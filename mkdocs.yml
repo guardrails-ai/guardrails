@@ -1,0 +1,111 @@
+site_name:  Guardrails.ai
+site_url: https://getguardrails.com
+site_author: Shreya Rajpal
+repo_url: https://github.com/ShreyaR/guardrails
+repo_name: ShreyaR/guardrails
+
+
+nav:
+    - 'Home': index.md
+    - 'Getting Started': notebooks/getting_started.md
+    - 'AIML Specification':
+      - 'Overview': aiml/index.md
+      - 'Output Element': aiml/output.md
+      - 'Prompt Element': aiml/prompt.md
+      - '(Experimental) Script Element': aiml/script.md
+    - 'Guardrails Modules':
+      - 'Data Types': data_types.md
+      - 'Validation': validation.md
+      - 'LLM API Wrappers': llm_api_wrappers.md
+      - 'Inspecting logs': inspecting_logs.md
+    - 'Examples':
+      - 'Extracting entities from ToS': examples/extracting_entities.md
+      - 'Generating bug-free Python code': examples/coda_qa.md
+      - 'SQL Code Generator': examples/sql_code_generator.md
+      - 'Recipe Generator': examples/recipe_generator.md
+      - 'Natural language to pandas code': examples/nl_to_pandas.md
+      - 'Building EHRs from doctors notes': examples/ehr_from_doctors_notes.md
+      - 'Forcing positive sentiment in chatbots': examples/positive_sentiment.md
+      - 'Using GPT to play valid chess moves': examples/gpt_chess.md
+      - 'AI tutor for writing improvements': examples/ai_tutor.md
+      - 'SFW tutoring system for kids': examples/sfw_tutoring.md
+      - 'No secrets in the code': examples/no_secrets.md
+
+
+theme:
+  name: material
+  favicon: img/favicon.ico
+  logo: img/tracks_white.png
+  custom_dir: docs/overrides
+  icon:
+    repo: fontawesome/brands/github
+    admonition:
+      note: octicons/tag-16
+      abstract: octicons/checklist-16
+      info: octicons/info-16
+      tip: octicons/squirrel-16
+      success: octicons/check-16
+      question: octicons/question-16
+      warning: octicons/alert-16
+      failure: octicons/x-circle-16
+      danger: octicons/zap-16
+      bug: octicons/bug-16
+      example: octicons/beaker-16
+      quote: octicons/quote-16
+  features:
+    - navigation.expand
+    - navigation.sections
+    - content.code.annotate
+    - toc.follow
+  palette:
+    - scheme: default
+      primary: black
+      toggle:
+        icon: material/toggle-switch
+        name: Switch to dark mode
+
+    # Palette toggle for dark mode
+    - scheme: slate
+      primary: black
+      toggle:
+        icon: material/toggle-switch-off-outline
+        name: Switch to light mode
+
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.tabbed:
+      alternate_style: true 
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - admonition
+  - pymdownx.details
+  - tables
+
+
+plugins:
+  - search
+  - mkdocstrings:
+      default_handler: python
+      handlers:
+        python:
+          options:
+            show_source: false
+            show_bases: false
+            show_if_no_docstring: true
+            merge_init_into_class: true
+            show_root_toc_entry: false
+            show_inheritance: true
+            show_private: false
+            show_special_members: false
+  - mkdocs-jupyter:
+      execute_notebooks: true
+      kernel_name: python3
+      extra_arguments:
+        - "--InlineBackend.figure_format=svg"
+      include_source: True
+

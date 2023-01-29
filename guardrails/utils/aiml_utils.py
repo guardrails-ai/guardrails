@@ -1,0 +1,84 @@
+"""XML utilities."""
+import re
+from typing import Dict, List, Optional, Tuple
+
+from lxml import etree as ET
+
+from guardrails.datatypes import registry as types_registry
+from guardrails.output_schema import OutputSchema
+from guardrails.prompt import Prompt
+from guardrails.utils.constants import constants
+from guardrails.validators import Validator
+
+
+def read_aiml(
+    aiml_file: Optional[str] = None, aiml_string: Optional[str] = None
+) -> Tuple[OutputSchema, Prompt, Dict]:
+    """Read an AIML file.
+
+    Args:
+        aiml_file: The path to the AIML file.
+
+    Returns:
+        The root element of the AIML file.
+    """
+    if aiml_file is not None:
+        with open(aiml_file, "r") as f:
+            xml = f.read()
+    elif aiml_string is not None:
+        xml = aiml_string
+    else:
+        raise ValueError("Must pass either aiml_file or aiml_string.")
+    parser = ET.XMLParser(encoding="utf-8")
+    parsed_aiml = ET.fromstring(xml, parser=parser)
+
+    raw_output_schema = parsed_aiml.find("output")
+    if raw_output_schema is None:
+        raise ValueError("AIML file must contain a output-schema element.")
+    output_schema = load_output_schema(raw_output_schema)
+
+    prompt = parsed_aiml.find("prompt")
+    if prompt is None:
+        raise ValueError("AIML file must contain a prompt element.")
+    prompt = load_prompt(prompt)
+
+    script = parsed_aiml.find("script")
+    if script is not None:
+        script = load_script(script)
+
+    return output_schema, prompt, script
+
+
+def load_output_schema(root: ET._Element) -> OutputSchema:
+    """Validate parsed XML, create a prompt and a Schema object."""
+
+    output = OutputSchema(parsed_aiml=root)
+
+    for child in root:
+        if isinstance(child, ET._Comment):
+            continue
+        child_name = child.attrib["name"]
+        child_data = types_registry[child.tag].from_xml(child)
+        output[child_name] = child_data
+
+    return output
+
+
+def load_prompt(root: ET._Element) -> Prompt:
+    text = root.text
+
+    # Substitute constants by reading the constants file.
+    # Regex to extract all occurrences of @<constant_name>
+    matches = re.findall(r"@(\w+)", text)
+
+    # Substitute all occurrences of @<constant_name> with the value of the constant.
+    for match in matches:
+        text = text.replace(f"@{match}", constants[match])
+
+    prompt = Prompt(text)
+
+    return prompt
+
+
+def load_script(root: ET._Element) -> Dict[str, List[Validator]]:
+    pass

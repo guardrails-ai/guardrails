@@ -1,0 +1,12 @@
+openai_api_key.txt
+*__pycache__*
+data/*
+.vscode/*
+.DS_Store
+*.ipynb_checkpoints/*
+*.pyc
+*.env
+*.log
+settings.json
+site/*
+guardrails.log
