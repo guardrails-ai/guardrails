@@ -1,0 +1,1082 @@
+Zelle® Service Agreement and Privacy
+Notice
+Last updated: 11/3/2022
+This agreement with Chase is available in Spanish as a courtesy. If there is any difference in
+meaning between the Spanish and English versions of this agreement or any related
+documents we provide you, either now or in the future, the English version is the official
+document and will prevail. Please consult with a translator if you have any questions.
+We suggest you read this document carefully and print a copy for your reference.
+This Zelle® Service Agreement and Privacy Notice (this "Agreement") states the terms and
+conditions that govern your use of the Zelle® Service (sometimes referred to as Chase
+QuickPay®, Chase QuickPay® with Zelle®, QuickPay, Send Money with Zelle®, Chase Personto-Person, QuickPay, Chase QuickPay for Small Business, Zelle, Zelle, or other trade name or
+trademark as determined by us) and J.P. Morgan QuickPay (each, the " Zelle® Service", “Zelle
+Service” or "Service"). As used herein, the terms "Bank", "us," "we," or "our" mean JPMorgan
+Chase Bank, National Association, or any affiliate, agent, independent contractor, designee, or
+assignee that we may, at our sole discretion, involve in the provision of the Service; "you" or
+"your" means (1) an individual or entity that is the owner of an account or (2) an authorized
+signer on an account who has authority to view account information and effect transactions
+on such account.
+TABLE OF CONTENTS
+1. General Terms Applicable to the Service
+2. Eligibility and User Profile
+3. Registering/Enrolling for the Service
+4. Definitions
+5. Statements
+6. Wireless Operator Data
+7. Disclosure of Account Information to Third Parties
+8. Mobile & Text Services; Consent to Emails and Automated Text Messages
+9. Cancellation of Your Service
+10. Cutoff Times
+11. Receiving Money
+12. Requesting Money
+13. Sending Money
+14. Transfer Limits
+15. Repeating Transfers
+16. Terms applicable to your use of Zelle platforms
+17. Zelle Fees
+18. Your Liability for Unauthorized Transfers
+19. Our Liability for Failure to Complete Transfers: For Consumer Deposit Accounts and Chase
+Liquid Cards Only
+20. Errors and Questions about Service: For Transfers From Consumer Deposit Accounts and
+Chase Liquid Cards Only
+21. No Purchase Protection
+22. ADDITIONAL TERMS APPLICABLE ONLY TO THE Service FOR BUSINESS ACCOUNTS
+Zelle Liability for Unauthorized Transfers for Chase Business Deposit Accounts Only
+Errors and Questions about Services for Chase Business Deposit Accounts Only
+Miscellaneous Terms for Business Accounts
+23. ADDITIONAL TERMS APPLICABLE TO ALL USERS OF THE SERVICE
+Computer Equipment; Browser Access and Internet Services
+Passwords
+Notices
+New Features
+Limitation of Liability; No Warranties
+Other Agreements
+Termination
+Disputes
+Binding Arbitration
+Indemnity
+Records; Communications
+Special Provisions for Business Customers
+Choice of Law/Successors; Waiver; Severability
+Chase Account Information
+Privacy Policy and Notice
+1. General Terms Applicable to the Service
+We have partnered with Zelle to enable transfers of money between you and others who are
+enrolled directly with Zelle or enrolled with another financial institution that partners with
+Zelle (each, a “User”) using aliases, such as email addresses or mobile phone numbers.
+When you use or access, or permit any other person(s) or entity to whom you have delegated
+to act on your behalf to use or access the Service, you agree to the terms and conditions of
+this Agreement. We may amend or change this Agreement (including any applicable fees and
+service charges) from time to time, in our sole discretion, by sending you written notice by
+electronic mail, postal mail or by posting the updated terms on the sites within the Service
+(the "Site(s)"). Please access and review this Agreement regularly. If you find the Agreement
+unacceptable to you at any time, please discontinue your use of the Service. Your use of the
+Service after we have made such changes available will be considered your agreement to the
+change.
+We grant to you, for your personal use or, if you are a business, internal business purposes
+only, a nonexclusive, limited and revocable right to access and use the Service. You agree not
+to use the Service for any other purpose, including commercial purposes, such as cobranding, framing, linking, or reselling any portion of the Service without our prior written
+consent.
+Subject to the terms of this Agreement, the Services are generally available 24 hours a day,
+seven days a week with the exception of outages for maintenance and circumstances beyond
+our or Zelle's control.  
+2. Eligibility and User Profile
+In order to register in the Service to request, send or receive money, you must have one
+or more eligible accounts to designate a Pay From Account and/or a Pay To Account, as
+applicable. If the existing default Pay From Account or Pay To Account you designated is
+inactive or terminated, we may, and you hereby authorize us to, designate on your
+behalf another eligible and active Chase Account in your profile as your primary Pay
+From Account or Pay To Account. You may change the designated accounts at any time
+subject to the terms of this Agreement. We have the right to determine eligibility and to
+restrict categories of recipients to whom payments may be made using the Service in
+our sole discretion. To use the Service to make a transfer between (i) two registered
+Zelle accounts; (ii) a Chase Account and a Network Bank Account (as defined below), or
+(iii) a Chase Account and an Out-of-Network Bank Account (as defined below).
+a. 
+You represent that you are a U.S. resident (not including U.S. territories) and you have
+the authority to authorize debits from and credits to the registered bank account(s).You
+agree that you will only use the Service for lawful purposes. You agree that you will not
+use the Service for International ACH Transactions, which are prohibited under this
+Agreement. You further agree not to use the Service to request, send or receive money
+from anyone to whom you are obligated for tax payments, payments made pursuant to
+court orders (including court-ordered amounts for alimony or child support), fines,
+payments to loan sharks, gambling debts or payments otherwise prohibited by law, and
+you agree that you will not use the Service to request money from anyone for any such
+payments. You agree that you will not authorize a third party to use the Service or share
+your credentials with a third party to use the Service on your behalf except in legally
+authorized situations such as legal guardianship or pursuant to a power of attorney.
+b. 
+Zelle Content Standards: You agree that you will not upload or provide content or
+otherwise post, transmit, distribute, or disseminate through the Service (including but
+not limited to memo fields accompanying a transfer) any material that: (a) is false,
+misleading, unlawful, obscene, indecent, lewd, pornographic, defamatory, libelous,
+threatening, harassing, hateful, abusive, or inflammatory; (b) encourages conduct that
+would be considered a criminal offense or gives rise to civil liability; (c) breaches or
+infringes any duty toward or rights of any person or entity, including rights of publicity,
+privacy or intellectual property; (d) contains corrupted data or any other harmful,
+disruptive, or destructive files; (e) advertises products or services competitive with Zelle,
+as determined by Zelle in its sole discretion; or (f) in Zelle’s or our sole judgment, is
+objectionable, restricts or inhibits any person or entity from using or enjoying any
+portion of the Service, or which may expose us, Zelle or our respective affiliates or
+customers to harm or liability of any nature.
+c. 
+Although neither we nor Zelle have any obligation to monitor any Content, both we and
+Zelle have absolute discretion to remove Content at any time and for any reason
+without notice. We and Zelle may also monitor such Content to detect and prevent
+fraudulent activity or violations of the terms and conditions. You understand that by
+d. 
+using the Service, you may be exposed to Content that is offensive, indecent, or
+objectionable. We and Zelle are not responsible for, and assume no liability, for any
+Content, including any loss or damage to any of your Content. We and Zelle make no
+representation or warranty that Content uploaded to a User profile accurately identifies
+a particular User of the Service.
+3. Registering/Enrolling for the Service
+You must provide us with an email address that you regularly use and intend to use
+regularly (i.e., no disposable email addresses) and a permanent U.S. mobile phone
+number that you intend to use for an extended period of time (i.e., no "burner"
+numbers), and must immediately update any registered email address or mobile phone
+number that you surrender or no longer use. You may not register or enroll with a
+home phone or “landline” phone number, Google Voice number, or Voice over Internet
+Protocol phone number.
+a. 
+To send, request and/or receive money, the User must (i) be registered with (a) the
+Service or (b) the person-to-person payment service of clearXchange, Zelle or a Network
+Bank, and (ii) have an eligible Pay To Account or Pay From Account, and in the case of
+transfers between you and another User at Chase, eligible Pay To and Pay From
+Accounts that are Chase Accounts.
+b. 
+ Once registered/enrolled, you may:
+authorize a debit of your account to send money to another User at your initiation
+or at the request of that User; and
+i. 
+receive money from another User at that User's initiation or at your request,
+subject to the conditions of the Section below titled "Requesting Money."
+ii. 
+c. 
+If at any time while you are enrolled, you do not send or receive money using the
+Service for a period of 18 consecutive months, we may contact you and/or take other
+steps to confirm that the U.S. mobile phone number or email address that you enrolled
+still belongs to you.  If we are unable to confirm that you are the owner of the mobile
+phone number or email address, then you understand that we may cancel your
+enrollment and you will not be able to send or receive money with the Service until you
+enroll again.
+d. 
+Once enrolled, a Z logo will appear on your profile picture for each U.S. mobile number
+and/or email address that you have enrolled with Zelle. The Z logo will be displayed to
+other Users to aid them in determining which of your U.S. mobile numbers or email
+addresses should be used to send money to you with Zelle.  If a User sends you money
+using a different U.S. mobile number or email address that they may have for you (one
+that is registered to you with the e-mail or mobile phone provider, but is not already
+enrolled with Zelle), you will receive a message with instructions on how to enroll with
+Zelle.
+e. 
+4. Definitions
+As used in this Agreement, the following terms have the following meanings:
+"Accept(s)" or "acceptance" means the recipient's consent to receive the funds or
+transfers, which could be provided through various ways, including by the recipient, by
+cXc or Zelle in the case of certain Out-of-Network Bank Accounts, or by the financial
+institution holding that account on recipient's behalf, either manually or through an
+automated process. For those financial institutions that accept payments on behalf of
+their accountholders, including us, the date of acceptance as used in this Agreement
+typically has the same meaning as the Send On date.
+•
+• "Business Day" refers to Monday through Friday, excluding federal holidays.
+• "Cancelled" means funds will neither be processed nor sent for any reason.
+"Chase Account" means a checking account held by us, or a reloadable, prepaid account
+established under the Chase Liquid® Card program (“Chase Liquid Card”) or other
+eligible Chase card or account as determined by us from time to time and registered for
+the Service.
+•
+"clearXchange" or “cXc” refers to refers to a digital payments network and company that
+arranges electronic money transfers, using email addresses and mobile phone
+numbers.
+•
+"clearXchange platform" means the website, clearXchange.com, operated and made
+available by cXc at its sole discretion, solely to those Users who bank with an Out-ofNetwork Bank.
+•
+"Completed" means funds have been successfully processed and both Pay To and Pay
+From Accounts have been updated. It does not mean funds have necessarily been
+received into the Pay To Account.
+•
+"Current Day" refers to funds from a Chase Account that are scheduled to be sent with a
+present day Send On date (i.e., the transfer is scheduled to begin processing the same
+date as the Instructions are entered).
+•
+"Cutoff Time" means the time by which we must receive Instructions to have them
+considered entered on that particular Business Day. See the paragraph entitled "Cutoff
+Times" for additional details.
+•
+"Funded" means when an amount to be sent has been withdrawn from the available
+balance of the Pay From Account.
+•
+"Future Dated" means Instructions that are not scheduled to begin processing on the
+Current Day; only Business Days may be selected for Future Dated transfers.
+•
+"In Process" means the funds requested for transfer are in transit but have not yet been
+credited to the Pay To Account.
+•
+"Instructions" means the information provided by you or the sender in order for the
+funds to be delivered to the Pay To Account.
+•
+"Out-of-Network Bank" means any financial institution that does not participate in the
+clearXchange or Zelle digital payments network.
+•
+"Out-of-Network Bank Account" means a deposit account held by an Out-of-Network
+Bank and registered for clearXchange's or Zelle's out-of-network person-to-person
+payment service.
+•
+"Network Bank" means a financial institution participating from time to time in the
+clearXchange or Zelle digital payments network, other than Chase.
+•
+"Network Bank Account" means an account registered with the person-to-person
+transfer service of a Network Bank.
+•
+• "Pay From Account" means the account from which funds will be transferred.
+• "Pay To Account" means the account to which funds will be transferred.
+"Pending" means any Instruction that has not been Cancelled before the Cutoff Time on
+the Send On date and has not been Funded.
+•
+"Repeating" means automatic recurring payment or transfer to the same Pay To
+Account, for the same amount which you can authorize for transmission;
+•
+"Send On date" means the date you select which will instruct us to begin the delivery
+process and notify the recipient of the payment. NOTE: The date that we will deliver the
+funds to recipient may vary depending on available funds, the Business Day on which it
+falls, acceptance of the transfer or the recipient's registration status in the Service or the
+person-to-person transfer service of a Network Bank, Zelle or cXc and may be on or
+after the date entered in the sender's Instructions.
+•
+"transfer" means any Instruction to move funds electronically from one account to
+another, and/or Instructions that have been processed through the Service, as the
+context requires.
+•
+• "User" has the meaning set forth in Section 1.
+"Zelle" or “Zelle®" refers to a service of Early Warning Services, a digital payments
+network and company. It provides no deposit account or other financial services. Zelle
+neither transfers nor moves money. Users may not establish a financial account with
+Zelle of any kind. All money will be transmitted by us and/or a Network Bank.
+•
+"Zelle platforms" means the website, zellepay.com, and/or the Zelle mobile application
+operated and made available by Zelle to certain Users as determined by Zelle from time
+to time, including those who bank with an Out-of-Network Bank.
+•
+5. Statements
+All of your transfers made through the Service to or from a Chase Account will appear on the
+Chase statement for such account.  
+6. Wireless Operator Data 
+We or Zelle may use information on file with your wireless operator to further verify your
+identity and to protect against or prevent actual or potential fraud or unauthorized use of the
+Service. By using the Service, you authorize your wireless operator (AT&T, Sprint, T-Mobile, US
+Cellular, Verizon, or any other branded wireless operator) to use or disclose information
+related to your wireless subscriber account (such as your mobile number, name, address,
+email, network status, customer type, mobile device identifiers (e.g. IMSI and IMEI) and other
+device and subscriber status and device details, if available, to us or our service providers,
+which we may use for the duration of your business relationship with us, solely to allow
+verification of your identity, to compare information you have provided to us or to Zelle®
+with your wireless operator account profile information, and for other user, token or
+transaction verifications to help prevent scams and fraud. See Zelle’s Privacy Policy for how it
+treats your data. See Privacy Policy and Notice for how we treat your data.
+7. Disclosure of Account Information to Third Parties
+We may disclose information to third parties about your account or the funds you send or
+receive:
+1. as necessary to complete transactions;
+2. as necessary in connection with offering the Service;
+in connection with the investigation of any claim related to your account or the funds
+you send or receive;
+3. 
+4. to comply with government agency or court orders;
+5. in accordance with your written permission; and
+6. as otherwise permitted by the terms of our privacy notice.
+Our Chase privacy notice, which includes details about our information sharing practices and
+your right to opt-out of certain information sharing, was provided to you when you opened
+your Chase Account with us. It can be viewed by clicking on the "Security" link, then "Privacy"
+on any of our website pages.  
+8. Mobile & Text Services; Consent to Emails and
+Automated Text Messages
+By participating as a User, you represent that you are the owner of the email address, mobile
+phone number, and/or other alias you registered, or that you have the delegated legal
+authority to act on behalf of the owner of such email address, mobile phone number and/or
+other alias to send or receive money as described in this Agreement. You consent to the
+receipt of emails or text messages from us, from Zelle, from other Users that are sending you
+money or requesting money from you, and from other Network Banks or their agents
+regarding the Services or related transfers between Network Banks, Out-of-Network Banks
+and you. You agree that we may, Zelle may or either of our agents may use automatic
+telephone dialing systems in connection with text messages sent to any mobile phone
+number you register.
+Mobile Services
+Your use of the Service may include access to some products and services through
+a mobile device, web-browser or a mobile app ("Mobile Services"). By using the
+Mobile Services, you agree to the following terms. You agree that we may send you
+information relative to Mobile Services through your communication service
+provider in order to deliver them to you and that your communication service
+provider is acting as your agent in this capacity. You agree to provide a valid phone
+number, e-mail address or other delivery location so that we may send you certain
+information about your applicable account or otherwise related to the Mobile
+Services. You will immediately notify us if any phone number you have registered
+is (i) surrendered by you, or (ii) changed by you.
+i. 
+Additionally, you agree to indemnify, defend and hold us harmless from and
+against any and all claims, losses, liability, cost and expenses (including reasonable
+attorneys' fees) arising from your provision, whether directly or indirectly (such as
+through our use, to the extent agreed to by you from time to time, of any tool or
+technology) of a phone number, e-mail address, information and photographs
+ii. 
+a. 
+associated with recipients contained in your mobile device Contacts, or other
+delivery location that is not your own, or your violation of applicable federal, state
+or local law, regulation or ordinance. Your obligation under this paragraph shall
+survive termination of the Agreement.
+You understand and agree that these services may not be encrypted and may
+include personal or confidential information about you such as your account
+activity or status. Delivery and receipt of information, including instructions for
+payment, transfer and other move money transactions, through the Mobile
+Services may be delayed or impacted by factor(s) pertaining to your Internet
+service provider(s), phone carriers, other parties, or because of other reasons
+outside of our control. We will not be liable for losses or damages arising from any
+disclosure of account information to third parties, non-delivery, delayed delivery,
+misdirected delivery or mishandling of, or inaccurate content in, information and
+instructions sent through the Mobile Services. Additionally, not all of the products,
+services or functionality described on the Site(s) and the Agreement are available
+when you use the Mobile Services. Therefore, you may not be eligible to use all the
+products, services or functionality described when you access or try to access
+them using a mobile device. We reserve the right to determine your eligibility for
+any product, service, or functionality. Information available via the Mobile Services,
+including balance, transfer and payment information, may differ from the
+information that is available directly through the Chase online services and Site(s)
+without the use of a mobile device. Information available directly through the
+Chase online services and Site(s) without the use of a mobile device may not be
+available via the Mobile Services, may be described using different terminology
+(including capitalized terms used in the Agreement or on our Site(s), or may be
+more current than the information available via the Mobile Services, including but
+not limited to account balance information. The method of entering instructions
+via the Mobile Services may also differ from the method of entering instructions
+directly through the Service without the use of a mobile device. Processing of
+payment and transfer instructions may take longer through the Mobile Services.
+We are not responsible for such differences, whether or not attributable to your
+use of the Mobile Services. Additionally, you agree that neither we nor our service
+providers will be liable for any errors or delays in the content, or for any actions
+taken in reliance thereon. You are responsible for any and all charges, including,
+but not limited to, fees associated with text messaging, data, or other message
+services imposed by your communications service provider, including, without
+limitation, for short message service. We are not responsible for any damages
+resulting from your failure to comply with any terms and conditions provided by
+your communication service provider or any app store.
+iii. 
+We, or our licensors, own all right, title and interest, including, without limitation,
+all intellectual property rights (including all names, trade names, trademarks,
+service marks, slogans, logos or other indicia) in and to the Service (including the
+products and services accessed through the Mobile Services). No license or other
+right in or to such products and services is granted to you except for the rights
+specifically set forth in this Agreement.
+iv. 
+b. Text Services
+Your enrollment in the Service includes access to mobile text messaging related
+services (collectively, "Text Services"). By receiving or otherwise using these
+services, you agree to the following terms for these services. You agree that we
+may send messages through your communication service provider in order to
+deliver them to you and that your communication services provider is acting as
+your agent in this capacity. We may use a telephone number, e-mail address or
+other delivery location we have in our records for you or other such contact
+information as you may provide to us for these services so that we may send you
+certain information about your applicable account. You will immediately notify us if
+any mobile phone number or email address you have registered is (i) surrendered
+by you, or (ii) changed by you.
+i. 
+In the case of any messages that you may send through either us or Zelle or that
+we may send or Zelle may send on your behalf to an email address or mobile
+phone number, you represent that you have obtained the consent of the recipient
+of such emails or automated text messages to send such emails or text messages
+to the recipient. You understand and agree that any emails or text messages that
+we send or that Zelle sends on your behalf may include your name. Additionally,
+you agree to indemnify, defend and hold us harmless from and against any and all
+claims, losses, liability, cost and expenses (including reasonable attorneys' fees)
+arising from your provision of a phone number, e-mail address, or other delivery
+location that is not your own or your violation of applicable federal, state or local
+law, regulation or ordinance. Your obligation under this paragraph shall survive
+termination of the Agreement.
+ii. 
+You understand and agree these services may not be encrypted and may include
+personal or confidential information about you such as your account activity or the
+status of your account. Messages may be delayed or impacted by factor(s)
+pertaining to your phone carriers or other parties. We will not be liable for losses
+or damages arising from any disclosure of account information to third parties,
+non-delivery, delayed delivery, misdirected delivery or mishandling of, or
+inaccurate content in, the messages sent through the Text Services.
+iii. 
+ There is no service fee for the Text Services but you are responsible for any and all
+charges, including, but not limited to, fees associated with text messaging imposed
+by your communications service provider. Message and data rates may apply.
+Such charges include those from your communications service provider.
+Message frequency depends on user preferences. To cancel the Text Services,
+send STOP to 24273 at any time (J.P. Morgan Online clients only, send STOP to
+576746). You expressly consent to receipt of a text message to confirm your
+"STOP" request. For help or information on the Text Services, send HELP to
+24273. For additional assistance with the Text Services, contact customer service at
+1-877-242-7372 (J.P. Morgan Online clients only call 1-866-265-1727).
+iv. 
+9. Cancellation of Your Service
+You may cancel the Service by calling 1-877-CHASEPC (1-877-242-7372) or online. By canceling
+the Service, any Pending, Repeating and Future Dated transfers, will also be terminated,
+however any transfer that is In Process cannot be Cancelled by you. When you cancel the
+Service, you will no longer be able to access or use the Service and you will not receive a
+refund of service fees, if any. When you cancel the Service, it will not cancel your other online
+services or your account relationships, if any, with us.  
+10. Cutoff Times
+Between Chase Accounts: The Cutoff Time for sending payments in order for recipients to
+receive money on the same day is 11:00 PM Eastern Time on any Business Day.
+Between a Chase Account and an Out-of-Network Bank Account or a Network Bank Account:
+The Cutoff Time for receiving payments from an Out-of-Network Bank Account or a Network
+Bank Account is 11:00 PM Eastern Time on any Business Day. The Cutoff Time for sending
+payments to an Out-of-Network Bank Account or a Network Bank Account is 8:00 PM Eastern
+Time on any Business Day.
+All Cutoff Times referenced in this Agreement reflect the times displayed on our internal
+system clocks and may not necessarily be synchronized with the internal clock displayed on
+your computer or mobile device. For this reason, we suggest that you transmit any
+Instructions to us sufficiently in advance of such Cutoff Times to eliminate the possibility of
+missing the cutoff. Instructions entered after the Cutoff Time with a Send On date that is the
+Current Day or next Business Day may start to process immediately and may be Funded prior
+to the Send On date.  
+11. Receiving Money
+You authorize us to accept, on your behalf, all payments sent to you through the
+Service. Once a Zelle user initiates a transfer of money to your email address or mobile
+phone number registered with the Service, you have no ability to stop or cancel the
+transfer. By using the Service, you agree and authorize us to initiate credit entries to the
+primary or default account you have registered for the Service. For avoidance of doubt,
+payments sent to you will be Cancelled if you have not designated any Chase Account as
+the primary or default account for the Service. To avoid this cancellation, if the existing
+primary or default account you designated is inactive or terminated, we may, and you
+hereby authorize us to, designate on your behalf another eligible and active Chase
+Account in your profile as your primary or default account to receive payments sent to
+you through the Service.
+a. 
+If you are receiving a payment from a business or government agency, your payment
+will be delivered in accordance with both this Agreement and the procedures of the
+business or government agency that is sending you the payment
+b. 
+Notwithstanding anything set forth in this Agreement, processing times vary depending
+on registration and information provided by the sender and recipient. We will
+automatically begin the delivery process and send notice of a transfer to the recipient
+on the Send On date. We will continue our attempts by sending a second notice of a
+transfer to the recipient, and providing the recipient a period of nine (9) succeeding
+Business Days to register in the Service, or the person-to-person payment service of
+c. 
+clearXchange, Zelle or a Network Bank. At the end of this period, if the recipient still has
+not registered, the transfer request will be Cancelled. The sender may cancel the
+transfer at any time during this ten (10) day period if the recipient is not registered at
+the time of cancellation. During this period, a hold may be placed on the sender's
+account for the amount of the transfer. Once the recipient has successfully enrolled,
+transfers will automatically be debited from the sender's account and deposited in the
+recipient's account.
+The recipient may not initiate a transfer of funds from a third party's Pay From Account
+to the recipient's Pay To Account. You may however send an e-mail via the Service to
+request money from a third party if you have a valid e-mail address for such third party.
+d. 
+As a recipient or sender of any transfer using the Service, you acknowledge and agree
+that, we may delay, block or cancel a payment, charge back and/or put a hold on the
+amount of such payment to or from the Pay From Account or other account as we
+determine in our discretion or claim a refund from you for such amount for various
+reasons including fraud, scams, suspicious or illegal activity, duplicate payment,
+incorrect amount or incorrect recipient or otherwise to meet our regulatory obligations.
+The hold on the amount of such payment may be up to ten (10) days. For example, we
+may need additional time to verify your identity or the identity of the person sending
+the money, or the payment may be delayed due to technical difficulties or
+circumstances beyond our control. If we delay or block a payment that you have
+initiated, we will notify you.  Neither we nor Zelle shall have liability to you for any such
+transfers of money, including without limitation, (i) any failure, through no fault of us or
+Zelle to complete a transaction in the correct amount, or (ii) any related losses or
+damages.
+e. 
+12. Requesting Money
+You may also send a text message via the Service to request money from a recipient
+holding an Out-of-Network Bank Account or an account at a Network Bank, if you have a
+valid mobile phone number for such recipient and the Network Bank or Zelle sends text
+messages at that mobile phone number to the recipient. If a request for transfer is
+subsequently cancelled by the requestor, and the sender has initiated a transfer tied to
+that request, the transfer will be Cancelled unless it is a Current Day transfer, the
+transfer is already accepted, or it is after the Cutoff Time on the Send On date.
+a. 
+You may request money from an individual or a group of individuals (up to a maximum
+number as determined by us from time to time) registered with clearXchange, Zelle or a
+Network Bank. You understand and acknowledge that individuals to whom you send
+payment requests may reject or ignore your request.  We do not guarantee that you will
+receive money from other individuals by sending a payment request or that you’ll
+receive the requested amount.  If an individual ignores your request, we may decide, in
+our sole discretion, that we will not send a reminder or repeat request to that individual.
+We have the right to expire all pending payment requests sent by you after a period of
+time determined by us from time to time, which is currently set at 14 days from the
+Send On date.
+b. 
+By accepting this Agreement, you agree that you will not use the Service to request
+money for the payment or collection of an overdue or delinquent debt; to request
+c. 
+money that is owed to another person; or to collect any amounts that are owed
+pursuant to a court order.  You agree to indemnify and hold us, Zelle and our respective
+officers, directors, employees and agents harmless from and against any loss, damage,
+liability, cost or expense of any kind (including, but not limited to, reasonable attorneys'
+fees), resulting from or arising out of any request for money that you send that is
+related to overdue or delinquent amounts.
+By using the Service, you agree to receive money requests from others, and to only send
+requests for legitimate and lawful purposes. Requests for money are solely between the
+sender and recipient and are not reviewed or verified by us. We do not assume
+responsibility for the accuracy or legality of such requests and do not act as a debt
+collector on your behalf or on behalf of the sender of a request for money.
+d. 
+We reserve the right, but assume no obligation, to terminate your ability to send
+requests for money in general, or to specific recipients, if we deem such requests to be
+potentially unlawful, abusive, offensive or unwelcome by the recipient.
+e. 
+13. Sending Money
+You may send money to a recipient at your initiation or in response to that recipient's request
+for money. You understand that use of this Service by you shall at all times be subject to (i)
+this Agreement, and (ii) your express authorization at the time of the transaction for us to
+initiate a debit entry to your bank account. You understand that when you send the payment,
+you will have no ability to stop or cancel it. The sender must be registered with (i) the Service
+with an eligible Pay From Account or (ii) the person-to-person payment service of
+clearXchange, Zelle or a Network Bank, and provide a valid e-mail address or mobile phone
+number for the recipient. Funds will not be withdrawn from the Pay From Account until the
+transfer has been accepted.
+You acknowledge and agree that payment transfers will be completed using only the email
+address or mobile phone number you enter even if it identifies a person different from your
+intended recipient. The name you enter will help you identify your intended recipient in the
+drop down menu and your transaction history but will not be used to process payments.
+Please make sure you accurately enter the recipient's email address or mobile phone number
+and ensure that their email address or mobile phone number is current and registered by the
+recipient since your obligation to pay for the transfer will not be excused by an error in the
+information you enter.
+You also acknowledge and agree that we can: (1) use and add any person or entity (and their
+associated information) with whom you have transacted through the Service to your list of
+Zelle recipients; and (2) access, use and add any person or entity from your contacts
+contained on your device (subject to your consent) for the purposes of updating your list of
+Zelle recipients, verifying their Zelle enrollment status, and displaying of a Z logo (or
+substantially similar indicia) for each such mobile number or email address of those contacts
+that are enrolled. You may add, edit and/or remove any recipients at any time.
+Sending Money Between Chase Accounts
+To use the Service to send money between two Chase Accounts, the sender and the
+1. 
+recipient must each maintain a Chase Account. You may transfer funds - up to your
+available balance plus any amount in your overdraft protection account, if applicable.
+Transfers between Chase Accounts: If you use the Service to send money, you authorize
+us to withdraw funds from your designated Pay From Account for all transfers of funds
+that you initiate through the Service and you also agree to have sufficient funds in your
+Pay From Account on the Send On date for each such transfer you schedule until the
+transfer is Completed or Cancelled, subject to Section 10(e). We will not be obligated to
+make any transfer you may request unless there are sufficient available funds in the Pay
+From Account to cover the transfer. Transfers from Chase Accounts will be Funded from
+your Pay From Account on the date of acceptance.
+For transfers between Chase Accounts, funds should typically be available within
+minutes, but no later than the next Business Day if the transfer is sent before the Cutoff
+Time.
+Current Day transfers between Chase Accounts: Any transfer Instruction for a requested
+Current Day transfer received by us after the Cutoff Time or on non-Business Days will
+not be a Current Day transfer and will be processed the following Business Day. If there
+are insufficient available funds to cover a Current Day transfer, the transfer request will
+fail and we will not make repeat attempts to debit the applicable account.
+Repeating and Future Dated transfers between Chase Accounts: In the case of
+Repeating and Future Dated transfers, if sufficient funds are not in the Pay From
+Account on the Send On date, the transfer will fail and we will not make repeat attempts
+to debit the applicable account.
+Sending Money Between Chase Accounts and Out-of-Network Bank Accounts
+To use the Service to send and receive money between a Chase Account and an Out-ofNetwork Bank Account, the parties must use at least one eligible Chase Account with us
+and at least one Out-of-Network Bank Account. To send money from a Chase Account,
+you may transfer funds - up to your available balance plus any amount in your overdraft
+protection account, if applicable.
+Transfers between a Chase Account and an Out-of-Network Bank Account: You
+authorize us to charge your designated Pay From Account with us for all transfers of
+funds that you initiate through the Service and you also agree to have sufficient funds in
+your Pay From Account on the Send On date to cover each such transfer you schedule
+and any fees that might be associated with such transfer until the transfer is Completed
+or Cancelled, subject to Section 10(e). We will not be obligated to make any transfer you
+may request unless there are sufficient available funds (including any available
+overdraft protection account you may have) in your Pay From Account to cover the
+transfer on the Send On date until the transfer is Completed or Cancelled. If there are
+insufficient available funds to cover a transfer on the date of acceptance, the transfer
+will fail and we will not make repeat attempts to debit the applicable account.
+Instructions for transfers to an Out-of-Network Bank Account will be deducted from the
+2. 
+Pay From Account held by us following acceptance. Transfers from Out-of-Network
+Bank Accounts are subject to the processing times of the Out-of-Network Bank Account.
+Instructions for transfers from the Out-of-Network Bank Accounts that we receive by
+the Cutoff Time on a Business Day will be sent to the Out-of-Network Bank Account on
+the same day for processing.
+Transfers to an Out-of-Network User through clearXchange.com:
+For transfers from a Chase Account to an Out-of-Network Bank Account through
+use of the clearXChange.com, the transfer should typically be completed one to
+two Business Days after the Business Day following acceptance, subject to the
+processing times of the Out-of-Network Bank.
+1. 
+Transfers from an Out-of-Network User through clearXchange.com:
+For transfers from an Out-of-Network Bank Account to a Chase Account through
+use of clearXChange.com, the transfer should typically be completed four to five
+Business Days after the Business Day following acceptance, subject to the
+processing times of the Out-of-Network Bank.
+2. 
+Transfers to or from the Zelle platforms:
+For transfers between a Chase Account and an Out-of-Network Bank Account or a
+Network Bank Account through use of the Zelle platform(s), the transfer should
+typically be completed within minutes, subject to the processing times of the
+financial institution holding the other account.
+3. 
+Sending Money Between Chase Accounts and Network Bank Accounts
+To use the Service to send and receive money between a Chase Account and a Network
+Bank Account, the parties must use at least one eligible Chase Account with us and at
+least one Network Bank Account. The holder of an account with a Network Bank may
+register with the person-to-person transfer service of the Network Bank holding their
+account and will not be required to register through the Service. To send money from a
+Chase Account, you may transfer funds up to (A) your available balance plus any
+amount in your overdraft protection account, if applicable.
+Transfers from a Chase Account to a Network Bank Account: You authorize us to charge
+your designated Pay From Account with us for all transfers of funds that you initiate
+through the Service, and you also agree to have sufficient funds in your Pay From
+Account on the Send On date to cover each such transfer you schedule and any fees
+that might be associated with such transfer until the transfer is Completed or Cancelled,
+subject to Section 10(e). We will not be obligated to make any transfer you may request
+unless there are sufficient available funds (including any available overdraft protection
+account you may have) in your Pay From Account to cover the transfer on the Send On
+date until the transfer is Completed or Cancelled.
+If there are insufficient available funds to cover a transfer to a Network Bank Account on
+3. 
+the date of acceptance, the transfer request will fail and we will not make repeat
+attempts to debit the applicable account.
+Instructions for transfers to a Network Bank Account will be deducted from the Pay
+From Account held by us once the recipient or the Network Bank accepts. Funds will
+typically be available in the Network Bank Account when Chase sends a guarantee of
+payment or a similar notice to the Network Bank, and depending on the Network Bank
+and whether there are sufficient funds in your Chase Account, that may be within
+minutes or within two Business Days following acceptance. Once your transfer has been
+submitted and confirmed, we will provide you information on when the funds for each
+transfer will become available.
+Transfers from a Network Bank Account to a Chase Account: Transfers from Network
+Bank Accounts to Chase Accounts are subject to the terms of the person-to-person
+transfer service of the Network Bank and may be delayed or canceled as the Network
+Bank may determine in its sole discretion.
+Funds will be typically available when Chase receives a guarantee of payment or a
+similar notice from the Network Bank sending the transfer, and depending on the
+Network Bank, that may be within minutes or within three Business Days following
+acceptance, subject to the processing times of the Network Bank. After acceptance, we
+will provide you information on you when the funds for each transfer will become
+available.
+14. Transfer Limits
+Transfers from your Chase Accounts may be made in any amounts from $1 up to the limits
+shown below.  Limits are aggregate from all of your combined Chase accounts registered with
+the Service.  All transfer limits are subject to temporary reductions to protect the security of
+customer accounts and/or the transfer system.  Note that the amount of money you can
+send a new recipient may be initially subject to lower limits; however, we may adjust
+the transfer limit when you send subsequent payments to the same recipient.
+Consumer Chase
+Accounts
+Chase Private Client or Chase
+Private Banking Client Chase
+Accounts
+Business Chase
+Accounts
+Per
+transaction $2,000 $5,000 $5,000
+Per day $2,000 $5,000 $5,000
+Per calendar
+month $16,000 $40,000 $40,000
+Your individual transfer limits may vary from the transfer limits shown above as determined
+in our sole discretion based on your recipient, the transaction history for your recipient, and
+your account tenure. Your transfer limits may be different from those of other Users
+depending upon the foregoing criteria which we may change from time to time. We will
+present your applicable limit for your recipient when using the Service if it varies from the
+limits shown above. We reserve the right to change from time to time the dollar amount of
+transfers you are permitted to make using Zelle without prior notice to you, unless otherwise
+required by applicable law or regulation. At our discretion we may refuse to process any
+transaction that exceeds your individual limits or to protect the security of your account
+and/or the transfer system. In this case, you are responsible for making alternate
+arrangements or rescheduling the payment or transfer.
+Transfer limits, if any, applicable to a holder of Network Bank Accounts or Out-of-Network
+Bank Accounts for transfers to Chase Accounts or in receiving transfers to their Network Bank
+Accounts or Out-of-Network Bank Accounts are governed by the terms of the person-toperson transfer service of clearXchange, Zelle or the applicable Network Bank.
+15. Repeating Transfers
+Repeating transfers that are for the same fixed amount each month will be sent in
+accordance with your Instructions and on the same calendar day of each period you
+designate, or on the prior Business Day if the regular Send On date falls on a non-Business
+Day. In order to authorize a Repeating transfer, you agree to have a printer or other means to
+obtain a printed copy of your authorization for your records. If you do not have a printer, you
+agree to continue to authorize a Repeating transfer on a transaction-by-transaction basis
+until you have means of printing a copy of your authorization for your records.
+If you desire to cancel a Repeating transfer, you may cancel your transaction online. If for any
+reason you cannot access the Online Service, you may also call or write online customer
+service at the phone number or address set forth in the paragraph entitled "Your Liability for
+Unauthorized Transfers”.
+16. Terms applicable to your use of Zelle platforms
+The Zelle platforms, such as the standalone Zelle mobile app and zellepay.com site, are
+additional platforms owned and controlled by Zelle. The Zelle platforms are not a part of the
+Service and the Service is not available on the Zelle platforms. By using the Zelle platforms,
+you will be required to agree to Zelle's terms and conditions. Chase hereby disclaims any and
+all liabilities, representations and warranties with respect to the Zelle platforms. 
+17. Zelle Fees
+There is no service fee from us to use the Service. However, if we process a transfer in
+accordance with your Instructions that overdraws your Chase Account with us, we may assess
+a fee or charge interest for any such overdraft in accordance with the terms of your Deposit
+Account Agreement. We will not be liable for failure to pay any transfer request unless it is
+drawn against available funds credited to the designated Pay From Account. You will be
+responsible for paying any telephone company or utility charges and/or Internet access
+service fees incurred while using telephone lines and/or Internet access services to connect
+with the Service. Fees are subject to change from time to time upon notice to you as may be
+required by law.
+The following additional terms apply whenever you use the Service to send transfers from a
+consumer deposit account. A consumer account is one that is used primarily for personal,
+family or household purposes; all other accounts are business accounts. You should use
+your consumer account to send or receive payments for personal, family, or household
+purposes, and you should use your business account to send or receive payments for
+business purposes. If you perform transactions from business accounts registered through
+the Service, please refer to the paragraphs beginning with "ADDITIONAL TERMS APPLICABLE
+ONLY TO TRANSFER SERVICES FOR BUSINESS ACCOUNTS" for additional terms applicable to
+business transactions. Network Bank Accounts are subject to the terms of the agreement of
+the Network Bank.
+18. Your Liability for Unauthorized Transfers
+If you permit other persons to use the Service or your Password, you are responsible for any
+transactions they authorize from your accounts. If you believe that your Password has
+been lost or stolen or that someone has transferred or may transfer money from your
+account without your permission, notify us AT ONCE, by calling 1-877-242-7372 (J.P.
+Morgan Online clients only call 1-866-265-1727) or writing us at Online Customer
+Service, P. O. Box 2558, Houston, TX 77252-9968.
+For Consumer Deposit Accounts and Chase Liquid Cards Only: Tell us AT ONCE if you believe
+your Password has been lost or stolen or that an unauthorized online transfer has been
+made from any of your deposit accounts or Chase Liquid Cards. Telephoning us is the best
+and fastest way of keeping your possible losses to a minimum. If you do not do so, you could
+lose all the money in each of the accounts, as well as all of the available funds in any
+overdraft protection account or any other credit line included among your accounts. If you
+tell us within two (2) Business Days after you discover the loss or theft, you are completely
+covered if someone makes a transfer without your authorization.
+If you do not tell us within two (2) Business Days after you discover the loss or theft of your
+Password or that an unauthorized online transfer has been made from any of your deposit
+accounts or Chase Liquid Cards, and we can prove we could have stopped someone from
+making a transfer without your authorization if you had told us, you could lose as much as
+$500. Furthermore, if any account statement shows online transfers that you did not make,
+tell us AT ONCE. If you do not tell us within sixty (60) days for a transfer from a Chase Account
+after a Chase statement showing such a transfer was transmitted, you may not get back any
+money you lost after the sixty (60) days if we can prove that we could have stopped someone
+from taking the money if you had told us in time.
+If a good reason, such as a long trip or hospital stay, kept you from telling us, we will extend
+the time periods.  
+19. Our Liability for Failure to Complete Transfers: For
+Consumer Deposit Accounts and Chase Liquid Cards Only
+If we do not complete a transfer you send from your consumer deposit account or a Chase
+Liquid Card in the correct amount or according to our agreement with you, we will be liable
+for those damages as the law imposes in such cases. However, there are some exceptions.
+We will not be liable, for example:
+(A) If, through no fault of ours, your account does not contain sufficient funds to make
+the transfer and the transfer would exceed any credit line or any overdraft for such
+account.
+•
+(B) The Service, your operating system or software was not functioning properly at the
+time you attempted to initiate such transfer and it was evident to you at the time you
+began the transfer.
+•
+(C) Circumstances beyond our control, such as fires, floods, acts of God, power outages
+and the like.
+•
+(D) If you have not provided us with complete and correct transfer information,
+including without limitation the financial institution name and account number (if
+applicable) for your Pay To and Pay From Accounts registered with Zelle, the email
+address or mobile phone number of the recipient for transfers you send and transfer
+amount for a transfer.
+•
+(E) If the intended recipient of a transfer is not registered with the Service or the personto-person transfer service of clearXchange, Zelle or a Network Bank.•
+The list of examples set out in this paragraph is meant to illustrate circumstances under
+which we would not be liable for failing to make a transfer and is not intended to list all of the
+circumstances where we would not be liable.  
+20. Errors and Questions about Service: For Transfers
+From Consumer Deposit Accounts and Chase Liquid Cards
+Only
+If you think your statement is wrong, or if you need more information about a transaction
+listed on it, call or write us at the telephone number or address at the end of this Agreement.
+We must hear from you NO LATER than 60 days after we sent you the FIRST statement on
+which the error appeared. Please provide us with the following:
+• Your name and account number;
+A description of the error or the transaction you are unsure about, and why you think it
+is an error or want more information; and
+•
+• The amount of the suspected error.
+We will determine whether an error occurred within 10 business days after we hear from you
+and will correct any error promptly. However, if we need more time, we may take up to 45
+days to investigate your complaint or question. If we do this, we will credit your balance
+within 10 business days for the amount you think is in error, so that you will have the use of
+the money during the time it takes us to complete our investigation. If you opened your
+account less than 30 days before the date of the suspected error, the 10-business-day period
+is extended to 20 business days. If you opened your account less than 30 days before the
+date of the suspected error or the transaction occurred at a point-of- sale location or outside
+the U.S., the 45-day period is extended to 90 days.
+If you call us, we may require that you send us your complaint or question in writing within 10
+business days. If we do not receive it within 10 business days, we may not credit your
+balance.
+We will tell you the results within three business days after completing our investigation. If we
+decide that there was no error, we will send you a written explanation. You may ask for
+copies of the documents that we used in our investigation.
+21. No Purchase Protection
+Neither we nor Zelle offer purchase protection for the purchase of goods and/or services
+(e.g., coverage for non-receipt, damage, or "not as described" claims related to the purchase
+of such goods and/or services). The Service is not intended for the purchase of goods from
+retailers, merchants, or the like.
+22. ADDITIONAL TERMS APPLICABLE ONLY TO THE Service
+FOR BUSINESS ACCOUNTS
+Zelle Liability for Unauthorized Transfers for Chase Business Deposit
+Accounts Only
+You are responsible for all transfers that are authorized using your Password to access the
+Zelle Service. If you permit other persons to use the Service or your Password, you are
+responsible for any transactions they authorize. NOTE: ACCOUNT ACCESS THROUGH THE
+ZELLE SERVICE IS SEPARATE AND DISTINCT FROM YOUR EXISTING SIGNATURE
+ARRANGEMENTS FOR YOUR ACCOUNTS. THEREFORE, WHEN YOU GIVE AN INDIVIDUAL THE
+AUTHORITY TO ACCESS ACCOUNTS THROUGH THE ZELLE SERVICE, THAT INDIVIDUAL MAY
+HAVE ACCESS TO ONE OR MORE ACCOUNTS TO WHICH THAT INDIVIDUAL WOULD NOT
+OTHERWISE HAVE SIGNATURE ACCESS. YOU ASSUME THE ENTIRE RISK FOR THE
+FRAUDULENT, UNAUTHORIZED OR OTHERWISE IMPROPER USE OF YOUR PASSWORD. WE
+SHALL BE ENTITLED TO RELY ON THE GENUINENESS AND AUTHORITY OF ALL INSTRUCTIONS
+RECEIVED BY US WHEN ACCOMPANIED BY SUCH PASSWORD, AND TO ACT ON SUCH
+INSTRUCTIONS.
+We shall have no liability to you for any errors or losses you sustain in using the Service
+except where we fail to exercise ordinary care in processing any transaction. We shall also not
+be liable for any failure to provide any service if the account(s) involved is no longer linked for
+the Service. Our liability in any case shall be limited to the amount of any funds improperly
+transferred from your Pay From Account less any amount, which, even with the exercise of
+ordinary care, would have been lost.
+Without regard to care or lack of care of either you or us, a failure to report to us any
+unauthorized transfer or error from any of your Chase Accounts within thirty (30) days of our
+providing or making available to you a bank statement showing such unauthorized transfer
+or error shall relieve us of any liability for any losses sustained after the expiration of such
+thirty-day period and you shall thereafter be precluded from asserting any such claim or
+error.
+Errors and Questions about Services for Chase Business Deposit Accounts
+Only
+For business accounts, our practice is to follow the procedures described above entitled
+“Errors and Questions about Service: For Transfers From Consumer Deposit Accounts and
+Chase Liquid Cards Only”, but we are not legally required to do so.  
+Miscellaneous Terms for Business Accounts
+You may not send or receive payments to or from a Zelle mobile app user who is registered
+with a debit card. Further, you should use your business account to send or receive payments
+for business purposes, and you should use your consumer account to send or receive
+payments for personal, family, or household purposes.
+23. ADDITIONAL TERMS APPLICABLE TO ALL USERS OF THE
+SERVICE
+Computer Equipment; Browser Access and Internet Services
+You are responsible for obtaining, installing, maintaining and operating all software,
+hardware or other equipment (collectively, "System") necessary for you to access and use the
+Service. This responsibility includes, without limitation, your utilizing up to date web-browsers
+and the best commercially available encryption, antivirus, anti-spyware, and internet security
+software. You are additionally responsible for obtaining Internet services via the Internet
+service provider of your choice, for any and all fees imposed by such Internet service provider
+and any associated communications service provider charges. You acknowledge that there
+are security, corruption, transmission error, and access availability risks associated with using
+open networks such as the Internet and you hereby expressly assume such risks, including,
+but not limited to those we may disclose in our educational materials. You acknowledge that
+you are responsible for the data security of the Systems used to access the Service, and for
+the transmission and receipt of information using such Systems. You acknowledge that you
+are using Service for your convenience, have made your own independent assessment of the
+adequacy of the Internet and Systems and that you are satisfied with that assessment. We
+are not responsible for any errors or problems that arise from the malfunction or failure of
+the Internet or your Systems nor are we responsible for notifying you of any upgrades, fixes,
+or enhancements to, or for providing technical or other support for your Systems. Although
+we may provide a link to a third party site where you may download software, we make no
+endorsement or warranty of any specific software, hardware or Internet Service Provider and
+your use of any such software, hardware or service may also be subject to the license or
+other agreements of that provider, in addition to the terms and conditions of this Agreement.
+Passwords
+We may at our option change the parameters for the password used to access and use the
+Service ("Password") without prior notice to you, and if we do so, you will be required to
+change your password the next time you access the Service. To prevent unauthorized access
+to your accounts and to prevent unauthorized use of the Service, you agree to protect and
+keep confidential your card number, account number, PIN, User ID, Password, or other
+means of accessing your accounts via the Service. The loss, theft, or unauthorized use of your
+card numbers, account numbers, PINs, User IDs, and Passwords could cause you to lose
+some or all of the money in your accounts, plus any amount available under your overdraft
+protection credit line. It could also permit unauthorized persons to gain access to your
+sensitive personal and account information and to use that information for fraudulent
+purposes, including identity theft. If you disclose your card numbers, account numbers, PINs,
+User IDs, and/or Passwords to any person(s) or entity, you assume all risks and losses
+associated with such disclosure. If you permit any other person(s) or entity to use the Service
+or to access or use your card numbers, account numbers, PINs, User IDs, Passwords, or other
+means to access your accounts, you are responsible for any transactions and activities
+performed from your accounts and for any use of your personal and account information by
+such person(s) or entity. If you believe someone may attempt to use or has used the Service
+without your permission, or that any other unauthorized use or security breach has occurred,
+you agree to immediately notify us at 1-877-242-7372 (J.P. Morgan Online clients only call
+1-866-265-1727).
+Notices
+You agree that by using the Service, all notices or other communications which we may be
+required to give you arising from our obligations under this Agreement or the Service may be
+sent to you by any or all of the following sources, at our option:
+• Through electronic notice given to any electronic mailbox we have for you, 
+• Any other electronic mail address or telephone number you provide to us,
+• The current address we have on file for you, or 
+In any other manner permitted by law including, but not limited to, posting it on our
+website.
+•
+New Features
+We may, from time to time, introduce new features to the Service or modify or delete existing
+features in our sole discretion. We shall notify you of any of these changes to features if we
+are legally required to do so. By using any new or modified features when they become
+available, you agree to be bound by the rules and terms concerning these features.  
+Limitation of Liability; No Warranties
+Neither we nor Zelle shall be liable for any typos or keystroke errors that you may make when
+using the Service.
+YOU AGREE THAT YOU, NOT WE OR ZELLE, ARE RESPONSIBLE FOR RESOLVING ANY PAYMENT
+OR OTHER DISPUTES THAT YOU HAVE WITH ANY OTHER USER WITH WHOM YOU SEND
+MONEY TO, OR RECEIVE OR REQUEST MONEY FROM, USING THE SERVICE.
+EXCEPT AS SPECIFICALLY SET FORTH HEREIN OR WHERE THE LAW REQUIRES A DIFFERENT
+STANDARD, WE, ZELLE, NETWORK BANKS AND OUR RESPECTIVE OFFICERS, DIRECTORS,
+AGENTS AND EMPLOYEES ARE NOT AND SHALL NOT BE RESPONSIBLE FOR ANY LOSS,
+DAMAGE OR INJURY OR FOR ANY DIRECT, INDIRECT, SPECIAL, INCIDENTAL, EXEMPLARY,
+OR CONSEQUENTIAL DAMAGES, INCLUDING LOST PROFITS, ARISING FROM OR RELATED
+TO THE SYSTEM, EQUIPMENT, BROWSER AND/OR THE INSTALLATION OR MAINTENENACE
+THEREOF, ACCESS TO OR USE OF THE SERVICE, FAILURE OF ELECTRONIC OR MECHANICAL
+EQUIPMENT, THE INTERNET, THE SYSTEM, OR COMMUNICATION LINES, TELEPHONE OR
+OTHER INTERCONNECT PROBLEMS, BUGS, ERRORS, CONFIGURATION PROBLEMS OR
+INCOMPATIBILITY OF COMPUTER HARDWARE, SOFTWARE, THE INTERNET, OR THE
+SYSTEM, FAILURE OR UNAVAILABILITY OF INTERNET ACCESS, PROBLEMS WITH INTERNET
+SERVICE PROVIDERS, PROBLEMS OR DELAYS WITH INTERMEDIATE COMPUTER OR
+COMMUNICATIONS NETWORKS OR FACILITIES, PROBLEMS WITH DATA TRANSMISSION
+FACILITIES OR ANY OTHER PROBLEMS YOU EXPERIENCE DUE TO CAUSES BEYOND OUR
+CONTROL. EXCEPT AS OTHERWISE EXPRESSLY PROVIDED IN ANY APPLICABLE
+AGREEMENT, YOU UNDERSTAND AND AGREE THAT YOUR USE OF THE SERVICE IS AT
+YOUR SOLE RISK AND THAT THE SERVICE AND ALL INFORMATION, PRODUCTS AND
+OTHER CONTENT (INCLUDING THIRD PARTY INFORMATION, PRODUCTS AND CONTENT)
+INCLUDED IN OR ACCESSIBLE FROM THE SITES, ARE PROVIDED ON AN "AS IS" "WHERE-IS"
+AND "WHERE AVAILABLE" BASIS, AND ARE SUBJECT TO CHANGE AT ANY TIME WITHOUT
+NOTICE TO YOU. YOU ACKNOWLEDGE THAT WE AND ZELLE MAKE NO WARRANTY THAT
+THE SERVICE WILL BE UNINTERRUPTED, TIMELY, INVULNERABLE TO CYBER ATTACK,
+SECURE OR ERROR-FREE, OR THAT DEFECTS WILL BE CORRECTED UNLESS OTHERWISE
+STATED ON THE SITE OR IN ANY APPLICABLE AGREEMENT. TO THE FULLEST EXTENT
+PERMITTED BY LAW, WE DISCLAIM ALL REPRESENTATIONS, WARRANTIES AND
+CONDITIONS OF ANY KIND (EXPRESS, IMPLIED, STATUTORY OR OTHERWISE, INCLUDING
+BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+PARTICULAR PURPOSE, TITLE AND NON- INFRINGEMENT OF PROPRIETARY RIGHTS) AS
+TO THE SERVICE AND ALL INFORMATION, PRODUCTS AND OTHER CONTENT (INCLUDING
+THIRD PARTY INFORMATION, PRODUCTS AND CONTENT) INCLUDED IN OR ACCESSIBLE
+FROM THE SITES. NO LICENSE TO YOU IS IMPLIED IN THESE DISCLAIMERS.
+Other Agreements
+In addition to this Agreement, you agree to be bound by and comply with such other written
+requirements as we may furnish to you in connection with either the Service or products
+which may be accessed via the Service, including, but not limited to, any account agreements
+that apply to your Chase Account or, and with all applicable State and Federal laws and
+regulations. In the event of a conflict between the terms of this Agreement and any applicable
+Chase account agreements with us, the terms of this Agreement will control except as may be
+otherwise stated herein.
+Termination
+We may terminate or suspend this Agreement, or terminate, suspend or limit your access
+privileges to or use of the Service (including but not limited to, use of clearXchange.com), in
+whole or part, at any time for any reason without prior notice, including for reasons involving
+your use of the Service which we may deem to be illegal or potentially brand damaging, and
+when you no longer have an eligible Chase Account. The obligations and liabilities of the
+parties incurred prior to the termination date shall survive the termination of this Agreement
+for all purposes. If your Chase Account is not in good standing, that account will not be
+eligible to be used in Zelle transactions. We may determine other eligibility criteria in our sole
+discretion. We also reserve the right to terminate or suspend our participation in the
+clearXchange or Zelle network or with a particular financial institution at any time.
+Disputes
+In the event of a dispute arising under or relating in any way to this Agreement or to the
+Service provided under this Agreement, you and we agree to resolve this dispute by looking
+to the terms of this Agreement. If there is a conflict between what one of our employees says
+and the terms of this Agreement, the terms of this Agreement shall control.
+Binding Arbitration
+YOU HEREBY AGREE THAT ANY DISPUTE, CLAIM OR CONTROVERSY ARISING NOW OR IN
+THE FUTURE UNDER OR RELATING IN ANY WAY TO THIS AGREEMENT, OR TO THE SERVICE
+("CLAIM"), REGARDLESS OF THE NATURE OF THE CAUSE(S) OF ACTION ASSERTED
+(INCLUDING CLAIMS FOR INJUNCTIVE, DECLARATORY, OR EQUITABLE RELIEF), SHALL BE
+RESOLVED BY BINDING ARBITRATION. CLAIMS SUBJECT TO ARBITRATION INCLUDE
+CLAIMS THAT ARE MADE AS COUNTERCLAIMS, CROSS CLAIMS, THIRD PARTY CLAIMS,
+INTERPLEADERS, OR OTHERWISE. ARBITRATION REPLACES THE RIGHT TO GO TO COURT,
+AND YOU THEREFORE AGREE TO WAIVE ANY RIGHT THAT YOU OR WE MIGHT OTHERWISE
+HAVE HAD TO A JURY TRIAL OR THE OPPORTUNITY TO LITIGATE ANY CLAIMS IN COURT
+BEFORE EITHER A JUDGE OR JURY. YOU FURTHER AGREE THAT YOU WILL NOT BE ABLE TO
+BRING A CLASS ACTION OR OTHER REPRESENTATIVE ACTION (SUCH AS AN ACTION IN
+THE FORM OF A PRIVATE ATTORNEY GENERAL) TO LITIGATE ANY CLAIMS IN COURT
+BEFORE EITHER A JUDGE OR JURY; NOR WILL YOU BE ABLE TO PARTICIPATE AS A CLASS
+MEMBER IN A CLASS ACTION OR OTHER REPRESENTATIVE ACTION TO LITIGATE ANY
+CLAIMS IN COURT BEFORE EITHER A JUDGE OR JURY. FURTHER, CLAIMS IN ARBITRATION
+SHALL PROCEED ON AN INDIVIDUAL BASIS ONLY AND YOU AGREE THAT YOU WILL NOT
+BE ABLE TO PROCEED ON ANY CLAIM IN ARBITRATION AS A CLASS CLAIM OR CLASS
+ACTION OR OTHER COMPARABLE REPRESENTATIVE PROCEEDING OR SEEK ANY AWARD
+OR REMEDY IN ARBITRATION AGAINST OR ON BEHALF OF ANYONE WHO IS NOT A
+NAMED PARTY TO THE ARBITRATION.  IF THE TERMS RELATING TO CLASS OR
+REPRESENTATIVE PROCEDURES ARE LEGALLY UNENFORCEABLE FOR ANY REASON WITH
+RESPECT TO A CLAIM, THEN THIS AGREEMENT TO ARBITRATE WILL BE INAPPLICABLE TO
+THAT CLAIM, AND THE CLAIM WILL INSTEAD BE HANDLED THROUGH LITIGATION IN
+COURT RATHER THAN BY ARBITRATION.
+This binding arbitration provision applies to any and all Claims that you have against us, our
+parent, subsidiaries, affiliates, licensees, predecessors, successors, assigns, and against all of
+their respective employees, agents, or assigns, or that we have against you; it also includes
+any and all Claims regarding the applicability of this arbitration clause or the validity of the
+Agreement, in whole or in part. It is made pursuant to a transaction involving interstate
+commerce, and shall be governed by the Federal Arbitration Act, 9 U.S.C. sections 1-16, as it
+may be amended. You acknowledge and agree that for any claims or disputes you assert
+against Zelle® and Early Warning Services, LLC, Zelle® and EarlyWarning Services, LLC are
+entitled to enforce this arbitration provision against you.
+The party filing a Claim(s) in arbitration must file its Claim(s) before the American Arbitration
+Association under the rules of such arbitration administrator in effect at the time the Claim(s)
+was filed. Rules and forms may be obtained from, and Claims made may be filed with JAMS
+(800.352.5267 or jamsadr.com) or the American Arbitration Association (800-778-7879 or
+www.adr.org). Arbitration hearings shall be held at a place within the federal judicial district
+that includes your address at the time the Claim(s) is filed, or at some other place to which
+you and we agree in writing. Judgment upon any arbitration award may be entered in any
+court having jurisdiction.
+This Arbitration Agreement shall survive: (i) termination or changes in the Agreement, and the
+relationship between you and us concerning the Agreement; and (ii) the bankruptcy of any
+party or any similar proceeding initiated by you or on your behalf. If any portion of this
+Arbitration provision is deemed invalid or unenforceable, the remaining portions shall
+nevertheless remain in force.  
+Indemnity
+You acknowledge and agree that you are personally responsible for your conduct while using
+the Service and agree to indemnify and hold us, Zelle and our respective officers, directors,
+employees and agents harmless from and against any loss, damage, liability, cost or expense
+of any kind (including, but not limited to, reasonable attorneys' fees) that we or they may
+incur in connection with a third party claim or otherwise, in relation to your use of the Service
+or the use of the Service by anyone using your card number, account number, PIN, User ID or
+Password or your violation of this Agreement or the rights of any third party (including, but
+not limited to, privacy rights). Your obligations under this paragraph shall survive termination
+of this Agreement.  
+Records; Communications
+Our records, kept in the regular course of business, shall be presumed to accurately reflect
+the contents of your instructions to us and, in the absence of manifest error, will be binding
+and conclusive.
+Unless otherwise prohibited by law, any communication or material you transmit to us via the
+Service or electronic mail is on a non-confidential basis and we may use such communication
+or material for any purpose consistent with our Online Privacy Policy, and where appropriate,
+our U.S. Consumer Privacy Notice, as amended from time to time, including reproduction,
+publication, broadcast and posting.
+When you give us your mobile phone number, we have your permission to contact you at
+that number about all your Chase or J.P. Morgan accounts. Your consent allows us to use text
+messaging, artificial or prerecorded voice messages and automatic dialing technology for
+informational and account service calls, but not for telemarketing or sales calls. It may include
+contact from companies working on our behalf to service your accounts. Message and data
+rates may apply. You may contact us anytime to change these preferences.  
+Special Provisions for Business Customers
+Any User ID or Password we provide to you is provided to you in your capacity as a
+representative of the business entity registered with the Service only, and may not be
+retained by you after any termination of your relationship with such business entity. You
+agree to inform us immediately if a person with access to a Password leaves the employ of
+the entity to which that Password has been assigned.  
+Choice of Law/Successors; Waiver; Severability
+This Agreement and its enforcement shall be governed by the laws of the State of New York,
+without regard to any choice of law provision, and shall inure to the benefit of our successors
+and assigns, whether by merger, consolidation, or otherwise. The account(s), products and
+services accessed via the Service shall be governed by laws of the applicable account
+agreements.
+We will not be deemed to have waived any of our rights or remedies under this Agreement
+unless such waiver is in writing and signed by us. No delay or omission on our part in
+exercising any rights or remedies shall operate as a waiver of such rights or remedies or any
+other rights or remedies. A waiver on any one occasion shall not be construed as a bar or
+waiver of any rights or remedies on future occasions.
+If any provision of this Agreement conflicts with the law under which this Agreement is to be
+construed or if any provision of this Agreement is held invalid or unenforceable by a court of
+competent jurisdiction, that provision will be deemed to be restated to reflect as nearly as
+possible the original intentions of the parties in accordance with applicable law. The
+remaining provisions of this Agreement and the application of the challenged provision to
+persons or circumstances other than those as to which it is invalid or unenforceable will not
+be affected thereby, and each of those provisions will be valid and enforceable to the full
+extent permitted by law.  
+Chase Account Information
+Any Chase Account information provided to you as part of the Service is not the official record
+of your Chase Account or its activity. Your Chase Account statement, furnished to you by us
+for Chase Accounts in a paper format, or electronically if you are enrolled in paperless
+statements service, will remain the official record. The Service information is generally
+updated regularly, but is subject to adjustment and correction and therefore should not be
+relied upon by you for taking, or forbearing to take, any action.  
+Privacy Policy and Notice
+Please click and read the Privacy Policy and Notice carefully and consider printing a copy for
+your records. This Privacy Policy and Notice explains what Chase does to keep information
+about you private and secure. We want you to know how we manage that information to
+serve you and that you have choices about how it is shared. This Privacy Policy and Notice
+covers our family of companies, a partial list of which is contained at the end of the Notice.  
