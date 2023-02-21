@@ -1,0 +1,4 @@
+openai_api_key.txt
+guardrails/__pycache__*
+data/*
+.vscode/*

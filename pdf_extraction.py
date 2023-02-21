@@ -55,9 +55,6 @@ class SchemaExtractor:
         self.template = Template(open('extract_data_prompt.html').read())
 
     def get_llm_output(self, document):
-        # Write document to a file
-        with open('document.txt', 'w') as f:
-            f.write(document)
         prompt = self.template.render(document=document)
 
         # Number of tokens in the prompt.
@@ -101,16 +98,7 @@ class Extractor:
     def extract(self, path: str) -> t.List[t.Dict[str, t.Any]]:
         """Extracts the info from the pdf at the given path."""
         content = self._read_pdf(path)
-
-        # Write content to a file
-        with open('content.txt', 'w') as f:
-            f.write(content)
-
         content_chunks = self.splitter(content, prompt_template=self.schema_extractor.template)
-
-        # Write the first content chunk to a document
-        with open('document_first.txt', 'w') as f:
-            f.write(content_chunks[0])
 
         for chunk in content_chunks:
             self.extract_from_chunk(chunk)

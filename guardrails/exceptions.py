@@ -1,0 +1,2 @@
+class SchemaMismatchException(Exception):
+    pass
