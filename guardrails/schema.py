@@ -270,11 +270,17 @@ If you are unsure of the answer, enter 'None'. If you answer incorrectly, you wi
 
         extracted_object = {}
         prev_llm_output = None
-        format_attributes = self._schema
-        content_attributes = self._schema
-        attributes_to_extract = self._schema
+        format_attributes = deepcopy(self._schema)
+        content_attributes = deepcopy(self._schema)
+        attributes_to_extract = deepcopy(self._schema)
+
+        iteration = 0
 
         while(True):
+            print('\n\n\n\nIteration =', iteration)
+            print('Prev llm output =', prev_llm_output)
+
+            iteration += 1
             format_prompts = self.get_format_prompts(
                 format_attributes,
                 llm_output=prev_llm_output
@@ -286,6 +292,8 @@ If you are unsure of the answer, enter 'None'. If you answer incorrectly, you wi
 
             final_prompt = self.get_merged_prompt(format_prompts, content_prompts)
             llm_output = self.llm_ask(final_prompt.format(document=text))
+            print(f'HERE LLM Output: {llm_output}')
+            print('Finished printing LLM Output')
 
             format_attributes = []
             content_attributes = []
@@ -306,6 +314,11 @@ If you are unsure of the answer, enter 'None'. If you answer incorrectly, you wi
                     continue
 
             prev_llm_output = llm_output
+
+            print(f'LLM Output: {llm_output}')
+            print(f'Prev LLM Output: {prev_llm_output}')
+            print('Finished printing LLM Output')
+
             old_content_attributes = deepcopy(content_attributes)
             content_attributes = self.merge_form_content_debugging(
                 content_attributes, format_attributes)
@@ -316,6 +329,8 @@ If you are unsure of the answer, enter 'None'. If you answer incorrectly, you wi
 
             if len(attributes_to_extract) == 0:
                 break
+
+        print(f'Schema: {self._schema}')
 
         return extracted_object
 

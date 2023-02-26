@@ -1,5 +1,5 @@
 import re
-from typing import Optional
+from typing import Optional, Union, List
 
 from pyparsing import CaselessKeyword, Regex, Token
 
@@ -55,6 +55,10 @@ class FormValidator(Validator):
 
     def debug(self, text: str, placeholder: Token):
         exception = None
+
+        print(f"Placeholder: {placeholder}")
+
+        print(f"Text: {text}")
 
         # Figure out where the text should start from.
         # If the placeholder is a CaselessKeyword, then the text should start from the first character.
@@ -128,6 +132,25 @@ class VerboseStringValidator(FormValidator):
         return "len(string) > 100"
 
 
+@register_validator("succinct_string_validator")
+class SuccinctStringValidator(FormValidator):
+    # @staticmethod
+    @property
+    def grammar(self, str_len: Optional[int] = 100) -> Regex:
+        return Regex(f".{{0,{str_len}}}", flags=re.IGNORECASE)
+        # return Regex(".{0,100}", flags=re.IGNORECASE)
+
+    @property
+    def grammar_as_text(self) -> str:
+        # return "len(string) < 100"
+        return "a string less than 100 characters in length"
+
+    @property
+    def as_definition(self) -> str:
+        return "len(string) < 100"
+
+
+
 @register_validator("float_validator")
 class FloatValidator(FormValidator):
 
@@ -170,3 +193,27 @@ class ReachableUrlValidator(Validator):
     @staticmethod
     def debug(url: str, exception: Exception) -> str:
         return Prompt(f"""The URL {url} is unreachable and returned the following error: {exception}. Please enter a valid URL.""")  # noqa: E501
+
+
+@register_validator("list_validator")
+class ListValidator(FormValidator):
+
+    def __init__(
+            self,
+            min_length: Optional[int] = None,
+            max_length: Optional[int] = None,
+            element_validators: Optional[Union[Validator, List[Validator]]] = None
+            ) -> None:
+        self.min_length = min_length
+        self.max_length = max_length
+        self.element_validators = element_validators
+        super().__init__()
+
+    @property
+    def grammar(self) -> Regex:
+        # Parse a list of the form [a, b, c, ...]
+        return Regex(r"\[.*\]", flags=re.IGNORECASE)
+
+    @property
+    def grammar_as_text(self) -> str:
+        return "a list"
