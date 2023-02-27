@@ -1,0 +1,30 @@
+<script>
+    var schema = {
+        "index": {
+            "type": "int | float",
+            "format": "max-val: 1000; min-val: 0; 1-indexed",
+            "on_fail": "debug",
+            "on_max_val_fail": { "error": "Index out of range" },
+            "on_min_val_fail": { "error": "Index out of range" },
+            "on_format_fail": "debug",
+            "on_type_fail": "debug"
+        }
+    };
+
+    def debug_max_val_fail():
+        print("Index out of range")
+</script>
+
+
+<schema>
+    <key
+        name="index"
+        type="int | float"
+        format="max-val: 1000; min-val: 0; 1-indexed"
+        on_fail={"debug"}
+        on_max_val_fail={ "error": "Index out of range" }
+        on_min_val_fail={ "error": "Index out of range" }
+        on_format_fail="debug"
+        on_type_fail="debug"
+    />
+</schema>

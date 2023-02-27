@@ -131,50 +131,6 @@ class Schema:
     def base_prompt(self, base_prompt: Prompt):
         self._base_prompt = base_prompt
 
-    # def prompts_ready(self):
-    #     """Return True if all fields have prompts set."""
-    #     for v in self._schema:
-    #         field = v['field']
-    #         if field.prompt is None:
-    #             return False
-
-    #     if self.base_prompt is None:
-    #         return False
-
-    #     return True
-
-#     def create_form_debug_prompt(
-#         self,
-#         text: str,
-#         invalid_forms: List[FormValidator],
-#     ):
-#         """Add the schema to the prompt."""
-#         # assert self.prompts_available(), "All fields must have prompts set."
-
-#         prompt_copy = deepcopy(self.base_prompt)
-#         prompt_str = "\n\nQuestions:\n"
-#         form_str = "\nTo answer these questions, respond in this format:\n"
-
-#         for item in invalid_forms:
-#             attr_name = item['name']
-#             attr_prompt = item['field'].prompt
-#             attr_form = item['field'].form_validator.grammar_as_text
-#             attr_idx = self.name2idx[attr_name]
-#             # attr_debug_prompt = item['field'].form_validator.debug(
-#             #     text, placeholder=CaselessKeyword(f"{attr_idx}. {attr_name}:"))
-#             attr_debug_prompt = item['field'].form_validator.debug(
-#                 text, placeholder=CaselessKeyword(f"{attr_name}:"))
-#             prompt_str += f"{attr_idx}. {attr_name}: {attr_prompt}\n"
-#             form_str += f"{attr_idx}. {attr_name}: << {attr_form} >>. {attr_debug_prompt}\n"
-
-#         prompt_copy.append_to_prompt(prompt_str)
-#         prompt_copy.append_to_prompt(form_str)
-#         prompt_copy.append_to_prompt("""
-# Try to be as correct and concise as possible. Find all relevant information in the document and answer the questions, even if the answer is 'None'.
-# If you are unsure of the answer, enter 'None'. If you answer incorrectly, you will be asked again until you get it right which is expensive.""")
-
-#         return prompt_copy
-
     def validate_form_for_field(self, idx: int, name: str, field: Field, text: str) -> Tuple[str, str]:
         # combined_grammar = CaselessKeyword(f"{idx}. {name}:") + field.form_validator.grammar
         combined_grammar = CaselessKeyword(f"{name}:") + field.form_validator.grammar
@@ -333,24 +289,6 @@ If you are unsure of the answer, enter 'None'. If you answer incorrectly, you wi
         print(f'Schema: {self._schema}')
 
         return extracted_object
-
-#     def add_to_prompt(self, prompt: Prompt) -> None:
-#         """Add the schema to the prompt."""
-#         template_str = "\n\nQuestions:\n"
-#         for i, attr in enumerate(self.attributes):
-#             attr_name = getattr(self, attr).name
-#             attr_prompt = getattr(self, attr).prompt_template
-#             template_str += f"{i}. {attr_name}: {attr_prompt}\n"
-
-#         template_str += "\nTo answer these questions, respond in this format:\n"
-
-#         for i, attr in enumerate(self.attributes):
-#             template_str += f"{i}. {attr_name}: << answer to question {i} >>\n"
-
-#         template_str += """
-# Try to be as correct and concise as possible. Find all relevant information in the document and answer the questions, even if the answer is 'None'.
-# If you are unsure of the answer, enter 'None'. If you answer incorrectly, you will be asked again until you get it right which is expensive."""
-#         prompt.append_to_prompt(template_str)
 
     def add_to_prompt(self, prompt: Prompt) -> Prompt:
         """Add the schema to the prompt."""

@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<prompt>
+    <list name="fees" description="What fees and charges are associated with my account?">
+        <item type="object">
+            <key name="index" type="int" format="1-indexed" />
+            <key name="name" type="string" format="lower-case two-words-only" />
+            <key name="explanation" type="string" format="one-line" />
+            <key name="value" type="float | int" format="percentage" />
+            <key name="description" type="string" format="less-than-200-characters" />
+            <key name="example" type="string" required="True" format="tone-twitter explain-high-quality" />
+            <key name="advertisement" type="string" format="tagline tv-ad" />
+        </item>
+    </list>
+    <string name='interest_rates' description='What are the interest rates offered by the bank on savings and checking accounts, loans, and credit products?'>
+    </string>
+</prompt>
