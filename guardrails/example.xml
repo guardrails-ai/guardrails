@@ -19,6 +19,7 @@
 <schema>
     <key
         name="index"
+        description="Index of the item"
         type="int | float"
         format="max-val: 1000; min-val: 0; 1-indexed"
         on_fail={"debug"}
