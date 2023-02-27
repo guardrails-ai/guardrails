@@ -105,6 +105,11 @@ def get_formatters(element: ET.Element, strict: bool = False) -> List[Validator]
             formatter = formatter.strip()
             args = [x.strip() for x in args.strip().split(' ')]
 
+            for i, arg in enumerate(args):
+                # If arg is enclosed within curly braces, then it is a python expression.
+                if arg[0] == '{' and arg[-1] == '}':
+                    args[i] = eval(arg[1:-1])
+
         if formatter not in registered_formatters:
             if strict:
                 raise ValueError(
