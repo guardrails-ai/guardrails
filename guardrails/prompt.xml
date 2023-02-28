@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <prompt>
-    <!-- <list name="fees" description="What fees and charges are associated with my account?">
+    <list name="fees" description="What fees and charges are associated with my account?">
         <item type="object">
             <key name="index" type="int" format="1-indexed" />
             <key name="name" type="string" format="lower-case two-words-only" />
@@ -10,9 +10,9 @@
             <key name="example" type="string" required="True" format="tone-twitter explain-high-quality" />
             <key name="advertisement" type="string" format="tagline tv-ad" />
         </item>
-    </list> -->
-    <string name='interest_rates' description='What are the interest rates offered by the bank on savings and checking accounts, loans, and credit products?'/>
+    </list>
+    <!-- <string name='interest_rates' description='What are the interest rates offered by the bank on savings and checking accounts, loans, and credit products?'/> -->
     <!-- </string> -->
-    <string name='fees' description='What fees and charges are associated with my account?' format="max-len: 5; explain-like-im-five; valid-choices: {[0,5,10]}"/>
+    <!-- <string name='fees' description='What fees and charges are associated with my account?' format="max-len: 5; explain-like-im-five; valid-choices: {[0,5,10]}"/> -->
     <!-- </string> -->
 </prompt>

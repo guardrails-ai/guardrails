@@ -65,3 +65,13 @@ class List(DataType):
 @register_type("map")
 class Map(DataType):
     pass
+
+
+@register_type("key")
+class Key(DataType):
+    pass
+
+
+@register_type("value")
+class Value(DataType):
+    pass

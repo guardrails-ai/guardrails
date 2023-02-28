@@ -17,14 +17,14 @@
 # from guardrails.x_datatypes import DataType
 # from guardrails.x_validators import Validator
 
-from typing import Dict, List, Union
 import warnings
-
+from copy import deepcopy
+from typing import Any, Dict, List, Union
 from xml.etree import ElementTree as ET
 
 from guardrails.x_datatypes import registry as types_registry, DataType
 from guardrails.x_validators import types_to_validators, validators_registry, Validator
-
+from guardrails.prompt_repo import Prompt
 
 
 class Field:
@@ -41,12 +41,26 @@ class Field:
 
 
 class XSchema:
-    # def __init__(self, schema: Dict[str, Any]):
-    def __init__(self, schema):
+    def __init__(self, schema: Dict[str, Any], prompt: Prompt):
         self.schema = schema
+        self.prompt = prompt
 
     def __repr__(self):
-        return f"XSchema({self.schema})"
+        def _print_dict(d: Dict[str, Any], indent: int = 0) -> str:
+            """Print a dictionary in a nice way."""
+
+            s = ""
+            for k, v in d.items():
+                if isinstance(v, dict):
+                    s += f"{k}:\n{_print_dict(v, indent=indent + 1)}"
+                else:
+                    s += f"{' ' * (indent * 4)}{k}: {v}\n"
+
+            return s
+
+        schema = _print_dict(self.schema)
+
+        return f"XSchema({schema})"
 
     @classmethod
     def from_xml(cls, xml_file: str, base_prompt: str) -> "XSchema":
@@ -54,14 +68,14 @@ class XSchema:
 
         with open(xml_file, "r") as f:
             xml = f.read()
-
         parser = ET.XMLParser(encoding="utf-8")
         parsed_xml = ET.fromstring(xml, parser=parser)
 
-        # TODO(shreya): Make this return a schema object.
         schema = validate_xml(parsed_xml, strict=False)
 
-        return cls(schema)
+        prompt = extract_prompt_from_xml(parsed_xml)
+
+        return cls(schema, prompt)
 
 
 def validate_xml(tree: Union[ET.ElementTree, ET.Element], strict: bool = False) -> bool:
@@ -94,7 +108,6 @@ def get_formatters(element: ET.Element, strict: bool = False) -> List[Validator]
         # Check if the formatter has any arguments.
 
         formatter = formatter.strip()
-        print(f'formatter: {formatter}')
 
         args = []
         formatter_with_args = formatter.split(':')
@@ -152,7 +165,7 @@ def validate_element(element: ET.Element, strict: bool = False) -> Dict:
 
     if 'name' not in element.attrib:
 
-        if element.tag == 'prompt':
+        if element.tag == 'prompt' or element.tag == 'item':
             # TODO(shreya): This needs to be more robust -- which tags are ok?
             shell_type = True
             pass
@@ -176,9 +189,35 @@ def validate_element(element: ET.Element, strict: bool = False) -> Dict:
 
     if shell_type:
         for child in element:
-            schema.update(validate_element(child, strict=strict))
+            child_schema = validate_element(child, strict=strict)
+            schema.update(child_schema)
     else:
         for child in element:
             schema[name].children = validate_element(child)
 
     return schema
+
+
+def extract_prompt_from_xml(tree: Union[ET.ElementTree, ET.Element]) -> str:
+    """Extract the prompt from an XML tree.
+
+    Args:
+        tree: The XML tree.
+
+    Returns:
+        The prompt.
+    """
+
+    tree_copy = deepcopy(tree)
+
+    if type(tree_copy) == ET.ElementTree:
+        tree_copy = tree_copy.getroot()
+
+    # From the element tree, remove any action attributes like 'on-fail-*'.
+    for element in tree_copy.iter():
+        for attr in list(element.attrib):
+            if attr.startswith('on-fail-'):
+                del element.attrib[attr]
+    
+    # Return the XML as a string.
+    return ET.tostring(tree_copy, encoding='unicode', method='xml')
