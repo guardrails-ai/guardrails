@@ -1,7 +1,101 @@
+import warnings
+from typing import Any, Dict, List
+
+from xml.etree import ElementTree as ET
 
 
-# Create registry of types 
-registry = {}
+def get_validators(element: ET.Element, strict: bool = False) -> List["Validator"]:
+    """Get the formatters for an element.
+
+    Args:
+        element: The XML element.
+        strict: If True, raise an error if the element is not registered.
+
+    Returns:
+        A list of formatters.
+    """
+
+    from guardrails.x_validators import types_to_validators, validators_registry
+
+    if 'format' not in element.attrib:
+        return []
+
+    provided_formatters = element.attrib['format'].split(';')
+    registered_formatters = types_to_validators[element.tag]
+    
+
+    valid_formatters = []
+
+    for formatter in provided_formatters:
+        # Check if the formatter has any arguments.
+
+        formatter = formatter.strip()
+
+        args = []
+        formatter_with_args = formatter.split(':')
+        if len(formatter_with_args) > 1:
+            assert len(formatter_with_args) == 2, (
+                f"Formatter {formatter} has too many arguments.")
+            formatter, args = formatter_with_args
+            formatter = formatter.strip()
+            args = [x.strip() for x in args.strip().split(' ')]
+
+            for i, arg in enumerate(args):
+                # If arg is enclosed within curly braces, then it is a python expression.
+                if arg[0] == '{' and arg[-1] == '}':
+                    args[i] = eval(arg[1:-1])
+
+        if formatter not in registered_formatters:
+            if strict:
+                raise ValueError(
+                    f"Formatter {formatter} is not valid for element {element.tag}.")
+            else:
+                warnings.warn(
+                    f"Formatter {formatter} is not valid for element {element.tag}.")
+            continue
+
+        # See if the formatter has an associated on_fail method.
+        on_fail = None
+        on_fail_attr_name = f'on-fail-{formatter}'
+        if on_fail_attr_name in element.attrib:
+            on_fail = element.attrib[on_fail_attr_name]
+            # TODO(shreya): Load the on_fail method.
+            # This method should be loaded from an optional script given at the
+            # beginning of a gxml file.
+
+        formatter = validators_registry[formatter]
+        valid_formatters.append(formatter(*args, on_fail=on_fail))
+
+    return valid_formatters
+
+
+class DataType:
+
+    def __init__(self, validators: List, children: Dict[str, Any]) -> None:
+        self.validators = validators
+        self.children = children
+
+    @classmethod
+    def from_str(self, s: str) -> "DataType":
+        """Create a DataType from a string."""
+        raise NotImplementedError("Abstract method.")
+
+    def validate(self, value: Any) -> bool:
+        """Validate a value."""
+        raise NotImplementedError("Abstract method.")
+
+    def set_children(self, element: ET.Element):
+        raise NotImplementedError("Abstract method.")
+
+    @classmethod
+    def from_xml(cls, element: ET.Element, strict: bool = False) -> "DataType":
+        data_type = cls([], {})
+        data_type.set_children(element)
+        data_type.validators = get_validators(element, strict=strict)
+        return data_type
+
+
+registry: Dict[str, DataType] = {}
 
 
 # Create a decorator to register a type
@@ -12,66 +106,142 @@ def register_type(name: str):
     return decorator
 
 
-class DataType:
-    def __init__(self):
-        self.validators = []
+class Scalar(DataType):
+    def validate(self, value: Any) -> bool:
+        """Validate a value."""
+        for validator in self.validators:
+            if not validator.validate(value):
+                return False
+        return True
+
+    def set_children(self, element: ET.Element):
+        for _ in element:
+            raise ValueError("Scalar data type must not have any children.")
 
 
 @register_type("string")
-class String(DataType):
-    pass
+class String(Scalar):
+
+    @classmethod
+    def from_str(self, s: str) -> "String":
+        """Create a String from a string."""
+        return s
 
 
 @register_type("integer")
-class Integer(DataType):
+class Integer(Scalar):
     pass
 
 
 @register_type("float")
-class Float(DataType):
+class Float(Scalar):
     pass
 
 
 @register_type("date")
-class Date(DataType):
+class Date(Scalar):
     pass
 
 
 @register_type("time")
-class Time(DataType):
+class Time(Scalar):
     pass
 
 
 @register_type("email")
-class Email(DataType):
+class Email(Scalar):
     pass
 
 
 @register_type("url")
-class URL(DataType):
+class URL(Scalar):
     pass
 
 
 @register_type("percentage")
-class Percentage(DataType):
+class Percentage(Scalar):
     pass
 
 
 @register_type("list")
 class List(DataType):
-    pass
+
+    def validate(self, value: Any) -> bool:
+        # Validators in the main list data type are applied to the list overall.
+
+        for validator in self.validators:
+            if not validator.validate(value):
+                return False
+
+        if len(self.children) == 0:
+            return True
+
+        item_type = list(self.children.values())[0]
+
+        for item in value:
+            if not item_type.validate(item):
+                return False
+
+        return True
+
+    def set_children(self, element: ET.Element):
+        idx = 0
+        for child in element:
+            idx += 1
+            if idx > 1:
+                # Only one child is allowed in a list data type.
+                # The child must be the datatype that all items in the list
+                # must conform to.
+                raise ValueError("List data type must have exactly one child.")
+            child_data_type = registry[child.tag]
+            self.children["item"] = child_data_type.from_xml(child)
 
 
-@register_type("map")
-class Map(DataType):
-    pass
+@register_type("object")
+class Object(DataType):
+
+    def validate(self, value: Any) -> bool:
+        # Validators in the main object data type are applied to the object overall.
+
+        for validator in self.validators:
+            if not validator.validate(value):
+                return False
+
+        if len(self.children) == 0:
+            return True
+
+        # Types of supported children
+        # 1. key_type
+        # 2. value_type
+        # 3. List of keys that must be present
+
+        # TODO(shreya): Implement key type and value type later
+
+        # Check for required keys
+        for key, field in self.children.items():
+            if key not in value:
+                return False
+            if not field.validate(value[key]):
+                return False
+        return True
+
+    def set_children(self, element: ET.Element):
+        for child in element:
+            child_data_type = registry[child.tag]
+            self.children[child.attrib["name"]] = child_data_type.from_xml(child)
+        # TODO(shreya): Does this need to return anything?
 
 
-@register_type("key")
-class Key(DataType):
-    pass
+# @register_type("key")
+# class Key(DataType):
+#     pass
 
 
-@register_type("value")
-class Value(DataType):
-    pass
+# @register_type("value")
+# class Value(DataType):
+#     pass
+
+
+# @register_type("item")
+# class Item(DataType):
+#     pass
