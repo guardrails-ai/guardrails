@@ -3,14 +3,14 @@
     <list name="fees" description="What fees and charges are associated with my account?">
         <object>
             <integer name="index" format="1-indexed" />
-            <string name="name" format="lower-case two-words-only" />
+            <string name="name" format="lower-case; two-words" />
             <string name="explanation" format="one-line" />
             <float name="value" format="percentage" />
-            <string name="description" format="less-than-200-characters" />
+            <string name="description" format="length: 0 200" />
             <string name="example" required="True" format="tone-twitter explain-high-quality" />
             <string name="advertisement" format="tagline tv-ad" />
         </object>
     </list>
     <string name='interest_rates' description='What are the interest rates offered by the bank on savings and checking accounts, loans, and credit products?'/>
-    <string name='fees' description='What fees and charges are associated with my account?' format="max-len: 5; explain-like-im-five; valid-choices: {[0,5,10]}"/>
+    <!-- <string name='fees' description='What fees and charges are associated with my account?' format="max-len: 5; explain-like-im-five; valid-choices: {[0,5,10]}"/> -->
 </prompt>

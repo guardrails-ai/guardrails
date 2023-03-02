@@ -42,8 +42,16 @@ class XSchema:
         )
         return llm_output['choices'][0]['text']
 
+    @staticmethod
+    def prompt_json_suffix():
+        return """\n\nReturn a valid JSON object that respects this XML format and extracts only the information requested in this document. Respect the types indicated in the XML -- the information you extract should be converted into the correct 'type'. Try to be as correct and concise as possible. Find all relevant information in the document. If you are unsure of the answer, enter 'None'. If you answer incorrectly, you will be asked again until you get it right which is expensive."""  # noqa: E501
+
+    @staticmethod
+    def prompt_xml_prefix():
+        return """\n\nGiven below is XML that describes the information to extract from this document and the tags to extract it into.\n\n"""  # noqa: E501
+
     @classmethod
-    def from_xml(cls, xml_file: str, base_prompt: str) -> "XSchema":
+    def from_xml(cls, xml_file: str, base_prompt: Prompt) -> "XSchema":
         """Create an XSchema from an XML file."""
 
         with open(xml_file, "r") as f:
@@ -51,23 +59,29 @@ class XSchema:
         parser = ET.XMLParser(encoding="utf-8")
         parsed_xml = ET.fromstring(xml, parser=parser)
 
-        # schema = validate_xml(parsed_xml, strict=False)
         schema = load_from_xml(parsed_xml, strict=False)
 
         prompt = extract_prompt_from_xml(parsed_xml)
 
-        return cls(schema, prompt)
+        base_prompt.append_to_prompt(cls.prompt_xml_prefix())
+        base_prompt.append_to_prompt(prompt)
+        base_prompt.append_to_prompt(cls.prompt_json_suffix())
+
+        return cls(schema, base_prompt)
 
     def ask_with_validation(self, text) -> str:
         """Ask a question, and validate the response."""
 
-        prompt = self.prompt.format(text)
+        prompt = self.prompt.format(document=text)
         response = self.llm_ask(prompt)
 
-        response_as_dict = json.loads(response)
-        validated_response = self.validate_response(response_as_dict)
+        try:
+            response_as_dict = json.loads(response)
+            validated_response = self.validate_response(response_as_dict)
+        except json.decoder.JSONDecodeError:
+            validated_response = None
 
-        return validated_response
+        return validated_response, response
 
     def validate_response(self, response: Dict[str, Any]):
         """Validate a response against the schema."""
@@ -86,6 +100,8 @@ class XSchema:
                         validator.validate(value)
 
         _validate_response(response, self.schema)
+
+        return response
 
 
 def load_from_xml(tree: Union[ET.ElementTree, ET.Element], strict: bool = False) -> bool:

@@ -1,4 +1,5 @@
 """Create validators for each data type."""
+import logging
 from collections import defaultdict
 from typing import List, Union, Any, Optional, Callable
 
@@ -6,6 +7,10 @@ from guardrails.x_datatypes import registry as types_registry
 
 validators_registry = {}
 types_to_validators = defaultdict(list)
+
+# Set up logger
+
+logger = logging.getLogger(__name__)
 
 
 def register_validator(name: str, data_type: Union[str, List[str]]):
@@ -88,10 +93,14 @@ class ValidRange(Validator):
     def validate(self, value: Any) -> bool:
         """Validate that a value is within a range."""
 
+        logger.debug(f"Validating {value} is in range {self._min} - {self._max}...")
+
         if self._min is not None and value < self._min:
+            logger.debug(f"Value {value} is less than {self._min}.")
             return False
 
         if self._max is not None and value > self._max:
+            logger.debug(f"Value {value} is greater than {self._max}.")
             return False
 
         return True
@@ -113,8 +122,128 @@ class ValidChoices(Validator):
     def validate(self, value: Any) -> bool:
         """Validate that a value is within a range."""
 
-        return value in self._choices
+        logger.debug(f"Validating {value} is in choices {self._choices}...")
+
+        validation_outcome = value in self._choices
+
+        logger.debug(f"Validation outcome: {validation_outcome}")
+
+        return validation_outcome
 
     def debug(self, value: Any) -> bool:
         """Validate that a value is within a range."""
+        raise NotImplementedError
+
+
+@register_validator(name='lower-case', data_type='string')
+class LowerCase(Validator):
+    """Validate that a value is lower case."""
+
+    def validate(self, value: Any) -> bool:
+        """Validate that a value is lower case."""
+
+        logger.debug(f"Validating {value} is lower case...")
+
+        validation_outcome = value.lower() == value
+
+        logger.debug(f"Validation outcome: {validation_outcome}")
+
+        return validation_outcome
+
+    def debug(self, value: Any) -> bool:
+        """Validate that a value is lower case."""
+        raise NotImplementedError
+
+
+@register_validator(name='upper-case', data_type='string')
+class UpperCase(Validator):
+    """Validate that a value is upper case."""
+
+    def validate(self, value: Any) -> bool:
+        """Validate that a value is upper case."""
+
+        logger.debug(f"Validating {value} is upper case...")
+
+        validation_outcome = value.upper() == value
+
+        logger.debug(f"Validation outcome: {validation_outcome}")
+
+        return validation_outcome
+
+    def debug(self, value: Any) -> bool:
+        """Validate that a value is upper case."""
+        raise NotImplementedError
+
+
+@register_validator(name='length', data_type=['string', 'list', 'object'])
+class ValidLength(Validator):
+    """Validate that the length of value is within the expected range."""
+
+    def __init__(
+            self,
+            min: int = None,
+            max: int = None,
+            on_fail: Optional[Callable] = None
+    ):
+        """Initialize the validator."""
+        super().__init__(on_fail=on_fail)
+        self._min = int(min)
+        self._max = int(max)
+
+    def validate(self, value: Any) -> bool:
+        """Validate that a value is within a range."""
+
+        logger.debug(f"Validating {value} is in length range {self._min} - {self._max}...")
+
+        if self._min is not None and len(value) < self._min:
+            logger.debug(f"Value {value} is less than {self._min}.")
+            return False
+
+        if self._max is not None and len(value) > self._max:
+            logger.debug(f"Value {value} is greater than {self._max}.")
+            return False
+
+        logger.debug(f"Value {value} is in range {self._min} - {self._max}.")
+        return True
+
+    def debug(self, value: Any) -> bool:
+        """Validate that a value is within a range."""
+        raise NotImplementedError
+
+
+@register_validator(name='two-words', data_type='string')
+class TwoWords(Validator):
+    """Validate that a value is upper case."""
+
+    def validate(self, value: Any) -> bool:
+        """Validate that a value is upper case."""
+        logger.debug(f"Validating {value} is two words...")
+
+        validation_outcome = len(value.split()) == 2
+
+        logger.debug(f"Validation outcome: {validation_outcome}")
+
+        return validation_outcome
+
+    def debug(self, value: Any) -> bool:
+        """Validate that a value is upper case."""
+        raise NotImplementedError
+
+
+@register_validator(name='one-line', data_type='string')
+class OneLine(Validator):
+    """Validate that a value is a single line or sentence."""
+
+    def validate(self, value: Any) -> bool:
+        """Validate that a value is a single line or sentence."""
+        logger.debug(f"Validating {value} is a single line...")
+
+        validation_outcome = len(value.splitlines()) == 1
+
+        logger.debug(f"Validation outcome: {validation_outcome}")
+
+        return validation_outcome
+
+    def debug(self, value: Any) -> bool:
+        """Validate that a value is upper case."""
         raise NotImplementedError
