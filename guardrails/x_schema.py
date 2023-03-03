@@ -7,23 +7,23 @@ from typing import Any, Dict, Union
 from xml.etree import ElementTree as ET
 
 from guardrails.x_datatypes import registry as types_registry, DataType
+from guardrails.x_validators import ReAsk
 from guardrails.prompt_repo import Prompt
 
 logger = logging.getLogger(__name__)
 
 
 class XSchema:
-    def __init__(self, schema: Dict[str, DataType], prompt: Prompt):
+    def __init__(self, schema: Dict[str, DataType], prompt: Prompt, parsed_xml: ET.Element):
         self.schema: Dict[str, DataType] = schema
         self.prompt = prompt
+        self.parsed_xml = parsed_xml
         
         self.openai_api_key = os.environ.get("OPENAI_API_KEY", None)
         self.client = manifest.Manifest(
             client_name="openai", 
             client_connection=self.openai_api_key,
         )
-        # with open('openai_api_key.txt', 'r') as f:
-        #     self.openai_api_key = f.read()
 
     def __repr__(self):
         def _print_dict(d: Dict[str, Any], indent: int = 0) -> str:
@@ -75,7 +75,7 @@ class XSchema:
         base_prompt.append_to_prompt(prompt)
         base_prompt.append_to_prompt(cls.prompt_json_suffix())
 
-        return cls(schema, base_prompt)
+        return cls(schema, base_prompt, parsed_xml)
 
     def ask_with_validation(self, text) -> str:
         """Ask a question, and validate the response."""
@@ -92,6 +92,21 @@ class XSchema:
 
         return response, response_as_dict, validated_response
 
+    def reasks_in_response(self, response: Dict):
+        # If any value in the response is a ReAsk object, then we need to reask.
+
+        for field, value in response.items():
+            if isinstance(value, ReAsk):
+                return True
+
+            if isinstance(value, dict):
+                return self.reasks_in_response(value)
+
+            else:
+                continue
+
+        return False
+
     def validate_response(self, response: Dict[str, Any]):
         """Validate a response against the schema."""
 
@@ -107,6 +122,11 @@ class XSchema:
                 value,
                 validated_response
             )
+
+        # validated_response
+        # prompt
+        # xml
+
 
         return validated_response
 

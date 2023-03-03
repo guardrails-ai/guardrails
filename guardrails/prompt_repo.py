@@ -27,6 +27,11 @@ class Prompt:
         """Format the prompt using the given keyword arguments."""
         return self.source.format(**kwargs)
 
+    def make_vars_optional(self):
+        """Make all variables in the prompt optional."""
+        for var in self.variable_names:
+            self.source = self.source.replace(f"{{{var}}}", f"{{{var}:}}")
+
 
 class PromptRepo:
     def __init__(self):
