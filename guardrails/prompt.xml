@@ -1,5 +1,12 @@
 <?xml version="1.0"?>
+
 <prompt>
+Here is my task description. Do this shit for me.
+{{ document }}
+{response}
+</prompt>
+
+<response>
     <list name="fees" description="What fees and charges are associated with my account?">
         <object>
             <integer name="index" format="1-indexed" />
@@ -14,4 +21,4 @@
     <string name='interest_rates' description='What are the interest rates offered by the bank on savings and checking accounts, loans, and credit products?' format="one-line" on-fail-one-line="noop"/>
     <!-- <string name='fees' description='What fees and charges are associated with my account?' format="max-len: 5; explain-like-im-five; valid-choices: {[0,5,10]}"/> -->
     <string name="follow_up_url" description="Where can I follow up for more information?" format="valid-url" on-fail-valid-url="debug" />
-</prompt>
+</response>
