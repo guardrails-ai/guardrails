@@ -4,15 +4,15 @@ from copy import deepcopy
 from typing import Any, Dict, Union
 from xml.etree import ElementTree as ET
 
-from guardrails.x_datatypes import registry as types_registry, XDataType
+from guardrails.x_datatypes import registry as types_registry, DataType
 from guardrails.prompt_repo import Prompt
 
 logger = logging.getLogger(__name__)
 
 
 class XSchema:
-    def __init__(self, schema: Dict[str, XDataType], prompt: Prompt):
-        self.schema: Dict[str, XDataType] = schema
+    def __init__(self, schema: Dict[str, DataType], prompt: Prompt):
+        self.schema: Dict[str, DataType] = schema
         self.prompt = prompt
         with open('openai_api_key.txt', 'r') as f:
             self.openai_api_key = f.read()
@@ -92,12 +92,16 @@ class XSchema:
 
         validated_response = deepcopy(response)
 
-        for field, value in response.items():
+        for field, value in validated_response.items():
             if field not in self.schema:
                 logger.debug(f"Field {field} not in schema.")
                 continue
 
-            validated_response = self.schema[field].validate(value)
+            validated_response = self.schema[field].validate(
+                field,
+                value,
+                validated_response
+            )
 
         return validated_response
 

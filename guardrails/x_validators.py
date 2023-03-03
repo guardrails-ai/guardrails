@@ -1,14 +1,13 @@
 """Create validators for each data type."""
 import logging
 from collections import defaultdict
-from typing import List, Union, Any, Optional, Callable
+from typing import List, Union, Any, Optional, Callable, Dict
 
 from guardrails.x_datatypes import registry as types_registry
 
 validators_registry = {}
 types_to_validators = defaultdict(list)
 
-# Set up logger
 
 logger = logging.getLogger(__name__)
 
@@ -44,26 +43,64 @@ class Validator:
 
     def __init__(self, on_fail: Optional[Callable] = None):
         if on_fail is not None:
+
+            if isinstance(on_fail, str):
+                if on_fail == 'filter':
+                    on_fail = self.filter_value
+                elif on_fail == 'refrain':
+                    on_fail = self.refrain_from_answering
+                elif on_fail == 'noop':
+                    on_fail = self.noop
+                elif on_fail == 'debug':
+                    on_fail = self.debug
+                else:
+                    raise ValueError(f"Unknown on_fail value: {on_fail}.")
             self.on_fail = on_fail
         else:
             self.on_fail = self.debug
 
-    def validate(self, value: Any) -> bool:
+    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
         """Validate a value."""
 
         raise NotImplementedError
 
-    def debug(self, value: Any) -> bool:
-        """Validate a value."""
+    def debug(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
+        """Debug the incorrect value."""
 
         raise NotImplementedError
+
+    def filter_value(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
+        """If validation fails, filter the offending key from the schema."""
+
+        logger.debug(f"Filtering {key} from schema...")
+
+        if isinstance(schema, dict):
+            schema.pop(key)
+        elif isinstance(schema, list):
+            schema.remove(value)
+
+        return schema
+
+    def refrain_from_answering(self, key: str, value: Any, schema: Union[Dict, List]) -> Optional[Dict]:
+        """If validation fails, refrain from answering."""
+
+        logger.debug(f"Refusing to answer {key}...")
+    
+        return None
+
+    def noop(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
+        """If validation fails, do nothing."""
+
+        logger.debug(f"Validator {self.__class__.__name__} failed for {key}, but doing nothing...")
+
+        return schema
 
 
 # @register_validator('required', 'all')
 # class Required(Validator):
 #     """Validate that a value is not None."""
 
-#     def validate(self, value: Any) -> bool:
+#     def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> bool:
 #         """Validate that a value is not None."""
 
 #         return value is not None
@@ -73,7 +110,7 @@ class Validator:
 # class Description(Validator):
 #     """Validate that a value is not None."""
 
-#     def validate(self, value: Any) -> bool:
+#     def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> bool:
 #         """Validate that a value is not None."""
 
 #         return value is not None
@@ -90,22 +127,22 @@ class ValidRange(Validator):
         self._min = min
         self._max = max
 
-    def validate(self, value: Any) -> bool:
+    def validate(self, key, str, value: Any, schema: Union[Dict, List]) -> Dict:
         """Validate that a value is within a range."""
 
         logger.debug(f"Validating {value} is in range {self._min} - {self._max}...")
 
         if self._min is not None and value < self._min:
             logger.debug(f"Value {value} is less than {self._min}.")
-            return False
+            return self.on_fail(key, value, schema)
 
         if self._max is not None and value > self._max:
             logger.debug(f"Value {value} is greater than {self._max}.")
-            return False
+            return self.on_fail(key, value, schema)
 
-        return True
+        return schema
 
-    def debug(self, value: Any) -> bool:
+    def debug(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
         """Validate that a value is within a range."""
         raise NotImplementedError
 
@@ -119,7 +156,7 @@ class ValidChoices(Validator):
         super().__init__(on_fail=on_fail)
         self._choices = choices
 
-    def validate(self, value: Any) -> bool:
+    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
         """Validate that a value is within a range."""
 
         logger.debug(f"Validating {value} is in choices {self._choices}...")
@@ -128,18 +165,17 @@ class ValidChoices(Validator):
 
         logger.debug(f"Validation outcome: {validation_outcome}")
 
-        return validation_outcome
+        if not validation_outcome:
+            return self.on_fail(key, value, schema)
 
-    def debug(self, value: Any) -> bool:
-        """Validate that a value is within a range."""
-        raise NotImplementedError
+        return schema
 
 
 @register_validator(name='lower-case', data_type='string')
 class LowerCase(Validator):
     """Validate that a value is lower case."""
 
-    def validate(self, value: Any) -> bool:
+    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
         """Validate that a value is lower case."""
 
         logger.debug(f"Validating {value} is lower case...")
@@ -148,9 +184,12 @@ class LowerCase(Validator):
 
         logger.debug(f"Validation outcome: {validation_outcome}")
 
-        return validation_outcome
+        if not validation_outcome:
+            return self.on_fail(key, value, schema)
 
-    def debug(self, value: Any) -> bool:
+        return schema
+
+    def debug(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
         """Validate that a value is lower case."""
         raise NotImplementedError
 
@@ -159,7 +198,7 @@ class LowerCase(Validator):
 class UpperCase(Validator):
     """Validate that a value is upper case."""
 
-    def validate(self, value: Any) -> bool:
+    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
         """Validate that a value is upper case."""
 
         logger.debug(f"Validating {value} is upper case...")
@@ -168,9 +207,12 @@ class UpperCase(Validator):
 
         logger.debug(f"Validation outcome: {validation_outcome}")
 
-        return validation_outcome
+        if not validation_outcome:
+            return self.on_fail(key, value, schema)
 
-    def debug(self, value: Any) -> bool:
+        return schema
+
+    def debug(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
         """Validate that a value is upper case."""
         raise NotImplementedError
 
@@ -190,23 +232,23 @@ class ValidLength(Validator):
         self._min = int(min)
         self._max = int(max)
 
-    def validate(self, value: Any) -> bool:
+    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
         """Validate that a value is within a range."""
 
         logger.debug(f"Validating {value} is in length range {self._min} - {self._max}...")
 
         if self._min is not None and len(value) < self._min:
             logger.debug(f"Value {value} is less than {self._min}.")
-            return False
+            return self.on_fail(key, value, schema)
 
         if self._max is not None and len(value) > self._max:
             logger.debug(f"Value {value} is greater than {self._max}.")
-            return False
+            return self.on_fail(key, value, schema)
 
         logger.debug(f"Value {value} is in range {self._min} - {self._max}.")
-        return True
+        return schema
 
-    def debug(self, value: Any) -> bool:
+    def debug(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
         """Validate that a value is within a range."""
         raise NotImplementedError
 
@@ -215,7 +257,7 @@ class ValidLength(Validator):
 class TwoWords(Validator):
     """Validate that a value is upper case."""
 
-    def validate(self, value: Any) -> bool:
+    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
         """Validate that a value is upper case."""
         logger.debug(f"Validating {value} is two words...")
 
@@ -223,9 +265,17 @@ class TwoWords(Validator):
 
         logger.debug(f"Validation outcome: {validation_outcome}")
 
-        return validation_outcome
 
-    def debug(self, value: Any) -> bool:
+        print(f'\n\n\nValidating {value} is two words...')
+        print(f'Validation outcome: {validation_outcome}\n\n\n')
+
+
+        if not validation_outcome:
+            return self.on_fail(key, value, schema)
+
+        return schema
+
+    def debug(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
         """Validate that a value is upper case."""
         raise NotImplementedError
 
@@ -234,7 +284,7 @@ class TwoWords(Validator):
 class OneLine(Validator):
     """Validate that a value is a single line or sentence."""
 
-    def validate(self, value: Any) -> bool:
+    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
         """Validate that a value is a single line or sentence."""
         logger.debug(f"Validating {value} is a single line...")
 
@@ -242,8 +292,11 @@ class OneLine(Validator):
 
         logger.debug(f"Validation outcome: {validation_outcome}")
 
-        return validation_outcome
+        if not validation_outcome:
+            return self.on_fail(key, value, schema)
 
-    def debug(self, value: Any) -> bool:
+        return schema
+
+    def debug(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
         """Validate that a value is upper case."""
         raise NotImplementedError

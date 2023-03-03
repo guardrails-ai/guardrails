@@ -22,7 +22,6 @@ def get_validators(element: ET.Element, strict: bool = False) -> List["Validator
 
     provided_formatters = element.attrib['format'].split(';')
     registered_formatters = types_to_validators[element.tag]
-    
 
     valid_formatters = []
 
@@ -80,7 +79,7 @@ class DataType:
         """Create a DataType from a string."""
         raise NotImplementedError("Abstract method.")
 
-    def validate(self, value: Any) -> bool:
+    def validate(self, key: str, value: Any, schema: Dict) -> Dict:
         """Validate a value."""
         raise NotImplementedError("Abstract method.")
 
@@ -107,12 +106,19 @@ def register_type(name: str):
 
 
 class Scalar(DataType):
-    def validate(self, value: Any) -> bool:
+    def validate(self, key: str, value: Any, schema: Dict) -> Dict:
         """Validate a value."""
         for validator in self.validators:
-            if not validator.validate(value):
-                return False
-        return True
+            schema = validator.validate(key, value, schema)
+
+            if schema is None:
+                # The outcome of validation was to refrain from answering.
+                return None
+
+            if key not in schema:
+                # The key may have been filtered out by a previous validator.
+                break
+        return schema
 
     def set_children(self, element: ET.Element):
         for _ in element:
@@ -166,23 +172,32 @@ class Percentage(Scalar):
 @register_type("list")
 class List(DataType):
 
-    def validate(self, value: Any) -> bool:
+    def validate(self, key: str, value: Any, schema: Dict) -> Dict:
         # Validators in the main list data type are applied to the list overall.
 
         for validator in self.validators:
-            if not validator.validate(value):
-                return False
+            schema = validator.validate(key, value, schema)
+
+            if schema is None:
+                # The outcome of validation was to refrain from answering.
+                return None
+
+            if key not in schema:
+                # The key may have been filtered out by a previous validator.
+                # In this case, we don't need to validate the items in the list,
+                # since the list itself is not present.
+                return schema
 
         if len(self.children) == 0:
-            return True
+            return schema
 
         item_type = list(self.children.values())[0]
 
+        # TODO(shreya): Edge case: List of lists -- does this still work?
         for item in value:
-            if not item_type.validate(item):
-                return False
+            value = item_type.validate(None, item, value)
 
-        return True
+        return schema
 
     def set_children(self, element: ET.Element):
         idx = 0
@@ -200,15 +215,24 @@ class List(DataType):
 @register_type("object")
 class Object(DataType):
 
-    def validate(self, value: Any) -> bool:
+    def validate(self, key: str, value: Any, schema: Dict) -> Dict:
         # Validators in the main object data type are applied to the object overall.
 
         for validator in self.validators:
-            if not validator.validate(value):
-                return False
+            schema = validator.validate(key, value, schema)
+
+            if schema is None:
+                # The outcome of validation was to refrain from answering.
+                return None
+
+            if key not in schema:
+                # The key may have been filtered out by a previous validator.
+                # In this case, we don't need to validate the items in the object,
+                # since the object itself is not present.
+                return schema
 
         if len(self.children) == 0:
-            return True
+            return schema
 
         # Types of supported children
         # 1. key_type
@@ -218,11 +242,16 @@ class Object(DataType):
         # TODO(shreya): Implement key type and value type later
 
         # Check for required keys
-        for key, field in self.children.items():
-            if key not in value:
-                return False
-            if not field.validate(value[key]):
-                return False
+        # for key, field in self.children.items():
+        for child_key, child_data_type in self.children.items():
+            # Value should be a dictionary
+            # child_key is an expected key that the schema defined
+            # child_data_type is the data type of the expected key
+            value = child_data_type.validate(
+                child_key,
+                value.get(child_key, None),
+                value
+            )
         return True
 
     def set_children(self, element: ET.Element):
