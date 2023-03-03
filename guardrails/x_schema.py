@@ -1,15 +1,18 @@
 import json
+import logging
 from copy import deepcopy
 from typing import Any, Dict, Union
 from xml.etree import ElementTree as ET
 
-from guardrails.x_datatypes import registry as types_registry
+from guardrails.x_datatypes import registry as types_registry, XDataType
 from guardrails.prompt_repo import Prompt
+
+logger = logging.getLogger(__name__)
 
 
 class XSchema:
-    def __init__(self, schema: Dict[str, Any], prompt: Prompt):
-        self.schema = schema
+    def __init__(self, schema: Dict[str, XDataType], prompt: Prompt):
+        self.schema: Dict[str, XDataType] = schema
         self.prompt = prompt
         with open('openai_api_key.txt', 'r') as f:
             self.openai_api_key = f.read()
@@ -80,28 +83,23 @@ class XSchema:
             validated_response = self.validate_response(response_as_dict)
         except json.decoder.JSONDecodeError:
             validated_response = None
+            response_as_dict = None
 
-        return validated_response, response
+        return response, response_as_dict, validated_response
 
     def validate_response(self, response: Dict[str, Any]):
         """Validate a response against the schema."""
 
-        def _validate_response(response: Dict[str, Any], schema: Dict[str, Any]):
-            """Validate a response against a schema."""
+        validated_response = deepcopy(response)
 
-            for field, value in response.items():
-                if field not in schema:
-                    continue
+        for field, value in response.items():
+            if field not in self.schema:
+                logger.debug(f"Field {field} not in schema.")
+                continue
 
-                if isinstance(value, dict):
-                    _validate_response(value, schema[field].children)
-                else:
-                    for validator in schema[field].validators:
-                        validator.validate(value)
+            validated_response = self.schema[field].validate(value)
 
-        _validate_response(response, self.schema)
-
-        return response
+        return validated_response
 
 
 def load_from_xml(tree: Union[ET.ElementTree, ET.Element], strict: bool = False) -> bool:
