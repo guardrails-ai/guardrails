@@ -1,6 +1,8 @@
 import json
 import logging
 from copy import deepcopy
+import manifest
+import os
 from typing import Any, Dict, Union
 from xml.etree import ElementTree as ET
 
@@ -14,8 +16,14 @@ class XSchema:
     def __init__(self, schema: Dict[str, DataType], prompt: Prompt):
         self.schema: Dict[str, DataType] = schema
         self.prompt = prompt
-        with open('openai_api_key.txt', 'r') as f:
-            self.openai_api_key = f.read()
+        
+        self.openai_api_key = os.environ.get("OPENAI_API_KEY", None)
+        self.client = manifest.Manifest(
+            client_name="openai", 
+            client_connection=self.openai_api_key,
+        )
+        # with open('openai_api_key.txt', 'r') as f:
+        #     self.openai_api_key = f.read()
 
     def __repr__(self):
         def _print_dict(d: Dict[str, Any], indent: int = 0) -> str:
@@ -35,15 +43,12 @@ class XSchema:
         return f"XSchema({schema})"
 
     def llm_ask(self, prompt):
-        from openai import Completion
-        llm_output = Completion.create(
-            model="text-davinci-003",
-            prompt=prompt,
+        return self.client.run(
+            prompt,
+            engine="text-davinci-003",
             temperature=0,
             max_tokens=2048,
-            api_key=self.openai_api_key
         )
-        return llm_output['choices'][0]['text']
 
     @staticmethod
     def prompt_json_suffix():

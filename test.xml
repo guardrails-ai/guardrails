@@ -1,0 +1,39 @@
+<!-- Create an XML response for Question Answering for Code -->
+<?xml version="1.0" encoding="UTF-8"?>
+<prompt>
+    <string 
+        name="instructions" 
+        description="Instructions for the user." 
+        format="itemize"
+    />
+    <code name="code" format="python" description={{ code_description }}>
+        <fragment name="module-doc" format="module-doc" />
+        <fragment name="imports" format="import" />
+        <fragment name="comment" format="comment single-line" />
+        <fragment name="fn" format="fn return={List[str]}">
+            <fragment name="fn-doc" format="fn-doc google with-example" />
+            <fragment name="fn-body" format="fn-body" />
+        </fragment>
+    </code>
+    <string
+        name="links" 
+        description="Links to relevant documentation." 
+        format="itemize" 
+    />
+    <template 
+        name="confidence" 
+        description="Explain the confidence of your answer to the user." 
+    >
+        {#if confident}
+            <item>I'm confident this function should run correctly.</item>
+        {:else}
+            <item>I'm not very confident that this will work.</item>
+        {/if}
+    </template>
+</prompt>
+
+
+<!-- <verbatim>
+def {name}(a: int, b: int) -> int:
+    {body}
+<verbatim/> -->
