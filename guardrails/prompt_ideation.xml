@@ -1,10 +1,18 @@
 <?xml version="1.0"?>
 
 <prompt>
-Here is my task description. Do this shit for me.
-{{ document }}
-{response}
+High level task description. This is what I'm trying to solve
+
+
+{document}
+
+
+{{response}}
 </prompt>
+
+<script>
+
+</script>
 
 <response>
     <list name="fees" description="What fees and charges are associated with my account?">
