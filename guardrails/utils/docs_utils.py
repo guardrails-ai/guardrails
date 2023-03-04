@@ -2,7 +2,7 @@ import typing as t
 import tiktoken
 import pypdfium2 as pdfium
 
-from guardrails.prompt_repo import Prompt
+from guardrails.prompt import Prompt
 
 
 class TextSplitter:

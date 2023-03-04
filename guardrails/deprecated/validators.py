@@ -3,7 +3,7 @@ from typing import Optional, Union, List
 
 from pyparsing import CaselessKeyword, Regex, Token
 
-from guardrails.prompt_repo import Prompt
+from guardrails.prompt import Prompt
 
 
 class Registry(object):

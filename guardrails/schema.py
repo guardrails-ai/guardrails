@@ -9,7 +9,7 @@ from lxml import etree as ET
 import rich
 import manifest
 
-from guardrails.prompt_repo import Prompt
+from guardrails.prompt import Prompt
 from guardrails.datatypes import DataType
 from guardrails.datatypes import registry as types_registry
 from guardrails.validators import ReAsk

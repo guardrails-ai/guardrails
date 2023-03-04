@@ -1,9 +1,12 @@
 <?xml version="1.0"?>
 
 <script language='python'>
-from guardrails.validators import Validator, EventDetail
+from guardrails.validators import Validator, EventDetail, register_validator
+import random
 
 
+
+@register_validator(name="custom", data_type="any")
 class CustomValidator(Validator):
     def __init__(self, *args, **kwargs):
         super(CustomValidator, self).__init__(*args, **kwargs)
@@ -13,7 +16,7 @@ class CustomValidator(Validator):
 
         logger.debug(f"Validating {value} is in choices {self._choices}...")
 
-        if value not in self._choices:
+        if random.random() > 0.5:
             raise EventDetail(
                 key,
                 value,

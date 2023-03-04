@@ -1,4 +1,4 @@
-from guardrails.prompt_repo import PromptRepo, Prompt
+from guardrails.prompt import PromptRepo, Prompt
 # from guardrails.types import DataType, String, URL, Email, Date, Time, Percentage, CodeSnippet, Float
 from dataclasses import dataclass
 from guardrails.deprecated.validators import Validator, FormValidator
