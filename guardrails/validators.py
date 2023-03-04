@@ -4,7 +4,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from typing import List, Union, Any, Optional, Callable, Dict
 
-from guardrails.x_datatypes import registry as types_registry
+from guardrails.datatypes import registry as types_registry
 
 validators_registry = {}
 types_to_validators = defaultdict(list)

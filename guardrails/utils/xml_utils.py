@@ -4,9 +4,9 @@ import warnings
 
 from xml.etree import ElementTree as ET
 
-from guardrails.x_schema import Field
-from guardrails.x_datatypes import registry as types_registry
-from guardrails.x_validators import types_to_validators, validators_registry, Validator
+from guardrails.schema import Field
+from guardrails.datatypes import registry as types_registry
+from guardrails.validators import types_to_validators, validators_registry, Validator
 
 
 def validate_xml(tree: Union[ET.ElementTree, ET.Element], strict: bool = False) -> bool:

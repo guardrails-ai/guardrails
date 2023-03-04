@@ -10,9 +10,9 @@ import rich
 import manifest
 
 from guardrails.prompt_repo import Prompt
-from guardrails.x_datatypes import DataType
-from guardrails.x_datatypes import registry as types_registry
-from guardrails.x_validators import ReAsk
+from guardrails.datatypes import DataType
+from guardrails.datatypes import registry as types_registry
+from guardrails.validators import ReAsk
 
 
 logger = logging.getLogger(__name__)
@@ -61,11 +61,6 @@ class XSchema:
             temperature=0,
             max_tokens=2048,
         )
-
-        # with open('response_as_dict.json', 'r') as f:
-        #     text = f.read()
-
-        # return text
 
     @staticmethod
     def prompt_json_suffix():

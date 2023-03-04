@@ -15,7 +15,7 @@ def get_validators(element: ET._Element, strict: bool = False) -> List["Validato
         A list of formatters.
     """
 
-    from guardrails.x_validators import types_to_validators, validators_registry
+    from guardrails.validators import types_to_validators, validators_registry
 
     if 'format' not in element.attrib:
         return []
