@@ -1,8 +1,8 @@
 from guardrails.prompt_repo import PromptRepo, Prompt
 # from guardrails.types import DataType, String, URL, Email, Date, Time, Percentage, CodeSnippet, Float
 from dataclasses import dataclass
-from guardrails.validators import Validator, FormValidator
-from guardrails.exceptions import SchemaMismatchException
+from guardrails.deprecated.validators import Validator, FormValidator
+from guardrails.deprecated.exceptions import SchemaMismatchException
 
 import re
 from copy import deepcopy

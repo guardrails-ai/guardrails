@@ -1,6 +1,6 @@
 from typing import List, Optional, Union, Callable
 
-import guardrails.validators as validators
+import guardrails.deprecated.validators as validators
 
 
 class DataType:
