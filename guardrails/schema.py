@@ -14,7 +14,6 @@ from guardrails.datatypes import DataType
 from guardrails.datatypes import registry as types_registry
 from guardrails.validators import ReAsk
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -61,14 +60,6 @@ class XSchema:
             temperature=0,
             max_tokens=2048,
         )
-
-    @staticmethod
-    def prompt_json_suffix():
-        return """\n\nReturn a valid JSON object that respects this XML format and extracts only the information requested in this document. Respect the types indicated in the XML -- the information you extract should be converted into the correct 'type'. Try to be as correct and concise as possible. Find all relevant information in the document. If you are unsure of the answer, enter 'None'. If you answer incorrectly, you will be asked again until you get it right which is expensive."""  # noqa: E501
-
-    @staticmethod
-    def prompt_xml_prefix():
-        return """\n\nGiven below is XML that describes the information to extract from this document and the tags to extract it into.\n\n"""  # noqa: E501
 
     def ask_with_validation(self, text) -> str:
         """Ask a question, and validate the response."""

@@ -1,0 +1,57 @@
+<?xml version="1.0"?>
+
+<script language='python'>
+from guardrails.validators import Validator, EventDetail
+
+
+class CustomValidator(Validator):
+    def __init__(self, *args, **kwargs):
+        super(CustomValidator, self).__init__(*args, **kwargs)
+
+    def validate(self, key: str, value: Any, schema: Union[Dict, List]):
+        """Validate that a value is within a range."""
+
+        logger.debug(f"Validating {value} is in choices {self._choices}...")
+
+        if value not in self._choices:
+            raise EventDetail(
+                key,
+                value,
+                schema,
+                f"Value {value} is not in choices {self._choices}.",
+                None,
+            )
+
+        return schema
+</script>
+
+
+<prompt>
+
+Given the following document, answer the following questions. If the answer doesn't exist in the document, enter 'None'.
+
+{document}
+
+@xml_prefix_prompt
+
+{{response}}
+
+@json_suffix_prompt
+
+</prompt>
+
+
+<response>
+    <list name="fees" description="What fees and charges are associated with my account?">
+        <object>
+            <integer name="index" format="1-indexed" />
+            <string name="name" format="lower-case; two-words" on-fail-lower-case="noop" on-fail-two-words="reask"/>
+            <string name="explanation" format="one-line" on-fail-one-line="noop" />
+            <float name="value" format="percentage"/>
+            <string name="description" format="length: 0 200" on-fail-length="noop" />
+            <string name="example" required="True" format="tone-twitter explain-high-quality" />
+            <string name="advertisement" format="tagline tv-ad" />
+        </object>
+    </list>
+    <string name='interest_rates' description='What are the interest rates offered by the bank on savings and checking accounts, loans, and credit products?' format="one-line" on-fail-one-line="noop"/>
+</response>
