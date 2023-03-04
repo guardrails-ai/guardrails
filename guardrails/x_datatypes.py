@@ -109,7 +109,7 @@ class Scalar(DataType):
     def validate(self, key: str, value: Any, schema: Dict) -> Dict:
         """Validate a value."""
         for validator in self.validators:
-            schema = validator.validate(key, value, schema)
+            schema = validator.validate_with_correction(key, value, schema)
 
             if schema is None:
                 # The outcome of validation was to refrain from answering.
@@ -176,7 +176,7 @@ class List(DataType):
         # Validators in the main list data type are applied to the list overall.
 
         for validator in self.validators:
-            schema = validator.validate(key, value, schema)
+            schema = validator.validate_with_correction(key, value, schema)
 
             if schema is None:
                 # The outcome of validation was to refrain from answering.
@@ -219,7 +219,7 @@ class Object(DataType):
         # Validators in the main object data type are applied to the object overall.
 
         for validator in self.validators:
-            schema = validator.validate(key, value, schema)
+            schema = validator.validate_with_correction(key, value, schema)
 
             if schema is None:
                 # The outcome of validation was to refrain from answering.
