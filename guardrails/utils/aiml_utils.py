@@ -4,8 +4,9 @@ from typing import Dict, List
 from lxml import etree as ET
 
 from guardrails.datatypes import registry as types_registry
-from guardrails.validators import types_to_validators, validators_registry, Validator
-
+from guardrails.validators import Validator
+from guardrails.utils.constants import constants
+from guardrails.prompt import Prompt
 
 
 def read_aiml(aiml_file: str) -> ET._Element:
@@ -56,12 +57,17 @@ def load_response_schema(root: ET._Element) -> Dict[str, List[Validator]]:
     return schema
 
 
-def load_prompt(root: ET._Element) -> Dict[str, List[Validator]]:
+def load_prompt(root: ET._Element) -> Prompt:
     text = root.text
 
     # Substitute constants by reading the constants file.
+    for key, value in constants.items():
+        text = text.replace(f"@{key}", value)
+
+    prompt = Prompt(text)
+
+    return prompt
 
 
 def load_script(root: ET._Element) -> Dict[str, List[Validator]]:
     pass
-

@@ -70,14 +70,12 @@ class XSchema:
         response, response_as_dict, validated_response = self.validation_inner_loop(
             text, response_prompt, 0
         )
-
         return response, response_as_dict, validated_response
 
     def validation_inner_loop(self, text: str, response_prompt: str, reask_ctr: int):
         prompt = self.base_prompt.format(document=text).format(
             response_prompt=response_prompt
         )
-
         response = self.llm_ask(prompt)
 
         try:

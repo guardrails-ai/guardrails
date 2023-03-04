@@ -4,7 +4,6 @@ from lxml import etree as ET
 
 
 class ConstantsContainer:
-
     def __init__(self):
         self._constants = {}
         self.fill_constants()
@@ -30,7 +29,7 @@ class ConstantsContainer:
             constant_name = child.tag
             constant_value = child.text
             self._constants[constant_name] = constant_value
-    
+
     def __getitem__(self, key):
         return self._constants[key]
 
