@@ -1,4 +1,11 @@
 <?xml version="1.0"?>
+
+<prompt>
+Here is my task description. Do this shit for me.
+{{ document }}
+{response}
+</prompt>
+
 <response>
     <list name="fees" description="What fees and charges are associated with my account?">
         <object>

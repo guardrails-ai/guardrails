@@ -1,10 +1,10 @@
-from collections import defaultdict
 import json
 import logging
 import os
+from collections import defaultdict
 from copy import deepcopy
-from typing import Any, Dict, List, Union
-from xml.etree import ElementTree as ET
+from typing import Any, Dict, List, Union, Optional, Tuple
+from lxml import etree as ET
 
 import manifest
 
@@ -13,6 +13,7 @@ from guardrails.x_datatypes import DataType
 from guardrails.x_datatypes import registry as types_registry
 from guardrails.x_validators import ReAsk
 
+
 logger = logging.getLogger(__name__)
 
 
@@ -20,12 +21,14 @@ class XSchema:
     def __init__(
         self,
         schema: Dict[str, DataType],
-        prompt: Prompt,
+        base_prompt: Prompt,
         parsed_xml: ET.Element,
+        num_reasks: int = 1,
     ):
         self.schema: Dict[str, DataType] = schema
-        self.prompt = prompt
+        self.base_prompt = base_prompt
         self.parsed_xml = parsed_xml
+        self.num_reasks = num_reasks
 
         self.openai_api_key = os.environ.get("OPENAI_API_KEY", None)
         self.client = manifest.Manifest(
@@ -33,22 +36,22 @@ class XSchema:
             client_connection=self.openai_api_key,
         )
 
-    def __repr__(self):
-        def _print_dict(d: Dict[str, Any], indent: int = 0) -> str:
-            """Print a dictionary in a nice way."""
+    @classmethod
+    def from_xml(cls, xml_file: str, base_prompt: Prompt) -> "XSchema":
+        """Create an XSchema from an XML file."""
 
-            s = ""
-            for k, v in d.items():
-                if isinstance(v, dict):
-                    s += f"{k}:\n{_print_dict(v, indent=indent + 1)}"
-                else:
-                    s += f"{' ' * (indent * 4)}{k}: {v}\n"
+        with open(xml_file, "r") as f:
+            xml = f.read()
+        parser = ET.XMLParser(encoding="utf-8")
+        parsed_xml = ET.fromstring(xml, parser=parser)
 
-            return s
+        schema = load_from_xml(parsed_xml, strict=False)
 
-        schema = _print_dict(self.schema)
+        base_prompt.append_to_prompt(cls.prompt_xml_prefix())
+        base_prompt.append_to_prompt("\n{{response_prompt}}\n")
+        base_prompt.append_to_prompt(cls.prompt_json_suffix())
 
-        return f"XSchema({schema})"
+        return cls(schema, base_prompt, parsed_xml)
 
     def llm_ask(self, prompt):
         return self.client.run(
@@ -66,37 +69,59 @@ class XSchema:
     def prompt_xml_prefix():
         return """\n\nGiven below is XML that describes the information to extract from this document and the tags to extract it into.\n\n"""  # noqa: E501
 
-    @classmethod
-    def from_xml(cls, xml_file: str, base_prompt: Prompt) -> "XSchema":
-        """Create an XSchema from an XML file."""
+    # def ask_with_validation(self, text) -> str:
+    #     """Ask a question, and validate the response."""
 
-        with open(xml_file, "r") as f:
-            xml = f.read()
-        parser = ET.XMLParser(encoding="utf-8")
-        parsed_xml = ET.fromstring(xml, parser=parser)
+    #     parsed_xml_copy = deepcopy(self.parsed_xml)
+    #     response_prompt = extract_prompt_from_xml(parsed_xml_copy)
 
-        schema = load_from_xml(parsed_xml, strict=False)
+    #     prompt = self.base_prompt.format(document=text).format(
+    #         response_prompt=response_prompt
+    #     )
 
-        prompt = extract_prompt_from_xml(parsed_xml)
+    #     response = self.llm_ask(prompt)
 
-        base_prompt.append_to_prompt(cls.prompt_xml_prefix())
-        base_prompt.append_to_prompt(prompt)
-        base_prompt.append_to_prompt(cls.prompt_json_suffix())
+    #     try:
+    #         response_as_dict = json.loads(response)
+    #         validated_response, reasks = self.validate_response(response_as_dict)
+    #     except json.decoder.JSONDecodeError:
+    #         validated_response = None
+    #         response_as_dict = None
 
-        return cls(schema, base_prompt, parsed_xml)
+    #     if reasks:
+    #         reask_prompt = self.get_reask_prompt(reasks)
+
+    #     return response, response_as_dict, validated_response
 
     def ask_with_validation(self, text) -> str:
         """Ask a question, and validate the response."""
 
-        prompt = self.prompt.format(document=text)
+        parsed_xml_copy = deepcopy(self.parsed_xml)
+        response_prompt = extract_prompt_from_xml(parsed_xml_copy)
+
+        response, response_as_dict, validated_response = self.validation_inner_loop(
+            text, response_prompt, 0
+        )
+
+        return response, response_as_dict, validated_response
+
+    def validation_inner_loop(self, text: str, response_prompt: str, reask_ctr: int):
+        prompt = self.base_prompt.format(document=text).format(
+            response_prompt=response_prompt
+        )
+
         response = self.llm_ask(prompt)
 
         try:
             response_as_dict = json.loads(response)
-            validated_response = self.validate_response(response_as_dict)
+            validated_response, reasks = self.validate_response(response_as_dict)
         except json.decoder.JSONDecodeError:
             validated_response = None
             response_as_dict = None
+
+        if reasks and reask_ctr < self.num_reasks:
+            reask_prompt = self.get_reask_prompt(reasks)
+            return self.validation_inner_loop(text, reask_prompt, reask_ctr + 1)
 
         return response, response_as_dict, validated_response
 
@@ -105,8 +130,8 @@ class XSchema:
         Traverse response and gather all ReAsk objects.
         Response is a nested dictionary, where values can also be lists or
         dictionaries.
-        Make sure to also grab the corresponding paths (including list index), and return
-        a list of tuples.
+        Make sure to also grab the corresponding paths (including list index),
+        and return a list of tuples.
         """
         reasks = []
 
@@ -132,10 +157,13 @@ class XSchema:
                             _gather_reasks(item, path + [field, idx])
 
         _gather_reasks(response)
-
         return reasks
-    
-    def get_reasks_by_element(self, reasks: List[tuple], **kwargs) -> Prompt:
+
+    def get_reasks_by_element(
+        self,
+        reasks: List[tuple],
+        parsed_xml: ET._Element,
+    ) -> Dict[ET._Element, List[tuple]]:
 
         reasks_by_element = defaultdict(list)
 
@@ -152,39 +180,81 @@ class XSchema:
                     query += f"/*[@name='{part}']"
 
             # Find the element
-            element = self.parsed_xml.find(query)
+            element = parsed_xml.find(query)
 
             reasks_by_element[element].append((path, reask))
 
         return reasks_by_element
-    
-    def get_reask_prompt(
-            self, 
-            reasks_by_element: Prompt,
-        ) -> Prompt:
-        # for all previous prompts:
-        #       prompt
-        #       response
-        #       XML schema
-        #       reasks_by_element (failed elements, path to failures, reask infos)
-        pass
 
-    # prompt = self.prompt.format(document=text)
-    # response = self.llm_ask(prompt)
-    # response_as_dict = json.loads(response)
-    # validated_response = self.validate_response(response_as_dict)
-    # print(validated_response)
-        
-    def do_reask(num_retries: int = 1, **kwargs):
-        return # Guardrails(
-            # ....
-        # ).run()
-        # for _ in range(num_retries):
-        #     # ...
-        #     pass
+    def get_pruned_tree(
+        self,
+        root: ET._Element,
+        reask_elements: List[ET._Element] = None,
+    ) -> str:
+        """Prune tree of any elements that are not in `reasks`.
 
-    def validate_response(self, response: Dict[str, Any]):
-        """Validate a response against the schema."""
+        Return the tree with only the elements that are keys of `reasks` and their
+        parents. If `reasks` is None, return the entire tree. If an element is
+        removed, remove all ancestors that have no children.
+
+        Args:
+            root: The XML tree.
+            reasks: The elements that are to be reasked.
+
+        Returns:
+            The prompt.
+        """
+        if reask_elements is None:
+            return root
+
+        # Get all elements in `root`
+        elements = root.findall(".//*")
+        for element in elements:
+            if (element not in reask_elements) and len(element) == 0:
+                parent = element.getparent()
+                parent.remove(element)
+
+                # Remove all ancestors that have no children
+                while len(parent) == 0:
+                    grandparent = parent.getparent()
+                    grandparent.remove(parent)
+                    parent = grandparent
+
+        return root
+
+    def get_reask_prompt(self, reasks: List[tuple]) -> str:
+        """Get the prompt for reasking.
+
+        Args:
+            reasks: The elements that are to be reasked.
+
+        Returns:
+            The prompt.
+        """
+        parsed_xml_copy = deepcopy(self.parsed_xml)
+        reasks_by_element = self.get_reasks_by_element(
+            reasks, parsed_xml=parsed_xml_copy
+        )
+        pruned_xml = self.get_pruned_tree(
+            root=parsed_xml_copy, reask_elements=list(reasks_by_element.keys())
+        )
+        reask_prompt = extract_prompt_from_xml(pruned_xml, reasks_by_element)
+
+        return reask_prompt
+
+    def validate_response(
+        self, response: Dict[str, Any]
+    ) -> Tuple[Dict[str, Any], List[tuple]]:
+        """Validate a response against the schema.
+
+        Args:
+            response: The response to validate.
+
+        Returns:
+            Tuple, where the first element is the validated response, and the
+            second element is a list of tuples, where each tuple contains the
+            path to the reasked element, and the ReAsk object.
+        """
 
         validated_response = deepcopy(response)
 
@@ -196,38 +266,128 @@ class XSchema:
             validated_response = self.schema[field].validate(
                 field, value, validated_response
             )
-        
+
         reasks = self.gather_reasks(validated_response)
-        if reasks:
-            pass
 
-        # validated_response
-        # prompt
-        # xml
+        return (validated_response, reasks)
 
-        return validated_response
+    def __repr__(self):
+        def _print_dict(d: Dict[str, Any], indent: int = 0) -> str:
+            """Print a dictionary in a nice way."""
+
+            s = ""
+            for k, v in d.items():
+                if isinstance(v, dict):
+                    s += f"{k}:\n{_print_dict(v, indent=indent + 1)}"
+                else:
+                    s += f"{' ' * (indent * 4)}{k}: {v}\n"
+
+            return s
+
+        schema = _print_dict(self.schema)
+
+        return f"XSchema({schema})"
 
 
-def load_from_xml(
-    tree: Union[ET.ElementTree, ET.Element], strict: bool = False
-) -> bool:
+# def load_from_xml(
+#     tree: Union[ET.ElementTree, ET.Element], strict: bool = False
+# ) -> bool:
+#     """Validate parsed XML, create a prompt and a Schema object."""
+
+#     if type(tree) == ET.ElementTree:
+#         tree = tree.getroot()
+
+#     schema = {}
+#     for child in tree:
+#         child_name = child.attrib["name"]
+#         child_data_type = child.tag
+#         child_data_type = types_registry[child_data_type]
+#         child_data = child_data_type.from_xml(child, strict=strict)
+#         schema[child_name] = child_data
+
+#     return schema
+
+
+def load_from_xml(tree: ET._Element, strict: bool = False) -> bool:
     """Validate parsed XML, create a prompt and a Schema object."""
 
-    if type(tree) == ET.ElementTree:
-        tree = tree.getroot()
-
     schema = {}
+
     for child in tree:
+        if isinstance(child, ET._Comment):
+            continue
         child_name = child.attrib["name"]
         child_data_type = child.tag
         child_data_type = types_registry[child_data_type]
-        child_data = child_data_type.from_xml(child)
+        child_data = child_data_type.from_xml(child, strict=strict)
         schema[child_name] = child_data
 
     return schema
 
 
-def extract_prompt_from_xml(tree: Union[ET.ElementTree, ET.Element]) -> str:
+# def extract_prompt_from_xml(tree: Union[ET.ElementTree, ET.Element]) -> str:
+#     """Extract the prompt from an XML tree.
+
+#     Args:
+#         tree: The XML tree.
+
+#     Returns:
+#         The prompt.
+#     """
+
+#     tree_copy = deepcopy(tree)
+
+#     if type(tree_copy) == ET.ElementTree:
+#         tree_copy = tree_copy.getroot()
+
+#     # From the element tree, remove any action attributes like 'on-fail-*'.
+#     for element in tree_copy.iter():
+#         for attr in list(element.attrib):
+#             if attr.startswith("on-fail-"):
+#                 del element.attrib[attr]
+
+#     # Return the XML as a string.
+#     return ET.tostring(tree_copy, encoding="unicode", method="xml")
+
+
+def get_correction_instruction(
+    reasks: List[tuple]
+) -> str:
+    """Construct a correction instruction.
+
+    Args:
+        reasks: List of tuples, where each tuple contains the path to the
+            reasked element, and the ReAsk object (which contains the error message describing why the
+            reask is necessary).
+        response: The response.
+
+    Returns:
+        The correction instruction.
+    """
+
+    correction_instruction = ""
+
+    for reask in reasks:
+        reask_path = reask[0]
+        reask_element = reask[1]
+        reask_error_message = reask_element.error_message
+        reask_value = reask_element.incorrect_value
+
+        # Create a helpful prompt that mentions why the reask value is incorrect.
+        # The helpful prompt should have english language directions for the user.
+        reask_prompt = f'"{reask_value}" is not a valid value for "{reask_path[-1]}"'
+        f" because {reask_error_message}"
+
+        # Add the helpful prompt to the correction instruction.
+        correction_instruction += f"{reask_prompt}"
+
+    return correction_instruction
+
+
+def extract_prompt_from_xml(
+    tree: ET._Element,
+    reasks: Optional[Dict[ET._Element, List[tuple]]] = None,
+) -> str:
     """Extract the prompt from an XML tree.
 
     Args:
@@ -236,17 +396,21 @@ def extract_prompt_from_xml(tree: Union[ET.ElementTree, ET.Element]) -> str:
     Returns:
         The prompt.
     """
+    reasks = reasks or {}
 
     tree_copy = deepcopy(tree)
-
-    if type(tree_copy) == ET.ElementTree:
-        tree_copy = tree_copy.getroot()
 
     # From the element tree, remove any action attributes like 'on-fail-*'.
     for element in tree_copy.iter():
         for attr in list(element.attrib):
             if attr.startswith("on-fail-"):
                 del element.attrib[attr]
+
+        if element in reasks:
+            correction_prompt = get_correction_instruction(
+                reasks[element], 
+            )
+            element.text = correction_prompt
 
     # Return the XML as a string.
     return ET.tostring(tree_copy, encoding="unicode", method="xml")

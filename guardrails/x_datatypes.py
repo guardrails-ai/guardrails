@@ -1,10 +1,10 @@
 import warnings
 from typing import Any, Dict, List
 
-from xml.etree import ElementTree as ET
+from lxml import etree as ET
 
 
-def get_validators(element: ET.Element, strict: bool = False) -> List["Validator"]:
+def get_validators(element: ET._Element, strict: bool = False) -> List["Validator"]:
     """Get the formatters for an element.
 
     Args:
@@ -83,11 +83,11 @@ class DataType:
         """Validate a value."""
         raise NotImplementedError("Abstract method.")
 
-    def set_children(self, element: ET.Element):
+    def set_children(self, element: ET._Element):
         raise NotImplementedError("Abstract method.")
 
     @classmethod
-    def from_xml(cls, element: ET.Element, strict: bool = False) -> "DataType":
+    def from_xml(cls, element: ET._Element, strict: bool = False) -> "DataType":
         data_type = cls([], {})
         data_type.set_children(element)
         data_type.validators = get_validators(element, strict=strict)
@@ -120,7 +120,7 @@ class Scalar(DataType):
                 break
         return schema
 
-    def set_children(self, element: ET.Element):
+    def set_children(self, element: ET._Element):
         for _ in element:
             raise ValueError("Scalar data type must not have any children.")
 
@@ -199,7 +199,7 @@ class List(DataType):
 
         return schema
 
-    def set_children(self, element: ET.Element):
+    def set_children(self, element: ET._Element):
         idx = 0
         for child in element:
             idx += 1
@@ -254,7 +254,7 @@ class Object(DataType):
             )
         return True
 
-    def set_children(self, element: ET.Element):
+    def set_children(self, element: ET._Element):
         for child in element:
             child_data_type = registry[child.tag]
             self.children[child.attrib["name"]] = child_data_type.from_xml(child)
