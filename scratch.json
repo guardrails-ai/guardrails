@@ -1,0 +1,20 @@
+{
+    "interest_rates": 0.000000000000000000,
+    "fees": [
+        {
+            "id": 1,
+            "name": "Fee 1"
+        },
+        {
+            "id": 2,
+            "name": "Fee 2"
+        }
+    ],
+    "loan_amount": {
+        "min": 1000,
+        "max": 100000
+    },
+    "url": ReAsk("https://www.example.com", 'bad_url')
+    // "url": "https://www.example.com"
+    // "url": Callable
+}

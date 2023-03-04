@@ -1,4 +1,8 @@
 openai_api_key.txt
-guardrails/__pycache__*
+*__pycache__*
 data/*
 .vscode/*
+.DS_Store
+*.ipynb_checkpoints/*
+*.pyc
+*.env

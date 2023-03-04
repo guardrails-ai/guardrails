@@ -1,0 +1,86 @@
+{
+    "fees": [
+        {
+            "index": 1,
+            "name": "annual membership",
+            "explanation": "annual fee for membership",
+            "value": 0,
+            "description": "None",
+            "example": "None",
+            "advertisement": "None"
+        },
+        {
+            "index": 2,
+            "name": "my chase plan",
+            "explanation": "fixed finance charge",
+            "value": 1.72,
+            "description": "Monthly fee of 0% of the amount of each eligible purchase transaction or amount selected to create a My Chase Plan while in the 0% Intro Purchase APR period. After that, monthly fee of 1.72% of the amount of each eligible purchase transaction or amount selected to create a My Chase Plan. The My Chase Plan Fee will be determined at the time each My Chase Plan is created and will remain the same until the My Chase Plan is paid in full.",
+            "example": "None",
+            "advertisement": "None"
+        },
+        {
+            "index": 3,
+            "name": "balance transfers",
+            "explanation": "intro fee of either $5 or 3% of the amount of each transfer, whichever is greater",
+            "value": 3,
+            "description": "Intro fee of either $5 or 3% of the amount of each transfer, whichever is greater, on transfers made within 60 days of account opening. After that: Either $5 or 5% of the amount of each transfer, whichever is greater.",
+            "example": "Transfer $100 and pay a fee of $3.",
+            "advertisement": "Transfer your balance and pay only a 3% fee!"
+        },
+        {
+            "index": 4,
+            "name": "cash advances",
+            "explanation": "either $10 or 5% of the amount of each transaction, whichever is greater",
+            "value": 5,
+            "description": "Either $10 or 5% of the amount of each transaction, whichever is greater.",
+            "example": "Withdraw $100 and pay a fee of $5.",
+            "advertisement": "Withdraw cash and pay only a 5% fee!"
+        },
+        {
+            "index": 5,
+            "name": "foreign transactions",
+            "explanation": "3% of the amount of each transaction in U.S. dollars",
+            "value": 3,
+            "description": "3% of the amount of each transaction in U.S. dollars.",
+            "example": "Make a purchase of $100 and pay a fee of $3.",
+            "advertisement": "Make purchases abroad and pay only a 3% fee!"
+        },
+        {
+            "index": 6,
+            "name": "late payment",
+            "explanation": "up to $40",
+            "value": 0,
+            "description": "Up to $40.",
+            "example": "Make a late payment and pay a fee of up to $40.",
+            "advertisement": "Make a late payment and pay only up to $40!"
+        },
+        {
+            "index": 7,
+            "name": "over-the-credit-limit",
+            "explanation": "none",
+            "value": 0,
+            "description": "None",
+            "example": "None",
+            "advertisement": "None"
+        },
+        {
+            "index": 8,
+            "name": "return payment",
+            "explanation": "up to $40",
+            "value": 0,
+            "description": "Up to $40.",
+            "example": "Make a return payment and pay a fee of up to $40.",
+            "advertisement": "Make a return payment and pay only up to $40!"
+        },
+        {
+            "index": 9,
+            "name": "return check",
+            "explanation": "none",
+            "value": 0,
+            "description": "None",
+            "example": "None",
+            "advertisement": "None"
+        }
+    ],
+    "interest_rates": "Purchase Annual Percentage Rate (APR) 0% Intro APR for the first 18 months that your Account is open. After that, 19.49%. This APR will vary with the market based on the Prime Rate. My Chase Loan SM APR 19.49%. This APR will vary with the market based on the Prime Rate. Balance Transfer APR 0% Intro APR for the first 18 months that your Account is open. After that, 19.49%. This APR will vary with the market based on the Prime Rate. Cash Advance APR 29.49%. This APR will vary with the market based on the Prime Rate. Penalty APR and When It Applies Up to 29.99%. This APR will vary with the market based on the Prime Rate."
+}

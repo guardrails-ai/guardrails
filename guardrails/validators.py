@@ -56,10 +56,6 @@ class FormValidator(Validator):
     def debug(self, text: str, placeholder: Token):
         exception = None
 
-        print(f"Placeholder: {placeholder}")
-
-        print(f"Text: {text}")
-
         # Figure out where the text should start from.
         # If the placeholder is a CaselessKeyword, then the text should start from the first character.
         placeholder_match = list(placeholder.scan_string(text, max_matches=1))
