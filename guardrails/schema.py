@@ -11,8 +11,8 @@ import manifest
 
 from guardrails.prompt import Prompt
 from guardrails.datatypes import DataType
-from guardrails.datatypes import registry as types_registry
 from guardrails.validators import ReAsk
+from guardrails.utils.aiml_utils import read_aiml
 
 logger = logging.getLogger(__name__)
 
@@ -37,29 +37,23 @@ class XSchema:
         )
 
     @classmethod
-    def from_xml(cls, xml_file: str, base_prompt: Prompt) -> "XSchema":
+    def from_aiml(cls, aiml_file: str) -> "XSchema":
         """Create an XSchema from an XML file."""
-
-        with open(xml_file, "r") as f:
-            xml = f.read()
-        parser = ET.XMLParser(encoding="utf-8")
-        parsed_xml = ET.fromstring(xml, parser=parser)
-
-        schema = load_from_xml(parsed_xml, strict=False)
-
-        base_prompt.append_to_prompt(cls.prompt_xml_prefix())
-        base_prompt.append_to_prompt("\n{{response_prompt}}\n")
-        base_prompt.append_to_prompt(cls.prompt_json_suffix())
-
-        return cls(schema, base_prompt, parsed_xml)
+        response_schema, parsed_xml, base_prompt, _ = read_aiml(aiml_file)
+        return cls(response_schema, base_prompt, parsed_xml)
 
     def llm_ask(self, prompt) -> str:
-        return self.client.run(
-            prompt,
-            engine="text-davinci-003",
-            temperature=0,
-            max_tokens=2048,
-        )
+        # return self.client.run(
+        #     prompt,
+        #     engine="text-davinci-003",
+        #     temperature=0,
+        #     max_tokens=2048,
+        # )
+
+        # Read the output from the file 'response_as_dict.json'
+        with open('response_as_dict.json', 'r') as f:
+            output = f.read()
+        return output
 
     def ask_with_validation(self, text) -> str:
         """Ask a question, and validate the response."""
@@ -74,7 +68,7 @@ class XSchema:
 
     def validation_inner_loop(self, text: str, response_prompt: str, reask_ctr: int):
         prompt = self.base_prompt.format(document=text).format(
-            response_prompt=response_prompt
+            response=response_prompt
         )
         response = self.llm_ask(prompt)
 
@@ -165,9 +159,9 @@ class XSchema:
     ) -> str:
         """Prune tree of any elements that are not in `reasks`.
 
-        Return the tree with only the elements that are keys of `reasks` and their
-        parents. If `reasks` is None, return the entire tree. If an element is
-        removed, remove all ancestors that have no children.
+        Return the tree with only the elements that are keys of `reasks` and
+        their parents. If `reasks` is None, return the entire tree. If an
+        element is removed, remove all ancestors that have no children.
 
         Args:
             root: The XML tree.
@@ -261,32 +255,13 @@ class XSchema:
         return f"XSchema({schema})"
 
 
-def load_from_xml(tree: ET._Element, strict: bool = False) -> bool:
-    """Validate parsed XML, create a prompt and a Schema object."""
-
-    schema = {}
-
-    for child in tree:
-        if isinstance(child, ET._Comment):
-            continue
-        child_name = child.attrib["name"]
-        child_data_type = child.tag
-        child_data_type = types_registry[child_data_type]
-        child_data = child_data_type.from_xml(child, strict=strict)
-        schema[child_name] = child_data
-
-    return schema
-
-
-def get_correction_instruction(
-    reasks: List[tuple]
-) -> str:
+def get_correction_instruction(reasks: List[tuple]) -> str:
     """Construct a correction instruction.
 
     Args:
         reasks: List of tuples, where each tuple contains the path to the
-            reasked element, and the ReAsk object (which contains the error message describing why the
-            reask is necessary).
+            reasked element, and the ReAsk object (which contains the error
+            message describing why the reask is necessary).
         response: The response.
 
     Returns:
@@ -339,7 +314,7 @@ def extract_prompt_from_xml(
         if element in reasks:
 
             correction_prompt = get_correction_instruction(
-                reasks[element], 
+                reasks[element],
             )
             element.attrib["previous_feedback"] = correction_prompt
 

@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-
+<aiml>
 <script language='python'>
 from guardrails.validators import Validator, EventDetail, register_validator
 import random
@@ -58,3 +58,4 @@ Given the following document, answer the following questions. If the answer does
     </list>
     <string name='interest_rates' description='What are the interest rates offered by the bank on savings and checking accounts, loans, and credit products?' format="one-line" on-fail-one-line="noop"/>
 </response>
+</aiml>

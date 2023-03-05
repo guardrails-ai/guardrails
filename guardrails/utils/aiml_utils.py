@@ -1,5 +1,5 @@
 """XML utilities."""
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 from lxml import etree as ET
 
@@ -9,7 +9,7 @@ from guardrails.utils.constants import constants
 from guardrails.prompt import Prompt
 
 
-def read_aiml(aiml_file: str) -> ET._Element:
+def read_aiml(aiml_file: str) -> Tuple[Dict, ET._Element, Prompt, Dict]:
     """Read an AIML file.
 
     Args:
@@ -23,10 +23,10 @@ def read_aiml(aiml_file: str) -> ET._Element:
     parser = ET.XMLParser(encoding="utf-8")
     parsed_aiml = ET.fromstring(xml, parser=parser)
 
-    response_schema = parsed_aiml.find("response-schema")
-    if response_schema is None:
+    raw_response_schema = parsed_aiml.find("response")
+    if raw_response_schema is None:
         raise ValueError("AIML file must contain a response-schema element.")
-    response_schema = load_response_schema(response_schema)
+    response_schema = load_response_schema(raw_response_schema)
 
     prompt = parsed_aiml.find("prompt")
     if prompt is None:
@@ -37,7 +37,7 @@ def read_aiml(aiml_file: str) -> ET._Element:
     if script is not None:
         script = load_script(script)
 
-    return response_schema, prompt, script
+    return response_schema, raw_response_schema, prompt, script
 
 
 def load_response_schema(root: ET._Element) -> Dict[str, List[Validator]]:

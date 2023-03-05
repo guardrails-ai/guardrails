@@ -3,6 +3,6 @@
 \n\nReturn a valid JSON object that respects this XML format and extracts only the information requested in this document. Respect the types indicated in the XML -- the information you extract should be converted into the correct 'type'. Try to be as correct and concise as possible. Find all relevant information in the document. If you are unsure of the answer, enter 'None'. If you answer incorrectly, you will be asked again until you get it right which is expensive.
 </json_suffix_prompt>
 <xml_prefix_prompt>
-\n\nGiven below is XML that describes the information to extract from this document and the tags to extract it into.\n\n
+\n\nGiven below is XML that describes the information to extract from this document and the tags to extract it into.
 </xml_prefix_prompt>
 </constants>
