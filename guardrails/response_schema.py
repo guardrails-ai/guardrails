@@ -34,5 +34,8 @@ class Response:
     def __getattr__(self, key: str) -> DataType:
         return getattr(self._schema, key)
 
+    def __contains__(self, key: str) -> bool:
+        return hasattr(self._schema, key)
+
     def items(self) -> Dict[str, DataType]:
         return vars(self._schema).items()
