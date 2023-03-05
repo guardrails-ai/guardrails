@@ -9,26 +9,23 @@ from lxml import etree as ET
 import rich
 import manifest
 
-from guardrails.prompt_repo import Prompt
-from guardrails.x_datatypes import DataType
-from guardrails.x_datatypes import registry as types_registry
-from guardrails.x_validators import ReAsk
-
+from guardrails.prompt import Prompt
+from guardrails.response_schema import Response
+from guardrails.validators import ReAsk
+from guardrails.utils.aiml_utils import read_aiml
 
 logger = logging.getLogger(__name__)
 
 
-class XSchema:
+class Schema:
     def __init__(
         self,
-        schema: Dict[str, DataType],
+        schema: Response,
         base_prompt: Prompt,
-        parsed_xml: ET.Element,
         num_reasks: int = 1,
     ):
-        self.schema: Dict[str, DataType] = schema
+        self.response_schema = schema
         self.base_prompt = base_prompt
-        self.parsed_xml = parsed_xml
         self.num_reasks = num_reasks
 
         self.openai_api_key = os.environ.get("OPENAI_API_KEY", None)
@@ -38,60 +35,39 @@ class XSchema:
         )
 
     @classmethod
-    def from_xml(cls, xml_file: str, base_prompt: Prompt) -> "XSchema":
-        """Create an XSchema from an XML file."""
-
-        with open(xml_file, "r") as f:
-            xml = f.read()
-        parser = ET.XMLParser(encoding="utf-8")
-        parsed_xml = ET.fromstring(xml, parser=parser)
-
-        schema = load_from_xml(parsed_xml, strict=False)
-
-        base_prompt.append_to_prompt(cls.prompt_xml_prefix())
-        base_prompt.append_to_prompt("\n{{response_prompt}}\n")
-        base_prompt.append_to_prompt(cls.prompt_json_suffix())
-
-        return cls(schema, base_prompt, parsed_xml)
+    def from_aiml(cls, aiml_file: str) -> "Schema":
+        """Create an Schema from an XML file."""
+        response_schema, base_prompt, _ = read_aiml(aiml_file)
+        return cls(response_schema, base_prompt)
 
     def llm_ask(self, prompt) -> str:
-        return self.client.run(
-            prompt,
-            engine="text-davinci-003",
-            temperature=0,
-            max_tokens=2048,
-        )
+        # return self.client.run(
+        #     prompt,
+        #     engine="text-davinci-003",
+        #     temperature=0,
+        #     max_tokens=2048,
+        # )
 
-        # with open('response_as_dict.json', 'r') as f:
-        #     text = f.read()
+        # Read the output from the file 'response_as_dict.json'
+        with open("response_as_dict.json", "r") as f:
+            output = f.read()
+        return output
 
-        # return text
-
-    @staticmethod
-    def prompt_json_suffix():
-        return """\n\nReturn a valid JSON object that respects this XML format and extracts only the information requested in this document. Respect the types indicated in the XML -- the information you extract should be converted into the correct 'type'. Try to be as correct and concise as possible. Find all relevant information in the document. If you are unsure of the answer, enter 'None'. If you answer incorrectly, you will be asked again until you get it right which is expensive."""  # noqa: E501
-
-    @staticmethod
-    def prompt_xml_prefix():
-        return """\n\nGiven below is XML that describes the information to extract from this document and the tags to extract it into.\n\n"""  # noqa: E501
-
-    def ask_with_validation(self, text) -> str:
+    def ask_with_validation(self, text) -> Tuple[str, Dict, Dict]:
         """Ask a question, and validate the response."""
 
-        parsed_xml_copy = deepcopy(self.parsed_xml)
-        response_prompt = extract_prompt_from_xml(parsed_xml_copy)
+        parsed_aiml_copy = deepcopy(self.response_schema.parsed_aiml)
+        response_prompt = extract_prompt_from_xml(parsed_aiml_copy)
 
         response, response_as_dict, validated_response = self.validation_inner_loop(
             text, response_prompt, 0
         )
-
         return response, response_as_dict, validated_response
 
-    def validation_inner_loop(self, text: str, response_prompt: str, reask_ctr: int):
-        prompt = self.base_prompt.format(document=text).format(
-            response_prompt=response_prompt
-        )
-
+    def validation_inner_loop(
+        self, text: str, response_prompt: str, reask_ctr: int
+    ) -> Tuple[str, Dict, Dict]:
+        prompt = self.base_prompt.format(document=text).format(response=response_prompt)
         response = self.llm_ask(prompt)
 
         try:
@@ -181,9 +157,9 @@ class XSchema:
     ) -> str:
         """Prune tree of any elements that are not in `reasks`.
 
-        Return the tree with only the elements that are keys of `reasks` and their
-        parents. If `reasks` is None, return the entire tree. If an element is
-        removed, remove all ancestors that have no children.
+        Return the tree with only the elements that are keys of `reasks` and
+        their parents. If `reasks` is None, return the entire tree. If an
+        element is removed, remove all ancestors that have no children.
 
         Args:
             root: The XML tree.
@@ -219,12 +195,12 @@ class XSchema:
         Returns:
             The prompt.
         """
-        parsed_xml_copy = deepcopy(self.parsed_xml)
+        parsed_aiml_copy = deepcopy(self.response_schema.parsed_aiml)
         reasks_by_element = self.get_reasks_by_element(
-            reasks, parsed_xml=parsed_xml_copy
+            reasks, parsed_xml=parsed_aiml_copy
         )
         pruned_xml = self.get_pruned_tree(
-            root=parsed_xml_copy, reask_elements=list(reasks_by_element.keys())
+            root=parsed_aiml_copy, reask_elements=list(reasks_by_element.keys())
         )
         reask_prompt = extract_prompt_from_xml(pruned_xml, reasks_by_element)
 
@@ -247,11 +223,11 @@ class XSchema:
         validated_response = deepcopy(response)
 
         for field, value in validated_response.items():
-            if field not in self.schema:
+            if field not in self.response_schema:
                 logger.debug(f"Field {field} not in schema.")
                 continue
 
-            validated_response = self.schema[field].validate(
+            validated_response = self.response_schema[field].validate(
                 field, value, validated_response
             )
 
@@ -272,37 +248,18 @@ class XSchema:
 
             return s
 
-        schema = _print_dict(self.schema)
+        schema = _print_dict(self.response_schema)
 
-        return f"XSchema({schema})"
-
-
-def load_from_xml(tree: ET._Element, strict: bool = False) -> bool:
-    """Validate parsed XML, create a prompt and a Schema object."""
-
-    schema = {}
-
-    for child in tree:
-        if isinstance(child, ET._Comment):
-            continue
-        child_name = child.attrib["name"]
-        child_data_type = child.tag
-        child_data_type = types_registry[child_data_type]
-        child_data = child_data_type.from_xml(child, strict=strict)
-        schema[child_name] = child_data
-
-    return schema
+        return f"Schema({schema})"
 
 
-def get_correction_instruction(
-    reasks: List[tuple]
-) -> str:
+def get_correction_instruction(reasks: List[tuple]) -> str:
     """Construct a correction instruction.
 
     Args:
         reasks: List of tuples, where each tuple contains the path to the
-            reasked element, and the ReAsk object (which contains the error message describing why the
-            reask is necessary).
+            reasked element, and the ReAsk object (which contains the error
+            message describing why the reask is necessary).
         response: The response.
 
     Returns:
@@ -355,7 +312,7 @@ def extract_prompt_from_xml(
         if element in reasks:
 
             correction_prompt = get_correction_instruction(
-                reasks[element], 
+                reasks[element],
             )
             element.attrib["previous_feedback"] = correction_prompt
 

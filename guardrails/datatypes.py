@@ -1,5 +1,6 @@
 import warnings
 from typing import Any, Dict, List
+from types import SimpleNamespace
 
 from lxml import etree as ET
 
@@ -15,7 +16,7 @@ def get_validators(element: ET._Element, strict: bool = False) -> List["Validato
         A list of formatters.
     """
 
-    from guardrails.x_validators import types_to_validators, validators_registry
+    from guardrails.validators import types_to_validators, validators_registry
 
     if 'format' not in element.attrib:
         return []
@@ -211,6 +212,7 @@ class List(DataType):
             child_data_type = registry[child.tag]
             self.children["item"] = child_data_type.from_xml(child)
 
+        self.children = SimpleNamespace(**self.children)
 
 @register_type("object")
 class Object(DataType):
@@ -258,7 +260,7 @@ class Object(DataType):
         for child in element:
             child_data_type = registry[child.tag]
             self.children[child.attrib["name"]] = child_data_type.from_xml(child)
-        # TODO(shreya): Does this need to return anything?
+        self.children = SimpleNamespace(**self.children)
 
 
 # @register_type("key")
