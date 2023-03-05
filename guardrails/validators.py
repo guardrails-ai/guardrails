@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import List, Union, Any, Optional, Callable, Dict
 
 from guardrails.datatypes import registry as types_registry
+from guardrails.utils.reask_utils import ReAsk
 
 validators_registry = {}
 types_to_validators = defaultdict(list)
@@ -48,12 +49,6 @@ class EventDetail(BaseException):
     schema: Dict[str, Any]
     error_message: str
     debug_value: Any
-
-
-@dataclass
-class ReAsk:
-    incorrect_value: Any
-    error_message: str
 
 
 class Validator:
