@@ -11,7 +11,6 @@ import manifest
 
 from guardrails.prompt import Prompt
 from guardrails.response_schema import Response
-from guardrails.datatypes import DataType
 from guardrails.validators import ReAsk
 from guardrails.utils.aiml_utils import read_aiml
 
