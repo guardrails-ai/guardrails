@@ -73,7 +73,7 @@ class DataType:
 
     def __init__(self, validators: List, children: Dict[str, Any]) -> None:
         self.validators = validators
-        self.children = children
+        self._children = children
 
     @classmethod
     def from_str(self, s: str) -> "DataType":
@@ -94,6 +94,9 @@ class DataType:
         data_type.validators = get_validators(element, strict=strict)
         return data_type
 
+    @property
+    def children(self) -> SimpleNamespace:
+        return SimpleNamespace(**self._children)
 
 registry: Dict[str, DataType] = {}
 
@@ -189,10 +192,10 @@ class List(DataType):
                 # since the list itself is not present.
                 return schema
 
-        if len(self.children) == 0:
+        if len(self._children) == 0:
             return schema
 
-        item_type = list(self.children.values())[0]
+        item_type = list(self._children.values())[0]
 
         # TODO(shreya): Edge case: List of lists -- does this still work?
         for item in value:
@@ -210,9 +213,8 @@ class List(DataType):
                 # must conform to.
                 raise ValueError("List data type must have exactly one child.")
             child_data_type = registry[child.tag]
-            self.children["item"] = child_data_type.from_xml(child)
+            self._children["item"] = child_data_type.from_xml(child)
 
-        self.children = SimpleNamespace(**self.children)
 
 @register_type("object")
 class Object(DataType):
@@ -233,7 +235,7 @@ class Object(DataType):
                 # since the object itself is not present.
                 return schema
 
-        if len(self.children) == 0:
+        if len(self._children) == 0:
             return schema
 
         # Types of supported children
@@ -244,8 +246,7 @@ class Object(DataType):
         # TODO(shreya): Implement key type and value type later
 
         # Check for required keys
-        # for key, field in self.children.items():
-        for child_key, child_data_type in self.children.items():
+        for child_key, child_data_type in self._children.items():
             # Value should be a dictionary
             # child_key is an expected key that the schema defined
             # child_data_type is the data type of the expected key
@@ -259,8 +260,7 @@ class Object(DataType):
     def set_children(self, element: ET._Element):
         for child in element:
             child_data_type = registry[child.tag]
-            self.children[child.attrib["name"]] = child_data_type.from_xml(child)
-        self.children = SimpleNamespace(**self.children)
+            self._children[child.attrib["name"]] = child_data_type.from_xml(child)
 
 
 # @register_type("key")
