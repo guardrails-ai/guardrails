@@ -25,7 +25,7 @@ class Schema:
         base_prompt: Prompt,
         num_reasks: int = 1,
     ):
-        self.schema = schema
+        self.response_schema = schema
         self.base_prompt = base_prompt
         self.num_reasks = num_reasks
 
@@ -57,7 +57,7 @@ class Schema:
     def ask_with_validation(self, text) -> Tuple[str, Dict, Dict]:
         """Ask a question, and validate the response."""
 
-        parsed_aiml_copy = deepcopy(self.schema.parsed_aiml)
+        parsed_aiml_copy = deepcopy(self.response_schema.parsed_aiml)
         response_prompt = extract_prompt_from_xml(parsed_aiml_copy)
 
         response, response_as_dict, validated_response = self.validation_inner_loop(
@@ -196,7 +196,7 @@ class Schema:
         Returns:
             The prompt.
         """
-        parsed_aiml_copy = deepcopy(self.schema.parsed_aiml)
+        parsed_aiml_copy = deepcopy(self.response_schema.parsed_aiml)
         reasks_by_element = self.get_reasks_by_element(
             reasks, parsed_xml=parsed_aiml_copy
         )
@@ -224,11 +224,11 @@ class Schema:
         validated_response = deepcopy(response)
 
         for field, value in validated_response.items():
-            if field not in self.schema:
+            if field not in self.response_schema:
                 logger.debug(f"Field {field} not in schema.")
                 continue
 
-            validated_response = self.schema[field].validate(
+            validated_response = self.response_schema[field].validate(
                 field, value, validated_response
             )
 
@@ -249,7 +249,7 @@ class Schema:
 
             return s
 
-        schema = _print_dict(self.schema)
+        schema = _print_dict(self.response_schema)
 
         return f"Schema({schema})"
 
