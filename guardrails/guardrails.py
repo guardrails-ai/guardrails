@@ -15,6 +15,7 @@ from guardrails.utils.reask_utils import (
     get_reasks_by_element,
     get_pruned_tree,
     get_correction_instruction,
+    gather_reasks,
 )
 
 logger = logging.getLogger(__name__)
@@ -103,7 +104,7 @@ class Schema:
             The prompt.
         """
         parsed_aiml_copy = deepcopy(self.response_schema.parsed_aiml)
-        reasks_by_element = get_reasks_by_element(reasks, parsed_xml=parsed_aiml_copy)
+        reasks_by_element = get_reasks_by_element(reasks, parsed_aiml=parsed_aiml_copy)
         pruned_xml = get_pruned_tree(
             root=parsed_aiml_copy, reask_elements=list(reasks_by_element.keys())
         )
@@ -136,7 +137,7 @@ class Schema:
                 field, value, validated_response
             )
 
-        reasks = self.gather_reasks(validated_response)
+        reasks = gather_reasks(validated_response)
 
         return (validated_response, reasks)
 
