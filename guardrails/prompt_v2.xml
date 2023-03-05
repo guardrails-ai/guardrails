@@ -1,31 +1,30 @@
 <?xml version="1.0"?>
 <aiml>
 <script language='python'>
-from guardrails.validators import Validator, EventDetail, register_validator
-import random
+    from guardrails.validators import Validator, EventDetail, register_validator
+    import random
 
 
+    @register_validator(name="custom", data_type="any")
+    class CustomValidator(Validator):
+        def __init__(self, *args, **kwargs):
+            super(CustomValidator, self).__init__(*args, **kwargs)
 
-@register_validator(name="custom", data_type="any")
-class CustomValidator(Validator):
-    def __init__(self, *args, **kwargs):
-        super(CustomValidator, self).__init__(*args, **kwargs)
+        def validate(self, key: str, value: Any, schema: Union[Dict, List]):
+            """Validate that a value is within a range."""
 
-    def validate(self, key: str, value: Any, schema: Union[Dict, List]):
-        """Validate that a value is within a range."""
+            logger.debug(f"Validating {value} is in choices {self._choices}...")
 
-        logger.debug(f"Validating {value} is in choices {self._choices}...")
+            if random.random() > 0.5:
+                raise EventDetail(
+                    key,
+                    value,
+                    schema,
+                    f"Value {value} is not in choices {self._choices}.",
+                    None,
+                )
 
-        if random.random() > 0.5:
-            raise EventDetail(
-                key,
-                value,
-                schema,
-                f"Value {value} is not in choices {self._choices}.",
-                None,
-            )
-
-        return schema
+            return schema
 </script>
 
 
@@ -58,4 +57,5 @@ Given the following document, answer the following questions. If the answer does
     </list>
     <string name='interest_rates' description='What are the interest rates offered by the bank on savings and checking accounts, loans, and credit products?' format="one-line" on-fail-one-line="noop"/>
 </response>
+
 </aiml>

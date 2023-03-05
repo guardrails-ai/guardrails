@@ -7,9 +7,10 @@ from guardrails.datatypes import registry as types_registry
 from guardrails.validators import Validator
 from guardrails.utils.constants import constants
 from guardrails.prompt import Prompt
+from guardrails.response_schema import Response
 
 
-def read_aiml(aiml_file: str) -> Tuple[Dict, ET._Element, Prompt, Dict]:
+def read_aiml(aiml_file: str) -> Tuple[Response, Prompt, Dict]:
     """Read an AIML file.
 
     Args:
@@ -37,24 +38,22 @@ def read_aiml(aiml_file: str) -> Tuple[Dict, ET._Element, Prompt, Dict]:
     if script is not None:
         script = load_script(script)
 
-    return response_schema, raw_response_schema, prompt, script
+    return response_schema, prompt, script
 
 
-def load_response_schema(root: ET._Element) -> Dict[str, List[Validator]]:
+def load_response_schema(root: ET._Element) -> Response:
     """Validate parsed XML, create a prompt and a Schema object."""
 
-    schema = {}
+    response = Response(parsed_aiml=root)
 
     for child in root:
         if isinstance(child, ET._Comment):
             continue
         child_name = child.attrib["name"]
-        child_data_type = child.tag
-        child_data_type = types_registry[child_data_type]
-        child_data = child_data_type.from_xml(child)
-        schema[child_name] = child_data
+        child_data = types_registry[child.tag].from_xml(child)
+        response[child_name] = child_data
 
-    return schema
+    return response
 
 
 def load_prompt(root: ET._Element) -> Prompt:

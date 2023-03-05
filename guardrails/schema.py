@@ -10,6 +10,7 @@ import rich
 import manifest
 
 from guardrails.prompt import Prompt
+from guardrails.response_schema import Response
 from guardrails.datatypes import DataType
 from guardrails.validators import ReAsk
 from guardrails.utils.aiml_utils import read_aiml
@@ -17,17 +18,15 @@ from guardrails.utils.aiml_utils import read_aiml
 logger = logging.getLogger(__name__)
 
 
-class XSchema:
+class Schema:
     def __init__(
         self,
-        schema: Dict[str, DataType],
+        schema: Response,
         base_prompt: Prompt,
-        parsed_xml: ET.Element,
         num_reasks: int = 1,
     ):
-        self.schema: Dict[str, DataType] = schema
+        self.schema = schema
         self.base_prompt = base_prompt
-        self.parsed_xml = parsed_xml
         self.num_reasks = num_reasks
 
         self.openai_api_key = os.environ.get("OPENAI_API_KEY", None)
@@ -37,10 +36,10 @@ class XSchema:
         )
 
     @classmethod
-    def from_aiml(cls, aiml_file: str) -> "XSchema":
-        """Create an XSchema from an XML file."""
-        response_schema, parsed_xml, base_prompt, _ = read_aiml(aiml_file)
-        return cls(response_schema, base_prompt, parsed_xml)
+    def from_aiml(cls, aiml_file: str) -> "Schema":
+        """Create an Schema from an XML file."""
+        response_schema, base_prompt, _ = read_aiml(aiml_file)
+        return cls(response_schema, base_prompt)
 
     def llm_ask(self, prompt) -> str:
         # return self.client.run(
@@ -51,25 +50,25 @@ class XSchema:
         # )
 
         # Read the output from the file 'response_as_dict.json'
-        with open('response_as_dict.json', 'r') as f:
+        with open("response_as_dict.json", "r") as f:
             output = f.read()
         return output
 
-    def ask_with_validation(self, text) -> str:
+    def ask_with_validation(self, text) -> Tuple[str, Dict, Dict]:
         """Ask a question, and validate the response."""
 
-        parsed_xml_copy = deepcopy(self.parsed_xml)
-        response_prompt = extract_prompt_from_xml(parsed_xml_copy)
+        parsed_aiml_copy = deepcopy(self.schema.parsed_aiml)
+        response_prompt = extract_prompt_from_xml(parsed_aiml_copy)
 
         response, response_as_dict, validated_response = self.validation_inner_loop(
             text, response_prompt, 0
         )
         return response, response_as_dict, validated_response
 
-    def validation_inner_loop(self, text: str, response_prompt: str, reask_ctr: int):
-        prompt = self.base_prompt.format(document=text).format(
-            response=response_prompt
-        )
+    def validation_inner_loop(
+        self, text: str, response_prompt: str, reask_ctr: int
+    ) -> Tuple[str, Dict, Dict]:
+        prompt = self.base_prompt.format(document=text).format(response=response_prompt)
         response = self.llm_ask(prompt)
 
         try:
@@ -197,12 +196,12 @@ class XSchema:
         Returns:
             The prompt.
         """
-        parsed_xml_copy = deepcopy(self.parsed_xml)
+        parsed_aiml_copy = deepcopy(self.schema.parsed_aiml)
         reasks_by_element = self.get_reasks_by_element(
-            reasks, parsed_xml=parsed_xml_copy
+            reasks, parsed_xml=parsed_aiml_copy
         )
         pruned_xml = self.get_pruned_tree(
-            root=parsed_xml_copy, reask_elements=list(reasks_by_element.keys())
+            root=parsed_aiml_copy, reask_elements=list(reasks_by_element.keys())
         )
         reask_prompt = extract_prompt_from_xml(pruned_xml, reasks_by_element)
 
@@ -252,7 +251,7 @@ class XSchema:
 
         schema = _print_dict(self.schema)
 
-        return f"XSchema({schema})"
+        return f"Schema({schema})"
 
 
 def get_correction_instruction(reasks: List[tuple]) -> str:
