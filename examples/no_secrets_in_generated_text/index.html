@@ -10,14 +10,14 @@
         <meta name="author" content="Shreya Rajpal">
       
       
-        <link rel="canonical" href="https://getguardrails.com/examples/bug_free_python_code/">
+        <link rel="canonical" href="https://getguardrails.com/examples/no_secrets_in_generated_text/">
       
       <link rel="icon" href="../../img/favicon.ico">
       <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-8.5.10">
     
     
       
-        <title>Generating bug-free Python code - Guardrails.ai</title>
+        <title>No secrets in generated text - Guardrails.ai</title>
       
     
     
@@ -119,7 +119,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#generating-bug-free-leetcode-solutions" class="md-skip">
+        <a href="#generating-strings-that-dont-have-any-secrets" class="md-skip">
           Skip to content
         </a>
       
@@ -151,7 +151,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Generating bug-free Python code
+              No secrets in generated text
             
           </span>
         </div>
@@ -540,6 +540,20 @@
               
   
   
+  
+    <li class="md-nav__item">
+      <a href="../bug_free_python_code/" class="md-nav__link">
+        Generating bug-free Python code
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
     
   
   
@@ -552,12 +566,12 @@
       
       
         <label class="md-nav__link md-nav__link--active" for="__toc">
-          Generating bug-free Python code
+          No secrets in generated text
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <a href="./" class="md-nav__link md-nav__link--active">
-        Generating bug-free Python code
+        No secrets in generated text
       </a>
       
         
@@ -583,8 +597,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#step-1-generating-rail-spec" class="md-nav__link">
-    Step 1: Generating RAIL Spec
+  <a href="#step-1-create-the-rail-spec" class="md-nav__link">
+    Step 1: Create the RAIL Spec
   </a>
   
 </li>
@@ -607,20 +621,6 @@
   
 </nav>
       
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../no_secrets_in_generated_text/" class="md-nav__link">
-        No secrets in generated text
-      </a>
     </li>
   
 
@@ -708,8 +708,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#step-1-generating-rail-spec" class="md-nav__link">
-    Step 1: Generating RAIL Spec
+  <a href="#step-1-create-the-rail-spec" class="md-nav__link">
+    Step 1: Create the RAIL Spec
   </a>
   
 </li>
@@ -745,7 +745,7 @@
 
                   
 
-  <a href="https://github.com/ShreyaR/guardrails/edit/master/docs/examples/bug_free_python_code.ipynb" title="Edit this page" class="md-content__button md-icon">
+  <a href="https://github.com/ShreyaR/guardrails/edit/master/docs/examples/no_secrets_in_generated_text.ipynb" title="Edit this page" class="md-content__button md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25Z"/></svg>
   </a>
@@ -785,22 +785,28 @@
 <div class="cell border-box-sizing text_cell rendered">
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h1 id="generating-bug-free-leetcode-solutions">Generating Bug Free Leetcode Solutions</h1>
+<h1 id="generating-strings-that-dont-have-any-secrets">Generating strings that don't have any secrets</h1>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>To download this tutorial as a Jupyter notebook, click <a href="https://github.com/ShreyaR/guardrails/blob/main/docs/examples/bug_free_python_code.ipynb">here</a>.</p>
+<p>To download this example as a Jupyter notebook, click <a href="https://github.com/ShreyaR/guardrails/blob/main/docs/examples/no_secrets_in_generated_text.ipynb">here</a>.</p>
 </div>
-<p>In this example, we want to solve String Maniuplation leetcode problems such that the code is bug free.</p>
-<p>We make the assumption that:</p>
-<ol>
-<li>We don't need any external libraries that are not already installed in the environment.</li>
-<li>We are able to execute the code in the environment.</li>
-</ol>
+<p>In this example, we will use Guardrails to generate strings that don't have any secrets.</p>
+<p>This is also a good example to show how to use the <code>script</code> element of the <code>RAIL</code> specification. In this case, we will use the <code>script</code> element to create a custom Validator that checks if a string has any secrets.</p>
 <h2 id="objective">Objective</h2>
-<p>We want to generate bug-free code for solving leetcode problems. In this example, we don't account for semantic bugs, only for syntactic bugs.</p>
-<p>In short, we want to make sure that the code can be executed without any errors.</p>
-<h2 id="step-1-generating-rail-spec">Step 1: Generating <code>RAIL</code> Spec</h2>
-<p>Ordinarily, we could create a separate <code>RAIL</code> spec in a file. However, for the sake of this example, we will generate the <code>RAIL</code> spec in the notebook as a string.</p>
+<p>We want to ask help with an API, but make sure that the generated text has no secrets.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="step-1-create-the-rail-spec">Step 1: Create the RAIL Spec</h2>
+<p>Ordinarily, we would create an RAIL spec in a separate file. For the purposes of this example, we will create the spec in this notebook as a string following the RAIL syntax. For more information on RAIL, see the <a href="rail/output.md">RAIL documentation</a>.</p>
+<p>In this RAIL spec, we:</p>
+<ol>
+<li>Create a <code>script</code> element that creates a custom Validator that checks if a string has any secrets. This is a simple example, but you can use this to create more complex Validators. For more information on creating custom Validators, see the <a href="validators.md">Validators documentation</a>.</li>
+<li>Create a <code>output</code> schema that returns an object with a <code>api_help</code> key.</li>
+</ol>
 </div>
 </div>
 </div>
@@ -810,25 +816,52 @@
 <div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">rail_str</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="s2">&lt;rail version=&quot;0.1&quot;&gt;</span>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="s2">&lt;output&gt;</span>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="s2">    &lt;pythoncode</span>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="s2">        name=&quot;python_code&quot;</span>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="s2">        format=&quot;bug-free-python&quot;</span>
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="s2">        on-fail-bug-free-python=&quot;reask&quot;</span>
-</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="s2">    /&gt;</span>
-</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="s2">&lt;/output&gt;</span>
-</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="s2">&lt;script language=&#39;python&#39;&gt;</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="s2">from dataclasses import dataclass</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="s2">from guardrails.validators import Validator, EventDetail, register_validator</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="s2">import re</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="s2">from typing import Dict, List</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="s2">OPENAI_KEY_PATTERN = re.compile(r&quot;sk-[a-zA-Z0-9]</span><span class="si">{24}</span><span class="s2">&quot;)</span>
 </span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>
-</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="s2">&lt;prompt&gt;</span>
-</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="s2">Given the following high level leetcode problem description, write a short Python code snippet that solves the problem.</span>
-</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>
-</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="s2">Problem Description:</span>
-</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="s2">{{leetcode_problem}}</span>
-</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>
-</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="s2">@complete_json_suffix&lt;/prompt&gt;</span>
-</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>
-</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a><span class="s2">&lt;/rail&gt;</span>
-</span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="s2">&quot;&quot;&quot;</span>
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="s2">@register_validator(name=&quot;no-code-secrets&quot;, data_type=&quot;string&quot;)</span>
+</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="s2">class NoCodeSecrets(Validator):</span>
+</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>
+</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="s2">    def validate(self, key, value, schema) -&gt; Dict:</span>
+</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="s2">        global OPENAI_KEY_PATTERN</span>
+</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>
+</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="s2">        if re.search(OPENAI_KEY_PATTERN, value) is not None:</span>
+</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a><span class="s2">            # Corrected value should replace the OpenAI API key with &quot;sk-xxx&quot;</span>
+</span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="s2">            correct_value = re.sub(OPENAI_KEY_PATTERN, &quot;sk-xxx&quot;, value)</span>
+</span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a><span class="s2">            raise EventDetail(</span>
+</span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a><span class="s2">                key,</span>
+</span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a><span class="s2">                value,</span>
+</span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a><span class="s2">                schema,</span>
+</span><span id="__span-0-27"><a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a><span class="s2">                f&quot;Value </span><span class="si">{value}</span><span class="s2"> is an OpenAI API key.&quot;,</span>
+</span><span id="__span-0-28"><a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a><span class="s2">                correct_value,</span>
+</span><span id="__span-0-29"><a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a><span class="s2">            )</span>
+</span><span id="__span-0-30"><a id="__codelineno-0-30" name="__codelineno-0-30" href="#__codelineno-0-30"></a>
+</span><span id="__span-0-31"><a id="__codelineno-0-31" name="__codelineno-0-31" href="#__codelineno-0-31"></a><span class="s2">        return schema</span>
+</span><span id="__span-0-32"><a id="__codelineno-0-32" name="__codelineno-0-32" href="#__codelineno-0-32"></a><span class="s2">&lt;/script&gt;</span>
+</span><span id="__span-0-33"><a id="__codelineno-0-33" name="__codelineno-0-33" href="#__codelineno-0-33"></a>
+</span><span id="__span-0-34"><a id="__codelineno-0-34" name="__codelineno-0-34" href="#__codelineno-0-34"></a>
+</span><span id="__span-0-35"><a id="__codelineno-0-35" name="__codelineno-0-35" href="#__codelineno-0-35"></a><span class="s2">&lt;output&gt;</span>
+</span><span id="__span-0-36"><a id="__codelineno-0-36" name="__codelineno-0-36" href="#__codelineno-0-36"></a><span class="s2">    &lt;string name=&quot;api_help&quot; description=&quot;Show an example curl command for using openai Completion API&quot; format=&quot;no-code-secrets&quot; on-fail-no-code-secrets=&quot;fix&quot; /&gt;</span>
+</span><span id="__span-0-37"><a id="__codelineno-0-37" name="__codelineno-0-37" href="#__codelineno-0-37"></a><span class="s2">&lt;/output&gt;</span>
+</span><span id="__span-0-38"><a id="__codelineno-0-38" name="__codelineno-0-38" href="#__codelineno-0-38"></a>
+</span><span id="__span-0-39"><a id="__codelineno-0-39" name="__codelineno-0-39" href="#__codelineno-0-39"></a>
+</span><span id="__span-0-40"><a id="__codelineno-0-40" name="__codelineno-0-40" href="#__codelineno-0-40"></a><span class="s2">&lt;prompt&gt;</span>
+</span><span id="__span-0-41"><a id="__codelineno-0-41" name="__codelineno-0-41" href="#__codelineno-0-41"></a>
+</span><span id="__span-0-42"><a id="__codelineno-0-42" name="__codelineno-0-42" href="#__codelineno-0-42"></a><span class="s2">How do I use OpenAI&#39;s Completion API?</span>
+</span><span id="__span-0-43"><a id="__codelineno-0-43" name="__codelineno-0-43" href="#__codelineno-0-43"></a>
+</span><span id="__span-0-44"><a id="__codelineno-0-44" name="__codelineno-0-44" href="#__codelineno-0-44"></a><span class="s2">@complete_json_suffix</span>
+</span><span id="__span-0-45"><a id="__codelineno-0-45" name="__codelineno-0-45" href="#__codelineno-0-45"></a><span class="s2">&lt;/prompt&gt;</span>
+</span><span id="__span-0-46"><a id="__codelineno-0-46" name="__codelineno-0-46" href="#__codelineno-0-46"></a>
+</span><span id="__span-0-47"><a id="__codelineno-0-47" name="__codelineno-0-47" href="#__codelineno-0-47"></a>
+</span><span id="__span-0-48"><a id="__codelineno-0-48" name="__codelineno-0-48" href="#__codelineno-0-48"></a><span class="s2">&lt;/rail&gt;</span>
+</span><span id="__span-0-49"><a id="__codelineno-0-49" name="__codelineno-0-49" href="#__codelineno-0-49"></a><span class="s2">&quot;&quot;&quot;</span>
 </span></code></pre></div>
 
 </div>
@@ -837,10 +870,10 @@
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="step-2-create-a-guard-object-with-the-rail-spec">Step 2: Create a <code>Guard</code> object with the RAIL Spec</h2>
-<p>We create a <code>gd.Guard</code> object that will check, validate and correct the generated code. This object:</p>
+<p>We create a <code>gd.Guard</code> object that will check, validate and correct the output of the LLM. This object:</p>
 <ol>
-<li>Enforces the quality criteria specified in the RAIL spec (i.e. bug free code).</li>
-<li>Takes corrective action when the quality criteria are not met (i.e. reasking the LLM).</li>
+<li>Enforces the quality criteria specified in the RAIL spec.</li>
+<li>Takes corrective action when the quality criteria are not met.</li>
 <li>Compiles the schema and type info from the RAIL spec and adds it to the prompt.</li>
 </ol>
 </div>
@@ -861,7 +894,7 @@
 <div class="cell border-box-sizing text_cell rendered">
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>The <code>Guard</code> object compiles the output schema and adds it to the prompt. We can see the final prompt below:</p>
+<p>We see the prompt that will be sent to the LLM.</p>
 </div>
 </div>
 </div>
@@ -877,17 +910,15 @@
 <div class="output_area">
 <div class="output_html rendered_html output_subarea ">
 <pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">
-Given the following high level leetcode problem description, write a short Python code snippet that solves the 
-problem.
 
-Problem Description:
-<span style="font-weight: bold">{</span>leetcode_problem<span style="font-weight: bold">}</span>
+How do I use OpenAI's Completion API?
 
 
 Given below is XML that describes the information to extract from this document and the tags to extract it into.
 
 <span style="font-weight: bold">&lt;</span><span style="color: #ff00ff; text-decoration-color: #ff00ff; font-weight: bold">output</span><span style="color: #000000; text-decoration-color: #000000">&gt;</span>
-<span style="color: #000000; text-decoration-color: #000000">    &lt;pythoncode </span><span style="color: #808000; text-decoration-color: #808000">name</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"python_code"</span><span style="color: #000000; text-decoration-color: #000000"> </span><span style="color: #808000; text-decoration-color: #808000">format</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"bug-free"</span><span style="color: #800080; text-decoration-color: #800080">/</span><span style="color: #000000; text-decoration-color: #000000">&gt;</span>
+<span style="color: #000000; text-decoration-color: #000000">    &lt;string </span><span style="color: #808000; text-decoration-color: #808000">name</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"api_help"</span><span style="color: #000000; text-decoration-color: #000000"> </span><span style="color: #808000; text-decoration-color: #808000">description</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"Show an example curl command for using openai Completion API"</span><span style="color: #000000; text-decoration-color: #000000"> </span>
+<span style="color: #808000; text-decoration-color: #808000">format</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"no-code-secrets"</span><span style="color: #800080; text-decoration-color: #800080">/</span><span style="color: #000000; text-decoration-color: #000000">&gt;</span>
 <span style="color: #000000; text-decoration-color: #000000">&lt;</span><span style="color: #800080; text-decoration-color: #800080">/</span><span style="color: #ff00ff; text-decoration-color: #ff00ff">output</span><span style="color: #000000; text-decoration-color: #000000">&gt;</span>
 
 
@@ -905,6 +936,7 @@ Given below is XML that describes the information to extract from this document 
 <span style="color: #800080; text-decoration-color: #800080">/</span><span style="color: #000000; text-decoration-color: #000000">&gt;&lt;</span><span style="color: #800080; text-decoration-color: #800080">/</span><span style="color: #ff00ff; text-decoration-color: #ff00ff">object</span><span style="color: #000000; text-decoration-color: #000000">&gt;` =</span><span style="font-weight: bold">&gt;</span> `<span style="font-weight: bold">{{</span><span style="color: #008000; text-decoration-color: #008000">'baz'</span>: <span style="font-weight: bold">{{</span><span style="color: #008000; text-decoration-color: #008000">'foo'</span>: <span style="color: #008000; text-decoration-color: #008000">'Some String'</span>, <span style="color: #008000; text-decoration-color: #008000">'index'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">1</span><span style="font-weight: bold">}}}}</span>`
 
 JSON Object:
+
 </pre>
 </div>
 </div>
@@ -923,17 +955,12 @@ JSON Object:
 
 <div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">import</span> <span class="nn">openai</span>
 </span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="n">leetcode_problem</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
-</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="s2">Given a string s, find the longest palindromic substring in s. You may assume that the maximum length of s is 1000.</span>
-</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="s2">&quot;&quot;&quot;</span>
-</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>
-</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="n">raw_llm_response</span><span class="p">,</span> <span class="n">validated_response</span> <span class="o">=</span> <span class="n">guard</span><span class="p">(</span>
-</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>    <span class="n">openai</span><span class="o">.</span><span class="n">Completion</span><span class="o">.</span><span class="n">create</span><span class="p">,</span>
-</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>    <span class="n">prompt_params</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;leetcode_problem&#39;</span><span class="p">:</span> <span class="n">leetcode_problem</span><span class="p">},</span>
-</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>    <span class="n">engine</span><span class="o">=</span><span class="s1">&#39;text-davinci-003&#39;</span><span class="p">,</span>
-</span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>    <span class="n">max_tokens</span><span class="o">=</span><span class="mi">2048</span><span class="p">,</span>
-</span><span id="__span-3-12"><a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>    <span class="n">temperature</span><span class="o">=</span><span class="mi">0</span>
-</span><span id="__span-3-13"><a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="p">)</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="n">raw_llm_response</span><span class="p">,</span> <span class="n">validated_response</span> <span class="o">=</span> <span class="n">guard</span><span class="p">(</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>    <span class="n">openai</span><span class="o">.</span><span class="n">Completion</span><span class="o">.</span><span class="n">create</span><span class="p">,</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>    <span class="n">engine</span><span class="o">=</span><span class="s1">&#39;text-davinci-003&#39;</span><span class="p">,</span>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>    <span class="n">max_tokens</span><span class="o">=</span><span class="mi">2048</span><span class="p">,</span>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>    <span class="n">temperature</span><span class="o">=</span><span class="mi">0</span>
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="p">)</span>
 </span></code></pre></div>
 
 </div>
@@ -941,9 +968,8 @@ JSON Object:
 <div class="cell border-box-sizing text_cell rendered">
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>Running the cell above returns:
-1. The raw LLM text output as a single string.
-2. A dictionary where the key is <code>python_code</code> and the value is the generated code.</p>
+<p>The <code>guard</code> wrapper returns the raw_llm_respose (which is a simple string), and the validated and corrected output (which is a dictionary).</p>
+<p>We can see that the output is a dictionary with the correct schema and types.</p>
 </div>
 </div>
 </div>
@@ -959,72 +985,9 @@ JSON Object:
 <div class="output_area">
 <div class="output_html rendered_html output_subarea ">
 <pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace"><span style="font-weight: bold">{</span>
-    <span style="color: #008000; text-decoration-color: #008000">'python_code'</span>: <span style="color: #008000; text-decoration-color: #008000">"def longestPalindrome(s):\n    longest_palindrome = ''\n    for i in range(len(s)):\n        </span>
-<span style="color: #008000; text-decoration-color: #008000">for j in range(i, len(s)):\n            substring = s[i:j+1]\n            if substring == substring[::-1] and </span>
-<span style="color: #008000; text-decoration-color: #008000">len(substring) &gt; len(longest_palindrome):\n                longest_palindrome = substring\n    return </span>
-<span style="color: #008000; text-decoration-color: #008000">longest_palindrome"</span>
+    <span style="color: #008000; text-decoration-color: #008000">'api_help'</span>: <span style="color: #008000; text-decoration-color: #008000">'curl -X POST -H \'Content-Type: application/json\' -d \'{"prompt": "The quick brown fox", </span>
+<span style="color: #008000; text-decoration-color: #008000">"max_tokens": 10}\' https://api.openai.com/v1/engines/completion/completions'</span>
 <span style="font-weight: bold">}</span>
-</pre>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered">
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>Here's the generated code:</p>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-
-<div class="language-python highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nb">print</span><span class="p">(</span><span class="n">validated_response</span><span class="p">[</span><span class="s1">&#39;python_code&#39;</span><span class="p">])</span>
-</span></code></pre></div>
-
-</div>
-<div class="output_wrapper">
-<div class="output">
-<div class="output_area">
-<div class="output_html rendered_html output_subarea ">
-<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">def <span style="color: #800080; text-decoration-color: #800080; font-weight: bold">longestPalindrome</span><span style="font-weight: bold">(</span>s<span style="font-weight: bold">)</span>:
-    longest_palindrome = <span style="color: #008000; text-decoration-color: #008000">''</span>
-    for i in <span style="color: #800080; text-decoration-color: #800080; font-weight: bold">range</span><span style="font-weight: bold">(</span><span style="color: #800080; text-decoration-color: #800080; font-weight: bold">len</span><span style="font-weight: bold">(</span>s<span style="font-weight: bold">))</span>:
-        for j in <span style="color: #800080; text-decoration-color: #800080; font-weight: bold">range</span><span style="font-weight: bold">(</span>i, <span style="color: #800080; text-decoration-color: #800080; font-weight: bold">len</span><span style="font-weight: bold">(</span>s<span style="font-weight: bold">))</span>:
-            substring = s
-            if substring == substring<span style="font-weight: bold">[</span>::<span style="color: #008080; text-decoration-color: #008080; font-weight: bold">-1</span><span style="font-weight: bold">]</span> and <span style="color: #800080; text-decoration-color: #800080; font-weight: bold">len</span><span style="font-weight: bold">(</span>substring<span style="font-weight: bold">)</span> &gt; <span style="color: #800080; text-decoration-color: #800080; font-weight: bold">len</span><span style="font-weight: bold">(</span>longest_palindrome<span style="font-weight: bold">)</span>:
-                longest_palindrome = substring
-    return longest_palindrome
-</pre>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered">
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>We can confirm that the code is bug free by executing the code in the environment.</p>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-
-<div class="language-python highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="k">try</span><span class="p">:</span>
-</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>    <span class="n">exec</span><span class="p">(</span><span class="n">validated_response</span><span class="p">[</span><span class="s1">&#39;python_code&#39;</span><span class="p">])</span>
-</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Success!&#39;</span><span class="p">)</span>
-</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Failed!&#39;</span><span class="p">)</span>
-</span></code></pre></div>
-
-</div>
-<div class="output_wrapper">
-<div class="output">
-<div class="output_area">
-<div class="output_html rendered_html output_subarea ">
-<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">Success!
 </pre>
 </div>
 </div>
@@ -1053,7 +1016,7 @@ JSON Object:
     <nav class="md-footer__inner md-grid" aria-label="Footer" >
       
         
-        <a href="../extracting_entities/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Extracting entities from ToS" rel="prev">
+        <a href="../bug_free_python_code/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Generating bug-free Python code" rel="prev">
           <div class="md-footer__button md-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
           </div>
@@ -1062,20 +1025,20 @@ JSON Object:
               <span class="md-footer__direction">
                 Previous
               </span>
-              Extracting entities from ToS
+              Generating bug-free Python code
             </div>
           </div>
         </a>
       
       
         
-        <a href="../no_secrets_in_generated_text/" class="md-footer__link md-footer__link--next" aria-label="Next: No secrets in generated text" rel="next">
+        <a href="../syntax_error_free_sql/" class="md-footer__link md-footer__link--next" aria-label="Next: Natural language to bug-free SQL" rel="next">
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
                 Next
               </span>
-              No secrets in generated text
+              Natural language to bug-free SQL
             </div>
           </div>
           <div class="md-footer__button md-icon">

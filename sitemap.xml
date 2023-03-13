@@ -31,6 +31,26 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
+         <loc>https://getguardrails.com/examples/no_secrets_in_generated_text/</loc>
+         <lastmod>2023-03-13</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://getguardrails.com/examples/recipe_generation/</loc>
+         <lastmod>2023-03-13</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://getguardrails.com/examples/syntax_error_free_sql/</loc>
+         <lastmod>2023-03-13</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://getguardrails.com/examples/valid_chess_moves/</loc>
+         <lastmod>2023-03-13</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
          <loc>https://getguardrails.com/notebooks/getting_started/</loc>
          <lastmod>2023-03-13</lastmod>
          <changefreq>daily</changefreq>
