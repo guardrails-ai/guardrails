@@ -165,7 +165,7 @@ class ValidRange(Validator):
         self._min = min
         self._max = max
 
-    def validate(self, key, str, value: Any, schema: Union[Dict, List]) -> Dict:
+    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
         """Validate that a value is within a range."""
 
         logger.debug(f"Validating {value} is in range {self._min} - {self._max}...")

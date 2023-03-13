@@ -11,3 +11,5 @@ settings.json
 site/*
 guardrails.log
 guardrails_ai.egg-info/
+build/*
+dist/*
