@@ -159,6 +159,13 @@ class Float(ScalarType):
     """
 
 
+@register_type("bool")
+class Boolean(ScalarType):
+    """
+    Element tag: `<bool>`
+    """
+
+
 @register_type("date")
 class Date(ScalarType):
     """
