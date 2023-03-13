@@ -108,10 +108,15 @@ plugins:
             show_inheritance: true
             show_private: false
             show_special_members: false
-  - mkdocs-jupyter:
-      execute_notebooks: true
-      kernel_name: python3
-      extra_arguments:
-        - "--InlineBackend.figure_format=svg"
-      include_source: True
+  - mknotebooks:
+      execute: false
+      timeout: 100
+      allow_errors: false
+  # - mkdocs-jupyter:
+  #     execute_notebooks: true
+  #     kernel_name: python3
+  #     extra_arguments:
+  #       - "--InlineBackend.figure_format=svg"
+  #     include_source: True
+
 
