@@ -10,14 +10,14 @@
         <meta name="author" content="Shreya Rajpal">
       
       
-        <link rel="canonical" href="https://getguardrails.com/examples/syntax_error_free_sql/">
+        <link rel="canonical" href="https://getguardrails.com/rail/script/">
       
       <link rel="icon" href="../../img/favicon.ico">
       <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-8.5.10">
     
     
       
-        <title>Natural language to bug-free SQL - Guardrails.ai</title>
+        <title>(Experimental) Script Element - Guardrails.ai</title>
       
     
     
@@ -119,7 +119,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#natural-language-to-bug-free-sql" class="md-skip">
+        <a href="#script-element" class="md-skip">
           Skip to content
         </a>
       
@@ -151,7 +151,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Natural language to bug-free SQL
+              (Experimental) Script Element
             
           </span>
         </div>
@@ -312,14 +312,16 @@
 
   
   
+    
+  
   
     
       
     
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" data-md-toggle="__nav_3" type="checkbox" id="__nav_3" checked>
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3" type="checkbox" id="__nav_3" checked>
       
       
       
@@ -342,7 +344,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../rail/" class="md-nav__link">
+      <a href="../" class="md-nav__link">
         Overview
       </a>
     </li>
@@ -356,7 +358,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../rail/output/" class="md-nav__link">
+      <a href="../output/" class="md-nav__link">
         Output Element
       </a>
     </li>
@@ -370,7 +372,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../rail/prompt/" class="md-nav__link">
+      <a href="../prompt/" class="md-nav__link">
         Prompt Element
       </a>
     </li>
@@ -382,11 +384,59 @@
               
   
   
+    
   
-    <li class="md-nav__item">
-      <a href="../../rail/script/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          (Experimental) Script Element
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         (Experimental) Script Element
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#adding-a-custom-validator" class="md-nav__link">
+    🔐 Adding a custom Validator
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adding-a-custom-datatype" class="md-nav__link">
+    🧭 Adding a custom DataType
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -496,16 +546,14 @@
 
   
   
-    
-  
   
     
       
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_5" type="checkbox" id="__nav_5" checked>
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" data-md-toggle="__nav_5" type="checkbox" id="__nav_5" checked>
       
       
       
@@ -528,7 +576,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../extracting_entities/" class="md-nav__link">
+      <a href="../../examples/extracting_entities/" class="md-nav__link">
         Extracting entities from ToS
       </a>
     </li>
@@ -542,7 +590,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../bug_free_python_code/" class="md-nav__link">
+      <a href="../../examples/bug_free_python_code/" class="md-nav__link">
         Generating bug-free Python code
       </a>
     </li>
@@ -556,7 +604,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../no_secrets_in_generated_text/" class="md-nav__link">
+      <a href="../../examples/no_secrets_in_generated_text/" class="md-nav__link">
         No secrets in generated text
       </a>
     </li>
@@ -568,80 +616,11 @@
               
   
   
-    
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          Natural language to bug-free SQL
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../examples/syntax_error_free_sql/" class="md-nav__link">
         Natural language to bug-free SQL
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#objective" class="md-nav__link">
-    Objective
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#step-0-setup" class="md-nav__link">
-    Step 0: Setup
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#step-1-create-the-rail-spec" class="md-nav__link">
-    Step 1: Create the RAIL Spec
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#step-2-create-a-guard-object-with-the-rail-spec" class="md-nav__link">
-    Step 2: Create a Guard object with the RAIL Spec
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#step-3-wrap-the-llm-api-call-with-guard" class="md-nav__link">
-    Step 3: Wrap the LLM API call with Guard
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -653,7 +632,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../recipe_generation/" class="md-nav__link">
+      <a href="../../examples/recipe_generation/" class="md-nav__link">
         Vegan Mac & Cheese Recipe Generator
       </a>
     </li>
@@ -667,7 +646,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../valid_chess_moves/" class="md-nav__link">
+      <a href="../../examples/valid_chess_moves/" class="md-nav__link">
         Using GPT to play valid chess moves
       </a>
     </li>
@@ -708,36 +687,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#objective" class="md-nav__link">
-    Objective
+  <a href="#adding-a-custom-validator" class="md-nav__link">
+    🔐 Adding a custom Validator
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#step-0-setup" class="md-nav__link">
-    Step 0: Setup
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#step-1-create-the-rail-spec" class="md-nav__link">
-    Step 1: Create the RAIL Spec
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#step-2-create-a-guard-object-with-the-rail-spec" class="md-nav__link">
-    Step 2: Create a Guard object with the RAIL Spec
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#step-3-wrap-the-llm-api-call-with-guard" class="md-nav__link">
-    Step 3: Wrap the LLM API call with Guard
+  <a href="#adding-a-custom-datatype" class="md-nav__link">
+    🧭 Adding a custom DataType
   </a>
   
 </li>
@@ -759,256 +717,86 @@
 
                   
 
-  <a href="https://github.com/ShreyaR/guardrails/edit/master/docs/examples/syntax_error_free_sql.ipynb" title="Edit this page" class="md-content__button md-icon">
+  <a href="https://github.com/ShreyaR/guardrails/edit/master/docs/rail/script.md" title="Edit this page" class="md-content__button md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25Z"/></svg>
   </a>
 
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
-<script>
-(function() {
-  function addWidgetsRenderer() {
-    var requireJsScript = document.createElement('script');
-    requireJsScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js';
-
-    var mimeElement = document.querySelector('script[type="application/vnd.jupyter.widget-view+json"]');
-    var jupyterWidgetsScript = document.createElement('script');
-    var widgetRendererSrc = 'https://unpkg.com/@jupyter-widgets/html-manager@*/dist/embed-amd.js';
-    var widgetState;
-
-    // Fallback for older version:
-    try {
-      widgetState = mimeElement && JSON.parse(mimeElement.innerHTML);
-
-      if (widgetState && (widgetState.version_major < 2 || !widgetState.version_major)) {
-        widgetRendererSrc = 'jupyter-js-widgets@*/dist/embed.js';
-      }
-    } catch(e) {}
-
-    jupyterWidgetsScript.src = widgetRendererSrc;
-
-    document.body.appendChild(requireJsScript);
-    document.body.appendChild(jupyterWidgetsScript);
-  }
-
-  document.addEventListener('DOMContentLoaded', addWidgetsRenderer);
-}());
-</script>
-
-<div class="cell border-box-sizing text_cell rendered">
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<h1 id="natural-language-to-bug-free-sql">Natural Language to Bug Free SQL</h1>
+<h1 id="script-element"><code>Script</code> Element</h1>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>To download this example as a Jupyter notebook, click <a href="https://github.com/ShreyaR/guardrails/blob/main/docs/examples/syntax_error_free_sql.ipynb">here</a>.</p>
+<p>This is a beta feature, and serves more advanced use cases. If you're just getting started with Guardrails, you can skip this section for now.</p>
 </div>
-<p>In this example, we will use Guardrails to generate SQL queries from natural language. We will check that the SQL is free of any syntax errors.</p>
-<h2 id="objective">Objective</h2>
-<p>We want to generate SQL queries from natural language, and check that the SQL is free of any syntax errors.</p>
-<h2 id="step-0-setup">Step 0: Setup</h2>
-<p>In order to run this example, you will need to install the <code>sqlvalidator</code> package. You can do so by running the following command:</p>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-
-<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="err">!</span><span class="n">pip</span> <span class="n">install</span> <span class="n">sqlvalidator</span>
-</span></code></pre></div>
-
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered">
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="step-1-create-the-rail-spec">Step 1: Create the RAIL Spec</h2>
-<p>Ordinarily, we would create an RAIL spec in a separate file. For the purposes of this example, we will create the spec in this notebook as a string following the RAIL syntax. For more information on RAIL, see the <a href="rail/output.md">RAIL documentation</a>.</p>
-<p>In this RAIL spec, we:</p>
+<p>The <code>&lt;script&gt;&lt;/script&gt;</code> element contains any custom code that a developer wants to use. Common use cases include:</p>
 <ol>
-<li>Create an <code>output</code> schema that returns a single key-value pair. The key should be 'generated_sql' and the value should be the SQL query generated from the natural language, which is syntactically correct.</li>
+<li>Custom <code>Validators</code>: Here's a few examples of adding custom validators via the <code>&lt;script&gt;</code> tag:<ol>
+<li><a href="../../examples/no_secrets_in_generated_text/">adding a validator to filter secret keys</a>,</li>
+<li><a href="../../examples/recipe_generation/">adding a validator to check if an ingredient is vegan</a>,</li>
+<li><a href="../../examples/valid_chess_moves/">adding a validator to check if a chess move is valid</a>.</li>
 </ol>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-
-<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">rail_str</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="s2">&lt;rail version=&quot;0.1&quot;&gt;</span>
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="s2">&lt;output&gt;</span>
-</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="s2">    &lt;string</span>
-</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="s2">        name=&quot;generated_sql&quot;</span>
-</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="s2">        description=&quot;Generate SQL for the given natural language instruction.&quot;</span>
-</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="s2">        format=&quot;bug-free-sql&quot;</span>
-</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="s2">        on-fail-bug-free-sql=&quot;reask&quot; </span>
-</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="s2">    /&gt;</span>
-</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="s2">&lt;/output&gt;</span>
+</li>
+<li>Custom <code>DataTypes</code>: Examples coming soon!</li>
+</ol>
+<p>Here's the syntax for the <code>&lt;script&gt;</code> element:</p>
+<div class="language-xml highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nt">&lt;rail</span><span class="w"> </span><span class="na">version=</span><span class="s">&quot;0.1&quot;</span><span class="nt">&gt;</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nt">&lt;script</span><span class="w"> </span><span class="na">language=</span><span class="s">&quot;python&quot;</span><span class="nt">&gt;</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>#<span class="w"> </span>your<span class="w"> </span>code<span class="w"> </span>here
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="nt">&lt;/script&gt;</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="nt">&lt;/rail&gt;</span>
+</span></code></pre></div>
+<h2 id="adding-a-custom-validator">🔐 Adding a custom <code>Validator</code></h2>
+<p>Here's an example of adding a custom validator to check if a generated text contains any secret keys. The validator is added via the <code>&lt;script&gt;</code> element.</p>
+<div class="language-xml highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nt">&lt;rail</span><span class="w"> </span><span class="na">version=</span><span class="s">&quot;0.1&quot;</span><span class="nt">&gt;</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="nt">&lt;script&gt;</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>from<span class="w"> </span>guardrails.validators<span class="w"> </span>import<span class="w"> </span>Validator,<span class="w"> </span>EventDetail,<span class="w"> </span>register_validator<span class="w"> </span><span class="cm">&lt;!-- (1)! --&gt;</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>@register_validator(name=&quot;custom-validator&quot;,<span class="w"> </span>data_type=&quot;string&quot;)<span class="w"> </span><span class="cm">&lt;!-- (2)! --&gt;</span>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>class<span class="w"> </span>CustomValidatorName(Validator):<span class="w"> </span><span class="cm">&lt;!-- (3)! --&gt;</span>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">    </span>def<span class="w"> </span>validate(self,<span class="w"> </span>key,<span class="w"> </span>value,<span class="w"> </span>schema)<span class="w"> </span>-&gt;<span class="w"> </span>Dict:<span class="w"> </span><span class="cm">&lt;!-- (4)! --&gt;</span>
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">        </span>#<span class="w"> </span>Check<span class="w"> </span>if<span class="w"> </span>value<span class="w"> </span>meets<span class="w"> </span>the<span class="w"> </span>criteria.
 </span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>
-</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>
-</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="s2">&lt;prompt&gt;</span>
+</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="w">        </span>valid_condition<span class="w"> </span>=<span class="w"> </span>...
+</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="w">        </span>descriptive_error_message<span class="w"> </span>=<span class="w"> </span>...
 </span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>
-</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="s2">Generate a valid SQL query for the following natural language instruction:</span>
-</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>
-</span><span id="__span-1-18"><a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="s2">{{nl_instruction}}</span>
-</span><span id="__span-1-19"><a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a>
-</span><span id="__span-1-20"><a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a><span class="s2">@complete_json_suffix</span>
-</span><span id="__span-1-21"><a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a><span class="s2">&lt;/prompt&gt;</span>
-</span><span id="__span-1-22"><a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a>
-</span><span id="__span-1-23"><a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a>
-</span><span id="__span-1-24"><a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a><span class="s2">&lt;/rail&gt;</span>
-</span><span id="__span-1-25"><a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a><span class="s2">&quot;&quot;&quot;</span>
+</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="w">        </span>if<span class="w"> </span>not<span class="w"> </span>valid_condition:
+</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="w">            </span>#<span class="w"> </span>Create<span class="w"> </span>a<span class="w"> </span>programatically<span class="w"> </span>corrected<span class="w"> </span>value.
+</span><span id="__span-1-18"><a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="w">            </span>correct_value<span class="w"> </span>=<span class="w"> </span>...
+</span><span id="__span-1-19"><a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="w">            </span>raise<span class="w"> </span>EventDetail(<span class="w">   </span><span class="cm">&lt;!-- (5)! --&gt;</span>
+</span><span id="__span-1-20"><a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a><span class="w">                </span>key=key,
+</span><span id="__span-1-21"><a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a><span class="w">                </span>value=value,
+</span><span id="__span-1-22"><a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a><span class="w">                </span>schema=schema,
+</span><span id="__span-1-23"><a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a><span class="w">                </span>error_message=descriptive_error_message,
+</span><span id="__span-1-24"><a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a><span class="w">                </span>fix_value=correct_value,
+</span><span id="__span-1-25"><a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a><span class="w">            </span>)
+</span><span id="__span-1-26"><a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a>
+</span><span id="__span-1-27"><a id="__codelineno-1-27" name="__codelineno-1-27" href="#__codelineno-1-27"></a><span class="w">        </span>return<span class="w"> </span>schema<span class="w">  </span><span class="cm">&lt;!-- (6)! --&gt;</span>
+</span><span id="__span-1-28"><a id="__codelineno-1-28" name="__codelineno-1-28" href="#__codelineno-1-28"></a>
+</span><span id="__span-1-29"><a id="__codelineno-1-29" name="__codelineno-1-29" href="#__codelineno-1-29"></a><span class="nt">&lt;/script&gt;</span>
+</span><span id="__span-1-30"><a id="__codelineno-1-30" name="__codelineno-1-30" href="#__codelineno-1-30"></a><span class="nt">&lt;/rail&gt;</span>
 </span></code></pre></div>
-
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered">
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>In order to ensure that the SQL is syntactically correct, we use <code>bug-free-sql</code> as the formatter. This is a light-weight formatter that uses the <code>sqlvalidator</code> package to check that the SQL is free of any syntax errors. For your use case, you can create a custom SQL validator that connects to your database and checks that the SQL is valid.</p>
-</div>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered">
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="step-2-create-a-guard-object-with-the-rail-spec">Step 2: Create a <code>Guard</code> object with the RAIL Spec</h2>
-<p>We create a <code>gd.Guard</code> object that will check, validate and correct the output of the LLM. This object:</p>
 <ol>
-<li>Enforces the quality criteria specified in the RAIL spec.</li>
-<li>Takes corrective action when the quality criteria are not met.</li>
-<li>Compiles the schema and type info from the RAIL spec and adds it to the prompt.</li>
+<li>In order to add a custom validator, you need to import the <code>Validator</code> class, <code>EventDetail</code> class, and <code>register_validator</code> decorator.</li>
+<li>Add the <code>register_validator</code> decorator to your custom validator class. The <code>name</code> argument is the name of the validator (this will be used in <code>RAIL</code> as the formatter name), and the <code>data_type</code> argument is the data type that the validator is applicable to. In this case, the validator is applicable to strings.</li>
+<li>Subclass the <code>Validator</code> class.</li>
+<li>You only need to implement the <code>validate</code> method. The <code>validate</code> method takes in the <code>key</code>, <code>value</code>, and <code>schema</code> as arguments. The <code>key</code> is the key of the value in the JSON object, the <code>value</code> is the value itself, and the <code>schema</code> is the schema of the value.</li>
+<li>The <code>validate</code> method raises an <code>EventDetail</code> object if the value is invalid. This object is then used to take corrective action specified in the <code>RAIL</code> spec.</li>
+<li>The <code>validate</code> method should return the <code>schema</code> if the value is valid.</li>
 </ol>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-
-<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">import</span> <span class="nn">guardrails</span> <span class="k">as</span> <span class="nn">gd</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="kn">from</span> <span class="nn">rich</span> <span class="kn">import</span> <span class="nb">print</span>
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="n">guard</span> <span class="o">=</span> <span class="n">gd</span><span class="o">.</span><span class="n">Guard</span><span class="o">.</span><span class="n">from_rail_string</span><span class="p">(</span><span class="n">rail_str</span><span class="p">)</span>
+<p>The custom validator defined in above can be used in the <code>RAIL</code> spec as follows:</p>
+<div class="language-xml highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nt">&lt;rail</span><span class="w"> </span><span class="na">version=</span><span class="s">&quot;0.1&quot;</span><span class="nt">&gt;</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="nt">&lt;output&gt;</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="nt">&lt;string</span><span class="w"> </span><span class="err">....</span><span class="w"> </span><span class="na">format=</span><span class="s">&quot;custom-validator&quot;</span><span class="w"> </span><span class="na">on-fail-custom-validator=</span><span class="s">&quot;fix&quot;</span><span class="nt">&gt;</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="nt">&lt;/output&gt;</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="nt">&lt;/rail&gt;</span>
 </span></code></pre></div>
-
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered">
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>We see the prompt that will be sent to the LLM:</p>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-
-<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nb">print</span><span class="p">(</span><span class="n">guard</span><span class="o">.</span><span class="n">base_prompt</span><span class="p">)</span>
-</span></code></pre></div>
-
-</div>
-<div class="output_wrapper">
-<div class="output">
-<div class="output_area">
-<div class="output_html rendered_html output_subarea ">
-<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">
-
-Generate a valid SQL query for the following natural language instruction:
-
-<span style="font-weight: bold">{</span>nl_instruction<span style="font-weight: bold">}</span>
-
-
-Given below is XML that describes the information to extract from this document and the tags to extract it into.
-
-<span style="font-weight: bold">&lt;</span><span style="color: #ff00ff; text-decoration-color: #ff00ff; font-weight: bold">output</span><span style="color: #000000; text-decoration-color: #000000">&gt;</span>
-<span style="color: #000000; text-decoration-color: #000000">    &lt;string </span><span style="color: #808000; text-decoration-color: #808000">name</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"generated_sql"</span><span style="color: #000000; text-decoration-color: #000000"> </span><span style="color: #808000; text-decoration-color: #808000">description</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"Generate SQL for the given natural language instruction."</span><span style="color: #000000; text-decoration-color: #000000"> </span>
-<span style="color: #808000; text-decoration-color: #808000">format</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"bug-free-sql"</span><span style="color: #800080; text-decoration-color: #800080">/</span><span style="color: #000000; text-decoration-color: #000000">&gt;</span>
-<span style="color: #000000; text-decoration-color: #000000">&lt;</span><span style="color: #800080; text-decoration-color: #800080">/</span><span style="color: #ff00ff; text-decoration-color: #ff00ff">output</span><span style="color: #000000; text-decoration-color: #000000">&gt;</span>
-
-
-
-
-<span style="color: #000000; text-decoration-color: #000000">ONLY return a valid JSON object </span><span style="color: #000000; text-decoration-color: #000000; font-weight: bold">(</span><span style="color: #000000; text-decoration-color: #000000">no other text is necessary</span><span style="color: #000000; text-decoration-color: #000000; font-weight: bold">)</span><span style="color: #000000; text-decoration-color: #000000">, where the key of the field in JSON is the `name` </span>
-<span style="color: #000000; text-decoration-color: #000000">attribute of the corresponding XML, and the value is of the type specified by the corresponding XML's tag. The JSON</span>
-<span style="color: #000000; text-decoration-color: #000000">MUST conform to the XML format, including any types and format requests e.g. requests for lists, objects and </span>
-<span style="color: #000000; text-decoration-color: #000000">specific types. Be correct and concise. If you are unsure anywhere, enter `</span><span style="color: #800080; text-decoration-color: #800080; font-style: italic">None</span><span style="color: #000000; text-decoration-color: #000000">`.</span>
-
-<span style="color: #000000; text-decoration-color: #000000">Here are examples of simple </span><span style="color: #000000; text-decoration-color: #000000; font-weight: bold">(</span><span style="color: #000000; text-decoration-color: #000000">XML, JSON</span><span style="color: #000000; text-decoration-color: #000000; font-weight: bold">)</span><span style="color: #000000; text-decoration-color: #000000"> pairs that show the expected behavior:</span>
-<span style="color: #000000; text-decoration-color: #000000">- `&lt;string </span><span style="color: #808000; text-decoration-color: #808000">name</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">'foo'</span><span style="color: #000000; text-decoration-color: #000000"> </span><span style="color: #808000; text-decoration-color: #808000">format</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">'two-words lower-case'</span><span style="color: #000000; text-decoration-color: #000000"> </span><span style="color: #800080; text-decoration-color: #800080">/</span><span style="color: #000000; text-decoration-color: #000000">&gt;` =&gt; `</span><span style="color: #000000; text-decoration-color: #000000; font-weight: bold">{{</span><span style="color: #008000; text-decoration-color: #008000">'foo'</span><span style="color: #000000; text-decoration-color: #000000">: </span><span style="color: #008000; text-decoration-color: #008000">'example one'</span><span style="color: #000000; text-decoration-color: #000000; font-weight: bold">}}</span><span style="color: #000000; text-decoration-color: #000000">`</span>
-<span style="color: #000000; text-decoration-color: #000000">- `&lt;list </span><span style="color: #808000; text-decoration-color: #808000">name</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">'bar'</span><span style="color: #000000; text-decoration-color: #000000">&gt;&lt;string </span><span style="color: #808000; text-decoration-color: #808000">format</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">'upper-case'</span><span style="color: #000000; text-decoration-color: #000000"> </span><span style="color: #800080; text-decoration-color: #800080">/</span><span style="color: #000000; text-decoration-color: #000000">&gt;&lt;</span><span style="color: #800080; text-decoration-color: #800080">/</span><span style="color: #ff00ff; text-decoration-color: #ff00ff">list</span><span style="color: #000000; text-decoration-color: #000000">&gt;` =&gt; `</span><span style="color: #000000; text-decoration-color: #000000; font-weight: bold">{{</span><span style="color: #008000; text-decoration-color: #008000">"bar"</span><span style="color: #000000; text-decoration-color: #000000">: </span><span style="color: #000000; text-decoration-color: #000000; font-weight: bold">[</span><span style="color: #008000; text-decoration-color: #008000">'STRING ONE'</span><span style="color: #000000; text-decoration-color: #000000">, </span><span style="color: #008000; text-decoration-color: #008000">'STRING TWO'</span><span style="color: #000000; text-decoration-color: #000000">, etc.</span><span style="color: #000000; text-decoration-color: #000000; font-weight: bold">]}}</span><span style="color: #000000; text-decoration-color: #000000">`</span>
-<span style="color: #000000; text-decoration-color: #000000">- `&lt;object </span><span style="color: #808000; text-decoration-color: #808000">name</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">'baz'</span><span style="color: #000000; text-decoration-color: #000000">&gt;&lt;string </span><span style="color: #808000; text-decoration-color: #808000">name</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"foo"</span><span style="color: #000000; text-decoration-color: #000000"> </span><span style="color: #808000; text-decoration-color: #808000">format</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"capitalize two-words"</span><span style="color: #000000; text-decoration-color: #000000"> </span><span style="color: #800080; text-decoration-color: #800080">/</span><span style="color: #000000; text-decoration-color: #000000">&gt;&lt;integer </span><span style="color: #808000; text-decoration-color: #808000">name</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"index"</span><span style="color: #000000; text-decoration-color: #000000"> </span><span style="color: #808000; text-decoration-color: #808000">format</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"1-indexed"</span><span style="color: #000000; text-decoration-color: #000000"> </span>
-<span style="color: #800080; text-decoration-color: #800080">/</span><span style="color: #000000; text-decoration-color: #000000">&gt;&lt;</span><span style="color: #800080; text-decoration-color: #800080">/</span><span style="color: #ff00ff; text-decoration-color: #ff00ff">object</span><span style="color: #000000; text-decoration-color: #000000">&gt;` =</span><span style="font-weight: bold">&gt;</span> `<span style="font-weight: bold">{{</span><span style="color: #008000; text-decoration-color: #008000">'baz'</span>: <span style="font-weight: bold">{{</span><span style="color: #008000; text-decoration-color: #008000">'foo'</span>: <span style="color: #008000; text-decoration-color: #008000">'Some String'</span>, <span style="color: #008000; text-decoration-color: #008000">'index'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">1</span><span style="font-weight: bold">}}}}</span>`
-
-JSON Object:
-
-</pre>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered">
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>Here, <code>nl_language</code> is the natural language instruction and will be provided by the user at runtime.</p>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered">
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="step-3-wrap-the-llm-api-call-with-guard">Step 3: Wrap the LLM API call with <code>Guard</code></h2>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-
-<div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kn">import</span> <span class="nn">openai</span>
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
-</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="n">raw_llm_response</span><span class="p">,</span> <span class="n">validated_response</span> <span class="o">=</span> <span class="n">guard</span><span class="p">(</span>
-</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>    <span class="n">openai</span><span class="o">.</span><span class="n">Completion</span><span class="o">.</span><span class="n">create</span><span class="p">,</span>
-</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>    <span class="n">prompt_params</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;nl_instruction&#39;</span><span class="p">:</span> <span class="s1">&#39;Select the name of the employee who has the highest salary.&#39;</span><span class="p">},</span>
-</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>    <span class="n">engine</span><span class="o">=</span><span class="s1">&#39;text-davinci-003&#39;</span><span class="p">,</span>
-</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>    <span class="n">max_tokens</span><span class="o">=</span><span class="mi">2048</span><span class="p">,</span>
-</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>    <span class="n">temperature</span><span class="o">=</span><span class="mi">0</span>
-</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="p">)</span>
-</span></code></pre></div>
-
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered">
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>The <code>guard</code> wrapper returns the raw_llm_respose (which is a simple string), and the validated and corrected output (which is a dictionary).</p>
-<p>We can see that the output is a dictionary with the correct schema and types.</p>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-
-<div class="language-python highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nb">print</span><span class="p">(</span><span class="n">validated_response</span><span class="p">)</span>
-</span></code></pre></div>
-
-</div>
-<div class="output_wrapper">
-<div class="output">
-<div class="output_area">
-<div class="output_html rendered_html output_subarea ">
-<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace"><span style="font-weight: bold">{</span><span style="color: #008000; text-decoration-color: #008000">'generated_sql'</span>: <span style="color: #008000; text-decoration-color: #008000">'SELECT name FROM employee ORDER BY salary DESC LIMIT 1'</span><span style="font-weight: bold">}</span>
-</pre>
-</div>
-</div>
-</div>
-</div>
-</div>
+<h2 id="adding-a-custom-datatype">🧭 Adding a custom <code>DataType</code></h2>
+<p>Coming soon!</p>
 
 
 
@@ -1031,7 +819,7 @@ JSON Object:
     <nav class="md-footer__inner md-grid" aria-label="Footer" >
       
         
-        <a href="../no_secrets_in_generated_text/" class="md-footer__link md-footer__link--prev" aria-label="Previous: No secrets in generated text" rel="prev">
+        <a href="../prompt/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Prompt Element" rel="prev">
           <div class="md-footer__button md-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
           </div>
@@ -1040,20 +828,20 @@ JSON Object:
               <span class="md-footer__direction">
                 Previous
               </span>
-              No secrets in generated text
+              Prompt Element
             </div>
           </div>
         </a>
       
       
         
-        <a href="../recipe_generation/" class="md-footer__link md-footer__link--next" aria-label="Next: Vegan Mac &amp; Cheese Recipe Generator" rel="next">
+        <a href="../../data_types/" class="md-footer__link md-footer__link--next" aria-label="Next: Data Types" rel="next">
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
                 Next
               </span>
-              Vegan Mac & Cheese Recipe Generator
+              Data Types
             </div>
           </div>
           <div class="md-footer__button md-icon">

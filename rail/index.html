@@ -448,7 +448,7 @@
   
   
     <li class="md-nav__item">
-      <a href="script.md" class="md-nav__link">
+      <a href="script/" class="md-nav__link">
         (Experimental) Script Element
       </a>
     </li>
@@ -762,7 +762,7 @@
 </ol>
 <details>
 
-<summary>Expand to see an example of an RAIL specification.</summary>
+<summary>Expand to see an example of a RAIL specification.</summary>
 
 <div class="language-xml highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nt">&lt;rail</span><span class="w"> </span><span class="na">version=</span><span class="s">&quot;0.1&quot;</span><span class="nt">&gt;</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
@@ -831,7 +831,8 @@
 <li><strong>Simple and familiar:</strong> <code>RAIL</code> should be familiar to anyone familiar with HTML, and should be easy to learn.</li>
 <li><strong>Validation and correction</strong>: <code>RAIL</code> can be used to define quality criteria for the expected output, and corrective actions to take in case the quality criteria is not met.</li>
 <li><strong>Can define complex structures:</strong> <code>RAIL</code> can be used to define arbitrarily complex structures, such as nested lists, nested objects, etc.</li>
-<li><strong>Supports writing custom code:</strong> If needed, <code>RAIL</code> supports writing code for using validators, custom corrective actions, etc.</li>
+<li><strong>Supports writing custom code:</strong> If needed, <code>RAIL</code> supports writing code for using validators, custom corrective actions, etc. To see examples of this, check out the <a href="script/">RAIL Script</a> page.</li>
+<li><strong>Code assistance</strong>: In the future, we plan to support code completion and IntelliSense for <code>RAIL</code> specifications, which will make it very easy to write <code>RAIL</code> specifications.</li>
 </ol>
 <p><strong>Design inspiration</strong></p>
 <ul>
@@ -845,7 +846,7 @@
    This is the main component of the <code>RAIL</code> specification, which enforces the guarantees that the LLM should provide.
    Check out the <a href="output/">RAIL Output</a> page for more details, including the full specifcation of how to create complex output schemas.</li>
 <li><code>Prompt</code>: Prompt template, and contains the high level instructions that are sent to the LLM. Check out the <a href="prompt/">RAIL Prompt</a> page for more details.</li>
-<li>(Experimental) (Optional) <code>Script</code>: Contains any custom code for implementing the schema. This is useful for implementing custom validators, custom corrective actions, etc. Check out the <a href="script.md">RAIL Script</a> page for more details.</li>
+<li>(Experimental) (Optional) <code>Script</code>: Contains any custom code for implementing the schema. This is useful for implementing custom validators, custom corrective actions, etc. Check out the <a href="script/">RAIL Script</a> page for more details.</li>
 </ol>
 <p>Let's see an example of an <code>RAIL</code> specification in action:</p>
 <div class="language-xml highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nt">&lt;rail</span><span class="w"> </span><span class="na">version=</span><span class="s">&quot;0.1&quot;</span><span class="nt">&gt;</span>

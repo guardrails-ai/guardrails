@@ -319,7 +319,7 @@
       
         <li class="md-nav__item">
   <a href="#what-is-guardrails" class="md-nav__link">
-    What is Guardrails?
+    🛤️ What is Guardrails?
   </a>
   
 </li>
@@ -346,7 +346,7 @@
       
         <li class="md-nav__item">
   <a href="#roadmap" class="md-nav__link">
-    🛣️ Roadmap
+    📍 Roadmap
   </a>
   
 </li>
@@ -452,7 +452,7 @@
   
   
     <li class="md-nav__item">
-      <a href="rail/script.md" class="md-nav__link">
+      <a href="rail/script/" class="md-nav__link">
         (Experimental) Script Element
       </a>
     </li>
@@ -706,7 +706,7 @@
       
         <li class="md-nav__item">
   <a href="#what-is-guardrails" class="md-nav__link">
-    What is Guardrails?
+    🛤️ What is Guardrails?
   </a>
   
 </li>
@@ -733,7 +733,7 @@
       
         <li class="md-nav__item">
   <a href="#roadmap" class="md-nav__link">
-    🛣️ Roadmap
+    📍 Roadmap
   </a>
   
 </li>
@@ -762,43 +762,43 @@
 
 
 <h1 id="guardrailsai">Guardrails.ai</h1>
-<div align="center">
-Guardrails is an open-source Python package for specifying structure and type, validating and correcting the outputs of large language models (LLMs).
-
-</div>
-
 <p><em>Note: Guardrails is an alpha release, so expect sharp edges and bugs.</em></p>
-<h2 id="what-is-guardrails">What is Guardrails?</h2>
+<h2 id="what-is-guardrails">🛤️ What is Guardrails?</h2>
 <p>Guardrails is a Python package that lets a user add structure, type and quality guarantees to the outputs of large language models (LLMs). Guardrails:</p>
-<p>✅ does pydantic-style validation of LLM outputs,</p>
-<p>✅ takes corrective actions (e.g. reasking LLM) when validation fails,</p>
-<p>✅ enforeces structure and type guarantees (e.g. JSON).</p>
+<p>✅ does pydantic-style validation of LLM outputs,  ****
+✅ takes corrective actions (e.g. reasking LLM) when validation fails,<br />
+✅ enforeces structure and type guarantees (e.g. JSON).</p>
 <h2 id="under-the-hood">🚒 Under the hood</h2>
 <p>Guardrails provides a format (<code>.rail</code>) for enforcing a specification on an LLM output, and a lightweight wrapper around LLM API calls to implement this spec.</p>
 <ol>
 <li><code>rail</code> (<strong>R</strong>eliable <strong>AI</strong> markup <strong>L</strong>anguage) files for specifying structure and type information, validators and corrective actions over LLM outputs.</li>
 <li><code>gd.Guard</code> wraps around LLM API calls to structure, validate and correct the outputs.</li>
 </ol>
+<pre class="mermaid"><code>graph LR
+    A[Create `RAIL` spec] --&gt; B["Initialize `guard` from spec"];
+    B --&gt; C["Wrap LLM API call with `guard`"];</code></pre>
+<p>Check out the <a href="getting_started/">Getting Started</a> guide to learn how to use Guardrails.</p>
 <h3 id="rail-spec">📜 <code>RAIL</code> spec</h3>
+<p>At the heart of Guardrails is the <code>rail</code> spec. <code>rail</code> is intended to be a language-agnostic, human-readable format for specifying structure and type information, validators and corrective actions over LLM outputs.</p>
 <p><code>rail</code> is a flavor of XML that lets users specify:</p>
 <ol>
 <li>the expected structure and types of the LLM output (e.g. JSON)</li>
 <li>the quality criteria for the output to be considered valid (e.g. generated text should be bias-free, generated code should be bug-free)</li>
 <li>and corrective actions to be taken if the output is invalid (e.g. reask the LLM, filter out the invalid output, etc.)</li>
 </ol>
-<p>To learn more about the <code>RAIL</code> spec and the design decisions behind it, check out the <a href="rail/">docs</a>. To learn how to write your own <code>RAIL</code> spec, check out <a href="https://shreyar.github.io/guardrails/rail/output.md">this link</a>.</p>
-<h2 id="roadmap">🛣️ Roadmap</h2>
-<ul>
-<li>adding more examples, new use cases and domains</li>
-<li>integrations with langchain, gpt-index, minichain, manifest</li>
-<li>expanding offered validators</li>
-<li>more transpilers from <code>.rail</code> -&gt; LLM prompt (e.g. <code>.rail</code> -&gt; TypeScript)</li>
-<li>informative logging</li>
-<li>improving reasking logic</li>
-<li>a guardrails.js implementation</li>
-<li>VSCode extension for <code>.rail</code> files</li>
-<li>next version of <code>.rail</code> format</li>
-<li>add more LLM providers</li>
+<p>To learn more about the <code>rail</code> spec and the design decisions behind it, check out the <a href="rail/">Rail Specification</a>. To learn how to write your own <code>rail</code> spec, check out <a href="rail/output/">specifying <code>output</code> elements in RAIL</a>.</p>
+<h2 id="roadmap">📍 Roadmap</h2>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Adding more examples, new use cases and domains</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Adding integrations with langchain, gpt-index, minichain, manifest</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Expanding validators offering</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> More compilers from <code>.rail</code> -&gt; LLM prompt (e.g. <code>.rail</code> -&gt; TypeScript)</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Informative logging</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Improving reasking logic</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> A guardrails.js implementation</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> VSCode extension for <code>.rail</code> files</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Next version of <code>.rail</code> format</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Add more LLM providers</li>
 </ul>
 
 
