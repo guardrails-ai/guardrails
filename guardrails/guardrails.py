@@ -1,22 +1,32 @@
 import json
 import logging
 from copy import deepcopy
-from typing import Any, Dict, List, Tuple, Callable
+from typing import Any, Callable, Dict, List, Tuple
 
 from eliot import start_action, to_file
 
 import guardrails.utils.reask_utils as reask_utils
 from guardrails.llm_providers import get_llm_ask
-from guardrails.prompt import Prompt
 from guardrails.output_schema import OutputSchema
-from guardrails.utils.rail_utils import read_rail
+from guardrails.prompt import Prompt
 from guardrails.utils.logs_utils import GuardHistory, GuardLogs, GuardState
+from guardrails.utils.rail_utils import read_rail
 
 logger = logging.getLogger(__name__)
 to_file(open("guardrails.log", "w"))
 
 
 class Guard:
+    """The Guard class.
+
+    This class is the main entry point for using Guardrails.
+    It is initialized from either `from_rail` or `from_rail_string` methods, 
+    which take in a `.rail` file or string, respectively. 
+    The `__call__` method functions as a wrapper around LLM APIs.
+    It takes in an LLM API, and optional prompt parameters,
+    and returns the raw output from the LLM and the validated output.
+    """
+
     def __init__(
         self,
         schema: OutputSchema,
@@ -33,13 +43,27 @@ class Guard:
 
     @classmethod
     def from_rail(cls, rail_file: str) -> "Guard":
-        """Create an Schema from an XML file."""
+        """Create an Schema from an `.rail` file.
+
+        Args:
+            rail_file: The path to the `.rail` file.
+
+        Returns:
+            An instance of the `Guard` class.
+        """
         output_schema, base_prompt, _ = read_rail(rail_file=rail_file)
         return cls(output_schema, base_prompt)
 
     @classmethod
     def from_rail_string(cls, rail_string: str) -> "Guard":
-        """Create an Schema from an XML string."""
+        """Create an Schema from an `.rail` string.
+
+        Args:
+            rail_string: The `.rail` string.
+
+        Returns:
+            An instance of the `Guard` class.
+        """
         output_schema, base_prompt, _ = read_rail(rail_string=rail_string)
         return cls(output_schema, base_prompt)
 
@@ -66,9 +90,7 @@ class Guard:
 
             return self.ask_with_validation(prompt, llm_ask)
 
-    def ask_with_validation(
-        self, prompt: str, llm_ask: Callable
-    ) -> Tuple[str, Dict]:
+    def ask_with_validation(self, prompt: str, llm_ask: Callable) -> Tuple[str, Dict]:
         """Ask a question, and validate the output."""
 
         with start_action(action_type="ask_with_validation", prompt=prompt):

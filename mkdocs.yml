@@ -19,11 +19,12 @@ nav:
       - 'Output Element': rail/output.md
       - 'Prompt Element': rail/prompt.md
       - '(Experimental) Script Element': rail/script.md
-    - 'Guardrails Modules':
+    - 'Guardrails Reference':
+      - 'Guard': guard.md
       - 'Data Types': data_types.md
-      - 'Validation': validation.md
-      - 'LLM API Wrappers': llm_api_wrappers.md
-      - 'Inspecting logs': inspecting_logs.md
+      - 'Validators': validation.md
+      # - 'LLM API Wrappers': llm_api_wrappers.md
+      - 'Inspecting logs': logs.md
     - 'Examples':
       - 'Extracting entities from ToS': examples/extracting_entities.ipynb
       - 'Generating bug-free Python code': examples/bug_free_python_code.ipynb

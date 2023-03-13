@@ -52,7 +52,7 @@ At the heart of the `RAIL` specification is the use of elements. Each element's 
 
 Guardrails supports many data types, including:, `string`, `integer`, `float`, `boolean`, `list`, `object`, `url`, `email` and many more.
 
-Check out the [RAIL Data Types](data-types.md) page for a list of supported data types.
+Check out the [RAIL Data Types](../data_types.md) page for a list of supported data types.
 
 
 #### Scalar vs Non-scalar types
@@ -256,7 +256,7 @@ Each quality criteria is then checked against the generated output. If the quali
 ### Supported criteria
 
 - Each quality critera is relevant to a specific data type. For example, the `two-words` quality criteria is only relevant to strings, and the `positive` quality criteria is only relevant to integers and floats.
-- To see the full list of supported quality criteria, check out the [Validation](validation.md) page.
+- To see the full list of supported quality criteria, check out the [Validation](../validation.md) page.
 
 
 ## 🛠️ Specifying corrective actions

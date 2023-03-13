@@ -1,7 +1,12 @@
+"""This module contains the validators for the Guardrails framework.
+
+The name with which a validator is registered is the name that is used in the `RAIL` spec to specify formatters.
+"""
+
 import logging
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import List, Union, Any, Optional, Callable, Dict
+from typing import Any, Callable, Dict, List, Optional, Union
 
 from guardrails.datatypes import registry as types_registry
 from guardrails.utils.reask_utils import ReAsk
@@ -154,12 +159,16 @@ class Validator:
 
 @register_validator(name="valid-range", data_type=["integer", "float", "percentage"])
 class ValidRange(Validator):
-    """Validate that a value is within a range."""
+    """Validate that a value is within a range.
+
+    - Name for `format` attribute: `valid-range`
+    - Supported data types: `integer`, `float`, `percentage`
+    - Programmatic fix: Closest value within the range.
+    """
 
     def __init__(
         self, min: int = None, max: int = None, on_fail: Optional[Callable] = None
     ):
-        """Initialize the validator."""
         super().__init__(on_fail=on_fail)
 
         self._min = min
@@ -193,10 +202,14 @@ class ValidRange(Validator):
 
 @register_validator(name="valid-choices", data_type="all")
 class ValidChoices(Validator):
-    """Validate that a value is within a range."""
+    """Validate that a value is within the acceptable choices.
+
+    - Name for `format` attribute: `valid-choices`
+    - Supported data types: `all`
+    - Programmatic fix: None.
+    """
 
     def __init__(self, choices: List[Any], on_fail: Optional[Callable] = None):
-        """Initialize the validator."""
         super().__init__(on_fail=on_fail)
         self._choices = choices
 
@@ -219,10 +232,14 @@ class ValidChoices(Validator):
 
 @register_validator(name="lower-case", data_type="string")
 class LowerCase(Validator):
-    """Validate that a value is lower case."""
+    """Validate that a value is lower case.
+
+    - Name for `format` attribute: `lower-case`
+    - Supported data types: `string`
+    - Programmatic fix: Manually convert to lower case.
+    """
 
     def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
-        """Validate that a value is lower case."""
 
         logger.debug(f"Validating {value} is lower case...")
 
@@ -240,10 +257,14 @@ class LowerCase(Validator):
 
 @register_validator(name="upper-case", data_type="string")
 class UpperCase(Validator):
-    """Validate that a value is upper case."""
+    """Validate that a value is upper case.
+
+    - Name for `format` attribute: `upper-case`
+    - Supported data types: `string`
+    - Programmatic fix: Manually convert to upper case.
+    """
 
     def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
-        """Validate that a value is upper case."""
 
         logger.debug(f"Validating {value} is upper case...")
 
@@ -261,16 +282,16 @@ class UpperCase(Validator):
 
 @register_validator(name="length", data_type=["string", "list", "object"])
 class ValidLength(Validator):
-    """Validate that the length of value is within the expected range."""
+    """Validate that the length of value is within the expected range.
+
+    - Name for `format` attribute: `length`
+    - Supported data types: `string`, `list`, `object`
+    - Programmatic fix: If shorter than the minimum, pad with empty last elements. If longer than the maximum, truncate.  # noqa: E501
+    """
 
     def __init__(
         self, min: int = None, max: int = None, on_fail: Optional[Callable] = None
     ):
-        """
-        Args:
-            min: The minimum length of the value.
-            max: The maximum length of the value.
-        """
         super().__init__(on_fail=on_fail)
         self._min = int(min) if min is not None else None
         self._max = int(max) if max is not None else None
@@ -312,10 +333,14 @@ class ValidLength(Validator):
 
 @register_validator(name="two-words", data_type="string")
 class TwoWords(Validator):
-    """Validate that a value is upper case."""
+    """Validate that a value is upper case.
+
+    - Name for `format` attribute: `two-words`
+    - Supported data types: `string`
+    - Programmatic fix: Pick the first two words.
+    """
 
     def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
-        """Validate that a value is upper case."""
         logger.debug(f"Validating {value} is two words...")
 
         if not len(value.split()) == 2:
@@ -332,10 +357,14 @@ class TwoWords(Validator):
 
 @register_validator(name="one-line", data_type="string")
 class OneLine(Validator):
-    """Validate that a value is a single line or sentence."""
+    """Validate that a value is a single line or sentence.
+
+    - Name for `format` attribute: `one-line`
+    - Supported data types: `string`
+    - Programmatic fix: Pick the first line.
+    """
 
     def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
-        """Validate that a value is a single line or sentence."""
         logger.debug(f"Validating {value} is a single line...")
 
         if not len(value.splitlines()) == 1:
@@ -352,10 +381,14 @@ class OneLine(Validator):
 
 @register_validator(name="valid-url", data_type=["string", "url"])
 class ValidUrl(Validator):
-    """Validate that a value is a valid URL."""
+    """Validate that a value is a valid URL.
+
+    - Name for `format` attribute: `valid-url`
+    - Supported data types: `string`, `url`
+    - Programmatic fix: None
+    """
 
     def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
-        """Validate that a value is a valid URL."""
         logger.debug(f"Validating {value} is a valid URL...")
 
         import requests
@@ -385,10 +418,17 @@ class ValidUrl(Validator):
 
 @register_validator(name="bug-free-python", data_type="pythoncode")
 class BugFreePython(Validator):
-    """Validate that a value is not a bug."""
+    """Validate that there are no Python syntactic bugs in the generated code.
+
+    This validator checks for syntax errors by running `exec(code)`, and will raise an exception if there are any.
+    Only the packages in the `python` environment are available to the code snippet.
+
+    - Name for `format` attribute: `bug-free-python`
+    - Supported data types: `pythoncode`
+    - Programmatic fix: None
+    """
 
     def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
-        """Validate that a value is not a bug."""
         logger.debug(f"Validating {value} is not a bug...")
 
         # The value represents a Python code snippet. We need to execute it and check if there are any bugs
@@ -408,10 +448,17 @@ class BugFreePython(Validator):
 
 @register_validator(name="bug-free-sql", data_type="sql")
 class BugFreeSQL(Validator):
-    """Validate that a value is not a bug."""
+    """Validate that there are no SQL syntactic bugs in the generated code.
+
+    This is a very minimal implementation that uses the Pypi `sqlvalidator` package to check if the SQL query is valid.
+    You can implement a custom SQL validator that uses a database connection to check if the query is valid.
+
+    - Name for `format` attribute: `bug-free-sql`
+    - Supported data types: `sql`
+    - Programmatic fix: None
+    """
 
     def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
-        """Validate that a value is not a bug."""
 
         import sqlvalidator
 
@@ -422,7 +469,7 @@ class BugFreeSQL(Validator):
                 key,
                 value,
                 schema,
-                '. '.join(sql_query.errors),
+                ". ".join(sql_query.errors),
                 None,
             )
 
