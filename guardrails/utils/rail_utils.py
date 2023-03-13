@@ -38,6 +38,11 @@ def read_rail(
             "Change the opening <rail> element to: <rail version='0.1'>"
         )
 
+    # Execute the script before validating the rest of the RAIL file.
+    script = parsed_rail.find("script")
+    if script is not None:
+        script = load_script(script)
+
     raw_output_schema = parsed_rail.find("output")
     if raw_output_schema is None:
         raise ValueError("RAIL file must contain a output-schema element.")
@@ -47,10 +52,6 @@ def read_rail(
     if prompt is None:
         raise ValueError("RAIL file must contain a prompt element.")
     prompt = load_prompt(prompt)
-
-    script = parsed_rail.find("script")
-    if script is not None:
-        script = load_script(script)
 
     return output_schema, prompt, script
 
@@ -89,5 +90,13 @@ def load_prompt(root: ET._Element) -> Prompt:
     return prompt
 
 
-def load_script(root: ET._Element) -> Dict[str, List[Validator]]:
-    pass
+def load_script(root: ET._Element) -> None:
+
+    if "language" not in root.attrib:
+        raise ValueError("Script element must have a language attribute.")
+    
+    language = root.attrib["language"]
+    if language != "python":
+        raise ValueError("Only python scripts are supported right now.")
+
+    exec(root.text, globals(), locals())

@@ -27,6 +27,7 @@ nav:
     - 'Examples':
       - 'Extracting entities from ToS': examples/extracting_entities.ipynb
       - 'Generating bug-free Python code': examples/bug_free_python_code.ipynb
+      - 'No secrets in generated text': examples/no_secrets_in_generated_text.ipynb
       - 'SQL Code Generator': examples/sql_code_generator.md
       - 'Recipe Generator': examples/recipe_generator.md
       - 'Natural language to pandas code': examples/nl_to_pandas.md
@@ -35,8 +36,7 @@ nav:
       - 'Using GPT to play valid chess moves': examples/gpt_chess.md
       - 'AI tutor for writing improvements': examples/ai_tutor.md
       - 'SFW tutoring system for kids': examples/sfw_tutoring.md
-      - 'No secrets in the code': examples/no_secrets.md
-
+      
 
 theme:
   name: material
