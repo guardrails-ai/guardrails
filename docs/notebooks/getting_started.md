@@ -1,10 +1,10 @@
 # Getting Started
 
-In this notebook, we will go through the basics of creating and `AIML` spec and using Guardrails to enforce it.
+In this notebook, we will go through the basics of creating and `RAIL` spec and using Guardrails to enforce it.
 
 ## Objective
 
-Our goal is understand what a bank run is, and generate URL links to relevant news articles. We will first generate an `AIML` spec for this and then use Guardrails to enforce it.
+Our goal is understand what a bank run is, and generate URL links to relevant news articles. We will first generate an `RAIL` spec for this and then use Guardrails to enforce it.
 
 ## Installation
 
@@ -16,24 +16,24 @@ To get started, install the `guardrails` package with `pip`.
 !pip install guardrails-ai
 ```
 
-## Creating an `AIML` spec
+## Creating an `RAIL` spec
 
-At the heart of `Guardrails` is the `AIML` spec.
+At the heart of `Guardrails` is the `RAIL` spec.
 
-`AIML` a flavor of XML (standing for `AI Markup Language`) that describes the expected structure and type of the output of the LLM, the quality criteria for the output to be valid and corrective actions to be taken if the output is invalid.
+`RAIL` a flavor of XML (standing for `**R**eliable **AI** markup **L**anguage`) that describes the expected structure and type of the output of the LLM, the quality criteria for the output to be valid and corrective actions to be taken if the output is invalid.
 
-- For this task, we create an `AIML` spec that requests the LLM to generate an object with two fields: `explanation` and `follow_up_url`.
+- For this task, we create an `RAIL` spec that requests the LLM to generate an object with two fields: `explanation` and `follow_up_url`.
 - For the `explanation` field to be valid, the max length of the generated string should be 280 characters. In case the generated string is between **200 to 280 characters in length**.
 - For the `follow_up_url` field to be valid, the URL should be reachable. In case the **URL is not reachable**, the LLM should be reasked to generate a valid URL.
 
-Ordinarily, the `AIML` spec would be created in a file directly. However, for the purposes of this demo, we write the spec in a string and then create a file from it.
+Ordinarily, the `RAIL` spec would be created in a file directly. However, for the purposes of this demo, we write the spec in a string and then create a file from it.
 
-We specify our quality criteria (generated length, URL reachability) in the `format` fields of the `AIML` spec below. For now, we want to do nothing if the quality criteria for `explanation` is not met, and filter the `follow_up_url` if it is not valid.
+We specify our quality criteria (generated length, URL reachability) in the `format` fields of the `RAIL` spec below. For now, we want to do nothing if the quality criteria for `explanation` is not met, and filter the `follow_up_url` if it is not valid.
 
 
 ```python
-aiml_spec = """
-<aiml version="0.1">
+rail_spec = """
+<rail version="0.1">
 
 <output>
     <object name="bank_run" format="length: 2">
@@ -62,13 +62,13 @@ Explain what a bank run is in a tweet.
 
 @json_suffix_prompt_v2_wo_none
 </prompt>
-</aiml>
+</rail>
 """
 ```
 
-## Using Guardrails to enforce the `AIML` spec
+## Using Guardrails to enforce the `RAIL` spec
 
-We write the `AIML` spec to a file and then use it to create a `Guard` object. The `Guard` object is used to wrap the LLM API call and enforce the `AIML` spec on the output of the LLM call.
+We write the `RAIL` spec to a file and then use it to create a `Guard` object. The `Guard` object is used to wrap the LLM API call and enforce the `RAIL` spec on the output of the LLM call.
 
 
 ```python
@@ -77,13 +77,13 @@ from rich import print
 
 import guardrails as gd
 
-with tempfile.NamedTemporaryFile(mode="w", suffix=".aiml") as f:
-    f.write(aiml_spec)
+with tempfile.NamedTemporaryFile(mode="w", suffix=".rail") as f:
+    f.write(rail_spec)
     f.flush()
-    guard = gd.Guard.from_aiml(f.name)
+    guard = gd.Guard.from_rail(f.name)
 ```
 
-We can see that the `Guard` object compiles the `AIML` output specification and adds it to the provided prompt.
+We can see that the `Guard` object compiles the `RAIL` output specification and adds it to the provided prompt.
 
 
 ```python
@@ -155,14 +155,14 @@ print(f'Len of explanation: {len(validated_output["bank_run"]["explanation"])}')
 
 
 
-As we can see, the `explanation` field didn't meet the quality criteria (length between 200 and 280 characters). However, because of the the `noop` action specified in the `AIML` spec, the `Guard` object returned the output of the LLM API call as is.
+As we can see, the `explanation` field didn't meet the quality criteria (length between 200 and 280 characters). However, because of the the `noop` action specified in the `RAIL` spec, the `Guard` object returned the output of the LLM API call as is.
 
-Next, we change the `AIML` spec to reask the LLM for a correct `explanation` if its length is incorrect. We do this by creating a new `AIML` spec and creating a new `Guard` object.
+Next, we change the `RAIL` spec to reask the LLM for a correct `explanation` if its length is incorrect. We do this by creating a new `RAIL` spec and creating a new `Guard` object.
 
 
 ```python
-aiml_spec = """
-<aiml version="0.1">
+rail_spec = """
+<rail version="0.1">
 
 <output>
     <object name="bank_run" format="length: 2">
@@ -191,13 +191,13 @@ Explain what a bank run is in a tweet.
 
 @json_suffix_prompt_v2_wo_none
 </prompt>
-</aiml>
+</rail>
 """
 
-with tempfile.NamedTemporaryFile(mode="w", suffix=".aiml") as f:
-    f.write(aiml_spec)
+with tempfile.NamedTemporaryFile(mode="w", suffix=".rail") as f:
+    f.write(rail_spec)
     f.flush()
-    guard_with_reask = gd.Guard.from_aiml(f.name)
+    guard_with_reask = gd.Guard.from_rail(f.name)
 
 raw_llm_output, validated_output = guard_with_reask(openai.Completion.create, engine="text-davinci-003", max_tokens=1024, temperature=0.3)
 

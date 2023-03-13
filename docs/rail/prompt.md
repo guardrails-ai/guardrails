@@ -15,7 +15,7 @@ In addition to the high level task description, the prompt also contains the fol
 
 
 ```xml
-<aiml>
+<rail>
 <prompt>
 <!-- (1)! -->
 Given the following document, answer the following questions. If the answer doesn't exist in the document, enter 'None'.
@@ -32,7 +32,7 @@ Given the following document, answer the following questions. If the answer does
 @json_suffix_prompt  <!-- (5)! -->
 
 </prompt>
-</aiml>
+</rail>
 ```
 
 1. The prompt contains high level task information.

@@ -12,7 +12,7 @@ class OutputSchema:
     """
     def __init__(
         self,
-        parsed_aiml: Optional[ET._Element] = None,
+        parsed_rail: Optional[ET._Element] = None,
         schema: Optional[Dict[str, DataType]] = None,
     ) -> None:
 
@@ -20,7 +20,7 @@ class OutputSchema:
             schema = {}
 
         self._schema = SimpleNamespace(**schema)
-        self.parsed_aiml = parsed_aiml
+        self.parsed_rail = parsed_rail
 
     def __getitem__(self, key: str) -> DataType:
         return getattr(self._schema, key)

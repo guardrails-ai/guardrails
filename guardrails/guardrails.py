@@ -4,13 +4,12 @@ from copy import deepcopy
 from typing import Any, Dict, List, Tuple, Callable
 
 from eliot import start_action, to_file
-from lxml import etree as ET
 
 import guardrails.utils.reask_utils as reask_utils
 from guardrails.llm_providers import get_llm_ask
 from guardrails.prompt import Prompt
 from guardrails.output_schema import OutputSchema
-from guardrails.utils.aiml_utils import read_aiml
+from guardrails.utils.rail_utils import read_rail
 from guardrails.utils.logs_utils import GuardHistory, GuardLogs, GuardState
 
 logger = logging.getLogger(__name__)
@@ -28,20 +27,20 @@ class Guard:
         self.num_reasks = num_reasks
         self.guard_state = GuardState([])
 
-        parsed_aiml_copy = deepcopy(self.output_schema.parsed_aiml)
-        output_schema_prompt = reask_utils.extract_prompt_from_xml(parsed_aiml_copy)
+        parsed_rail_copy = deepcopy(self.output_schema.parsed_rail)
+        output_schema_prompt = reask_utils.extract_prompt_from_xml(parsed_rail_copy)
         self.base_prompt = base_prompt.format(output_schema=output_schema_prompt)
 
     @classmethod
-    def from_aiml(cls, aiml_file: str) -> "Guard":
+    def from_rail(cls, rail_file: str) -> "Guard":
         """Create an Schema from an XML file."""
-        output_schema, base_prompt, _ = read_aiml(aiml_file=aiml_file)
+        output_schema, base_prompt, _ = read_rail(rail_file=rail_file)
         return cls(output_schema, base_prompt)
 
     @classmethod
-    def from_aiml_string(cls, aiml_string: str) -> "Guard":
+    def from_rail_string(cls, rail_string: str) -> "Guard":
         """Create an Schema from an XML string."""
-        output_schema, base_prompt, _ = read_aiml(aiml_string=aiml_string)
+        output_schema, base_prompt, _ = read_rail(rail_string=rail_string)
         return cls(output_schema, base_prompt)
 
     def __call__(
@@ -144,7 +143,7 @@ class Guard:
 
                 reask_json = reask_utils.prune_json_for_reasking(validated_response)
                 reask_prompt, reask_schema = reask_utils.get_reask_prompt(
-                    self.output_schema.parsed_aiml, reasks, reask_json
+                    self.output_schema.parsed_rail, reasks, reask_json
                 )
 
                 return self.validation_inner_loop(

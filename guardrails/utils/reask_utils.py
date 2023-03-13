@@ -58,7 +58,7 @@ def gather_reasks(output: Dict) -> List[ReAsk]:
 
 def get_reasks_by_element(
     reasks: List[ReAsk],
-    parsed_aiml: ET._Element,
+    parsed_rail: ET._Element,
 ) -> Dict[ET._Element, List[tuple]]:
     """Cluster reasks by the XML element they are associated with."""
 
@@ -75,7 +75,7 @@ def get_reasks_by_element(
                 query += f"/*[@name='{part}']"
 
         # Find the element
-        element = parsed_aiml.find(query)
+        element = parsed_rail.find(query)
 
         reasks_by_element[element].append(reask)
 
@@ -192,12 +192,12 @@ def extract_prompt_from_xml(tree: ET._Element) -> str:
 
 
 def get_reask_prompt(
-    parsed_aiml, reasks: List[ReAsk], reask_json: Dict
+    parsed_rail, reasks: List[ReAsk], reask_json: Dict
 ) -> Tuple[str, ET._Element]:
     """Construct a prompt for reasking.
 
     Args:
-        parsed_aiml: The parsed AIML.
+        parsed_rail: The parsed RAIL.
         reasks: List of tuples, where each tuple contains the path to the
             reasked element, and the ReAsk object (which contains the error
             message describing why the reask is necessary).
@@ -206,14 +206,14 @@ def get_reask_prompt(
     Returns:
         The prompt.
     """
-    parsed_aiml_copy = deepcopy(parsed_aiml)
+    parsed_rail_copy = deepcopy(parsed_rail)
 
     # Get the elements that are to be reasked
-    reask_elements = get_reasks_by_element(reasks, parsed_aiml_copy)
+    reask_elements = get_reasks_by_element(reasks, parsed_rail_copy)
 
     # Get the pruned JSON so that it only contains ReAsk objects
     # Get the pruned tree
-    pruned_tree = get_pruned_tree(parsed_aiml_copy, list(reask_elements.keys()))
+    pruned_tree = get_pruned_tree(parsed_rail_copy, list(reask_elements.keys()))
     pruned_tree_string = extract_prompt_from_xml(pruned_tree)
 
     reask_prompt_template = (

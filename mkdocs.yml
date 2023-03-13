@@ -8,11 +8,11 @@ repo_name: ShreyaR/guardrails
 nav:
     - 'Home': index.md
     - 'Getting Started': notebooks/getting_started.md
-    - 'AIML Specification':
-      - 'Overview': aiml/index.md
-      - 'Output Element': aiml/output.md
-      - 'Prompt Element': aiml/prompt.md
-      - '(Experimental) Script Element': aiml/script.md
+    - 'RAIL Specification':
+      - 'Overview': rail/index.md
+      - 'Output Element': rail/output.md
+      - 'Prompt Element': rail/prompt.md
+      - '(Experimental) Script Element': rail/script.md
     - 'Guardrails Modules':
       - 'Data Types': data_types.md
       - 'Validation': validation.md

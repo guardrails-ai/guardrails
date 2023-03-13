@@ -11,38 +11,38 @@ from guardrails.utils.constants import constants
 from guardrails.validators import Validator
 
 
-def read_aiml(
-    aiml_file: Optional[str] = None, aiml_string: Optional[str] = None
+def read_rail(
+    rail_file: Optional[str] = None, rail_string: Optional[str] = None
 ) -> Tuple[OutputSchema, Prompt, Dict]:
-    """Read an AIML file.
+    """Read an RAIL file.
 
     Args:
-        aiml_file: The path to the AIML file.
+        rail_file: The path to the RAIL file.
 
     Returns:
-        The root element of the AIML file.
+        The root element of the RAIL file.
     """
-    if aiml_file is not None:
-        with open(aiml_file, "r") as f:
+    if rail_file is not None:
+        with open(rail_file, "r") as f:
             xml = f.read()
-    elif aiml_string is not None:
-        xml = aiml_string
+    elif rail_string is not None:
+        xml = rail_string
     else:
-        raise ValueError("Must pass either aiml_file or aiml_string.")
+        raise ValueError("Must pass either rail_file or rail_string.")
     parser = ET.XMLParser(encoding="utf-8")
-    parsed_aiml = ET.fromstring(xml, parser=parser)
+    parsed_rail = ET.fromstring(xml, parser=parser)
 
-    raw_output_schema = parsed_aiml.find("output")
+    raw_output_schema = parsed_rail.find("output")
     if raw_output_schema is None:
-        raise ValueError("AIML file must contain a output-schema element.")
+        raise ValueError("RAIL file must contain a output-schema element.")
     output_schema = load_output_schema(raw_output_schema)
 
-    prompt = parsed_aiml.find("prompt")
+    prompt = parsed_rail.find("prompt")
     if prompt is None:
-        raise ValueError("AIML file must contain a prompt element.")
+        raise ValueError("RAIL file must contain a prompt element.")
     prompt = load_prompt(prompt)
 
-    script = parsed_aiml.find("script")
+    script = parsed_rail.find("script")
     if script is not None:
         script = load_script(script)
 
@@ -52,7 +52,7 @@ def read_aiml(
 def load_output_schema(root: ET._Element) -> OutputSchema:
     """Validate parsed XML, create a prompt and a Schema object."""
 
-    output = OutputSchema(parsed_aiml=root)
+    output = OutputSchema(parsed_rail=root)
 
     for child in root:
         if isinstance(child, ET._Comment):

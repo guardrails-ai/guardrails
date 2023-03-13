@@ -2,17 +2,17 @@
 
 Guardrails is a python package supporting:
 
-1. `AIML` specification for defining the expected outcome to the LLM.
+1. `RAIL` specification for defining the expected outcome to the LLM.
 2. Lightweight wrappers around LLM API calls that allow output validation and correction.
 
 Let's say you want to extract key information from a Terms-of-Service document. Here's how you can use Guardrails to get a structured, validated and corrected output from the LLM.
 
-## Step 1: Add expected output schema to the `AIML` spec.
-Start by specifying the schema and format of their desired output in an .aiml file.
+## Step 1: Add expected output schema to the `RAIL` spec.
+Start by specifying the schema and format of their desired output in an .rail file.
 
 ```xml
 <?xml version="1.0"?>
-<aiml>
+<rail>
 <output>
     <list name="fees" description="What fees and charges are associated with my account?">
         <object>
@@ -27,15 +27,15 @@ Start by specifying the schema and format of their desired output in an .aiml fi
     </list>
     <string name='interest_rates' description='What are the interest rates offered by the bank on savings and checking accounts, loans, and credit products?' format="one-line" on-fail-one-line="noop"/>
 </output>
-</aiml>
+</rail>
 ```
 
-## Step 2: Add the information about the high level task to the `AIML` spec.
+## Step 2: Add the information about the high level task to the `RAIL` spec.
 
-Add the prompt to the .aiml file. .aiml supports templating, and provides helpful primitives out-of-the-box to aid in prompt construction.
+Add the prompt to the .rail file. .rail supports templating, and provides helpful primitives out-of-the-box to aid in prompt construction.
 
 <?xml version="1.0"?>
-<aiml>
+<rail>
 <prompt>
 
 Given the following document, answer the following questions. If the answer doesn't exist in the document, enter 'None'.
@@ -53,7 +53,7 @@ Given the following document, answer the following questions. If the answer does
 	...
 </output>
 
-</aiml>
+</rail>
 
 At runtime, the `{{output_schema}}` specification will be substituted automatically by the correct value. Anything enclosed in `{}` is a prompt variable which will be substituted at runtime. `@xml_prefix_prompt` and `@json_suffix_prompt` are guardrails primitives.
 
@@ -65,7 +65,7 @@ Wrap any LLM API call with Guardrails to make sure that the generated output is 
 import guardrails as gd
 import openai
 
-guard = gd.Guard.from_aiml("path/to/aiml/file")
+guard = gd.Guard.from_rail("path/to/rail/file")
 output = guard(
 		openai.Completion.create,
 		document=document,

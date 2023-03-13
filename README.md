@@ -5,7 +5,7 @@
 ## XML Files
 
 - define what information you want in the repsonse. Like defining a schema.
-- `Schema.from_aiml` reads in the `.aiml` file and parses it to make sure it's consistent with the dialect (e.g. `.aiml` dialect), ensures that the validators are registered for valid formatters. If you pass in formatters that don't exist, then it will raise a warning, but won't create any validation for those formatters. This also creates a prompt that is passed to the LLM
+- `Schema.from_rail` reads in the `.rail` file and parses it to make sure it's consistent with the dialect (e.g. `.rail` dialect), ensures that the validators are registered for valid formatters. If you pass in formatters that don't exist, then it will raise a warning, but won't create any validation for those formatters. This also creates a prompt that is passed to the LLM
 
 ### Formatter
 `two-words` is a formatter
