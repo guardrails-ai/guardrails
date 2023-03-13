@@ -47,7 +47,7 @@ class EventDetail(BaseException):
     value: Any
     schema: Dict[str, Any]
     error_message: str
-    debug_value: Any
+    fix_value: Any
 
 
 class Validator:
@@ -62,15 +62,15 @@ class Validator:
                     on_fail = self.refrain
                 elif on_fail == "noop":
                     on_fail = self.noop
-                elif on_fail == "debug":
-                    on_fail = self.debug
+                elif on_fail == "fix":
+                    on_fail = self.fix
                 elif on_fail == "reask":
                     on_fail = self.reask
                 else:
                     raise ValueError(f"Unknown on_fail value: {on_fail}.")
             self.on_fail = on_fail
         else:
-            self.on_fail = self.debug
+            self.on_fail = self.fix
 
     def validate_with_correction(self, key, value, schema) -> Dict:
         try:
@@ -86,10 +86,10 @@ class Validator:
 
         raise NotImplementedError
 
-    def debug(self, error: EventDetail) -> Dict:
+    def fix(self, error: EventDetail) -> Dict:
         """Debug the incorrect value."""
 
-        error.schema[error.key] = error.debug_value
+        error.schema[error.key] = error.fix_value
         return error.schema
 
     def reask(self, error: EventDetail) -> Dict:

@@ -89,7 +89,7 @@ Each element can have attributes that specify additional information about the d
         ```
 
 2. `description` attribute that specifies the description of the field. This is similar to a prompt that will be provided to the LLM. It can contain more context to help the LLM generate the correct output.
-3. `required` attribute that specifies whether the field is required or not. If the field is required, the LLM will be asked to generate the field until it is generated correctly. If the field is not required, the LLM will not be asked to generate the field if it is not generated correctly.
+3. (Coming soon!) `required` attribute that specifies whether the field is required or not. If the field is required, the LLM will be asked to generate the field until it is generated correctly. If the field is not required, the LLM will not be asked to generate the field if it is not generated correctly.
 4. `format` attribute that specifies the quality criteria that the field should respect. The `format` attribute can contain multiple quality criteria separated by a colon (`;`). For example, `two-words; upper-case`.
 5. `on-fail-{quality-criteria}` attribute that specifies the corrective action to take in case the quality criteria is not met. For example, `on-fail-two-words="reask"` specifies that if the field does not have two words, the LLM should be asked to re-generate the field.
 
