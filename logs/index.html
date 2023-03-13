@@ -10,21 +10,21 @@
         <meta name="author" content="Shreya Rajpal">
       
       
-        <link rel="canonical" href="https://getguardrails.com/rail/prompt/">
+        <link rel="canonical" href="https://getguardrails.com/logs/">
       
-      <link rel="icon" href="../../img/favicon.ico">
+      <link rel="icon" href="../img/favicon.ico">
       <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-8.5.10">
     
     
       
-        <title>Prompt Element - Guardrails.ai</title>
+        <title>Inspecting logs - Guardrails.ai</title>
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.975780f9.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.975780f9.min.css">
       
         
-        <link rel="stylesheet" href="../../assets/stylesheets/palette.2505c338.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/palette.2505c338.min.css">
         
       
       
@@ -82,15 +82,15 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
     
-      <link rel="stylesheet" href="../../css/ansi-colours.css">
+      <link rel="stylesheet" href="../css/ansi-colours.css">
     
-      <link rel="stylesheet" href="../../css/jupyter-cells.css">
+      <link rel="stylesheet" href="../css/jupyter-cells.css">
     
-      <link rel="stylesheet" href="../../css/pandas-dataframe.css">
+      <link rel="stylesheet" href="../css/pandas-dataframe.css">
     
-    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -119,7 +119,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#prompt-element" class="md-skip">
+        <a href="#inspecting-logs" class="md-skip">
           Skip to content
         </a>
       
@@ -133,9 +133,9 @@
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../.." title="Guardrails.ai" class="md-header__button md-logo" aria-label="Guardrails.ai" data-md-component="logo">
+    <a href=".." title="Guardrails.ai" class="md-header__button md-logo" aria-label="Guardrails.ai" data-md-component="logo">
       
-  <img src="../../img/tracks_white.png" alt="logo">
+  <img src="../img/tracks_white.png" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -151,7 +151,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Prompt Element
+              Inspecting logs
             
           </span>
         </div>
@@ -254,9 +254,9 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../.." title="Guardrails.ai" class="md-nav__button md-logo" aria-label="Guardrails.ai" data-md-component="logo">
+    <a href=".." title="Guardrails.ai" class="md-nav__button md-logo" aria-label="Guardrails.ai" data-md-component="logo">
       
-  <img src="../../img/tracks_white.png" alt="logo">
+  <img src="../img/tracks_white.png" alt="logo">
 
     </a>
     Guardrails.ai
@@ -284,7 +284,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../.." class="md-nav__link">
+      <a href=".." class="md-nav__link">
         Home
       </a>
     </li>
@@ -299,7 +299,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../getting_started/" class="md-nav__link">
+      <a href="../getting_started/" class="md-nav__link">
         Getting Started
       </a>
     </li>
@@ -312,16 +312,14 @@
 
   
   
-    
-  
   
     
       
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3" type="checkbox" id="__nav_3" checked>
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" data-md-toggle="__nav_3" type="checkbox" id="__nav_3" checked>
       
       
       
@@ -344,7 +342,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../" class="md-nav__link">
+      <a href="../rail/" class="md-nav__link">
         Overview
       </a>
     </li>
@@ -358,7 +356,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../output/" class="md-nav__link">
+      <a href="../rail/output/" class="md-nav__link">
         Output Element
       </a>
     </li>
@@ -370,52 +368,11 @@
               
   
   
-    
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          Prompt Element
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../rail/prompt/" class="md-nav__link">
         Prompt Element
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#components-of-a-prompt" class="md-nav__link">
-    📚 Components of a Prompt
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -427,7 +384,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../script/" class="md-nav__link">
+      <a href="../rail/script/" class="md-nav__link">
         (Experimental) Script Element
       </a>
     </li>
@@ -447,14 +404,16 @@
 
   
   
+    
+  
   
     
       
     
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" data-md-toggle="__nav_4" type="checkbox" id="__nav_4" checked>
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_4" type="checkbox" id="__nav_4" checked>
       
       
       
@@ -477,7 +436,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../guard/" class="md-nav__link">
+      <a href="../guard/" class="md-nav__link">
         Guard
       </a>
     </li>
@@ -491,7 +450,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../data_types/" class="md-nav__link">
+      <a href="../data_types/" class="md-nav__link">
         Data Types
       </a>
     </li>
@@ -505,7 +464,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../validation/" class="md-nav__link">
+      <a href="../validation/" class="md-nav__link">
         Validators
       </a>
     </li>
@@ -517,11 +476,66 @@
               
   
   
+    
   
-    <li class="md-nav__item">
-      <a href="../../logs/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Inspecting logs
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         Inspecting logs
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#accessing-logs-via-guardrailslog" class="md-nav__link">
+    🪵 Accessing logs via guardrails.log
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#accessing-logs-via-gdguardguard_state" class="md-nav__link">
+    🇻🇦 Accessing logs via gd.Guard.guard_state
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#coming-soon" class="md-nav__link">
+    ⏲️ Coming soon!
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -569,7 +583,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../examples/extracting_entities/" class="md-nav__link">
+      <a href="../examples/extracting_entities/" class="md-nav__link">
         Extracting entities from ToS
       </a>
     </li>
@@ -583,7 +597,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../examples/bug_free_python_code/" class="md-nav__link">
+      <a href="../examples/bug_free_python_code/" class="md-nav__link">
         Generating bug-free Python code
       </a>
     </li>
@@ -597,7 +611,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../examples/no_secrets_in_generated_text/" class="md-nav__link">
+      <a href="../examples/no_secrets_in_generated_text/" class="md-nav__link">
         No secrets in generated text
       </a>
     </li>
@@ -611,7 +625,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../examples/syntax_error_free_sql/" class="md-nav__link">
+      <a href="../examples/syntax_error_free_sql/" class="md-nav__link">
         Natural language to bug-free SQL
       </a>
     </li>
@@ -625,7 +639,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../examples/recipe_generation/" class="md-nav__link">
+      <a href="../examples/recipe_generation/" class="md-nav__link">
         Vegan Mac & Cheese Recipe Generator
       </a>
     </li>
@@ -639,7 +653,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../examples/valid_chess_moves/" class="md-nav__link">
+      <a href="../examples/valid_chess_moves/" class="md-nav__link">
         Using GPT to play valid chess moves
       </a>
     </li>
@@ -680,8 +694,22 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#components-of-a-prompt" class="md-nav__link">
-    📚 Components of a Prompt
+  <a href="#accessing-logs-via-guardrailslog" class="md-nav__link">
+    🪵 Accessing logs via guardrails.log
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#accessing-logs-via-gdguardguard_state" class="md-nav__link">
+    🇻🇦 Accessing logs via gd.Guard.guard_state
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#coming-soon" class="md-nav__link">
+    ⏲️ Coming soon!
   </a>
   
 </li>
@@ -703,74 +731,27 @@
 
                   
 
-  <a href="https://github.com/ShreyaR/guardrails/edit/master/docs/rail/prompt.md" title="Edit this page" class="md-content__button md-icon">
+  <a href="https://github.com/ShreyaR/guardrails/edit/master/docs/logs.md" title="Edit this page" class="md-content__button md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25Z"/></svg>
   </a>
 
 
-<h1 id="prompt-element"><code>Prompt</code> Element</h1>
-<p>The <code>&lt;prompt&gt;&lt;/prompt&gt;</code> element contains the high level instructions sent to the LLM, that describe the high level task.</p>
-<h2 id="components-of-a-prompt">📚 Components of a Prompt</h2>
-<p>In addition to the high level task description, the prompt also contains the following:</p>
-<table>
-<thead>
-<tr>
-<th>Component</th>
-<th>Syntax</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Variables</td>
-<td><code>{{variable_name}}</code></td>
-<td>These are provided by the user at runtime, and substituted in the prompt.</td>
-</tr>
-<tr>
-<td>Output Schema</td>
-<td><code>{output_schema}</code></td>
-<td>This is the schema of the expected output, and is compiled based on the  <code>output</code> element.  For more information on how the output schema is compiled for the prompt, check out <a href="../output/#adding-compiled-output-element-to-prompt"><code>output</code> element compilation</a>.</td>
-</tr>
-<tr>
-<td>Prompt Primitives</td>
-<td><code>@prompt_primitive_name</code></td>
-<td>These are pre-constructed prompts that are useful for common tasks. E.g., some primitives may contain information that helps the LLM understand the output schema better.  To see the full list of prompt primitives, check out <a href="https://github.com/ShreyaR/guardrails/blob/main/guardrails/constants.xml"><code>guardrails/constants.xml</code></a>.</td>
-</tr>
-</tbody>
-</table>
-<div class="language-xml highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nt">&lt;rail</span><span class="w"> </span><span class="na">version=</span><span class="s">&quot;0.1&quot;</span><span class="nt">&gt;</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nt">&lt;prompt&gt;</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="cm">&lt;!-- (1)! --&gt;</span>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>Given<span class="w"> </span>the<span class="w"> </span>following<span class="w"> </span>document,<span class="w"> </span>answer<span class="w"> </span>the<span class="w"> </span>following<span class="w"> </span>questions.<span class="w"> </span>If<span class="w"> </span>the<span class="w"> </span>answer<span class="w"> </span>doesn&#39;t<span class="w"> </span>exist<span class="w"> </span>in<span class="w"> </span>the<span class="w"> </span>document,<span class="w"> </span>enter<span class="w"> </span>&#39;None&#39;.
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>{document}<span class="w"> </span><span class="cm">&lt;!-- (2)! --&gt;</span>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>
-</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>@xml_prefix_prompt<span class="w">  </span><span class="cm">&lt;!-- (3)! --&gt;</span>
-</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>
-</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>
-</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>{{output_schema}}<span class="w">  </span><span class="cm">&lt;!-- (4)! --&gt;</span>
-</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>
-</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>
-</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>@json_suffix_prompt<span class="w">  </span><span class="cm">&lt;!-- (5)! --&gt;</span>
-</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>
-</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="nt">&lt;/prompt&gt;</span>
-</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="nt">&lt;/rail&gt;</span>
+<h1 id="inspecting-logs">Inspecting logs</h1>
+<p>All <code>gd.Guard</code> calls are logged internally, and can be accessed via two methods, <code>gd.Guard.guard_state</code> or <code>guardrails.log</code>.</p>
+<h2 id="accessing-logs-via-guardrailslog">🪵 Accessing logs via <code>guardrails.log</code></h2>
+<p>This is the simplest way to access logs. It returns a list of all <code>gd.Guard</code> calls, in the order they were made.</p>
+<p>In order to access logs, run:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>eliot-tree<span class="w"> </span>--output-format<span class="o">=</span>ascii<span class="w"> </span>guardrails.log
 </span></code></pre></div>
+<h2 id="accessing-logs-via-gdguardguard_state">🇻🇦 Accessing logs via <code>gd.Guard.guard_state</code></h2>
+<p><code>guard_state</code> is an attribute of the <code>gd.Guard</code> class. It contains:</p>
 <ol>
-<li>The prompt contains high level task information.</li>
-<li>The variable <code>{{document}}</code> is provided by the user at runtime.</li>
-<li><code>@xml_prefix_prompt</code> is a prompt primitive provided by guardrails. It is equivalent to typing the following lines in the prompt:
-<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>Given below is XML that describes the information to extract from this document and the tags to extract it into.
-</span></code></pre></div></li>
-<li><code>{output_schema}</code> is the output schema and contains information about , which is compiled based on the <code>output</code> element.</li>
-<li><code>@json_suffix_prompt</code> is a prompt primitive provided by guardrails. It is equivalent to typing the following lines in the prompt:
-<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>ONLY return a valid JSON object (no other text is necessary). The JSON MUST conform to the XML format, including any types and format requests e.g. requests for lists, objects and specific types. Be correct and concise. If you are unsure anywhere, enter `None`.
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>JSON Output:
-</span></code></pre></div></li>
+<li>A list of all <code>gd.Guard</code> calls, in the order they were made.</li>
+<li>For each call, reasks needed and their results.</li>
 </ol>
+<h2 id="coming-soon">⏲️ Coming soon!</h2>
+<p>On the roadmap: first class support for reading logs.</p>
 
 
 
@@ -793,7 +774,7 @@
     <nav class="md-footer__inner md-grid" aria-label="Footer" >
       
         
-        <a href="../output/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Output Element" rel="prev">
+        <a href="../validation/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Validators" rel="prev">
           <div class="md-footer__button md-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
           </div>
@@ -802,20 +783,20 @@
               <span class="md-footer__direction">
                 Previous
               </span>
-              Output Element
+              Validators
             </div>
           </div>
         </a>
       
       
         
-        <a href="../script/" class="md-footer__link md-footer__link--next" aria-label="Next: (Experimental) Script Element" rel="next">
+        <a href="../examples/extracting_entities/" class="md-footer__link md-footer__link--next" aria-label="Next: Extracting entities from ToS" rel="next">
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
                 Next
               </span>
-              (Experimental) Script Element
+              Extracting entities from ToS
             </div>
           </div>
           <div class="md-footer__button md-icon">
@@ -851,10 +832,10 @@
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.expand", "navigation.sections", "content.code.annotate", "toc.follow"], "search": "../../assets/javascripts/workers/search.16e2a7d4.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}}</script>
+    <script id="__config" type="application/json">{"base": "..", "features": ["navigation.expand", "navigation.sections", "content.code.annotate", "toc.follow"], "search": "../assets/javascripts/workers/search.16e2a7d4.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}}</script>
     
     
-      <script src="../../assets/javascripts/bundle.5a2dcb6a.min.js"></script>
+      <script src="../assets/javascripts/bundle.5a2dcb6a.min.js"></script>
       
     
     

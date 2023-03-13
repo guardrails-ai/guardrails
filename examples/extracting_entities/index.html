@@ -417,16 +417,30 @@
       
       
         <label class="md-nav__link" for="__nav_4">
-          Guardrails Modules
+          Guardrails Reference
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="Guardrails Modules" data-md-level="1">
+      <nav class="md-nav" aria-label="Guardrails Reference" data-md-level="1">
         <label class="md-nav__title" for="__nav_4">
           <span class="md-nav__icon md-icon"></span>
-          Guardrails Modules
+          Guardrails Reference
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guard/" class="md-nav__link">
+        Guard
+      </a>
+    </li>
+  
+
+            
           
             
               
@@ -449,7 +463,7 @@
   
     <li class="md-nav__item">
       <a href="../../validation/" class="md-nav__link">
-        Validation
+        Validators
       </a>
     </li>
   
@@ -462,21 +476,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../llm_api_wrappers.md" class="md-nav__link">
-        LLM API Wrappers
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../inspecting_logs.md" class="md-nav__link">
+      <a href="../../logs/" class="md-nav__link">
         Inspecting logs
       </a>
     </li>
@@ -805,11 +805,10 @@
 <p>To download this example as a Jupyter notebook, click <a href="https://github.com/ShreyaR/guardrails/blob/main/docs/examples/extracting_entities.ipynb">here</a>.</p>
 </div>
 <p>In this example, we will use Guardrails to extract key information from a Terms-of-Service document.</p>
-<p>To get started, download the document from <a href="https://github.com/ShreyaR/guardrails/blob/main/example_data/chase_card_agreement.pdf">here</a> and save it as <code>chase_card_agreement.pdf</code> in the same directory as this notebook.</p>
 <h2 id="objective">Objective</h2>
 <p>We want to extract structured information about all fees and interest rates associated with the Chase credit card.</p>
 <h2 id="step-0-download-pdf-and-load-it-as-string">Step 0: Download PDF and load it as string</h2>
-<p>To get started, download the document from <a href="https://github.com/ShreyaR/guardrails/blob/main/example_data/chase_card_agreement.pdf">here</a> and save it in <code>data/chase_card_agreement.pdf</code>.</p>
+<p>To get started, download the document from <a href="https://github.com/ShreyaR/guardrails/blob/main/docs/examples/data/chase_card_agreement.pdf">here</a> and save it in <code>data/chase_card_agreement.pdf</code>.</p>
 <p>Guardrails has some built-in functions to help with common tasks. Here, we will use the <code>load_pdf</code> function to load the PDF as a string.</p>
 </div>
 </div>
@@ -851,7 +850,7 @@ After that, <span style="color: #008080; text-decoration-color: #008080; font-we
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="step-1-create-the-rail-spec">Step 1: Create the RAIL Spec</h2>
-<p>Ordinarily, we would create an RAIL spec in a separate file. For the purposes of this example, we will create the spec in this notebook as a string following the RAIL syntax. For more information on RAIL, see the <a href="rail/output.md">RAIL documentation</a>.</p>
+<p>Ordinarily, we would create an RAIL spec in a separate file. For the purposes of this example, we will create the spec in this notebook as a string following the RAIL syntax. For more information on RAIL, see the <a href="../../rail/output/">RAIL documentation</a>.</p>
 <p>Here, we request:</p>
 <ol>
 <li>A list of the fees associated with the card. We ask for sub-information, each with its own quality criteria and corrective action.</li>
@@ -1123,7 +1122,7 @@ JSON Output:
     <nav class="md-footer__inner md-grid" aria-label="Footer" >
       
         
-        <a href="../../validation/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Validation" rel="prev">
+        <a href="../../logs/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Inspecting logs" rel="prev">
           <div class="md-footer__button md-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
           </div>
@@ -1132,7 +1131,7 @@ JSON Output:
               <span class="md-footer__direction">
                 Previous
               </span>
-              Validation
+              Inspecting logs
             </div>
           </div>
         </a>

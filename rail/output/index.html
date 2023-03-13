@@ -595,16 +595,30 @@
       
       
         <label class="md-nav__link" for="__nav_4">
-          Guardrails Modules
+          Guardrails Reference
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="Guardrails Modules" data-md-level="1">
+      <nav class="md-nav" aria-label="Guardrails Reference" data-md-level="1">
         <label class="md-nav__title" for="__nav_4">
           <span class="md-nav__icon md-icon"></span>
-          Guardrails Modules
+          Guardrails Reference
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guard/" class="md-nav__link">
+        Guard
+      </a>
+    </li>
+  
+
+            
           
             
               
@@ -627,7 +641,7 @@
   
     <li class="md-nav__item">
       <a href="../../validation/" class="md-nav__link">
-        Validation
+        Validators
       </a>
     </li>
   
@@ -640,21 +654,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../llm_api_wrappers.md" class="md-nav__link">
-        LLM API Wrappers
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../inspecting_logs.md" class="md-nav__link">
+      <a href="../../logs/" class="md-nav__link">
         Inspecting logs
       </a>
     </li>
@@ -1025,7 +1025,7 @@
 </div>
 <h3 id="supported-types">Supported types</h3>
 <p>Guardrails supports many data types, including:, <code>string</code>, <code>integer</code>, <code>float</code>, <code>boolean</code>, <code>list</code>, <code>object</code>, <code>url</code>, <code>email</code> and many more.</p>
-<p>Check out the <a href="data-types.md">RAIL Data Types</a> page for a list of supported data types.</p>
+<p>Check out the <a href="../../data_types/">RAIL Data Types</a> page for a list of supported data types.</p>
 <h4 id="scalar-vs-non-scalar-types">Scalar vs Non-scalar types</h4>
 <p>Guardrails supports two types of data types: scalar and non-scalar.</p>
 <table>
@@ -1223,7 +1223,7 @@
 <h3 id="supported-criteria">Supported criteria</h3>
 <ul>
 <li>Each quality critera is relevant to a specific data type. For example, the <code>two-words</code> quality criteria is only relevant to strings, and the <code>positive</code> quality criteria is only relevant to integers and floats.</li>
-<li>To see the full list of supported quality criteria, check out the <a href="validation.md">Validation</a> page.</li>
+<li>To see the full list of supported quality criteria, check out the <a href="../../validation/">Validation</a> page.</li>
 </ul>
 <h2 id="specifying-corrective-actions">🛠️ Specifying corrective actions</h2>
 <p>The <code>on-fail-{quality-criteria}</code> attribute allows specifying the corrective action that should be taken if the quality criteria is not met. The corrective action can be one of the following:</p>
