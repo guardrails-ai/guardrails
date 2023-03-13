@@ -383,8 +383,8 @@ class ValidUrl(Validator):
         return schema
 
 
-@register_validator(name="bug-free", data_type="pythoncode")
-class BugFree(Validator):
+@register_validator(name="bug-free-python", data_type="pythoncode")
+class BugFreePython(Validator):
     """Validate that a value is not a bug."""
 
     def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
@@ -400,6 +400,29 @@ class BugFree(Validator):
                 value,
                 schema,
                 e,
+                None,
+            )
+
+        return schema
+
+
+@register_validator(name="bug-free-sql", data_type="sql")
+class BugFreeSQL(Validator):
+    """Validate that a value is not a bug."""
+
+    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
+        """Validate that a value is not a bug."""
+
+        import sqlvalidator
+
+        sql_query = sqlvalidator.parse("SELECT * from table")
+
+        if not sql_query.is_valid():
+            raise EventDetail(
+                key,
+                value,
+                schema,
+                '. '.join(sql_query.errors),
                 None,
             )
 

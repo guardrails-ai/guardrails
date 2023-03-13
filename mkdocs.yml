@@ -28,8 +28,8 @@ nav:
       - 'Extracting entities from ToS': examples/extracting_entities.ipynb
       - 'Generating bug-free Python code': examples/bug_free_python_code.ipynb
       - 'No secrets in generated text': examples/no_secrets_in_generated_text.ipynb
-      - 'SQL Code Generator': examples/sql_code_generator.md
-      - 'Recipe Generator': examples/recipe_generator.md
+      - 'SQL Code Generator': examples/syntax_error_free_sql.md
+      - 'Vegan Mac & Cheese Recipe Generator': examples/recipe_generation.ipynb
       - 'Natural language to pandas code': examples/nl_to_pandas.md
       - 'Building EHRs from doctors notes': examples/ehr_from_doctors_notes.md
       - 'Forcing positive sentiment in chatbots': examples/positive_sentiment.md

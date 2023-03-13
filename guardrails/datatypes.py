@@ -201,6 +201,12 @@ class PythonCode(ScalarType):
     """
 
 
+@register_type("sql")
+class SQLCode(ScalarType):
+    """
+    Element tag: `<sql>`
+    """
+
 
 @register_type("percentage")
 class Percentage(ScalarType):
