@@ -53,6 +53,7 @@ EXTRAS = {
         "parameterized",
         "pre-commit>=2.9.3",
         "twine",
+        "alt-profanity-check",
     ]
     + DOCS_REQUIREMENTS,
     "sql": ["sqlvalidator"],
