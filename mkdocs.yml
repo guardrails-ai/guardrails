@@ -30,10 +30,10 @@ nav:
       - 'No secrets in generated text': examples/no_secrets_in_generated_text.ipynb
       - 'Natural language to bug-free SQL': examples/syntax_error_free_sql.ipynb
       - 'Vegan Mac & Cheese Recipe Generator': examples/recipe_generation.ipynb
+      - 'Using GPT to play valid chess moves': examples/valid_chess_moves.ipynb
       # - 'Natural language to pandas code': examples/nl_to_pandas.md
       # - 'Building EHRs from doctors notes': examples/ehr_from_doctors_notes.md
       # - 'Forcing positive sentiment in chatbots': examples/positive_sentiment.md
-      # - 'Using GPT to play valid chess moves': examples/gpt_chess.md
       # - 'AI tutor for writing improvements': examples/ai_tutor.md
       # - 'SFW tutoring system for kids': examples/sfw_tutoring.md
 
