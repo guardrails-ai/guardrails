@@ -12,7 +12,7 @@
 
 <details>
 
-<summary>Expand to see an example of an RAIL specification.</summary>
+<summary>Expand to see an example of a RAIL specification.</summary>
 
 ```xml
 <rail version="0.1">
@@ -83,7 +83,8 @@ Given the following document, answer the following questions. If the answer does
 2. **Simple and familiar:** `RAIL` should be familiar to anyone familiar with HTML, and should be easy to learn.
 3. **Validation and correction**: `RAIL` can be used to define quality criteria for the expected output, and corrective actions to take in case the quality criteria is not met.
 4. **Can define complex structures:** `RAIL` can be used to define arbitrarily complex structures, such as nested lists, nested objects, etc.
-5. **Supports writing custom code:** If needed, `RAIL` supports writing code for using validators, custom corrective actions, etc.
+5. **Supports writing custom code:** If needed, `RAIL` supports writing code for using validators, custom corrective actions, etc. To see examples of this, check out the [RAIL Script](script.md) page.
+6. **Code assistance**: In the future, we plan to support code completion and IntelliSense for `RAIL` specifications, which will make it very easy to write `RAIL` specifications.
 
 
 **Design inspiration**
