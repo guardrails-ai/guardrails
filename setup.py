@@ -55,6 +55,7 @@ EXTRAS = {
         "twine",
     ]
     + DOCS_REQUIREMENTS,
+    "sql": ["sqlvalidator"],
 }
 
 # The rest you shouldn't have to touch too much :)
