@@ -1,0 +1,6 @@
+include README.md LICENSE
+prune */__pycache__
+global-exclude *.pyc
+global-exclude *.DS_Store
+recursive-include guardrails/ *.xml
+recursive-include guardrails/ *.rail
