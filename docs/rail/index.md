@@ -2,7 +2,7 @@
 
 ## 🤖 What is `RAIL`?
 
-`.RAIL` is a dialect of XML. It stands for `**R**eliable **AI** markup **L**anguage`, and it can be used to define:
+`.RAIL` is a dialect of XML. It stands for "**R**eliable **AI** markup **L**anguage", and it can be used to define:
 
 1. The structure of the expected outcome of the LLM. (E.g. JSON)
 2. The type of each field in the expected outcome. (E.g. string, integer, list, object)

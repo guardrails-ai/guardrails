@@ -8,10 +8,34 @@ Guardrails is an open-source Python package for specifying structure and type, v
 
 _Note: Guardrails is an alpha release, so expect sharp edges and bugs._
 
+## What is Guardrails?
+
+Guardrails is a Python package that lets a user add structure, type and quality guarantees to the outputs of large language models (LLMs). Guardrails:
+
+✅ does pydantic-style validation of LLM outputs,
+✅ takes corrective actions (e.g. reasking LLM) when validation fails,
+✅ enforeces structure and type guarantees (e.g. JSON).
+
+
+## 🚒 Under the hood
+
 Guardrails provides a format (`.rail`) for enforcing a specification on an LLM output, and a lightweight wrapper around LLM API calls to implement this spec.
 
-1. `rail` (`reliable AI markup language`) files for specifying structure and type information, validators and corrective actions over LLM outputs.
+1. `rail` (**R**eliable **AI** markup **L**anguage) files for specifying structure and type information, validators and corrective actions over LLM outputs.
 2. `gd.Guard` wraps around LLM API calls to structure, validate and correct the outputs.
+
+### 📜 `RAIL` spec
+
+`rail` is a flavor of XML that lets users specify:
+
+1. the expected structure and types of the LLM output (e.g. JSON)
+2. the quality criteria for the output to be considered valid (e.g. generated text should be bias-free, generated code should be bug-free)
+3. and corrective actions to be taken if the output is invalid (e.g. reask the LLM, filter out the invalid output, etc.)
+
+
+To learn more about the `RAIL` spec and the design decisions behind it, check out the [docs](https://shreyar.github.io/guardrails/rail/). To learn how to write your own `RAIL` spec, check out [this link](https://shreyar.github.io/guardrails/rail/output/).
+
+
 
 ## 📦 Installation
 
@@ -32,15 +56,18 @@ pip install guardrails-ai
 - add more LLM providers
 
 ## 🚀 Getting Started
-Let's go through an example where we ask an LLM to explain what a "bank run" is, and generate URL links to relevant news articles. We'll generate a `.rail` spec for this and then use Guardrails to enforce it. You can see more examples in the docs.
+Let's go through an example where we ask an LLM to explain what a "bank run" is in a tweet, and generate URL links to relevant news articles. We'll generate a `.rail` spec for this and then use Guardrails to enforce it. You can see more examples in the docs.
 
 ### 📝 Creating a `RAIL` spec
 
-`RAIL` (with extension `.rail`) is a flavor of XML (stands for `Reliable AI Markup Language`) that describes the expected structure and types of the LLM output, the quality criteria for the output to be considered valid, and corrective actions to be taken if the output is invalid.
+We create a `RAIL` spec to describe the expected structure and types of the LLM output, the quality criteria for the output to be considered valid, and corrective actions to be taken if the output is invalid.
 
-- Create a `RAIL` spec that requests the LLM to generate an object with two fields: `explanation` and `follow_up_url`.
-- For the `explanation` field, the max length of the generated string should be 280 characters. If the explanation is not of valid length, reask the LLM.
-- For the `follow_up_url` field, the URL should be reachable. If the URL is not reachable, we will filter it out of the response.
+Specifically, we use `RAIL` to
+- Request the LLM to generate an object with two fields: `explanation` and `follow_up_url`.
+- For the `explanation` field, ensure the max length of the generated string should be between 200 and 280 characters.
+  - If the explanation is not of valid length, reask the LLM.
+- For the `follow_up_url` field, the URL should be reachable.
+  - If the URL is not reachable, we will filter it out of the response.
 
 
 ```xml
