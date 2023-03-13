@@ -861,9 +861,11 @@
 <p>To download this tutorial as a Jupyter notebook, click <a href="https://github.com/ShreyaR/guardrails/blob/main/docs/examples/bug_free_python_code.ipynb">here</a>.</p>
 </div>
 <p>In this example, we want to solve String Maniuplation leetcode problems such that the code is bug free.</p>
-<p>We make the assumption that:
-1. We don't need any external libraries that are not already installed in the environment.
-2. We are able to execute the code in the environment.</p>
+<p>We make the assumption that:</p>
+<ol>
+<li>We don't need any external libraries that are not already installed in the environment.</li>
+<li>We are able to execute the code in the environment.</li>
+</ol>
 <h2 id="objective">Objective</h2>
 <p>We want to generate bug-free code for solving leetcode problems. In this example, we don't account for semantic bugs, only for syntactic bugs.</p>
 <p>In short, we want to make sure that the code can be executed without any errors.</p>
@@ -905,10 +907,12 @@
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="step-2-create-a-guard-object-with-the-rail-spec">Step 2: Create a <code>Guard</code> object with the RAIL Spec</h2>
-<p>We create a <code>gd.Guard</code> object that will check, validate and correct the generated code. This object:
-1. Enforces the quality criteria specified in the RAIL spec (i.e. bug free code).
-2. Takes corrective action when the quality criteria are not met (i.e. reasking the LLM).
-3. Compiles the schema and type info from the RAIL spec and adds it to the prompt.</p>
+<p>We create a <code>gd.Guard</code> object that will check, validate and correct the generated code. This object:</p>
+<ol>
+<li>Enforces the quality criteria specified in the RAIL spec (i.e. bug free code).</li>
+<li>Takes corrective action when the quality criteria are not met (i.e. reasking the LLM).</li>
+<li>Compiles the schema and type info from the RAIL spec and adds it to the prompt.</li>
+</ol>
 </div>
 </div>
 </div>

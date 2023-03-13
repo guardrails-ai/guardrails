@@ -922,9 +922,11 @@ After that, <span style="color: #008080; text-decoration-color: #008080; font-we
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="step-1-create-the-rail-spec">Step 1: Create the RAIL Spec</h2>
 <p>Ordinarily, we would create an RAIL spec in a separate file. For the purposes of this example, we will create the spec in this notebook as a string following the RAIL syntax. For more information on RAIL, see the <a href="rail/output.md">RAIL documentation</a>.</p>
-<p>Here, we request:
-1. A list of the fees associated with the card. We ask for sub-information, each with its own quality criteria and corrective action.
-2. A object (i.e. key-value pairs) for the interest.</p>
+<p>Here, we request:</p>
+<ol>
+<li>A list of the fees associated with the card. We ask for sub-information, each with its own quality criteria and corrective action.</li>
+<li>A object (i.e. key-value pairs) for the interest.</li>
+</ol>
 </div>
 </div>
 </div>
@@ -969,10 +971,12 @@ After that, <span style="color: #008080; text-decoration-color: #008080; font-we
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="step-2-create-a-guard-object-with-the-rail-spec">Step 2: Create a <code>Guard</code> object with the RAIL Spec</h2>
-<p>We create a <code>gd.Guard</code> object that will check, validate and correct the output of the LLM. This object:
-1. Enforces the quality criteria specified in the RAIL spec.
-2. Takes corrective action when the quality criteria are not met.
-3. Compiles the schema and type info from the RAIL spec and adds it to the prompt.</p>
+<p>We create a <code>gd.Guard</code> object that will check, validate and correct the output of the LLM. This object:</p>
+<ol>
+<li>Enforces the quality criteria specified in the RAIL spec.</li>
+<li>Takes corrective action when the quality criteria are not met.</li>
+<li>Compiles the schema and type info from the RAIL spec and adds it to the prompt.</li>
+</ol>
 </div>
 </div>
 </div>
