@@ -1,0 +1,4 @@
+mkdocs
+mkdocstrings[python]
+mkdocs-jupyter
+mkdocs-material

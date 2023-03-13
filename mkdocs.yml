@@ -4,6 +4,12 @@ site_author: Shreya Rajpal
 repo_url: https://github.com/ShreyaR/guardrails
 repo_name: ShreyaR/guardrails
 
+remote_branch: gh-pages
+remote_name: origin
+
+copyright: |
+  Maintained by <a href="https://github.com/shreyar">Shreya Rajpal</a>.
+
 
 nav:
     - 'Home': index.md
