@@ -1,13 +1,14 @@
 import typing as t
-import tiktoken
-import pypdfium2 as pdfium
 
 from guardrails.prompt import Prompt
 
 
 class TextSplitter:
     """Split the docs into chunks with token boundaries."""
+
     def __init__(self):
+        import tiktoken
+
         self.tokenizer = tiktoken.get_encoding("gpt2")
 
     def split(
@@ -32,7 +33,7 @@ class TextSplitter:
         chunks = []
         for i in range(0, len(tokens), tokens_per_chunk - token_overlap):
             # Note: this is lossy but should be ok.
-            chunks.append(self.tokenizer.decode(tokens[i:i + tokens_per_chunk]))
+            chunks.append(self.tokenizer.decode(tokens[i : i + tokens_per_chunk]))
         return chunks
 
     def prompt_template_token_length(self, prompt_template: Prompt) -> str:
@@ -43,7 +44,8 @@ class TextSplitter:
         prompt_vars = prompt_template.get_prompt_variables()
 
         tokens = self.tokenizer.encode(
-            prompt_template.format(**{var: '' for var in prompt_vars}))
+            prompt_template.format(**{var: "" for var in prompt_vars})
+        )
         return len(tokens)
 
     def __call__(self, *args: t.Any, **kwds: t.Any) -> t.Any:
@@ -52,6 +54,8 @@ class TextSplitter:
 
 def read_pdf(path) -> str:
     """Reads the pdf at the given path."""
+    import pypdfium2 as pdfium
+
     content = ""
     pdf = pdfium.PdfDocument(path)
     for i in range(len(pdf)):
