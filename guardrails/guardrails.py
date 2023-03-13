@@ -42,30 +42,32 @@ class Guard:
         self.base_prompt = base_prompt.format(output_schema=output_schema_prompt)
 
     @classmethod
-    def from_rail(cls, rail_file: str) -> "Guard":
+    def from_rail(cls, rail_file: str, num_reasks: int = 1) -> "Guard":
         """Create an Schema from an `.rail` file.
 
         Args:
             rail_file: The path to the `.rail` file.
+            num_reasks: The max number of times to re-ask the LLM if the output is invalid.
 
         Returns:
             An instance of the `Guard` class.
         """
         output_schema, base_prompt, _ = read_rail(rail_file=rail_file)
-        return cls(output_schema, base_prompt)
+        return cls(output_schema, base_prompt, num_reasks=num_reasks)
 
     @classmethod
-    def from_rail_string(cls, rail_string: str) -> "Guard":
+    def from_rail_string(cls, rail_string: str, num_reasks: int = 1) -> "Guard":
         """Create an Schema from an `.rail` string.
 
         Args:
             rail_string: The `.rail` string.
+            num_reasks: The max number of times to re-ask the LLM if the output is invalid.
 
         Returns:
             An instance of the `Guard` class.
         """
         output_schema, base_prompt, _ = read_rail(rail_string=rail_string)
-        return cls(output_schema, base_prompt)
+        return cls(output_schema, base_prompt, num_reasks=num_reasks)
 
     def __call__(
         self, llm_api: Callable, prompt_params: Dict = None, *args, **kwargs
