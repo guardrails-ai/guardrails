@@ -7,7 +7,7 @@ repo_name: ShreyaR/guardrails
 
 nav:
     - 'Home': index.md
-    - 'Getting Started': notebooks/getting_started.md
+    - 'Getting Started': getting_started.ipynb
     - 'RAIL Specification':
       - 'Overview': rail/index.md
       - 'Output Element': rail/output.md
@@ -19,8 +19,8 @@ nav:
       - 'LLM API Wrappers': llm_api_wrappers.md
       - 'Inspecting logs': inspecting_logs.md
     - 'Examples':
-      - 'Extracting entities from ToS': examples/extracting_entities.md
-      - 'Generating bug-free Python code': examples/coda_qa.md
+      - 'Extracting entities from ToS': examples/extracting_entities.ipynb
+      - 'Generating bug-free Python code': examples/bug_free_python_code.ipynb
       - 'SQL Code Generator': examples/sql_code_generator.md
       - 'Recipe Generator': examples/recipe_generator.md
       - 'Natural language to pandas code': examples/nl_to_pandas.md

@@ -29,6 +29,7 @@ pip install guardrails-ai
 - a guardrails.js implementation
 - VSCode extension for `.rail` files
 - next version of `.rail` format
+- add more LLM providers
 
 ## 🚀 Getting Started
 Let's go through an example where we ask an LLM to explain what a "bank run" is, and generate URL links to relevant news articles. We'll generate a `.rail` spec for this and then use Guardrails to enforce it. You can see more examples in the docs.

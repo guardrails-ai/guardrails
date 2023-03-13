@@ -33,6 +33,7 @@ REQUIRED = [
     "openai",
     "rich",
     "eliot",
+    "eliot-tree",
 ]
 
 # Read in docs/requirements.txt
