@@ -12,7 +12,7 @@ Example:
 === "RAIL Spec"
 
     ```xml
-    <rail>
+    <rail version="0.1">
         <output>
             <string name="text" description="The generated text" format="two-words" on-fail-two-words="reask"/>
             <float name="score" description="The score of the generated text" format="min-val: 0" on-fail-min-val="fix"/>
@@ -75,7 +75,7 @@ Each element can have attributes that specify additional information about the d
 
     === "RAIL Spec"
         ```xml
-        <rail>
+        <rail version="0.1">
             <output>
                 <string name="some_key" />
             </output>
@@ -98,7 +98,7 @@ E.g.,
 
 === "RAIL Spec"
     ```xml
-    <rail>
+    <rail version="0.1">
         <output>
             <string
                 name="some_key"
@@ -129,7 +129,7 @@ You can combine `RAIL` elements to create an arbitrarily complex output structur
 === "RAIL Spec"
 
     ```xml
-    <rail>
+    <rail version="0.1">
         <output>
             <string name="some_key" ..../>
             <integer name="some_other_key" ..../>
@@ -158,7 +158,7 @@ You can combine `RAIL` elements to create an arbitrarily complex output structur
 === "RAIL Spec"
 
     ```xml
-    <rail>
+    <rail version="0.1">
         <output>
             <object name="some_object">
                 <string name="some_str_key" description="What should the value for this key represent?" format="two-words; upper-case" />
@@ -198,7 +198,7 @@ In the above example, `"SOME STRING"` is the value for the `some_str_key` key, a
 === "RAIL Spec"
 
     ```xml
-    <rail>
+    <rail version="0.1">
         <output>
             <list name="some_list" format="min-len: 2">
                 <string format="two-words; upper-case" />
@@ -228,7 +228,7 @@ In the above example, `"SOME STRING"` is the value for the `some_str_key` key, a
 The `format` attribute allows specifying the quality criteria for each field in the expected output. The `format` attribute can contain multiple quality criteria separated by a colon (`;`). For example,
 
 ```xml
-<rail>
+<rail version="0.1">
     <output>
         <string
             name="text"
@@ -288,7 +288,7 @@ An example of the compiled `output` element:
 === "RAIL Spec"
 
     ```xml
-    <rail>
+    <rail version="0.1">
         <output>
             <string
                 name="text"
@@ -324,7 +324,7 @@ Coming soon!
 - This behavior can be changed by setting the `strict` attribute of the `<output>` element to `true`. If `strict` is set to `true`, Guardrails will throw an error if you add an unsupported type, attribute or quality criteria.
 
     ```xml
-    <rail>
+    <rail version="0.1">
         <output strict="true">
             <unsupported-type ... />
         </output>

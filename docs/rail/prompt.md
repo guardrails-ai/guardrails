@@ -15,7 +15,7 @@ In addition to the high level task description, the prompt also contains the fol
 
 
 ```xml
-<rail>
+<rail version="0.1">
 <prompt>
 <!-- (1)! -->
 Given the following document, answer the following questions. If the answer doesn't exist in the document, enter 'None'.

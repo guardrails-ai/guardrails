@@ -32,6 +32,12 @@ def read_rail(
     parser = ET.XMLParser(encoding="utf-8")
     parsed_rail = ET.fromstring(xml, parser=parser)
 
+    if "version" not in parsed_rail.attrib or parsed_rail.attrib["version"] != "0.1":
+        raise ValueError(
+            "RAIL file must have a version attribute set to 0.1."
+            "Change the opening <rail> element to: <rail version='0.1'>"
+        )
+
     raw_output_schema = parsed_rail.find("output")
     if raw_output_schema is None:
         raise ValueError("RAIL file must contain a output-schema element.")

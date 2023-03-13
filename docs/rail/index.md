@@ -15,7 +15,7 @@
 <summary>Expand to see an example of an RAIL specification.</summary>
 
 ```xml
-<rail>
+<rail version="0.1">
 
 <output>
     <list name="fees" description="What fees and charges are associated with my account?">
@@ -106,7 +106,7 @@ Let's see an example of an `RAIL` specification in action:
 
 
 ```xml
-<rail>
+<rail version="0.1">
 
 <output> <!-- (1)! -->
 ...

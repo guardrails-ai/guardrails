@@ -11,8 +11,7 @@ Let's say you want to extract key information from a Terms-of-Service document. 
 Start by specifying the schema and format of their desired output in an .rail file.
 
 ```xml
-<?xml version="1.0"?>
-<rail>
+<rail version=0.1>
 <output>
     <list name="fees" description="What fees and charges are associated with my account?">
         <object>
@@ -34,8 +33,7 @@ Start by specifying the schema and format of their desired output in an .rail fi
 
 Add the prompt to the .rail file. .rail supports templating, and provides helpful primitives out-of-the-box to aid in prompt construction.
 
-<?xml version="1.0"?>
-<rail>
+<rail version="0.1">
 <prompt>
 
 Given the following document, answer the following questions. If the answer doesn't exist in the document, enter 'None'.
