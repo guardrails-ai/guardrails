@@ -59,12 +59,15 @@ def load_output_schema(root: ET._Element) -> OutputSchema:
     """Validate parsed XML, create a prompt and a Schema object."""
 
     output = OutputSchema(parsed_rail=root)
+    strict = False
+    if "strict" in root.attrib and root.attrib["strict"] == "true":
+        strict = True
 
     for child in root:
         if isinstance(child, ET._Comment):
             continue
         child_name = child.attrib["name"]
-        child_data = types_registry[child.tag].from_xml(child)
+        child_data = types_registry[child.tag].from_xml(child, strict=strict)
         output[child_name] = child_data
 
     return output
