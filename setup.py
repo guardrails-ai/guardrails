@@ -49,8 +49,6 @@ EXTRAS = {
         "flake8>=3.8.4",
         "docformatter>=1.4",
         "pytest-cov>=2.10.1",
-        "recommonmark>=0.7.1",
-        "parameterized",
         "pre-commit>=2.9.3",
         "twine",
     ]
@@ -132,6 +130,7 @@ setup(
     # py_modules=['mypackage'],
     install_requires=REQUIRED,
     include_package_data=True,
+    extras_require=EXTRAS,
     license="Apache 2.0",
     classifiers=[
         # Trove classifiers
