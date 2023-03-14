@@ -79,7 +79,7 @@ soupsieve==2.4
 SQLAlchemy==1.4.46
 sqlitedict==2.1.0
 stack-data==0.6.2
-starlette==0.22.0
+starlette==0.25.0
 synchronicity==0.2.13
 tblib==1.7.0
 tiktoken==0.2.0
