@@ -1,6 +1,6 @@
 import warnings
-from typing import Any, Dict, List
 from types import SimpleNamespace
+from typing import Any, Dict, List
 
 from lxml import etree as ET
 
