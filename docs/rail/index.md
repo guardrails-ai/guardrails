@@ -133,7 +133,7 @@ Let's see an example of an `RAIL` specification in action:
 
 ## 📖 How to use `RAIL` in Guardrails?
 
-After creating an `RAIL` specification, you can use to get corrected output from LLMs by wrapping your LLM API call with a `Guard` module. Here's an example of doing that:
+After creating a `RAIL` specification, you can use it to get corrected output from LLMs by wrapping your LLM API call with a `Guard` module. Here's an example of doing that:
 
 ```python
 
@@ -150,5 +150,5 @@ validated_output = guard(
 
 ```
 
-1. A `Guard` object is created from an `RAIL` specification. This object manages the validation and correction of the output of the LLM, as well as the prompt that is sent to the LLM.
+1. A `Guard` object is created from a `RAIL` specification. This object manages the validation and correction of the output of the LLM, as well as the prompt that is sent to the LLM.
 2. Wrap the LLM API call (`openai.Completion.create`) with the `Guard` object, and add any additional arguments that you want to pass to the LLM API call. Instead of returning the raw text object, the `Guard` object will return a JSON object that is validated and corrected according to the `RAIL` specification.

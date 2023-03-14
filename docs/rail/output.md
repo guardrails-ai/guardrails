@@ -1,6 +1,6 @@
 # `Output` Element
 
-The `<output>...</output>` element of an `RAIL` spec is used to give precise specification of the expected output of the LLM. It specifies
+The `<output>...</output>` element of a `RAIL` spec is used to give precise specification of the expected output of the LLM. It specifies
 
 1. the structure of the expected output (e.g. JSON),
 2. the type of each field,
@@ -120,7 +120,7 @@ E.g.,
     }
     ```
 
-## 🪜 Specifying output structure
+## ⚡ Specifying output structure
 
 You can combine `RAIL` elements to create an arbitrarily complex output structure.
 
