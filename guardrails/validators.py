@@ -3,6 +3,7 @@
 The name with which a validator is registered is the name that is used in the `RAIL` spec to specify formatters.
 """
 
+import ast
 import logging
 from collections import defaultdict
 from dataclasses import dataclass
@@ -420,7 +421,7 @@ class ValidUrl(Validator):
 class BugFreePython(Validator):
     """Validate that there are no Python syntactic bugs in the generated code.
 
-    This validator checks for syntax errors by running `exec(code)`, and will raise an exception if there are any.
+    This validator checks for syntax errors by running `ast.parse(code)`, and will raise an exception if there are any.
     Only the packages in the `python` environment are available to the code snippet.
 
     - Name for `format` attribute: `bug-free-python`
@@ -431,10 +432,10 @@ class BugFreePython(Validator):
     def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
         logger.debug(f"Validating {value} is not a bug...")
 
-        # The value represents a Python code snippet. We need to execute it and check if there are any bugs
+        # The value represents a Python code snippet. We need to check for syntax errors.
         try:
-            exec(value)
-        except Exception as e:
+            ast.parse(value)
+        except SyntaxError as e:
             raise EventDetail(
                 key,
                 value,
