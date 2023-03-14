@@ -657,6 +657,20 @@
 
             
           
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/translation_to_specific_language/" class="md-nav__link">
+        Translate text with profanity filtering
+      </a>
+    </li>
+  
+
+            
+          
         </ul>
       </nav>
     </li>
@@ -771,7 +785,7 @@ and returns the raw output from the LLM and the validated output.</p>
 
 
 <h2 id="guardrails.guardrails.Guard.from_rail" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">from_rail</span><span class="p">(</span><span class="n">rail_file</span><span class="p">)</span></code>
+<code class="highlight language-python"><span class="n">from_rail</span><span class="p">(</span><span class="n">rail_file</span><span class="p">,</span> <span class="n">num_reasks</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></code>
   
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
@@ -805,6 +819,16 @@ and returns the raw output from the LLM and the validated output.</p>
               <em>required</em>
           </td>
         </tr>
+        <tr>
+          <td><code>num_reasks</code></td>
+          <td>
+                <code>int</code>
+          </td>
+          <td><p>The max number of times to re-ask the LLM if the output is invalid.</p></td>
+          <td>
+                <code>1</code>
+          </td>
+        </tr>
     </tbody>
   </table>
 
@@ -835,7 +859,7 @@ and returns the raw output from the LLM and the validated output.</p>
 
 
 <h2 id="guardrails.guardrails.Guard.from_rail_string" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">from_rail_string</span><span class="p">(</span><span class="n">rail_string</span><span class="p">)</span></code>
+<code class="highlight language-python"><span class="n">from_rail_string</span><span class="p">(</span><span class="n">rail_string</span><span class="p">,</span> <span class="n">num_reasks</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></code>
   
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
@@ -867,6 +891,16 @@ and returns the raw output from the LLM and the validated output.</p>
           <td><p>The <code>.rail</code> string.</p></td>
           <td>
               <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>num_reasks</code></td>
+          <td>
+                <code>int</code>
+          </td>
+          <td><p>The max number of times to re-ask the LLM if the output is invalid.</p></td>
+          <td>
+                <code>1</code>
           </td>
         </tr>
     </tbody>
