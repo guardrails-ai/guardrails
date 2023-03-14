@@ -798,9 +798,9 @@
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h1 id="getting-started">Getting Started</h1>
-<p>In this notebook, we will go through the basics of creating and <code>RAIL</code> spec and using Guardrails to enforce it.</p>
+<p>In this notebook, we will go through the basics of creating a <code>RAIL</code> spec and using Guardrails to enforce it.</p>
 <h2 id="objective">Objective</h2>
-<p>Our goal is understand what a bank run is, and generate URL links to relevant news articles. We will first generate an <code>RAIL</code> spec for this and then use Guardrails to enforce it.</p>
+<p>Our goal is to understand what a bank run is, and generate URL links to relevant news articles. We will first generate a <code>RAIL</code> spec for this and then use Guardrails to enforce it.</p>
 <h2 id="installation">Installation</h2>
 <p>To get started, install the <code>guardrails</code> package with <code>pip</code>.</p>
 </div>
@@ -819,9 +819,9 @@
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="creating-an-rail-spec">Creating an <code>RAIL</code> spec</h2>
 <p>At the heart of <code>Guardrails</code> is the <code>RAIL</code> spec.</p>
-<p><code>RAIL</code> a flavor of XML (standing for <code>**R**eliable **AI** markup **L**anguage</code>) that describes the expected structure and type of the output of the LLM, the quality criteria for the output to be valid and corrective actions to be taken if the output is invalid.</p>
+<p><code>RAIL</code> a flavor of XML (standing for <strong>R</strong>eliable <strong>AI</strong> markup <strong>L</strong>anguage) that describes the expected structure and type of the output of the LLM, the quality criteria for the output to be valid and corrective actions to be taken if the output is invalid.</p>
 <ul>
-<li>For this task, we create an <code>RAIL</code> spec that requests the LLM to generate an object with 2 fields: <code>explanation</code> and <code>follow_up_url</code>.</li>
+<li>For this task, we create a <code>RAIL</code> spec that requests the LLM to generate an object with 2 fields: <code>explanation</code> and <code>follow_up_url</code>.</li>
 <li>For the <code>explanation</code> field to be valid, the max length of the generated string should be <strong>between 200 to 280 characters in length</strong>. In case the generated string doesn't meet this criteria, for now we just want to log the validation error and continue (i.e. the <strong>noop</strong> action).</li>
 <li>For the <code>follow_up_url</code> field to be valid, the <strong>URL should be reachable</strong>. In case this quality criteria is not met, the generated output should be filtered out (i.e. the <strong>filter</strong> action).</li>
 </ul>

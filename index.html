@@ -779,7 +779,7 @@
 <p><em>Note: Guardrails is an alpha release, so expect sharp edges and bugs.</em></p>
 <h2 id="what-is-guardrails">🛤️ What is Guardrails?</h2>
 <p>Guardrails is a Python package that lets a user add structure, type and quality guarantees to the outputs of large language models (LLMs). Guardrails:</p>
-<p>✅ does pydantic-style validation of LLM outputs,  ****
+<p>✅ does pydantic-style validation of LLM outputs,
 ✅ takes corrective actions (e.g. reasking LLM) when validation fails,<br />
 ✅ enforces structure and type guarantees (e.g. JSON).</p>
 <h2 id="under-the-hood">🚒 Under the hood</h2>
@@ -796,9 +796,9 @@
 <p>At the heart of Guardrails is the <code>rail</code> spec. <code>rail</code> is intended to be a language-agnostic, human-readable format for specifying structure and type information, validators and corrective actions over LLM outputs.</p>
 <p><code>rail</code> is a flavor of XML that lets users specify:</p>
 <ol>
-<li>the expected structure and types of the LLM output (e.g. JSON)</li>
-<li>the quality criteria for the output to be considered valid (e.g. generated text should be bias-free, generated code should be bug-free)</li>
-<li>and corrective actions to be taken if the output is invalid (e.g. reask the LLM, filter out the invalid output, etc.)</li>
+<li>The expected structure and types of the LLM output (e.g. JSON),</li>
+<li>The quality criteria for the output to be considered valid (e.g. generated text should be bias-free, generated code should be bug-free),</li>
+<li>Corrective actions to be taken if the output is invalid (e.g. reask the LLM, filter out the invalid output, etc.)</li>
 </ol>
 <p>To learn more about the <code>rail</code> spec and the design decisions behind it, check out the <a href="rail/">Rail Specification</a>. To learn how to write your own <code>rail</code> spec, check out <a href="rail/output/">specifying <code>output</code> elements in RAIL</a>.</p>
 <h2 id="roadmap">📍 Roadmap</h2>

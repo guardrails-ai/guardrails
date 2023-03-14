@@ -887,7 +887,7 @@
 <li>The <code>script</code> element is optional, and contains any custom code for implementing the schema.</li>
 </ol>
 <h2 id="how-to-use-rail-in-guardrails">📖 How to use <code>RAIL</code> in Guardrails?</h2>
-<p>After creating an <code>RAIL</code> specification, you can use to get corrected output from LLMs by wrapping your LLM API call with a <code>Guard</code> module. Here's an example of doing that:</p>
+<p>After creating a <code>RAIL</code> specification, you can use it to get corrected output from LLMs by wrapping your LLM API call with a <code>Guard</code> module. Here's an example of doing that:</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">import</span> <span class="nn">guardrails</span> <span class="k">as</span> <span class="nn">gd</span>
 </span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
 </span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="c1"># Create a Guard object</span>
@@ -900,7 +900,7 @@
 </span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="p">)</span>
 </span></code></pre></div>
 <ol>
-<li>A <code>Guard</code> object is created from an <code>RAIL</code> specification. This object manages the validation and correction of the output of the LLM, as well as the prompt that is sent to the LLM.</li>
+<li>A <code>Guard</code> object is created from a <code>RAIL</code> specification. This object manages the validation and correction of the output of the LLM, as well as the prompt that is sent to the LLM.</li>
 <li>Wrap the LLM API call (<code>openai.Completion.create</code>) with the <code>Guard</code> object, and add any additional arguments that you want to pass to the LLM API call. Instead of returning the raw text object, the <code>Guard</code> object will return a JSON object that is validated and corrected according to the <code>RAIL</code> specification.</li>
 </ol>
 
