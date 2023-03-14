@@ -38,7 +38,7 @@ jupyter_client==8.0.1
 jupyter_core==5.1.5
 lxml==4.9.2
 manifest-ml==0.1.1
-markdown-it-py==2.1.0
+markdown-it-py==2.2.0
 MarkupSafe==2.1.2
 marshmallow==3.19.0
 marshmallow-enum==1.5.1
