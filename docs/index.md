@@ -8,7 +8,7 @@ Guardrails is a Python package that lets a user add structure, type and quality 
 
 ✅ does pydantic-style validation of LLM outputs,  ****
 ✅ takes corrective actions (e.g. reasking LLM) when validation fails,  
-✅ enforeces structure and type guarantees (e.g. JSON).
+✅ enforces structure and type guarantees (e.g. JSON).
 
 
 ## 🚒 Under the hood
