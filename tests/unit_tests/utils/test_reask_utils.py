@@ -10,14 +10,8 @@ def test_sub_reasks_with_fixed_values():
     assert reask_utils.sub_reasks_with_fixed_values(input_dict) == expected_dict
 
     # Test Case 2
-    input_dict = {
-        "a": 1,
-        "b" : {
-            "c": 2,
-            "d": reask_utils.ReAsk(-1, "Error Msg", 2)
-        }
-    }
-    expected_dict = {"a": 1, "b" : {"c": 2, "d": 2}}
+    input_dict = {"a": 1, "b": {"c": 2, "d": reask_utils.ReAsk(-1, "Error Msg", 2)}}
+    expected_dict = {"a": 1, "b": {"c": 2, "d": 2}}
     assert reask_utils.sub_reasks_with_fixed_values(input_dict) == expected_dict
 
     # Test Case 3

@@ -9,7 +9,6 @@ class ConstantsContainer:
         self.fill_constants()
 
     def fill_constants(self) -> None:
-
         constants_file = os.path.join(
             os.path.dirname(os.path.dirname(__file__)), "constants.xml"
         )
@@ -41,25 +40,25 @@ class ConstantsContainer:
 
     def __iter__(self):
         return iter(self._constants)
-    
+
     def __len__(self):
         return len(self._constants)
-    
+
     def __contains__(self, key):
         return key in self._constants
-    
+
     def __repr__(self):
         return repr(self._constants)
-    
+
     def __str__(self):
         return str(self._constants)
-    
+
     def items(self):
         return self._constants.items()
-    
+
     def keys(self):
         return self._constants.keys()
-    
+
     def values(self):
         return self._constants.values()
 

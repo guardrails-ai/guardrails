@@ -1,7 +1,7 @@
 import json
 import logging
 from copy import deepcopy
-from typing import Any, Callable, Dict, List, Tuple, Optional
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from eliot import start_action, to_file
 
@@ -19,12 +19,12 @@ to_file(open("guardrails.log", "w"))
 class Guard:
     """The Guard class.
 
-    This class is the main entry point for using Guardrails.
-    It is initialized from either `from_rail` or `from_rail_string` methods,
-    which take in a `.rail` file or string, respectively.
-    The `__call__` method functions as a wrapper around LLM APIs.
-    It takes in an LLM API, and optional prompt parameters,
-    and returns the raw output from the LLM and the validated output.
+    This class is the main entry point for using Guardrails. It is
+    initialized from either `from_rail` or `from_rail_string` methods,
+    which take in a `.rail` file or string, respectively. The `__call__`
+    method functions as a wrapper around LLM APIs. It takes in an LLM
+    API, and optional prompt parameters, and returns the raw output from
+    the LLM and the validated output.
     """
 
     def __init__(
@@ -48,7 +48,7 @@ class Guard:
 
         Args:
             rail_file: The path to the `.rail` file.
-            num_reasks: The max number of times to re-ask the LLM if the output is invalid.
+            num_reasks: The max times to re-ask the LLM for invalid output.
 
         Returns:
             An instance of the `Guard` class.
@@ -62,7 +62,7 @@ class Guard:
 
         Args:
             rail_string: The `.rail` string.
-            num_reasks: The max number of times to re-ask the LLM if the output is invalid.
+            num_reasks: The max times to re-ask the LLM for invalid output.
 
         Returns:
             An instance of the `Guard` class.
@@ -118,15 +118,14 @@ class Guard:
         llm_output: Optional[str] = None,
         guard_history: GuardHistory = None,
     ) -> GuardHistory:
-        """
-        Ask a question, and validate the output.
+        """Ask a question, and validate the output.
 
         Args:
             reask_ctr: The number of times the LLM has been reasked.
             output_schema: The output schema to validate against.
             llm_ask: The LLM API wrapper to call (e.g. wrapper openai.Completion.create)
-            prompt: The prompt to send to the LLM. Either this or llm_output must be provided.
-            llm_output: The raw output from the LLM. Either this or prompt must be provided.
+            prompt: The prompt to send to the LLM. This or llm_output must be set.
+            llm_output: The raw output from the LLM. This or prompt must be provided.
             guard_history: The history of the guard calls.
 
         Returns:
@@ -251,7 +250,8 @@ class Guard:
         return f"Schema({schema})"
 
     def parse(self, llm_output: str, llm_api: Callable = None, *args, **kwargs) -> Dict:
-        """Alternate flow to using Guard where the llm_output is already known."""
+        """Alternate flow to using Guard where the llm_output is already
+        known."""
 
         llm_ask = None
         if llm_api is not None:

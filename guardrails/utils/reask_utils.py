@@ -21,12 +21,11 @@ class ReAsk:
 
 
 def gather_reasks(output: Dict) -> List[ReAsk]:
-    """
-    Traverse output and gather all ReAsk objects.
+    """Traverse output and gather all ReAsk objects.
+
     Response is a nested dictionary, where values can also be lists or
-    dictionaries.
-    Make sure to also grab the corresponding paths (including list index),
-    and return a list of tuples.
+    dictionaries. Make sure to also grab the corresponding paths
+    (including list index), and return a list of tuples.
     """
     reasks = []
 
@@ -120,7 +119,8 @@ def get_pruned_tree(
 
 
 def prune_json_for_reasking(json_object: Any) -> Dict:
-    """Validated JSON is a nested dictionary where some keys may be ReAsk objects.
+    """Validated JSON is a nested dictionary where some keys may be ReAsk
+    objects.
 
     This function prunes the validated JSON of any object that is not a ReAsk object.
     It also keeps all of the ancestors of the ReAsk objects.

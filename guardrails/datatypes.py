@@ -5,7 +5,9 @@ from typing import Any, Dict, List
 from lxml import etree as ET
 
 
-def get_validators(element: ET._Element, strict: bool = False) -> List["Validator"]:
+def get_validators(
+    element: ET._Element, strict: bool = False
+) -> List["Validator"]:  # noqa: F821
     """Get the formatters for an element.
 
     Args:
@@ -18,10 +20,10 @@ def get_validators(element: ET._Element, strict: bool = False) -> List["Validato
 
     from guardrails.validators import types_to_validators, validators_registry
 
-    if 'format' not in element.attrib:
+    if "format" not in element.attrib:
         return []
 
-    provided_formatters = element.attrib['format'].split(';')
+    provided_formatters = element.attrib["format"].split(";")
     registered_formatters = types_to_validators[element.tag]
 
     valid_formatters = []
@@ -32,31 +34,34 @@ def get_validators(element: ET._Element, strict: bool = False) -> List["Validato
         formatter = formatter.strip()
 
         args = []
-        formatter_with_args = formatter.split(':')
+        formatter_with_args = formatter.split(":")
         if len(formatter_with_args) > 1:
-            assert len(formatter_with_args) == 2, (
-                f"Formatter {formatter} has too many arguments.")
+            assert (
+                len(formatter_with_args) == 2
+            ), f"Formatter {formatter} has too many arguments."
             formatter, args = formatter_with_args
             formatter = formatter.strip()
-            args = [x.strip() for x in args.strip().split(' ')]
+            args = [x.strip() for x in args.strip().split(" ")]
 
             for i, arg in enumerate(args):
-                # If arg is enclosed within curly braces, then it is a python expression.
-                if arg[0] == '{' and arg[-1] == '}':
+                # Arg enclosed in curly braces is a python expression.
+                if arg[0] == "{" and arg[-1] == "}":
                     args[i] = eval(arg[1:-1])
 
         if formatter not in registered_formatters:
             if strict:
                 raise ValueError(
-                    f"Formatter {formatter} is not valid for element {element.tag}.")
+                    f"Formatter {formatter} is not valid for element {element.tag}."
+                )
             else:
                 warnings.warn(
-                    f"Formatter {formatter} is not valid for element {element.tag}.")
+                    f"Formatter {formatter} is not valid for element {element.tag}."
+                )
             continue
 
         # See if the formatter has an associated on_fail method.
         on_fail = None
-        on_fail_attr_name = f'on-fail-{formatter}'
+        on_fail_attr_name = f"on-fail-{formatter}"
         if on_fail_attr_name in element.attrib:
             on_fail = element.attrib[on_fail_attr_name]
             # TODO(shreya): Load the on_fail method.
@@ -70,7 +75,6 @@ def get_validators(element: ET._Element, strict: bool = False) -> List["Validato
 
 
 class DataType:
-
     def __init__(self, validators: List, children: Dict[str, Any]) -> None:
         self.validators = validators
         self._children = children
@@ -98,6 +102,7 @@ class DataType:
     def children(self) -> SimpleNamespace:
         return SimpleNamespace(**self._children)
 
+
 registry: Dict[str, DataType] = {}
 
 
@@ -106,6 +111,7 @@ def register_type(name: str):
     def decorator(cls: type):
         registry[name] = cls
         return cls
+
     return decorator
 
 
@@ -135,9 +141,7 @@ class NonScalarType(DataType):
 
 @register_type("string")
 class String(ScalarType):
-    """
-    Element tag: `<string>`
-    """
+    """Element tag: `<string>`"""
 
     @classmethod
     def from_str(self, s: str) -> "String":
@@ -147,79 +151,57 @@ class String(ScalarType):
 
 @register_type("integer")
 class Integer(ScalarType):
-    """
-    Element tag: `<integer>`
-    """
+    """Element tag: `<integer>`"""
 
 
 @register_type("float")
 class Float(ScalarType):
-    """
-    Element tag: `<float>`
-    """
+    """Element tag: `<float>`"""
 
 
 @register_type("bool")
 class Boolean(ScalarType):
-    """
-    Element tag: `<bool>`
-    """
+    """Element tag: `<bool>`"""
 
 
 @register_type("date")
 class Date(ScalarType):
-    """
-    Element tag: `<date>`
-    """
+    """Element tag: `<date>`"""
 
 
 @register_type("time")
 class Time(ScalarType):
-    """
-    Element tag: `<time>`
-    """
+    """Element tag: `<time>`"""
 
 
 @register_type("email")
 class Email(ScalarType):
-    """
-    Element tag: `<email>`
-    """
+    """Element tag: `<email>`"""
 
 
 @register_type("url")
 class URL(ScalarType):
-    """
-    Element tag: `<url>`
-    """
+    """Element tag: `<url>`"""
 
 
 @register_type("pythoncode")
 class PythonCode(ScalarType):
-    """
-    Element tag: `<pythoncode>`
-    """
+    """Element tag: `<pythoncode>`"""
 
 
 @register_type("sql")
 class SQLCode(ScalarType):
-    """
-    Element tag: `<sql>`
-    """
+    """Element tag: `<sql>`"""
 
 
 @register_type("percentage")
 class Percentage(ScalarType):
-    """
-    Element tag: `<percentage>`
-    """
+    """Element tag: `<percentage>`"""
 
 
 @register_type("list")
 class List(NonScalarType):
-    """
-    Element tag: `<list>`
-    """
+    """Element tag: `<list>`"""
 
     def validate(self, key: str, value: Any, schema: Dict) -> Dict:
         # Validators in the main list data type are applied to the list overall.
@@ -263,9 +245,7 @@ class List(NonScalarType):
 
 @register_type("object")
 class Object(NonScalarType):
-    """
-    Element tag: `<object>`
-    """
+    """Element tag: `<object>`"""
 
     def validate(self, key: str, value: Any, schema: Dict) -> Dict:
         # Validators in the main object data type are applied to the object overall.
@@ -299,9 +279,7 @@ class Object(NonScalarType):
             # child_key is an expected key that the schema defined
             # child_data_type is the data type of the expected key
             value = child_data_type.validate(
-                child_key,
-                value.get(child_key, None),
-                value
+                child_key, value.get(child_key, None), value
             )
 
         schema[key] = value
@@ -316,20 +294,20 @@ class Object(NonScalarType):
 
 # @register_type("key")
 # class Key(DataType):
-    # """
-    # Element tag: `<string>`
-    # """
+# """
+# Element tag: `<string>`
+# """
 
 
 # @register_type("value")
 # class Value(DataType):
-    # """
-    # Element tag: `<string>`
-    # """
+# """
+# Element tag: `<string>`
+# """
 
 
 # @register_type("item")
 # class Item(DataType):
-    # """
-    # Element tag: `<string>`
-    # """
+# """
+# Element tag: `<string>`
+# """

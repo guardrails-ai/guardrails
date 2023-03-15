@@ -2,8 +2,7 @@ from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any, Dict, List
 
-from guardrails.utils.reask_utils import (ReAsk, gather_reasks,
-                                          prune_json_for_reasking)
+from guardrails.utils.reask_utils import ReAsk, gather_reasks, prune_json_for_reasking
 
 
 @dataclass
@@ -25,7 +24,6 @@ class GuardHistory:
     history: List[GuardLogs]
 
     def push(self, guard_log: GuardLogs) -> "GuardHistory":
-
         if len(self.history) > 0:
             last_log = self.history[-1]
             guard_log.validated_response = merge_reask_output(last_log, guard_log)
