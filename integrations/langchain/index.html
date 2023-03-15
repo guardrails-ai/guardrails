@@ -10,21 +10,21 @@
         <meta name="author" content="Shreya Rajpal">
       
       
-        <link rel="canonical" href="https://getguardrails.com/validation/">
+        <link rel="canonical" href="https://getguardrails.com/integrations/langchain/">
       
-      <link rel="icon" href="../img/favicon.ico">
+      <link rel="icon" href="../../img/favicon.ico">
       <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-8.5.10">
     
     
       
-        <title>Validators - Guardrails.ai</title>
+        <title>LangChain - Guardrails.ai</title>
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.975780f9.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.975780f9.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.2505c338.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.2505c338.min.css">
         
       
       
@@ -82,15 +82,15 @@
       
     
     
-      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
     
-      <link rel="stylesheet" href="../css/ansi-colours.css">
+      <link rel="stylesheet" href="../../css/ansi-colours.css">
     
-      <link rel="stylesheet" href="../css/jupyter-cells.css">
+      <link rel="stylesheet" href="../../css/jupyter-cells.css">
     
-      <link rel="stylesheet" href="../css/pandas-dataframe.css">
+      <link rel="stylesheet" href="../../css/pandas-dataframe.css">
     
-    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -119,7 +119,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#guardrails.validators.BugFreePython" class="md-skip">
+        <a href="#use-guardrails-from-langchain" class="md-skip">
           Skip to content
         </a>
       
@@ -133,9 +133,9 @@
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href=".." title="Guardrails.ai" class="md-header__button md-logo" aria-label="Guardrails.ai" data-md-component="logo">
+    <a href="../.." title="Guardrails.ai" class="md-header__button md-logo" aria-label="Guardrails.ai" data-md-component="logo">
       
-  <img src="../img/tracks_white.png" alt="logo">
+  <img src="../../img/tracks_white.png" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -151,7 +151,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Validators
+              LangChain
             
           </span>
         </div>
@@ -254,9 +254,9 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href=".." title="Guardrails.ai" class="md-nav__button md-logo" aria-label="Guardrails.ai" data-md-component="logo">
+    <a href="../.." title="Guardrails.ai" class="md-nav__button md-logo" aria-label="Guardrails.ai" data-md-component="logo">
       
-  <img src="../img/tracks_white.png" alt="logo">
+  <img src="../../img/tracks_white.png" alt="logo">
 
     </a>
     Guardrails.ai
@@ -284,7 +284,7 @@
   
   
     <li class="md-nav__item">
-      <a href=".." class="md-nav__link">
+      <a href="../.." class="md-nav__link">
         Home
       </a>
     </li>
@@ -299,7 +299,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../getting_started/" class="md-nav__link">
+      <a href="../../getting_started/" class="md-nav__link">
         Getting Started
       </a>
     </li>
@@ -342,7 +342,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../rail/" class="md-nav__link">
+      <a href="../../rail/" class="md-nav__link">
         Overview
       </a>
     </li>
@@ -356,7 +356,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../rail/output/" class="md-nav__link">
+      <a href="../../rail/output/" class="md-nav__link">
         Output Element
       </a>
     </li>
@@ -370,7 +370,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../rail/prompt/" class="md-nav__link">
+      <a href="../../rail/prompt/" class="md-nav__link">
         Prompt Element
       </a>
     </li>
@@ -384,7 +384,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../rail/script/" class="md-nav__link">
+      <a href="../../rail/script/" class="md-nav__link">
         (Experimental) Script Element
       </a>
     </li>
@@ -404,16 +404,14 @@
 
   
   
-    
-  
   
     
       
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_4" type="checkbox" id="__nav_4" checked>
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" data-md-toggle="__nav_4" type="checkbox" id="__nav_4" checked>
       
       
       
@@ -436,7 +434,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../guard/" class="md-nav__link">
+      <a href="../../guard/" class="md-nav__link">
         Guard
       </a>
     </li>
@@ -450,7 +448,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../data_types/" class="md-nav__link">
+      <a href="../../data_types/" class="md-nav__link">
         Data Types
       </a>
     </li>
@@ -462,111 +460,11 @@
               
   
   
-    
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
-      
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          Validators
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../validation/" class="md-nav__link">
         Validators
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.validators.BugFreePython" class="md-nav__link">
-    BugFreePython
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.validators.BugFreeSQL" class="md-nav__link">
-    BugFreeSQL
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.validators.LowerCase" class="md-nav__link">
-    LowerCase
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.validators.OneLine" class="md-nav__link">
-    OneLine
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.validators.TwoWords" class="md-nav__link">
-    TwoWords
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.validators.UpperCase" class="md-nav__link">
-    UpperCase
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.validators.ValidChoices" class="md-nav__link">
-    ValidChoices
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.validators.ValidLength" class="md-nav__link">
-    ValidLength
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.validators.ValidRange" class="md-nav__link">
-    ValidRange
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.validators.ValidUrl" class="md-nav__link">
-    ValidUrl
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -578,7 +476,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../logs/" class="md-nav__link">
+      <a href="../../logs/" class="md-nav__link">
         Inspecting logs
       </a>
     </li>
@@ -628,7 +526,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../examples/extracting_entities/" class="md-nav__link">
+      <a href="../../examples/extracting_entities/" class="md-nav__link">
         Extracting entities from ToS
       </a>
     </li>
@@ -642,7 +540,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../examples/bug_free_python_code/" class="md-nav__link">
+      <a href="../../examples/bug_free_python_code/" class="md-nav__link">
         Generating bug-free Python code
       </a>
     </li>
@@ -656,7 +554,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../examples/no_secrets_in_generated_text/" class="md-nav__link">
+      <a href="../../examples/no_secrets_in_generated_text/" class="md-nav__link">
         No secrets in generated text
       </a>
     </li>
@@ -670,7 +568,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../examples/syntax_error_free_sql/" class="md-nav__link">
+      <a href="../../examples/syntax_error_free_sql/" class="md-nav__link">
         Natural language to bug-free SQL
       </a>
     </li>
@@ -684,7 +582,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../examples/recipe_generation/" class="md-nav__link">
+      <a href="../../examples/recipe_generation/" class="md-nav__link">
         Vegan Mac & Cheese Recipe Generator
       </a>
     </li>
@@ -698,7 +596,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../examples/valid_chess_moves/" class="md-nav__link">
+      <a href="../../examples/valid_chess_moves/" class="md-nav__link">
         Using GPT to play valid chess moves
       </a>
     </li>
@@ -712,7 +610,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../examples/translation_to_specific_language/" class="md-nav__link">
+      <a href="../../examples/translation_to_specific_language/" class="md-nav__link">
         Translate text with profanity filtering
       </a>
     </li>
@@ -726,7 +624,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../examples/generate_structured_data/" class="md-nav__link">
+      <a href="../../examples/generate_structured_data/" class="md-nav__link">
         Generate structured synthetic data
       </a>
     </li>
@@ -746,14 +644,16 @@
 
   
   
+    
+  
   
     
       
     
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" data-md-toggle="__nav_6" type="checkbox" id="__nav_6" checked>
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_6" type="checkbox" id="__nav_6" checked>
       
       
       
@@ -774,11 +674,80 @@
               
   
   
+    
   
-    <li class="md-nav__item">
-      <a href="../integrations/langchain/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          LangChain
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         LangChain
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#installing-dependencies" class="md-nav__link">
+    Installing dependencies
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#create-a-rail-spec" class="md-nav__link">
+    Create a RAIL spec
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#create-a-guardrailsoutputparser" class="md-nav__link">
+    Create a GuardrailsOutputParser
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#create-prompt-template" class="md-nav__link">
+    Create Prompt Template
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#query-the-llm-and-get-formatted-validated-and-corrected-output" class="md-nav__link">
+    Query the LLM and get formatted, validated and corrected output
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -807,6 +776,8 @@
   
   
   
+    
+  
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
@@ -815,71 +786,36 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#guardrails.validators.BugFreePython" class="md-nav__link">
-    BugFreePython
+  <a href="#installing-dependencies" class="md-nav__link">
+    Installing dependencies
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#guardrails.validators.BugFreeSQL" class="md-nav__link">
-    BugFreeSQL
+  <a href="#create-a-rail-spec" class="md-nav__link">
+    Create a RAIL spec
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#guardrails.validators.LowerCase" class="md-nav__link">
-    LowerCase
+  <a href="#create-a-guardrailsoutputparser" class="md-nav__link">
+    Create a GuardrailsOutputParser
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#guardrails.validators.OneLine" class="md-nav__link">
-    OneLine
+  <a href="#create-prompt-template" class="md-nav__link">
+    Create Prompt Template
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#guardrails.validators.TwoWords" class="md-nav__link">
-    TwoWords
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.validators.UpperCase" class="md-nav__link">
-    UpperCase
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.validators.ValidChoices" class="md-nav__link">
-    ValidChoices
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.validators.ValidLength" class="md-nav__link">
-    ValidLength
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.validators.ValidRange" class="md-nav__link">
-    ValidRange
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.validators.ValidUrl" class="md-nav__link">
-    ValidUrl
+  <a href="#query-the-llm-and-get-formatted-validated-and-corrected-output" class="md-nav__link">
+    Query the LLM and get formatted, validated and corrected output
   </a>
   
 </li>
@@ -901,479 +837,208 @@
 
                   
 
-  <a href="https://github.com/ShreyaR/guardrails/edit/master/docs/validation.md" title="Edit this page" class="md-content__button md-icon">
+  <a href="https://github.com/ShreyaR/guardrails/edit/master/docs/integrations/langchain.ipynb" title="Edit this page" class="md-content__button md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25Z"/></svg>
   </a>
 
 
-  <h1>Validators</h1>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+<script>
+(function() {
+  function addWidgetsRenderer() {
+    var requireJsScript = document.createElement('script');
+    requireJsScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js';
 
-<!-- ::: my_library.my_module.my_class -->
+    var mimeElement = document.querySelector('script[type="application/vnd.jupyter.widget-view+json"]');
+    var jupyterWidgetsScript = document.createElement('script');
+    var widgetRendererSrc = 'https://unpkg.com/@jupyter-widgets/html-manager@*/dist/embed-amd.js';
+    var widgetState;
 
+    // Fallback for older version:
+    try {
+      widgetState = mimeElement && JSON.parse(mimeElement.innerHTML);
 
+      if (widgetState && (widgetState.version_major < 2 || !widgetState.version_major)) {
+        widgetRendererSrc = 'jupyter-js-widgets@*/dist/embed.js';
+      }
+    } catch(e) {}
 
-<div class="doc doc-object doc-module">
+    jupyterWidgetsScript.src = widgetRendererSrc;
 
+    document.body.appendChild(requireJsScript);
+    document.body.appendChild(jupyterWidgetsScript);
+  }
 
+  document.addEventListener('DOMContentLoaded', addWidgetsRenderer);
+}());
+</script>
 
-  <div class="doc doc-contents first">
-  
-      <p>This module contains the validators for the Guardrails framework.</p>
-<p>The name with which a validator is registered is the name that is used
-in the <code>RAIL</code> spec to specify formatters.</p>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h1 id="use-guardrails-from-langchain">Use Guardrails from LangChain</h1>
+<p>You can use Guardrails to add a layer of security around LangChain components. Here's how to use Guardrails with LangChain.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="installing-dependencies">Installing dependencies</h2>
+<p>Make sure you have both langchain and guardrails installed. If you don't, run the following commands:</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
 
-  
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="guardrails.validators.BugFreePython" class="doc doc-heading">
-        <code>BugFreePython</code>
-
-
-</h2>
-
-
-  <div class="doc doc-contents ">
-
-  
-      <p>Validate that there are no Python syntactic bugs in the generated code.</p>
-<p>This validator checks for syntax errors by running <code>ast.parse(code)</code>,
-and will raise an exception if there are any.
-Only the packages in the <code>python</code> environment are available to the code snippet.</p>
-<ul>
-<li>Name for <code>format</code> attribute: <code>bug-free-python</code></li>
-<li>Supported data types: <code>pythoncode</code></li>
-<li>Programmatic fix: None</li>
-</ul>
-
-
-
-  
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-  </div>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="err">!</span><span class="n">pip</span> <span class="n">install</span> <span class="n">guardrails</span><span class="o">-</span><span class="n">ai</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="err">!</span><span class="n">pip</span> <span class="n">install</span> <span class="n">langchain</span>
+</span></code></pre></div>
 
 </div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="create-a-rail-spec">Create a <code>RAIL</code> spec</h2>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
 
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="guardrails.validators.BugFreeSQL" class="doc doc-heading">
-        <code>BugFreeSQL</code>
-
-
-</h2>
-
-
-  <div class="doc doc-contents ">
-
-  
-      <p>Validate that there are no SQL syntactic bugs in the generated code.</p>
-<p>This is a very minimal implementation that uses the Pypi <code>sqlvalidator</code> package
-to check if the SQL query is valid. You can implement a custom SQL validator
-that uses a database connection to check if the query is valid.</p>
-<ul>
-<li>Name for <code>format</code> attribute: <code>bug-free-sql</code></li>
-<li>Supported data types: <code>sql</code></li>
-<li>Programmatic fix: None</li>
-</ul>
-
-
-
-  
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-  </div>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">rail_spec</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="s2">&lt;rail version=&quot;0.1&quot;&gt;</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="s2">&lt;output&gt;</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="s2">    &lt;object name=&quot;bank_run&quot; format=&quot;length: 2&quot;&gt;</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="s2">        &lt;string</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="s2">            name=&quot;explanation&quot;</span>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="s2">            description=&quot;A paragraph about what a bank run is.&quot;</span>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="s2">            format=&quot;length: 200 240&quot;</span>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="s2">            on-fail-length=&quot;noop&quot;</span>
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="s2">        /&gt;</span>
+</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="s2">        &lt;url</span>
+</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="s2">            name=&quot;follow_up_url&quot;</span>
+</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="s2">            description=&quot;A web URL where I can read more about bank runs.&quot;</span>
+</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="s2">            required=&quot;true&quot;</span>
+</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="s2">            format=&quot;valid-url&quot;</span>
+</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="s2">            on-fail-valid-url=&quot;filter&quot;</span>
+</span><span id="__span-1-18"><a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="s2">        /&gt;</span>
+</span><span id="__span-1-19"><a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="s2">    &lt;/object&gt;</span>
+</span><span id="__span-1-20"><a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a><span class="s2">&lt;/output&gt;</span>
+</span><span id="__span-1-21"><a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a>
+</span><span id="__span-1-22"><a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a><span class="s2">&lt;prompt&gt;</span>
+</span><span id="__span-1-23"><a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a><span class="s2">Explain what a bank run is in a tweet.</span>
+</span><span id="__span-1-24"><a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a>
+</span><span id="__span-1-25"><a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a><span class="s2">@xml_prefix_prompt</span>
+</span><span id="__span-1-26"><a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a>
+</span><span id="__span-1-27"><a id="__codelineno-1-27" name="__codelineno-1-27" href="#__codelineno-1-27"></a><span class="si">{output_schema}</span>
+</span><span id="__span-1-28"><a id="__codelineno-1-28" name="__codelineno-1-28" href="#__codelineno-1-28"></a>
+</span><span id="__span-1-29"><a id="__codelineno-1-29" name="__codelineno-1-29" href="#__codelineno-1-29"></a><span class="s2">@json_suffix_prompt_v2_wo_none</span>
+</span><span id="__span-1-30"><a id="__codelineno-1-30" name="__codelineno-1-30" href="#__codelineno-1-30"></a><span class="s2">&lt;/prompt&gt;</span>
+</span><span id="__span-1-31"><a id="__codelineno-1-31" name="__codelineno-1-31" href="#__codelineno-1-31"></a><span class="s2">&lt;/rail&gt;</span>
+</span><span id="__span-1-32"><a id="__codelineno-1-32" name="__codelineno-1-32" href="#__codelineno-1-32"></a><span class="s2">&quot;&quot;&quot;</span>
+</span></code></pre></div>
 
 </div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="create-a-guardrailsoutputparser">Create a <code>GuardrailsOutputParser</code></h2>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
 
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="guardrails.validators.LowerCase" class="doc doc-heading">
-        <code>LowerCase</code>
-
-
-</h2>
-
-
-  <div class="doc doc-contents ">
-
-  
-      <p>Validate that a value is lower case.</p>
-<ul>
-<li>Name for <code>format</code> attribute: <code>lower-case</code></li>
-<li>Supported data types: <code>string</code></li>
-<li>Programmatic fix: Manually convert to lower case.</li>
-</ul>
-
-
-
-  
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-  </div>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span> <span class="nn">rich</span> <span class="kn">import</span> <span class="nb">print</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="kn">from</span> <span class="nn">langchain.output_parsers</span> <span class="kn">import</span> <span class="n">GuardrailsOutputParser</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="kn">from</span> <span class="nn">langchain.prompts</span> <span class="kn">import</span> <span class="n">PromptTemplate</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="kn">from</span> <span class="nn">langchain.llms</span> <span class="kn">import</span> <span class="n">OpenAI</span>
+</span></code></pre></div>
 
 </div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
 
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="guardrails.validators.OneLine" class="doc doc-heading">
-        <code>OneLine</code>
-
-
-</h2>
-
-
-  <div class="doc doc-contents ">
-
-  
-      <p>Validate that a value is a single line or sentence.</p>
-<ul>
-<li>Name for <code>format</code> attribute: <code>one-line</code></li>
-<li>Supported data types: <code>string</code></li>
-<li>Programmatic fix: Pick the first line.</li>
-</ul>
-
-
-
-  
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-  </div>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">output_parser</span> <span class="o">=</span> <span class="n">GuardrailsOutputParser</span><span class="o">.</span><span class="n">from_rail_string</span><span class="p">(</span><span class="n">rail_spec</span><span class="p">)</span>
+</span></code></pre></div>
 
 </div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>The <code>GuardrailsOutputParser</code> contains a <code>Guard</code> object, which can be used to access the prompt and output schema. E.g., here is the compiled prompt that is stored in <code>GuardrailsOutputParser</code>:</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
 
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="guardrails.validators.TwoWords" class="doc doc-heading">
-        <code>TwoWords</code>
-
-
-</h2>
-
-
-  <div class="doc doc-contents ">
-
-  
-      <p>Validate that a value is upper case.</p>
-<ul>
-<li>Name for <code>format</code> attribute: <code>two-words</code></li>
-<li>Supported data types: <code>string</code></li>
-<li>Programmatic fix: Pick the first two words.</li>
-</ul>
-
-
-
-  
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-  </div>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nb">print</span><span class="p">(</span><span class="n">output_parser</span><span class="o">.</span><span class="n">guard</span><span class="o">.</span><span class="n">base_prompt</span><span class="p">)</span>
+</span></code></pre></div>
 
 </div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>We can now create a LangChain <code>PromptTemplate</code> from this output parser.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="create-prompt-template">Create Prompt Template</h2>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
 
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="guardrails.validators.UpperCase" class="doc doc-heading">
-        <code>UpperCase</code>
-
-
-</h2>
-
-
-  <div class="doc doc-contents ">
-
-  
-      <p>Validate that a value is upper case.</p>
-<ul>
-<li>Name for <code>format</code> attribute: <code>upper-case</code></li>
-<li>Supported data types: <code>string</code></li>
-<li>Programmatic fix: Manually convert to upper case.</li>
-</ul>
-
-
-
-  
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-  </div>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">format_instructions</span> <span class="o">=</span> <span class="n">output_parser</span><span class="o">.</span><span class="n">get_format_instructions</span><span class="p">()</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="n">prompt</span> <span class="o">=</span> <span class="n">PromptTemplate</span><span class="p">(</span>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>    <span class="n">template</span><span class="o">=</span><span class="s2">&quot;answer the users question as best as possible.</span><span class="se">\n</span><span class="si">{format_instructions}</span><span class="se">\n</span><span class="si">{question}</span><span class="s2">&quot;</span><span class="p">,</span>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>    <span class="n">input_variables</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;question&quot;</span><span class="p">],</span>
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>    <span class="n">partial_variables</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;format_instructions&quot;</span><span class="p">:</span> <span class="n">format_instructions</span><span class="p">}</span>
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="p">)</span>
+</span></code></pre></div>
 
 </div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="query-the-llm-and-get-formatted-validated-and-corrected-output">Query the LLM and get formatted, validated and corrected output</h2>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
 
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="guardrails.validators.ValidChoices" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">ValidChoices</span><span class="p">(</span><span class="n">choices</span><span class="p">,</span> <span class="n">on_fail</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
-
-</h2>
-
-
-  <div class="doc doc-contents ">
-
-  
-      <p>Validate that a value is within the acceptable choices.</p>
-<ul>
-<li>Name for <code>format</code> attribute: <code>valid-choices</code></li>
-<li>Supported data types: <code>all</code></li>
-<li>Programmatic fix: None.</li>
-</ul>
-
-
-
-  
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-  </div>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">model</span> <span class="o">=</span> <span class="n">OpenAI</span><span class="p">(</span><span class="n">temperature</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="n">output</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">prompt</span><span class="o">.</span><span class="n">format_prompt</span><span class="p">()</span><span class="o">.</span><span class="n">to_string</span><span class="p">())</span>
+</span></code></pre></div>
 
 </div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
 
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="guardrails.validators.ValidLength" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">ValidLength</span><span class="p">(</span><span class="nb">min</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_fail</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
-
-</h2>
-
-
-  <div class="doc doc-contents ">
-
-  
-      <p>Validate that the length of value is within the expected range.</p>
-<ul>
-<li>Name for <code>format</code> attribute: <code>length</code></li>
-<li>Supported data types: <code>string</code>, <code>list</code>, <code>object</code></li>
-<li>Programmatic fix: If shorter than the minimum, pad with empty last elements. If longer than the maximum, truncate.  # noqa: E501</li>
-</ul>
-
-
-
-  
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-  </div>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">output_parser</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">output</span><span class="p">)</span>
+</span></code></pre></div>
 
 </div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="guardrails.validators.ValidRange" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">ValidRange</span><span class="p">(</span><span class="nb">min</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_fail</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
-
-</h2>
-
-
-  <div class="doc doc-contents ">
-
-  
-      <p>Validate that a value is within a range.</p>
-<ul>
-<li>Name for <code>format</code> attribute: <code>valid-range</code></li>
-<li>Supported data types: <code>integer</code>, <code>float</code>, <code>percentage</code></li>
-<li>Programmatic fix: Closest value within the range.</li>
-</ul>
-
-
-
-  
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-  </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="guardrails.validators.ValidUrl" class="doc doc-heading">
-        <code>ValidUrl</code>
-
-
-</h2>
-
-
-  <div class="doc doc-contents ">
-
-  
-      <p>Validate that a value is a valid URL.</p>
-<ul>
-<li>Name for <code>format</code> attribute: <code>valid-url</code></li>
-<li>Supported data types: <code>string</code>, <code>url</code></li>
-<li>Programmatic fix: None</li>
-</ul>
-
-
-
-  
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-  </div>
-
-</div>
-
-
-
-
-  </div>
-
-  </div>
-
 </div>
 
 
@@ -1397,7 +1062,7 @@ that uses a database connection to check if the query is valid.</p>
     <nav class="md-footer__inner md-grid" aria-label="Footer" >
       
         
-        <a href="../data_types/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Data Types" rel="prev">
+        <a href="../../examples/generate_structured_data/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Generate structured synthetic data" rel="prev">
           <div class="md-footer__button md-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
           </div>
@@ -1406,26 +1071,11 @@ that uses a database connection to check if the query is valid.</p>
               <span class="md-footer__direction">
                 Previous
               </span>
-              Data Types
+              Generate structured synthetic data
             </div>
           </div>
         </a>
       
-      
-        
-        <a href="../logs/" class="md-footer__link md-footer__link--next" aria-label="Next: Inspecting logs" rel="next">
-          <div class="md-footer__title">
-            <div class="md-ellipsis">
-              <span class="md-footer__direction">
-                Next
-              </span>
-              Inspecting logs
-            </div>
-          </div>
-          <div class="md-footer__button md-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4Z"/></svg>
-          </div>
-        </a>
       
     </nav>
   
@@ -1455,10 +1105,10 @@ that uses a database connection to check if the query is valid.</p>
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": "..", "features": ["navigation.expand", "navigation.sections", "content.code.annotate", "toc.follow"], "search": "../assets/javascripts/workers/search.16e2a7d4.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}}</script>
+    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.expand", "navigation.sections", "content.code.annotate", "toc.follow"], "search": "../../assets/javascripts/workers/search.16e2a7d4.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.5a2dcb6a.min.js"></script>
+      <script src="../../assets/javascripts/bundle.5a2dcb6a.min.js"></script>
       
     
     

@@ -71,6 +71,11 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
+         <loc>https://getguardrails.com/integrations/langchain/</loc>
+         <lastmod>2023-03-15</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
          <loc>https://getguardrails.com/rail/</loc>
          <lastmod>2023-03-15</lastmod>
          <changefreq>daily</changefreq>
