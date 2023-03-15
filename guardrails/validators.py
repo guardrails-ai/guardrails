@@ -470,7 +470,7 @@ class BugFreeSQL(Validator):
     def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
         import sqlvalidator
 
-        sql_query = sqlvalidator.parse("SELECT * from table")
+        sql_query = sqlvalidator.parse(value)
 
         if not sql_query.is_valid():
             raise EventDetail(
