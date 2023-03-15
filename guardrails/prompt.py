@@ -1,15 +1,36 @@
-
 import re
+from typing import Optional
+
+from guardrails.utils.constants import constants
 
 
 class Prompt:
+    def __init__(self, source: str, output_schema: Optional[str] = None):
+        output_schema = output_schema or {}
+        self.source = source.format(output_schema=output_schema)
 
-    def __init__(self, source: str):
-        self.source = source
+        # Get variable names in the source string (surronded by 2 curly braces)
+        self.variable_names = re.findall(r"{{(.*?)}}", source)
 
-        # Get all the variable names in the source string.
-        # Variable names are surounded by curly braces, and may optionally contain a colon and a type.
-        self.variable_names = re.findall(r'\{([\w\d_]+)\}', self.source)
+        format_instructions_start_idx = self.get_format_instructions_idx(source)
+
+        # Substitute constants in the prompt.
+        self.source = self.substitue_constants(self.source)
+
+        # Format instructions contain info for how to format LLM output.
+        self.format_instructions = self.source[format_instructions_start_idx:]
+
+    def substitue_constants(self, text):
+        """Substitute constants in the prompt."""
+        # Substitute constants by reading the constants file.
+        # Regex to extract all occurrences of @<constant_name>
+        matches = re.findall(r"@(\w+)", text)
+
+        # Substitute all occurrences of @<constant_name> with the value of the constant.
+        for match in matches:
+            text = text.replace(f"@{match}", constants[match])
+
+        return text
 
     def add_output_schema_to_prompt(self, output_schema: str):
         self.output_schema = output_schema
@@ -32,35 +53,22 @@ class Prompt:
         for var in self.variable_names:
             self.source = self.source.replace(f"{{{var}}}", f"{{{var}:}}")
 
+    def get_format_instructions_idx(self, text: str) -> Optional[int]:
+        """Get the index of the first format instruction in the prompt.
 
-class PromptRepo:
-    def __init__(self):
-        self.prompts = []
+        It checks to see where the first instance of any constant is in the text.
+        Everything from then on is considered to be a format instruction.
 
-    def add_prompt(self, prompt_name: str, prompt_template: Prompt):
-        # Make sure that the prompt name is not already in the repo.
-        for prompt in self.prompts:
-            if prompt["name"] == prompt_name:
-                raise ValueError(f"Prompt with name {prompt_name} already exists.")
-        self.prompts.append({"name": prompt_name, "template": prompt_template})
+        Returns:
+            The index of the first format instruction in the prompt.
+        """
+        # TODO(shreya): Optionally add support for special character demarcation.
 
-    def get_prompts(self):
-        """Return a list of all prompts in the repo."""
-        return self.prompts
+        # Regex to extract first occurrence of @<constant_name>
+        match = re.search(r"@(\w+)", text)
+        if match is None:
+            return 0
 
-    def get_prompt(self, prompt_name: str):
-        """Return the prompt template for the given prompt name. If the prompt name is not found, return None."""
-        for prompt in self.prompts:
-            if prompt["name"] == prompt_name:
-                return prompt["template"]
-        return None
-
-    def update_prompt(self, prompt_name: str, prompt_template: Prompt):
-        """Update the prompt template for the given prompt name. If the prompt name is not found, raise an error."""
-        found_prompt = False
-        for prompt in self.prompts:
-            if prompt["name"] == prompt_name:
-                prompt["template"] = prompt_template
-                return
-        if not found_prompt:
-            raise ValueError(f"Prompt with name {prompt_name} not found.")
+        # Subtract 2*len(variable_names) to account for curly braces.
+        start_idx = match.start() - 2 * len(self.variable_names)
+        return start_idx

@@ -13,6 +13,7 @@ from guardrails.utils.constants import constants
 class ReAsk:
     incorrect_value: Any
     error_message: str
+    fix_value: Any
     path: List[Any] = None
 
     def __repr__(self) -> str:
@@ -244,3 +245,25 @@ def reask_json_as_dict(json: Dict) -> Dict:
             return json_object
 
     return _reask_json_as_dict(json)
+
+
+def sub_reasks_with_fixed_values(value: Any) -> Any:
+    """Substitute ReAsk objects with their fixed values recursively.
+
+    Args:
+        value: Either a list, a dictionary, a ReAsk object or a scalar value.
+
+    Returns:
+        The value with ReAsk objects replaced with their fixed values.
+    """
+
+    if isinstance(value, list):
+        for index, item in enumerate(value):
+            value[index] = sub_reasks_with_fixed_values(item)
+    elif isinstance(value, dict):
+        for key, value in value.items():
+            value[key] = sub_reasks_with_fixed_values(value)
+    elif isinstance(value, ReAsk):
+        value = value.fix_value
+
+    return value
