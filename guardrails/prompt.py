@@ -7,7 +7,6 @@ from guardrails.utils.constants import constants
 class Prompt:
     def __init__(self, source: str, output_schema: Optional[str] = None):
         output_schema = output_schema or {}
-        self.source = source.format(output_schema=output_schema)
 
         # Get variable names in the source string (surronded by 2 curly braces)
         self.variable_names = re.findall(r"{{(.*?)}}", source)
@@ -15,10 +14,11 @@ class Prompt:
         format_instructions_start_idx = self.get_format_instructions_idx(source)
 
         # Substitute constants in the prompt.
-        self.source = self.substitue_constants(self.source)
-
+        source = self.substitue_constants(source)
         # Format instructions contain info for how to format LLM output.
-        self.format_instructions = self.source[format_instructions_start_idx:]
+        self.format_instructions = source[format_instructions_start_idx:]
+        
+        self.source = source.format(output_schema=output_schema)
 
     def substitue_constants(self, text):
         """Substitute constants in the prompt."""
