@@ -1,6 +1,5 @@
-from typing import Dict, Optional
 from types import SimpleNamespace
-
+from typing import Dict, Optional
 
 from lxml import etree as ET
 

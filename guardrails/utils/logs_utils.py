@@ -2,7 +2,8 @@ from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any, Dict, List
 
-from guardrails.utils.reask_utils import ReAsk, gather_reasks, prune_json_for_reasking
+from guardrails.utils.reask_utils import (ReAsk, gather_reasks,
+                                          prune_json_for_reasking)
 
 
 @dataclass
