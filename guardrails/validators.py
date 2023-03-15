@@ -186,7 +186,9 @@ class ValidRange(Validator):
 
         logger.debug(f"Validating {value} is in range {self._min} - {self._max}...")
 
-        if self._min is not None and value < self._min:
+        val_type = type(value)
+
+        if self._min is not None and value < val_type(self._min):
             raise EventDetail(
                 key,
                 value,
@@ -195,7 +197,7 @@ class ValidRange(Validator):
                 self._min,
             )
 
-        if self._max is not None and value > self._max:
+        if self._max is not None and value > val_type(self._max):
             raise EventDetail(
                 key,
                 value,

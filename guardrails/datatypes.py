@@ -1,3 +1,4 @@
+import datetime
 import warnings
 from types import SimpleNamespace
 from typing import Any, Dict, List
@@ -118,6 +119,9 @@ def register_type(name: str):
 class ScalarType(DataType):
     def validate(self, key: str, value: Any, schema: Dict) -> Dict:
         """Validate a value."""
+
+        value = self.from_str(value)
+
         for validator in self.validators:
             schema = validator.validate_with_correction(key, value, schema)
 
@@ -133,6 +137,15 @@ class ScalarType(DataType):
     def set_children(self, element: ET._Element):
         for _ in element:
             raise ValueError("ScalarType data type must not have any children.")
+
+    @classmethod
+    def from_str(self, s: str) -> "ScalarType":
+        """Create a ScalarType from a string.
+
+        Note: ScalarTypes like int, float, bool, etc. will override this method.
+        Other ScalarTypes like string, email, url, etc. will not override this
+        """
+        return s
 
 
 class NonScalarType(DataType):
@@ -153,25 +166,55 @@ class String(ScalarType):
 class Integer(ScalarType):
     """Element tag: `<integer>`"""
 
+    @classmethod
+    def from_str(self, s: str) -> "Integer":
+        """Create an Integer from a string."""
+        return int(s)
+
 
 @register_type("float")
 class Float(ScalarType):
     """Element tag: `<float>`"""
+
+    @classmethod
+    def from_str(self, s: str) -> "Float":
+        """Create a Float from a string."""
+        return float(s)
 
 
 @register_type("bool")
 class Boolean(ScalarType):
     """Element tag: `<bool>`"""
 
+    @classmethod
+    def from_str(self, s: str) -> "Boolean":
+        """Create a Boolean from a string."""
+        if s.lower() == "true":
+            return True
+        elif s.lower() == "false":
+            return False
+        else:
+            raise ValueError(f"Invalid boolean value: {s}")
+
 
 @register_type("date")
 class Date(ScalarType):
     """Element tag: `<date>`"""
 
+    @classmethod
+    def from_str(self, s: str) -> "Date":
+        """Create a Date from a string."""
+        return datetime.datetime.strptime(s, "%Y-%m-%d").date()
+
 
 @register_type("time")
 class Time(ScalarType):
     """Element tag: `<time>`"""
+
+    @classmethod
+    def from_str(self, s: str) -> "Time":
+        """Create a Time from a string."""
+        return datetime.datetime.strptime(s, "%H:%M:%S").time()
 
 
 @register_type("email")
