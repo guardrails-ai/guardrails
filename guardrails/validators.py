@@ -100,7 +100,11 @@ class Validator:
     def reask(self, error: EventDetail) -> Dict:
         """Reask disambiguates the validation failure into a helpful error message."""
 
-        error.schema[error.key] = ReAsk(error.value, error.error_message)
+        error.schema[error.key] = ReAsk(
+            incorrect_value=error.value,
+            error_message=error.error_message,
+            fix_value=error.fix_value
+        )
         return error.schema
 
     def filter(self, error: EventDetail) -> Dict:

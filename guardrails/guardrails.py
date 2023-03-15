@@ -1,7 +1,7 @@
 import json
 import logging
 from copy import deepcopy
-from typing import Any, Callable, Dict, List, Tuple
+from typing import Any, Callable, Dict, List, Tuple, Optional
 
 from eliot import start_action, to_file
 
@@ -20,8 +20,8 @@ class Guard:
     """The Guard class.
 
     This class is the main entry point for using Guardrails.
-    It is initialized from either `from_rail` or `from_rail_string` methods, 
-    which take in a `.rail` file or string, respectively. 
+    It is initialized from either `from_rail` or `from_rail_string` methods,
+    which take in a `.rail` file or string, respectively.
     The `__call__` method functions as a wrapper around LLM APIs.
     It takes in an LLM API, and optional prompt parameters,
     and returns the raw output from the LLM and the validated output.
@@ -37,9 +37,10 @@ class Guard:
         self.num_reasks = num_reasks
         self.guard_state = GuardState([])
 
-        parsed_rail_copy = deepcopy(self.output_schema.parsed_rail)
-        output_schema_prompt = reask_utils.extract_prompt_from_xml(parsed_rail_copy)
-        self.base_prompt = base_prompt.format(output_schema=output_schema_prompt)
+        # raw_prompt is an instance of the Prompt class.
+        self.raw_prompt = base_prompt
+        # base_prompt is a string, and contains output schema instructions.
+        self.base_prompt = base_prompt.source
 
     @classmethod
     def from_rail(cls, rail_file: str, num_reasks: int = 1) -> "Guard":
@@ -97,7 +98,10 @@ class Guard:
 
         with start_action(action_type="ask_with_validation", prompt=prompt):
             guard_history = self.validation_inner_loop(
-                prompt, llm_ask, 0, self.output_schema
+                prompt=prompt,
+                llm_ask=llm_ask,
+                reask_ctr=0,
+                output_schema=self.output_schema,
             )
 
             return (
@@ -107,18 +111,23 @@ class Guard:
 
     def validation_inner_loop(
         self,
-        formatted_prompt: str,
-        llm_ask: Callable,
         reask_ctr: int,
         output_schema: OutputSchema,
+        llm_ask: Optional[Callable] = None,
+        prompt: Optional[str] = None,
+        llm_output: Optional[str] = None,
         guard_history: GuardHistory = None,
     ) -> GuardHistory:
         """
         Ask a question, and validate the output.
 
         Args:
-            formatted_prompt: The prompt to send to the LLM.
-            reask_ctr: The number of times the user has been reasked.
+            reask_ctr: The number of times the LLM has been reasked.
+            output_schema: The output schema to validate against.
+            llm_ask: The LLM API wrapper to call (e.g. wrapper openai.Completion.create)
+            prompt: The prompt to send to the LLM. Either this or llm_output must be provided.
+            llm_output: The raw output from the LLM. Either this or prompt must be provided.
+            guard_history: The history of the guard calls.
 
         Returns:
             The raw output from the LLM, the output as a dict, and the
@@ -128,15 +137,23 @@ class Guard:
         if guard_history is None:
             guard_history = GuardHistory([])
 
+        # If the prompt is not provided, then the output must be provided.
+        if prompt is not None:
+            assert llm_ask is not None
+            assert llm_output is None
+        elif llm_output is not None:
+            assert prompt is None
+
         with start_action(
             action_type="validation_inner_loop", reask_ctr=reask_ctr
         ) as action:
 
-            output = llm_ask(formatted_prompt)
-            action.log(message_type="info", prompt=formatted_prompt, output=output)
+            if llm_output is None:
+                llm_output = llm_ask(prompt)
+                action.log(message_type="info", prompt=prompt, output=llm_output)
 
             try:
-                output_as_dict = json.loads(output)
+                output_as_dict = json.loads(llm_output)
                 action.log(message_type="info", output_as_dict=output_as_dict)
                 validated_response, reasks = self.validate_output(
                     output_as_dict, output_schema
@@ -154,8 +171,8 @@ class Guard:
             )
 
             gd_log = GuardLogs(
-                prompt=formatted_prompt,
-                output=output,
+                prompt=prompt,
+                output=llm_output,
                 output_as_dict=output_as_dict,
                 validated_response=validated_response,
                 reasks=reasks,
@@ -165,13 +182,22 @@ class Guard:
 
             if len(reasks) and reask_ctr < self.num_reasks:
 
+                if llm_ask is None:
+                    # If the LLM API is None, then we can't re-ask the LLM.
+                    self.guard_state = self.guard_state.push(guard_history)
+                    return guard_history
+
                 reask_json = reask_utils.prune_json_for_reasking(validated_response)
                 reask_prompt, reask_schema = reask_utils.get_reask_prompt(
                     self.output_schema.parsed_rail, reasks, reask_json
                 )
 
                 return self.validation_inner_loop(
-                    reask_prompt, llm_ask, reask_ctr + 1, reask_schema, guard_history
+                    prompt=reask_prompt,
+                    llm_ask=llm_ask,
+                    reask_ctr=reask_ctr + 1,
+                    output_schema=reask_schema,
+                    guard_history=guard_history,
                 )
 
             self.guard_state = self.guard_state.push(guard_history)
@@ -223,3 +249,23 @@ class Guard:
         schema = _print_dict(self.output_schema)
 
         return f"Schema({schema})"
+
+    def parse(self, llm_output: str, llm_api: Callable = None, *args, **kwargs) -> Dict:
+        """Alternate flow to using Guard where the llm_output is already known."""
+
+        llm_ask = None
+        if llm_api is not None:
+            llm_ask = get_llm_ask(llm_api, *args, **kwargs)
+
+        guard_history = self.validation_inner_loop(
+            reask_ctr=0,
+            output_schema=self.output_schema,
+            llm_ask=llm_ask,
+            llm_output=llm_output,
+        )
+
+        validated_response = reask_utils.sub_reasks_with_fixed_values(
+            guard_history.validated_response
+        )
+
+        return validated_response

@@ -1,14 +1,13 @@
-"""XML utilities."""
-import re
-from typing import Dict, List, Optional, Tuple
+"""RAIL utilities."""
+from copy import deepcopy
+from typing import Dict, Optional, Tuple
 
 from lxml import etree as ET
 
 from guardrails.datatypes import registry as types_registry
 from guardrails.output_schema import OutputSchema
 from guardrails.prompt import Prompt
-from guardrails.utils.constants import constants
-from guardrails.validators import Validator
+from guardrails.utils.reask_utils import extract_prompt_from_xml
 
 
 def read_rail(
@@ -51,7 +50,7 @@ def read_rail(
     prompt = parsed_rail.find("prompt")
     if prompt is None:
         raise ValueError("RAIL file must contain a prompt element.")
-    prompt = load_prompt(prompt)
+    prompt = load_prompt(prompt, output_schema)
 
     return output_schema, prompt, script
 
@@ -74,27 +73,18 @@ def load_output_schema(root: ET._Element) -> OutputSchema:
     return output
 
 
-def load_prompt(root: ET._Element) -> Prompt:
+def load_prompt(root: ET._Element, output_schema: OutputSchema) -> Prompt:
     text = root.text
+    output_schema_prompt = extract_prompt_from_xml(deepcopy(output_schema.parsed_rail))
 
-    # Substitute constants by reading the constants file.
-    # Regex to extract all occurrences of @<constant_name>
-    matches = re.findall(r"@(\w+)", text)
-
-    # Substitute all occurrences of @<constant_name> with the value of the constant.
-    for match in matches:
-        text = text.replace(f"@{match}", constants[match])
-
-    prompt = Prompt(text)
-
-    return prompt
+    return Prompt(text, output_schema=output_schema_prompt)
 
 
 def load_script(root: ET._Element) -> None:
 
     if "language" not in root.attrib:
         raise ValueError("Script element must have a language attribute.")
-    
+
     language = root.attrib["language"]
     if language != "python":
         raise ValueError("Only python scripts are supported right now.")
