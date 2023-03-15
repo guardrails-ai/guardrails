@@ -671,6 +671,20 @@
 
             
           
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/generate_structured_data/" class="md-nav__link">
+        Generate structured synthetic data
+      </a>
+    </li>
+  
+
+            
+          
         </ul>
       </nav>
     </li>
@@ -759,12 +773,12 @@
 
   
       <p>The Guard class.</p>
-<p>This class is the main entry point for using Guardrails.
-It is initialized from either <code>from_rail</code> or <code>from_rail_string</code> methods, 
-which take in a <code>.rail</code> file or string, respectively. 
-The <code>__call__</code> method functions as a wrapper around LLM APIs.
-It takes in an LLM API, and optional prompt parameters,
-and returns the raw output from the LLM and the validated output.</p>
+<p>This class is the main entry point for using Guardrails. It is
+initialized from either <code>from_rail</code> or <code>from_rail_string</code> methods,
+which take in a <code>.rail</code> file or string, respectively. The <code>__call__</code>
+method functions as a wrapper around LLM APIs. It takes in an LLM
+API, and optional prompt parameters, and returns the raw output from
+the LLM and the validated output.</p>
 
 
 
@@ -824,7 +838,7 @@ and returns the raw output from the LLM and the validated output.</p>
           <td>
                 <code>int</code>
           </td>
-          <td><p>The max number of times to re-ask the LLM if the output is invalid.</p></td>
+          <td><p>The max times to re-ask the LLM for invalid output.</p></td>
           <td>
                 <code>1</code>
           </td>
@@ -898,7 +912,7 @@ and returns the raw output from the LLM and the validated output.</p>
           <td>
                 <code>int</code>
           </td>
-          <td><p>The max number of times to re-ask the LLM if the output is invalid.</p></td>
+          <td><p>The max times to re-ask the LLM for invalid output.</p></td>
           <td>
                 <code>1</code>
           </td>

@@ -720,6 +720,20 @@
 
             
           
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/generate_structured_data/" class="md-nav__link">
+        Generate structured synthetic data
+      </a>
+    </li>
+  
+
+            
+          
         </ul>
       </nav>
     </li>
@@ -856,7 +870,8 @@
   <div class="doc doc-contents first">
   
       <p>This module contains the validators for the Guardrails framework.</p>
-<p>The name with which a validator is registered is the name that is used in the <code>RAIL</code> spec to specify formatters.</p>
+<p>The name with which a validator is registered is the name that is used
+in the <code>RAIL</code> spec to specify formatters.</p>
 
   
 
@@ -884,7 +899,8 @@
 
   
       <p>Validate that there are no Python syntactic bugs in the generated code.</p>
-<p>This validator checks for syntax errors by running <code>exec(code)</code>, and will raise an exception if there are any.
+<p>This validator checks for syntax errors by running <code>ast.parse(code)</code>,
+and will raise an exception if there are any.
 Only the packages in the <code>python</code> environment are available to the code snippet.</p>
 <ul>
 <li>Name for <code>format</code> attribute: <code>bug-free-python</code></li>
@@ -929,8 +945,9 @@ Only the packages in the <code>python</code> environment are available to the co
 
   
       <p>Validate that there are no SQL syntactic bugs in the generated code.</p>
-<p>This is a very minimal implementation that uses the Pypi <code>sqlvalidator</code> package to check if the SQL query is valid.
-You can implement a custom SQL validator that uses a database connection to check if the query is valid.</p>
+<p>This is a very minimal implementation that uses the Pypi <code>sqlvalidator</code> package
+to check if the SQL query is valid. You can implement a custom SQL validator
+that uses a database connection to check if the query is valid.</p>
 <ul>
 <li>Name for <code>format</code> attribute: <code>bug-free-sql</code></li>
 <li>Supported data types: <code>sql</code></li>
