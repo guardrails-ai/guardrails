@@ -1,12 +1,12 @@
 autoformat:
-	black guardrails/ tests/ demo/
-	isort --atomic guardrails/ tests/ demo/
-	docformatter --in-place --recursive guardrails tests demo
+	black guardrails/ tests/
+	isort --atomic guardrails/ tests/
+	docformatter --in-place --recursive guardrails tests
 
 lint:
-	isort -c guardrails/ tests/ demo/
-	black guardrails/ tests/ demo/ --check
-	flake8 guardrails/ tests/ demo/
+	isort -c guardrails/ tests/
+	black guardrails/ tests/ --check
+	flake8 guardrails/ tests/
 
 test:
 	pytest tests/

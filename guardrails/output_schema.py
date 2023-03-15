@@ -7,8 +7,8 @@ from guardrails.datatypes import DataType
 
 
 class OutputSchema:
-    """Output schema class that holds a _schema attribute.
-    """
+    """Output schema class that holds a _schema attribute."""
+
     def __init__(
         self,
         parsed_rail: Optional[ET._Element] = None,
@@ -23,7 +23,7 @@ class OutputSchema:
 
     def __getitem__(self, key: str) -> DataType:
         return getattr(self._schema, key)
-    
+
     def __setitem__(self, key: str, value: DataType) -> None:
         setattr(self._schema, key, value)
 

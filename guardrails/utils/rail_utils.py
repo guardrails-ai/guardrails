@@ -81,7 +81,6 @@ def load_prompt(root: ET._Element, output_schema: OutputSchema) -> Prompt:
 
 
 def load_script(root: ET._Element) -> None:
-
     if "language" not in root.attrib:
         raise ValueError("Script element must have a language attribute.")
 

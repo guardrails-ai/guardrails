@@ -1,6 +1,7 @@
 """This module contains the validators for the Guardrails framework.
 
-The name with which a validator is registered is the name that is used in the `RAIL` spec to specify formatters.
+The name with which a validator is registered is the name that is used
+in the `RAIL` spec to specify formatters.
 """
 
 import ast
@@ -99,12 +100,13 @@ class Validator:
         return error.schema
 
     def reask(self, error: EventDetail) -> Dict:
-        """Reask disambiguates the validation failure into a helpful error message."""
+        """Reask disambiguates the validation failure into a helpful error
+        message."""
 
         error.schema[error.key] = ReAsk(
             incorrect_value=error.value,
             error_message=error.error_message,
-            fix_value=error.fix_value
+            fix_value=error.fix_value,
         )
         return error.schema
 
@@ -245,7 +247,6 @@ class LowerCase(Validator):
     """
 
     def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
-
         logger.debug(f"Validating {value} is lower case...")
 
         if not value.lower() == value:
@@ -270,7 +271,6 @@ class UpperCase(Validator):
     """
 
     def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
-
         logger.debug(f"Validating {value} is upper case...")
 
         if not value.upper() == value:
@@ -318,7 +318,8 @@ class ValidLength(Validator):
                 value,
                 schema,
                 f"Value has length less than {self._min}. "
-                f"Please return a longer output, that is shorter than {self._max} characters.",
+                f"Please return a longer output, "
+                f"that is shorter than {self._max} characters.",
                 corrected_value,
             )
 
@@ -329,7 +330,8 @@ class ValidLength(Validator):
                 value,
                 schema,
                 f"Value has length greater than {self._max}. "
-                f"Please return a shorter output, that is shorter than {self._max} characters.",
+                f"Please return a shorter output, "
+                f"that is shorter than {self._max} characters.",
                 value[0 : self._max],
             )
 
@@ -425,7 +427,8 @@ class ValidUrl(Validator):
 class BugFreePython(Validator):
     """Validate that there are no Python syntactic bugs in the generated code.
 
-    This validator checks for syntax errors by running `ast.parse(code)`, and will raise an exception if there are any.
+    This validator checks for syntax errors by running `ast.parse(code)`,
+    and will raise an exception if there are any.
     Only the packages in the `python` environment are available to the code snippet.
 
     - Name for `format` attribute: `bug-free-python`
@@ -436,7 +439,7 @@ class BugFreePython(Validator):
     def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
         logger.debug(f"Validating {value} is not a bug...")
 
-        # The value represents a Python code snippet. We need to check for syntax errors.
+        # The value is a Python code snippet. We need to check for syntax errors.
         try:
             ast.parse(value)
         except SyntaxError as e:
@@ -455,8 +458,9 @@ class BugFreePython(Validator):
 class BugFreeSQL(Validator):
     """Validate that there are no SQL syntactic bugs in the generated code.
 
-    This is a very minimal implementation that uses the Pypi `sqlvalidator` package to check if the SQL query is valid.
-    You can implement a custom SQL validator that uses a database connection to check if the query is valid.
+    This is a very minimal implementation that uses the Pypi `sqlvalidator` package
+    to check if the SQL query is valid. You can implement a custom SQL validator
+    that uses a database connection to check if the query is valid.
 
     - Name for `format` attribute: `bug-free-sql`
     - Supported data types: `sql`
@@ -464,7 +468,6 @@ class BugFreeSQL(Validator):
     """
 
     def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
-
         import sqlvalidator
 
         sql_query = sqlvalidator.parse("SELECT * from table")
