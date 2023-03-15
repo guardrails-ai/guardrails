@@ -61,8 +61,8 @@ def openai_chat_wrapper(text: str, *args, model="gpt-3.5-turbo", **kwargs):
         messages=[
             {"role": "system", "content": "You are a helpful assistant."},
             {"role": "user", "content": text},
-        ]
-        * args,
+        ],
+        *args,
         **kwargs,
     )
     return openai_response["choices"][0]["message"]["content"]
