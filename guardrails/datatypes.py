@@ -1,7 +1,7 @@
+import datetime
 import warnings
 from types import SimpleNamespace
 from typing import Any, Dict, List
-import datetime
 
 from lxml import etree as ET
 
@@ -141,12 +141,11 @@ class ScalarType(DataType):
     @classmethod
     def from_str(self, s: str) -> "ScalarType":
         """Create a ScalarType from a string.
-        
+
         Note: ScalarTypes like int, float, bool, etc. will override this method.
         Other ScalarTypes like string, email, url, etc. will not override this
         """
         return s
-        
 
 
 class NonScalarType(DataType):

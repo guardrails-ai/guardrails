@@ -17,7 +17,7 @@ class Prompt:
         source = self.substitue_constants(source)
         # Format instructions contain info for how to format LLM output.
         self.format_instructions = source[format_instructions_start_idx:]
-        
+
         self.source = source.format(output_schema=output_schema)
 
     def substitue_constants(self, text):
