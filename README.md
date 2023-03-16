@@ -112,8 +112,8 @@ Explain what a bank run is in a tweet.
 @json_suffix_prompt_v2_wo_none
 </prompt>
 </rail>
-"""
 ```
+
 We specify our quality criteria (generated length, URL reachability) in the `format` fields of the `RAIL` spec below. We `reask` if `explanation` is not valid, and filter the `follow_up_url` if it is not valid.
 
 ### 🛠️ Using Guardrails to enforce the `RAIL` spec
