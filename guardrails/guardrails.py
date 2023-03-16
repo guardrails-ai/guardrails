@@ -11,6 +11,7 @@ from guardrails.output_schema import OutputSchema
 from guardrails.prompt import Prompt
 from guardrails.utils.logs_utils import GuardHistory, GuardLogs, GuardState
 from guardrails.utils.rail_utils import read_rail
+from guardrails.validators import check_refrain_in_dict, filter_in_dict
 
 logger = logging.getLogger(__name__)
 to_file(open("guardrails.log", "w"))
@@ -146,7 +147,6 @@ class Guard:
         with start_action(
             action_type="validation_inner_loop", reask_ctr=reask_ctr
         ) as action:
-
             if llm_output is None:
                 llm_output = llm_ask(prompt)
                 action.log(message_type="info", prompt=prompt, output=llm_output)
@@ -180,7 +180,6 @@ class Guard:
             guard_history = guard_history.push(gd_log)
 
             if len(reasks) and reask_ctr < self.num_reasks:
-
                 if llm_ask is None:
                     # If the LLM API is None, then we can't re-ask the LLM.
                     self.guard_state = self.guard_state.push(guard_history)
@@ -227,6 +226,12 @@ class Guard:
             validated_response = schema[field].validate(
                 field, value, validated_response
             )
+
+        if check_refrain_in_dict(validated_response):
+            logger.debug("Refrain detected.")
+            validated_response = {}
+
+        validated_response = filter_in_dict(validated_response)
 
         reasks = reask_utils.gather_reasks(validated_response)
 

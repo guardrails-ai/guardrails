@@ -20,6 +20,14 @@ types_to_validators = defaultdict(list)
 logger = logging.getLogger(__name__)
 
 
+class Filter:
+    pass
+
+
+class Refrain:
+    pass
+
+
 def register_validator(name: str, data_type: Union[str, List[str]]):
     """Register a validator for a data type."""
 
@@ -115,23 +123,17 @@ class Validator:
 
         logger.debug(f"Filtering {error.key} from schema...")
 
-        schema = error.schema
-        key = error.key
-        value = error.value
+        error.schema[error.key] = Filter()
 
-        if isinstance(schema, dict):
-            schema.pop(key)
-        elif isinstance(schema, list):
-            schema.remove(value)
-
-        return schema
+        return error.schema
 
     def refrain(self, error: EventDetail) -> Optional[Dict]:
         """If validation fails, refrain from answering."""
 
         logger.debug(f"Refusing to answer {error.key}...")
 
-        return None
+        error.schema[error.key] = Refrain()
+        return error.schema
 
     def noop(self, error: EventDetail) -> Dict:
         """If validation fails, do nothing."""
@@ -484,3 +486,104 @@ class BugFreeSQL(Validator):
             )
 
         return schema
+
+
+def check_refrain_in_list(schema: List) -> bool:
+    """Check if a Refrain object exists in a list.
+
+    Args:
+        schema: A list that can contain lists, dicts or scalars.
+
+    Returns:
+        bool: True if a Refrain object exists in the list.
+    """
+    for item in schema:
+        if isinstance(item, Refrain):
+            return True
+        elif isinstance(item, list):
+            if check_refrain_in_list(item):
+                return True
+        elif isinstance(item, dict):
+            if check_refrain_in_dict(item):
+                return True
+
+    return False
+
+
+def check_refrain_in_dict(schema: Dict) -> bool:
+    """Check if a Refrain object exists in a dict.
+
+    Args:
+        schema: A dict that can contain lists, dicts or scalars.
+
+    Returns:
+        True if a Refrain object exists in the dict.
+    """
+
+    for key, value in schema.items():
+        if isinstance(value, Refrain):
+            return True
+        elif isinstance(value, list):
+            if check_refrain_in_list(value):
+                return True
+        elif isinstance(value, dict):
+            if check_refrain_in_dict(value):
+                return True
+
+    return False
+
+
+def filter_in_list(schema: List) -> List:
+    """Remove out all Filter objects from a list.
+
+    Args:
+        schema: A list that can contain lists, dicts or scalars.
+
+    Returns:
+        A list with all Filter objects removed.
+    """
+
+    filtered_list = []
+
+    for item in schema:
+        if isinstance(item, Filter):
+            pass
+        elif isinstance(item, list):
+            filtered_item = filter_in_list(item)
+            if len(filtered_item):
+                filtered_list.append(filtered_item)
+        elif isinstance(item, dict):
+            filtered_dict = filter_in_dict(item)
+            if len(filtered_dict):
+                filtered_list.append(filtered_dict)
+        else:
+            filtered_list.append(item)
+
+    return filtered_list
+
+
+def filter_in_dict(schema: Dict) -> Dict:
+    """Remove out all Filter objects from a dictionary.
+
+    Args:
+        schema: A dictionary that can contain lists, dicts or scalars.
+
+    Returns:
+        A dictionary with all Filter objects removed.
+    """
+
+    filtered_dict = {}
+
+    for key, value in schema.items():
+        if isinstance(value, Filter):
+            pass
+        elif isinstance(value, list):
+            filtered_item = filter_in_list(value)
+            if len(filtered_item):
+                filtered_dict[key] = filtered_item
+        elif isinstance(value, dict):
+            filtered_dict[key] = filter_in_dict(value)
+        else:
+            filtered_dict[key] = value
+
+    return filtered_dict
