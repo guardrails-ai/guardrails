@@ -72,13 +72,19 @@ class Guard:
         return cls(output_schema, base_prompt, num_reasks=num_reasks)
 
     def __call__(
-        self, llm_api: Callable, prompt_params: Dict = None, *args, **kwargs
+        self,
+        llm_api: Callable,
+        prompt_params: Dict = None,
+        num_reasks: int = 1,
+        *args,
+        **kwargs,
     ) -> Tuple[str, Dict]:
         """Outermost function that calls the LLM and validates the output.
 
         Args:
             llm_api: The LLM API to call (e.g. openai.Completion.create)
             prompt_params: The parameters to pass to the prompt.format() method.
+            num_reasks: The max times to re-ask the LLM for invalid output.
             *args: Additional arguments to pass to the LLM API.
             **kwargs: Additional keyword arguments to pass to the LLM API.
 
@@ -92,17 +98,19 @@ class Guard:
             prompt = self.base_prompt.format(**prompt_params)
             llm_ask = get_llm_ask(llm_api, *args, **kwargs)
 
-            return self.ask_with_validation(prompt, llm_ask)
+            return self.ask_with_validation(prompt, llm_ask, num_reasks)
 
-    def ask_with_validation(self, prompt: str, llm_ask: Callable) -> Tuple[str, Dict]:
+    def ask_with_validation(
+        self, prompt: str, llm_ask: Callable, num_reasks: Optional[int]
+    ) -> Tuple[str, Dict]:
         """Ask a question, and validate the output."""
-
         with start_action(action_type="ask_with_validation", prompt=prompt):
             guard_history = self.validation_inner_loop(
                 prompt=prompt,
                 llm_ask=llm_ask,
                 reask_ctr=0,
                 output_schema=self.output_schema,
+                num_reasks=num_reasks,
             )
 
             return (
@@ -118,6 +126,7 @@ class Guard:
         prompt: Optional[str] = None,
         llm_output: Optional[str] = None,
         guard_history: GuardHistory = None,
+        num_reasks: Optional[int] = None,
     ) -> GuardHistory:
         """Ask a question, and validate the output.
 
@@ -136,6 +145,9 @@ class Guard:
 
         if guard_history is None:
             guard_history = GuardHistory([])
+
+        if num_reasks is None:
+            num_reasks = self.num_reasks
 
         # If the prompt is not provided, then the output must be provided.
         if prompt is not None:
@@ -179,7 +191,7 @@ class Guard:
 
             guard_history = guard_history.push(gd_log)
 
-            if len(reasks) and reask_ctr < self.num_reasks:
+            if len(reasks) and reask_ctr < num_reasks:
                 if llm_ask is None:
                     # If the LLM API is None, then we can't re-ask the LLM.
                     self.guard_state = self.guard_state.push(guard_history)
@@ -196,6 +208,7 @@ class Guard:
                     reask_ctr=reask_ctr + 1,
                     output_schema=reask_schema,
                     guard_history=guard_history,
+                    num_reasks=num_reasks,
                 )
 
             self.guard_state = self.guard_state.push(guard_history)
@@ -254,9 +267,24 @@ class Guard:
 
         return f"Schema({schema})"
 
-    def parse(self, llm_output: str, llm_api: Callable = None, *args, **kwargs) -> Dict:
-        """Alternate flow to using Guard where the llm_output is already
-        known."""
+    def parse(
+        self,
+        llm_output: str,
+        llm_api: Callable = None,
+        num_reasks: int = 1,
+        *args,
+        **kwargs,
+    ) -> Dict:
+        """Alternate flow to using Guard where the llm_output is known.
+
+        Args:
+            llm_output: The output from the LLM.
+            llm_api: The LLM API to use to re-ask the LLM.
+            num_reasks: The max times to re-ask the LLM for invalid output.
+
+        Returns:
+            The validated response.
+        """
 
         llm_ask = None
         if llm_api is not None:
@@ -267,6 +295,7 @@ class Guard:
             output_schema=self.output_schema,
             llm_ask=llm_ask,
             llm_output=llm_output,
+            num_reasks=num_reasks,
         )
 
         validated_response = reask_utils.sub_reasks_with_fixed_values(

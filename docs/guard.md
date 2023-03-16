@@ -7,3 +7,4 @@
             - "from_rail"
             - "from_rail_string"
             - "__call__"
+            - "parse"
