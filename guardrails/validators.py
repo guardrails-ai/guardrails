@@ -36,11 +36,7 @@ def register_validator(name: str, data_type: Union[str, List[str]]):
 
         nonlocal data_type
         if isinstance(data_type, str):
-            if data_type == "all":
-                data_type = list(types_registry.keys())
-            else:
-                data_type = [data_type]
-
+            data_type = list(types_registry.keys()) if data_type == "all" else [data_type]
         # Make sure that the data type string exists in the data types registry.
         for dt in data_type:
             if dt not in types_registry:
@@ -253,7 +249,7 @@ class LowerCase(Validator):
     def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
         logger.debug(f"Validating {value} is lower case...")
 
-        if not value.lower() == value:
+        if value.lower() != value:
             raise EventDetail(
                 key,
                 value,
@@ -277,7 +273,7 @@ class UpperCase(Validator):
     def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
         logger.debug(f"Validating {value} is upper case...")
 
-        if not value.upper() == value:
+        if value.upper() != value:
             raise EventDetail(
                 key,
                 value,
@@ -302,8 +298,8 @@ class ValidLength(Validator):
         self, min: int = None, max: int = None, on_fail: Optional[Callable] = None
     ):
         super().__init__(on_fail=on_fail)
-        self._min = int(min) if min is not None else None
-        self._max = int(max) if max is not None else None
+        self._min = min if min is not None else None
+        self._max = max if max is not None else None
 
     def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
         """Validate that a value is within a range."""
@@ -333,10 +329,8 @@ class ValidLength(Validator):
                 key,
                 value,
                 schema,
-                f"Value has length greater than {self._max}. "
-                f"Please return a shorter output, "
-                f"that is shorter than {self._max} characters.",
-                value[0 : self._max],
+                f"Value has length greater than {self._max}. Please return a shorter output, that is shorter than {self._max} characters.",
+                value[: self._max],
             )
 
         return schema
@@ -354,13 +348,13 @@ class TwoWords(Validator):
     def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
         logger.debug(f"Validating {value} is two words...")
 
-        if not len(value.split()) == 2:
+        if len(value.split()) != 2:
             raise EventDetail(
                 key,
                 value,
                 schema,
                 "must be exactly two words",
-                " ".join(value.split()[0:2]),
+                " ".join(value.split()[:2]),
             )
 
         return schema
@@ -378,7 +372,7 @@ class OneLine(Validator):
     def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
         logger.debug(f"Validating {value} is a single line...")
 
-        if not len(value.splitlines()) == 1:
+        if len(value.splitlines()) != 1:
             raise EventDetail(
                 key,
                 value,
@@ -407,7 +401,7 @@ class ValidUrl(Validator):
         # Check that the URL exists and can be reached
         try:
             response = requests.get(value)
-            if not response.status_code == 200:
+            if response.status_code != 200:
                 raise EventDetail(
                     key,
                     value,

@@ -9,7 +9,6 @@
 3. The quality criteria for the expected outcome to be considered valid. (E.g. generated text should be bias-free, generated code should be bug-free)
 4. The corrective action to take in case the quality criteria is not met. (E.g. reask the question, filter the LLM, progrmatically fix, etc.)
 
-
 <details>
 
 <summary>Expand to see an example of a RAIL specification.</summary>
@@ -73,9 +72,7 @@ Given the following document, answer the following questions. If the answer does
 </rail>
 ```
 
-
 </details>
-
 
 ## 🤔 Why `RAIL`?
 
@@ -86,12 +83,10 @@ Given the following document, answer the following questions. If the answer does
 5. **Supports writing custom code:** If needed, `RAIL` supports writing code for using validators, custom corrective actions, etc. To see examples of this, check out the [RAIL Script](script.md) page.
 6. **Code assistance**: In the future, we plan to support code completion and IntelliSense for `RAIL` specifications, which will make it very easy to write `RAIL` specifications.
 
-
 **Design inspiration**
 
 - HTML, CSS and Javascript: `RAIL` spec is a dialect of XML, and so is similar to HTML. Specifying quality criteria is done via the `format` attribute, which is similar to CSS `style` tags. Corrective actions are specified via the `on-fail-*` attributes, which is similar to Javascript event handlers.
 - OpenAPI as an open standard for creating machine-readable RESTful APIs.
-
 
 ## 📚 Components of an `RAIL` Specification
 
@@ -104,7 +99,6 @@ The `RAIL` specification contains 3 main components:
 3. (Experimental) (Optional) `Script`: Contains any custom code for implementing the schema. This is useful for implementing custom validators, custom corrective actions, etc. Check out the [RAIL Script](script.md) page for more details.
 
 Let's see an example of an `RAIL` specification in action:
-
 
 ```xml
 <rail version="0.1">
@@ -129,7 +123,6 @@ Let's see an example of an `RAIL` specification in action:
 1. The `output` element contains the structure of the expected output of the LLM. It contains the spec for the overall structure of the LLM output, type info for each field, and the quality criteria for each field and the corrective action to be taken in case quality criteria is not met.
 2. The `prompt` element contains the high level instructions that are sent to the LLM. Check out the [RAIL Prompt](prompt.md) page for more details.
 3. The `script` element is optional, and contains any custom code for implementing the schema.
-
 
 ## 📖 How to use `RAIL` in Guardrails?
 
