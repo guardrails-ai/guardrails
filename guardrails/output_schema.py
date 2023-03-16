@@ -14,7 +14,6 @@ class OutputSchema:
         parsed_rail: Optional[ET._Element] = None,
         schema: Optional[Dict[str, DataType]] = None,
     ) -> None:
-
         if schema is None:
             schema = {}
 

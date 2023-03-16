@@ -147,7 +147,6 @@ class Guard:
         with start_action(
             action_type="validation_inner_loop", reask_ctr=reask_ctr
         ) as action:
-
             if llm_output is None:
                 llm_output = llm_ask(prompt)
                 action.log(message_type="info", prompt=prompt, output=llm_output)
@@ -181,7 +180,6 @@ class Guard:
             guard_history = guard_history.push(gd_log)
 
             if len(reasks) and reask_ctr < self.num_reasks:
-
                 if llm_ask is None:
                     # If the LLM API is None, then we can't re-ask the LLM.
                     self.guard_state = self.guard_state.push(guard_history)

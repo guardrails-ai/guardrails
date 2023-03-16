@@ -180,7 +180,6 @@ def extract_prompt_from_xml(tree: ET._Element) -> str:
     # From the element tree, remove any action attributes like 'on-fail-*'.
     # Filter any elements that are comments.
     for element in tree.iter():
-
         if isinstance(element, ET._Comment):
             continue
 

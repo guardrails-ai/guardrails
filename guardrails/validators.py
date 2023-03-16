@@ -28,7 +28,6 @@ class Refrain:
     pass
 
 
-
 def register_validator(name: str, data_type: Union[str, List[str]]):
     """Register a validator for a data type."""
 

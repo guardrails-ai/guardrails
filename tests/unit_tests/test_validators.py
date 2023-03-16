@@ -1,6 +1,6 @@
 import pytest
 
-from guardrails.validators import Refrain, check_refrain_in_dict, filter_in_dict, Filter
+from guardrails.validators import Filter, Refrain, check_refrain_in_dict, filter_in_dict
 
 
 @pytest.mark.parametrize(
@@ -22,7 +22,10 @@ def test_check_refrain(input_dict, expected):
     "input_dict, expected_dict",
     [
         ({"a": 1, "b": Filter(), "c": 3}, {"a": 1, "c": 3}),
-        ({"a": 1, "b": {"c": 2, "d": Filter()}, "e": 4}, {"a": 1, "b": {"c": 2}, "e": 4}),
+        (
+            {"a": 1, "b": {"c": 2, "d": Filter()}, "e": 4},
+            {"a": 1, "b": {"c": 2}, "e": 4},
+        ),
         ({"a": [1, 2, Filter()], "b": 4}, {"a": [1, 2], "b": 4}),
         ({"a": [1, 2, {"c": Filter(), "d": 3}]}, {"a": [1, 2, {"d": 3}]}),
         ({"a": [1, 2, [3, 4, Filter()]]}, {"a": [1, 2, [3, 4]]}),
