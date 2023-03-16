@@ -1,3 +1,5 @@
+MKDOCS_SERVE_ADDR ?= localhost:8000 # Default address for mkdocs serve, format: <host>:<port>, override with `make docs-serve MKDOCS_SERVE_ADDR=<host>:<port>`
+
 autoformat:
 	black guardrails/ tests/
 	isort --atomic guardrails/ tests/
@@ -20,7 +22,7 @@ test-cov:
 	pytest tests/ --cov=./ --cov-report=xml
 
 docs-serve:
-	mkdocs serve
+	mkdocs serve -a $(MKDOCS_SERVE_ADDR)
 
 docs-deploy:
 	mkdocs gh-deploy
