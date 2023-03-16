@@ -11,6 +11,7 @@ from guardrails.output_schema import OutputSchema
 from guardrails.prompt import Prompt
 from guardrails.utils.logs_utils import GuardHistory, GuardLogs, GuardState
 from guardrails.utils.rail_utils import read_rail
+from guardrails.validators import check_refrain_in_dict, filter_in_dict
 
 logger = logging.getLogger(__name__)
 to_file(open("guardrails.log", "w"))
@@ -227,6 +228,12 @@ class Guard:
             validated_response = schema[field].validate(
                 field, value, validated_response
             )
+
+        if check_refrain_in_dict(validated_response):
+            logger.debug("Refrain detected.")
+            validated_response = {}
+
+        validated_response = filter_in_dict(validated_response)
 
         reasks = reask_utils.gather_reasks(validated_response)
 

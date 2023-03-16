@@ -125,13 +125,6 @@ class ScalarType(DataType):
         for validator in self.validators:
             schema = validator.validate_with_correction(key, value, schema)
 
-            if schema is None:
-                # The outcome of validation was to refrain from answering.
-                return None
-
-            if key not in schema:
-                # The key may have been filtered out by a previous validator.
-                break
         return schema
 
     def set_children(self, element: ET._Element):
@@ -252,16 +245,6 @@ class List(NonScalarType):
         for validator in self.validators:
             schema = validator.validate_with_correction(key, value, schema)
 
-            if schema is None:
-                # The outcome of validation was to refrain from answering.
-                return None
-
-            if key not in schema:
-                # The key may have been filtered out by a previous validator.
-                # In this case, we don't need to validate the items in the list,
-                # since the list itself is not present.
-                return schema
-
         if len(self._children) == 0:
             return schema
 
@@ -295,16 +278,6 @@ class Object(NonScalarType):
 
         for validator in self.validators:
             schema = validator.validate_with_correction(key, value, schema)
-
-            if schema is None:
-                # The outcome of validation was to refrain from answering.
-                return None
-
-            if key not in schema:
-                # The key may have been filtered out by a previous validator.
-                # In this case, we don't need to validate the items in the object,
-                # since the object itself is not present.
-                return schema
 
         if len(self._children) == 0:
             return schema
