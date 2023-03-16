@@ -261,8 +261,8 @@ def sub_reasks_with_fixed_values(value: Any) -> Any:
         for index, item in enumerate(value):
             value[index] = sub_reasks_with_fixed_values(item)
     elif isinstance(value, dict):
-        for key, value in value.items():
-            value[key] = sub_reasks_with_fixed_values(value)
+        for dict_key, dict_value in value.items():
+            value[dict_key] = sub_reasks_with_fixed_values(dict_value)
     elif isinstance(value, ReAsk):
         value = value.fix_value
 
