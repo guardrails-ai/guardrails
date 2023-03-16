@@ -75,7 +75,7 @@ class Guard:
         self,
         llm_api: Callable,
         prompt_params: Dict = None,
-        num_reasks: Optional[int] = None,
+        num_reasks: int = 1,
         *args,
         **kwargs,
     ) -> Tuple[str, Dict]:
@@ -271,12 +271,20 @@ class Guard:
         self,
         llm_output: str,
         llm_api: Callable = None,
-        num_reasks: Optional[int] = None,
+        num_reasks: int = 1,
         *args,
         **kwargs,
     ) -> Dict:
-        """Alternate flow to using Guard where the llm_output is already
-        known."""
+        """Alternate flow to using Guard where the llm_output is known.
+
+        Args:
+            llm_output: The output from the LLM.
+            llm_api: The LLM API to use to re-ask the LLM.
+            num_reasks: The max times to re-ask the LLM for invalid output.
+
+        Returns:
+            The validated response.
+        """
 
         llm_ask = None
         if llm_api is not None:
