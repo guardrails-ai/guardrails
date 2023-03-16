@@ -17,7 +17,7 @@ jobs:
         runs-on: ubuntu-latest
         strategy:
             matrix:
-                python-version: ['3.8']
+                python-version: ['3.8', '3.9']
         
         steps:
             -   uses: actions/checkout@v2
@@ -39,3 +39,38 @@ jobs:
             -   name: Lint with isort, black, docformatter, flake8
                 run: |
                     make lint
+
+    Pytests:
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                python-version: ['3.8', '3.9']
+
+        steps:
+            -   uses: actions/checkout@v2
+            -   name: Set up Python ${{ matrix.python-version }}
+                uses: actions/setup-python@v2
+                with:
+                    python-version: ${{ matrix.python-version }}
+                    
+            -   uses: actions/cache@v2
+                with:
+                    path: ~/.cache/pip
+                    key: ${{ runner.os }}-pip
+
+            -   name: Install Dependencies
+                run: |
+                    python -m pip install --upgrade pip
+                    make dev
+
+            -   name: Run Pytests
+                run: |
+                    make test-cov
+
+            -   name: Upload to codecov.io
+                uses: codecov/codecov-action@v1
+                with:
+                    file: ./coverage.xml
+                    flags: unittests
+                    name: codecov-umbrella
+                    fail_ci_if_error: true
