@@ -486,6 +486,13 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#guardrails.guardrails.Guard.parse" class="md-nav__link">
+    parse()
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -786,6 +793,13 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#guardrails.guardrails.Guard.parse" class="md-nav__link">
+    parse()
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -997,7 +1011,7 @@ the LLM and the validated output.</p>
 
 
 <h2 id="guardrails.guardrails.Guard.__call__" class="doc doc-heading">
-<code class="highlight language-python"><span class="fm">__call__</span><span class="p">(</span><span class="n">llm_api</span><span class="p">,</span> <span class="n">prompt_params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
+<code class="highlight language-python"><span class="fm">__call__</span><span class="p">(</span><span class="n">llm_api</span><span class="p">,</span> <span class="n">prompt_params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">num_reasks</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
 
 </h2>
 
@@ -1038,6 +1052,16 @@ the LLM and the validated output.</p>
           </td>
         </tr>
         <tr>
+          <td><code>num_reasks</code></td>
+          <td>
+                <code>int</code>
+          </td>
+          <td><p>The max times to re-ask the LLM for invalid output.</p></td>
+          <td>
+                <code>1</code>
+          </td>
+        </tr>
+        <tr>
           <td><code>*args</code></td>
           <td>
           </td>
@@ -1072,6 +1096,86 @@ the LLM and the validated output.</p>
                 <code><span title="typing.Tuple">Tuple</span>[str, <span title="typing.Dict">Dict</span>]</code>
           </td>
           <td><p>The raw text output from the LLM and the validated output.</p></td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h2 id="guardrails.guardrails.Guard.parse" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">parse</span><span class="p">(</span><span class="n">llm_output</span><span class="p">,</span> <span class="n">llm_api</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">num_reasks</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
+
+</h2>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Alternate flow to using Guard where the llm_output is known.</p>
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>llm_output</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td><p>The output from the LLM.</p></td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>llm_api</code></td>
+          <td>
+                <code><span title="typing.Callable">Callable</span></code>
+          </td>
+          <td><p>The LLM API to use to re-ask the LLM.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>num_reasks</code></td>
+          <td>
+                <code>int</code>
+          </td>
+          <td><p>The max times to re-ask the LLM for invalid output.</p></td>
+          <td>
+                <code>1</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td>
+                <code><span title="typing.Dict">Dict</span></code>
+          </td>
+          <td><p>The validated response.</p></td>
         </tr>
     </tbody>
   </table>
