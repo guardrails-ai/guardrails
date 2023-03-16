@@ -39,6 +39,8 @@ nav:
       # - 'Forcing positive sentiment in chatbots': examples/positive_sentiment.md
       # - 'AI tutor for writing improvements': examples/ai_tutor.md
       # - 'SFW tutoring system for kids': examples/sfw_tutoring.md
+    - 'Integrations':
+      - 'LangChain': integrations/langchain.ipynb
 
 
 theme:

@@ -23,3 +23,8 @@ def test_sub_reasks_with_fixed_values():
     input_dict = {"a": [1, 2, {"c": reask_utils.ReAsk(-1, "Error Msg", 3)}]}
     expected_dict = {"a": [1, 2, {"c": 3}]}
     assert reask_utils.sub_reasks_with_fixed_values(input_dict) == expected_dict
+
+    # Create a test case with no reasks
+    input_dict = {"a": 1}
+    expected_dict = {"a": 1}
+    assert reask_utils.sub_reasks_with_fixed_values(input_dict) == expected_dict
