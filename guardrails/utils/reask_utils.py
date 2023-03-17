@@ -1,11 +1,10 @@
-import dataclasses
+import json
 from collections import defaultdict
 from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any, Dict, List, Tuple
 
 from lxml import etree as ET
-from rich.pretty import pretty_repr
 
 from guardrails.utils.constants import constants
 
@@ -16,9 +15,6 @@ class ReAsk:
     error_message: str
     fix_value: Any
     path: List[Any] = None
-
-    def __repr__(self) -> str:
-        return pretty_repr(dataclasses.asdict(self))
 
 
 def gather_reasks(validated_output: Dict) -> List[ReAsk]:
@@ -234,7 +230,7 @@ def get_reask_prompt(
     )
 
     reask_prompt = reask_prompt_template.format(
-        previous_response=pretty_repr(reask_json),
+        previous_response=json.dumps(reask_json, indent=2),
         output_schema=pruned_tree_string,
     )
 
