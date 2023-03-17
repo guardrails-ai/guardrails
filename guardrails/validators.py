@@ -3,9 +3,9 @@
 The name with which a validator is registered is the name that is used
 in the `RAIL` spec to specify formatters.
 """
-
 import ast
 import logging
+import os
 from collections import defaultdict
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Union
@@ -26,6 +26,107 @@ class Filter:
 
 class Refrain:
     pass
+
+
+def check_refrain_in_list(schema: List) -> bool:
+    """Check if a Refrain object exists in a list.
+
+    Args:
+        schema: A list that can contain lists, dicts or scalars.
+
+    Returns:
+        bool: True if a Refrain object exists in the list.
+    """
+    for item in schema:
+        if isinstance(item, Refrain):
+            return True
+        elif isinstance(item, list):
+            if check_refrain_in_list(item):
+                return True
+        elif isinstance(item, dict):
+            if check_refrain_in_dict(item):
+                return True
+
+    return False
+
+
+def check_refrain_in_dict(schema: Dict) -> bool:
+    """Check if a Refrain object exists in a dict.
+
+    Args:
+        schema: A dict that can contain lists, dicts or scalars.
+
+    Returns:
+        True if a Refrain object exists in the dict.
+    """
+
+    for key, value in schema.items():
+        if isinstance(value, Refrain):
+            return True
+        elif isinstance(value, list):
+            if check_refrain_in_list(value):
+                return True
+        elif isinstance(value, dict):
+            if check_refrain_in_dict(value):
+                return True
+
+    return False
+
+
+def filter_in_list(schema: List) -> List:
+    """Remove out all Filter objects from a list.
+
+    Args:
+        schema: A list that can contain lists, dicts or scalars.
+
+    Returns:
+        A list with all Filter objects removed.
+    """
+
+    filtered_list = []
+
+    for item in schema:
+        if isinstance(item, Filter):
+            pass
+        elif isinstance(item, list):
+            filtered_item = filter_in_list(item)
+            if len(filtered_item):
+                filtered_list.append(filtered_item)
+        elif isinstance(item, dict):
+            filtered_dict = filter_in_dict(item)
+            if len(filtered_dict):
+                filtered_list.append(filtered_dict)
+        else:
+            filtered_list.append(item)
+
+    return filtered_list
+
+
+def filter_in_dict(schema: Dict) -> Dict:
+    """Remove out all Filter objects from a dictionary.
+
+    Args:
+        schema: A dictionary that can contain lists, dicts or scalars.
+
+    Returns:
+        A dictionary with all Filter objects removed.
+    """
+
+    filtered_dict = {}
+
+    for key, value in schema.items():
+        if isinstance(value, Filter):
+            pass
+        elif isinstance(value, list):
+            filtered_item = filter_in_list(value)
+            if len(filtered_item):
+                filtered_dict[key] = filtered_item
+        elif isinstance(value, dict):
+            filtered_dict[key] = filter_in_dict(value)
+        else:
+            filtered_dict[key] = value
+
+    return filtered_dict
 
 
 def register_validator(name: str, data_type: Union[str, List[str]]):
@@ -487,102 +588,75 @@ class BugFreeSQL(Validator):
         return schema
 
 
-def check_refrain_in_list(schema: List) -> bool:
-    """Check if a Refrain object exists in a list.
+@register_validator(name="is-profanity-free", data_type="string")
+class IsProfanityFree(Validator):
+    """Validate that a translated text does not contain profanity language.
 
-    Args:
-        schema: A list that can contain lists, dicts or scalars.
+    This validator uses the `alt-profanity-check` package to check if a string
+    contains profanity language.
 
-    Returns:
-        bool: True if a Refrain object exists in the list.
-    """
-    for item in schema:
-        if isinstance(item, Refrain):
-            return True
-        elif isinstance(item, list):
-            if check_refrain_in_list(item):
-                return True
-        elif isinstance(item, dict):
-            if check_refrain_in_dict(item):
-                return True
-
-    return False
-
-
-def check_refrain_in_dict(schema: Dict) -> bool:
-    """Check if a Refrain object exists in a dict.
-
-    Args:
-        schema: A dict that can contain lists, dicts or scalars.
-
-    Returns:
-        True if a Refrain object exists in the dict.
+    - Name for `format` attribute: `is-profanity-free`
+    - Supported data types: `string`
+    - Programmatic fix: ""
     """
 
-    for key, value in schema.items():
-        if isinstance(value, Refrain):
-            return True
-        elif isinstance(value, list):
-            if check_refrain_in_list(value):
-                return True
-        elif isinstance(value, dict):
-            if check_refrain_in_dict(value):
-                return True
+    def validate(self, key, value, schema) -> Dict:
+        try:
+            from profanity_check import predict
+        except ImportError:
+            raise ImportError(
+                "`is-profanity-free` validator requires the `alt-profanity-check`"
+                "package. Please install it with `pip install profanity-check`."
+            )
 
-    return False
+        prediction = predict([value])
+        if prediction[0] == 1:
+            raise EventDetail(
+                key,
+                value,
+                schema,
+                f"{value} contains profanity. Please return a profanity-free output.",
+                "",
+            )
+        return schema
 
 
-def filter_in_list(schema: List) -> List:
-    """Remove out all Filter objects from a list.
+@register_validator(name="is-high-quality-translation", data_type="string")
+class IsHighQualityTranslation(Validator):
+    """Using inpiredco.critique to check if a translation is high quality.
 
-    Args:
-        schema: A list that can contain lists, dicts or scalars.
-
-    Returns:
-        A list with all Filter objects removed.
+    - Name for `format` attribute: `is-high-quality-translation`
+    - Supported data types: `string`
+    - Programmatic fix: ""
     """
 
-    filtered_list = []
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        try:
+            from inspiredco.critique import Critique
 
-    for item in schema:
-        if isinstance(item, Filter):
-            pass
-        elif isinstance(item, list):
-            filtered_item = filter_in_list(item)
-            if len(filtered_item):
-                filtered_list.append(filtered_item)
-        elif isinstance(item, dict):
-            filtered_dict = filter_in_dict(item)
-            if len(filtered_dict):
-                filtered_list.append(filtered_dict)
-        else:
-            filtered_list.append(item)
+            self.critique = Critique(api_key=os.environ["INSPIREDCO_API_KEY"])
 
-    return filtered_list
+        except ImportError:
+            raise ImportError(
+                "`is-high-quality-translation` validator requires the `inspiredco`"
+                "package. Please install it with `pip install inspiredco`."
+            )
 
-
-def filter_in_dict(schema: Dict) -> Dict:
-    """Remove out all Filter objects from a dictionary.
-
-    Args:
-        schema: A dictionary that can contain lists, dicts or scalars.
-
-    Returns:
-        A dictionary with all Filter objects removed.
-    """
-
-    filtered_dict = {}
-
-    for key, value in schema.items():
-        if isinstance(value, Filter):
-            pass
-        elif isinstance(value, list):
-            filtered_item = filter_in_list(value)
-            if len(filtered_item):
-                filtered_dict[key] = filtered_item
-        elif isinstance(value, dict):
-            filtered_dict[key] = filter_in_dict(value)
-        else:
-            filtered_dict[key] = value
-
-    return filtered_dict
+    def validate(self, key, value, schema) -> Dict:
+        prediction = self.critique.evaluate(
+            metric="comet",
+            config={"model": "unbabel_comet/wmt21-comet-qe-da"},
+            dataset=[{"source": key, "target": value}],
+        )
+        quality = prediction["examples"][0]["value"]
+        if quality < -0.1:
+            raise EventDetail(
+                key,
+                value,
+                schema,
+                f"{value} is a low quality translation."
+                "Please return a higher quality output.",
+                "",
+            )
+        return schema
