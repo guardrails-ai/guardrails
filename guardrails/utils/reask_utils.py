@@ -20,39 +20,43 @@ class ReAsk:
         return pretty_repr(self)
 
 
-def gather_reasks(output: Dict) -> List[ReAsk]:
+def gather_reasks(validated_output: Dict) -> List[ReAsk]:
     """Traverse output and gather all ReAsk objects.
 
-    Response is a nested dictionary, where values can also be lists or
-    dictionaries. Make sure to also grab the corresponding paths
-    (including list index), and return a list of tuples.
+    Args:
+        validated_output (Dict): The output of a model. Each value can be a ReAsk,
+            a list, a dictionary, or a single value.
+
+    Returns:
+        A list of ReAsk objects found in the output.
     """
     reasks = []
 
-    def _gather_reasks(output: Union[list, dict], path: List[str] = []):
-        if isinstance(output, dict):
-            iterable = output.items()
-        elif isinstance(output, list):
-            iterable = enumerate(output)
-        else:
-            raise ValueError(f"Expected dict or list, got {type(output)}")
-        for field, value in iterable:
+    def _gather_reasks_in_dict(output: Dict, path: List[str] = []) -> None:
+        for field, value in output.items():
             if isinstance(value, ReAsk):
                 value.path = path + [field]
                 reasks.append(value)
 
             if isinstance(value, dict):
-                _gather_reasks(value, path + [field])
+                _gather_reasks_in_dict(value, path + [field])
 
             if isinstance(value, list):
-                for idx, item in enumerate(value):
-                    if isinstance(item, ReAsk):
-                        item.path = path + [field, idx]
-                        reasks.append(item)
-                    else:
-                        _gather_reasks(item, path + [field, idx])
+                _gather_reasks_in_list(value, path + [field])
+        return
 
-    _gather_reasks(output)
+    def _gather_reasks_in_list(output: List, path: List[str] = []) -> None:
+        for idx, item in enumerate(output):
+            if isinstance(item, ReAsk):
+                item.path = path + [idx]
+                reasks.append(item)
+            elif isinstance(item, dict):
+                _gather_reasks_in_dict(item, path + [idx])
+            elif isinstance(item, list):
+                _gather_reasks_in_list(item, path + [idx])
+        return
+
+    _gather_reasks_in_dict(validated_output)
     return reasks
 
 
