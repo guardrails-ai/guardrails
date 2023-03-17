@@ -54,6 +54,7 @@ EXTRAS = {
     + DOCS_REQUIREMENTS,
     "sql": ["sqlvalidator"],
     "profanity": ["alt-profanity-check"],
+    "critique": ["inspiredco"],
 }
 
 # The rest you shouldn't have to touch too much :)
