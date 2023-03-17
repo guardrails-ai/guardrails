@@ -36,7 +36,9 @@ def register_validator(name: str, data_type: Union[str, List[str]]):
 
         nonlocal data_type
         if isinstance(data_type, str):
-            data_type = list(types_registry.keys()) if data_type == "all" else [data_type]
+            data_type = (
+                list(types_registry.keys()) if data_type == "all" else [data_type]
+            )
         # Make sure that the data type string exists in the data types registry.
         for dt in data_type:
             if dt not in types_registry:
@@ -298,8 +300,8 @@ class ValidLength(Validator):
         self, min: int = None, max: int = None, on_fail: Optional[Callable] = None
     ):
         super().__init__(on_fail=on_fail)
-        self._min = min if min is not None else None
-        self._max = max if max is not None else None
+        self._min = int(min) if min is not None else None
+        self._max = int(max) if max is not None else None
 
     def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
         """Validate that a value is within a range."""
