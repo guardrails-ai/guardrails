@@ -293,7 +293,8 @@ class ValidLength(Validator):
 
     - Name for `format` attribute: `length`
     - Supported data types: `string`, `list`, `object`
-    - Programmatic fix: If shorter than the minimum, pad with empty last elements. If longer than the maximum, truncate.  # noqa: E501
+    - Programmatic fix: If shorter than the minimum, pad with empty last elements.
+        If longer than the maximum, truncate.
     """
 
     def __init__(
@@ -331,7 +332,9 @@ class ValidLength(Validator):
                 key,
                 value,
                 schema,
-                f"Value has length greater than {self._max}. Please return a shorter output, that is shorter than {self._max} characters.",
+                f"Value has length greater than {self._max}. "
+                f"Please return a shorter output, "
+                f"that is shorter than {self._max} characters.",
                 value[: self._max],
             )
 
