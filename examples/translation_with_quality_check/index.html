@@ -10,14 +10,14 @@
         <meta name="author" content="Shreya Rajpal">
       
       
-        <link rel="canonical" href="https://getguardrails.com/examples/extracting_entities/">
+        <link rel="canonical" href="https://getguardrails.com/examples/translation_with_quality_check/">
       
       <link rel="icon" href="../../img/favicon.ico">
       <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-8.5.10">
     
     
       
-        <title>Extracting entities from ToS - Guardrails.ai</title>
+        <title>Ensure translated text is high quality - Guardrails.ai</title>
       
     
     
@@ -119,7 +119,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#extracting-entities-from-a-terms-of-service-document" class="md-skip">
+        <a href="#translate-text-with-quality-checks" class="md-skip">
           Skip to content
         </a>
       
@@ -151,7 +151,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Extracting entities from ToS
+              Ensure translated text is high quality
             
           </span>
         </div>
@@ -526,80 +526,11 @@
               
   
   
-    
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          Extracting entities from ToS
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../extracting_entities/" class="md-nav__link">
         Extracting entities from ToS
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#objective" class="md-nav__link">
-    Objective
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#step-0-download-pdf-and-load-it-as-string" class="md-nav__link">
-    Step 0: Download PDF and load it as string
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#step-1-create-the-rail-spec" class="md-nav__link">
-    Step 1: Create the RAIL Spec
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#step-2-create-a-guard-object-with-the-rail-spec" class="md-nav__link">
-    Step 2: Create a Guard object with the RAIL Spec
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#step-3-wrap-the-llm-api-call-with-guard" class="md-nav__link">
-    Step 3: Wrap the LLM API call with Guard
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -707,11 +638,80 @@
               
   
   
+    
   
-    <li class="md-nav__item">
-      <a href="../translation_with_quality_check/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Ensure translated text is high quality
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         Ensure translated text is high quality
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#objective" class="md-nav__link">
+    Objective
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-0-setup" class="md-nav__link">
+    Step 0: Setup
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-1-create-the-rail-spec" class="md-nav__link">
+    Step 1: Create the RAIL Spec
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-2-create-a-guard-object-with-the-rail-spec" class="md-nav__link">
+    Step 2: Create a Guard object with the RAIL Spec
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-3-wrap-the-llm-api-call-with-guard" class="md-nav__link">
+    Step 3: Wrap the LLM API call with Guard
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -807,8 +807,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#step-0-download-pdf-and-load-it-as-string" class="md-nav__link">
-    Step 0: Download PDF and load it as string
+  <a href="#step-0-setup" class="md-nav__link">
+    Step 0: Setup
   </a>
   
 </li>
@@ -851,7 +851,7 @@
 
                   
 
-  <a href="https://github.com/ShreyaR/guardrails/edit/master/docs/examples/extracting_entities.ipynb" title="Edit this page" class="md-content__button md-icon">
+  <a href="https://github.com/ShreyaR/guardrails/edit/master/docs/examples/translation_with_quality_check.ipynb" title="Edit this page" class="md-content__button md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25Z"/></svg>
   </a>
@@ -891,51 +891,29 @@
 <div class="cell border-box-sizing text_cell rendered">
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h1 id="extracting-entities-from-a-terms-of-service-document">Extracting entities from a Terms of Service document</h1>
+<h1 id="translate-text-with-quality-checks">Translate text with quality checks</h1>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>To download this example as a Jupyter notebook, click <a href="https://github.com/ShreyaR/guardrails/blob/main/docs/examples/extracting_entities.ipynb">here</a>.</p>
+<p>To download this example as a Jupyter notebook, click <a href="https://github.com/ShreyaR/guardrails/blob/main/docs/examples/translation_with_quality_check.ipynb">here</a>.</p>
 </div>
-<p>In this example, we will use Guardrails to extract key information from a Terms-of-Service document.</p>
+<p>In this example, we will use Guardrails during the translation of a statement from another language to English. We will check whether the translated statement is likely high quality or not.</p>
 <h2 id="objective">Objective</h2>
-<p>We want to extract structured information about all fees and interest rates associated with the Chase credit card.</p>
-<h2 id="step-0-download-pdf-and-load-it-as-string">Step 0: Download PDF and load it as string</h2>
-<p>To get started, download the document from <a href="https://github.com/ShreyaR/guardrails/blob/main/docs/examples/data/chase_card_agreement.pdf">here</a> and save it in <code>data/chase_card_agreement.pdf</code>.</p>
-<p>Guardrails has some built-in functions to help with common tasks. Here, we will use the <code>read_pdf</code> function to load the PDF as a string.</p>
+<p>We want to translate a statement from another languages to English and ensure that the translated statement accurately reflects the original content.</p>
+<h2 id="step-0-setup">Step 0: Setup</h2>
+<p>To do the quality check, we can use the <a href="https://docs.inspiredco.ai/critique/">Critique</a> library, which allows for simple calculation of various metrics over generated text, including <a href="https://docs.inspiredco.ai/critique/criteria_translation_quality.html">translation quality estimation</a>.</p>
+<p>First you can get an API key from the <a href="https://dashboard.inspiredco.ai">Inspired Cognition Dashboard</a> add the following line to the ".env" file in your top directory (like you do for your OpenAI API key).</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nv">INSPIREDCO_API_KEY</span><span class="o">=</span>&lt;your_api_key&gt;
+</span></code></pre></div>
+<p>Then you can install the library</p>
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 
-<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">import</span> <span class="nn">guardrails</span> <span class="k">as</span> <span class="nn">gd</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="kn">from</span> <span class="nn">rich</span> <span class="kn">import</span> <span class="nb">print</span>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="n">content</span> <span class="o">=</span> <span class="n">gd</span><span class="o">.</span><span class="n">docs_utils</span><span class="o">.</span><span class="n">read_pdf</span><span class="p">(</span><span class="s1">&#39;data/chase_card_agreement.pdf&#39;</span><span class="p">)</span>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Chase Credit Card Document:</span><span class="se">\n\n</span><span class="si">{</span><span class="n">content</span><span class="p">[:</span><span class="mi">275</span><span class="p">]</span><span class="si">}</span><span class="se">\n</span><span class="s1">...&#39;</span><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="err">!</span><span class="n">pip</span> <span class="n">install</span> <span class="n">inspiredco</span>
 </span></code></pre></div>
 
-</div>
-<div class="output_wrapper">
-<div class="output">
-<div class="output_area">
-<div class="output_html rendered_html output_subarea ">
-<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">Chase Credit Card Document:
-
-<span style="color: #008080; text-decoration-color: #008080; font-weight: bold">2</span>/<span style="color: #008080; text-decoration-color: #008080; font-weight: bold">25</span>/<span style="color: #008080; text-decoration-color: #008080; font-weight: bold">23</span>, <span style="color: #00ff00; text-decoration-color: #00ff00; font-weight: bold">7:59</span> PM about:blank
-about:blank <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">1</span>/<span style="color: #008080; text-decoration-color: #008080; font-weight: bold">4</span>
-PRICING INFORMATION
-INTEREST RATES AND INTEREST CHARGES
-Purchase Annual
-Percentage Rate <span style="font-weight: bold">(</span>APR<span style="font-weight: bold">)</span> <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">0</span>% Intro APR for the first <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">18</span> months that your Account is open.
-After that, <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">19.49</span>%. This APR will vary with the market based on th
-<span style="color: #808000; text-decoration-color: #808000">...</span>
-</pre>
-</div>
-</div>
-</div>
 </div>
 </div>
 <div class="cell border-box-sizing text_cell rendered">
@@ -943,10 +921,9 @@ After that, <span style="color: #008080; text-decoration-color: #008080; font-we
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="step-1-create-the-rail-spec">Step 1: Create the RAIL Spec</h2>
 <p>Ordinarily, we would create an RAIL spec in a separate file. For the purposes of this example, we will create the spec in this notebook as a string following the RAIL syntax. For more information on RAIL, see the <a href="../../rail/output/">RAIL documentation</a>.</p>
-<p>Here, we request:</p>
+<p>In this RAIL spec, we:</p>
 <ol>
-<li>A list of the fees associated with the card. We ask for sub-information, each with its own quality criteria and corrective action.</li>
-<li>A object (i.e. key-value pairs) for the interest.</li>
+<li>Create an <code>output</code> schema that returns a single key-value pair. The key should be 'translated_statement', and the value should be the English translation of the given statement. The translated statement should not have any profanity.</li>
 </ol>
 </div>
 </div>
@@ -954,38 +931,85 @@ After that, <span style="color: #008080; text-decoration-color: #008080; font-we
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 
-<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">rail_str</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="s2">&lt;rail version=&quot;0.1&quot;&gt;</span>
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="s2">&lt;output&gt;</span>
-</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>
-</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="s2">    &lt;list name=&quot;fees&quot; description=&quot;What fees and charges are associated with my account?&quot;&gt;</span>
-</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="s2">        &lt;object&gt;</span>
-</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="s2">            &lt;integer name=&quot;index&quot; format=&quot;1-indexed&quot; /&gt;</span>
-</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="s2">            &lt;string name=&quot;name&quot; format=&quot;lower-case; two-words&quot; on-fail-lower-case=&quot;noop&quot; on-fail-two-words=&quot;reask&quot;/&gt;</span>
-</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="s2">            &lt;string name=&quot;explanation&quot; format=&quot;one-line&quot; on-fail-one-line=&quot;noop&quot; /&gt;</span>
-</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="s2">            &lt;float name=&quot;value&quot; format=&quot;percentage&quot;/&gt;</span>
-</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="s2">        &lt;/object&gt;</span>
-</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="s2">    &lt;/list&gt;</span>
-</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="s2">    &lt;object name=&quot;interest_rates&quot; description=&quot;What are the interest rates offered by the bank on savings and checking accounts, loans, and credit products?&quot; /&gt;</span>
-</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="s2">&lt;/output&gt;</span>
-</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>
-</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>
-</span><span id="__span-1-18"><a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="s2">&lt;prompt&gt;</span>
-</span><span id="__span-1-19"><a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="s2">Given the following document, answer the following questions. If the answer doesn&#39;t exist in the document, enter &#39;None&#39;.</span>
-</span><span id="__span-1-20"><a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a>
-</span><span id="__span-1-21"><a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a><span class="s2">{{document}}</span>
-</span><span id="__span-1-22"><a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a>
-</span><span id="__span-1-23"><a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a><span class="s2">@xml_prefix_prompt</span>
-</span><span id="__span-1-24"><a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a>
-</span><span id="__span-1-25"><a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a><span class="si">{output_schema}</span>
-</span><span id="__span-1-26"><a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a>
-</span><span id="__span-1-27"><a id="__codelineno-1-27" name="__codelineno-1-27" href="#__codelineno-1-27"></a><span class="s2">@json_suffix_prompt_v2_wo_none&lt;/prompt&gt;</span>
-</span><span id="__span-1-28"><a id="__codelineno-1-28" name="__codelineno-1-28" href="#__codelineno-1-28"></a>
-</span><span id="__span-1-29"><a id="__codelineno-1-29" name="__codelineno-1-29" href="#__codelineno-1-29"></a><span class="s2">&lt;/rail&gt;</span>
-</span><span id="__span-1-30"><a id="__codelineno-1-30" name="__codelineno-1-30" href="#__codelineno-1-30"></a><span class="s2">&quot;&quot;&quot;</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span> <span class="nn">inspiredco</span> <span class="kn">import</span> <span class="n">critique</span>
 </span></code></pre></div>
 
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">rail_str</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="s2">&lt;rail version=&quot;0.1&quot;&gt;</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="s2">&lt;script language=&#39;python&#39;&gt;</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="s2">import inspiredco.critique</span>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="s2">import os</span>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="s2">from guardrails.validators import Validator, EventDetail, register_validator</span>
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>
+</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="s2">critique = inspiredco.critique.Critique(api_key=os.environ[&#39;INSPIREDCO_API_KEY&#39;])</span>
+</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>
+</span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="s2">from typing import Dict, List</span>
+</span><span id="__span-3-12"><a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>
+</span><span id="__span-3-13"><a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a>
+</span><span id="__span-3-14"><a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a><span class="s2">@register_validator(name=&quot;is-high-quality-translation&quot;, data_type=&quot;string&quot;)</span>
+</span><span id="__span-3-15"><a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="s2">class IsHighQualityTranslation(Validator):</span>
+</span><span id="__span-3-16"><a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a><span class="s2">    global critique</span>
+</span><span id="__span-3-17"><a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a><span class="s2">    global EventDetail</span>
+</span><span id="__span-3-18"><a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a><span class="s2">    def validate(self, key, value, schema) -&gt; Dict:</span>
+</span><span id="__span-3-19"><a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a><span class="s2">        prediction = critique.evaluate(</span>
+</span><span id="__span-3-20"><a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a><span class="s2">            metric = &quot;comet&quot;,</span>
+</span><span id="__span-3-21"><a id="__codelineno-3-21" name="__codelineno-3-21" href="#__codelineno-3-21"></a><span class="s2">            config = {&quot;model&quot;: &quot;unbabel_comet/wmt21-comet-qe-da&quot;},</span>
+</span><span id="__span-3-22"><a id="__codelineno-3-22" name="__codelineno-3-22" href="#__codelineno-3-22"></a><span class="s2">            dataset = [{&quot;source&quot;: key, &quot;target&quot;: value}],</span>
+</span><span id="__span-3-23"><a id="__codelineno-3-23" name="__codelineno-3-23" href="#__codelineno-3-23"></a><span class="s2">        )</span>
+</span><span id="__span-3-24"><a id="__codelineno-3-24" name="__codelineno-3-24" href="#__codelineno-3-24"></a><span class="s2">        quality = prediction[&quot;examples&quot;][0][&quot;value&quot;]</span>
+</span><span id="__span-3-25"><a id="__codelineno-3-25" name="__codelineno-3-25" href="#__codelineno-3-25"></a><span class="s2">        if quality &amp;lt; -0.1:</span>
+</span><span id="__span-3-26"><a id="__codelineno-3-26" name="__codelineno-3-26" href="#__codelineno-3-26"></a><span class="s2">            raise EventDetail(</span>
+</span><span id="__span-3-27"><a id="__codelineno-3-27" name="__codelineno-3-27" href="#__codelineno-3-27"></a><span class="s2">                key,</span>
+</span><span id="__span-3-28"><a id="__codelineno-3-28" name="__codelineno-3-28" href="#__codelineno-3-28"></a><span class="s2">                value,</span>
+</span><span id="__span-3-29"><a id="__codelineno-3-29" name="__codelineno-3-29" href="#__codelineno-3-29"></a><span class="s2">                schema,</span>
+</span><span id="__span-3-30"><a id="__codelineno-3-30" name="__codelineno-3-30" href="#__codelineno-3-30"></a><span class="s2">                f&quot;Value </span><span class="si">{value}</span><span class="s2"> has relatively low quality </span><span class="si">{quality}</span><span class="s2">&quot;,</span>
+</span><span id="__span-3-31"><a id="__codelineno-3-31" name="__codelineno-3-31" href="#__codelineno-3-31"></a><span class="s2">                &quot;&quot;,</span>
+</span><span id="__span-3-32"><a id="__codelineno-3-32" name="__codelineno-3-32" href="#__codelineno-3-32"></a><span class="s2">            )</span>
+</span><span id="__span-3-33"><a id="__codelineno-3-33" name="__codelineno-3-33" href="#__codelineno-3-33"></a><span class="s2">        return schema</span>
+</span><span id="__span-3-34"><a id="__codelineno-3-34" name="__codelineno-3-34" href="#__codelineno-3-34"></a><span class="s2">&lt;/script&gt;</span>
+</span><span id="__span-3-35"><a id="__codelineno-3-35" name="__codelineno-3-35" href="#__codelineno-3-35"></a>
+</span><span id="__span-3-36"><a id="__codelineno-3-36" name="__codelineno-3-36" href="#__codelineno-3-36"></a><span class="s2">&lt;output&gt;</span>
+</span><span id="__span-3-37"><a id="__codelineno-3-37" name="__codelineno-3-37" href="#__codelineno-3-37"></a><span class="s2">    &lt;string</span>
+</span><span id="__span-3-38"><a id="__codelineno-3-38" name="__codelineno-3-38" href="#__codelineno-3-38"></a><span class="s2">        name=&quot;translated_statement&quot;</span>
+</span><span id="__span-3-39"><a id="__codelineno-3-39" name="__codelineno-3-39" href="#__codelineno-3-39"></a><span class="s2">        description=&quot;Translate the given statement into the English language&quot;</span>
+</span><span id="__span-3-40"><a id="__codelineno-3-40" name="__codelineno-3-40" href="#__codelineno-3-40"></a><span class="s2">        format=&quot;is-high-quality-translation&quot;</span>
+</span><span id="__span-3-41"><a id="__codelineno-3-41" name="__codelineno-3-41" href="#__codelineno-3-41"></a><span class="s2">        on-fail-is-high-quality-translation=&quot;fix&quot; </span>
+</span><span id="__span-3-42"><a id="__codelineno-3-42" name="__codelineno-3-42" href="#__codelineno-3-42"></a><span class="s2">    /&gt;</span>
+</span><span id="__span-3-43"><a id="__codelineno-3-43" name="__codelineno-3-43" href="#__codelineno-3-43"></a><span class="s2">&lt;/output&gt;</span>
+</span><span id="__span-3-44"><a id="__codelineno-3-44" name="__codelineno-3-44" href="#__codelineno-3-44"></a>
+</span><span id="__span-3-45"><a id="__codelineno-3-45" name="__codelineno-3-45" href="#__codelineno-3-45"></a>
+</span><span id="__span-3-46"><a id="__codelineno-3-46" name="__codelineno-3-46" href="#__codelineno-3-46"></a><span class="s2">&lt;prompt&gt;</span>
+</span><span id="__span-3-47"><a id="__codelineno-3-47" name="__codelineno-3-47" href="#__codelineno-3-47"></a>
+</span><span id="__span-3-48"><a id="__codelineno-3-48" name="__codelineno-3-48" href="#__codelineno-3-48"></a><span class="s2">Translate the given statement into the English language:</span>
+</span><span id="__span-3-49"><a id="__codelineno-3-49" name="__codelineno-3-49" href="#__codelineno-3-49"></a>
+</span><span id="__span-3-50"><a id="__codelineno-3-50" name="__codelineno-3-50" href="#__codelineno-3-50"></a><span class="s2">{{statement_to_be_translated}}</span>
+</span><span id="__span-3-51"><a id="__codelineno-3-51" name="__codelineno-3-51" href="#__codelineno-3-51"></a>
+</span><span id="__span-3-52"><a id="__codelineno-3-52" name="__codelineno-3-52" href="#__codelineno-3-52"></a><span class="s2">@complete_json_suffix</span>
+</span><span id="__span-3-53"><a id="__codelineno-3-53" name="__codelineno-3-53" href="#__codelineno-3-53"></a><span class="s2">&lt;/prompt&gt;</span>
+</span><span id="__span-3-54"><a id="__codelineno-3-54" name="__codelineno-3-54" href="#__codelineno-3-54"></a>
+</span><span id="__span-3-55"><a id="__codelineno-3-55" name="__codelineno-3-55" href="#__codelineno-3-55"></a>
+</span><span id="__span-3-56"><a id="__codelineno-3-56" name="__codelineno-3-56" href="#__codelineno-3-56"></a><span class="s2">&lt;/rail&gt;</span>
+</span><span id="__span-3-57"><a id="__codelineno-3-57" name="__codelineno-3-57" href="#__codelineno-3-57"></a>
+</span><span id="__span-3-58"><a id="__codelineno-3-58" name="__codelineno-3-58" href="#__codelineno-3-58"></a>
+</span><span id="__span-3-59"><a id="__codelineno-3-59" name="__codelineno-3-59" href="#__codelineno-3-59"></a><span class="s2">&quot;&quot;&quot;</span>
+</span></code></pre></div>
+
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>In order to ensure the translated statement is high quality, we use <code>is-high-quality-translation</code> as the validator. This validator uses <code>inspiredco</code> package.</p>
+</div>
+</div>
 </div>
 </div>
 <div class="cell border-box-sizing text_cell rendered">
@@ -1004,20 +1028,63 @@ After that, <span style="color: #008080; text-decoration-color: #008080; font-we
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 
-<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">guard</span> <span class="o">=</span> <span class="n">gd</span><span class="o">.</span><span class="n">Guard</span><span class="o">.</span><span class="n">from_rail_string</span><span class="p">(</span><span class="n">rail_str</span><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kn">import</span> <span class="nn">guardrails</span> <span class="k">as</span> <span class="nn">gd</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="kn">from</span> <span class="nn">rich</span> <span class="kn">import</span> <span class="nb">print</span>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="n">guard</span> <span class="o">=</span> <span class="n">gd</span><span class="o">.</span><span class="n">Guard</span><span class="o">.</span><span class="n">from_rail_string</span><span class="p">(</span><span class="n">rail_str</span><span class="p">)</span>
+</span></code></pre></div>
+
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>We see the prompt that will be sent to the LLM:</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="language-python highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nb">print</span><span class="p">(</span><span class="n">guard</span><span class="o">.</span><span class="n">base_prompt</span><span class="p">)</span>
 </span></code></pre></div>
 
 </div>
 <div class="output_wrapper">
 <div class="output">
 <div class="output_area">
-<div class="output_subarea output_stream output_stderr output_text">
-<pre>
-<code>/Users/shreyarajpal/guardrails/guardrails/datatypes.py:53: UserWarning: Formatter 1-indexed is not valid for element integer.
-  warnings.warn(
-/Users/shreyarajpal/guardrails/guardrails/datatypes.py:53: UserWarning: Formatter percentage is not valid for element float.
-  warnings.warn(
-</code>
+<div class="output_html rendered_html output_subarea ">
+<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">
+
+Translate the given statement into the English language:
+
+<span style="font-weight: bold">{</span>statement_to_be_translated<span style="font-weight: bold">}</span>
+
+
+Given below is XML that describes the information to extract from this document and the tags to extract it into.
+
+<span style="font-weight: bold">&lt;</span><span style="color: #ff00ff; text-decoration-color: #ff00ff; font-weight: bold">output</span><span style="color: #000000; text-decoration-color: #000000">&gt;</span>
+<span style="color: #000000; text-decoration-color: #000000">    &lt;string </span><span style="color: #808000; text-decoration-color: #808000">name</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"translated_statement"</span><span style="color: #000000; text-decoration-color: #000000"> </span><span style="color: #808000; text-decoration-color: #808000">description</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"Translate the given statement into the English language"</span><span style="color: #000000; text-decoration-color: #000000"> </span>
+<span style="color: #808000; text-decoration-color: #808000">format</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"is-high-quality-translation"</span><span style="color: #800080; text-decoration-color: #800080">/</span><span style="color: #000000; text-decoration-color: #000000">&gt;</span>
+<span style="color: #000000; text-decoration-color: #000000">&lt;</span><span style="color: #800080; text-decoration-color: #800080">/</span><span style="color: #ff00ff; text-decoration-color: #ff00ff">output</span><span style="color: #000000; text-decoration-color: #000000">&gt;</span>
+
+
+
+
+<span style="color: #000000; text-decoration-color: #000000">ONLY return a valid JSON object </span><span style="color: #000000; text-decoration-color: #000000; font-weight: bold">(</span><span style="color: #000000; text-decoration-color: #000000">no other text is necessary</span><span style="color: #000000; text-decoration-color: #000000; font-weight: bold">)</span><span style="color: #000000; text-decoration-color: #000000">, where the key of the field in JSON is the `name` </span>
+<span style="color: #000000; text-decoration-color: #000000">attribute of the corresponding XML, and the value is of the type specified by the corresponding XML's tag. The JSON</span>
+<span style="color: #000000; text-decoration-color: #000000">MUST conform to the XML format, including any types and format requests e.g. requests for lists, objects and </span>
+<span style="color: #000000; text-decoration-color: #000000">specific types. Be correct and concise. If you are unsure anywhere, enter `</span><span style="color: #800080; text-decoration-color: #800080; font-style: italic">None</span><span style="color: #000000; text-decoration-color: #000000">`.</span>
+
+<span style="color: #000000; text-decoration-color: #000000">Here are examples of simple </span><span style="color: #000000; text-decoration-color: #000000; font-weight: bold">(</span><span style="color: #000000; text-decoration-color: #000000">XML, JSON</span><span style="color: #000000; text-decoration-color: #000000; font-weight: bold">)</span><span style="color: #000000; text-decoration-color: #000000"> pairs that show the expected behavior:</span>
+<span style="color: #000000; text-decoration-color: #000000">- `&lt;string </span><span style="color: #808000; text-decoration-color: #808000">name</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">'foo'</span><span style="color: #000000; text-decoration-color: #000000"> </span><span style="color: #808000; text-decoration-color: #808000">format</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">'two-words lower-case'</span><span style="color: #000000; text-decoration-color: #000000"> </span><span style="color: #800080; text-decoration-color: #800080">/</span><span style="color: #000000; text-decoration-color: #000000">&gt;` =&gt; `</span><span style="color: #000000; text-decoration-color: #000000; font-weight: bold">{{</span><span style="color: #008000; text-decoration-color: #008000">'foo'</span><span style="color: #000000; text-decoration-color: #000000">: </span><span style="color: #008000; text-decoration-color: #008000">'example one'</span><span style="color: #000000; text-decoration-color: #000000; font-weight: bold">}}</span><span style="color: #000000; text-decoration-color: #000000">`</span>
+<span style="color: #000000; text-decoration-color: #000000">- `&lt;list </span><span style="color: #808000; text-decoration-color: #808000">name</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">'bar'</span><span style="color: #000000; text-decoration-color: #000000">&gt;&lt;string </span><span style="color: #808000; text-decoration-color: #808000">format</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">'upper-case'</span><span style="color: #000000; text-decoration-color: #000000"> </span><span style="color: #800080; text-decoration-color: #800080">/</span><span style="color: #000000; text-decoration-color: #000000">&gt;&lt;</span><span style="color: #800080; text-decoration-color: #800080">/</span><span style="color: #ff00ff; text-decoration-color: #ff00ff">list</span><span style="color: #000000; text-decoration-color: #000000">&gt;` =&gt; `</span><span style="color: #000000; text-decoration-color: #000000; font-weight: bold">{{</span><span style="color: #008000; text-decoration-color: #008000">"bar"</span><span style="color: #000000; text-decoration-color: #000000">: </span><span style="color: #000000; text-decoration-color: #000000; font-weight: bold">[</span><span style="color: #008000; text-decoration-color: #008000">'STRING ONE'</span><span style="color: #000000; text-decoration-color: #000000">, </span><span style="color: #008000; text-decoration-color: #008000">'STRING TWO'</span><span style="color: #000000; text-decoration-color: #000000">, etc.</span><span style="color: #000000; text-decoration-color: #000000; font-weight: bold">]}}</span><span style="color: #000000; text-decoration-color: #000000">`</span>
+<span style="color: #000000; text-decoration-color: #000000">- `&lt;object </span><span style="color: #808000; text-decoration-color: #808000">name</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">'baz'</span><span style="color: #000000; text-decoration-color: #000000">&gt;&lt;string </span><span style="color: #808000; text-decoration-color: #808000">name</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"foo"</span><span style="color: #000000; text-decoration-color: #000000"> </span><span style="color: #808000; text-decoration-color: #808000">format</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"capitalize two-words"</span><span style="color: #000000; text-decoration-color: #000000"> </span><span style="color: #800080; text-decoration-color: #800080">/</span><span style="color: #000000; text-decoration-color: #000000">&gt;&lt;integer </span><span style="color: #808000; text-decoration-color: #808000">name</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"index"</span><span style="color: #000000; text-decoration-color: #000000"> </span><span style="color: #808000; text-decoration-color: #808000">format</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"1-indexed"</span><span style="color: #000000; text-decoration-color: #000000"> </span>
+<span style="color: #800080; text-decoration-color: #800080">/</span><span style="color: #000000; text-decoration-color: #000000">&gt;&lt;</span><span style="color: #800080; text-decoration-color: #800080">/</span><span style="color: #ff00ff; text-decoration-color: #ff00ff">object</span><span style="color: #000000; text-decoration-color: #000000">&gt;` =</span><span style="font-weight: bold">&gt;</span> `<span style="font-weight: bold">{{</span><span style="color: #008000; text-decoration-color: #008000">'baz'</span>: <span style="font-weight: bold">{{</span><span style="color: #008000; text-decoration-color: #008000">'foo'</span>: <span style="color: #008000; text-decoration-color: #008000">'Some String'</span>, <span style="color: #008000; text-decoration-color: #008000">'index'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">1</span><span style="font-weight: bold">}}}}</span>`
+
+JSON Object:
+
 </pre>
 </div>
 </div>
@@ -1027,58 +1094,7 @@ After that, <span style="color: #008080; text-decoration-color: #008080; font-we
 <div class="cell border-box-sizing text_cell rendered">
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>As we can see, a few formatters weren't supported. These formatters won't be enforced in the output, but this information can still be used to generate a prompt.</p>
-<p>We see the prompt that will be sent to the LLM. The <code>{document}</code> is substituted with the user provided value at runtime.</p>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-
-<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nb">print</span><span class="p">(</span><span class="n">guard</span><span class="o">.</span><span class="n">base_prompt</span><span class="p">)</span>
-</span></code></pre></div>
-
-</div>
-<div class="output_wrapper">
-<div class="output">
-<div class="output_area">
-<div class="output_html rendered_html output_subarea ">
-<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">
-Given the following document, answer the following questions. If the answer doesn't exist in the document, enter 
-<span style="color: #008000; text-decoration-color: #008000">'None'</span>.
-
-<span style="font-weight: bold">{</span>document<span style="font-weight: bold">}</span>
-
-
-Given below is XML that describes the information to extract from this document and the tags to extract it into.
-
-
-<span style="font-weight: bold">&lt;</span><span style="color: #ff00ff; text-decoration-color: #ff00ff; font-weight: bold">output</span><span style="color: #000000; text-decoration-color: #000000">&gt;</span>
-
-<span style="color: #000000; text-decoration-color: #000000">    &lt;list </span><span style="color: #808000; text-decoration-color: #808000">name</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"fees"</span><span style="color: #000000; text-decoration-color: #000000"> </span><span style="color: #808000; text-decoration-color: #808000">description</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"What fees and charges are associated with my account?"</span><span style="color: #000000; text-decoration-color: #000000">&gt;</span>
-<span style="color: #000000; text-decoration-color: #000000">        &lt;object&gt;</span>
-<span style="color: #000000; text-decoration-color: #000000">            &lt;integer </span><span style="color: #808000; text-decoration-color: #808000">name</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"index"</span><span style="color: #000000; text-decoration-color: #000000"> </span><span style="color: #808000; text-decoration-color: #808000">format</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"1-indexed"</span><span style="color: #800080; text-decoration-color: #800080">/</span><span style="color: #000000; text-decoration-color: #000000">&gt;</span>
-<span style="color: #000000; text-decoration-color: #000000">            &lt;string </span><span style="color: #808000; text-decoration-color: #808000">name</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"name"</span><span style="color: #000000; text-decoration-color: #000000"> </span><span style="color: #808000; text-decoration-color: #808000">format</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"lower-case; two-words"</span><span style="color: #800080; text-decoration-color: #800080">/</span><span style="color: #000000; text-decoration-color: #000000">&gt;</span>
-<span style="color: #000000; text-decoration-color: #000000">            &lt;string </span><span style="color: #808000; text-decoration-color: #808000">name</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"explanation"</span><span style="color: #000000; text-decoration-color: #000000"> </span><span style="color: #808000; text-decoration-color: #808000">format</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"one-line"</span><span style="color: #800080; text-decoration-color: #800080">/</span><span style="color: #000000; text-decoration-color: #000000">&gt;</span>
-<span style="color: #000000; text-decoration-color: #000000">            &lt;float </span><span style="color: #808000; text-decoration-color: #808000">name</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"value"</span><span style="color: #000000; text-decoration-color: #000000"> </span><span style="color: #808000; text-decoration-color: #808000">format</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"percentage"</span><span style="color: #800080; text-decoration-color: #800080">/</span><span style="color: #000000; text-decoration-color: #000000">&gt;</span>
-<span style="color: #000000; text-decoration-color: #000000">        &lt;</span><span style="color: #800080; text-decoration-color: #800080">/</span><span style="color: #ff00ff; text-decoration-color: #ff00ff">object</span><span style="color: #000000; text-decoration-color: #000000">&gt;</span>
-<span style="color: #000000; text-decoration-color: #000000">    &lt;</span><span style="color: #800080; text-decoration-color: #800080">/</span><span style="color: #ff00ff; text-decoration-color: #ff00ff">list</span><span style="color: #000000; text-decoration-color: #000000">&gt;</span>
-<span style="color: #000000; text-decoration-color: #000000">    &lt;object </span><span style="color: #808000; text-decoration-color: #808000">name</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"interest_rates"</span><span style="color: #000000; text-decoration-color: #000000"> </span><span style="color: #808000; text-decoration-color: #808000">description</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"What are the interest rates offered by the bank on savings and </span>
-<span style="color: #008000; text-decoration-color: #008000">checking accounts, loans, and credit products?"</span><span style="color: #800080; text-decoration-color: #800080">/</span><span style="color: #000000; text-decoration-color: #000000">&gt;</span>
-<span style="color: #000000; text-decoration-color: #000000">&lt;</span><span style="color: #800080; text-decoration-color: #800080">/</span><span style="color: #ff00ff; text-decoration-color: #ff00ff">output</span><span style="font-weight: bold">&gt;</span>
-
-
-
-
-
-ONLY return a valid JSON object <span style="font-weight: bold">(</span>no other text is necessary<span style="font-weight: bold">)</span>. The JSON MUST conform to the XML format, including 
-any types and format requests e.g. requests for lists, objects and specific types. Be correct and concise.
-
-JSON Output:
-
-</pre>
-</div>
-</div>
+<p>Here, <code>statement_to_be_translated</code> is the the statement and will be provided by the user at runtime.</p>
 </div>
 </div>
 </div>
@@ -1089,34 +1105,27 @@ JSON Output:
 </div>
 </div>
 </div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-
-<div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kn">import</span> <span class="nn">openai</span>
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
-</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="n">raw_llm_response</span><span class="p">,</span> <span class="n">validated_response</span> <span class="o">=</span> <span class="n">guard</span><span class="p">(</span>
-</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>    <span class="n">openai</span><span class="o">.</span><span class="n">Completion</span><span class="o">.</span><span class="n">create</span><span class="p">,</span>
-</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>    <span class="n">prompt_params</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;document&#39;</span><span class="p">:</span> <span class="n">content</span><span class="p">[:</span><span class="mi">6000</span><span class="p">]},</span>
-</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>    <span class="n">engine</span><span class="o">=</span><span class="s1">&#39;text-davinci-003&#39;</span><span class="p">,</span>
-</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>    <span class="n">max_tokens</span><span class="o">=</span><span class="mi">2048</span><span class="p">,</span>
-</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>    <span class="n">temperature</span><span class="o">=</span><span class="mi">0</span>
-</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="p">)</span>
-</span></code></pre></div>
-
-</div>
-</div>
 <div class="cell border-box-sizing text_cell rendered">
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>The <code>guard</code> wrapper returns the raw_llm_respose (which is a simple string), and the validated and corrected output (which is a dictionary).</p>
-<p>We can see that the output is a dictionary with the correct schema and types.</p>
+<p>First, let's try translating a statement that is relatively easy to translate.</p>
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 
-<div class="language-python highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nb">print</span><span class="p">(</span><span class="n">validated_response</span><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="kn">import</span> <span class="nn">openai</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="n">raw_llm_response</span><span class="p">,</span> <span class="n">validated_response</span> <span class="o">=</span> <span class="n">guard</span><span class="p">(</span>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>    <span class="n">openai</span><span class="o">.</span><span class="n">Completion</span><span class="o">.</span><span class="n">create</span><span class="p">,</span>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>    <span class="n">prompt_params</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;statement_to_be_translated&#39;</span><span class="p">:</span> <span class="s1">&#39;これは簡単に翻訳できるかもしれない。&#39;</span><span class="p">},</span>
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>    <span class="n">engine</span><span class="o">=</span><span class="s1">&#39;text-davinci-003&#39;</span><span class="p">,</span>
+</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>    <span class="n">max_tokens</span><span class="o">=</span><span class="mi">2048</span><span class="p">,</span>
+</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>    <span class="n">temperature</span><span class="o">=</span><span class="mi">0</span>
+</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="p">)</span>
+</span><span id="__span-6-10"><a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>
+</span><span id="__span-6-11"><a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Validated Output: </span><span class="si">{</span><span class="n">validated_response</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 </span></code></pre></div>
 
 </div>
@@ -1124,68 +1133,41 @@ JSON Output:
 <div class="output">
 <div class="output_area">
 <div class="output_html rendered_html output_subarea ">
-<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace"><span style="font-weight: bold">{</span>
-    <span style="color: #008000; text-decoration-color: #008000">'fees'</span>: <span style="font-weight: bold">[</span>
-        <span style="font-weight: bold">{</span><span style="color: #008000; text-decoration-color: #008000">'index'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">1</span>, <span style="color: #008000; text-decoration-color: #008000">'name'</span>: <span style="color: #008000; text-decoration-color: #008000">'annual membership'</span>, <span style="color: #008000; text-decoration-color: #008000">'explanation'</span>: <span style="color: #008000; text-decoration-color: #008000">'none'</span>, <span style="color: #008000; text-decoration-color: #008000">'value'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">0</span><span style="font-weight: bold">}</span>,
-        <span style="font-weight: bold">{</span>
-            <span style="color: #008000; text-decoration-color: #008000">'index'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">2</span>,
-            <span style="color: #008000; text-decoration-color: #008000">'name'</span>: <span style="color: #008000; text-decoration-color: #008000">'fee one'</span>,
-            <span style="color: #008000; text-decoration-color: #008000">'explanation'</span>: <span style="color: #008000; text-decoration-color: #008000">'monthly fee of 0% of the amount of each eligible purchase transaction or amount </span>
-<span style="color: #008000; text-decoration-color: #008000">selected to create a My Chase Plan while in the 0% Intro Purchase APR period. After that, monthly fee of 1.72% of </span>
-<span style="color: #008000; text-decoration-color: #008000">the amount of each eligible purchase transaction or amount selected to create a My Chase Plan.'</span>,
-            <span style="color: #008000; text-decoration-color: #008000">'value'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">1.72</span>
-        <span style="font-weight: bold">}</span>,
-        <span style="font-weight: bold">{</span>
-            <span style="color: #008000; text-decoration-color: #008000">'index'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">3</span>,
-            <span style="color: #008000; text-decoration-color: #008000">'name'</span>: <span style="color: #008000; text-decoration-color: #008000">'balance transfers'</span>,
-            <span style="color: #008000; text-decoration-color: #008000">'explanation'</span>: <span style="color: #008000; text-decoration-color: #008000">'intro fee of either $5 or 3% of the amount of each transfer, whichever is greater, on </span>
-<span style="color: #008000; text-decoration-color: #008000">transfers made within 60 days of account opening. After that: Either $5 or 5% of the amount of each transfer, </span>
-<span style="color: #008000; text-decoration-color: #008000">whichever is greater.'</span>,
-            <span style="color: #008000; text-decoration-color: #008000">'value'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">5</span>
-        <span style="font-weight: bold">}</span>,
-        <span style="font-weight: bold">{</span>
-            <span style="color: #008000; text-decoration-color: #008000">'index'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">4</span>,
-            <span style="color: #008000; text-decoration-color: #008000">'name'</span>: <span style="color: #008000; text-decoration-color: #008000">'cash advances'</span>,
-            <span style="color: #008000; text-decoration-color: #008000">'explanation'</span>: <span style="color: #008000; text-decoration-color: #008000">'either $10 or 5% of the amount of each transaction, whichever is greater.'</span>,
-            <span style="color: #008000; text-decoration-color: #008000">'value'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">5</span>
-        <span style="font-weight: bold">}</span>,
-        <span style="font-weight: bold">{</span>
-            <span style="color: #008000; text-decoration-color: #008000">'index'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">5</span>,
-            <span style="color: #008000; text-decoration-color: #008000">'name'</span>: <span style="color: #008000; text-decoration-color: #008000">'foreign transactions'</span>,
-            <span style="color: #008000; text-decoration-color: #008000">'explanation'</span>: <span style="color: #008000; text-decoration-color: #008000">'3% of the amount of each transaction in U.S. dollars.'</span>,
-            <span style="color: #008000; text-decoration-color: #008000">'value'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">3</span>
-        <span style="font-weight: bold">}</span>,
-        <span style="font-weight: bold">{</span><span style="color: #008000; text-decoration-color: #008000">'index'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">6</span>, <span style="color: #008000; text-decoration-color: #008000">'name'</span>: <span style="color: #008000; text-decoration-color: #008000">'late payment'</span>, <span style="color: #008000; text-decoration-color: #008000">'explanation'</span>: <span style="color: #008000; text-decoration-color: #008000">'up to $40.'</span>, <span style="color: #008000; text-decoration-color: #008000">'value'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">0</span><span style="font-weight: bold">}</span>,
-        <span style="font-weight: bold">{</span><span style="color: #008000; text-decoration-color: #008000">'index'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">7</span>, <span style="color: #008000; text-decoration-color: #008000">'name'</span>: <span style="color: #008000; text-decoration-color: #008000">'fee two'</span>, <span style="color: #008000; text-decoration-color: #008000">'explanation'</span>: <span style="color: #008000; text-decoration-color: #008000">'none'</span>, <span style="color: #008000; text-decoration-color: #008000">'value'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">0</span><span style="font-weight: bold">}</span>,
-        <span style="font-weight: bold">{</span><span style="color: #008000; text-decoration-color: #008000">'index'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">8</span>, <span style="color: #008000; text-decoration-color: #008000">'name'</span>: <span style="color: #008000; text-decoration-color: #008000">'return payment'</span>, <span style="color: #008000; text-decoration-color: #008000">'explanation'</span>: <span style="color: #008000; text-decoration-color: #008000">'up to $40.'</span>, <span style="color: #008000; text-decoration-color: #008000">'value'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">0</span><span style="font-weight: bold">}</span>,
-        <span style="font-weight: bold">{</span><span style="color: #008000; text-decoration-color: #008000">'index'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">9</span>, <span style="color: #008000; text-decoration-color: #008000">'name'</span>: <span style="color: #008000; text-decoration-color: #008000">'return check'</span>, <span style="color: #008000; text-decoration-color: #008000">'explanation'</span>: <span style="color: #008000; text-decoration-color: #008000">'none'</span>, <span style="color: #008000; text-decoration-color: #008000">'value'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">0</span><span style="font-weight: bold">}</span>
-    <span style="font-weight: bold">]</span>,
-    <span style="color: #008000; text-decoration-color: #008000">'interest_rates'</span>: <span style="font-weight: bold">{</span>
-        <span style="color: #008000; text-decoration-color: #008000">'purchase'</span>: <span style="font-weight: bold">{</span>
-            <span style="color: #008000; text-decoration-color: #008000">'apr'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">0</span>,
-            <span style="color: #008000; text-decoration-color: #008000">'explanation'</span>: <span style="color: #008000; text-decoration-color: #008000">'0% Intro APR for the first 18 months that your Account is open. After that, 19.49%. </span>
-<span style="color: #008000; text-decoration-color: #008000">This APR will vary with the market based on the Prime Rate.'</span>
-        <span style="font-weight: bold">}</span>,
-        <span style="color: #008000; text-decoration-color: #008000">'my_chase_loan'</span>: <span style="font-weight: bold">{</span>
-            <span style="color: #008000; text-decoration-color: #008000">'apr'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">19.49</span>,
-            <span style="color: #008000; text-decoration-color: #008000">'explanation'</span>: <span style="color: #008000; text-decoration-color: #008000">'19.49%. This APR will vary with the market based on the Prime Rate.'</span>
-        <span style="font-weight: bold">}</span>,
-        <span style="color: #008000; text-decoration-color: #008000">'balance_transfer'</span>: <span style="font-weight: bold">{</span>
-            <span style="color: #008000; text-decoration-color: #008000">'apr'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">0</span>,
-            <span style="color: #008000; text-decoration-color: #008000">'explanation'</span>: <span style="color: #008000; text-decoration-color: #008000">'0% Intro APR for the first 18 months that your Account is open. After that, 19.49%. </span>
-<span style="color: #008000; text-decoration-color: #008000">This APR will vary with the market based on the Prime Rate.'</span>
-        <span style="font-weight: bold">}</span>,
-        <span style="color: #008000; text-decoration-color: #008000">'cash_advance'</span>: <span style="font-weight: bold">{</span>
-            <span style="color: #008000; text-decoration-color: #008000">'apr'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">29.49</span>,
-            <span style="color: #008000; text-decoration-color: #008000">'explanation'</span>: <span style="color: #008000; text-decoration-color: #008000">'29.49%. This APR will vary with the market based on the Prime Rate.'</span>
-        <span style="font-weight: bold">}</span>,
-        <span style="color: #008000; text-decoration-color: #008000">'penalty'</span>: <span style="font-weight: bold">{</span>
-            <span style="color: #008000; text-decoration-color: #008000">'apr'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">29.99</span>,
-            <span style="color: #008000; text-decoration-color: #008000">'explanation'</span>: <span style="color: #008000; text-decoration-color: #008000">'Up to 29.99%. This APR will vary with the market based on the Prime Rate.'</span>
-        <span style="font-weight: bold">}</span>,
-        <span style="color: #008000; text-decoration-color: #008000">'prime_rate'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">7.75</span>
-    <span style="font-weight: bold">}</span>
-<span style="font-weight: bold">}</span>
+<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">Validated Output: <span style="font-weight: bold">{</span><span style="color: #008000; text-decoration-color: #008000">'translated_statement'</span>: <span style="color: #008000; text-decoration-color: #008000">'This may be easy to translate.'</span><span style="font-weight: bold">}</span>
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>The <code>guard</code> wrapper returns the raw_llm_respose (which is a simple string), and the validated and corrected output (which is a dictionary). We can see that the output is a dictionary with the correct schema and types.</p>
+<p>Next, let's try translating a statement that is harder to translate (because it contains some difficult-to-translate slang words). We see that the translated statement has been corrected to return an empty string instead of the translated statement.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="language-python highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">raw_llm_response</span><span class="p">,</span> <span class="n">validated_response</span> <span class="o">=</span> <span class="n">guard</span><span class="p">(</span>
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>    <span class="n">openai</span><span class="o">.</span><span class="n">Completion</span><span class="o">.</span><span class="n">create</span><span class="p">,</span>
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>    <span class="n">prompt_params</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;statement_to_be_translated&#39;</span><span class="p">:</span> <span class="s1">&#39;ドン引きするほど翻訳が悪い。&#39;</span><span class="p">},</span>
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>    <span class="n">engine</span><span class="o">=</span><span class="s1">&#39;text-davinci-003&#39;</span><span class="p">,</span>
+</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>    <span class="n">max_tokens</span><span class="o">=</span><span class="mi">2048</span><span class="p">,</span>
+</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>    <span class="n">temperature</span><span class="o">=</span><span class="mi">0</span>
+</span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="p">)</span>
+</span><span id="__span-7-8"><a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>
+</span><span id="__span-7-9"><a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Validated Output: </span><span class="si">{</span><span class="n">validated_response</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span></code></pre></div>
+
+</div>
+<div class="output_wrapper">
+<div class="output">
+<div class="output_area">
+<div class="output_html rendered_html output_subarea ">
+<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">Validated Output: <span style="font-weight: bold">{</span><span style="color: #008000; text-decoration-color: #008000">'translated_statement'</span>: <span style="color: #008000; text-decoration-color: #008000">''</span><span style="font-weight: bold">}</span>
 </pre>
 </div>
 </div>
@@ -1214,7 +1196,7 @@ JSON Output:
     <nav class="md-footer__inner md-grid" aria-label="Footer" >
       
         
-        <a href="../../logs/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Inspecting logs" rel="prev">
+        <a href="../generate_structured_data/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Generate structured synthetic data" rel="prev">
           <div class="md-footer__button md-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
           </div>
@@ -1223,20 +1205,20 @@ JSON Output:
               <span class="md-footer__direction">
                 Previous
               </span>
-              Inspecting logs
+              Generate structured synthetic data
             </div>
           </div>
         </a>
       
       
         
-        <a href="../bug_free_python_code/" class="md-footer__link md-footer__link--next" aria-label="Next: Generating bug-free Python code" rel="next">
+        <a href="../../integrations/langchain/" class="md-footer__link md-footer__link--next" aria-label="Next: LangChain" rel="next">
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
                 Next
               </span>
-              Generating bug-free Python code
+              LangChain
             </div>
           </div>
           <div class="md-footer__button md-icon">
