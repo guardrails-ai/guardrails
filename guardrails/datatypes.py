@@ -81,7 +81,7 @@ class DataType:
         self._children = children
 
     @classmethod
-    def from_str(self, s: str) -> "DataType":
+    def from_str(cls, s: str) -> "DataType":
         """Create a DataType from a string."""
         raise NotImplementedError("Abstract method.")
 
@@ -132,7 +132,7 @@ class ScalarType(DataType):
             raise ValueError("ScalarType data type must not have any children.")
 
     @classmethod
-    def from_str(self, s: str) -> "ScalarType":
+    def from_str(cls, s: str) -> "ScalarType":
         """Create a ScalarType from a string.
 
         Note: ScalarTypes like int, float, bool, etc. will override this method.
@@ -150,7 +150,7 @@ class String(ScalarType):
     """Element tag: `<string>`"""
 
     @classmethod
-    def from_str(self, s: str) -> "String":
+    def from_str(cls, s: str) -> "String":
         """Create a String from a string."""
         return s
 
@@ -160,7 +160,7 @@ class Integer(ScalarType):
     """Element tag: `<integer>`"""
 
     @classmethod
-    def from_str(self, s: str) -> "Integer":
+    def from_str(cls, s: str) -> "Integer":
         """Create an Integer from a string."""
         return int(s)
 
@@ -170,7 +170,7 @@ class Float(ScalarType):
     """Element tag: `<float>`"""
 
     @classmethod
-    def from_str(self, s: str) -> "Float":
+    def from_str(cls, s: str) -> "Float":
         """Create a Float from a string."""
         return float(s)
 
@@ -180,7 +180,8 @@ class Boolean(ScalarType):
     """Element tag: `<bool>`"""
 
     @classmethod
-    def from_str(self, s: Union[str, bool]) -> "Boolean":
+
+    def from_str(cls, s: Union[str, bool]) -> "Boolean":
         """Create a Boolean from a string."""
 
         if isinstance(s, bool):
@@ -199,7 +200,7 @@ class Date(ScalarType):
     """Element tag: `<date>`"""
 
     @classmethod
-    def from_str(self, s: str) -> "Date":
+    def from_str(cls, s: str) -> "Date":
         """Create a Date from a string."""
         return datetime.datetime.strptime(s, "%Y-%m-%d").date()
 
@@ -209,7 +210,7 @@ class Time(ScalarType):
     """Element tag: `<time>`"""
 
     @classmethod
-    def from_str(self, s: str) -> "Time":
+    def from_str(cls, s: str) -> "Time":
         """Create a Time from a string."""
         return datetime.datetime.strptime(s, "%H:%M:%S").time()
 
@@ -261,9 +262,7 @@ class List(NonScalarType):
         return schema
 
     def set_children(self, element: ET._Element):
-        idx = 0
-        for child in element:
-            idx += 1
+        for idx, child in enumerate(element, start=1):
             if idx > 1:
                 # Only one child is allowed in a list data type.
                 # The child must be the datatype that all items in the list

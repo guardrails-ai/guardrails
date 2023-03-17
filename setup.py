@@ -3,6 +3,7 @@
 
 import io
 import os
+
 # Note: To use the 'upload' functionality of this file, you must:
 #   $ pipenv install twine --dev
 import sys
@@ -18,9 +19,7 @@ with open(ver_path) as ver_file:
 
 # Package meta-data.
 NAME = "guardrails-ai"
-DESCRIPTION = (
-    "Adding guardrails to large language models."
-)
+DESCRIPTION = "Adding guardrails to large language models."
 URL = "https://github.com/shreyar/guardrails"
 EMAIL = "shreya.rajpal@gmail.com"
 AUTHOR = "Shreya Rajpal"

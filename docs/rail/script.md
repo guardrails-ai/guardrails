@@ -3,7 +3,6 @@
 !!! note
     This is a beta feature, and serves more advanced use cases. If you're just getting started with Guardrails, you can skip this section for now.
 
-
 The `<script></script>` element contains any custom code that a developer wants to use. Common use cases include:
 
 1. Custom `Validators`: Here's a few examples of adding custom validators via the `<script>` tag:
@@ -11,7 +10,6 @@ The `<script></script>` element contains any custom code that a developer wants 
       2. [adding a validator to check if an ingredient is vegan](../examples/recipe_generation.ipynb),
       3. [adding a validator to check if a chess move is valid](../examples/valid_chess_moves.ipynb).
 2. Custom `DataTypes`: Examples coming soon!
-
 
 Here's the syntax for the `<script>` element:
 
@@ -24,8 +22,6 @@ Here's the syntax for the `<script>` element:
 </script>
 </rail>
 ```
-
-
 
 ## 🔐 Adding a custom `Validator`
 
@@ -71,7 +67,6 @@ class CustomValidatorName(Validator): <!-- (3)! -->
 5. The `validate` method raises an `EventDetail` object if the value is invalid. This object is then used to take corrective action specified in the `RAIL` spec.
 6. The `validate` method should return the `schema` if the value is valid.
 
-
 The custom validator defined in above can be used in the `RAIL` spec as follows:
 
 ```xml
@@ -81,7 +76,6 @@ The custom validator defined in above can be used in the `RAIL` spec as follows:
 </output>
 </rail>
 ```
-
 
 ## 🧭 Adding a custom `DataType`
 
