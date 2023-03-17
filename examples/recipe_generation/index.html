@@ -1109,11 +1109,8 @@ JSON Object:
 <div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kn">import</span> <span class="nn">openai</span>
 </span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
 </span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="n">raw_llm_response</span><span class="p">,</span> <span class="n">validated_response</span> <span class="o">=</span> <span class="n">guard</span><span class="p">(</span>
-</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>    <span class="n">openai</span><span class="o">.</span><span class="n">Completion</span><span class="o">.</span><span class="n">create</span><span class="p">,</span>
-</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>    <span class="n">engine</span><span class="o">=</span><span class="s1">&#39;text-davinci-003&#39;</span><span class="p">,</span>
-</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>    <span class="n">max_tokens</span><span class="o">=</span><span class="mi">2048</span><span class="p">,</span>
-</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>    <span class="n">temperature</span><span class="o">=</span><span class="mi">0</span>
-</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="p">)</span>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>    <span class="n">openai</span><span class="o">.</span><span class="n">Completion</span><span class="o">.</span><span class="n">create</span><span class="p">,</span> <span class="n">engine</span><span class="o">=</span><span class="s2">&quot;text-davinci-003&quot;</span><span class="p">,</span> <span class="n">max_tokens</span><span class="o">=</span><span class="mi">2048</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="mi">0</span>
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="p">)</span>
 </span></code></pre></div>
 
 </div>

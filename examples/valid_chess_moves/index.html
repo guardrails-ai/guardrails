@@ -1094,11 +1094,15 @@ R N B Q K B N R</pre></desc><defs><g id="white-pawn" class="white pawn"><path d=
 </span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
 </span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="n">raw_llm_response</span><span class="p">,</span> <span class="n">validated_response</span> <span class="o">=</span> <span class="n">guard</span><span class="p">(</span>
 </span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>    <span class="n">openai</span><span class="o">.</span><span class="n">Completion</span><span class="o">.</span><span class="n">create</span><span class="p">,</span>
-</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>    <span class="n">prompt_params</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;board_state&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">board</span><span class="o">.</span><span class="n">move_stack</span><span class="p">)</span> <span class="k">if</span> <span class="n">board</span><span class="o">.</span><span class="n">move_stack</span> <span class="k">else</span> <span class="s1">&#39;Starting position.&#39;</span><span class="p">},</span>
-</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>    <span class="n">engine</span><span class="o">=</span><span class="s1">&#39;text-davinci-003&#39;</span><span class="p">,</span>
-</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>    <span class="n">max_tokens</span><span class="o">=</span><span class="mi">2048</span><span class="p">,</span>
-</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>    <span class="n">temperature</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span>
-</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="p">)</span>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>    <span class="n">prompt_params</span><span class="o">=</span><span class="p">{</span>
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>        <span class="s2">&quot;board_state&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">board</span><span class="o">.</span><span class="n">move_stack</span><span class="p">)</span>
+</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>        <span class="k">if</span> <span class="n">board</span><span class="o">.</span><span class="n">move_stack</span>
+</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>        <span class="k">else</span> <span class="s2">&quot;Starting position.&quot;</span>
+</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>    <span class="p">},</span>
+</span><span id="__span-6-10"><a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>    <span class="n">engine</span><span class="o">=</span><span class="s2">&quot;text-davinci-003&quot;</span><span class="p">,</span>
+</span><span id="__span-6-11"><a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>    <span class="n">max_tokens</span><span class="o">=</span><span class="mi">2048</span><span class="p">,</span>
+</span><span id="__span-6-12"><a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a>    <span class="n">temperature</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span>
+</span><span id="__span-6-13"><a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a><span class="p">)</span>
 </span></code></pre></div>
 
 </div>
@@ -1163,7 +1167,7 @@ R N B Q K B N R</pre></desc><defs><g id="white-pawn" class="white pawn"><path d=
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 
-<div class="language-python highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="n">board</span><span class="o">.</span><span class="n">push_san</span><span class="p">(</span><span class="s1">&#39;e5&#39;</span><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="n">board</span><span class="o">.</span><span class="n">push_san</span><span class="p">(</span><span class="s2">&quot;e5&quot;</span><span class="p">)</span>
 </span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="n">board</span>
 </span></code></pre></div>
 
@@ -1197,11 +1201,15 @@ R N B Q K B N R</pre></desc><defs><g id="white-pawn" class="white pawn"><path d=
 
 <div class="language-python highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="n">raw_llm_response</span><span class="p">,</span> <span class="n">validated_response</span> <span class="o">=</span> <span class="n">guard</span><span class="p">(</span>
 </span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>    <span class="n">openai</span><span class="o">.</span><span class="n">Completion</span><span class="o">.</span><span class="n">create</span><span class="p">,</span>
-</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>    <span class="n">prompt_params</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;board_state&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">board</span><span class="o">.</span><span class="n">move_stack</span><span class="p">)</span> <span class="k">if</span> <span class="n">board</span><span class="o">.</span><span class="n">move_stack</span> <span class="k">else</span> <span class="s1">&#39;Starting position.&#39;</span><span class="p">},</span>
-</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>    <span class="n">engine</span><span class="o">=</span><span class="s1">&#39;text-davinci-003&#39;</span><span class="p">,</span>
-</span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>    <span class="n">max_tokens</span><span class="o">=</span><span class="mi">2048</span><span class="p">,</span>
-</span><span id="__span-10-6"><a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>    <span class="n">temperature</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span>
-</span><span id="__span-10-7"><a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="p">)</span>
+</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>    <span class="n">prompt_params</span><span class="o">=</span><span class="p">{</span>
+</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>        <span class="s2">&quot;board_state&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">board</span><span class="o">.</span><span class="n">move_stack</span><span class="p">)</span>
+</span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>        <span class="k">if</span> <span class="n">board</span><span class="o">.</span><span class="n">move_stack</span>
+</span><span id="__span-10-6"><a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>        <span class="k">else</span> <span class="s2">&quot;Starting position.&quot;</span>
+</span><span id="__span-10-7"><a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>    <span class="p">},</span>
+</span><span id="__span-10-8"><a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a>    <span class="n">engine</span><span class="o">=</span><span class="s2">&quot;text-davinci-003&quot;</span><span class="p">,</span>
+</span><span id="__span-10-9"><a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a>    <span class="n">max_tokens</span><span class="o">=</span><span class="mi">2048</span><span class="p">,</span>
+</span><span id="__span-10-10"><a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a>    <span class="n">temperature</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span>
+</span><span id="__span-10-11"><a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a><span class="p">)</span>
 </span></code></pre></div>
 
 </div>
@@ -1233,7 +1241,7 @@ R N B Q K B . R</pre></desc><defs><g id="white-pawn" class="white pawn"><path d=
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 
-<div class="language-python highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="n">board</span><span class="o">.</span><span class="n">push_san</span><span class="p">(</span><span class="s1">&#39;Nc6&#39;</span><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="n">board</span><span class="o">.</span><span class="n">push_san</span><span class="p">(</span><span class="s2">&quot;Nc6&quot;</span><span class="p">)</span>
 </span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="n">board</span>
 </span></code></pre></div>
 

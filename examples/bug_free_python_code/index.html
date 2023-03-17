@@ -1021,10 +1021,10 @@ JSON Object:
 </span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>
 </span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="n">raw_llm_response</span><span class="p">,</span> <span class="n">validated_response</span> <span class="o">=</span> <span class="n">guard</span><span class="p">(</span>
 </span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>    <span class="n">openai</span><span class="o">.</span><span class="n">Completion</span><span class="o">.</span><span class="n">create</span><span class="p">,</span>
-</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>    <span class="n">prompt_params</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;leetcode_problem&#39;</span><span class="p">:</span> <span class="n">leetcode_problem</span><span class="p">},</span>
-</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>    <span class="n">engine</span><span class="o">=</span><span class="s1">&#39;text-davinci-003&#39;</span><span class="p">,</span>
+</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>    <span class="n">prompt_params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;leetcode_problem&quot;</span><span class="p">:</span> <span class="n">leetcode_problem</span><span class="p">},</span>
+</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>    <span class="n">engine</span><span class="o">=</span><span class="s2">&quot;text-davinci-003&quot;</span><span class="p">,</span>
 </span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>    <span class="n">max_tokens</span><span class="o">=</span><span class="mi">2048</span><span class="p">,</span>
-</span><span id="__span-3-12"><a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>    <span class="n">temperature</span><span class="o">=</span><span class="mi">0</span>
+</span><span id="__span-3-12"><a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>    <span class="n">temperature</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
 </span><span id="__span-3-13"><a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="p">)</span>
 </span></code></pre></div>
 
@@ -1072,7 +1072,7 @@ JSON Object:
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 
-<div class="language-python highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nb">print</span><span class="p">(</span><span class="n">validated_response</span><span class="p">[</span><span class="s1">&#39;python_code&#39;</span><span class="p">])</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nb">print</span><span class="p">(</span><span class="n">validated_response</span><span class="p">[</span><span class="s2">&quot;python_code&quot;</span><span class="p">])</span>
 </span></code></pre></div>
 
 </div>
@@ -1105,10 +1105,10 @@ JSON Object:
 <div class="input">
 
 <div class="language-python highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="k">try</span><span class="p">:</span>
-</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>    <span class="n">exec</span><span class="p">(</span><span class="n">validated_response</span><span class="p">[</span><span class="s1">&#39;python_code&#39;</span><span class="p">])</span>
-</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Success!&#39;</span><span class="p">)</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>    <span class="n">exec</span><span class="p">(</span><span class="n">validated_response</span><span class="p">[</span><span class="s2">&quot;python_code&quot;</span><span class="p">])</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Success!&quot;</span><span class="p">)</span>
 </span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Failed!&#39;</span><span class="p">)</span>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Failed!&quot;</span><span class="p">)</span>
 </span></code></pre></div>
 
 </div>

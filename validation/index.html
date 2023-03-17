@@ -515,6 +515,33 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#guardrails.validators.IsHighQualityTranslation" class="md-nav__link">
+    IsHighQualityTranslation
+  </a>
+  
+    <nav class="md-nav" aria-label="IsHighQualityTranslation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#guardrails.validators.IsHighQualityTranslation.critique" class="md-nav__link">
+    critique
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#guardrails.validators.IsProfanityFree" class="md-nav__link">
+    IsProfanityFree
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#guardrails.validators.LowerCase" class="md-nav__link">
     LowerCase
   </a>
@@ -864,6 +891,33 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#guardrails.validators.IsHighQualityTranslation" class="md-nav__link">
+    IsHighQualityTranslation
+  </a>
+  
+    <nav class="md-nav" aria-label="IsHighQualityTranslation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#guardrails.validators.IsHighQualityTranslation.critique" class="md-nav__link">
+    critique
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#guardrails.validators.IsProfanityFree" class="md-nav__link">
+    IsProfanityFree
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#guardrails.validators.LowerCase" class="md-nav__link">
     LowerCase
   </a>
@@ -1083,6 +1137,112 @@ that uses a database connection to check if the query is valid.</p>
 
 
 
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="guardrails.validators.IsHighQualityTranslation" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">IsHighQualityTranslation</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
+
+</h2>
+
+
+  <div class="doc doc-contents ">
+
+  
+      <p>Using inpiredco.critique to check if a translation is high quality.</p>
+<ul>
+<li>Name for <code>format</code> attribute: <code>is-high-quality-translation</code></li>
+<li>Supported data types: <code>string</code></li>
+<li>Programmatic fix: ""</li>
+</ul>
+
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="guardrails.validators.IsHighQualityTranslation.critique" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">critique</span> <span class="o">=</span> <span class="n">Critique</span><span class="p">(</span><span class="n">api_key</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;INSPIREDCO_API_KEY&#39;</span><span class="p">])</span></code>
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  </div>
+
+</div>
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="guardrails.validators.IsProfanityFree" class="doc doc-heading">
+        <code>IsProfanityFree</code>
+
+
+</h2>
+
+
+  <div class="doc doc-contents ">
+
+  
+      <p>Validate that a translated text does not contain profanity language.</p>
+<p>This validator uses the <code>alt-profanity-check</code> package to check if a string
+contains profanity language.</p>
+<ul>
+<li>Name for <code>format</code> attribute: <code>is-profanity-free</code></li>
+<li>Supported data types: <code>string</code></li>
+<li>Programmatic fix: ""</li>
+</ul>
+
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
 
   </div>
 
@@ -1339,7 +1499,8 @@ that uses a database connection to check if the query is valid.</p>
 <ul>
 <li>Name for <code>format</code> attribute: <code>length</code></li>
 <li>Supported data types: <code>string</code>, <code>list</code>, <code>object</code></li>
-<li>Programmatic fix: If shorter than the minimum, pad with empty last elements. If longer than the maximum, truncate.  # noqa: E501</li>
+<li>Programmatic fix: If shorter than the minimum, pad with empty last elements.
+    If longer than the maximum, truncate.</li>
 </ul>
 
 
