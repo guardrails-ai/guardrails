@@ -1,7 +1,7 @@
 import datetime
 import warnings
 from types import SimpleNamespace
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 
 from lxml import etree as ET
 
@@ -180,8 +180,12 @@ class Boolean(ScalarType):
     """Element tag: `<bool>`"""
 
     @classmethod
-    def from_str(self, s: str) -> "Boolean":
+    def from_str(self, s: Union[str, bool]) -> "Boolean":
         """Create a Boolean from a string."""
+
+        if isinstance(s, bool):
+            return s
+
         if s.lower() == "true":
             return True
         elif s.lower() == "false":
