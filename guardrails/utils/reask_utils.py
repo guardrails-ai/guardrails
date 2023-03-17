@@ -1,3 +1,4 @@
+import dataclasses
 from collections import defaultdict
 from copy import deepcopy
 from dataclasses import dataclass
@@ -17,7 +18,7 @@ class ReAsk:
     path: List[Any] = None
 
     def __repr__(self) -> str:
-        return pretty_repr(self)
+        return pretty_repr(dataclasses.asdict(self))
 
 
 def gather_reasks(validated_output: Dict) -> List[ReAsk]:
