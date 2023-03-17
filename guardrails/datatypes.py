@@ -180,7 +180,6 @@ class Boolean(ScalarType):
     """Element tag: `<bool>`"""
 
     @classmethod
-
     def from_str(cls, s: Union[str, bool]) -> "Boolean":
         """Create a Boolean from a string."""
 
