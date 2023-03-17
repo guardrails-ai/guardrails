@@ -34,6 +34,7 @@ nav:
       - 'Using GPT to play valid chess moves': examples/valid_chess_moves.ipynb
       - 'Translate text with profanity filtering': examples/translation_to_specific_language.ipynb
       - 'Generate structured synthetic data': examples/generate_structured_data.ipynb
+      - 'Ensure translated text is high quality': examples/translation_with_quality_check.ipynb
       # - 'Natural language to pandas code': examples/nl_to_pandas.md
       # - 'Building EHRs from doctors notes': examples/ehr_from_doctors_notes.md
       # - 'Forcing positive sentiment in chatbots': examples/positive_sentiment.md
