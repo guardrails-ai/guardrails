@@ -1,7 +1,7 @@
 from collections import defaultdict
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Tuple
 
 from lxml import etree as ET
 from rich.pretty import pretty_repr
