@@ -136,6 +136,14 @@ def prune_json_for_reasking(json_object: Any) -> Dict:
     Returns:
         The pruned validated JSON.
     """
+
+    def reask_to_dict(reask: ReAsk) -> Dict:
+        return {
+            "incorrect_value": reask.incorrect_value,
+            "error_message": reask.error_message,
+            "fix_value": reask.fix_value,
+        }
+
     if isinstance(json_object, list):
         pruned_list = []
         for item in json_object:
@@ -149,7 +157,7 @@ def prune_json_for_reasking(json_object: Any) -> Dict:
         pruned_json = {}
         for key, value in json_object.items():
             if isinstance(value, ReAsk):
-                pruned_json[key] = value
+                pruned_json[key] = reask_to_dict(value)
             elif isinstance(value, dict):
                 pruned_output = prune_json_for_reasking(value)
                 if pruned_output is not None:
@@ -169,7 +177,7 @@ def prune_json_for_reasking(json_object: Any) -> Dict:
         return None
     else:
         if isinstance(json_object, ReAsk):
-            return json_object
+            return reask_to_dict(json_object)
         return None
 
 
