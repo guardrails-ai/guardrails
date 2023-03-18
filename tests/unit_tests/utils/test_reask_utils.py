@@ -63,56 +63,20 @@ def test_gather_reasks():
     "input_dict, expected_dict",
     [
         (
-            {"a": 1, "b": reask_utils.ReAsk(-1, "Error Msg", 1)},
-            {
-                "b": {
-                    "incorrect_value": -1,
-                    "error_message": "Error Msg",
-                    "fix_value": 1,
-                    "path": None,
-                }
-            },
+            {"a": 1, "b": ReAsk(-1, "Error Msg", 1)},
+            {"b": ReAsk(-1, "Error Msg", 1)},
         ),
         (
-            {"a": 1, "b": {"c": 2, "d": reask_utils.ReAsk(-1, "Error Msg", 2)}},
-            {
-                "b": {
-                    "d": {
-                        "incorrect_value": -1,
-                        "error_message": "Error Msg",
-                        "fix_value": 2,
-                        "path": None,
-                    }
-                }
-            },
+            {"a": 1, "b": {"c": 2, "d": ReAsk(-1, "Error Msg", 2)}},
+            {"b": {"d": ReAsk(-1, "Error Msg", 2)}},
         ),
         (
-            {"a": [1, 2, reask_utils.ReAsk(-1, "Error Msg", 3)], "b": 4},
-            {
-                "a": [
-                    {
-                        "incorrect_value": -1,
-                        "error_message": "Error Msg",
-                        "fix_value": 3,
-                        "path": None,
-                    }
-                ]
-            },
+            {"a": [1, 2, ReAsk(-1, "Error Msg", 3)], "b": 4},
+            {"a": [ReAsk(-1, "Error Msg", 3),]},
         ),
         (
-            {"a": [1, 2, {"c": reask_utils.ReAsk(-1, "Error Msg", 3)}]},
-            {
-                "a": [
-                    {
-                        "c": {
-                            "incorrect_value": -1,
-                            "error_message": "Error Msg",
-                            "fix_value": 3,
-                            "path": None,
-                        }
-                    }
-                ]
-            },
+            {"a": [1, 2, {"c": ReAsk(-1, "Error Msg", 3)}]},
+            {"a": [{"c": ReAsk(-1, "Error Msg", 3),}]},
         ),
         ({"a": 1}, None),
     ],
