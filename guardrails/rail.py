@@ -8,7 +8,6 @@ from lxml import etree as ET
 from guardrails.datatypes import registry as types_registry
 from guardrails.prompt import Prompt
 from guardrails.schema import InputSchema, OutputSchema, Schema
-from guardrails.utils.pydantic_utils import convert_field_element
 from guardrails.utils.reask_utils import extract_prompt_from_xml
 
 XMLPARSER = ET.XMLParser(encoding="utf-8")
@@ -50,7 +49,6 @@ class Rail:
                 "RAIL file must have a version attribute set to 0.1."
                 "Change the opening <rail> element to: <rail version='0.1'>."
             )
-        print(xml)
 
         # Execute the script before validating the rest of the RAIL file.
         script = xml.find("script")
@@ -88,13 +86,6 @@ class Rail:
     def load_schema(root: ET._Element) -> Schema:
         """Given the RAIL <input> or <output> element, create a Schema
         object."""
-
-        # Replace all <field ... /> elements with the output
-        # of `convert_field_element(..)`
-        print(root)
-        for field in root.findall("field"):
-            root.replace(field, convert_field_element(field))
-
         output = Schema(parsed_rail=root)
         strict = False
         if "strict" in root.attrib and root.attrib["strict"] == "true":
