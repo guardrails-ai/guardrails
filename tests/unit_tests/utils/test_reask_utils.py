@@ -72,11 +72,21 @@ def test_gather_reasks():
         ),
         (
             {"a": [1, 2, ReAsk(-1, "Error Msg", 3)], "b": 4},
-            {"a": [ReAsk(-1, "Error Msg", 3),]},
+            {
+                "a": [
+                    ReAsk(-1, "Error Msg", 3),
+                ]
+            },
         ),
         (
             {"a": [1, 2, {"c": ReAsk(-1, "Error Msg", 3)}]},
-            {"a": [{"c": ReAsk(-1, "Error Msg", 3),}]},
+            {
+                "a": [
+                    {
+                        "c": ReAsk(-1, "Error Msg", 3),
+                    }
+                ]
+            },
         ),
         ({"a": 1}, None),
     ],
