@@ -12,10 +12,10 @@ class PromptCallableException(Exception):
 
 @dataclass
 class PromptCallable:
-    """
-    A wrapper around a callable that takes in a prompt.
-    Catches exceptions to let the user know clearly
-    if the callable failed, and how to fix it.
+    """A wrapper around a callable that takes in a prompt.
+
+    Catches exceptions to let the user know clearly if the callable
+    failed, and how to fix it.
     """
 
     fn: Callable

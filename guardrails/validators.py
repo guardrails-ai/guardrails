@@ -10,8 +10,18 @@ from collections import defaultdict
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Union
 
+import openai
+
 from guardrails.datatypes import registry as types_registry
 from guardrails.utils.reask_utils import ReAsk
+
+try:
+    import numpy as np
+except ImportError:
+    _HAS_NUMPY = False
+else:
+    _HAS_NUMPY = True
+
 
 validators_registry = {}
 types_to_validators = defaultdict(list)
@@ -582,6 +592,79 @@ class BugFreeSQL(Validator):
                 value,
                 schema,
                 ". ".join(sql_query.errors),
+                None,
+            )
+
+        return schema
+
+
+@register_validator(name="similar-to-document", data_type="string")
+class SimilarToDocument(Validator):
+    """Validate that a value is similar to the document.
+
+    This validator checks if the value is similar to the document by checking
+    the cosine similarity between the value and the document, using an
+    embedding.
+
+    - Name for `format` attribute: `similar-to-document`
+    - Supported data types: `string`
+    - Programmatic fix: None
+    """
+
+    def __init__(
+        self,
+        document: str,
+        threshold: float = 0.7,
+        model: str = "text-embedding-ada-002",
+        on_fail: Optional[Callable] = None,
+    ):
+        super().__init__(on_fail=on_fail)
+        if not _HAS_NUMPY:
+            raise ImportError(
+                f"The {self.__class__.__name__} validator requires the numpy package.\n"
+                "`pip install numpy` to install it."
+            )
+
+        self._document = document
+        embedding = openai.Embedding.create(input=[document], model=model)["data"][0][
+            "embedding"
+        ]
+        self._document_embedding = np.array(embedding)
+        self._model = model
+        self._threshold = float(threshold)
+
+    @staticmethod
+    def cosine_similarity(a: "np.ndarray", b: "np.ndarray") -> float:
+        """Calculate the cosine similarity between two vectors.
+
+        Args:
+            a: The first vector.
+            b: The second vector.
+
+        Returns:
+            float: The cosine similarity between the two vectors.
+        """
+        return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
+
+    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
+        logger.debug(f"Validating {value} is similar to document...")
+
+        value_embedding = np.array(
+            openai.Embedding.create(input=[value], model=self._model)["data"][0][
+                "embedding"
+            ]
+        )
+
+        similarity = SimilarToDocument.cosine_similarity(
+            self._document_embedding,
+            value_embedding,
+        )
+        if similarity < self._threshold:
+            raise EventDetail(
+                key,
+                value,
+                schema,
+                f"Value {value} is not similar enough to document {self._document}.",
                 None,
             )
 
