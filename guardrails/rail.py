@@ -16,9 +16,8 @@ XMLPARSER = ET.XMLParser(encoding="utf-8")
 
 @dataclass
 class Rail:
-    """
-    RAIL (Reliable AI Language) is a dialect of XML that allows users to specify
-    guardrails for large language models (LLMs).
+    """RAIL (Reliable AI Language) is a dialect of XML that allows users to
+    specify guardrails for large language models (LLMs).
 
     A RAIL file contains a root element called
         `<rail version="x.y">`
@@ -39,17 +38,14 @@ class Rail:
         with open(file_path, "r") as f:
             xml = f.read()
         return cls.from_string(xml)
-    
+
     @classmethod
     def from_string(cls, string: str) -> "Rail":
         return cls.from_xml(ET.fromstring(string, parser=XMLPARSER))
 
     @classmethod
     def from_xml(cls, xml: ET._Element):
-        if (
-            "version" not in xml.attrib
-            or xml.attrib["version"] != "0.1"
-        ):
+        if "version" not in xml.attrib or xml.attrib["version"] != "0.1":
             raise ValueError(
                 "RAIL file must have a version attribute set to 0.1."
                 "Change the opening <rail> element to: <rail version='0.1'>."
@@ -90,7 +86,8 @@ class Rail:
 
     @staticmethod
     def load_schema(root: ET._Element) -> Schema:
-        """Given the RAIL <input> or <output> element, create a Schema object."""
+        """Given the RAIL <input> or <output> element, create a Schema
+        object."""
 
         # Replace all <field ... /> elements with the output
         # of `convert_field_element(..)`

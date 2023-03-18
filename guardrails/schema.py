@@ -1,8 +1,7 @@
-from copy import deepcopy
 import logging
+from copy import deepcopy
 from types import SimpleNamespace
-from typing import Any, Dict, List, Optional, Tuple
-from guardrails.utils import reask_utils
+from typing import Any, Dict, Optional
 
 from lxml import etree as ET
 
@@ -49,7 +48,7 @@ class Schema:
     def validate(
         self,
         data: Dict[str, Any],
-    ) -> Tuple[Dict[str, Any], List[reask_utils.ReAsk]]:
+    ) -> Dict[str, Any]:
         """Validate a dictionary of data against the schema.
 
         Args:
@@ -60,11 +59,15 @@ class Schema:
             second element is a list of tuples, where each tuple contains the
             path to the reasked element, and the ReAsk object.
         """
+        if data is None:
+            return None
+
+        if not isinstance(data, dict):
+            raise TypeError(f"Argument `data` must be a dictionary, not {type(data)}.")
 
         validated_response = deepcopy(data)
 
         for field, value in validated_response.items():
-
             if field not in self:
                 # This is an extra field that is not in the schema.
                 # We remove it from the validated response.

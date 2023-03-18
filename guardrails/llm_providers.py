@@ -70,9 +70,11 @@ def openai_chat_wrapper(text: str, *args, model="gpt-3.5-turbo", **kwargs):
 
 def get_llm_ask(llm_api: Callable, *args, **kwargs):
     if llm_api == openai.Completion.create:
-        return partial(openai_wrapper, *args, **kwargs)
+        fn = partial(openai_wrapper, *args, **kwargs)
     elif llm_api == openai.ChatCompletion.create:
-        return partial(openai_chat_wrapper, *args, **kwargs)
+        fn = partial(openai_chat_wrapper, *args, **kwargs)
     else:
         # Let the user pass in an arbitrary callable.
-        return PromptCallable(fn=partial(llm_api, *args, **kwargs))
+        fn = partial(llm_api, *args, **kwargs)
+
+    return PromptCallable(fn=fn)

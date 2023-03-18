@@ -10,13 +10,13 @@ class GuardLogs:
     prompt: str
     output: str
     output_as_dict: dict
-    validated_response: dict
+    validated_output: dict
     reasks: List[ReAsk]
 
     @property
     def failed_validations(self) -> List[ReAsk]:
         """Returns the failed validations."""
-        return gather_reasks(self.validated_response)
+        return gather_reasks(self.validated_output)
 
 
 @dataclass
@@ -26,14 +26,14 @@ class GuardHistory:
     def push(self, guard_log: GuardLogs) -> "GuardHistory":
         if len(self.history) > 0:
             last_log = self.history[-1]
-            guard_log.validated_response = merge_reask_output(last_log, guard_log)
+            guard_log.validated_output = merge_reask_output(last_log, guard_log)
 
         return GuardHistory(self.history + [guard_log])
 
     @property
-    def validated_response(self) -> dict:
+    def validated_output(self) -> dict:
         """Returns the latest validated output."""
-        return self.history[-1].validated_response
+        return self.history[-1].validated_output
 
     @property
     def output(self) -> str:
@@ -89,9 +89,9 @@ def merge_reask_output(prev_logs: GuardLogs, current_logs: GuardLogs) -> Dict:
     Returns:
         The merged output.
     """
-    previous_response = prev_logs.validated_response
+    previous_response = prev_logs.validated_output
     pruned_reask_json = prune_json_for_reasking(previous_response)
-    reask_response = current_logs.validated_response
+    reask_response = current_logs.validated_output
 
     # Reask output and reask json have the same structure, except that values
     # of the reask json are ReAsk objects. We want to replace the ReAsk objects
