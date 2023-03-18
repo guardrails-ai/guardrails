@@ -1,6 +1,12 @@
 import pytest
 
-from guardrails.validators import Filter, Refrain, check_refrain_in_dict, filter_in_dict
+from guardrails.validators import (
+    Filter,
+    Refrain,
+    SimilarToDocument,
+    check_refrain_in_dict,
+    filter_in_dict,
+)
 
 
 @pytest.mark.parametrize(
@@ -34,3 +40,23 @@ def test_check_refrain(input_dict, expected):
 )
 def test_filter_in_dict(input_dict, expected_dict):
     assert filter_in_dict(input_dict) == expected_dict
+
+
+# TODO: Implement testing with models on CI
+@pytest.mark.skip(
+    reason="This test requires the text-embedding-ada-002 embedding model."
+    " Testing with models needs to be implemented."
+)
+def test_similar_to_document_validator():
+    import os
+
+    datapath = os.path.abspath(os.path.dirname(__file__) + "/../data/article1.txt")
+    val = SimilarToDocument(
+        document=open(datapath, "r").read(),
+        model="text-embedding-ada-002",
+        threshold=0.85,
+    )
+    summary = "All legislative powers are held by a Congress"
+    " consisting of two chambers, the Senate and the House of Representatives."
+    schema = {"key": summary}
+    assert val.validate("key", summary, schema) == schema
