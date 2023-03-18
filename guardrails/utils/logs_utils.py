@@ -2,12 +2,7 @@ from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any, Dict, List
 
-from guardrails.utils.reask_utils import (
-    ReAsk,
-    _is_reask_dict,
-    gather_reasks,
-    prune_json_for_reasking,
-)
+from guardrails.utils.reask_utils import ReAsk, gather_reasks, prune_json_for_reasking
 
 
 @dataclass
@@ -106,18 +101,18 @@ def merge_reask_output(prev_logs: GuardLogs, current_logs: GuardLogs) -> Dict:
     def update_reasked_elements(pruned_reask_json, reask_response_dict):
         if isinstance(pruned_reask_json, dict):
             for key, value in pruned_reask_json.items():
-                if _is_reask_dict(value):
+                if isinstance(value, ReAsk):
                     corrected_value = reask_response_dict[key]
-                    update_response_by_path(merged_json, value["path"], corrected_value)
+                    update_response_by_path(merged_json, value.path, corrected_value)
                 else:
                     update_reasked_elements(
                         pruned_reask_json[key], reask_response_dict[key]
                     )
         elif isinstance(pruned_reask_json, list):
             for i, item in enumerate(pruned_reask_json):
-                if _is_reask_dict(item):
+                if isinstance(item, ReAsk):
                     corrected_value = reask_response_dict[i]
-                    update_response_by_path(merged_json, item["path"], corrected_value)
+                    update_response_by_path(merged_json, item.path, corrected_value)
                 else:
                     update_reasked_elements(
                         pruned_reask_json[i], reask_response_dict[i]
