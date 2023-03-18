@@ -1,11 +1,14 @@
+import json
 import logging
 from copy import deepcopy
+import pprint
 from types import SimpleNamespace
 from typing import Any, Dict, Optional
 
 from lxml import etree as ET
 
 from guardrails.datatypes import DataType
+from guardrails.datatypes import registry as types_registry
 from guardrails.validators import check_refrain_in_dict, filter_in_dict
 
 logger = logging.getLogger(__name__)
@@ -25,6 +28,24 @@ class Schema:
         self._schema = SimpleNamespace(**schema)
         self.parsed_rail = parsed_rail
 
+        if parsed_rail:
+            strict = False
+            if (
+                "strict" in parsed_rail.attrib
+                and parsed_rail.attrib["strict"] == "true"
+            ):
+                strict = True
+
+            for child in parsed_rail:
+                if isinstance(child, ET._Comment):
+                    continue
+                child_name = child.attrib["name"]
+                child_data = types_registry[child.tag].from_xml(child, strict=strict)
+                self[child_name] = child_data
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({pprint.pformat(vars(self._schema))})"
+
     def __getitem__(self, key: str) -> DataType:
         return getattr(self._schema, key)
 
@@ -42,7 +63,7 @@ class Schema:
 
     @classmethod
     def from_schema(cls, schema: "Schema") -> "Schema":
-        """Create an InputSchema from a Schema."""
+        """Create a `cls`Schema from a Schema."""
         return cls(schema.parsed_rail, schema._schema.__dict__)
 
     def validate(

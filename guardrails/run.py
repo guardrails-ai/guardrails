@@ -5,6 +5,7 @@ from typing import Callable, Dict, List, Optional, Tuple
 from eliot import start_action
 
 from guardrails.llm_providers import PromptCallable
+from guardrails.prompt import Prompt
 from guardrails.schema import InputSchema, OutputSchema
 from guardrails.utils.logs_utils import GuardHistory, GuardLogs
 from guardrails.utils.reask_utils import (
@@ -36,7 +37,7 @@ class Runner:
         guard_history: The guard history to use, defaults to an empty history.
     """
 
-    prompt: str
+    prompt: Prompt
     api: PromptCallable
     input_schema: InputSchema
     output_schema: OutputSchema
@@ -100,7 +101,7 @@ class Runner:
         self,
         index: int,
         api: Callable,
-        prompt: str,
+        prompt: Prompt,
         prompt_params: Dict,
         input_schema: InputSchema,
         output_schema: OutputSchema,
@@ -116,9 +117,10 @@ class Runner:
             output_schema=output_schema,
         ):
             # Prepare: run pre-processing, and input validation.
-            prompt = None
             if not output:
                 prompt = self.prepare(index, prompt, prompt_params, input_schema)
+            else:
+                prompt = None
 
             # Call: run the API, and convert to dict.
             output, output_as_dict = self.call(index, prompt, api, output)
@@ -137,10 +139,10 @@ class Runner:
     def prepare(
         self,
         index: int,
-        prompt: str,
+        prompt: Prompt,
         prompt_params: Dict,
         input_schema: InputSchema,
-    ):
+    ) -> str:
         """Prepare by running pre-processing and input validation."""
         with start_action(action_type="prepare", index=index) as action:
             if prompt_params is None:
@@ -148,8 +150,12 @@ class Runner:
 
             if input_schema:
                 validated_prompt_params = input_schema.validate(prompt_params)
+            else:
+                validated_prompt_params = prompt_params
 
-            prompt = self.prompt.format(**prompt_params)
+            print(index, "validated_prompt_params", validated_prompt_params)
+            if isinstance(prompt, Prompt):
+                prompt = prompt.format(**validated_prompt_params)
 
             action.log(
                 message_type="info",
@@ -260,4 +266,4 @@ class Runner:
             reasks=reasks,
             reask_json=prune_json_for_reasking(validated_output),
         )
-        return prompt, output_schema
+        return prompt, OutputSchema(output_schema)

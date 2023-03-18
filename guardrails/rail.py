@@ -5,7 +5,6 @@ from typing import Optional
 
 from lxml import etree as ET
 
-from guardrails.datatypes import registry as types_registry
 from guardrails.prompt import Prompt
 from guardrails.schema import InputSchema, OutputSchema, Schema
 from guardrails.utils.reask_utils import extract_prompt_from_xml
@@ -87,16 +86,6 @@ class Rail:
         """Given the RAIL <input> or <output> element, create a Schema
         object."""
         output = Schema(parsed_rail=root)
-        strict = False
-        if "strict" in root.attrib and root.attrib["strict"] == "true":
-            strict = True
-
-        for child in root:
-            if isinstance(child, ET._Comment):
-                continue
-            child_name = child.attrib["name"]
-            child_data = types_registry[child.tag].from_xml(child, strict=strict)
-            output[child_name] = child_data
 
         return output
 
@@ -132,4 +121,4 @@ class Rail:
         if language != "python":
             raise ValueError("Only python scripts are supported right now.")
 
-        exec(root.text, globals(), locals())
+        exec(root.text, globals())

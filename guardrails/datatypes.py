@@ -80,6 +80,9 @@ class DataType:
         self.validators = validators
         self._children = children
 
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({self._children})"
+
     @classmethod
     def from_str(cls, s: str) -> "DataType":
         """Create a DataType from a string."""

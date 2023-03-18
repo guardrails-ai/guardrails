@@ -20,6 +20,14 @@ class Prompt:
 
         self.source = source.format(output_schema=output_schema)
 
+    def __repr__(self) -> str:
+        # Truncate the prompt to 50 characters and add ellipsis if it's longer.
+        truncated_prompt = self.source[:50]
+        if len(self.source) > 50:
+            truncated_prompt += "..."
+        return f"Prompt({truncated_prompt})"
+
+
     def substitue_constants(self, text):
         """Substitute constants in the prompt."""
         # Substitute constants by reading the constants file.

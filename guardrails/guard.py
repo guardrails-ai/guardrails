@@ -137,21 +137,10 @@ class Guard:
             return guard_history.output, guard_history.validated_output
 
     def __repr__(self):
-        def _print_dict(d: Dict[str, Any], indent: int = 0) -> str:
-            """Print a dictionary in a nice way."""
-
-            s = ""
-            for k, v in d.items():
-                if isinstance(v, dict):
-                    s += f"{k}:\n{_print_dict(v, indent=indent + 1)}"
-                else:
-                    s += f"{' ' * (indent * 4)}{k}: {v}\n"
-
-            return s
-
-        schema = _print_dict(self.output_schema)
-
-        return f"Schema({schema})"
+        return f"Guard(RAIL={self.rail})"
+    
+    def __rich_repr__(self):
+        yield "RAIL", self.rail
 
     def parse(
         self,

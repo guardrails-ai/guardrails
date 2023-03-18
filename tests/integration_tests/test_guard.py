@@ -108,14 +108,12 @@ def test_entity_extraction_with_reask(mocker):
     assert guard_history[0].prompt == entity_extraction.COMPILED_PROMPT_REASK_1
     assert guard_history[0].output == entity_extraction.LLM_OUTPUT_REASK_1
     assert (
-        guard_history[0].validated_response
-        == entity_extraction.VALIDATED_OUTPUT_REASK_1
+        guard_history[0].validated_output == entity_extraction.VALIDATED_OUTPUT_REASK_1
     )
 
     # For re-asked prompt and output
     assert guard_history[1].prompt == entity_extraction.COMPILED_PROMPT_REASK_2
     assert guard_history[1].output == entity_extraction.LLM_OUTPUT_REASK_2
     assert (
-        guard_history[1].validated_response
-        == entity_extraction.VALIDATED_OUTPUT_REASK_2
+        guard_history[1].validated_output == entity_extraction.VALIDATED_OUTPUT_REASK_2
     )
