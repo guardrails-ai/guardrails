@@ -17,18 +17,6 @@ class ReAsk:
     path: List[Any] = None
 
 
-def _is_reask_dict(output: Dict) -> bool:
-    """Check if a dictionary is a ReAsk object."""
-    return (
-        isinstance(output, dict)
-        and len(output) == 4
-        and "incorrect_value" in output
-        and "error_message" in output
-        and "fix_value" in output
-        and "path" in output
-    )
-
-
 def gather_reasks(validated_output: Dict) -> List[ReAsk]:
     """Traverse output and gather all ReAsk objects.
 
@@ -158,7 +146,7 @@ def prune_json_for_reasking(json_object: Any) -> Union[None, Dict, List]:
         pruned_json = {}
         for key, value in json_object.items():
             if isinstance(value, ReAsk):
-                pruned_json[key] = value.__dict__
+                pruned_json[key] = value
             elif isinstance(value, dict):
                 pruned_output = prune_json_for_reasking(value)
                 if pruned_output is not None:
@@ -178,7 +166,7 @@ def prune_json_for_reasking(json_object: Any) -> Union[None, Dict, List]:
         return None
     else:
         if isinstance(json_object, ReAsk):
-            return json_object.__dict__
+            return json_object
         return None
 
 
@@ -235,7 +223,9 @@ def get_reask_prompt(
     )
 
     reask_prompt = reask_prompt_template.format(
-        previous_response=json.dumps(reask_json, indent=2),
+        previous_response=json.dumps(
+            reask_json, indent=2, default=lambda x: x.__dict__
+        ),
         output_schema=pruned_tree_string,
     )
 
