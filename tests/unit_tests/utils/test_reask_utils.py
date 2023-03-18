@@ -69,6 +69,7 @@ def test_gather_reasks():
                     "incorrect_value": -1,
                     "error_message": "Error Msg",
                     "fix_value": 1,
+                    "path": None,
                 }
             },
         ),
@@ -80,6 +81,7 @@ def test_gather_reasks():
                         "incorrect_value": -1,
                         "error_message": "Error Msg",
                         "fix_value": 2,
+                        "path": None,
                     }
                 }
             },
@@ -92,6 +94,7 @@ def test_gather_reasks():
                         "incorrect_value": -1,
                         "error_message": "Error Msg",
                         "fix_value": 3,
+                        "path": None,
                     }
                 ]
             },
@@ -105,6 +108,7 @@ def test_gather_reasks():
                             "incorrect_value": -1,
                             "error_message": "Error Msg",
                             "fix_value": 3,
+                            "path": None,
                         }
                     }
                 ]

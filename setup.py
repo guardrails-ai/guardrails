@@ -50,7 +50,8 @@ EXTRAS = {
         "pytest-cov>=2.10.1",
         "pre-commit>=2.9.3",
         "twine",
-        "pytest-mock", 
+        "pytest-mock",
+        "pypdfium2",
     ]
     + DOCS_REQUIREMENTS,
     "sql": ["sqlvalidator"],
