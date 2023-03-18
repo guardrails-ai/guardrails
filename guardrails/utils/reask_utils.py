@@ -2,7 +2,7 @@ import json
 from collections import defaultdict
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Union
 
 from lxml import etree as ET
 
@@ -15,6 +15,18 @@ class ReAsk:
     error_message: str
     fix_value: Any
     path: List[Any] = None
+
+
+def _is_reask_dict(output: Dict) -> bool:
+    """Check if a dictionary is a ReAsk object."""
+    return (
+        isinstance(output, dict)
+        and len(output) == 4
+        and "incorrect_value" in output
+        and "error_message" in output
+        and "fix_value" in output
+        and "path" in output
+    )
 
 
 def gather_reasks(validated_output: Dict) -> List[ReAsk]:
@@ -119,7 +131,7 @@ def get_pruned_tree(
     return root
 
 
-def prune_json_for_reasking(json_object: Any) -> Dict:
+def prune_json_for_reasking(json_object: Any) -> Union[None, Dict, List]:
     """Validated JSON is a nested dictionary where some keys may be ReAsk
     objects.
 
@@ -132,13 +144,6 @@ def prune_json_for_reasking(json_object: Any) -> Dict:
     Returns:
         The pruned validated JSON.
     """
-
-    def reask_to_dict(reask: ReAsk) -> Dict:
-        return {
-            "incorrect_value": reask.incorrect_value,
-            "error_message": reask.error_message,
-            "fix_value": reask.fix_value,
-        }
 
     if isinstance(json_object, list):
         pruned_list = []
@@ -153,7 +158,7 @@ def prune_json_for_reasking(json_object: Any) -> Dict:
         pruned_json = {}
         for key, value in json_object.items():
             if isinstance(value, ReAsk):
-                pruned_json[key] = reask_to_dict(value)
+                pruned_json[key] = value.__dict__
             elif isinstance(value, dict):
                 pruned_output = prune_json_for_reasking(value)
                 if pruned_output is not None:
@@ -173,7 +178,7 @@ def prune_json_for_reasking(json_object: Any) -> Dict:
         return None
     else:
         if isinstance(json_object, ReAsk):
-            return reask_to_dict(json_object)
+            return json_object.__dict__
         return None
 
 
