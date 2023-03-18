@@ -743,3 +743,31 @@ class IsHighQualityTranslation(Validator):
                 "",
             )
         return schema
+
+
+@register_validator(name="ends-with", data_type="list")
+class EndsWith(Validator):
+    """Validate that a list ends with a given value.
+
+    - Name for `format` attribute: `ends-with`
+    - Supported data types: `list`
+    - Programmatic fix: Append the given value to the list.
+    """
+
+    def __init__(self, end: str, on_fail: str = "fix"):
+        super().__init__(on_fail=on_fail)
+        self._end = end
+
+    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
+        logger.debug(f"Validating {value} ends with {self._end}...")
+
+        if not value[-1] == self._end:
+            raise EventDetail(
+                key,
+                value,
+                schema,
+                f"{value} must end with {self._end}",
+                value + [self._end],
+            )
+
+        return schema
