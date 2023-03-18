@@ -1,10 +1,10 @@
+import json
 from collections import defaultdict
 from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any, Dict, List, Tuple
 
 from lxml import etree as ET
-from rich.pretty import pretty_repr
 
 from guardrails.utils.constants import constants
 
@@ -15,9 +15,6 @@ class ReAsk:
     error_message: str
     fix_value: Any
     path: List[Any] = None
-
-    def __repr__(self) -> str:
-        return pretty_repr(self)
 
 
 def gather_reasks(validated_output: Dict) -> List[ReAsk]:
@@ -135,6 +132,14 @@ def prune_json_for_reasking(json_object: Any) -> Dict:
     Returns:
         The pruned validated JSON.
     """
+
+    def reask_to_dict(reask: ReAsk) -> Dict:
+        return {
+            "incorrect_value": reask.incorrect_value,
+            "error_message": reask.error_message,
+            "fix_value": reask.fix_value,
+        }
+
     if isinstance(json_object, list):
         pruned_list = []
         for item in json_object:
@@ -148,7 +153,7 @@ def prune_json_for_reasking(json_object: Any) -> Dict:
         pruned_json = {}
         for key, value in json_object.items():
             if isinstance(value, ReAsk):
-                pruned_json[key] = value
+                pruned_json[key] = reask_to_dict(value)
             elif isinstance(value, dict):
                 pruned_output = prune_json_for_reasking(value)
                 if pruned_output is not None:
@@ -168,7 +173,7 @@ def prune_json_for_reasking(json_object: Any) -> Dict:
         return None
     else:
         if isinstance(json_object, ReAsk):
-            return json_object
+            return reask_to_dict(json_object)
         return None
 
 
@@ -225,7 +230,7 @@ def get_reask_prompt(
     )
 
     reask_prompt = reask_prompt_template.format(
-        previous_response=pretty_repr(reask_json),
+        previous_response=json.dumps(reask_json, indent=2),
         output_schema=pruned_tree_string,
     )
 
