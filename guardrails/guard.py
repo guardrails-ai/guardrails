@@ -1,17 +1,15 @@
 import json
 import logging
-from copy import deepcopy
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, Optional, Tuple
 
 from eliot import start_action, to_file
 
 import guardrails.utils.reask_utils as reask_utils
 from guardrails.llm_providers import get_llm_ask
-from guardrails.output_schema import OutputSchema
 from guardrails.prompt import Prompt
+from guardrails.rail import Rail
+from guardrails.schema import InputSchema, OutputSchema
 from guardrails.utils.logs_utils import GuardHistory, GuardLogs, GuardState
-from guardrails.utils.rail_utils import read_rail
-from guardrails.validators import check_refrain_in_dict, filter_in_dict
 
 logger = logging.getLogger(__name__)
 to_file(open("guardrails.log", "w"))
@@ -30,22 +28,59 @@ class Guard:
 
     def __init__(
         self,
-        schema: OutputSchema,
-        base_prompt: Prompt,
+        rail: Rail,
         num_reasks: int = 1,
     ):
-        self.output_schema = schema
+        """Initialize the Guard."""
+        self.rail = rail
         self.num_reasks = num_reasks
         self.guard_state = GuardState([])
 
-        # raw_prompt is an instance of the Prompt class.
-        self.raw_prompt = base_prompt
-        # base_prompt is a string, and contains output schema instructions.
-        self.base_prompt = base_prompt.source
+    @property
+    def input_schema(self) -> InputSchema:
+        """Return the input schema."""
+        return self.rail.input_schema
+
+    @property
+    def output_schema(self) -> OutputSchema:
+        """Return the output schema."""
+        return self.rail.output_schema
+
+    @property
+    def prompt(self) -> Prompt:
+        """Return the prompt."""
+        return self.rail.prompt
+
+    @property
+    def raw_prompt(self) -> Prompt:
+        """Return the prompt, alias for `prompt`."""
+        return self.prompt
+
+    @property
+    def base_prompt(self) -> str:
+        """Return the base prompt i.e. prompt.source."""
+        return self.prompt.source
+
+    @property
+    def script(self) -> Optional[Dict]:
+        """Return the script."""
+        return self.rail.script
+
+    @property
+    def state(self) -> GuardState:
+        """Return the state."""
+        return self.guard_state
+
+    def configure(
+        self,
+        num_reasks: int = 1,
+    ):
+        """Configure the Guard."""
+        self.num_reasks = num_reasks
 
     @classmethod
     def from_rail(cls, rail_file: str, num_reasks: int = 1) -> "Guard":
-        """Create an Schema from an `.rail` file.
+        """Create a Schema from a `.rail` file.
 
         Args:
             rail_file: The path to the `.rail` file.
@@ -54,12 +89,11 @@ class Guard:
         Returns:
             An instance of the `Guard` class.
         """
-        output_schema, base_prompt, _ = read_rail(rail_file=rail_file)
-        return cls(output_schema, base_prompt, num_reasks=num_reasks)
+        return cls(Rail.from_file(rail_file), num_reasks=num_reasks)
 
     @classmethod
     def from_rail_string(cls, rail_string: str, num_reasks: int = 1) -> "Guard":
-        """Create an Schema from an `.rail` string.
+        """Create a Schema from a `.rail` string.
 
         Args:
             rail_string: The `.rail` string.
@@ -68,8 +102,7 @@ class Guard:
         Returns:
             An instance of the `Guard` class.
         """
-        output_schema, base_prompt, _ = read_rail(rail_string=rail_string)
-        return cls(output_schema, base_prompt, num_reasks=num_reasks)
+        return cls(Rail.from_string(rail_string), num_reasks=num_reasks)
 
     def __call__(
         self,
@@ -92,24 +125,27 @@ class Guard:
             The raw text output from the LLM and the validated output.
         """
         with start_action(action_type="guard_call", prompt_params=prompt_params):
-            prompt = self.base_prompt
             if prompt_params is None:
                 prompt_params = {}
-            prompt = self.base_prompt.format(**prompt_params)
+            prompt = self.prompt.format(**prompt_params)
             llm_ask = get_llm_ask(llm_api, *args, **kwargs)
 
             return self.ask_with_validation(prompt, llm_ask, num_reasks)
 
     def ask_with_validation(
-        self, prompt: str, llm_ask: Callable, num_reasks: Optional[int]
+        self,
+        prompt: str,
+        llm_ask: Callable,
+        num_reasks: Optional[int],
     ) -> Tuple[str, Dict]:
         """Ask a question, and validate the output."""
         with start_action(action_type="ask_with_validation", prompt=prompt):
             guard_history = self.validation_inner_loop(
-                prompt=prompt,
-                llm_ask=llm_ask,
                 reask_ctr=0,
+                input_schema=self.input_schema,
                 output_schema=self.output_schema,
+                llm_ask=llm_ask,
+                prompt=prompt,
                 num_reasks=num_reasks,
             )
 
@@ -121,6 +157,7 @@ class Guard:
     def validation_inner_loop(
         self,
         reask_ctr: int,
+        input_schema: InputSchema,
         output_schema: OutputSchema,
         llm_ask: Optional[Callable] = None,
         prompt: Optional[str] = None,
@@ -132,11 +169,13 @@ class Guard:
 
         Args:
             reask_ctr: The number of times the LLM has been reasked.
+            input_schema: The input schema to validate against.
             output_schema: The output schema to validate against.
             llm_ask: The LLM API wrapper to call (e.g. wrapper openai.Completion.create)
             prompt: The prompt to send to the LLM. This or llm_output must be set.
             llm_output: The raw output from the LLM. This or prompt must be provided.
             guard_history: The history of the guard calls.
+            num_reasks: The max times to re-ask the LLM for invalid output.
 
         Returns:
             The raw output from the LLM, the output as a dict, and the
@@ -157,7 +196,8 @@ class Guard:
             assert prompt is None
 
         with start_action(
-            action_type="validation_inner_loop", reask_ctr=reask_ctr
+            action_type="validation_inner_loop",
+            reask_ctr=reask_ctr,
         ) as action:
             if llm_output is None:
                 llm_output = llm_ask(prompt)
@@ -166,9 +206,8 @@ class Guard:
             try:
                 output_as_dict = json.loads(llm_output)
                 action.log(message_type="info", output_as_dict=output_as_dict)
-                validated_response, reasks = self.validate_output(
-                    output_as_dict, output_schema
-                )
+                validated_response = output_schema.validate(output_as_dict)
+                reasks = reask_utils.gather_reasks(validated_response)
             except json.decoder.JSONDecodeError:
                 validated_response = None
                 output_as_dict = None
@@ -206,6 +245,7 @@ class Guard:
                     prompt=reask_prompt,
                     llm_ask=llm_ask,
                     reask_ctr=reask_ctr + 1,
+                    input_schema=None,
                     output_schema=reask_schema,
                     guard_history=guard_history,
                     num_reasks=num_reasks,
@@ -214,41 +254,6 @@ class Guard:
             self.guard_state = self.guard_state.push(guard_history)
 
             return guard_history
-
-    def validate_output(
-        self, output: Dict[str, Any], schema: OutputSchema
-    ) -> Tuple[Dict[str, Any], List[reask_utils.ReAsk]]:
-        """Validate a output against the schema.
-
-        Args:
-            output: The output to validate.
-
-        Returns:
-            Tuple, where the first element is the validated output, and the
-            second element is a list of tuples, where each tuple contains the
-            path to the reasked element, and the ReAsk object.
-        """
-
-        validated_response = deepcopy(output)
-
-        for field, value in validated_response.items():
-            if field not in schema:
-                logger.debug(f"Field {field} not in schema.")
-                continue
-
-            validated_response = schema[field].validate(
-                field, value, validated_response
-            )
-
-        if check_refrain_in_dict(validated_response):
-            logger.debug("Refrain detected.")
-            validated_response = {}
-
-        validated_response = filter_in_dict(validated_response)
-
-        reasks = reask_utils.gather_reasks(validated_response)
-
-        return (validated_response, reasks)
 
     def __repr__(self):
         def _print_dict(d: Dict[str, Any], indent: int = 0) -> str:
@@ -292,6 +297,7 @@ class Guard:
 
         guard_history = self.validation_inner_loop(
             reask_ctr=0,
+            input_schema=self.input_schema,
             output_schema=self.output_schema,
             llm_ask=llm_ask,
             llm_output=llm_output,
