@@ -1,7 +1,8 @@
 """Rail class."""
 from copy import deepcopy
-from dataclasses import dataclass
-from typing import Optional
+from dataclasses import dataclass, field
+import re
+from typing import List, Optional
 
 from lxml import etree as ET
 
@@ -10,6 +11,71 @@ from guardrails.schema import InputSchema, OutputSchema, Schema
 from guardrails.utils.reask_utils import extract_prompt_from_xml
 
 XMLPARSER = ET.XMLParser(encoding="utf-8")
+
+
+@dataclass
+class Script:
+
+    variables: dict = field(default_factory=dict)
+    language: str = "python"
+
+    @classmethod
+    def from_xml(cls, root: ET._Element) -> "Script":
+        if "language" not in root.attrib:
+            raise ValueError("Script element must have a language attribute.")
+
+        language = root.attrib["language"]
+        if language != "python":
+            raise ValueError("Only python scripts are supported right now.")
+
+        # Run the script in the global namespace, returning the additional
+        # globals that were created.
+        keys = set(globals().keys())
+        exec(root.text, globals())
+        new_keys = globals().keys()
+        variables = {k: globals()[k] for k in new_keys if k not in keys}
+        return cls(variables, language)
+
+    @staticmethod
+    def find_expressions(body) -> List[str]:
+        """Get all expressions, written as {...} in a string body."""
+        expressions = []
+        stack = []
+        start = -1
+
+        for i, char in enumerate(body):
+            if char == "{":
+                if not stack:
+                    start = i
+                stack.append(char)
+            elif char == "}":
+                if stack and stack[-1] == "{":
+                    stack.pop()
+                    if not stack:
+                        expressions.append(body[start + 1 : i])
+                else:
+                    stack.append(char)
+        return expressions
+
+    def replace_expressions(self, body: str) -> str:
+        """Replace all expressions in a string body with their evaluated values."""
+        # Decode the body if it's a bytes object.
+        if isinstance(body, bytes):
+            body = body.decode("utf-8")
+        for expr in self.find_expressions(body):
+            # The replacement should be inserted as a Python expression, inside
+            # curly braces.
+            replacement = self(expr)
+            # If a string, wrap it in '' quotes.
+            if isinstance(replacement, str):
+                replacement = f"'{replacement}'"
+            body = body.replace(f"{{{expr}}}", f"{{{replacement}}}")
+
+        return body
+
+    def __call__(self, expr: str):
+        """Eval expression in the script's namespace."""
+        return eval(expr, {**globals(), **self.variables})
 
 
 @dataclass
@@ -29,6 +95,7 @@ class Rail:
     input_schema: Optional[InputSchema] = (None,)
     output_schema: Optional[OutputSchema] = (None,)
     prompt: Optional[Prompt] = (None,)
+    script: Optional[Script] = (None,)
     version: Optional[str] = ("0.1",)
 
     @classmethod
@@ -50,9 +117,11 @@ class Rail:
             )
 
         # Execute the script before validating the rest of the RAIL file.
-        script = xml.find("script")
-        if script is not None:
-            cls.load_script(script)
+        raw_script = xml.find("script")
+        if raw_script is not None:
+            script = cls.load_script(raw_script)
+        else:
+            script = Script()
 
         # Load <input /> schema
         raw_input_schema = xml.find("input")
@@ -66,6 +135,9 @@ class Rail:
         raw_output_schema = xml.find("output")
         if raw_output_schema is None:
             raise ValueError("RAIL file must contain a output-schema element.")
+        # Replace all expressions in the <output /> schema.
+        raw_output_schema = script.replace_expressions(ET.tostring(raw_output_schema))
+        raw_output_schema = ET.fromstring(raw_output_schema, parser=XMLPARSER)
         output_schema = cls.load_output_schema(raw_output_schema)
 
         # Load <prompt />
@@ -78,6 +150,7 @@ class Rail:
             input_schema=input_schema,
             output_schema=output_schema,
             prompt=prompt,
+            script=script,
             version=xml.attrib["version"],
         )
 
@@ -85,40 +158,29 @@ class Rail:
     def load_schema(root: ET._Element) -> Schema:
         """Given the RAIL <input> or <output> element, create a Schema
         object."""
-        output = Schema(parsed_rail=root)
-
-        return output
+        return Schema(root)
 
     @staticmethod
     def load_input_schema(root: ET._Element) -> InputSchema:
         """Given the RAIL <input> element, create a Schema object."""
         # Recast the schema as an InputSchema.
-        return InputSchema.from_schema(Rail.load_schema(root))
+        return InputSchema(root)
 
     @staticmethod
     def load_output_schema(root: ET._Element) -> OutputSchema:
         """Given the RAIL <output> element, create a Schema object."""
         # Recast the schema as an OutputSchema.
-        return OutputSchema.from_schema(Rail.load_schema(root))
+        return OutputSchema(root)
 
     @staticmethod
     def load_prompt(root: ET._Element, output_schema: OutputSchema) -> Prompt:
         """Given the RAIL <prompt> element, create a Prompt object."""
-        text = root.text
-        output_schema_prompt = extract_prompt_from_xml(
-            deepcopy(output_schema.parsed_rail)
+        return Prompt(
+            source=root.text,
+            output_schema=extract_prompt_from_xml(deepcopy(output_schema.root)),
         )
 
-        return Prompt(text, output_schema=output_schema_prompt)
-
     @staticmethod
-    def load_script(root: ET._Element) -> None:
+    def load_script(root: ET._Element) -> Script:
         """Given the RAIL <script> element, load and execute the script."""
-        if "language" not in root.attrib:
-            raise ValueError("Script element must have a language attribute.")
-
-        language = root.attrib["language"]
-        if language != "python":
-            raise ValueError("Only python scripts are supported right now.")
-
-        exec(root.text, globals())
+        return Script.from_xml(root)

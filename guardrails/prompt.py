@@ -14,7 +14,7 @@ class Prompt:
         format_instructions_start_idx = self.get_format_instructions_idx(source)
 
         # Substitute constants in the prompt.
-        source = self.substitue_constants(source)
+        source = self.substitute_constants(source)
         # Format instructions contain info for how to format LLM output.
         self.format_instructions = source[format_instructions_start_idx:]
 
@@ -28,7 +28,7 @@ class Prompt:
         return f"Prompt({truncated_prompt})"
 
 
-    def substitue_constants(self, text):
+    def substitute_constants(self, text):
         """Substitute constants in the prompt."""
         # Substitute constants by reading the constants file.
         # Regex to extract all occurrences of @<constant_name>

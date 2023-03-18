@@ -1,78 +1,8 @@
 import datetime
-import warnings
 from types import SimpleNamespace
 from typing import Any, Dict, List, Union
 
 from lxml import etree as ET
-
-
-def get_validators(
-    element: ET._Element, strict: bool = False
-) -> List["Validator"]:  # noqa: F821
-    """Get the formatters for an element.
-
-    Args:
-        element: The XML element.
-        strict: If True, raise an error if the element is not registered.
-
-    Returns:
-        A list of formatters.
-    """
-
-    from guardrails.validators import types_to_validators, validators_registry
-
-    if "format" not in element.attrib:
-        return []
-
-    provided_formatters = element.attrib["format"].split(";")
-    registered_formatters = types_to_validators[element.tag]
-
-    valid_formatters = []
-
-    for formatter in provided_formatters:
-        # Check if the formatter has any arguments.
-
-        formatter = formatter.strip()
-
-        args = []
-        formatter_with_args = formatter.split(":")
-        if len(formatter_with_args) > 1:
-            assert (
-                len(formatter_with_args) == 2
-            ), f"Formatter {formatter} has too many arguments."
-            formatter, args = formatter_with_args
-            formatter = formatter.strip()
-            args = [x.strip() for x in args.strip().split(" ")]
-
-            for i, arg in enumerate(args):
-                # Arg enclosed in curly braces is a python expression.
-                if arg[0] == "{" and arg[-1] == "}":
-                    args[i] = eval(arg[1:-1])
-
-        if formatter not in registered_formatters:
-            if strict:
-                raise ValueError(
-                    f"Formatter {formatter} is not valid for element {element.tag}."
-                )
-            else:
-                warnings.warn(
-                    f"Formatter {formatter} is not valid for element {element.tag}."
-                )
-            continue
-
-        # See if the formatter has an associated on_fail method.
-        on_fail = None
-        on_fail_attr_name = f"on-fail-{formatter}"
-        if on_fail_attr_name in element.attrib:
-            on_fail = element.attrib[on_fail_attr_name]
-            # TODO(shreya): Load the on_fail method.
-            # This method should be loaded from an optional script given at the
-            # beginning of a gxml file.
-
-        formatter = validators_registry[formatter]
-        valid_formatters.append(formatter(*args, on_fail=on_fail))
-
-    return valid_formatters
 
 
 class DataType:
@@ -97,9 +27,11 @@ class DataType:
 
     @classmethod
     def from_xml(cls, element: ET._Element, strict: bool = False) -> "DataType":
+        from guardrails.schema import FormatAttr
+        
         data_type = cls([], {})
         data_type.set_children(element)
-        data_type.validators = get_validators(element, strict=strict)
+        data_type.validators = FormatAttr.from_element(element).get_validators(strict)
         return data_type
 
     @property

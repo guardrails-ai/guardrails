@@ -262,7 +262,7 @@ class Runner:
     ) -> Tuple[str, OutputSchema]:
         """Prepare to loop again."""
         prompt, output_schema = get_reask_prompt(
-            parsed_rail=output_schema.parsed_rail,
+            parsed_rail=output_schema.root,
             reasks=reasks,
             reask_json=prune_json_for_reasking(validated_output),
         )

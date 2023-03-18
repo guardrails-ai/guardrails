@@ -26,7 +26,7 @@ class PromptCallable:
         except Exception as e:
             raise PromptCallableException(
                 "The callable `fn` passed to `Guard(fn, ...)` failed"
-                f" with the following error: {e}. "
+                f" with the following error: `{e}`. "
                 "Make sure that `fn` can be called as a function that"
                 " takes in a single prompt string "
                 "and returns a string."
