@@ -1,9 +1,40 @@
 import datetime
+import re
 import warnings
 from types import SimpleNamespace
 from typing import Any, Dict, List, Union
 
 from lxml import etree as ET
+
+
+def get_args(input_string: str) -> List[Any]:
+    """Get the arguments for a formatter.
+
+    Args:
+        args: The arguments string.
+
+    Returns:
+        A list of arguments.
+    """
+    pattern = re.compile(r"\s+(?=([^{}]*{[^{}]*})*[^{}]*$)")
+    tokens = re.split(pattern, input_string)
+    tokens = list(filter(None, tokens))
+
+    args = []
+    for token in tokens:
+        # If the token is enclosed in curly braces, it is a python expression.
+        if token[0] == "{" and token[-1] == "}":
+            token = token[1:-1]
+            try:
+                token = eval(token)
+            except (ValueError, SyntaxError) as e:
+                raise ValueError(
+                    f"Python expression {token} is not valid, "
+                    f"and raised the error: {e}."
+                )
+        args.append(token)
+
+    return args
 
 
 def get_validators(
@@ -35,19 +66,11 @@ def get_validators(
         formatter = formatter.strip()
 
         args = []
-        formatter_with_args = formatter.split(":")
+        formatter_with_args = formatter.split(":", 1)
         if len(formatter_with_args) > 1:
-            assert (
-                len(formatter_with_args) == 2
-            ), f"Formatter {formatter} has too many arguments."
             formatter, args = formatter_with_args
             formatter = formatter.strip()
-            args = [x.strip() for x in args.strip().split(" ")]
-
-            for i, arg in enumerate(args):
-                # Arg enclosed in curly braces is a python expression.
-                if arg[0] == "{" and arg[-1] == "}":
-                    args[i] = eval(arg[1:-1])
+            args = get_args(args)
 
         if formatter not in registered_formatters:
             if strict:
@@ -67,7 +90,7 @@ def get_validators(
             on_fail = element.attrib[on_fail_attr_name]
             # TODO(shreya): Load the on_fail method.
             # This method should be loaded from an optional script given at the
-            # beginning of a gxml file.
+            # beginning of a rail file.
 
         formatter = validators_registry[formatter]
         valid_formatters.append(formatter(*args, on_fail=on_fail))
