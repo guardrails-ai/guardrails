@@ -61,7 +61,7 @@ def read_pdf(path) -> str:
     for i in range(len(pdf)):
         page = pdf.get_page(i)
         textpage = page.get_textpage()
-        content += textpage.get_text()
+        content += textpage.get_text_range()
         content += "\n"
         [g.close() for g in (textpage, page)]
     pdf.close()
