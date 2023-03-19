@@ -1,6 +1,5 @@
-import pytest
-
 import openai
+import pytest
 
 import guardrails as gd
 
@@ -206,9 +205,7 @@ def test_entity_extraction_with_fix(mocker):
     # For orginal prompt and output
     assert guard_history[0].prompt == entity_extraction.COMPILED_PROMPT
     assert guard_history[0].output == entity_extraction.LLM_OUTPUT
-    assert (
-        guard_history[0].validated_response == entity_extraction.VALIDATED_OUTPUT_FIX
-    )
+    assert guard_history[0].validated_response == entity_extraction.VALIDATED_OUTPUT_FIX
 
 
 def test_entity_extraction_with_refrain(mocker):
@@ -237,5 +234,6 @@ def test_entity_extraction_with_refrain(mocker):
     assert guard_history[0].prompt == entity_extraction.COMPILED_PROMPT
     assert guard_history[0].output == entity_extraction.LLM_OUTPUT
     assert (
-        guard_history[0].validated_response == entity_extraction.VALIDATED_OUTPUT_REFRAIN
+        guard_history[0].validated_response
+        == entity_extraction.VALIDATED_OUTPUT_REFRAIN
     )
