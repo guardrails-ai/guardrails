@@ -1,0 +1,10 @@
+{
+  "fees": [
+    {
+      "name": "my chase"
+    },
+    {
+      "name": "over-the-credit-limit"
+    }
+  ]
+}

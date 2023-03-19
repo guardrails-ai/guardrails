@@ -57,10 +57,11 @@ class FormatAttr:
     def tokens(self) -> List[str]:
         """Split the format attribute into tokens.
 
-        For example, the format attribute "valid-url; is-reachable" will be split
-        into ["valid-url", "is-reachable"]. The semicolon is used as a delimiter,
-        but not if it is inside curly braces, because the format string
-        can contain Python expressions that contain semicolons.
+        For example, the format attribute "valid-url; is-reachable" will
+        be split into ["valid-url", "is-reachable"]. The semicolon is
+        used as a delimiter, but not if it is inside curly braces,
+        because the format string can contain Python expressions that
+        contain semicolons.
         """
         if self.format is None:
             return []
@@ -134,8 +135,11 @@ class FormatAttr:
 
     @property
     def validators(self) -> List[Validator]:
-        """Get the list of validators from the format attribute. Only the
-        validators that are registered for this element will be returned."""
+        """Get the list of validators from the format attribute.
+
+        Only the validators that are registered for this element will be
+        returned.
+        """
         try:
             return getattr(self, "_validators")
         except AttributeError:
@@ -201,8 +205,9 @@ class FormatAttr:
         in prompting. Uses the validators' to_prompt method in order to
         construct the string to use in prompting.
 
-        For example, the format string "valid-url; other-validator: 1.0 {1 + 2}"
-        will be converted to "valid-url other-validator: arg1=1.0 arg2=3".
+        For example, the format string "valid-url; other-validator: 1.0
+        {1 + 2}" will be converted to "valid-url other-validator:
+        arg1=1.0 arg2=3".
         """
         if self.format is None:
             return ""
@@ -311,9 +316,8 @@ class Schema:
         return validated_response
 
     def transpile(self, method: str = "default") -> str:
-        """
-        Convert the XML schema to a string that is used for prompting
-        a large language model.
+        """Convert the XML schema to a string that is used for prompting a
+        large language model.
 
         Returns:
             The prompt.
@@ -331,11 +335,11 @@ class OutputSchema(Schema):
 
 
 class Schema2Prompt:
-    """Class that contains transpilers to go from a
-    schema to its representation in a prompt.
+    """Class that contains transpilers to go from a schema to its
+    representation in a prompt.
 
-    This is important for communicating the schema to a large language model,
-    and this class will provide multiple alternatives to do so.
+    This is important for communicating the schema to a large language
+    model, and this class will provide multiple alternatives to do so.
     """
 
     @staticmethod
@@ -359,7 +363,8 @@ class Schema2Prompt:
 
     @staticmethod
     def remove_validator_arguments(element: ET._Element) -> None:
-        """Recursively remove all validator arguments in the `format` attribute."""
+        """Recursively remove all validator arguments in the `format`
+        attribute."""
         # Get the `format` attribute.
         format = FormatAttr.from_element(element)
 

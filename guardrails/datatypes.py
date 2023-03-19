@@ -28,7 +28,7 @@ class DataType:
     @classmethod
     def from_xml(cls, element: ET._Element, strict: bool = False) -> "DataType":
         from guardrails.schema import FormatAttr
-        
+
         data_type = cls([], {})
         data_type.set_children(element)
         data_type.validators = FormatAttr.from_element(element).get_validators(strict)

@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Callable, Dict, Optional, Tuple
+from typing import Callable, Dict, Optional, Tuple
 
 from eliot import start_action, to_file
 
@@ -138,7 +138,7 @@ class Guard:
 
     def __repr__(self):
         return f"Guard(RAIL={self.rail})"
-    
+
     def __rich_repr__(self):
         yield "RAIL", self.rail
 

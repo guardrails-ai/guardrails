@@ -1,7 +1,6 @@
 """Rail class."""
 from copy import deepcopy
 from dataclasses import dataclass, field
-import re
 from typing import List, Optional
 
 from lxml import etree as ET
@@ -15,7 +14,6 @@ XMLPARSER = ET.XMLParser(encoding="utf-8")
 
 @dataclass
 class Script:
-
     variables: dict = field(default_factory=dict)
     language: str = "python"
 
@@ -58,7 +56,8 @@ class Script:
         return expressions
 
     def replace_expressions(self, body: str) -> str:
-        """Replace all expressions in a string body with their evaluated values."""
+        """Replace all expressions in a string body with their evaluated
+        values."""
         # Decode the body if it's a bytes object.
         if isinstance(body, bytes):
             body = body.decode("utf-8")

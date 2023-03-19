@@ -65,4 +65,4 @@ def read_pdf(path) -> str:
         content += "\n"
         [g.close() for g in (textpage, page)]
     pdf.close()
-    return content
+    return content.replace("\r", "")

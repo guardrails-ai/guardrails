@@ -3,7 +3,7 @@ import pytest
 
 import guardrails as gd
 
-from .mock_llm_outputs import entity_extraction, openai_Completion_create
+from .mock_llm_outputs import entity_extraction, openai_completion_create
 
 
 @pytest.fixture(scope="module")
@@ -84,7 +84,7 @@ def test_rail_spec_output_parse(rail_spec, llm_output, validated_output):
 def test_entity_extraction_with_reask(mocker):
     """Test that the entity extraction works with re-asking."""
     mocker.patch(
-        "guardrails.llm_providers.openai_wrapper", new=openai_Completion_create
+        "guardrails.llm_providers.openai_wrapper", new=openai_completion_create
     )
 
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
@@ -121,7 +121,7 @@ def test_entity_extraction_with_reask(mocker):
 def test_entity_extraction_with_noop(mocker):
     """Test that the entity extraction works with re-asking."""
     mocker.patch(
-        "guardrails.llm_providers.openai_wrapper", new=openai_Completion_create
+        "guardrails.llm_providers.openai_wrapper", new=openai_completion_create
     )
 
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
@@ -143,15 +143,13 @@ def test_entity_extraction_with_noop(mocker):
     # For orginal prompt and output
     assert guard_history[0].prompt == entity_extraction.COMPILED_PROMPT
     assert guard_history[0].output == entity_extraction.LLM_OUTPUT
-    assert (
-        guard_history[0].validated_response == entity_extraction.VALIDATED_OUTPUT_NOOP
-    )
+    assert guard_history[0].validated_output == entity_extraction.VALIDATED_OUTPUT_NOOP
 
 
 def test_entity_extraction_with_filter(mocker):
     """Test that the entity extraction works with re-asking."""
     mocker.patch(
-        "guardrails.llm_providers.openai_wrapper", new=openai_Completion_create
+        "guardrails.llm_providers.openai_wrapper", new=openai_completion_create
     )
 
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
@@ -174,14 +172,14 @@ def test_entity_extraction_with_filter(mocker):
     assert guard_history[0].prompt == entity_extraction.COMPILED_PROMPT
     assert guard_history[0].output == entity_extraction.LLM_OUTPUT
     assert (
-        guard_history[0].validated_response == entity_extraction.VALIDATED_OUTPUT_FILTER
+        guard_history[0].validated_output == entity_extraction.VALIDATED_OUTPUT_FILTER
     )
 
 
 def test_entity_extraction_with_fix(mocker):
     """Test that the entity extraction works with re-asking."""
     mocker.patch(
-        "guardrails.llm_providers.openai_wrapper", new=openai_Completion_create
+        "guardrails.llm_providers.openai_wrapper", new=openai_completion_create
     )
 
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
@@ -203,13 +201,13 @@ def test_entity_extraction_with_fix(mocker):
     # For orginal prompt and output
     assert guard_history[0].prompt == entity_extraction.COMPILED_PROMPT
     assert guard_history[0].output == entity_extraction.LLM_OUTPUT
-    assert guard_history[0].validated_response == entity_extraction.VALIDATED_OUTPUT_FIX
+    assert guard_history[0].validated_output == entity_extraction.VALIDATED_OUTPUT_FIX
 
 
 def test_entity_extraction_with_refrain(mocker):
     """Test that the entity extraction works with re-asking."""
     mocker.patch(
-        "guardrails.llm_providers.openai_wrapper", new=openai_Completion_create
+        "guardrails.llm_providers.openai_wrapper", new=openai_completion_create
     )
 
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
@@ -232,6 +230,5 @@ def test_entity_extraction_with_refrain(mocker):
     assert guard_history[0].prompt == entity_extraction.COMPILED_PROMPT
     assert guard_history[0].output == entity_extraction.LLM_OUTPUT
     assert (
-        guard_history[0].validated_response
-        == entity_extraction.VALIDATED_OUTPUT_REFRAIN
+        guard_history[0].validated_output == entity_extraction.VALIDATED_OUTPUT_REFRAIN
     )

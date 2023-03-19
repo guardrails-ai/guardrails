@@ -27,7 +27,6 @@ class Prompt:
             truncated_prompt += "..."
         return f"Prompt({truncated_prompt})"
 
-
     def substitute_constants(self, text):
         """Substitute constants in the prompt."""
         # Substitute constants by reading the constants file.
