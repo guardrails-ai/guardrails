@@ -672,6 +672,9 @@ class SimilarToDocument(Validator):
 
         return schema
 
+    def to_prompt(self, with_keywords: bool = True) -> str:
+        return ""
+
 
 @register_validator(name="is-profanity-free", data_type="string")
 class IsProfanityFree(Validator):

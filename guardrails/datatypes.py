@@ -1,17 +1,42 @@
 import datetime
 from types import SimpleNamespace
-from typing import Any, Dict, List, Union
+from typing import TYPE_CHECKING, Any, Dict, Generator, List, Tuple, Union
 
 from lxml import etree as ET
 
+if TYPE_CHECKING:
+    from guardrails.schema import FormatAttr
+
 
 class DataType:
-    def __init__(self, validators: List, children: Dict[str, Any]) -> None:
-        self.validators = validators
+    def __init__(
+        self,
+        children: Dict[str, Any],
+        format_attr: "FormatAttr",
+        element: ET._Element,
+    ) -> None:
         self._children = children
+        self.format_attr = format_attr
+        self.element = element
+
+    @property
+    def validators(self) -> List:
+        return self.format_attr.validators
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self._children})"
+
+    def __iter__(self) -> Generator[Tuple[str, "DataType", ET._Element], None, None]:
+        """Return a tuple of (name, child_data_type, child_element) for each
+        child."""
+        for el_child in self.element:
+            if "name" in el_child.attrib:
+                name: str = el_child.attrib["name"]
+                child_data_type: DataType = self._children[name]
+                yield name, child_data_type, el_child
+            else:
+                assert len(self._children) == 1, "Must have exactly one child."
+                yield None, list(self._children.values())[0], el_child
 
     @classmethod
     def from_str(cls, s: str) -> "DataType":
@@ -29,13 +54,19 @@ class DataType:
     def from_xml(cls, element: ET._Element, strict: bool = False) -> "DataType":
         from guardrails.schema import FormatAttr
 
-        data_type = cls([], {})
+        # TODO: don't want to pass strict through to DataType,
+        # but need to pass it to FormatAttr.from_element
+        # how to handle this?
+        format_attr = FormatAttr.from_element(element)
+        format_attr.get_validators(strict)
+
+        data_type = cls({}, format_attr, element)
         data_type.set_children(element)
-        data_type.validators = FormatAttr.from_element(element).get_validators(strict)
         return data_type
 
     @property
     def children(self) -> SimpleNamespace:
+        """Return a SimpleNamespace of the children of this DataType."""
         return SimpleNamespace(**self._children)
 
 

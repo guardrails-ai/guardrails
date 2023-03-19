@@ -14,6 +14,7 @@ from guardrails.utils.reask_utils import (
     get_reask_prompt,
     prune_json_for_reasking,
     reask_json_as_dict,
+    sub_reasks_with_fixed_values,
 )
 
 
@@ -131,6 +132,10 @@ class Runner:
             # Introspect: inspect validated output for reasks.
             reasks = self.introspect(index, validated_output)
 
+            # Replace reask values with fixed values if terminal step.
+            if not self.do_loop(index, reasks):
+                validated_output = sub_reasks_with_fixed_values(validated_output)
+
             # Log: step information.
             self.log(prompt, output, output_as_dict, validated_output, reasks)
 
@@ -153,7 +158,6 @@ class Runner:
             else:
                 validated_prompt_params = prompt_params
 
-            print(index, "validated_prompt_params", validated_prompt_params)
             if isinstance(prompt, Prompt):
                 prompt = prompt.format(**validated_prompt_params)
 

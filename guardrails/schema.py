@@ -259,17 +259,19 @@ class Schema:
     def __contains__(self, key: str) -> bool:
         return hasattr(self._schema, key)
 
+    def __getstate__(self) -> Dict[str, Any]:
+        return {"_schema": self._schema, "root": self.root}
+
+    def __setstate__(self, state: Dict[str, Any]) -> None:
+        self._schema = state["_schema"]
+        self.root = state["root"]
+
     def items(self) -> Dict[str, DataType]:
         return vars(self._schema).items()
 
     @property
     def parsed_rail(self) -> Optional[ET._Element]:
         return self.root
-
-    @classmethod
-    def from_schema(cls, schema: "Schema") -> "Schema":
-        """Create a `cls`Schema from a Schema."""
-        return cls(schema.root, schema._schema.__dict__)
 
     def validate(
         self,
@@ -362,17 +364,20 @@ class Schema2Prompt:
                 Schema2Prompt.remove_comments(child)
 
     @staticmethod
-    def remove_validator_arguments(element: ET._Element) -> None:
+    def validator_to_prompt(schema: Schema) -> None:
         """Recursively remove all validator arguments in the `format`
         attribute."""
-        # Get the `format` attribute.
-        format = FormatAttr.from_element(element)
 
-        # Replace the `format` attribute with its prompt representation.
-        element.attrib["format"] = format.to_prompt()
+        def _inner(dt: DataType, el: ET._Element):
+            if hasattr(el.attrib, "format"):
+                el.attrib["format"] = dt.format_attr.to_prompt()
 
-        for child in element:
-            Schema2Prompt.remove_validator_arguments(child)
+            for _, dt_child, el_child in dt:
+                _inner(dt_child, el_child)
+
+        for el_child in schema.root:
+            dt_child = schema[el_child.attrib["name"]]
+            _inner(dt_child, el_child)
 
     @classmethod
     def default(cls, schema: Schema) -> str:
@@ -389,14 +394,18 @@ class Schema2Prompt:
             The prompt.
         """
         # Construct another XML tree from the schema.
-        root = deepcopy(schema.root)
+        # root = deepcopy(schema.root)
+        schema = deepcopy(schema)
+
+        for k, v in schema.items():
+            print(k, v)
 
         # Remove comments.
-        cls.remove_comments(root)
+        cls.remove_comments(schema.root)
         # Remove action attributes.
-        cls.remove_on_fail_attributes(root)
+        cls.remove_on_fail_attributes(schema.root)
         # Remove validators with arguments.
-        cls.remove_validator_arguments(root)
+        cls.validator_to_prompt(schema)
 
         # Return the XML as a string.
-        return ET.tostring(root, encoding="unicode", method="xml")
+        return ET.tostring(schema.root, encoding="unicode", method="xml")

@@ -1,5 +1,4 @@
 """Rail class."""
-from copy import deepcopy
 from dataclasses import dataclass, field
 from typing import List, Optional
 
@@ -7,7 +6,6 @@ from lxml import etree as ET
 
 from guardrails.prompt import Prompt
 from guardrails.schema import InputSchema, OutputSchema, Schema
-from guardrails.utils.reask_utils import extract_prompt_from_xml
 
 XMLPARSER = ET.XMLParser(encoding="utf-8")
 
@@ -176,7 +174,7 @@ class Rail:
         """Given the RAIL <prompt> element, create a Prompt object."""
         return Prompt(
             source=root.text,
-            output_schema=extract_prompt_from_xml(deepcopy(output_schema.root)),
+            output_schema=output_schema.transpile(),
         )
 
     @staticmethod
