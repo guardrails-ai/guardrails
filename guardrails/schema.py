@@ -132,6 +132,15 @@ class FormatAttr:
 
         return validators
 
+    @property
+    def validators(self) -> List[Validator]:
+        """Get the list of validators from the format attribute. Only the
+        validators that are registered for this element will be returned."""
+        try:
+            return getattr(self, "_validators")
+        except AttributeError:
+            raise AttributeError("Must call `get_validators` first.")
+
     def get_validators(self, strict: bool = False) -> List[Validator]:
         """Get the list of validators from the format attribute. Only the
         validators that are registered for this element will be returned.
@@ -169,7 +178,7 @@ class FormatAttr:
                         f" element {self.element.tag}."
                     )
                 continue
-            
+
             validator = validators_registry[validator_name]
 
             # See if the formatter has an associated on_fail method.
@@ -184,7 +193,22 @@ class FormatAttr:
             # Create the validator.
             _validators.append(validator(*args, on_fail=on_fail))
 
+        self._validators = _validators
         return _validators
+
+    def to_prompt(self, with_keywords: bool = True) -> str:
+        """Convert the format string to another string representation for use
+        in prompting. Uses the validators' to_prompt method in order to
+        construct the string to use in prompting.
+
+        For example, the format string "valid-url; other-validator: 1.0 {1 + 2}"
+        will be converted to "valid-url other-validator: arg1=1.0 arg2=3".
+        """
+        if self.format is None:
+            return ""
+        # Use the validators' to_prompt method to convert the format string to
+        # another string representation.
+        return "; ".join([v.to_prompt(with_keywords) for v in self.validators])
 
 
 class Schema:
@@ -286,14 +310,6 @@ class Schema:
 
         return validated_response
 
-
-class InputSchema(Schema):
-    """Input schema class that holds a _schema attribute."""
-
-
-class OutputSchema(Schema):
-    """Output schema class that holds a _schema attribute."""
-
     def transpile(self, method: str = "default") -> str:
         """
         Convert the XML schema to a string that is used for prompting
@@ -304,6 +320,14 @@ class OutputSchema(Schema):
         """
         transpiler = getattr(Schema2Prompt, method)
         return transpiler(self)
+
+
+class InputSchema(Schema):
+    """Input schema class that holds a _schema attribute."""
+
+
+class OutputSchema(Schema):
+    """Output schema class that holds a _schema attribute."""
 
 
 class Schema2Prompt:
@@ -320,7 +344,7 @@ class Schema2Prompt:
         for attr in list(element.attrib):
             if attr.startswith("on-fail-"):
                 del element.attrib[attr]
-        
+
         for child in element:
             Schema2Prompt.remove_on_fail_attributes(child)
 
@@ -334,13 +358,16 @@ class Schema2Prompt:
                 Schema2Prompt.remove_comments(child)
 
     @staticmethod
-    def remove_validators_with_arguments(element: ET._Element) -> None:
-        """Recursively remove all validators that have arguments."""
+    def remove_validator_arguments(element: ET._Element) -> None:
+        """Recursively remove all validator arguments in the `format` attribute."""
+        # Get the `format` attribute.
+        format = FormatAttr.from_element(element)
+
+        # Replace the `format` attribute with its prompt representation.
+        element.attrib["format"] = format.to_prompt()
+
         for child in element:
-            if "args" in child.attrib:
-                element.remove(child)
-            else:
-                Schema2Prompt.remove_validators_with_arguments(child)
+            Schema2Prompt.remove_validator_arguments(child)
 
     @classmethod
     def default(cls, schema: Schema) -> str:
@@ -363,6 +390,8 @@ class Schema2Prompt:
         cls.remove_comments(root)
         # Remove action attributes.
         cls.remove_on_fail_attributes(root)
+        # Remove validators with arguments.
+        cls.remove_validator_arguments(root)
 
         # Return the XML as a string.
         return ET.tostring(root, encoding="unicode", method="xml")

@@ -158,6 +158,7 @@ def register_validator(name: str, data_type: Union[str, List[str]]):
             types_to_validators[dt].append(name)
 
         validators_registry[name] = cls
+        cls.rail_alias = name
         return cls
 
     return decorator
@@ -177,24 +178,18 @@ class EventDetail(BaseException):
 class Validator:
     """Base class for validators."""
 
-    def __init__(self, on_fail: Optional[Callable] = None):
-        if on_fail is not None:
-            if isinstance(on_fail, str):
-                if on_fail == "filter":
-                    on_fail = self.filter
-                elif on_fail == "refrain":
-                    on_fail = self.refrain
-                elif on_fail == "noop":
-                    on_fail = self.noop
-                elif on_fail == "fix":
-                    on_fail = self.fix
-                elif on_fail == "reask":
-                    on_fail = self.reask
-                else:
-                    raise ValueError(f"Unknown on_fail value: {on_fail}.")
-            self.on_fail = on_fail
+    def __init__(self, on_fail: Optional[Callable] = None, **kwargs):
+        if isinstance(on_fail, str):
+            self.on_fail = getattr(self, on_fail, self.noop)
         else:
-            self.on_fail = self.fix
+            self.on_fail = on_fail or self.noop
+
+        # Store the kwargs for the validator.
+        self._kwargs = kwargs
+
+        assert (
+            self.rail_alias in validators_registry
+        ), f"Validator {self.__class__.__name__} is not registered. "
 
     def validate_with_correction(self, key, value, schema) -> Dict:
         try:
@@ -253,6 +248,13 @@ class Validator:
         )
 
         return error.schema
+
+    def to_prompt(self, with_keywords: bool = True) -> str:
+        """Convert the validator to a prompt."""
+        params = " ".join(list(self._kwargs.values()))
+        if with_keywords:
+            params = " ".join([f"{k}={v}" for k, v in self._kwargs.items()])
+        return f"{self.rail_alias}: {params}"
 
 
 # @register_validator('required', 'all')
