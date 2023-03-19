@@ -6,6 +6,7 @@ from copy import deepcopy
 from dataclasses import dataclass
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+from guardrails.utils.pydantic_utils import convert_field_element
 
 from lxml import etree as ET
 
@@ -232,6 +233,12 @@ class Schema:
 
         self._schema = SimpleNamespace(**schema)
         self.root = root
+
+        # Replace all <field ... /> elements with the output of 
+        # convert_field_element.
+        # TODO: check this
+        for field in root.findall("field"):
+            root.replace(field, convert_field_element(field))
 
         if root is not None:
             strict = False
