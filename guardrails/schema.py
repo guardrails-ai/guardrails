@@ -70,7 +70,8 @@ class FormatAttr:
         tokens = list(filter(None, tokens))
         return tokens
 
-    def parse_token(self, token: str) -> Tuple[str, List[Any]]:
+    @classmethod
+    def parse_token(cls, token: str) -> Tuple[str, List[Any]]:
         """Parse a single token in the format attribute, and return the
         validator name and the list of arguments.
 
