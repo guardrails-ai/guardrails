@@ -369,8 +369,12 @@ class Schema2Prompt:
         attribute."""
 
         def _inner(dt: DataType, el: ET._Element):
-            if hasattr(el.attrib, "format"):
-                el.attrib["format"] = dt.format_attr.to_prompt()
+            if "format" in el.attrib:
+                format = dt.format_attr.to_prompt()
+                if len(format):
+                    el.attrib["format"] = format
+                else:
+                    del el.attrib["format"]
 
             for _, dt_child, el_child in dt:
                 _inner(dt_child, el_child)
@@ -394,11 +398,7 @@ class Schema2Prompt:
             The prompt.
         """
         # Construct another XML tree from the schema.
-        # root = deepcopy(schema.root)
         schema = deepcopy(schema)
-
-        for k, v in schema.items():
-            print(k, v)
 
         # Remove comments.
         cls.remove_comments(schema.root)
