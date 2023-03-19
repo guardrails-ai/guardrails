@@ -226,6 +226,8 @@ class Runner:
     ) -> List[ReAsk]:
         """Introspect the validated output."""
         with start_action(action_type="introspect", index=index) as action:
+            if validated_output is None:
+                return []
             reasks = gather_reasks(validated_output)
             action.log(
                 message_type="info",
