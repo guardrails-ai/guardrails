@@ -276,6 +276,19 @@ class Object(NonScalarType):
             self._children[child.attrib["name"]] = child_data_type.from_xml(child)
 
 
+# @register_type("field")
+# class Field(ScalarType):
+#     """
+#     Element tag: `<field>`
+#     """
+
+#     @classmethod
+#     def from_xml(cls, element: ET._Element, strict: bool = False) -> "DataType":
+#         data_type = cls([], {})
+#         data_type.set_children(element)
+#         data_type.validators = get_validators(element, strict=strict)
+#         return data_type
+
 # @register_type("key")
 # class Key(DataType):
 # """
