@@ -1,7 +1,7 @@
 from .test_cases import entity_extraction
 
 
-def openai_Completion_create(prompt, *args, **kwargs):
+def openai_completion_create(prompt, *args, **kwargs):
     """Mock the OpenAI API call to Completion.create."""
 
     mock_llm_responses = {

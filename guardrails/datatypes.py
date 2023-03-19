@@ -1,107 +1,42 @@
 import datetime
-import re
-import warnings
 from types import SimpleNamespace
-from typing import Any, Dict, List, Union
+from typing import TYPE_CHECKING, Any, Dict, Generator, List, Tuple, Union
 
 from lxml import etree as ET
 
-
-def get_args(input_string: str) -> List[Any]:
-    """Get the arguments for a formatter.
-
-    Args:
-        args: The arguments string.
-
-    Returns:
-        A list of arguments.
-    """
-    pattern = re.compile(r"\s+(?=([^{}]*{[^{}]*})*[^{}]*$)")
-    tokens = re.split(pattern, input_string)
-    tokens = list(filter(None, tokens))
-
-    args = []
-    for token in tokens:
-        # If the token is enclosed in curly braces, it is a python expression.
-        if token[0] == "{" and token[-1] == "}":
-            token = token[1:-1]
-            try:
-                token = eval(token)
-            except (ValueError, SyntaxError) as e:
-                raise ValueError(
-                    f"Python expression {token} is not valid, "
-                    f"and raised the error: {e}."
-                )
-        args.append(token)
-
-    return args
-
-
-def get_validators(
-    element: ET._Element, strict: bool = False
-) -> List["Validator"]:  # noqa: F821
-    """Get the formatters for an element.
-
-    Args:
-        element: The XML element.
-        strict: If True, raise an error if the element is not registered.
-
-    Returns:
-        A list of formatters.
-    """
-
-    from guardrails.validators import types_to_validators, validators_registry
-
-    if "format" not in element.attrib:
-        return []
-
-    provided_formatters = element.attrib["format"].split(";")
-    registered_formatters = types_to_validators[element.tag]
-
-    valid_formatters = []
-
-    for formatter in provided_formatters:
-        # Check if the formatter has any arguments.
-
-        formatter = formatter.strip()
-
-        args = []
-        formatter_with_args = formatter.split(":", 1)
-        if len(formatter_with_args) > 1:
-            formatter, args = formatter_with_args
-            formatter = formatter.strip()
-            args = get_args(args)
-
-        if formatter not in registered_formatters:
-            if strict:
-                raise ValueError(
-                    f"Formatter {formatter} is not valid for element {element.tag}."
-                )
-            else:
-                warnings.warn(
-                    f"Formatter {formatter} is not valid for element {element.tag}."
-                )
-            continue
-
-        # See if the formatter has an associated on_fail method.
-        on_fail = None
-        on_fail_attr_name = f"on-fail-{formatter}"
-        if on_fail_attr_name in element.attrib:
-            on_fail = element.attrib[on_fail_attr_name]
-            # TODO(shreya): Load the on_fail method.
-            # This method should be loaded from an optional script given at the
-            # beginning of a rail file.
-
-        formatter = validators_registry[formatter]
-        valid_formatters.append(formatter(*args, on_fail=on_fail))
-
-    return valid_formatters
+if TYPE_CHECKING:
+    from guardrails.schema import FormatAttr
 
 
 class DataType:
-    def __init__(self, validators: List, children: Dict[str, Any]) -> None:
-        self.validators = validators
+    def __init__(
+        self,
+        children: Dict[str, Any],
+        format_attr: "FormatAttr",
+        element: ET._Element,
+    ) -> None:
         self._children = children
+        self.format_attr = format_attr
+        self.element = element
+
+    @property
+    def validators(self) -> List:
+        return self.format_attr.validators
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({self._children})"
+
+    def __iter__(self) -> Generator[Tuple[str, "DataType", ET._Element], None, None]:
+        """Return a tuple of (name, child_data_type, child_element) for each
+        child."""
+        for el_child in self.element:
+            if "name" in el_child.attrib:
+                name: str = el_child.attrib["name"]
+                child_data_type: DataType = self._children[name]
+                yield name, child_data_type, el_child
+            else:
+                assert len(self._children) == 1, "Must have exactly one child."
+                yield None, list(self._children.values())[0], el_child
 
     @classmethod
     def from_str(cls, s: str) -> "DataType":
@@ -117,13 +52,21 @@ class DataType:
 
     @classmethod
     def from_xml(cls, element: ET._Element, strict: bool = False) -> "DataType":
-        data_type = cls([], {})
+        from guardrails.schema import FormatAttr
+
+        # TODO: don't want to pass strict through to DataType,
+        # but need to pass it to FormatAttr.from_element
+        # how to handle this?
+        format_attr = FormatAttr.from_element(element)
+        format_attr.get_validators(strict)
+
+        data_type = cls({}, format_attr, element)
         data_type.set_children(element)
-        data_type.validators = get_validators(element, strict=strict)
         return data_type
 
     @property
     def children(self) -> SimpleNamespace:
+        """Return a SimpleNamespace of the children of this DataType."""
         return SimpleNamespace(**self._children)
 
 

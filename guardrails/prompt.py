@@ -14,13 +14,20 @@ class Prompt:
         format_instructions_start_idx = self.get_format_instructions_idx(source)
 
         # Substitute constants in the prompt.
-        source = self.substitue_constants(source)
+        source = self.substitute_constants(source)
         # Format instructions contain info for how to format LLM output.
         self.format_instructions = source[format_instructions_start_idx:]
 
         self.source = source.format(output_schema=output_schema)
 
-    def substitue_constants(self, text):
+    def __repr__(self) -> str:
+        # Truncate the prompt to 50 characters and add ellipsis if it's longer.
+        truncated_prompt = self.source[:50]
+        if len(self.source) > 50:
+            truncated_prompt += "..."
+        return f"Prompt({truncated_prompt})"
+
+    def substitute_constants(self, text):
         """Substitute constants in the prompt."""
         # Substitute constants by reading the constants file.
         # Regex to extract all occurrences of @<constant_name>

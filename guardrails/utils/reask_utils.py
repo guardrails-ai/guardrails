@@ -116,6 +116,13 @@ def get_pruned_tree(
                 grandparent.remove(parent)
                 parent = grandparent
 
+    pruned_elements = root.findall(".//*")
+    for element in pruned_elements:
+        if element not in reask_elements:
+            # Remove the format attribute
+            if "format" in element.attrib:
+                del element.attrib["format"]
+
     return root
 
 
@@ -170,29 +177,6 @@ def prune_json_for_reasking(json_object: Any) -> Union[None, Dict, List]:
         return None
 
 
-def extract_prompt_from_xml(tree: ET._Element) -> str:
-    """Extract the prompt from an XML tree.
-
-    Args:
-        tree: The XML tree.
-
-    Returns:
-        The prompt.
-    """
-    # From the element tree, remove any action attributes like 'on-fail-*'.
-    # Filter any elements that are comments.
-    for element in tree.iter():
-        if isinstance(element, ET._Comment):
-            continue
-
-        for attr in list(element.attrib):
-            if attr.startswith("on-fail-"):
-                del element.attrib[attr]
-
-    # Return the XML as a string.
-    return ET.tostring(tree, encoding="unicode", method="xml")
-
-
 def get_reask_prompt(
     parsed_rail, reasks: List[ReAsk], reask_json: Dict
 ) -> Tuple[str, ET._Element]:
@@ -208,6 +192,8 @@ def get_reask_prompt(
     Returns:
         The prompt.
     """
+    from guardrails.schema import OutputSchema
+
     parsed_rail_copy = deepcopy(parsed_rail)
 
     # Get the elements that are to be reasked
@@ -216,16 +202,17 @@ def get_reask_prompt(
     # Get the pruned JSON so that it only contains ReAsk objects
     # Get the pruned tree
     pruned_tree = get_pruned_tree(parsed_rail_copy, list(reask_elements.keys()))
-    pruned_tree_string = extract_prompt_from_xml(pruned_tree)
+    pruned_tree_string = OutputSchema(pruned_tree).transpile()
 
     reask_prompt_template = (
         constants["high_level_reask_prompt"] + constants["complete_json_suffix"]
     )
 
+    def reask_decoder(obj):
+        return {k: v for k, v in obj.__dict__.items() if k not in ["path", "fix_value"]}
+
     reask_prompt = reask_prompt_template.format(
-        previous_response=json.dumps(
-            reask_json, indent=2, default=lambda x: x.__dict__
-        ),
+        previous_response=json.dumps(reask_json, indent=2, default=reask_decoder),
         output_schema=pruned_tree_string,
     )
 
