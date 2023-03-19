@@ -26,13 +26,13 @@ class FormatAttr:
     validators e.g. "valid-url; is-reachable". Each validator is itself either:
     - the name of an parameter-less validator, e.g. "valid-url"
     - the name of a validator with parameters, separated by a colon with a
-        comma-separated list of parameters, e.g. "is-in: 1, 2, 3"
+        space-separated list of parameters, e.g. "is-in: 1 2 3"
 
     Parameters can either be written in plain text, or in python expressions
     enclosed in curly braces. For example, the following are all valid:
-    - "is-in: 1, 2, 3"
-    - "is-in: {1}, {2}, {3}"
-    - "is-in: {1 + 2}, {2 + 3}, {3 + 4}"
+    - "is-in: 1 2 3"
+    - "is-in: {1} {2} {3}"
+    - "is-in: {1 + 2} {2 + 3} {3 + 4}"
     """
 
     # The format attribute string.
