@@ -116,6 +116,13 @@ def get_pruned_tree(
                 grandparent.remove(parent)
                 parent = grandparent
 
+    pruned_elements = root.findall(".//*")
+    for element in pruned_elements:
+        if element not in reask_elements:
+            # Remove the format attribute
+            if "format" in element.attrib:
+                del element.attrib["format"]
+
     return root
 
 
@@ -201,10 +208,11 @@ def get_reask_prompt(
         constants["high_level_reask_prompt"] + constants["complete_json_suffix"]
     )
 
+    def reask_decoder(obj):
+        return {k: v for k, v in obj.__dict__.items() if k not in ["path", "fix_value"]}
+
     reask_prompt = reask_prompt_template.format(
-        previous_response=json.dumps(
-            reask_json, indent=2, default=lambda x: x.__dict__
-        ),
+        previous_response=json.dumps(reask_json, indent=2, default=reask_decoder),
         output_schema=pruned_tree_string,
     )
 
