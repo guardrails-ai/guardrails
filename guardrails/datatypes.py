@@ -1,8 +1,9 @@
 import datetime
 from types import SimpleNamespace
-from typing import TYPE_CHECKING, Any, Dict, Generator, List, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, Generator, List, Tuple, Type, Union
 
 from lxml import etree as ET
+from pydantic import BaseModel
 
 if TYPE_CHECKING:
     from guardrails.schema import FormatAttr
@@ -38,14 +39,38 @@ class DataType:
                 assert len(self._children) == 1, "Must have exactly one child."
                 yield None, list(self._children.values())[0], el_child
 
+    def iter(
+        self, element: ET._Element
+    ) -> Generator[Tuple[str, "DataType", ET._Element], None, None]:
+        """Return a tuple of (name, child_data_type, child_element) for each
+        child."""
+        for el_child in element:
+            if "name" in el_child.attrib:
+                name: str = el_child.attrib["name"]
+                child_data_type: DataType = self._children[name]
+                yield name, child_data_type, el_child
+            else:
+                assert len(self._children) == 1, "Must have exactly one child."
+                yield None, list(self._children.values())[0], el_child
+
     @classmethod
     def from_str(cls, s: str) -> "DataType":
-        """Create a DataType from a string."""
-        raise NotImplementedError("Abstract method.")
+        """Create a DataType from a string.
+
+        Note: ScalarTypes like int, float, bool, etc. will override this method.
+        Other ScalarTypes like string, email, url, etc. will not override this
+        """
+        return s
 
     def validate(self, key: str, value: Any, schema: Dict) -> Dict:
         """Validate a value."""
-        raise NotImplementedError("Abstract method.")
+
+        value = self.from_str(value)
+
+        for validator in self.validators:
+            schema = validator.validate_with_correction(key, value, schema)
+
+        return schema
 
     def set_children(self, element: ET._Element):
         raise NotImplementedError("Abstract method.")
@@ -83,28 +108,9 @@ def register_type(name: str):
 
 
 class ScalarType(DataType):
-    def validate(self, key: str, value: Any, schema: Dict) -> Dict:
-        """Validate a value."""
-
-        value = self.from_str(value)
-
-        for validator in self.validators:
-            schema = validator.validate_with_correction(key, value, schema)
-
-        return schema
-
     def set_children(self, element: ET._Element):
         for _ in element:
             raise ValueError("ScalarType data type must not have any children.")
-
-    @classmethod
-    def from_str(cls, s: str) -> "ScalarType":
-        """Create a ScalarType from a string.
-
-        Note: ScalarTypes like int, float, bool, etc. will override this method.
-        Other ScalarTypes like string, email, url, etc. will not override this
-        """
-        return s
 
 
 class NonScalarType(DataType):
@@ -276,18 +282,134 @@ class Object(NonScalarType):
             self._children[child.attrib["name"]] = child_data_type.from_xml(child)
 
 
-# @register_type("field")
-# class Field(ScalarType):
-#     """
-#     Element tag: `<field>`
-#     """
+@register_type("pydantic")
+class Pydantic(NonScalarType):
+    """Element tag: `<pydantic>`"""
 
-#     @classmethod
-#     def from_xml(cls, element: ET._Element, strict: bool = False) -> "DataType":
-#         data_type = cls([], {})
-#         data_type.set_children(element)
-#         data_type.validators = get_validators(element, strict=strict)
-#         return data_type
+    def __init__(
+        self,
+        model: Type[BaseModel],
+        children: Dict[str, Any],
+        format_attr: "FormatAttr",
+        element: ET._Element,
+    ) -> None:
+        super().__init__(children, format_attr, element)
+        assert (
+            format_attr.empty
+        ), "The <pydantic /> data type does not support the `format` attribute."
+        assert isinstance(model, type) and issubclass(
+            model, BaseModel
+        ), "The `model` argument must be a Pydantic model."
+
+        self.model = model
+
+    @property
+    def validators(self) -> List:
+        from guardrails.validators import Pydantic as PydanticValidator
+
+        # Check if the <pydantic /> element has an `on-fail` attribute.
+        # If so, use that as the `on_fail` argument for the PydanticValidator.
+        on_fail = None
+        on_fail_attr_name = "on-fail-pydantic"
+        if on_fail_attr_name in self.element.attrib:
+            on_fail = self.element.attrib[on_fail_attr_name]
+        return [PydanticValidator(self.model, on_fail=on_fail)]
+
+    def set_children(self, element: ET._Element):
+        for child in element:
+            child_data_type = registry[child.tag]
+            self._children[child.attrib["name"]] = child_data_type.from_xml(child)
+
+    @classmethod
+    def from_xml(cls, element: ET._Element, strict: bool = False) -> "DataType":
+        from guardrails.schema import FormatAttr
+        from guardrails.utils.pydantic_utils import pydantic_models
+
+        model_name = element.attrib["model"]
+        model = pydantic_models.get(model_name, None)
+
+        if model is None:
+            raise ValueError(f"Invalid Pydantic model: {model_name}")
+
+        data_type = cls(model, {}, FormatAttr(), element)
+        data_type.set_children(element)
+        return data_type
+
+    def to_object_element(self) -> ET._Element:
+        """Convert the Pydantic data type to an <object /> element."""
+        from guardrails.utils.pydantic_utils import (
+            PYDANTIC_SCHEMA_TYPE_MAP,
+            get_field_descriptions,
+            pydantic_validators,
+        )
+
+        # Get the following attributes
+        # TODO: add on-fail
+        try:
+            name = self.element.attrib["name"]
+        except KeyError:
+            name = None
+        try:
+            description = self.element.attrib["description"]
+        except KeyError:
+            description = None
+
+        # Get the Pydantic model schema.
+        schema = self.model.schema()
+        field_descriptions = get_field_descriptions(self.model)
+
+        # Make the XML as follows using lxml
+        # <object name="..." description="..." format="semicolon separated root validators" pydantic="ModelName"> # noqa: E501
+        #     <type name="..." description="..." format="semicolon separated validators" /> # noqa: E501
+        # </object>
+
+        # Add the object element, opening tag
+        xml = ""
+        root_validators = "; ".join(
+            list(pydantic_validators[self.model]["__root__"].keys())
+        )
+        xml += "<object "
+        if name:
+            xml += f' name="{name}"'
+        if description:
+            xml += f' description="{description}"'
+        if root_validators:
+            xml += f' format="{root_validators}"'
+        xml += f' pydantic="{self.model.__name__}"'
+        xml += ">"
+
+        # Add all the nested fields
+        for field in schema["properties"]:
+            properties = schema["properties"][field]
+            field_type = PYDANTIC_SCHEMA_TYPE_MAP[properties["type"]]
+            field_validators = "; ".join(
+                list(pydantic_validators[self.model][field].keys())
+            )
+            try:
+                field_description = field_descriptions[field]
+            except KeyError:
+                field_description = ""
+            xml += f"<{field_type}"
+            xml += f' name="{field}"'
+            if field_description:
+                xml += f' description="{field_descriptions[field]}"'
+            if field_validators:
+                xml += f' format="{field_validators}"'
+            xml += " />"
+
+        # Close the object element
+        xml += "</object>"
+
+        # Convert the string to an XML element, making sure to format it.
+        return ET.fromstring(
+            xml, parser=ET.XMLParser(encoding="utf-8", remove_blank_text=True)
+        )
+
+
+@register_type("field")
+class Field(ScalarType):
+    """Element tag: `<field>`"""
+
 
 # @register_type("key")
 # class Key(DataType):

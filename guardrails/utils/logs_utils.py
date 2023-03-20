@@ -89,6 +89,8 @@ def merge_reask_output(prev_logs: GuardLogs, current_logs: GuardLogs) -> Dict:
     Returns:
         The merged output.
     """
+    from guardrails.validators import PydanticReAsk
+
     previous_response = prev_logs.validated_output
     pruned_reask_json = prune_json_for_reasking(previous_response)
     reask_response = current_logs.validated_output
@@ -99,7 +101,16 @@ def merge_reask_output(prev_logs: GuardLogs, current_logs: GuardLogs) -> Dict:
     merged_json = deepcopy(previous_response)
 
     def update_reasked_elements(pruned_reask_json, reask_response_dict):
-        if isinstance(pruned_reask_json, dict):
+        if isinstance(pruned_reask_json, PydanticReAsk):
+            corrected_value = reask_response_dict
+            # Get the path from any of the ReAsk objects in the PydanticReAsk object
+            # all of them have the same path.
+            path = [v.path for v in pruned_reask_json.values() if isinstance(v, ReAsk)][
+                0
+            ]
+            update_response_by_path(merged_json, path, corrected_value)
+
+        elif isinstance(pruned_reask_json, dict):
             for key, value in pruned_reask_json.items():
                 if isinstance(value, ReAsk):
                     corrected_value = reask_response_dict[key]
