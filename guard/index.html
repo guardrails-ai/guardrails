@@ -119,7 +119,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#guardrails.guardrails.Guard.from_rail" class="md-skip">
+        <a href="#guardrails.guard.Guard.from_rail" class="md-skip">
           Skip to content
         </a>
       
@@ -466,28 +466,28 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#guardrails.guardrails.Guard.from_rail" class="md-nav__link">
+  <a href="#guardrails.guard.Guard.from_rail" class="md-nav__link">
     from_rail()
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#guardrails.guardrails.Guard.from_rail_string" class="md-nav__link">
+  <a href="#guardrails.guard.Guard.from_rail_string" class="md-nav__link">
     from_rail_string()
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#guardrails.guardrails.Guard.__call__" class="md-nav__link">
+  <a href="#guardrails.guard.Guard.__call__" class="md-nav__link">
     __call__()
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#guardrails.guardrails.Guard.parse" class="md-nav__link">
+  <a href="#guardrails.guard.Guard.parse" class="md-nav__link">
     parse()
   </a>
   
@@ -706,6 +706,20 @@
 
             
           
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/text_summarization_quality/" class="md-nav__link">
+        Check key info present in generated summary
+      </a>
+    </li>
+  
+
+            
+          
         </ul>
       </nav>
     </li>
@@ -756,6 +770,20 @@
 
             
           
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../integrations/pydantic_validation/" class="md-nav__link">
+        Pydantic
+      </a>
+    </li>
+  
+
+            
+          
         </ul>
       </nav>
     </li>
@@ -787,28 +815,28 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#guardrails.guardrails.Guard.from_rail" class="md-nav__link">
+  <a href="#guardrails.guard.Guard.from_rail" class="md-nav__link">
     from_rail()
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#guardrails.guardrails.Guard.from_rail_string" class="md-nav__link">
+  <a href="#guardrails.guard.Guard.from_rail_string" class="md-nav__link">
     from_rail_string()
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#guardrails.guardrails.Guard.__call__" class="md-nav__link">
+  <a href="#guardrails.guard.Guard.__call__" class="md-nav__link">
     __call__()
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#guardrails.guardrails.Guard.parse" class="md-nav__link">
+  <a href="#guardrails.guard.Guard.parse" class="md-nav__link">
     parse()
   </a>
   
@@ -858,6 +886,8 @@ method functions as a wrapper around LLM APIs. It takes in an LLM
 API, and optional prompt parameters, and returns the raw output from
 the LLM and the validated output.</p>
 
+  
+      <p>Initialize the Guard.</p>
 
 
   
@@ -876,7 +906,7 @@ the LLM and the validated output.</p>
 
 
 
-<h2 id="guardrails.guardrails.Guard.from_rail" class="doc doc-heading">
+<h2 id="guardrails.guard.Guard.from_rail" class="doc doc-heading">
 <code class="highlight language-python"><span class="n">from_rail</span><span class="p">(</span><span class="n">rail_file</span><span class="p">,</span> <span class="n">num_reasks</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></code>
   
   <span class="doc doc-labels">
@@ -888,7 +918,7 @@ the LLM and the validated output.</p>
 
   <div class="doc doc-contents ">
   
-      <p>Create an Schema from an <code>.rail</code> file.</p>
+      <p>Create a Schema from a <code>.rail</code> file.</p>
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -935,7 +965,7 @@ the LLM and the validated output.</p>
     <tbody>
         <tr>
           <td>
-                <code><span title="guardrails.guardrails.Guard">Guard</span></code>
+                <code><span title="guardrails.guard.Guard">Guard</span></code>
           </td>
           <td><p>An instance of the <code>Guard</code> class.</p></td>
         </tr>
@@ -950,7 +980,7 @@ the LLM and the validated output.</p>
 
 
 
-<h2 id="guardrails.guardrails.Guard.from_rail_string" class="doc doc-heading">
+<h2 id="guardrails.guard.Guard.from_rail_string" class="doc doc-heading">
 <code class="highlight language-python"><span class="n">from_rail_string</span><span class="p">(</span><span class="n">rail_string</span><span class="p">,</span> <span class="n">num_reasks</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></code>
   
   <span class="doc doc-labels">
@@ -962,7 +992,7 @@ the LLM and the validated output.</p>
 
   <div class="doc doc-contents ">
   
-      <p>Create an Schema from an <code>.rail</code> string.</p>
+      <p>Create a Schema from a <code>.rail</code> string.</p>
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -1009,7 +1039,7 @@ the LLM and the validated output.</p>
     <tbody>
         <tr>
           <td>
-                <code><span title="guardrails.guardrails.Guard">Guard</span></code>
+                <code><span title="guardrails.guard.Guard">Guard</span></code>
           </td>
           <td><p>An instance of the <code>Guard</code> class.</p></td>
         </tr>
@@ -1024,7 +1054,7 @@ the LLM and the validated output.</p>
 
 
 
-<h2 id="guardrails.guardrails.Guard.__call__" class="doc doc-heading">
+<h2 id="guardrails.guard.Guard.__call__" class="doc doc-heading">
 <code class="highlight language-python"><span class="fm">__call__</span><span class="p">(</span><span class="n">llm_api</span><span class="p">,</span> <span class="n">prompt_params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">num_reasks</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
 
 </h2>
@@ -1032,7 +1062,7 @@ the LLM and the validated output.</p>
 
   <div class="doc doc-contents ">
   
-      <p>Outermost function that calls the LLM and validates the output.</p>
+      <p>Call the LLM and validate the output.</p>
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -1122,7 +1152,7 @@ the LLM and the validated output.</p>
 
 
 
-<h2 id="guardrails.guardrails.Guard.parse" class="doc doc-heading">
+<h2 id="guardrails.guard.Guard.parse" class="doc doc-heading">
 <code class="highlight language-python"><span class="n">parse</span><span class="p">(</span><span class="n">llm_output</span><span class="p">,</span> <span class="n">llm_api</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">num_reasks</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
 
 </h2>
@@ -1156,7 +1186,7 @@ the LLM and the validated output.</p>
         <tr>
           <td><code>llm_api</code></td>
           <td>
-                <code><span title="typing.Callable">Callable</span></code>
+                <code><span title="guardrails.llm_providers.PromptCallable">PromptCallable</span></code>
           </td>
           <td><p>The LLM API to use to re-ask the LLM.</p></td>
           <td>

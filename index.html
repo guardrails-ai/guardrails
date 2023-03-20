@@ -714,6 +714,20 @@
 
             
           
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="examples/text_summarization_quality/" class="md-nav__link">
+        Check key info present in generated summary
+      </a>
+    </li>
+  
+
+            
+          
         </ul>
       </nav>
     </li>
@@ -758,6 +772,20 @@
     <li class="md-nav__item">
       <a href="integrations/langchain/" class="md-nav__link">
         LangChain
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="integrations/pydantic_validation/" class="md-nav__link">
+        Pydantic
       </a>
     </li>
   
@@ -857,9 +885,11 @@
 <p><em>Note: Guardrails is an alpha release, so expect sharp edges and bugs.</em></p>
 <h2 id="what-is-guardrails">🛤️ What is Guardrails?</h2>
 <p>Guardrails is a Python package that lets a user add structure, type and quality guarantees to the outputs of large language models (LLMs). Guardrails:</p>
-<p>✅ does pydantic-style validation of LLM outputs,
-✅ takes corrective actions (e.g. reasking LLM) when validation fails,<br />
-✅ enforces structure and type guarantees (e.g. JSON).</p>
+<ul>
+<li>does pydantic-style validation of LLM outputs. This includes semantic validation such as checking for bias in generated text, checking for bugs in generated code, etc.</li>
+<li>takes corrective actions (e.g. reasking LLM) when validation fails,</li>
+<li>enforces structure and type guarantees (e.g. JSON).</li>
+</ul>
 <h2 id="under-the-hood">🚒 Under the hood</h2>
 <p>Guardrails provides a format (<code>.rail</code>) for enforcing a specification on an LLM output, and a lightweight wrapper around LLM API calls to implement this spec.</p>
 <ol>
@@ -882,15 +912,15 @@
 <h2 id="roadmap">📍 Roadmap</h2>
 <ul class="task-list">
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Adding more examples, new use cases and domains</li>
-<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Adding integrations with langchain, gpt-index, minichain, manifest</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled checked/><span class="task-list-indicator"></span></label> Adding integrations with langchain, gpt-index, minichain, manifest</li>
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Expanding validators offering</li>
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> More compilers from <code>.rail</code> -&gt; LLM prompt (e.g. <code>.rail</code> -&gt; TypeScript)</li>
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Informative logging</li>
-<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Improving reasking logic</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled checked/><span class="task-list-indicator"></span></label> Improving reasking logic</li>
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> A guardrails.js implementation</li>
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> VSCode extension for <code>.rail</code> files</li>
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Next version of <code>.rail</code> format</li>
-<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Add more LLM providers</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled checked/><span class="task-list-indicator"></span></label> Add more LLM providers</li>
 </ul>
 
 

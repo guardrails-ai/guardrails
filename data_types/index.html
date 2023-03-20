@@ -501,6 +501,13 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#guardrails.datatypes.Field" class="md-nav__link">
+    Field
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#guardrails.datatypes.Float" class="md-nav__link">
     Float
   </a>
@@ -532,6 +539,47 @@
   <a href="#guardrails.datatypes.Percentage" class="md-nav__link">
     Percentage
   </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#guardrails.datatypes.Pydantic" class="md-nav__link">
+    Pydantic
+  </a>
+  
+    <nav class="md-nav" aria-label="Pydantic">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#guardrails.datatypes.Pydantic.model" class="md-nav__link">
+    model
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#guardrails.datatypes.Pydantic.validators" class="md-nav__link">
+    validators
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#guardrails.datatypes.Pydantic.from_xml" class="md-nav__link">
+    from_xml()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#guardrails.datatypes.Pydantic.to_object_element" class="md-nav__link">
+    to_object_element()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -769,6 +817,20 @@
 
             
           
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/text_summarization_quality/" class="md-nav__link">
+        Check key info present in generated summary
+      </a>
+    </li>
+  
+
+            
+          
         </ul>
       </nav>
     </li>
@@ -813,6 +875,20 @@
     <li class="md-nav__item">
       <a href="../integrations/langchain/" class="md-nav__link">
         LangChain
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../integrations/pydantic_validation/" class="md-nav__link">
+        Pydantic
       </a>
     </li>
   
@@ -871,6 +947,13 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#guardrails.datatypes.Field" class="md-nav__link">
+    Field
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#guardrails.datatypes.Float" class="md-nav__link">
     Float
   </a>
@@ -902,6 +985,47 @@
   <a href="#guardrails.datatypes.Percentage" class="md-nav__link">
     Percentage
   </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#guardrails.datatypes.Pydantic" class="md-nav__link">
+    Pydantic
+  </a>
+  
+    <nav class="md-nav" aria-label="Pydantic">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#guardrails.datatypes.Pydantic.model" class="md-nav__link">
+    model
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#guardrails.datatypes.Pydantic.validators" class="md-nav__link">
+    validators
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#guardrails.datatypes.Pydantic.from_xml" class="md-nav__link">
+    from_xml()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#guardrails.datatypes.Pydantic.to_object_element" class="md-nav__link">
+    to_object_element()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1094,6 +1218,30 @@
 
 
 
+<h2 id="guardrails.datatypes.Field" class="doc doc-heading">
+        <code>Field</code>
+
+
+</h2>
+
+
+  <div class="doc doc-contents ">
+      <p class="doc doc-class-bases">
+        Bases: <code><span title="guardrails.datatypes.ScalarType">ScalarType</span></code></p>
+
+  
+      <p>Element tag: <code>&lt;field&gt;</code></p>
+
+
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
 <h2 id="guardrails.datatypes.Float" class="doc doc-heading">
         <code>Float</code>
 
@@ -1269,6 +1417,121 @@
       <p>Element tag: <code>&lt;percentage&gt;</code></p>
 
 
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="guardrails.datatypes.Pydantic" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">Pydantic</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">children</span><span class="p">,</span> <span class="n">format_attr</span><span class="p">,</span> <span class="n">element</span><span class="p">)</span></code>
+
+</h2>
+
+
+  <div class="doc doc-contents ">
+      <p class="doc doc-class-bases">
+        Bases: <code><span title="guardrails.datatypes.NonScalarType">NonScalarType</span></code></p>
+
+  
+      <p>Element tag: <code>&lt;pydantic&gt;</code></p>
+
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="guardrails.datatypes.Pydantic.model" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">model</span> <span class="o">=</span> <span class="n">model</span></code>
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="guardrails.datatypes.Pydantic.validators" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">validators</span><span class="p">:</span> <span class="n">List</span></code>
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  </div>
+
+</div>
+
+
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 id="guardrails.datatypes.Pydantic.from_xml" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">from_xml</span><span class="p">(</span><span class="n">element</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 id="guardrails.datatypes.Pydantic.to_object_element" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">to_object_element</span><span class="p">()</span></code>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Convert the Pydantic data type to an <object /> element.</p>
+
+  </div>
+
+</div>
+
+
+
+  </div>
 
   </div>
 

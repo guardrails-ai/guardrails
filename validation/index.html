@@ -508,6 +508,13 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#guardrails.validators.EndsWith" class="md-nav__link">
+    EndsWith
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#guardrails.validators.Filter" class="md-nav__link">
     Filter
   </a>
@@ -556,8 +563,42 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#guardrails.validators.Pydantic" class="md-nav__link">
+    Pydantic
+  </a>
+  
+    <nav class="md-nav" aria-label="Pydantic">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#guardrails.validators.Pydantic.model" class="md-nav__link">
+    model
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#guardrails.validators.PydanticReAsk" class="md-nav__link">
+    PydanticReAsk
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#guardrails.validators.Refrain" class="md-nav__link">
     Refrain
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#guardrails.validators.SimilarToDocument" class="md-nav__link">
+    SimilarToDocument
   </a>
   
 </li>
@@ -789,6 +830,20 @@
 
             
           
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/text_summarization_quality/" class="md-nav__link">
+        Check key info present in generated summary
+      </a>
+    </li>
+  
+
+            
+          
         </ul>
       </nav>
     </li>
@@ -839,6 +894,20 @@
 
             
           
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../integrations/pydantic_validation/" class="md-nav__link">
+        Pydantic
+      </a>
+    </li>
+  
+
+            
+          
         </ul>
       </nav>
     </li>
@@ -879,6 +948,13 @@
         <li class="md-nav__item">
   <a href="#guardrails.validators.BugFreeSQL" class="md-nav__link">
     BugFreeSQL
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#guardrails.validators.EndsWith" class="md-nav__link">
+    EndsWith
   </a>
   
 </li>
@@ -932,8 +1008,42 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#guardrails.validators.Pydantic" class="md-nav__link">
+    Pydantic
+  </a>
+  
+    <nav class="md-nav" aria-label="Pydantic">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#guardrails.validators.Pydantic.model" class="md-nav__link">
+    model
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#guardrails.validators.PydanticReAsk" class="md-nav__link">
+    PydanticReAsk
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#guardrails.validators.Refrain" class="md-nav__link">
     Refrain
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#guardrails.validators.SimilarToDocument" class="md-nav__link">
+    SimilarToDocument
   </a>
   
 </li>
@@ -1098,6 +1208,48 @@ that uses a database connection to check if the query is valid.</p>
 <li>Name for <code>format</code> attribute: <code>bug-free-sql</code></li>
 <li>Supported data types: <code>sql</code></li>
 <li>Programmatic fix: None</li>
+</ul>
+
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="guardrails.validators.EndsWith" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">EndsWith</span><span class="p">(</span><span class="n">end</span><span class="p">,</span> <span class="n">on_fail</span><span class="o">=</span><span class="s1">&#39;fix&#39;</span><span class="p">)</span></code>
+
+</h2>
+
+
+  <div class="doc doc-contents ">
+
+  
+      <p>Validate that a list ends with a given value.</p>
+<ul>
+<li>Name for <code>format</code> attribute: <code>ends-with</code></li>
+<li>Supported data types: <code>list</code></li>
+<li>Programmatic fix: Append the given value to the list.</li>
 </ul>
 
 
@@ -1338,6 +1490,82 @@ contains profanity language.</p>
 
 
 
+<h2 id="guardrails.validators.Pydantic" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">Pydantic</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">on_fail</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+</h2>
+
+
+  <div class="doc doc-contents ">
+
+  
+      <p>Validate an object using Pydantic.</p>
+
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="guardrails.validators.Pydantic.model" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">model</span> <span class="o">=</span> <span class="n">model</span></code>
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  </div>
+
+</div>
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="guardrails.validators.PydanticReAsk" class="doc doc-heading">
+        <code>PydanticReAsk</code>
+
+
+</h2>
+
+
+  <div class="doc doc-contents ">
+
+
+
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
 <h2 id="guardrails.validators.Refrain" class="doc doc-heading">
         <code>Refrain</code>
 
@@ -1349,6 +1577,51 @@ contains profanity language.</p>
 
 
 
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="guardrails.validators.SimilarToDocument" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">SimilarToDocument</span><span class="p">(</span><span class="n">document</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="s1">&#39;text-embedding-ada-002&#39;</span><span class="p">,</span> <span class="n">on_fail</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+</h2>
+
+
+  <div class="doc doc-contents ">
+
+  
+      <p>Validate that a value is similar to the document.</p>
+<p>This validator checks if the value is similar to the document by checking
+the cosine similarity between the value and the document, using an
+embedding.</p>
+<ul>
+<li>Name for <code>format</code> attribute: <code>similar-to-document</code></li>
+<li>Supported data types: <code>string</code></li>
+<li>Programmatic fix: None</li>
+</ul>
+
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
 
   </div>
 
