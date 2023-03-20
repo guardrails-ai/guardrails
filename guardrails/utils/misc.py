@@ -34,16 +34,15 @@ def generate_test_artifacts(
         f.write(rail_spec)
 
     for i, logs in enumerate(guard_history.history):
-        if i==0:
-            ext = ''
-        elif i==1:
+        if i == 0:
+            ext = ""
+        elif i == 1:
             if len(guard_history.history) == 2:
-                ext = '_reask'
+                ext = "_reask"
             else:
-                ext = '_reask_1'
+                ext = "_reask_1"
         else:
-            ext = f'_reask_{i}'
-
+            ext = f"_reask_{i}"
 
         # Save the compiled prompt.
         compiled_prompt = logs.prompt
@@ -72,6 +71,4 @@ def generate_test_artifacts(
                 f.write("from guardrails.utils.reask_utils import ReAsk\n")
 
             validated_output_repr = pretty_repr(validated_output, max_string=None)
-            f.write(
-                f"\nVALIDATED_OUTPUT = {validated_output_repr}"
-            )
+            f.write(f"\nVALIDATED_OUTPUT = {validated_output_repr}")
