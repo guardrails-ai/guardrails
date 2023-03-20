@@ -6,9 +6,9 @@ _Note: Guardrails is an alpha release, so expect sharp edges and bugs._
 
 Guardrails is a Python package that lets a user add structure, type and quality guarantees to the outputs of large language models (LLMs). Guardrails:
 
-✅ does pydantic-style validation of LLM outputs,
-✅ takes corrective actions (e.g. reasking LLM) when validation fails,  
-✅ enforces structure and type guarantees (e.g. JSON).
+- does pydantic-style validation of LLM outputs. This includes semantic validation such as checking for bias in generated text, checking for bugs in generated code, etc.
+- takes corrective actions (e.g. reasking LLM) when validation fails,
+- enforces structure and type guarantees (e.g. JSON).
 
 ## 🚒 Under the hood
 
@@ -40,12 +40,12 @@ To learn more about the `rail` spec and the design decisions behind it, check ou
 ## 📍 Roadmap
 
 - [ ] Adding more examples, new use cases and domains
-- [ ] Adding integrations with langchain, gpt-index, minichain, manifest
+- [x] Adding integrations with langchain, gpt-index, minichain, manifest
 - [ ] Expanding validators offering
 - [ ] More compilers from `.rail` -> LLM prompt (e.g. `.rail` -> TypeScript)
 - [ ] Informative logging
-- [ ] Improving reasking logic
+- [x] Improving reasking logic
 - [ ] A guardrails.js implementation
 - [ ] VSCode extension for `.rail` files
 - [ ] Next version of `.rail` format
-- [ ] Add more LLM providers
+- [x] Add more LLM providers
