@@ -1,7 +1,7 @@
 <!-- ::: my_library.my_module.my_class -->
 
 
-::: guardrails.guardrails.Guard
+::: guardrails.guard.Guard
     options:
         members: 
             - "from_rail"

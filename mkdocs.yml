@@ -43,6 +43,7 @@ nav:
       # - 'SFW tutoring system for kids': examples/sfw_tutoring.md
     - 'Integrations':
       - 'LangChain': integrations/langchain.ipynb
+      - 'Pydantic': integrations/pydantic_validation.ipynb
 
 
 theme:
