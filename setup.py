@@ -33,6 +33,7 @@ REQUIRED = [
     "rich",
     "eliot",
     "eliot-tree",
+    "pydantic",
 ]
 
 # Read in docs/requirements.txt
