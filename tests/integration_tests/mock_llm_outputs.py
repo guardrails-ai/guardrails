@@ -1,4 +1,4 @@
-from .test_cases import entity_extraction
+from .test_cases import entity_extraction, pydantic
 
 
 def openai_completion_create(prompt, *args, **kwargs):
@@ -7,6 +7,9 @@ def openai_completion_create(prompt, *args, **kwargs):
     mock_llm_responses = {
         entity_extraction.COMPILED_PROMPT: entity_extraction.LLM_OUTPUT,
         entity_extraction.COMPILED_PROMPT_REASK: entity_extraction.LLM_OUTPUT_REASK,
+        pydantic.COMPILED_PROMPT: pydantic.LLM_OUTPUT,
+        pydantic.COMPILED_PROMPT_REASK_1: pydantic.LLM_OUTPUT_REASK_1,
+        pydantic.COMPILED_PROMPT_REASK_2: pydantic.LLM_OUTPUT_REASK_2,
     }
 
     try:

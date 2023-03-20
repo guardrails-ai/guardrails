@@ -41,6 +41,11 @@ class FormatAttr:
     # The XML element that this format attribute is associated with.
     element: Optional[ET._Element] = None
 
+    @property
+    def empty(self) -> bool:
+        """Return True if the format attribute is empty, False otherwise."""
+        return self.format is None
+
     @classmethod
     def from_element(cls, element: ET._Element) -> "FormatAttr":
         """Create a FormatAttr object from an XML element.
@@ -384,6 +389,23 @@ class Schema2Prompt:
             dt_child = schema[el_child.attrib["name"]]
             _inner(dt_child, el_child)
 
+    @staticmethod
+    def pydantic_to_object(schema: Schema) -> None:
+        """Recursively replace all pydantic elements with object elements."""
+        from guardrails.datatypes import Pydantic
+
+        def _inner(dt: DataType, el: ET._Element):
+            if isinstance(dt, Pydantic):
+                new_el = dt.to_object_element()
+                el.getparent().replace(el, new_el)
+
+            for _, dt_child, el_child in dt.iter(el):
+                _inner(dt_child, el_child)
+
+        for el_child in schema.root:
+            dt_child = schema[el_child.attrib["name"]]
+            _inner(dt_child, el_child)
+
     @classmethod
     def default(cls, schema: Schema) -> str:
         """Default transpiler.
@@ -407,6 +429,13 @@ class Schema2Prompt:
         cls.remove_on_fail_attributes(schema.root)
         # Remove validators with arguments.
         cls.validator_to_prompt(schema)
+        # Replace pydantic elements with object elements.
+        cls.pydantic_to_object(schema)
 
-        # Return the XML as a string.
-        return ET.tostring(schema.root, encoding="unicode", method="xml")
+        # Return the XML as a string that is
+        return ET.tostring(
+            schema.root,
+            encoding="unicode",
+            method="xml",
+            # pretty_print=True,
+        )

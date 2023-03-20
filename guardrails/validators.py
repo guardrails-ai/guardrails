@@ -7,10 +7,12 @@ import ast
 import logging
 import os
 from collections import defaultdict
+from copy import deepcopy
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Type, Union
 
 import openai
+from pydantic import BaseModel, ValidationError
 
 from guardrails.datatypes import registry as types_registry
 from guardrails.utils.reask_utils import ReAsk
@@ -98,6 +100,8 @@ def filter_in_list(schema: List) -> List:
     for item in schema:
         if isinstance(item, Filter):
             pass
+        elif isinstance(item, PydanticReAsk):
+            filtered_list.append(item)
         elif isinstance(item, list):
             filtered_item = filter_in_list(item)
             if len(filtered_item):
@@ -127,6 +131,8 @@ def filter_in_dict(schema: Dict) -> Dict:
     for key, value in schema.items():
         if isinstance(value, Filter):
             pass
+        elif isinstance(value, PydanticReAsk):
+            filtered_dict[key] = value
         elif isinstance(value, list):
             filtered_item = filter_in_list(value)
             if len(filtered_item):
@@ -275,6 +281,90 @@ class Validator:
 #         """Validate that a value is not None."""
 
 #         return value is not None
+
+
+class PydanticReAsk(dict):
+    pass
+
+
+@register_validator(name="pydantic", data_type="pydantic")
+class Pydantic(Validator):
+    """Validate an object using Pydantic."""
+
+    def __init__(
+        self,
+        model: Type[BaseModel],
+        on_fail: Optional[Callable] = None,
+    ):
+        super().__init__(on_fail=on_fail)
+
+        self.model = model
+
+    def validate_with_correction(
+        self, key: str, value: Dict, schema: Union[Dict, List]
+    ) -> Dict:
+        """Validate an object using Pydantic.
+
+        For example, consider the following data for a `Person` model
+        with fields `name`, `age`, and `zipcode`:
+        {
+            "user" : {
+                "name": "John",
+                "age": 30,
+                "zipcode": "12345",
+            }
+        }
+        then `key` is "user", `value` is the value of the "user" key, and
+        `schema` is the entire schema.
+
+        If this validator succeeds, then the `schema` is returned and
+        looks like:
+        {
+            "user": Person(name="John", age=30, zipcode="12345")
+        }
+
+        If it fails, then the `schema` is returned and looks like e.g.
+        {
+            "user": {
+                "name": "John",
+                "age": 30,
+                "zipcode": ReAsk(
+                    incorrect_value="12345",
+                    error_message="...",
+                    fix_value=None,
+                    path=None,
+                )
+            }
+        }
+        """
+        try:
+            # Run the Pydantic model on the value.
+            schema[key] = self.model(**value)
+        except ValidationError as e:
+            # Create a copy of the value so that we can modify it
+            # to insert e.g. ReAsk objects.
+            new_value = deepcopy(value)
+            for error in e.errors():
+                assert (
+                    len(error["loc"]) == 1
+                ), "Pydantic validation errors should only have one location."
+
+                field_name = error["loc"][0]
+                event_detail = EventDetail(
+                    key=field_name,
+                    value=new_value[field_name],
+                    schema=new_value,
+                    error_message=error["msg"],
+                    fix_value=None,
+                )
+                # Call the on_fail method and reassign the value.
+                new_value = self.on_fail(event_detail)
+
+            # Insert the new `value` dictionary into the schema.
+            # This now contains e.g. ReAsk objects.
+            schema[key] = PydanticReAsk(new_value)
+
+        return schema
 
 
 @register_validator(name="valid-range", data_type=["integer", "float", "percentage"])

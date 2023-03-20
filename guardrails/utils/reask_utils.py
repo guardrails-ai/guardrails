@@ -27,12 +27,18 @@ def gather_reasks(validated_output: Dict) -> List[ReAsk]:
     Returns:
         A list of ReAsk objects found in the output.
     """
+    from guardrails.validators import PydanticReAsk
+
     reasks = []
 
     def _gather_reasks_in_dict(output: Dict, path: List[str] = []) -> None:
+        is_pydantic = isinstance(output, PydanticReAsk)
         for field, value in output.items():
             if isinstance(value, ReAsk):
-                value.path = path + [field]
+                if is_pydantic:
+                    value.path = path
+                else:
+                    value.path = path + [field]
                 reasks.append(value)
 
             if isinstance(value, dict):
@@ -62,6 +68,12 @@ def get_reasks_by_element(
     parsed_rail: ET._Element,
 ) -> Dict[ET._Element, List[tuple]]:
     """Cluster reasks by the XML element they are associated with."""
+    # This should be guaranteed to work, since the path corresponding
+    # to a ReAsk should always be valid in the element tree.
+
+    # This is because ReAsk objects are only created for elements
+    # with corresponding validators i.e. the element must have been
+    # in the tree in the first place for the ReAsk to be created.
 
     reasks_by_element = defaultdict(list)
 
@@ -139,8 +151,11 @@ def prune_json_for_reasking(json_object: Any) -> Union[None, Dict, List]:
     Returns:
         The pruned validated JSON.
     """
+    from guardrails.validators import PydanticReAsk
 
-    if isinstance(json_object, list):
+    if isinstance(json_object, ReAsk) or isinstance(json_object, PydanticReAsk):
+        return json_object
+    elif isinstance(json_object, list):
         pruned_list = []
         for item in json_object:
             pruned_output = prune_json_for_reasking(item)
@@ -152,7 +167,7 @@ def prune_json_for_reasking(json_object: Any) -> Union[None, Dict, List]:
     elif isinstance(json_object, dict):
         pruned_json = {}
         for key, value in json_object.items():
-            if isinstance(value, ReAsk):
+            if isinstance(value, ReAsk) or isinstance(value, PydanticReAsk):
                 pruned_json[key] = value
             elif isinstance(value, dict):
                 pruned_output = prune_json_for_reasking(value)
@@ -171,14 +186,12 @@ def prune_json_for_reasking(json_object: Any) -> Union[None, Dict, List]:
             return pruned_json
 
         return None
-    else:
-        if isinstance(json_object, ReAsk):
-            return json_object
-        return None
 
 
 def get_reask_prompt(
-    parsed_rail, reasks: List[ReAsk], reask_json: Dict
+    parsed_rail: ET._Element,
+    reasks: List[ReAsk],
+    reask_json: Dict,
 ) -> Tuple[str, ET._Element]:
     """Construct a prompt for reasking.
 
