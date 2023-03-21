@@ -57,7 +57,11 @@ def openai_chat_wrapper(text: str, *args, model="gpt-3.5-turbo", **kwargs):
     if "system_prompt" in kwargs:
         system_prompt = kwargs.pop("system_prompt")
     else:
-        system_prompt = "You are a helpful assistant."
+        system_prompt = (
+            "You are a helpful assistant, "
+            "able to express yourself purely through JSON, "
+            "strictly and precisely adhering to the provided XML schemas."
+        )
 
     api_key = os.environ.get("OPENAI_API_KEY")
     openai_response = openai.ChatCompletion.create(
