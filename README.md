@@ -2,7 +2,7 @@
 
 <div align="center">
 
-[![Discord](https://badgen.net/badge/icon/discord?icon=discord&label)](https://discord.gg/wQsm6vgG) [![Twitter](https://badgen.net/badge/icon/twitter?icon=twitter&label)](https://twitter.com/guardrails_ai)
+[![Discord](https://badgen.net/badge/icon/discord?icon=discord&label)](https://discord.gg/Jsey3mX98B) [![Twitter](https://badgen.net/badge/icon/twitter?icon=twitter&label)](https://twitter.com/guardrails_ai)
 
 Guardrails is an open-source Python package for specifying structure and type, validating and correcting the outputs of large language models (LLMs).
 
