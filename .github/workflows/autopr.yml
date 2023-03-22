@@ -2,10 +2,7 @@ name: AutoPR
 
 on:
   issues:
-    types: [opened, edited]
-  properties:
-    title:
-      contains: "!autopr"
+    types: [edited]
 
 jobs:
   autopr:
