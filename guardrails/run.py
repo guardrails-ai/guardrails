@@ -190,7 +190,7 @@ class Runner:
             error = None
             # Treat the output as a JSON string, and load it into a dict.
             try:
-                output_as_dict = json.loads(output)
+                output_as_dict = json.loads(output, strict=False)
             except json.decoder.JSONDecodeError as e:
                 output_as_dict = None
                 error = e
