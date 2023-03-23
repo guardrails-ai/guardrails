@@ -2,6 +2,11 @@ from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any, Dict, List
 
+from rich.console import Group
+from rich.panel import Panel
+from rich.pretty import pretty_repr
+from rich.tree import Tree
+
 from guardrails.utils.reask_utils import ReAsk, gather_reasks, prune_json_for_reasking
 
 
@@ -18,6 +23,22 @@ class GuardLogs:
         """Returns the failed validations."""
         return gather_reasks(self.validated_output)
 
+    @property
+    def rich_group(self) -> Group:
+        return Group(
+            Panel(
+                self.prompt,
+                title="Prompt",
+                style="on #F0F8FF",
+            ),
+            Panel(self.output, title="Raw LLM Output", style="on #F5F5DC"),
+            Panel(
+                pretty_repr(self.validated_output),
+                title="Validated Output",
+                style="on #F0FFF0",
+            ),
+        )
+
 
 @dataclass
 class GuardHistory:
@@ -29,6 +50,14 @@ class GuardHistory:
             guard_log.validated_output = merge_reask_output(last_log, guard_log)
 
         return GuardHistory(self.history + [guard_log])
+
+    @property
+    def tree(self) -> Tree:
+        """Returns the tree."""
+        tree = Tree("Logs")
+        for i, log in enumerate(self.history):
+            tree.add(Panel(log.rich_group, title=f"Step {i}"))
+        return tree
 
     @property
     def validated_output(self) -> dict:
