@@ -46,7 +46,7 @@ def openai_wrapper(text: str, *args, **kwargs):
     api_key = os.environ.get("OPENAI_API_KEY")
     openai_response = openai.Completion.create(
         api_key=api_key,
-        prompt=text,
+        prompt=text + "\n\nJson Output:\n\n",
         *args,
         **kwargs,
     )
