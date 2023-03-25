@@ -157,8 +157,7 @@ Here are examples of simple (XML, JSON) pairs that show the expected behavior:
 - `<string name='foo' format='two-words lower-case' />` => `{{'foo': 'example one'}}`
 - `<list name='bar'><string format='upper-case' /></list>` => `{{"bar": ['STRING ONE', 'STRING TWO', etc.]}}`
 - `<object name='baz'><string name="foo" format="capitalize two-words" /><integer name="index" format="1-indexed" /></object>` => `{{'baz': {{'foo': 'Some String', 'index': 1}}}}`
-
-JSON Object:"""  # noqa: E501
+"""  # noqa: E501
 
     result_prompt, _ = reask_utils.get_reask_prompt(
         ET.fromstring(example_rail), reasks, reask_json

@@ -46,6 +46,4 @@ Given below is XML that describes the information to extract from this document 
 
 ```
 ONLY return a valid JSON object (no other text is necessary). The JSON MUST conform to the XML format, including any types and format requests e.g. requests for lists, objects and specific types. Be correct and concise. If you are unsure anywhere, enter `None`.
-
-JSON Output:
 ```
