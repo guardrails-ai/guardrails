@@ -270,6 +270,7 @@ The `on-fail-{quality-criteria}` attribute allows specifying the corrective acti
 | `filter`  | Filter the incorrect value. This only filters the field that fails, and will return the rest of the generated output.                                                                                  |
 | `refrain` | Refrain from returning an output. If a formatter has the corrective action refrain, then on failure there will be a `None` output returned instead of the JSON.                                        |
 | `noop`    | Do nothing. The failure will still be recorded in the logs, but no corrective action will be taken.                                                                                                    |
+| `raise`  | Raise an exception when validation fails.                                                                                                                                                      |
 
 
 ## 🚒 Adding compiled `output` element to prompt
