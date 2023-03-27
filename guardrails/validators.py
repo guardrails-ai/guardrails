@@ -32,6 +32,10 @@ types_to_validators = defaultdict(list)
 logger = logging.getLogger(__name__)
 
 
+class ValidatorError(Exception):
+    """Base class for all validator errors."""
+
+
 class Filter:
     pass
 
@@ -261,6 +265,11 @@ class Validator:
         if with_keywords:
             params = " ".join([f"{k}={v}" for k, v in self._kwargs.items()])
         return f"{self.rail_alias}: {params}"
+
+    def raise_exception(self, error: EventDetail) -> None:
+        """Raise an exception."""
+
+        raise ValidatorError(error.error_message)
 
 
 # @register_validator('required', 'all')
