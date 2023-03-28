@@ -431,6 +431,7 @@ class Schema2Prompt:
         cls.validator_to_prompt(schema)
         # Replace pydantic elements with object elements.
         cls.pydantic_to_object(schema)
+        # TODO(shreya): Transpile cases with the same with clause together.
 
         # Return the XML as a string that is
         return ET.tostring(

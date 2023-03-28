@@ -266,7 +266,7 @@ class Validator:
             params = " ".join([f"{k}={v}" for k, v in self._kwargs.items()])
         return f"{self.rail_alias}: {params}"
 
-    def raise_exception(self, error: EventDetail) -> None:
+    def exception(self, error: EventDetail) -> None:
         """Raise an exception."""
 
         raise ValidatorError(error.error_message)
@@ -372,6 +372,67 @@ class Pydantic(Validator):
             # Insert the new `value` dictionary into the schema.
             # This now contains e.g. ReAsk objects.
             schema[key] = PydanticReAsk(new_value)
+
+        return schema
+
+
+@register_validator(name="choice", data_type="choice")
+class Choice(Validator):
+    """Validate that a value is one of a set of choices.
+
+    - Name for `format` attribute: `choice`
+    - Supported data types: `string`
+    - Programmatic fix: Closest value within the set of choices.
+    """
+
+    def __init__(
+        self,
+        choices: List[str],
+        on_fail: Optional[Callable] = None,
+    ):
+        super().__init__(on_fail=on_fail)
+
+        self._choices = choices
+
+    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
+        """Validate that a value is one of a set of choices."""
+
+        logger.debug(f"Validating {value} is in {self._choices}...")
+
+        if value not in self._choices:
+            raise EventDetail(
+                key=key,
+                value=value,
+                schema=schema,
+                error_message=f"{value} is not in {self._choices}",
+                fix_value=None,
+            )
+
+        selected_choice = value
+        if selected_choice not in schema:
+            raise EventDetail(
+                key=key,
+                value=value,
+                schema=schema,
+                error_message=f"{schema} must contain a key called {value}",
+                fix_value=None,
+            )
+
+        # Make sure that no other choice is selected.
+        for choice in self._choices:
+            if choice == selected_choice:
+                continue
+            if choice in schema:
+                raise EventDetail(
+                    key=key,
+                    value=value,
+                    schema=schema,
+                    error_message=(
+                        f"{schema} must not contain a key called {choice}, "
+                        f"since {selected_choice} is selected"
+                    ),
+                    fix_value=None,
+                )
 
         return schema
 

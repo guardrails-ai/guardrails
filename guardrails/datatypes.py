@@ -282,6 +282,72 @@ class Object(NonScalarType):
             self._children[child.attrib["name"]] = child_data_type.from_xml(child)
 
 
+@register_type("choice")
+class Choice(NonScalarType):
+    """Element tag: `<object>`"""
+
+    def __init__(
+        self, children: Dict[str, Any], format_attr: "FormatAttr", element: ET._Element
+    ) -> None:
+        super().__init__(children, format_attr, element)
+
+    def validate(self, key: str, value: Any, schema: Dict) -> Dict:
+        # Call the validate method of the parent class
+        super().validate(key, value, schema)
+
+        # Validate the selected choice
+        selected_key = value
+        selected_value = schema[selected_key]
+
+        self._children[selected_key].validate(selected_key, selected_value, schema)
+
+        schema[key] = value
+        return schema
+
+    def set_children(self, element: ET._Element):
+        for child in element:
+            child_data_type = registry[child.tag]
+            assert child_data_type == Case
+            self._children[child.attrib["name"]] = child_data_type.from_xml(child)
+
+    @property
+    def validators(self) -> List:
+        from guardrails.validators import Choice as ChoiceValidator
+
+        # Check if the <choice ... /> element has an `on-fail` attribute.
+        # If so, use that as the `on_fail` argument for the PydanticValidator.
+        on_fail = None
+        on_fail_attr_name = "on-fail-choice"
+        if on_fail_attr_name in self.element.attrib:
+            on_fail = self.element.attrib[on_fail_attr_name]
+        return [ChoiceValidator(choices=list(self._children.keys()), on_fail=on_fail)]
+
+
+@register_type("case")
+class Case(NonScalarType):
+    """Element tag: `<case>`"""
+
+    def __init__(
+        self, children: Dict[str, Any], format_attr: "FormatAttr", element: ET._Element
+    ) -> None:
+        super().__init__(children, format_attr, element)
+
+    def validate(self, key: str, value: Any, schema: Dict) -> Dict:
+        child = list(self._children.values())[0]
+        child.validate(key, value, schema)
+
+        schema[key] = value
+
+        return schema
+
+    def set_children(self, element: ET._Element):
+        assert len(element) == 1, "Case must have exactly one child."
+
+        for child in element:
+            child_data_type = registry[child.tag]
+            self._children[child.attrib["name"]] = child_data_type.from_xml(child)
+
+
 @register_type("pydantic")
 class Pydantic(NonScalarType):
     """Element tag: `<pydantic>`"""
