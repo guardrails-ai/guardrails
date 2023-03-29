@@ -560,7 +560,7 @@ class UpperCase(Validator):
         return schema
 
 
-@register_validator(name="length", data_type=["string", "list", "object"])
+@register_validator(name="length", data_type=["string", "list"])
 class ValidLength(Validator):
     """Validate that the length of value is within the expected range.
 
@@ -588,7 +588,12 @@ class ValidLength(Validator):
             logger.debug(f"Value {value} is less than {self._min}.")
 
             # Repeat the last character to make the value the correct length.
-            corrected_value = value + value[-1] * (self._min - len(value))
+            if isinstance(value, str):
+                last_val = value[-1]
+            else:
+                last_val = [value[-1]]
+
+            corrected_value = value + last_val * (self._min - len(value))
             raise EventDetail(
                 key,
                 value,
