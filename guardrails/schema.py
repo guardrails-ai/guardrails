@@ -8,6 +8,7 @@ from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 from lxml import etree as ET
+from lxml.builder import E
 
 from guardrails.datatypes import DataType
 from guardrails.validators import Validator, check_refrain_in_dict, filter_in_dict
@@ -406,6 +407,32 @@ class Schema2Prompt:
             dt_child = schema[el_child.attrib["name"]]
             _inner(dt_child, el_child)
 
+    @staticmethod
+    def deconstruct_choice(root: ET._Element) -> ET._Element:
+        """Deconstruct a choice element into a string and cases."""
+
+        def _inner(el: str) -> ET._Element:
+            el = ET.fromstring(el)
+            el_copy = ET.Element(el.tag, **el.attrib)
+
+            for child in el:
+                if child.tag == "choice":
+                    choice_str = E.string(**child.attrib)
+                    valid_choices = [x.attrib["name"] for x in child]
+                    choice_str.attrib["choices"] = ",".join(valid_choices)
+                    el_copy.append(choice_str)
+                    for case in child:
+                        case.attrib["on"] = child.attrib["name"]
+                        case = _inner(ET.tostring(case))
+                        el_copy.append(case)
+                else:
+                    child = _inner(ET.tostring(child))
+                    el_copy.append(child)
+
+            return el_copy
+
+        return _inner(ET.tostring(root))
+
     @classmethod
     def default(cls, schema: Schema) -> str:
         """Default transpiler.
@@ -431,11 +458,14 @@ class Schema2Prompt:
         cls.validator_to_prompt(schema)
         # Replace pydantic elements with object elements.
         cls.pydantic_to_object(schema)
+        # Deconstruct choice elements into string and cases.
+        updated_root = cls.deconstruct_choice(schema.root)
 
         # Return the XML as a string that is
+        ET.indent(updated_root, space="    ")
         return ET.tostring(
-            schema.root,
+            updated_root,
             encoding="unicode",
             method="xml",
-            # pretty_print=True,
+            pretty_print=True,
         )
