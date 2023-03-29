@@ -134,6 +134,9 @@ class Integer(ScalarType):
     @classmethod
     def from_str(cls, s: str) -> "Integer":
         """Create an Integer from a string."""
+        if s is None:
+            return None
+
         return int(s)
 
 
@@ -144,6 +147,9 @@ class Float(ScalarType):
     @classmethod
     def from_str(cls, s: str) -> "Float":
         """Create a Float from a string."""
+        if s is None:
+            return None
+
         return float(s)
 
 
@@ -154,6 +160,8 @@ class Boolean(ScalarType):
     @classmethod
     def from_str(cls, s: Union[str, bool]) -> "Boolean":
         """Create a Boolean from a string."""
+        if s is None:
+            return None
 
         if isinstance(s, bool):
             return s
@@ -173,6 +181,9 @@ class Date(ScalarType):
     @classmethod
     def from_str(cls, s: str) -> "Date":
         """Create a Date from a string."""
+        if s is None:
+            return None
+
         return datetime.datetime.strptime(s, "%Y-%m-%d").date()
 
 
@@ -183,6 +194,9 @@ class Time(ScalarType):
     @classmethod
     def from_str(cls, s: str) -> "Time":
         """Create a Time from a string."""
+        if s is None:
+            return None
+
         return datetime.datetime.strptime(s, "%H:%M:%S").time()
 
 
