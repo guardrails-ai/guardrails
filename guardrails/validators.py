@@ -261,9 +261,9 @@ class Validator:
 
     def to_prompt(self, with_keywords: bool = True) -> str:
         """Convert the validator to a prompt.
-        
+
         E.g. ValidLength(5, 10) -> "length: 5 10" when with_keywords is False.
-        E.g. ValidLength(5, 10) -> "length: min=5 max=10" when with_keywords is True.
+        ValidLength(5, 10) -> "length: min=5 max=10" when with_keywords is True.
 
         Args:
             with_keywords: Whether to include the keyword arguments in the prompt.
