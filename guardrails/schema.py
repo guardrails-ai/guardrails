@@ -412,24 +412,23 @@ class Schema2Prompt:
         """Deconstruct a choice element into a string and cases."""
 
         def _inner(el: str) -> ET._Element:
-
             el = ET.fromstring(el)
             el_copy = ET.Element(el.tag, **el.attrib)
 
             for child in el:
                 if child.tag == "choice":
                     choice_str = E.string(**child.attrib)
-                    valid_choices = [x.attrib['name'] for x in child]
-                    choice_str.attrib['choices'] = ','.join(valid_choices)
+                    valid_choices = [x.attrib["name"] for x in child]
+                    choice_str.attrib["choices"] = ",".join(valid_choices)
                     el_copy.append(choice_str)
                     for case in child:
-                        case.attrib['on'] = child.attrib['name']
+                        case.attrib["on"] = child.attrib["name"]
                         case = _inner(ET.tostring(case))
                         el_copy.append(case)
                 else:
                     child = _inner(ET.tostring(child))
                     el_copy.append(child)
-            
+
             return el_copy
 
         return _inner(ET.tostring(root))
