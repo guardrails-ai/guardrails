@@ -20,8 +20,14 @@ Given below is XML that describes the information to extract from this document 
 
 <output>
     <list name="people" description="A list of 3 people.">
-        <object description="Information about a person." pydantic="Person"><string name="name" description="The name of the person."/><integer name="age" description="The age of the person." format="age-must-be-between-0-and-150"/><string name="zip_code" description="The zip code of the person." format="zip-code-must-be-numeric; zip-code-in-california"/></object></list>
+        <object description="Information about a person." pydantic="Person">
+            <string name="name" description="The name of the person."/>
+            <integer name="age" description="The age of the person." format="age-must-be-between-0-and-150"/>
+            <string name="zip_code" description="The zip code of the person." format="zip-code-must-be-numeric; zip-code-in-california"/>
+        </object>
+    </list>
 </output>
+
 
 ONLY return a valid JSON object (no other text is necessary), where the key of the field in JSON is the `name` attribute of the corresponding XML, and the value is of the type specified by the corresponding XML's tag. The JSON MUST conform to the XML format, including any types and format requests e.g. requests for lists, objects and specific types. Be correct and concise. If you are unsure anywhere, enter `None`.
 

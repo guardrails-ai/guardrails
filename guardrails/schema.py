@@ -462,6 +462,7 @@ class Schema2Prompt:
         updated_root = cls.deconstruct_choice(schema.root)
 
         # Return the XML as a string that is
+        ET.indent(updated_root, space="    ")
         return ET.tostring(
             updated_root,
             encoding="unicode",
