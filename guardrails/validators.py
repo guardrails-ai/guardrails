@@ -390,7 +390,7 @@ class Choice(Validator):
         choices: List[str],
         on_fail: Optional[Callable] = None,
     ):
-        super().__init__(on_fail=on_fail)
+        super().__init__(on_fail=on_fail, choices=choices)
 
         self._choices = choices
 
@@ -449,7 +449,7 @@ class ValidRange(Validator):
     def __init__(
         self, min: int = None, max: int = None, on_fail: Optional[Callable] = None
     ):
-        super().__init__(on_fail=on_fail)
+        super().__init__(on_fail=on_fail, min=min, max=max)
 
         self._min = min
         self._max = max
@@ -492,7 +492,7 @@ class ValidChoices(Validator):
     """
 
     def __init__(self, choices: List[Any], on_fail: Optional[Callable] = None):
-        super().__init__(on_fail=on_fail)
+        super().__init__(on_fail=on_fail, choices=choices)
         self._choices = choices
 
     def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
@@ -573,7 +573,7 @@ class ValidLength(Validator):
     def __init__(
         self, min: int = None, max: int = None, on_fail: Optional[Callable] = None
     ):
-        super().__init__(on_fail=on_fail)
+        super().__init__(on_fail=on_fail, min=min, max=max)
         self._min = int(min) if min is not None else None
         self._max = int(max) if max is not None else None
 
@@ -925,7 +925,7 @@ class EndsWith(Validator):
     """
 
     def __init__(self, end: str, on_fail: str = "fix"):
-        super().__init__(on_fail=on_fail)
+        super().__init__(on_fail=on_fail, end=end)
         self._end = end
 
     def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
