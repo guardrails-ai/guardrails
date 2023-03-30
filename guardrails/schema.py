@@ -152,6 +152,16 @@ class FormatAttr:
         except AttributeError:
             raise AttributeError("Must call `get_validators` first.")
 
+    @property
+    def unregistered_validators(self) -> List[str]:
+        """Get the list of validators from the format attribute that are not
+        registered for this element.
+        """
+        try:
+            return getattr(self, "_unregistered_validators")
+        except AttributeError:
+            raise AttributeError("Must call `get_validators` first.")
+
     def get_validators(self, strict: bool = False) -> List[Validator]:
         """Get the list of validators from the format attribute. Only the
         validators that are registered for this element will be returned.
@@ -171,6 +181,7 @@ class FormatAttr:
         from guardrails.validators import types_to_validators, validators_registry
 
         _validators = []
+        _unregistered_validators = []
         parsed = self.parse().items()
         for validator_name, args in parsed:
             # Check if the validator is registered for this element.
@@ -188,6 +199,7 @@ class FormatAttr:
                         f"Validator {validator_name} is not valid for"
                         f" element {self.element.tag}."
                     )
+                    _unregistered_validators.append(validator_name)
                 continue
 
             validator = validators_registry[validator_name]
@@ -205,6 +217,7 @@ class FormatAttr:
             _validators.append(validator(*args, on_fail=on_fail))
 
         self._validators = _validators
+        self._unregistered_validators = _unregistered_validators
         return _validators
 
     def to_prompt(self, with_keywords: bool = True) -> str:
@@ -220,7 +233,13 @@ class FormatAttr:
             return ""
         # Use the validators' to_prompt method to convert the format string to
         # another string representation.
-        return "; ".join([v.to_prompt(with_keywords) for v in self.validators])
+        prompt = "; ".join([v.to_prompt(with_keywords) for v in self.validators])
+        unreg_prompt = "; ".join(self.unregistered_validators)
+        if prompt and unreg_prompt:
+            prompt += f"; {unreg_prompt}"
+        elif unreg_prompt:
+            prompt += unreg_prompt
+        return prompt
 
 
 class Schema:
@@ -428,17 +447,21 @@ class Schema2Prompt:
                     # <choice name='bar'><case><string name='foo'/></case></choice> =>
                     # <string name='bar'/><string name='foo' if='bar==foo'/>
                     for case in child:
-                        case_int = case[0]
+                        case_int = case[0]  # The child of the case element
                         case_int_name = case_int.attrib.get("name", None)
                         case_int_description = case_int.attrib.get("description", "")
+
                         # Copy attributes from the case element to case internal element
                         for k, v in case.attrib.items():
                             case_int.attrib[k] = v
 
                         # Make sure information about the case_internal name is not lost
-                        if case_int_name is not None:    
-                            case_int.attrib["description"] = \
-                                f"{case_int_name}: {case_int_description}"
+                        if case_int_name is not None:
+                            if case_int_description == "":
+                                case_int.attrib["description"] = case_int_name
+                            else:
+                                case_int.attrib["description"] = \
+                                    f"{case_int_name}: {case_int_description}"
 
                         # Add the if attribute to the case internal element
                         case_int.attrib["if"] = \

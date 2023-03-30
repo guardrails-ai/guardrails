@@ -272,6 +272,9 @@ class Validator:
             A string representation of the validator.
         """
 
+        if not len(self._kwargs):
+            return self.rail_alias
+
         kwargs = self._kwargs.copy()
         for k, v in kwargs.items():
             if not isinstance(v, str):
