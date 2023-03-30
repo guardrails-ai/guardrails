@@ -143,8 +143,6 @@ Given below is XML that describes the information to extract from this document 
 </output>
 
 ONLY return a valid JSON object (no other text is necessary). The JSON MUST conform to the XML format, including any types and format requests e.g. requests for lists, objects and specific types. Be correct and concise.
-
-JSON Output:
 ```
 
 Call the `Guard` object with the LLM API call as the first argument and add any additional arguments to the LLM API call as the remaining arguments.
