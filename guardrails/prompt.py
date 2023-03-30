@@ -39,12 +39,6 @@ class Prompt:
 
         return text
 
-    def add_output_schema_to_prompt(self, output_schema: str):
-        self.output_schema = output_schema
-
-    def append_to_prompt(self, text: str):
-        self.source += text
-
     def __str__(self) -> str:
         return self.source
 

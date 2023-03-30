@@ -383,7 +383,7 @@ class Schema2Prompt:
                 else:
                     del el.attrib["format"]
 
-            for _, dt_child, el_child in dt:
+            for _, dt_child, el_child in dt.iter(el):
                 _inner(dt_child, el_child)
 
         for el_child in schema.root:
@@ -417,14 +417,36 @@ class Schema2Prompt:
 
             for child in el:
                 if child.tag == "choice":
+                    # Create a high level string element.
                     choice_str = E.string(**child.attrib)
                     valid_choices = [x.attrib["name"] for x in child]
                     choice_str.attrib["choices"] = ",".join(valid_choices)
                     el_copy.append(choice_str)
+
+                    # Create a case for each choice. The child of the case element
+                    # is bubbled up to the parent of the case element. E.g., 
+                    # <choice name='bar'><case><string name='foo'/></case></choice> =>
+                    # <string name='bar'/><string name='foo' if='bar==foo'/>
                     for case in child:
-                        case.attrib["on"] = child.attrib["name"]
-                        case = _inner(ET.tostring(case))
-                        el_copy.append(case)
+                        case_int = case[0]
+                        case_int_name = case_int.attrib.get("name", None)
+                        case_int_description = case_int.attrib.get("description", "")
+                        # Copy attributes from the case element to case internal element
+                        for k, v in case.attrib.items():
+                            case_int.attrib[k] = v
+
+                        # Make sure information about the case_internal name is not lost
+                        if case_int_name is not None:    
+                            case_int.attrib["description"] = \
+                                f"{case_int_name}: {case_int_description}"
+
+                        # Add the if attribute to the case internal element
+                        case_int.attrib["if"] = \
+                            f"{child.attrib['name']}=={case.attrib['name']}"
+
+                        # Bubble up the case_internal element to the parent of choice
+                        case_int = _inner(ET.tostring(case_int))
+                        el_copy.append(case_int)
                 else:
                     child = _inner(ET.tostring(child))
                     el_copy.append(child)
