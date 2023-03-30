@@ -443,7 +443,7 @@ class Schema2Prompt:
                     el_copy.append(choice_str)
 
                     # Create a case for each choice. The child of the case element
-                    # is bubbled up to the parent of the case element. E.g., 
+                    # is bubbled up to the parent of the case element. E.g.,
                     # <choice name='bar'><case><string name='foo'/></case></choice> =>
                     # <string name='bar'/><string name='foo' if='bar==foo'/>
                     for case in child:
@@ -460,12 +460,14 @@ class Schema2Prompt:
                             if case_int_description == "":
                                 case_int.attrib["description"] = case_int_name
                             else:
-                                case_int.attrib["description"] = \
-                                    f"{case_int_name}: {case_int_description}"
+                                case_int.attrib[
+                                    "description"
+                                ] = f"{case_int_name}: {case_int_description}"
 
                         # Add the if attribute to the case internal element
-                        case_int.attrib["if"] = \
-                            f"{child.attrib['name']}=={case.attrib['name']}"
+                        case_int.attrib[
+                            "if"
+                        ] = f"{child.attrib['name']}=={case.attrib['name']}"
 
                         # Bubble up the case_internal element to the parent of choice
                         case_int = _inner(ET.tostring(case_int))
