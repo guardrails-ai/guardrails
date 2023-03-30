@@ -569,6 +569,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../examples/select_choice_based_on_action/" class="md-nav__link">
+        If condition: generate different JSON objects based on condition
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../examples/extracting_entities/" class="md-nav__link">
         Extracting entities from ToS
       </a>
@@ -881,17 +895,11 @@
 <ol>
 <li>The prompt contains high level task information.</li>
 <li>The variable <code>{{document}}</code> is provided by the user at runtime.</li>
-<li><code>@xml_prefix_prompt</code> is a prompt primitive provided by guardrails. It is equivalent to typing the following lines in the prompt:</li>
-</ol>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>Given below is XML that describes the information to extract from this document and the tags to extract it into.
-</span></code></pre></div>
-<ol>
+<li><code>@xml_prefix_prompt</code> is a prompt primitive provided by guardrails. It is equivalent to typing the following lines in the prompt: <code>Given below is XML that describes the information to extract from this document and the tags to extract it into.</code></li>
 <li><code>{output_schema}</code> is the output schema and contains information about , which is compiled based on the <code>output</code> element.</li>
 <li><code>@json_suffix_prompt</code> is a prompt primitive provided by guardrails. It is equivalent to typing the following lines in the prompt:</li>
 </ol>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>ONLY return a valid JSON object (no other text is necessary). The JSON MUST conform to the XML format, including any types and format requests e.g. requests for lists, objects and specific types. Be correct and concise. If you are unsure anywhere, enter `None`.
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>JSON Output:
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>ONLY return a valid JSON object (no other text is necessary). The JSON MUST conform to the XML format, including any types and format requests e.g. requests for lists, objects and specific types. Be correct and concise. If you are unsure anywhere, enter `None`.
 </span></code></pre></div>
 
 

@@ -508,6 +508,13 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#guardrails.validators.Choice" class="md-nav__link">
+    Choice
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#guardrails.validators.EndsWith" class="md-nav__link">
     EndsWith
   </a>
@@ -703,6 +710,20 @@
           Examples
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/select_choice_based_on_action/" class="md-nav__link">
+        If condition: generate different JSON objects based on condition
+      </a>
+    </li>
+  
+
+            
           
             
               
@@ -948,6 +969,13 @@
         <li class="md-nav__item">
   <a href="#guardrails.validators.BugFreeSQL" class="md-nav__link">
     BugFreeSQL
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#guardrails.validators.Choice" class="md-nav__link">
+    Choice
   </a>
   
 </li>
@@ -1208,6 +1236,48 @@ that uses a database connection to check if the query is valid.</p>
 <li>Name for <code>format</code> attribute: <code>bug-free-sql</code></li>
 <li>Supported data types: <code>sql</code></li>
 <li>Programmatic fix: None</li>
+</ul>
+
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="guardrails.validators.Choice" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">Choice</span><span class="p">(</span><span class="n">choices</span><span class="p">,</span> <span class="n">on_fail</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+</h2>
+
+
+  <div class="doc doc-contents ">
+
+  
+      <p>Validate that a value is one of a set of choices.</p>
+<ul>
+<li>Name for <code>format</code> attribute: <code>choice</code></li>
+<li>Supported data types: <code>string</code></li>
+<li>Programmatic fix: Closest value within the set of choices.</li>
 </ul>
 
 

@@ -528,6 +528,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../select_choice_based_on_action/" class="md-nav__link">
+        If condition: generate different JSON objects based on condition
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../extracting_entities/" class="md-nav__link">
         Extracting entities from ToS
       </a>
@@ -1058,10 +1072,8 @@ Summarize the following document:
 Given below is XML that describes the information to extract from this document and the tags to extract it into.
 
 <span style="font-weight: bold">&lt;</span><span style="color: #ff00ff; text-decoration-color: #ff00ff; font-weight: bold">output</span><span style="color: #000000; text-decoration-color: #000000">&gt;</span>
-<span style="color: #000000; text-decoration-color: #000000">    &lt;string </span><span style="color: #808000; text-decoration-color: #808000">name</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"summary"</span><span style="color: #000000; text-decoration-color: #000000"> </span><span style="color: #808000; text-decoration-color: #808000">description</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"Summarize the given document faithfully."</span><span style="color: #000000; text-decoration-color: #000000"> </span><span style="color: #808000; text-decoration-color: #808000">format</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"similar-to-document: </span>
-<span style="color: #008000; text-decoration-color: #008000">{document}, 0.60"</span><span style="color: #800080; text-decoration-color: #800080">/</span><span style="color: #000000; text-decoration-color: #000000">&gt;</span>
+<span style="color: #000000; text-decoration-color: #000000">    &lt;string </span><span style="color: #808000; text-decoration-color: #808000">name</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"summary"</span><span style="color: #000000; text-decoration-color: #000000"> </span><span style="color: #808000; text-decoration-color: #808000">description</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"Summarize the given document faithfully."</span><span style="color: #800080; text-decoration-color: #800080">/</span><span style="color: #000000; text-decoration-color: #000000">&gt;</span>
 <span style="color: #000000; text-decoration-color: #000000">&lt;</span><span style="color: #800080; text-decoration-color: #800080">/</span><span style="color: #ff00ff; text-decoration-color: #ff00ff">output</span><span style="color: #000000; text-decoration-color: #000000">&gt;</span>
-
 
 
 <span style="color: #000000; text-decoration-color: #000000">ONLY return a valid JSON object </span><span style="color: #000000; text-decoration-color: #000000; font-weight: bold">(</span><span style="color: #000000; text-decoration-color: #000000">no other text is necessary</span><span style="color: #000000; text-decoration-color: #000000; font-weight: bold">)</span><span style="color: #000000; text-decoration-color: #000000">, where the key of the field in JSON is the `name` </span>
@@ -1124,15 +1136,129 @@ JSON Object:
 <div class="output_wrapper">
 <div class="output">
 <div class="output_area">
+<div class="output_subarea output_stream output_stderr output_text">
+<pre>
+<code>/Users/shreyarajpal/anaconda3/envs/tiff-env/lib/python3.9/site-packages/eliot/json.py:22: FutureWarning: In the future `np.bool` will be defined as the corresponding NumPy scalar.  (This may have returned Python scalars in past versions.
+  if isinstance(o, (numpy.bool, numpy.bool_)):
+</code>
+</pre>
+</div>
+</div>
+<div class="output_area">
 <div class="output_html rendered_html output_subarea ">
-<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">Validated Output: <span style="font-weight: bold">{</span><span style="color: #008000; text-decoration-color: #008000">'summary'</span>: <span style="color: #008000; text-decoration-color: #008000">'All legislative Powers shall be vested in a Congress of the United States, which </span>
-<span style="color: #008000; text-decoration-color: #008000">shall consist of a Senate and House of Representatives. The House of Representatives shall be composed of Members </span>
-<span style="color: #008000; text-decoration-color: #008000">chosen every second Year by the People of the several States, and the Electors in each State shall have the </span>
-<span style="color: #008000; text-decoration-color: #008000">Qualifications requisite for Electors of the most numerous Branch of the State Legislature. Representatives and </span>
-<span style="color: #008000; text-decoration-color: #008000">direct Taxes shall be apportioned among the several States according to their respective Numbers, and the Number of</span>
-<span style="color: #008000; text-decoration-color: #008000">Representatives shall not exceed one for every thirty Thousand. When vacancies happen in the Representation from </span>
-<span style="color: #008000; text-decoration-color: #008000">any State, the Executive Authority thereof shall issue Writs of Election to fill such Vacancies. The House of </span>
-<span style="color: #008000; text-decoration-color: #008000">Representatives shall chuse their Speaker and other Officers; and shall have the sole Power of Impeachment.'</span><span style="font-weight: bold">}</span>
+<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">Validated Output: <span style="font-weight: bold">{</span><span style="color: #008000; text-decoration-color: #008000">'summary'</span>: <span style="color: #008000; text-decoration-color: #008000">'All legislative powers are vested in a Congress of the United States, which consists</span>
+<span style="color: #008000; text-decoration-color: #008000">of a Senate and House of Representatives. The House of Representatives is composed of members chosen every two </span>
+<span style="color: #008000; text-decoration-color: #008000">years by the people of the several states, and must meet certain qualifications. Representatives and direct taxes </span>
+<span style="color: #008000; text-decoration-color: #008000">are apportioned among the states according to their respective numbers. The House of Representatives chooses their </span>
+<span style="color: #008000; text-decoration-color: #008000">speaker and other officers, and has the sole power of impeachment. When vacancies happen in the representation from</span>
+<span style="color: #008000; text-decoration-color: #008000">any state, the executive authority thereof shall issue writs of election to fill such vacancies.'</span><span style="font-weight: bold">}</span>
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>In order to see a detailed look into the logs of the <code>Guard</code> object, we can print the <code>Guard</code> state history:</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="language-python highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nb">print</span><span class="p">(</span><span class="n">guard</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">most_recent_call</span><span class="o">.</span><span class="n">tree</span><span class="p">)</span>
+</span></code></pre></div>
+
+</div>
+<div class="output_wrapper">
+<div class="output">
+<div class="output_area">
+<div class="output_html rendered_html output_subarea ">
+<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">Logs
+└── ╭────────────────────────────────────────────────── Step 0 ───────────────────────────────────────────────────╮
+    │ <span style="background-color: #f0f8ff">╭──────────────────────────────────────────────── Prompt ─────────────────────────────────────────────────╮</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ Summarize the following document:                                                                       │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ Section. 1.                                                                                             │</span> │
+    │ <span style="background-color: #f0f8ff">│ All legislative Powers herein granted shall be vested in a Congress of the United States, which shall   │</span> │
+    │ <span style="background-color: #f0f8ff">│ consist of a Senate and House of Representatives.                                                       │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ Section. 2.                                                                                             │</span> │
+    │ <span style="background-color: #f0f8ff">│ The House of Representatives shall be composed of Members chosen every second Year by the People of the │</span> │
+    │ <span style="background-color: #f0f8ff">│ several States, and the Electors in each State shall have the Qualifications requisite for Electors of  │</span> │
+    │ <span style="background-color: #f0f8ff">│ the most numerous Branch of the State Legislature.                                                      │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ No Person shall be a Representative who shall not have attained to the Age of twenty five Years, and    │</span> │
+    │ <span style="background-color: #f0f8ff">│ been seven Years a Citizen of the United States, and who shall not, when elected, be an Inhabitant of   │</span> │
+    │ <span style="background-color: #f0f8ff">│ that State in which he shall be chosen.                                                                 │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ Representatives and direct Taxes shall be apportioned among the several States which may be included    │</span> │
+    │ <span style="background-color: #f0f8ff">│ within this Union, according to their respective Numbers, which shall be determined by adding to the    │</span> │
+    │ <span style="background-color: #f0f8ff">│ whole Number of free Persons, including those bound to Service for a Term of Years, and excluding       │</span> │
+    │ <span style="background-color: #f0f8ff">│ Indians not taxed, three fifths of all other Persons. The actual Enumeration shall be made within three │</span> │
+    │ <span style="background-color: #f0f8ff">│ Years after the first Meeting of the Congress of the United States, and within every subsequent Term of │</span> │
+    │ <span style="background-color: #f0f8ff">│ ten Years, in such Manner as they shall by Law direct. The Number of Representatives shall not exceed   │</span> │
+    │ <span style="background-color: #f0f8ff">│ one for every thirty Thousand, but each State shall have at Least one Representative; and until such    │</span> │
+    │ <span style="background-color: #f0f8ff">│ enumeration shall be made, the State of New Hampshire shall be entitled to chuse three, Massachusetts   │</span> │
+    │ <span style="background-color: #f0f8ff">│ eight, Rhode-Island and Providence Plantations one, Connecticut five, New-York six, New Jersey four,    │</span> │
+    │ <span style="background-color: #f0f8ff">│ Pennsylvania eight, Delaware one, Maryland six, Virginia ten, North Carolina five, South Carolina five, │</span> │
+    │ <span style="background-color: #f0f8ff">│ and Georgia three.                                                                                      │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ When vacancies happen in the Representation from any State, the Executive Authority thereof shall issue │</span> │
+    │ <span style="background-color: #f0f8ff">│ Writs of Election to fill such Vacancies.                                                               │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ The House of Representatives shall chuse their Speaker and other Officers; and shall have the sole      │</span> │
+    │ <span style="background-color: #f0f8ff">│ Power of Impeachment.                                                                                   │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ Given below is XML that describes the information to extract from this document and the tags to extract │</span> │
+    │ <span style="background-color: #f0f8ff">│ it into.                                                                                                │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ &lt;output&gt;                                                                                                │</span> │
+    │ <span style="background-color: #f0f8ff">│     &lt;string name="summary" description="Summarize the given document faithfully."/&gt;                     │</span> │
+    │ <span style="background-color: #f0f8ff">│ &lt;/output&gt;                                                                                               │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ ONLY return a valid JSON object (no other text is necessary), where the key of the field in JSON is the │</span> │
+    │ <span style="background-color: #f0f8ff">│ `name` attribute of the corresponding XML, and the value is of the type specified by the corresponding  │</span> │
+    │ <span style="background-color: #f0f8ff">│ XML's tag. The JSON MUST conform to the XML format, including any types and format requests e.g.        │</span> │
+    │ <span style="background-color: #f0f8ff">│ requests for lists, objects and specific types. Be correct and concise. If you are unsure anywhere,     │</span> │
+    │ <span style="background-color: #f0f8ff">│ enter `None`.                                                                                           │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ Here are examples of simple (XML, JSON) pairs that show the expected behavior:                          │</span> │
+    │ <span style="background-color: #f0f8ff">│ - `&lt;string name='foo' format='two-words lower-case' /&gt;` =&gt; `{'foo': 'example one'}`                     │</span> │
+    │ <span style="background-color: #f0f8ff">│ - `&lt;list name='bar'&gt;&lt;string format='upper-case' /&gt;&lt;/list&gt;` =&gt; `{"bar": ['STRING ONE', 'STRING TWO',     │</span> │
+    │ <span style="background-color: #f0f8ff">│ etc.]}`                                                                                                 │</span> │
+    │ <span style="background-color: #f0f8ff">│ - `&lt;object name='baz'&gt;&lt;string name="foo" format="capitalize two-words" /&gt;&lt;integer name="index"          │</span> │
+    │ <span style="background-color: #f0f8ff">│ format="1-indexed" /&gt;&lt;/object&gt;` =&gt; `{'baz': {'foo': 'Some String', 'index': 1}}`                        │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ JSON Object:                                                                                            │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">╰─────────────────────────────────────────────────────────────────────────────────────────────────────────╯</span> │
+    │ <span style="background-color: #f5f5dc">╭──────────────────────────────────────────── Raw LLM Output ─────────────────────────────────────────────╮</span> │
+    │ <span style="background-color: #f5f5dc">│ {"summary": "All legislative powers are vested in a Congress of the United States, which consists of a  │</span> │
+    │ <span style="background-color: #f5f5dc">│ Senate and House of Representatives. The House of Representatives is composed of members chosen every   │</span> │
+    │ <span style="background-color: #f5f5dc">│ two years by the people of the several states, and must meet certain qualifications. Representatives    │</span> │
+    │ <span style="background-color: #f5f5dc">│ and direct taxes are apportioned among the states according to their respective numbers. The House of   │</span> │
+    │ <span style="background-color: #f5f5dc">│ Representatives chooses their speaker and other officers, and has the sole power of impeachment. When   │</span> │
+    │ <span style="background-color: #f5f5dc">│ vacancies happen in the representation from any state, the executive authority thereof shall issue      │</span> │
+    │ <span style="background-color: #f5f5dc">│ writs of election to fill such vacancies."}                                                             │</span> │
+    │ <span style="background-color: #f5f5dc">╰─────────────────────────────────────────────────────────────────────────────────────────────────────────╯</span> │
+    │ <span style="background-color: #f0fff0">╭─────────────────────────────────────────── Validated Output ────────────────────────────────────────────╮</span> │
+    │ <span style="background-color: #f0fff0">│ {                                                                                                       │</span> │
+    │ <span style="background-color: #f0fff0">│     'summary': 'All legislative powers are vested in a Congress of the United States, which consists of │</span> │
+    │ <span style="background-color: #f0fff0">│ a Senate and House of Representatives. The House of Representatives is composed of members chosen every │</span> │
+    │ <span style="background-color: #f0fff0">│ two years by the people of the several states, and must meet certain qualifications. Representatives    │</span> │
+    │ <span style="background-color: #f0fff0">│ and direct taxes are apportioned among the states according to their respective numbers. The House of   │</span> │
+    │ <span style="background-color: #f0fff0">│ Representatives chooses their speaker and other officers, and has the sole power of impeachment. When   │</span> │
+    │ <span style="background-color: #f0fff0">│ vacancies happen in the representation from any state, the executive authority thereof shall issue      │</span> │
+    │ <span style="background-color: #f0fff0">│ writs of election to fill such vacancies.'                                                              │</span> │
+    │ <span style="background-color: #f0fff0">│ }                                                                                                       │</span> │
+    │ <span style="background-color: #f0fff0">╰─────────────────────────────────────────────────────────────────────────────────────────────────────────╯</span> │
+    ╰─────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 </pre>
 </div>
 </div>
@@ -1150,15 +1276,15 @@ JSON Object:
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 
-<div class="language-python highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">raw_llm_response</span><span class="p">,</span> <span class="n">validated_response</span> <span class="o">=</span> <span class="n">guard</span><span class="p">(</span>
-</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>    <span class="n">openai</span><span class="o">.</span><span class="n">Completion</span><span class="o">.</span><span class="n">create</span><span class="p">,</span>
-</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>    <span class="n">prompt_params</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;document&#39;</span><span class="p">:</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;data/article1.txt&quot;</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()},</span>
-</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>    <span class="n">engine</span><span class="o">=</span><span class="s1">&#39;text-ada-001&#39;</span><span class="p">,</span>
-</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>    <span class="n">max_tokens</span><span class="o">=</span><span class="mi">512</span><span class="p">,</span>
-</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>    <span class="n">temperature</span><span class="o">=</span><span class="mi">0</span>
-</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="p">)</span>
-</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>
-</span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Validated Output: </span><span class="si">{</span><span class="n">validated_response</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">raw_llm_response</span><span class="p">,</span> <span class="n">validated_response</span> <span class="o">=</span> <span class="n">guard</span><span class="p">(</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>    <span class="n">openai</span><span class="o">.</span><span class="n">Completion</span><span class="o">.</span><span class="n">create</span><span class="p">,</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>    <span class="n">prompt_params</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;document&#39;</span><span class="p">:</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;data/article1.txt&quot;</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()},</span>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>    <span class="n">engine</span><span class="o">=</span><span class="s1">&#39;text-ada-001&#39;</span><span class="p">,</span>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>    <span class="n">max_tokens</span><span class="o">=</span><span class="mi">512</span><span class="p">,</span>
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>    <span class="n">temperature</span><span class="o">=</span><span class="mi">0</span>
+</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="p">)</span>
+</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>
+</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Validated Output: </span><span class="si">{</span><span class="n">validated_response</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 </span></code></pre></div>
 
 </div>
@@ -1173,12 +1299,101 @@ JSON Object:
 </div>
 </div>
 </div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>We can see the step-wise history of the <code>Guard</code> object below:</p>
+</div>
+</div>
+</div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 
-<div class="language-python highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="nb">print</span><span class="p">(</span><span class="n">guard</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">most_recent_call</span><span class="o">.</span><span class="n">tree</span><span class="p">)</span>
 </span></code></pre></div>
 
+</div>
+<div class="output_wrapper">
+<div class="output">
+<div class="output_area">
+<div class="output_html rendered_html output_subarea ">
+<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">Logs
+└── ╭────────────────────────────────────────────────── Step 0 ───────────────────────────────────────────────────╮
+    │ <span style="background-color: #f0f8ff">╭──────────────────────────────────────────────── Prompt ─────────────────────────────────────────────────╮</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ Summarize the following document:                                                                       │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ Section. 1.                                                                                             │</span> │
+    │ <span style="background-color: #f0f8ff">│ All legislative Powers herein granted shall be vested in a Congress of the United States, which shall   │</span> │
+    │ <span style="background-color: #f0f8ff">│ consist of a Senate and House of Representatives.                                                       │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ Section. 2.                                                                                             │</span> │
+    │ <span style="background-color: #f0f8ff">│ The House of Representatives shall be composed of Members chosen every second Year by the People of the │</span> │
+    │ <span style="background-color: #f0f8ff">│ several States, and the Electors in each State shall have the Qualifications requisite for Electors of  │</span> │
+    │ <span style="background-color: #f0f8ff">│ the most numerous Branch of the State Legislature.                                                      │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ No Person shall be a Representative who shall not have attained to the Age of twenty five Years, and    │</span> │
+    │ <span style="background-color: #f0f8ff">│ been seven Years a Citizen of the United States, and who shall not, when elected, be an Inhabitant of   │</span> │
+    │ <span style="background-color: #f0f8ff">│ that State in which he shall be chosen.                                                                 │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ Representatives and direct Taxes shall be apportioned among the several States which may be included    │</span> │
+    │ <span style="background-color: #f0f8ff">│ within this Union, according to their respective Numbers, which shall be determined by adding to the    │</span> │
+    │ <span style="background-color: #f0f8ff">│ whole Number of free Persons, including those bound to Service for a Term of Years, and excluding       │</span> │
+    │ <span style="background-color: #f0f8ff">│ Indians not taxed, three fifths of all other Persons. The actual Enumeration shall be made within three │</span> │
+    │ <span style="background-color: #f0f8ff">│ Years after the first Meeting of the Congress of the United States, and within every subsequent Term of │</span> │
+    │ <span style="background-color: #f0f8ff">│ ten Years, in such Manner as they shall by Law direct. The Number of Representatives shall not exceed   │</span> │
+    │ <span style="background-color: #f0f8ff">│ one for every thirty Thousand, but each State shall have at Least one Representative; and until such    │</span> │
+    │ <span style="background-color: #f0f8ff">│ enumeration shall be made, the State of New Hampshire shall be entitled to chuse three, Massachusetts   │</span> │
+    │ <span style="background-color: #f0f8ff">│ eight, Rhode-Island and Providence Plantations one, Connecticut five, New-York six, New Jersey four,    │</span> │
+    │ <span style="background-color: #f0f8ff">│ Pennsylvania eight, Delaware one, Maryland six, Virginia ten, North Carolina five, South Carolina five, │</span> │
+    │ <span style="background-color: #f0f8ff">│ and Georgia three.                                                                                      │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ When vacancies happen in the Representation from any State, the Executive Authority thereof shall issue │</span> │
+    │ <span style="background-color: #f0f8ff">│ Writs of Election to fill such Vacancies.                                                               │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ The House of Representatives shall chuse their Speaker and other Officers; and shall have the sole      │</span> │
+    │ <span style="background-color: #f0f8ff">│ Power of Impeachment.                                                                                   │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ Given below is XML that describes the information to extract from this document and the tags to extract │</span> │
+    │ <span style="background-color: #f0f8ff">│ it into.                                                                                                │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ &lt;output&gt;                                                                                                │</span> │
+    │ <span style="background-color: #f0f8ff">│     &lt;string name="summary" description="Summarize the given document faithfully."/&gt;                     │</span> │
+    │ <span style="background-color: #f0f8ff">│ &lt;/output&gt;                                                                                               │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ ONLY return a valid JSON object (no other text is necessary), where the key of the field in JSON is the │</span> │
+    │ <span style="background-color: #f0f8ff">│ `name` attribute of the corresponding XML, and the value is of the type specified by the corresponding  │</span> │
+    │ <span style="background-color: #f0f8ff">│ XML's tag. The JSON MUST conform to the XML format, including any types and format requests e.g.        │</span> │
+    │ <span style="background-color: #f0f8ff">│ requests for lists, objects and specific types. Be correct and concise. If you are unsure anywhere,     │</span> │
+    │ <span style="background-color: #f0f8ff">│ enter `None`.                                                                                           │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ Here are examples of simple (XML, JSON) pairs that show the expected behavior:                          │</span> │
+    │ <span style="background-color: #f0f8ff">│ - `&lt;string name='foo' format='two-words lower-case' /&gt;` =&gt; `{'foo': 'example one'}`                     │</span> │
+    │ <span style="background-color: #f0f8ff">│ - `&lt;list name='bar'&gt;&lt;string format='upper-case' /&gt;&lt;/list&gt;` =&gt; `{"bar": ['STRING ONE', 'STRING TWO',     │</span> │
+    │ <span style="background-color: #f0f8ff">│ etc.]}`                                                                                                 │</span> │
+    │ <span style="background-color: #f0f8ff">│ - `&lt;object name='baz'&gt;&lt;string name="foo" format="capitalize two-words" /&gt;&lt;integer name="index"          │</span> │
+    │ <span style="background-color: #f0f8ff">│ format="1-indexed" /&gt;&lt;/object&gt;` =&gt; `{'baz': {'foo': 'Some String', 'index': 1}}`                        │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ JSON Object:                                                                                            │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">╰─────────────────────────────────────────────────────────────────────────────────────────────────────────╯</span> │
+    │ <span style="background-color: #f5f5dc">╭──────────────────────────────────────────── Raw LLM Output ─────────────────────────────────────────────╮</span> │
+    │ <span style="background-color: #f5f5dc">│                                                                                                         │</span> │
+    │ <span style="background-color: #f5f5dc">│ The string "None`" is removed from the list "baz" in the example above.                                 │</span> │
+    │ <span style="background-color: #f5f5dc">│                                                                                                         │</span> │
+    │ <span style="background-color: #f5f5dc">│ The object "baz" is created with the value "Some String" which is set to "{'foo': 'Some String',        │</span> │
+    │ <span style="background-color: #f5f5dc">│ 'index': 1}".                                                                                           │</span> │
+    │ <span style="background-color: #f5f5dc">╰─────────────────────────────────────────────────────────────────────────────────────────────────────────╯</span> │
+    │ <span style="background-color: #f0fff0">╭─────────────────────────────────────────── Validated Output ────────────────────────────────────────────╮</span> │
+    │ <span style="background-color: #f0fff0">│ None                                                                                                    │</span> │
+    │ <span style="background-color: #f0fff0">╰─────────────────────────────────────────────────────────────────────────────────────────────────────────╯</span> │
+    ╰─────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+</pre>
+</div>
+</div>
+</div>
 </div>
 </div>
 

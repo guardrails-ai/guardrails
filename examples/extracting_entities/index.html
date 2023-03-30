@@ -526,6 +526,20 @@
               
   
   
+  
+    <li class="md-nav__item">
+      <a href="../select_choice_based_on_action/" class="md-nav__link">
+        If condition: generate different JSON objects based on condition
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
     
   
   
@@ -958,7 +972,7 @@ PRICING INFORMATION
 INTEREST RATES AND INTEREST CHARGES
 Purchase Annual
 Percentage Rate <span style="font-weight: bold">(</span>APR<span style="font-weight: bold">)</span> <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">0</span>% Intro APR for the first <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">18</span> months that your Account is open.
-After that, <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">19.49</span>%. This APR will vary with the market based on th
+After that, <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">19.49</span>%. This APR will vary with the market based on the Prim
 <span style="color: #808000; text-decoration-color: #808000">...</span>
 </pre>
 </div>
@@ -1041,9 +1055,9 @@ After that, <span style="color: #008080; text-decoration-color: #008080; font-we
 <div class="output_area">
 <div class="output_subarea output_stream output_stderr output_text">
 <pre>
-<code>/Users/shreyarajpal/guardrails/guardrails/datatypes.py:53: UserWarning: Formatter 1-indexed is not valid for element integer.
+<code>/Users/shreyarajpal/guardrails/guardrails/schema.py:187: UserWarning: Validator 1-indexed is not valid for element integer.
   warnings.warn(
-/Users/shreyarajpal/guardrails/guardrails/datatypes.py:53: UserWarning: Formatter percentage is not valid for element float.
+/Users/shreyarajpal/guardrails/guardrails/schema.py:187: UserWarning: Validator percentage is not valid for element float.
   warnings.warn(
 </code>
 </pre>
@@ -1082,7 +1096,6 @@ Given below is XML that describes the information to extract from this document 
 
 
 <span style="font-weight: bold">&lt;</span><span style="color: #ff00ff; text-decoration-color: #ff00ff; font-weight: bold">output</span><span style="color: #000000; text-decoration-color: #000000">&gt;</span>
-
 <span style="color: #000000; text-decoration-color: #000000">    &lt;list </span><span style="color: #808000; text-decoration-color: #808000">name</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"fees"</span><span style="color: #000000; text-decoration-color: #000000"> </span><span style="color: #808000; text-decoration-color: #808000">description</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"What fees and charges are associated with my account?"</span><span style="color: #000000; text-decoration-color: #000000">&gt;</span>
 <span style="color: #000000; text-decoration-color: #000000">        &lt;object&gt;</span>
 <span style="color: #000000; text-decoration-color: #000000">            &lt;integer </span><span style="color: #808000; text-decoration-color: #808000">name</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"index"</span><span style="color: #000000; text-decoration-color: #000000"> </span><span style="color: #808000; text-decoration-color: #808000">format</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"1-indexed"</span><span style="color: #800080; text-decoration-color: #800080">/</span><span style="color: #000000; text-decoration-color: #000000">&gt;</span>
@@ -1094,8 +1107,6 @@ Given below is XML that describes the information to extract from this document 
 <span style="color: #000000; text-decoration-color: #000000">    &lt;object </span><span style="color: #808000; text-decoration-color: #808000">name</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"interest_rates"</span><span style="color: #000000; text-decoration-color: #000000"> </span><span style="color: #808000; text-decoration-color: #808000">description</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"What are the interest rates offered by the bank on savings and </span>
 <span style="color: #008000; text-decoration-color: #008000">checking accounts, loans, and credit products?"</span><span style="color: #800080; text-decoration-color: #800080">/</span><span style="color: #000000; text-decoration-color: #000000">&gt;</span>
 <span style="color: #000000; text-decoration-color: #000000">&lt;</span><span style="color: #800080; text-decoration-color: #800080">/</span><span style="color: #ff00ff; text-decoration-color: #ff00ff">output</span><span style="font-weight: bold">&gt;</span>
-
-
 
 
 
@@ -1154,66 +1165,519 @@ JSON Output:
 <div class="output_html rendered_html output_subarea ">
 <pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace"><span style="font-weight: bold">{</span>
     <span style="color: #008000; text-decoration-color: #008000">'fees'</span>: <span style="font-weight: bold">[</span>
-        <span style="font-weight: bold">{</span><span style="color: #008000; text-decoration-color: #008000">'index'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">1</span>, <span style="color: #008000; text-decoration-color: #008000">'name'</span>: <span style="color: #008000; text-decoration-color: #008000">'annual membership'</span>, <span style="color: #008000; text-decoration-color: #008000">'explanation'</span>: <span style="color: #008000; text-decoration-color: #008000">'none'</span>, <span style="color: #008000; text-decoration-color: #008000">'value'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">0</span><span style="font-weight: bold">}</span>,
+        <span style="font-weight: bold">{</span><span style="color: #008000; text-decoration-color: #008000">'index'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">1</span>, <span style="color: #008000; text-decoration-color: #008000">'name'</span>: <span style="color: #008000; text-decoration-color: #008000">'annual membership'</span>, <span style="color: #008000; text-decoration-color: #008000">'explanation'</span>: <span style="color: #008000; text-decoration-color: #008000">'Annual Membership Fee'</span>, <span style="color: #008000; text-decoration-color: #008000">'value'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">0</span><span style="font-weight: bold">}</span>,
         <span style="font-weight: bold">{</span>
             <span style="color: #008000; text-decoration-color: #008000">'index'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">2</span>,
-            <span style="color: #008000; text-decoration-color: #008000">'name'</span>: <span style="color: #008000; text-decoration-color: #008000">'fee one'</span>,
-            <span style="color: #008000; text-decoration-color: #008000">'explanation'</span>: <span style="color: #008000; text-decoration-color: #008000">'monthly fee of 0% of the amount of each eligible purchase transaction or amount </span>
-<span style="color: #008000; text-decoration-color: #008000">selected to create a My Chase Plan while in the 0% Intro Purchase APR period. After that, monthly fee of 1.72% of </span>
-<span style="color: #008000; text-decoration-color: #008000">the amount of each eligible purchase transaction or amount selected to create a My Chase Plan.'</span>,
+            <span style="color: #008000; text-decoration-color: #008000">'name'</span>: <span style="color: #008000; text-decoration-color: #008000">'my-chase-plan'</span>,
+            <span style="color: #008000; text-decoration-color: #008000">'explanation'</span>: <span style="color: #008000; text-decoration-color: #008000">'My Chase Plan Fee (fixed finance charge)'</span>,
             <span style="color: #008000; text-decoration-color: #008000">'value'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">1.72</span>
         <span style="font-weight: bold">}</span>,
         <span style="font-weight: bold">{</span>
             <span style="color: #008000; text-decoration-color: #008000">'index'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">3</span>,
             <span style="color: #008000; text-decoration-color: #008000">'name'</span>: <span style="color: #008000; text-decoration-color: #008000">'balance transfers'</span>,
-            <span style="color: #008000; text-decoration-color: #008000">'explanation'</span>: <span style="color: #008000; text-decoration-color: #008000">'intro fee of either $5 or 3% of the amount of each transfer, whichever is greater, on </span>
-<span style="color: #008000; text-decoration-color: #008000">transfers made within 60 days of account opening. After that: Either $5 or 5% of the amount of each transfer, </span>
-<span style="color: #008000; text-decoration-color: #008000">whichever is greater.'</span>,
-            <span style="color: #008000; text-decoration-color: #008000">'value'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">5</span>
+            <span style="color: #008000; text-decoration-color: #008000">'explanation'</span>: <span style="color: #008000; text-decoration-color: #008000">'Balance Transfers Intro fee of either $5 or 3% of the amount of each transfer, </span>
+<span style="color: #008000; text-decoration-color: #008000">whichever is greater, on transfers made within 60 days of account opening. After that: Either $5 or 5% of the </span>
+<span style="color: #008000; text-decoration-color: #008000">amount of each transfer, whichever is greater.'</span>,
+            <span style="color: #008000; text-decoration-color: #008000">'value'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">3</span>
         <span style="font-weight: bold">}</span>,
         <span style="font-weight: bold">{</span>
             <span style="color: #008000; text-decoration-color: #008000">'index'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">4</span>,
             <span style="color: #008000; text-decoration-color: #008000">'name'</span>: <span style="color: #008000; text-decoration-color: #008000">'cash advances'</span>,
-            <span style="color: #008000; text-decoration-color: #008000">'explanation'</span>: <span style="color: #008000; text-decoration-color: #008000">'either $10 or 5% of the amount of each transaction, whichever is greater.'</span>,
+            <span style="color: #008000; text-decoration-color: #008000">'explanation'</span>: <span style="color: #008000; text-decoration-color: #008000">'Either $10 or 5% of the amount of each transaction, whichever is greater.'</span>,
             <span style="color: #008000; text-decoration-color: #008000">'value'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">5</span>
         <span style="font-weight: bold">}</span>,
         <span style="font-weight: bold">{</span>
             <span style="color: #008000; text-decoration-color: #008000">'index'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">5</span>,
             <span style="color: #008000; text-decoration-color: #008000">'name'</span>: <span style="color: #008000; text-decoration-color: #008000">'foreign transactions'</span>,
-            <span style="color: #008000; text-decoration-color: #008000">'explanation'</span>: <span style="color: #008000; text-decoration-color: #008000">'3% of the amount of each transaction in U.S. dollars.'</span>,
+            <span style="color: #008000; text-decoration-color: #008000">'explanation'</span>: <span style="color: #008000; text-decoration-color: #008000">'Foreign Transactions 3% of the amount of each transaction in U.S. dollars.'</span>,
             <span style="color: #008000; text-decoration-color: #008000">'value'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">3</span>
         <span style="font-weight: bold">}</span>,
-        <span style="font-weight: bold">{</span><span style="color: #008000; text-decoration-color: #008000">'index'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">6</span>, <span style="color: #008000; text-decoration-color: #008000">'name'</span>: <span style="color: #008000; text-decoration-color: #008000">'late payment'</span>, <span style="color: #008000; text-decoration-color: #008000">'explanation'</span>: <span style="color: #008000; text-decoration-color: #008000">'up to $40.'</span>, <span style="color: #008000; text-decoration-color: #008000">'value'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">0</span><span style="font-weight: bold">}</span>,
-        <span style="font-weight: bold">{</span><span style="color: #008000; text-decoration-color: #008000">'index'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">7</span>, <span style="color: #008000; text-decoration-color: #008000">'name'</span>: <span style="color: #008000; text-decoration-color: #008000">'fee two'</span>, <span style="color: #008000; text-decoration-color: #008000">'explanation'</span>: <span style="color: #008000; text-decoration-color: #008000">'none'</span>, <span style="color: #008000; text-decoration-color: #008000">'value'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">0</span><span style="font-weight: bold">}</span>,
-        <span style="font-weight: bold">{</span><span style="color: #008000; text-decoration-color: #008000">'index'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">8</span>, <span style="color: #008000; text-decoration-color: #008000">'name'</span>: <span style="color: #008000; text-decoration-color: #008000">'return payment'</span>, <span style="color: #008000; text-decoration-color: #008000">'explanation'</span>: <span style="color: #008000; text-decoration-color: #008000">'up to $40.'</span>, <span style="color: #008000; text-decoration-color: #008000">'value'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">0</span><span style="font-weight: bold">}</span>,
-        <span style="font-weight: bold">{</span><span style="color: #008000; text-decoration-color: #008000">'index'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">9</span>, <span style="color: #008000; text-decoration-color: #008000">'name'</span>: <span style="color: #008000; text-decoration-color: #008000">'return check'</span>, <span style="color: #008000; text-decoration-color: #008000">'explanation'</span>: <span style="color: #008000; text-decoration-color: #008000">'none'</span>, <span style="color: #008000; text-decoration-color: #008000">'value'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">0</span><span style="font-weight: bold">}</span>
+        <span style="font-weight: bold">{</span><span style="color: #008000; text-decoration-color: #008000">'index'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">6</span>, <span style="color: #008000; text-decoration-color: #008000">'name'</span>: <span style="color: #008000; text-decoration-color: #008000">'late payment'</span>, <span style="color: #008000; text-decoration-color: #008000">'explanation'</span>: <span style="color: #008000; text-decoration-color: #008000">'Late Payment Up to $40.'</span>, <span style="color: #008000; text-decoration-color: #008000">'value'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">0</span><span style="font-weight: bold">}</span>,
+        <span style="font-weight: bold">{</span><span style="color: #008000; text-decoration-color: #008000">'index'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">7</span>, <span style="color: #008000; text-decoration-color: #008000">'name'</span>: <span style="color: #008000; text-decoration-color: #008000">'over-credit-limit'</span>, <span style="color: #008000; text-decoration-color: #008000">'explanation'</span>: <span style="color: #008000; text-decoration-color: #008000">'Over-the-Credit-Limit None'</span>, <span style="color: #008000; text-decoration-color: #008000">'value'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">0</span><span style="font-weight: bold">}</span>,
+        <span style="font-weight: bold">{</span><span style="color: #008000; text-decoration-color: #008000">'index'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">8</span>, <span style="color: #008000; text-decoration-color: #008000">'name'</span>: <span style="color: #008000; text-decoration-color: #008000">'return payment'</span>, <span style="color: #008000; text-decoration-color: #008000">'explanation'</span>: <span style="color: #008000; text-decoration-color: #008000">'Return Payment Up to $40.'</span>, <span style="color: #008000; text-decoration-color: #008000">'value'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">0</span><span style="font-weight: bold">}</span>,
+        <span style="font-weight: bold">{</span><span style="color: #008000; text-decoration-color: #008000">'index'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">9</span>, <span style="color: #008000; text-decoration-color: #008000">'name'</span>: <span style="color: #008000; text-decoration-color: #008000">'return check'</span>, <span style="color: #008000; text-decoration-color: #008000">'explanation'</span>: <span style="color: #008000; text-decoration-color: #008000">'Return Check None'</span>, <span style="color: #008000; text-decoration-color: #008000">'value'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">0</span><span style="font-weight: bold">}</span>
     <span style="font-weight: bold">]</span>,
     <span style="color: #008000; text-decoration-color: #008000">'interest_rates'</span>: <span style="font-weight: bold">{</span>
-        <span style="color: #008000; text-decoration-color: #008000">'purchase'</span>: <span style="font-weight: bold">{</span>
-            <span style="color: #008000; text-decoration-color: #008000">'apr'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">0</span>,
-            <span style="color: #008000; text-decoration-color: #008000">'explanation'</span>: <span style="color: #008000; text-decoration-color: #008000">'0% Intro APR for the first 18 months that your Account is open. After that, 19.49%. </span>
-<span style="color: #008000; text-decoration-color: #008000">This APR will vary with the market based on the Prime Rate.'</span>
-        <span style="font-weight: bold">}</span>,
-        <span style="color: #008000; text-decoration-color: #008000">'my_chase_loan'</span>: <span style="font-weight: bold">{</span>
-            <span style="color: #008000; text-decoration-color: #008000">'apr'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">19.49</span>,
-            <span style="color: #008000; text-decoration-color: #008000">'explanation'</span>: <span style="color: #008000; text-decoration-color: #008000">'19.49%. This APR will vary with the market based on the Prime Rate.'</span>
-        <span style="font-weight: bold">}</span>,
-        <span style="color: #008000; text-decoration-color: #008000">'balance_transfer'</span>: <span style="font-weight: bold">{</span>
-            <span style="color: #008000; text-decoration-color: #008000">'apr'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">0</span>,
-            <span style="color: #008000; text-decoration-color: #008000">'explanation'</span>: <span style="color: #008000; text-decoration-color: #008000">'0% Intro APR for the first 18 months that your Account is open. After that, 19.49%. </span>
-<span style="color: #008000; text-decoration-color: #008000">This APR will vary with the market based on the Prime Rate.'</span>
-        <span style="font-weight: bold">}</span>,
-        <span style="color: #008000; text-decoration-color: #008000">'cash_advance'</span>: <span style="font-weight: bold">{</span>
-            <span style="color: #008000; text-decoration-color: #008000">'apr'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">29.49</span>,
-            <span style="color: #008000; text-decoration-color: #008000">'explanation'</span>: <span style="color: #008000; text-decoration-color: #008000">'29.49%. This APR will vary with the market based on the Prime Rate.'</span>
-        <span style="font-weight: bold">}</span>,
-        <span style="color: #008000; text-decoration-color: #008000">'penalty'</span>: <span style="font-weight: bold">{</span>
-            <span style="color: #008000; text-decoration-color: #008000">'apr'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">29.99</span>,
-            <span style="color: #008000; text-decoration-color: #008000">'explanation'</span>: <span style="color: #008000; text-decoration-color: #008000">'Up to 29.99%. This APR will vary with the market based on the Prime Rate.'</span>
-        <span style="font-weight: bold">}</span>,
-        <span style="color: #008000; text-decoration-color: #008000">'prime_rate'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">7.75</span>
+        <span style="color: #008000; text-decoration-color: #008000">'purchase'</span>: <span style="font-weight: bold">{</span><span style="color: #008000; text-decoration-color: #008000">'apr'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">0</span>, <span style="color: #008000; text-decoration-color: #008000">'after_apr'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">19.49</span><span style="font-weight: bold">}</span>,
+        <span style="color: #008000; text-decoration-color: #008000">'my_chase_loan'</span>: <span style="font-weight: bold">{</span><span style="color: #008000; text-decoration-color: #008000">'apr'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">19.49</span><span style="font-weight: bold">}</span>,
+        <span style="color: #008000; text-decoration-color: #008000">'balance_transfer'</span>: <span style="font-weight: bold">{</span><span style="color: #008000; text-decoration-color: #008000">'apr'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">0</span>, <span style="color: #008000; text-decoration-color: #008000">'after_apr'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">19.49</span><span style="font-weight: bold">}</span>,
+        <span style="color: #008000; text-decoration-color: #008000">'cash_advance'</span>: <span style="font-weight: bold">{</span><span style="color: #008000; text-decoration-color: #008000">'apr'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">29.49</span><span style="font-weight: bold">}</span>,
+        <span style="color: #008000; text-decoration-color: #008000">'penalty'</span>: <span style="font-weight: bold">{</span><span style="color: #008000; text-decoration-color: #008000">'apr'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">0</span>, <span style="color: #008000; text-decoration-color: #008000">'maximum_apr'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">29.99</span><span style="font-weight: bold">}</span>
     <span style="font-weight: bold">}</span>
 <span style="font-weight: bold">}</span>
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="language-python highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">guard</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">most_recent_call</span><span class="o">.</span><span class="n">tree</span>
+</span></code></pre></div>
+
+</div>
+<div class="output_wrapper">
+<div class="output">
+<div class="output_area">
+<div class="output_html rendered_html output_subarea output_execute_result">
+<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">Logs
+├── ╭────────────────────────────────────────────────── Step 1 ───────────────────────────────────────────────────╮
+│   │ <span style="background-color: #f0f8ff">╭──────────────────────────────────────────────── Prompt ─────────────────────────────────────────────────╮</span> │
+│   │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+│   │ <span style="background-color: #f0f8ff">│ Given the following document, answer the following questions. If the answer doesn't exist in the        │</span> │
+│   │ <span style="background-color: #f0f8ff">│ document, enter 'None'.                                                                                 │</span> │
+│   │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+│   │ <span style="background-color: #f0f8ff">│ 2/25/23, 7:59 PM about:blank                                                                            │</span> │
+│   │ <span style="background-color: #f0f8ff">│ about:blank 1/4                                                                                         │</span> │
+│   │ <span style="background-color: #f0f8ff">│ PRICING INFORMATION                                                                                     │</span> │
+│   │ <span style="background-color: #f0f8ff">│ INTEREST RATES AND INTEREST CHARGES                                                                     │</span> │
+│   │ <span style="background-color: #f0f8ff">│ Purchase Annual                                                                                         │</span> │
+│   │ <span style="background-color: #f0f8ff">│ Percentage Rate (APR) 0% Intro APR for the first 18 months that your Account is open.                   │</span> │
+│   │ <span style="background-color: #f0f8ff">│ After that, 19.49%. This APR will vary with the market based on the Prime                               │</span> │
+│   │ <span style="background-color: #f0f8ff">│ Rate.                                                                                                   │</span> │
+│   │ <span style="background-color: #f0f8ff">│ a                                                                                                       │</span> │
+│   │ <span style="background-color: #f0f8ff">│ My Chase Loan                                                                                           │</span> │
+│   │ <span style="background-color: #f0f8ff">│ SM APR 19.49%. This APR will vary with the market based on the Prime Rate.                              │</span> │
+│   │ <span style="background-color: #f0f8ff">│ a                                                                                                       │</span> │
+│   │ <span style="background-color: #f0f8ff">│ Promotional offers with fixed APRs and varying durations may be available from                          │</span> │
+│   │ <span style="background-color: #f0f8ff">│ time to time on some accounts.                                                                          │</span> │
+│   │ <span style="background-color: #f0f8ff">│ Balance Transfer APR 0% Intro APR for the first 18 months that your Account is open.                    │</span> │
+│   │ <span style="background-color: #f0f8ff">│ After that, 19.49%. This APR will vary with the market based on the Prime                               │</span> │
+│   │ <span style="background-color: #f0f8ff">│ Rate.                                                                                                   │</span> │
+│   │ <span style="background-color: #f0f8ff">│ a                                                                                                       │</span> │
+│   │ <span style="background-color: #f0f8ff">│ Cash Advance APR 29.49%. This APR will vary with the market based on the Prime Rate.                    │</span> │
+│   │ <span style="background-color: #f0f8ff">│ b                                                                                                       │</span> │
+│   │ <span style="background-color: #f0f8ff">│ Penalty APR and When                                                                                    │</span> │
+│   │ <span style="background-color: #f0f8ff">│ It Applies                                                                                              │</span> │
+│   │ <span style="background-color: #f0f8ff">│ Up to 29.99%. This APR will vary with the market based on the Prime Rate.                               │</span> │
+│   │ <span style="background-color: #f0f8ff">│ c                                                                                                       │</span> │
+│   │ <span style="background-color: #f0f8ff">│ We may apply the Penalty APR to your account if you:                                                    │</span> │
+│   │ <span style="background-color: #f0f8ff">│ fail to make a Minimum Payment by the date and time that it is due; or                                  │</span> │
+│   │ <span style="background-color: #f0f8ff">│ make a payment to us that is returned unpaid.                                                           │</span> │
+│   │ <span style="background-color: #f0f8ff">│ How Long Will the Penalty APR Apply?: If we apply the Penalty APR for                                   │</span> │
+│   │ <span style="background-color: #f0f8ff">│ either of these reasons, the Penalty APR could potentially remain in effect                             │</span> │
+│   │ <span style="background-color: #f0f8ff">│ indefinitely.                                                                                           │</span> │
+│   │ <span style="background-color: #f0f8ff">│ How to Avoid Paying                                                                                     │</span> │
+│   │ <span style="background-color: #f0f8ff">│ Interest on Purchases                                                                                   │</span> │
+│   │ <span style="background-color: #f0f8ff">│ Your due date will be a minimum of 21 days after the close of each billing cycle.                       │</span> │
+│   │ <span style="background-color: #f0f8ff">│ We will not charge you interest on new purchases if you pay your entire balance                         │</span> │
+│   │ <span style="background-color: #f0f8ff">│ or Interest Saving Balance by the due date each month. We will begin charging                           │</span> │
+│   │ <span style="background-color: #f0f8ff">│ interest on balance transfers and cash advances on the transaction date.                                │</span> │
+│   │ <span style="background-color: #f0f8ff">│ Minimum Interest                                                                                        │</span> │
+│   │ <span style="background-color: #f0f8ff">│ Charge                                                                                                  │</span> │
+│   │ <span style="background-color: #f0f8ff">│ None                                                                                                    │</span> │
+│   │ <span style="background-color: #f0f8ff">│ Credit Card Tips from                                                                                   │</span> │
+│   │ <span style="background-color: #f0f8ff">│ the Consumer Financial                                                                                  │</span> │
+│   │ <span style="background-color: #f0f8ff">│ Protection Bureau                                                                                       │</span> │
+│   │ <span style="background-color: #f0f8ff">│ To learn more about factors to consider when applying for or using a credit card,                       │</span> │
+│   │ <span style="background-color: #f0f8ff">│ visit the website of the Consumer Financial Protection Bureau at                                        │</span> │
+│   │ <span style="background-color: #f0f8ff">│ http://www.consumerfinance.gov/learnmore.                                                               │</span> │
+│   │ <span style="background-color: #f0f8ff">│ FEES                                                                                                    │</span> │
+│   │ <span style="background-color: #f0f8ff">│ Annual Membership                                                                                       │</span> │
+│   │ <span style="background-color: #f0f8ff">│ Fee                                                                                                     │</span> │
+│   │ <span style="background-color: #f0f8ff">│ None                                                                                                    │</span> │
+│   │ <span style="background-color: #f0f8ff">│ My Chase Plan                                                                                           │</span> │
+│   │ <span style="background-color: #f0f8ff">│ SM Fee                                                                                                  │</span> │
+│   │ <span style="background-color: #f0f8ff">│ (fixed finance charge)                                                                                  │</span> │
+│   │ <span style="background-color: #f0f8ff">│ Monthly fee of 0% of the amount of each eligible purchase transaction or                                │</span> │
+│   │ <span style="background-color: #f0f8ff">│ amount selected to create a My Chase Plan while in the 0% Intro Purchase                                │</span> │
+│   │ <span style="background-color: #f0f8ff">│ APR period.                                                                                             │</span> │
+│   │ <span style="background-color: #f0f8ff">│ After that, monthly fee of 1.72% of the amount of each eligible purchase                                │</span> │
+│   │ <span style="background-color: #f0f8ff">│ transaction or amount selected to create a My Chase Plan. The My Chase Plan                             │</span> │
+│   │ <span style="background-color: #f0f8ff">│ Fee will be determined at the time each My Chase Plan is created and will                               │</span> │
+│   │ <span style="background-color: #f0f8ff">│ remain the same until the My Chase Plan is paid in full.                                                │</span> │
+│   │ <span style="background-color: #f0f8ff">│ d                                                                                                       │</span> │
+│   │ <span style="background-color: #f0f8ff">│ Transaction Fees                                                                                        │</span> │
+│   │ <span style="background-color: #f0f8ff">│ Balance Transfers Intro fee of either $5 or 3% of the amount of each transfer, whichever is greater,    │</span> │
+│   │ <span style="background-color: #f0f8ff">│ on transfers made within 60 days of account opening. After that: Either $5 or 5%                        │</span> │
+│   │ <span style="background-color: #f0f8ff">│ of the amount of each transfer, whichever is greater.                                                   │</span> │
+│   │ <span style="background-color: #f0f8ff">│ Cash Advances Either $10 or 5% of the amount of each transaction, whichever is greater.                 │</span> │
+│   │ <span style="background-color: #f0f8ff">│ 2/25/23, 7:59 PM about:blank                                                                            │</span> │
+│   │ <span style="background-color: #f0f8ff">│ about:blank 2/4                                                                                         │</span> │
+│   │ <span style="background-color: #f0f8ff">│ Foreign Transactions 3% of the amount of each transaction in U.S. dollars.                              │</span> │
+│   │ <span style="background-color: #f0f8ff">│ Penalty Fees                                                                                            │</span> │
+│   │ <span style="background-color: #f0f8ff">│ Late Payment Up to $40.                                                                                 │</span> │
+│   │ <span style="background-color: #f0f8ff">│ Over-the-Credit-Limit None                                                                              │</span> │
+│   │ <span style="background-color: #f0f8ff">│ Return Payment Up to $40.                                                                               │</span> │
+│   │ <span style="background-color: #f0f8ff">│ Return Check None                                                                                       │</span> │
+│   │ <span style="background-color: #f0f8ff">│ Note: This account may not be eligible for balance transfers.                                           │</span> │
+│   │ <span style="background-color: #f0f8ff">│ Loss of Intro APR: We will end your introductory APR if any required Minimum Payment is 60 days late,   │</span> │
+│   │ <span style="background-color: #f0f8ff">│ and                                                                                                     │</span> │
+│   │ <span style="background-color: #f0f8ff">│ apply the Penalty APR.                                                                                  │</span> │
+│   │ <span style="background-color: #f0f8ff">│ How We Will Calculate Your Balance: We use the daily balance method (including new transactions).       │</span> │
+│   │ <span style="background-color: #f0f8ff">│ Prime Rate: Variable APRs are based on the 7.75% Prime Rate as of 2/7/2023.                             │</span> │
+│   │ <span style="background-color: #f0f8ff">│ aWe add 11.74% to the Prime Rate to determine the Purchase/My Chase Loan/Balance Transfer APR.          │</span> │
+│   │ <span style="background-color: #f0f8ff">│ Maximum APR 29.99%.                                                                                     │</span> │
+│   │ <span style="background-color: #f0f8ff">│ bWe add 21.74% to the Prime Rate to determine the Cash Advance APR. Maximum APR 29.99%.                 │</span> │
+│   │ <span style="background-color: #f0f8ff">│ cWe add up to 26.99% to the Prime Rate to determine the Penalty APR. Maximum APR 29.99%.                │</span> │
+│   │ <span style="background-color: #f0f8ff">│ dMy Chase Plan Fee: The My Chase Plan Fee is calculated at the time each plan is created and is based   │</span> │
+│   │ <span style="background-color: #f0f8ff">│ on                                                                                                      │</span> │
+│   │ <span style="background-color: #f0f8ff">│ the amount of each purchase transaction or amount selected to create the plan, the number of billing    │</span> │
+│   │ <span style="background-color: #f0f8ff">│ periods                                                                                                 │</span> │
+│   │ <span style="background-color: #f0f8ff">│ you choose to pay the balance in full, and other factors. The monthly and aggregate dollar amount of    │</span> │
+│   │ <span style="background-color: #f0f8ff">│ your My                                                                                                 │</span> │
+│   │ <span style="background-color: #f0f8ff">│ Chase Plan Fee will be disclosed during the activation of each My Chase Plan.                           │</span> │
+│   │ <span style="background-color: #f0f8ff">│ MILITARY LENDING ACT NOTICE: Federal law provides important protections to members of the Armed         │</span> │
+│   │ <span style="background-color: #f0f8ff">│ Forces and their dependents relating to extensions of consumer credit. In general, the cost of consumer │</span> │
+│   │ <span style="background-color: #f0f8ff">│ credit                                                                                                  │</span> │
+│   │ <span style="background-color: #f0f8ff">│ to a member of the Armed Forces and his or her dependent may not exceed an annual percentage rate of 36 │</span> │
+│   │ <span style="background-color: #f0f8ff">│ percent. This rate must include, as applicable to the credit transaction or account: the costs          │</span> │
+│   │ <span style="background-color: #f0f8ff">│ associated with                                                                                         │</span> │
+│   │ <span style="background-color: #f0f8ff">│ credit insurance premiums; fees for ancillary products sold in connection with the credit transaction;  │</span> │
+│   │ <span style="background-color: #f0f8ff">│ any                                                                                                     │</span> │
+│   │ <span style="background-color: #f0f8ff">│ application fee charged (other than certain application fees for specified credit transactions or       │</span> │
+│   │ <span style="background-color: #f0f8ff">│ accounts); and                                                                                          │</span> │
+│   │ <span style="background-color: #f0f8ff">│ any participation fee charged (other than certain participation fees for a credit card account). To     │</span> │
+│   │ <span style="background-color: #f0f8ff">│ receive this                                                                                            │</span> │
+│   │ <span style="background-color: #f0f8ff">│ information and a description of your payment obligation verbally, please call 1-800-235-9978.          │</span> │
+│   │ <span style="background-color: #f0f8ff">│ TERMS &amp; CONDITIONS                                                                                      │</span> │
+│   │ <span style="background-color: #f0f8ff">│ Authorization: When you respond to this credit card offer from JPMorgan Chase Bank, N.A., Member FDIC,  │</span> │
+│   │ <span style="background-color: #f0f8ff">│ a                                                                                                       │</span> │
+│   │ <span style="background-color: #f0f8ff">│ subsidiary of JPMorgan Chase &amp; Co. ("Chase", "we", or "us"), you agree to the following:                │</span> │
+│   │ <span style="background-color: #f0f8ff">│ 1. You authorize us to obtain credit bureau reports, employment, and income information about you that  │</span> │
+│   │ <span style="background-color: #f0f8ff">│ we                                                                                                      │</span> │
+│   │ <span style="background-color: #f0f8ff">│ will use when considering your application for credit. We may obtain and use information about your     │</span> │
+│   │ <span style="background-color: #f0f8ff">│ accounts with us and others such as Checking, Deposit, Investment, and Utility accounts from credit     │</span> │
+│   │ <span style="background-color: #f0f8ff">│ bureaus and other entities. You also authorize us to obtain credit bureau reports and any other         │</span> │
+│   │ <span style="background-color: #f0f8ff">│ information about you in connection with: 1) extensions of credit on your account; 2) the               │</span> │
+│   │ <span style="background-color: #f0f8ff">│ administration,                                                                                         │</span> │
+│   │ <span style="background-color: #f0f8ff">│ review or collection of your account; and 3) offering you enhanced or additional products and services. │</span> │
+│   │ <span style="background-color: #f0f8ff">│ If                                                                                                      │</span> │
+│   │ <span style="background-color: #f0f8ff">│ you ask, we will tell you the name and address of the credit bureau from which we obtained a report     │</span> │
+│   │ <span style="background-color: #f0f8ff">│ about you.                                                                                              │</span> │
+│   │ <span style="background-color: #f0f8ff">│ 2. If an account is opened, you will receive a Cardmember Agreement with your card(s). You agree to the │</span> │
+│   │ <span style="background-color: #f0f8ff">│ terms of this agreement by: using the account or any card, authorizing their use, or making any payment │</span> │
+│   │ <span style="background-color: #f0f8ff">│ on the account.                                                                                         │</span> │
+│   │ <span style="background-color: #f0f8ff">│ 3. By providing your mobile ph                                                                          │</span> │
+│   │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+│   │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+│   │ <span style="background-color: #f0f8ff">│ Given below is XML that describes the information to extract from this document and the tags to extract │</span> │
+│   │ <span style="background-color: #f0f8ff">│ it into.                                                                                                │</span> │
+│   │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+│   │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+│   │ <span style="background-color: #f0f8ff">│ &lt;output&gt;                                                                                                │</span> │
+│   │ <span style="background-color: #f0f8ff">│     &lt;list name="fees" description="What fees and charges are associated with my account?"&gt;              │</span> │
+│   │ <span style="background-color: #f0f8ff">│         &lt;object&gt;                                                                                        │</span> │
+│   │ <span style="background-color: #f0f8ff">│             &lt;integer name="index" format="1-indexed"/&gt;                                                  │</span> │
+│   │ <span style="background-color: #f0f8ff">│             &lt;string name="name" format="lower-case; two-words"/&gt;                                        │</span> │
+│   │ <span style="background-color: #f0f8ff">│             &lt;string name="explanation" format="one-line"/&gt;                                              │</span> │
+│   │ <span style="background-color: #f0f8ff">│             &lt;float name="value" format="percentage"/&gt;                                                   │</span> │
+│   │ <span style="background-color: #f0f8ff">│         &lt;/object&gt;                                                                                       │</span> │
+│   │ <span style="background-color: #f0f8ff">│     &lt;/list&gt;                                                                                             │</span> │
+│   │ <span style="background-color: #f0f8ff">│     &lt;object name="interest_rates" description="What are the interest rates offered by the bank on       │</span> │
+│   │ <span style="background-color: #f0f8ff">│ savings and checking accounts, loans, and credit products?"/&gt;                                           │</span> │
+│   │ <span style="background-color: #f0f8ff">│ &lt;/output&gt;                                                                                               │</span> │
+│   │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+│   │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+│   │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+│   │ <span style="background-color: #f0f8ff">│ ONLY return a valid JSON object (no other text is necessary). The JSON MUST conform to the XML format,  │</span> │
+│   │ <span style="background-color: #f0f8ff">│ including any types and format requests e.g. requests for lists, objects and specific types. Be correct │</span> │
+│   │ <span style="background-color: #f0f8ff">│ and concise.                                                                                            │</span> │
+│   │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+│   │ <span style="background-color: #f0f8ff">│ JSON Output:                                                                                            │</span> │
+│   │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+│   │ <span style="background-color: #f0f8ff">╰─────────────────────────────────────────────────────────────────────────────────────────────────────────╯</span> │
+│   │ <span style="background-color: #f5f5dc">╭──────────────────────────────────────────── Raw LLM Output ─────────────────────────────────────────────╮</span> │
+│   │ <span style="background-color: #f5f5dc">│ {                                                                                                       │</span> │
+│   │ <span style="background-color: #f5f5dc">│     "fees": [                                                                                           │</span> │
+│   │ <span style="background-color: #f5f5dc">│         {                                                                                               │</span> │
+│   │ <span style="background-color: #f5f5dc">│             "index": 1,                                                                                 │</span> │
+│   │ <span style="background-color: #f5f5dc">│             "name": "annual membership",                                                                │</span> │
+│   │ <span style="background-color: #f5f5dc">│             "explanation": "Annual Membership Fee",                                                     │</span> │
+│   │ <span style="background-color: #f5f5dc">│             "value": 0                                                                                  │</span> │
+│   │ <span style="background-color: #f5f5dc">│         },                                                                                              │</span> │
+│   │ <span style="background-color: #f5f5dc">│         {                                                                                               │</span> │
+│   │ <span style="background-color: #f5f5dc">│             "index": 2,                                                                                 │</span> │
+│   │ <span style="background-color: #f5f5dc">│             "name": "my chase plan",                                                                    │</span> │
+│   │ <span style="background-color: #f5f5dc">│             "explanation": "My Chase Plan Fee (fixed finance charge)",                                  │</span> │
+│   │ <span style="background-color: #f5f5dc">│             "value": 1.72                                                                               │</span> │
+│   │ <span style="background-color: #f5f5dc">│         },                                                                                              │</span> │
+│   │ <span style="background-color: #f5f5dc">│         {                                                                                               │</span> │
+│   │ <span style="background-color: #f5f5dc">│             "index": 3,                                                                                 │</span> │
+│   │ <span style="background-color: #f5f5dc">│             "name": "balance transfers",                                                                │</span> │
+│   │ <span style="background-color: #f5f5dc">│             "explanation": "Balance Transfers Intro fee of either $5 or 3% of the amount of each        │</span> │
+│   │ <span style="background-color: #f5f5dc">│ transfer, whichever is greater, on transfers made within 60 days of account opening. After that: Either │</span> │
+│   │ <span style="background-color: #f5f5dc">│ $5 or 5% of the amount of each transfer, whichever is greater.",                                        │</span> │
+│   │ <span style="background-color: #f5f5dc">│             "value": 3                                                                                  │</span> │
+│   │ <span style="background-color: #f5f5dc">│         },                                                                                              │</span> │
+│   │ <span style="background-color: #f5f5dc">│         {                                                                                               │</span> │
+│   │ <span style="background-color: #f5f5dc">│             "index": 4,                                                                                 │</span> │
+│   │ <span style="background-color: #f5f5dc">│             "name": "cash advances",                                                                    │</span> │
+│   │ <span style="background-color: #f5f5dc">│             "explanation": "Either $10 or 5% of the amount of each transaction, whichever is greater.", │</span> │
+│   │ <span style="background-color: #f5f5dc">│             "value": 5                                                                                  │</span> │
+│   │ <span style="background-color: #f5f5dc">│         },                                                                                              │</span> │
+│   │ <span style="background-color: #f5f5dc">│         {                                                                                               │</span> │
+│   │ <span style="background-color: #f5f5dc">│             "index": 5,                                                                                 │</span> │
+│   │ <span style="background-color: #f5f5dc">│             "name": "foreign transactions",                                                             │</span> │
+│   │ <span style="background-color: #f5f5dc">│             "explanation": "Foreign Transactions 3% of the amount of each transaction in U.S.           │</span> │
+│   │ <span style="background-color: #f5f5dc">│ dollars.",                                                                                              │</span> │
+│   │ <span style="background-color: #f5f5dc">│             "value": 3                                                                                  │</span> │
+│   │ <span style="background-color: #f5f5dc">│         },                                                                                              │</span> │
+│   │ <span style="background-color: #f5f5dc">│         {                                                                                               │</span> │
+│   │ <span style="background-color: #f5f5dc">│             "index": 6,                                                                                 │</span> │
+│   │ <span style="background-color: #f5f5dc">│             "name": "late payment",                                                                     │</span> │
+│   │ <span style="background-color: #f5f5dc">│             "explanation": "Late Payment Up to $40.",                                                   │</span> │
+│   │ <span style="background-color: #f5f5dc">│             "value": 0                                                                                  │</span> │
+│   │ <span style="background-color: #f5f5dc">│         },                                                                                              │</span> │
+│   │ <span style="background-color: #f5f5dc">│         {                                                                                               │</span> │
+│   │ <span style="background-color: #f5f5dc">│             "index": 7,                                                                                 │</span> │
+│   │ <span style="background-color: #f5f5dc">│             "name": "over-the-credit-limit",                                                            │</span> │
+│   │ <span style="background-color: #f5f5dc">│             "explanation": "Over-the-Credit-Limit None",                                                │</span> │
+│   │ <span style="background-color: #f5f5dc">│             "value": 0                                                                                  │</span> │
+│   │ <span style="background-color: #f5f5dc">│         },                                                                                              │</span> │
+│   │ <span style="background-color: #f5f5dc">│         {                                                                                               │</span> │
+│   │ <span style="background-color: #f5f5dc">│             "index": 8,                                                                                 │</span> │
+│   │ <span style="background-color: #f5f5dc">│             "name": "return payment",                                                                   │</span> │
+│   │ <span style="background-color: #f5f5dc">│             "explanation": "Return Payment Up to $40.",                                                 │</span> │
+│   │ <span style="background-color: #f5f5dc">│             "value": 0                                                                                  │</span> │
+│   │ <span style="background-color: #f5f5dc">│         },                                                                                              │</span> │
+│   │ <span style="background-color: #f5f5dc">│         {                                                                                               │</span> │
+│   │ <span style="background-color: #f5f5dc">│             "index": 9,                                                                                 │</span> │
+│   │ <span style="background-color: #f5f5dc">│             "name": "return check",                                                                     │</span> │
+│   │ <span style="background-color: #f5f5dc">│             "explanation": "Return Check None",                                                         │</span> │
+│   │ <span style="background-color: #f5f5dc">│             "value": 0                                                                                  │</span> │
+│   │ <span style="background-color: #f5f5dc">│         }                                                                                               │</span> │
+│   │ <span style="background-color: #f5f5dc">│     ],                                                                                                  │</span> │
+│   │ <span style="background-color: #f5f5dc">│     "interest_rates": {                                                                                 │</span> │
+│   │ <span style="background-color: #f5f5dc">│         "purchase": {                                                                                   │</span> │
+│   │ <span style="background-color: #f5f5dc">│             "apr": 0,                                                                                   │</span> │
+│   │ <span style="background-color: #f5f5dc">│             "after_apr": 19.49                                                                          │</span> │
+│   │ <span style="background-color: #f5f5dc">│         },                                                                                              │</span> │
+│   │ <span style="background-color: #f5f5dc">│         "my_chase_loan": {                                                                              │</span> │
+│   │ <span style="background-color: #f5f5dc">│             "apr": 19.49                                                                                │</span> │
+│   │ <span style="background-color: #f5f5dc">│         },                                                                                              │</span> │
+│   │ <span style="background-color: #f5f5dc">│         "balance_transfer": {                                                                           │</span> │
+│   │ <span style="background-color: #f5f5dc">│             "apr": 0,                                                                                   │</span> │
+│   │ <span style="background-color: #f5f5dc">│             "after_apr": 19.49                                                                          │</span> │
+│   │ <span style="background-color: #f5f5dc">│         },                                                                                              │</span> │
+│   │ <span style="background-color: #f5f5dc">│         "cash_advance": {                                                                               │</span> │
+│   │ <span style="background-color: #f5f5dc">│             "apr": 29.49                                                                                │</span> │
+│   │ <span style="background-color: #f5f5dc">│         },                                                                                              │</span> │
+│   │ <span style="background-color: #f5f5dc">│         "penalty": {                                                                                    │</span> │
+│   │ <span style="background-color: #f5f5dc">│             "apr": 0,                                                                                   │</span> │
+│   │ <span style="background-color: #f5f5dc">│             "maximum_apr": 29.99                                                                        │</span> │
+│   │ <span style="background-color: #f5f5dc">│         }                                                                                               │</span> │
+│   │ <span style="background-color: #f5f5dc">│     }                                                                                                   │</span> │
+│   │ <span style="background-color: #f5f5dc">│ }                                                                                                       │</span> │
+│   │ <span style="background-color: #f5f5dc">╰─────────────────────────────────────────────────────────────────────────────────────────────────────────╯</span> │
+│   │ <span style="background-color: #f0fff0">╭─────────────────────────────────────────── Validated Output ────────────────────────────────────────────╮</span> │
+│   │ <span style="background-color: #f0fff0">│ {                                                                                                       │</span> │
+│   │ <span style="background-color: #f0fff0">│     'fees': [                                                                                           │</span> │
+│   │ <span style="background-color: #f0fff0">│         {                                                                                               │</span> │
+│   │ <span style="background-color: #f0fff0">│             'index': 1,                                                                                 │</span> │
+│   │ <span style="background-color: #f0fff0">│             'name': 'annual membership',                                                                │</span> │
+│   │ <span style="background-color: #f0fff0">│             'explanation': 'Annual Membership Fee',                                                     │</span> │
+│   │ <span style="background-color: #f0fff0">│             'value': 0                                                                                  │</span> │
+│   │ <span style="background-color: #f0fff0">│         },                                                                                              │</span> │
+│   │ <span style="background-color: #f0fff0">│         {                                                                                               │</span> │
+│   │ <span style="background-color: #f0fff0">│             'index': 2,                                                                                 │</span> │
+│   │ <span style="background-color: #f0fff0">│             'name': ReAsk(                                                                              │</span> │
+│   │ <span style="background-color: #f0fff0">│                 incorrect_value='my chase plan',                                                        │</span> │
+│   │ <span style="background-color: #f0fff0">│                 error_message='must be exactly two words',                                              │</span> │
+│   │ <span style="background-color: #f0fff0">│                 fix_value='my chase',                                                                   │</span> │
+│   │ <span style="background-color: #f0fff0">│                 path=['fees', 1, 'name']                                                                │</span> │
+│   │ <span style="background-color: #f0fff0">│             ),                                                                                          │</span> │
+│   │ <span style="background-color: #f0fff0">│             'explanation': 'My Chase Plan Fee (fixed finance charge)',                                  │</span> │
+│   │ <span style="background-color: #f0fff0">│             'value': 1.72                                                                               │</span> │
+│   │ <span style="background-color: #f0fff0">│         },                                                                                              │</span> │
+│   │ <span style="background-color: #f0fff0">│         {                                                                                               │</span> │
+│   │ <span style="background-color: #f0fff0">│             'index': 3,                                                                                 │</span> │
+│   │ <span style="background-color: #f0fff0">│             'name': 'balance transfers',                                                                │</span> │
+│   │ <span style="background-color: #f0fff0">│             'explanation': 'Balance Transfers Intro fee of either $5 or 3% of the amount of each        │</span> │
+│   │ <span style="background-color: #f0fff0">│ transfer, whichever is greater, on transfers made within 60 days of account opening. After that: Either │</span> │
+│   │ <span style="background-color: #f0fff0">│ $5 or 5% of the amount of each transfer, whichever is greater.',                                        │</span> │
+│   │ <span style="background-color: #f0fff0">│             'value': 3                                                                                  │</span> │
+│   │ <span style="background-color: #f0fff0">│         },                                                                                              │</span> │
+│   │ <span style="background-color: #f0fff0">│         {                                                                                               │</span> │
+│   │ <span style="background-color: #f0fff0">│             'index': 4,                                                                                 │</span> │
+│   │ <span style="background-color: #f0fff0">│             'name': 'cash advances',                                                                    │</span> │
+│   │ <span style="background-color: #f0fff0">│             'explanation': 'Either $10 or 5% of the amount of each transaction, whichever is greater.', │</span> │
+│   │ <span style="background-color: #f0fff0">│             'value': 5                                                                                  │</span> │
+│   │ <span style="background-color: #f0fff0">│         },                                                                                              │</span> │
+│   │ <span style="background-color: #f0fff0">│         {                                                                                               │</span> │
+│   │ <span style="background-color: #f0fff0">│             'index': 5,                                                                                 │</span> │
+│   │ <span style="background-color: #f0fff0">│             'name': 'foreign transactions',                                                             │</span> │
+│   │ <span style="background-color: #f0fff0">│             'explanation': 'Foreign Transactions 3% of the amount of each transaction in U.S.           │</span> │
+│   │ <span style="background-color: #f0fff0">│ dollars.',                                                                                              │</span> │
+│   │ <span style="background-color: #f0fff0">│             'value': 3                                                                                  │</span> │
+│   │ <span style="background-color: #f0fff0">│         },                                                                                              │</span> │
+│   │ <span style="background-color: #f0fff0">│         {                                                                                               │</span> │
+│   │ <span style="background-color: #f0fff0">│             'index': 6,                                                                                 │</span> │
+│   │ <span style="background-color: #f0fff0">│             'name': 'late payment',                                                                     │</span> │
+│   │ <span style="background-color: #f0fff0">│             'explanation': 'Late Payment Up to $40.',                                                   │</span> │
+│   │ <span style="background-color: #f0fff0">│             'value': 0                                                                                  │</span> │
+│   │ <span style="background-color: #f0fff0">│         },                                                                                              │</span> │
+│   │ <span style="background-color: #f0fff0">│         {                                                                                               │</span> │
+│   │ <span style="background-color: #f0fff0">│             'index': 7,                                                                                 │</span> │
+│   │ <span style="background-color: #f0fff0">│             'name': ReAsk(                                                                              │</span> │
+│   │ <span style="background-color: #f0fff0">│                 incorrect_value='over-the-credit-limit',                                                │</span> │
+│   │ <span style="background-color: #f0fff0">│                 error_message='must be exactly two words',                                              │</span> │
+│   │ <span style="background-color: #f0fff0">│                 fix_value='over-the-credit-limit',                                                      │</span> │
+│   │ <span style="background-color: #f0fff0">│                 path=['fees', 6, 'name']                                                                │</span> │
+│   │ <span style="background-color: #f0fff0">│             ),                                                                                          │</span> │
+│   │ <span style="background-color: #f0fff0">│             'explanation': 'Over-the-Credit-Limit None',                                                │</span> │
+│   │ <span style="background-color: #f0fff0">│             'value': 0                                                                                  │</span> │
+│   │ <span style="background-color: #f0fff0">│         },                                                                                              │</span> │
+│   │ <span style="background-color: #f0fff0">│         {                                                                                               │</span> │
+│   │ <span style="background-color: #f0fff0">│             'index': 8,                                                                                 │</span> │
+│   │ <span style="background-color: #f0fff0">│             'name': 'return payment',                                                                   │</span> │
+│   │ <span style="background-color: #f0fff0">│             'explanation': 'Return Payment Up to $40.',                                                 │</span> │
+│   │ <span style="background-color: #f0fff0">│             'value': 0                                                                                  │</span> │
+│   │ <span style="background-color: #f0fff0">│         },                                                                                              │</span> │
+│   │ <span style="background-color: #f0fff0">│         {                                                                                               │</span> │
+│   │ <span style="background-color: #f0fff0">│             'index': 9,                                                                                 │</span> │
+│   │ <span style="background-color: #f0fff0">│             'name': 'return check',                                                                     │</span> │
+│   │ <span style="background-color: #f0fff0">│             'explanation': 'Return Check None',                                                         │</span> │
+│   │ <span style="background-color: #f0fff0">│             'value': 0                                                                                  │</span> │
+│   │ <span style="background-color: #f0fff0">│         }                                                                                               │</span> │
+│   │ <span style="background-color: #f0fff0">│     ],                                                                                                  │</span> │
+│   │ <span style="background-color: #f0fff0">│     'interest_rates': {                                                                                 │</span> │
+│   │ <span style="background-color: #f0fff0">│         'purchase': {'apr': 0, 'after_apr': 19.49},                                                     │</span> │
+│   │ <span style="background-color: #f0fff0">│         'my_chase_loan': {'apr': 19.49},                                                                │</span> │
+│   │ <span style="background-color: #f0fff0">│         'balance_transfer': {'apr': 0, 'after_apr': 19.49},                                             │</span> │
+│   │ <span style="background-color: #f0fff0">│         'cash_advance': {'apr': 29.49},                                                                 │</span> │
+│   │ <span style="background-color: #f0fff0">│         'penalty': {'apr': 0, 'maximum_apr': 29.99}                                                     │</span> │
+│   │ <span style="background-color: #f0fff0">│     }                                                                                                   │</span> │
+│   │ <span style="background-color: #f0fff0">│ }                                                                                                       │</span> │
+│   │ <span style="background-color: #f0fff0">╰─────────────────────────────────────────────────────────────────────────────────────────────────────────╯</span> │
+│   ╰─────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+└── ╭────────────────────────────────────────────────── Step 2 ───────────────────────────────────────────────────╮
+    │ <span style="background-color: #f0f8ff">╭──────────────────────────────────────────────── Prompt ─────────────────────────────────────────────────╮</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ I was given the following JSON response, which had problems due to incorrect values.                    │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ {                                                                                                       │</span> │
+    │ <span style="background-color: #f0f8ff">│   "fees": [                                                                                             │</span> │
+    │ <span style="background-color: #f0f8ff">│     {                                                                                                   │</span> │
+    │ <span style="background-color: #f0f8ff">│       "name": {                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│         "incorrect_value": "my chase plan",                                                             │</span> │
+    │ <span style="background-color: #f0f8ff">│         "error_message": "must be exactly two words"                                                    │</span> │
+    │ <span style="background-color: #f0f8ff">│       }                                                                                                 │</span> │
+    │ <span style="background-color: #f0f8ff">│     },                                                                                                  │</span> │
+    │ <span style="background-color: #f0f8ff">│     {                                                                                                   │</span> │
+    │ <span style="background-color: #f0f8ff">│       "name": {                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│         "incorrect_value": "over-the-credit-limit",                                                     │</span> │
+    │ <span style="background-color: #f0f8ff">│         "error_message": "must be exactly two words"                                                    │</span> │
+    │ <span style="background-color: #f0f8ff">│       }                                                                                                 │</span> │
+    │ <span style="background-color: #f0f8ff">│     }                                                                                                   │</span> │
+    │ <span style="background-color: #f0f8ff">│   ]                                                                                                     │</span> │
+    │ <span style="background-color: #f0f8ff">│ }                                                                                                       │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ Help me correct the incorrect values based on the given error messages.                                 │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ Given below is XML that describes the information to extract from this document and the tags to extract │</span> │
+    │ <span style="background-color: #f0f8ff">│ it into.                                                                                                │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ &lt;output&gt;                                                                                                │</span> │
+    │ <span style="background-color: #f0f8ff">│     &lt;list name="fees" description="What fees and charges are associated with my account?"&gt;              │</span> │
+    │ <span style="background-color: #f0f8ff">│         &lt;object&gt;                                                                                        │</span> │
+    │ <span style="background-color: #f0f8ff">│             &lt;string name="name" format="lower-case; two-words"/&gt;                                        │</span> │
+    │ <span style="background-color: #f0f8ff">│         &lt;/object&gt;                                                                                       │</span> │
+    │ <span style="background-color: #f0f8ff">│     &lt;/list&gt;                                                                                             │</span> │
+    │ <span style="background-color: #f0f8ff">│ &lt;/output&gt;                                                                                               │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ ONLY return a valid JSON object (no other text is necessary), where the key of the field in JSON is the │</span> │
+    │ <span style="background-color: #f0f8ff">│ `name` attribute of the corresponding XML, and the value is of the type specified by the corresponding  │</span> │
+    │ <span style="background-color: #f0f8ff">│ XML's tag. The JSON MUST conform to the XML format, including any types and format requests e.g.        │</span> │
+    │ <span style="background-color: #f0f8ff">│ requests for lists, objects and specific types. Be correct and concise. If you are unsure anywhere,     │</span> │
+    │ <span style="background-color: #f0f8ff">│ enter `None`.                                                                                           │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ Here are examples of simple (XML, JSON) pairs that show the expected behavior:                          │</span> │
+    │ <span style="background-color: #f0f8ff">│ - `&lt;string name='foo' format='two-words lower-case' /&gt;` =&gt; `{{'foo': 'example one'}}`                   │</span> │
+    │ <span style="background-color: #f0f8ff">│ - `&lt;list name='bar'&gt;&lt;string format='upper-case' /&gt;&lt;/list&gt;` =&gt; `{{"bar": ['STRING ONE', 'STRING TWO',    │</span> │
+    │ <span style="background-color: #f0f8ff">│ etc.]}}`                                                                                                │</span> │
+    │ <span style="background-color: #f0f8ff">│ - `&lt;object name='baz'&gt;&lt;string name="foo" format="capitalize two-words" /&gt;&lt;integer name="index"          │</span> │
+    │ <span style="background-color: #f0f8ff">│ format="1-indexed" /&gt;&lt;/object&gt;` =&gt; `{{'baz': {{'foo': 'Some String', 'index': 1}}}}`                    │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ JSON Object:                                                                                            │</span> │
+    │ <span style="background-color: #f0f8ff">╰─────────────────────────────────────────────────────────────────────────────────────────────────────────╯</span> │
+    │ <span style="background-color: #f5f5dc">╭──────────────────────────────────────────── Raw LLM Output ─────────────────────────────────────────────╮</span> │
+    │ <span style="background-color: #f5f5dc">│                                                                                                         │</span> │
+    │ <span style="background-color: #f5f5dc">│ {                                                                                                       │</span> │
+    │ <span style="background-color: #f5f5dc">│   "fees": [                                                                                             │</span> │
+    │ <span style="background-color: #f5f5dc">│     {                                                                                                   │</span> │
+    │ <span style="background-color: #f5f5dc">│       "name": "my-chase-plan"                                                                           │</span> │
+    │ <span style="background-color: #f5f5dc">│     },                                                                                                  │</span> │
+    │ <span style="background-color: #f5f5dc">│     {                                                                                                   │</span> │
+    │ <span style="background-color: #f5f5dc">│       "name": "over-credit-limit"                                                                       │</span> │
+    │ <span style="background-color: #f5f5dc">│     }                                                                                                   │</span> │
+    │ <span style="background-color: #f5f5dc">│   ]                                                                                                     │</span> │
+    │ <span style="background-color: #f5f5dc">│ }                                                                                                       │</span> │
+    │ <span style="background-color: #f5f5dc">╰─────────────────────────────────────────────────────────────────────────────────────────────────────────╯</span> │
+    │ <span style="background-color: #f0fff0">╭─────────────────────────────────────────── Validated Output ────────────────────────────────────────────╮</span> │
+    │ <span style="background-color: #f0fff0">│ {                                                                                                       │</span> │
+    │ <span style="background-color: #f0fff0">│     'fees': [                                                                                           │</span> │
+    │ <span style="background-color: #f0fff0">│         {                                                                                               │</span> │
+    │ <span style="background-color: #f0fff0">│             'index': 1,                                                                                 │</span> │
+    │ <span style="background-color: #f0fff0">│             'name': 'annual membership',                                                                │</span> │
+    │ <span style="background-color: #f0fff0">│             'explanation': 'Annual Membership Fee',                                                     │</span> │
+    │ <span style="background-color: #f0fff0">│             'value': 0                                                                                  │</span> │
+    │ <span style="background-color: #f0fff0">│         },                                                                                              │</span> │
+    │ <span style="background-color: #f0fff0">│         {                                                                                               │</span> │
+    │ <span style="background-color: #f0fff0">│             'index': 2,                                                                                 │</span> │
+    │ <span style="background-color: #f0fff0">│             'name': 'my-chase-plan',                                                                    │</span> │
+    │ <span style="background-color: #f0fff0">│             'explanation': 'My Chase Plan Fee (fixed finance charge)',                                  │</span> │
+    │ <span style="background-color: #f0fff0">│             'value': 1.72                                                                               │</span> │
+    │ <span style="background-color: #f0fff0">│         },                                                                                              │</span> │
+    │ <span style="background-color: #f0fff0">│         {                                                                                               │</span> │
+    │ <span style="background-color: #f0fff0">│             'index': 3,                                                                                 │</span> │
+    │ <span style="background-color: #f0fff0">│             'name': 'balance transfers',                                                                │</span> │
+    │ <span style="background-color: #f0fff0">│             'explanation': 'Balance Transfers Intro fee of either $5 or 3% of the amount of each        │</span> │
+    │ <span style="background-color: #f0fff0">│ transfer, whichever is greater, on transfers made within 60 days of account opening. After that: Either │</span> │
+    │ <span style="background-color: #f0fff0">│ $5 or 5% of the amount of each transfer, whichever is greater.',                                        │</span> │
+    │ <span style="background-color: #f0fff0">│             'value': 3                                                                                  │</span> │
+    │ <span style="background-color: #f0fff0">│         },                                                                                              │</span> │
+    │ <span style="background-color: #f0fff0">│         {                                                                                               │</span> │
+    │ <span style="background-color: #f0fff0">│             'index': 4,                                                                                 │</span> │
+    │ <span style="background-color: #f0fff0">│             'name': 'cash advances',                                                                    │</span> │
+    │ <span style="background-color: #f0fff0">│             'explanation': 'Either $10 or 5% of the amount of each transaction, whichever is greater.', │</span> │
+    │ <span style="background-color: #f0fff0">│             'value': 5                                                                                  │</span> │
+    │ <span style="background-color: #f0fff0">│         },                                                                                              │</span> │
+    │ <span style="background-color: #f0fff0">│         {                                                                                               │</span> │
+    │ <span style="background-color: #f0fff0">│             'index': 5,                                                                                 │</span> │
+    │ <span style="background-color: #f0fff0">│             'name': 'foreign transactions',                                                             │</span> │
+    │ <span style="background-color: #f0fff0">│             'explanation': 'Foreign Transactions 3% of the amount of each transaction in U.S.           │</span> │
+    │ <span style="background-color: #f0fff0">│ dollars.',                                                                                              │</span> │
+    │ <span style="background-color: #f0fff0">│             'value': 3                                                                                  │</span> │
+    │ <span style="background-color: #f0fff0">│         },                                                                                              │</span> │
+    │ <span style="background-color: #f0fff0">│         {                                                                                               │</span> │
+    │ <span style="background-color: #f0fff0">│             'index': 6,                                                                                 │</span> │
+    │ <span style="background-color: #f0fff0">│             'name': 'late payment',                                                                     │</span> │
+    │ <span style="background-color: #f0fff0">│             'explanation': 'Late Payment Up to $40.',                                                   │</span> │
+    │ <span style="background-color: #f0fff0">│             'value': 0                                                                                  │</span> │
+    │ <span style="background-color: #f0fff0">│         },                                                                                              │</span> │
+    │ <span style="background-color: #f0fff0">│         {                                                                                               │</span> │
+    │ <span style="background-color: #f0fff0">│             'index': 7,                                                                                 │</span> │
+    │ <span style="background-color: #f0fff0">│             'name': 'over-credit-limit',                                                                │</span> │
+    │ <span style="background-color: #f0fff0">│             'explanation': 'Over-the-Credit-Limit None',                                                │</span> │
+    │ <span style="background-color: #f0fff0">│             'value': 0                                                                                  │</span> │
+    │ <span style="background-color: #f0fff0">│         },                                                                                              │</span> │
+    │ <span style="background-color: #f0fff0">│         {                                                                                               │</span> │
+    │ <span style="background-color: #f0fff0">│             'index': 8,                                                                                 │</span> │
+    │ <span style="background-color: #f0fff0">│             'name': 'return payment',                                                                   │</span> │
+    │ <span style="background-color: #f0fff0">│             'explanation': 'Return Payment Up to $40.',                                                 │</span> │
+    │ <span style="background-color: #f0fff0">│             'value': 0                                                                                  │</span> │
+    │ <span style="background-color: #f0fff0">│         },                                                                                              │</span> │
+    │ <span style="background-color: #f0fff0">│         {                                                                                               │</span> │
+    │ <span style="background-color: #f0fff0">│             'index': 9,                                                                                 │</span> │
+    │ <span style="background-color: #f0fff0">│             'name': 'return check',                                                                     │</span> │
+    │ <span style="background-color: #f0fff0">│             'explanation': 'Return Check None',                                                         │</span> │
+    │ <span style="background-color: #f0fff0">│             'value': 0                                                                                  │</span> │
+    │ <span style="background-color: #f0fff0">│         }                                                                                               │</span> │
+    │ <span style="background-color: #f0fff0">│     ],                                                                                                  │</span> │
+    │ <span style="background-color: #f0fff0">│     'interest_rates': {                                                                                 │</span> │
+    │ <span style="background-color: #f0fff0">│         'purchase': {'apr': 0, 'after_apr': 19.49},                                                     │</span> │
+    │ <span style="background-color: #f0fff0">│         'my_chase_loan': {'apr': 19.49},                                                                │</span> │
+    │ <span style="background-color: #f0fff0">│         'balance_transfer': {'apr': 0, 'after_apr': 19.49},                                             │</span> │
+    │ <span style="background-color: #f0fff0">│         'cash_advance': {'apr': 29.49},                                                                 │</span> │
+    │ <span style="background-color: #f0fff0">│         'penalty': {'apr': 0, 'maximum_apr': 29.99}                                                     │</span> │
+    │ <span style="background-color: #f0fff0">│     }                                                                                                   │</span> │
+    │ <span style="background-color: #f0fff0">│ }                                                                                                       │</span> │
+    │ <span style="background-color: #f0fff0">╰─────────────────────────────────────────────────────────────────────────────────────────────────────────╯</span> │
+    ╰─────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 </pre>
 </div>
 </div>
@@ -1242,7 +1706,7 @@ JSON Output:
     <nav class="md-footer__inner md-grid" aria-label="Footer" >
       
         
-        <a href="../../logs/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Inspecting logs" rel="prev">
+        <a href="../select_choice_based_on_action/" class="md-footer__link md-footer__link--prev" aria-label="Previous: If condition: generate different JSON objects based on condition" rel="prev">
           <div class="md-footer__button md-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
           </div>
@@ -1251,7 +1715,7 @@ JSON Output:
               <span class="md-footer__direction">
                 Previous
               </span>
-              Inspecting logs
+              If condition: generate different JSON objects based on condition
             </div>
           </div>
         </a>

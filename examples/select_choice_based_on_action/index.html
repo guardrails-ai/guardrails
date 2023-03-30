@@ -10,14 +10,14 @@
         <meta name="author" content="Shreya Rajpal">
       
       
-        <link rel="canonical" href="https://getguardrails.com/examples/syntax_error_free_sql/">
+        <link rel="canonical" href="https://getguardrails.com/examples/select_choice_based_on_action/">
       
       <link rel="icon" href="../../img/favicon.ico">
       <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-8.5.10">
     
     
       
-        <title>Natural language to bug-free SQL - Guardrails.ai</title>
+        <title>If condition: generate different JSON objects based on condition - Guardrails.ai</title>
       
     
     
@@ -119,7 +119,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#natural-language-to-bug-free-sql" class="md-skip">
+        <a href="#enforcing-guardrails-on-choice-selection" class="md-skip">
           Skip to content
         </a>
       
@@ -151,7 +151,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Natural language to bug-free SQL
+              If condition: generate different JSON objects based on condition
             
           </span>
         </div>
@@ -526,11 +526,73 @@
               
   
   
+    
   
-    <li class="md-nav__item">
-      <a href="../select_choice_based_on_action/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          If condition: generate different JSON objects based on condition
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         If condition: generate different JSON objects based on condition
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#objective" class="md-nav__link">
+    Objective
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-1-generating-rail-spec" class="md-nav__link">
+    Step 1: Generating RAIL Spec
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-2-create-a-guard-object-with-the-rail-spec" class="md-nav__link">
+    Step 2: Create a Guard object with the RAIL Spec
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-3-wrap-the-llm-api-call-with-guard" class="md-nav__link">
+    Step 3: Wrap the LLM API call with Guard
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -582,80 +644,11 @@
               
   
   
-    
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          Natural language to bug-free SQL
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../syntax_error_free_sql/" class="md-nav__link">
         Natural language to bug-free SQL
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#objective" class="md-nav__link">
-    Objective
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#step-0-setup" class="md-nav__link">
-    Step 0: Setup
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#step-1-create-the-rail-spec" class="md-nav__link">
-    Step 1: Create the RAIL Spec
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#step-2-create-a-guard-object-with-the-rail-spec" class="md-nav__link">
-    Step 2: Create a Guard object with the RAIL Spec
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#step-3-wrap-the-llm-api-call-with-guard" class="md-nav__link">
-    Step 3: Wrap the LLM API call with Guard
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -849,15 +842,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#step-0-setup" class="md-nav__link">
-    Step 0: Setup
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#step-1-create-the-rail-spec" class="md-nav__link">
-    Step 1: Create the RAIL Spec
+  <a href="#step-1-generating-rail-spec" class="md-nav__link">
+    Step 1: Generating RAIL Spec
   </a>
   
 </li>
@@ -893,7 +879,7 @@
 
                   
 
-  <a href="https://github.com/ShreyaR/guardrails/edit/master/docs/examples/syntax_error_free_sql.ipynb" title="Edit this page" class="md-content__button md-icon">
+  <a href="https://github.com/ShreyaR/guardrails/edit/master/docs/examples/select_choice_based_on_action.ipynb" title="Edit this page" class="md-content__button md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25Z"/></svg>
   </a>
@@ -933,89 +919,65 @@
 <div class="cell border-box-sizing text_cell rendered">
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h1 id="natural-language-to-bug-free-sql">Natural Language to Bug Free SQL</h1>
+<h1 id="enforcing-guardrails-on-choice-selection">Enforcing Guardrails on Choice Selection</h1>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>To download this example as a Jupyter notebook, click <a href="https://github.com/ShreyaR/guardrails/blob/main/docs/examples/syntax_error_free_sql.ipynb">here</a>.</p>
+<p>To download this tutorial as a Jupyter notebook, click <a href="https://github.com/ShreyaR/guardrails/blob/main/docs/examples/select_choice_based_on_action.ipynb">here</a>.</p>
 </div>
-<p>In this example, we will use Guardrails to generate SQL queries from natural language. We will check that the SQL is free of any syntax errors.</p>
-<h2 id="objective">Objective</h2>
-<p>We want to generate SQL queries from natural language, and check that the SQL is free of any syntax errors.</p>
-<h2 id="step-0-setup">Step 0: Setup</h2>
-<p>In order to run this example, you will need to install the <code>sqlvalidator</code> package. You can do so by running the following command:</p>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-
-<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="err">!</span><span class="n">pip</span> <span class="n">install</span> <span class="n">sqlvalidator</span>
-</span></code></pre></div>
-
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered">
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="step-1-create-the-rail-spec">Step 1: Create the RAIL Spec</h2>
-<p>Ordinarily, we would create an RAIL spec in a separate file. For the purposes of this example, we will create the spec in this notebook as a string following the RAIL syntax. For more information on RAIL, see the <a href="../../rail/output/">RAIL documentation</a>.</p>
-<p>In this RAIL spec, we:</p>
+<p>In this example, we want the LLM to pick an action (e.g. <code>fight</code> or <code>flight</code>), and based on that action we want to return different JSON objects. For example, if the action is <code>fight</code>, we want to return a JSON object that contains the <code>weapon</code> field. If the action is <code>flight</code>, we want to return a JSON object that contains the <code>direction</code> and <code>distance</code> fields.</p>
+<p>We make the assumption that:</p>
 <ol>
-<li>Create an <code>output</code> schema that returns a single key-value pair. The key should be 'generated_sql' and the value should be the SQL query generated from the natural language, which is syntactically correct.</li>
+<li>We don't need any external libraries that are not already installed in the environment.</li>
+<li>We are able to execute the code in the environment.</li>
 </ol>
+<h2 id="objective">Objective</h2>
+<p>We want the LLM to play an RP game where it can choose to either <code>fight</code> or <code>flight</code>. If it chooses to <code>fight</code>, the LLM should choose a <code>weapon</code> and an <code>enemy</code>. If the player chooses <code>flight</code>, the LLM shoudl choose a <code>direction</code> and a <code>distance</code>.</p>
+<h2 id="step-1-generating-rail-spec">Step 1: Generating <code>RAIL</code> Spec</h2>
+<p>Ordinarily, we could create a separate <code>RAIL</code> spec in a file. However, for the sake of this example, we will generate the <code>RAIL</code> spec in the notebook as a string.</p>
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 
-<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">rail_str</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="s2">&lt;rail version=&quot;0.1&quot;&gt;</span>
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="s2">&lt;output&gt;</span>
-</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="s2">    &lt;string</span>
-</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="s2">        name=&quot;generated_sql&quot;</span>
-</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="s2">        description=&quot;Generate SQL for the given natural language instruction.&quot;</span>
-</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="s2">        format=&quot;bug-free-sql&quot;</span>
-</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="s2">        on-fail-bug-free-sql=&quot;reask&quot; </span>
-</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="s2">    /&gt;</span>
-</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="s2">&lt;/output&gt;</span>
-</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>
-</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>
-</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="s2">&lt;prompt&gt;</span>
-</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>
-</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="s2">Generate a valid SQL query for the following natural language instruction:</span>
-</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>
-</span><span id="__span-1-18"><a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="s2">{{nl_instruction}}</span>
-</span><span id="__span-1-19"><a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a>
-</span><span id="__span-1-20"><a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a><span class="s2">@complete_json_suffix</span>
-</span><span id="__span-1-21"><a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a><span class="s2">&lt;/prompt&gt;</span>
-</span><span id="__span-1-22"><a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a>
-</span><span id="__span-1-23"><a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a>
-</span><span id="__span-1-24"><a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a><span class="s2">&lt;/rail&gt;</span>
-</span><span id="__span-1-25"><a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a><span class="s2">&quot;&quot;&quot;</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">rail_str</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="s2">&lt;rail version=&quot;0.1&quot;&gt;</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="s2">&lt;output&gt;</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="s2">    &lt;choice name=&quot;action&quot; on-fail-choice=&quot;reask&quot;&gt;</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="s2">        &lt;case name=&quot;fight&quot;&gt;</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="s2">            &lt;string name=&quot;weapon&quot; format=&quot;valid-choices: {[&#39;crossbow&#39;, &#39;machine gun&#39;]}&quot; on-fail-valid-choices=&quot;reask&quot; /&gt;</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="s2">        &lt;/case&gt;</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="s2">        &lt;case name=&quot;flight&quot;&gt;</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="s2">            &lt;object name=&quot;flight&quot;&gt;</span>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="s2">                &lt;string name=&quot;flight_direction&quot; format=&quot;valid-choices: {[&#39;north&#39;,&#39;south&#39;,&#39;east&#39;,&#39;west&#39;]}&quot; on-fail-valid-choices=&quot;exception&quot; /&gt;</span>
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="s2">                &lt;integer name=&quot;distance&quot; format=&quot;valid-choices: {[1,2,3,4]}&quot; on-fail-valid-choices=&quot;exception&quot; /&gt;</span>
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="s2">            &lt;/object&gt;</span>
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="s2">        &lt;/case&gt;</span>
+</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="s2">    &lt;/choice&gt;</span>
+</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="s2">&lt;/output&gt;</span>
+</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>
+</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="s2">&lt;prompt&gt;</span>
+</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="s2">You are a human in an enchanted forest. You come across opponents of different types, and you should fight smaller opponents and run away from bigger ones.</span>
+</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>
+</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a><span class="s2">You run into a {{opp_type}}. What do you do?</span>
+</span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>
+</span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a><span class="s2">@complete_json_suffix_v2&lt;/prompt&gt;</span>
+</span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>
+</span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a><span class="s2">&lt;/rail&gt;</span>
+</span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a><span class="s2">&quot;&quot;&quot;</span>
 </span></code></pre></div>
 
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered">
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>In order to ensure that the SQL is syntactically correct, we use <code>bug-free-sql</code> as the formatter. This is a light-weight formatter that uses the <code>sqlvalidator</code> package to check that the SQL is free of any syntax errors. For your use case, you can create a custom SQL validator that connects to your database and checks that the SQL is valid.</p>
-</div>
-</div>
 </div>
 </div>
 <div class="cell border-box-sizing text_cell rendered">
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="step-2-create-a-guard-object-with-the-rail-spec">Step 2: Create a <code>Guard</code> object with the RAIL Spec</h2>
-<p>We create a <code>gd.Guard</code> object that will check, validate and correct the output of the LLM. This object:</p>
+<p>We create a <code>gd.Guard</code> object that will check, validate and correct the generated code. This object:</p>
 <ol>
-<li>Enforces the quality criteria specified in the RAIL spec.</li>
-<li>Takes corrective action when the quality criteria are not met.</li>
+<li>Enforces the quality criteria specified in the RAIL spec (i.e. bug free code).</li>
+<li>Takes corrective action when the quality criteria are not met (i.e. reasking the LLM).</li>
 <li>Compiles the schema and type info from the RAIL spec and adds it to the prompt.</li>
 </ol>
 </div>
@@ -1024,39 +986,26 @@
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 
-<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">import</span> <span class="nn">guardrails</span> <span class="k">as</span> <span class="nn">gd</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="kn">from</span> <span class="nn">rich</span> <span class="kn">import</span> <span class="nb">print</span>
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="n">guard</span> <span class="o">=</span> <span class="n">gd</span><span class="o">.</span><span class="n">Guard</span><span class="o">.</span><span class="n">from_rail_string</span><span class="p">(</span><span class="n">rail_str</span><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">import</span> <span class="nn">guardrails</span> <span class="k">as</span> <span class="nn">gd</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="kn">from</span> <span class="nn">rich</span> <span class="kn">import</span> <span class="nb">print</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="n">guard</span> <span class="o">=</span> <span class="n">gd</span><span class="o">.</span><span class="n">Guard</span><span class="o">.</span><span class="n">from_rail_string</span><span class="p">(</span><span class="n">rail_str</span><span class="p">)</span>
 </span></code></pre></div>
 
-</div>
-<div class="output_wrapper">
-<div class="output">
-<div class="output_area">
-<div class="output_subarea output_stream output_stderr output_text">
-<pre>
-<code>/Users/shreyarajpal/guardrails/guardrails/schema.py:187: UserWarning: Validator bug-free-sql is not valid for element string.
-  warnings.warn(
-</code>
-</pre>
-</div>
-</div>
-</div>
 </div>
 </div>
 <div class="cell border-box-sizing text_cell rendered">
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>We see the prompt that will be sent to the LLM:</p>
+<p>The <code>Guard</code> object compiles the output schema and adds it to the prompt. We can see the final prompt below:</p>
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 
-<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nb">print</span><span class="p">(</span><span class="n">guard</span><span class="o">.</span><span class="n">base_prompt</span><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nb">print</span><span class="p">(</span><span class="n">guard</span><span class="o">.</span><span class="n">base_prompt</span><span class="p">)</span>
 </span></code></pre></div>
 
 </div>
@@ -1065,42 +1014,42 @@
 <div class="output_area">
 <div class="output_html rendered_html output_subarea ">
 <pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">
+You are a human in an enchanted forest. You come across opponents of different types, and you should fight smaller 
+opponents and run away from bigger ones.
 
-Generate a valid SQL query for the following natural language instruction:
-
-<span style="font-weight: bold">{</span>nl_instruction<span style="font-weight: bold">}</span>
+You run into a <span style="font-weight: bold">{</span>opp_type<span style="font-weight: bold">}</span>. What do you do?
 
 
 Given below is XML that describes the information to extract from this document and the tags to extract it into.
 
 <span style="font-weight: bold">&lt;</span><span style="color: #ff00ff; text-decoration-color: #ff00ff; font-weight: bold">output</span><span style="color: #000000; text-decoration-color: #000000">&gt;</span>
-<span style="color: #000000; text-decoration-color: #000000">    &lt;string </span><span style="color: #808000; text-decoration-color: #808000">name</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"generated_sql"</span><span style="color: #000000; text-decoration-color: #000000"> </span><span style="color: #808000; text-decoration-color: #808000">description</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"Generate SQL for the given natural language instruction."</span><span style="color: #800080; text-decoration-color: #800080">/</span><span style="color: #000000; text-decoration-color: #000000">&gt;</span>
+<span style="color: #000000; text-decoration-color: #000000">    &lt;string </span><span style="color: #808000; text-decoration-color: #808000">name</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"action"</span><span style="color: #000000; text-decoration-color: #000000"> </span><span style="color: #808000; text-decoration-color: #808000">choices</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"fight,flight"</span><span style="color: #800080; text-decoration-color: #800080">/</span><span style="color: #000000; text-decoration-color: #000000">&gt;</span>
+<span style="color: #000000; text-decoration-color: #000000">    &lt;string </span><span style="color: #808000; text-decoration-color: #808000">format</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"valid-choices: choices=['crossbow', 'machine gun']"</span><span style="color: #000000; text-decoration-color: #000000"> </span><span style="color: #808000; text-decoration-color: #808000">name</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"fight"</span><span style="color: #000000; text-decoration-color: #000000"> </span><span style="color: #808000; text-decoration-color: #808000">if</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"action==fight"</span><span style="color: #800080; text-decoration-color: #800080">/</span><span style="color: #000000; text-decoration-color: #000000">&gt;</span>
+<span style="color: #000000; text-decoration-color: #000000">    &lt;object </span><span style="color: #808000; text-decoration-color: #808000">name</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"flight"</span><span style="color: #000000; text-decoration-color: #000000"> </span><span style="color: #808000; text-decoration-color: #808000">if</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"action==flight"</span><span style="color: #000000; text-decoration-color: #000000">&gt;</span>
+<span style="color: #000000; text-decoration-color: #000000">        &lt;string </span><span style="color: #808000; text-decoration-color: #808000">name</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"flight_direction"</span><span style="color: #000000; text-decoration-color: #000000"> </span><span style="color: #808000; text-decoration-color: #808000">format</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"valid-choices: choices=['north', 'south', 'east', 'west']"</span><span style="color: #800080; text-decoration-color: #800080">/</span><span style="color: #000000; text-decoration-color: #000000">&gt;</span>
+<span style="color: #000000; text-decoration-color: #000000">        &lt;integer </span><span style="color: #808000; text-decoration-color: #808000">name</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"distance"</span><span style="color: #000000; text-decoration-color: #000000"> </span><span style="color: #808000; text-decoration-color: #808000">format</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"valid-choices: choices=[1, 2, 3, 4]"</span><span style="color: #800080; text-decoration-color: #800080">/</span><span style="color: #000000; text-decoration-color: #000000">&gt;</span>
+<span style="color: #000000; text-decoration-color: #000000">    &lt;</span><span style="color: #800080; text-decoration-color: #800080">/</span><span style="color: #ff00ff; text-decoration-color: #ff00ff">object</span><span style="color: #000000; text-decoration-color: #000000">&gt;</span>
 <span style="color: #000000; text-decoration-color: #000000">&lt;</span><span style="color: #800080; text-decoration-color: #800080">/</span><span style="color: #ff00ff; text-decoration-color: #ff00ff">output</span><span style="color: #000000; text-decoration-color: #000000">&gt;</span>
 
 
 <span style="color: #000000; text-decoration-color: #000000">ONLY return a valid JSON object </span><span style="color: #000000; text-decoration-color: #000000; font-weight: bold">(</span><span style="color: #000000; text-decoration-color: #000000">no other text is necessary</span><span style="color: #000000; text-decoration-color: #000000; font-weight: bold">)</span><span style="color: #000000; text-decoration-color: #000000">, where the key of the field in JSON is the `name` </span>
 <span style="color: #000000; text-decoration-color: #000000">attribute of the corresponding XML, and the value is of the type specified by the corresponding XML's tag. The JSON</span>
 <span style="color: #000000; text-decoration-color: #000000">MUST conform to the XML format, including any types and format requests e.g. requests for lists, objects and </span>
-<span style="color: #000000; text-decoration-color: #000000">specific types. Be correct and concise. If you are unsure anywhere, enter `</span><span style="color: #800080; text-decoration-color: #800080; font-style: italic">None</span><span style="color: #000000; text-decoration-color: #000000">`.</span>
+<span style="color: #000000; text-decoration-color: #000000">specific types. Be correct and concise.</span>
 
 <span style="color: #000000; text-decoration-color: #000000">Here are examples of simple </span><span style="color: #000000; text-decoration-color: #000000; font-weight: bold">(</span><span style="color: #000000; text-decoration-color: #000000">XML, JSON</span><span style="color: #000000; text-decoration-color: #000000; font-weight: bold">)</span><span style="color: #000000; text-decoration-color: #000000"> pairs that show the expected behavior:</span>
 <span style="color: #000000; text-decoration-color: #000000">- `&lt;string </span><span style="color: #808000; text-decoration-color: #808000">name</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">'foo'</span><span style="color: #000000; text-decoration-color: #000000"> </span><span style="color: #808000; text-decoration-color: #808000">format</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">'two-words lower-case'</span><span style="color: #000000; text-decoration-color: #000000"> </span><span style="color: #800080; text-decoration-color: #800080">/</span><span style="color: #000000; text-decoration-color: #000000">&gt;` =&gt; `</span><span style="color: #000000; text-decoration-color: #000000; font-weight: bold">{{</span><span style="color: #008000; text-decoration-color: #008000">'foo'</span><span style="color: #000000; text-decoration-color: #000000">: </span><span style="color: #008000; text-decoration-color: #008000">'example one'</span><span style="color: #000000; text-decoration-color: #000000; font-weight: bold">}}</span><span style="color: #000000; text-decoration-color: #000000">`</span>
 <span style="color: #000000; text-decoration-color: #000000">- `&lt;list </span><span style="color: #808000; text-decoration-color: #808000">name</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">'bar'</span><span style="color: #000000; text-decoration-color: #000000">&gt;&lt;string </span><span style="color: #808000; text-decoration-color: #808000">format</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">'upper-case'</span><span style="color: #000000; text-decoration-color: #000000"> </span><span style="color: #800080; text-decoration-color: #800080">/</span><span style="color: #000000; text-decoration-color: #000000">&gt;&lt;</span><span style="color: #800080; text-decoration-color: #800080">/</span><span style="color: #ff00ff; text-decoration-color: #ff00ff">list</span><span style="color: #000000; text-decoration-color: #000000">&gt;` =&gt; `</span><span style="color: #000000; text-decoration-color: #000000; font-weight: bold">{{</span><span style="color: #008000; text-decoration-color: #008000">"bar"</span><span style="color: #000000; text-decoration-color: #000000">: </span><span style="color: #000000; text-decoration-color: #000000; font-weight: bold">[</span><span style="color: #008000; text-decoration-color: #008000">'STRING ONE'</span><span style="color: #000000; text-decoration-color: #000000">, </span><span style="color: #008000; text-decoration-color: #008000">'STRING TWO'</span><span style="color: #000000; text-decoration-color: #000000">, etc.</span><span style="color: #000000; text-decoration-color: #000000; font-weight: bold">]}}</span><span style="color: #000000; text-decoration-color: #000000">`</span>
 <span style="color: #000000; text-decoration-color: #000000">- `&lt;object </span><span style="color: #808000; text-decoration-color: #808000">name</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">'baz'</span><span style="color: #000000; text-decoration-color: #000000">&gt;&lt;string </span><span style="color: #808000; text-decoration-color: #808000">name</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"foo"</span><span style="color: #000000; text-decoration-color: #000000"> </span><span style="color: #808000; text-decoration-color: #808000">format</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"capitalize two-words"</span><span style="color: #000000; text-decoration-color: #000000"> </span><span style="color: #800080; text-decoration-color: #800080">/</span><span style="color: #000000; text-decoration-color: #000000">&gt;&lt;integer </span><span style="color: #808000; text-decoration-color: #808000">name</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"index"</span><span style="color: #000000; text-decoration-color: #000000"> </span><span style="color: #808000; text-decoration-color: #808000">format</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"1-indexed"</span><span style="color: #000000; text-decoration-color: #000000"> </span>
-<span style="color: #800080; text-decoration-color: #800080">/</span><span style="color: #000000; text-decoration-color: #000000">&gt;&lt;</span><span style="color: #800080; text-decoration-color: #800080">/</span><span style="color: #ff00ff; text-decoration-color: #ff00ff">object</span><span style="color: #000000; text-decoration-color: #000000">&gt;` =</span><span style="font-weight: bold">&gt;</span> `<span style="font-weight: bold">{{</span><span style="color: #008000; text-decoration-color: #008000">'baz'</span>: <span style="font-weight: bold">{{</span><span style="color: #008000; text-decoration-color: #008000">'foo'</span>: <span style="color: #008000; text-decoration-color: #008000">'Some String'</span>, <span style="color: #008000; text-decoration-color: #008000">'index'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">1</span><span style="font-weight: bold">}}}}</span>`
-
+<span style="color: #800080; text-decoration-color: #800080">/</span><span style="color: #000000; text-decoration-color: #000000">&gt;&lt;</span><span style="color: #800080; text-decoration-color: #800080">/</span><span style="color: #ff00ff; text-decoration-color: #ff00ff">object</span><span style="color: #000000; text-decoration-color: #000000">&gt;` =&gt; `</span><span style="color: #000000; text-decoration-color: #000000; font-weight: bold">{{</span><span style="color: #008000; text-decoration-color: #008000">'baz'</span><span style="color: #000000; text-decoration-color: #000000">: </span><span style="color: #000000; text-decoration-color: #000000; font-weight: bold">{{</span><span style="color: #008000; text-decoration-color: #008000">'foo'</span><span style="color: #000000; text-decoration-color: #000000">: </span><span style="color: #008000; text-decoration-color: #008000">'Some String'</span><span style="color: #000000; text-decoration-color: #000000">, </span><span style="color: #008000; text-decoration-color: #008000">'index'</span><span style="color: #000000; text-decoration-color: #000000">: </span><span style="color: #008080; text-decoration-color: #008080; font-weight: bold">1</span><span style="color: #000000; text-decoration-color: #000000; font-weight: bold">}}}}</span><span style="color: #000000; text-decoration-color: #000000">`</span>
+<span style="color: #000000; text-decoration-color: #000000">- `&lt;string </span><span style="color: #808000; text-decoration-color: #808000">name</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"foo"</span><span style="color: #000000; text-decoration-color: #000000"> </span><span style="color: #808000; text-decoration-color: #808000">choices</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"bar,baz"</span><span style="color: #800080; text-decoration-color: #800080">/</span><span style="color: #000000; text-decoration-color: #000000">&gt;&lt;case </span><span style="color: #808000; text-decoration-color: #808000">name</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"bar"</span><span style="color: #000000; text-decoration-color: #000000"> </span><span style="color: #808000; text-decoration-color: #808000">on</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"foo"</span><span style="color: #000000; text-decoration-color: #000000">&gt;&lt;string </span><span style="color: #808000; text-decoration-color: #808000">format</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"valid-choices: ['a', </span>
+<span style="color: #008000; text-decoration-color: #008000">'b']"</span><span style="color: #800080; text-decoration-color: #800080">/</span><span style="color: #000000; text-decoration-color: #000000">&gt;&lt;</span><span style="color: #800080; text-decoration-color: #800080">/</span><span style="color: #ff00ff; text-decoration-color: #ff00ff">case</span><span style="color: #000000; text-decoration-color: #000000">&gt;&lt;case </span><span style="color: #808000; text-decoration-color: #808000">name</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"baz"</span><span style="color: #000000; text-decoration-color: #000000"> </span><span style="color: #808000; text-decoration-color: #808000">on</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"foo"</span><span style="color: #000000; text-decoration-color: #000000">&gt;&lt;object&gt;&lt;string </span><span style="color: #808000; text-decoration-color: #808000">name</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"qux"</span><span style="color: #000000; text-decoration-color: #000000"> </span><span style="color: #808000; text-decoration-color: #808000">format</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"valid-choices: ['corge', </span>
+<span style="color: #008000; text-decoration-color: #008000">'grault']"</span><span style="color: #800080; text-decoration-color: #800080">/</span><span style="color: #000000; text-decoration-color: #000000">&gt;&lt;integer </span><span style="color: #808000; text-decoration-color: #808000">name</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"quux"</span><span style="color: #000000; text-decoration-color: #000000"> </span><span style="color: #808000; text-decoration-color: #808000">format</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"valid-choices: [1, 2, 3, 4]"</span><span style="color: #800080; text-decoration-color: #800080">/</span><span style="color: #000000; text-decoration-color: #000000">&gt;&lt;</span><span style="color: #800080; text-decoration-color: #800080">/</span><span style="color: #ff00ff; text-decoration-color: #ff00ff">object</span><span style="color: #000000; text-decoration-color: #000000">&gt;&lt;</span><span style="color: #800080; text-decoration-color: #800080">/</span><span style="color: #ff00ff; text-decoration-color: #ff00ff">case</span><span style="color: #000000; text-decoration-color: #000000">&gt;` =</span><span style="font-weight: bold">&gt;</span> `<span style="font-weight: bold">{{</span><span style="color: #008000; text-decoration-color: #008000">'foo'</span>: <span style="color: #008000; text-decoration-color: #008000">'baz'</span>, <span style="color: #008000; text-decoration-color: #008000">'baz'</span>:
+<span style="font-weight: bold">{{</span><span style="color: #008000; text-decoration-color: #008000">'qux'</span>: <span style="color: #008000; text-decoration-color: #008000">'corge'</span>, <span style="color: #008000; text-decoration-color: #008000">'quux'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">1</span><span style="font-weight: bold">}}}}</span>`
 JSON Object:
-
 </pre>
 </div>
 </div>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered">
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>Here, <code>nl_language</code> is the natural language instruction and will be provided by the user at runtime.</p>
 </div>
 </div>
 </div>
@@ -1111,31 +1060,52 @@ JSON Object:
 </div>
 </div>
 </div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>We can now wrap the LsLM API call with the <code>Guard</code> object. This will ensure that the LLM generates an output that is compliant with the RAIL spec.</p>
+<p>To start, we test with a 'giant' as an opponent, and look at the output.</p>
+</div>
+</div>
+</div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 
-<div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kn">import</span> <span class="nn">openai</span>
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
-</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="n">raw_llm_response</span><span class="p">,</span> <span class="n">validated_response</span> <span class="o">=</span> <span class="n">guard</span><span class="p">(</span>
-</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>    <span class="n">openai</span><span class="o">.</span><span class="n">Completion</span><span class="o">.</span><span class="n">create</span><span class="p">,</span>
-</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>    <span class="n">prompt_params</span><span class="o">=</span><span class="p">{</span>
-</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>        <span class="s2">&quot;nl_instruction&quot;</span><span class="p">:</span> <span class="s2">&quot;Select the name of the employee who has the highest salary.&quot;</span>
-</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>    <span class="p">},</span>
-</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>    <span class="n">engine</span><span class="o">=</span><span class="s2">&quot;text-davinci-003&quot;</span><span class="p">,</span>
-</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>    <span class="n">max_tokens</span><span class="o">=</span><span class="mi">2048</span><span class="p">,</span>
-</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>    <span class="n">temperature</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-</span><span id="__span-4-11"><a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">import</span> <span class="nn">openai</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="n">raw_llm_response</span><span class="p">,</span> <span class="n">validated_response</span> <span class="o">=</span> <span class="n">guard</span><span class="p">(</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>    <span class="n">openai</span><span class="o">.</span><span class="n">Completion</span><span class="o">.</span><span class="n">create</span><span class="p">,</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>    <span class="n">prompt_params</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;opp_type&#39;</span><span class="p">:</span> <span class="s1">&#39;giant&#39;</span><span class="p">},</span>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>    <span class="n">engine</span><span class="o">=</span><span class="s2">&quot;text-davinci-003&quot;</span><span class="p">,</span>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>    <span class="n">max_tokens</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span>
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>    <span class="n">temperature</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="p">)</span>
+</span></code></pre></div>
+
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Running the cell above returns:
+1. The raw LLM text output as a single string.
+2. A dictionary where the key is <code>python_code</code> and the value is the generated code.</p>
+<p>We can see that if the LLM chooses <code>flight</code>, the output is a dictionary with <code>flight_direction</code> and <code>distance</code> fields.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nb">print</span><span class="p">(</span><span class="n">validated_response</span><span class="p">)</span>
 </span></code></pre></div>
 
 </div>
 <div class="output_wrapper">
 <div class="output">
 <div class="output_area">
-<div class="output_subarea output_stream output_stderr output_text">
-<pre>
-<code>/Users/shreyarajpal/anaconda3/envs/tiff-env/lib/python3.9/site-packages/eliot/json.py:22: FutureWarning: In the future `np.bool` will be defined as the corresponding NumPy scalar.  (This may have returned Python scalars in past versions.
-  if isinstance(o, (numpy.bool, numpy.bool_)):
-</code>
+<div class="output_html rendered_html output_subarea ">
+<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace"><span style="font-weight: bold">{</span><span style="color: #008000; text-decoration-color: #008000">'action'</span>: <span style="color: #008000; text-decoration-color: #008000">'flight'</span>, <span style="color: #008000; text-decoration-color: #008000">'flight'</span>: <span style="font-weight: bold">{</span><span style="color: #008000; text-decoration-color: #008000">'flight_direction'</span>: <span style="color: #008000; text-decoration-color: #008000">'north'</span>, <span style="color: #008000; text-decoration-color: #008000">'distance'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">1</span><span style="font-weight: bold">}}</span>
 </pre>
 </div>
 </div>
@@ -1145,33 +1115,14 @@ JSON Object:
 <div class="cell border-box-sizing text_cell rendered">
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>The <code>guard</code> wrapper returns the raw_llm_respose (which is a simple string), and the validated and corrected output (which is a dictionary).</p>
-<p>We can see that the output is a dictionary with the correct schema and types.</p>
+<p>We can inspect the logs of the guard object to see the quality criteria that were checked and the corrective actions that were taken.</p>
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 
-<div class="language-python highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nb">print</span><span class="p">(</span><span class="n">validated_response</span><span class="p">)</span>
-</span></code></pre></div>
-
-</div>
-<div class="output_wrapper">
-<div class="output">
-<div class="output_area">
-<div class="output_html rendered_html output_subarea ">
-<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace"><span style="font-weight: bold">{</span><span style="color: #008000; text-decoration-color: #008000">'generated_sql'</span>: <span style="color: #008000; text-decoration-color: #008000">'SELECT name FROM employee ORDER BY salary DESC LIMIT 1'</span><span style="font-weight: bold">}</span>
-</pre>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-
-<div class="language-python highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="nb">print</span><span class="p">(</span><span class="n">guard</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">most_recent_call</span><span class="o">.</span><span class="n">tree</span><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nb">print</span><span class="p">(</span><span class="n">guard</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">most_recent_call</span><span class="o">.</span><span class="n">tree</span><span class="p">)</span>
 </span></code></pre></div>
 
 </div>
@@ -1180,29 +1131,34 @@ JSON Object:
 <div class="output_area">
 <div class="output_html rendered_html output_subarea ">
 <pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">Logs
-└── ╭────────────────────────────────────────────────── Step 1 ───────────────────────────────────────────────────╮
+└── ╭────────────────────────────────────────────────── Step 0 ───────────────────────────────────────────────────╮
     │ <span style="background-color: #f0f8ff">╭──────────────────────────────────────────────── Prompt ─────────────────────────────────────────────────╮</span> │
     │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ You are a human in an enchanted forest. You come across opponents of different types, and you should    │</span> │
+    │ <span style="background-color: #f0f8ff">│ fight smaller opponents and run away from bigger ones.                                                  │</span> │
     │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
-    │ <span style="background-color: #f0f8ff">│ Generate a valid SQL query for the following natural language instruction:                              │</span> │
-    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
-    │ <span style="background-color: #f0f8ff">│ Select the name of the employee who has the highest salary.                                             │</span> │
+    │ <span style="background-color: #f0f8ff">│ You run into a giant. What do you do?                                                                   │</span> │
     │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
     │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
     │ <span style="background-color: #f0f8ff">│ Given below is XML that describes the information to extract from this document and the tags to extract │</span> │
     │ <span style="background-color: #f0f8ff">│ it into.                                                                                                │</span> │
     │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
     │ <span style="background-color: #f0f8ff">│ &lt;output&gt;                                                                                                │</span> │
-    │ <span style="background-color: #f0f8ff">│     &lt;string name="generated_sql" description="Generate SQL for the given natural language               │</span> │
-    │ <span style="background-color: #f0f8ff">│ instruction."/&gt;                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│     &lt;string name="action" choices="fight,flight"/&gt;                                                      │</span> │
+    │ <span style="background-color: #f0f8ff">│     &lt;string format="valid-choices: choices=['crossbow', 'machine gun']" name="fight"                    │</span> │
+    │ <span style="background-color: #f0f8ff">│ if="action==fight"/&gt;                                                                                    │</span> │
+    │ <span style="background-color: #f0f8ff">│     &lt;object name="flight" if="action==flight"&gt;                                                          │</span> │
+    │ <span style="background-color: #f0f8ff">│         &lt;string name="flight_direction" format="valid-choices: choices=['north', 'south', 'east',       │</span> │
+    │ <span style="background-color: #f0f8ff">│ 'west']"/&gt;                                                                                              │</span> │
+    │ <span style="background-color: #f0f8ff">│         &lt;integer name="distance" format="valid-choices: choices=[1, 2, 3, 4]"/&gt;                         │</span> │
+    │ <span style="background-color: #f0f8ff">│     &lt;/object&gt;                                                                                           │</span> │
     │ <span style="background-color: #f0f8ff">│ &lt;/output&gt;                                                                                               │</span> │
     │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
     │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
     │ <span style="background-color: #f0f8ff">│ ONLY return a valid JSON object (no other text is necessary), where the key of the field in JSON is the │</span> │
     │ <span style="background-color: #f0f8ff">│ `name` attribute of the corresponding XML, and the value is of the type specified by the corresponding  │</span> │
     │ <span style="background-color: #f0f8ff">│ XML's tag. The JSON MUST conform to the XML format, including any types and format requests e.g.        │</span> │
-    │ <span style="background-color: #f0f8ff">│ requests for lists, objects and specific types. Be correct and concise. If you are unsure anywhere,     │</span> │
-    │ <span style="background-color: #f0f8ff">│ enter `None`.                                                                                           │</span> │
+    │ <span style="background-color: #f0f8ff">│ requests for lists, objects and specific types. Be correct and concise.                                 │</span> │
     │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
     │ <span style="background-color: #f0f8ff">│ Here are examples of simple (XML, JSON) pairs that show the expected behavior:                          │</span> │
     │ <span style="background-color: #f0f8ff">│ - `&lt;string name='foo' format='two-words lower-case' /&gt;` =&gt; `{'foo': 'example one'}`                     │</span> │
@@ -1210,15 +1166,132 @@ JSON Object:
     │ <span style="background-color: #f0f8ff">│ etc.]}`                                                                                                 │</span> │
     │ <span style="background-color: #f0f8ff">│ - `&lt;object name='baz'&gt;&lt;string name="foo" format="capitalize two-words" /&gt;&lt;integer name="index"          │</span> │
     │ <span style="background-color: #f0f8ff">│ format="1-indexed" /&gt;&lt;/object&gt;` =&gt; `{'baz': {'foo': 'Some String', 'index': 1}}`                        │</span> │
-    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ - `&lt;string name="foo" choices="bar,baz"/&gt;&lt;case name="bar" on="foo"&gt;&lt;string format="valid-choices: ['a', │</span> │
+    │ <span style="background-color: #f0f8ff">│ 'b']"/&gt;&lt;/case&gt;&lt;case name="baz" on="foo"&gt;&lt;object&gt;&lt;string name="qux" format="valid-choices: ['corge',     │</span> │
+    │ <span style="background-color: #f0f8ff">│ 'grault']"/&gt;&lt;integer name="quux" format="valid-choices: [1, 2, 3, 4]"/&gt;&lt;/object&gt;&lt;/case&gt;` =&gt; `{'foo':    │</span> │
+    │ <span style="background-color: #f0f8ff">│ 'baz', 'baz': {'qux': 'corge', 'quux': 1}}`                                                             │</span> │
     │ <span style="background-color: #f0f8ff">│ JSON Object:                                                                                            │</span> │
-    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
     │ <span style="background-color: #f0f8ff">╰─────────────────────────────────────────────────────────────────────────────────────────────────────────╯</span> │
     │ <span style="background-color: #f5f5dc">╭──────────────────────────────────────────── Raw LLM Output ─────────────────────────────────────────────╮</span> │
-    │ <span style="background-color: #f5f5dc">│ {"generated_sql": "SELECT name FROM employee ORDER BY salary DESC LIMIT 1"}                             │</span> │
+    │ <span style="background-color: #f5f5dc">│                                                                                                         │</span> │
+    │ <span style="background-color: #f5f5dc">│ {"action": "flight", "flight": {"flight_direction": "north", "distance": 1}}                            │</span> │
     │ <span style="background-color: #f5f5dc">╰─────────────────────────────────────────────────────────────────────────────────────────────────────────╯</span> │
     │ <span style="background-color: #f0fff0">╭─────────────────────────────────────────── Validated Output ────────────────────────────────────────────╮</span> │
-    │ <span style="background-color: #f0fff0">│ {'generated_sql': 'SELECT name FROM employee ORDER BY salary DESC LIMIT 1'}                             │</span> │
+    │ <span style="background-color: #f0fff0">│ {'action': 'flight', 'flight': {'flight_direction': 'north', 'distance': 1}}                            │</span> │
+    │ <span style="background-color: #f0fff0">╰─────────────────────────────────────────────────────────────────────────────────────────────────────────╯</span> │
+    ╰─────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Now, let's test with a <code>goblin</code> as an opponent.</p>
+<p>We can see that the LLM chose to <code>fight</code> and the output is a choice of <code>weapon</code>.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="language-python highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">raw_llm_response</span><span class="p">,</span> <span class="n">validated_response</span> <span class="o">=</span> <span class="n">guard</span><span class="p">(</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>    <span class="n">openai</span><span class="o">.</span><span class="n">Completion</span><span class="o">.</span><span class="n">create</span><span class="p">,</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>    <span class="n">prompt_params</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;opp_type&#39;</span><span class="p">:</span> <span class="s1">&#39;goblin&#39;</span><span class="p">},</span>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>    <span class="n">engine</span><span class="o">=</span><span class="s2">&quot;text-davinci-003&quot;</span><span class="p">,</span>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>    <span class="n">max_tokens</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span>
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>    <span class="n">temperature</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="p">)</span>
+</span></code></pre></div>
+
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="language-python highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="nb">print</span><span class="p">(</span><span class="n">validated_response</span><span class="p">)</span>
+</span></code></pre></div>
+
+</div>
+<div class="output_wrapper">
+<div class="output">
+<div class="output_area">
+<div class="output_html rendered_html output_subarea ">
+<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace"><span style="font-weight: bold">{</span><span style="color: #008000; text-decoration-color: #008000">'action'</span>: <span style="color: #008000; text-decoration-color: #008000">'fight'</span>, <span style="color: #008000; text-decoration-color: #008000">'fight'</span>: <span style="color: #008000; text-decoration-color: #008000">'crossbow'</span><span style="font-weight: bold">}</span>
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>We can inspect the state of the guard after each call to see what happened.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="language-python highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="nb">print</span><span class="p">(</span><span class="n">guard</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">most_recent_call</span><span class="o">.</span><span class="n">tree</span><span class="p">)</span>
+</span></code></pre></div>
+
+</div>
+<div class="output_wrapper">
+<div class="output">
+<div class="output_area">
+<div class="output_html rendered_html output_subarea ">
+<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">Logs
+└── ╭────────────────────────────────────────────────── Step 0 ───────────────────────────────────────────────────╮
+    │ <span style="background-color: #f0f8ff">╭──────────────────────────────────────────────── Prompt ─────────────────────────────────────────────────╮</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ You are a human in an enchanted forest. You come across opponents of different types, and you should    │</span> │
+    │ <span style="background-color: #f0f8ff">│ fight smaller opponents and run away from bigger ones.                                                  │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ You run into a goblin. What do you do?                                                                  │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ Given below is XML that describes the information to extract from this document and the tags to extract │</span> │
+    │ <span style="background-color: #f0f8ff">│ it into.                                                                                                │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ &lt;output&gt;                                                                                                │</span> │
+    │ <span style="background-color: #f0f8ff">│     &lt;string name="action" choices="fight,flight"/&gt;                                                      │</span> │
+    │ <span style="background-color: #f0f8ff">│     &lt;string format="valid-choices: choices=['crossbow', 'machine gun']" name="fight"                    │</span> │
+    │ <span style="background-color: #f0f8ff">│ if="action==fight"/&gt;                                                                                    │</span> │
+    │ <span style="background-color: #f0f8ff">│     &lt;object name="flight" if="action==flight"&gt;                                                          │</span> │
+    │ <span style="background-color: #f0f8ff">│         &lt;string name="flight_direction" format="valid-choices: choices=['north', 'south', 'east',       │</span> │
+    │ <span style="background-color: #f0f8ff">│ 'west']"/&gt;                                                                                              │</span> │
+    │ <span style="background-color: #f0f8ff">│         &lt;integer name="distance" format="valid-choices: choices=[1, 2, 3, 4]"/&gt;                         │</span> │
+    │ <span style="background-color: #f0f8ff">│     &lt;/object&gt;                                                                                           │</span> │
+    │ <span style="background-color: #f0f8ff">│ &lt;/output&gt;                                                                                               │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ ONLY return a valid JSON object (no other text is necessary), where the key of the field in JSON is the │</span> │
+    │ <span style="background-color: #f0f8ff">│ `name` attribute of the corresponding XML, and the value is of the type specified by the corresponding  │</span> │
+    │ <span style="background-color: #f0f8ff">│ XML's tag. The JSON MUST conform to the XML format, including any types and format requests e.g.        │</span> │
+    │ <span style="background-color: #f0f8ff">│ requests for lists, objects and specific types. Be correct and concise.                                 │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ Here are examples of simple (XML, JSON) pairs that show the expected behavior:                          │</span> │
+    │ <span style="background-color: #f0f8ff">│ - `&lt;string name='foo' format='two-words lower-case' /&gt;` =&gt; `{'foo': 'example one'}`                     │</span> │
+    │ <span style="background-color: #f0f8ff">│ - `&lt;list name='bar'&gt;&lt;string format='upper-case' /&gt;&lt;/list&gt;` =&gt; `{"bar": ['STRING ONE', 'STRING TWO',     │</span> │
+    │ <span style="background-color: #f0f8ff">│ etc.]}`                                                                                                 │</span> │
+    │ <span style="background-color: #f0f8ff">│ - `&lt;object name='baz'&gt;&lt;string name="foo" format="capitalize two-words" /&gt;&lt;integer name="index"          │</span> │
+    │ <span style="background-color: #f0f8ff">│ format="1-indexed" /&gt;&lt;/object&gt;` =&gt; `{'baz': {'foo': 'Some String', 'index': 1}}`                        │</span> │
+    │ <span style="background-color: #f0f8ff">│ - `&lt;string name="foo" choices="bar,baz"/&gt;&lt;case name="bar" on="foo"&gt;&lt;string format="valid-choices: ['a', │</span> │
+    │ <span style="background-color: #f0f8ff">│ 'b']"/&gt;&lt;/case&gt;&lt;case name="baz" on="foo"&gt;&lt;object&gt;&lt;string name="qux" format="valid-choices: ['corge',     │</span> │
+    │ <span style="background-color: #f0f8ff">│ 'grault']"/&gt;&lt;integer name="quux" format="valid-choices: [1, 2, 3, 4]"/&gt;&lt;/object&gt;&lt;/case&gt;` =&gt; `{'foo':    │</span> │
+    │ <span style="background-color: #f0f8ff">│ 'baz', 'baz': {'qux': 'corge', 'quux': 1}}`                                                             │</span> │
+    │ <span style="background-color: #f0f8ff">│ JSON Object:                                                                                            │</span> │
+    │ <span style="background-color: #f0f8ff">╰─────────────────────────────────────────────────────────────────────────────────────────────────────────╯</span> │
+    │ <span style="background-color: #f5f5dc">╭──────────────────────────────────────────── Raw LLM Output ─────────────────────────────────────────────╮</span> │
+    │ <span style="background-color: #f5f5dc">│                                                                                                         │</span> │
+    │ <span style="background-color: #f5f5dc">│ {"action": "fight", "fight": "crossbow"}                                                                │</span> │
+    │ <span style="background-color: #f5f5dc">╰─────────────────────────────────────────────────────────────────────────────────────────────────────────╯</span> │
+    │ <span style="background-color: #f0fff0">╭─────────────────────────────────────────── Validated Output ────────────────────────────────────────────╮</span> │
+    │ <span style="background-color: #f0fff0">│ {'action': 'fight', 'fight': 'crossbow'}                                                                │</span> │
     │ <span style="background-color: #f0fff0">╰─────────────────────────────────────────────────────────────────────────────────────────────────────────╯</span> │
     ╰─────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 </pre>
@@ -1249,7 +1322,7 @@ JSON Object:
     <nav class="md-footer__inner md-grid" aria-label="Footer" >
       
         
-        <a href="../no_secrets_in_generated_text/" class="md-footer__link md-footer__link--prev" aria-label="Previous: No secrets in generated text" rel="prev">
+        <a href="../../logs/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Inspecting logs" rel="prev">
           <div class="md-footer__button md-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
           </div>
@@ -1258,20 +1331,20 @@ JSON Object:
               <span class="md-footer__direction">
                 Previous
               </span>
-              No secrets in generated text
+              Inspecting logs
             </div>
           </div>
         </a>
       
       
         
-        <a href="../recipe_generation/" class="md-footer__link md-footer__link--next" aria-label="Next: Vegan Mac &amp; Cheese Recipe Generator" rel="next">
+        <a href="../extracting_entities/" class="md-footer__link md-footer__link--next" aria-label="Next: Extracting entities from ToS" rel="next">
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
                 Next
               </span>
-              Vegan Mac & Cheese Recipe Generator
+              Extracting entities from ToS
             </div>
           </div>
           <div class="md-footer__button md-icon">
