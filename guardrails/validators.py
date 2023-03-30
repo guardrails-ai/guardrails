@@ -259,6 +259,21 @@ class Validator:
 
         return error.schema
 
+    def exception(self, error: EventDetail) -> None:
+        """Raise an exception."""
+
+        raise ValidatorError(error.error_message)
+
+    def fix_reask(self, error: EventDetail) -> Dict:
+        """If validation fails, fix the value and reask."""
+
+        schema = self.fix(error)
+
+        try:
+            self.validate(error.key, error.fix_value, schema)
+        except EventDetail as e:
+            return self.reask(e)
+
     def to_prompt(self, with_keywords: bool = True) -> str:
         """Convert the validator to a prompt.
 
@@ -284,11 +299,6 @@ class Validator:
         if with_keywords:
             params = " ".join([f"{k}={v}" for k, v in kwargs.items()])
         return f"{self.rail_alias}: {params}"
-
-    def exception(self, error: EventDetail) -> None:
-        """Raise an exception."""
-
-        raise ValidatorError(error.error_message)
 
 
 # @register_validator('required', 'all')
