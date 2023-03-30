@@ -21,6 +21,12 @@ eliot-tree --output-format=ascii guardrails.log
 1. A list of all `gd.Guard` calls, in the order they were made.
 2. For each call, reasks needed and their results.
 
-## ⏲️ Coming soon
+In order to access logs, run:
 
-On the roadmap: first class support for reading logs.
+```python
+from rich import print
+
+print(guard.state.most_recent_call.tree)
+```
+
+![guard_state](img/guard_history.png)

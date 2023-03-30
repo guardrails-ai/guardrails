@@ -26,6 +26,7 @@ nav:
       # - 'LLM API Wrappers': llm_api_wrappers.md
       - 'Inspecting logs': logs.md
     - 'Examples':
+      - 'If condition: generate different JSON objects based on condition': examples/select_choice_based_on_action.ipynb
       - 'Extracting entities from ToS': examples/extracting_entities.ipynb
       - 'Generating bug-free Python code': examples/bug_free_python_code.ipynb
       - 'No secrets in generated text': examples/no_secrets_in_generated_text.ipynb
