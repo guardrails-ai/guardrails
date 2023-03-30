@@ -1,5 +1,5 @@
 import json
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Callable, Dict, List, Optional, Tuple
 
 from eliot import start_action
@@ -44,7 +44,11 @@ class Runner:
     output_schema: OutputSchema
     num_reasks: int = 0
     output: str = None
-    guard_history: GuardHistory = field(default_factory=lambda: GuardHistory([]))
+    guard_history: GuardHistory = GuardHistory([])
+
+    def _reset_guard_history(self):
+        """Reset the guard history."""
+        self.guard_history = GuardHistory([])
 
     def __post_init__(self):
         assert (self.prompt and self.api and not self.output) or (
@@ -62,6 +66,9 @@ class Runner:
         Returns:
             The guard history.
         """
+
+        self._reset_guard_history()
+
         with start_action(
             action_type="run",
             prompt=self.prompt,
