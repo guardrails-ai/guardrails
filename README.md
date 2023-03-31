@@ -22,7 +22,7 @@ Guardrails is a Python package that lets a user add structure, type and quality 
 
 ## 🚒 Under the hood
 
-Guardrails provides a format (`.rail`) for enforcing a specification on an LLM output, and a lightweight wrapper around LLM API calls to implement this spec.
+Guardrails provides a file format (`.rail`) for enforcing a specification on an LLM output, and a lightweight wrapper around LLM API calls to implement this spec.
 
 1. `rail` (**R**eliable **AI** markup **L**anguage) files for specifying structure and type information, validators and corrective actions over LLM outputs.
 2. `gd.Guard` wraps around LLM API calls to structure, validate and correct the outputs.
@@ -69,13 +69,13 @@ pip install guardrails-ai
 - [ ] Add more LLM providers
 
 ## 🚀 Getting Started
-Let's go through an example where we ask an LLM to explain what a "bank run" is in a tweet, and generate URL links to relevant news articles. We'll generate a `.rail` spec for this and then use Guardrails to enforce it. You can see more examples in the docs.
+Let's go through an example where we ask an LLM to explain what a "bank run" is in a tweet, and generate URLs to relevant news articles. We'll generate a `.rail` spec for this and then use Guardrails to enforce it. You can see more examples in the docs.
 
 ### 📝 Creating a `RAIL` spec
 
 We create a `RAIL` spec to describe the expected structure and types of the LLM output, the quality criteria for the output to be considered valid, and corrective actions to be taken if the output is invalid.
 
-Specifically, we use `RAIL` to
+Using `RAIL`, we:
 - Request the LLM to generate an object with two fields: `explanation` and `follow_up_url`.
 - For the `explanation` field, ensure the max length of the generated string should be between 200 and 280 characters.
   - If the explanation is not of valid length, `reask` the LLM.
@@ -143,6 +143,8 @@ Given below is XML that describes the information to extract from this document 
 </output>
 
 ONLY return a valid JSON object (no other text is necessary). The JSON MUST conform to the XML format, including any types and format requests e.g. requests for lists, objects and specific types. Be correct and concise.
+
+JSON Output:
 ```
 
 Call the `Guard` object with the LLM API call as the first argument and add any additional arguments to the LLM API call as the remaining arguments.
@@ -170,3 +172,7 @@ print(validated_output)
 }
 
 ```
+
+## 🛠️ Contributing
+
+Get started by checking out Github issues and of course using Guardrails to familiarize yourself with the project. Guardrails is still actively under development and any support is gladly welcomed. Feel free to open an issue, or reach out if you would like to add to the project!
