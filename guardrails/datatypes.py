@@ -53,8 +53,7 @@ class DataType:
                 assert len(self._children) == 1, "Must have exactly one child."
                 yield None, list(self._children.values())[0], el_child
 
-    @classmethod
-    def from_str(cls, s: str) -> "DataType":
+    def from_str(self, s: str) -> "DataType":
         """Create a DataType from a string.
 
         Note: ScalarTypes like int, float, bool, etc. will override this method.
@@ -121,8 +120,7 @@ class NonScalarType(DataType):
 class String(ScalarType):
     """Element tag: `<string>`"""
 
-    @classmethod
-    def from_str(cls, s: str) -> "String":
+    def from_str(self, s: str) -> "String":
         """Create a String from a string."""
         return s
 
@@ -131,8 +129,7 @@ class String(ScalarType):
 class Integer(ScalarType):
     """Element tag: `<integer>`"""
 
-    @classmethod
-    def from_str(cls, s: str) -> "Integer":
+    def from_str(self, s: str) -> "Integer":
         """Create an Integer from a string."""
         if s is None:
             return None
@@ -144,8 +141,7 @@ class Integer(ScalarType):
 class Float(ScalarType):
     """Element tag: `<float>`"""
 
-    @classmethod
-    def from_str(cls, s: str) -> "Float":
+    def from_str(self, s: str) -> "Float":
         """Create a Float from a string."""
         if s is None:
             return None
@@ -157,8 +153,7 @@ class Float(ScalarType):
 class Boolean(ScalarType):
     """Element tag: `<bool>`"""
 
-    @classmethod
-    def from_str(cls, s: Union[str, bool]) -> "Boolean":
+    def from_str(self, s: Union[str, bool]) -> "Boolean":
         """Create a Boolean from a string."""
         if s is None:
             return None
@@ -178,26 +173,54 @@ class Boolean(ScalarType):
 class Date(ScalarType):
     """Element tag: `<date>`"""
 
-    @classmethod
-    def from_str(cls, s: str) -> "Date":
+    def __init__(
+        self, children: Dict[str, Any], format_attr: "FormatAttr", element: ET._Element
+    ) -> None:
+        self.date_format = "%Y-%m-%d"
+        super().__init__(children, format_attr, element)
+
+    def from_str(self, s: str) -> "Date":
         """Create a Date from a string."""
         if s is None:
             return None
 
-        return datetime.datetime.strptime(s, "%Y-%m-%d").date()
+        return datetime.datetime.strptime(s, self.date_format).date()
+
+    @classmethod
+    def from_xml(cls, element: ET._Element, strict: bool = False) -> "DataType":
+        datatype = super().from_xml(element, strict)
+
+        if 'date-format' in element.attrib:
+            datatype.date_format = element.attrib['date-format']
+
+        return datatype
 
 
 @register_type("time")
 class Time(ScalarType):
     """Element tag: `<time>`"""
 
-    @classmethod
-    def from_str(cls, s: str) -> "Time":
+    def __init__(
+        self, children: Dict[str, Any], format_attr: "FormatAttr", element: ET._Element
+    ) -> None:
+        self.time_format = "%H:%M:%S"
+        super().__init__(children, format_attr, element)
+
+    def from_str(self, s: str) -> "Time":
         """Create a Time from a string."""
         if s is None:
             return None
 
-        return datetime.datetime.strptime(s, "%H:%M:%S").time()
+        return datetime.datetime.strptime(s, self.time_format).time()
+
+    @classmethod
+    def from_xml(cls, element: ET._Element, strict: bool = False) -> "DataType":
+        datatype = super().from_xml(element, strict)
+
+        if 'time-format' in element.attrib:
+            datatype.date_format = element.attrib['time-format']
+
+        return datatype
 
 
 @register_type("email")
