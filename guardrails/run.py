@@ -44,7 +44,7 @@ class Runner:
     output_schema: OutputSchema
     num_reasks: int = 0
     output: str = None
-    guard_history: GuardHistory = field(default_factory=GuardHistory)
+    guard_history: GuardHistory = field(default_factory=lambda: GuardHistory([]))
 
     def _reset_guard_history(self):
         """Reset the guard history."""
