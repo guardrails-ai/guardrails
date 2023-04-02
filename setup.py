@@ -34,6 +34,7 @@ REQUIRED = [
     "eliot",
     "eliot-tree",
     "pydantic",
+    "typer",
 ]
 
 # Read in docs/requirements.txt
@@ -131,6 +132,10 @@ setup(
     packages=find_packages(exclude=["tests", "*.tests", "*.tests.*", "tests.*"]),
     # If your package is a single module, use this instead of 'packages':
     # py_modules=['mypackage'],
+    # Add CLI for "guardrails" command, point to guardrails.cli:cli
+    entry_points={
+        "console_scripts": ["guardrails=guardrails.cli:cli"],
+    },
     install_requires=REQUIRED,
     include_package_data=True,
     extras_require=EXTRAS,

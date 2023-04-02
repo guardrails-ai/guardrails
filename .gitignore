@@ -13,3 +13,4 @@ guardrails.log
 guardrails_ai.egg-info/
 build/*
 dist/*
+*.rail_output*
