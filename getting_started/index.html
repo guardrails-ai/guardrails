@@ -351,12 +351,93 @@
     Creating an RAIL spec
   </a>
   
+    <nav class="md-nav" aria-label="Creating an RAIL spec">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#output-schema" class="md-nav__link">
+    Output schema
+  </a>
+  
+    <nav class="md-nav" aria-label="Output schema">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#specifying-structure" class="md-nav__link">
+    Specifying structure
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#specifying-quality-criteria" class="md-nav__link">
+    Specifying quality criteria
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#specifying-corrective-actions" class="md-nav__link">
+    Specifying corrective actions
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#prompt" class="md-nav__link">
+    Prompt
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
   <a href="#using-guardrails-to-enforce-the-rail-spec" class="md-nav__link">
     Using Guardrails to enforce the RAIL spec
   </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#inspecting-logs-to-peek-under-the-hood" class="md-nav__link">
+    Inspecting logs to peek under the hood
+  </a>
+  
+    <nav class="md-nav" aria-label="Inspecting logs to peek under the hood">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#inspecting-step-1-getting-llm-output" class="md-nav__link">
+    Inspecting Step 1: Getting LLM output
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#inspecting-step-2-re-prompting-llm" class="md-nav__link">
+    Inspecting Step 2: Re-prompting LLM
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bonus-see-the-full-history-of-calls" class="md-nav__link">
+    Bonus: See the full history of calls
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -865,12 +946,93 @@
     Creating an RAIL spec
   </a>
   
+    <nav class="md-nav" aria-label="Creating an RAIL spec">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#output-schema" class="md-nav__link">
+    Output schema
+  </a>
+  
+    <nav class="md-nav" aria-label="Output schema">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#specifying-structure" class="md-nav__link">
+    Specifying structure
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#specifying-quality-criteria" class="md-nav__link">
+    Specifying quality criteria
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#specifying-corrective-actions" class="md-nav__link">
+    Specifying corrective actions
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#prompt" class="md-nav__link">
+    Prompt
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
   <a href="#using-guardrails-to-enforce-the-rail-spec" class="md-nav__link">
     Using Guardrails to enforce the RAIL spec
   </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#inspecting-logs-to-peek-under-the-hood" class="md-nav__link">
+    Inspecting logs to peek under the hood
+  </a>
+  
+    <nav class="md-nav" aria-label="Inspecting logs to peek under the hood">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#inspecting-step-1-getting-llm-output" class="md-nav__link">
+    Inspecting Step 1: Getting LLM output
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#inspecting-step-2-re-prompting-llm" class="md-nav__link">
+    Inspecting Step 2: Re-prompting LLM
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bonus-see-the-full-history-of-calls" class="md-nav__link">
+    Bonus: See the full history of calls
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -934,7 +1096,30 @@
 <h1 id="getting-started">Getting Started</h1>
 <p>In this notebook, we will go through the basics of creating a <code>RAIL</code> spec and using Guardrails to enforce it.</p>
 <h2 id="objective">Objective</h2>
-<p>Our goal is to understand what a bank run is, and generate URL links to relevant news articles. We will first generate a <code>RAIL</code> spec for this and then use Guardrails to enforce it.</p>
+<p>Our goal is to extract detailed patient information from a medical record. We will use a simple example to demonstrate how Guardrails can be used to enforce a <code>RAIL</code> spec.</p>
+<p>As an example, we will use the following medical record:</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">doctors_notes</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;49 y/o Male with chronic macular rash to face &amp; hair, worse in beard, eyebrows &amp; nares.</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="s2">Itchy, flaky, slightly scaly. Moderate response to OTC steroid cream&quot;&quot;&quot;</span>
+</span></code></pre></div>
+
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>We want our extracted information to contain the following fields:</p>
+<ol>
+<li>Patient's gender</li>
+<li>Patient's age</li>
+<li>A list of symptoms, each with a severity rating and an affected area</li>
+<li>A list of medications, each with information about the patient's response to the medication</li>
+</ol>
 <h2 id="installation">Installation</h2>
 <p>To get started, install the <code>guardrails</code> package with <code>pip</code>.</p>
 </div>
@@ -943,7 +1128,7 @@
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 
-<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="err">!</span><span class="n">pip</span> <span class="n">install</span> <span class="n">guardrails</span><span class="o">-</span><span class="n">ai</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="err">!</span><span class="n">pip</span> <span class="n">install</span> <span class="n">guardrails</span><span class="o">-</span><span class="n">ai</span>
 </span></code></pre></div>
 
 </div>
@@ -954,62 +1139,218 @@
 <h2 id="creating-an-rail-spec">Creating an <code>RAIL</code> spec</h2>
 <p>At the heart of <code>Guardrails</code> is the <code>RAIL</code> spec.</p>
 <p><code>RAIL</code> a flavor of XML (standing for <strong>R</strong>eliable <strong>AI</strong> markup <strong>L</strong>anguage) that describes the expected structure and type of the output of the LLM, the quality criteria for the output to be valid and corrective actions to be taken if the output is invalid.</p>
-<ul>
-<li>For this task, we create a <code>RAIL</code> spec that requests the LLM to generate an object with 2 fields: <code>explanation</code> and <code>follow_up_url</code>.</li>
-<li>For the <code>explanation</code> field to be valid, the max length of the generated string should be <strong>between 200 to 280 characters in length</strong>. In case the generated string doesn't meet this criteria, for now we just want to log the validation error and continue (i.e. the <strong>noop</strong> action).</li>
-<li>For the <code>follow_up_url</code> field to be valid, the <strong>URL should be reachable</strong>. In case this quality criteria is not met, the generated output should be filtered out (i.e. the <strong>filter</strong> action).</li>
-</ul>
+<p>A <code>RAIL</code> spec is composed of 3 main components:</p>
+<ol>
+<li>Output schema</li>
+<li>Prompt</li>
+<li>(Optional) Script</li>
+</ol>
+<h3 id="output-schema">Output schema</h3>
+<p>We start by creating the output schema. The output schema is a <code>RAIL</code> spec that describes the expected structure and type of the output of the LLM. </p>
+<h4 id="specifying-structure">Specifying structure</h4>
+<p>As mentioned earlier, we want our extracted information to contain the following fields: gender, age, symptoms, and medications. Using <code>RAIL</code>, we can create fairly complex output schemas. For example, we can specify that a field is a list of objects, etc. We see an example of this below.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">RAIL Spec</label><label for="__tabbed_1_2">Output JSON</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="language-xml highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nt">&lt;object</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;patient_info&quot;</span><span class="nt">&gt;</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">    </span><span class="nt">&lt;string</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;gender&quot;</span><span class="w"> </span><span class="na">description=</span><span class="s">&quot;Patient&#39;s gender&quot;</span><span class="w"> </span><span class="nt">/&gt;</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="nt">&lt;integer</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;age&quot;</span><span class="nt">/&gt;</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">    </span><span class="nt">&lt;list</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">        </span><span class="na">name=</span><span class="s">&quot;symptoms&quot;</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">        </span><span class="na">description=</span><span class="s">&quot;Symptoms that the patient is currently experiencing. Each symptom should be classified into  separate item in the list.&quot;</span><span class="nt">&gt;</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">        </span><span class="nt">&lt;object&gt;</span>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">            </span><span class="nt">&lt;string</span>
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">                </span><span class="na">name=</span><span class="s">&quot;symptom&quot;</span>
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">                </span><span class="na">description=</span><span class="s">&quot;Symptom that a patient is experiencing&quot;</span>
+</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="w">            </span><span class="nt">/&gt;</span>
+</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="w">            </span><span class="nt">&lt;string</span>
+</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="w">                </span><span class="na">name=</span><span class="s">&quot;affected area&quot;</span>
+</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="w">                </span><span class="na">description=</span><span class="s">&quot;What part of the body the symptom is affecting&quot;</span>
+</span><span id="__span-2-15"><a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="w">            </span><span class="nt">/&gt;</span>
+</span><span id="__span-2-16"><a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span class="w">        </span><span class="nt">&lt;/object&gt;</span>
+</span><span id="__span-2-17"><a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="w">    </span><span class="nt">&lt;/list&gt;</span>
+</span><span id="__span-2-18"><a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="w">    </span><span class="nt">&lt;list</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;current_meds&quot;</span><span class="w"> </span><span class="na">description=</span><span class="s">&quot;Medications the patient is currently taking and their response&quot;</span><span class="nt">&gt;</span>
+</span><span id="__span-2-19"><a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a><span class="w">        </span><span class="nt">&lt;object&gt;</span>
+</span><span id="__span-2-20"><a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a><span class="w">            </span><span class="nt">&lt;string</span>
+</span><span id="__span-2-21"><a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a><span class="w">                </span><span class="na">name=</span><span class="s">&quot;medication&quot;</span>
+</span><span id="__span-2-22"><a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a><span class="w">                </span><span class="na">description=</span><span class="s">&quot;Name of the medication the patient is taking&quot;</span><span class="w"> </span>
+</span><span id="__span-2-23"><a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a><span class="w">            </span><span class="nt">/&gt;</span>
+</span><span id="__span-2-24"><a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a><span class="w">            </span><span class="nt">&lt;string</span>
+</span><span id="__span-2-25"><a id="__codelineno-2-25" name="__codelineno-2-25" href="#__codelineno-2-25"></a><span class="w">                </span><span class="na">name=</span><span class="s">&quot;response&quot;</span>
+</span><span id="__span-2-26"><a id="__codelineno-2-26" name="__codelineno-2-26" href="#__codelineno-2-26"></a><span class="w">                </span><span class="na">description=</span><span class="s">&quot;How the patient is responding to the medication&quot;</span>
+</span><span id="__span-2-27"><a id="__codelineno-2-27" name="__codelineno-2-27" href="#__codelineno-2-27"></a><span class="w">            </span><span class="nt">/&gt;</span>
+</span><span id="__span-2-28"><a id="__codelineno-2-28" name="__codelineno-2-28" href="#__codelineno-2-28"></a><span class="w">        </span><span class="nt">&lt;/object&gt;</span>
+</span><span id="__span-2-29"><a id="__codelineno-2-29" name="__codelineno-2-29" href="#__codelineno-2-29"></a><span class="w">    </span><span class="nt">&lt;/list&gt;</span>
+</span><span id="__span-2-30"><a id="__codelineno-2-30" name="__codelineno-2-30" href="#__codelineno-2-30"></a><span class="nt">&lt;/object&gt;</span>
+</span></code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-json highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="p">{</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">    </span><span class="nt">&quot;patient_info&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">        </span><span class="nt">&quot;gender&quot;</span><span class="p">:</span><span class="w"> </span><span class="err">...</span><span class="p">,</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">        </span><span class="nt">&quot;age&quot;</span><span class="p">:</span><span class="w"> </span><span class="err">...</span><span class="p">,</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">        </span><span class="nt">&quot;symptoms&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">            </span><span class="p">{</span>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">                </span><span class="nt">&quot;symptom&quot;</span><span class="p">:</span><span class="w"> </span><span class="err">...</span><span class="p">,</span>
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">                </span><span class="nt">&quot;affected area&quot;</span><span class="p">:</span><span class="w"> </span><span class="err">...</span>
+</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="w">            </span><span class="p">},</span>
+</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="w">            </span><span class="err">...</span>
+</span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="w">        </span><span class="p">],</span>
+</span><span id="__span-3-12"><a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="w">        </span><span class="nt">&quot;current_meds&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+</span><span id="__span-3-13"><a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="w">            </span><span class="p">{</span>
+</span><span id="__span-3-14"><a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a><span class="w">                </span><span class="nt">&quot;medication&quot;</span><span class="p">:</span><span class="w"> </span><span class="err">...</span><span class="p">,</span>
+</span><span id="__span-3-15"><a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="w">                </span><span class="nt">&quot;response&quot;</span><span class="p">:</span><span class="w"> </span><span class="err">...</span>
+</span><span id="__span-3-16"><a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a><span class="w">            </span><span class="p">},</span>
+</span><span id="__span-3-17"><a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a><span class="w">            </span><span class="err">...</span>
+</span><span id="__span-3-18"><a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a><span class="w">        </span><span class="p">]</span>
+</span><span id="__span-3-19"><a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-3-20"><a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a><span class="p">}</span>
+</span></code></pre></div>
+</div>
+</div>
+</div>
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing text_cell rendered">
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>We specify our quality criteria (generated length, URL reachability) in the <code>format</code> fields of the <code>RAIL</code> spec below. For now, we want to do nothing if the quality criteria for <code>explanation</code> is not met, and filter the <code>follow_up_url</code> if it is not valid.</p>
+<h4 id="specifying-quality-criteria">Specifying quality criteria</h4>
+<p>Next, we want to specify the quality criteria for the output to be valid and corrective actions to be taken if the output is invalid. We can do this by adding a <code>format</code> tag to each field in the output schema. Format tags can either be enforced by Guardrails, or they can only be suggetions to the LLM. You can see the list of validators enforced by Guardrails <a href="../validation/">here</a>. Additionally, you can create your own custom validators, see examples here <a href="../examples/no_secrets_in_generated_text/">1</a>, <a href="../examples/recipe_generation/">2</a>, <a href="../examples/valid_chess_moves/">3</a>.</p>
+<p>As an example, for our use case we specify that the <code>affected_area</code> of <code>symptoms</code> should be one of the following: <code>['head', 'neck', 'chest']</code>. For this, we use the <a href="validation.md/#guardrails.validators.ValidChoices"><code>valid-choices</code> validator</a>.</p>
+<h4 id="specifying-corrective-actions">Specifying corrective actions</h4>
+<p>Additionally, we can specify how to handle invalid output by adding a <code>on-fail-...</code> attribute to an element.</p>
+<p>For example, we can specify that if the <code>affected_area</code> of a symptom is not one of the valid choices, we should re-prompt the LLM to correct its output.</p>
+<p>We do this by adding the <code>on-fail-valid-choices='reask'</code> attribute to the <code>affected_area</code> field. To see the full list of corrective actions, see <a href="output.md#specifying-corrective-actions">here</a>.</p>
+<p>Finally, out updated output schema looks like:</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<div class="language-xml highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nt">&lt;object</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;patient_info&quot;</span><span class="nt">&gt;</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">    </span><span class="nt">&lt;string</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;gender&quot;</span><span class="w"> </span><span class="na">description=</span><span class="s">&quot;Patient&#39;s gender&quot;</span><span class="w"> </span><span class="nt">/&gt;</span>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">    </span><span class="nt">&lt;integer</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;age&quot;</span><span class="w"> </span><span class="na">format=</span><span class="s">&quot;valid-range: 0 100&quot;</span><span class="nt">/&gt;</span><span class="w">  </span><span class="cm">&lt;!-- (1)! --&gt;</span>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">    </span><span class="nt">&lt;list</span>
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">        </span><span class="na">name=</span><span class="s">&quot;symptoms&quot;</span>
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">        </span><span class="na">description=</span><span class="s">&quot;Symptoms that the patient is currently experiencing. Each symptom should be classified into  separate item in the list.&quot;</span><span class="nt">&gt;</span>
+</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">        </span><span class="nt">&lt;object&gt;</span>
+</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">            </span><span class="nt">&lt;string</span>
+</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="w">                </span><span class="na">name=</span><span class="s">&quot;symptom&quot;</span>
+</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="w">                </span><span class="na">description=</span><span class="s">&quot;Symptom that a patient is experiencing&quot;</span>
+</span><span id="__span-4-11"><a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="w">            </span><span class="nt">/&gt;</span>
+</span><span id="__span-4-12"><a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="w">            </span><span class="nt">&lt;string</span>
+</span><span id="__span-4-13"><a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="w">                </span><span class="na">name=</span><span class="s">&quot;affected area&quot;</span>
+</span><span id="__span-4-14"><a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a><span class="w">                </span><span class="na">description=</span><span class="s">&quot;What part of the body the symptom is affecting&quot;</span>
+</span><span id="__span-4-15"><a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a><span class="w">                </span><span class="na">format=</span><span class="s">&quot;valid-choices: {[&#39;head&#39;, &#39;neck&#39;, &#39;chest&#39;]}&quot;</span>
+</span><span id="__span-4-16"><a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a><span class="w">                </span><span class="na">on-fail-valid-choices=</span><span class="s">&quot;reask&quot;</span>
+</span><span id="__span-4-17"><a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a><span class="w">            </span><span class="nt">/&gt;</span><span class="w">  </span><span class="cm">&lt;!-- (2)! --&gt;</span>
+</span><span id="__span-4-18"><a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a><span class="w">        </span><span class="nt">&lt;/object&gt;</span>
+</span><span id="__span-4-19"><a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a><span class="w">    </span><span class="nt">&lt;/list&gt;</span>
+</span><span id="__span-4-20"><a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a><span class="w">    </span><span class="nt">&lt;list</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;current_meds&quot;</span><span class="w"> </span><span class="na">description=</span><span class="s">&quot;Medications the patient is currently taking and their response&quot;</span><span class="nt">&gt;</span>
+</span><span id="__span-4-21"><a id="__codelineno-4-21" name="__codelineno-4-21" href="#__codelineno-4-21"></a><span class="w">        </span><span class="nt">&lt;object&gt;</span>
+</span><span id="__span-4-22"><a id="__codelineno-4-22" name="__codelineno-4-22" href="#__codelineno-4-22"></a><span class="w">            </span><span class="nt">&lt;string</span>
+</span><span id="__span-4-23"><a id="__codelineno-4-23" name="__codelineno-4-23" href="#__codelineno-4-23"></a><span class="w">                </span><span class="na">name=</span><span class="s">&quot;medication&quot;</span>
+</span><span id="__span-4-24"><a id="__codelineno-4-24" name="__codelineno-4-24" href="#__codelineno-4-24"></a><span class="w">                </span><span class="na">description=</span><span class="s">&quot;Name of the medication the patient is taking&quot;</span><span class="w"> </span>
+</span><span id="__span-4-25"><a id="__codelineno-4-25" name="__codelineno-4-25" href="#__codelineno-4-25"></a><span class="w">            </span><span class="nt">/&gt;</span>
+</span><span id="__span-4-26"><a id="__codelineno-4-26" name="__codelineno-4-26" href="#__codelineno-4-26"></a><span class="w">            </span><span class="nt">&lt;string</span>
+</span><span id="__span-4-27"><a id="__codelineno-4-27" name="__codelineno-4-27" href="#__codelineno-4-27"></a><span class="w">                </span><span class="na">name=</span><span class="s">&quot;response&quot;</span>
+</span><span id="__span-4-28"><a id="__codelineno-4-28" name="__codelineno-4-28" href="#__codelineno-4-28"></a><span class="w">                </span><span class="na">description=</span><span class="s">&quot;How the patient is responding to the medication&quot;</span>
+</span><span id="__span-4-29"><a id="__codelineno-4-29" name="__codelineno-4-29" href="#__codelineno-4-29"></a><span class="w">            </span><span class="nt">/&gt;</span>
+</span><span id="__span-4-30"><a id="__codelineno-4-30" name="__codelineno-4-30" href="#__codelineno-4-30"></a><span class="w">        </span><span class="nt">&lt;/object&gt;</span>
+</span><span id="__span-4-31"><a id="__codelineno-4-31" name="__codelineno-4-31" href="#__codelineno-4-31"></a><span class="w">    </span><span class="nt">&lt;/list&gt;</span>
+</span><span id="__span-4-32"><a id="__codelineno-4-32" name="__codelineno-4-32" href="#__codelineno-4-32"></a><span class="nt">&lt;/object&gt;</span>
+</span></code></pre></div>
+<ol>
+<li>We specify the <code>valid-range</code> validator for the <code>age</code> field. This validator takes the min and max arguments, which we pass as <code>0</code> and <code>100</code> respectively.</li>
+<li>We specify the <code>valid-choices</code> validator for the <code>affected_area</code> field. This validator will check that the value of the field is one of the choices specified in the <code>format</code> attribute. We specify that if the <code>affected_area</code> field fails the <code>valid-choices</code> validator, we should re-prompt the LLM to correct its output. This is done by setting the <code>on-fail-valid-choices</code> attribute to <code>reask</code>.</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>Ordinarily, the <code>RAIL</code> spec would be created in a file directly. However, for the purposes of this demo, we write the spec in a string and then create a file from it.</p>
+<p>In order to pass in a list of choices, we wrap the list in curly braces -- <code>{['head', 'neck', 'chest']}</code>. Anything inside the curly braces will be evaluated as a Python expression. This allows us to pass in more complex data structures or objects as arguments to the validator. </p>
 </div>
 </div>
 </div>
 </div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-
-<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">rail_spec</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="s2">&lt;rail version=&quot;0.1&quot;&gt;</span>
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="s2">&lt;output&gt;</span>
-</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="s2">    &lt;object name=&quot;bank_run&quot; format=&quot;length: 2&quot;&gt;</span>
-</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="s2">        &lt;string</span>
-</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="s2">            name=&quot;explanation&quot;</span>
-</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="s2">            description=&quot;A paragraph about what a bank run is.&quot;</span>
-</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="s2">            format=&quot;length: 200 240&quot;</span>
-</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="s2">            on-fail-length=&quot;noop&quot;</span>
-</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="s2">        /&gt;</span>
-</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="s2">        &lt;url</span>
-</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="s2">            name=&quot;follow_up_url&quot;</span>
-</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="s2">            description=&quot;A web URL where I can read more about bank runs.&quot;</span>
-</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="s2">            required=&quot;true&quot;</span>
-</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="s2">            format=&quot;valid-url&quot;</span>
-</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="s2">            on-fail-valid-url=&quot;filter&quot;</span>
-</span><span id="__span-1-18"><a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="s2">        /&gt;</span>
-</span><span id="__span-1-19"><a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="s2">    &lt;/object&gt;</span>
-</span><span id="__span-1-20"><a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a><span class="s2">&lt;/output&gt;</span>
-</span><span id="__span-1-21"><a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a>
-</span><span id="__span-1-22"><a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a><span class="s2">&lt;prompt&gt;</span>
-</span><span id="__span-1-23"><a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a><span class="s2">Explain what a bank run is in a tweet.</span>
-</span><span id="__span-1-24"><a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a>
-</span><span id="__span-1-25"><a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a><span class="s2">@xml_prefix_prompt</span>
-</span><span id="__span-1-26"><a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a>
-</span><span id="__span-1-27"><a id="__codelineno-1-27" name="__codelineno-1-27" href="#__codelineno-1-27"></a><span class="si">{output_schema}</span>
-</span><span id="__span-1-28"><a id="__codelineno-1-28" name="__codelineno-1-28" href="#__codelineno-1-28"></a>
-</span><span id="__span-1-29"><a id="__codelineno-1-29" name="__codelineno-1-29" href="#__codelineno-1-29"></a><span class="s2">@json_suffix_prompt_v2_wo_none</span>
-</span><span id="__span-1-30"><a id="__codelineno-1-30" name="__codelineno-1-30" href="#__codelineno-1-30"></a><span class="s2">&lt;/prompt&gt;</span>
-</span><span id="__span-1-31"><a id="__codelineno-1-31" name="__codelineno-1-31" href="#__codelineno-1-31"></a><span class="s2">&lt;/rail&gt;</span>
-</span><span id="__span-1-32"><a id="__codelineno-1-32" name="__codelineno-1-32" href="#__codelineno-1-32"></a><span class="s2">&quot;&quot;&quot;</span>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="prompt">Prompt</h3>
+<p>The prompt contains high level instructions for the LLM, as well as any parameters that need to be substituted at runtime.</p>
+<p>For our use case, we create the following prompt:</p>
+<div class="language-xml highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nt">&lt;prompt&gt;</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>Given<span class="w"> </span>the<span class="w"> </span>following<span class="w"> </span>doctor&#39;s<span class="w"> </span>notes<span class="w"> </span>about<span class="w"> </span>a<span class="w"> </span>patient,
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>please<span class="w"> </span>extract<span class="w"> </span>a<span class="w"> </span>dictionary<span class="w"> </span>that<span class="w"> </span>contains<span class="w"> </span>the<span class="w"> </span>patient&#39;s<span class="w"> </span>information.<span class="w">  </span><span class="cm">&lt;!-- (1)! --&gt;</span>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>{{doctors_notes}}<span class="w">  </span><span class="cm">&lt;!-- (2)! --&gt;</span>
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>
+</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>@complete_json_suffix_v2<span class="w">  </span><span class="cm">&lt;!-- (3)! --&gt;</span>
+</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="nt">&lt;/prompt&gt;</span>
 </span></code></pre></div>
-
+<ol>
+<li>This is the high level instructions for the LLM.</li>
+<li>This is a prompt parameter that will be substituted at runtime. We will see how to do this in the next section.</li>
+<li>This is some boilerplate text that formats helps the LLM output a valid JSON object. Guardrails will automatically add this text to the end of the LLM's output. You can see the full list of boilerplate text <a href="https://github.com/ShreyaR/guardrails/blob/main/guardrails/constants.xml">here</a>.</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Putting it all together, the full <code>rail</code> spec for our use case looks like. You can see the full spec <a href="https://github.com/ShreyaR/guardrails/blob/main/docs/getting_started.rail">here</a>.</p>
+<p><detail></p>
+<summary>Expand to see an example of a RAIL specification.</summary>
+<div class="language-xml highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="nt">&lt;rail</span><span class="w"> </span><span class="na">version=</span><span class="s">&quot;0.1&quot;</span><span class="nt">&gt;</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="nt">&lt;output&gt;</span>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">    </span><span class="nt">&lt;object</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;patient_info&quot;</span><span class="nt">&gt;</span>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">        </span><span class="nt">&lt;string</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;gender&quot;</span><span class="w"> </span><span class="na">description=</span><span class="s">&quot;Patient&#39;s gender&quot;</span><span class="w"> </span><span class="nt">/&gt;</span>
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">        </span><span class="nt">&lt;integer</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;age&quot;</span><span class="w"> </span><span class="na">format=</span><span class="s">&quot;valid-range: 0 100&quot;</span><span class="w"> </span><span class="nt">/&gt;</span>
+</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="w">        </span><span class="nt">&lt;list</span>
+</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="w">            </span><span class="na">name=</span><span class="s">&quot;symptoms&quot;</span>
+</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="w">            </span><span class="na">description=</span><span class="s">&quot;Symptoms that the patient is currently experiencing. Each symptom should be classified into a separate item in the list.&quot;</span><span class="nt">&gt;</span>
+</span><span id="__span-6-10"><a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="w">            </span><span class="nt">&lt;object&gt;</span>
+</span><span id="__span-6-11"><a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="w">                </span><span class="nt">&lt;string</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;symptom&quot;</span><span class="w"> </span><span class="na">description=</span><span class="s">&quot;Symptom that a patient is experiencing&quot;</span><span class="nt">/&gt;</span>
+</span><span id="__span-6-12"><a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a><span class="w">                </span><span class="nt">&lt;string</span>
+</span><span id="__span-6-13"><a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a><span class="w">                    </span><span class="na">name=</span><span class="s">&quot;affected area&quot;</span>
+</span><span id="__span-6-14"><a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a><span class="w">                    </span><span class="na">description=</span><span class="s">&quot;What part of the body the symptom is affecting&quot;</span>
+</span><span id="__span-6-15"><a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a><span class="w">                    </span><span class="na">format=</span><span class="s">&quot;valid-choices: {[&#39;head&#39;, &#39;neck&#39;, &#39;chest&#39;]}&quot;</span>
+</span><span id="__span-6-16"><a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a><span class="w">                    </span><span class="na">on-fail-valid-choices=</span><span class="s">&quot;reask&quot;</span>
+</span><span id="__span-6-17"><a id="__codelineno-6-17" name="__codelineno-6-17" href="#__codelineno-6-17"></a><span class="w">                </span><span class="nt">/&gt;</span>
+</span><span id="__span-6-18"><a id="__codelineno-6-18" name="__codelineno-6-18" href="#__codelineno-6-18"></a><span class="w">            </span><span class="nt">&lt;/object&gt;</span>
+</span><span id="__span-6-19"><a id="__codelineno-6-19" name="__codelineno-6-19" href="#__codelineno-6-19"></a><span class="w">        </span><span class="nt">&lt;/list&gt;</span>
+</span><span id="__span-6-20"><a id="__codelineno-6-20" name="__codelineno-6-20" href="#__codelineno-6-20"></a><span class="w">        </span><span class="nt">&lt;list</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;current_meds&quot;</span><span class="w"> </span><span class="na">description=</span><span class="s">&quot;Medications the patient is currently taking and their response&quot;</span><span class="nt">&gt;</span>
+</span><span id="__span-6-21"><a id="__codelineno-6-21" name="__codelineno-6-21" href="#__codelineno-6-21"></a><span class="w">            </span><span class="nt">&lt;object&gt;</span>
+</span><span id="__span-6-22"><a id="__codelineno-6-22" name="__codelineno-6-22" href="#__codelineno-6-22"></a><span class="w">                </span><span class="nt">&lt;string</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;medication&quot;</span><span class="w"> </span><span class="na">description=</span><span class="s">&quot;Name of the medication the patient is taking&quot;</span><span class="w"> </span><span class="nt">/&gt;</span>
+</span><span id="__span-6-23"><a id="__codelineno-6-23" name="__codelineno-6-23" href="#__codelineno-6-23"></a><span class="w">                </span><span class="nt">&lt;string</span>
+</span><span id="__span-6-24"><a id="__codelineno-6-24" name="__codelineno-6-24" href="#__codelineno-6-24"></a><span class="w">                    </span><span class="na">name=</span><span class="s">&quot;response&quot;</span>
+</span><span id="__span-6-25"><a id="__codelineno-6-25" name="__codelineno-6-25" href="#__codelineno-6-25"></a><span class="w">                    </span><span class="na">description=</span><span class="s">&quot;How the patient is responding to the medication&quot;</span>
+</span><span id="__span-6-26"><a id="__codelineno-6-26" name="__codelineno-6-26" href="#__codelineno-6-26"></a><span class="w">                </span><span class="nt">/&gt;</span>
+</span><span id="__span-6-27"><a id="__codelineno-6-27" name="__codelineno-6-27" href="#__codelineno-6-27"></a><span class="w">            </span><span class="nt">&lt;/object&gt;</span>
+</span><span id="__span-6-28"><a id="__codelineno-6-28" name="__codelineno-6-28" href="#__codelineno-6-28"></a><span class="w">        </span><span class="nt">&lt;/list&gt;</span>
+</span><span id="__span-6-29"><a id="__codelineno-6-29" name="__codelineno-6-29" href="#__codelineno-6-29"></a><span class="w">    </span><span class="nt">&lt;/object&gt;</span>
+</span><span id="__span-6-30"><a id="__codelineno-6-30" name="__codelineno-6-30" href="#__codelineno-6-30"></a><span class="nt">&lt;/output&gt;</span>
+</span><span id="__span-6-31"><a id="__codelineno-6-31" name="__codelineno-6-31" href="#__codelineno-6-31"></a>
+</span><span id="__span-6-32"><a id="__codelineno-6-32" name="__codelineno-6-32" href="#__codelineno-6-32"></a><span class="nt">&lt;prompt&gt;</span>
+</span><span id="__span-6-33"><a id="__codelineno-6-33" name="__codelineno-6-33" href="#__codelineno-6-33"></a>
+</span><span id="__span-6-34"><a id="__codelineno-6-34" name="__codelineno-6-34" href="#__codelineno-6-34"></a>Given<span class="w"> </span>the<span class="w"> </span>following<span class="w"> </span>doctor&#39;s<span class="w"> </span>notes<span class="w"> </span>about<span class="w"> </span>a<span class="w"> </span>patient,<span class="w"> </span>please<span class="w"> </span>extract<span class="w"> </span>a<span class="w"> </span>dictionary<span class="w"> </span>that<span class="w"> </span>contains<span class="w"> </span>the<span class="w"> </span>patient&#39;s<span class="w"> </span>information.
+</span><span id="__span-6-35"><a id="__codelineno-6-35" name="__codelineno-6-35" href="#__codelineno-6-35"></a>
+</span><span id="__span-6-36"><a id="__codelineno-6-36" name="__codelineno-6-36" href="#__codelineno-6-36"></a>{{doctors_notes}}
+</span><span id="__span-6-37"><a id="__codelineno-6-37" name="__codelineno-6-37" href="#__codelineno-6-37"></a>
+</span><span id="__span-6-38"><a id="__codelineno-6-38" name="__codelineno-6-38" href="#__codelineno-6-38"></a>@complete_json_suffix_v2
+</span><span id="__span-6-39"><a id="__codelineno-6-39" name="__codelineno-6-39" href="#__codelineno-6-39"></a><span class="nt">&lt;/prompt&gt;</span>
+</span><span id="__span-6-40"><a id="__codelineno-6-40" name="__codelineno-6-40" href="#__codelineno-6-40"></a><span class="nt">&lt;/rail&gt;</span>
+</span></code></pre></div>
+<p></detail></p>
+</div>
 </div>
 </div>
 <div class="cell border-box-sizing text_cell rendered">
@@ -1023,12 +1364,11 @@
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 
-<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span> <span class="nn">rich</span> <span class="kn">import</span> <span class="nb">print</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="kn">import</span> <span class="nn">guardrails</span> <span class="k">as</span> <span class="nn">gd</span>
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>
-</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="n">guard</span> <span class="o">=</span> <span class="n">gd</span><span class="o">.</span><span class="n">Guard</span><span class="o">.</span><span class="n">from_rail_string</span><span class="p">(</span><span class="n">rail_spec</span><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="kn">from</span> <span class="nn">rich</span> <span class="kn">import</span> <span class="nb">print</span>
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="kn">import</span> <span class="nn">guardrails</span> <span class="k">as</span> <span class="nn">gd</span>
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>
+</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="n">guard</span> <span class="o">=</span> <span class="n">gd</span><span class="o">.</span><span class="n">Guard</span><span class="o">.</span><span class="n">from_rail</span><span class="p">(</span><span class="s1">&#39;getting_started.rail&#39;</span><span class="p">)</span>
 </span></code></pre></div>
 
 </div>
@@ -1037,47 +1377,6 @@
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <p>We can see that the <code>Guard</code> object compiles the <code>RAIL</code> output specification and adds it to the provided prompt.</p>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-
-<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nb">print</span><span class="p">(</span><span class="n">guard</span><span class="o">.</span><span class="n">base_prompt</span><span class="p">)</span>
-</span></code></pre></div>
-
-</div>
-<div class="output_wrapper">
-<div class="output">
-<div class="output_area">
-<div class="output_html rendered_html output_subarea ">
-<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">
-Explain what a bank run is in a tweet.
-
-
-Given below is XML that describes the information to extract from this document and the tags to extract it into.
-
-
-<span style="font-weight: bold">&lt;</span><span style="color: #ff00ff; text-decoration-color: #ff00ff; font-weight: bold">output</span><span style="color: #000000; text-decoration-color: #000000">&gt;</span>
-<span style="color: #000000; text-decoration-color: #000000">    &lt;object </span><span style="color: #808000; text-decoration-color: #808000">name</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"bank_run"</span><span style="color: #000000; text-decoration-color: #000000"> </span><span style="color: #808000; text-decoration-color: #808000">format</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"length: 2"</span><span style="color: #000000; text-decoration-color: #000000">&gt;</span>
-<span style="color: #000000; text-decoration-color: #000000">        &lt;string </span><span style="color: #808000; text-decoration-color: #808000">name</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"explanation"</span><span style="color: #000000; text-decoration-color: #000000"> </span><span style="color: #808000; text-decoration-color: #808000">description</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"A paragraph about what a bank run is."</span><span style="color: #000000; text-decoration-color: #000000"> </span><span style="color: #808000; text-decoration-color: #808000">format</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"length: 200 240"</span><span style="color: #800080; text-decoration-color: #800080">/</span><span style="color: #000000; text-decoration-color: #000000">&gt;</span>
-<span style="color: #000000; text-decoration-color: #000000">        &lt;url </span><span style="color: #808000; text-decoration-color: #808000">name</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"follow_up_url"</span><span style="color: #000000; text-decoration-color: #000000"> </span><span style="color: #808000; text-decoration-color: #808000">description</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"A web URL where I can read more about bank runs."</span><span style="color: #000000; text-decoration-color: #000000"> </span><span style="color: #808000; text-decoration-color: #808000">required</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"true"</span><span style="color: #000000; text-decoration-color: #000000"> </span>
-<span style="color: #808000; text-decoration-color: #808000">format</span><span style="color: #000000; text-decoration-color: #000000">=</span><span style="color: #008000; text-decoration-color: #008000">"valid-url"</span><span style="color: #800080; text-decoration-color: #800080">/</span><span style="color: #000000; text-decoration-color: #000000">&gt;</span>
-<span style="color: #000000; text-decoration-color: #000000">    &lt;</span><span style="color: #800080; text-decoration-color: #800080">/</span><span style="color: #ff00ff; text-decoration-color: #ff00ff">object</span><span style="color: #000000; text-decoration-color: #000000">&gt;</span>
-<span style="color: #000000; text-decoration-color: #000000">&lt;</span><span style="color: #800080; text-decoration-color: #800080">/</span><span style="color: #ff00ff; text-decoration-color: #ff00ff">output</span><span style="font-weight: bold">&gt;</span>
-
-
-
-
-ONLY return a valid JSON object <span style="font-weight: bold">(</span>no other text is necessary<span style="font-weight: bold">)</span>. The JSON MUST conform to the XML format, including 
-any types and format requests e.g. requests for lists, objects and specific types. Be correct and concise.
-
-JSON Output:
-
-
-</pre>
-</div>
-</div>
 </div>
 </div>
 </div>
@@ -1091,54 +1390,50 @@ JSON Output:
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 
-<div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kn">import</span> <span class="nn">openai</span>
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="kn">import</span> <span class="nn">os</span>
-</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
-</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="c1"># Set your OpenAI API key</span>
-</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;OPENAI_API_KEY&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;YOUR_OPENAI_API_KEY&quot;</span>
-</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>
-</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="c1"># Wrap the OpenAI API call with the `guard` object</span>
-</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="n">raw_llm_output</span><span class="p">,</span> <span class="n">validated_output</span> <span class="o">=</span> <span class="n">guard</span><span class="p">(</span>
-</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>    <span class="n">openai</span><span class="o">.</span><span class="n">Completion</span><span class="o">.</span><span class="n">create</span><span class="p">,</span>
-</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>    <span class="n">engine</span><span class="o">=</span><span class="s2">&quot;text-davinci-003&quot;</span><span class="p">,</span>
-</span><span id="__span-4-11"><a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>    <span class="n">max_tokens</span><span class="o">=</span><span class="mi">1024</span><span class="p">,</span>
-</span><span id="__span-4-12"><a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>    <span class="n">temperature</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span>
-</span><span id="__span-4-13"><a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="p">)</span>
-</span><span id="__span-4-14"><a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a>
-</span><span id="__span-4-15"><a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a><span class="c1"># Print the validated output from the LLM</span>
-</span><span id="__span-4-16"><a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a><span class="nb">print</span><span class="p">(</span><span class="n">validated_output</span><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="kn">import</span> <span class="nn">openai</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="kn">import</span> <span class="nn">os</span>
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>
+</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="c1"># Set your OpenAI API key</span>
+</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;OPENAI_API_KEY&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;YOUR_OPENAI_API_KEY&quot;</span>
+</span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>
+</span><span id="__span-8-7"><a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="c1"># Wrap the OpenAI API call with the `guard` object</span>
+</span><span id="__span-8-8"><a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="n">raw_llm_output</span><span class="p">,</span> <span class="n">validated_output</span> <span class="o">=</span> <span class="n">guard</span><span class="p">(</span>
+</span><span id="__span-8-9"><a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>    <span class="n">openai</span><span class="o">.</span><span class="n">Completion</span><span class="o">.</span><span class="n">create</span><span class="p">,</span>
+</span><span id="__span-8-10"><a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a>    <span class="n">prompt_params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;doctors_notes&quot;</span><span class="p">:</span> <span class="n">doctors_notes</span><span class="p">},</span>
+</span><span id="__span-8-11"><a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a>    <span class="n">engine</span><span class="o">=</span><span class="s2">&quot;text-davinci-003&quot;</span><span class="p">,</span>
+</span><span id="__span-8-12"><a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a>    <span class="n">max_tokens</span><span class="o">=</span><span class="mi">1024</span><span class="p">,</span>
+</span><span id="__span-8-13"><a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a>    <span class="n">temperature</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span>
+</span><span id="__span-8-14"><a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a><span class="p">)</span>
+</span><span id="__span-8-15"><a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a>
+</span><span id="__span-8-16"><a id="__codelineno-8-16" name="__codelineno-8-16" href="#__codelineno-8-16"></a><span class="c1"># Print the validated output from the LLM</span>
+</span><span id="__span-8-17"><a id="__codelineno-8-17" name="__codelineno-8-17" href="#__codelineno-8-17"></a><span class="nb">print</span><span class="p">(</span><span class="n">validated_output</span><span class="p">)</span>
 </span></code></pre></div>
 
 </div>
 <div class="output_wrapper">
 <div class="output">
 <div class="output_area">
-<div class="output_html rendered_html output_subarea ">
-<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace"><span style="font-weight: bold">{</span>
-    <span style="color: #008000; text-decoration-color: #008000">'bank_run'</span>: <span style="font-weight: bold">{</span>
-        <span style="color: #008000; text-decoration-color: #008000">'explanation'</span>: <span style="color: #008000; text-decoration-color: #008000">"A bank run is when a large number of customers withdraw their deposits from a bank due to </span>
-<span style="color: #008000; text-decoration-color: #008000">concerns about the bank's solvency."</span>,
-        <span style="color: #008000; text-decoration-color: #008000">'follow_up_url'</span>: <span style="color: #008000; text-decoration-color: #008000">'https://www.investopedia.com/terms/b/bankrun.asp'</span>
-    <span style="font-weight: bold">}</span>
-<span style="font-weight: bold">}</span>
+<div class="output_subarea output_stream output_stderr output_text">
+<pre>
+<code>/Users/shreyarajpal/anaconda3/envs/tiff-env/lib/python3.9/site-packages/eliot/json.py:22: FutureWarning: In the future `np.bool` will be defined as the corresponding NumPy scalar.  (This may have returned Python scalars in past versions.
+  if isinstance(o, (numpy.bool, numpy.bool_)):
+</code>
 </pre>
 </div>
 </div>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-
-<div class="language-python highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Len of explanation: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">validated_output</span><span class="p">[</span><span class="s2">&quot;bank_run&quot;</span><span class="p">][</span><span class="s2">&quot;explanation&quot;</span><span class="p">])</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-</span></code></pre></div>
-
-</div>
-<div class="output_wrapper">
-<div class="output">
 <div class="output_area">
 <div class="output_html rendered_html output_subarea ">
-<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">Len of explanation: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">125</span>
+<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace"><span style="font-weight: bold">{</span>
+    <span style="color: #008000; text-decoration-color: #008000">'patient_info'</span>: <span style="font-weight: bold">{</span>
+        <span style="color: #008000; text-decoration-color: #008000">'gender'</span>: <span style="color: #008000; text-decoration-color: #008000">'Male'</span>,
+        <span style="color: #008000; text-decoration-color: #008000">'age'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">49</span>,
+        <span style="color: #008000; text-decoration-color: #008000">'symptoms'</span>: <span style="font-weight: bold">[</span>
+            <span style="font-weight: bold">{</span><span style="color: #008000; text-decoration-color: #008000">'symptom'</span>: <span style="color: #008000; text-decoration-color: #008000">'macular rash'</span>, <span style="color: #008000; text-decoration-color: #008000">'affected area'</span>: <span style="color: #008000; text-decoration-color: #008000">'head'</span><span style="font-weight: bold">}</span>,
+            <span style="font-weight: bold">{</span><span style="color: #008000; text-decoration-color: #008000">'symptom'</span>: <span style="color: #008000; text-decoration-color: #008000">'itchy, flaky, slightly scaly'</span>, <span style="color: #008000; text-decoration-color: #008000">'affected area'</span>: <span style="color: #008000; text-decoration-color: #008000">'neck'</span><span style="font-weight: bold">}</span>
+        <span style="font-weight: bold">]</span>,
+        <span style="color: #008000; text-decoration-color: #008000">'current_meds'</span>: <span style="font-weight: bold">[{</span><span style="color: #008000; text-decoration-color: #008000">'medication'</span>: <span style="color: #008000; text-decoration-color: #008000">'OTC steroid cream'</span>, <span style="color: #008000; text-decoration-color: #008000">'response'</span>: <span style="color: #008000; text-decoration-color: #008000">'Moderate'</span><span style="font-weight: bold">}]</span>
+    <span style="font-weight: bold">}</span>
+<span style="font-weight: bold">}</span>
 </pre>
 </div>
 </div>
@@ -1148,63 +1443,23 @@ JSON Output:
 <div class="cell border-box-sizing text_cell rendered">
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>As we can see, the <code>explanation</code> field didn't meet the quality criteria (length between 200 and 280 characters). However, because of the the <code>noop</code> action specified in the <code>RAIL</code> spec, the <code>Guard</code> object returned the output of the LLM API call as is.</p>
-<p>Next, we change the <code>RAIL</code> spec to reask the LLM for a correct <code>explanation</code> if its length is incorrect. We do this by creating a new <code>RAIL</code> spec and creating a new <code>Guard</code> object.</p>
+<p>We can see that our output was structured correctly, and that the values of the <code>affected_area</code> field were one of the valid choices.</p>
+<h2 id="inspecting-logs-to-peek-under-the-hood">Inspecting logs to peek under the hood</h2>
+<p>Guardrails logs all of the steps it takes to enforce the <code>RAIL</code> spec. We inspect these logs below to see all the steps Guardrails took to enforce the <code>RAIL</code> spec.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="inspecting-step-1-getting-llm-output">Inspecting Step 1: Getting LLM output</h3>
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 
-<div class="language-python highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="kn">import</span> <span class="nn">tempfile</span>
-</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
-</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="n">rail_spec</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
-</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="s2">&lt;rail version=&quot;0.1&quot;&gt;</span>
-</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>
-</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="s2">&lt;output&gt;</span>
-</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="s2">    &lt;object name=&quot;bank_run&quot; format=&quot;length: 2&quot;&gt;</span>
-</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="s2">        &lt;string</span>
-</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="s2">            name=&quot;explanation&quot;</span>
-</span><span id="__span-6-10"><a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="s2">            description=&quot;A paragraph about what a bank run is.&quot;</span>
-</span><span id="__span-6-11"><a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="s2">            format=&quot;length: 200 240&quot;</span>
-</span><span id="__span-6-12"><a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a><span class="s2">            on-fail-length=&quot;reask&quot;</span>
-</span><span id="__span-6-13"><a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a><span class="s2">        /&gt;</span>
-</span><span id="__span-6-14"><a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a><span class="s2">        &lt;url</span>
-</span><span id="__span-6-15"><a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a><span class="s2">            name=&quot;follow_up_url&quot;</span>
-</span><span id="__span-6-16"><a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a><span class="s2">            description=&quot;A web URL where I can read more about bank runs.&quot;</span>
-</span><span id="__span-6-17"><a id="__codelineno-6-17" name="__codelineno-6-17" href="#__codelineno-6-17"></a><span class="s2">            required=&quot;true&quot;</span>
-</span><span id="__span-6-18"><a id="__codelineno-6-18" name="__codelineno-6-18" href="#__codelineno-6-18"></a><span class="s2">            format=&quot;valid-url&quot;</span>
-</span><span id="__span-6-19"><a id="__codelineno-6-19" name="__codelineno-6-19" href="#__codelineno-6-19"></a><span class="s2">            on-fail-valid-url=&quot;filter&quot;</span>
-</span><span id="__span-6-20"><a id="__codelineno-6-20" name="__codelineno-6-20" href="#__codelineno-6-20"></a><span class="s2">        /&gt;</span>
-</span><span id="__span-6-21"><a id="__codelineno-6-21" name="__codelineno-6-21" href="#__codelineno-6-21"></a><span class="s2">    &lt;/object&gt;</span>
-</span><span id="__span-6-22"><a id="__codelineno-6-22" name="__codelineno-6-22" href="#__codelineno-6-22"></a><span class="s2">&lt;/output&gt;</span>
-</span><span id="__span-6-23"><a id="__codelineno-6-23" name="__codelineno-6-23" href="#__codelineno-6-23"></a>
-</span><span id="__span-6-24"><a id="__codelineno-6-24" name="__codelineno-6-24" href="#__codelineno-6-24"></a><span class="s2">&lt;prompt&gt;</span>
-</span><span id="__span-6-25"><a id="__codelineno-6-25" name="__codelineno-6-25" href="#__codelineno-6-25"></a><span class="s2">Explain what a bank run is in a tweet.</span>
-</span><span id="__span-6-26"><a id="__codelineno-6-26" name="__codelineno-6-26" href="#__codelineno-6-26"></a>
-</span><span id="__span-6-27"><a id="__codelineno-6-27" name="__codelineno-6-27" href="#__codelineno-6-27"></a><span class="s2">@xml_prefix_prompt</span>
-</span><span id="__span-6-28"><a id="__codelineno-6-28" name="__codelineno-6-28" href="#__codelineno-6-28"></a>
-</span><span id="__span-6-29"><a id="__codelineno-6-29" name="__codelineno-6-29" href="#__codelineno-6-29"></a><span class="si">{output_schema}</span>
-</span><span id="__span-6-30"><a id="__codelineno-6-30" name="__codelineno-6-30" href="#__codelineno-6-30"></a>
-</span><span id="__span-6-31"><a id="__codelineno-6-31" name="__codelineno-6-31" href="#__codelineno-6-31"></a><span class="s2">@json_suffix_prompt_v2_wo_none</span>
-</span><span id="__span-6-32"><a id="__codelineno-6-32" name="__codelineno-6-32" href="#__codelineno-6-32"></a><span class="s2">&lt;/prompt&gt;</span>
-</span><span id="__span-6-33"><a id="__codelineno-6-33" name="__codelineno-6-33" href="#__codelineno-6-33"></a><span class="s2">&lt;/rail&gt;</span>
-</span><span id="__span-6-34"><a id="__codelineno-6-34" name="__codelineno-6-34" href="#__codelineno-6-34"></a><span class="s2">&quot;&quot;&quot;</span>
-</span><span id="__span-6-35"><a id="__codelineno-6-35" name="__codelineno-6-35" href="#__codelineno-6-35"></a>
-</span><span id="__span-6-36"><a id="__codelineno-6-36" name="__codelineno-6-36" href="#__codelineno-6-36"></a><span class="k">with</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">NamedTemporaryFile</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="n">suffix</span><span class="o">=</span><span class="s2">&quot;.rail&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-</span><span id="__span-6-37"><a id="__codelineno-6-37" name="__codelineno-6-37" href="#__codelineno-6-37"></a>    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">rail_spec</span><span class="p">)</span>
-</span><span id="__span-6-38"><a id="__codelineno-6-38" name="__codelineno-6-38" href="#__codelineno-6-38"></a>    <span class="n">f</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
-</span><span id="__span-6-39"><a id="__codelineno-6-39" name="__codelineno-6-39" href="#__codelineno-6-39"></a>    <span class="n">guard_with_reask</span> <span class="o">=</span> <span class="n">gd</span><span class="o">.</span><span class="n">Guard</span><span class="o">.</span><span class="n">from_rail</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
-</span><span id="__span-6-40"><a id="__codelineno-6-40" name="__codelineno-6-40" href="#__codelineno-6-40"></a>
-</span><span id="__span-6-41"><a id="__codelineno-6-41" name="__codelineno-6-41" href="#__codelineno-6-41"></a><span class="n">raw_llm_output</span><span class="p">,</span> <span class="n">validated_output</span> <span class="o">=</span> <span class="n">guard_with_reask</span><span class="p">(</span>
-</span><span id="__span-6-42"><a id="__codelineno-6-42" name="__codelineno-6-42" href="#__codelineno-6-42"></a>    <span class="n">openai</span><span class="o">.</span><span class="n">Completion</span><span class="o">.</span><span class="n">create</span><span class="p">,</span>
-</span><span id="__span-6-43"><a id="__codelineno-6-43" name="__codelineno-6-43" href="#__codelineno-6-43"></a>    <span class="n">engine</span><span class="o">=</span><span class="s2">&quot;text-davinci-003&quot;</span><span class="p">,</span>
-</span><span id="__span-6-44"><a id="__codelineno-6-44" name="__codelineno-6-44" href="#__codelineno-6-44"></a>    <span class="n">max_tokens</span><span class="o">=</span><span class="mi">1024</span><span class="p">,</span>
-</span><span id="__span-6-45"><a id="__codelineno-6-45" name="__codelineno-6-45" href="#__codelineno-6-45"></a>    <span class="n">temperature</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span>
-</span><span id="__span-6-46"><a id="__codelineno-6-46" name="__codelineno-6-46" href="#__codelineno-6-46"></a><span class="p">)</span>
-</span><span id="__span-6-47"><a id="__codelineno-6-47" name="__codelineno-6-47" href="#__codelineno-6-47"></a>
-</span><span id="__span-6-48"><a id="__codelineno-6-48" name="__codelineno-6-48" href="#__codelineno-6-48"></a><span class="c1"># Print the validated output from the LLM</span>
-</span><span id="__span-6-49"><a id="__codelineno-6-49" name="__codelineno-6-49" href="#__codelineno-6-49"></a><span class="nb">print</span><span class="p">(</span><span class="n">validated_output</span><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="nb">print</span><span class="p">(</span><span class="n">guard</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">most_recent_call</span><span class="o">.</span><span class="n">history</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">rich_group</span><span class="p">)</span>
 </span></code></pre></div>
 
 </div>
@@ -1212,24 +1467,128 @@ JSON Output:
 <div class="output">
 <div class="output_area">
 <div class="output_html rendered_html output_subarea ">
-<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace"><span style="font-weight: bold">{</span>
-    <span style="color: #008000; text-decoration-color: #008000">'bank_run'</span>: <span style="font-weight: bold">{</span>
-        <span style="color: #008000; text-decoration-color: #008000">'explanation'</span>: <span style="color: #008000; text-decoration-color: #008000">'A bank run is when a large number of people withdraw their deposits from a bank due to </span>
-<span style="color: #008000; text-decoration-color: #008000">concerns about its solvency. This can cause a financial crisis if the bank is unable to meet the demand for </span>
-<span style="color: #008000; text-decoration-color: #008000">withdrawals.'</span>,
-        <span style="color: #008000; text-decoration-color: #008000">'follow_up_url'</span>: <span style="color: #008000; text-decoration-color: #008000">'https://www.investopedia.com/terms/b/bankrun.asp'</span>
-    <span style="font-weight: bold">}</span>
-<span style="font-weight: bold">}</span>
+<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace"><span style="background-color: #f0f8ff">╭──────────────────────────────────────────────────── Prompt ─────────────────────────────────────────────────────╮</span>
+<span style="background-color: #f0f8ff">│                                                                                                                 │</span>
+<span style="background-color: #f0f8ff">│                                                                                                                 │</span>
+<span style="background-color: #f0f8ff">│ Given the following doctor's notes about a patient, please extract a dictionary that contains the patient's     │</span>
+<span style="background-color: #f0f8ff">│ information.                                                                                                    │</span>
+<span style="background-color: #f0f8ff">│                                                                                                                 │</span>
+<span style="background-color: #f0f8ff">│ 49 y/o Male with chronic macular rash to face &amp; hair, worse in beard, eyebrows &amp; nares.                         │</span>
+<span style="background-color: #f0f8ff">│ Itchy, flaky, slightly scaly. Moderate response to OTC steroid cream                                            │</span>
+<span style="background-color: #f0f8ff">│                                                                                                                 │</span>
+<span style="background-color: #f0f8ff">│                                                                                                                 │</span>
+<span style="background-color: #f0f8ff">│ Given below is XML that describes the information to extract from this document and the tags to extract it      │</span>
+<span style="background-color: #f0f8ff">│ into.                                                                                                           │</span>
+<span style="background-color: #f0f8ff">│                                                                                                                 │</span>
+<span style="background-color: #f0f8ff">│ &lt;output&gt;                                                                                                        │</span>
+<span style="background-color: #f0f8ff">│     &lt;object name="patient_info"&gt;                                                                                │</span>
+<span style="background-color: #f0f8ff">│         &lt;string name="gender" description="Patient's gender"/&gt;                                                  │</span>
+<span style="background-color: #f0f8ff">│         &lt;integer name="age" format="valid-range: min=0 max=100"/&gt;                                               │</span>
+<span style="background-color: #f0f8ff">│         &lt;list name="symptoms" description="Symptoms that the patient is currently experiencing. Each symptom    │</span>
+<span style="background-color: #f0f8ff">│ should be classified into a separate item in the list."&gt;                                                        │</span>
+<span style="background-color: #f0f8ff">│             &lt;object&gt;                                                                                            │</span>
+<span style="background-color: #f0f8ff">│                 &lt;string name="symptom" description="Symptom that a patient is experiencing"/&gt;                   │</span>
+<span style="background-color: #f0f8ff">│                 &lt;string name="affected area" description="What part of the body the symptom is affecting"       │</span>
+<span style="background-color: #f0f8ff">│ format="valid-choices: choices=['head', 'neck', 'chest']"/&gt;                                                     │</span>
+<span style="background-color: #f0f8ff">│             &lt;/object&gt;                                                                                           │</span>
+<span style="background-color: #f0f8ff">│         &lt;/list&gt;                                                                                                 │</span>
+<span style="background-color: #f0f8ff">│         &lt;list name="current_meds" description="Medications the patient is currently taking and their response"&gt; │</span>
+<span style="background-color: #f0f8ff">│             &lt;object&gt;                                                                                            │</span>
+<span style="background-color: #f0f8ff">│                 &lt;string name="medication" description="Name of the medication the patient is taking"/&gt;          │</span>
+<span style="background-color: #f0f8ff">│                 &lt;string name="response" description="How the patient is responding to the medication"/&gt;         │</span>
+<span style="background-color: #f0f8ff">│             &lt;/object&gt;                                                                                           │</span>
+<span style="background-color: #f0f8ff">│         &lt;/list&gt;                                                                                                 │</span>
+<span style="background-color: #f0f8ff">│     &lt;/object&gt;                                                                                                   │</span>
+<span style="background-color: #f0f8ff">│ &lt;/output&gt;                                                                                                       │</span>
+<span style="background-color: #f0f8ff">│                                                                                                                 │</span>
+<span style="background-color: #f0f8ff">│                                                                                                                 │</span>
+<span style="background-color: #f0f8ff">│ ONLY return a valid JSON object (no other text is necessary), where the key of the field in JSON is the `name`  │</span>
+<span style="background-color: #f0f8ff">│ attribute of the corresponding XML, and the value is of the type specified by the corresponding XML's tag. The  │</span>
+<span style="background-color: #f0f8ff">│ JSON MUST conform to the XML format, including any types and format requests e.g. requests for lists, objects   │</span>
+<span style="background-color: #f0f8ff">│ and specific types. Be correct and concise.                                                                     │</span>
+<span style="background-color: #f0f8ff">│                                                                                                                 │</span>
+<span style="background-color: #f0f8ff">│ Here are examples of simple (XML, JSON) pairs that show the expected behavior:                                  │</span>
+<span style="background-color: #f0f8ff">│ - `&lt;string name='foo' format='two-words lower-case' /&gt;` =&gt; `{'foo': 'example one'}`                             │</span>
+<span style="background-color: #f0f8ff">│ - `&lt;list name='bar'&gt;&lt;string format='upper-case' /&gt;&lt;/list&gt;` =&gt; `{"bar": ['STRING ONE', 'STRING TWO', etc.]}`     │</span>
+<span style="background-color: #f0f8ff">│ - `&lt;object name='baz'&gt;&lt;string name="foo" format="capitalize two-words" /&gt;&lt;integer name="index"                  │</span>
+<span style="background-color: #f0f8ff">│ format="1-indexed" /&gt;&lt;/object&gt;` =&gt; `{'baz': {'foo': 'Some String', 'index': 1}}`                                │</span>
+<span style="background-color: #f0f8ff">│                                                                                                                 │</span>
+<span style="background-color: #f0f8ff">│                                                                                                                 │</span>
+<span style="background-color: #f0f8ff">╰─────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯</span>
+<span style="background-color: #f5f5dc">╭──────────────────────────────────────────────── Raw LLM Output ─────────────────────────────────────────────────╮</span>
+<span style="background-color: #f5f5dc">│ {                                                                                                               │</span>
+<span style="background-color: #f5f5dc">│     "patient_info": {                                                                                           │</span>
+<span style="background-color: #f5f5dc">│         "gender": "Male",                                                                                       │</span>
+<span style="background-color: #f5f5dc">│         "age": 49,                                                                                              │</span>
+<span style="background-color: #f5f5dc">│         "symptoms": [                                                                                           │</span>
+<span style="background-color: #f5f5dc">│             {                                                                                                   │</span>
+<span style="background-color: #f5f5dc">│                 "symptom": "macular rash",                                                                      │</span>
+<span style="background-color: #f5f5dc">│                 "affected area": "face &amp; hair"                                                                  │</span>
+<span style="background-color: #f5f5dc">│             },                                                                                                  │</span>
+<span style="background-color: #f5f5dc">│             {                                                                                                   │</span>
+<span style="background-color: #f5f5dc">│                 "symptom": "itchy, flaky, slightly scaly",                                                      │</span>
+<span style="background-color: #f5f5dc">│                 "affected area": "beard, eyebrows &amp; nares"                                                      │</span>
+<span style="background-color: #f5f5dc">│             }                                                                                                   │</span>
+<span style="background-color: #f5f5dc">│         ],                                                                                                      │</span>
+<span style="background-color: #f5f5dc">│         "current_meds": [                                                                                       │</span>
+<span style="background-color: #f5f5dc">│             {                                                                                                   │</span>
+<span style="background-color: #f5f5dc">│                 "medication": "OTC steroid cream",                                                              │</span>
+<span style="background-color: #f5f5dc">│                 "response": "Moderate"                                                                          │</span>
+<span style="background-color: #f5f5dc">│             }                                                                                                   │</span>
+<span style="background-color: #f5f5dc">│         ]                                                                                                       │</span>
+<span style="background-color: #f5f5dc">│     }                                                                                                           │</span>
+<span style="background-color: #f5f5dc">│ }                                                                                                               │</span>
+<span style="background-color: #f5f5dc">╰─────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯</span>
+<span style="background-color: #f0fff0">╭─────────────────────────────────────────────── Validated Output ────────────────────────────────────────────────╮</span>
+<span style="background-color: #f0fff0">│ {                                                                                                               │</span>
+<span style="background-color: #f0fff0">│     'patient_info': {                                                                                           │</span>
+<span style="background-color: #f0fff0">│         'gender': 'Male',                                                                                       │</span>
+<span style="background-color: #f0fff0">│         'age': 49,                                                                                              │</span>
+<span style="background-color: #f0fff0">│         'symptoms': [                                                                                           │</span>
+<span style="background-color: #f0fff0">│             {                                                                                                   │</span>
+<span style="background-color: #f0fff0">│                 'symptom': 'macular rash',                                                                      │</span>
+<span style="background-color: #f0fff0">│                 'affected area': ReAsk(                                                                         │</span>
+<span style="background-color: #f0fff0">│                     incorrect_value='face &amp; hair',                                                              │</span>
+<span style="background-color: #f0fff0">│                     error_message="Value face &amp; hair is not in choices ['head', 'neck', 'chest'].",             │</span>
+<span style="background-color: #f0fff0">│                     fix_value=None,                                                                             │</span>
+<span style="background-color: #f0fff0">│                     path=['patient_info', 'symptoms', 0, 'affected area']                                       │</span>
+<span style="background-color: #f0fff0">│                 )                                                                                               │</span>
+<span style="background-color: #f0fff0">│             },                                                                                                  │</span>
+<span style="background-color: #f0fff0">│             {                                                                                                   │</span>
+<span style="background-color: #f0fff0">│                 'symptom': 'itchy, flaky, slightly scaly',                                                      │</span>
+<span style="background-color: #f0fff0">│                 'affected area': ReAsk(                                                                         │</span>
+<span style="background-color: #f0fff0">│                     incorrect_value='beard, eyebrows &amp; nares',                                                  │</span>
+<span style="background-color: #f0fff0">│                     error_message="Value beard, eyebrows &amp; nares is not in choices ['head', 'neck', 'chest'].", │</span>
+<span style="background-color: #f0fff0">│                     fix_value=None,                                                                             │</span>
+<span style="background-color: #f0fff0">│                     path=['patient_info', 'symptoms', 1, 'affected area']                                       │</span>
+<span style="background-color: #f0fff0">│                 )                                                                                               │</span>
+<span style="background-color: #f0fff0">│             }                                                                                                   │</span>
+<span style="background-color: #f0fff0">│         ],                                                                                                      │</span>
+<span style="background-color: #f0fff0">│         'current_meds': [                                                                                       │</span>
+<span style="background-color: #f0fff0">│             {'medication': 'OTC steroid cream', 'response': 'Moderate'}                                         │</span>
+<span style="background-color: #f0fff0">│         ]                                                                                                       │</span>
+<span style="background-color: #f0fff0">│     }                                                                                                           │</span>
+<span style="background-color: #f0fff0">│ }                                                                                                               │</span>
+<span style="background-color: #f0fff0">╰─────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯</span>
 </pre>
 </div>
 </div>
 </div>
 </div>
 </div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>We can see that the output returned by the LLM contained invalid values for the <code>affected_area</code> field.</p>
+<p>On validation, Guardrails created <code>ReAsk</code> objects that contains all of the information needed to re-prompt the LLM to correct its output.</p>
+<h3 id="inspecting-step-2-re-prompting-llm">Inspecting Step 2: Re-prompting LLM</h3>
+</div>
+</div>
+</div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 
-<div class="language-python highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Len of explanation: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">validated_output</span><span class="p">[</span><span class="s2">&quot;bank_run&quot;</span><span class="p">][</span><span class="s2">&quot;explanation&quot;</span><span class="p">])</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="nb">print</span><span class="p">(</span><span class="n">guard</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">most_recent_call</span><span class="o">.</span><span class="n">history</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">rich_group</span><span class="p">)</span>
 </span></code></pre></div>
 
 </div>
@@ -1237,7 +1596,322 @@ JSON Output:
 <div class="output">
 <div class="output_area">
 <div class="output_html rendered_html output_subarea ">
-<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">Len of explanation: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">207</span>
+<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace"><span style="background-color: #f0f8ff">╭──────────────────────────────────────────────────── Prompt ─────────────────────────────────────────────────────╮</span>
+<span style="background-color: #f0f8ff">│                                                                                                                 │</span>
+<span style="background-color: #f0f8ff">│ I was given the following JSON response, which had problems due to incorrect values.                            │</span>
+<span style="background-color: #f0f8ff">│                                                                                                                 │</span>
+<span style="background-color: #f0f8ff">│ {                                                                                                               │</span>
+<span style="background-color: #f0f8ff">│   "patient_info": {                                                                                             │</span>
+<span style="background-color: #f0f8ff">│     "symptoms": [                                                                                               │</span>
+<span style="background-color: #f0f8ff">│       {                                                                                                         │</span>
+<span style="background-color: #f0f8ff">│         "affected area": {                                                                                      │</span>
+<span style="background-color: #f0f8ff">│           "incorrect_value": "face &amp; hair",                                                                     │</span>
+<span style="background-color: #f0f8ff">│           "error_message": "Value face &amp; hair is not in choices ['head', 'neck', 'chest']."                     │</span>
+<span style="background-color: #f0f8ff">│         }                                                                                                       │</span>
+<span style="background-color: #f0f8ff">│       },                                                                                                        │</span>
+<span style="background-color: #f0f8ff">│       {                                                                                                         │</span>
+<span style="background-color: #f0f8ff">│         "affected area": {                                                                                      │</span>
+<span style="background-color: #f0f8ff">│           "incorrect_value": "beard, eyebrows &amp; nares",                                                         │</span>
+<span style="background-color: #f0f8ff">│           "error_message": "Value beard, eyebrows &amp; nares is not in choices ['head', 'neck', 'chest']."         │</span>
+<span style="background-color: #f0f8ff">│         }                                                                                                       │</span>
+<span style="background-color: #f0f8ff">│       }                                                                                                         │</span>
+<span style="background-color: #f0f8ff">│     ]                                                                                                           │</span>
+<span style="background-color: #f0f8ff">│   }                                                                                                             │</span>
+<span style="background-color: #f0f8ff">│ }                                                                                                               │</span>
+<span style="background-color: #f0f8ff">│                                                                                                                 │</span>
+<span style="background-color: #f0f8ff">│ Help me correct the incorrect values based on the given error messages.                                         │</span>
+<span style="background-color: #f0f8ff">│                                                                                                                 │</span>
+<span style="background-color: #f0f8ff">│ Given below is XML that describes the information to extract from this document and the tags to extract it      │</span>
+<span style="background-color: #f0f8ff">│ into.                                                                                                           │</span>
+<span style="background-color: #f0f8ff">│                                                                                                                 │</span>
+<span style="background-color: #f0f8ff">│ &lt;output&gt;                                                                                                        │</span>
+<span style="background-color: #f0f8ff">│     &lt;object name="patient_info"&gt;                                                                                │</span>
+<span style="background-color: #f0f8ff">│         &lt;list name="symptoms" description="Symptoms that the patient is currently experiencing. Each symptom    │</span>
+<span style="background-color: #f0f8ff">│ should be classified into a separate item in the list."&gt;                                                        │</span>
+<span style="background-color: #f0f8ff">│             &lt;object&gt;                                                                                            │</span>
+<span style="background-color: #f0f8ff">│                 &lt;string name="affected area" description="What part of the body the symptom is affecting"       │</span>
+<span style="background-color: #f0f8ff">│ format="valid-choices: choices=['head', 'neck', 'chest']"/&gt;                                                     │</span>
+<span style="background-color: #f0f8ff">│             &lt;/object&gt;                                                                                           │</span>
+<span style="background-color: #f0f8ff">│         &lt;/list&gt;                                                                                                 │</span>
+<span style="background-color: #f0f8ff">│     &lt;/object&gt;                                                                                                   │</span>
+<span style="background-color: #f0f8ff">│ &lt;/output&gt;                                                                                                       │</span>
+<span style="background-color: #f0f8ff">│                                                                                                                 │</span>
+<span style="background-color: #f0f8ff">│                                                                                                                 │</span>
+<span style="background-color: #f0f8ff">│ ONLY return a valid JSON object (no other text is necessary), where the key of the field in JSON is the `name`  │</span>
+<span style="background-color: #f0f8ff">│ attribute of the corresponding XML, and the value is of the type specified by the corresponding XML's tag. The  │</span>
+<span style="background-color: #f0f8ff">│ JSON MUST conform to the XML format, including any types and format requests e.g. requests for lists, objects   │</span>
+<span style="background-color: #f0f8ff">│ and specific types. Be correct and concise. If you are unsure anywhere, enter `None`.                           │</span>
+<span style="background-color: #f0f8ff">│                                                                                                                 │</span>
+<span style="background-color: #f0f8ff">│ Here are examples of simple (XML, JSON) pairs that show the expected behavior:                                  │</span>
+<span style="background-color: #f0f8ff">│ - `&lt;string name='foo' format='two-words lower-case' /&gt;` =&gt; `{{'foo': 'example one'}}`                           │</span>
+<span style="background-color: #f0f8ff">│ - `&lt;list name='bar'&gt;&lt;string format='upper-case' /&gt;&lt;/list&gt;` =&gt; `{{"bar": ['STRING ONE', 'STRING TWO', etc.]}}`   │</span>
+<span style="background-color: #f0f8ff">│ - `&lt;object name='baz'&gt;&lt;string name="foo" format="capitalize two-words" /&gt;&lt;integer name="index"                  │</span>
+<span style="background-color: #f0f8ff">│ format="1-indexed" /&gt;&lt;/object&gt;` =&gt; `{{'baz': {{'foo': 'Some String', 'index': 1}}}}`                            │</span>
+<span style="background-color: #f0f8ff">│                                                                                                                 │</span>
+<span style="background-color: #f0f8ff">╰─────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯</span>
+<span style="background-color: #f5f5dc">╭──────────────────────────────────────────────── Raw LLM Output ─────────────────────────────────────────────────╮</span>
+<span style="background-color: #f5f5dc">│ {                                                                                                               │</span>
+<span style="background-color: #f5f5dc">│   "patient_info": {                                                                                             │</span>
+<span style="background-color: #f5f5dc">│     "symptoms": [                                                                                               │</span>
+<span style="background-color: #f5f5dc">│       {                                                                                                         │</span>
+<span style="background-color: #f5f5dc">│         "affected area": "head"                                                                                 │</span>
+<span style="background-color: #f5f5dc">│       },                                                                                                        │</span>
+<span style="background-color: #f5f5dc">│       {                                                                                                         │</span>
+<span style="background-color: #f5f5dc">│         "affected area": "neck"                                                                                 │</span>
+<span style="background-color: #f5f5dc">│       }                                                                                                         │</span>
+<span style="background-color: #f5f5dc">│     ]                                                                                                           │</span>
+<span style="background-color: #f5f5dc">│   }                                                                                                             │</span>
+<span style="background-color: #f5f5dc">│ }                                                                                                               │</span>
+<span style="background-color: #f5f5dc">╰─────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯</span>
+<span style="background-color: #f0fff0">╭─────────────────────────────────────────────── Validated Output ────────────────────────────────────────────────╮</span>
+<span style="background-color: #f0fff0">│ {                                                                                                               │</span>
+<span style="background-color: #f0fff0">│     'patient_info': {                                                                                           │</span>
+<span style="background-color: #f0fff0">│         'gender': 'Male',                                                                                       │</span>
+<span style="background-color: #f0fff0">│         'age': 49,                                                                                              │</span>
+<span style="background-color: #f0fff0">│         'symptoms': [                                                                                           │</span>
+<span style="background-color: #f0fff0">│             {'symptom': 'macular rash', 'affected area': 'head'},                                               │</span>
+<span style="background-color: #f0fff0">│             {                                                                                                   │</span>
+<span style="background-color: #f0fff0">│                 'symptom': 'itchy, flaky, slightly scaly',                                                      │</span>
+<span style="background-color: #f0fff0">│                 'affected area': 'neck'                                                                         │</span>
+<span style="background-color: #f0fff0">│             }                                                                                                   │</span>
+<span style="background-color: #f0fff0">│         ],                                                                                                      │</span>
+<span style="background-color: #f0fff0">│         'current_meds': [                                                                                       │</span>
+<span style="background-color: #f0fff0">│             {'medication': 'OTC steroid cream', 'response': 'Moderate'}                                         │</span>
+<span style="background-color: #f0fff0">│         ]                                                                                                       │</span>
+<span style="background-color: #f0fff0">│     }                                                                                                           │</span>
+<span style="background-color: #f0fff0">│ }                                                                                                               │</span>
+<span style="background-color: #f0fff0">╰─────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯</span>
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>The prompt to the LLM was fully constructed by Guardrails. Additionally, the prompt only contained the previously invalid values for the <code>affected_area</code> field.</p>
+<p>On receiving the corrected LLM output, Guardrails merges it with the previously invalid values to create a valid output. It then reruns the validation step to ensure that the output is valid, and returns the output to the user.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="bonus-see-the-full-history-of-calls">Bonus: See the full history of calls</h3>
+<p>Guardrails also logs the full history of calls made to the LLM. This can be useful for debugging purposes.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="language-python highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="nb">print</span><span class="p">(</span><span class="n">guard</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">most_recent_call</span><span class="o">.</span><span class="n">tree</span><span class="p">)</span>
+</span></code></pre></div>
+
+</div>
+<div class="output_wrapper">
+<div class="output">
+<div class="output_area">
+<div class="output_html rendered_html output_subarea ">
+<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">Logs
+├── ╭────────────────────────────────────────────────── Step 0 ───────────────────────────────────────────────────╮
+│   │ <span style="background-color: #f0f8ff">╭──────────────────────────────────────────────── Prompt ─────────────────────────────────────────────────╮</span> │
+│   │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+│   │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+│   │ <span style="background-color: #f0f8ff">│ Given the following doctor's notes about a patient, please extract a dictionary that contains the       │</span> │
+│   │ <span style="background-color: #f0f8ff">│ patient's information.                                                                                  │</span> │
+│   │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+│   │ <span style="background-color: #f0f8ff">│ 49 y/o Male with chronic macular rash to face &amp; hair, worse in beard, eyebrows &amp; nares.                 │</span> │
+│   │ <span style="background-color: #f0f8ff">│ Itchy, flaky, slightly scaly. Moderate response to OTC steroid cream                                    │</span> │
+│   │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+│   │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+│   │ <span style="background-color: #f0f8ff">│ Given below is XML that describes the information to extract from this document and the tags to extract │</span> │
+│   │ <span style="background-color: #f0f8ff">│ it into.                                                                                                │</span> │
+│   │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+│   │ <span style="background-color: #f0f8ff">│ &lt;output&gt;                                                                                                │</span> │
+│   │ <span style="background-color: #f0f8ff">│     &lt;object name="patient_info"&gt;                                                                        │</span> │
+│   │ <span style="background-color: #f0f8ff">│         &lt;string name="gender" description="Patient's gender"/&gt;                                          │</span> │
+│   │ <span style="background-color: #f0f8ff">│         &lt;integer name="age" format="valid-range: min=0 max=100"/&gt;                                       │</span> │
+│   │ <span style="background-color: #f0f8ff">│         &lt;list name="symptoms" description="Symptoms that the patient is currently experiencing. Each    │</span> │
+│   │ <span style="background-color: #f0f8ff">│ symptom should be classified into a separate item in the list."&gt;                                        │</span> │
+│   │ <span style="background-color: #f0f8ff">│             &lt;object&gt;                                                                                    │</span> │
+│   │ <span style="background-color: #f0f8ff">│                 &lt;string name="symptom" description="Symptom that a patient is experiencing"/&gt;           │</span> │
+│   │ <span style="background-color: #f0f8ff">│                 &lt;string name="affected area" description="What part of the body the symptom is          │</span> │
+│   │ <span style="background-color: #f0f8ff">│ affecting" format="valid-choices: choices=['head', 'neck', 'chest']"/&gt;                                  │</span> │
+│   │ <span style="background-color: #f0f8ff">│             &lt;/object&gt;                                                                                   │</span> │
+│   │ <span style="background-color: #f0f8ff">│         &lt;/list&gt;                                                                                         │</span> │
+│   │ <span style="background-color: #f0f8ff">│         &lt;list name="current_meds" description="Medications the patient is currently taking and their    │</span> │
+│   │ <span style="background-color: #f0f8ff">│ response"&gt;                                                                                              │</span> │
+│   │ <span style="background-color: #f0f8ff">│             &lt;object&gt;                                                                                    │</span> │
+│   │ <span style="background-color: #f0f8ff">│                 &lt;string name="medication" description="Name of the medication the patient is taking"/&gt;  │</span> │
+│   │ <span style="background-color: #f0f8ff">│                 &lt;string name="response" description="How the patient is responding to the medication"/&gt; │</span> │
+│   │ <span style="background-color: #f0f8ff">│             &lt;/object&gt;                                                                                   │</span> │
+│   │ <span style="background-color: #f0f8ff">│         &lt;/list&gt;                                                                                         │</span> │
+│   │ <span style="background-color: #f0f8ff">│     &lt;/object&gt;                                                                                           │</span> │
+│   │ <span style="background-color: #f0f8ff">│ &lt;/output&gt;                                                                                               │</span> │
+│   │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+│   │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+│   │ <span style="background-color: #f0f8ff">│ ONLY return a valid JSON object (no other text is necessary), where the key of the field in JSON is the │</span> │
+│   │ <span style="background-color: #f0f8ff">│ `name` attribute of the corresponding XML, and the value is of the type specified by the corresponding  │</span> │
+│   │ <span style="background-color: #f0f8ff">│ XML's tag. The JSON MUST conform to the XML format, including any types and format requests e.g.        │</span> │
+│   │ <span style="background-color: #f0f8ff">│ requests for lists, objects and specific types. Be correct and concise.                                 │</span> │
+│   │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+│   │ <span style="background-color: #f0f8ff">│ Here are examples of simple (XML, JSON) pairs that show the expected behavior:                          │</span> │
+│   │ <span style="background-color: #f0f8ff">│ - `&lt;string name='foo' format='two-words lower-case' /&gt;` =&gt; `{'foo': 'example one'}`                     │</span> │
+│   │ <span style="background-color: #f0f8ff">│ - `&lt;list name='bar'&gt;&lt;string format='upper-case' /&gt;&lt;/list&gt;` =&gt; `{"bar": ['STRING ONE', 'STRING TWO',     │</span> │
+│   │ <span style="background-color: #f0f8ff">│ etc.]}`                                                                                                 │</span> │
+│   │ <span style="background-color: #f0f8ff">│ - `&lt;object name='baz'&gt;&lt;string name="foo" format="capitalize two-words" /&gt;&lt;integer name="index"          │</span> │
+│   │ <span style="background-color: #f0f8ff">│ format="1-indexed" /&gt;&lt;/object&gt;` =&gt; `{'baz': {'foo': 'Some String', 'index': 1}}`                        │</span> │
+│   │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+│   │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+│   │ <span style="background-color: #f0f8ff">╰─────────────────────────────────────────────────────────────────────────────────────────────────────────╯</span> │
+│   │ <span style="background-color: #f5f5dc">╭──────────────────────────────────────────── Raw LLM Output ─────────────────────────────────────────────╮</span> │
+│   │ <span style="background-color: #f5f5dc">│ {                                                                                                       │</span> │
+│   │ <span style="background-color: #f5f5dc">│     "patient_info": {                                                                                   │</span> │
+│   │ <span style="background-color: #f5f5dc">│         "gender": "Male",                                                                               │</span> │
+│   │ <span style="background-color: #f5f5dc">│         "age": 49,                                                                                      │</span> │
+│   │ <span style="background-color: #f5f5dc">│         "symptoms": [                                                                                   │</span> │
+│   │ <span style="background-color: #f5f5dc">│             {                                                                                           │</span> │
+│   │ <span style="background-color: #f5f5dc">│                 "symptom": "macular rash",                                                              │</span> │
+│   │ <span style="background-color: #f5f5dc">│                 "affected area": "face &amp; hair"                                                          │</span> │
+│   │ <span style="background-color: #f5f5dc">│             },                                                                                          │</span> │
+│   │ <span style="background-color: #f5f5dc">│             {                                                                                           │</span> │
+│   │ <span style="background-color: #f5f5dc">│                 "symptom": "itchy, flaky, slightly scaly",                                              │</span> │
+│   │ <span style="background-color: #f5f5dc">│                 "affected area": "beard, eyebrows &amp; nares"                                              │</span> │
+│   │ <span style="background-color: #f5f5dc">│             }                                                                                           │</span> │
+│   │ <span style="background-color: #f5f5dc">│         ],                                                                                              │</span> │
+│   │ <span style="background-color: #f5f5dc">│         "current_meds": [                                                                               │</span> │
+│   │ <span style="background-color: #f5f5dc">│             {                                                                                           │</span> │
+│   │ <span style="background-color: #f5f5dc">│                 "medication": "OTC steroid cream",                                                      │</span> │
+│   │ <span style="background-color: #f5f5dc">│                 "response": "Moderate"                                                                  │</span> │
+│   │ <span style="background-color: #f5f5dc">│             }                                                                                           │</span> │
+│   │ <span style="background-color: #f5f5dc">│         ]                                                                                               │</span> │
+│   │ <span style="background-color: #f5f5dc">│     }                                                                                                   │</span> │
+│   │ <span style="background-color: #f5f5dc">│ }                                                                                                       │</span> │
+│   │ <span style="background-color: #f5f5dc">╰─────────────────────────────────────────────────────────────────────────────────────────────────────────╯</span> │
+│   │ <span style="background-color: #f0fff0">╭─────────────────────────────────────────── Validated Output ────────────────────────────────────────────╮</span> │
+│   │ <span style="background-color: #f0fff0">│ {                                                                                                       │</span> │
+│   │ <span style="background-color: #f0fff0">│     'patient_info': {                                                                                   │</span> │
+│   │ <span style="background-color: #f0fff0">│         'gender': 'Male',                                                                               │</span> │
+│   │ <span style="background-color: #f0fff0">│         'age': 49,                                                                                      │</span> │
+│   │ <span style="background-color: #f0fff0">│         'symptoms': [                                                                                   │</span> │
+│   │ <span style="background-color: #f0fff0">│             {                                                                                           │</span> │
+│   │ <span style="background-color: #f0fff0">│                 'symptom': 'macular rash',                                                              │</span> │
+│   │ <span style="background-color: #f0fff0">│                 'affected area': ReAsk(                                                                 │</span> │
+│   │ <span style="background-color: #f0fff0">│                     incorrect_value='face &amp; hair',                                                      │</span> │
+│   │ <span style="background-color: #f0fff0">│                     error_message="Value face &amp; hair is not in choices ['head', 'neck', 'chest'].",     │</span> │
+│   │ <span style="background-color: #f0fff0">│                     fix_value=None,                                                                     │</span> │
+│   │ <span style="background-color: #f0fff0">│                     path=['patient_info', 'symptoms', 0, 'affected area']                               │</span> │
+│   │ <span style="background-color: #f0fff0">│                 )                                                                                       │</span> │
+│   │ <span style="background-color: #f0fff0">│             },                                                                                          │</span> │
+│   │ <span style="background-color: #f0fff0">│             {                                                                                           │</span> │
+│   │ <span style="background-color: #f0fff0">│                 'symptom': 'itchy, flaky, slightly scaly',                                              │</span> │
+│   │ <span style="background-color: #f0fff0">│                 'affected area': ReAsk(                                                                 │</span> │
+│   │ <span style="background-color: #f0fff0">│                     incorrect_value='beard, eyebrows &amp; nares',                                          │</span> │
+│   │ <span style="background-color: #f0fff0">│                     error_message="Value beard, eyebrows &amp; nares is not in choices ['head', 'neck',     │</span> │
+│   │ <span style="background-color: #f0fff0">│ 'chest'].",                                                                                             │</span> │
+│   │ <span style="background-color: #f0fff0">│                     fix_value=None,                                                                     │</span> │
+│   │ <span style="background-color: #f0fff0">│                     path=['patient_info', 'symptoms', 1, 'affected area']                               │</span> │
+│   │ <span style="background-color: #f0fff0">│                 )                                                                                       │</span> │
+│   │ <span style="background-color: #f0fff0">│             }                                                                                           │</span> │
+│   │ <span style="background-color: #f0fff0">│         ],                                                                                              │</span> │
+│   │ <span style="background-color: #f0fff0">│         'current_meds': [                                                                               │</span> │
+│   │ <span style="background-color: #f0fff0">│             {'medication': 'OTC steroid cream', 'response': 'Moderate'}                                 │</span> │
+│   │ <span style="background-color: #f0fff0">│         ]                                                                                               │</span> │
+│   │ <span style="background-color: #f0fff0">│     }                                                                                                   │</span> │
+│   │ <span style="background-color: #f0fff0">│ }                                                                                                       │</span> │
+│   │ <span style="background-color: #f0fff0">╰─────────────────────────────────────────────────────────────────────────────────────────────────────────╯</span> │
+│   ╰─────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+└── ╭────────────────────────────────────────────────── Step 1 ───────────────────────────────────────────────────╮
+    │ <span style="background-color: #f0f8ff">╭──────────────────────────────────────────────── Prompt ─────────────────────────────────────────────────╮</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ I was given the following JSON response, which had problems due to incorrect values.                    │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ {                                                                                                       │</span> │
+    │ <span style="background-color: #f0f8ff">│   "patient_info": {                                                                                     │</span> │
+    │ <span style="background-color: #f0f8ff">│     "symptoms": [                                                                                       │</span> │
+    │ <span style="background-color: #f0f8ff">│       {                                                                                                 │</span> │
+    │ <span style="background-color: #f0f8ff">│         "affected area": {                                                                              │</span> │
+    │ <span style="background-color: #f0f8ff">│           "incorrect_value": "face &amp; hair",                                                             │</span> │
+    │ <span style="background-color: #f0f8ff">│           "error_message": "Value face &amp; hair is not in choices ['head', 'neck', 'chest']."             │</span> │
+    │ <span style="background-color: #f0f8ff">│         }                                                                                               │</span> │
+    │ <span style="background-color: #f0f8ff">│       },                                                                                                │</span> │
+    │ <span style="background-color: #f0f8ff">│       {                                                                                                 │</span> │
+    │ <span style="background-color: #f0f8ff">│         "affected area": {                                                                              │</span> │
+    │ <span style="background-color: #f0f8ff">│           "incorrect_value": "beard, eyebrows &amp; nares",                                                 │</span> │
+    │ <span style="background-color: #f0f8ff">│           "error_message": "Value beard, eyebrows &amp; nares is not in choices ['head', 'neck', 'chest']." │</span> │
+    │ <span style="background-color: #f0f8ff">│         }                                                                                               │</span> │
+    │ <span style="background-color: #f0f8ff">│       }                                                                                                 │</span> │
+    │ <span style="background-color: #f0f8ff">│     ]                                                                                                   │</span> │
+    │ <span style="background-color: #f0f8ff">│   }                                                                                                     │</span> │
+    │ <span style="background-color: #f0f8ff">│ }                                                                                                       │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ Help me correct the incorrect values based on the given error messages.                                 │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ Given below is XML that describes the information to extract from this document and the tags to extract │</span> │
+    │ <span style="background-color: #f0f8ff">│ it into.                                                                                                │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ &lt;output&gt;                                                                                                │</span> │
+    │ <span style="background-color: #f0f8ff">│     &lt;object name="patient_info"&gt;                                                                        │</span> │
+    │ <span style="background-color: #f0f8ff">│         &lt;list name="symptoms" description="Symptoms that the patient is currently experiencing. Each    │</span> │
+    │ <span style="background-color: #f0f8ff">│ symptom should be classified into a separate item in the list."&gt;                                        │</span> │
+    │ <span style="background-color: #f0f8ff">│             &lt;object&gt;                                                                                    │</span> │
+    │ <span style="background-color: #f0f8ff">│                 &lt;string name="affected area" description="What part of the body the symptom is          │</span> │
+    │ <span style="background-color: #f0f8ff">│ affecting" format="valid-choices: choices=['head', 'neck', 'chest']"/&gt;                                  │</span> │
+    │ <span style="background-color: #f0f8ff">│             &lt;/object&gt;                                                                                   │</span> │
+    │ <span style="background-color: #f0f8ff">│         &lt;/list&gt;                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│     &lt;/object&gt;                                                                                           │</span> │
+    │ <span style="background-color: #f0f8ff">│ &lt;/output&gt;                                                                                               │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ ONLY return a valid JSON object (no other text is necessary), where the key of the field in JSON is the │</span> │
+    │ <span style="background-color: #f0f8ff">│ `name` attribute of the corresponding XML, and the value is of the type specified by the corresponding  │</span> │
+    │ <span style="background-color: #f0f8ff">│ XML's tag. The JSON MUST conform to the XML format, including any types and format requests e.g.        │</span> │
+    │ <span style="background-color: #f0f8ff">│ requests for lists, objects and specific types. Be correct and concise. If you are unsure anywhere,     │</span> │
+    │ <span style="background-color: #f0f8ff">│ enter `None`.                                                                                           │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ Here are examples of simple (XML, JSON) pairs that show the expected behavior:                          │</span> │
+    │ <span style="background-color: #f0f8ff">│ - `&lt;string name='foo' format='two-words lower-case' /&gt;` =&gt; `{{'foo': 'example one'}}`                   │</span> │
+    │ <span style="background-color: #f0f8ff">│ - `&lt;list name='bar'&gt;&lt;string format='upper-case' /&gt;&lt;/list&gt;` =&gt; `{{"bar": ['STRING ONE', 'STRING TWO',    │</span> │
+    │ <span style="background-color: #f0f8ff">│ etc.]}}`                                                                                                │</span> │
+    │ <span style="background-color: #f0f8ff">│ - `&lt;object name='baz'&gt;&lt;string name="foo" format="capitalize two-words" /&gt;&lt;integer name="index"          │</span> │
+    │ <span style="background-color: #f0f8ff">│ format="1-indexed" /&gt;&lt;/object&gt;` =&gt; `{{'baz': {{'foo': 'Some String', 'index': 1}}}}`                    │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">╰─────────────────────────────────────────────────────────────────────────────────────────────────────────╯</span> │
+    │ <span style="background-color: #f5f5dc">╭──────────────────────────────────────────── Raw LLM Output ─────────────────────────────────────────────╮</span> │
+    │ <span style="background-color: #f5f5dc">│ {                                                                                                       │</span> │
+    │ <span style="background-color: #f5f5dc">│   "patient_info": {                                                                                     │</span> │
+    │ <span style="background-color: #f5f5dc">│     "symptoms": [                                                                                       │</span> │
+    │ <span style="background-color: #f5f5dc">│       {                                                                                                 │</span> │
+    │ <span style="background-color: #f5f5dc">│         "affected area": "head"                                                                         │</span> │
+    │ <span style="background-color: #f5f5dc">│       },                                                                                                │</span> │
+    │ <span style="background-color: #f5f5dc">│       {                                                                                                 │</span> │
+    │ <span style="background-color: #f5f5dc">│         "affected area": "neck"                                                                         │</span> │
+    │ <span style="background-color: #f5f5dc">│       }                                                                                                 │</span> │
+    │ <span style="background-color: #f5f5dc">│     ]                                                                                                   │</span> │
+    │ <span style="background-color: #f5f5dc">│   }                                                                                                     │</span> │
+    │ <span style="background-color: #f5f5dc">│ }                                                                                                       │</span> │
+    │ <span style="background-color: #f5f5dc">╰─────────────────────────────────────────────────────────────────────────────────────────────────────────╯</span> │
+    │ <span style="background-color: #f0fff0">╭─────────────────────────────────────────── Validated Output ────────────────────────────────────────────╮</span> │
+    │ <span style="background-color: #f0fff0">│ {                                                                                                       │</span> │
+    │ <span style="background-color: #f0fff0">│     'patient_info': {                                                                                   │</span> │
+    │ <span style="background-color: #f0fff0">│         'gender': 'Male',                                                                               │</span> │
+    │ <span style="background-color: #f0fff0">│         'age': 49,                                                                                      │</span> │
+    │ <span style="background-color: #f0fff0">│         'symptoms': [                                                                                   │</span> │
+    │ <span style="background-color: #f0fff0">│             {'symptom': 'macular rash', 'affected area': 'head'},                                       │</span> │
+    │ <span style="background-color: #f0fff0">│             {                                                                                           │</span> │
+    │ <span style="background-color: #f0fff0">│                 'symptom': 'itchy, flaky, slightly scaly',                                              │</span> │
+    │ <span style="background-color: #f0fff0">│                 'affected area': 'neck'                                                                 │</span> │
+    │ <span style="background-color: #f0fff0">│             }                                                                                           │</span> │
+    │ <span style="background-color: #f0fff0">│         ],                                                                                              │</span> │
+    │ <span style="background-color: #f0fff0">│         'current_meds': [                                                                               │</span> │
+    │ <span style="background-color: #f0fff0">│             {'medication': 'OTC steroid cream', 'response': 'Moderate'}                                 │</span> │
+    │ <span style="background-color: #f0fff0">│         ]                                                                                               │</span> │
+    │ <span style="background-color: #f0fff0">│     }                                                                                                   │</span> │
+    │ <span style="background-color: #f0fff0">│ }                                                                                                       │</span> │
+    │ <span style="background-color: #f0fff0">╰─────────────────────────────────────────────────────────────────────────────────────────────────────────╯</span> │
+    ╰─────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 </pre>
 </div>
 </div>
