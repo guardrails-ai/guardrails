@@ -10,14 +10,14 @@
         <meta name="author" content="Shreya Rajpal">
       
       
-        <link rel="canonical" href="https://getguardrails.com/guard/">
+        <link rel="canonical" href="https://getguardrails.com/cli/">
       
       <link rel="icon" href="../img/favicon.ico">
       <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-8.5.10">
     
     
       
-        <title>Guard - Guardrails.ai</title>
+        <title>Guardrails CLI - Guardrails.ai</title>
       
     
     
@@ -119,7 +119,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#guardrails.guard.Guard.from_rail" class="md-skip">
+        <a href="#using-guardrails-from-a-cli" class="md-skip">
           Skip to content
         </a>
       
@@ -151,7 +151,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Guard
+              Guardrails CLI
             
           </span>
         </div>
@@ -434,69 +434,11 @@
               
   
   
-    
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
-      
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          Guard
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../guard/" class="md-nav__link">
         Guard
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.guard.Guard.from_rail" class="md-nav__link">
-    from_rail()
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.guard.Guard.from_rail_string" class="md-nav__link">
-    from_rail_string()
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.guard.Guard.__call__" class="md-nav__link">
-    __call__()
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.guard.Guard.parse" class="md-nav__link">
-    parse()
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -548,11 +490,52 @@
               
   
   
+    
   
-    <li class="md-nav__item">
-      <a href="../cli/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Guardrails CLI
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         Guardrails CLI
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#usage" class="md-nav__link">
+    Usage
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -835,6 +818,8 @@
   
   
   
+    
+  
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
@@ -843,29 +828,8 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#guardrails.guard.Guard.from_rail" class="md-nav__link">
-    from_rail()
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.guard.Guard.from_rail_string" class="md-nav__link">
-    from_rail_string()
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.guard.Guard.__call__" class="md-nav__link">
-    __call__()
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.guard.Guard.parse" class="md-nav__link">
-    parse()
+  <a href="#usage" class="md-nav__link">
+    Usage
   </a>
   
 </li>
@@ -887,382 +851,17 @@
 
                   
 
-  <a href="https://github.com/ShreyaR/guardrails/edit/master/docs/guard.md" title="Edit this page" class="md-content__button md-icon">
+  <a href="https://github.com/ShreyaR/guardrails/edit/master/docs/cli.md" title="Edit this page" class="md-content__button md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25Z"/></svg>
   </a>
 
 
-  <h1>Guard</h1>
-
-<!-- ::: my_library.my_module.my_class -->
-
-
-
-<div class="doc doc-object doc-class">
-
-
-
-  <div class="doc doc-contents first">
-
-  
-      <p>The Guard class.</p>
-<p>This class is the main entry point for using Guardrails. It is
-initialized from either <code>from_rail</code> or <code>from_rail_string</code> methods,
-which take in a <code>.rail</code> file or string, respectively. The <code>__call__</code>
-method functions as a wrapper around LLM APIs. It takes in an LLM
-API, and optional prompt parameters, and returns the raw output from
-the LLM and the validated output.</p>
-
-  
-      <p>Initialize the Guard.</p>
-
-
-  
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-<div class="doc doc-object doc-function">
-
-
-
-<h2 id="guardrails.guard.Guard.from_rail" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">from_rail</span><span class="p">(</span><span class="n">rail_file</span><span class="p">,</span> <span class="n">num_reasks</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></code>
-  
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
-  </span>
-
-</h2>
-
-
-  <div class="doc doc-contents ">
-  
-      <p>Create a Schema from a <code>.rail</code> file.</p>
-
-  <p><strong>Parameters:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Type</th>
-        <th>Description</th>
-        <th>Default</th>
-      </tr>
-    </thead>
-    <tbody>
-        <tr>
-          <td><code>rail_file</code></td>
-          <td>
-                <code>str</code>
-          </td>
-          <td><p>The path to the <code>.rail</code> file.</p></td>
-          <td>
-              <em>required</em>
-          </td>
-        </tr>
-        <tr>
-          <td><code>num_reasks</code></td>
-          <td>
-                <code>int</code>
-          </td>
-          <td><p>The max times to re-ask the LLM for invalid output.</p></td>
-          <td>
-                <code>1</code>
-          </td>
-        </tr>
-    </tbody>
-  </table>
-
-  <p><strong>Returns:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-        <tr>
-          <td>
-                <code><span title="guardrails.guard.Guard">Guard</span></code>
-          </td>
-          <td><p>An instance of the <code>Guard</code> class.</p></td>
-        </tr>
-    </tbody>
-  </table>
-
-  </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-
-<h2 id="guardrails.guard.Guard.from_rail_string" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">from_rail_string</span><span class="p">(</span><span class="n">rail_string</span><span class="p">,</span> <span class="n">num_reasks</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></code>
-  
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
-  </span>
-
-</h2>
-
-
-  <div class="doc doc-contents ">
-  
-      <p>Create a Schema from a <code>.rail</code> string.</p>
-
-  <p><strong>Parameters:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Type</th>
-        <th>Description</th>
-        <th>Default</th>
-      </tr>
-    </thead>
-    <tbody>
-        <tr>
-          <td><code>rail_string</code></td>
-          <td>
-                <code>str</code>
-          </td>
-          <td><p>The <code>.rail</code> string.</p></td>
-          <td>
-              <em>required</em>
-          </td>
-        </tr>
-        <tr>
-          <td><code>num_reasks</code></td>
-          <td>
-                <code>int</code>
-          </td>
-          <td><p>The max times to re-ask the LLM for invalid output.</p></td>
-          <td>
-                <code>1</code>
-          </td>
-        </tr>
-    </tbody>
-  </table>
-
-  <p><strong>Returns:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-        <tr>
-          <td>
-                <code><span title="guardrails.guard.Guard">Guard</span></code>
-          </td>
-          <td><p>An instance of the <code>Guard</code> class.</p></td>
-        </tr>
-    </tbody>
-  </table>
-
-  </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-
-<h2 id="guardrails.guard.Guard.__call__" class="doc doc-heading">
-<code class="highlight language-python"><span class="fm">__call__</span><span class="p">(</span><span class="n">llm_api</span><span class="p">,</span> <span class="n">prompt_params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">num_reasks</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
-
-</h2>
-
-
-  <div class="doc doc-contents ">
-  
-      <p>Call the LLM and validate the output.</p>
-
-  <p><strong>Parameters:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Type</th>
-        <th>Description</th>
-        <th>Default</th>
-      </tr>
-    </thead>
-    <tbody>
-        <tr>
-          <td><code>llm_api</code></td>
-          <td>
-                <code><span title="typing.Callable">Callable</span></code>
-          </td>
-          <td><p>The LLM API to call (e.g. openai.Completion.create)</p></td>
-          <td>
-              <em>required</em>
-          </td>
-        </tr>
-        <tr>
-          <td><code>prompt_params</code></td>
-          <td>
-                <code><span title="typing.Dict">Dict</span></code>
-          </td>
-          <td><p>The parameters to pass to the prompt.format() method.</p></td>
-          <td>
-                <code>None</code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>num_reasks</code></td>
-          <td>
-                <code>int</code>
-          </td>
-          <td><p>The max times to re-ask the LLM for invalid output.</p></td>
-          <td>
-                <code>1</code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>*args</code></td>
-          <td>
-          </td>
-          <td><p>Additional arguments to pass to the LLM API.</p></td>
-          <td>
-                <code>()</code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>**kwargs</code></td>
-          <td>
-          </td>
-          <td><p>Additional keyword arguments to pass to the LLM API.</p></td>
-          <td>
-                <code>{}</code>
-          </td>
-        </tr>
-    </tbody>
-  </table>
-
-  <p><strong>Returns:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-        <tr>
-          <td>
-                <code><span title="typing.Tuple">Tuple</span>[str, <span title="typing.Dict">Dict</span>]</code>
-          </td>
-          <td><p>The raw text output from the LLM and the validated output.</p></td>
-        </tr>
-    </tbody>
-  </table>
-
-  </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-
-<h2 id="guardrails.guard.Guard.parse" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">parse</span><span class="p">(</span><span class="n">llm_output</span><span class="p">,</span> <span class="n">llm_api</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">num_reasks</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
-
-</h2>
-
-
-  <div class="doc doc-contents ">
-  
-      <p>Alternate flow to using Guard where the llm_output is known.</p>
-
-  <p><strong>Parameters:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Type</th>
-        <th>Description</th>
-        <th>Default</th>
-      </tr>
-    </thead>
-    <tbody>
-        <tr>
-          <td><code>llm_output</code></td>
-          <td>
-                <code>str</code>
-          </td>
-          <td><p>The output from the LLM.</p></td>
-          <td>
-              <em>required</em>
-          </td>
-        </tr>
-        <tr>
-          <td><code>llm_api</code></td>
-          <td>
-                <code><span title="guardrails.llm_providers.PromptCallable">PromptCallable</span></code>
-          </td>
-          <td><p>The LLM API to use to re-ask the LLM.</p></td>
-          <td>
-                <code>None</code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>num_reasks</code></td>
-          <td>
-                <code>int</code>
-          </td>
-          <td><p>The max times to re-ask the LLM for invalid output.</p></td>
-          <td>
-                <code>1</code>
-          </td>
-        </tr>
-    </tbody>
-  </table>
-
-  <p><strong>Returns:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-        <tr>
-          <td>
-                <code><span title="typing.Dict">Dict</span></code>
-          </td>
-          <td><p>The validated response.</p></td>
-        </tr>
-    </tbody>
-  </table>
-
-  </div>
-
-</div>
-
-
-
-  </div>
-
-  </div>
-
-</div>
+<h1 id="using-guardrails-from-a-cli">Using Guardrails from a CLI</h1>
+<p>Guardrails can be used from the command line to validate the output of an LLM. Currently, the guardrails CLI doesn't support reasking.</p>
+<h2 id="usage">Usage</h2>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>guardrails<span class="w"> </span>validate<span class="w"> </span>&lt;path<span class="w"> </span>to<span class="w"> </span>rail<span class="w"> </span>spec&gt;<span class="w"> </span>&lt;llm<span class="w"> </span>output<span class="w"> </span>as<span class="w"> </span>string&gt;<span class="w"> </span>--out<span class="w"> </span>&lt;output<span class="w"> </span>path<span class="w"> </span><span class="k">for</span><span class="w"> </span>validated<span class="w"> </span>JSON&gt;
+</span></code></pre></div>
 
 
 
@@ -1285,7 +884,7 @@ the LLM and the validated output.</p>
     <nav class="md-footer__inner md-grid" aria-label="Footer" >
       
         
-        <a href="../rail/script/" class="md-footer__link md-footer__link--prev" aria-label="Previous: (Experimental) Script Element" rel="prev">
+        <a href="../logs/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Inspecting logs" rel="prev">
           <div class="md-footer__button md-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
           </div>
@@ -1294,20 +893,20 @@ the LLM and the validated output.</p>
               <span class="md-footer__direction">
                 Previous
               </span>
-              (Experimental) Script Element
+              Inspecting logs
             </div>
           </div>
         </a>
       
       
         
-        <a href="../data_types/" class="md-footer__link md-footer__link--next" aria-label="Next: Data Types" rel="next">
+        <a href="../examples/select_choice_based_on_action/" class="md-footer__link md-footer__link--next" aria-label="Next: If condition: generate different JSON objects based on condition" rel="next">
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
                 Next
               </span>
-              Data Types
+              If condition: generate different JSON objects based on condition
             </div>
           </div>
           <div class="md-footer__button md-icon">

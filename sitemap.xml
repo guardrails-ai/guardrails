@@ -6,6 +6,11 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
+         <loc>https://getguardrails.com/cli/</loc>
+         <lastmod>2023-04-02</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
          <loc>https://getguardrails.com/data_types/</loc>
          <lastmod>2023-04-02</lastmod>
          <changefreq>daily</changefreq>
