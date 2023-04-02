@@ -11,4 +11,8 @@
             - "!set_children"
             - "!validate"
             - "!from_str"
+            - "!from_xml"
+            - "!model"
+            - "!validators"
+            - "!to_object_element"
         show_bases: true

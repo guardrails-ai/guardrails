@@ -171,7 +171,11 @@ class Boolean(ScalarType):
 
 @register_type("date")
 class Date(ScalarType):
-    """Element tag: `<date>`"""
+    """Element tag: `<date>`
+
+    To configure the date format, create a date-format attribute on the element.
+    E.g. `<date name="..." ... date-format="%Y-%m-%d" />`
+    """
 
     def __init__(
         self, children: Dict[str, Any], format_attr: "FormatAttr", element: ET._Element
@@ -198,7 +202,11 @@ class Date(ScalarType):
 
 @register_type("time")
 class Time(ScalarType):
-    """Element tag: `<time>`"""
+    """Element tag: `<time>`
+
+    To configure the date format, create a date-format attribute on the element.
+    E.g. `<time name="..." ... time-format="%H:%M:%S" />`
+    """
 
     def __init__(
         self, children: Dict[str, Any], format_attr: "FormatAttr", element: ET._Element
