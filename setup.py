@@ -35,6 +35,7 @@ REQUIRED = [
     "eliot-tree",
     "pydantic",
     "typer",
+    "griffe",
 ]
 
 # Read in docs/requirements.txt
