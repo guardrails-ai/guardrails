@@ -1,8 +1,8 @@
-import typer
-from guardrails import Guard
-
-import os
 import json
+
+import typer
+
+from guardrails import Guard
 
 cli = typer.Typer()
 
@@ -46,20 +46,14 @@ def validate(
         help="Path to the compiled output directory.",
         file_okay=True,
         dir_okay=False,
-    )
+    ),
 ):
     """Validate the output of an LLM against a `rail` spec."""
     result = validate_llm_output(rail, llm_output)
     # Result is a dictionary, log it to a file
     print(result)
 
-    # If the file 'out' doesn't exist, create it
-    if not os.path.exists(out):
-        # Create the file
-        with open(out, "w") as f:
-            f.write("")
-
-    with open(out, "a") as f:
+    with open(out, "w") as f:
         json.dump(result, f)
         f.write("\n")
 
