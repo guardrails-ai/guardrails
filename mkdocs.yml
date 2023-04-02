@@ -25,6 +25,7 @@ nav:
       - 'Validators': validation.md
       # - 'LLM API Wrappers': llm_api_wrappers.md
       - 'Inspecting logs': logs.md
+      - 'Guardrails CLI': cli.md
     - 'Examples':
       - 'If condition: generate different JSON objects based on condition': examples/select_choice_based_on_action.ipynb
       - 'Extracting entities from ToS': examples/extracting_entities.ipynb
