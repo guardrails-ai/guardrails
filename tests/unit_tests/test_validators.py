@@ -1,6 +1,8 @@
 import pytest
 
 from guardrails.validators import (
+    BugFreeSQL,
+    EventDetail,
     Filter,
     Refrain,
     SimilarToDocument,
@@ -60,3 +62,32 @@ def test_similar_to_document_validator():
     " consisting of two chambers, the Senate and the House of Representatives."
     schema = {"key": summary}
     assert val.validate("key", summary, schema) == schema
+
+
+class TestBugFreeSQLValidator:
+    def test_bug_free_sql(self):
+        # TODO Make this robust by computing the abs path of the sql file
+        # relative to this file
+        val = BugFreeSQL(
+            schema_file="./tests/unit_tests/test_assets/valid_schema.sql",
+            conn="sqlite://",
+        )
+        bad_query = "select name, fro employees"
+        with pytest.raises(EventDetail) as context:
+            val.validate("sql-query", bad_query, {})
+        assert context.type is EventDetail
+        assert context.value.error_message != ""
+
+        good_query = "select name from employees;"
+        val.validate("sql-query", good_query, {})
+
+    def test_bug_free_sql_simple(self):
+        val = BugFreeSQL()
+        bad_query = "select name, fro employees"
+        with pytest.raises(EventDetail) as context:
+            val.validate("sql-query", bad_query, {})
+        assert context.type is EventDetail
+        assert context.value.error_message != ""
+
+        good_query = "select name from employees;"
+        val.validate("sql-query", good_query, {})
