@@ -1,7 +1,7 @@
 import os
 from dataclasses import dataclass
 from functools import partial
-from typing import Callable
+from typing import Callable, List, Optional
 
 import openai
 
@@ -51,6 +51,14 @@ def openai_wrapper(text: str, *args, **kwargs):
         **kwargs,
     )
     return openai_response["choices"][0]["text"]
+
+
+def openai_embedding_wrapper(
+    texts: List[str], model: Optional[str] = "text-embedding-ada-002", *args, **kwargs
+):
+    api_key = os.environ.get("OPENAI_API_KEY")
+    resp = openai.Embedding.create(api_key=api_key, model=model, input=texts)
+    return [r["embedding"] for r in resp["data"]]
 
 
 def openai_chat_wrapper(text: str, *args, model="gpt-3.5-turbo", **kwargs):
