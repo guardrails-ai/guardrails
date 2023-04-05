@@ -16,6 +16,7 @@ from pydantic import BaseModel, ValidationError
 
 from guardrails.datatypes import registry as types_registry
 from guardrails.utils.reask_utils import ReAsk
+from guardrails.utils.sql_utils import SQLDriver, create_sql_driver
 
 try:
     import numpy as np
@@ -777,17 +778,17 @@ class BugFreeSQL(Validator):
     - Programmatic fix: None
     """
 
+    def __init__(self, schema_file: Optional[str] = None, conn: Optional[str] = None):
+        self._driver: SQLDriver = create_sql_driver(schema_file=schema_file, conn=conn)
+
     def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
-        import sqlvalidator
-
-        sql_query = sqlvalidator.parse(value)
-
-        if not sql_query.is_valid():
+        errors = self._driver.validate_sql(value)
+        if len(errors) > 0:
             raise EventDetail(
                 key,
                 value,
                 schema,
-                ". ".join(sql_query.errors),
+                ". ".join(errors),
                 None,
             )
 

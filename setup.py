@@ -42,7 +42,7 @@ REQUIRED = [
 with open("docs/requirements.txt") as f:
     DOCS_REQUIREMENTS = f.read().splitlines()
 
-
+SQL_REQUIREMENTS = ["sqlvalidator", "sqlalchemy"]
 # What packages are optional?
 EXTRAS = {
     "dev": [
@@ -55,9 +55,10 @@ EXTRAS = {
         "twine",
         "pytest-mock",
         "pypdfium2",
+        *SQL_REQUIREMENTS,
     ]
     + DOCS_REQUIREMENTS,
-    "sql": ["sqlvalidator"],
+    "sql": SQL_REQUIREMENTS,
     "profanity": ["alt-profanity-check"],
     "critique": ["inspiredco"],
 }
