@@ -23,7 +23,7 @@ nav:
       - 'Guard': guard.md
       - 'Data Types': data_types.md
       - 'Validators': validation.md
-      # - 'LLM API Wrappers': llm_api_wrappers.md
+      - 'LLM API Wrappers': llm_api_wrappers.md
       - 'Inspecting logs': logs.md
       - 'Guardrails CLI': cli.md
     - 'Examples':
