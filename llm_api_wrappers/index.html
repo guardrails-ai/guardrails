@@ -10,14 +10,14 @@
         <meta name="author" content="Shreya Rajpal">
       
       
-        <link rel="canonical" href="https://getguardrails.com/data_types/">
+        <link rel="canonical" href="https://getguardrails.com/llm_api_wrappers/">
       
       <link rel="icon" href="../img/favicon.ico">
       <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-8.5.10">
     
     
       
-        <title>Data Types - Guardrails.ai</title>
+        <title>LLM API Wrappers - Guardrails.ai</title>
       
     
     
@@ -119,7 +119,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#guardrails.datatypes.Boolean" class="md-skip">
+        <a href="#use-guardrails-with-llm-apis" class="md-skip">
           Skip to content
         </a>
       
@@ -151,7 +151,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Data Types
+              LLM API Wrappers
             
           </span>
         </div>
@@ -448,186 +448,11 @@
               
   
   
-    
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
-      
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          Data Types
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../data_types/" class="md-nav__link">
         Data Types
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.datatypes.Boolean" class="md-nav__link">
-    Boolean
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.datatypes.Case" class="md-nav__link">
-    Case
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.datatypes.Choice" class="md-nav__link">
-    Choice
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.datatypes.Date" class="md-nav__link">
-    Date
-  </a>
-  
-    <nav class="md-nav" aria-label="Date">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#guardrails.datatypes.Date.date_format" class="md-nav__link">
-    date_format
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.datatypes.Email" class="md-nav__link">
-    Email
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.datatypes.Field" class="md-nav__link">
-    Field
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.datatypes.Float" class="md-nav__link">
-    Float
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.datatypes.Integer" class="md-nav__link">
-    Integer
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.datatypes.List" class="md-nav__link">
-    List
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.datatypes.Object" class="md-nav__link">
-    Object
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.datatypes.Percentage" class="md-nav__link">
-    Percentage
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.datatypes.Pydantic" class="md-nav__link">
-    Pydantic
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.datatypes.PythonCode" class="md-nav__link">
-    PythonCode
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.datatypes.SQLCode" class="md-nav__link">
-    SQLCode
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.datatypes.String" class="md-nav__link">
-    String
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.datatypes.Time" class="md-nav__link">
-    Time
-  </a>
-  
-    <nav class="md-nav" aria-label="Time">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#guardrails.datatypes.Time.time_format" class="md-nav__link">
-    time_format
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.datatypes.URL" class="md-nav__link">
-    URL
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -651,11 +476,79 @@
               
   
   
+    
   
-    <li class="md-nav__item">
-      <a href="../llm_api_wrappers/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          LLM API Wrappers
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         LLM API Wrappers
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#openai" class="md-nav__link">
+    OpenAI
+  </a>
+  
+    <nav class="md-nav" aria-label="OpenAI">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#completion-models-eg-gpt-3" class="md-nav__link">
+    Completion Models (e.g. GPT-3)
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#chatcompletion-models-eg-chatgpt" class="md-nav__link">
+    ChatCompletion Models (e.g. ChatGPT)
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#using-a-custom-llm-api" class="md-nav__link">
+    Using a custom LLM API
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -966,6 +859,8 @@
   
   
   
+    
+  
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
@@ -974,37 +869,23 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#guardrails.datatypes.Boolean" class="md-nav__link">
-    Boolean
+  <a href="#openai" class="md-nav__link">
+    OpenAI
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.datatypes.Case" class="md-nav__link">
-    Case
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.datatypes.Choice" class="md-nav__link">
-    Choice
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.datatypes.Date" class="md-nav__link">
-    Date
-  </a>
-  
-    <nav class="md-nav" aria-label="Date">
+    <nav class="md-nav" aria-label="OpenAI">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#guardrails.datatypes.Date.date_format" class="md-nav__link">
-    date_format
+  <a href="#completion-models-eg-gpt-3" class="md-nav__link">
+    Completion Models (e.g. GPT-3)
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#chatcompletion-models-eg-chatgpt" class="md-nav__link">
+    ChatCompletion Models (e.g. ChatGPT)
   </a>
   
 </li>
@@ -1015,105 +896,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#guardrails.datatypes.Email" class="md-nav__link">
-    Email
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.datatypes.Field" class="md-nav__link">
-    Field
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.datatypes.Float" class="md-nav__link">
-    Float
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.datatypes.Integer" class="md-nav__link">
-    Integer
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.datatypes.List" class="md-nav__link">
-    List
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.datatypes.Object" class="md-nav__link">
-    Object
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.datatypes.Percentage" class="md-nav__link">
-    Percentage
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.datatypes.Pydantic" class="md-nav__link">
-    Pydantic
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.datatypes.PythonCode" class="md-nav__link">
-    PythonCode
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.datatypes.SQLCode" class="md-nav__link">
-    SQLCode
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.datatypes.String" class="md-nav__link">
-    String
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.datatypes.Time" class="md-nav__link">
-    Time
-  </a>
-  
-    <nav class="md-nav" aria-label="Time">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#guardrails.datatypes.Time.time_format" class="md-nav__link">
-    time_format
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.datatypes.URL" class="md-nav__link">
-    URL
+  <a href="#using-a-custom-llm-api" class="md-nav__link">
+    Using a custom LLM API
   </a>
   
 </li>
@@ -1135,664 +919,69 @@
 
                   
 
-  <a href="https://github.com/ShreyaR/guardrails/edit/master/docs/data_types.md" title="Edit this page" class="md-content__button md-icon">
+  <a href="https://github.com/ShreyaR/guardrails/edit/master/docs/llm_api_wrappers.md" title="Edit this page" class="md-content__button md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25Z"/></svg>
   </a>
 
 
-  <h1>Data Types</h1>
-
-<!-- ::: my_library.my_module.my_class -->
-
-
-
-<div class="doc doc-object doc-module">
-
-
-
-  <div class="doc doc-contents first">
-
-  
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="guardrails.datatypes.Boolean" class="doc doc-heading">
-        <code>Boolean</code>
-
-
-</h2>
-
-
-  <div class="doc doc-contents ">
-      <p class="doc doc-class-bases">
-        Bases: <code><span title="guardrails.datatypes.ScalarType">ScalarType</span></code></p>
-
-  
-      <p>Element tag: <code>&lt;bool&gt;</code></p>
-
-
-
-  
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-  </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="guardrails.datatypes.Case" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">Case</span><span class="p">(</span><span class="n">children</span><span class="p">,</span> <span class="n">format_attr</span><span class="p">,</span> <span class="n">element</span><span class="p">)</span></code>
-
-</h2>
-
-
-  <div class="doc doc-contents ">
-      <p class="doc doc-class-bases">
-        Bases: <code><span title="guardrails.datatypes.NonScalarType">NonScalarType</span></code></p>
-
-  
-      <p>Element tag: <code>&lt;case&gt;</code></p>
-
-
-
-  
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-  </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="guardrails.datatypes.Choice" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">Choice</span><span class="p">(</span><span class="n">children</span><span class="p">,</span> <span class="n">format_attr</span><span class="p">,</span> <span class="n">element</span><span class="p">)</span></code>
-
-</h2>
-
-
-  <div class="doc doc-contents ">
-      <p class="doc doc-class-bases">
-        Bases: <code><span title="guardrails.datatypes.NonScalarType">NonScalarType</span></code></p>
-
-  
-      <p>Element tag: <code>&lt;object&gt;</code></p>
-
-
-
-  
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-  </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="guardrails.datatypes.Date" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">Date</span><span class="p">(</span><span class="n">children</span><span class="p">,</span> <span class="n">format_attr</span><span class="p">,</span> <span class="n">element</span><span class="p">)</span></code>
-
-</h2>
-
-
-  <div class="doc doc-contents ">
-      <p class="doc doc-class-bases">
-        Bases: <code><span title="guardrails.datatypes.ScalarType">ScalarType</span></code></p>
-
-  
-      <p>Element tag: <code>&lt;date&gt;</code></p>
-<p>To configure the date format, create a date-format attribute on the element.
-E.g. <code>&lt;date name="..." ... date-format="%Y-%m-%d" /&gt;</code></p>
-
-
-
-  
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-<div class="doc doc-object doc-attribute">
-
-
-
-<h3 id="guardrails.datatypes.Date.date_format" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">date_format</span> <span class="o">=</span> <span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">&#39;</span></code>
-  
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
-  </span>
-
-</h3>
-
-
-  <div class="doc doc-contents ">
-  </div>
-
-</div>
-
-
-
-
-
-  </div>
-
-  </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="guardrails.datatypes.Email" class="doc doc-heading">
-        <code>Email</code>
-
-
-</h2>
-
-
-  <div class="doc doc-contents ">
-      <p class="doc doc-class-bases">
-        Bases: <code><span title="guardrails.datatypes.ScalarType">ScalarType</span></code></p>
-
-  
-      <p>Element tag: <code>&lt;email&gt;</code></p>
-
-
-
-  </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="guardrails.datatypes.Field" class="doc doc-heading">
-        <code>Field</code>
-
-
-</h2>
-
-
-  <div class="doc doc-contents ">
-      <p class="doc doc-class-bases">
-        Bases: <code><span title="guardrails.datatypes.ScalarType">ScalarType</span></code></p>
-
-  
-      <p>Element tag: <code>&lt;field&gt;</code></p>
-
-
-
-  </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="guardrails.datatypes.Float" class="doc doc-heading">
-        <code>Float</code>
-
-
-</h2>
-
-
-  <div class="doc doc-contents ">
-      <p class="doc doc-class-bases">
-        Bases: <code><span title="guardrails.datatypes.ScalarType">ScalarType</span></code></p>
-
-  
-      <p>Element tag: <code>&lt;float&gt;</code></p>
-
-
-
-  
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-  </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="guardrails.datatypes.Integer" class="doc doc-heading">
-        <code>Integer</code>
-
-
-</h2>
-
-
-  <div class="doc doc-contents ">
-      <p class="doc doc-class-bases">
-        Bases: <code><span title="guardrails.datatypes.ScalarType">ScalarType</span></code></p>
-
-  
-      <p>Element tag: <code>&lt;integer&gt;</code></p>
-
-
-
-  
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-  </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="guardrails.datatypes.List" class="doc doc-heading">
-        <code>List</code>
-
-
-</h2>
-
-
-  <div class="doc doc-contents ">
-      <p class="doc doc-class-bases">
-        Bases: <code><span title="guardrails.datatypes.NonScalarType">NonScalarType</span></code></p>
-
-  
-      <p>Element tag: <code>&lt;list&gt;</code></p>
-
-
-
-  
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-  </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="guardrails.datatypes.Object" class="doc doc-heading">
-        <code>Object</code>
-
-
-</h2>
-
-
-  <div class="doc doc-contents ">
-      <p class="doc doc-class-bases">
-        Bases: <code><span title="guardrails.datatypes.NonScalarType">NonScalarType</span></code></p>
-
-  
-      <p>Element tag: <code>&lt;object&gt;</code></p>
-
-
-
-  
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-  </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="guardrails.datatypes.Percentage" class="doc doc-heading">
-        <code>Percentage</code>
-
-
-</h2>
-
-
-  <div class="doc doc-contents ">
-      <p class="doc doc-class-bases">
-        Bases: <code><span title="guardrails.datatypes.ScalarType">ScalarType</span></code></p>
-
-  
-      <p>Element tag: <code>&lt;percentage&gt;</code></p>
-
-
-
-  </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="guardrails.datatypes.Pydantic" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">Pydantic</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">children</span><span class="p">,</span> <span class="n">format_attr</span><span class="p">,</span> <span class="n">element</span><span class="p">)</span></code>
-
-</h2>
-
-
-  <div class="doc doc-contents ">
-      <p class="doc doc-class-bases">
-        Bases: <code><span title="guardrails.datatypes.NonScalarType">NonScalarType</span></code></p>
-
-  
-      <p>Element tag: <code>&lt;pydantic&gt;</code></p>
-
-
-
-  
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-  </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="guardrails.datatypes.PythonCode" class="doc doc-heading">
-        <code>PythonCode</code>
-
-
-</h2>
-
-
-  <div class="doc doc-contents ">
-      <p class="doc doc-class-bases">
-        Bases: <code><span title="guardrails.datatypes.ScalarType">ScalarType</span></code></p>
-
-  
-      <p>Element tag: <code>&lt;pythoncode&gt;</code></p>
-
-
-
-  </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="guardrails.datatypes.SQLCode" class="doc doc-heading">
-        <code>SQLCode</code>
-
-
-</h2>
-
-
-  <div class="doc doc-contents ">
-      <p class="doc doc-class-bases">
-        Bases: <code><span title="guardrails.datatypes.ScalarType">ScalarType</span></code></p>
-
-  
-      <p>Element tag: <code>&lt;sql&gt;</code></p>
-
-
-
-  </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="guardrails.datatypes.String" class="doc doc-heading">
-        <code>String</code>
-
-
-</h2>
-
-
-  <div class="doc doc-contents ">
-      <p class="doc doc-class-bases">
-        Bases: <code><span title="guardrails.datatypes.ScalarType">ScalarType</span></code></p>
-
-  
-      <p>Element tag: <code>&lt;string&gt;</code></p>
-
-
-
-  
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-  </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="guardrails.datatypes.Time" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">Time</span><span class="p">(</span><span class="n">children</span><span class="p">,</span> <span class="n">format_attr</span><span class="p">,</span> <span class="n">element</span><span class="p">)</span></code>
-
-</h2>
-
-
-  <div class="doc doc-contents ">
-      <p class="doc doc-class-bases">
-        Bases: <code><span title="guardrails.datatypes.ScalarType">ScalarType</span></code></p>
-
-  
-      <p>Element tag: <code>&lt;time&gt;</code></p>
-<p>To configure the date format, create a date-format attribute on the element.
-E.g. <code>&lt;time name="..." ... time-format="%H:%M:%S" /&gt;</code></p>
-
-
-
-  
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-<div class="doc doc-object doc-attribute">
-
-
-
-<h3 id="guardrails.datatypes.Time.time_format" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">time_format</span> <span class="o">=</span> <span class="s1">&#39;%H:%M:%S&#39;</span></code>
-  
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
-  </span>
-
-</h3>
-
-
-  <div class="doc doc-contents ">
-  </div>
-
-</div>
-
-
-
-
-
-  </div>
-
-  </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="guardrails.datatypes.URL" class="doc doc-heading">
-        <code>URL</code>
-
-
-</h2>
-
-
-  <div class="doc doc-contents ">
-      <p class="doc doc-class-bases">
-        Bases: <code><span title="guardrails.datatypes.ScalarType">ScalarType</span></code></p>
-
-  
-      <p>Element tag: <code>&lt;url&gt;</code></p>
-
-
-
-  </div>
-
-</div>
-
-
-
-
-  </div>
-
-  </div>
-
-</div>
+<h1 id="use-guardrails-with-llm-apis">Use Guardrails with LLM APIs</h1>
+<p>Guardrails' <code>Guard</code> wrappers provide a simple way to add Guardrails to your LLM API calls. The wrappers are designed to be used with any LLM API.</p>
+<p>Here are some examples of how to use the wrappers with different LLM providers and models:</p>
+<h2 id="openai">OpenAI</h2>
+<h3 id="completion-models-eg-gpt-3">Completion Models (e.g. GPT-3)</h3>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">import</span> <span class="nn">openai</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">import</span> <span class="nn">guardrails</span> <span class="k">as</span> <span class="nn">gd</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="c1"># Create a Guard class</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="n">guard</span> <span class="o">=</span> <span class="n">gd</span><span class="o">.</span><span class="n">Guard</span><span class="o">.</span><span class="n">from_rail</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="c1"># Wrap openai API call</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="n">raw_llm_output</span><span class="p">,</span> <span class="n">guardrail_output</span> <span class="o">=</span> <span class="n">guard</span><span class="p">(</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>    <span class="n">openai</span><span class="o">.</span><span class="n">Completion</span><span class="o">.</span><span class="n">create</span><span class="p">,</span>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>    <span class="n">prompt_params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;prompt_param_1&quot;</span><span class="p">:</span> <span class="s2">&quot;value_1&quot;</span><span class="p">,</span> <span class="s2">&quot;prompt_param_2&quot;</span><span class="p">:</span> <span class="s2">&quot;value_2&quot;</span><span class="p">,</span> <span class="o">..</span><span class="p">},</span>
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>    <span class="n">engine</span><span class="o">=</span><span class="s2">&quot;text-davinci-003&quot;</span><span class="p">,</span>
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>    <span class="n">max_tokens</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>    <span class="n">temperature</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="p">)</span>
+</span></code></pre></div>
+<h3 id="chatcompletion-models-eg-chatgpt">ChatCompletion Models (e.g. ChatGPT)</h3>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">import</span> <span class="nn">openai</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="kn">import</span> <span class="nn">guardrails</span> <span class="k">as</span> <span class="nn">gd</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="c1"># Create a Guard class</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="n">guard</span> <span class="o">=</span> <span class="n">gd</span><span class="o">.</span><span class="n">Guard</span><span class="o">.</span><span class="n">from_rail</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="c1"># Wrap openai API call</span>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="n">raw_llm_output</span><span class="p">,</span> <span class="n">guardrail_output</span> <span class="o">=</span> <span class="n">guard</span><span class="p">(</span>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>    <span class="n">openai</span><span class="o">.</span><span class="n">ChatCompletion</span><span class="o">.</span><span class="n">create</span><span class="p">,</span>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>    <span class="n">prompt_params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;prompt_param_1&quot;</span><span class="p">:</span> <span class="s2">&quot;value_1&quot;</span><span class="p">,</span> <span class="s2">&quot;prompt_param_2&quot;</span><span class="p">:</span> <span class="s2">&quot;value_2&quot;</span><span class="p">,</span> <span class="o">..</span><span class="p">},</span>
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>    <span class="n">system_prompt</span><span class="o">=</span><span class="s2">&quot;You are a helpful assistant...&quot;</span><span class="p">,</span>
+</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>    <span class="n">model</span><span class="o">=</span><span class="s2">&quot;gpt-3.5-turbo&quot;</span><span class="p">,</span>
+</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>    <span class="n">max_tokens</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>    <span class="n">temperature</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="p">)</span>
+</span></code></pre></div>
+<h2 id="using-a-custom-llm-api">Using a custom LLM API</h2>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">import</span> <span class="nn">guardrails</span> <span class="k">as</span> <span class="nn">gd</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="c1"># Create a Guard class</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">guard</span> <span class="o">=</span> <span class="n">gd</span><span class="o">.</span><span class="n">Guard</span><span class="o">.</span><span class="n">from_rail</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="c1"># Create a PromptCallable function that takes in the prompt as a string and returns the LLM output</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="k">def</span> <span class="nf">my_llm_api</span><span class="p">(</span><span class="n">prompt</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>    <span class="c1"># Call your LLM API here</span>
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>    <span class="k">return</span> <span class="o">...</span>
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>
+</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>
+</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="c1"># Wrap your LLM API call</span>
+</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="n">raw_llm_output</span><span class="p">,</span> <span class="n">guardrail_output</span> <span class="o">=</span> <span class="n">guard</span><span class="p">(</span>
+</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>    <span class="n">my_llm_api</span><span class="p">,</span>
+</span><span id="__span-2-15"><a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>    <span class="n">prompt_params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;prompt_param_1&quot;</span><span class="p">:</span> <span class="s2">&quot;value_1&quot;</span><span class="p">,</span> <span class="s2">&quot;prompt_param_2&quot;</span><span class="p">:</span> <span class="s2">&quot;value_2&quot;</span><span class="p">,</span> <span class="o">..</span><span class="p">},</span>
+</span><span id="__span-2-16"><a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>    <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+</span><span id="__span-2-17"><a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="p">)</span>
+</span></code></pre></div>
 
 
 
@@ -1815,7 +1004,7 @@ E.g. <code>&lt;time name="..." ... time-format="%H:%M:%S" /&gt;</code></p>
     <nav class="md-footer__inner md-grid" aria-label="Footer" >
       
         
-        <a href="../guard/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Guard" rel="prev">
+        <a href="../validation/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Validators" rel="prev">
           <div class="md-footer__button md-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
           </div>
@@ -1824,20 +1013,20 @@ E.g. <code>&lt;time name="..." ... time-format="%H:%M:%S" /&gt;</code></p>
               <span class="md-footer__direction">
                 Previous
               </span>
-              Guard
+              Validators
             </div>
           </div>
         </a>
       
       
         
-        <a href="../validation/" class="md-footer__link md-footer__link--next" aria-label="Next: Validators" rel="next">
+        <a href="../logs/" class="md-footer__link md-footer__link--next" aria-label="Next: Inspecting logs" rel="next">
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
                 Next
               </span>
-              Validators
+              Inspecting logs
             </div>
           </div>
           <div class="md-footer__button md-icon">
