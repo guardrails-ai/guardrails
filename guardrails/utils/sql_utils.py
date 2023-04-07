@@ -23,6 +23,10 @@ class SQLDriver(ABC):
     def validate_sql(self, query: str) -> List[str]:
         ...
 
+    @abstractmethod
+    def get_schema(self) -> str:
+        ...
+
 
 class SimpleSqlDriver(SQLDriver):
     """
@@ -37,6 +41,9 @@ class SimpleSqlDriver(SQLDriver):
         if not sql_query.is_valid():
             return sql_query.errors
         return sql_query.errors
+
+    def get_schema(self) -> str:
+        raise NotImplementedError
 
 
 class SqlAlchemyDriver(SQLDriver):
@@ -84,8 +91,38 @@ class SqlAlchemyDriver(SQLDriver):
             exceptions.append(str(ex))
         return exceptions
 
+    def get_schema(self) -> str:
+        # Get table schema using sqlalchemy.inspect
+        insp = sqlalchemy.inspect(self._conn)
 
-def create_sql_driver(schema_file: Optional[str], conn: Optional[str]) -> SQLDriver:
+        schema = {}
+        for table in insp.get_table_names():
+            schema[table] = {}
+            for column in insp.get_columns(table):
+                schema[table][column["name"]] = {"type": column["type"]}
+
+            # Get foreign keys
+            for fk in insp.get_foreign_keys(table):
+                schema[table][fk["constrained_columns"][0]]["foreign_key"] = {
+                    "table": fk["referred_table"],
+                    "column": fk["referred_columns"][0],
+                }
+
+        # Create a nicely formatted schema from the dictionary
+        formatted_schema = []
+        for table, columns in schema.items():
+            formatted_schema.append(f"Table: {table}")
+            for column, column_info in columns.items():
+                formatted_schema.append(f"    Column: {column}")
+                for info, value in column_info.items():
+                    formatted_schema.append(f"        {info}: {value}")
+
+        return "\n".join(formatted_schema)
+
+
+def create_sql_driver(
+    schema_file: Optional[str] = None, conn: Optional[str] = None
+) -> SQLDriver:
     if schema_file is None and conn is None:
         return SimpleSqlDriver()
     return SqlAlchemyDriver(schema_file=schema_file, conn=conn)

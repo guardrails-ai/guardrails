@@ -134,7 +134,7 @@ class EphemeralDocumentStore(DocumentStoreBase):
             )
         except exc.IntegrityError:
             return
-        self._vector_db.add_texts(document.pages.values())
+        self._vector_db.add_texts(list(document.pages.values()))
 
     def add_text(self, text: str, meta: Dict[Any, Any]) -> str:
         hash = hashlib.md5()
