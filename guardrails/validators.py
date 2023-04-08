@@ -76,7 +76,6 @@ def check_refrain_in_dict(schema: Dict) -> bool:
     Returns:
         True if a Refrain object exists in the dict.
     """
-
     for key, value in schema.items():
         if isinstance(value, Refrain):
             return True
@@ -99,7 +98,6 @@ def filter_in_list(schema: List) -> List:
     Returns:
         A list with all Filter objects removed.
     """
-
     filtered_list = []
 
     for item in schema:
@@ -130,7 +128,6 @@ def filter_in_dict(schema: Dict) -> Dict:
     Returns:
         A dictionary with all Filter objects removed.
     """
-
     filtered_dict = {}
 
     for key, value in schema.items():
@@ -155,7 +152,6 @@ def register_validator(name: str, data_type: Union[str, List[str]]):
 
     def decorator(cls: type):
         """Register a validator for a data type."""
-
         nonlocal data_type
         if isinstance(data_type, str):
             data_type = (
@@ -213,12 +209,10 @@ class Validator:
 
     def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
         """Validate a value."""
-
         raise NotImplementedError
 
     def fix(self, error: EventDetail) -> Dict:
         """Debug the incorrect value."""
-
         error.schema[error.key] = error.fix_value
         return error.schema
 
@@ -235,7 +229,6 @@ class Validator:
 
     def filter(self, error: EventDetail) -> Dict:
         """If validation fails, filter the offending key from the schema."""
-
         logger.debug(f"Filtering {error.key} from schema...")
 
         error.schema[error.key] = Filter()
@@ -244,7 +237,6 @@ class Validator:
 
     def refrain(self, error: EventDetail) -> Optional[Dict]:
         """If validation fails, refrain from answering."""
-
         logger.debug(f"Refusing to answer {error.key}...")
 
         error.schema[error.key] = Refrain()
@@ -252,7 +244,6 @@ class Validator:
 
     def noop(self, error: EventDetail) -> Dict:
         """If validation fails, do nothing."""
-
         logger.debug(
             f"Validator {self.__class__.__name__} failed for {error.key}, "
             "but doing nothing..."
@@ -262,12 +253,10 @@ class Validator:
 
     def exception(self, error: EventDetail) -> None:
         """Raise an exception."""
-
         raise ValidatorError(error.error_message)
 
     def fix_reask(self, error: EventDetail) -> Dict:
         """If validation fails, fix the value and reask."""
-
         schema = self.fix(error)
 
         try:
@@ -287,7 +276,6 @@ class Validator:
         Returns:
             A string representation of the validator.
         """
-
         if not len(self._kwargs):
             return self.rail_alias
 
@@ -426,7 +414,6 @@ class Choice(Validator):
 
     def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
         """Validate that a value is one of a set of choices."""
-
         logger.debug(f"Validating {value} is in {self._choices}...")
 
         if value not in self._choices:
@@ -486,7 +473,6 @@ class ValidRange(Validator):
 
     def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
         """Validate that a value is within a range."""
-
         logger.debug(f"Validating {value} is in range {self._min} - {self._max}...")
 
         val_type = type(value)
@@ -527,7 +513,6 @@ class ValidChoices(Validator):
 
     def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
         """Validate that a value is within a range."""
-
         logger.debug(f"Validating {value} is in choices {self._choices}...")
 
         if value not in self._choices:
@@ -609,7 +594,6 @@ class ValidLength(Validator):
 
     def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
         """Validate that a value is within a range."""
-
         logger.debug(
             f"Validating {value} is in length range {self._min} - {self._max}..."
         )

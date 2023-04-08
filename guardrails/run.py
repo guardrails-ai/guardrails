@@ -66,7 +66,6 @@ class Runner:
         Returns:
             The guard history.
         """
-
         self._reset_guard_history()
 
         with start_action(

@@ -76,7 +76,6 @@ def validated_output():
 
 def test_rail_spec_output_parse(rail_spec, llm_output, validated_output):
     """Test that the rail_spec fixture is working."""
-
     guard = gd.Guard.from_rail_string(rail_spec)
     assert guard.parse(llm_output) == validated_output
 

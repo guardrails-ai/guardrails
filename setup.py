@@ -59,6 +59,7 @@ EXTRAS = {
     ]
     + DOCS_REQUIREMENTS,
     "sql": SQL_REQUIREMENTS,
+    "manifest": "manifest-ml",
     "profanity": ["alt-profanity-check"],
     "critique": ["inspiredco"],
 }

@@ -3,7 +3,6 @@ from .test_cases import entity_extraction, pydantic
 
 def openai_completion_create(prompt, *args, **kwargs):
     """Mock the OpenAI API call to Completion.create."""
-
     mock_llm_responses = {
         entity_extraction.COMPILED_PROMPT: entity_extraction.LLM_OUTPUT,
         entity_extraction.COMPILED_PROMPT_REASK: entity_extraction.LLM_OUTPUT_REASK,

@@ -63,7 +63,6 @@ class DataType:
 
     def validate(self, key: str, value: Any, schema: Dict) -> Dict:
         """Validate a value."""
-
         value = self.from_str(value)
 
         for validator in self.validators:

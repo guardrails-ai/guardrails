@@ -259,7 +259,6 @@ def sub_reasks_with_fixed_values(value: Any) -> Any:
     Returns:
         The value with ReAsk objects replaced with their fixed values.
     """
-
     if isinstance(value, list):
         for index, item in enumerate(value):
             value[index] = sub_reasks_with_fixed_values(item)

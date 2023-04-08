@@ -7,8 +7,7 @@ from guardrails.utils.pydantic_utils import register_pydantic
 
 @register_pydantic
 class Person(BaseModel):
-    """
-    Information about a person.
+    """Information about a person.
 
     Args:
         name (str): The name of the person.
