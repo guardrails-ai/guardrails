@@ -24,7 +24,6 @@ class SimpleSqlDriver(SQLDriver):
 class SqlAlchemyDriver(SQLDriver):
     def __init__(self, schema_file: Optional[str], conn: Optional[str]) -> None:
         import sqlalchemy as db
-        from sqlalchemy import text
 
         if schema_file is not None and conn is None:
             raise ValidationError(
@@ -42,7 +41,12 @@ class SqlAlchemyDriver(SQLDriver):
 
         if schema_file is not None:
             schema = Path(schema_file).read_text()
-            self._conn.execute(text(schema))
+            if conn.startswith("sqlite"):
+                self._conn.connection.executescript(schema)
+            else:
+                from sqlalchemy import text
+
+                self._conn.execute(text(schema))
 
     def validate_sql(self, query: str) -> List[str]:
         from sqlalchemy import text

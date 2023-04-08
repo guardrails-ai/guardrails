@@ -81,6 +81,13 @@ class TestBugFreeSQLValidator:
         good_query = "select name from employees;"
         val.validate("sql-query", good_query, {})
 
+    def test_long_sql_schema_no_exception(self):
+        val = BugFreeSQL(
+            schema_file="./tests/unit_tests/test_assets/spider.sql",
+            conn="sqlite://",
+        )
+        assert val is not None
+
     def test_bug_free_sql_simple(self):
         val = BugFreeSQL()
         bad_query = "select name, fro employees"
