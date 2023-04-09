@@ -56,8 +56,18 @@ import guardrails as gd
 # Create a Guard class
 guard = gd.Guard.from_rail(...)
 
-# Create a PromptCallable function that takes in the prompt as a string and returns the LLM output
+# Function that takes the prompt as a string and returns the LLM output as string
 def my_llm_api(prompt: str, **kwargs) -> str:
+    """Custom LLM API wrapper.
+
+    Args:
+        prompt (str): The prompt to be passed to the LLM API
+        **kwargs: Any additional arguments to be passed to the LLM API
+
+    Returns:
+        str: The output of the LLM API
+    """
+
     # Call your LLM API here
     return ...
 
