@@ -47,6 +47,34 @@ raw_llm_output, guardrail_output = guard(
 )
 ```
 
+## Using Manifest
+[Manifest](https://github.com/HazyResearch/manifest) is a wrapper around most model APIs and supports hosting local models. It can be used as a LLM API.
+
+```python
+import guardrails as gd
+import manifest
+
+# Create a Guard class
+guard = gd.Guard.from_rail(...)
+
+# Create a Manifest client - this one points to GPT-4
+# and caches responses in SQLLite
+manifest = manifest.Manifest(
+    client_name="openai",
+    engine="gpt-4",
+    cache_name="sqlite",
+    cache_connection="my_manifest_cache.db"
+)
+
+# Wrap openai API call
+raw_llm_output, guardrail_output = guard(
+    manifest,
+    prompt_params={"prompt_param_1": "value_1", "prompt_param_2": "value_2", ..},
+    max_tokens=100,
+    temperature=0.0,
+)
+```
+
 
 ## Using a custom LLM API
 

@@ -155,8 +155,7 @@ class FormatAttr:
     @property
     def unregistered_validators(self) -> List[str]:
         """Get the list of validators from the format attribute that are not
-        registered for this element.
-        """
+        registered for this element."""
         try:
             return getattr(self, "_unregistered_validators")
         except AttributeError:
