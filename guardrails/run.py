@@ -137,7 +137,7 @@ class Runner:
                 prompt = None
 
             # Call: run the API, and convert to dict.
-            output, output_as_dict = self.call(index, prompt, api, output)
+            output, output_as_dict = self.call(index, instructions, prompt, api, output)
 
             # Validate: run output validation.
             validated_output = self.validate(index, output_as_dict, output_schema)
@@ -186,6 +186,7 @@ class Runner:
     def call(
         self,
         index: int,
+        instructions: str,
         prompt: str,
         api: Callable,
         output: str = None,
@@ -196,9 +197,10 @@ class Runner:
         2. Convert the response string to a dict,
         3. Log the output
         """
+        import IPython; IPython.embed()
         with start_action(action_type="call", index=index, prompt=prompt) as action:
             if prompt:
-                output = api(prompt)
+                output = api(prompt, instructions=instructions)
 
             error = None
             # Treat the output as a JSON string, and load it into a dict.

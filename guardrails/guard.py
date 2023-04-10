@@ -131,7 +131,6 @@ class Guard:
             The raw text output from the LLM and the validated output.
         """
         with start_action(action_type="guard_call", prompt_params=prompt_params):
-            import IPython; IPython.embed()
             runner = Runner(
                 instructions=self.instructions,
                 prompt=self.prompt,
