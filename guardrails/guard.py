@@ -4,6 +4,7 @@ from typing import Callable, Dict, Optional, Tuple
 from eliot import start_action, to_file
 
 from guardrails.llm_providers import PromptCallable, get_llm_ask
+from guardrails.instructions import Instructions
 from guardrails.prompt import Prompt
 from guardrails.rail import Rail
 from guardrails.run import Runner
@@ -45,6 +46,11 @@ class Guard:
     def output_schema(self) -> OutputSchema:
         """Return the output schema."""
         return self.rail.output_schema
+
+    @property
+    def instructions(self) -> Instructions:
+        """Return the instruction-prompt."""
+        return self.rail.instructions
 
     @property
     def prompt(self) -> Prompt:
@@ -125,7 +131,9 @@ class Guard:
             The raw text output from the LLM and the validated output.
         """
         with start_action(action_type="guard_call", prompt_params=prompt_params):
+            import IPython; IPython.embed()
             runner = Runner(
+                instructions=self.instructions,
                 prompt=self.prompt,
                 api=get_llm_ask(llm_api, *args, **kwargs),
                 input_schema=self.input_schema,
@@ -162,6 +170,7 @@ class Guard:
         """
         with start_action(action_type="guard_parse"):
             runner = Runner(
+                instructions=None,
                 prompt=None,
                 api=get_llm_ask(llm_api, *args, **kwargs) if llm_api else None,
                 input_schema=None,

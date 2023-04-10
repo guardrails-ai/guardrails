@@ -5,6 +5,7 @@ from typing import List, Optional
 from lxml import etree as ET
 
 from guardrails.prompt import Prompt
+from guardrails.instructions import Instructions
 from guardrails.schema import InputSchema, OutputSchema, Schema
 
 XMLPARSER = ET.XMLParser(encoding="utf-8")
@@ -91,6 +92,7 @@ class Rail:
 
     input_schema: Optional[InputSchema] = (None,)
     output_schema: Optional[OutputSchema] = (None,)
+    instructions: Optional[Instructions] = (None,)
     prompt: Optional[Prompt] = (None,)
     script: Optional[Script] = (None,)
     version: Optional[str] = ("0.1",)
@@ -137,6 +139,14 @@ class Rail:
         raw_output_schema = ET.fromstring(raw_output_schema, parser=XMLPARSER)
         output_schema = cls.load_output_schema(raw_output_schema)
 
+        # Parse instructions for the LLM. These are optional but if given,
+        # LLMs can use them to improve their output. Commonly these are
+        # prepended to the prompt.
+        instructions = xml.find("instructions")
+        if instructions is not None:
+            print("received instructions!")
+            instructions = cls.load_instructions(instructions, output_schema)
+
         # Load <prompt />
         prompt = xml.find("prompt")
         if prompt is None:
@@ -146,6 +156,7 @@ class Rail:
         return cls(
             input_schema=input_schema,
             output_schema=output_schema,
+            instructions=instructions,
             prompt=prompt,
             script=script,
             version=xml.attrib["version"],
@@ -168,6 +179,14 @@ class Rail:
         """Given the RAIL <output> element, create a Schema object."""
         # Recast the schema as an OutputSchema.
         return OutputSchema(root)
+
+    @staticmethod
+    def load_instructions(root: ET._Element, output_schema: OutputSchema) -> Instructions:
+        """Given the RAIL <instructions> element, create Instructions."""
+        return Instructions(
+            source=root.text,
+            output_schema=output_schema.transpile(),
+        )
 
     @staticmethod
     def load_prompt(root: ET._Element, output_schema: OutputSchema) -> Prompt:

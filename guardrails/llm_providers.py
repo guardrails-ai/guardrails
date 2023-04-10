@@ -82,6 +82,7 @@ def openai_wrapper(text: str, *args, **kwargs):
 
 def openai_chat_wrapper(text: str, *args, model="gpt-3.5-turbo", **kwargs):
     api_key = os.environ.get("OPENAI_API_KEY")
+    import IPython; IPython.embed()
     openai_response = openai.ChatCompletion.create(
         api_key=api_key,
         model=model,

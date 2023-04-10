@@ -5,6 +5,7 @@ from typing import Callable, Dict, List, Optional, Tuple
 from eliot import start_action
 
 from guardrails.llm_providers import PromptCallable
+from guardrails.instructions import Instructions
 from guardrails.prompt import Prompt
 from guardrails.schema import InputSchema, OutputSchema
 from guardrails.utils.logs_utils import GuardHistory, GuardLogs
@@ -38,6 +39,7 @@ class Runner:
         guard_history: The guard history to use, defaults to an empty history.
     """
 
+    instructions: Instructions
     prompt: Prompt
     api: PromptCallable
     input_schema: InputSchema
@@ -70,13 +72,15 @@ class Runner:
 
         with start_action(
             action_type="run",
+            instructions=self.instructions,
             prompt=self.prompt,
             api=self.api,
             input_schema=self.input_schema,
             output_schema=self.output_schema,
             num_reasks=self.num_reasks,
         ):
-            prompt, input_schema, output_schema = (
+            instructions, prompt, input_schema, output_schema = (
+                self.instructions,
                 self.prompt,
                 self.input_schema,
                 self.output_schema,
@@ -86,6 +90,7 @@ class Runner:
                 validated_output, reasks = self.step(
                     index=index,
                     api=self.api,
+                    instructions=instructions,
                     prompt=prompt,
                     prompt_params=prompt_params,
                     input_schema=input_schema,
@@ -108,6 +113,7 @@ class Runner:
         self,
         index: int,
         api: Callable,
+        instructions: Instructions,
         prompt: Prompt,
         prompt_params: Dict,
         input_schema: InputSchema,
@@ -118,6 +124,7 @@ class Runner:
         with start_action(
             action_type="step",
             index=index,
+            instructions=instructions,
             prompt=prompt,
             prompt_params=prompt_params,
             input_schema=input_schema,
