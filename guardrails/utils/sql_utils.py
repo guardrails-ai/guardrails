@@ -4,14 +4,32 @@ from typing import List, Optional
 
 from pydantic import ValidationError
 
+try:
+    import sqlalchemy
+    from sqlalchemy import text
+
+    _HAS_SQLALCHEMY = True
+except ImportError:
+    _HAS_SQLALCHEMY = False
+
 
 class SQLDriver(ABC):
+    """
+    Abstract class for SQL drivers. The expose common functionality
+    for validating SQL queries.
+    """
+
     @abstractmethod
     def validate_sql(self, query: str) -> List[str]:
         ...
 
 
 class SimpleSqlDriver(SQLDriver):
+    """
+    Simple SQL driver which uses sqlvalidator to validate SQL queries.
+    Does not understands dialects and is not connected to a database.
+    """
+
     def validate_sql(self, query: str) -> List[str]:
         import sqlvalidator
 
@@ -22,8 +40,18 @@ class SimpleSqlDriver(SQLDriver):
 
 
 class SqlAlchemyDriver(SQLDriver):
+    """
+    SQL driver which uses sqlalchemy to validate SQL queries.
+    It can setup the database schema and check if the queries are valid
+    by connecting to the database.
+    """
+
     def __init__(self, schema_file: Optional[str], conn: Optional[str]) -> None:
-        import sqlalchemy as db
+        if not _HAS_SQLALCHEMY:
+            raise ImportError(
+                """The functionality requires sqlalchemy to be installed.
+                              Please install it using `pip install SqlAlchemy`"""
+            )
 
         if schema_file is not None and conn is None:
             raise ValidationError(
@@ -34,7 +62,7 @@ class SqlAlchemyDriver(SQLDriver):
 
         if conn is not None:
             try:
-                self._engine = db.create_engine(conn)
+                self._engine = sqlalchemy.create_engine(conn)
                 self._conn = self._engine.connect()
             except Exception as ex:
                 raise ValueError(ex)
@@ -49,8 +77,6 @@ class SqlAlchemyDriver(SQLDriver):
                 self._conn.execute(text(schema))
 
     def validate_sql(self, query: str) -> List[str]:
-        from sqlalchemy import text
-
         exceptions: List[str] = []
         try:
             self._conn.execute(text(query))

@@ -43,6 +43,9 @@ with open("docs/requirements.txt") as f:
     DOCS_REQUIREMENTS = f.read().splitlines()
 
 SQL_REQUIREMENTS = ["sqlvalidator", "sqlalchemy"]
+
+VECTORDB_REQUIREMENTS = ["faiss-cpu", "numpy"]
+
 # What packages are optional?
 EXTRAS = {
     "dev": [
@@ -56,10 +59,12 @@ EXTRAS = {
         "pytest-mock",
         "pypdfium2",
         *SQL_REQUIREMENTS,
+        *VECTORDB_REQUIREMENTS,
     ]
     + DOCS_REQUIREMENTS,
     "sql": SQL_REQUIREMENTS,
     "manifest": "manifest-ml",
+    "vectordb": VECTORDB_REQUIREMENTS,
     "profanity": ["alt-profanity-check"],
     "critique": ["inspiredco"],
 }
