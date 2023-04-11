@@ -39,7 +39,7 @@ class Runner:
         guard_history: The guard history to use, defaults to an empty history.
     """
 
-    instructions: Instructions
+    instructions: Optional[Instructions]
     prompt: Prompt
     api: PromptCallable
     input_schema: InputSchema
@@ -113,7 +113,7 @@ class Runner:
         self,
         index: int,
         api: Callable,
-        instructions: Instructions,
+        instructions: Optional[Instructions],
         prompt: Prompt,
         prompt_params: Dict,
         input_schema: InputSchema,
@@ -132,8 +132,11 @@ class Runner:
         ):
             # Prepare: run pre-processing, and input validation.
             if not output:
-                prompt = self.prepare(index, prompt, prompt_params, input_schema)
+                instructions, prompt = self.prepare(
+                    index, instructions, prompt, prompt_params, input_schema
+                )
             else:
+                instructions = None
                 prompt = None
 
             # Call: run the API, and convert to dict.
@@ -157,6 +160,7 @@ class Runner:
     def prepare(
         self,
         index: int,
+        instructions: Optional[Instructions],
         prompt: Prompt,
         prompt_params: Dict,
         input_schema: InputSchema,
@@ -174,19 +178,24 @@ class Runner:
             if isinstance(prompt, Prompt):
                 prompt = prompt.format(**validated_prompt_params)
 
+            # TODO: For instructions, we're not parsing prompt params. Should we?
+            if instructions is not None and isinstance(instructions, Instructions):
+                instructions = instructions.format()
+
             action.log(
                 message_type="info",
+                instructions=instructions,
                 prompt=prompt,
                 prompt_params=prompt_params,
                 validated_prompt_params=validated_prompt_params,
             )
 
-        return prompt
+        return instructions, prompt
 
     def call(
         self,
         index: int,
-        instructions: str,
+        instructions: Optional[str],
         prompt: str,
         api: Callable,
         output: str = None,
@@ -197,9 +206,10 @@ class Runner:
         2. Convert the response string to a dict,
         3. Log the output
         """
-        import IPython; IPython.embed()
         with start_action(action_type="call", index=index, prompt=prompt) as action:
             if prompt:
+                # TODO: Not sure if this is the best way to pass the instructions,
+                # as they'll get passed as kwargs to the llm callable
                 output = api(prompt, instructions=instructions)
 
             error = None
