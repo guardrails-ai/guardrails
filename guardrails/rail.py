@@ -4,8 +4,7 @@ from typing import List, Optional
 
 from lxml import etree as ET
 
-from guardrails.prompt import Prompt
-from guardrails.instructions import Instructions
+from guardrails.prompt import Prompt, Instructions
 from guardrails.schema import InputSchema, OutputSchema, Schema
 
 XMLPARSER = ET.XMLParser(encoding="utf-8")
