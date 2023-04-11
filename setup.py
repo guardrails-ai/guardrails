@@ -42,7 +42,7 @@ REQUIRED = [
 with open("docs/requirements.txt") as f:
     DOCS_REQUIREMENTS = f.read().splitlines()
 
-SQL_REQUIREMENTS = ["sqlvalidator", "sqlalchemy"]
+SQL_REQUIREMENTS = ["sqlvalidator", "sqlalchemy", "sqlglot"]
 
 VECTORDB_REQUIREMENTS = ["faiss-cpu", "numpy"]
 

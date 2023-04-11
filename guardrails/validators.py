@@ -779,6 +779,40 @@ class BugFreeSQL(Validator):
         return schema
 
 
+@register_validator(name="sql-column-presence", data_type="sql")
+class SqlColumnPresence(Validator):
+    """Validate that all columns in the SQL query are present in the schema.
+
+    - Name for `format` attribute: `sql-column-presence`
+    - Supported data types: `string`
+    """
+
+    def __init__(self, cols: List[str], on_fail: Optional[Callable] = None):
+        super().__init__(on_fail=on_fail, cols=cols)
+        self._cols = set(cols)
+
+    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
+        from sqlglot import exp, parse
+
+        expressions = parse(value)
+        cols = set()
+        for expression in expressions:
+            for col in expression.find_all(exp.Column):
+                cols.add(col.alias_or_name)
+
+        diff = cols.difference(self._cols)
+        if len(diff) > 0:
+            raise EventDetail(
+                key,
+                value,
+                schema,
+                f"Columns [{', '.join(diff)}] not in [{', '.join(self._cols)}]",
+                None,
+            )
+
+        return schema
+
+
 @register_validator(name="similar-to-document", data_type="string")
 class SimilarToDocument(Validator):
     """Validate that a value is similar to the document.
