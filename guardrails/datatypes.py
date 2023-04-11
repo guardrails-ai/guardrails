@@ -347,6 +347,8 @@ class Choice(NonScalarType):
 
         # Validate the selected choice
         selected_key = value
+        if selected_key not in schema:
+            return schema
         selected_value = schema[selected_key]
 
         self._children[selected_key].validate(selected_key, selected_value, schema)
