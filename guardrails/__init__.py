@@ -2,10 +2,10 @@
 
 from guardrails.guard import Guard
 from guardrails.llm_providers import PromptCallable
+from guardrails.logging import configure_logging
 from guardrails.rail import Rail
 from guardrails.utils import constants, docs_utils
 from guardrails.validators import Validator, register_validator
-from guardrails.logging import configure_logging
 
 __all__ = [
     "Guard",

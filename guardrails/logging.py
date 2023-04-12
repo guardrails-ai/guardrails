@@ -1,32 +1,31 @@
 import logging
 import logging.config
 
-
 LOGGING_CONFIG = {
-    'version': 1,
-    'formatters': {
-        'default': {
-            'format': '[%(asctime)s] %(levelname)s %(name)s: %(message)s',
+    "version": 1,
+    "formatters": {
+        "default": {
+            "format": "[%(asctime)s] %(levelname)s %(name)s: %(message)s",
         },
     },
-    'handlers': {
-        'console': {
-            'class': 'logging.StreamHandler',
-            'level': 'DEBUG',
-            'formatter': 'default',
-            'stream': 'ext://sys.stdout',
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "level": "DEBUG",
+            "formatter": "default",
+            "stream": "ext://sys.stdout",
         },
     },
-    'loggers': {
-        'your_package': {
-            'level': 'DEBUG',
-            'handlers': ['console'],
-            'propagate': False,
+    "loggers": {
+        "your_package": {
+            "level": "DEBUG",
+            "handlers": ["console"],
+            "propagate": False,
         },
     },
-    'root': {
-        'level': 'WARNING',
-        'handlers': ['console'],
+    "root": {
+        "level": "WARNING",
+        "handlers": ["console"],
     },
 }
 
