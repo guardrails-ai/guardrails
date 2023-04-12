@@ -206,8 +206,10 @@ class Runner:
         3. Log the output
         """
         with start_action(action_type="call", index=index, prompt=prompt) as action:
-            if prompt:
+            if prompt and instructions:
                 output = api(prompt, instructions=instructions)
+            elif prompt:
+                output = api(prompt)
 
             error = None
             # Treat the output as a JSON string, and load it into a dict.
