@@ -58,16 +58,14 @@ def nonchat_prompt(prompt: str, instructions: Optional[str] = None, **kwargs) ->
 
 def chat_prompt(prompt: str, instructions: Optional[str] = None, **kwargs) -> List[Dict[str, str]]:
     """Prepare final prompt for chat engine."""
-    if instructions:
-        system_prompt = instructions
-    else:
-        system_prompt = (
+    if not instructions:
+        instructions = (
             "You are a helpful assistant, "
             "able to express yourself purely through JSON, "
             "strictly and precisely adhering to the provided XML schemas."
         )
     return [
-        {"role": "system", "content": system_prompt},
+        {"role": "system", "content": instructions},
         {"role": "user", "content": prompt},
     ]
 
