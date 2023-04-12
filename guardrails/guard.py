@@ -12,7 +12,7 @@ from guardrails.utils.logs_utils import GuardState
 from guardrails.utils.reask_utils import sub_reasks_with_fixed_values
 
 logger = logging.getLogger(__name__)
-to_file(open("guardrails.log", "w"))
+# to_file(open("guardrails.log", "w"))
 
 
 class Guard:
