@@ -179,7 +179,7 @@ class Runner:
 
             # TODO: For instructions, we're not parsing prompt params. Should we?
             if instructions is not None and isinstance(instructions, Instructions):
-                instructions = instructions.format()
+                instructions = instructions.format(**validated_prompt_params)
 
             action.log(
                 message_type="info",
@@ -207,8 +207,6 @@ class Runner:
         """
         with start_action(action_type="call", index=index, prompt=prompt) as action:
             if prompt:
-                # TODO: Not sure if this is the best way to pass the instructions,
-                # as they'll get passed as kwargs to the llm callable
                 output = api(prompt, instructions=instructions)
 
             error = None

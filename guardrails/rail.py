@@ -143,7 +143,6 @@ class Rail:
         # prepended to the prompt.
         instructions = xml.find("instructions")
         if instructions is not None:
-            print("received instructions!")
             instructions = cls.load_instructions(instructions, output_schema)
 
         # Load <prompt />

@@ -10,8 +10,6 @@ class Instructions(BasePrompt):
     instructions in the system-prompt.
     """
 
-    # TODO: Don't allow inserting text at run time, that is specific to Prompt?
-
     def __repr__(self) -> str:
         # Truncate the prompt to 50 characters and add ellipsis if it's longer.
         truncated_instructions = self.source[:50]
