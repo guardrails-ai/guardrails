@@ -100,11 +100,14 @@ class TestBugFreeSQLValidator:
         good_query = "select name from employees;"
         val.validate("sql-query", good_query, {})
 
-    def test_sql_column_precense(self):
+    def test_sql_column_presense(self):
         sql = "select name, age from employees;"
         columns = ["name", "address"]
         val = SqlColumnPresence(cols=columns)
         with pytest.raises(EventDetail) as context:
             val.validate("sql-query", sql, {})
         assert context.type is EventDetail
-        assert context.value.error_message == "Columns [age] not in [name, address]"
+        assert context.value.error_message in (
+            "Columns [age] not in [name, address]",
+            "Columns [age] not in [address, name]",
+        )
