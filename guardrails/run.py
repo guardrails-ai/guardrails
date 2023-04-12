@@ -177,7 +177,7 @@ class Runner:
             if isinstance(prompt, Prompt):
                 prompt = prompt.format(**validated_prompt_params)
 
-            # TODO: For instructions, we're not parsing prompt params. Should we?
+            # TODO(shreya): should there be any difference to parsing params for prompt?
             if instructions is not None and isinstance(instructions, Instructions):
                 instructions = instructions.format(**validated_prompt_params)
 
