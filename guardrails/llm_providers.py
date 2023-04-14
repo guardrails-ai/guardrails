@@ -52,7 +52,7 @@ def nonchat_prompt(prompt: str, instructions: Optional[str] = None, **kwargs) ->
     """Prepare final prompt for nonchat engine."""
     if instructions:
         prompt = "\n\n".join([instructions, prompt])
-    
+
     return prompt + "\n\nJson Output:\n\n"
 
 
@@ -70,23 +70,29 @@ def chat_prompt(prompt: str, instructions: Optional[str] = None, **kwargs) -> Li
     ]
 
 
-def openai_wrapper(text: str, *args, **kwargs):
+def openai_wrapper(text: str, *args, instructions: Optional[str] = None, **kwargs):
     api_key = os.environ.get("OPENAI_API_KEY")
     openai_response = openai.Completion.create(
         api_key=api_key,
-        prompt=nonchat_prompt(text, kwargs.pop("instructions"), **kwargs),
+        prompt=nonchat_prompt(text, instructions, **kwargs),
         *args,
         **kwargs,
     )
     return openai_response["choices"][0]["text"]
 
 
-def openai_chat_wrapper(text: str, *args, model="gpt-3.5-turbo", **kwargs):
+def openai_chat_wrapper(
+    text: str,
+    *args,
+    model="gpt-3.5-turbo",
+    instructions: Optional[str] = None,
+    **kwargs
+):
     api_key = os.environ.get("OPENAI_API_KEY")
     openai_response = openai.ChatCompletion.create(
         api_key=api_key,
         model=model,
-        messages=chat_prompt(text, kwargs.pop("instructions"), **kwargs),
+        messages=chat_prompt(text, instructions, **kwargs),
         *args,
         **kwargs,
     )
