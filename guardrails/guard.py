@@ -130,8 +130,11 @@ class Guard:
             The raw text output from the LLM and the validated output.
         """
         with start_action(action_type="guard_call", prompt_params=prompt_params):
+            if "instructions" in kwargs:
+                logger.info("Instructions overridden at call time")
+                # TODO(shreya): should we overwrite self.instructions for this run as well?
             runner = Runner(
-                instructions=self.instructions,
+                instructions=kwargs.get("instructions", self.instructions),
                 prompt=self.prompt,
                 api=get_llm_ask(llm_api, *args, **kwargs),
                 input_schema=self.input_schema,
