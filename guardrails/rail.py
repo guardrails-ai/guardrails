@@ -7,6 +7,7 @@ from lxml import etree as ET
 from guardrails.prompt import Prompt, Instructions
 from guardrails.schema import InputSchema, OutputSchema, Schema
 
+# TODO: Logging 
 XMLPARSER = ET.XMLParser(encoding="utf-8")
 
 
