@@ -1,7 +1,7 @@
 import logging
 from typing import Callable, Dict, Optional, Tuple
 
-from eliot import start_action, to_file
+from eliot import add_destinations, start_action
 
 from guardrails.llm_providers import PromptCallable, get_llm_ask
 from guardrails.prompt import Prompt
@@ -12,7 +12,8 @@ from guardrails.utils.logs_utils import GuardState
 from guardrails.utils.reask_utils import sub_reasks_with_fixed_values
 
 logger = logging.getLogger(__name__)
-# to_file(open("guardrails.log", "w"))
+actions_logger = logging.getLogger(f"{__name__}.actions")
+add_destinations(actions_logger.debug)
 
 
 class Guard:
