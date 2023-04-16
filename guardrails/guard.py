@@ -4,7 +4,7 @@ from typing import Callable, Dict, Optional, Tuple
 from eliot import start_action, to_file
 
 from guardrails.llm_providers import PromptCallable, get_llm_ask
-from guardrails.prompt import Prompt, Instructions
+from guardrails.prompt import Instructions, Prompt
 from guardrails.rail import Rail
 from guardrails.run import Runner
 from guardrails.schema import InputSchema, OutputSchema

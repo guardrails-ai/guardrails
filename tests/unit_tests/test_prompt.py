@@ -62,5 +62,10 @@ def test_instructions_with_params():
     user_instructions = "A useful system message."
     user_prompt = "A useful prompt."
 
-    assert guard.instructions.format(user_instructions=user_instructions).strip() == user_instructions.strip()
-    assert guard.base_prompt.format(user_prompt=user_prompt).strip() == user_prompt.strip()
+    assert (
+        guard.instructions.format(user_instructions=user_instructions).strip()
+        == user_instructions.strip()
+    )
+    assert (
+        guard.base_prompt.format(user_prompt=user_prompt).strip() == user_prompt.strip()
+    )

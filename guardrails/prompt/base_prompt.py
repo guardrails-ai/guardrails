@@ -7,6 +7,7 @@ from guardrails.utils.constants import constants
 
 class BasePrompt:
     """Base class for representing an LLM prompt."""
+
     def __init__(self, source: str, output_schema: Optional[str] = None):
         output_schema = output_schema or {}
 
