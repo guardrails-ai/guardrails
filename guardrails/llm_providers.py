@@ -1,7 +1,7 @@
 import os
 from dataclasses import dataclass
 from functools import partial
-from typing import Any, Callable, Dict, List, cast, Optional
+from typing import Any, Callable, Dict, List, Optional, cast
 
 import openai
 
@@ -56,7 +56,9 @@ def nonchat_prompt(prompt: str, instructions: Optional[str] = None, **kwargs) ->
     return prompt + "\n\nJson Output:\n\n"
 
 
-def chat_prompt(prompt: str, instructions: Optional[str] = None, **kwargs) -> List[Dict[str, str]]:
+def chat_prompt(
+    prompt: str, instructions: Optional[str] = None, **kwargs
+) -> List[Dict[str, str]]:
     """Prepare final prompt for chat engine."""
     if not instructions:
         instructions = (
@@ -86,7 +88,7 @@ def openai_chat_wrapper(
     model="gpt-3.5-turbo",
     instructions: Optional[str] = None,
     *args,
-    **kwargs
+    **kwargs,
 ):
     api_key = os.environ.get("OPENAI_API_KEY")
     openai_response = openai.ChatCompletion.create(

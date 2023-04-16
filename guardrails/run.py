@@ -5,7 +5,7 @@ from typing import Callable, Dict, List, Optional, Tuple
 from eliot import start_action
 
 from guardrails.llm_providers import PromptCallable
-from guardrails.prompt import Prompt, Instructions
+from guardrails.prompt import Instructions, Prompt
 from guardrails.schema import InputSchema, OutputSchema
 from guardrails.utils.logs_utils import GuardHistory, GuardLogs
 from guardrails.utils.reask_utils import (
