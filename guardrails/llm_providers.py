@@ -70,7 +70,7 @@ def chat_prompt(prompt: str, instructions: Optional[str] = None, **kwargs) -> Li
     ]
 
 
-def openai_wrapper(text: str, *args, instructions: Optional[str] = None, **kwargs):
+def openai_wrapper(text: str, instructions: Optional[str] = None, *args, **kwargs):
     api_key = os.environ.get("OPENAI_API_KEY")
     openai_response = openai.Completion.create(
         api_key=api_key,
@@ -83,9 +83,9 @@ def openai_wrapper(text: str, *args, instructions: Optional[str] = None, **kwarg
 
 def openai_chat_wrapper(
     text: str,
-    *args,
     model="gpt-3.5-turbo",
     instructions: Optional[str] = None,
+    *args,
     **kwargs
 ):
     api_key = os.environ.get("OPENAI_API_KEY")
