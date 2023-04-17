@@ -5,7 +5,7 @@ from typing import Callable, Dict, List, Optional, Tuple
 from eliot import start_action
 
 from guardrails.llm_providers import PromptCallable
-from guardrails.prompt import Prompt
+from guardrails.prompt import Instructions, Prompt
 from guardrails.schema import InputSchema, OutputSchema
 from guardrails.utils.logs_utils import GuardHistory, GuardLogs
 from guardrails.utils.reask_utils import (
@@ -38,6 +38,7 @@ class Runner:
         guard_history: The guard history to use, defaults to an empty history.
     """
 
+    instructions: Optional[Instructions]
     prompt: Prompt
     api: PromptCallable
     input_schema: InputSchema
@@ -70,13 +71,15 @@ class Runner:
 
         with start_action(
             action_type="run",
+            instructions=self.instructions,
             prompt=self.prompt,
             api=self.api,
             input_schema=self.input_schema,
             output_schema=self.output_schema,
             num_reasks=self.num_reasks,
         ):
-            prompt, input_schema, output_schema = (
+            instructions, prompt, input_schema, output_schema = (
+                self.instructions,
                 self.prompt,
                 self.input_schema,
                 self.output_schema,
@@ -86,6 +89,7 @@ class Runner:
                 validated_output, reasks = self.step(
                     index=index,
                     api=self.api,
+                    instructions=instructions,
                     prompt=prompt,
                     prompt_params=prompt_params,
                     input_schema=input_schema,
@@ -108,6 +112,7 @@ class Runner:
         self,
         index: int,
         api: Callable,
+        instructions: Optional[Instructions],
         prompt: Prompt,
         prompt_params: Dict,
         input_schema: InputSchema,
@@ -118,6 +123,7 @@ class Runner:
         with start_action(
             action_type="step",
             index=index,
+            instructions=instructions,
             prompt=prompt,
             prompt_params=prompt_params,
             input_schema=input_schema,
@@ -125,12 +131,15 @@ class Runner:
         ):
             # Prepare: run pre-processing, and input validation.
             if not output:
-                prompt = self.prepare(index, prompt, prompt_params, input_schema)
+                instructions, prompt = self.prepare(
+                    index, instructions, prompt, prompt_params, input_schema
+                )
             else:
+                instructions = None
                 prompt = None
 
             # Call: run the API, and convert to dict.
-            output, output_as_dict = self.call(index, prompt, api, output)
+            output, output_as_dict = self.call(index, instructions, prompt, api, output)
 
             # Validate: run output validation.
             validated_output = self.validate(index, output_as_dict, output_schema)
@@ -143,13 +152,21 @@ class Runner:
                 validated_output = sub_reasks_with_fixed_values(validated_output)
 
             # Log: step information.
-            self.log(prompt, output, output_as_dict, validated_output, reasks)
+            self.log(
+                prompt=prompt,
+                instructions=instructions,
+                output=output,
+                output_as_dict=output_as_dict,
+                validated_output=validated_output,
+                reasks=reasks,
+            )
 
             return validated_output, reasks
 
     def prepare(
         self,
         index: int,
+        instructions: Optional[Instructions],
         prompt: Prompt,
         prompt_params: Dict,
         input_schema: InputSchema,
@@ -167,14 +184,19 @@ class Runner:
             if isinstance(prompt, Prompt):
                 prompt = prompt.format(**validated_prompt_params)
 
+            # TODO(shreya): should there be any difference to parsing params for prompt?
+            if instructions is not None and isinstance(instructions, Instructions):
+                instructions = instructions.format(**validated_prompt_params)
+
             action.log(
                 message_type="info",
+                instructions=instructions,
                 prompt=prompt,
                 prompt_params=prompt_params,
                 validated_prompt_params=validated_prompt_params,
             )
 
-        return prompt
+        return instructions, prompt
 
     def post_process(self, output: str) -> str:
         """Post-process the raw output before parsing it.
@@ -192,6 +214,7 @@ class Runner:
     def call(
         self,
         index: int,
+        instructions: Optional[str],
         prompt: str,
         api: Callable,
         output: str = None,
@@ -203,7 +226,9 @@ class Runner:
         3. Log the output
         """
         with start_action(action_type="call", index=index, prompt=prompt) as action:
-            if prompt:
+            if prompt and instructions:
+                output = api(prompt, instructions=instructions)
+            elif prompt:
                 output = api(prompt)
 
             # Post-process the output before loading it as JSON.
@@ -260,6 +285,7 @@ class Runner:
     def log(
         self,
         prompt: str,
+        instructions: Optional[str],
         output: str,
         output_as_dict: Dict,
         validated_output: Dict,
@@ -269,6 +295,7 @@ class Runner:
         self.guard_history = self.guard_history.push(
             GuardLogs(
                 prompt=prompt,
+                instructions=instructions,
                 output=output,
                 output_as_dict=output_as_dict,
                 validated_output=validated_output,
