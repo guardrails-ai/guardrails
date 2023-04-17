@@ -10,3 +10,16 @@
 {{ super() }}
 
 {% endblock content %}
+
+{% block announce %}
+<div style="text-align: center">
+If you're using Guardrails, join the 
+<a rel="me" href="https://discord.gg/Jsey3mX98B">
+    <span class="twemoji mastodon">
+        {% include ".icons/fontawesome/brands/discord.svg" %}
+    </span>
+    <strong>Discord server</strong>
+</a>
+to get help and share your work!
+</div>
+{% endblock %}
