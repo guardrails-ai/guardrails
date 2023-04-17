@@ -4,3 +4,5 @@ mkdocs-jupyter
 mkdocs-material
 mknotebooks
 griffe
+pillow
+cairosvg
