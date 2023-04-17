@@ -132,7 +132,7 @@ class Guard:
         with start_action(action_type="guard_call", prompt_params=prompt_params):
             if "instructions" in kwargs:
                 logger.info("Instructions overridden at call time")
-                # TODO(shreya): should we overwrite self.instructions for this run as well?
+                # TODO(shreya): should we overwrite self.instructions for this run?
             runner = Runner(
                 instructions=kwargs.get("instructions", self.instructions),
                 prompt=self.prompt,
