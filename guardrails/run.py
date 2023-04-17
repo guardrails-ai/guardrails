@@ -49,7 +49,7 @@ class Runner:
 
     def _reset_guard_history(self):
         """Reset the guard history."""
-        self.guard_history = GuardHistory([])
+        self.guard_history = field(default_factory=lambda: GuardHistory([]))
 
     def __post_init__(self):
         assert (self.prompt and self.api and not self.output) or (
