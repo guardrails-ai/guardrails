@@ -152,7 +152,14 @@ class Runner:
                 validated_output = sub_reasks_with_fixed_values(validated_output)
 
             # Log: step information.
-            self.log(prompt, output, output_as_dict, validated_output, reasks)
+            self.log(
+                prompt=prompt,
+                instructions=instructions,
+                output=output,
+                output_as_dict=output_as_dict,
+                validated_output=validated_output,
+                reasks=reasks,
+            )
 
             return validated_output, reasks
 
@@ -262,6 +269,7 @@ class Runner:
     def log(
         self,
         prompt: str,
+        instructions: Optional[str],
         output: str,
         output_as_dict: Dict,
         validated_output: Dict,
@@ -271,6 +279,7 @@ class Runner:
         self.guard_history = self.guard_history.push(
             GuardLogs(
                 prompt=prompt,
+                instructions=instructions,
                 output=output,
                 output_as_dict=output_as_dict,
                 validated_output=validated_output,
