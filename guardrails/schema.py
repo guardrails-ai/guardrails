@@ -7,10 +7,12 @@ from dataclasses import dataclass
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
+import json
+
 from lxml import etree as ET
 from lxml.builder import E
 
-from guardrails.datatypes import DataType
+from guardrails.datatypes import DataType, ScalarType, NonScalarType, List as GDList, Object as GDObject
 from guardrails.validators import Validator, check_refrain_in_dict, filter_in_dict
 
 if TYPE_CHECKING:
@@ -359,6 +361,33 @@ class InputSchema(Schema):
 
 class OutputSchema(Schema):
     """Output schema class that holds a _schema attribute."""
+
+    def skeleton(self):
+        schema = self
+        def _recurse_datatype(dt):
+            if isinstance(dt, ScalarType):
+                return f"___{dt.__class__.__name__.lower()}___"
+            elif isinstance(dt, NonScalarType):
+                # Recurse
+                if isinstance(dt, GDList):
+                    return [
+                        _recurse_datatype(dt.children.item),
+                        "..."
+                    ]
+                elif isinstance(dt, GDObject):
+                    return {
+                        k: _recurse_datatype(v)
+                        for k, v in dt.children.__dict__.items()
+                    }
+            else:
+                print(dt)
+                raise ValueError("Unknown datatype")
+
+        output = {}
+        for k, v in schema.items():
+            output[k] = _recurse_datatype(v)
+
+        return json.dumps(output, indent=4)
 
 
 class Schema2Prompt:
