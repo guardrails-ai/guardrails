@@ -18,6 +18,7 @@ nav:
       - 'Overview': rail/index.md
       - 'Output Element': rail/output.md
       - 'Prompt Element': rail/prompt.md
+      - 'Instruction Element': rail/instructions.md
       - '(Experimental) Script Element': rail/script.md
     - 'Guardrails Reference':
       - 'Guard': guard.md
@@ -27,7 +28,8 @@ nav:
       - 'Inspecting logs': logs.md
       - 'Guardrails CLI': cli.md
     - 'Examples':
-      - 'If condition: generate different JSON objects based on condition': examples/select_choice_based_on_action.ipynb
+      - 'Use Guardrails with Chat Models': examples/guardrails_with_chat_models.ipynb
+      - 'If condition: generate different JSON objects based on condition': examples/select_choice_based_on_action.ipynb'
       - 'Extracting entities from ToS': examples/extracting_entities.ipynb
       - 'Generating bug-free Python code': examples/bug_free_python_code.ipynb
       - 'No secrets in generated text': examples/no_secrets_in_generated_text.ipynb
