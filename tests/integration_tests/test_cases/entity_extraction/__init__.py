@@ -15,7 +15,9 @@ reader = (
 
 COMPILED_PROMPT = reader("compiled_prompt.txt")
 COMPILED_PROMPT_REASK = reader("compiled_prompt_reask.txt")
-COMPILED_PROMPT_WITHOUT_INSTRUCTIONS = reader("compiled_prompt_without_instructions.txt")
+COMPILED_PROMPT_WITHOUT_INSTRUCTIONS = reader(
+    "compiled_prompt_without_instructions.txt"
+)
 COMPILED_INSTRUCTIONS = reader("compiled_instructions.txt")
 
 LLM_OUTPUT = reader("llm_output.txt")
