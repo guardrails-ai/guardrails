@@ -15,3 +15,18 @@ def openai_completion_create(prompt, *args, **kwargs):
         return mock_llm_responses[prompt]
     except KeyError:
         raise ValueError("Compiled prompt not found")
+
+
+def openai_chat_completion_create(prompt, instructions, *args, **kwargs):
+    """Mock the OpenAI API call to ChatCompletion.create."""
+    mock_llm_responses = {
+        (
+            entity_extraction.COMPILED_PROMPT_WITHOUT_INSTRUCTIONS,
+            entity_extraction.COMPILED_INSTRUCTIONS,
+        ): entity_extraction.LLM_OUTPUT,
+    }
+
+    try:
+        return mock_llm_responses[(prompt, instructions)]
+    except KeyError:
+        raise ValueError("Compiled prompt not found")

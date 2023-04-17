@@ -3,7 +3,11 @@ import pytest
 
 import guardrails as gd
 
-from .mock_llm_outputs import entity_extraction, openai_completion_create
+from .mock_llm_outputs import (
+    entity_extraction,
+    openai_chat_completion_create,
+    openai_completion_create,
+)
 
 
 @pytest.fixture(scope="module")
@@ -231,3 +235,37 @@ def test_entity_extraction_with_refrain(mocker):
     assert (
         guard_history[0].validated_output == entity_extraction.VALIDATED_OUTPUT_REFRAIN
     )
+
+
+def test_entity_extraction_with_fix_chat_models(mocker):
+    """Test that the entity extraction works with fix for chat models."""
+
+    mocker.patch(
+        "guardrails.llm_providers.openai_chat_wrapper",
+        new=openai_chat_completion_create,
+    )
+
+    content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
+    guard = gd.Guard.from_rail_string(entity_extraction.RAIL_SPEC_WITH_FIX_CHAT_MODEL)
+    _, final_output = guard(
+        llm_api=openai.ChatCompletion.create,
+        prompt_params={"document": content[:6000]},
+        num_reasks=1,
+    )
+
+    # Assertions are made on the guard state object.
+    assert final_output == entity_extraction.VALIDATED_OUTPUT_FIX
+
+    guard_history = guard.guard_state.most_recent_call.history
+
+    # Check that the guard state object has the correct number of re-asks.
+    assert len(guard_history) == 1
+
+    # For orginal prompt and output
+    assert (
+        guard_history[0].prompt
+        == entity_extraction.COMPILED_PROMPT_WITHOUT_INSTRUCTIONS
+    )
+    assert guard_history[0].instructions == entity_extraction.COMPILED_INSTRUCTIONS
+    assert guard_history[0].output == entity_extraction.LLM_OUTPUT
+    assert guard_history[0].validated_output == entity_extraction.VALIDATED_OUTPUT_FIX
