@@ -176,6 +176,19 @@ class Runner:
 
         return prompt
 
+    def post_process(self, output: str) -> str:
+        """Post-process the raw output before parsing it.
+
+        If the output is surrounded by triple backticks, remove them."""
+        output = output.strip()
+        if output.startswith("```"):
+            output = output[3:]
+            if output.startswith("json"):
+                output = output[4:]
+        if output.endswith("```"):
+            output = output[:-3]
+        return output
+
     def call(
         self,
         index: int,
@@ -192,6 +205,9 @@ class Runner:
         with start_action(action_type="call", index=index, prompt=prompt) as action:
             if prompt:
                 output = api(prompt)
+
+            # Post-process the output before loading it as JSON.
+            output = self.post_process(output)
 
             error = None
             # Treat the output as a JSON string, and load it into a dict.
