@@ -14,3 +14,4 @@ guardrails_ai.egg-info/
 build/*
 dist/*
 *.rail_output*
+.idea/*
