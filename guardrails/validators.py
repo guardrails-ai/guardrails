@@ -6,6 +6,7 @@ in the `RAIL` spec to specify formatters.
 import ast
 import logging
 import os
+import re
 from collections import defaultdict
 from copy import deepcopy
 from dataclasses import dataclass
@@ -20,9 +21,6 @@ from guardrails.embedding import OpenAIEmbedding
 from guardrails.utils.reask_utils import ReAsk
 from guardrails.utils.sql_utils import SQLDriver, create_sql_driver
 from guardrails.vectordb import Faiss
-
-import re
-
 
 try:
     import numpy as np
@@ -1011,25 +1009,17 @@ class EndsWith(Validator):
 @register_validator(name="extracted-summary-sentences-match", data_type="string")
 class ExtractedSummarySentencesMatch(Validator):
     def __init__(
-            self, 
-            documents_dir: str, 
-            threshold: float=0.7,
-            embedding_model: Optional[str] = None,
-            vector_db: str = "faiss",
-            document_store: Optional[DocumentStoreBase] = None,
-            similarity_fn: Callable = None,
-            on_fail: Optional[Callable] = None, 
-            **kwargs,
-        ):
+        self,
+        documents_dir: str,
+        threshold: float = 0.7,
+        embedding_model: Optional[str] = None,
+        vector_db: str = "faiss",
+        document_store: Optional[DocumentStoreBase] = None,
+        similarity_fn: Callable = None,
+        on_fail: Optional[Callable] = None,
+        **kwargs,
+    ):
         super().__init__(on_fail, **kwargs)
-
-        if Manifest is None:
-            raise ImportError(
-                "`extracted-summary-sentences-match` validator requires the `manifest`"
-                "package. Please install it with `pip install manifest`."
-            )
-    
-        from thefuzz import fuzz
 
         if embedding_model is None:
             embedding_model = OpenAIEmbedding
@@ -1044,16 +1034,12 @@ class ExtractedSummarySentencesMatch(Validator):
         for doc_path in os.listdir(documents_dir):
             with open(os.path.join(documents_dir, doc_path)) as f:
                 doc = f.read()
-                self.store.add_text(doc, {"path": os.path.join(documents_dir, doc_path)})
-
-        if similarity_fn is None:
-            similarity_fn = fuzz.ratio
+                self.store.add_text(
+                    doc, {"path": os.path.join(documents_dir, doc_path)}
+                )
 
         self._documents = documents
         self._threshold = float(threshold)
-        self._similarity_fn = similarity_fn
-        # Split each document into sentences.
-        # self._sentences = [re.split(r"(?<=[.!?]) +", d) for d in documents]
 
     def validate(self, key, value, schema) -> Dict:
         # Split the value into sentences.
@@ -1061,20 +1047,38 @@ class ExtractedSummarySentencesMatch(Validator):
 
         # Check if any of the sentences in the value match any of the sentences
         # in the documents.
+        unverified = []
+        count = 0
+        new_value = ""
+        citations = ""
+        for i, sentence in enumerate(sentences):
+            page = self.store.search_with_threshold(sentence, self._threshold)
+            if not page:
+                unverified.append(i)
+            else:
+                citations += f"\n[{count+1}] {page[0].metadata['path']}"
+                new_value += sentence + f" [{count+1}] "
+                count += 1
 
-        for sentence in sentences:
-            for doc_sentences in self._sentences:
-                for doc_sentence in doc_sentences:
-                    if self._similarity_fn(sentence, doc_sentence) > self._threshold:
-                        return schema
+        fixed_summary = new_value + citations
 
-        raise EventDetail(
-            key,
-            value,
-            schema,
-            f"Value {value} does not match any of the sentences in the documents.",
-            None,
-        )
-    
+        if unverified:
+            unverified_sentences = "\n".join(
+                "- " + s for i, s in enumerate(sentences) if i in unverified
+            )
+            raise EventDetail(
+                key,
+                value,
+                schema,
+                (
+                    f"The summary \nSummary: {value}\n has sentences\n"
+                    f"{unverified_sentences}\n that are not similar to any document."
+                ),
+                fixed_summary,
+            )
+
+        schema[key] = fixed_summary
+        return schema
+
     def to_prompt(self, with_keywords: bool = True) -> str:
         return ""
