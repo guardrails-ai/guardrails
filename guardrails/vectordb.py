@@ -36,6 +36,19 @@ class VectorDBBase(ABC):
         """
         ...
 
+    @abstractmethod
+    def similarity_search_vector_with_threshold(
+        self, vector: List[float], k: int, threshold: float
+    ) -> List[int]:
+        """Searches for vectors which are similar to the given vector.
+
+        Args:
+            vector: Vector to search for.
+            k: Number of similar vectors to return.
+            threshold: Minimum similarity threshold to return.
+        """
+        ...
+
     def similarity_search(self, text: str, k: int) -> List[int]:
         """Searches for vectors which are similar to the given text.
         Args:
@@ -46,6 +59,12 @@ class VectorDBBase(ABC):
             List[int] List of indexes of the similar vectors."""
         vector = self._embedder.embed_query(text)
         return self.similarity_search_vector(vector, k)
+
+    def similarity_search_with_threshold(
+        self, text: str, k: int, threshold: float
+    ) -> List[int]:
+        vector = self._embedder.embed_query(text)
+        return self.similarity_search_vector_with_threshold(vector, k, threshold)
 
     def add_texts(self, texts: List[str], ids: List[Any] = None) -> None:
         """Adds a list of texts to the store.
@@ -91,6 +110,14 @@ class Faiss(VectorDBBase):
         return cls(IndexFlatL2(vector_dim), embedder, path)
 
     @classmethod
+    def new_flat_ip_index(
+        cls, vector_dim: int, embedder: EmbeddingBase, path: str = None
+    ):
+        from faiss import IndexFlatIP
+
+        return cls(IndexFlatIP(vector_dim), embedder, path)
+
+    @classmethod
     def new_flat_l2_index_from_embedding(
         cls, embedding: List[List[float]], embedder: EmbeddingBase, path: str = None
     ):
@@ -118,6 +145,21 @@ class Faiss(VectorDBBase):
 
         _, scores = self._index.search(np.array([vector]), k)
         return scores[0].tolist()
+
+    def similarity_search_vector_with_threshold(
+        self, vector: List[float], k: int, threshold: float
+    ) -> List[int]:
+        import numpy as np
+
+        # Call faiss range search and get all the vectors with a score >= threshold
+        _, dist, indexes = self._index.range_search(np.array([vector]), threshold)
+
+        if len(indexes) == 0:
+            return []
+
+        sorted_indices = np.argsort(dist)
+        sorted_indexes = indexes[sorted_indices]
+        return sorted_indexes.tolist()[:k]
 
     def add_vectors(self, vectors: List[List[float]]) -> None:
         import numpy as np

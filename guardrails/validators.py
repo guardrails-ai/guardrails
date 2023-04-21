@@ -6,6 +6,7 @@ in the `RAIL` spec to specify formatters.
 import ast
 import logging
 import os
+import re
 from collections import defaultdict
 from copy import deepcopy
 from dataclasses import dataclass
@@ -15,8 +16,11 @@ import openai
 from pydantic import BaseModel, ValidationError
 
 from guardrails.datatypes import registry as types_registry
+from guardrails.document_store import DocumentStoreBase, EphemeralDocumentStore
+from guardrails.embedding import OpenAIEmbedding
 from guardrails.utils.reask_utils import ReAsk
 from guardrails.utils.sql_utils import SQLDriver, create_sql_driver
+from guardrails.vectordb import Faiss
 
 try:
     import numpy as np
@@ -24,6 +28,11 @@ except ImportError:
     _HAS_NUMPY = False
 else:
     _HAS_NUMPY = True
+
+try:
+    from manifest import Manifest
+except ImportError:
+    Manifest = None
 
 
 validators_registry = {}
@@ -995,3 +1004,143 @@ class EndsWith(Validator):
             )
 
         return schema
+
+
+@register_validator(name="extracted-summary-sentences-match", data_type="string")
+class ExtractedSummarySentencesMatch(Validator):
+    def __init__(
+        self,
+        documents_dir: str,
+        threshold: float = 0.7,
+        embedding_model: Optional[str] = None,
+        vector_db: str = "faiss",
+        document_store: Optional[DocumentStoreBase] = None,
+        similarity_fn: Callable = None,
+        on_fail: Optional[Callable] = None,
+        **kwargs,
+    ):
+        super().__init__(on_fail, **kwargs)
+
+        if embedding_model is None:
+            embedding_model = OpenAIEmbedding
+        if document_store is None:
+            document_store = EphemeralDocumentStore
+
+        e = embedding_model()
+        vector_db = Faiss.new_flat_ip_index(e.output_dim, embedder=e)
+        self.store = document_store(vector_db)
+
+        documents = []
+        for doc_path in os.listdir(documents_dir):
+            with open(os.path.join(documents_dir, doc_path)) as f:
+                doc = f.read()
+                self.store.add_text(
+                    doc, {"path": os.path.join(documents_dir, doc_path)}
+                )
+
+        self._documents = documents
+        self._threshold = float(threshold)
+
+    def validate(self, key, value, schema) -> Dict:
+        # Split the value into sentences.
+        sentences = re.split(r"(?<=[.!?]) +", value)
+
+        # Check if any of the sentences in the value match any of the sentences
+        # in the documents.
+        unverified = []
+        count = 0
+        new_value = ""
+        citations = ""
+        for i, sentence in enumerate(sentences):
+            page = self.store.search_with_threshold(sentence, self._threshold)
+            if not page:
+                unverified.append(i)
+            else:
+                citations += f"\n[{count+1}] {page[0].metadata['path']}"
+                new_value += sentence + f" [{count+1}] "
+                count += 1
+
+        fixed_summary = new_value + citations
+
+        if unverified:
+            unverified_sentences = "\n".join(
+                "- " + s for i, s in enumerate(sentences) if i in unverified
+            )
+            raise EventDetail(
+                key,
+                value,
+                schema,
+                (
+                    f"The summary \nSummary: {value}\n has sentences\n"
+                    f"{unverified_sentences}\n that are not similar to any document."
+                ),
+                fixed_summary,
+            )
+
+        schema[key] = fixed_summary
+        return schema
+
+    def to_prompt(self, with_keywords: bool = True) -> str:
+        return ""
+
+
+@register_validator(name="qa-relevance-llm-eval", data_type="string")
+class QARelevanceLLMEval(Validator):
+    def __init__(
+        self,
+        llm_callable: Callable = None,
+        on_fail: Optional[Callable] = None,
+        **kwargs,
+    ):
+        super().__init__(on_fail, **kwargs)
+        self.llm_callable = (
+            llm_callable if llm_callable else openai.ChatCompletion.create
+        )
+
+    def selfeval(self, question: str, answer: str):
+        from guardrails import Guard
+
+        spec = """
+<rail version="0.1">
+<output>
+    <bool name="relevant" />
+</output>
+
+<prompt>
+Is the answer below relevant to the question asked?
+Question: {question}
+Answer: {answer}
+
+Relevant (as a JSON with a single boolean key, "relevant"):\
+</prompt>
+</rail>
+    """.format(
+            question=question,
+            answer=answer,
+        )
+        guard = Guard.from_rail_string(spec)
+
+        return guard(
+            self.llm_callable,
+            max_tokens=10,
+            temperature=0.1,
+        )[1]
+
+    def validate(self, key, value, schema) -> Dict:
+        assert "question" in schema, "The schema must contain a `question` key."
+
+        relevant = self.selfeval(schema["question"], value)["relevant"]
+        if relevant:
+            return schema
+
+        fixed_answer = "No relevant answer found."
+        raise EventDetail(
+            key,
+            value,
+            schema,
+            f"The answer {value} is not relevant to the question {schema['question']}.",
+            fixed_answer,
+        )
+
+    def to_prompt(self, with_keywords: bool = True) -> str:
+        return ""
