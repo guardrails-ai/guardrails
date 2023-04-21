@@ -15,8 +15,14 @@ import openai
 from pydantic import BaseModel, ValidationError
 
 from guardrails.datatypes import registry as types_registry
+from guardrails.document_store import DocumentStoreBase, EphemeralDocumentStore
+from guardrails.embedding import OpenAIEmbedding
 from guardrails.utils.reask_utils import ReAsk
 from guardrails.utils.sql_utils import SQLDriver, create_sql_driver
+from guardrails.vectordb import Faiss
+
+import re
+
 
 try:
     import numpy as np
@@ -24,6 +30,11 @@ except ImportError:
     _HAS_NUMPY = False
 else:
     _HAS_NUMPY = True
+
+try:
+    from manifest import Manifest
+except ImportError:
+    Manifest = None
 
 
 validators_registry = {}
@@ -995,3 +1006,76 @@ class EndsWith(Validator):
             )
 
         return schema
+
+
+@register_validator(name="extracted-summary-sentences-match", data_type="string")
+class ExtractedSummarySentencesMatch(Validator):
+    def __init__(
+            self, 
+            documents_dir: str, 
+            threshold: float=0.7,
+            embedding_model: Optional[str] = None,
+            vector_db: str = "faiss",
+            document_store: Optional[DocumentStoreBase] = None,
+            similarity_fn: Callable = fuzz.ratio,
+            on_fail: Optional[Callable] = None, 
+            **kwargs,
+        ):
+        super().__init__(on_fail, **kwargs)
+
+        if Manifest is None:
+            raise ImportError(
+                "`extracted-summary-sentences-match` validator requires the `manifest`"
+                "package. Please install it with `pip install manifest`."
+            )
+
+        documents = []
+        for document in os.listdir(documents_dir):
+            with open(os.path.join(documents_dir, document)) as f:
+                documents.append(f.read())
+
+        self._documents = documents
+        self._threshold = float(threshold)
+        self._similarity_fn = similarity_fn
+
+        if embedding_model is None:
+            embedding_model = OpenAIEmbedding
+        if document_store is None:
+            document_store = EphemeralDocumentStore
+
+        e = embedding_model()
+        vector_db = Faiss.new_flat_l2_index(e.output_dim, embedder=e)
+        store = document_store(vector_db)
+        store.add_texts(
+            {doc: {"text": doc} for doc in documents},
+        )
+
+        # Split each document into sentences.
+        # self._sentences = [re.split(r"(?<=[.!?]) +", d) for d in documents]
+
+    def validate(self, key, value, schema) -> Dict:
+        # Split the value into sentences.
+        sentences = re.split(r"(?<=[.!?]) +", value)
+
+        # Check if any of the sentences in the value match any of the sentences
+        # in the documents.
+
+        for sentence in sentences:
+
+            
+
+            for doc_sentences in self._sentences:
+                for doc_sentence in doc_sentences:
+                    if self._similarity_fn(sentence, doc_sentence) > self._threshold:
+                        return schema
+
+        raise EventDetail(
+            key,
+            value,
+            schema,
+            f"Value {value} does not match any of the sentences in the documents.",
+            None,
+        )
+    
+    def to_prompt(self, with_keywords: bool = True) -> str:
+        return ""

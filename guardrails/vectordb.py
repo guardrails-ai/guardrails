@@ -36,6 +36,18 @@ class VectorDBBase(ABC):
         """
         ...
 
+    @abstractmethod
+    def similarity_search_vector_with_threshold(
+        self, vector: List[float], k: int, threshold: float
+    ) -> List[int]:
+        """Searches for vectors which are similar to the given vector.
+        Args:
+            vector: Vector to search for.
+            k: Number of similar vectors to return.
+            threshold: Minimum similarity threshold to return.
+        """
+        ...
+
     def similarity_search(self, text: str, k: int) -> List[int]:
         """Searches for vectors which are similar to the given text.
         Args:
@@ -46,6 +58,10 @@ class VectorDBBase(ABC):
             List[int] List of indexes of the similar vectors."""
         vector = self._embedder.embed_query(text)
         return self.similarity_search_vector(vector, k)
+
+    def similarity_search_with_threshold(self, text: str, k: int, threshold: float) -> List[int]:
+        vector = self._embedder.embed_query(text)
+        return self.similarity_search_vector_with_threshold(vector, k, threshold)
 
     def add_texts(self, texts: List[str], ids: List[Any] = None) -> None:
         """Adds a list of texts to the store.
@@ -118,6 +134,14 @@ class Faiss(VectorDBBase):
 
         _, scores = self._index.search(np.array([vector]), k)
         return scores[0].tolist()
+
+    def similarity_search_vector_with_threshold(
+        self, vector: List[float], k: int, threshold: float
+    ) -> List[int]:
+        import numpy as np
+
+        _, scores = self._index.range_search(np.array([vector]), k, radius=threshold)
+        return [score for score in scores[0].tolist() if score >= threshold]
 
     def add_vectors(self, vectors: List[List[float]]) -> None:
         import numpy as np
