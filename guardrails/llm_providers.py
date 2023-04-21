@@ -4,12 +4,23 @@ from functools import partial
 from typing import Any, Callable, Dict, List, Optional, cast
 
 import openai
+from tenacity import retry, retry_if_exception_type, wait_exponential_jitter
 
 try:
     MANIFEST = True
     import manifest
 except ImportError:
     MANIFEST = False
+
+OPENAI_RETRYABLE_ERRORS = [
+    openai.error.APIConnectionError,
+    openai.error.APIError,
+    openai.error.TryAgain,
+    openai.error.Timeout,
+    openai.error.RateLimitError,
+    openai.error.ServiceUnavailableError,
+]
+RETRYABLE_ERRORS = OPENAI_RETRYABLE_ERRORS
 
 
 class PromptCallableException(Exception):
@@ -26,6 +37,10 @@ class PromptCallable:
 
     fn: Callable
 
+    @retry(
+        wait=wait_exponential_jitter(max=60),
+        retry=retry_if_exception_type(RETRYABLE_ERRORS),
+    )
     def __call__(self, *args, **kwargs):
         try:
             result = self.fn(*args, **kwargs)
