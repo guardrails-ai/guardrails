@@ -60,7 +60,9 @@ class VectorDBBase(ABC):
         vector = self._embedder.embed_query(text)
         return self.similarity_search_vector(vector, k)
 
-    def similarity_search_with_threshold(self, text: str, k: int, threshold: float) -> List[int]:
+    def similarity_search_with_threshold(
+        self, text: str, k: int, threshold: float
+    ) -> List[int]:
         vector = self._embedder.embed_query(text)
         return self.similarity_search_vector_with_threshold(vector, k, threshold)
 
