@@ -13,7 +13,7 @@ def generate_test_artifacts(
 
     Artifacts include: rail_spec, compiled_prompt, llm_output, validated_response.
     The artifacts are saved by on_fail_type. Check out
-    tests/integration_tests/test_cases/entity_extraction/ for examples.
+    tests/integration_tests/test_assets/entity_extraction/ for examples.
 
     This function is only intended to be used to create artifacts for integration tests
     once the GuardHistory object has been manually checked to be correct.
