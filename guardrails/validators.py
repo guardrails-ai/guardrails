@@ -1082,3 +1082,65 @@ class ExtractedSummarySentencesMatch(Validator):
 
     def to_prompt(self, with_keywords: bool = True) -> str:
         return ""
+
+
+@register_validator(name="qa-relevance-llm-eval", data_type="string")
+class QARelevanceLLMEval(Validator):
+    def __init__(
+        self,
+        llm_callable: Callable = None,
+        on_fail: Optional[Callable] = None,
+        **kwargs,
+    ):
+        super().__init__(on_fail, **kwargs)
+        self.llm_callable = (
+            llm_callable if llm_callable else openai.ChatCompletion.create
+        )
+
+    def selfeval(self, question: str, answer: str):
+        from guardrails import Guard
+
+        spec = """
+<rail version="0.1">
+<output>
+    <bool name="relevant" />
+</output>
+
+<prompt>
+Is the answer below relevant to the question asked?
+Question: {question}
+Answer: {answer}
+
+Relevant (as a JSON with a single boolean key, "relevant"):\
+</prompt>
+</rail>
+    """.format(
+            question=question,
+            answer=answer,
+        )
+        guard = Guard.from_rail_string(spec)
+
+        return guard(
+            self.llm_callable,
+            max_tokens=10,
+            temperature=0.1,
+        )[1]
+
+    def validate(self, key, value, schema) -> Dict:
+        assert "question" in schema, "The schema must contain a `question` key."
+
+        relevant = self.selfeval(schema["question"], value)["relevant"]
+        if relevant:
+            return schema
+
+        fixed_answer = "No relevant answer found."
+        raise EventDetail(
+            key,
+            value,
+            schema,
+            f"The answer {value} is not relevant to the question {schema['question']}.",
+            fixed_answer,
+        )
+
+    def to_prompt(self, with_keywords: bool = True) -> str:
+        return ""
