@@ -41,6 +41,7 @@ class VectorDBBase(ABC):
         self, vector: List[float], k: int, threshold: float
     ) -> List[int]:
         """Searches for vectors which are similar to the given vector.
+
         Args:
             vector: Vector to search for.
             k: Number of similar vectors to return.
@@ -107,6 +108,14 @@ class Faiss(VectorDBBase):
         return cls(IndexFlatL2(vector_dim), embedder, path)
 
     @classmethod
+    def new_flat_ip_index(
+        cls, vector_dim: int, embedder: EmbeddingBase, path: str = None
+    ):
+        from faiss import IndexFlatIP
+
+        return cls(IndexFlatIP(vector_dim), embedder, path)
+
+    @classmethod
     def new_flat_l2_index_from_embedding(
         cls, embedding: List[List[float]], embedder: EmbeddingBase, path: str = None
     ):
@@ -139,6 +148,20 @@ class Faiss(VectorDBBase):
         self, vector: List[float], k: int, threshold: float
     ) -> List[int]:
         import numpy as np
+
+        # Call faiss range search and get all the vectors with a score >= threshold
+        lims, dist, indexes = self._index.range_search(np.array([vector]), threshold)
+
+        if len(indexes) == 0:
+            return []
+
+        sorted_index = np.argsort(D)
+        sorted_index = sorted_index[0:k]
+
+        
+        return [score for score in output[1][0].tolist() if score >= threshold]
+
+
 
         _, scores = self._index.range_search(np.array([vector]), k, radius=threshold)
         return [score for score in scores[0].tolist() if score >= threshold]

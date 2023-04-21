@@ -1017,7 +1017,7 @@ class ExtractedSummarySentencesMatch(Validator):
             embedding_model: Optional[str] = None,
             vector_db: str = "faiss",
             document_store: Optional[DocumentStoreBase] = None,
-            similarity_fn: Callable = fuzz.ratio,
+            similarity_fn: Callable = None,
             on_fail: Optional[Callable] = None, 
             **kwargs,
         ):
@@ -1028,11 +1028,16 @@ class ExtractedSummarySentencesMatch(Validator):
                 "`extracted-summary-sentences-match` validator requires the `manifest`"
                 "package. Please install it with `pip install manifest`."
             )
+    
+        from thefuzz import fuzz
 
         documents = []
         for document in os.listdir(documents_dir):
             with open(os.path.join(documents_dir, document)) as f:
                 documents.append(f.read())
+
+        if similarity_fn is None:
+            similarity_fn = fuzz.ratio
 
         self._documents = documents
         self._threshold = float(threshold)
@@ -1044,9 +1049,9 @@ class ExtractedSummarySentencesMatch(Validator):
             document_store = EphemeralDocumentStore
 
         e = embedding_model()
-        vector_db = Faiss.new_flat_l2_index(e.output_dim, embedder=e)
-        store = document_store(vector_db)
-        store.add_texts(
+        vector_db = Faiss.new_flat_ip_index(e.output_dim, embedder=e)
+        self.store = document_store(vector_db)
+        self.store.add_texts(
             {doc: {"text": doc} for doc in documents},
         )
 
@@ -1061,9 +1066,6 @@ class ExtractedSummarySentencesMatch(Validator):
         # in the documents.
 
         for sentence in sentences:
-
-            
-
             for doc_sentences in self._sentences:
                 for doc_sentence in doc_sentences:
                     if self._similarity_fn(sentence, doc_sentence) > self._threshold:

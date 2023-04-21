@@ -159,6 +159,13 @@ class EphemeralDocumentStore(DocumentStoreBase):
         filtered_ids = filter(lambda x: x != -1, vector_db_indexes)
         return self._storage.get_pages_for_for_indexes(filtered_ids)
 
+    def search_with_threshold(self, query: str, threshold: float, k: int = 4) -> List[Page]:
+        vector_db_indexes = self._vector_db.similarity_search_with_threshold(
+            query, k, threshold
+        )
+        filtered_ids = filter(lambda x: x != -1, vector_db_indexes)
+        return self._storage.get_pages_for_for_indexes(filtered_ids)
+
     def flush(self, path: Optional[str] = None):
         self._vector_db.save(path)
 
