@@ -762,7 +762,13 @@ class BugFreeSQL(Validator):
     - Programmatic fix: None
     """
 
-    def __init__(self, schema_file: Optional[str] = None, conn: Optional[str] = None):
+    def __init__(
+        self,
+        conn: Optional[str] = None,
+        schema_file: Optional[str] = None,
+        on_fail: Optional[Callable] = None,
+    ):
+        super().__init__(on_fail=on_fail)
         self._driver: SQLDriver = create_sql_driver(schema_file=schema_file, conn=conn)
 
     def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:

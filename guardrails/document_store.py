@@ -112,6 +112,7 @@ class EphemeralDocumentStore(DocumentStoreBase):
 
     def __init__(self, vector_db: VectorDBBase, path: Optional[String] = None):
         """Creates a new EphemeralDocumentStore.
+
         Args:
             vector_db: VectorDBBase instance to use for storing the vectors.
             path: Path to the database file store metadata.
@@ -134,7 +135,7 @@ class EphemeralDocumentStore(DocumentStoreBase):
             )
         except exc.IntegrityError:
             return
-        self._vector_db.add_texts(document.pages.values())
+        self._vector_db.add_texts(list(document.pages.values()))
 
     def add_text(self, text: str, meta: Dict[Any, Any]) -> str:
         hash = hashlib.md5()
@@ -179,7 +180,7 @@ class SQLMetadataStore:
     def __init__(self, path: Optional[str] = None):
         conn = f"sqlite:///{path}" if path is not None else "sqlite://"
         self._engine = sqlalchemy.create_engine(conn)
-        SqlDocument.__table__.metadata.create_all(self._engine, checkfirst=True)
+        SqlDocument.metadata.create_all(self._engine, checkfirst=True)
 
     def add_docs(self, docs: List[Document], vdb_last_index: int):
         vector_id = vdb_last_index

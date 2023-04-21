@@ -1,5 +1,6 @@
 """Class for representing a prompt entry."""
 import re
+from string import Formatter
 from typing import Optional
 
 from guardrails.utils.constants import constants
@@ -12,7 +13,9 @@ class BasePrompt:
         output_schema = output_schema or {}
 
         # Get variable names in the source string (surronded by 2 curly braces)
-        self.variable_names = re.findall(r"{{(.*?)}}", source)
+        self.variable_names = [
+            x[1] for x in Formatter().parse(source) if x[1] is not None
+        ]
 
         format_instructions_start_idx = self.get_format_instructions_idx(source)
 
@@ -21,7 +24,10 @@ class BasePrompt:
         # Format instructions contain info for how to format LLM output.
         self.format_instructions = source[format_instructions_start_idx:]
 
-        self.source = source.format(output_schema=output_schema)
+        if output_schema:
+            self.source = source.format(output_schema=output_schema)
+        else:
+            self.source = source
 
     def __repr__(self) -> str:
         # Truncate the prompt to 50 characters and add ellipsis if it's longer.
@@ -49,8 +55,7 @@ class BasePrompt:
         return self.variable_names
 
     def format(self, **kwargs):
-        """Format the prompt using the given keyword arguments."""
-        return self.source.format(**kwargs)
+        raise NotImplementedError("Subclasses must implement this method.")
 
     def make_vars_optional(self):
         """Make all variables in the prompt optional."""

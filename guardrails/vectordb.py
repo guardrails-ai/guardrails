@@ -49,6 +49,7 @@ class VectorDBBase(ABC):
 
     def add_texts(self, texts: List[str], ids: List[Any] = None) -> None:
         """Adds a list of texts to the store.
+
         Args:
             texts: List of texts to add.
             ids: List of ids to associate with the texts.

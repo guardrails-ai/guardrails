@@ -2,10 +2,11 @@ import json
 from collections import defaultdict
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from lxml import etree as ET
 
+from guardrails.prompt import Prompt
 from guardrails.utils.constants import constants
 
 
@@ -192,7 +193,8 @@ def get_reask_prompt(
     parsed_rail: ET._Element,
     reasks: List[ReAsk],
     reask_json: Dict,
-) -> Tuple[str, ET._Element]:
+    reask_prompt_template: Optional[Prompt] = None,
+) -> Tuple[Prompt, ET._Element]:
     """Construct a prompt for reasking.
 
     Args:
@@ -217,15 +219,18 @@ def get_reask_prompt(
     pruned_tree = get_pruned_tree(parsed_rail_copy, list(reask_elements.keys()))
     pruned_tree_string = OutputSchema(pruned_tree).transpile()
 
-    reask_prompt_template = (
-        constants["high_level_reask_prompt"] + constants["complete_json_suffix"]
-    )
+    if reask_prompt_template is None:
+        reask_prompt_template = Prompt(
+            constants["high_level_reask_prompt"] + constants["complete_json_suffix"]
+        )
 
     def reask_decoder(obj):
         return {k: v for k, v in obj.__dict__.items() if k not in ["path", "fix_value"]}
 
     reask_prompt = reask_prompt_template.format(
-        previous_response=json.dumps(reask_json, indent=2, default=reask_decoder),
+        previous_response=json.dumps(reask_json, indent=2, default=reask_decoder)
+        .replace("{", "{{")
+        .replace("}", "}}"),
         output_schema=pruned_tree_string,
     )
 

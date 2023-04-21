@@ -104,3 +104,18 @@ class OpenAIEmbedding(EmbeddingBase):
         api_key = os.environ.get("OPENAI_API_KEY")
         resp = openai.Embedding.create(api_key=api_key, model=self._model, input=texts)
         return [r["embedding"] for r in resp["data"]]
+
+    @property
+    def output_dim(self) -> int:
+        if self._model == "text-embedding-ada-002":
+            return 1536
+        elif "ada" in self._model:
+            return 1024
+        elif "babbage" in self._model:
+            return 2048
+        elif "curie" in self._model:
+            return 4096
+        elif "davinci" in self._model:
+            return 12288
+        else:
+            raise ValueError("Unknown model")

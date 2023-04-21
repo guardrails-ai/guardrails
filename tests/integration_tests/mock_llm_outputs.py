@@ -1,4 +1,4 @@
-from .test_cases import entity_extraction, pydantic
+from .test_assets import entity_extraction, pydantic
 
 
 def openai_completion_create(prompt, *args, **kwargs):

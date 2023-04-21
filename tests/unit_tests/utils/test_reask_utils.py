@@ -3,6 +3,7 @@ import json
 import pytest
 from lxml import etree as ET
 
+from guardrails import Prompt
 from guardrails.utils import reask_utils
 from guardrails.utils.reask_utils import (
     ReAsk,
@@ -163,7 +164,11 @@ Here are examples of simple (XML, JSON) pairs that show the expected behavior:
     result_prompt, _ = reask_utils.get_reask_prompt(
         ET.fromstring(example_rail), reasks, reask_json
     )
-    assert result_prompt == expected_result_template % (
-        json.dumps(reask_json, indent=2),
-        example_rail,
+
+    assert result_prompt == Prompt(
+        expected_result_template
+        % (
+            json.dumps(reask_json, indent=2).replace("{", "{{").replace("}", "}}"),
+            example_rail,
+        )
     )

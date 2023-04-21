@@ -1,5 +1,6 @@
 import logging
-from typing import Callable, Dict, Optional, Tuple
+from string import Formatter
+from typing import Callable, Dict, Optional, Tuple, Union
 
 from eliot import start_action, to_file
 
@@ -35,6 +36,7 @@ class Guard:
         self.rail = rail
         self.num_reasks = num_reasks
         self.guard_state = GuardState([])
+        self._reask_prompt = None
 
     @property
     def input_schema(self) -> InputSchema:
@@ -75,6 +77,25 @@ class Guard:
     def state(self) -> GuardState:
         """Return the state."""
         return self.guard_state
+
+    @property
+    def reask_prompt(self) -> Prompt:
+        """Return the reask prompt."""
+        return self._reask_prompt
+
+    @reask_prompt.setter
+    def reask_prompt(self, reask_prompt: Union[str, Prompt]):
+        """Set the reask prompt."""
+
+        if isinstance(reask_prompt, str):
+            reask_prompt = Prompt(reask_prompt)
+
+        # Check that the reask prompt has the correct variables
+        variables = [
+            t[1] for t in Formatter().parse(reask_prompt.source) if t[1] is not None
+        ]
+        assert set(variables) == {"previous_response", "output_schema"}
+        self._reask_prompt = reask_prompt
 
     def configure(
         self,
@@ -140,6 +161,7 @@ class Guard:
                 input_schema=self.input_schema,
                 output_schema=self.output_schema,
                 num_reasks=num_reasks,
+                reask_prompt=self.reask_prompt,
             )
             guard_history = runner(prompt_params=prompt_params)
             self.guard_state = self.guard_state.push(guard_history)
@@ -156,6 +178,7 @@ class Guard:
         llm_output: str,
         llm_api: PromptCallable = None,
         num_reasks: int = 1,
+        prompt_params: Dict = None,
         *args,
         **kwargs,
     ) -> Dict:
@@ -178,7 +201,8 @@ class Guard:
                 output_schema=self.output_schema,
                 num_reasks=num_reasks,
                 output=llm_output,
+                reask_prompt=self.reask_prompt,
             )
-            guard_history = runner()
+            guard_history = runner(prompt_params=prompt_params)
             self.guard_state = self.guard_state.push(guard_history)
             return sub_reasks_with_fixed_values(guard_history.validated_output)

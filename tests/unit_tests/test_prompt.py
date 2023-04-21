@@ -51,8 +51,8 @@ def test_parse_prompt():
     guard = gd.Guard.from_rail_string(SIMPLE_RAIL_SPEC)
 
     # Strip both, raw and parsed, to be safe
-    assert guard.instructions.format().strip() == INSTRUCTIONS.strip()
-    assert guard.base_prompt.format().strip() == PROMPT.strip()
+    assert guard.instructions.format().source.strip() == INSTRUCTIONS.strip()
+    assert guard.prompt.format().source.strip() == PROMPT.strip()
 
 
 def test_instructions_with_params():
@@ -63,9 +63,10 @@ def test_instructions_with_params():
     user_prompt = "A useful prompt."
 
     assert (
-        guard.instructions.format(user_instructions=user_instructions).strip()
+        guard.instructions.format(user_instructions=user_instructions).source.strip()
         == user_instructions.strip()
     )
     assert (
-        guard.base_prompt.format(user_prompt=user_prompt).strip() == user_prompt.strip()
+        guard.prompt.format(user_prompt=user_prompt).source.strip()
+        == user_prompt.strip()
     )

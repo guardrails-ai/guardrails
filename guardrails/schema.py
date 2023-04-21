@@ -294,6 +294,10 @@ class Schema:
     def items(self) -> Dict[str, DataType]:
         return vars(self._schema).items()
 
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert the schema to a dictionary."""
+        return vars(self._schema)
+
     @property
     def parsed_rail(self) -> Optional[ET._Element]:
         return self.root
@@ -389,7 +393,7 @@ class Schema2Prompt:
                 Schema2Prompt.remove_comments(child)
 
     @staticmethod
-    def validator_to_prompt(schema: Schema) -> None:
+    def validator_to_prompt(root: ET.Element, schema_dict: Dict[str, DataType]) -> None:
         """Recursively remove all validator arguments in the `format`
         attribute."""
 
@@ -404,12 +408,12 @@ class Schema2Prompt:
             for _, dt_child, el_child in dt.iter(el):
                 _inner(dt_child, el_child)
 
-        for el_child in schema.root:
-            dt_child = schema[el_child.attrib["name"]]
+        for el_child in root:
+            dt_child = schema_dict[el_child.attrib["name"]]
             _inner(dt_child, el_child)
 
     @staticmethod
-    def pydantic_to_object(schema: Schema) -> None:
+    def pydantic_to_object(root: ET.Element, schema_dict: Dict[str, DataType]) -> None:
         """Recursively replace all pydantic elements with object elements."""
         from guardrails.datatypes import Pydantic
 
@@ -421,8 +425,8 @@ class Schema2Prompt:
             for _, dt_child, el_child in dt.iter(el):
                 _inner(dt_child, el_child)
 
-        for el_child in schema.root:
-            dt_child = schema[el_child.attrib["name"]]
+        for el_child in root:
+            dt_child = schema_dict[el_child.attrib["name"]]
             _inner(dt_child, el_child)
 
     @staticmethod
@@ -494,18 +498,19 @@ class Schema2Prompt:
             The prompt.
         """
         # Construct another XML tree from the schema.
-        schema = deepcopy(schema)
+        root = deepcopy(schema.root)
+        schema_dict = schema.to_dict()
 
         # Remove comments.
-        cls.remove_comments(schema.root)
+        cls.remove_comments(root)
         # Remove action attributes.
-        cls.remove_on_fail_attributes(schema.root)
+        cls.remove_on_fail_attributes(root)
         # Remove validators with arguments.
-        cls.validator_to_prompt(schema)
+        cls.validator_to_prompt(root, schema_dict)
         # Replace pydantic elements with object elements.
-        cls.pydantic_to_object(schema)
+        cls.pydantic_to_object(root, schema_dict)
         # Deconstruct choice elements into string and cases.
-        updated_root = cls.deconstruct_choice(schema.root)
+        updated_root = cls.deconstruct_choice(root)
 
         # Return the XML as a string that is
         ET.indent(updated_root, space="    ")
