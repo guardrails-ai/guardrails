@@ -150,21 +150,14 @@ class Faiss(VectorDBBase):
         import numpy as np
 
         # Call faiss range search and get all the vectors with a score >= threshold
-        lims, dist, indexes = self._index.range_search(np.array([vector]), threshold)
+        _, dist, indexes = self._index.range_search(np.array([vector]), threshold)
 
         if len(indexes) == 0:
             return []
 
-        sorted_index = np.argsort(D)
-        sorted_index = sorted_index[0:k]
-
-        
-        return [score for score in output[1][0].tolist() if score >= threshold]
-
-
-
-        _, scores = self._index.range_search(np.array([vector]), k, radius=threshold)
-        return [score for score in scores[0].tolist() if score >= threshold]
+        sorted_indices = np.argsort(dist)
+        sorted_indexes = indexes[sorted_indices]
+        return sorted_indexes.tolist()[:k]
 
     def add_vectors(self, vectors: List[List[float]]) -> None:
         import numpy as np
