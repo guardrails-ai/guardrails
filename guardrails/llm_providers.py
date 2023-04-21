@@ -38,7 +38,7 @@ class PromptCallable:
     fn: Callable
 
     @retry(
-        wait=wait_exponential_jitter(multiplier=1, max=60),
+        wait=wait_exponential_jitter(max=60),
         retry=retry_if_exception_type(RETRYABLE_ERRORS),
     )
     def __call__(self, *args, **kwargs):
