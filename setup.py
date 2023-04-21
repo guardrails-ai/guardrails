@@ -44,7 +44,7 @@ with open("docs/requirements.txt") as f:
 
 SQL_REQUIREMENTS = ["sqlvalidator", "sqlalchemy>=2.0.9", "sqlglot"]
 
-VECTORDB_REQUIREMENTS = ["faiss-cpu", "numpy"]
+VECTORDB_REQUIREMENTS = ["faiss-cpu", "numpy", "tiktoken"]
 
 # What packages are optional?
 EXTRAS = {
