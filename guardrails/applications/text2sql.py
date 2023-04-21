@@ -1,4 +1,5 @@
 import json
+import os
 from string import Template
 from typing import Callable, Dict, Optional
 
@@ -37,6 +38,11 @@ Help me correct the incorrect values based on the given error messages.
 """
 
 
+EXAMPLE_BOILERPLATE = """
+I will give you a list of examples. Write a SQL query similar to the examples below:
+"""
+
+
 def example_formatter(
     input: str, output: str, output_schema: Optional[Callable] = None
 ) -> str:
@@ -61,10 +67,12 @@ class Text2Sql:
         embedding: Optional[EmbeddingBase] = OpenAIEmbedding,
         vector_db: Optional[VectorDBBase] = Faiss,
         document_store: Optional[DocumentStoreBase] = EphemeralDocumentStore,
-        rail_spec: Optional[str] = "text2sql.rail",
+        rail_spec: Optional[str] = None,
+        rail_params: Optional[Dict] = None,
         example_formatter: Optional[Callable] = example_formatter,
         reask_prompt: Optional[str] = REASK_PROMPT,
         llm_api: Optional[PromptCallable] = openai.Completion.create,
+        num_relevant_examples: int = 2,
     ):
         """Initialize the text2sql application.
 
@@ -87,35 +95,68 @@ class Text2Sql:
         self.sql_driver = create_sql_driver(conn=conn_str, schema_file=schema_file)
         self.sql_schema = self.sql_driver.get_schema()
 
-        # Initialize the Guard class
-        with open(rail_spec, "r") as f:
-            rail_spec_str = f.read()
-        if rail_spec == "text2sql.rail":
-            rail_spec_str = Template(rail_spec_str).safe_substitute(
-                conn_str=conn_str, schema_file=schema_file
-            )
-        self.guard = Guard.from_rail_string(rail_spec_str)
-        self.guard.reask_prompt = reask_prompt
+        # Number of relevant examples to use for the LLM.
+        self.num_relevant_examples = num_relevant_examples
+
+        # Initialize the Guard class.
+        self.guard = self._init_guard(
+            conn_str,
+            schema_file,
+            rail_spec,
+            rail_params,
+            reask_prompt,
+        )
 
         # Initialize the document store.
-        self.store = self._add_examples_to_docstore(
+        self.store = self._create_docstore_with_examples(
             examples, embedding, vector_db, document_store
         )
 
-    def _add_examples_to_docstore(
+    def _init_guard(
         self,
-        examples: Dict,
+        conn_str: str,
+        schema_file: Optional[str] = None,
+        rail_spec: Optional[str] = None,
+        rail_params: Optional[Dict] = None,
+        reask_prompt: Optional[str] = REASK_PROMPT,
+    ):
+        # Initialize the Guard class
+        if rail_spec is None:
+            rail_spec = os.path.join(os.path.dirname(__file__), "text2sql.rail")
+            rail_params = {"conn_str": conn_str, "schema_file": schema_file}
+            if schema_file is None:
+                rail_params["schema_file"] = ""
+
+        # Load the rail specification.
+        with open(rail_spec, "r") as f:
+            rail_spec_str = f.read()
+
+        # Substitute the parameters in the rail specification.
+        if rail_params is not None:
+            rail_spec_str = Template(rail_spec_str).safe_substitute(**rail_params)
+
+        guard = Guard.from_rail_string(rail_spec_str)
+        guard.reask_prompt = reask_prompt
+
+        return guard
+
+    def _create_docstore_with_examples(
+        self,
+        examples: Optional[Dict],
         embedding: EmbeddingBase,
         vector_db: VectorDBBase,
         document_store: DocumentStoreBase,
-    ) -> EphemeralDocumentStore:
+    ) -> Optional[DocumentStoreBase]:
+        if examples is None:
+            return None
+
         """Add examples to the document store."""
         e = embedding()
         if vector_db == Faiss:
             db = Faiss.new_flat_l2_index(e.output_dim, embedder=e)
         else:
             raise NotImplementedError(f"VectorDB {vector_db} is not implemented.")
-        store = document_store(db, e)
+        store = document_store(db)
         store.add_texts(
             {example["question"]: {"ctx": example["query"]} for example in examples}
         )
@@ -128,11 +169,15 @@ class Text2Sql:
     def __call__(self, text: str) -> str:
         """Run text2sql on a text query and return the SQL query."""
 
-        similar_examples = self.store.search(text, 1)
-        similar_examples_prompt = "\n".join(
-            self.example_formatter(example.text, example.metadata["ctx"])
-            for example in similar_examples
-        )
+        if self.store is not None:
+            similar_examples = self.store.search(text, self.num_relevant_examples)
+            similar_examples_prompt = "\n".join(
+                self.example_formatter(example.text, example.metadata["ctx"])
+                for example in similar_examples
+            )
+        else:
+            similar_examples_prompt = ""
+
         return self.guard(
             self.llm_api,
             prompt_params={
