@@ -16,11 +16,8 @@ import openai
 from pydantic import BaseModel, ValidationError
 
 from guardrails.datatypes import registry as types_registry
-from guardrails.document_store import DocumentStoreBase, EphemeralDocumentStore
-from guardrails.embedding import OpenAIEmbedding
 from guardrails.utils.reask_utils import ReAsk
 from guardrails.utils.sql_utils import SQLDriver, create_sql_driver
-from guardrails.vectordb import Faiss
 
 try:
     import numpy as np
@@ -28,11 +25,6 @@ except ImportError:
     _HAS_NUMPY = False
 else:
     _HAS_NUMPY = True
-
-try:
-    from manifest import Manifest
-except ImportError:
-    Manifest = None
 
 
 validators_registry = {}
@@ -1012,25 +1004,33 @@ class ExtractedSummarySentencesMatch(Validator):
         self,
         documents_dir: str,
         threshold: float = 0.7,
-        embedding_model: Optional[str] = None,
-        vector_db: str = "faiss",
-        document_store: Optional[DocumentStoreBase] = None,
-        similarity_fn: Callable = None,
+        embedding_model: Optional["EmbeddingBase"] = None,  # noqa: F821
+        vector_db: Optional["VectorDBBase"] = None,  # noqa: F821
+        document_store: Optional["DocumentStoreBase"] = None,  # noqa: F821
         on_fail: Optional[Callable] = None,
         **kwargs,
     ):
         super().__init__(on_fail, **kwargs)
+        # TODO(shreya): Pass embedding_model, vector_db, document_store from spec
 
-        if embedding_model is None:
-            embedding_model = OpenAIEmbedding
         if document_store is None:
-            document_store = EphemeralDocumentStore
+            from guardrails.document_store import EphemeralDocumentStore
 
-        e = embedding_model()
-        vector_db = Faiss.new_flat_ip_index(e.output_dim, embedder=e)
-        self.store = document_store(vector_db)
+            if vector_db is None:
+                from guardrails.vectordb import Faiss
 
-        documents = []
+                if embedding_model is None:
+                    from guardrails.embedding import OpenAIEmbedding
+
+                    embedding_model = OpenAIEmbedding()
+
+                vector_db = Faiss.new_flat_ip_index(
+                    embedding_model.output_dim, embedder=embedding_model
+                )
+            self.store = EphemeralDocumentStore(vector_db)
+        else:
+            self.store = document_store
+
         for doc_path in os.listdir(documents_dir):
             with open(os.path.join(documents_dir, doc_path)) as f:
                 doc = f.read()
@@ -1038,7 +1038,6 @@ class ExtractedSummarySentencesMatch(Validator):
                     doc, {"path": os.path.join(documents_dir, doc_path)}
                 )
 
-        self._documents = documents
         self._threshold = float(threshold)
 
     def validate(self, key, value, schema) -> Dict:
