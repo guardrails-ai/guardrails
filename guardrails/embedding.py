@@ -3,8 +3,12 @@ from abc import ABC, abstractmethod
 from itertools import islice
 from typing import Callable, List, Optional
 
-import numpy as np
 import openai
+
+try:
+    import numpy as np
+except ImportError:
+    np = None
 
 
 class EmbeddingBase(ABC):
@@ -16,6 +20,12 @@ class EmbeddingBase(ABC):
         encoding_name: Optional[str],
         max_tokens: Optional[int],
     ):
+        if np is None:
+            raise ImportError(
+                f"`numpy` is required for `{self.__class__.__name__}` class."
+                "Please install it with `pip install numpy`."
+            )
+
         self._model = model
         self._encoding_name = encoding_name
         self._max_tokens = max_tokens
