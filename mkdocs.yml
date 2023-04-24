@@ -29,7 +29,7 @@ nav:
       - 'Guardrails CLI': cli.md
     - 'Examples':
       - 'Use Guardrails with Chat Models': examples/guardrails_with_chat_models.ipynb
-      - 'If condition: generate different JSON objects based on condition': examples/select_choice_based_on_action.ipynb'
+      - 'If condition: generate different JSON objects based on condition': examples/select_choice_based_on_action.ipynb
       - 'Extracting entities from ToS': examples/extracting_entities.ipynb
       - 'Generating bug-free Python code': examples/bug_free_python_code.ipynb
       - 'No secrets in generated text': examples/no_secrets_in_generated_text.ipynb
