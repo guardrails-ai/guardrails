@@ -581,6 +581,26 @@ to get help and share your work!
 </li>
       
         <li class="md-nav__item">
+  <a href="#guardrails.validators.ExtractedSummarySentencesMatch" class="md-nav__link">
+    ExtractedSummarySentencesMatch
+  </a>
+  
+    <nav class="md-nav" aria-label="ExtractedSummarySentencesMatch">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#guardrails.validators.ExtractedSummarySentencesMatch.store" class="md-nav__link">
+    store
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#guardrails.validators.Filter" class="md-nav__link">
     Filter
   </a>
@@ -652,6 +672,26 @@ to get help and share your work!
   <a href="#guardrails.validators.PydanticReAsk" class="md-nav__link">
     PydanticReAsk
   </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#guardrails.validators.QARelevanceLLMEval" class="md-nav__link">
+    QARelevanceLLMEval
+  </a>
+  
+    <nav class="md-nav" aria-label="QARelevanceLLMEval">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#guardrails.validators.QARelevanceLLMEval.selfeval" class="md-nav__link">
+    selfeval()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -825,7 +865,7 @@ to get help and share your work!
   
   
     <li class="md-nav__item">
-      <a href="../examples/select_choice_based_on_action.ipynb'" class="md-nav__link">
+      <a href="../examples/select_choice_based_on_action/" class="md-nav__link">
         If condition: generate different JSON objects based on condition
       </a>
     </li>
@@ -1111,6 +1151,26 @@ to get help and share your work!
 </li>
       
         <li class="md-nav__item">
+  <a href="#guardrails.validators.ExtractedSummarySentencesMatch" class="md-nav__link">
+    ExtractedSummarySentencesMatch
+  </a>
+  
+    <nav class="md-nav" aria-label="ExtractedSummarySentencesMatch">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#guardrails.validators.ExtractedSummarySentencesMatch.store" class="md-nav__link">
+    store
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#guardrails.validators.Filter" class="md-nav__link">
     Filter
   </a>
@@ -1182,6 +1242,26 @@ to get help and share your work!
   <a href="#guardrails.validators.PydanticReAsk" class="md-nav__link">
     PydanticReAsk
   </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#guardrails.validators.QARelevanceLLMEval" class="md-nav__link">
+    QARelevanceLLMEval
+  </a>
+  
+    <nav class="md-nav" aria-label="QARelevanceLLMEval">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#guardrails.validators.QARelevanceLLMEval.selfeval" class="md-nav__link">
+    selfeval()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1349,7 +1429,7 @@ Only the packages in the <code>python</code> environment are available to the co
 
 
 <h2 id="guardrails.validators.BugFreeSQL" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">BugFreeSQL</span><span class="p">(</span><span class="n">schema_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">conn</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+<code class="highlight language-python"><span class="n">BugFreeSQL</span><span class="p">(</span><span class="n">conn</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">schema_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_fail</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
 
 </h2>
 
@@ -1462,6 +1542,60 @@ that uses a database connection to check if the query is valid.</p>
 
 
 
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="guardrails.validators.ExtractedSummarySentencesMatch" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">ExtractedSummarySentencesMatch</span><span class="p">(</span><span class="n">documents_dir</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">embedding_model</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">vector_db</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">document_store</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_fail</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
+
+</h2>
+
+
+  <div class="doc doc-contents ">
+
+
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="guardrails.validators.ExtractedSummarySentencesMatch.store" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">store</span> <span class="o">=</span> <span class="n">EphemeralDocumentStore</span><span class="p">(</span><span class="n">vector_db</span><span class="p">)</span></code>
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  </div>
+
+</div>
 
 
 
@@ -1756,6 +1890,57 @@ contains profanity language.</p>
 
 
 
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="guardrails.validators.QARelevanceLLMEval" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">QARelevanceLLMEval</span><span class="p">(</span><span class="n">llm_callable</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_fail</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
+
+</h2>
+
+
+  <div class="doc doc-contents ">
+
+
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 id="guardrails.validators.QARelevanceLLMEval.selfeval" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">selfeval</span><span class="p">(</span><span class="n">question</span><span class="p">,</span> <span class="n">answer</span><span class="p">)</span></code>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+
+  </div>
+
+</div>
+
+
+
+  </div>
 
   </div>
 
