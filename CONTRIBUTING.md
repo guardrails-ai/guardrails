@@ -20,7 +20,7 @@ Follow these steps before committing your changes:
 
 1. Ensure tests pass: `make test`
 2. Format your code: `make autoformat`
-3. Update documentation if needed, located in the `docs` directory.
+3. Update documentation if needed. Docs are located in the `docs` directory. You can serve docs using `mkdocs serve`.
 
 ### Optional: Pre-Commit Hooks
 
