@@ -144,8 +144,6 @@ class Guard:
             llm_api: The LLM API to call (e.g. openai.Completion.create)
             prompt_params: The parameters to pass to the prompt.format() method.
             num_reasks: The max times to re-ask the LLM for invalid output.
-            *args: Additional arguments to pass to the LLM API.
-            **kwargs: Additional keyword arguments to pass to the LLM API.
 
         Returns:
             The raw text output from the LLM and the validated output.

@@ -178,13 +178,17 @@ class Text2Sql:
         else:
             similar_examples_prompt = ""
 
-        return self.guard(
-            self.llm_api,
-            prompt_params={
-                "nl_instruction": text,
-                "examples": similar_examples_prompt,
-                "db_info": str(self.sql_schema),
-            },
-            engine="text-davinci-003",
-            max_tokens=512,
-        )[1]["generated_sql"]
+        try:
+            output = self.guard(
+                self.llm_api,
+                prompt_params={
+                    "nl_instruction": text,
+                    "examples": similar_examples_prompt,
+                    "db_info": str(self.sql_schema),
+                },
+                max_tokens=512,
+            )[1]["generated_sql"]
+        except TypeError:
+            output = None
+
+        return output
