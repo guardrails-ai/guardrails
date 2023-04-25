@@ -1,6 +1,9 @@
 """Unit tests for prompt and instructions parsing."""
 
+import pytest
+
 import guardrails as gd
+from guardrails.utils.constants import constants
 
 INSTRUCTIONS = "You are a helpful bot, who answers only with valid JSON"
 
@@ -46,6 +49,27 @@ RAIL_WITH_PARAMS = """
 """
 
 
+RAIL_WITH_FORMAT_INSTRUCTIONS = f"""
+<rail version="0.1">
+<output>
+    <string name="test_string" description="A string for testing." />
+</output>
+<instructions>
+
+{INSTRUCTIONS}
+
+</instructions>
+
+<prompt>
+
+{PROMPT}
+
+@complete_json_suffix_v2
+</prompt>
+</rail>
+"""
+
+
 def test_parse_prompt():
     """Test parsing a prompt."""
     guard = gd.Guard.from_rail_string(SIMPLE_RAIL_SPEC)
@@ -70,3 +94,30 @@ def test_instructions_with_params():
         guard.prompt.format(user_prompt=user_prompt).source.strip()
         == user_prompt.strip()
     )
+
+
+@pytest.mark.parametrize(
+    "rail,var_names",
+    [
+        (SIMPLE_RAIL_SPEC, []),
+        (RAIL_WITH_PARAMS, ["user_prompt"]),
+    ],
+)
+def test_variable_names(rail, var_names):
+    """Test extracting variable names from a prompt."""
+    guard = gd.Guard.from_rail_string(rail)
+
+    assert guard.prompt.variable_names == var_names
+
+
+def test_format_instructions():
+    """Test extracting format instructions from a prompt."""
+    guard = gd.Guard.from_rail_string(RAIL_WITH_FORMAT_INSTRUCTIONS)
+    output_schema = guard.rail.output_schema.transpile()
+    expected_instructions = (
+        constants["complete_json_suffix_v2"]
+        .format(output_schema=output_schema)
+        .rstrip()
+    )
+
+    assert guard.prompt.format_instructions.rstrip() == expected_instructions

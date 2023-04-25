@@ -10,20 +10,12 @@ class BasePrompt:
     """Base class for representing an LLM prompt."""
 
     def __init__(self, source: str, output_schema: Optional[str] = None):
-        output_schema = output_schema or {}
-
-        # Get variable names in the source string (surronded by 2 curly braces)
-        self.variable_names = [
-            x[1] for x in Formatter().parse(source) if x[1] is not None
-        ]
-
-        format_instructions_start_idx = self.get_format_instructions_idx(source)
+        self.format_instructions_start = self.get_format_instructions_idx(source)
 
         # Substitute constants in the prompt.
         source = self.substitute_constants(source)
-        # Format instructions contain info for how to format LLM output.
-        self.format_instructions = source[format_instructions_start_idx:]
 
+        # If an output schema is provided, substitute it in the prompt.
         if output_schema:
             self.source = source.format(output_schema=output_schema)
         else:
@@ -36,6 +28,17 @@ class BasePrompt:
             truncated_prompt += "..."
         return f"Prompt({truncated_prompt})"
 
+    def __str__(self) -> str:
+        return self.source
+
+    @property
+    def variable_names(self):
+        return [x[1] for x in Formatter().parse(self.source) if x[1] is not None]
+
+    @property
+    def format_instructions(self):
+        return self.source[self.format_instructions_start :]
+
     def substitute_constants(self, text):
         """Substitute constants in the prompt."""
         # Substitute constants by reading the constants file.
@@ -47,9 +50,6 @@ class BasePrompt:
             text = text.replace(f"@{match}", constants[match])
 
         return text
-
-    def __str__(self) -> str:
-        return self.source
 
     def get_prompt_variables(self):
         return self.variable_names
@@ -74,10 +74,20 @@ class BasePrompt:
         # TODO(shreya): Optionally add support for special character demarcation.
 
         # Regex to extract first occurrence of @<constant_name>
-        match = re.search(r"@(\w+)", text)
-        if match is None:
+
+        matches = re.finditer(r"@(\w+)", text)
+
+        earliest_match_idx = None
+        earliest_match = None
+
+        # Find the earliest match where the match belongs to a constant.
+        for match in matches:
+            if match.group(1) in constants:
+                if earliest_match_idx is None or earliest_match_idx > match.start():
+                    earliest_match_idx = match.start()
+                    earliest_match = match
+
+        if earliest_match_idx is None:
             return 0
 
-        # Subtract 2*len(variable_names) to account for curly braces.
-        start_idx = match.start() - 2 * len(self.variable_names)
-        return start_idx
+        return earliest_match.start()
