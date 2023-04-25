@@ -1,8 +1,12 @@
 """Rail class."""
 from dataclasses import dataclass, field
-from typing import List, Optional
 
 from lxml import etree as ET
+from lxml.etree import Element, SubElement, tostring
+from typing import Type, Optional, List
+from pydantic import BaseModel, HttpUrl
+from datetime import date, time
+import typing
 
 from guardrails.prompt import Instructions, Prompt
 from guardrails.schema import InputSchema, OutputSchema, Schema
@@ -201,3 +205,77 @@ class Rail:
     def load_script(root: ET._Element) -> Script:
         """Given the RAIL <script> element, load and execute the script."""
         return Script.from_xml(root)
+
+    @classmethod
+    def from_class(cls, output_class, prompt):
+        xml = generate_xml_code(output_class, prompt)
+        return cls.from_string(xml)
+
+
+def create_xml_elements_for_model(parent_element, model, model_name):
+    # Iterate through the fields of the model and create elements for each field
+    for field_name, field_type in model.__fields__.items():
+        # Determine the XML element name based on the field type
+        if field_type.type_ == bool:
+            field_element_name = 'boolean'
+        elif field_type.type_ == date:
+            field_element_name = 'date'
+        elif field_type.type_ == float:
+            field_element_name = 'float'
+        elif field_type.type_ == int:
+            field_element_name = 'integer'
+        elif issubclass(field_type.type_, List) or typing.get_origin(model.__annotations__.get(field_name)) == list:
+            field_element_name = 'list'
+            # Handle list of objects
+            inner_type = field_type.type_
+            if issubclass(inner_type, BaseModel):
+                field_element = SubElement(parent_element, field_element_name)
+                field_element.set('name', field_name)
+                # Add the object element inside the list element
+                object_element = SubElement(field_element, 'object')
+                object_element.set('name', model_name)
+                create_xml_elements_for_model(object_element, field_type.type_, field_name)
+                continue
+        elif issubclass(field_type.type_, BaseModel):
+            field_element_name = 'object'
+        elif field_type.type_ == str:
+            field_element_name = 'string'
+        elif field_type.type_ == time:
+            field_element_name = 'time'
+        elif field_type.type_ == HttpUrl:
+            field_element_name = 'url'
+        else:
+            # Skip unsupported types
+            # TODO: Add logging?
+            continue
+
+        # Create the field element
+        field_element = SubElement(parent_element, field_element_name)
+        field_element.set('name', field_name)
+
+        # Handle nested models
+        if issubclass(field_type.type_, BaseModel):
+            create_xml_elements_for_model(field_element, field_type.type_, field_name)
+
+
+def generate_xml_code(output_class: Type[BaseModel], prompt: str) -> str:
+    # Create the root element
+    root = Element('rail')
+    root.set('version', '0.1')
+
+    # Create the output element
+    output = SubElement(root, 'output')
+
+    # Create XML elements for the output_class
+    create_xml_elements_for_model(output, output_class, output_class.__name__)
+
+    # Create the prompt element
+    prompt_element = SubElement(root, 'prompt')
+    prompt_text = f'\n{prompt}\n'
+    prompt_text += '@complete_json_suffix_v2\n'
+    prompt_element.text = prompt_text
+
+    # Convert the XML tree to a string
+    xml_code = tostring(root, encoding='unicode', pretty_print=True)
+
+    return xml_code

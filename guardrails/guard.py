@@ -204,3 +204,9 @@ class Guard:
             guard_history = runner(prompt_params=prompt_params)
             self.guard_state = self.guard_state.push(guard_history)
             return sub_reasks_with_fixed_values(guard_history.validated_output)
+
+    @classmethod
+    def from_class(cls, output_class, prompt) -> "Guard":
+        """Create a Guard instance from an output class object."""
+        rail = Rail.from_class(output_class=output_class, prompt=prompt)
+        return cls(rail)
