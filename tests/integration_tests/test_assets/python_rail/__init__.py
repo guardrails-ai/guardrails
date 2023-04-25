@@ -6,11 +6,13 @@ reader = (
     lambda filename: open(os.path.join(DATA_DIR, filename)).read().replace("\r", "")
 )
 
-COMPILED_PROMPT = reader("compiled_prompt.txt")
+COMPILED_PROMPT_WITHOUT_INSTRUCTIONS = reader("compiled_prompt.txt")
+COMPILED_INSTRUCTIONS = reader("compiled_instructions.txt")
 
 LLM_OUTPUT = reader("llm_output.txt")
 
 __all__ = [
-    "COMPILED_PROMPT",
+    "COMPILED_PROMPT_WITHOUT_INSTRUCTIONS",
+    "COMPILED_INSTRUCTIONS",
     "LLM_OUTPUT",
 ]

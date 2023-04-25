@@ -7,13 +7,13 @@ from pydantic import BaseModel, EmailStr
 
 import guardrails as gd
 
-from .mock_llm_outputs import openai_completion_create
+from .mock_llm_outputs import openai_completion_create, openai_chat_completion_create
 from .test_assets import python_rail
 
 
 def test_python_rail_with_reask(mocker):
     mocker.patch(
-        "guardrails.llm_providers.openai_wrapper", new=openai_completion_create
+        "guardrails.llm_providers.openai_wrapper", new=openai_chat_completion_create
     )
 
     class Details(BaseModel):
@@ -39,6 +39,8 @@ def test_python_rail_with_reask(mocker):
             "Provide detailed information about the top 5 grossing movies from {{director}} "
             "including release date, duration, budget, whether it's a sequel, website, and contact email."
         ),
+        instructions="You are a helpful assistant only capable of communicating with valid JSON, "
+                     "and no other text.\n\n@json_suffix_prompt_examples"
     )
 
     _, final_output = guard(

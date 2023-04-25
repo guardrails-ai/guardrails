@@ -53,7 +53,7 @@ class Script:
                 if stack and stack[-1] == "{":
                     stack.pop()
                     if not stack:
-                        expressions.append(body[start + 1 : i])
+                        expressions.append(body[start + 1: i])
                 else:
                     stack.append(char)
         return expressions
@@ -185,7 +185,7 @@ class Rail:
 
     @staticmethod
     def load_instructions(
-        root: ET._Element, output_schema: OutputSchema
+            root: ET._Element, output_schema: OutputSchema
     ) -> Instructions:
         """Given the RAIL <instructions> element, create Instructions."""
         return Instructions(
@@ -207,8 +207,8 @@ class Rail:
         return Script.from_xml(root)
 
     @classmethod
-    def from_class(cls, output_class, prompt):
-        xml = generate_xml_code(output_class, prompt)
+    def from_class(cls, output_class, prompt, instructions):
+        xml = generate_xml_code(output_class, prompt, instructions)
         return cls.from_string(xml)
 
 
@@ -225,8 +225,8 @@ def create_xml_elements_for_model(parent_element, model, model_name):
         elif field_type.type_ == int:
             field_element_name = "integer"
         elif (
-            issubclass(field_type.type_, List)
-            or typing.get_origin(model.__annotations__.get(field_name)) == list
+                issubclass(field_type.type_, List)
+                or typing.get_origin(model.__annotations__.get(field_name)) == list
         ):
             field_element_name = "list"
             # Handle list of objects
@@ -263,7 +263,7 @@ def create_xml_elements_for_model(parent_element, model, model_name):
             create_xml_elements_for_model(field_element, field_type.type_, field_name)
 
 
-def generate_xml_code(output_class: Type[BaseModel], prompt: str) -> str:
+def generate_xml_code(output_class: Type[BaseModel], prompt: str, instructions: str) -> str:
     # Create the root element
     root = Element("rail")
     root.set("version", "0.1")
@@ -279,6 +279,11 @@ def generate_xml_code(output_class: Type[BaseModel], prompt: str) -> str:
     prompt_text = f"\n{prompt}\n"
     prompt_text += "@complete_json_suffix_v2\n"
     prompt_element.text = prompt_text
+
+    # Create the instructions element
+    instructions_element = SubElement(root, "instructions")
+    instructions_text = f"\n{instructions}\n"
+    instructions_element.text = instructions_text
 
     # Convert the XML tree to a string
     xml_code = tostring(root, encoding="unicode", pretty_print=True)
