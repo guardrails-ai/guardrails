@@ -7,11 +7,11 @@ from pydantic import BaseModel, EmailStr
 
 import guardrails as gd
 
-from .mock_llm_outputs import openai_completion_create, openai_chat_completion_create
+from .mock_llm_outputs import openai_chat_completion_create
 from .test_assets import python_rail
 
 
-def test_python_rail_with_reask(mocker):
+def test_python_rail(mocker):
     mocker.patch(
         "guardrails.llm_providers.openai_wrapper", new=openai_chat_completion_create
     )
