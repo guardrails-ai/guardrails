@@ -820,6 +820,42 @@ class SqlColumnPresence(Validator):
         return schema
 
 
+@register_validator(name="exclude-sql-predicates", data_type="sql")
+class ExcludeSqlPredicates(Validator):
+    """Validate that the SQL query does not contain certain predicates.
+
+    - Name for `format` attribute: `exclude-sql-predicates`
+    - Supported data types: `sql`
+    """
+
+    def __init__(self, predicates: List[str], on_fail: Optional[Callable] = None):
+        super().__init__(on_fail=on_fail, predicates=predicates)
+        self._predicates = set(predicates)
+
+    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
+        from sqlglot import exp, parse
+
+        expressions = parse(value)
+        for expression in expressions:
+            if expression is None:
+                continue
+            for pred in self._predicates:
+                try:
+                    getattr(exp, pred)
+                except AttributeError:
+                    raise ValueError(f"Predicate {pred} does not exist")
+                if len(list(expression.find_all(getattr(exp, pred)))):
+                    raise EventDetail(
+                        key,
+                        value,
+                        schema,
+                        f"SQL query contains predicate {pred}",
+                        "",
+                    )
+
+        return schema
+
+
 @register_validator(name="similar-to-document", data_type="string")
 class SimilarToDocument(Validator):
     """Validate that a value is similar to the document.

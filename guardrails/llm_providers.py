@@ -20,7 +20,7 @@ OPENAI_RETRYABLE_ERRORS = [
     openai.error.RateLimitError,
     openai.error.ServiceUnavailableError,
 ]
-RETRYABLE_ERRORS = OPENAI_RETRYABLE_ERRORS
+RETRYABLE_ERRORS = tuple(OPENAI_RETRYABLE_ERRORS)
 
 
 class PromptCallableException(Exception):
@@ -87,10 +87,17 @@ def chat_prompt(
     ]
 
 
-def openai_wrapper(text: str, instructions: Optional[str] = None, *args, **kwargs):
+def openai_wrapper(
+    text: str,
+    engine: str = "text-davinci-003",
+    instructions: Optional[str] = None,
+    *args,
+    **kwargs,
+):
     api_key = os.environ.get("OPENAI_API_KEY")
     openai_response = openai.Completion.create(
         api_key=api_key,
+        engine=engine,
         prompt=nonchat_prompt(text, instructions, **kwargs),
         *args,
         **kwargs,

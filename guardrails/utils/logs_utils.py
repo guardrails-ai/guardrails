@@ -34,7 +34,7 @@ class GuardLogs:
                     title="Prompt",
                     style="on #F0F8FF",
                 ),
-                Panel(self.instructions, title="Instructions", style="on #FFF0F2"),
+                Panel(self.instructions.source, title="Instructions", style="on #FFF0F2"),
                 Panel(self.output, title="Raw LLM Output", style="on #F5F5DC"),
                 Panel(
                     pretty_repr(self.validated_output),
