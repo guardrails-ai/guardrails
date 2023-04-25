@@ -1,5 +1,65 @@
-{"movies": [{"rank": 1, "title": "Inception"},
-            {"rank": 2, "title": "The Dark Knight"},
-            {"rank": 3, "title": "The Dark Knight Rises"},
-            {"rank": 4, "title": "Interstellar"},
-            {"rank": 5, "title": "Dunkirk"}]}
+{
+    "name": "Christopher Nolan",
+    "movies": [
+        {
+            "rank": 1,
+            "title": "Inception",
+            "details": {
+                "release_date": "2010-07-16",
+                "duration": "02:28:00",
+                "budget": 160000000.0,
+                "is_sequel": false,
+                "website": "https://www.inceptionmovie.com",
+                "contact_email": "info@inceptionmovie.com"
+            }
+        },
+        {
+            "rank": 2,
+            "title": "The Dark Knight",
+            "details": {
+                "release_date": "2008-07-18",
+                "duration": "02:32:00",
+                "budget": 185000000.0,
+                "is_sequel": true,
+                "website": "https://www.thedarkknightmovie.com",
+                "contact_email": "info@thedarkknightmovie.com"
+            }
+        },
+        {
+            "rank": 3,
+            "title": "The Dark Knight Rises",
+            "details": {
+                "release_date": "2012-07-20",
+                "duration": "02:44:00",
+                "budget": 250000000.0,
+                "is_sequel": true,
+                "website": "https://www.thedarkknightrises.com",
+                "contact_email": "info@thedarkknightrises.com"
+            }
+        },
+        {
+            "rank": 4,
+            "title": "Interstellar",
+            "details": {
+                "release_date": "2014-11-07",
+                "duration": "02:49:00",
+                "budget": 165000000.0,
+                "is_sequel": false,
+                "website": "https://www.interstellarmovie.com",
+                "contact_email": "info@interstellarmovie.com"
+            }
+        },
+        {
+            "rank": 5,
+            "title": "Dunkirk",
+            "details": {
+                "release_date": "2017-07-21",
+                "duration": "01:46:00",
+                "budget": 100000000.0,
+                "is_sequel": false,
+                "website": "https://www.dunkirkmovie.com",
+                "contact_email": "info@dunkirkmovie.com"
+            }
+        }
+    ]
+}

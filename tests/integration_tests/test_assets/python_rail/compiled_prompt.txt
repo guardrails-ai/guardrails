@@ -1,13 +1,21 @@
 
-What are the top 5 grossing movies from Christopher Nolan?
+Provide detailed information about the top 5 grossing movies from Christopher Nolan including release date, duration, budget, whether it's a sequel, website, and contact email.
 
 Given below is XML that describes the information to extract from this document and the tags to extract it into.
 
 <output>
+    <string name="name"/>
     <list name="movies">
-        <object name="Movies">
+        <object name="Director">
             <integer name="rank"/>
             <string name="title"/>
+            <object name="details">
+                <date name="release_date"/>
+                <time name="duration"/>
+                <float name="budget"/>
+                <bool name="is_sequel"/>
+                <string name="website"/>
+            </object>
         </object>
     </list>
 </output>
