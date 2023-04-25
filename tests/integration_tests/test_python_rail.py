@@ -1,3 +1,5 @@
+import json
+
 import openai
 
 from pydantic import BaseModel
@@ -5,6 +7,7 @@ from typing import List
 import guardrails as gd
 
 from .mock_llm_outputs import openai_completion_create
+from .test_assets import python_rail
 
 
 def test_python_rail_with_reask(mocker):
@@ -34,28 +37,7 @@ def test_python_rail_with_reask(mocker):
         num_reasks=2,
     )
 
-    expected_output_data = [
-        {"rank": 1, "title": "Inception"},
-        {"rank": 2, "title": "The Dark Knight"},
-        {"rank": 3, "title": "The Dark Knight Rises"},
-        {"rank": 4, "title": "Interstellar"},
-        {"rank": 5, "title": "Dunkirk"}
-    ]
-
-    expected_output = """
-What are the top 5 grossing movies from Christopher Nolan?
-
-Given below is XML that describes the information to extract from this document and the tags to extract it into.
-
-<output>
-    <list name="Movies">
-        <object name="Movie">
-            <integer name="rank"/>
-            <string name="title"/>
-        </object>
-    </list>
-</output>
-""".strip()
-
-    assert final_output == expected_output
+    # Assertions are made on the guard state object.
+    expected_llm_output_dict = json.loads(python_rail.LLM_OUTPUT)
+    assert final_output == expected_llm_output_dict
 

@@ -1,4 +1,4 @@
-from .test_assets import entity_extraction, pydantic
+from .test_assets import entity_extraction, pydantic, python_rail
 
 
 def openai_completion_create(prompt, *args, **kwargs):
@@ -9,6 +9,7 @@ def openai_completion_create(prompt, *args, **kwargs):
         pydantic.COMPILED_PROMPT: pydantic.LLM_OUTPUT,
         pydantic.COMPILED_PROMPT_REASK_1: pydantic.LLM_OUTPUT_REASK_1,
         pydantic.COMPILED_PROMPT_REASK_2: pydantic.LLM_OUTPUT_REASK_2,
+        python_rail.COMPILED_PROMPT: python_rail.LLM_OUTPUT,
     }
 
     try:
