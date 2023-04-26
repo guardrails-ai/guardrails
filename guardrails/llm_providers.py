@@ -123,7 +123,9 @@ def openai_chat_wrapper(
     return openai_response["choices"][0]["message"]["content"]
 
 
-def manifest_wrapper(text: str, client: Any, *args, **kwargs):
+def manifest_wrapper(
+    text: str, client: Any, instructions: Optional[str] = None, *args, **kwargs
+):
     """Wrapper for manifest client.
 
     To use manifest for guardrailse, do
@@ -141,7 +143,9 @@ def manifest_wrapper(text: str, client: Any, *args, **kwargs):
             "Install with `pip install manifest-ml`"
         )
     client = cast(manifest.Manifest, client)
-    manifest_response = client.run(nonchat_prompt(text), *args, **kwargs)
+    manifest_response = client.run(
+        nonchat_prompt(text, instructions, **kwargs), *args, **kwargs
+    )
     return manifest_response
 
 

@@ -1,5 +1,6 @@
 import os
 from abc import ABC, abstractmethod
+from functools import cached_property
 from itertools import islice
 from typing import Callable, List, Optional
 
@@ -43,13 +44,16 @@ class EmbeddingBase(ABC):
     def _len_safe_get_embedding(
         self, text, embedder: Callable[[str], List[float]], average=True
     ) -> List[float]:
-        """Gets the embedding for a text, but splits it into chunks if it is too long.
+        """Gets the embedding for a text, but splits it into chunks if it is
+        too long.
+
         Args:
             text: Text to embed.
             embedder: Embedding function to use.
             average: Whether to average the embeddings of the chunks.
         Returns:
-            List[float] Embedding of the text."""
+            List[float] Embedding of the text.
+        """
         chunk_embeddings = []
         chunk_lens = []
 
@@ -68,17 +72,23 @@ class EmbeddingBase(ABC):
 
     @staticmethod
     def _chunked_tokens(text, encoding_name, chunk_length):
-        """Calculates the number of tokens and chunks them into chunks of tokens."""
+        """Calculates the number of tokens and chunks them into chunks of
+        tokens."""
         import tiktoken
 
         encoding = tiktoken.get_encoding(encoding_name)
         tokens = encoding.encode(text)
         chunks_iterator = EmbeddingBase._batched(iterable=tokens, n=chunk_length)
-        yield from chunks_iterator
+        # Detokenize the chunks
+        for chunk in chunks_iterator:
+            yield encoding.decode(chunk)
 
     @staticmethod
     def _batched(iterable, n):
-        """Batch data into tuples of length n. The last batch may be shorter."""
+        """Batch data into tuples of length n.
+
+        The last batch may be shorter.
+        """
         # batched('ABCDEFG', 3) --> ABC DEF G
         if n < 1:
             raise ValueError("n must be at least one")
@@ -129,3 +139,60 @@ class OpenAIEmbedding(EmbeddingBase):
             return 12288
         else:
             raise ValueError("Unknown model")
+
+
+class ManifestEmbedding(EmbeddingBase):
+    def __init__(
+        self,
+        client_name: str = "openai",
+        client_connection: Optional[str] = None,
+        cache_name: Optional[str] = None,
+        cache_connection: Optional[str] = None,
+        engine: Optional[str] = "text-embedding-ada-002",
+        encoding_name: Optional[str] = "cl100k_base",
+        max_tokens: Optional[int] = 8191,
+    ):
+        try:
+            from manifest import Manifest
+        except ImportError:
+            raise ImportError(
+                "The `manifest` package is not installed. "
+                "Install with `pip install manifest-ml`"
+            )
+        super().__init__(engine, encoding_name, max_tokens)
+        self._client_name = client_name
+        self._client_connection = client_connection
+        self._cache_name = cache_name
+        self._cache_connection = cache_connection
+
+        manifest_args = {
+            "client_name": client_name,
+            "client_connection": client_connection,
+            "cache_name": cache_name,
+            "cache_connection": cache_connection,
+            "engine": engine,
+        }
+        manifest_args = {k: v for k, v in manifest_args.items() if v is not None}
+        self._manifest = Manifest(**manifest_args)
+
+    def embed(self, texts: List[str]) -> List[List[float]]:
+        embeddings = []
+        for text in texts:
+            embeddings.append(
+                super()._len_safe_get_embedding(text, self._get_embedding)
+            )
+
+        return embeddings
+
+    def embed_query(self, query: str) -> List[float]:
+        resp = self._get_embedding([query])
+        return resp[0]
+
+    def _get_embedding(self, texts: List[str]) -> List[float]:
+        embeddings = self._manifest.run(texts)
+        return embeddings
+
+    @cached_property
+    def output_dim(self) -> int:
+        embedding = self._get_embedding(["test"])
+        return len(embedding[0])
