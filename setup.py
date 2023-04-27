@@ -45,6 +45,8 @@ with open("docs/requirements.txt") as f:
 
 SQL_REQUIREMENTS = ["sqlvalidator", "sqlalchemy>=2.0.9", "sqlglot"]
 
+SUMMARY_REQUIREMENTS = ["thefuzz", "nltk"]
+
 VECTORDB_REQUIREMENTS = ["faiss-cpu", "numpy", "tiktoken"]
 
 # What packages are optional?
@@ -68,6 +70,7 @@ EXTRAS = {
     "vectordb": VECTORDB_REQUIREMENTS,
     "profanity": ["alt-profanity-check"],
     "critique": ["inspiredco"],
+    "summary": SUMMARY_REQUIREMENTS,
 }
 
 # The rest you shouldn't have to touch too much :)

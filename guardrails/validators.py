@@ -18,6 +18,7 @@ from pydantic import BaseModel, ValidationError
 from guardrails.datatypes import registry as types_registry
 from guardrails.utils.reask_utils import ReAsk
 from guardrails.utils.sql_utils import SQLDriver, create_sql_driver
+from guardrails.utils.docs_utils import sentence_split
 
 try:
     import numpy as np
@@ -1036,6 +1037,9 @@ class EndsWith(Validator):
 
 @register_validator(name="extracted-summary-sentences-match", data_type="string")
 class ExtractedSummarySentencesMatch(Validator):
+    """Validate that the extracted summary sentences match the original text by
+    performing a cosine similarity in the embedding space."""
+
     def __init__(
         self,
         documents_dir: str,
@@ -1083,24 +1087,21 @@ class ExtractedSummarySentencesMatch(Validator):
         # Check if any of the sentences in the value match any of the sentences
         # in the documents.
         unverified = []
-        count = 0
-        new_value = ""
-        citations = ""
-        for i, sentence in enumerate(sentences):
+        verified = []
+        citations = []
+        for sentence in sentences:
             page = self.store.search_with_threshold(sentence, self._threshold)
             if not page:
-                unverified.append(i)
+                unverified.append(sentence)
             else:
-                citations += f"\n[{count+1}] {page[0].metadata['path']}"
-                new_value += sentence + f" [{count+1}] "
-                count += 1
+                citation_count = len(citations) + 1
+                verified.append(sentence + f" [{citation_count}] ")
+                citations.append(f"\n[{citation_count}] {page[0].metadata['path']}")
 
-        fixed_summary = new_value + citations
+        fixed_summary = " ".join(verified) + "\n\n" + "".join(citations)
 
         if unverified:
-            unverified_sentences = "\n".join(
-                "- " + s for i, s in enumerate(sentences) if i in unverified
-            )
+            unverified_sentences = "\n".join(unverified)
             raise EventDetail(
                 key,
                 value,
@@ -1117,6 +1118,292 @@ class ExtractedSummarySentencesMatch(Validator):
 
     def to_prompt(self, with_keywords: bool = True) -> str:
         return ""
+
+
+@register_validator(name="reading-time", data_type="string")
+class ReadingTime(Validator):
+    """Validate that the a string can be read in less than a certain amount of time."""
+
+    def __init__(self, reading_time: int, on_fail: str = "fix"):
+        super().__init__(on_fail=on_fail, max_time=reading_time)
+        self._max_time = reading_time
+
+    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
+        logger.debug(f"Validating {value} can be read in less than {self._max_time} seconds...")
+
+        # Estimate the reading time of the string
+        reading_time = len(value.split()) / 200 * 60
+        logger.debug(f"Estimated reading time {reading_time} seconds...")
+
+        if abs(reading_time - self._max_time) > 1:
+            logger.error(f"{value} took {reading_time} to read")
+            raise EventDetail(
+                key,
+                value,
+                schema,
+                f"The length of the string should be readable within {self._max_time} minutes.",
+                value,
+            )
+
+        return schema
+
+
+@register_validator(name="extractive-summary", data_type="string")
+class ExtractiveSummary(Validator):
+    """Validate that a string is a valid extractive summary of a given document.
+    
+    This validator does a fuzzy match between the sentences in the summary and the
+    sentences in the document. Each sentence in the summary must be similar to at
+    least one sentence in the document. After the validation, the summary is updated
+    to include the sentences from the document that were matched, and the citations
+    for those sentences are added to the end of the summary.
+    """
+
+    def __init__(
+        self,
+        documents_dir: str,
+        threshold: int = 85,
+        on_fail: Optional[Callable] = None,
+        **kwargs,
+    ):
+        super().__init__(on_fail, **kwargs)
+
+        self.threshold = threshold
+
+        # Load documents
+        self._document_store = {}
+        for doc_path in os.listdir(documents_dir):
+            with open(os.path.join(documents_dir, doc_path)) as f:
+                doc = f.read()
+            self._document_store[doc_path] = sentence_split(doc)
+
+    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
+        """Make sure each sentence was precisely copied from the document."""
+
+        try:
+            from thefuzz import fuzz
+        except ImportError:
+            raise ImportError(
+                "The `thefuzz` library is required for the `extractive-summary` validator. "
+                "Please install it with `pip install thefuzz`."
+            )
+
+        # Split the value into sentences.
+        sentences = sentence_split(value)
+
+        # Check if any of the sentences in the value match any of the sentences
+        # # in the documents.
+        unverified = []
+        verified = []
+        citations = []
+
+        for sentence in sentences:
+            highest_ratio = 0
+            highest_ratio_doc = None
+
+            # Check fuzzy match against all sentences in all documents
+            for doc_path, doc_sentences in self._document_store.items():
+                for doc_sentence in doc_sentences:
+                    ratio = fuzz.ratio(sentence, doc_sentence)
+                    if ratio > highest_ratio:
+                        highest_ratio = ratio
+                        highest_ratio_doc = doc_path
+
+            if highest_ratio < self.threshold:
+                unverified.append(sentence)
+            else:
+                citation_count = len(citations) + 1
+                verified.append(f'{sentence} [{citation_count}]')
+                citations.append(f'[{citation_count}] {highest_ratio_doc}\n')
+
+        verified_sentences = " ".join(verified) + "\n\n" + "".join(citations)
+
+        if len(unverified):
+            unverified_sentences = "\n".join(
+                "- " + s for i, s in enumerate(sentences) if i in unverified
+            )
+            raise EventDetail(
+                key,
+                value,
+                schema,
+                (
+                    f"The summary \nSummary: {value}\n has sentences\n"
+                    f"{unverified_sentences}\n that are not similar to any document."
+                ),
+                verified_sentences,
+            )
+
+        schema[key] = verified_sentences
+
+        return schema
+
+
+@register_validator(name="remove-redundant-sentences", data_type="string")
+class RemoveRedundantSentences(Validator):
+    """Remove redundant sentences from a string.
+    
+    This validator removes sentences from a string that are similar to other sentences
+    in the string. This is useful for removing repetitive sentences from a string.
+    """
+
+    def __init__(self, threshold: int = 70, on_fail: Optional[Callable] = None, **kwargs):
+        super().__init__(on_fail, **kwargs)
+        self.threshold = threshold
+
+    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
+        """Remove redundant sentences from a string."""
+
+        try:
+            from thefuzz import fuzz
+        except ImportError:
+            raise ImportError(
+                "The `thefuzz` library is required for the `remove-redundant-sentences` validator. "
+                "Please install it with `pip install thefuzz`."
+            )
+
+        # Split the value into sentences.
+        sentences = sentence_split(value)
+        filtered_sentences = []
+        redundant_sentences = []
+
+        sentence = sentences[0]
+        other_sentences = sentences[1:]
+        while(len(other_sentences)):
+            # Check fuzzy match against all other sentences
+            filtered_sentences.append(sentence)
+            unique_sentences = []
+            for other_sentence in other_sentences:
+                ratio = fuzz.ratio(sentence, other_sentence)
+                if ratio > self.threshold:
+                    redundant_sentences.append(other_sentence)
+                else:
+                    unique_sentences.append(other_sentence)
+            if len(unique_sentences) == 0:
+                break
+            sentence = unique_sentences[0]
+            other_sentences = unique_sentences[1:]
+
+        filtered_summary = " ".join(filtered_sentences)
+
+        if len(redundant_sentences):
+            redundant_sentences = "\n".join(redundant_sentences)
+            raise EventDetail(
+                key,
+                value,
+                schema,
+                (
+                    f"The summary \nSummary: {value}\n has sentences\n"
+                    f"{redundant_sentences}\n that are similar to other sentences."
+                ),
+                filtered_summary,
+            )
+
+        return schema
+
+
+@register_validator(name="saliency-check", data_type="string")
+class SaliencyCheck(Validator):
+    """Check that the summary covers the list of topics present in the document."""
+
+    def __init__(
+        self,
+        docs_dir: str,
+        llm_callable: Callable = None,
+        on_fail: Optional[Callable] = None,
+        threshold: int = 0.25,
+        **kwargs,
+    ):
+        """Initialize the SalienceCheck validator.
+
+        Args:
+            docs_dir: Path to the directory containing the documents.
+            on_fail: Function to call when validation fails.
+            threshold: Threshold for overlap between topics in document and summary.
+        """
+
+        super().__init__(on_fail, **kwargs)
+
+        self.llm_callable = (
+            llm_callable if llm_callable else openai.ChatCompletion.create
+        )
+
+        self.threshold = threshold
+
+        # Load documents
+        self._document_store = {}
+        for doc_path in os.listdir(docs_dir):
+            with open(os.path.join(docs_dir, doc_path)) as f:
+                text = f.read()
+            # Precompute topics for each document
+            self._document_store[doc_path] = self._get_topics(text)
+
+    @property
+    def topics(self) -> List[str]:
+        """Return a list of topics that can be used in the validator."""
+        # Merge topics from all documents
+        topics = set()
+        for doc_topics in self._document_store.values():
+            topics.update(doc_topics)
+        return list(topics)
+
+    def _get_topics(self, text: str, topics: Optional[List[str]] = None) -> List[str]:
+        """Extract topics from a string."""
+
+        from guardrails import Guard
+
+        topics_seed = ""
+        if topics is not None:
+            topics_seed = (
+                "Here's a seed list of topics, select topics from this list"
+                " if they are covered in the doc:\n\n" + ", ".join(topics)
+            )
+
+        spec = f"""
+<rail version="0.1">
+<output>
+    <list name="topics">
+        <string name="topic" description="few words describing the topic in text"/>
+    </list>
+</output>
+
+<prompt>
+Extract a list of topics from the following text:
+
+{text}
+
+{topics_seed}
+
+Return the output as a JSON with a single key "topics" containing a list of topics.
+
+Make sure that the topics are relevant to the text, and that they are not too specific or general.
+</prompt>
+</rail>
+    """
+
+        guard = Guard.from_rail_string(spec)
+        _, validated_output = guard(llm_api=self.llm_callable)
+        return validated_output["topics"]
+
+    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
+        topics_in_summary = self._get_topics(value, topics=self.topics)
+
+        # Compute overlap between topics in document and summary
+        intersection = set(topics_in_summary).intersection(set(self.topics))
+        overlap = len(intersection) / len(self.topics)
+
+        if overlap < self.threshold:
+            raise EventDetail(
+                key,
+                value,
+                schema,
+                (
+                    f"The summary \nSummary: {value}\n does not cover these topics:\n"
+                    f"{set(self.topics).difference(intersection)}"
+                ),
+                "",
+            )
+
+        return schema
 
 
 @register_validator(name="qa-relevance-llm-eval", data_type="string")
