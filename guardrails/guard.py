@@ -206,7 +206,7 @@ class Guard:
             return sub_reasks_with_fixed_values(guard_history.validated_output)
 
     @classmethod
-    def from_class(cls, output_class, prompt, instructions) -> "Guard":
-        """Create a Guard instance from an output class object."""
-        rail = Rail.from_class(output_class=output_class, prompt=prompt, instructions=instructions)
+    def from_pydantic(cls, output_class, prompt, instructions) -> "Guard":
+        """Create a Guard instance from a Pydantic model and prompt."""
+        rail = Rail.from_pydantic(output_class=output_class, prompt=prompt, instructions=instructions)
         return cls(rail)

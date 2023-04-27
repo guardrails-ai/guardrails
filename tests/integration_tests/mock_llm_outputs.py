@@ -25,9 +25,13 @@ def openai_chat_completion_create(prompt, instructions, *args, **kwargs):
             entity_extraction.COMPILED_INSTRUCTIONS,
         ): entity_extraction.LLM_OUTPUT,
         (
-            python_rail.COMPILED_PROMPT_WITHOUT_INSTRUCTIONS,
+            python_rail.COMPILED_PROMPT_1_WITHOUT_INSTRUCTIONS,
             python_rail.COMPILED_INSTRUCTIONS
-        ): python_rail.LLM_OUTPUT,
+        ): python_rail.LLM_OUTPUT_1_FAIL_GUARDRAILS_VALIDATION,
+        (
+            python_rail.COMPILED_PROMPT_2_WITHOUT_INSTRUCTIONS,
+            python_rail.COMPILED_INSTRUCTIONS
+        ): python_rail.LLM_OUTPUT_2_SUCCEED_GUARDRAILS_BUT_FAIL_PYDANTIC_VALIDATION
     }
 
     try:
