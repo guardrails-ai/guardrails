@@ -1,6 +1,6 @@
 import json
 from datetime import date, time
-from typing import Optional
+from typing import List, Optional
 
 import openai
 import pytest
@@ -97,7 +97,7 @@ def test_python_rail(mocker):
 
     class Director(GuardModel):
         name: str = Field(gd_validators=[IsValidDirector()])
-        movies: list[Movie]
+        movies: List[Movie]
 
     guard = gd.Guard.from_pydantic(
         output_class=Director,
