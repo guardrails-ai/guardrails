@@ -4,7 +4,7 @@ Provide detailed information about the top 5 grossing movies from Christopher No
 Given below is XML that describes the information to extract from this document and the tags to extract it into.
 
 <output>
-    <string name="name"/>
+    <string name="name" format="is-valid-director"/>
     <list name="movies">
         <object>
             <integer name="rank"/>
@@ -14,13 +14,13 @@ Given below is XML that describes the information to extract from this document 
                 <time name="duration"/>
                 <float name="budget"/>
                 <bool name="is_sequel"/>
-                <string name="website"/>
+                <string name="website" format="length: min=9 max=100"/>
                 <string name="revenue_type" choices="box_office,streaming"/>
-                <object name="box_office" description="box_office_revenue" if="revenue_type==box_office">
+                <object name="box_office" description="box_office" if="revenue_type==box_office">
                     <float name="gross"/>
                     <float name="opening_weekend"/>
                 </object>
-                <object name="streaming" description="streaming_revenue" if="revenue_type==streaming">
+                <object name="streaming" description="streaming" if="revenue_type==streaming">
                     <integer name="subscriptions"/>
                     <float name="subscription_fee"/>
                 </object>

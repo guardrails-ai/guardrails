@@ -521,17 +521,21 @@ class Pydantic(NonScalarType):
         )
 
 
-class GdField:
-    def __init__(self, *args, gd_if=None, **kwargs):
-        self.fieldinfo = FieldInfo(*args, **kwargs)
+class GdField(FieldInfo):
+    def __init__(self, *args, gd_if=None, gd_validators=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        # self.fieldinfo = FieldInfo(*args, **kwargs)
         self.gd_if = gd_if
+        self.gd_validators = gd_validators
+    #
+    # def get_fieldinfo(self):
+    #     return self.fieldinfo
 
-    def get_fieldinfo(self):
-        return self.fieldinfo
 
 def Field(*args, **kwargs):
     gd_field = GdField(*args, **kwargs)
     return gd_field
+
 
 class GuardModel(BaseModel):
     pass
