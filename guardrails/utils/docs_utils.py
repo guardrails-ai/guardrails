@@ -52,6 +52,19 @@ class TextSplitter:
         return self.split(*args, **kwds)
 
 
+def sentence_split(text: str) -> t.List[str]:
+    """Split the text into sentences."""
+    try:
+        from nltk import sent_tokenize
+    except ImportError:
+        raise ImportError(
+            "nltk is required for sentence splitting. Please install it using "
+            "`pip install nltk`"
+        )
+
+    return sent_tokenize(text)
+
+
 def read_pdf(path) -> str:
     """Reads the pdf at the given path."""
     import pypdfium2 as pdfium
