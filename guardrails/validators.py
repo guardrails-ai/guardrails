@@ -16,9 +16,9 @@ import openai
 from pydantic import BaseModel, ValidationError
 
 from guardrails.datatypes import registry as types_registry
+from guardrails.utils.docs_utils import sentence_split
 from guardrails.utils.reask_utils import ReAsk
 from guardrails.utils.sql_utils import SQLDriver, create_sql_driver
-from guardrails.utils.docs_utils import sentence_split
 
 try:
     import numpy as np
@@ -1129,7 +1129,9 @@ class ReadingTime(Validator):
         self._max_time = reading_time
 
     def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
-        logger.debug(f"Validating {value} can be read in less than {self._max_time} seconds...")
+        logger.debug(
+            f"Validating {value} can be read in less than {self._max_time} seconds..."
+        )
 
         # Estimate the reading time of the string
         reading_time = len(value.split()) / 200 * 60
@@ -1141,7 +1143,7 @@ class ReadingTime(Validator):
                 key,
                 value,
                 schema,
-                f"The length of the string should be readable within {self._max_time} minutes.",
+                f"String should be readable within {self._max_time} minutes.",
                 value,
             )
 
@@ -1151,7 +1153,7 @@ class ReadingTime(Validator):
 @register_validator(name="extractive-summary", data_type="string")
 class ExtractiveSummary(Validator):
     """Validate that a string is a valid extractive summary of a given document.
-    
+
     This validator does a fuzzy match between the sentences in the summary and the
     sentences in the document. Each sentence in the summary must be similar to at
     least one sentence in the document. After the validation, the summary is updated
@@ -1184,7 +1186,7 @@ class ExtractiveSummary(Validator):
             from thefuzz import fuzz
         except ImportError:
             raise ImportError(
-                "The `thefuzz` library is required for the `extractive-summary` validator. "
+                "`thefuzz` library is required for `extractive-summary` validator. "
                 "Please install it with `pip install thefuzz`."
             )
 
@@ -1213,8 +1215,8 @@ class ExtractiveSummary(Validator):
                 unverified.append(sentence)
             else:
                 citation_count = len(citations) + 1
-                verified.append(f'{sentence} [{citation_count}]')
-                citations.append(f'[{citation_count}] {highest_ratio_doc}\n')
+                verified.append(f"{sentence} [{citation_count}]")
+                citations.append(f"[{citation_count}] {highest_ratio_doc}\n")
 
         verified_sentences = " ".join(verified) + "\n\n" + "".join(citations)
 
@@ -1241,12 +1243,14 @@ class ExtractiveSummary(Validator):
 @register_validator(name="remove-redundant-sentences", data_type="string")
 class RemoveRedundantSentences(Validator):
     """Remove redundant sentences from a string.
-    
+
     This validator removes sentences from a string that are similar to other sentences
     in the string. This is useful for removing repetitive sentences from a string.
     """
 
-    def __init__(self, threshold: int = 70, on_fail: Optional[Callable] = None, **kwargs):
+    def __init__(
+        self, threshold: int = 70, on_fail: Optional[Callable] = None, **kwargs
+    ):
         super().__init__(on_fail, **kwargs)
         self.threshold = threshold
 
@@ -1257,8 +1261,8 @@ class RemoveRedundantSentences(Validator):
             from thefuzz import fuzz
         except ImportError:
             raise ImportError(
-                "The `thefuzz` library is required for the `remove-redundant-sentences` validator. "
-                "Please install it with `pip install thefuzz`."
+                "`thefuzz` library is required for `remove-redundant-sentences` "
+                "validator. Please install it with `pip install thefuzz`."
             )
 
         # Split the value into sentences.
@@ -1268,7 +1272,7 @@ class RemoveRedundantSentences(Validator):
 
         sentence = sentences[0]
         other_sentences = sentences[1:]
-        while(len(other_sentences)):
+        while len(other_sentences):
             # Check fuzzy match against all other sentences
             filtered_sentences.append(sentence)
             unique_sentences = []
@@ -1375,7 +1379,7 @@ Extract a list of topics from the following text:
 
 Return the output as a JSON with a single key "topics" containing a list of topics.
 
-Make sure that the topics are relevant to the text, and that they are not too specific or general.
+Make sure that topics are relevant to text, and topics are not too specific or general.
 </prompt>
 </rail>
     """
