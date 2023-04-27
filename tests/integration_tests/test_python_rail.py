@@ -1,10 +1,10 @@
 import json
-from datetime import date, time
-from typing import List
-
 import openai
-from pydantic import BaseModel, EmailStr
+from pydantic import EmailStr
 
+from typing import Optional
+from guardrails.datatypes import GuardModel, Field
+from datetime import date, time
 import guardrails as gd
 
 from .mock_llm_outputs import openai_chat_completion_create
@@ -16,22 +16,33 @@ def test_python_rail(mocker):
         "guardrails.llm_providers.openai_wrapper", new=openai_chat_completion_create
     )
 
-    class Details(BaseModel):
+    class BoxOfficeRevenue(GuardModel):
+        gross: float
+        opening_weekend: float
+
+    class StreamingRevenue(GuardModel):
+        subscriptions: int
+        subscription_fee: float
+
+    class Details(GuardModel):
         release_date: date
         duration: time
         budget: float
         is_sequel: bool
         website: str
         contact_email: EmailStr
+        revenue_type: str
+        box_office_revenue: Optional[BoxOfficeRevenue] = Field(gd_if='revenue_type==box_office')
+        streaming_revenue: Optional[StreamingRevenue] = Field(gd_if='revenue_type==streaming')
 
-    class Movie(BaseModel):
+    class Movie(GuardModel):
         rank: int
         title: str
         details: Details
 
-    class Director(BaseModel):
+    class Director(GuardModel):
         name: str
-        movies: List[Movie]
+        movies: list[Movie]
 
     guard = gd.Guard.from_class(
         output_class=Director,
