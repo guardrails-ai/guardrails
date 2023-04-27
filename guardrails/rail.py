@@ -213,8 +213,23 @@ class Rail:
 
 
 def create_xml_elements_for_model(parent_element, model, model_name):
+    # Dictionary to keep track of choice elements and their corresponding case elements
+    choice_elements: typing.Dict[str, Element] = {}
+
+    # Iterate through all elements to detect any discriminator fields, and store the discriminator
+    discriminators = set()  # List of discriminator fields (used in choices)
+    for field_name, field_type in model.__fields__.items():
+        if hasattr(field_type.default, "gd_if"):
+            gd_if = field_type.default.gd_if
+            discriminator = gd_if.split("==")[0].strip()
+            discriminators.add(discriminator)
+
     # Iterate through the fields of the model and create elements for each field
     for field_name, field_type in model.__fields__.items():
+        # Skip discriminator fields
+        if field_name in discriminators:
+            continue
+
         # Determine the XML element name based on the field type
         if field_type.type_ == bool:
             field_element_name = "bool"
@@ -236,7 +251,6 @@ def create_xml_elements_for_model(parent_element, model, model_name):
                 field_element.set("name", field_name)
                 # Add the object element inside the list element
                 object_element = SubElement(field_element, "object")
-                object_element.set("name", model_name)
                 create_xml_elements_for_model(
                     object_element, field_type.type_, field_name
                 )
@@ -254,13 +268,52 @@ def create_xml_elements_for_model(parent_element, model, model_name):
             # TODO: Add logging?
             continue
 
-        # Create the field element
-        field_element = SubElement(parent_element, field_element_name)
-        field_element.set("name", field_name)
+        # Check if the field has a discriminator
+        if hasattr(field_type.default, "gd_if"):
+            gd_if = field_type.default.gd_if
+
+            # split gd_if on "==" to get the field name and value
+            discriminator_field_name, discriminator_field_value = gd_if.split("==")
+
+            # ensure both discriminator_field_name and discriminator_field_value are strings of len > 0 and that the
+            # discriminator_field_name is a valid field
+            if len(discriminator_field_name) == 0 or len(
+                    discriminator_field_value) == 0 or discriminator_field_name not in model.__fields__:
+                raise ValueError(f"Invalid gd_if for field {discriminator_field_name}")
+
+            # Check if a choice element already exists for the discriminator_field_name
+            if discriminator_field_name in choice_elements:
+                choice_element = choice_elements[discriminator_field_name]
+            else:
+                choice_element = SubElement(parent_element, "choice")
+                choice_element.set("name", discriminator_field_name)
+                choice_elements[discriminator_field_name] = choice_element
+
+            # Create the case element
+            case_element = SubElement(choice_element, "case")
+            case_element.set("name", discriminator_field_value)
+
+            # Create the field element inside the case element
+            field_element = SubElement(case_element, field_element_name)
+            field_element.set("name", field_name)
+        else:
+            # Skip creating the field element if it's a discriminator field
+            if field_name in choice_elements.values():
+                continue
+
+            # Create the field
+            field_element = SubElement(parent_element, field_element_name)
+            field_element.set("name", field_name)
 
         # Handle nested models
         if issubclass(field_type.type_, BaseModel):
-            create_xml_elements_for_model(field_element, field_type.type_, field_name)
+            # If the field has a discriminator, use the discriminator field value as the model name
+            if hasattr(field_type.default, "gd_if"):
+                _, discriminator_field_value = field_type.default.gd_if.split("==")
+                nested_model_name = discriminator_field_value
+            else:
+                nested_model_name = field_name
+            create_xml_elements_for_model(field_element, field_type.type_, nested_model_name)
 
 
 def generate_xml_code(output_class: Type[BaseModel], prompt: str, instructions: str) -> str:

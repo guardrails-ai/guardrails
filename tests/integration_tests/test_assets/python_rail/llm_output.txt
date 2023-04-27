@@ -10,7 +10,12 @@
                 "budget": 160000000.0,
                 "is_sequel": false,
                 "website": "https://www.inceptionmovie.com",
-                "contact_email": "info@inceptionmovie.com"
+                "contact_email": "info@inceptionmovie.com",
+                "revenue_type": "box_office",
+                "box_office": {
+                    "gross": 829895144.0,
+                    "opening_weekend": 62785337.0
+                }
             }
         },
         {
@@ -22,7 +27,12 @@
                 "budget": 185000000.0,
                 "is_sequel": true,
                 "website": "https://www.thedarkknightmovie.com",
-                "contact_email": "info@thedarkknightmovie.com"
+                "contact_email": "info@thedarkknightmovie.com",
+                "revenue_type": "box_office",
+                "box_office": {
+                    "gross": 1004558444.0,
+                    "opening_weekend": 158411483.0
+                }
             }
         },
         {
@@ -34,7 +44,12 @@
                 "budget": 250000000.0,
                 "is_sequel": true,
                 "website": "https://www.thedarkknightrises.com",
-                "contact_email": "info@thedarkknightrises.com"
+                "contact_email": "info@thedarkknightrises.com",
+                "revenue_type": "streaming",
+                "streaming": {
+                    "subscriptions": 15000000,
+                    "subscription_fee": 9.99
+                }
             }
         },
         {
@@ -46,7 +61,12 @@
                 "budget": 165000000.0,
                 "is_sequel": false,
                 "website": "https://www.interstellarmovie.com",
-                "contact_email": "info@interstellarmovie.com"
+                "contact_email": "info@interstellarmovie.com",
+                "revenue_type": "box_office",
+                "box_office": {
+                    "gross": 677471339.0,
+                    "opening_weekend": 47510360.0
+                }
             }
         },
         {
@@ -58,7 +78,12 @@
                 "budget": 100000000.0,
                 "is_sequel": false,
                 "website": "https://www.dunkirkmovie.com",
-                "contact_email": "info@dunkirkmovie.com"
+                "contact_email": "info@dunkirkmovie.com",
+                "revenue_type": "box_office",
+                "box_office": {
+                    "gross": 526940665.0,
+                    "opening_weekend": 50513488.0
+                }
             }
         }
     ]

@@ -2,8 +2,10 @@ import datetime
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, Dict, Generator, List, Tuple, Type, Union
 
+import pydantic
 from lxml import etree as ET
-from pydantic import BaseModel
+from pydantic import BaseModel, Field as PydanticField
+from pydantic.fields import FieldInfo
 
 if TYPE_CHECKING:
     from guardrails.schema import FormatAttr
@@ -519,10 +521,20 @@ class Pydantic(NonScalarType):
         )
 
 
-@register_type("field")
-class Field(ScalarType):
-    """Element tag: `<field>`"""
+class GdField:
+    def __init__(self, *args, gd_if=None, **kwargs):
+        self.fieldinfo = FieldInfo(*args, **kwargs)
+        self.gd_if = gd_if
 
+    def get_fieldinfo(self):
+        return self.fieldinfo
+
+def Field(*args, **kwargs):
+    gd_field = GdField(*args, **kwargs)
+    return gd_field
+
+class GuardModel(BaseModel):
+    pass
 
 # @register_type("key")
 # class Key(DataType):
