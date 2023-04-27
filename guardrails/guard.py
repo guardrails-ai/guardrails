@@ -208,5 +208,7 @@ class Guard:
     @classmethod
     def from_pydantic(cls, output_class, prompt, instructions) -> "Guard":
         """Create a Guard instance from a Pydantic model and prompt."""
-        rail = Rail.from_pydantic(output_class=output_class, prompt=prompt, instructions=instructions)
+        rail = Rail.from_pydantic(
+            output_class=output_class, prompt=prompt, instructions=instructions
+        )
         return cls(rail)
