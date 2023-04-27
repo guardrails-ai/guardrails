@@ -56,7 +56,7 @@ def test_python_rail(mocker):
         budget: float
         is_sequel: bool = PydanticField(default=False)
         website: str = Field(gd_validators=[ValidLength(min=9, max=100, on_fail="reask")])
-        contact_email: EmailStr
+        contact_email: str
         revenue_type: str = Field(gd_validators=[ValidChoices(choices=['box_office', 'streaming'])])
         box_office: Optional[BoxOfficeRevenue] = Field(gd_if='revenue_type==box_office')
         streaming: Optional[StreamingRevenue] = Field(gd_if='revenue_type==streaming')
