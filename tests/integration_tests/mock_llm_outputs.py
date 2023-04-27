@@ -8,7 +8,7 @@ def openai_completion_create(prompt, *args, **kwargs):
         entity_extraction.COMPILED_PROMPT_REASK: entity_extraction.LLM_OUTPUT_REASK,
         pydantic.COMPILED_PROMPT: pydantic.LLM_OUTPUT,
         pydantic.COMPILED_PROMPT_REASK_1: pydantic.LLM_OUTPUT_REASK_1,
-        pydantic.COMPILED_PROMPT_REASK_2: pydantic.LLM_OUTPUT_REASK_2
+        pydantic.COMPILED_PROMPT_REASK_2: pydantic.LLM_OUTPUT_REASK_2,
     }
 
     try:
@@ -26,12 +26,12 @@ def openai_chat_completion_create(prompt, instructions, *args, **kwargs):
         ): entity_extraction.LLM_OUTPUT,
         (
             python_rail.COMPILED_PROMPT_1_WITHOUT_INSTRUCTIONS,
-            python_rail.COMPILED_INSTRUCTIONS
+            python_rail.COMPILED_INSTRUCTIONS,
         ): python_rail.LLM_OUTPUT_1_FAIL_GUARDRAILS_VALIDATION,
         (
             python_rail.COMPILED_PROMPT_2_WITHOUT_INSTRUCTIONS,
-            python_rail.COMPILED_INSTRUCTIONS
-        ): python_rail.LLM_OUTPUT_2_SUCCEED_GUARDRAILS_BUT_FAIL_PYDANTIC_VALIDATION
+            python_rail.COMPILED_INSTRUCTIONS,
+        ): python_rail.LLM_OUTPUT_2_SUCCEED_GUARDRAILS_BUT_FAIL_PYDANTIC_VALIDATION,
     }
 
     try:

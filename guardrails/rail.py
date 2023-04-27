@@ -53,7 +53,7 @@ class Script:
                 if stack and stack[-1] == "{":
                     stack.pop()
                     if not stack:
-                        expressions.append(body[start + 1: i])
+                        expressions.append(body[start + 1 : i])
                 else:
                     stack.append(char)
         return expressions
@@ -184,7 +184,7 @@ class Rail:
 
     @staticmethod
     def load_instructions(
-            root: ET._Element, output_schema: OutputSchema
+        root: ET._Element, output_schema: OutputSchema
     ) -> Instructions:
         """Given the RAIL <instructions> element, create Instructions."""
         return Instructions(
@@ -215,10 +215,13 @@ def create_xml_elements_for_model(parent_element, model, model_name):
     # Dictionary to keep track of choice elements and their corresponding case elements
     choice_elements: typing.Dict[str, Element] = {}
 
-    # Iterate through all elements to detect any discriminator fields, and store the discriminator
+    # Iterate through all elements to detect any discriminator fields
     discriminators = set()  # List of discriminator fields (used in choices)
     for field_name, field_type in model.__fields__.items():
-        if hasattr(field_type.field_info, "gd_if") and field_type.field_info.gd_if is not None:
+        if (
+            hasattr(field_type.field_info, "gd_if")
+            and field_type.field_info.gd_if is not None
+        ):
             gd_if = field_type.field_info.gd_if
             discriminator = gd_if.split("==")[0].strip()
             discriminators.add(discriminator)
@@ -239,8 +242,8 @@ def create_xml_elements_for_model(parent_element, model, model_name):
         elif field_type.type_ == int:
             field_element_name = "integer"
         elif (
-                issubclass(field_type.type_, List)
-                or typing.get_origin(model.__annotations__.get(field_name)) == list
+            issubclass(field_type.type_, List)
+            or typing.get_origin(model.__annotations__.get(field_name)) == list
         ):
             field_element_name = "list"
             # Handle list of objects
@@ -268,16 +271,23 @@ def create_xml_elements_for_model(parent_element, model, model_name):
             continue
 
         # Check if the field has a discriminator
-        if hasattr(field_type.field_info, "gd_if") and field_type.field_info.gd_if is not None:
+        if (
+            hasattr(field_type.field_info, "gd_if")
+            and field_type.field_info.gd_if is not None
+        ):
             gd_if = field_type.field_info.gd_if
 
             # split gd_if on "==" to get the field name and value
             discriminator_field_name, discriminator_field_value = gd_if.split("==")
 
-            # ensure both discriminator_field_name and discriminator_field_value are strings of len > 0 and that the
+            # ensure both discriminator_field_name and discriminator_field_value
+            # are strings of len > 0 and that the
             # discriminator_field_name is a valid field
-            if len(discriminator_field_name) == 0 or len(
-                    discriminator_field_value) == 0 or discriminator_field_name not in model.__fields__:
+            if (
+                len(discriminator_field_name) == 0
+                or len(discriminator_field_value) == 0
+                or discriminator_field_name not in model.__fields__
+            ):
                 raise ValueError(f"Invalid gd_if for field {discriminator_field_name}")
 
             # Check if a choice element already exists for the discriminator_field_name
@@ -304,28 +314,39 @@ def create_xml_elements_for_model(parent_element, model, model_name):
             field_element = SubElement(parent_element, field_element_name)
             field_element.set("name", field_name)
 
-        # Extract validators from the Pydantic field and add format and on-fail attributes
-        if hasattr(field_type.field_info, "gd_validators") and field_type.field_info.gd_validators is not None:
+        # Extract validators from the Pydantic field and add format
+        # and on-fail attributes
+        if (
+            hasattr(field_type.field_info, "gd_validators")
+            and field_type.field_info.gd_validators is not None
+        ):
             for validator in field_type.field_info.gd_validators:
                 # Set the format attribute based on the validator class name
                 format_prompt = validator.to_prompt(with_keywords=False)
                 field_element.set("format", format_prompt)
                 # Set the on-fail attribute based on the on_fail value
-                on_fail_action = validator.on_fail.__name__ if validator.on_fail else "noop"
+                on_fail_action = (
+                    validator.on_fail.__name__ if validator.on_fail else "noop"
+                )
                 field_element.set("on-fail-" + validator.rail_alias, on_fail_action)
 
         # Handle nested models
         if issubclass(field_type.type_, BaseModel):
-            # If the field has a discriminator, use the discriminator field value as the model name
+            # If the field has a discriminator, use the discriminator
+            # field value as the model name
             if hasattr(field_type.field_info, "gd_if"):
                 _, discriminator_field_value = field_type.field_info.gd_if.split("==")
                 nested_model_name = discriminator_field_value
             else:
                 nested_model_name = field_name
-            create_xml_elements_for_model(field_element, field_type.type_, nested_model_name)
+            create_xml_elements_for_model(
+                field_element, field_type.type_, nested_model_name
+            )
 
 
-def generate_xml_code(output_class: Type[BaseModel], prompt: str, instructions: str) -> str:
+def generate_xml_code(
+    output_class: Type[BaseModel], prompt: str, instructions: str
+) -> str:
     # Create the root element
     root = Element("rail")
     root.set("version", "0.1")

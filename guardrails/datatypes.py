@@ -2,9 +2,8 @@ import datetime
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, Dict, Generator, List, Tuple, Type, Union
 
-import pydantic
 from lxml import etree as ET
-from pydantic import BaseModel, Field as PydanticField
+from pydantic import BaseModel
 from pydantic.fields import FieldInfo
 
 if TYPE_CHECKING:
@@ -535,6 +534,7 @@ def Field(*args, **kwargs):
 
 class GuardModel(BaseModel):
     pass
+
 
 # @register_type("key")
 # class Key(DataType):
