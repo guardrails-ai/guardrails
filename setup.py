@@ -61,6 +61,7 @@ EXTRAS = {
         "twine",
         "pytest-mock",
         "pypdfium2",
+        "pytest",
         *SQL_REQUIREMENTS,
         *VECTORDB_REQUIREMENTS,
     ]

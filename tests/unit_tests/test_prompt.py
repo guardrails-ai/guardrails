@@ -121,3 +121,19 @@ def test_format_instructions():
     )
 
     assert guard.prompt.format_instructions.rstrip() == expected_instructions
+
+
+@pytest.mark.parametrize(
+    "prompt_str,final_prompt",
+    [
+        (
+            "Dummy prompt. @complete_json_suffix_v2",
+            f"Dummy prompt. {constants['complete_json_suffix_v2']}",
+        ),
+        ("Dummy prompt. some@email.com", "Dummy prompt. some@email.com"),
+    ],
+)
+def test_substitute_constants(prompt_str, final_prompt):
+    """Test substituting constants in a prompt."""
+    prompt = gd.Prompt(prompt_str)
+    assert prompt.source == final_prompt
