@@ -47,7 +47,8 @@ class BasePrompt:
 
         # Substitute all occurrences of @<constant_name> with the value of the constant.
         for match in matches:
-            text = text.replace(f"@{match}", constants[match])
+            if match in constants:
+                text = text.replace(f"@{match}", constants[match])
 
         return text
 
