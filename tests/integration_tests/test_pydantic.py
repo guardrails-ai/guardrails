@@ -29,16 +29,16 @@ def test_pydantic_with_reask(mocker):
     assert len(guard_history) == 3
 
     # For orginal prompt and output
-    assert guard_history[0].prompt == pydantic.COMPILED_PROMPT
+    assert guard_history[0].prompt == gd.Prompt(pydantic.COMPILED_PROMPT)
     assert guard_history[0].output == pydantic.LLM_OUTPUT
     assert guard_history[0].validated_output == pydantic.VALIDATED_OUTPUT_REASK_1
 
     # For re-asked prompt and output
-    assert guard_history[1].prompt == pydantic.COMPILED_PROMPT_REASK_1
+    assert guard_history[1].prompt == gd.Prompt(pydantic.COMPILED_PROMPT_REASK_1)
     assert guard_history[1].output == pydantic.LLM_OUTPUT_REASK_1
     assert guard_history[1].validated_output == pydantic.VALIDATED_OUTPUT_REASK_2
 
     # For re-asked prompt #2 and output #2
-    assert guard_history[2].prompt == pydantic.COMPILED_PROMPT_REASK_2
+    assert guard_history[2].prompt == gd.Prompt(pydantic.COMPILED_PROMPT_REASK_2)
     assert guard_history[2].output == pydantic.LLM_OUTPUT_REASK_2
     assert guard_history[2].validated_output == pydantic.VALIDATED_OUTPUT_REASK_3

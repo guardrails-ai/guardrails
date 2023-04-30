@@ -42,16 +42,19 @@ class DataType:
     def iter(
         self, element: ET._Element
     ) -> Generator[Tuple[str, "DataType", ET._Element], None, None]:
-        """Return a tuple of (name, child_data_type, child_element) for each
-        child."""
+        """
+        Iterate over the children of an element.
+
+        Yields tuples of (name, child_data_type, child_element) for each child.
+        """
         for el_child in element:
-            if "name" in el_child.attrib:
+            if element.tag == "list":
+                assert len(self._children) == 1, "Must have exactly one child."
+                yield None, list(self._children.values())[0], el_child
+            else:
                 name: str = el_child.attrib["name"]
                 child_data_type: DataType = self._children[name]
                 yield name, child_data_type, el_child
-            else:
-                assert len(self._children) == 1, "Must have exactly one child."
-                yield None, list(self._children.values())[0], el_child
 
     def from_str(self, s: str) -> "DataType":
         """Create a DataType from a string.

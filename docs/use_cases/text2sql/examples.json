@@ -1,0 +1,66 @@
+[
+    {
+        "question": "How many heads of the departments are older than 56 ?",
+        "query": "SELECT count(*) FROM head WHERE age  >  56"
+    },
+    {
+        "question": "List the name, born state and age of the heads of departments ordered by age.",
+        "query": "SELECT name ,  born_state ,  age FROM head ORDER BY age"
+    },
+    {
+        "question": "List the creation year, name and budget of each department.",
+        "query": "SELECT creation ,  name ,  budget_in_billions FROM department"
+    },
+    {
+        "question": "What are the maximum and minimum budget of the departments?",
+        "query": "SELECT max(budget_in_billions) ,  min(budget_in_billions) FROM department"
+    },
+    {
+        "question": "What is the average number of employees of the departments whose rank is between 10 and 15?",
+        "query": "SELECT avg(num_employees) FROM department WHERE ranking BETWEEN 10 AND 15"
+    },
+    {
+        "question": "What are the names of the heads who are born outside the California state?",
+        "query": "SELECT name FROM head WHERE born_state != 'California'"
+    },
+    {
+        "question": "What are the distinct creation years of the departments managed by a secretary born in state 'Alabama'?",
+        "query": "SELECT DISTINCT T1.creation FROM department AS T1 JOIN management AS T2 ON T1.department_id  =  T2.department_id JOIN head AS T3 ON T2.head_id  =  T3.head_id WHERE T3.born_state  =  'Alabama'"
+    },
+    {
+        "question": "What are the names of the states where at least 3 heads were born?",
+        "query": "SELECT born_state FROM head GROUP BY born_state HAVING count(*)  >=  3"
+    },
+    {
+        "question": "In which year were most departments established?",
+        "query": "SELECT creation FROM department GROUP BY creation ORDER BY count(*) DESC LIMIT 1"
+    },
+    {
+        "question": "Show the name and number of employees for the departments managed by heads whose temporary acting value is 'Yes'?",
+        "query": "SELECT T1.name ,  T1.num_employees FROM department AS T1 JOIN management AS T2 ON T1.department_id  =  T2.department_id WHERE T2.temporary_acting  =  'Yes'"
+    },
+    {
+        "question": "How many acting statuses are there?",
+        "query": "SELECT count(DISTINCT temporary_acting) FROM management"
+    },
+    {
+        "question": "How many departments are led by heads who are not mentioned?",
+        "query": "SELECT count(*) FROM department WHERE department_id NOT IN (SELECT department_id FROM management);"
+    },
+    {
+        "question": "What are the distinct ages of the heads who are acting?",
+        "query": "SELECT DISTINCT T1.age FROM management AS T2 JOIN head AS T1 ON T1.head_id  =  T2.head_id WHERE T2.temporary_acting  =  'Yes'"
+    },
+    {
+        "question": "List the states where both the secretary of 'Treasury' department and the secretary of 'Homeland Security' were born.",
+        "query": "SELECT T3.born_state FROM department AS T1 JOIN management AS T2 ON T1.department_id  =  T2.department_id JOIN head AS T3 ON T2.head_id  =  T3.head_id WHERE T1.name  =  'Treasury' INTERSECT SELECT T3.born_state FROM department AS T1 JOIN management AS T2 ON T1.department_id  =  T2.department_id JOIN head AS T3 ON T2.head_id  =  T3.head_id WHERE T1.name  =  'Homeland Security'"
+    },
+    {
+        "question": "Which department has more than 1 head at a time? List the id, name and the number of heads.",
+        "query": "SELECT T1.department_id ,  T1.name ,  count(*) FROM management AS T2 JOIN department AS T1 ON T1.department_id  =  T2.department_id GROUP BY T1.department_id HAVING count(*)  >  1"
+    },
+    {
+        "question": "Which head's name has the substring 'Ha'? List the id and name.",
+        "query": "SELECT head_id ,  name FROM head WHERE name LIKE '%Ha%'"
+    }
+]

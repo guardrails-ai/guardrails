@@ -1,18 +1,20 @@
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from rich.console import Group
 from rich.panel import Panel
 from rich.pretty import pretty_repr
 from rich.tree import Tree
 
+from guardrails.prompt import Prompt
 from guardrails.utils.reask_utils import ReAsk, gather_reasks, prune_json_for_reasking
 
 
 @dataclass
 class GuardLogs:
-    prompt: str
+    prompt: Prompt
+    instructions: Optional[str]
     output: str
     output_as_dict: dict
     validated_output: dict
@@ -25,19 +27,37 @@ class GuardLogs:
 
     @property
     def rich_group(self) -> Group:
-        return Group(
-            Panel(
-                self.prompt,
-                title="Prompt",
-                style="on #F0F8FF",
-            ),
-            Panel(self.output, title="Raw LLM Output", style="on #F5F5DC"),
-            Panel(
-                pretty_repr(self.validated_output),
-                title="Validated Output",
-                style="on #F0FFF0",
-            ),
-        )
+        if self.instructions is not None:
+            return Group(
+                Panel(
+                    self.prompt.source if self.prompt else "No prompt",
+                    title="Prompt",
+                    style="on #F0F8FF",
+                ),
+                Panel(
+                    self.instructions.source, title="Instructions", style="on #FFF0F2"
+                ),
+                Panel(self.output, title="Raw LLM Output", style="on #F5F5DC"),
+                Panel(
+                    pretty_repr(self.validated_output),
+                    title="Validated Output",
+                    style="on #F0FFF0",
+                ),
+            )
+        else:
+            return Group(
+                Panel(
+                    self.prompt.source if self.prompt else "No prompt",
+                    title="Prompt",
+                    style="on #F0F8FF",
+                ),
+                Panel(self.output, title="Raw LLM Output", style="on #F5F5DC"),
+                Panel(
+                    pretty_repr(self.validated_output),
+                    title="Validated Output",
+                    style="on #F0FFF0",
+                ),
+            )
 
 
 @dataclass

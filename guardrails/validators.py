@@ -6,6 +6,7 @@ in the `RAIL` spec to specify formatters.
 import ast
 import logging
 import os
+import re
 from collections import defaultdict
 from copy import deepcopy
 from dataclasses import dataclass
@@ -15,6 +16,7 @@ import openai
 from pydantic import BaseModel, ValidationError
 
 from guardrails.datatypes import registry as types_registry
+from guardrails.utils.docs_utils import sentence_split
 from guardrails.utils.reask_utils import ReAsk
 from guardrails.utils.sql_utils import SQLDriver, create_sql_driver
 
@@ -762,7 +764,13 @@ class BugFreeSQL(Validator):
     - Programmatic fix: None
     """
 
-    def __init__(self, schema_file: Optional[str] = None, conn: Optional[str] = None):
+    def __init__(
+        self,
+        conn: Optional[str] = None,
+        schema_file: Optional[str] = None,
+        on_fail: Optional[Callable] = None,
+    ):
+        super().__init__(on_fail=on_fail)
         self._driver: SQLDriver = create_sql_driver(schema_file=schema_file, conn=conn)
 
     def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
@@ -809,6 +817,42 @@ class SqlColumnPresence(Validator):
                 f"Columns [{', '.join(diff)}] not in [{', '.join(self._cols)}]",
                 None,
             )
+
+        return schema
+
+
+@register_validator(name="exclude-sql-predicates", data_type="sql")
+class ExcludeSqlPredicates(Validator):
+    """Validate that the SQL query does not contain certain predicates.
+
+    - Name for `format` attribute: `exclude-sql-predicates`
+    - Supported data types: `sql`
+    """
+
+    def __init__(self, predicates: List[str], on_fail: Optional[Callable] = None):
+        super().__init__(on_fail=on_fail, predicates=predicates)
+        self._predicates = set(predicates)
+
+    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
+        from sqlglot import exp, parse
+
+        expressions = parse(value)
+        for expression in expressions:
+            if expression is None:
+                continue
+            for pred in self._predicates:
+                try:
+                    getattr(exp, pred)
+                except AttributeError:
+                    raise ValueError(f"Predicate {pred} does not exist")
+                if len(list(expression.find_all(getattr(exp, pred)))):
+                    raise EventDetail(
+                        key,
+                        value,
+                        schema,
+                        f"SQL query contains predicate {pred}",
+                        "",
+                    )
 
         return schema
 
@@ -989,3 +1033,440 @@ class EndsWith(Validator):
             )
 
         return schema
+
+
+@register_validator(name="extracted-summary-sentences-match", data_type="string")
+class ExtractedSummarySentencesMatch(Validator):
+    """Validate that the extracted summary sentences match the original text by
+    performing a cosine similarity in the embedding space."""
+
+    def __init__(
+        self,
+        documents_dir: str,
+        threshold: float = 0.7,
+        embedding_model: Optional["EmbeddingBase"] = None,  # noqa: F821
+        vector_db: Optional["VectorDBBase"] = None,  # noqa: F821
+        document_store: Optional["DocumentStoreBase"] = None,  # noqa: F821
+        on_fail: Optional[Callable] = None,
+        **kwargs,
+    ):
+        super().__init__(on_fail, **kwargs)
+        # TODO(shreya): Pass embedding_model, vector_db, document_store from spec
+
+        if document_store is None:
+            from guardrails.document_store import EphemeralDocumentStore
+
+            if vector_db is None:
+                from guardrails.vectordb import Faiss
+
+                if embedding_model is None:
+                    from guardrails.embedding import OpenAIEmbedding
+
+                    embedding_model = OpenAIEmbedding()
+
+                vector_db = Faiss.new_flat_ip_index(
+                    embedding_model.output_dim, embedder=embedding_model
+                )
+            self.store = EphemeralDocumentStore(vector_db)
+        else:
+            self.store = document_store
+
+        for doc_path in os.listdir(documents_dir):
+            with open(os.path.join(documents_dir, doc_path)) as f:
+                doc = f.read()
+                self.store.add_text(
+                    doc, {"path": os.path.join(documents_dir, doc_path)}
+                )
+
+        self._threshold = float(threshold)
+
+    def validate(self, key, value, schema) -> Dict:
+        # Split the value into sentences.
+        sentences = re.split(r"(?<=[.!?]) +", value)
+
+        # Check if any of the sentences in the value match any of the sentences
+        # in the documents.
+        unverified = []
+        verified = []
+        citations = []
+        for sentence in sentences:
+            page = self.store.search_with_threshold(sentence, self._threshold)
+            if not page:
+                unverified.append(sentence)
+            else:
+                citation_count = len(citations) + 1
+                verified.append(sentence + f" [{citation_count}] ")
+                citations.append(f"\n[{citation_count}] {page[0].metadata['path']}")
+
+        fixed_summary = " ".join(verified) + "\n\n" + "".join(citations)
+
+        if unverified:
+            unverified_sentences = "\n".join(unverified)
+            raise EventDetail(
+                key,
+                value,
+                schema,
+                (
+                    f"The summary \nSummary: {value}\n has sentences\n"
+                    f"{unverified_sentences}\n that are not similar to any document."
+                ),
+                fixed_summary,
+            )
+
+        schema[key] = fixed_summary
+        return schema
+
+    def to_prompt(self, with_keywords: bool = True) -> str:
+        return ""
+
+
+@register_validator(name="reading-time", data_type="string")
+class ReadingTime(Validator):
+    """Validate that the a string can be read in less than a certain amount of time."""
+
+    def __init__(self, reading_time: int, on_fail: str = "fix"):
+        super().__init__(on_fail=on_fail, max_time=reading_time)
+        self._max_time = reading_time
+
+    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
+        logger.debug(
+            f"Validating {value} can be read in less than {self._max_time} seconds..."
+        )
+
+        # Estimate the reading time of the string
+        reading_time = len(value.split()) / 200 * 60
+        logger.debug(f"Estimated reading time {reading_time} seconds...")
+
+        if abs(reading_time - self._max_time) > 1:
+            logger.error(f"{value} took {reading_time} to read")
+            raise EventDetail(
+                key,
+                value,
+                schema,
+                f"String should be readable within {self._max_time} minutes.",
+                value,
+            )
+
+        return schema
+
+
+@register_validator(name="extractive-summary", data_type="string")
+class ExtractiveSummary(Validator):
+    """Validate that a string is a valid extractive summary of a given document.
+
+    This validator does a fuzzy match between the sentences in the summary and the
+    sentences in the document. Each sentence in the summary must be similar to at
+    least one sentence in the document. After the validation, the summary is updated
+    to include the sentences from the document that were matched, and the citations
+    for those sentences are added to the end of the summary.
+    """
+
+    def __init__(
+        self,
+        documents_dir: str,
+        threshold: int = 85,
+        on_fail: Optional[Callable] = None,
+        **kwargs,
+    ):
+        super().__init__(on_fail, **kwargs)
+
+        self.threshold = threshold
+
+        # Load documents
+        self._document_store = {}
+        for doc_path in os.listdir(documents_dir):
+            with open(os.path.join(documents_dir, doc_path)) as f:
+                doc = f.read()
+            self._document_store[doc_path] = sentence_split(doc)
+
+    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
+        """Make sure each sentence was precisely copied from the document."""
+
+        try:
+            from thefuzz import fuzz
+        except ImportError:
+            raise ImportError(
+                "`thefuzz` library is required for `extractive-summary` validator. "
+                "Please install it with `pip install thefuzz`."
+            )
+
+        # Split the value into sentences.
+        sentences = sentence_split(value)
+
+        # Check if any of the sentences in the value match any of the sentences
+        # # in the documents.
+        unverified = []
+        verified = []
+        citations = []
+
+        for sentence in sentences:
+            highest_ratio = 0
+            highest_ratio_doc = None
+
+            # Check fuzzy match against all sentences in all documents
+            for doc_path, doc_sentences in self._document_store.items():
+                for doc_sentence in doc_sentences:
+                    ratio = fuzz.ratio(sentence, doc_sentence)
+                    if ratio > highest_ratio:
+                        highest_ratio = ratio
+                        highest_ratio_doc = doc_path
+
+            if highest_ratio < self.threshold:
+                unverified.append(sentence)
+            else:
+                citation_count = len(citations) + 1
+                verified.append(f"{sentence} [{citation_count}]")
+                citations.append(f"[{citation_count}] {highest_ratio_doc}\n")
+
+        verified_sentences = " ".join(verified) + "\n\n" + "".join(citations)
+
+        if len(unverified):
+            unverified_sentences = "\n".join(
+                "- " + s for i, s in enumerate(sentences) if i in unverified
+            )
+            raise EventDetail(
+                key,
+                value,
+                schema,
+                (
+                    f"The summary \nSummary: {value}\n has sentences\n"
+                    f"{unverified_sentences}\n that are not similar to any document."
+                ),
+                verified_sentences,
+            )
+
+        schema[key] = verified_sentences
+
+        return schema
+
+
+@register_validator(name="remove-redundant-sentences", data_type="string")
+class RemoveRedundantSentences(Validator):
+    """Remove redundant sentences from a string.
+
+    This validator removes sentences from a string that are similar to other sentences
+    in the string. This is useful for removing repetitive sentences from a string.
+    """
+
+    def __init__(
+        self, threshold: int = 70, on_fail: Optional[Callable] = None, **kwargs
+    ):
+        super().__init__(on_fail, **kwargs)
+        self.threshold = threshold
+
+    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
+        """Remove redundant sentences from a string."""
+
+        try:
+            from thefuzz import fuzz
+        except ImportError:
+            raise ImportError(
+                "`thefuzz` library is required for `remove-redundant-sentences` "
+                "validator. Please install it with `pip install thefuzz`."
+            )
+
+        # Split the value into sentences.
+        sentences = sentence_split(value)
+        filtered_sentences = []
+        redundant_sentences = []
+
+        sentence = sentences[0]
+        other_sentences = sentences[1:]
+        while len(other_sentences):
+            # Check fuzzy match against all other sentences
+            filtered_sentences.append(sentence)
+            unique_sentences = []
+            for other_sentence in other_sentences:
+                ratio = fuzz.ratio(sentence, other_sentence)
+                if ratio > self.threshold:
+                    redundant_sentences.append(other_sentence)
+                else:
+                    unique_sentences.append(other_sentence)
+            if len(unique_sentences) == 0:
+                break
+            sentence = unique_sentences[0]
+            other_sentences = unique_sentences[1:]
+
+        filtered_summary = " ".join(filtered_sentences)
+
+        if len(redundant_sentences):
+            redundant_sentences = "\n".join(redundant_sentences)
+            raise EventDetail(
+                key,
+                value,
+                schema,
+                (
+                    f"The summary \nSummary: {value}\n has sentences\n"
+                    f"{redundant_sentences}\n that are similar to other sentences."
+                ),
+                filtered_summary,
+            )
+
+        return schema
+
+
+@register_validator(name="saliency-check", data_type="string")
+class SaliencyCheck(Validator):
+    """Check that the summary covers the list of topics present in the document."""
+
+    def __init__(
+        self,
+        docs_dir: str,
+        llm_callable: Callable = None,
+        on_fail: Optional[Callable] = None,
+        threshold: int = 0.25,
+        **kwargs,
+    ):
+        """Initialize the SalienceCheck validator.
+
+        Args:
+            docs_dir: Path to the directory containing the documents.
+            on_fail: Function to call when validation fails.
+            threshold: Threshold for overlap between topics in document and summary.
+        """
+
+        super().__init__(on_fail, **kwargs)
+
+        self.llm_callable = (
+            llm_callable if llm_callable else openai.ChatCompletion.create
+        )
+
+        self.threshold = threshold
+
+        # Load documents
+        self._document_store = {}
+        for doc_path in os.listdir(docs_dir):
+            with open(os.path.join(docs_dir, doc_path)) as f:
+                text = f.read()
+            # Precompute topics for each document
+            self._document_store[doc_path] = self._get_topics(text)
+
+    @property
+    def topics(self) -> List[str]:
+        """Return a list of topics that can be used in the validator."""
+        # Merge topics from all documents
+        topics = set()
+        for doc_topics in self._document_store.values():
+            topics.update(doc_topics)
+        return list(topics)
+
+    def _get_topics(self, text: str, topics: Optional[List[str]] = None) -> List[str]:
+        """Extract topics from a string."""
+
+        from guardrails import Guard
+
+        topics_seed = ""
+        if topics is not None:
+            topics_seed = (
+                "Here's a seed list of topics, select topics from this list"
+                " if they are covered in the doc:\n\n" + ", ".join(topics)
+            )
+
+        spec = f"""
+<rail version="0.1">
+<output>
+    <list name="topics">
+        <string name="topic" description="few words describing the topic in text"/>
+    </list>
+</output>
+
+<prompt>
+Extract a list of topics from the following text:
+
+{text}
+
+{topics_seed}
+
+Return the output as a JSON with a single key "topics" containing a list of topics.
+
+Make sure that topics are relevant to text, and topics are not too specific or general.
+</prompt>
+</rail>
+    """
+
+        guard = Guard.from_rail_string(spec)
+        _, validated_output = guard(llm_api=self.llm_callable)
+        return validated_output["topics"]
+
+    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
+        topics_in_summary = self._get_topics(value, topics=self.topics)
+
+        # Compute overlap between topics in document and summary
+        intersection = set(topics_in_summary).intersection(set(self.topics))
+        overlap = len(intersection) / len(self.topics)
+
+        if overlap < self.threshold:
+            raise EventDetail(
+                key,
+                value,
+                schema,
+                (
+                    f"The summary \nSummary: {value}\n does not cover these topics:\n"
+                    f"{set(self.topics).difference(intersection)}"
+                ),
+                "",
+            )
+
+        return schema
+
+
+@register_validator(name="qa-relevance-llm-eval", data_type="string")
+class QARelevanceLLMEval(Validator):
+    def __init__(
+        self,
+        llm_callable: Callable = None,
+        on_fail: Optional[Callable] = None,
+        **kwargs,
+    ):
+        super().__init__(on_fail, **kwargs)
+        self.llm_callable = (
+            llm_callable if llm_callable else openai.ChatCompletion.create
+        )
+
+    def selfeval(self, question: str, answer: str):
+        from guardrails import Guard
+
+        spec = """
+<rail version="0.1">
+<output>
+    <bool name="relevant" />
+</output>
+
+<prompt>
+Is the answer below relevant to the question asked?
+Question: {question}
+Answer: {answer}
+
+Relevant (as a JSON with a single boolean key, "relevant"):\
+</prompt>
+</rail>
+    """.format(
+            question=question,
+            answer=answer,
+        )
+        guard = Guard.from_rail_string(spec)
+
+        return guard(
+            self.llm_callable,
+            max_tokens=10,
+            temperature=0.1,
+        )[1]
+
+    def validate(self, key, value, schema) -> Dict:
+        assert "question" in schema, "The schema must contain a `question` key."
+
+        relevant = self.selfeval(schema["question"], value)["relevant"]
+        if relevant:
+            return schema
+
+        fixed_answer = "No relevant answer found."
+        raise EventDetail(
+            key,
+            value,
+            schema,
+            f"The answer {value} is not relevant to the question {schema['question']}.",
+            fixed_answer,
+        )
+
+    def to_prompt(self, with_keywords: bool = True) -> str:
+        return ""

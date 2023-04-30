@@ -1,15 +1,26 @@
 import os
 from dataclasses import dataclass
 from functools import partial
-from typing import Any, Callable, Dict, List, cast
+from typing import Any, Callable, Dict, List, Optional, cast
 
 import openai
+from tenacity import retry, retry_if_exception_type, wait_exponential_jitter
 
 try:
     MANIFEST = True
     import manifest
 except ImportError:
     MANIFEST = False
+
+OPENAI_RETRYABLE_ERRORS = [
+    openai.error.APIConnectionError,
+    openai.error.APIError,
+    openai.error.TryAgain,
+    openai.error.Timeout,
+    openai.error.RateLimitError,
+    openai.error.ServiceUnavailableError,
+]
+RETRYABLE_ERRORS = tuple(OPENAI_RETRYABLE_ERRORS)
 
 
 class PromptCallableException(Exception):
@@ -26,6 +37,10 @@ class PromptCallable:
 
     fn: Callable
 
+    @retry(
+        wait=wait_exponential_jitter(max=60),
+        retry=retry_if_exception_type(RETRYABLE_ERRORS),
+    )
     def __call__(self, *args, **kwargs):
         try:
             result = self.fn(*args, **kwargs)
@@ -48,44 +63,60 @@ class PromptCallable:
         return result
 
 
-def nonchat_prompt(prompt: str) -> str:
+def nonchat_prompt(prompt: str, instructions: Optional[str] = None, **kwargs) -> str:
     """Prepare final prompt for nonchat engine."""
+    if instructions:
+        prompt = "\n\n".join([instructions, prompt])
+
     return prompt + "\n\nJson Output:\n\n"
 
 
-def chat_prompt(prompt: str, **kwargs) -> List[Dict[str, str]]:
+def chat_prompt(
+    prompt: str, instructions: Optional[str] = None, **kwargs
+) -> List[Dict[str, str]]:
     """Prepare final prompt for chat engine."""
-    if "system_prompt" in kwargs:
-        system_prompt = kwargs.pop("system_prompt")
-    else:
-        system_prompt = (
+    if not instructions:
+        instructions = (
             "You are a helpful assistant, "
             "able to express yourself purely through JSON, "
             "strictly and precisely adhering to the provided XML schemas."
         )
     return [
-        {"role": "system", "content": system_prompt},
+        {"role": "system", "content": instructions},
         {"role": "user", "content": prompt},
     ]
 
 
-def openai_wrapper(text: str, *args, **kwargs):
+def openai_wrapper(
+    text: str,
+    engine: str = "text-davinci-003",
+    instructions: Optional[str] = None,
+    *args,
+    **kwargs,
+):
     api_key = os.environ.get("OPENAI_API_KEY")
     openai_response = openai.Completion.create(
         api_key=api_key,
-        prompt=nonchat_prompt(text),
+        engine=engine,
+        prompt=nonchat_prompt(text, instructions, **kwargs),
         *args,
         **kwargs,
     )
     return openai_response["choices"][0]["text"]
 
 
-def openai_chat_wrapper(text: str, *args, model="gpt-3.5-turbo", **kwargs):
+def openai_chat_wrapper(
+    text: str,
+    model="gpt-3.5-turbo",
+    instructions: Optional[str] = None,
+    *args,
+    **kwargs,
+):
     api_key = os.environ.get("OPENAI_API_KEY")
     openai_response = openai.ChatCompletion.create(
         api_key=api_key,
         model=model,
-        messages=chat_prompt(text, **kwargs),
+        messages=chat_prompt(text, instructions, **kwargs),
         *args,
         **kwargs,
     )

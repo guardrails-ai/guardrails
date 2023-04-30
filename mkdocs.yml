@@ -1,5 +1,5 @@
-site_name:  Guardrails.ai
-site_url: https://getguardrails.com
+site_name:  Guardrails AI
+site_url: https://getguardrails.ai
 site_author: Shreya Rajpal
 repo_url: https://github.com/ShreyaR/guardrails
 repo_name: ShreyaR/guardrails
@@ -18,6 +18,7 @@ nav:
       - 'Overview': rail/index.md
       - 'Output Element': rail/output.md
       - 'Prompt Element': rail/prompt.md
+      - 'Instruction Element': rail/instructions.md
       - '(Experimental) Script Element': rail/script.md
     - 'Guardrails Reference':
       - 'Guard': guard.md
@@ -26,7 +27,10 @@ nav:
       - 'LLM API Wrappers': llm_api_wrappers.md
       - 'Inspecting logs': logs.md
       - 'Guardrails CLI': cli.md
+    - 'Applications':
+      - 'Text to SQL': use_cases/text2sql/text2sql.ipynb
     - 'Examples':
+      - 'Use Guardrails with Chat Models': examples/guardrails_with_chat_models.ipynb
       - 'If condition: generate different JSON objects based on condition': examples/select_choice_based_on_action.ipynb
       - 'Extracting entities from ToS': examples/extracting_entities.ipynb
       - 'Generating bug-free Python code': examples/bug_free_python_code.ipynb
@@ -64,6 +68,8 @@ theme:
       example: octicons/beaker-16
       quote: octicons/quote-16
   features:
+    - navigation.instant
+    - navigation.tracking
     - navigation.expand
     - navigation.sections
     - content.code.annotate
@@ -107,6 +113,7 @@ markdown_extensions:
 
 
 plugins:
+  - social
   - search
   - mkdocstrings:
       default_handler: python
@@ -125,6 +132,15 @@ plugins:
       execute: false
       timeout: 100
       allow_errors: false
+      tag_remove_configs:
+        remove_cell_tags:
+          - Remove_cell
+        remove_all_outputs_tags:
+          - Remove_all_output
+        remove_single_output_tags:
+          - Remove_single_output
+        remove_input_tags:
+          - Remove_input
   # - mkdocs-jupyter:
   #     execute_notebooks: true
   #     kernel_name: python3
@@ -133,3 +149,11 @@ plugins:
   #     include_source: True
 
 
+extra:
+  social:
+    - icon: fontawesome/brands/twitter
+      link: https://twitter.com/guardrails_ai
+    - icon: fontawesome/brands/github
+      link: https://github.com/ShreyaR/guardrails
+    - icon: fontawesome/brands/discord
+      link: https://discord.gg/Jsey3mX98B

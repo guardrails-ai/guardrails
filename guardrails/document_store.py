@@ -4,23 +4,23 @@ from collections import namedtuple
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
+from guardrails.vectordb import VectorDBBase
+
 try:
     import sqlalchemy
-    from sqlalchemy import Integer, PickleType, String, exc, select
-    from sqlalchemy.orm import Mapped, Session, declarative_base, mapped_column
-
-    _HAS_SQLALCHEMY = True
+    import sqlalchemy.orm as orm
 except ImportError:
-    _HAS_SQLALCHEMY = False
-
-from guardrails.vectordb import VectorDBBase
+    sqlalchemy = None
+    orm = None
 
 
 @dataclass
 class Document:
-    """Document holds text and metadata of a document. Examples of documents are
-    PDFs, Word documents, etc. A collection of related text in an NLP application
-    can be thought of a document as well."""
+    """Document holds text and metadata of a document.
+
+    Examples of documents are PDFs, Word documents, etc. A collection of related text
+    in an NLP application can be thought of a document as well.
+    """
 
     id: str
     pages: Dict[int, str]
@@ -35,6 +35,7 @@ PageCoordinates = namedtuple("PageCoordinates", ["doc_id", "page_num"])
 @dataclass
 class Page:
     """Page holds text and metadata of a page in a document.
+
     It also containts the coordinates of the page in the document."""
 
     cordinates: PageCoordinates
@@ -44,9 +45,9 @@ class Page:
 
 class DocumentStoreBase(ABC):
     """
-    DocumentStoreBase is an abstract class that defines the interface
-    of a store that can store text, and metadata extracted from documents
-    and the store can be queried by text for similar documents.
+    Abstract class for a store that can store text, and metadata from documents.
+
+    The store can be queried by text for similar documents.
     """
 
     @abstractmethod
@@ -110,13 +111,14 @@ class EphemeralDocumentStore(DocumentStoreBase):
     local disk and use a ephemeral vector store like Faiss
     """
 
-    def __init__(self, vector_db: VectorDBBase, path: Optional[String] = None):
+    def __init__(self, vector_db: VectorDBBase, path: Optional[str] = None):
         """Creates a new EphemeralDocumentStore.
+
         Args:
             vector_db: VectorDBBase instance to use for storing the vectors.
             path: Path to the database file store metadata.
         """
-        if not _HAS_SQLALCHEMY:
+        if sqlalchemy is None:
             raise ImportError(
                 "SQLAlchemy is required for EphemeralDocumentStore"
                 "Please install it using `pip install SqlAlchemy`"
@@ -132,9 +134,9 @@ class EphemeralDocumentStore(DocumentStoreBase):
             self._storage.add_docs(
                 [document], vdb_last_index=self._vector_db.last_index()
             )
-        except exc.IntegrityError:
+        except sqlalchemy.exc.IntegrityError:
             return
-        self._vector_db.add_texts(document.pages.values())
+        self._vector_db.add_texts(list(document.pages.values()))
 
     def add_text(self, text: str, meta: Dict[Any, Any]) -> str:
         hash = hashlib.md5()
@@ -158,32 +160,48 @@ class EphemeralDocumentStore(DocumentStoreBase):
         filtered_ids = filter(lambda x: x != -1, vector_db_indexes)
         return self._storage.get_pages_for_for_indexes(filtered_ids)
 
+    def search_with_threshold(
+        self, query: str, threshold: float, k: int = 4
+    ) -> List[Page]:
+        vector_db_indexes = self._vector_db.similarity_search_with_threshold(
+            query, k, threshold
+        )
+        filtered_ids = filter(lambda x: x != -1, vector_db_indexes)
+        return self._storage.get_pages_for_for_indexes(filtered_ids)
+
     def flush(self, path: Optional[str] = None):
         self._vector_db.save(path)
 
 
-Base = declarative_base()
+if orm is not None:
+    Base = orm.declarative_base()
 
+    class SqlDocument(Base):
+        __tablename__ = "documents"
 
-class SqlDocument(Base):
-    __tablename__ = "documents"
+        id: orm.Mapped[int] = orm.mapped_column(primary_key=True)
+        page_num: orm.Mapped[int] = orm.mapped_column(
+            sqlalchemy.Integer, primary_key=True
+        )
+        text: orm.Mapped[str] = orm.mapped_column(sqlalchemy.String)
+        meta: orm.Mapped[dict] = orm.mapped_column(sqlalchemy.PickleType)
+        vector_index: orm.Mapped[int] = orm.mapped_column(sqlalchemy.Integer)
 
-    id: Mapped[int] = mapped_column(primary_key=True)
-    page_num: Mapped[int] = mapped_column(Integer, primary_key=True)
-    text: Mapped[str] = mapped_column(String)
-    meta: Mapped[dict] = mapped_column(PickleType)
-    vector_index: Mapped[int] = mapped_column(Integer)
+else:
+
+    class SqlDocument:
+        pass
 
 
 class SQLMetadataStore:
     def __init__(self, path: Optional[str] = None):
         conn = f"sqlite:///{path}" if path is not None else "sqlite://"
         self._engine = sqlalchemy.create_engine(conn)
-        SqlDocument.__table__.metadata.create_all(self._engine, checkfirst=True)
+        SqlDocument.metadata.create_all(self._engine, checkfirst=True)
 
     def add_docs(self, docs: List[Document], vdb_last_index: int):
         vector_id = vdb_last_index
-        with Session(self._engine) as session:
+        with orm.Session(self._engine) as session:
             for doc in docs:
                 for page_num, text in doc.pages.items():
                     session.add(
@@ -201,9 +219,11 @@ class SQLMetadataStore:
 
     def get_pages_for_for_indexes(self, indexes: List[int]) -> List[Page]:
         pages: List[Page] = []
-        with Session(self._engine) as session:
+        with orm.Session(self._engine) as session:
             for index in indexes:
-                query = select(SqlDocument).where(SqlDocument.vector_index == index)
+                query = sqlalchemy.select(SqlDocument).where(
+                    SqlDocument.vector_index == index
+                )
                 sql_docs = session.execute(query)
                 sql_doc = sql_docs.first()[0]
                 pages.append(

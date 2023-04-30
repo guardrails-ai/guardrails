@@ -1,2 +1,1 @@
-
 {"people": [{"name": "John Doe", "age": 28, "zip_code": "None"}]}

@@ -3,6 +3,7 @@
 from guardrails.guard import Guard
 from guardrails.llm_providers import PromptCallable
 from guardrails.logging import configure_logging
+from guardrails.prompt import Instructions, Prompt
 from guardrails.rail import Rail
 from guardrails.utils import constants, docs_utils
 from guardrails.validators import Validator, register_validator
@@ -16,4 +17,6 @@ __all__ = [
     "constants",
     "docs_utils",
     "configure_logging",
+    "Prompt",
+    "Instructions",
 ]

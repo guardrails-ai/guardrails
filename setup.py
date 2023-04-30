@@ -36,6 +36,7 @@ REQUIRED = [
     "pydantic",
     "typer",
     "griffe",
+    "tenacity",
 ]
 
 # Read in docs/requirements.txt
@@ -44,7 +45,9 @@ with open("docs/requirements.txt") as f:
 
 SQL_REQUIREMENTS = ["sqlvalidator", "sqlalchemy>=2.0.9", "sqlglot"]
 
-VECTORDB_REQUIREMENTS = ["faiss-cpu", "numpy"]
+SUMMARY_REQUIREMENTS = ["thefuzz", "nltk"]
+
+VECTORDB_REQUIREMENTS = ["faiss-cpu", "numpy", "tiktoken"]
 
 # What packages are optional?
 EXTRAS = {
@@ -58,6 +61,7 @@ EXTRAS = {
         "twine",
         "pytest-mock",
         "pypdfium2",
+        "pytest",
         *SQL_REQUIREMENTS,
         *VECTORDB_REQUIREMENTS,
     ]
@@ -67,6 +71,7 @@ EXTRAS = {
     "vectordb": VECTORDB_REQUIREMENTS,
     "profanity": ["alt-profanity-check"],
     "critique": ["inspiredco"],
+    "summary": SUMMARY_REQUIREMENTS,
 }
 
 # The rest you shouldn't have to touch too much :)

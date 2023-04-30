@@ -6,7 +6,7 @@ from typing import Callable, Dict, List, Optional, Tuple
 from eliot import add_destinations, start_action
 
 from guardrails.llm_providers import PromptCallable
-from guardrails.prompt import Prompt
+from guardrails.prompt import Instructions, Prompt
 from guardrails.schema import InputSchema, OutputSchema
 from guardrails.utils.logs_utils import GuardHistory, GuardLogs
 from guardrails.utils.reask_utils import (
@@ -43,12 +43,14 @@ class Runner:
         guard_history: The guard history to use, defaults to an empty history.
     """
 
+    instructions: Optional[Instructions]
     prompt: Prompt
     api: PromptCallable
     input_schema: InputSchema
     output_schema: OutputSchema
     num_reasks: int = 0
     output: str = None
+    reask_prompt: Optional[Prompt] = None
     guard_history: GuardHistory = field(default_factory=lambda: GuardHistory([]))
 
     def _reset_guard_history(self):
@@ -75,13 +77,15 @@ class Runner:
 
         with start_action(
             action_type="run",
+            instructions=self.instructions,
             prompt=self.prompt,
             api=self.api,
             input_schema=self.input_schema,
             output_schema=self.output_schema,
             num_reasks=self.num_reasks,
         ):
-            prompt, input_schema, output_schema = (
+            instructions, prompt, input_schema, output_schema = (
+                self.instructions,
                 self.prompt,
                 self.input_schema,
                 self.output_schema,
@@ -91,6 +95,7 @@ class Runner:
                 validated_output, reasks = self.step(
                     index=index,
                     api=self.api,
+                    instructions=instructions,
                     prompt=prompt,
                     prompt_params=prompt_params,
                     input_schema=input_schema,
@@ -103,9 +108,10 @@ class Runner:
                     break
                 # Get new prompt and output schema.
                 prompt, output_schema = self.prepare_to_loop(
-                    reasks, validated_output, output_schema
+                    reasks,
+                    validated_output,
+                    output_schema,
                 )
-                prompt_params = {}
 
             return self.guard_history
 
@@ -113,6 +119,7 @@ class Runner:
         self,
         index: int,
         api: Callable,
+        instructions: Optional[Instructions],
         prompt: Prompt,
         prompt_params: Dict,
         input_schema: InputSchema,
@@ -123,6 +130,7 @@ class Runner:
         with start_action(
             action_type="step",
             index=index,
+            instructions=instructions,
             prompt=prompt,
             prompt_params=prompt_params,
             input_schema=input_schema,
@@ -130,12 +138,15 @@ class Runner:
         ):
             # Prepare: run pre-processing, and input validation.
             if not output:
-                prompt = self.prepare(index, prompt, prompt_params, input_schema)
+                instructions, prompt = self.prepare(
+                    index, instructions, prompt, prompt_params, input_schema
+                )
             else:
+                instructions = None
                 prompt = None
 
             # Call: run the API, and convert to dict.
-            output, output_as_dict = self.call(index, prompt, api, output)
+            output, output_as_dict = self.call(index, instructions, prompt, api, output)
 
             # Validate: run output validation.
             validated_output = self.validate(index, output_as_dict, output_schema)
@@ -148,17 +159,25 @@ class Runner:
                 validated_output = sub_reasks_with_fixed_values(validated_output)
 
             # Log: step information.
-            self.log(prompt, output, output_as_dict, validated_output, reasks)
+            self.log(
+                prompt=prompt,
+                instructions=instructions,
+                output=output,
+                output_as_dict=output_as_dict,
+                validated_output=validated_output,
+                reasks=reasks,
+            )
 
             return validated_output, reasks
 
     def prepare(
         self,
         index: int,
+        instructions: Optional[Instructions],
         prompt: Prompt,
         prompt_params: Dict,
         input_schema: InputSchema,
-    ) -> str:
+    ) -> Prompt:
         """Prepare by running pre-processing and input validation."""
         with start_action(action_type="prepare", index=index) as action:
             if prompt_params is None:
@@ -169,22 +188,43 @@ class Runner:
             else:
                 validated_prompt_params = prompt_params
 
-            if isinstance(prompt, Prompt):
-                prompt = prompt.format(**validated_prompt_params)
+            if isinstance(prompt, str):
+                prompt = Prompt(prompt)
+
+            prompt = prompt.format(**validated_prompt_params)
+
+            # TODO(shreya): should there be any difference to parsing params for prompt?
+            if instructions is not None and isinstance(instructions, Instructions):
+                instructions = instructions.format(**validated_prompt_params)
 
             action.log(
                 message_type="info",
+                instructions=instructions,
                 prompt=prompt,
                 prompt_params=prompt_params,
                 validated_prompt_params=validated_prompt_params,
             )
 
-        return prompt
+        return instructions, prompt
+
+    def post_process(self, output: str) -> str:
+        """Post-process the raw output before parsing it.
+
+        If the output is surrounded by triple backticks, remove them."""
+        output = output.strip()
+        if output.startswith("```"):
+            output = output[3:]
+            if output.startswith("json"):
+                output = output[4:]
+        if output.endswith("```"):
+            output = output[:-3]
+        return output
 
     def call(
         self,
         index: int,
-        prompt: str,
+        instructions: Optional[str],
+        prompt: Prompt,
         api: Callable,
         output: str = None,
     ) -> Tuple[str, Optional[Dict]]:
@@ -195,8 +235,13 @@ class Runner:
         3. Log the output
         """
         with start_action(action_type="call", index=index, prompt=prompt) as action:
-            if prompt:
-                output = api(prompt)
+            if prompt and instructions:
+                output = api(prompt.source, instructions=instructions.source)
+            elif prompt:
+                output = api(prompt.source)
+
+            # Post-process the output before loading it as JSON.
+            output = self.post_process(output)
 
             error = None
             # Treat the output as a JSON string, and load it into a dict.
@@ -249,6 +294,7 @@ class Runner:
     def log(
         self,
         prompt: str,
+        instructions: Optional[str],
         output: str,
         output_as_dict: Dict,
         validated_output: Dict,
@@ -258,6 +304,7 @@ class Runner:
         self.guard_history = self.guard_history.push(
             GuardLogs(
                 prompt=prompt,
+                instructions=instructions,
                 output=output,
                 output_as_dict=output_as_dict,
                 validated_output=validated_output,
@@ -282,5 +329,6 @@ class Runner:
             parsed_rail=output_schema.root,
             reasks=reasks,
             reask_json=prune_json_for_reasking(validated_output),
+            reask_prompt_template=self.reask_prompt,
         )
         return prompt, OutputSchema(output_schema)

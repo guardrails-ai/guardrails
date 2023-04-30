@@ -1,10 +1,11 @@
 import logging
-from typing import Callable, Dict, Optional, Tuple
+from string import Formatter
+from typing import Callable, Dict, Optional, Tuple, Union
 
 from eliot import add_destinations, start_action
 
 from guardrails.llm_providers import PromptCallable, get_llm_ask
-from guardrails.prompt import Prompt
+from guardrails.prompt import Instructions, Prompt
 from guardrails.rail import Rail
 from guardrails.run import Runner
 from guardrails.schema import InputSchema, OutputSchema
@@ -36,6 +37,7 @@ class Guard:
         self.rail = rail
         self.num_reasks = num_reasks
         self.guard_state = GuardState([])
+        self._reask_prompt = None
 
     @property
     def input_schema(self) -> InputSchema:
@@ -46,6 +48,11 @@ class Guard:
     def output_schema(self) -> OutputSchema:
         """Return the output schema."""
         return self.rail.output_schema
+
+    @property
+    def instructions(self) -> Instructions:
+        """Return the instruction-prompt."""
+        return self.rail.instructions
 
     @property
     def prompt(self) -> Prompt:
@@ -71,6 +78,25 @@ class Guard:
     def state(self) -> GuardState:
         """Return the state."""
         return self.guard_state
+
+    @property
+    def reask_prompt(self) -> Prompt:
+        """Return the reask prompt."""
+        return self._reask_prompt
+
+    @reask_prompt.setter
+    def reask_prompt(self, reask_prompt: Union[str, Prompt]):
+        """Set the reask prompt."""
+
+        if isinstance(reask_prompt, str):
+            reask_prompt = Prompt(reask_prompt)
+
+        # Check that the reask prompt has the correct variables
+        variables = [
+            t[1] for t in Formatter().parse(reask_prompt.source) if t[1] is not None
+        ]
+        assert set(variables) == {"previous_response", "output_schema"}
+        self._reask_prompt = reask_prompt
 
     def configure(
         self,
@@ -119,19 +145,22 @@ class Guard:
             llm_api: The LLM API to call (e.g. openai.Completion.create)
             prompt_params: The parameters to pass to the prompt.format() method.
             num_reasks: The max times to re-ask the LLM for invalid output.
-            *args: Additional arguments to pass to the LLM API.
-            **kwargs: Additional keyword arguments to pass to the LLM API.
 
         Returns:
             The raw text output from the LLM and the validated output.
         """
         with start_action(action_type="guard_call", prompt_params=prompt_params):
+            if "instructions" in kwargs:
+                logger.info("Instructions overridden at call time")
+                # TODO(shreya): should we overwrite self.instructions for this run?
             runner = Runner(
+                instructions=kwargs.get("instructions", self.instructions),
                 prompt=self.prompt,
                 api=get_llm_ask(llm_api, *args, **kwargs),
                 input_schema=self.input_schema,
                 output_schema=self.output_schema,
                 num_reasks=num_reasks,
+                reask_prompt=self.reask_prompt,
             )
             guard_history = runner(prompt_params=prompt_params)
             self.guard_state = self.guard_state.push(guard_history)
@@ -148,6 +177,7 @@ class Guard:
         llm_output: str,
         llm_api: PromptCallable = None,
         num_reasks: int = 1,
+        prompt_params: Dict = None,
         *args,
         **kwargs,
     ) -> Dict:
@@ -163,13 +193,15 @@ class Guard:
         """
         with start_action(action_type="guard_parse"):
             runner = Runner(
+                instructions=None,
                 prompt=None,
                 api=get_llm_ask(llm_api, *args, **kwargs) if llm_api else None,
                 input_schema=None,
                 output_schema=self.output_schema,
                 num_reasks=num_reasks,
                 output=llm_output,
+                reask_prompt=self.reask_prompt,
             )
-            guard_history = runner()
+            guard_history = runner(prompt_params=prompt_params)
             self.guard_state = self.guard_state.push(guard_history)
             return sub_reasks_with_fixed_values(guard_history.validated_output)

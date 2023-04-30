@@ -1,0 +1,37 @@
+<rail version="0.1">
+<output>
+    <sql
+        name="generated_sql"
+        description="Generate SQL for the given natural language instruction."
+        format="bug-free-sql: ${conn_str} ${schema_file}"
+        on-fail-bug-free-sql="reask"
+        on-fail-exclude-sql-predicates="fix"
+    />
+</output>
+
+<instructions>
+You are a data scientist whose job is to write SQL queries.
+
+@complete_json_suffix_v2
+
+</instructions>
+
+<prompt>
+Here's schema about the database that you can use to generate the SQL query.
+Try to avoid using joins if the data can be retrieved from the same table.
+
+{{db_info}}
+
+I will give you a list of examples. Write a SQL query similar to the examples below:
+
+{{examples}}
+
+INSTRUCTIONS:
+---------
+{{nl_instruction}}
+
+QUERY:
+---------
+</prompt>
+
+</rail>

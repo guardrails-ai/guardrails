@@ -1,0 +1,37 @@
+<rail version="0.1">
+
+<output>
+
+    <list name="fees" description="What fees and charges are associated with my account?">
+        <object>
+            <integer name="index" format="1-indexed" />
+            <string name="name" format="lower-case; two-words" on-fail-lower-case="fix" on-fail-two-words="fix"/>
+            <string name="explanation" format="one-line" on-fail-one-line="fix" />
+            <float name="value" format="percentage"/>
+        </object>
+    </list>
+    <object name="interest_rates" description="What are the interest rates offered by the bank on savings and checking accounts, loans, and credit products?" />
+</output>
+
+
+<instructions>
+You are a helpful assistant only capable of communicating with valid JSON, and no other text.
+
+@json_suffix_prompt_examples
+</instructions>
+
+
+<prompt>
+Given the following document, answer the following questions. If the answer doesn't exist in the document, enter 
+`null`.
+
+{{document}}
+
+Extract information from this document and return a JSON that follows the correct schema.
+
+@xml_prefix_prompt
+
+{output_schema}
+</prompt>
+
+</rail>
