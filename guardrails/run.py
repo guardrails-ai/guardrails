@@ -1,8 +1,9 @@
 import json
+import logging
 from dataclasses import dataclass, field
 from typing import Callable, Dict, List, Optional, Tuple
 
-from eliot import start_action
+from eliot import add_destinations, start_action
 
 from guardrails.llm_providers import PromptCallable
 from guardrails.prompt import Instructions, Prompt
@@ -16,6 +17,10 @@ from guardrails.utils.reask_utils import (
     reask_json_as_dict,
     sub_reasks_with_fixed_values,
 )
+
+logger = logging.getLogger(__name__)
+actions_logger = logging.getLogger(f"{__name__}.actions")
+add_destinations(actions_logger.debug)
 
 
 @dataclass
