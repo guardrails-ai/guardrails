@@ -751,7 +751,7 @@ class BugFreePython(Validator):
         return schema
 
 
-@register_validator(name="bug-free-sql", data_type="sql")
+@register_validator(name="bug-free-sql", data_type=["sql", "string"])
 class BugFreeSQL(Validator):
     """Validate that there are no SQL syntactic bugs in the generated code.
 
@@ -776,11 +776,12 @@ class BugFreeSQL(Validator):
     def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
         errors = self._driver.validate_sql(value)
         if len(errors) > 0:
+            error_str = errors[0].split("\n[SQL:")[0]
             raise EventDetail(
                 key,
                 value,
                 schema,
-                ". ".join(errors),
+                error_str,
                 None,
             )
 

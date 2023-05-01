@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
+import pandas as pd
 from typing import List, Optional
 
 from pydantic import ValidationError
@@ -83,6 +84,11 @@ class SqlAlchemyDriver(SQLDriver):
 
                 self._conn.execute(text(schema))
 
+    def _get_k_rows(self, table_name: str, k: int = 1000) -> pd.DataFrame:
+        """Get the first k rows of a table."""
+        query = f"SELECT * FROM {table_name} LIMIT {k}"
+        return pd.read_sql(query, self._conn)
+
     def validate_sql(self, query: str) -> List[str]:
         exceptions: List[str] = []
         try:
@@ -91,7 +97,7 @@ class SqlAlchemyDriver(SQLDriver):
             exceptions.append(str(ex))
         return exceptions
 
-    def get_schema(self) -> str:
+    def get_schema(self, lower: bool = False) -> str:
         # Get table schema using sqlalchemy.inspect
         insp = sqlalchemy.inspect(self._conn)
 
@@ -110,12 +116,44 @@ class SqlAlchemyDriver(SQLDriver):
 
         # Create a nicely formatted schema from the dictionary
         formatted_schema = []
+        # LAUREL
+        lower = True
+        do_lower = lambda x: x.lower() if lower else x
         for table, columns in schema.items():
-            formatted_schema.append(f"Table: {table}")
-            for column, column_info in columns.items():
-                formatted_schema.append(f"    Column: {column}")
-                for info, value in column_info.items():
-                    formatted_schema.append(f"        {info}: {value}")
+            # table_str = f"CREATE TABLE {do_lower(table)}"
+
+            table_str = f"CREATE TABLE {do_lower(table)} (\n"
+            column_str = ",\n".join(
+                [
+                    f"    {do_lower(column)} {column_info['type']}"
+                    for column, column_info in columns.items()
+                ]
+            )
+            table_str += column_str + "\n)"
+            max_examples = 3
+            df = self._get_k_rows(table)
+            # Sort by all columns
+            df = df.sort_values(by=df.columns.tolist(), ignore_index=True)
+            # Extract a list of unique values for string columns only
+            cols_to_distinct_values = {
+                col: sorted(list(map(str, set(df[col].unique()))))[:max_examples]
+                for col in df.columns
+                if pd.api.types.is_string_dtype(df[col].dtype)
+                or len(set(df[col].unique())) <= max_examples
+            }
+            cols_str = "\n".join(
+                f"{col}: {', '.join(values)}"
+                for col, values in cols_to_distinct_values.items()
+            )
+            table_str += f"\n/*\nExample Values for String Columns\n{cols_str}\n*/"
+
+            formatted_schema.append(table_str)
+
+            # formatted_schema.append(f"Table: {do_lower(table)}")
+            # for column, column_info in columns.items():
+            #     formatted_schema.append(f"    Column: {do_lower(column)}")
+            #     for info, value in column_info.items():
+            #         formatted_schema.append(f"        {do_lower(info)}: {value}")
 
         return "\n".join(formatted_schema)
 

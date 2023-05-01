@@ -240,7 +240,6 @@ def test_entity_extraction_with_refrain(mocker):
 
 def test_entity_extraction_with_fix_chat_models(mocker):
     """Test that the entity extraction works with fix for chat models."""
-
     mocker.patch(
         "guardrails.llm_providers.openai_chat_wrapper",
         new=openai_chat_completion_create,

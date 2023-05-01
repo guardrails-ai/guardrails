@@ -1,4 +1,3 @@
-import json
 import os
 from string import Template
 from typing import Callable, Dict, Optional
@@ -15,7 +14,7 @@ from guardrails.vectordb import Faiss, VectorDBBase
 REASK_PROMPT = """
 You are a data scientist whose job is to write SQL queries.
 
-@complete_json_suffix_v2
+@complete_string_suffix
 
 Here's schema about the database that you can use to generate the SQL query.
 Try to avoid using joins if the data can be retrieved from the same table.
@@ -38,17 +37,10 @@ Help me correct the incorrect values based on the given error messages.
 """
 
 
-EXAMPLE_BOILERPLATE = """
-I will give you a list of examples. Write a SQL query similar to the examples below:
-"""
-
-
-def example_formatter(
-    input: str, output: str, output_schema: Optional[Callable] = None
+def sql_example_formatter(
+    input: str,
+    output: str,
 ) -> str:
-    if output_schema is not None:
-        output = output_schema(output)
-
     example = "\nINSTRUCTIONS:\n============\n"
     example += f"{input}\n\n"
 
@@ -64,12 +56,12 @@ class Text2Sql:
         conn_str: str,
         schema_file: Optional[str] = None,
         examples: Optional[Dict] = None,
-        embedding: Optional[EmbeddingBase] = OpenAIEmbedding,
+        embedding: Optional[EmbeddingBase] = None,
         vector_db: Optional[VectorDBBase] = Faiss,
         document_store: Optional[DocumentStoreBase] = EphemeralDocumentStore,
         rail_spec: Optional[str] = None,
         rail_params: Optional[Dict] = None,
-        example_formatter: Optional[Callable] = example_formatter,
+        example_formatter: Optional[Callable] = sql_example_formatter,
         reask_prompt: Optional[str] = REASK_PROMPT,
         llm_api: Optional[PromptCallable] = openai.Completion.create,
         llm_api_kwargs: Optional[Dict] = None,
@@ -88,7 +80,6 @@ class Text2Sql:
             example_formatter: Fn to format examples. Defaults to example_formatter.
             reask_prompt: Prompt to use for reasking. Defaults to REASK_PROMPT.
         """
-
         self.example_formatter = example_formatter
         self.llm_api = llm_api
         self.llm_api_kwargs = llm_api_kwargs or {"max_tokens": 512}
@@ -110,6 +101,8 @@ class Text2Sql:
         )
 
         # Initialize the document store.
+        if not embedding:
+            embedding = OpenAIEmbedding()
         self.store = self._create_docstore_with_examples(
             examples, embedding, vector_db, document_store
         )
@@ -125,6 +118,8 @@ class Text2Sql:
         # Initialize the Guard class
         if rail_spec is None:
             rail_spec = os.path.join(os.path.dirname(__file__), "text2sql.rail")
+
+        if not rail_params:
             rail_params = {"conn_str": conn_str, "schema_file": schema_file}
             if schema_file is None:
                 rail_params["schema_file"] = ""
@@ -134,8 +129,7 @@ class Text2Sql:
             rail_spec_str = f.read()
 
         # Substitute the parameters in the rail specification.
-        if rail_params is not None:
-            rail_spec_str = Template(rail_spec_str).safe_substitute(**rail_params)
+        rail_spec_str = Template(rail_spec_str).safe_substitute(**rail_params)
 
         guard = Guard.from_rail_string(rail_spec_str)
         guard.reask_prompt = reask_prompt
@@ -145,7 +139,7 @@ class Text2Sql:
     def _create_docstore_with_examples(
         self,
         examples: Optional[Dict],
-        embedding: EmbeddingBase,
+        embedder: EmbeddingBase,
         vector_db: VectorDBBase,
         document_store: DocumentStoreBase,
     ) -> Optional[DocumentStoreBase]:
@@ -153,26 +147,38 @@ class Text2Sql:
             return None
 
         """Add examples to the document store."""
-        e = embedding()
         if vector_db == Faiss:
-            db = Faiss.new_flat_l2_index(e.output_dim, embedder=e)
+            db = Faiss.new_flat_l2_index(embedder.output_dim, embedder=embedder)
         else:
             raise NotImplementedError(f"VectorDB {vector_db} is not implemented.")
         store = document_store(db)
         store.add_texts(
-            {example["question"]: {"ctx": example["query"]} for example in examples}
+            {example["question"]: {"ctx": example["query"]} for example in examples},
+            verbose=True,
         )
         return store
 
-    @staticmethod
-    def output_schema_formatter(output) -> str:
-        return json.dumps({"generated_sql": output}, indent=4)
-
-    def __call__(self, text: str) -> str:
+    def __call__(self, text: str, gold_sql: Optional[str] = None) -> str:
         """Run text2sql on a text query and return the SQL query."""
-
-        if self.store is not None:
-            similar_examples = self.store.search(text, self.num_relevant_examples)
+        if self.store is not None and self.num_relevant_examples > 0:
+            # +10 to drop the queries matching gold sql
+            all_similar_examples = self.store.search(
+                text, self.num_relevant_examples + 10
+            )
+            seen_texts = set()
+            similar_examples = []
+            for example in all_similar_examples:
+                if len(similar_examples) >= self.num_relevant_examples:
+                    break
+                if (
+                    not gold_sql
+                    or example.metadata["ctx"].strip().lower()
+                    != gold_sql.strip().lower()
+                ) and (example.text not in seen_texts):
+                    similar_examples.append(example)
+                    seen_texts.add(example.text)
+            # Reverse order to get most similar first
+            similar_examples = similar_examples[::-1]
             similar_examples_prompt = "\n".join(
                 self.example_formatter(example.text, example.metadata["ctx"])
                 for example in similar_examples
@@ -189,7 +195,7 @@ class Text2Sql:
                     "db_info": str(self.sql_schema),
                 },
                 **self.llm_api_kwargs,
-            )[1]["generated_sql"]
+            )[1]
         except TypeError:
             output = None
 

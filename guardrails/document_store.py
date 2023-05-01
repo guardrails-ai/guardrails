@@ -4,6 +4,8 @@ from collections import namedtuple
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
+from tqdm.auto import tqdm
+
 from guardrails.vectordb import VectorDBBase
 
 try:
@@ -147,9 +149,13 @@ class EphemeralDocumentStore(DocumentStoreBase):
         self.add_document(doc)
         return doc.id
 
-    def add_texts(self, texts: Dict[str, Dict[Any, Any]]) -> List[str]:
+    def add_texts(
+        self, texts: Dict[str, Dict[Any, Any]], verbose: bool = False
+    ) -> List[str]:
         doc_ids = []
-        for text, meta in texts.items():
+        for text, meta in tqdm(
+            texts.items(), total=len(texts), disable=not verbose, desc="Adding texts"
+        ):
             doc_id = self.add_text(text, meta)
             doc_ids.append(doc_id)
         return doc_ids

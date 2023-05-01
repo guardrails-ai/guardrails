@@ -1,3 +1,4 @@
+import json
 import os
 from dataclasses import dataclass
 from functools import partial
@@ -139,9 +140,11 @@ def manifest_wrapper(
             "Install with `pip install manifest-ml`"
         )
     client = cast(manifest.Manifest, client)
-    manifest_response = client.run(
-        nonchat_prompt(text, instructions, **kwargs), *args, **kwargs
-    )
+    if client.client_pool.get_current_client().IS_CHAT:
+        prompt = chat_prompt(text, instructions, **kwargs)
+    else:
+        prompt = nonchat_prompt(text, instructions, **kwargs)
+    manifest_response = client.run(prompt, *args, **kwargs)
     return manifest_response
 
 

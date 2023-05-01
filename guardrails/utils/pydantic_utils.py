@@ -2,12 +2,9 @@
 
 Guardrails lets users specify
 
-<pydantic
-    model="Person"
-    name="person"
-    description="Information about a person."
-    on-fail-pydantic="reask" / "refrain" / "raise"
-/>
+<pydantic     model="Person"     name="person"
+description="Information about a person."     on-fail-pydantic="reask" /
+"refrain" / "raise" />
 """
 import logging
 from typing import TYPE_CHECKING, Dict

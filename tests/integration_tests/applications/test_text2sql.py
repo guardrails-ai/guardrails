@@ -22,7 +22,6 @@ DB_PATH = os.path.join(
 )
 def test_text2sql_with_examples(conn_str: str, schema_path: str, examples: str, mocker):
     """Test that Text2Sql can be initialized with examples."""
-
     # Mock the call to the OpenAI API.
     mocker.patch(
         "guardrails.embedding.OpenAIEmbedding._get_embedding",
