@@ -292,6 +292,13 @@ class Validator:
         return f"{self.rail_alias}: {params}"
 
 
+    def log(self, data: Dict[str, Any]) -> None:
+        """Log some data to a sink."""
+        from guardrails.monitor import log
+        # Prepend all keys with the validator name.
+        data = {f"{self.rail_alias}/{k}": v for k, v in data.items()}
+        log(data)
+
 # @register_validator('required', 'all')
 # class Required(Validator):
 #     """Validate that a value is not None."""
@@ -1135,6 +1142,7 @@ class ReadingTime(Validator):
 
         # Estimate the reading time of the string
         reading_time = len(value.split()) / 200 * 60
+        self.log({'reading_time': reading_time})
         logger.debug(f"Estimated reading time {reading_time} seconds...")
 
         if abs(reading_time - self._max_time) > 1:

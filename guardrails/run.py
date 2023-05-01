@@ -5,6 +5,7 @@ from typing import Callable, Dict, List, Optional, Tuple
 from eliot import start_action
 
 from guardrails.llm_providers import PromptCallable
+from guardrails.monitor import Sink
 from guardrails.prompt import Instructions, Prompt
 from guardrails.schema import InputSchema, OutputSchema
 from guardrails.utils.logs_utils import GuardHistory, GuardLogs
@@ -108,6 +109,11 @@ class Runner:
                     output_schema,
                 )
 
+            # Flushes the sink before returning.
+            try:
+                Sink().flush()
+            except TypeError:
+                pass
             return self.guard_history
 
     def step(
