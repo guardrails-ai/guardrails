@@ -671,7 +671,7 @@ class OneLine(Validator):
     def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
         logger.debug(f"Validating {value} is a single line...")
 
-        if len(value.splitlines()) != 1:
+        if len(value.splitlines()) > 1:
             raise EventDetail(
                 key,
                 value,
