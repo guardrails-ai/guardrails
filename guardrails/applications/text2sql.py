@@ -72,6 +72,7 @@ class Text2Sql:
         example_formatter: Optional[Callable] = example_formatter,
         reask_prompt: Optional[str] = REASK_PROMPT,
         llm_api: Optional[PromptCallable] = openai.Completion.create,
+        llm_api_kwargs: Optional[Dict] = None,
         num_relevant_examples: int = 2,
     ):
         """Initialize the text2sql application.
@@ -90,6 +91,7 @@ class Text2Sql:
 
         self.example_formatter = example_formatter
         self.llm_api = llm_api
+        self.llm_api_kwargs = llm_api_kwargs or {"max_tokens": 512}
 
         # Initialize the SQL driver.
         self.sql_driver = create_sql_driver(conn=conn_str, schema_file=schema_file)
@@ -186,7 +188,7 @@ class Text2Sql:
                     "examples": similar_examples_prompt,
                     "db_info": str(self.sql_schema),
                 },
-                max_tokens=512,
+                **self.llm_api_kwargs,
             )[1]["generated_sql"]
         except TypeError:
             output = None
