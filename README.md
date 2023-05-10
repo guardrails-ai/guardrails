@@ -172,6 +172,11 @@ print(validated_output)
 }
 
 ```
+## 🚴‍ Guardrails Activity Report
+
+To help the Guardrails community stay informed about the project's progress, [Blueprint AI](https://blueprint.ai) has developed a Github activity summarizer for Guardrails. This concise report displays a summary of all contributions to the Guardrails repository over the past 7 days (continuously updated), making it easy for you to keep track of the latest developments.
+
+To view the Guardrails 7-day activity report, go here: [https://app.blueprint.ai/github/ShreyaR/guardrails](https://app.blueprint.ai/github/ShreyaR/guardrails)
 
 ## 🛠️ Contributing
 
