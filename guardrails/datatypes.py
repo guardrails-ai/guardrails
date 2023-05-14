@@ -103,6 +103,7 @@ registry: Dict[str, DataType] = {}
 def register_type(name: str):
     def decorator(cls: type):
         registry[name] = cls
+        cls.rail_alias = name
         return cls
 
     return decorator
