@@ -67,7 +67,7 @@ EXTRAS = {
     ]
     + DOCS_REQUIREMENTS,
     "sql": SQL_REQUIREMENTS,
-    "manifest": "manifest-ml",
+    "manifest": "manifest-ml>=0.1.6",
     "vectordb": VECTORDB_REQUIREMENTS,
     "profanity": ["alt-profanity-check"],
     "critique": ["inspiredco"],
