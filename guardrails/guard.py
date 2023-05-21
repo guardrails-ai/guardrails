@@ -3,6 +3,7 @@ from string import Formatter
 from typing import Callable, Dict, Optional, Tuple, Union
 
 from eliot import add_destinations, start_action
+from guardrails.datatypes import GuardModel
 
 from guardrails.llm_providers import PromptCallable, get_llm_ask
 from guardrails.prompt import Instructions, Prompt
@@ -207,7 +208,9 @@ class Guard:
             return sub_reasks_with_fixed_values(guard_history.validated_output)
 
     @classmethod
-    def from_pydantic(cls, output_class, prompt, instructions) -> "Guard":
+    def from_pydantic(
+        cls, output_class: GuardModel, prompt: str, instructions: Optional[str] = None
+    ) -> "Guard":
         """Create a Guard instance from a Pydantic model and prompt."""
         rail = Rail.from_pydantic(
             output_class=output_class, prompt=prompt, instructions=instructions

@@ -7,6 +7,7 @@ from typing import List, Optional, Type
 from lxml import etree as ET
 from lxml.etree import Element, SubElement, tostring
 from pydantic import BaseModel, HttpUrl
+from guardrails.datatypes import GuardModel
 
 from guardrails.prompt import Instructions, Prompt
 from guardrails.schema import InputSchema, OutputSchema, Schema
@@ -206,7 +207,9 @@ class Rail:
         return Script.from_xml(root)
 
     @classmethod
-    def from_pydantic(cls, output_class, prompt, instructions):
+    def from_pydantic(
+        cls, output_class: GuardModel, prompt: str, instructions: Optional[str] = None
+    ):
         xml = generate_xml_code(output_class, prompt, instructions)
         return cls.from_string(xml)
 
@@ -219,11 +222,11 @@ def create_xml_elements_for_model(parent_element, model, model_name):
     discriminators = set()  # List of discriminator fields (used in choices)
     for field_name, field_type in model.__fields__.items():
         if (
-            hasattr(field_type.field_info, "gd_if")
-            and field_type.field_info.gd_if is not None
+            hasattr(field_type.field_info, "when")
+            and field_type.field_info.when is not None
         ):
-            gd_if = field_type.field_info.gd_if
-            discriminator = gd_if.split("==")[0].strip()
+            when = field_type.field_info.when
+            discriminator = when.split("==")[0].strip()
             discriminators.add(discriminator)
 
     # Iterate through the fields of the model and create elements for each field
@@ -272,13 +275,13 @@ def create_xml_elements_for_model(parent_element, model, model_name):
 
         # Check if the field has a discriminator
         if (
-            hasattr(field_type.field_info, "gd_if")
-            and field_type.field_info.gd_if is not None
+            hasattr(field_type.field_info, "when")
+            and field_type.field_info.when is not None
         ):
-            gd_if = field_type.field_info.gd_if
+            when = field_type.field_info.when
 
-            # split gd_if on "==" to get the field name and value
-            discriminator_field_name, discriminator_field_value = gd_if.split("==")
+            # split when on "==" to get the field name and value
+            discriminator_field_name, discriminator_field_value = when.split("==")
 
             # ensure both discriminator_field_name and discriminator_field_value
             # are strings of len > 0 and that the
@@ -288,7 +291,7 @@ def create_xml_elements_for_model(parent_element, model, model_name):
                 or len(discriminator_field_value) == 0
                 or discriminator_field_name not in model.__fields__
             ):
-                raise ValueError(f"Invalid gd_if for field {discriminator_field_name}")
+                raise ValueError(f"Invalid when for field {discriminator_field_name}")
 
             # Check if a choice element already exists for the discriminator_field_name
             if discriminator_field_name in choice_elements:
@@ -297,6 +300,8 @@ def create_xml_elements_for_model(parent_element, model, model_name):
                 choice_element = SubElement(parent_element, "choice")
                 choice_element.set("name", discriminator_field_name)
                 choice_elements[discriminator_field_name] = choice_element
+                # TODO(shreya): DONT MERGE WTHOUT SOLVING THIS: How do you dynamically set this
+                choice_element.set("on-fail-choice", "exception")
 
             # Create the case element
             case_element = SubElement(choice_element, "case")
@@ -322,7 +327,7 @@ def create_xml_elements_for_model(parent_element, model, model_name):
         ):
             for validator in field_type.field_info.gd_validators:
                 # Set the format attribute based on the validator class name
-                format_prompt = validator.to_prompt(with_keywords=False)
+                format_prompt = validator.to_xml_attrib()
                 field_element.set("format", format_prompt)
                 # Set the on-fail attribute based on the on_fail value
                 on_fail_action = (
@@ -334,8 +339,8 @@ def create_xml_elements_for_model(parent_element, model, model_name):
         if issubclass(field_type.type_, BaseModel):
             # If the field has a discriminator, use the discriminator
             # field value as the model name
-            if hasattr(field_type.field_info, "gd_if"):
-                _, discriminator_field_value = field_type.field_info.gd_if.split("==")
+            if hasattr(field_type.field_info, "when"):
+                _, discriminator_field_value = field_type.field_info.when.split("==")
                 nested_model_name = discriminator_field_value
             else:
                 nested_model_name = field_name
@@ -345,7 +350,7 @@ def create_xml_elements_for_model(parent_element, model, model_name):
 
 
 def generate_xml_code(
-    output_class: Type[BaseModel], prompt: str, instructions: str
+    output_class: Type[BaseModel], prompt: str, instructions: Optional[str] = None
 ) -> str:
     # Create the root element
     root = Element("rail")
@@ -363,10 +368,11 @@ def generate_xml_code(
     prompt_text += "@complete_json_suffix_v2\n"
     prompt_element.text = prompt_text
 
-    # Create the instructions element
-    instructions_element = SubElement(root, "instructions")
-    instructions_text = f"\n{instructions}\n"
-    instructions_element.text = instructions_text
+    if instructions is not None:
+        # Create the instructions element
+        instructions_element = SubElement(root, "instructions")
+        instructions_text = f"\n{instructions}\n"
+        instructions_element.text = instructions_text
 
     # Convert the XML tree to a string
     xml_code = tostring(root, encoding="unicode", pretty_print=True)

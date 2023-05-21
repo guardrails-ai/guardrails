@@ -1,12 +1,23 @@
 import datetime
 from types import SimpleNamespace
-from typing import TYPE_CHECKING, Any, Dict, Generator, List, Tuple, Type, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Generator,
+    List as TypedList,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+)
 
 from lxml import etree as ET
 from pydantic import BaseModel
 from pydantic.fields import FieldInfo
 
 if TYPE_CHECKING:
+    from guardrails.validators import Validator
     from guardrails.schema import FormatAttr
 
 
@@ -22,7 +33,7 @@ class DataType:
         self.element = element
 
     @property
-    def validators(self) -> List:
+    def validators(self) -> TypedList:
         return self.format_attr.validators
 
     def __repr__(self) -> str:
@@ -359,7 +370,7 @@ class Choice(NonScalarType):
             self._children[child.attrib["name"]] = child_data_type.from_xml(child)
 
     @property
-    def validators(self) -> List:
+    def validators(self) -> TypedList:
         from guardrails.validators import Choice as ChoiceValidator
 
         # Check if the <choice ... /> element has an `on-fail` attribute.
@@ -418,7 +429,7 @@ class Pydantic(NonScalarType):
         self.model = model
 
     @property
-    def validators(self) -> List:
+    def validators(self) -> TypedList:
         from guardrails.validators import Pydantic as PydanticValidator
 
         # Check if the <pydantic /> element has an `on-fail` attribute.
@@ -521,9 +532,21 @@ class Pydantic(NonScalarType):
 
 
 class GdField(FieldInfo):
-    def __init__(self, *args, gd_if=None, gd_validators=None, **kwargs):
+    def __init__(
+        self,
+        *args,
+        when=None,
+        gd_validators: Optional[Union["Validator", TypedList["Validator"]]] = None,
+        **kwargs,
+    ):
+        from guardrails.validators import Validator
+
         super().__init__(*args, **kwargs)
-        self.gd_if = gd_if
+        self.when = when
+        if gd_validators is None:
+            gd_validators = []
+        if isinstance(gd_validators, Validator):
+            gd_validators = [gd_validators]
         self.gd_validators = gd_validators
 
 
