@@ -102,11 +102,9 @@ def test_choice_validation_pydantic(llm_output, raises):
         action: str = Field(gd_validators=ValidChoices(choices=["fight", "flight"]))
         fight: Optional[str] = Field(
             gd_validators=ValidChoices(choices=["punch", "kick"], on_fail="exception"),
-            when="action==fight",
+            when="action",
         )
-        flight: Optional[FlightDetails] = Field(when="action==flight")
-        # flight: Optional[FlightDetails] = Field(when="action")
-        # flight: Optional[FlightDetails] = Field(given="action")
+        flight: Optional[FlightDetails] = Field(when="action")
 
     guard = Guard.from_pydantic(output_class=Action, prompt="Dummy prompt.")
 

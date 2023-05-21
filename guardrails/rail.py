@@ -226,8 +226,7 @@ def create_xml_elements_for_model(parent_element, model, model_name):
             and field_type.field_info.when is not None
         ):
             when = field_type.field_info.when
-            discriminator = when.split("==")[0].strip()
-            discriminators.add(discriminator)
+            discriminators.add(when)
 
     # Iterate through the fields of the model and create elements for each field
     for field_name, field_type in model.__fields__.items():
@@ -278,34 +277,28 @@ def create_xml_elements_for_model(parent_element, model, model_name):
             hasattr(field_type.field_info, "when")
             and field_type.field_info.when is not None
         ):
-            when = field_type.field_info.when
+            when_discriminator = field_type.field_info.when
 
-            # split when on "==" to get the field name and value
-            discriminator_field_name, discriminator_field_value = when.split("==")
-
-            # ensure both discriminator_field_name and discriminator_field_value
-            # are strings of len > 0 and that the
-            # discriminator_field_name is a valid field
+            # ensure when_discriminator is string of len > 0 and is valid field
             if (
-                len(discriminator_field_name) == 0
-                or len(discriminator_field_value) == 0
-                or discriminator_field_name not in model.__fields__
+                len(when_discriminator) == 0
+                or when_discriminator not in model.__fields__
             ):
-                raise ValueError(f"Invalid when for field {discriminator_field_name}")
+                raise ValueError(f"Invalid `when` for field {when_discriminator}")
 
-            # Check if a choice element already exists for the discriminator_field_name
-            if discriminator_field_name in choice_elements:
-                choice_element = choice_elements[discriminator_field_name]
+            # Check if a choice element already exists for the when_discriminator
+            if when_discriminator in choice_elements:
+                choice_element = choice_elements[when_discriminator]
             else:
                 choice_element = SubElement(parent_element, "choice")
-                choice_element.set("name", discriminator_field_name)
-                choice_elements[discriminator_field_name] = choice_element
-                # TODO(shreya): DONT MERGE WTHOUT SOLVING THIS: How do you dynamically set this
+                choice_element.set("name", when_discriminator)
+                choice_elements[when_discriminator] = choice_element
+                # TODO(shreya): DONT MERGE WTHOUT SOLVING THIS: How do you set this via SDK?
                 choice_element.set("on-fail-choice", "exception")
 
             # Create the case element
             case_element = SubElement(choice_element, "case")
-            case_element.set("name", discriminator_field_value)
+            case_element.set("name", field_name)
 
             # Create the field element inside the case element
             field_element = SubElement(case_element, field_element_name)
@@ -337,11 +330,9 @@ def create_xml_elements_for_model(parent_element, model, model_name):
 
         # Handle nested models
         if issubclass(field_type.type_, BaseModel):
-            # If the field has a discriminator, use the discriminator
-            # field value as the model name
+            # If field has a when_discriminator, use field name as the model name
             if hasattr(field_type.field_info, "when"):
-                _, discriminator_field_value = field_type.field_info.when.split("==")
-                nested_model_name = discriminator_field_value
+                nested_model_name = field_name
             else:
                 nested_model_name = field_name
             create_xml_elements_for_model(

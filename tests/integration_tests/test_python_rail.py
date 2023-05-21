@@ -75,8 +75,8 @@ def test_python_rail(mocker):
         revenue_type: str = Field(
             gd_validators=[ValidChoices(choices=["box_office", "streaming"])]
         )
-        box_office: Optional[BoxOfficeRevenue] = Field(when="revenue_type==box_office")
-        streaming: Optional[StreamingRevenue] = Field(when="revenue_type==streaming")
+        box_office: Optional[BoxOfficeRevenue] = Field(when="revenue_type")
+        streaming: Optional[StreamingRevenue] = Field(when="revenue_type")
 
         # Root-level validation using Pydantic (Not in Guardrails)
         @root_validator
