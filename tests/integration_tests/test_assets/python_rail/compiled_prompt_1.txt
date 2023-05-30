@@ -1,4 +1,3 @@
-
 Provide detailed information about the top 5 grossing movies from Christopher Nolan including release date, duration, budget, whether it's a sequel, website, and contact email.
 
 Given below is XML that describes the information to extract from this document and the tags to extract it into.
@@ -37,4 +36,3 @@ Here are examples of simple (XML, JSON) pairs that show the expected behavior:
 - `<string name='foo' format='two-words lower-case' />` => `{'foo': 'example one'}`
 - `<list name='bar'><string format='upper-case' /></list>` => `{"bar": ['STRING ONE', 'STRING TWO', etc.]}`
 - `<object name='baz'><string name="foo" format="capitalize two-words" /><integer name="index" format="1-indexed" /></object>` => `{'baz': {'foo': 'Some String', 'index': 1}}`
-

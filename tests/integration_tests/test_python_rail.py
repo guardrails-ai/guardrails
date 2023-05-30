@@ -45,7 +45,8 @@ class IsValidDirector(Validator):
 
 def test_python_rail(mocker):
     mocker.patch(
-        "guardrails.llm_providers.openai_wrapper", new=openai_chat_completion_create
+        "guardrails.llm_providers.openai_chat_wrapper",
+        new=openai_chat_completion_create,
     )
 
     class BoxOfficeRevenue(GuardModel):
@@ -104,7 +105,7 @@ def test_python_rail(mocker):
         prompt=(
             "Provide detailed information about the top 5 grossing movies from"
             " {{director}} including release date, duration, budget, whether "
-            "it's a sequel, website, and contact email."
+            "it's a sequel, website, and contact email.\n@complete_json_suffix_v2"
         ),
         instructions="You are a helpful assistant only capable of communicating"
         " with valid JSON, and no other text.\n\n@json_suffix_prompt_examples",
@@ -112,11 +113,8 @@ def test_python_rail(mocker):
 
     # Guardrails runs validation and fixes the first failing output through reasking
     _, final_output = guard(
-        openai.Completion.create,
-        engine="text-davinci-003",
+        openai.ChatCompletion.create,
         prompt_params={"director": "Christopher Nolan"},
-        max_tokens=512,
-        temperature=0.5,
         num_reasks=2,
     )
 
