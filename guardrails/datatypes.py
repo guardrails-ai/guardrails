@@ -545,7 +545,7 @@ class GdField(FieldInfo):
         self.when = when
         if gd_validators is None:
             gd_validators = []
-        if isinstance(gd_validators, Validator):
+        if isinstance(gd_validators, Validator) or isinstance(gd_validators, str):
             gd_validators = [gd_validators]
         self.gd_validators = gd_validators
 

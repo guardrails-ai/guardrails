@@ -1,16 +1,14 @@
 """Rail class."""
-import typing
 from dataclasses import dataclass, field
-from datetime import date, time
 from typing import List, Optional, Type
 
 from lxml import etree as ET
 from lxml.etree import Element, SubElement, tostring
-from pydantic import BaseModel, HttpUrl
-from guardrails.datatypes import GuardModel
 
+from guardrails.datatypes import GuardModel
 from guardrails.prompt import Instructions, Prompt
 from guardrails.schema import InputSchema, OutputSchema, Schema
+from guardrails.utils.pydantic_utils import create_xml_element_for_base_model
 
 # TODO: Logging
 XMLPARSER = ET.XMLParser(encoding="utf-8")
@@ -214,155 +212,32 @@ class Rail:
         return cls.from_string(xml)
 
 
-def create_xml_elements_for_model(parent_element, model, model_name):
-    # Dictionary to keep track of choice elements and their corresponding case elements
-    choice_elements: typing.Dict[str, Element] = {}
-
-    # Iterate through all elements to detect any discriminator fields
-    discriminators = set()  # List of discriminator fields (used in choices)
-    for field_name, field_type in model.__fields__.items():
-        if (
-            hasattr(field_type.field_info, "when")
-            and field_type.field_info.when is not None
-        ):
-            when = field_type.field_info.when
-            discriminators.add(when)
-
-    # Iterate through the fields of the model and create elements for each field
-    for field_name, field_type in model.__fields__.items():
-        # Skip discriminator fields
-        if field_name in discriminators:
-            continue
-
-        # Determine the XML element name based on the field type
-        if field_type.type_ == bool:
-            field_element_name = "bool"
-        elif field_type.type_ == date:
-            field_element_name = "date"
-        elif field_type.type_ == float:
-            field_element_name = "float"
-        elif field_type.type_ == int:
-            field_element_name = "integer"
-        elif (
-            issubclass(field_type.type_, List)
-            or typing.get_origin(model.__annotations__.get(field_name)) == list
-        ):
-            field_element_name = "list"
-            # Handle list of objects
-            inner_type = field_type.type_
-            if issubclass(inner_type, BaseModel):
-                field_element = SubElement(parent_element, field_element_name)
-                field_element.set("name", field_name)
-                # Add the object element inside the list element
-                object_element = SubElement(field_element, "object")
-                create_xml_elements_for_model(
-                    object_element, field_type.type_, field_name
-                )
-                continue
-        elif issubclass(field_type.type_, BaseModel):
-            field_element_name = "object"
-        elif field_type.type_ == str:
-            field_element_name = "string"
-        elif field_type.type_ == time:
-            field_element_name = "time"
-        elif field_type.type_ == HttpUrl:
-            field_element_name = "url"
-        else:
-            # Skip unsupported types
-            # TODO: Add logging?
-            continue
-
-        # Check if the field has a discriminator
-        if (
-            hasattr(field_type.field_info, "when")
-            and field_type.field_info.when is not None
-        ):
-            when_discriminator = field_type.field_info.when
-
-            # ensure when_discriminator is string of len > 0 and is valid field
-            if (
-                len(when_discriminator) == 0
-                or when_discriminator not in model.__fields__
-            ):
-                raise ValueError(f"Invalid `when` for field {when_discriminator}")
-
-            # Check if a choice element already exists for the when_discriminator
-            if when_discriminator in choice_elements:
-                choice_element = choice_elements[when_discriminator]
-            else:
-                choice_element = SubElement(parent_element, "choice")
-                choice_element.set("name", when_discriminator)
-                choice_elements[when_discriminator] = choice_element
-                # TODO(shreya): DONT MERGE WTHOUT SOLVING THIS: How do you set this via SDK?
-                choice_element.set("on-fail-choice", "exception")
-
-            # Create the case element
-            case_element = SubElement(choice_element, "case")
-            case_element.set("name", field_name)
-
-            # Create the field element inside the case element
-            field_element = SubElement(case_element, field_element_name)
-            field_element.set("name", field_name)
-        else:
-            # Skip creating the field element if it's a discriminator field
-            if field_name in choice_elements.values():
-                continue
-
-            # Create the field
-            field_element = SubElement(parent_element, field_element_name)
-            field_element.set("name", field_name)
-
-        # Extract validators from the Pydantic field and add format
-        # and on-fail attributes
-        if (
-            hasattr(field_type.field_info, "gd_validators")
-            and field_type.field_info.gd_validators is not None
-        ):
-            for validator in field_type.field_info.gd_validators:
-                # Set the format attribute based on the validator class name
-                format_prompt = validator.to_xml_attrib()
-                field_element.set("format", format_prompt)
-                # Set the on-fail attribute based on the on_fail value
-                on_fail_action = (
-                    validator.on_fail.__name__ if validator.on_fail else "noop"
-                )
-                field_element.set("on-fail-" + validator.rail_alias, on_fail_action)
-
-        # Handle nested models
-        if issubclass(field_type.type_, BaseModel):
-            # If field has a when_discriminator, use field name as the model name
-            if hasattr(field_type.field_info, "when"):
-                nested_model_name = field_name
-            else:
-                nested_model_name = field_name
-            create_xml_elements_for_model(
-                field_element, field_type.type_, nested_model_name
-            )
-
-
 def generate_xml_code(
-    output_class: Type[BaseModel], prompt: str, instructions: Optional[str] = None
+    output_class: Type["pydantic.BaseModel"],
+    prompt: str,
+    instructions: Optional[str] = None,
 ) -> str:
+    """Generate XML RAIL Spec from a pydantic model and a prompt."""
+
     # Create the root element
     root = Element("rail")
     root.set("version", "0.1")
 
     # Create the output element
-    output = SubElement(root, "output")
+    output_element = SubElement(root, "output")
 
     # Create XML elements for the output_class
-    create_xml_elements_for_model(output, output_class, output_class.__name__)
+    create_xml_element_for_base_model(output_class, output_element)
 
     # Create the prompt element
     prompt_element = SubElement(root, "prompt")
-    prompt_text = f"\n{prompt}\n"
-    prompt_text += "@complete_json_suffix_v2\n"
+    prompt_text = f"{prompt}"
     prompt_element.text = prompt_text
 
     if instructions is not None:
         # Create the instructions element
         instructions_element = SubElement(root, "instructions")
-        instructions_text = f"\n{instructions}\n"
+        instructions_text = f"{instructions}"
         instructions_element.text = instructions_text
 
     # Convert the XML tree to a string

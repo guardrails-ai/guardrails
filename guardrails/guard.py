@@ -132,11 +132,25 @@ class Guard:
         """
         return cls(Rail.from_string(rail_string), num_reasks=num_reasks)
 
+    @classmethod
+    def from_pydantic(
+        cls,
+        output_class: GuardModel,
+        prompt: str,
+        instructions: Optional[str] = None,
+        num_reasks: int = 1,
+    ) -> "Guard":
+        """Create a Guard instance from a Pydantic model and prompt."""
+        rail = Rail.from_pydantic(
+            output_class=output_class, prompt=prompt, instructions=instructions
+        )
+        return cls(rail, num_reasks=num_reasks)
+
     def __call__(
         self,
         llm_api: Callable,
         prompt_params: Dict = None,
-        num_reasks: int = 1,
+        num_reasks: Optional[int] = None,
         *args,
         **kwargs,
     ) -> Tuple[str, Dict]:
@@ -150,6 +164,10 @@ class Guard:
         Returns:
             The raw text output from the LLM and the validated output.
         """
+
+        if num_reasks is None:
+            num_reasks = self.num_reasks
+
         with start_action(action_type="guard_call", prompt_params=prompt_params):
             if "instructions" in kwargs:
                 logger.info("Instructions overridden at call time")
@@ -206,13 +224,3 @@ class Guard:
             guard_history = runner(prompt_params=prompt_params)
             self.guard_state = self.guard_state.push(guard_history)
             return sub_reasks_with_fixed_values(guard_history.validated_output)
-
-    @classmethod
-    def from_pydantic(
-        cls, output_class: GuardModel, prompt: str, instructions: Optional[str] = None
-    ) -> "Guard":
-        """Create a Guard instance from a Pydantic model and prompt."""
-        rail = Rail.from_pydantic(
-            output_class=output_class, prompt=prompt, instructions=instructions
-        )
-        return cls(rail)

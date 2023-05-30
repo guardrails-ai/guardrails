@@ -1,7 +1,10 @@
+from typing import Optional, Union
 import openai
 import pytest
 
 import guardrails as gd
+from guardrails.datatypes import GuardModel
+from guardrails.guard import Guard
 
 from .mock_llm_outputs import (
     entity_extraction,
@@ -78,20 +81,39 @@ def validated_output():
     }
 
 
+def guard_initializer(
+    rail: Union[str, GuardModel], prompt: str, instructions: Optional[str] = None
+) -> Guard:
+    """Helper function to initialize a Guard object using the correct method."""
+
+    if isinstance(rail, str):
+        return Guard.from_rail_string(rail)
+    else:
+        return Guard.from_pydantic(rail, prompt=prompt, instructions=instructions)
+
+
 def test_rail_spec_output_parse(rail_spec, llm_output, validated_output):
     """Test that the rail_spec fixture is working."""
     guard = gd.Guard.from_rail_string(rail_spec)
     assert guard.parse(llm_output) == validated_output
 
 
-def test_entity_extraction_with_reask(mocker):
+@pytest.mark.parametrize(
+    "rail,prompt",
+    [
+        (entity_extraction.RAIL_SPEC_WITH_REASK, None),
+        (entity_extraction.PYDANTIC_RAIL_WITH_REASK, entity_extraction.PYDANTIC_PROMPT),
+    ],
+)
+def test_entity_extraction_with_reask(mocker, rail, prompt):
     """Test that the entity extraction works with re-asking."""
     mocker.patch(
         "guardrails.llm_providers.openai_wrapper", new=openai_completion_create
     )
 
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
-    guard = gd.Guard.from_rail_string(entity_extraction.RAIL_SPEC_WITH_REASK)
+    guard = guard_initializer(rail, prompt)
+
     _, final_output = guard(
         llm_api=openai.Completion.create,
         prompt_params={"document": content[:6000]},
@@ -121,14 +143,21 @@ def test_entity_extraction_with_reask(mocker):
     )
 
 
-def test_entity_extraction_with_noop(mocker):
+@pytest.mark.parametrize(
+    "rail,prompt",
+    [
+        (entity_extraction.RAIL_SPEC_WITH_NOOP, None),
+        (entity_extraction.PYDANTIC_RAIL_WITH_NOOP, entity_extraction.PYDANTIC_PROMPT),
+    ],
+)
+def test_entity_extraction_with_noop(mocker, rail, prompt):
     """Test that the entity extraction works with re-asking."""
     mocker.patch(
         "guardrails.llm_providers.openai_wrapper", new=openai_completion_create
     )
 
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
-    guard = gd.Guard.from_rail_string(entity_extraction.RAIL_SPEC_WITH_NOOP)
+    guard = guard_initializer(rail, prompt)
     _, final_output = guard(
         llm_api=openai.Completion.create,
         prompt_params={"document": content[:6000]},
@@ -149,14 +178,24 @@ def test_entity_extraction_with_noop(mocker):
     assert guard_history[0].validated_output == entity_extraction.VALIDATED_OUTPUT_NOOP
 
 
-def test_entity_extraction_with_filter(mocker):
+@pytest.mark.parametrize(
+    "rail,prompt",
+    [
+        (entity_extraction.RAIL_SPEC_WITH_FILTER, None),
+        (
+            entity_extraction.PYDANTIC_RAIL_WITH_FILTER,
+            entity_extraction.PYDANTIC_PROMPT,
+        ),
+    ],
+)
+def test_entity_extraction_with_filter(mocker, rail, prompt):
     """Test that the entity extraction works with re-asking."""
     mocker.patch(
         "guardrails.llm_providers.openai_wrapper", new=openai_completion_create
     )
 
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
-    guard = gd.Guard.from_rail_string(entity_extraction.RAIL_SPEC_WITH_FILTER)
+    guard = guard_initializer(rail, prompt)
     _, final_output = guard(
         llm_api=openai.Completion.create,
         prompt_params={"document": content[:6000]},
@@ -179,14 +218,21 @@ def test_entity_extraction_with_filter(mocker):
     )
 
 
-def test_entity_extraction_with_fix(mocker):
+@pytest.mark.parametrize(
+    "rail,prompt",
+    [
+        (entity_extraction.RAIL_SPEC_WITH_FIX, None),
+        (entity_extraction.PYDANTIC_RAIL_WITH_FIX, entity_extraction.PYDANTIC_PROMPT),
+    ],
+)
+def test_entity_extraction_with_fix(mocker, rail, prompt):
     """Test that the entity extraction works with re-asking."""
     mocker.patch(
         "guardrails.llm_providers.openai_wrapper", new=openai_completion_create
     )
 
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
-    guard = gd.Guard.from_rail_string(entity_extraction.RAIL_SPEC_WITH_FIX)
+    guard = guard_initializer(rail, prompt)
     _, final_output = guard(
         llm_api=openai.Completion.create,
         prompt_params={"document": content[:6000]},
@@ -207,14 +253,24 @@ def test_entity_extraction_with_fix(mocker):
     assert guard_history[0].validated_output == entity_extraction.VALIDATED_OUTPUT_FIX
 
 
-def test_entity_extraction_with_refrain(mocker):
+@pytest.mark.parametrize(
+    "rail,prompt",
+    [
+        (entity_extraction.RAIL_SPEC_WITH_REFRAIN, None),
+        (
+            entity_extraction.PYDANTIC_RAIL_WITH_REFRAIN,
+            entity_extraction.PYDANTIC_PROMPT,
+        ),
+    ],
+)
+def test_entity_extraction_with_refrain(mocker, rail, prompt):
     """Test that the entity extraction works with re-asking."""
     mocker.patch(
         "guardrails.llm_providers.openai_wrapper", new=openai_completion_create
     )
 
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
-    guard = gd.Guard.from_rail_string(entity_extraction.RAIL_SPEC_WITH_REFRAIN)
+    guard = guard_initializer(rail, prompt)
     _, final_output = guard(
         llm_api=openai.Completion.create,
         prompt_params={"document": content[:6000]},
@@ -237,7 +293,18 @@ def test_entity_extraction_with_refrain(mocker):
     )
 
 
-def test_entity_extraction_with_fix_chat_models(mocker):
+@pytest.mark.parametrize(
+    "rail,prompt,instructions",
+    [
+        # (entity_extraction.RAIL_SPEC_WITH_FIX_CHAT_MODEL, None, None),
+        (
+            entity_extraction.PYDANTIC_RAIL_WITH_FIX,
+            entity_extraction.PYDANTIC_PROMPT_CHAT_MODEL,
+            entity_extraction.PYDANTIC_INSTRUCTIONS_CHAT_MODEL,
+        ),
+    ],
+)
+def test_entity_extraction_with_fix_chat_models(mocker, rail, prompt, instructions):
     """Test that the entity extraction works with fix for chat models."""
 
     mocker.patch(
@@ -246,7 +313,7 @@ def test_entity_extraction_with_fix_chat_models(mocker):
     )
 
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
-    guard = gd.Guard.from_rail_string(entity_extraction.RAIL_SPEC_WITH_FIX_CHAT_MODEL)
+    guard = guard_initializer(rail, prompt, instructions)
     _, final_output = guard(
         llm_api=openai.ChatCompletion.create,
         prompt_params={"document": content[:6000]},
