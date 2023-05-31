@@ -3,7 +3,7 @@ from string import Formatter
 from typing import Callable, Dict, Optional, Tuple, Union
 
 from eliot import add_destinations, start_action
-from guardrails.datatypes import GuardModel
+from pydantic import BaseModel
 
 from guardrails.llm_providers import PromptCallable, get_llm_ask
 from guardrails.prompt import Instructions, Prompt
@@ -135,7 +135,7 @@ class Guard:
     @classmethod
     def from_pydantic(
         cls,
-        output_class: GuardModel,
+        output_class: BaseModel,
         prompt: str,
         instructions: Optional[str] = None,
         num_reasks: int = 1,

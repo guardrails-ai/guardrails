@@ -1,10 +1,10 @@
 # flake8: noqa: E501
 from typing import Optional
+
 import pytest
+from pydantic import BaseModel, Field
 
 from guardrails import Guard
-
-from guardrails.datatypes import Field, GuardModel
 from guardrails.validators import ValidChoices
 
 
@@ -88,20 +88,20 @@ Dummy prompt.
     ],
 )
 def test_choice_validation_pydantic(llm_output, raises):
-    class FlightDetails(GuardModel):
+    class FlightDetails(BaseModel):
         flight_direction: str = Field(
-            gd_validators=ValidChoices(
+            validators=ValidChoices(
                 choices=["north", "south", "east", "west"], on_fail="exception"
             )
         )
         flight_speed: int = Field(
-            gd_validators=ValidChoices(choices=[1, 2, 3, 4], on_fail="exception")
+            validators=ValidChoices(choices=[1, 2, 3, 4], on_fail="exception")
         )
 
-    class Action(GuardModel):
-        action: str = Field(gd_validators=ValidChoices(choices=["fight", "flight"]))
+    class Action(BaseModel):
+        action: str = Field(validators=ValidChoices(choices=["fight", "flight"]))
         fight: Optional[str] = Field(
-            gd_validators=ValidChoices(choices=["punch", "kick"], on_fail="exception"),
+            validators=ValidChoices(choices=["punch", "kick"], on_fail="exception"),
             when="action",
         )
         flight: Optional[FlightDetails] = Field(when="action")

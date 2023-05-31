@@ -531,34 +531,6 @@ class Pydantic(NonScalarType):
         )
 
 
-class GdField(FieldInfo):
-    def __init__(
-        self,
-        *args,
-        when=None,
-        gd_validators: Optional[Union["Validator", TypedList["Validator"]]] = None,
-        **kwargs,
-    ):
-        from guardrails.validators import Validator
-
-        super().__init__(*args, **kwargs)
-        self.when = when
-        if gd_validators is None:
-            gd_validators = []
-        if isinstance(gd_validators, Validator) or isinstance(gd_validators, str):
-            gd_validators = [gd_validators]
-        self.gd_validators = gd_validators
-
-
-def Field(*args, **kwargs):
-    gd_field = GdField(*args, **kwargs)
-    return gd_field
-
-
-class GuardModel(BaseModel):
-    pass
-
-
 # @register_type("key")
 # class Key(DataType):
 # """

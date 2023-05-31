@@ -1,20 +1,20 @@
 from typing import Dict, List
 
-from guardrails.datatypes import Field, GuardModel
+from pydantic import BaseModel, Field
 
-from guardrails.validators import LowerCase, TwoWords, OneLine
+from guardrails.validators import LowerCase, OneLine, TwoWords
 
 
-class FeeDetailsFilter(GuardModel):
-    index: int = Field(gd_validators="1-indexed")
+class FeeDetailsFilter(BaseModel):
+    index: int = Field(validators="1-indexed")
     name: str = Field(
-        gd_validators=[LowerCase(on_fail="filter"), TwoWords(on_fail="filter")]
+        validators=[LowerCase(on_fail="filter"), TwoWords(on_fail="filter")]
     )
-    explanation: str = Field(gd_validators=OneLine(on_fail="filter"))
-    value: float = Field(gd_validators="percentage")
+    explanation: str = Field(validators=OneLine(on_fail="filter"))
+    value: float = Field(validators="percentage")
 
 
-class ContractDetailsFilter(GuardModel):
+class ContractDetailsFilter(BaseModel):
     fees: List[FeeDetailsFilter] = Field(
         description="What fees and charges are associated with my account?"
     )
@@ -23,14 +23,14 @@ class ContractDetailsFilter(GuardModel):
     )
 
 
-class FeeDetailsFix(GuardModel):
-    index: int = Field(gd_validators="1-indexed")
-    name: str = Field(gd_validators=[LowerCase(on_fail="fix"), TwoWords(on_fail="fix")])
-    explanation: str = Field(gd_validators=OneLine(on_fail="fix"))
-    value: float = Field(gd_validators="percentage")
+class FeeDetailsFix(BaseModel):
+    index: int = Field(validators="1-indexed")
+    name: str = Field(validators=[LowerCase(on_fail="fix"), TwoWords(on_fail="fix")])
+    explanation: str = Field(validators=OneLine(on_fail="fix"))
+    value: float = Field(validators="percentage")
 
 
-class ContractDetailsFix(GuardModel):
+class ContractDetailsFix(BaseModel):
     fees: List[FeeDetailsFix] = Field(
         description="What fees and charges are associated with my account?"
     )
@@ -39,16 +39,16 @@ class ContractDetailsFix(GuardModel):
     )
 
 
-class FeeDetailsNoop(GuardModel):
-    index: int = Field(gd_validators="1-indexed")
+class FeeDetailsNoop(BaseModel):
+    index: int = Field(validators="1-indexed")
     name: str = Field(
-        gd_validators=[LowerCase(on_fail="noop"), TwoWords(on_fail="noop")]
+        validators=[LowerCase(on_fail="noop"), TwoWords(on_fail="noop")]
     )
-    explanation: str = Field(gd_validators=OneLine(on_fail="noop"))
-    value: float = Field(gd_validators="percentage")
+    explanation: str = Field(validators=OneLine(on_fail="noop"))
+    value: float = Field(validators="percentage")
 
 
-class ContractDetailsNoop(GuardModel):
+class ContractDetailsNoop(BaseModel):
     fees: List[FeeDetailsNoop] = Field(
         description="What fees and charges are associated with my account?"
     )
@@ -57,16 +57,16 @@ class ContractDetailsNoop(GuardModel):
     )
 
 
-class FeeDetailsReask(GuardModel):
-    index: int = Field(gd_validators="1-indexed")
+class FeeDetailsReask(BaseModel):
+    index: int = Field(validators="1-indexed")
     name: str = Field(
-        gd_validators=[LowerCase(on_fail="noop"), TwoWords(on_fail="reask")]
+        validators=[LowerCase(on_fail="noop"), TwoWords(on_fail="reask")]
     )
-    explanation: str = Field(gd_validators=OneLine(on_fail="noop"))
-    value: float = Field(gd_validators="percentage")
+    explanation: str = Field(validators=OneLine(on_fail="noop"))
+    value: float = Field(validators="percentage")
 
 
-class ContractDetailsReask(GuardModel):
+class ContractDetailsReask(BaseModel):
     fees: List[FeeDetailsReask] = Field(
         description="What fees and charges are associated with my account?"
     )
@@ -75,16 +75,16 @@ class ContractDetailsReask(GuardModel):
     )
 
 
-class FeeDetailsRefrain(GuardModel):
-    index: int = Field(gd_validators="1-indexed")
+class FeeDetailsRefrain(BaseModel):
+    index: int = Field(validators="1-indexed")
     name: str = Field(
-        gd_validators=[LowerCase(on_fail="refrain"), TwoWords(on_fail="refrain")]
+        validators=[LowerCase(on_fail="refrain"), TwoWords(on_fail="refrain")]
     )
-    explanation: str = Field(gd_validators=OneLine(on_fail="refrain"))
-    value: float = Field(gd_validators="percentage")
+    explanation: str = Field(validators=OneLine(on_fail="refrain"))
+    value: float = Field(validators="percentage")
 
 
-class ContractDetailsRefrain(GuardModel):
+class ContractDetailsRefrain(BaseModel):
     fees: List[FeeDetailsRefrain] = Field(
         description="What fees and charges are associated with my account?"
     )

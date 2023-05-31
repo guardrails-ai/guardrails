@@ -21,6 +21,8 @@ from lxml.etree import Element
 from pydantic import BaseModel, HttpUrl
 from pydantic.fields import ModelField
 
+from guardrails.validators import Validator
+
 griffe_docstrings_google_logger = logging.getLogger("griffe.docstrings.google")
 griffe_agents_nodes_logger = logging.getLogger("griffe.agents.nodes")
 
@@ -222,15 +224,18 @@ def add_validators_to_xml_element(field_info: ModelField, element: Element) -> E
 
     if (
         isinstance(field_info, ModelField)
-        and hasattr(field_info.field_info, "gd_validators")
-        and field_info.field_info.gd_validators is not None
+        and "validators" in field_info.field_info.extra
     ):
+        validators = field_info.field_info.extra["validators"]
+        if isinstance(validators, str) or isinstance(validators, Validator):
+            validators = [validators]
+
         format_prompt = []
         on_fails = {}
-        for validator in field_info.field_info.gd_validators:
+        for validator in validators:
             validator_prompt = validator
             if not isinstance(validator, str):
-                # `validator`` is of type gd.Validator, use the to_xml_attrib method
+                # `validator` is of type gd.Validator, use the to_xml_attrib method
                 validator_prompt = validator.to_xml_attrib()
                 # Set the on-fail attribute based on the on_fail value
                 on_fail = validator.on_fail.__name__ if validator.on_fail else "noop"
@@ -336,8 +341,8 @@ def create_xml_element_for_base_model(
     choice_elements = defaultdict(list)
     case_elements = set()
     for field_name, field in model.__fields__.items():
-        if hasattr(field.field_info, "when") and field.field_info.when:
-            choice_elements[field.field_info.when].append((field_name, field))
+        if "when" in field.field_info.extra:
+            choice_elements[field.field_info.extra["when"]].append((field_name, field))
             case_elements.add(field_name)
 
     # Add fields to the XML element, except for fields with `when` attribute

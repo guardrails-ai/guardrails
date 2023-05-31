@@ -4,8 +4,8 @@ from typing import List, Optional, Type
 
 from lxml import etree as ET
 from lxml.etree import Element, SubElement, tostring
+from pydantic import BaseModel
 
-from guardrails.datatypes import GuardModel
 from guardrails.prompt import Instructions, Prompt
 from guardrails.schema import InputSchema, OutputSchema, Schema
 from guardrails.utils.pydantic_utils import create_xml_element_for_base_model
@@ -206,14 +206,14 @@ class Rail:
 
     @classmethod
     def from_pydantic(
-        cls, output_class: GuardModel, prompt: str, instructions: Optional[str] = None
+        cls, output_class: BaseModel, prompt: str, instructions: Optional[str] = None
     ):
         xml = generate_xml_code(output_class, prompt, instructions)
         return cls.from_string(xml)
 
 
 def generate_xml_code(
-    output_class: Type["pydantic.BaseModel"],
+    output_class: Type[BaseModel],
     prompt: str,
     instructions: Optional[str] = None,
 ) -> str:

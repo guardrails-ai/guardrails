@@ -4,11 +4,9 @@ from typing import List, Optional
 
 import openai
 import pytest
-from pydantic import Field as PydanticField
-from pydantic import root_validator, validator
+from pydantic import BaseModel, Field, root_validator, validator
 
 import guardrails as gd
-from guardrails.datatypes import Field, GuardModel
 from guardrails.validators import (
     EventDetail,
     Validator,
@@ -49,7 +47,7 @@ def test_python_rail(mocker):
         new=openai_chat_completion_create,
     )
 
-    class BoxOfficeRevenue(GuardModel):
+    class BoxOfficeRevenue(BaseModel):
         gross: float
         opening_weekend: float
 
@@ -60,21 +58,22 @@ def test_python_rail(mocker):
                 raise ValueError("Gross revenue must be a positive value")
             return gross
 
-    class StreamingRevenue(GuardModel):
+    class StreamingRevenue(BaseModel):
         subscriptions: int
         subscription_fee: float
 
-    class Details(GuardModel):
+    class Details(BaseModel):
         release_date: date
         duration: time
         budget: float
-        is_sequel: bool = PydanticField(default=False)
+        # is_sequel: bool = PydanticField(default=False)
+        is_sequel: bool = Field(default=False)
         website: str = Field(
-            gd_validators=[ValidLength(min=9, max=100, on_fail="reask")]
+            validators=[ValidLength(min=9, max=100, on_fail="reask")]
         )
         contact_email: str
         revenue_type: str = Field(
-            gd_validators=[ValidChoices(choices=["box_office", "streaming"])]
+            validators=[ValidChoices(choices=["box_office", "streaming"])]
         )
         box_office: Optional[BoxOfficeRevenue] = Field(when="revenue_type")
         streaming: Optional[StreamingRevenue] = Field(when="revenue_type")
@@ -91,13 +90,13 @@ def test_python_rail(mocker):
                     raise ValueError("Budget must be less than gross revenue")
             return values
 
-    class Movie(GuardModel):
+    class Movie(BaseModel):
         rank: int
         title: str
         details: Details
 
-    class Director(GuardModel):
-        name: str = Field(gd_validators=[IsValidDirector()])
+    class Director(BaseModel):
+        name: str = Field(validators=[IsValidDirector()])
         movies: List[Movie]
 
     guard = gd.Guard.from_pydantic(

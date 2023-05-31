@@ -1,9 +1,10 @@
 from typing import Optional, Union
+
 import openai
 import pytest
+from pydantic import BaseModel
 
 import guardrails as gd
-from guardrails.datatypes import GuardModel
 from guardrails.guard import Guard
 
 from .mock_llm_outputs import (
@@ -82,7 +83,7 @@ def validated_output():
 
 
 def guard_initializer(
-    rail: Union[str, GuardModel], prompt: str, instructions: Optional[str] = None
+    rail: Union[str, BaseModel], prompt: str, instructions: Optional[str] = None
 ) -> Guard:
     """Helper function to initialize a Guard object using the correct method."""
 
