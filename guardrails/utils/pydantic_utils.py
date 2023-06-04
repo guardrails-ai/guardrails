@@ -10,15 +10,17 @@ Guardrails lets users specify
 />
 """
 import logging
+import warnings
 from collections import defaultdict
+from copy import deepcopy
 from datetime import date, time
-from typing import Any, Dict, Optional, Type, Union, get_args, get_origin
+from typing import Any, Callable, Dict, Optional, Type, Union, get_args, get_origin
 
 from griffe.dataclasses import Docstring
 from griffe.docstrings.parsers import Parser, parse
 from lxml.builder import E
 from lxml.etree import Element
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel, HttpUrl, validator
 from pydantic.fields import ModelField
 
 from guardrails.validators import Validator
@@ -86,29 +88,29 @@ def register_pydantic(cls: type):
     for field in cls.__fields__.values():
         pydantic_validators[cls][field.name] = {}
         if field.pre_validators:
-            for validator in field.pre_validators:
+            for pre_validator in field.pre_validators:
                 pydantic_validators[cls][field.name][
-                    validator.func_name.replace("_", "-")
-                ] = validator
+                    pre_validator.func_name.replace("_", "-")
+                ] = pre_validator
         if field.post_validators:
-            for validator in field.post_validators:
+            for post_validator in field.post_validators:
                 pydantic_validators[cls][field.name][
-                    validator.func_name.replace("_", "-")
-                ] = validator
+                    post_validator.func_name.replace("_", "-")
+                ] = post_validator
 
     pydantic_validators[cls]["__root__"] = {}
     # Add all pre and post root validators
     if cls.__pre_root_validators__:
-        for _, validator in cls.__pre_root_validators__:
+        for _, pre_validator in cls.__pre_root_validators__:
             pydantic_validators[cls]["__root__"][
-                validator.__name__.replace("_", "-")
-            ] = validator
+                pre_validator.__name__.replace("_", "-")
+            ] = pre_validator
 
     if cls.__post_root_validators__:
-        for _, validator in cls.__post_root_validators__:
+        for _, post_validator in cls.__post_root_validators__:
             pydantic_validators[cls]["__root__"][
-                validator.__name__.replace("_", "-")
-            ] = validator
+                post_validator.__name__.replace("_", "-")
+            ] = post_validator
     return cls
 
 
@@ -232,14 +234,14 @@ def add_validators_to_xml_element(field_info: ModelField, element: Element) -> E
 
         format_prompt = []
         on_fails = {}
-        for validator in validators:
-            validator_prompt = validator
-            if not isinstance(validator, str):
+        for val in validators:
+            validator_prompt = val
+            if not isinstance(val, str):
                 # `validator` is of type gd.Validator, use the to_xml_attrib method
-                validator_prompt = validator.to_xml_attrib()
+                validator_prompt = val.to_xml_attrib()
                 # Set the on-fail attribute based on the on_fail value
-                on_fail = validator.on_fail.__name__ if validator.on_fail else "noop"
-                on_fails[validator.rail_alias] = on_fail
+                on_fail = val.on_fail.__name__ if val.on_fail else "noop"
+                on_fails[val.rail_alias] = on_fail
             format_prompt.append(validator_prompt)
 
         if len(format_prompt) > 0:
@@ -337,16 +339,19 @@ def create_xml_element_for_base_model(
     if element is None:
         element = E("object")
 
+    # Extract pydantic validators from the model and add them as guardrails validators
+    model_fields = add_pydantic_validators_as_guardrails_validators(model)
+
     # Identify fields with `when` attribute
     choice_elements = defaultdict(list)
     case_elements = set()
-    for field_name, field in model.__fields__.items():
+    for field_name, field in model_fields.items():
         if "when" in field.field_info.extra:
             choice_elements[field.field_info.extra["when"]].append((field_name, field))
             case_elements.add(field_name)
 
     # Add fields to the XML element, except for fields with `when` attribute
-    for field_name, field in model.__fields__.items():
+    for field_name, field in model_fields.items():
         if field_name in choice_elements or field_name in case_elements:
             continue
         field_element = create_xml_element_for_field(field, field_name)
@@ -367,3 +372,113 @@ def create_xml_element_for_base_model(
         element.append(choice_element)
 
     return element
+
+
+def add_validator(
+    *fields: str,
+    pre: bool = False,
+    each_item: bool = False,
+    always: bool = False,
+    check_fields: bool = True,
+    whole: Optional[bool] = None,
+    allow_reuse: bool = True,
+    fn: Optional[Callable] = None,
+) -> Callable:
+    return validator(
+        *fields,
+        pre=pre,
+        each_item=each_item,
+        always=always,
+        check_fields=check_fields,
+        whole=whole,
+        allow_reuse=allow_reuse,
+    )(fn)
+
+
+def convert_pydantic_validator_to_guardrails_validator(
+    model: BaseModel, fn: Callable
+) -> Validator:
+    """Convert a Pydantic validator to a Guardrails validator.
+
+    Pydantic validators can be defined in three ways:
+        1. A method defined in the BaseModel using a `validator` decorator.
+        2. Using the `add_validator` function with a Guardrails validator class.
+        3. Using the `add_validator` function with a custom function.
+    This method converts all three types of validators to a Guardrails validator.
+
+    Args:
+        model: The Pydantic BaseModel that the validator is defined in.
+        fn: The Pydantic validator function. This is the raw cython function generated
+            by calling `BaseModelName.__fields__[field_name].post_validators[idx]`.
+
+    Returns:
+        A Guardrails validator
+    """
+
+    fn_name = fn.__name__
+    callable_fn = fn.__wrapped__
+
+    if hasattr(model, fn_name):
+        # # Case 1: fn is a method defined in the BaseModel
+        # # Wrap the method in a Guardrails PydanticFieldValidator class
+        # field_validator = partial(callable_fn, model)
+        # return PydanticFieldValidator(field_validator=field_validator)
+        warnings.warn(
+            f"Validator {fn_name} is defined as a method in the BaseModel. "
+            "This is not supported by Guardrails. "
+            "Please define the validator using the `add_validator` function."
+        )
+        return fn_name
+
+    if issubclass(type(callable_fn), Validator):
+        # Case 2: fn is a Guardrails validator
+        return callable_fn
+    else:
+        # # Case 3: fn is a custom function
+        # return PydanticFieldValidator(field_validator=callable_fn)
+        warnings.warn(
+            f"Validator {fn_name} is defined as a custom function. "
+            "This is not supported by Guardrails. "
+            "Please define the validator using the `add_validator` function."
+        )
+        return fn_name
+
+
+def add_pydantic_validators_as_guardrails_validators(
+    model: BaseModel,
+) -> Dict[str, ModelField]:
+    """Extract all validators for a pydantic BaseModel.
+
+    This function converts each Pydantic validator to a GuardRails validator and adds
+    it to the corresponding field in the model. The resulting dictionary maps field
+    names to ModelField objects.
+
+    Args:
+        model: A pydantic BaseModel.
+
+    Returns:
+        A dictionary mapping field names to ModelField objects.
+    """
+
+    def process_validators(vals, fld):
+
+        if not vals:
+            return
+
+        for val in vals:
+            gd_validator = convert_pydantic_validator_to_guardrails_validator(
+                model, val
+            )
+            if "validators" not in fld.field_info.extra:
+                fld.field_info.extra["validators"] = []
+            fld.field_info.extra["validators"].append(gd_validator)
+
+    model_fields = {}
+    for field_name, field in model.__fields__.items():
+        field_copy = deepcopy(field)
+        process_validators(field.pre_validators, field_copy)
+        process_validators(field.post_validators, field_copy)
+        model_fields[field_name] = field_copy
+
+    # TODO(shreya): Before merging handle root validators
+    return model_fields

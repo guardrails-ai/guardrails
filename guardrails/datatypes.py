@@ -6,7 +6,6 @@ from typing import (
     Dict,
     Generator,
     List as TypedList,
-    Optional,
     Tuple,
     Type,
     Union,
@@ -14,10 +13,8 @@ from typing import (
 
 from lxml import etree as ET
 from pydantic import BaseModel
-from pydantic.fields import FieldInfo
 
 if TYPE_CHECKING:
-    from guardrails.validators import Validator
     from guardrails.schema import FormatAttr
 
 
