@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 from typing import List, Optional, Type
 
 from lxml import etree as ET
-from lxml.etree import Element, SubElement, tostring
+from lxml.etree import Element, SubElement
 from pydantic import BaseModel
 
 from guardrails.prompt import Instructions, Prompt
@@ -99,6 +99,13 @@ class Rail:
     prompt: Optional[Prompt] = (None,)
     script: Optional[Script] = (None,)
     version: Optional[str] = ("0.1",)
+
+    @classmethod
+    def from_pydantic(
+        cls, output_class: BaseModel, prompt: str, instructions: Optional[str] = None
+    ):
+        xml = generate_xml_code(output_class, prompt, instructions)
+        return cls.from_xml(xml)
 
     @classmethod
     def from_file(cls, file_path: str) -> "Rail":
@@ -204,19 +211,11 @@ class Rail:
         """Given the RAIL <script> element, load and execute the script."""
         return Script.from_xml(root)
 
-    @classmethod
-    def from_pydantic(
-        cls, output_class: BaseModel, prompt: str, instructions: Optional[str] = None
-    ):
-        xml = generate_xml_code(output_class, prompt, instructions)
-        return cls.from_string(xml)
-
-
 def generate_xml_code(
     output_class: Type[BaseModel],
     prompt: str,
     instructions: Optional[str] = None,
-) -> str:
+) -> ET._Element:
     """Generate XML RAIL Spec from a pydantic model and a prompt."""
 
     # Create the root element
@@ -240,7 +239,4 @@ def generate_xml_code(
         instructions_text = f"{instructions}"
         instructions_element.text = instructions_text
 
-    # Convert the XML tree to a string
-    xml_code = tostring(root, encoding="unicode", pretty_print=True)
-
-    return xml_code
+    return root
