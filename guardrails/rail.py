@@ -5,7 +5,13 @@ from typing import List, Optional
 from lxml import etree as ET
 
 from guardrails.prompt import Instructions, Prompt
-from guardrails.schema import InputSchema, BaseOutputSchema, Schema, JsonOutputSchema, StringOutputSchema
+from guardrails.schema import (
+    BaseOutputSchema,
+    InputSchema,
+    JsonOutputSchema,
+    Schema,
+    StringOutputSchema,
+)
 
 # TODO: Logging
 XMLPARSER = ET.XMLParser(encoding="utf-8")

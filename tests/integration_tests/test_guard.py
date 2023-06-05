@@ -276,8 +276,7 @@ def test_entity_extraction_with_fix_chat_models(mocker):
 def test_string_output(mocker):
     """Test single string (non-JSON) generation."""
     mocker.patch(
-        "guardrails.llm_providers.openai_wrapper",
-        new=openai_completion_create
+        "guardrails.llm_providers.openai_wrapper", new=openai_completion_create
     )
 
     guard = gd.Guard.from_rail_string(string.RAIL_SPEC_FOR_STRING)

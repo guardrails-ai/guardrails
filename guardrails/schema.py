@@ -1,5 +1,4 @@
 import json
-
 import logging
 import pprint
 import re
@@ -12,11 +11,16 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 from lxml import etree as ET
 from lxml.builder import E
 
-from guardrails.prompt import Prompt
 from guardrails.datatypes import DataType, String
+from guardrails.prompt import Prompt
 from guardrails.utils.constants import constants
-from guardrails.utils.reask_utils import ReAsk, get_reasks_by_element, get_pruned_tree, gather_reasks
-from guardrails.validators import Validator, check_refrain_in_dict, filter_in_dict, Refrain
+from guardrails.utils.reask_utils import (
+    ReAsk,
+    gather_reasks,
+    get_pruned_tree,
+    get_reasks_by_element,
+)
+from guardrails.validators import Validator, check_refrain_in_dict, filter_in_dict
 
 if TYPE_CHECKING:
     pass
@@ -322,6 +326,7 @@ class InputSchema(Schema):
 
 class BaseOutputSchema(Schema):
     """Output schema class that holds a _schema attribute."""
+
     def transpile(self, method: str = "default") -> str:
         """Convert the XML schema to a string that is used for prompting a
         large language model.
@@ -368,7 +373,7 @@ class BaseOutputSchema(Schema):
         """
         raise NotImplementedError
 
-    def introspect(self, data: Any) -> list[ReAsk]:
+    def introspect(self, data: Any) -> List[ReAsk]:
         """Inspect the data for reasks.
 
         Args:
@@ -384,7 +389,7 @@ class BaseOutputSchema(Schema):
         reask_json: Dict,
         reask_prompt_template: Optional[Prompt] = None,
     ) -> Prompt:
-        """ Get a reask prompt for the schema.
+        """Get a reask prompt for the schema.
 
         Args:
             reask_json: The JSON that was returned from the API.
@@ -439,11 +444,14 @@ class JsonOutputSchema(BaseOutputSchema):
 
         if reask_prompt_template is None:
             reask_prompt_template = Prompt(
-                constants["high_level_json_reask_prompt"] + constants["complete_json_suffix"]
+                constants["high_level_json_reask_prompt"]
+                + constants["complete_json_suffix"]
             )
 
         def reask_decoder(obj):
-            return {k: v for k, v in obj.__dict__.items() if k not in ["path", "fix_value"]}
+            return {
+                k: v for k, v in obj.__dict__.items() if k not in ["path", "fix_value"]
+            }
 
         return reask_prompt_template.format(
             previous_response=json.dumps(reask_json, indent=2, default=reask_decoder)
@@ -511,7 +519,9 @@ class StringOutputSchema(BaseOutputSchema):
 
         child = root[0]
         if child.tag != "string":
-            raise ValueError("String output schemas must have exactly one child of type `string`.")
+            raise ValueError(
+                "String output schemas must have exactly one child of type `string`."
+            )
 
         if "name" in child.attrib:
             self.string_key = child.attrib["name"]
@@ -529,7 +539,8 @@ class StringOutputSchema(BaseOutputSchema):
 
         if reask_prompt_template is None:
             reask_prompt_template = Prompt(
-                constants["high_level_string_reask_prompt"] + constants["complete_string_suffix"]
+                constants["high_level_string_reask_prompt"]
+                + constants["complete_string_suffix"]
             )
 
         return reask_prompt_template.format(
@@ -579,7 +590,7 @@ class StringOutputSchema(BaseOutputSchema):
             return validated_response[self.string_key]
         return None
 
-    def introspect(self, data: Any) -> list[ReAsk]:
+    def introspect(self, data: Any) -> List[ReAsk]:
         if isinstance(data, ReAsk):
             return [data]
         return []

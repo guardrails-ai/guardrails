@@ -42,10 +42,10 @@ class DataType:
     def iter(
         self, element: ET._Element
     ) -> Generator[Tuple[str, "DataType", ET._Element], None, None]:
-        """
-        Iterate over the children of an element.
+        """Iterate over the children of an element.
 
-        Yields tuples of (name, child_data_type, child_element) for each child.
+        Yields tuples of (name, child_data_type, child_element) for each
+        child.
         """
         for el_child in element:
             if element.tag == "list":
@@ -175,8 +175,8 @@ class Boolean(ScalarType):
 class Date(ScalarType):
     """Element tag: `<date>`
 
-    To configure the date format, create a date-format attribute on the element.
-    E.g. `<date name="..." ... date-format="%Y-%m-%d" />`
+    To configure the date format, create a date-format attribute on the
+    element. E.g. `<date name="..." ... date-format="%Y-%m-%d" />`
     """
 
     def __init__(
@@ -206,8 +206,8 @@ class Date(ScalarType):
 class Time(ScalarType):
     """Element tag: `<time>`
 
-    To configure the date format, create a date-format attribute on the element.
-    E.g. `<time name="..." ... time-format="%H:%M:%S" />`
+    To configure the date format, create a date-format attribute on the
+    element. E.g. `<time name="..." ... time-format="%H:%M:%S" />`
     """
 
     def __init__(

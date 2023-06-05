@@ -1,13 +1,8 @@
-import json
 from collections import defaultdict
-from copy import deepcopy
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Union
 
 from lxml import etree as ET
-
-from guardrails.prompt import Prompt
-from guardrails.utils.constants import constants
 
 
 @dataclass
@@ -140,7 +135,8 @@ def get_pruned_tree(
 
 
 def prune_obj_for_reasking(obj: Any) -> Union[None, Dict, List]:
-    """After validation, we get a nested dictionary where some keys may be ReAsk objects.
+    """After validation, we get a nested dictionary where some keys may be
+    ReAsk objects.
 
     This function prunes the validated form of any object that is not a ReAsk object.
     It also keeps all of the ancestors of the ReAsk objects.
@@ -193,9 +189,7 @@ def reasks_to_dict(dict_with_reasks: Dict) -> Dict:
 
     def _(dict_object: Any) -> Any:
         if isinstance(dict_object, dict):
-            return {
-                key: _(value) for key, value in dict_object.items()
-            }
+            return {key: _(value) for key, value in dict_object.items()}
         elif isinstance(dict_object, list):
             return [_(item) for item in dict_object]
         elif isinstance(dict_object, ReAsk):

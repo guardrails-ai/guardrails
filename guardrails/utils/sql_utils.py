@@ -14,9 +14,9 @@ except ImportError:
 
 
 class SQLDriver(ABC):
-    """
-    Abstract class for SQL drivers. The expose common functionality
-    for validating SQL queries.
+    """Abstract class for SQL drivers.
+
+    The expose common functionality for validating SQL queries.
     """
 
     @abstractmethod
@@ -29,8 +29,8 @@ class SQLDriver(ABC):
 
 
 class SimpleSqlDriver(SQLDriver):
-    """
-    Simple SQL driver which uses sqlvalidator to validate SQL queries.
+    """Simple SQL driver which uses sqlvalidator to validate SQL queries.
+
     Does not understands dialects and is not connected to a database.
     """
 
@@ -47,8 +47,8 @@ class SimpleSqlDriver(SQLDriver):
 
 
 class SqlAlchemyDriver(SQLDriver):
-    """
-    SQL driver which uses sqlalchemy to validate SQL queries.
+    """SQL driver which uses sqlalchemy to validate SQL queries.
+
     It can setup the database schema and check if the queries are valid
     by connecting to the database.
     """
