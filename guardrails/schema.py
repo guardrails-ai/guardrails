@@ -1,3 +1,5 @@
+import json
+
 import logging
 import pprint
 import re
@@ -10,7 +12,10 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 from lxml import etree as ET
 from lxml.builder import E
 
+from guardrails.prompt import Prompt
 from guardrails.datatypes import DataType
+from guardrails.utils.constants import constants
+from guardrails.utils.reask_utils import ReAsk, get_reasks_by_element, get_pruned_tree, gather_reasks
 from guardrails.validators import Validator, check_refrain_in_dict, filter_in_dict
 
 if TYPE_CHECKING:
@@ -249,8 +254,6 @@ class Schema:
         root: Optional[ET._Element] = None,
         schema: Optional[Dict[str, DataType]] = None,
     ) -> None:
-        from guardrails.datatypes import registry as types_registry
-
         if schema is None:
             schema = {}
 
@@ -258,16 +261,7 @@ class Schema:
         self.root = root
 
         if root is not None:
-            strict = False
-            if "strict" in root.attrib and root.attrib["strict"] == "true":
-                strict = True
-
-            for child in root:
-                if isinstance(child, ET._Comment):
-                    continue
-                child_name = child.attrib["name"]
-                child_data = types_registry[child.tag].from_xml(child, strict=strict)
-                self[child_name] = child_data
+            self.parse_spec(root)
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({pprint.pformat(vars(self._schema))})"
@@ -301,6 +295,162 @@ class Schema:
     @property
     def parsed_rail(self) -> Optional[ET._Element]:
         return self.root
+
+    def parse_spec(self, root: ET._Element) -> None:
+        """Parse the schema specification.
+
+        Args:
+            root: The root element of the schema specification.
+        """
+        raise NotImplementedError
+
+    def validate(self, data: Any) -> Any:
+        """Validate a dictionary of data against the schema.
+
+        Args:
+            data: The data to validate.
+
+        Returns:
+            The validated data.
+        """
+        raise NotImplementedError
+
+
+class InputSchema(Schema):
+    """Input schema class that holds a _schema attribute."""
+
+
+class BaseOutputSchema(Schema):
+    """Output schema class that holds a _schema attribute."""
+    def transpile(self, method: str = "default") -> str:
+        """Convert the XML schema to a string that is used for prompting a
+        large language model.
+
+        Returns:
+            The prompt.
+        """
+        transpiler = getattr(Schema2Prompt, method)
+        return transpiler(self)
+
+    def get_reask_schema(
+        self,
+        reasks: List[ReAsk],
+    ) -> "BaseOutputSchema":
+        """Construct a schema for reasking.
+
+        Args:
+            reasks: List of tuples, where each tuple contains the path to the
+                reasked element, and the ReAsk object (which contains the error
+                message describing why the reask is necessary).
+
+        Returns:
+            The prompt.
+        """
+        parsed_rail = deepcopy(self.root)
+
+        # Get the elements that are to be reasked
+        reask_elements = get_reasks_by_element(reasks, parsed_rail)
+
+        # Get the pruned tree so that it only contains ReAsk objects
+        pruned_tree = get_pruned_tree(parsed_rail, list(reask_elements.keys()))
+        pruned_tree_schema = type(self)(pruned_tree)
+
+        return pruned_tree_schema
+
+    def parse(self, output: str) -> Tuple[Any, Optional[Exception]]:
+        """Parse the output from the large language model.
+
+        Args:
+            output: The output from the large language model.
+
+        Returns:
+            The parsed output, and the exception that was raised (if any).
+        """
+        raise NotImplementedError
+
+    def introspect(self, data: Any) -> list[ReAsk]:
+        """Inspect the data for reasks.
+
+        Args:
+            data: The data to introspect.
+
+        Returns:
+            A list of ReAsk objects.
+        """
+        raise NotImplementedError
+
+    def get_reask_prompt(
+        self,
+        reask_json: Dict,
+        reask_prompt_template: Optional[Prompt] = None,
+    ) -> Prompt:
+        """ Get a reask prompt for the schema.
+
+        Args:
+            reask_json: The JSON that was returned from the API.
+            reask_prompt_template: The template to use for the reask prompt.
+
+        Returns:
+            The reask prompt.
+        """
+        raise NotImplementedError
+
+
+class JsonOutputSchema(BaseOutputSchema):
+    def parse_spec(self, root: ET._Element) -> None:
+        from guardrails.datatypes import registry as types_registry
+
+        strict = False
+        if "strict" in root.attrib and root.attrib["strict"] == "true":
+            strict = True
+
+        for child in root:
+            if isinstance(child, ET._Comment):
+                continue
+            child_name = child.attrib["name"]
+            child_data = types_registry[child.tag].from_xml(child, strict=strict)
+            self[child_name] = child_data
+
+    def parse(self, output: str) -> Tuple[Dict, Optional[Exception]]:
+        # Remove the triple backticks from the output
+        output = output.strip()
+        if output.startswith("```"):
+            output = output[3:]
+            if output.startswith("json"):
+                output = output[4:]
+        if output.endswith("```"):
+            output = output[:-3]
+
+        # Treat the output as a JSON string, and load it into a dict.
+        error = None
+        try:
+            output_as_dict = json.loads(output, strict=False)
+        except json.decoder.JSONDecodeError as e:
+            output_as_dict = None
+            error = e
+        return output_as_dict, error
+
+    def get_reask_prompt(
+        self,
+        reask_json: Dict,
+        reask_prompt_template: Optional[Prompt] = None,
+    ) -> Prompt:
+        pruned_tree_string = self.transpile()
+
+        if reask_prompt_template is None:
+            reask_prompt_template = Prompt(
+                constants["high_level_json_reask_prompt"] + constants["complete_json_suffix"]
+            )
+
+        def reask_decoder(obj):
+            return {k: v for k, v in obj.__dict__.items() if k not in ["path", "fix_value"]}
+
+        return reask_prompt_template.format(
+            previous_response=json.dumps(reask_json, indent=2, default=reask_decoder)
+            .replace("{", "{{")
+            .replace("}", "}}"),
+            output_schema=pruned_tree_string,
+        )
 
     def validate(
         self,
@@ -346,23 +496,8 @@ class Schema:
 
         return validated_response
 
-    def transpile(self, method: str = "default") -> str:
-        """Convert the XML schema to a string that is used for prompting a
-        large language model.
-
-        Returns:
-            The prompt.
-        """
-        transpiler = getattr(Schema2Prompt, method)
-        return transpiler(self)
-
-
-class InputSchema(Schema):
-    """Input schema class that holds a _schema attribute."""
-
-
-class OutputSchema(Schema):
-    """Output schema class that holds a _schema attribute."""
+    def introspect(self, data: Dict) -> list:
+        return gather_reasks(data)
 
 
 class Schema2Prompt:

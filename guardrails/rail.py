@@ -5,7 +5,7 @@ from typing import List, Optional
 from lxml import etree as ET
 
 from guardrails.prompt import Instructions, Prompt
-from guardrails.schema import InputSchema, OutputSchema, Schema
+from guardrails.schema import InputSchema, BaseOutputSchema, Schema, JsonOutputSchema
 
 # TODO: Logging
 XMLPARSER = ET.XMLParser(encoding="utf-8")
@@ -91,7 +91,7 @@ class Rail:
     """
 
     input_schema: Optional[InputSchema] = (None,)
-    output_schema: Optional[OutputSchema] = (None,)
+    output_schema: Optional[BaseOutputSchema] = (None,)
     instructions: Optional[Instructions] = (None,)
     prompt: Optional[Prompt] = (None,)
     script: Optional[Script] = (None,)
@@ -174,14 +174,14 @@ class Rail:
         return InputSchema(root)
 
     @staticmethod
-    def load_output_schema(root: ET._Element) -> OutputSchema:
+    def load_output_schema(root: ET._Element) -> BaseOutputSchema:
         """Given the RAIL <output> element, create a Schema object."""
-        # Recast the schema as an OutputSchema.
-        return OutputSchema(root)
+        # TODO if root is a single <string> element, return a StringOutputSchema
+        return JsonOutputSchema(root)
 
     @staticmethod
     def load_instructions(
-        root: ET._Element, output_schema: OutputSchema
+        root: ET._Element, output_schema: BaseOutputSchema
     ) -> Instructions:
         """Given the RAIL <instructions> element, create Instructions."""
         return Instructions(
@@ -190,7 +190,7 @@ class Rail:
         )
 
     @staticmethod
-    def load_prompt(root: ET._Element, output_schema: OutputSchema) -> Prompt:
+    def load_prompt(root: ET._Element, output_schema: BaseOutputSchema) -> Prompt:
         """Given the RAIL <prompt> element, create a Prompt object."""
         return Prompt(
             source=root.text,

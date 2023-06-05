@@ -4,6 +4,7 @@ import pytest
 from lxml import etree as ET
 
 from guardrails import Prompt
+from guardrails.schema import JsonOutputSchema
 from guardrails.utils import reask_utils
 from guardrails.utils.reask_utils import (
     ReAsk,
@@ -93,8 +94,8 @@ def test_gather_reasks():
     ],
 )
 def test_prune_json_for_reasking(input_dict, expected_dict):
-    """Test that the prune_json_for_reasking function removes ReAsk objects."""
-    assert reask_utils.prune_json_for_reasking(input_dict) == expected_dict
+    """Test that the prune_obj_for_reasking function removes ReAsk objects."""
+    assert reask_utils.prune_obj_for_reasking(input_dict) == expected_dict
 
 
 @pytest.mark.parametrize(
@@ -160,10 +161,9 @@ Here are examples of simple (XML, JSON) pairs that show the expected behavior:
 - `<list name='bar'><string format='upper-case' /></list>` => `{{"bar": ['STRING ONE', 'STRING TWO', etc.]}}`
 - `<object name='baz'><string name="foo" format="capitalize two-words" /><integer name="index" format="1-indexed" /></object>` => `{{'baz': {{'foo': 'Some String', 'index': 1}}}}`
 """  # noqa: E501
-
-    result_prompt, _ = reask_utils.get_reask_prompt(
-        ET.fromstring(example_rail), reasks, reask_json
-    )
+    output_schema = JsonOutputSchema(ET.fromstring(example_rail))
+    reask_schema = output_schema.get_reask_schema(reasks)
+    result_prompt = reask_schema.get_reask_prompt(reask_json)
 
     assert result_prompt == Prompt(
         expected_result_template
