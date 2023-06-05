@@ -183,10 +183,10 @@ class Runner:
             if prompt_params is None:
                 prompt_params = {}
 
-            if input_schema:
-                validated_prompt_params = input_schema.validate(prompt_params)
-            else:
-                validated_prompt_params = prompt_params
+            # if input_schema:
+            #     validated_prompt_params = input_schema.validate(prompt_params)
+            # else:
+            validated_prompt_params = prompt_params
 
             if isinstance(prompt, str):
                 prompt = Prompt(prompt)
