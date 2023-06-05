@@ -13,10 +13,10 @@ from lxml import etree as ET
 from lxml.builder import E
 
 from guardrails.prompt import Prompt
-from guardrails.datatypes import DataType
+from guardrails.datatypes import DataType, String
 from guardrails.utils.constants import constants
 from guardrails.utils.reask_utils import ReAsk, get_reasks_by_element, get_pruned_tree, gather_reasks
-from guardrails.validators import Validator, check_refrain_in_dict, filter_in_dict
+from guardrails.validators import Validator, check_refrain_in_dict, filter_in_dict, Refrain
 
 if TYPE_CHECKING:
     pass
@@ -498,6 +498,91 @@ class JsonOutputSchema(BaseOutputSchema):
 
     def introspect(self, data: Dict) -> list:
         return gather_reasks(data)
+
+
+class StringOutputSchema(BaseOutputSchema):
+    def __init__(self, root: ET._Element) -> None:
+        self.string_key = "string"
+        super().__init__(root)
+
+    def parse_spec(self, root: ET._Element) -> None:
+        if len(root) != 1:
+            raise ValueError("String output schemas must have exactly one child.")
+
+        child = root[0]
+        if child.tag != "string":
+            raise ValueError("String output schemas must have exactly one child of type `string`.")
+
+        if "name" in child.attrib:
+            self.string_key = child.attrib["name"]
+        else:
+            self.string_key = child.attrib["name"] = "string"
+
+        self[self.string_key] = String.from_xml(root[0])
+
+    def get_reask_prompt(
+        self,
+        reask_json: Dict,
+        reask_prompt_template: Optional[Prompt] = None,
+    ) -> Prompt:
+        pruned_tree_string = self.transpile()
+
+        if reask_prompt_template is None:
+            reask_prompt_template = Prompt(
+                constants["high_level_string_reask_prompt"] + constants["complete_string_suffix"]
+            )
+
+        return reask_prompt_template.format(
+            previous_response=reask_json,
+            output_schema=pruned_tree_string,
+        )
+
+    def parse(self, output: str) -> Tuple[Any, Optional[Exception]]:
+        return output, None
+
+    def validate(
+        self,
+        data: Any,
+    ) -> Any:
+        """Validate a dictionary of data against the schema.
+
+        Args:
+            data: The data to validate.
+
+        Returns:
+            The validated data.
+        """
+        if data is None:
+            return None
+
+        if not isinstance(data, str):
+            raise TypeError(f"Argument `data` must be a dictionary, not {type(data)}.")
+
+        validated_response = self[self.string_key].validate(
+            key=self.string_key,
+            value=data,
+            schema={
+                self.string_key: data,
+            },
+        )
+
+        if check_refrain_in_dict(validated_response):
+            # If the data contains a `Refain` value, we return an empty
+            # dictionary.
+            logger.debug("Refrain detected.")
+            validated_response = {}
+
+        # Remove all keys that have `Filter` values.
+        validated_response = filter_in_dict(validated_response)
+
+        if self.string_key in validated_response:
+            return validated_response[self.string_key]
+        return None
+
+    def introspect(self, data: Any) -> list[ReAsk]:
+        if isinstance(data, ReAsk):
+            return [data]
+        return []
 
 
 class Schema2Prompt:

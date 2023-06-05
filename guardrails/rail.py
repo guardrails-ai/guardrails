@@ -5,7 +5,7 @@ from typing import List, Optional
 from lxml import etree as ET
 
 from guardrails.prompt import Instructions, Prompt
-from guardrails.schema import InputSchema, BaseOutputSchema, Schema, JsonOutputSchema
+from guardrails.schema import InputSchema, BaseOutputSchema, Schema, JsonOutputSchema, StringOutputSchema
 
 # TODO: Logging
 XMLPARSER = ET.XMLParser(encoding="utf-8")
@@ -176,7 +176,9 @@ class Rail:
     @staticmethod
     def load_output_schema(root: ET._Element) -> BaseOutputSchema:
         """Given the RAIL <output> element, create a Schema object."""
-        # TODO if root is a single <string> element, return a StringOutputSchema
+        # if root is a single <string> element, return a StringOutputSchema
+        if len(root) == 1 and root[0].tag == "string":
+            return StringOutputSchema(root)
         return JsonOutputSchema(root)
 
     @staticmethod
