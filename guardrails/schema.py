@@ -351,16 +351,7 @@ class BaseOutputSchema(Schema):
         Returns:
             The prompt.
         """
-        parsed_rail = deepcopy(self.root)
-
-        # Get the elements that are to be reasked
-        reask_elements = get_reasks_by_element(reasks, parsed_rail)
-
-        # Get the pruned tree so that it only contains ReAsk objects
-        pruned_tree = get_pruned_tree(parsed_rail, list(reask_elements.keys()))
-        pruned_tree_schema = type(self)(pruned_tree)
-
-        return pruned_tree_schema
+        raise NotImplementedError
 
     def parse(self, output: str) -> Tuple[Any, Optional[Exception]]:
         """Parse the output from the large language model.
@@ -384,6 +375,14 @@ class BaseOutputSchema(Schema):
         """
         raise NotImplementedError
 
+    def get_default_reask_prompt(self) -> Prompt:
+        """Get the default reask prompt for the schema.
+
+        Returns:
+            The default reask prompt.
+        """
+        raise NotImplementedError
+
     def get_reask_prompt(
         self,
         reask_json: Dict,
@@ -398,10 +397,40 @@ class BaseOutputSchema(Schema):
         Returns:
             The reask prompt.
         """
-        raise NotImplementedError
+        pruned_tree_string = self.transpile()
+
+        if reask_prompt_template is None:
+            reask_prompt_template = self.get_default_reask_prompt()
+
+        def reask_decoder(obj):
+            return {
+                k: v for k, v in obj.__dict__.items() if k not in ["path", "fix_value"]
+            }
+
+        return reask_prompt_template.format(
+            previous_response=json.dumps(reask_json, indent=2, default=reask_decoder)
+            .replace("{", "{{")
+            .replace("}", "}}"),
+            output_schema=pruned_tree_string,
+        )
 
 
 class JsonOutputSchema(BaseOutputSchema):
+    def get_reask_schema(
+        self,
+        reasks: List[ReAsk],
+    ) -> "BaseOutputSchema":
+        parsed_rail = deepcopy(self.root)
+
+        # Get the elements that are to be reasked
+        reask_elements = get_reasks_by_element(reasks, parsed_rail)
+
+        # Get the pruned tree so that it only contains ReAsk objects
+        pruned_tree = get_pruned_tree(parsed_rail, list(reask_elements.keys()))
+        pruned_tree_schema = type(self)(pruned_tree)
+
+        return pruned_tree_schema
+
     def parse_spec(self, root: ET._Element) -> None:
         from guardrails.datatypes import registry as types_registry
 
@@ -435,29 +464,10 @@ class JsonOutputSchema(BaseOutputSchema):
             error = e
         return output_as_dict, error
 
-    def get_reask_prompt(
-        self,
-        reask_json: Dict,
-        reask_prompt_template: Optional[Prompt] = None,
-    ) -> Prompt:
-        pruned_tree_string = self.transpile()
-
-        if reask_prompt_template is None:
-            reask_prompt_template = Prompt(
-                constants["high_level_json_reask_prompt"]
-                + constants["complete_json_suffix"]
-            )
-
-        def reask_decoder(obj):
-            return {
-                k: v for k, v in obj.__dict__.items() if k not in ["path", "fix_value"]
-            }
-
-        return reask_prompt_template.format(
-            previous_response=json.dumps(reask_json, indent=2, default=reask_decoder)
-            .replace("{", "{{")
-            .replace("}", "}}"),
-            output_schema=pruned_tree_string,
+    def get_default_reask_prompt(self):
+        return Prompt(
+            constants["high_level_json_reask_prompt"]
+            + constants["complete_json_suffix"]
         )
 
     def validate(
@@ -530,22 +540,16 @@ class StringOutputSchema(BaseOutputSchema):
 
         self[self.string_key] = String.from_xml(root[0])
 
-    def get_reask_prompt(
+    def get_reask_schema(
         self,
-        reask_json: Dict,
-        reask_prompt_template: Optional[Prompt] = None,
-    ) -> Prompt:
-        pruned_tree_string = self.transpile()
+        reasks: List[ReAsk],
+    ) -> "BaseOutputSchema":
+        return self
 
-        if reask_prompt_template is None:
-            reask_prompt_template = Prompt(
-                constants["high_level_string_reask_prompt"]
-                + constants["complete_string_suffix"]
-            )
-
-        return reask_prompt_template.format(
-            previous_response=reask_json,
-            output_schema=pruned_tree_string,
+    def get_default_reask_prompt(self):
+        return Prompt(
+            constants["high_level_string_reask_prompt"]
+            + constants["complete_string_suffix"]
         )
 
     def parse(self, output: str) -> Tuple[Any, Optional[Exception]]:

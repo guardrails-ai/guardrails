@@ -144,6 +144,9 @@ def merge_reask_output(prev_logs: GuardLogs, current_logs: GuardLogs) -> Dict:
     pruned_reask_json = prune_obj_for_reasking(previous_response)
     reask_response = current_logs.validated_output
 
+    if isinstance(pruned_reask_json, ReAsk):
+        return reask_response
+
     # Reask output and reask json have the same structure, except that values
     # of the reask json are ReAsk objects. We want to replace the ReAsk objects
     # with the values from the reask output.

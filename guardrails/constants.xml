@@ -80,8 +80,8 @@ Given below is XML that describes the information to extract from this document 
 ONLY return a valid string answer (no other text is necessary), where the string is formatted according to the XML format. Be correct and concise.
 
 Here are examples of simple (XML, string) pairs that show the expected behavior:
-- `<![CDATA[<string name='foo' format='two-words lower-case' />`]]> => `{{{{'foo': 'example one'}}}}`
-- `<![CDATA[<string name='bar' format='upper-case' />]]>` => `{{{{'bar': 'STRING ONE'}}}}`
+- `<![CDATA[<string format='two-words lower-case' />`]]> => `{{{{'foo': 'example one'}}}}`
+- `<![CDATA[<string format='upper-case' />]]>` => `{{{{'bar': 'STRING ONE'}}}}`
 </complete_string_suffix>
 
 </constants>

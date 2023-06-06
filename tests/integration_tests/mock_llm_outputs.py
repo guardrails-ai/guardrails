@@ -10,6 +10,7 @@ def openai_completion_create(prompt, *args, **kwargs):
         pydantic.COMPILED_PROMPT_REASK_1: pydantic.LLM_OUTPUT_REASK_1,
         pydantic.COMPILED_PROMPT_REASK_2: pydantic.LLM_OUTPUT_REASK_2,
         string.COMPILED_PROMPT: string.LLM_OUTPUT,
+        string.COMPILED_PROMPT_REASK: string.LLM_OUTPUT_REASK,
     }
 
     try:
