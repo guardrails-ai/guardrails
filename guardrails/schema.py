@@ -319,14 +319,6 @@ class Schema:
         """
         raise NotImplementedError
 
-
-class InputSchema(Schema):
-    """Input schema class that holds a _schema attribute."""
-
-
-class BaseOutputSchema(Schema):
-    """Output schema class that holds a _schema attribute."""
-
     def transpile(self, method: str = "default") -> str:
         """Convert the XML schema to a string that is used for prompting a
         large language model.
@@ -340,7 +332,7 @@ class BaseOutputSchema(Schema):
     def get_reask_schema(
         self,
         reasks: List[ReAsk],
-    ) -> "BaseOutputSchema":
+    ) -> "Schema":
         """Construct a schema for reasking.
 
         Args:
@@ -415,11 +407,11 @@ class BaseOutputSchema(Schema):
         )
 
 
-class JsonOutputSchema(BaseOutputSchema):
+class JsonSchema(Schema):
     def get_reask_schema(
         self,
         reasks: List[ReAsk],
-    ) -> "BaseOutputSchema":
+    ) -> "Schema":
         parsed_rail = deepcopy(self.root)
 
         # Get the elements that are to be reasked
@@ -518,7 +510,7 @@ class JsonOutputSchema(BaseOutputSchema):
         return gather_reasks(data)
 
 
-class StringOutputSchema(BaseOutputSchema):
+class StringSchema(Schema):
     def __init__(self, root: ET._Element) -> None:
         self.string_key = "string"
         super().__init__(root)
@@ -543,7 +535,7 @@ class StringOutputSchema(BaseOutputSchema):
     def get_reask_schema(
         self,
         reasks: List[ReAsk],
-    ) -> "BaseOutputSchema":
+    ) -> "Schema":
         return self
 
     def get_default_reask_prompt(self):

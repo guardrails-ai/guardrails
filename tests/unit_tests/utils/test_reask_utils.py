@@ -4,7 +4,7 @@ import pytest
 from lxml import etree as ET
 
 from guardrails import Prompt
-from guardrails.schema import JsonOutputSchema
+from guardrails.schema import JsonSchema
 from guardrails.utils import reask_utils
 from guardrails.utils.reask_utils import (
     ReAsk,
@@ -161,7 +161,7 @@ Here are examples of simple (XML, JSON) pairs that show the expected behavior:
 - `<list name='bar'><string format='upper-case' /></list>` => `{{"bar": ['STRING ONE', 'STRING TWO', etc.]}}`
 - `<object name='baz'><string name="foo" format="capitalize two-words" /><integer name="index" format="1-indexed" /></object>` => `{{'baz': {{'foo': 'Some String', 'index': 1}}}}`
 """  # noqa: E501
-    output_schema = JsonOutputSchema(ET.fromstring(example_rail))
+    output_schema = JsonSchema(ET.fromstring(example_rail))
     reask_schema = output_schema.get_reask_schema(reasks)
     result_prompt = reask_schema.get_reask_prompt(reask_json)
 

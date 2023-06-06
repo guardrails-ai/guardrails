@@ -6,7 +6,7 @@ from eliot import add_destinations, start_action
 
 from guardrails.llm_providers import PromptCallable
 from guardrails.prompt import Instructions, Prompt
-from guardrails.schema import BaseOutputSchema, InputSchema
+from guardrails.schema import Schema, Schema
 from guardrails.utils.logs_utils import GuardHistory, GuardLogs
 from guardrails.utils.reask_utils import (
     ReAsk,
@@ -43,8 +43,8 @@ class Runner:
     instructions: Optional[Instructions]
     prompt: Prompt
     api: PromptCallable
-    input_schema: InputSchema
-    output_schema: BaseOutputSchema
+    input_schema: Schema
+    output_schema: Schema
     num_reasks: int = 0
     output: str = None
     reask_prompt: Optional[Prompt] = None
@@ -119,8 +119,8 @@ class Runner:
         instructions: Optional[Instructions],
         prompt: Prompt,
         prompt_params: Dict,
-        input_schema: InputSchema,
-        output_schema: BaseOutputSchema,
+        input_schema: Schema,
+        output_schema: Schema,
         output: str = None,
     ):
         """Run a full step."""
@@ -176,7 +176,7 @@ class Runner:
         instructions: Optional[Instructions],
         prompt: Prompt,
         prompt_params: Dict,
-        input_schema: InputSchema,
+        input_schema: Schema,
     ) -> Tuple[Instructions, Prompt]:
         """Prepare by running pre-processing and input validation."""
         with start_action(action_type="prepare", index=index) as action:
@@ -238,7 +238,7 @@ class Runner:
         self,
         index: int,
         output: str,
-        output_schema: BaseOutputSchema,
+        output_schema: Schema,
     ):
         with start_action(action_type="parse", index=index) as action:
             parsed_output, error = output_schema.parse(output)
@@ -255,7 +255,7 @@ class Runner:
         self,
         index: int,
         parsed_output: Any,
-        output_schema: BaseOutputSchema,
+        output_schema: Schema,
     ):
         """Validate the output."""
         with start_action(action_type="validate", index=index) as action:
@@ -272,7 +272,7 @@ class Runner:
         self,
         index: int,
         validated_output: Any,
-        output_schema: BaseOutputSchema,
+        output_schema: Schema,
     ) -> List[ReAsk]:
         """Introspect the validated output."""
         with start_action(action_type="introspect", index=index) as action:
@@ -318,8 +318,8 @@ class Runner:
         self,
         reasks: list,
         validated_output: Optional[Dict],
-        output_schema: BaseOutputSchema,
-    ) -> Tuple[Prompt, BaseOutputSchema]:
+        output_schema: Schema,
+    ) -> Tuple[Prompt, Schema]:
         """Prepare to loop again."""
         output_schema = output_schema.get_reask_schema(
             reasks=reasks,
