@@ -5,13 +5,7 @@ from typing import List, Optional
 from lxml import etree as ET
 
 from guardrails.prompt import Instructions, Prompt
-from guardrails.schema import (
-    Schema,
-    Schema,
-    JsonSchema,
-    Schema,
-    StringSchema,
-)
+from guardrails.schema import JsonSchema, Schema, StringSchema
 
 # TODO: Logging
 XMLPARSER = ET.XMLParser(encoding="utf-8")
@@ -188,9 +182,7 @@ class Rail:
         return JsonSchema(root)
 
     @staticmethod
-    def load_instructions(
-        root: ET._Element, output_schema: Schema
-    ) -> Instructions:
+    def load_instructions(root: ET._Element, output_schema: Schema) -> Instructions:
         """Given the RAIL <instructions> element, create Instructions."""
         return Instructions(
             source=root.text,

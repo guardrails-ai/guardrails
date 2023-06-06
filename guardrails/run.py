@@ -6,7 +6,7 @@ from eliot import add_destinations, start_action
 
 from guardrails.llm_providers import PromptCallable
 from guardrails.prompt import Instructions, Prompt
-from guardrails.schema import Schema, Schema
+from guardrails.schema import Schema
 from guardrails.utils.logs_utils import GuardHistory, GuardLogs
 from guardrails.utils.reask_utils import (
     ReAsk,

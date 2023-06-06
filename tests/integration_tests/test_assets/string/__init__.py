@@ -1,6 +1,7 @@
+# flake8: noqa: E501
 import os
 
-from tests.integration_tests.test_assets.string.validated_output_reask import VALIDATED_OUTPUT_REASK
+from .validated_output_reask import VALIDATED_OUTPUT_REASK
 
 DATA_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)))
 reader = (
