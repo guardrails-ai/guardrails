@@ -182,8 +182,8 @@ class Rail:
     @staticmethod
     def load_output_schema(root: ET._Element) -> Schema:
         """Given the RAIL <output> element, create a Schema object."""
-        # if root is a single <string> element, return a StringOutputSchema
-        if len(root) == 1 and root[0].tag == "string":
+        # If root contains a `type="string"` attribute, then it's a StringSchema
+        if "type" in root.attrib and root.attrib["type"] == "string":
             return StringSchema(root)
         return JsonSchema(root)
 

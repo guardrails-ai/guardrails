@@ -516,21 +516,17 @@ class StringSchema(Schema):
         super().__init__(root)
 
     def parse_spec(self, root: ET._Element) -> None:
-        if len(root) != 1:
-            raise ValueError("String output schemas must have exactly one child.")
+        if len(root) != 0:
+            raise ValueError("String output schemas must not have children.")
 
-        child = root[0]
-        if child.tag != "string":
-            raise ValueError(
-                "String output schemas must have exactly one child of type `string`."
-            )
-
-        if "name" in child.attrib:
-            self.string_key = child.attrib["name"]
+        if "name" in root.attrib:
+            self.string_key = root.attrib["name"]
         else:
-            self.string_key = child.attrib["name"] = "string"
+            self.string_key = root.attrib["name"] = "string"
 
-        self[self.string_key] = String.from_xml(root[0])
+        # make root tag into a string tag
+        root_string = ET.Element("string", root.attrib)
+        self[self.string_key] = String.from_xml(root_string)
 
     def get_reask_schema(
         self,
@@ -563,7 +559,7 @@ class StringSchema(Schema):
             return None
 
         if not isinstance(data, str):
-            raise TypeError(f"Argument `data` must be a dictionary, not {type(data)}.")
+            raise TypeError(f"Argument `data` must be a string, not {type(data)}.")
 
         validated_response = self[self.string_key].validate(
             key=self.string_key,

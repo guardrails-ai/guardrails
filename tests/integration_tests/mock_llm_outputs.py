@@ -16,6 +16,7 @@ def openai_completion_create(prompt, *args, **kwargs):
     try:
         return mock_llm_responses[prompt]
     except KeyError:
+        print(prompt)
         raise ValueError("Compiled prompt not found")
 
 

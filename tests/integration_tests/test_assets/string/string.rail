@@ -1,9 +1,8 @@
 <rail version="0.1">
-<output>
-    <string
-        description="Name for the pizza"
-    />
-</output>
+<output
+    type="string"
+    description="Name for the pizza"
+/>
 
 <instructions>
 You are a helpful assistant, and you are helping me come up with a name for a pizza.
