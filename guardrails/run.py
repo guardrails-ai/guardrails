@@ -1,11 +1,11 @@
 import logging
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple
 
 from eliot import add_destinations, start_action
 from pydantic import BaseModel
 
-from guardrails.llm_providers import PromptCallable
+from guardrails.llm_providers import AsyncPromptCallable, PromptCallable
 from guardrails.prompt import Instructions, Prompt
 from guardrails.schema import Schema
 from guardrails.utils.logs_utils import GuardHistory, GuardLogs
@@ -354,3 +354,145 @@ class Runner:
             reask_prompt_template=self.reask_prompt,
         )
         return prompt, output_schema
+
+
+class AsyncRunner(Runner):
+    api: AsyncPromptCallable
+
+    async def async_run(self, prompt_params: Dict = None) -> GuardHistory:
+        """Execute the runner by repeatedly calling step until the reask budget
+        is exhausted.
+
+        Args:
+            prompt_params: Parameters to pass to the prompt in order to
+                generate the prompt string.
+
+        Returns:
+            The guard history.
+        """
+        self._reset_guard_history()
+
+        with start_action(
+            action_type="run",
+            instructions=self.instructions,
+            prompt=self.prompt,
+            api=self.api,
+            input_schema=self.input_schema,
+            output_schema=self.output_schema,
+            num_reasks=self.num_reasks,
+        ):
+            instructions, prompt, input_schema, output_schema = (
+                self.instructions,
+                self.prompt,
+                self.input_schema,
+                self.output_schema,
+            )
+            for index in range(self.num_reasks + 1):
+                # Run a single step.
+                validated_output, reasks = await self.async_step(
+                    index=index,
+                    api=self.api,
+                    instructions=instructions,
+                    prompt=prompt,
+                    prompt_params=prompt_params,
+                    input_schema=input_schema,
+                    output_schema=output_schema,
+                    output=self.output if index == 0 else None,
+                )
+
+                # Loop again?
+                if not self.do_loop(index, reasks):
+                    break
+                # Get new prompt and output schema.
+                prompt, output_schema = self.prepare_to_loop(
+                    reasks,
+                    validated_output,
+                    output_schema,
+                )
+
+            return self.guard_history
+
+    async def async_step(
+        self,
+        index: int,
+        api: AsyncPromptCallable,
+        instructions: Optional[Instructions],
+        prompt: Prompt,
+        prompt_params: Dict,
+        input_schema: Schema,
+        output_schema: Schema,
+        output: str = None,
+    ):
+        """Run a full step."""
+        with start_action(
+            action_type="step",
+            index=index,
+            instructions=instructions,
+            prompt=prompt,
+            prompt_params=prompt_params,
+            input_schema=input_schema,
+            output_schema=output_schema,
+        ):
+            # Prepare: run pre-processing, and input validation.
+            if not output:
+                instructions, prompt = self.prepare(
+                    index, instructions, prompt, prompt_params, input_schema
+                )
+            else:
+                instructions = None
+                prompt = None
+
+            # Call: run the API.
+            output = await self.async_call(index, instructions, prompt, api, output)
+
+            # Parse: parse the output.
+            parsed_output = self.parse(index, output, output_schema)
+
+            # Validate: run output validation.
+            validated_output = self.validate(index, parsed_output, output_schema)
+
+            # Introspect: inspect validated output for reasks.
+            reasks = self.introspect(index, validated_output, output_schema)
+
+            # Replace reask values with fixed values if terminal step.
+            if not self.do_loop(index, reasks):
+                validated_output = sub_reasks_with_fixed_values(validated_output)
+
+            # Log: step information.
+            self.log(
+                prompt=prompt,
+                instructions=instructions,
+                output=output,
+                parsed_output=parsed_output,
+                validated_output=validated_output,
+                reasks=reasks,
+            )
+
+            return validated_output, reasks
+
+    async def async_call(
+        self,
+        index: int,
+        instructions: Optional[Instructions],
+        prompt: Prompt,
+        api: AsyncPromptCallable,
+        output: str = None,
+    ) -> str:
+        """Run a step.
+
+        1. Query the LLM API,
+        2. Convert the response string to a dict,
+        3. Log the output
+        """
+        with start_action(action_type="call", index=index, prompt=prompt) as action:
+            if prompt and instructions:
+                output = await api(prompt.source, instructions=instructions.source)
+            elif prompt:
+                output = await api(prompt.source)
+
+            action.log(
+                message_type="info",
+                output=output,
+            )
+
+            return output

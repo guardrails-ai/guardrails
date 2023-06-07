@@ -1,14 +1,15 @@
+import asyncio
 import logging
 from string import Formatter
-from typing import Callable, Dict, Optional, Tuple, Union
+from typing import Awaitable, Callable, Dict, Optional, Tuple, Union
 
 from eliot import add_destinations, start_action
 from pydantic import BaseModel
 
-from guardrails.llm_providers import PromptCallable, get_llm_ask
+from guardrails.llm_providers import PromptCallable, get_async_llm_ask, get_llm_ask
 from guardrails.prompt import Instructions, Prompt
 from guardrails.rail import Rail
-from guardrails.run import Runner
+from guardrails.run import AsyncRunner, Runner
 from guardrails.schema import Schema
 from guardrails.utils.logs_utils import GuardState
 from guardrails.utils.reask_utils import sub_reasks_with_fixed_values
@@ -150,12 +151,12 @@ class Guard:
 
     def __call__(
         self,
-        llm_api: Callable,
+        llm_api: Union[Callable, Callable[..., Awaitable[...]]],
         prompt_params: Dict = None,
         num_reasks: Optional[int] = None,
         *args,
         **kwargs,
-    ) -> Tuple[str, Dict]:
+    ) -> Union[Tuple[str, Dict], Awaitable[Tuple[str, Dict]]]:
         """Call the LLM and validate the output.
 
         Args:
@@ -166,10 +167,35 @@ class Guard:
         Returns:
             The raw text output from the LLM and the validated output.
         """
-
         if num_reasks is None:
             num_reasks = self.num_reasks
 
+        # If the LLM API is async, return a coroutine
+        if asyncio.iscoroutinefunction(llm_api):
+            return self._call_async(
+                llm_api,
+                prompt_params=prompt_params,
+                num_reasks=num_reasks,
+                *args,
+                **kwargs,
+            )
+        # Otherwise, call the LLM synchronously
+        return self._call_sync(
+            llm_api,
+            prompt_params=prompt_params,
+            num_reasks=num_reasks,
+            *args,
+            **kwargs,
+        )
+
+    def _call_sync(
+        self,
+        llm_api: Callable,
+        prompt_params: Dict = None,
+        num_reasks: int = 1,
+        *args,
+        **kwargs,
+    ) -> Tuple[str, Dict]:
         with start_action(action_type="guard_call", prompt_params=prompt_params):
             if "instructions" in kwargs:
                 logger.info("Instructions overridden at call time")
@@ -185,6 +211,41 @@ class Guard:
                 base_model=self.base_model,
             )
             guard_history = runner(prompt_params=prompt_params)
+            self.guard_state = self.guard_state.push(guard_history)
+            return guard_history.output, guard_history.validated_output
+
+    async def _call_async(
+        self,
+        llm_api: Callable[..., Awaitable[...]],
+        prompt_params: Dict = None,
+        num_reasks: int = 1,
+        *args,
+        **kwargs,
+    ) -> Tuple[str, Dict]:
+        """Call the LLM asynchronously and validate the output.
+
+        Args:
+            llm_api: The LLM API to call asynchronously (e.g. openai.Completion.acreate)
+            prompt_params: The parameters to pass to the prompt.format() method.
+            num_reasks: The max times to re-ask the LLM for invalid output.
+
+        Returns:
+            The raw text output from the LLM and the validated output.
+        """
+        with start_action(action_type="guard_call", prompt_params=prompt_params):
+            if "instructions" in kwargs:
+                logger.info("Instructions overridden at call time")
+                # TODO(shreya): should we overwrite self.instructions for this run?
+            runner = AsyncRunner(
+                instructions=kwargs.get("instructions", self.instructions),
+                prompt=self.prompt,
+                api=get_async_llm_ask(llm_api, *args, **kwargs),
+                input_schema=self.input_schema,
+                output_schema=self.output_schema,
+                num_reasks=num_reasks,
+                reask_prompt=self.reask_prompt,
+            )
+            guard_history = await runner.async_run(prompt_params=prompt_params)
             self.guard_state = self.guard_state.push(guard_history)
             return guard_history.output, guard_history.validated_output
 
