@@ -265,7 +265,7 @@ class Schema:
         self.root = root
 
         if root is not None:
-            self.parse_spec(root)
+            self.setup_schema(root)
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({pprint.pformat(vars(self._schema))})"
@@ -300,7 +300,7 @@ class Schema:
     def parsed_rail(self) -> Optional[ET._Element]:
         return self.root
 
-    def parse_spec(self, root: ET._Element) -> None:
+    def setup_schema(self, root: ET._Element) -> None:
         """Parse the schema specification.
 
         Args:
@@ -423,7 +423,7 @@ class JsonSchema(Schema):
 
         return pruned_tree_schema
 
-    def parse_spec(self, root: ET._Element) -> None:
+    def setup_schema(self, root: ET._Element) -> None:
         from guardrails.datatypes import registry as types_registry
 
         strict = False
@@ -515,7 +515,7 @@ class StringSchema(Schema):
         self.string_key = "string"
         super().__init__(root)
 
-    def parse_spec(self, root: ET._Element) -> None:
+    def setup_schema(self, root: ET._Element) -> None:
         if len(root) != 0:
             raise ValueError("String output schemas must not have children.")
 
