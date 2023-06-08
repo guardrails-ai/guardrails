@@ -6,7 +6,7 @@ from eliot import add_destinations, start_action
 
 from guardrails.llm_providers import PromptCallable
 from guardrails.prompt import Instructions, Prompt
-from guardrails.schema import Schema, JsonSchema
+from guardrails.schema import JsonSchema, Schema
 from guardrails.utils.logs_utils import GuardHistory, GuardLogs
 from guardrails.utils.reask_utils import (
     ReAsk,
@@ -136,7 +136,12 @@ class Runner:
             # Prepare: run pre-processing, and input validation.
             if not output:
                 instructions, prompt = self.prepare(
-                    index, instructions, prompt, prompt_params, input_schema, output_schema
+                    index,
+                    instructions,
+                    prompt,
+                    prompt_params,
+                    input_schema,
+                    output_schema,
                 )
             else:
                 instructions = None

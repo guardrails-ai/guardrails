@@ -12,7 +12,7 @@ from lxml import etree as ET
 from lxml.builder import E
 
 from guardrails.datatypes import DataType, String
-from guardrails.prompt import Prompt, Instructions
+from guardrails.prompt import Instructions, Prompt
 from guardrails.utils.constants import constants
 from guardrails.utils.reask_utils import (
     ReAsk,
@@ -391,8 +391,8 @@ class Schema:
         raise NotImplementedError
 
     def preprocess_prompt(self, instructions: Instructions, prompt: Prompt):
-        """
-        Preprocess the instructions and prompt before sending it to the model.
+        """Preprocess the instructions and prompt before sending it to the
+        model.
 
         Args:
             instructions: The instructions to preprocess.
@@ -657,7 +657,9 @@ class StringSchema(Schema):
 {obj.element.attrib["description"]}
 +++"""
         if not obj.format_attr.empty:
-            schema += "\n\nYour generated response should satisfy the following properties:"
+            schema += (
+                "\n\nYour generated response should satisfy the following properties:"
+            )
             for validator in obj.format_attr.validators:
                 schema += f"\n- {validator.to_prompt()}"
         return schema

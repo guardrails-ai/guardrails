@@ -76,9 +76,7 @@ def chat_prompt(
 ) -> List[Dict[str, str]]:
     """Prepare final prompt for chat engine."""
     if not instructions:
-        instructions = (
-            "You are a helpful assistant."
-        )
+        instructions = "You are a helpful assistant."
     return [
         {"role": "system", "content": instructions},
         {"role": "user", "content": prompt},

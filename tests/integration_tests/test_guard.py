@@ -320,7 +320,9 @@ def test_string_reask(mocker):
     assert len(guard_history) == 2
 
     # For orginal prompt and output
-    assert guard_history[0].instructions == gd.Instructions(string.COMPILED_INSTRUCTIONS)
+    assert guard_history[0].instructions == gd.Instructions(
+        string.COMPILED_INSTRUCTIONS
+    )
     assert guard_history[0].prompt == gd.Prompt(string.COMPILED_PROMPT)
     assert guard_history[0].output == string.LLM_OUTPUT
     assert guard_history[0].validated_output == string.VALIDATED_OUTPUT_REASK
@@ -329,4 +331,3 @@ def test_string_reask(mocker):
     assert guard_history[1].prompt == gd.Prompt(string.COMPILED_PROMPT_REASK)
     assert guard_history[1].output == string.LLM_OUTPUT_REASK
     assert guard_history[1].validated_output == string.LLM_OUTPUT_REASK
-
