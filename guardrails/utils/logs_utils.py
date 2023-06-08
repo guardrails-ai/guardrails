@@ -141,11 +141,11 @@ def merge_reask_output(prev_logs: GuardLogs, current_logs: GuardLogs) -> Dict:
     from guardrails.validators import PydanticReAsk
 
     previous_response = prev_logs.validated_output
-    pruned_reask_json = prune_obj_for_reasking(previous_response)
     reask_response = current_logs.validated_output
-
-    if isinstance(pruned_reask_json, ReAsk):
+    if isinstance(previous_response, ReAsk):
         return reask_response
+
+    pruned_reask_json = prune_obj_for_reasking(previous_response)
 
     # Reask output and reask json have the same structure, except that values
     # of the reask json are ReAsk objects. We want to replace the ReAsk objects
