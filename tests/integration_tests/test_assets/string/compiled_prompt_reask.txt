@@ -1,20 +1,22 @@
 
-I was given the following string, which had problems due to incorrect values.
+I was given the following string, delimited by +++:
 
-{
-  "incorrect_value": "sour cream tomata",
-  "error_message": "must be exactly two words"
-}
++++
+Tomato Cheese Pizza
++++
 
-Help me correct the incorrect values based on the given error messages.
+It had the following problems:
+- must be exactly two words
 
-Given below is XML that describes the information to extract from this document and the tags to extract it into.
+String description, delimited by +++:
 
-<output type="string" description="Name for the pizza" format="two-words" name="string"/>
++++
+Name for the pizza
++++
+
+Your generated response should satisfy the following properties:
+- two-words
 
 
-ONLY return a valid string answer (no other text is necessary), where the string is formatted according to the XML format. Be correct and concise.
+String Output:
 
-Here are examples of simple (XML, string) pairs that show the expected behavior:
-- `<output format='two-words lower-case' />` => `{'foo': 'example one'}`
-- `<output format='upper-case' />` => `{'bar': 'STRING ONE'}`

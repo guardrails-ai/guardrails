@@ -11,9 +11,8 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 from lxml import etree as ET
 from lxml.builder import E
 
-from guardrails import Instructions
 from guardrails.datatypes import DataType, String
-from guardrails.prompt import Prompt
+from guardrails.prompt import Prompt, Instructions
 from guardrails.utils.constants import constants
 from guardrails.utils.reask_utils import (
     ReAsk,
@@ -327,8 +326,7 @@ class Schema:
         Returns:
             The prompt.
         """
-        transpiler = getattr(Schema2Prompt, method)
-        return transpiler(self)
+        raise NotImplementedError
 
     def get_reask_schema(
         self,
@@ -378,34 +376,19 @@ class Schema:
 
     def get_reask_prompt(
         self,
-        reask_json: Dict,
+        reask_value: Any,
         reask_prompt_template: Optional[Prompt] = None,
     ) -> Prompt:
         """Get a reask prompt for the schema.
 
         Args:
-            reask_json: The JSON that was returned from the API.
+            reask_value: The value that was returned from the API, with reasks.
             reask_prompt_template: The template to use for the reask prompt.
 
         Returns:
             The reask prompt.
         """
-        pruned_tree_string = self.transpile()
-
-        if reask_prompt_template is None:
-            reask_prompt_template = self.get_default_reask_prompt()
-
-        def reask_decoder(obj):
-            return {
-                k: v for k, v in obj.__dict__.items() if k not in ["path", "fix_value"]
-            }
-
-        return reask_prompt_template.format(
-            previous_response=json.dumps(reask_json, indent=2, default=reask_decoder)
-            .replace("{", "{{")
-            .replace("}", "}}"),
-            output_schema=pruned_tree_string,
-        )
+        raise NotImplementedError
 
     def preprocess_prompt(self, instructions: Instructions, prompt: Prompt):
         """
@@ -433,6 +416,28 @@ class JsonSchema(Schema):
         pruned_tree_schema = type(self)(pruned_tree)
 
         return pruned_tree_schema
+
+    def get_reask_prompt(
+        self,
+        reask_value: Any,
+        reask_prompt_template: Optional[Prompt] = None,
+    ) -> Prompt:
+        pruned_tree_string = self.transpile()
+
+        if reask_prompt_template is None:
+            reask_prompt_template = self.get_default_reask_prompt()
+
+        def reask_decoder(obj):
+            return {
+                k: v for k, v in obj.__dict__.items() if k not in ["path", "fix_value"]
+            }
+
+        return reask_prompt_template.format(
+            previous_response=json.dumps(reask_value, indent=2, default=reask_decoder)
+            .replace("{", "{{")
+            .replace("}", "}}"),
+            output_schema=pruned_tree_string,
+        )
 
     def setup_schema(self, root: ET._Element) -> None:
         from guardrails.datatypes import registry as types_registry
@@ -532,6 +537,10 @@ class JsonSchema(Schema):
 
         return instructions, prompt
 
+    def transpile(self, method: str = "default") -> str:
+        transpiler = getattr(Schema2Prompt, method)
+        return transpiler(self)
+
 
 class StringSchema(Schema):
     def __init__(self, root: ET._Element) -> None:
@@ -561,6 +570,22 @@ class StringSchema(Schema):
         return Prompt(
             constants["high_level_string_reask_prompt"]
             + constants["complete_string_suffix"]
+        )
+
+    def get_reask_prompt(
+        self,
+        reask_value: ReAsk,
+        reask_prompt_template: Optional[Prompt] = None,
+    ) -> Prompt:
+        pruned_tree_string = self.transpile()
+
+        if reask_prompt_template is None:
+            reask_prompt_template = self.get_default_reask_prompt()
+
+        return reask_prompt_template.format(
+            previous_response=reask_value.incorrect_value,
+            error_messages=f"- {reask_value.error_message}",
+            output_schema=pruned_tree_string,
         )
 
     def parse(self, output: str) -> Tuple[Any, Optional[Exception]]:
@@ -621,6 +646,21 @@ class StringSchema(Schema):
         prompt.source += "\n\nString Output:\n\n"
 
         return instructions, prompt
+
+    def transpile(self, method: str = "default") -> str:
+        obj = self[self.string_key]
+        schema = ""
+        if "description" in obj.element.attrib:
+            schema += f"""String description, delimited by +++:
+
++++
+{obj.element.attrib["description"]}
++++"""
+        if not obj.format_attr.empty:
+            schema += "\n\nYour generated response should satisfy the following properties:"
+            for validator in obj.format_attr.validators:
+                schema += f"\n- {validator.to_prompt()}"
+        return schema
 
 
 class Schema2Prompt:

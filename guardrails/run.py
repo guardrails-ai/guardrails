@@ -328,7 +328,7 @@ class Runner:
             reasks=reasks,
         )
         prompt = output_schema.get_reask_prompt(
-            reask_json=prune_obj_for_reasking(validated_output),
+            reask_value=prune_obj_for_reasking(validated_output),
             reask_prompt_template=self.reask_prompt,
         )
         return prompt, output_schema

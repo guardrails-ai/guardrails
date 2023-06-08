@@ -65,23 +65,18 @@ Here are examples of simple (XML, JSON) pairs that show the expected behavior:
 </json_suffix_prompt_examples>
 
 <high_level_string_reask_prompt>
-I was given the following string, which had problems due to incorrect values.
+I was given the following string, delimited by +++:
 
++++
 {previous_response}
++++
 
-Help me correct the incorrect values based on the given error messages.
+It had the following problems:
+{error_messages}
 </high_level_string_reask_prompt>
 
 <complete_string_suffix>
-Given below is XML that describes the information to extract from this document and the tags to extract it into.
-
 {output_schema}
-
-ONLY return a valid string answer (no other text is necessary), where the string is formatted according to the XML format. Be correct and concise.
-
-Here are examples of simple (XML, string) pairs that show the expected behavior:
-- `<![CDATA[<output format='two-words lower-case' />`]]> => `{{{{'foo': 'example one'}}}}`
-- `<![CDATA[<output format='upper-case' />]]>` => `{{{{'bar': 'STRING ONE'}}}}`
 </complete_string_suffix>
 
 </constants>

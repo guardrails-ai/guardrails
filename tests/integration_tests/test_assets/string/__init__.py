@@ -8,6 +8,7 @@ reader = (
     lambda filename: open(os.path.join(DATA_DIR, filename)).read().replace("\r", "")
 )
 
+COMPILED_INSTRUCTIONS = reader("compiled_instructions.txt")
 COMPILED_PROMPT = reader("compiled_prompt.txt")
 LLM_OUTPUT = reader("llm_output.txt")
 RAIL_SPEC_FOR_STRING = reader("string.rail")
