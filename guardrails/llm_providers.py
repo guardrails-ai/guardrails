@@ -203,7 +203,7 @@ class AsyncPromptCallable:
     failed, and how to fix it.
     """
 
-    fn: Callable[..., Awaitable[...]]
+    fn: Callable[[Any], Awaitable[Any]]
 
     @retry(
         wait=wait_exponential_jitter(max=60),
@@ -293,7 +293,7 @@ async def async_manifest_wrapper(
     return manifest_response
 
 
-def get_async_llm_ask(llm_api: Callable[..., Awaitable[...]], *args, **kwargs):
+def get_async_llm_ask(llm_api: Callable[[Any], Awaitable[Any]], *args, **kwargs):
     if llm_api == openai.Completion.acreate:
         fn = partial(async_openai_wrapper, *args, **kwargs)
     elif llm_api == openai.ChatCompletion.acreate:

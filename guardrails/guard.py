@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from string import Formatter
-from typing import Awaitable, Callable, Dict, Optional, Tuple, Union
+from typing import Any, Awaitable, Callable, Dict, Optional, Tuple, Union
 
 from eliot import add_destinations, start_action
 from pydantic import BaseModel
@@ -151,7 +151,7 @@ class Guard:
 
     def __call__(
         self,
-        llm_api: Union[Callable, Callable[..., Awaitable[...]]],
+        llm_api: Union[Callable, Callable[[Any], Awaitable[Any]]],
         prompt_params: Dict = None,
         num_reasks: Optional[int] = None,
         *args,
@@ -216,7 +216,7 @@ class Guard:
 
     async def _call_async(
         self,
-        llm_api: Callable[..., Awaitable[...]],
+        llm_api: Callable[[Any], Awaitable[Any]],
         prompt_params: Dict = None,
         num_reasks: int = 1,
         *args,

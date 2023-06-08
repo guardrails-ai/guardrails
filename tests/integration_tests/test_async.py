@@ -3,17 +3,15 @@ import pytest
 
 import guardrails as gd
 
-from .mock_llm_outputs import (
-    entity_extraction,
-    async_openai_completion_create,
-)
+from .mock_llm_outputs import async_openai_completion_create, entity_extraction
 
 
 @pytest.mark.asyncio
 async def test_entity_extraction_with_reask(mocker):
     """Test that the entity extraction works with re-asking."""
     mocker.patch(
-        "guardrails.llm_providers.async_openai_wrapper", new=async_openai_completion_create
+        "guardrails.llm_providers.async_openai_wrapper",
+        new=async_openai_completion_create,
     )
 
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
