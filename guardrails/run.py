@@ -6,7 +6,7 @@ from eliot import add_destinations, start_action
 
 from guardrails.llm_providers import PromptCallable
 from guardrails.prompt import Instructions, Prompt
-from guardrails.schema import Schema
+from guardrails.schema import Schema, JsonSchema
 from guardrails.utils.logs_utils import GuardHistory, GuardLogs
 from guardrails.utils.reask_utils import (
     ReAsk,
@@ -136,7 +136,7 @@ class Runner:
             # Prepare: run pre-processing, and input validation.
             if not output:
                 instructions, prompt = self.prepare(
-                    index, instructions, prompt, prompt_params, input_schema
+                    index, instructions, prompt, prompt_params, input_schema, output_schema
                 )
             else:
                 instructions = None
@@ -177,6 +177,7 @@ class Runner:
         prompt: Prompt,
         prompt_params: Dict,
         input_schema: Schema,
+        output_schema: Schema,
     ) -> Tuple[Instructions, Prompt]:
         """Prepare by running pre-processing and input validation."""
         with start_action(action_type="prepare", index=index) as action:
@@ -196,6 +197,8 @@ class Runner:
             # TODO(shreya): should there be any difference to parsing params for prompt?
             if instructions is not None and isinstance(instructions, Instructions):
                 instructions = instructions.format(**validated_prompt_params)
+
+            instructions, prompt = output_schema.preprocess_prompt(instructions, prompt)
 
             action.log(
                 message_type="info",

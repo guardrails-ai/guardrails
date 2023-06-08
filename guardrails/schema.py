@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 from lxml import etree as ET
 from lxml.builder import E
 
+from guardrails import Instructions
 from guardrails.datatypes import DataType, String
 from guardrails.prompt import Prompt
 from guardrails.utils.constants import constants
@@ -406,6 +407,16 @@ class Schema:
             output_schema=pruned_tree_string,
         )
 
+    def preprocess_prompt(self, instructions: Instructions, prompt: Prompt):
+        """
+        Preprocess the instructions and prompt before sending it to the model.
+
+        Args:
+            instructions: The instructions to preprocess.
+            prompt: The prompt to preprocess.
+        """
+        raise NotImplementedError
+
 
 class JsonSchema(Schema):
     def get_reask_schema(
@@ -509,6 +520,18 @@ class JsonSchema(Schema):
     def introspect(self, data: Dict) -> list:
         return gather_reasks(data)
 
+    def preprocess_prompt(self, instructions: Optional[Instructions], prompt: Prompt):
+        if not instructions:
+            instructions = Instructions(
+                "You are a helpful assistant, "
+                "able to express yourself purely through JSON, "
+                "strictly and precisely adhering to the provided XML schemas."
+            )
+
+        prompt.source += "\n\nJson Output:\n\n"
+
+        return instructions, prompt
+
 
 class StringSchema(Schema):
     def __init__(self, root: ET._Element) -> None:
@@ -586,6 +609,18 @@ class StringSchema(Schema):
         if isinstance(data, ReAsk):
             return [data]
         return []
+
+    def preprocess_prompt(self, instructions: Optional[Instructions], prompt: Prompt):
+        if not instructions:
+            instructions = Instructions(
+                "You are a helpful assistant, "
+                "able to express yourself purely through JSON, "
+                "strictly and precisely adhering to the provided XML schemas."
+            )
+
+        prompt.source += "\n\nString Output:\n\n"
+
+        return instructions, prompt
 
 
 class Schema2Prompt:
