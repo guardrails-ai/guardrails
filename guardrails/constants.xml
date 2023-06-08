@@ -20,16 +20,13 @@ ONLY return a valid JSON object (no other text is necessary). The JSON MUST conf
 ONLY return a valid JSON object (no other text is necessary). The JSON MUST conform to the XML format, including any types and format requests e.g. requests for lists, objects and specific types. Be correct and concise.
 </json_suffix_prompt_v2_wo_none>
 
-
-
-<high_level_reask_prompt>
+<high_level_json_reask_prompt>
 I was given the following JSON response, which had problems due to incorrect values.
 
 {previous_response}
 
 Help me correct the incorrect values based on the given error messages.
-</high_level_reask_prompt>
-
+</high_level_json_reask_prompt>
 
 <complete_json_suffix>
 Given below is XML that describes the information to extract from this document and the tags to extract it into.
@@ -67,5 +64,19 @@ Here are examples of simple (XML, JSON) pairs that show the expected behavior:
 - `<![CDATA[<object name='baz'><string name="foo" format="capitalize two-words" /><integer name="index" format="1-indexed" /></object>]]>` => `{{{{'baz': {{{{'foo': 'Some String', 'index': 1}}}}}}}}`
 </json_suffix_prompt_examples>
 
+<high_level_string_reask_prompt>
+I was given the following string, delimited by +++:
+
++++
+{previous_response}
++++
+
+It had the following problems:
+{error_messages}
+</high_level_string_reask_prompt>
+
+<complete_string_suffix>
+{output_schema}
+</complete_string_suffix>
 
 </constants>

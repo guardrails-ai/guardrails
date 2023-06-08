@@ -68,7 +68,7 @@ def nonchat_prompt(prompt: str, instructions: Optional[str] = None, **kwargs) ->
     if instructions:
         prompt = "\n\n".join([instructions, prompt])
 
-    return prompt + "\n\nJson Output:\n\n"
+    return prompt
 
 
 def chat_prompt(
@@ -76,11 +76,7 @@ def chat_prompt(
 ) -> List[Dict[str, str]]:
     """Prepare final prompt for chat engine."""
     if not instructions:
-        instructions = (
-            "You are a helpful assistant, "
-            "able to express yourself purely through JSON, "
-            "strictly and precisely adhering to the provided XML schemas."
-        )
+        instructions = "You are a helpful assistant."
     return [
         {"role": "system", "content": instructions},
         {"role": "user", "content": prompt},

@@ -8,7 +8,7 @@ from rich.pretty import pretty_repr
 from rich.tree import Tree
 
 from guardrails.prompt import Prompt
-from guardrails.utils.reask_utils import ReAsk, gather_reasks, prune_json_for_reasking
+from guardrails.utils.reask_utils import ReAsk, gather_reasks, prune_obj_for_reasking
 
 
 @dataclass
@@ -16,7 +16,7 @@ class GuardLogs:
     prompt: Prompt
     instructions: Optional[str]
     output: str
-    output_as_dict: dict
+    parsed_output: dict
     validated_output: dict
     reasks: List[ReAsk]
 
@@ -92,7 +92,7 @@ class GuardHistory:
     @property
     def output_as_dict(self) -> dict:
         """Returns the latest output as a dict."""
-        return self.history[-1].output_as_dict
+        return self.history[-1].parsed_output
 
     @property
     def failed_validations(self) -> List[ReAsk]:
@@ -141,8 +141,11 @@ def merge_reask_output(prev_logs: GuardLogs, current_logs: GuardLogs) -> Dict:
     from guardrails.validators import PydanticReAsk
 
     previous_response = prev_logs.validated_output
-    pruned_reask_json = prune_json_for_reasking(previous_response)
     reask_response = current_logs.validated_output
+    if isinstance(previous_response, ReAsk):
+        return reask_response
+
+    pruned_reask_json = prune_obj_for_reasking(previous_response)
 
     # Reask output and reask json have the same structure, except that values
     # of the reask json are ReAsk objects. We want to replace the ReAsk objects

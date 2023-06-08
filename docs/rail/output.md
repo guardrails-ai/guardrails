@@ -8,8 +8,9 @@ The `<output>...</output>` element of a `RAIL` spec is used to give precise spec
 4. the corrective action to take in case the quality criteria is not met (e.g. reask the question to the LLM, filter offending values, progrmatically fix, etc.)
 
 Example:
+<!-- TODO add formatting so that there's nesting between the spec and outputs for each output type -->
 
-=== "RAIL Spec"
+=== "JSON RAIL Spec"
 
     ```xml
     <rail version="0.1">
@@ -37,87 +38,23 @@ Example:
     }
     ```
 
+=== "String RAIL Spec"
 
-## 🏷️ `RAIL` Elements
-
-At the heart of the `RAIL` specification is the use of elements. Each element's tag represents a type of data. For example, in the element `<string ... />`, the tag represents a string, the `<integer ... />` elements represents an integer, the `<object ...></object>` element represents an object, etc.
-
-
-!!! note
-    The tag of RAIL element is the same as the "type" of the data it represents.
-
-    E.g. `<string .../>` element will generate a string, `<integer .../>` element will generate an integer, etc.
-
-### Supported types
-
-Guardrails supports many data types, including:, `string`, `integer`, `float`, `boolean`, `list`, `object`, `url`, `email` and many more.
-
-Check out the [RAIL Data Types](../data_types.md) page for a list of supported data types.
-
-
-#### Scalar vs Non-scalar types
-
-Guardrails supports two types of data types: scalar and non-scalar.
-
-
-| Scalar                                                                  | Non Scalar                                                                           |
-|-------------------------------------------------------------------------|--------------------------------------------------------------------------------------|
-| Scalar types are void elements, and can't have any child elements.      | Non-scalar types can be non-void, and can have closing tags and child elements.                       |
-| Syntax:   ``` <string ... /> ```                                        | Syntax: <list ...>     <string /> </list>|
-| Examples: `string`, `integer`, `float`, `boolean`, `url`, `email`, etc. | Examples: `list` and `object` are the only non-scalar types supported by Guardrails. |
-
-
-### Supported attributes
-
-Each element can have attributes that specify additional information about the data, such as:
-
-1. `name` attribute that specifies the name of the field. This will be the key in the output JSON. E.g.
-
-    === "RAIL Spec"
-        ```xml
-        <rail version="0.1">
-            <output>
-                <string name="some_key" />
-            </output>
-        </rail>
-        ```
-    === "Output JSON"
-        ```json
-        {
-            "some_key": "..."
-        }
-        ```
-
-2. `description` attribute that specifies the description of the field. This is similar to a prompt that will be provided to the LLM. It can contain more context to help the LLM generate the correct output.
-3. (Coming soon!) `required` attribute that specifies whether the field is required or not. If the field is required, the LLM will be asked to generate the field until it is generated correctly. If the field is not required, the LLM will not be asked to generate the field if it is not generated correctly.
-4. `format` attribute that specifies the quality criteria that the field should respect. The `format` attribute can contain multiple quality criteria separated by a colon (`;`). For example, `two-words; upper-case`.
-5. `on-fail-{quality-criteria}` attribute that specifies the corrective action to take in case the quality criteria is not met. For example, `on-fail-two-words="reask"` specifies that if the field does not have two words, the LLM should be asked to re-generate the field.
-
-
-E.g.,
-
-=== "RAIL Spec"
     ```xml
     <rail version="0.1">
-        <output>
-            <string
-                name="some_key"
-                description="Detailed description of what the value of the key should be"
-                required="true"
-                format="two-words; upper-case"
-                on-fail-two-words="reask"
-                on-fail-upper-case="noop" 
-            />
-        </output>
+        <output
+            type="string"
+            description="The generated text"
+            format="two-words"
+            on-fail-two-words="reask"
+        />
     </rail>
     ```
 
-=== "Output JSON"
-
-    ```json
-    {
-        "some_key": "SOME STRING"
-    }
+=== "Output String"
+    
+    ```
+    string output
     ```
 
 ## ⚡ Specifying output structure
@@ -222,6 +159,109 @@ In the above example, `"SOME STRING"` is the value for the `some_str_key` key, a
 
     Providing a child element is useful when you want to have more control over the values that the LLM should generate.
 
+### String output
+
+Generate simple strings by specifying `type="string"` in the `<output ... />` element.
+All the formatters supported by the `string` element can be used to specify the quality criteria for the generated string.
+
+=== "RAIL Spec"
+
+    ```xml
+    <rail version="0.1">
+        <output
+            type="string" 
+            format="two-words" 
+            on-fail-two-words="reask"
+        />
+    </rail>
+    ```
+
+=== "Output"
+    ```
+    string output
+    ```
+
+## 🏷️ `RAIL` Elements
+
+At the heart of the `RAIL` specification is the use of elements. Each element's tag represents a type of data. For example, in the element `<string ... />`, the tag represents a string, the `<integer ... />` elements represents an integer, the `<object ...></object>` element represents an object, etc.
+
+
+!!! note
+    The tag of RAIL element is the same as the "type" of the data it represents.
+
+    E.g. `<string .../>` element will generate a string, `<integer .../>` element will generate an integer, etc.
+
+### Supported types
+
+Guardrails supports many data types, including:, `string`, `integer`, `float`, `boolean`, `list`, `object`, `url`, `email` and many more.
+
+Check out the [RAIL Data Types](../data_types.md) page for a list of supported data types.
+
+
+#### Scalar vs Non-scalar types
+
+Guardrails supports two types of data types: scalar and non-scalar.
+
+
+| Scalar                                                                  | Non Scalar                                                                           |
+|-------------------------------------------------------------------------|--------------------------------------------------------------------------------------|
+| Scalar types are void elements, and can't have any child elements.      | Non-scalar types can be non-void, and can have closing tags and child elements.                       |
+| Syntax:   ``` <string ... /> ```                                        | Syntax: <list ...>     <string /> </list>|
+| Examples: `string`, `integer`, `float`, `boolean`, `url`, `email`, etc. | Examples: `list` and `object` are the only non-scalar types supported by Guardrails. |
+
+
+### Supported attributes
+
+Each element can have attributes that specify additional information about the data, such as:
+
+1. `name` attribute that specifies the name of the field. This will be the key in the output JSON. E.g.
+
+    === "RAIL Spec"
+        ```xml
+        <rail version="0.1">
+            <output>
+                <string name="some_key" />
+            </output>
+        </rail>
+        ```
+    === "Output JSON"
+        ```json
+        {
+            "some_key": "..."
+        }
+        ```
+
+2. `description` attribute that specifies the description of the field. This is similar to a prompt that will be provided to the LLM. It can contain more context to help the LLM generate the correct output.
+3. (Coming soon!) `required` attribute that specifies whether the field is required or not. If the field is required, the LLM will be asked to generate the field until it is generated correctly. If the field is not required, the LLM will not be asked to generate the field if it is not generated correctly.
+4. `format` attribute that specifies the quality criteria that the field should respect. The `format` attribute can contain multiple quality criteria separated by a colon (`;`). For example, `two-words; upper-case`.
+5. `on-fail-{quality-criteria}` attribute that specifies the corrective action to take in case the quality criteria is not met. For example, `on-fail-two-words="reask"` specifies that if the field does not have two words, the LLM should be asked to re-generate the field.
+
+
+E.g.,
+
+=== "RAIL Spec"
+    ```xml
+    <rail version="0.1">
+        <output>
+            <string
+                name="some_key"
+                description="Detailed description of what the value of the key should be"
+                required="true"
+                format="two-words; upper-case"
+                on-fail-two-words="reask"
+                on-fail-upper-case="noop" 
+            />
+        </output>
+    </rail>
+    ```
+
+=== "Output JSON"
+
+    ```json
+    {
+        "some_key": "SOME STRING"
+    }
+    ```
 
 ## 🍀 Specifying quality criteria
 
