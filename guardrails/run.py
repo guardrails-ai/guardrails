@@ -6,7 +6,7 @@ from eliot import add_destinations, start_action
 
 from guardrails.llm_providers import PromptCallable
 from guardrails.prompt import Instructions, Prompt
-from guardrails.schema import JsonSchema, Schema
+from guardrails.schema import Schema
 from guardrails.utils.logs_utils import GuardHistory, GuardLogs
 from guardrails.utils.reask_utils import (
     ReAsk,
@@ -115,7 +115,7 @@ class Runner:
     def step(
         self,
         index: int,
-        api: Callable,
+        api: PromptCallable,
         instructions: Optional[Instructions],
         prompt: Prompt,
         prompt_params: Dict,
@@ -140,6 +140,7 @@ class Runner:
                     instructions,
                     prompt,
                     prompt_params,
+                    api,
                     input_schema,
                     output_schema,
                 )
@@ -181,6 +182,7 @@ class Runner:
         instructions: Optional[Instructions],
         prompt: Prompt,
         prompt_params: Dict,
+        api: PromptCallable,
         input_schema: Schema,
         output_schema: Schema,
     ) -> Tuple[Instructions, Prompt]:
@@ -203,7 +205,9 @@ class Runner:
             if instructions is not None and isinstance(instructions, Instructions):
                 instructions = instructions.format(**validated_prompt_params)
 
-            instructions, prompt = output_schema.preprocess_prompt(instructions, prompt)
+            instructions, prompt = output_schema.preprocess_prompt(
+                api, instructions, prompt
+            )
 
             action.log(
                 message_type="info",

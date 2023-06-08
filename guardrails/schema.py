@@ -12,6 +12,7 @@ from lxml import etree as ET
 from lxml.builder import E
 
 from guardrails.datatypes import DataType, String
+from guardrails.llm_providers import PromptCallable, openai_chat_wrapper, openai_wrapper
 from guardrails.prompt import Instructions, Prompt
 from guardrails.utils.constants import constants
 from guardrails.utils.reask_utils import (
@@ -390,11 +391,17 @@ class Schema:
         """
         raise NotImplementedError
 
-    def preprocess_prompt(self, instructions: Instructions, prompt: Prompt):
+    def preprocess_prompt(
+        self,
+        prompt_callable: PromptCallable,
+        instructions: Optional[Instructions],
+        prompt: Prompt,
+    ):
         """Preprocess the instructions and prompt before sending it to the
         model.
 
         Args:
+            prompt_callable: The callable to be used to prompt the model.
             instructions: The instructions to preprocess.
             prompt: The prompt to preprocess.
         """
@@ -525,15 +532,24 @@ class JsonSchema(Schema):
     def introspect(self, data: Dict) -> list:
         return gather_reasks(data)
 
-    def preprocess_prompt(self, instructions: Optional[Instructions], prompt: Prompt):
-        if not instructions:
+    def preprocess_prompt(
+        self,
+        prompt_callable: PromptCallable,
+        instructions: Optional[Instructions],
+        prompt: Prompt,
+    ):
+        if not hasattr(prompt_callable.fn, "func"):
+            # Only apply preprocessing to guardrails wrappers.
+            return instructions, prompt
+
+        if prompt_callable.fn.func is openai_wrapper:
+            prompt.source += "\n\nJson Output:\n\n"
+        if prompt_callable.fn.func is openai_chat_wrapper and not instructions:
             instructions = Instructions(
                 "You are a helpful assistant, "
                 "able to express yourself purely through JSON, "
                 "strictly and precisely adhering to the provided XML schemas."
             )
-
-        prompt.source += "\n\nJson Output:\n\n"
 
         return instructions, prompt
 
@@ -635,15 +651,22 @@ class StringSchema(Schema):
             return [data]
         return []
 
-    def preprocess_prompt(self, instructions: Optional[Instructions], prompt: Prompt):
-        if not instructions:
-            instructions = Instructions(
-                "You are a helpful assistant, "
-                "able to express yourself purely through JSON, "
-                "strictly and precisely adhering to the provided XML schemas."
-            )
+    def preprocess_prompt(
+        self,
+        prompt_callable: PromptCallable,
+        instructions: Optional[Instructions],
+        prompt: Prompt,
+    ):
+        if not hasattr(prompt_callable.fn, "func"):
+            # Only apply preprocessing to guardrails wrappers.
+            return instructions, prompt
 
-        prompt.source += "\n\nString Output:\n\n"
+        if prompt_callable.fn.func is openai_wrapper:
+            prompt.source += "\n\nString Output:\n\n"
+        if prompt_callable.fn.func is openai_chat_wrapper and not instructions:
+            instructions = Instructions(
+                "You are a helpful assistant, expressing yourself through a string."
+            )
 
         return instructions, prompt
 

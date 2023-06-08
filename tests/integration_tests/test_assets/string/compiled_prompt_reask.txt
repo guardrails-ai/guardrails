@@ -16,7 +16,3 @@ Name for the pizza
 
 Your generated response should satisfy the following properties:
 - two-words
-
-
-String Output:
-
