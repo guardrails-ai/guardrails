@@ -8,6 +8,7 @@ The `<output>...</output>` element of a `RAIL` spec is used to give precise spec
 4. the corrective action to take in case the quality criteria is not met (e.g. reask the question to the LLM, filter offending values, progrmatically fix, etc.)
 
 Example:
+<!-- TODO add formatting so that there's nesting between the spec and outputs for each output type -->
 
 === "JSON RAIL Spec"
 
