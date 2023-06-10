@@ -5,7 +5,7 @@ from typing import List, Optional
 from lxml import etree as ET
 
 from guardrails.prompt import Instructions, Prompt
-from guardrails.schema import InputSchema, OutputSchema, Schema
+from guardrails.schema import JsonSchema, Schema, StringSchema
 
 # TODO: Logging
 XMLPARSER = ET.XMLParser(encoding="utf-8")
@@ -90,8 +90,8 @@ class Rail:
         4. `<prompt>`, which contains the prompt to be passed to the LLM
     """
 
-    input_schema: Optional[InputSchema] = (None,)
-    output_schema: Optional[OutputSchema] = (None,)
+    input_schema: Optional[Schema] = (None,)
+    output_schema: Optional[Schema] = (None,)
     instructions: Optional[Instructions] = (None,)
     prompt: Optional[Prompt] = (None,)
     script: Optional[Script] = (None,)
@@ -126,7 +126,7 @@ class Rail:
         raw_input_schema = xml.find("input")
         if raw_input_schema is None:
             # No input schema, so do no input checking.
-            input_schema = InputSchema()
+            input_schema = Schema()
         else:
             input_schema = cls.load_input_schema(raw_input_schema)
 
@@ -168,21 +168,21 @@ class Rail:
         return Schema(root)
 
     @staticmethod
-    def load_input_schema(root: ET._Element) -> InputSchema:
+    def load_input_schema(root: ET._Element) -> Schema:
         """Given the RAIL <input> element, create a Schema object."""
         # Recast the schema as an InputSchema.
-        return InputSchema(root)
+        return Schema(root)
 
     @staticmethod
-    def load_output_schema(root: ET._Element) -> OutputSchema:
+    def load_output_schema(root: ET._Element) -> Schema:
         """Given the RAIL <output> element, create a Schema object."""
-        # Recast the schema as an OutputSchema.
-        return OutputSchema(root)
+        # If root contains a `type="string"` attribute, then it's a StringSchema
+        if "type" in root.attrib and root.attrib["type"] == "string":
+            return StringSchema(root)
+        return JsonSchema(root)
 
     @staticmethod
-    def load_instructions(
-        root: ET._Element, output_schema: OutputSchema
-    ) -> Instructions:
+    def load_instructions(root: ET._Element, output_schema: Schema) -> Instructions:
         """Given the RAIL <instructions> element, create Instructions."""
         return Instructions(
             source=root.text,
@@ -190,7 +190,7 @@ class Rail:
         )
 
     @staticmethod
-    def load_prompt(root: ET._Element, output_schema: OutputSchema) -> Prompt:
+    def load_prompt(root: ET._Element, output_schema: Schema) -> Prompt:
         """Given the RAIL <prompt> element, create a Prompt object."""
         return Prompt(
             source=root.text,

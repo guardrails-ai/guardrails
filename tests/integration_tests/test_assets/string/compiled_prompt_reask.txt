@@ -1,0 +1,18 @@
+
+I was given the following string, delimited by +++:
+
++++
+Tomato Cheese Pizza
++++
+
+It had the following problems:
+- must be exactly two words
+
+String description, delimited by +++:
+
++++
+Name for the pizza
++++
+
+Your generated response should satisfy the following properties:
+- two-words

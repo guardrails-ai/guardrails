@@ -45,6 +45,7 @@ nav:
     - 'Integrations':
       - 'LangChain': integrations/langchain.ipynb
       - 'Pydantic': integrations/pydantic_validation.ipynb
+    -  'Join the Guardrails AI team': https://docs.google.com/spreadsheets/d/1m4yELzbGQCgj84_uSe1Ws3IdlroYdwTVUkLmZm9ZVSE/edit?usp=sharing
 
 
 theme:
