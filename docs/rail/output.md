@@ -40,6 +40,7 @@ Example:
 
 === "String RAIL Spec"
 
+
     ```xml
     <rail version="0.1">
         <output
@@ -193,7 +194,7 @@ At the heart of the `RAIL` specification is the use of elements. Each element's 
 
 ### Supported types
 
-Guardrails supports many data types, including:, `string`, `integer`, `float`, `boolean`, `list`, `object`, `url`, `email` and many more.
+Guardrails supports many data types, including:, `string`, `integer`, `float`, `bool`, `list`, `object`, `url`, `email` and many more.
 
 Check out the [RAIL Data Types](../data_types.md) page for a list of supported data types.
 
@@ -207,7 +208,7 @@ Guardrails supports two types of data types: scalar and non-scalar.
 |-------------------------------------------------------------------------|--------------------------------------------------------------------------------------|
 | Scalar types are void elements, and can't have any child elements.      | Non-scalar types can be non-void, and can have closing tags and child elements.                       |
 | Syntax:   ``` <string ... /> ```                                        | Syntax: <list ...>     <string /> </list>|
-| Examples: `string`, `integer`, `float`, `boolean`, `url`, `email`, etc. | Examples: `list` and `object` are the only non-scalar types supported by Guardrails. |
+| Examples: `string`, `integer`, `float`, `bool`, `url`, `email`, etc. | Examples: `list` and `object` are the only non-scalar types supported by Guardrails. |
 
 
 ### Supported attributes
