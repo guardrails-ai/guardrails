@@ -1,6 +1,6 @@
 import logging
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from eliot import add_destinations, start_action
 from pydantic import BaseModel
@@ -184,7 +184,7 @@ class Runner:
         instructions: Optional[Instructions],
         prompt: Prompt,
         prompt_params: Dict,
-        api: PromptCallable,
+        api: Union[PromptCallable, AsyncPromptCallable],
         input_schema: Schema,
         output_schema: Schema,
     ) -> Tuple[Instructions, Prompt]:
@@ -436,7 +436,13 @@ class AsyncRunner(Runner):
             # Prepare: run pre-processing, and input validation.
             if not output:
                 instructions, prompt = self.prepare(
-                    index, instructions, prompt, prompt_params, input_schema
+                    index,
+                    instructions,
+                    prompt,
+                    prompt_params,
+                    api,
+                    input_schema,
+                    output_schema,
                 )
             else:
                 instructions = None
