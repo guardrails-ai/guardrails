@@ -1,0 +1,44 @@
+<rail version="0.1">
+
+<output>
+    <object name="patient_info">
+        <string name="gender" description="Patient's gender" />
+        <integer name="age" format="valid-range: 0 100"/>  
+        <list name="symptoms" description="Symptoms that the patient is currently experiencing. Each symptom should be classified into  separate item in the list.">
+            <object>
+                <string name="symptom" description="Symptom that a patient is experiencing" />
+                <string name="affected area" description="What part of the body the symptom is affecting"
+                    format="valid-choices: {['head', 'neck', 'chest']}"
+                    on-fail-valid-choices="reask"
+                />  
+            </object>
+        </list>
+        <list name="current_meds" description="Medications the patient is currently taking and their response">
+            <object>
+                <string name="medication" description="Name of the medication the patient is taking" />
+                <string name="response" description="How the patient is responding to the medication" />
+            </object>
+        </list>
+    </object>
+</output>
+
+<instructions>
+You are a helpful assistant only capable of communicating with valid JSON, and no other text.
+
+@json_suffix_prompt_examples
+</instructions>
+
+<prompt>
+Given the following doctor's notes about a patient,
+please extract a dictionary that contains the patient's information.  
+If the answer doesn't exist in the document, enter `null`.
+
+{{doctors_notes}}  
+
+@xml_prefix_prompt
+
+{output_schema} 
+</prompt>
+
+
+</rail>

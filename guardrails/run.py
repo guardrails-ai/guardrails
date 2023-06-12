@@ -109,7 +109,7 @@ class Runner:
                 if not self.do_loop(index, reasks):
                     break
                 # Get new prompt and output schema.
-                prompt, output_schema = self.prepare_to_loop(
+                prompt, instructions, output_schema = self.prepare_to_loop(
                     reasks,
                     validated_output,
                     output_schema,
@@ -335,14 +335,18 @@ class Runner:
         reasks: list,
         validated_output: Optional[Dict],
         output_schema: Schema,
-    ) -> Tuple[Prompt, Schema]:
+    ) -> Tuple[Prompt, Instructions, Schema]:
         """Prepare to loop again."""
         output_schema, prompt = output_schema.get_reask_schema_and_prompt(
             reasks=reasks,
             reask_value=prune_obj_for_reasking(validated_output),
             reask_prompt_template=self.reask_prompt,
         )
-        return prompt, output_schema
+        instructions = output_schema.get_reask_instructions(
+            reask_value=prune_obj_for_reasking(validated_output),
+            reask_instructions_template=self.reask_instructions,
+        )
+        return prompt, instructions, output_schema
 
 
 class AsyncRunner(Runner):
