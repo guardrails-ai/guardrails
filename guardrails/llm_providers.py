@@ -196,6 +196,7 @@ def get_llm_ask(llm_api: Callable, *args, **kwargs) -> PromptCallable:
 ###
 
 
+@dataclass
 class AsyncPromptCallable:
     """A wrapper around a callable that takes in a prompt.
 
@@ -304,4 +305,4 @@ def get_async_llm_ask(llm_api: Callable[[Any], Awaitable[Any]], *args, **kwargs)
         # Let the user pass in an arbitrary callable.
         fn = partial(llm_api, *args, **kwargs)
 
-    return fn
+    return AsyncPromptCallable(fn=fn)
