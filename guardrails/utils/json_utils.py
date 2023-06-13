@@ -1,6 +1,7 @@
 from dataclasses import dataclass
-import lxml.etree as ET
 from typing import Any, Dict
+
+import lxml.etree as ET
 
 
 @dataclass
@@ -26,14 +27,9 @@ def generate_type_skeleton_from_schema(schema: ET._Element) -> Dict[str, Any]:
 
     def _recurse_schema(schema):
         if schema.tag == "object":
-            return {
-                child.attrib["name"]: _recurse_schema(child)
-                for child in schema
-            }
+            return {child.attrib["name"]: _recurse_schema(child) for child in schema}
         elif schema.tag == "list":
-            return [
-                _recurse_schema(schema[0])
-            ]
+            return [_recurse_schema(schema[0])]
         else:
             return Placeholder(schema.tag)
 
@@ -68,14 +64,14 @@ def verify_schema_against_json(xml_schema: ET._Element, generated_json: Dict[str
                 raise ValueError(f"Unknown type {type(schema[key])}")
 
         return True
-    
+
     def _verify_list(schema, json):
         assert len(schema) == 1  # Schema for a list should only have one child
         if not isinstance(json, list):
             return False
 
         child_schema = schema[0]
-        
+
         if isinstance(child_schema, Placeholder):
             expected_type = child_schema.type_object
 
@@ -96,7 +92,7 @@ def verify_schema_against_json(xml_schema: ET._Element, generated_json: Dict[str
                     return False
         else:
             raise ValueError(f"Unknown type {type(child_schema)}")
-        
+
         return True
 
     return _verify_dict(type_skeleton, generated_json)

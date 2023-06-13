@@ -28,23 +28,17 @@ def test_skeleton():
 """
     xml_schema = ET.fromstring(xml)
     generated_json = {
-        "my_list": [
-            {
-                "my_string": "string"
-            }
-        ],
+        "my_list": [{"my_string": "string"}],
         "my_integer": 1,
         "my_string": "string",
-        "my_dict": {
-            "my_string": "string"
-        },
+        "my_dict": {"my_string": "string"},
         "my_dict2": {
             "my_list": [
                 1.0,
                 2.0,
             ]
         },
-        "my_list2": []
+        "my_list2": [],
     }
     assert verify_schema_against_json(xml_schema, generated_json)
     del generated_json["my_dict2"]
