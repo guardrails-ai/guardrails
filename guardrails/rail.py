@@ -171,6 +171,7 @@ class Rail:
         )
 
     @staticmethod
+<<<<<<< Updated upstream
     def load_schema(root: ET._Element) -> Schema:
         """Given the RAIL <input> or <output> element, create a Schema
         object."""
@@ -181,14 +182,25 @@ class Rail:
         """Given the RAIL <input> element, create a Schema object."""
         # Recast the schema as an InputSchema.
         return Schema(root)
+=======
+    def load_input_schema(root: ET._Element) -> InputSchema:
+        """Given the RAIL <input> element, create a Schema object."""
+        # Recast the schema as an InputSchema.
+        return InputSchema.from_xml(root)
+>>>>>>> Stashed changes
 
     @staticmethod
     def load_output_schema(root: ET._Element) -> Schema:
         """Given the RAIL <output> element, create a Schema object."""
+<<<<<<< Updated upstream
         # If root contains a `type="string"` attribute, then it's a StringSchema
         if "type" in root.attrib and root.attrib["type"] == "string":
             return StringSchema(root)
         return JsonSchema(root)
+=======
+        # Recast the schema as an OutputSchema.
+        return OutputSchema.from_xml(root)
+>>>>>>> Stashed changes
 
     @staticmethod
     def load_instructions(root: ET._Element, output_schema: Schema) -> Instructions:

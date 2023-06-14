@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 from lxml import etree as ET
 from lxml.builder import E
 
+<<<<<<< Updated upstream
 from guardrails.datatypes import DataType, String
 from guardrails.llm_providers import PromptCallable, openai_chat_wrapper, openai_wrapper
 from guardrails.prompt import Instructions, Prompt
@@ -21,6 +22,10 @@ from guardrails.utils.reask_utils import (
     get_pruned_tree,
     get_reasks_by_element,
 )
+=======
+from guardrails.datatypes import DataType
+from guardrails.element import Element
+>>>>>>> Stashed changes
 from guardrails.validators import Validator, check_refrain_in_dict, filter_in_dict
 
 if TYPE_CHECKING:
@@ -251,14 +256,295 @@ class FormatAttr:
         return prompt
 
 
+# class Schema:
+#     """Schema class that holds a _schema attribute."""
+
+#     def __init__(
+#         self,
+#         root: Optional[ET._Element] = None,
+#         schema: Optional[Dict[str, DataType]] = None,
+#     ) -> None:
+#         from guardrails.datatypes import registry as types_registry
+
+#         if schema is None:
+#             schema = {}
+
+#         self._schema = SimpleNamespace(**schema)
+#         self.root = root
+
+#         if root is not None:
+#             strict = False
+#             if "strict" in root.attrib and root.attrib["strict"] == "true":
+#                 strict = True
+
+#             for child in root:
+#                 if isinstance(child, ET._Comment):
+#                     continue
+#                 child_name = child.attrib["name"]
+#                 child_data = types_registry[child.tag].from_xml(child, strict=strict)
+#                 self[child_name] = child_data
+
+#     def __repr__(self) -> str:
+#         return f"{self.__class__.__name__}({pprint.pformat(vars(self._schema))})"
+
+#     def __getitem__(self, key: str) -> DataType:
+#         return getattr(self._schema, key)
+
+#     def __setitem__(self, key: str, value: DataType) -> None:
+#         setattr(self._schema, key, value)
+
+#     def __getattr__(self, key: str) -> DataType:
+#         return getattr(self._schema, key)
+
+#     def __contains__(self, key: str) -> bool:
+#         return hasattr(self._schema, key)
+
+#     def __getstate__(self) -> Dict[str, Any]:
+#         return {"_schema": self._schema, "root": self.root}
+
+#     def __setstate__(self, state: Dict[str, Any]) -> None:
+#         self._schema = state["_schema"]
+#         self.root = state["root"]
+
+#     def items(self) -> Dict[str, DataType]:
+#         return vars(self._schema).items()
+
+#     def to_dict(self) -> Dict[str, Any]:
+#         """Convert the schema to a dictionary."""
+#         return vars(self._schema)
+
+#     @property
+#     def parsed_rail(self) -> Optional[ET._Element]:
+#         return self.root
+
+#     def validate(
+#         self,
+#         data: Optional[Dict[str, Any]],
+#     ) -> Optional[Dict[str, Any]]:
+#         """Validate a dictionary of data against the schema.
+
+#         Args:
+#             data: The data to validate.
+
+#         Returns:
+#             The validated data.
+#         """
+#         if data is None:
+#             return None
+
+#         if not isinstance(data, dict):
+#             raise TypeError(f"Argument `data` must be a dictionary, not {type(data)}.")
+
+#         validated_response = deepcopy(data)
+
+#         for field, value in validated_response.items():
+#             if field not in self:
+#                 # This is an extra field that is not in the schema.
+#                 # We remove it from the validated response.
+#                 logger.debug(f"Field {field} not in schema.")
+#                 continue
+
+#             validated_response = self[field].validate(
+#                 key=field,
+#                 value=value,
+#                 schema=validated_response,
+#             )
+
+#         if check_refrain_in_dict(validated_response):
+#             # If the data contains a `Refain` value, we return an empty
+#             # dictionary.
+#             logger.debug("Refrain detected.")
+#             validated_response = {}
+
+#         # Remove all keys that have `Filter` values.
+#         validated_response = filter_in_dict(validated_response)
+
+#         return validated_response
+
+#     def transpile(self, method: str = "default") -> str:
+#         """Convert the XML schema to a string that is used for prompting a
+#         large language model.
+
+#         Returns:
+#             The prompt.
+#         """
+#         transpiler = getattr(Schema2Prompt, method)
+#         return transpiler(self)
+
+
+# class InputSchema(Schema):
+#     """Input schema class that holds a _schema attribute."""
+
+
+# class OutputSchema(Schema):
+#     """Output schema class that holds a _schema attribute."""
+
+
+# class Schema2Prompt:
+#     """Class that contains transpilers to go from a schema to its
+#     representation in a prompt.
+
+#     This is important for communicating the schema to a large language
+#     model, and this class will provide multiple alternatives to do so.
+#     """
+
+#     @staticmethod
+#     def remove_on_fail_attributes(element: ET._Element) -> None:
+#         """Recursively remove all attributes that start with 'on-fail-'."""
+#         for attr in list(element.attrib):
+#             if attr.startswith("on-fail-"):
+#                 del element.attrib[attr]
+
+#         for child in element:
+#             Schema2Prompt.remove_on_fail_attributes(child)
+
+#     @staticmethod
+#     def remove_comments(element: ET._Element) -> None:
+#         """Recursively remove all comments."""
+#         for child in element:
+#             if isinstance(child, ET._Comment):
+#                 element.remove(child)
+#             else:
+#                 Schema2Prompt.remove_comments(child)
+
+#     @staticmethod
+#     def validator_to_prompt(root: ET.Element, schema_dict: Dict[str, DataType]) -> None:
+#         """Recursively remove all validator arguments in the `format`
+#         attribute."""
+
+#         def _inner(dt: DataType, el: ET._Element):
+#             if "format" in el.attrib:
+#                 format = dt.format_attr.to_prompt()
+#                 if len(format):
+#                     el.attrib["format"] = format
+#                 else:
+#                     del el.attrib["format"]
+
+#             for _, dt_child, el_child in dt.iter(el):
+#                 _inner(dt_child, el_child)
+
+#         for el_child in root:
+#             dt_child = schema_dict[el_child.attrib["name"]]
+#             _inner(dt_child, el_child)
+
+#     @staticmethod
+#     def pydantic_to_object(root: ET.Element, schema_dict: Dict[str, DataType]) -> None:
+#         """Recursively replace all pydantic elements with object elements."""
+#         from guardrails.datatypes import Pydantic
+
+#         def _inner(dt: DataType, el: ET._Element):
+#             if isinstance(dt, Pydantic):
+#                 new_el = dt.to_object_element()
+#                 el.getparent().replace(el, new_el)
+
+#             for _, dt_child, el_child in dt.iter(el):
+#                 _inner(dt_child, el_child)
+
+#         for el_child in root:
+#             dt_child = schema_dict[el_child.attrib["name"]]
+#             _inner(dt_child, el_child)
+
+#     @staticmethod
+#     def deconstruct_choice(root: ET._Element) -> ET._Element:
+#         """Deconstruct a choice element into a string and cases."""
+
+#         def _inner(el: str) -> ET._Element:
+#             el = ET.fromstring(el)
+#             el_copy = ET.Element(el.tag, **el.attrib)
+
+#             for child in el:
+#                 if child.tag == "choice":
+#                     # Create a high level string element.
+#                     choice_str = E.string(**child.attrib)
+#                     valid_choices = [x.attrib["name"] for x in child]
+#                     choice_str.attrib["choices"] = ",".join(valid_choices)
+#                     el_copy.append(choice_str)
+
+#                     # Create a case for each choice. The child of the case element
+#                     # is bubbled up to the parent of the case element. E.g.,
+#                     # <choice name='bar'><case><string name='foo'/></case></choice> =>
+#                     # <string name='bar'/><string name='foo' if='bar==foo'/>
+#                     for case in child:
+#                         case_int = case[0]  # The child of the case element
+#                         case_int_name = case_int.attrib.get("name", None)
+#                         case_int_description = case_int.attrib.get("description", "")
+
+#                         # Copy attributes from the case element to case internal element
+#                         for k, v in case.attrib.items():
+#                             case_int.attrib[k] = v
+
+#                         # Make sure information about the case_internal name is not lost
+#                         if case_int_name is not None:
+#                             if case_int_description == "":
+#                                 case_int.attrib["description"] = case_int_name
+#                             else:
+#                                 case_int.attrib[
+#                                     "description"
+#                                 ] = f"{case_int_name}: {case_int_description}"
+
+#                         # Add the if attribute to the case internal element
+#                         case_int.attrib[
+#                             "if"
+#                         ] = f"{child.attrib['name']}=={case.attrib['name']}"
+
+#                         # Bubble up the case_internal element to the parent of choice
+#                         case_int = _inner(ET.tostring(case_int))
+#                         el_copy.append(case_int)
+#                 else:
+#                     child = _inner(ET.tostring(child))
+#                     el_copy.append(child)
+
+#             return el_copy
+
+#         return _inner(ET.tostring(root))
+
+#     @classmethod
+#     def default(cls, schema: Schema) -> str:
+#         """Default transpiler.
+
+#         Converts the XML schema to a string directly after removing:
+#             - Comments
+#             - Action attributes like 'on-fail-*'
+
+#         Args:
+#             schema: The schema to transpile.
+
+#         Returns:
+#             The prompt.
+#         """
+#         # Construct another XML tree from the schema.
+#         root = deepcopy(schema.root)
+#         schema_dict = schema.to_dict()
+
+#         # Remove comments.
+#         cls.remove_comments(root)
+#         # Remove action attributes.
+#         cls.remove_on_fail_attributes(root)
+#         # Remove validators with arguments.
+#         cls.validator_to_prompt(root, schema_dict)
+#         # Replace pydantic elements with object elements.
+#         cls.pydantic_to_object(root, schema_dict)
+#         # Deconstruct choice elements into string and cases.
+#         updated_root = cls.deconstruct_choice(root)
+
+#         # Return the XML as a string that is
+#         ET.indent(updated_root, space="    ")
+#         return ET.tostring(
+#             updated_root,
+#             encoding="unicode",
+#             method="xml",
+#             pretty_print=True,
+#         )
+
+
 class Schema:
     """Schema class that holds a _schema attribute."""
 
     def __init__(
         self,
-        root: Optional[ET._Element] = None,
-        schema: Optional[Dict[str, DataType]] = None,
+        root: Element = None,
     ) -> None:
+<<<<<<< Updated upstream
         if schema is None:
             schema = {}
 
@@ -267,6 +553,27 @@ class Schema:
 
         if root is not None:
             self.setup_schema(root)
+=======
+        from guardrails.datatypes import registry as types_registry
+
+        self._schema = SimpleNamespace()
+        self.root = root
+
+        if root is not None:
+            # TODO(shreya): Won't root never be None?
+            # strict = False
+            # if "strict" in root.attrib and root.attrib["strict"] == "true":
+            #     strict = True
+
+            for child in root:
+                # if isinstance(child, ET._Comment):
+                #     continue
+                child_name = child.name
+                # child_data = types_registry[child.tag].from_xml(child, strict=strict)
+                # TODO(shreya): IS THIS OK????
+                child_data = child
+                self[child_name] = child_data
+>>>>>>> Stashed changes
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({pprint.pformat(vars(self._schema))})"
@@ -301,6 +608,7 @@ class Schema:
     def parsed_rail(self) -> Optional[ET._Element]:
         return self.root
 
+<<<<<<< Updated upstream
     def setup_schema(self, root: ET._Element) -> None:
         """Parse the schema specification.
 
@@ -484,6 +792,12 @@ class JsonSchema(Schema):
             constants["high_level_json_reask_prompt"]
             + constants["complete_json_suffix"]
         )
+=======
+    @classmethod
+    def from_xml(cls, xml: ET._Element) -> "Schema":
+        root_element = Element.from_xml(xml)
+        return cls(root=root_element)
+>>>>>>> Stashed changes
 
     def validate(
         self,
