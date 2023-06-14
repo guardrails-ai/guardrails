@@ -16,3 +16,4 @@ dist/*
 *.rail_output*
 .idea/*
 .cache
+scratch/

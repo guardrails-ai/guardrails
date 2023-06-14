@@ -1,6 +1,5 @@
 
-Given the following document, answer the following questions. If the answer doesn't exist in the document, enter 
-'None'.
+Given the following document, answer the following questions. If the answer doesn't exist in the document, enter 'None'.
 
 2/25/23, 7:59 PM about:blank
 about:blank 1/4

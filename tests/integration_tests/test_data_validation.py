@@ -1,7 +1,11 @@
 # flake8: noqa: E501
+from typing import Optional
+
 import pytest
+from pydantic import BaseModel, Field
 
 from guardrails import Guard
+from guardrails.validators import ValidChoices
 
 
 @pytest.mark.parametrize(
@@ -52,6 +56,57 @@ Dummy prompt.
 </rail>
 """
     guard = Guard.from_rail_string(rail_spec)
+
+    # If raises is True, then the test should raise an exception.
+    if raises:
+        with pytest.raises(Exception):
+            guard.parse(llm_output)
+    else:
+        guard.parse(llm_output)
+
+
+@pytest.mark.parametrize(
+    "llm_output, raises",
+    [
+        ('{"action": "fight", "fight": "kick"}', False),
+        (
+            '{"action": "flight", "flight": {"flight_direction": "north", "flight_speed": 1}}',
+            False,
+        ),
+        ('{"action": "flight", "fight": "punch"}', True),
+        (
+            '{"action": "fight", "flight": {"flight_direction": "north", "flight_speed": 1}}',
+            True,
+        ),
+        ('{"action": "random_action"}', True),
+        ('{"action": "fight", "fight": "random_move"}', True),
+        ('{"action": "flight", "flight": {"random_key": "random_value"}}', True),
+        (
+            '{"action": "flight", "flight": {"flight_direction": "north", "flight_speed": 1}, "fight": "punch"}',
+            True,
+        ),
+    ],
+)
+def test_choice_validation_pydantic(llm_output, raises):
+    class FlightDetails(BaseModel):
+        flight_direction: str = Field(
+            validators=ValidChoices(
+                choices=["north", "south", "east", "west"], on_fail="exception"
+            )
+        )
+        flight_speed: int = Field(
+            validators=ValidChoices(choices=[1, 2, 3, 4], on_fail="exception")
+        )
+
+    class Action(BaseModel):
+        action: str = Field(validators=ValidChoices(choices=["fight", "flight"]))
+        fight: Optional[str] = Field(
+            validators=ValidChoices(choices=["punch", "kick"], on_fail="exception"),
+            when="action",
+        )
+        flight: Optional[FlightDetails] = Field(when="action")
+
+    guard = Guard.from_pydantic(output_class=Action, prompt="Dummy prompt.")
 
     # If raises is True, then the test should raise an exception.
     if raises:

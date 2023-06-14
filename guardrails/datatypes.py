@@ -1,6 +1,8 @@
 import datetime
 from types import SimpleNamespace
-from typing import TYPE_CHECKING, Any, Dict, Generator, List, Tuple, Type, Union
+from typing import TYPE_CHECKING, Any, Dict, Generator
+from typing import List as TypedList
+from typing import Tuple, Type, Union
 
 from lxml import etree as ET
 from pydantic import BaseModel
@@ -21,7 +23,7 @@ class DataType:
         self.element = element
 
     @property
-    def validators(self) -> List:
+    def validators(self) -> TypedList:
         return self.format_attr.validators
 
     def __repr__(self) -> str:
@@ -358,7 +360,7 @@ class Choice(NonScalarType):
             self._children[child.attrib["name"]] = child_data_type.from_xml(child)
 
     @property
-    def validators(self) -> List:
+    def validators(self) -> TypedList:
         from guardrails.validators import Choice as ChoiceValidator
 
         # Check if the <choice ... /> element has an `on-fail` attribute.
@@ -417,7 +419,7 @@ class Pydantic(NonScalarType):
         self.model = model
 
     @property
-    def validators(self) -> List:
+    def validators(self) -> TypedList:
         from guardrails.validators import Pydantic as PydanticValidator
 
         # Check if the <pydantic /> element has an `on-fail` attribute.
@@ -517,11 +519,6 @@ class Pydantic(NonScalarType):
         return ET.fromstring(
             xml, parser=ET.XMLParser(encoding="utf-8", remove_blank_text=True)
         )
-
-
-@register_type("field")
-class Field(ScalarType):
-    """Element tag: `<field>`"""
 
 
 # @register_type("key")

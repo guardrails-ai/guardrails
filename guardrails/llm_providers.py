@@ -4,6 +4,7 @@ from functools import partial
 from typing import Any, Callable, Dict, List, Optional, cast
 
 import openai
+from pydantic import BaseModel
 from tenacity import retry, retry_if_exception_type, wait_exponential_jitter
 
 try:
@@ -105,18 +106,44 @@ def openai_chat_wrapper(
     text: str,
     model="gpt-3.5-turbo",
     instructions: Optional[str] = None,
+    base_model: Optional[BaseModel] = None,
     *args,
     **kwargs,
 ):
+
+    if base_model:
+        base_model_schema = base_model.schema()
+        function_params = {
+            "name": base_model_schema["title"],
+            "description": base_model_schema["description"]
+            if "description" in base_model_schema
+            else None,
+            "parameters": base_model_schema,
+        }
+
     api_key = os.environ.get("OPENAI_API_KEY")
-    openai_response = openai.ChatCompletion.create(
-        api_key=api_key,
-        model=model,
-        messages=chat_prompt(text, instructions, **kwargs),
-        *args,
-        **kwargs,
-    )
-    return openai_response["choices"][0]["message"]["content"]
+
+    # TODO: update this as new models are released
+    if base_model and model in ["gpt-3.5-turbo-0613", "gpt-4-0613"]:
+        openai_response = openai.ChatCompletion.create(
+            api_key=api_key,
+            model=model,
+            messages=chat_prompt(text, instructions, **kwargs),
+            functions=[function_params],
+            function_call={"name": function_params["name"]},
+            *args,
+            **kwargs,
+        )
+        return openai_response["choices"][0]["message"]["function_call"]["arguments"]
+    else:
+        openai_response = openai.ChatCompletion.create(
+            api_key=api_key,
+            model=model,
+            messages=chat_prompt(text, instructions, **kwargs),
+            *args,
+            **kwargs,
+        )
+        return openai_response["choices"][0]["message"]["content"]
 
 
 def manifest_wrapper(

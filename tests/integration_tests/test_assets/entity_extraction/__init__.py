@@ -1,6 +1,16 @@
 # flake8: noqa: E501
 import os
 
+from .pydantic_models import (
+    INSTRUCTIONS_CHAT_MODEL,
+    PROMPT,
+    PROMPT_CHAT_MODEL,
+    ContractDetailsFilter,
+    ContractDetailsFix,
+    ContractDetailsNoop,
+    ContractDetailsReask,
+    ContractDetailsRefrain,
+)
 from .validated_output_filter import VALIDATED_OUTPUT_FILTER
 from .validated_output_fix import VALIDATED_OUTPUT_FIX
 from .validated_output_noop import VALIDATED_OUTPUT_NOOP
@@ -29,6 +39,17 @@ RAIL_SPEC_WITH_NOOP = reader("noop.rail")
 RAIL_SPEC_WITH_REASK = reader("reask.rail")
 RAIL_SPEC_WITH_REFRAIN = reader("refrain.rail")
 RAIL_SPEC_WITH_FIX_CHAT_MODEL = reader("fix_chat_model.rail")
+
+
+PYDANTIC_RAIL_WITH_FILTER = ContractDetailsFilter
+PYDANTIC_RAIL_WITH_FIX = ContractDetailsFix
+PYDANTIC_RAIL_WITH_NOOP = ContractDetailsNoop
+PYDANTIC_RAIL_WITH_REASK = ContractDetailsReask
+PYDANTIC_RAIL_WITH_REFRAIN = ContractDetailsRefrain
+PYDANTIC_PROMPT = PROMPT
+PYDANTIC_PROMPT_CHAT_MODEL = PROMPT_CHAT_MODEL
+PYDANTIC_INSTRUCTIONS_CHAT_MODEL = INSTRUCTIONS_CHAT_MODEL
+
 
 __all__ = [
     "COMPILED_PROMPT",

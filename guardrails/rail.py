@@ -1,11 +1,14 @@
 """Rail class."""
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import List, Optional, Type
 
 from lxml import etree as ET
+from lxml.etree import Element, SubElement
+from pydantic import BaseModel
 
 from guardrails.prompt import Instructions, Prompt
 from guardrails.schema import JsonSchema, Schema, StringSchema
+from guardrails.utils.pydantic_utils import create_xml_element_for_base_model
 
 # TODO: Logging
 XMLPARSER = ET.XMLParser(encoding="utf-8")
@@ -98,6 +101,13 @@ class Rail:
     version: Optional[str] = ("0.1",)
 
     @classmethod
+    def from_pydantic(
+        cls, output_class: BaseModel, prompt: str, instructions: Optional[str] = None
+    ):
+        xml = generate_xml_code(output_class, prompt, instructions)
+        return cls.from_xml(xml)
+
+    @classmethod
     def from_file(cls, file_path: str) -> "Rail":
         with open(file_path, "r") as f:
             xml = f.read()
@@ -138,7 +148,6 @@ class Rail:
         raw_output_schema = script.replace_expressions(ET.tostring(raw_output_schema))
         raw_output_schema = ET.fromstring(raw_output_schema, parser=XMLPARSER)
         output_schema = cls.load_output_schema(raw_output_schema)
-
         # Parse instructions for the LLM. These are optional but if given,
         # LLMs can use them to improve their output. Commonly these are
         # prepended to the prompt.
@@ -201,3 +210,34 @@ class Rail:
     def load_script(root: ET._Element) -> Script:
         """Given the RAIL <script> element, load and execute the script."""
         return Script.from_xml(root)
+
+
+def generate_xml_code(
+    output_class: Type[BaseModel],
+    prompt: str,
+    instructions: Optional[str] = None,
+) -> ET._Element:
+    """Generate XML RAIL Spec from a pydantic model and a prompt."""
+
+    # Create the root element
+    root = Element("rail")
+    root.set("version", "0.1")
+
+    # Create the output element
+    output_element = SubElement(root, "output")
+
+    # Create XML elements for the output_class
+    create_xml_element_for_base_model(output_class, output_element)
+
+    # Create the prompt element
+    prompt_element = SubElement(root, "prompt")
+    prompt_text = f"{prompt}"
+    prompt_element.text = prompt_text
+
+    if instructions is not None:
+        # Create the instructions element
+        instructions_element = SubElement(root, "instructions")
+        instructions_text = f"{instructions}"
+        instructions_element.text = instructions_text
+
+    return root

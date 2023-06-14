@@ -291,6 +291,25 @@ class Validator:
             params = " ".join([f"{k}={v}" for k, v in kwargs.items()])
         return f"{self.rail_alias}: {params}"
 
+    def to_xml_attrib(self):
+        """Convert the validator to an XML attribute."""
+
+        if not len(self._kwargs):
+            return self.rail_alias
+
+        validator_args = []
+        for arg in self.__init__.__code__.co_varnames[1:]:
+            if arg not in ("on_fail", "args", "kwargs"):
+                str_arg = str(self._kwargs[arg])
+                str_arg = "{" + str_arg + "}" if " " in str_arg else str_arg
+                validator_args.append(str_arg)
+
+        params = " ".join(validator_args)
+        return f"{self.rail_alias}: {params}"
+
+    def __call__(self, v: Any) -> Any:
+        return self.validate("dummy_key", v, {"dummy_key": v})["dummy_key"]
+
 
 # @register_validator('required', 'all')
 # class Required(Validator):
@@ -394,6 +413,33 @@ class Pydantic(Validator):
             schema[key] = PydanticReAsk(new_value)
 
         return schema
+
+
+@register_validator(name="pydantic_field_validator", data_type="all")
+class PydanticFieldValidator(Validator):
+    def __init__(
+        self,
+        field_validator: Callable,
+        on_fail: Optional[Callable[..., Any]] = None,
+        **kwargs,
+    ):
+        self.field_validator = field_validator
+        super().__init__(on_fail, **kwargs)
+
+    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
+        try:
+            return self.field_validator(value)
+        except Exception as e:
+            raise EventDetail(
+                key=key,
+                value=value,
+                schema=schema,
+                error_message=str(e),
+                fix_value=None,
+            )
+
+    def to_prompt(self, with_keywords: bool = True) -> str:
+        return self.field_validator.__func__.__name__
 
 
 @register_validator(name="choice", data_type="choice")

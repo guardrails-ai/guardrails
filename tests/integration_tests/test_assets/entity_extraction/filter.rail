@@ -16,8 +16,7 @@ on-fail-two-words="filter"/>
 
 
 <prompt>
-Given the following document, answer the following questions. If the answer doesn't exist in the document, enter 
-'None'.
+Given the following document, answer the following questions. If the answer doesn't exist in the document, enter 'None'.
 
 {{document}}
 
