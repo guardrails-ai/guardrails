@@ -43,6 +43,7 @@ nav:
       - 'Ensure translated text is high quality': examples/translation_with_quality_check.ipynb
       - 'Check key info present in generated summary': examples/text_summarization_quality.ipynb
     - 'Integrations':
+      - 'OpenAI Functions': integrations/openai_functions.ipynb
       - 'LangChain': integrations/langchain.ipynb
       - 'Pydantic': integrations/pydantic_validation.ipynb
     -  'Join the Guardrails AI team': https://docs.google.com/spreadsheets/d/1m4yELzbGQCgj84_uSe1Ws3IdlroYdwTVUkLmZm9ZVSE/edit?usp=sharing
