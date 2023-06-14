@@ -245,8 +245,8 @@ class Runner:
                     )
                 elif prompt:
                     output = api(prompt.source, base_model=self.base_model)
-            except Exception as e:
-                # If the API call fails, try calling the API again without the instructions.
+            except Exception:
+                # If the API call fails, try calling again without the instructions.
                 if prompt and instructions:
                     output = api(prompt.source, instructions=instructions.source)
                 elif prompt:

@@ -19,7 +19,8 @@ class ContractDetailsFilter(BaseModel):
         description="What fees and charges are associated with my account?"
     )
     interest_rates: Dict = Field(
-        description="What are the interest rates offered by the bank on savings and checking accounts, loans, and credit products?"
+        description="What are the interest rates offered by the bank on savings "
+        "and checking accounts, loans, and credit products?"
     )
 
 
@@ -35,15 +36,14 @@ class ContractDetailsFix(BaseModel):
         description="What fees and charges are associated with my account?"
     )
     interest_rates: Dict = Field(
-        description="What are the interest rates offered by the bank on savings and checking accounts, loans, and credit products?"
+        description="What are the interest rates offered by the bank on savings "
+        "and checking accounts, loans, and credit products?"
     )
 
 
 class FeeDetailsNoop(BaseModel):
     index: int = Field(validators="1-indexed")
-    name: str = Field(
-        validators=[LowerCase(on_fail="noop"), TwoWords(on_fail="noop")]
-    )
+    name: str = Field(validators=[LowerCase(on_fail="noop"), TwoWords(on_fail="noop")])
     explanation: str = Field(validators=OneLine(on_fail="noop"))
     value: float = Field(validators="percentage")
 
@@ -53,15 +53,14 @@ class ContractDetailsNoop(BaseModel):
         description="What fees and charges are associated with my account?"
     )
     interest_rates: Dict = Field(
-        description="What are the interest rates offered by the bank on savings and checking accounts, loans, and credit products?"
+        description="What are the interest rates offered by the bank on savings "
+        "and checking accounts, loans, and credit products?"
     )
 
 
 class FeeDetailsReask(BaseModel):
     index: int = Field(validators="1-indexed")
-    name: str = Field(
-        validators=[LowerCase(on_fail="noop"), TwoWords(on_fail="reask")]
-    )
+    name: str = Field(validators=[LowerCase(on_fail="noop"), TwoWords(on_fail="reask")])
     explanation: str = Field(validators=OneLine(on_fail="noop"))
     value: float = Field(validators="percentage")
 
@@ -71,7 +70,8 @@ class ContractDetailsReask(BaseModel):
         description="What fees and charges are associated with my account?"
     )
     interest_rates: Dict = Field(
-        description="What are the interest rates offered by the bank on savings and checking accounts, loans, and credit products?"
+        description="What are the interest rates offered by the bank on savings "
+        "and checking accounts, loans, and credit products?"
     )
 
 
@@ -89,13 +89,13 @@ class ContractDetailsRefrain(BaseModel):
         description="What fees and charges are associated with my account?"
     )
     interest_rates: Dict = Field(
-        description="What are the interest rates offered by the bank on savings and checking accounts, loans, and credit products?"
+        description="What are the interest rates offered by the bank on savings "
+        "and checking accounts, loans, and credit products?"
     )
 
 
 PROMPT = """
-Given the following document, answer the following questions. If the answer doesn't exist in the document, enter 
-'None'.
+Given the following document, answer the following questions. If the answer doesn't exist in the document, enter 'None'.
 
 {{document}}
 
@@ -103,19 +103,18 @@ Given the following document, answer the following questions. If the answer does
 
 {output_schema}
 
-@json_suffix_prompt_v2_wo_none"""
+@json_suffix_prompt_v2_wo_none"""  # noqa: E501
 
 
 INSTRUCTIONS_CHAT_MODEL = """
 You are a helpful assistant only capable of communicating with valid JSON, and no other text.
 
 @json_suffix_prompt_examples
-"""
+"""  # noqa: E501
 
 
 PROMPT_CHAT_MODEL = """
-Given the following document, answer the following questions. If the answer doesn't exist in the document, enter 
-`null`.
+Given the following document, answer the following questions. If the answer doesn't exist in the document, enter `null`.
 
 {{document}}
 
@@ -124,4 +123,4 @@ Extract information from this document and return a JSON that follows the correc
 @xml_prefix_prompt
 
 {output_schema}
-"""
+"""  # noqa: E501

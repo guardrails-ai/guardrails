@@ -171,7 +171,9 @@ def prepare_type_annotation(type_annotation: Any) -> Type:
 
     # Strip a Union type annotation to the first non-None type
     if get_origin(type_annotation) == Union:
-        type_annotation = [t for t in get_args(type_annotation) if t != type(None)]
+        type_annotation = [
+            t for t in get_args(type_annotation) if t != type(None)  # noqa E721
+        ]
         assert (
             len(type_annotation) == 1
         ), "Union type must have exactly one non-None type"

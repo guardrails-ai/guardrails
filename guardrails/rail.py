@@ -211,6 +211,7 @@ class Rail:
         """Given the RAIL <script> element, load and execute the script."""
         return Script.from_xml(root)
 
+
 def generate_xml_code(
     output_class: Type[BaseModel],
     prompt: str,

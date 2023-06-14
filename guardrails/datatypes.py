@@ -1,7 +1,8 @@
 import datetime
 from types import SimpleNamespace
-from typing import TYPE_CHECKING, Any, Dict, Generator, Tuple, Type, Union
+from typing import TYPE_CHECKING, Any, Dict, Generator
 from typing import List as TypedList
+from typing import Tuple, Type, Union
 
 from lxml import etree as ET
 from pydantic import BaseModel
