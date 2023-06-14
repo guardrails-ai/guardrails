@@ -683,7 +683,7 @@ class ValidLength(Validator):
 
 @register_validator(name="two-words", data_type="string")
 class TwoWords(Validator):
-    """Validate that a value is upper case.
+    """Validate that a value is two words.
 
     - Name for `format` attribute: `two-words`
     - Supported data types: `string`
