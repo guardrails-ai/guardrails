@@ -10,6 +10,7 @@ class VectorDBBase(ABC):
 
     def __init__(self, embedder: EmbeddingBase, path: str = None) -> None:
         """Creates a new VectorDBBase.
+
         Args:
             embedder: EmbeddingBase instance to use for embedding the text.
             path: Path to store or load the vector database.
@@ -20,6 +21,7 @@ class VectorDBBase(ABC):
     @abstractmethod
     def add_vectors(self, vectors: List[List[float]]) -> None:
         """Adds a list of vectors to the store.
+
         Args:
             vectors: List of vectors to add.
         Returns:
@@ -30,6 +32,7 @@ class VectorDBBase(ABC):
     @abstractmethod
     def similarity_search_vector(self, vector: List[float], k: int) -> List[int]:
         """Searches for vectors which are similar to the given vector.
+
         Args:
             vector: Vector to search for.
             k: Number of similar vectors to return.

@@ -9,7 +9,7 @@ from guardrails.llm_providers import PromptCallable, get_llm_ask
 from guardrails.prompt import Instructions, Prompt
 from guardrails.rail import Rail
 from guardrails.run import Runner
-from guardrails.schema import InputSchema, OutputSchema
+from guardrails.schema import Schema
 from guardrails.utils.logs_utils import GuardState
 from guardrails.utils.reask_utils import sub_reasks_with_fixed_values
 
@@ -43,12 +43,12 @@ class Guard:
         self.base_model = base_model
 
     @property
-    def input_schema(self) -> InputSchema:
+    def input_schema(self) -> Schema:
         """Return the input schema."""
         return self.rail.input_schema
 
     @property
-    def output_schema(self) -> OutputSchema:
+    def output_schema(self) -> Schema:
         """Return the output schema."""
         return self.rail.output_schema
 

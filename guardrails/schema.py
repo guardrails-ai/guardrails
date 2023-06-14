@@ -1,3 +1,4 @@
+import json
 import logging
 import pprint
 import re
@@ -10,7 +11,16 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 from lxml import etree as ET
 from lxml.builder import E
 
-from guardrails.datatypes import DataType
+from guardrails.datatypes import DataType, String
+from guardrails.llm_providers import PromptCallable, openai_chat_wrapper, openai_wrapper
+from guardrails.prompt import Instructions, Prompt
+from guardrails.utils.constants import constants
+from guardrails.utils.reask_utils import (
+    ReAsk,
+    gather_reasks,
+    get_pruned_tree,
+    get_reasks_by_element,
+)
 from guardrails.validators import Validator, check_refrain_in_dict, filter_in_dict
 
 if TYPE_CHECKING:
@@ -249,8 +259,6 @@ class Schema:
         root: Optional[ET._Element] = None,
         schema: Optional[Dict[str, DataType]] = None,
     ) -> None:
-        from guardrails.datatypes import registry as types_registry
-
         if schema is None:
             schema = {}
 
@@ -258,16 +266,7 @@ class Schema:
         self.root = root
 
         if root is not None:
-            strict = False
-            if "strict" in root.attrib and root.attrib["strict"] == "true":
-                strict = True
-
-            for child in root:
-                if isinstance(child, ET._Comment):
-                    continue
-                child_name = child.attrib["name"]
-                child_data = types_registry[child.tag].from_xml(child, strict=strict)
-                self[child_name] = child_data
+            self.setup_schema(root)
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({pprint.pformat(vars(self._schema))})"
@@ -301,6 +300,190 @@ class Schema:
     @property
     def parsed_rail(self) -> Optional[ET._Element]:
         return self.root
+
+    def setup_schema(self, root: ET._Element) -> None:
+        """Parse the schema specification.
+
+        Args:
+            root: The root element of the schema specification.
+        """
+        raise NotImplementedError
+
+    def validate(self, data: Any) -> Any:
+        """Validate a dictionary of data against the schema.
+
+        Args:
+            data: The data to validate.
+
+        Returns:
+            The validated data.
+        """
+        raise NotImplementedError
+
+    def transpile(self, method: str = "default") -> str:
+        """Convert the XML schema to a string that is used for prompting a
+        large language model.
+
+        Returns:
+            The prompt.
+        """
+        raise NotImplementedError
+
+    def get_reask_schema(
+        self,
+        reasks: List[ReAsk],
+    ) -> "Schema":
+        """Construct a schema for reasking.
+
+        Args:
+            reasks: List of tuples, where each tuple contains the path to the
+                reasked element, and the ReAsk object (which contains the error
+                message describing why the reask is necessary).
+
+        Returns:
+            The prompt.
+        """
+        raise NotImplementedError
+
+    def parse(self, output: str) -> Tuple[Any, Optional[Exception]]:
+        """Parse the output from the large language model.
+
+        Args:
+            output: The output from the large language model.
+
+        Returns:
+            The parsed output, and the exception that was raised (if any).
+        """
+        raise NotImplementedError
+
+    def introspect(self, data: Any) -> List[ReAsk]:
+        """Inspect the data for reasks.
+
+        Args:
+            data: The data to introspect.
+
+        Returns:
+            A list of ReAsk objects.
+        """
+        raise NotImplementedError
+
+    def get_default_reask_prompt(self) -> Prompt:
+        """Get the default reask prompt for the schema.
+
+        Returns:
+            The default reask prompt.
+        """
+        raise NotImplementedError
+
+    def get_reask_prompt(
+        self,
+        reask_value: Any,
+        reask_prompt_template: Optional[Prompt] = None,
+    ) -> Prompt:
+        """Get a reask prompt for the schema.
+
+        Args:
+            reask_value: The value that was returned from the API, with reasks.
+            reask_prompt_template: The template to use for the reask prompt.
+
+        Returns:
+            The reask prompt.
+        """
+        raise NotImplementedError
+
+    def preprocess_prompt(
+        self,
+        prompt_callable: PromptCallable,
+        instructions: Optional[Instructions],
+        prompt: Prompt,
+    ):
+        """Preprocess the instructions and prompt before sending it to the
+        model.
+
+        Args:
+            prompt_callable: The callable to be used to prompt the model.
+            instructions: The instructions to preprocess.
+            prompt: The prompt to preprocess.
+        """
+        raise NotImplementedError
+
+
+class JsonSchema(Schema):
+    def get_reask_schema(
+        self,
+        reasks: List[ReAsk],
+    ) -> "Schema":
+        parsed_rail = deepcopy(self.root)
+
+        # Get the elements that are to be reasked
+        reask_elements = get_reasks_by_element(reasks, parsed_rail)
+
+        # Get the pruned tree so that it only contains ReAsk objects
+        pruned_tree = get_pruned_tree(parsed_rail, list(reask_elements.keys()))
+        pruned_tree_schema = type(self)(pruned_tree)
+
+        return pruned_tree_schema
+
+    def get_reask_prompt(
+        self,
+        reask_value: Any,
+        reask_prompt_template: Optional[Prompt] = None,
+    ) -> Prompt:
+        pruned_tree_string = self.transpile()
+
+        if reask_prompt_template is None:
+            reask_prompt_template = self.get_default_reask_prompt()
+
+        def reask_decoder(obj):
+            return {
+                k: v for k, v in obj.__dict__.items() if k not in ["path", "fix_value"]
+            }
+
+        return reask_prompt_template.format(
+            previous_response=json.dumps(reask_value, indent=2, default=reask_decoder)
+            .replace("{", "{{")
+            .replace("}", "}}"),
+            output_schema=pruned_tree_string,
+        )
+
+    def setup_schema(self, root: ET._Element) -> None:
+        from guardrails.datatypes import registry as types_registry
+
+        strict = False
+        if "strict" in root.attrib and root.attrib["strict"] == "true":
+            strict = True
+
+        for child in root:
+            if isinstance(child, ET._Comment):
+                continue
+            child_name = child.attrib["name"]
+            child_data = types_registry[child.tag].from_xml(child, strict=strict)
+            self[child_name] = child_data
+
+    def parse(self, output: str) -> Tuple[Dict, Optional[Exception]]:
+        # Remove the triple backticks from the output
+        output = output.strip()
+        if output.startswith("```"):
+            output = output[3:]
+            if output.startswith("json"):
+                output = output[4:]
+        if output.endswith("```"):
+            output = output[:-3]
+
+        # Treat the output as a JSON string, and load it into a dict.
+        error = None
+        try:
+            output_as_dict = json.loads(output, strict=False)
+        except json.decoder.JSONDecodeError as e:
+            output_as_dict = None
+            error = e
+        return output_as_dict, error
+
+    def get_default_reask_prompt(self):
+        return Prompt(
+            constants["high_level_json_reask_prompt"]
+            + constants["complete_json_suffix"]
+        )
 
     def validate(
         self,
@@ -346,23 +529,163 @@ class Schema:
 
         return validated_response
 
-    def transpile(self, method: str = "default") -> str:
-        """Convert the XML schema to a string that is used for prompting a
-        large language model.
+    def introspect(self, data: Dict) -> list:
+        return gather_reasks(data)
 
-        Returns:
-            The prompt.
-        """
+    def preprocess_prompt(
+        self,
+        prompt_callable: PromptCallable,
+        instructions: Optional[Instructions],
+        prompt: Prompt,
+    ):
+        if not hasattr(prompt_callable.fn, "func"):
+            # Only apply preprocessing to guardrails wrappers.
+            return instructions, prompt
+
+        if prompt_callable.fn.func is openai_wrapper:
+            prompt.source += "\n\nJson Output:\n\n"
+        if prompt_callable.fn.func is openai_chat_wrapper and not instructions:
+            instructions = Instructions(
+                "You are a helpful assistant, "
+                "able to express yourself purely through JSON, "
+                "strictly and precisely adhering to the provided XML schemas."
+            )
+
+        return instructions, prompt
+
+    def transpile(self, method: str = "default") -> str:
         transpiler = getattr(Schema2Prompt, method)
         return transpiler(self)
 
 
-class InputSchema(Schema):
-    """Input schema class that holds a _schema attribute."""
+class StringSchema(Schema):
+    def __init__(self, root: ET._Element) -> None:
+        self.string_key = "string"
+        super().__init__(root)
 
+    def setup_schema(self, root: ET._Element) -> None:
+        if len(root) != 0:
+            raise ValueError("String output schemas must not have children.")
 
-class OutputSchema(Schema):
-    """Output schema class that holds a _schema attribute."""
+        if "name" in root.attrib:
+            self.string_key = root.attrib["name"]
+        else:
+            self.string_key = root.attrib["name"] = "string"
+
+        # make root tag into a string tag
+        root_string = ET.Element("string", root.attrib)
+        self[self.string_key] = String.from_xml(root_string)
+
+    def get_reask_schema(
+        self,
+        reasks: List[ReAsk],
+    ) -> "Schema":
+        return self
+
+    def get_default_reask_prompt(self):
+        return Prompt(
+            constants["high_level_string_reask_prompt"]
+            + constants["complete_string_suffix"]
+        )
+
+    def get_reask_prompt(
+        self,
+        reask_value: ReAsk,
+        reask_prompt_template: Optional[Prompt] = None,
+    ) -> Prompt:
+        pruned_tree_string = self.transpile()
+
+        if reask_prompt_template is None:
+            reask_prompt_template = self.get_default_reask_prompt()
+
+        return reask_prompt_template.format(
+            previous_response=reask_value.incorrect_value,
+            error_messages=f"- {reask_value.error_message}",
+            output_schema=pruned_tree_string,
+        )
+
+    def parse(self, output: str) -> Tuple[Any, Optional[Exception]]:
+        return output, None
+
+    def validate(
+        self,
+        data: Any,
+    ) -> Any:
+        """Validate a dictionary of data against the schema.
+
+        Args:
+            data: The data to validate.
+
+        Returns:
+            The validated data.
+        """
+        if data is None:
+            return None
+
+        if not isinstance(data, str):
+            raise TypeError(f"Argument `data` must be a string, not {type(data)}.")
+
+        validated_response = self[self.string_key].validate(
+            key=self.string_key,
+            value=data,
+            schema={
+                self.string_key: data,
+            },
+        )
+
+        if check_refrain_in_dict(validated_response):
+            # If the data contains a `Refain` value, we return an empty
+            # dictionary.
+            logger.debug("Refrain detected.")
+            validated_response = {}
+
+        # Remove all keys that have `Filter` values.
+        validated_response = filter_in_dict(validated_response)
+
+        if self.string_key in validated_response:
+            return validated_response[self.string_key]
+        return None
+
+    def introspect(self, data: Any) -> List[ReAsk]:
+        if isinstance(data, ReAsk):
+            return [data]
+        return []
+
+    def preprocess_prompt(
+        self,
+        prompt_callable: PromptCallable,
+        instructions: Optional[Instructions],
+        prompt: Prompt,
+    ):
+        if not hasattr(prompt_callable.fn, "func"):
+            # Only apply preprocessing to guardrails wrappers.
+            return instructions, prompt
+
+        if prompt_callable.fn.func is openai_wrapper:
+            prompt.source += "\n\nString Output:\n\n"
+        if prompt_callable.fn.func is openai_chat_wrapper and not instructions:
+            instructions = Instructions(
+                "You are a helpful assistant, expressing yourself through a string."
+            )
+
+        return instructions, prompt
+
+    def transpile(self, method: str = "default") -> str:
+        obj = self[self.string_key]
+        schema = ""
+        if "description" in obj.element.attrib:
+            schema += f"""String description, delimited by +++:
+
++++
+{obj.element.attrib["description"]}
++++"""
+        if not obj.format_attr.empty:
+            schema += (
+                "\n\nYour generated response should satisfy the following properties:"
+            )
+            for validator in obj.format_attr.validators:
+                schema += f"\n- {validator.to_prompt()}"
+        return schema
 
 
 class Schema2Prompt:

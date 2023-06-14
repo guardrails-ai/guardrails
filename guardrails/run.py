@@ -1,21 +1,18 @@
-import json
 import logging
 from dataclasses import dataclass, field
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from eliot import add_destinations, start_action
 from pydantic import BaseModel
 
 from guardrails.llm_providers import PromptCallable
 from guardrails.prompt import Instructions, Prompt
-from guardrails.schema import InputSchema, OutputSchema
+from guardrails.schema import Schema
 from guardrails.utils.logs_utils import GuardHistory, GuardLogs
 from guardrails.utils.reask_utils import (
     ReAsk,
-    gather_reasks,
-    get_reask_prompt,
-    prune_json_for_reasking,
-    reask_json_as_dict,
+    prune_obj_for_reasking,
+    reasks_to_dict,
     sub_reasks_with_fixed_values,
 )
 
@@ -47,8 +44,8 @@ class Runner:
     instructions: Optional[Instructions]
     prompt: Prompt
     api: PromptCallable
-    input_schema: InputSchema
-    output_schema: OutputSchema
+    input_schema: Schema
+    output_schema: Schema
     num_reasks: int = 0
     output: str = None
     reask_prompt: Optional[Prompt] = None
@@ -120,12 +117,12 @@ class Runner:
     def step(
         self,
         index: int,
-        api: Callable,
+        api: PromptCallable,
         instructions: Optional[Instructions],
         prompt: Prompt,
         prompt_params: Dict,
-        input_schema: InputSchema,
-        output_schema: OutputSchema,
+        input_schema: Schema,
+        output_schema: Schema,
         output: str = None,
     ):
         """Run a full step."""
@@ -141,20 +138,29 @@ class Runner:
             # Prepare: run pre-processing, and input validation.
             if not output:
                 instructions, prompt = self.prepare(
-                    index, instructions, prompt, prompt_params, input_schema
+                    index,
+                    instructions,
+                    prompt,
+                    prompt_params,
+                    api,
+                    input_schema,
+                    output_schema,
                 )
             else:
                 instructions = None
                 prompt = None
 
-            # Call: run the API, and convert to dict.
-            output, output_as_dict = self.call(index, instructions, prompt, api, output)
+            # Call: run the API.
+            output = self.call(index, instructions, prompt, api, output)
+
+            # Parse: parse the output.
+            parsed_output = self.parse(index, output, output_schema)
 
             # Validate: run output validation.
-            validated_output = self.validate(index, output_as_dict, output_schema)
+            validated_output = self.validate(index, parsed_output, output_schema)
 
             # Introspect: inspect validated output for reasks.
-            reasks = self.introspect(index, validated_output)
+            reasks = self.introspect(index, validated_output, output_schema)
 
             # Replace reask values with fixed values if terminal step.
             if not self.do_loop(index, reasks):
@@ -165,7 +171,7 @@ class Runner:
                 prompt=prompt,
                 instructions=instructions,
                 output=output,
-                output_as_dict=output_as_dict,
+                parsed_output=parsed_output,
                 validated_output=validated_output,
                 reasks=reasks,
             )
@@ -178,17 +184,19 @@ class Runner:
         instructions: Optional[Instructions],
         prompt: Prompt,
         prompt_params: Dict,
-        input_schema: InputSchema,
-    ) -> Prompt:
+        api: PromptCallable,
+        input_schema: Schema,
+        output_schema: Schema,
+    ) -> Tuple[Instructions, Prompt]:
         """Prepare by running pre-processing and input validation."""
         with start_action(action_type="prepare", index=index) as action:
             if prompt_params is None:
                 prompt_params = {}
 
-            if input_schema:
-                validated_prompt_params = input_schema.validate(prompt_params)
-            else:
-                validated_prompt_params = prompt_params
+            # if input_schema:
+            #     validated_prompt_params = input_schema.validate(prompt_params)
+            # else:
+            validated_prompt_params = prompt_params
 
             if isinstance(prompt, str):
                 prompt = Prompt(prompt)
@@ -198,6 +206,10 @@ class Runner:
             # TODO(shreya): should there be any difference to parsing params for prompt?
             if instructions is not None and isinstance(instructions, Instructions):
                 instructions = instructions.format(**validated_prompt_params)
+
+            instructions, prompt = output_schema.preprocess_prompt(
+                api, instructions, prompt
+            )
 
             action.log(
                 message_type="info",
@@ -209,27 +221,14 @@ class Runner:
 
         return instructions, prompt
 
-    def post_process(self, output: str) -> str:
-        """Post-process the raw output before parsing it.
-
-        If the output is surrounded by triple backticks, remove them."""
-        output = output.strip()
-        if output.startswith("```"):
-            output = output[3:]
-            if output.startswith("json"):
-                output = output[4:]
-        if output.endswith("```"):
-            output = output[:-3]
-        return output
-
     def call(
         self,
         index: int,
-        instructions: Optional[str],
+        instructions: Optional[Instructions],
         prompt: Prompt,
         api: Callable,
         output: str = None,
-    ) -> Tuple[str, Optional[Dict]]:
+    ) -> str:
         """Run a step.
 
         1. Query the LLM API,
@@ -253,64 +252,73 @@ class Runner:
                 elif prompt:
                     output = api(prompt.source)
 
-            # Post-process the output before loading it as JSON.
-            output = self.post_process(output)
-
-            error = None
-            # Treat the output as a JSON string, and load it into a dict.
-            try:
-                output_as_dict = json.loads(output, strict=False)
-            except json.decoder.JSONDecodeError as e:
-                output_as_dict = None
-                error = e
-
             action.log(
                 message_type="info",
                 output=output,
-                output_as_dict=output_as_dict,
+            )
+
+            return output
+
+    def parse(
+        self,
+        index: int,
+        output: str,
+        output_schema: Schema,
+    ):
+        with start_action(action_type="parse", index=index) as action:
+            parsed_output, error = output_schema.parse(output)
+
+            action.log(
+                message_type="info",
+                parsed_output=parsed_output,
                 error=error,
             )
 
-            return output, output_as_dict
+            return parsed_output
 
     def validate(
         self,
         index: int,
-        output_as_dict: Dict,
-        output_schema: OutputSchema,
+        parsed_output: Any,
+        output_schema: Schema,
     ):
         """Validate the output."""
         with start_action(action_type="validate", index=index) as action:
-            validated_output = output_schema.validate(output_as_dict)
+            validated_output = output_schema.validate(parsed_output)
+
             action.log(
                 message_type="info",
-                validated_output=reask_json_as_dict(validated_output),
+                validated_output=reasks_to_dict(validated_output),
             )
+
             return validated_output
 
     def introspect(
         self,
         index: int,
-        validated_output: Optional[Dict],
+        validated_output: Any,
+        output_schema: Schema,
     ) -> List[ReAsk]:
         """Introspect the validated output."""
         with start_action(action_type="introspect", index=index) as action:
             if validated_output is None:
                 return []
-            reasks = gather_reasks(validated_output)
+            reasks = output_schema.introspect(validated_output)
+
             action.log(
                 message_type="info",
                 reasks=[r.__dict__ for r in reasks],
             )
+
             return reasks
 
     def log(
         self,
-        prompt: str,
+        prompt: Prompt,
         instructions: Optional[str],
         output: str,
-        output_as_dict: Dict,
-        validated_output: Dict,
+        parsed_output: Any,
+        validated_output: Any,
         reasks: list,
     ) -> None:
         """Log the step."""
@@ -319,7 +327,7 @@ class Runner:
                 prompt=prompt,
                 instructions=instructions,
                 output=output,
-                output_as_dict=output_as_dict,
+                parsed_output=parsed_output,
                 validated_output=validated_output,
                 reasks=reasks,
             )
@@ -335,13 +343,14 @@ class Runner:
         self,
         reasks: list,
         validated_output: Optional[Dict],
-        output_schema: OutputSchema,
-    ) -> Tuple[str, OutputSchema]:
+        output_schema: Schema,
+    ) -> Tuple[Prompt, Schema]:
         """Prepare to loop again."""
-        prompt, output_schema = get_reask_prompt(
-            parsed_rail=output_schema.root,
+        output_schema = output_schema.get_reask_schema(
             reasks=reasks,
-            reask_json=prune_json_for_reasking(validated_output),
+        )
+        prompt = output_schema.get_reask_prompt(
+            reask_value=prune_obj_for_reasking(validated_output),
             reask_prompt_template=self.reask_prompt,
         )
-        return prompt, OutputSchema(output_schema)
+        return prompt, output_schema

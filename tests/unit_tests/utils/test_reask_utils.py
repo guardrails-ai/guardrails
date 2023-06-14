@@ -4,6 +4,7 @@ import pytest
 from lxml import etree as ET
 
 from guardrails import Prompt
+from guardrails.schema import JsonSchema
 from guardrails.utils import reask_utils
 from guardrails.utils.reask_utils import (
     ReAsk,
@@ -93,8 +94,8 @@ def test_gather_reasks():
     ],
 )
 def test_prune_json_for_reasking(input_dict, expected_dict):
-    """Test that the prune_json_for_reasking function removes ReAsk objects."""
-    assert reask_utils.prune_json_for_reasking(input_dict) == expected_dict
+    """Test that the prune_obj_for_reasking function removes ReAsk objects."""
+    assert reask_utils.prune_obj_for_reasking(input_dict) == expected_dict
 
 
 @pytest.mark.parametrize(
@@ -153,17 +154,16 @@ Help me correct the incorrect values based on the given error messages.
 Given below is XML that describes the information to extract from this document and the tags to extract it into.
 %s
 
-ONLY return a valid JSON object (no other text is necessary), where the key of the field in JSON is the `name` attribute of the corresponding XML, and the value is of the type specified by the corresponding XML's tag. The JSON MUST conform to the XML format, including any types and format requests e.g. requests for lists, objects and specific types. Be correct and concise. If you are unsure anywhere, enter `None`.
+ONLY return a valid JSON object (no other text is necessary), where the key of the field in JSON is the `name` attribute of the corresponding XML, and the value is of the type specified by the corresponding XML's tag. The JSON MUST conform to the XML format, including any types and format requests e.g. requests for lists, objects and specific types. Be correct and concise. If you are unsure anywhere, enter `null`.
 
 Here are examples of simple (XML, JSON) pairs that show the expected behavior:
 - `<string name='foo' format='two-words lower-case' />` => `{{'foo': 'example one'}}`
 - `<list name='bar'><string format='upper-case' /></list>` => `{{"bar": ['STRING ONE', 'STRING TWO', etc.]}}`
 - `<object name='baz'><string name="foo" format="capitalize two-words" /><integer name="index" format="1-indexed" /></object>` => `{{'baz': {{'foo': 'Some String', 'index': 1}}}}`
 """  # noqa: E501
-
-    result_prompt, _ = reask_utils.get_reask_prompt(
-        ET.fromstring(example_rail), reasks, reask_json
-    )
+    output_schema = JsonSchema(ET.fromstring(example_rail))
+    reask_schema = output_schema.get_reask_schema(reasks)
+    result_prompt = reask_schema.get_reask_prompt(reask_json)
 
     assert result_prompt == Prompt(
         expected_result_template

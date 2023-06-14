@@ -1,4 +1,4 @@
-from .test_assets import entity_extraction, pydantic, python_rail
+from .test_assets import entity_extraction, pydantic, python_rail, string
 
 
 def openai_completion_create(prompt, *args, **kwargs):
@@ -9,11 +9,14 @@ def openai_completion_create(prompt, *args, **kwargs):
         pydantic.COMPILED_PROMPT: pydantic.LLM_OUTPUT,
         pydantic.COMPILED_PROMPT_REASK_1: pydantic.LLM_OUTPUT_REASK_1,
         pydantic.COMPILED_PROMPT_REASK_2: pydantic.LLM_OUTPUT_REASK_2,
+        string.COMPILED_PROMPT: string.LLM_OUTPUT,
+        string.COMPILED_PROMPT_REASK: string.LLM_OUTPUT_REASK,
     }
 
     try:
         return mock_llm_responses[prompt]
     except KeyError:
+        print(prompt)
         raise ValueError("Compiled prompt not found")
 
 

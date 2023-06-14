@@ -32,7 +32,7 @@ You are a helpful assistant only capable of communicating with valid JSON, and n
 
 ONLY return a valid JSON object (no other text is necessary).
 The JSON MUST conform to the XML format, including any types and format requests e.g. requests for lists, objects and specific types.
-Be correct and concise. If you are unsure anywhere, enter `None`.
+Be correct and concise. If you are unsure anywhere, enter `null`.
 
 Here are examples of simple (XML, JSON) pairs that show the expected behavior:
 - `<string name='foo' format='two-words lower-case' />` => `{'foo': 'example one'}`

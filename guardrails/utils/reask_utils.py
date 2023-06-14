@@ -1,13 +1,8 @@
-import json
 from collections import defaultdict
-from copy import deepcopy
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Union
 
 from lxml import etree as ET
-
-from guardrails.prompt import Prompt
-from guardrails.utils.constants import constants
 
 
 @dataclass
@@ -139,45 +134,45 @@ def get_pruned_tree(
     return root
 
 
-def prune_json_for_reasking(json_object: Any) -> Union[None, Dict, List]:
-    """Validated JSON is a nested dictionary where some keys may be ReAsk
-    objects.
+def prune_obj_for_reasking(obj: Any) -> Union[None, Dict, List]:
+    """After validation, we get a nested dictionary where some keys may be
+    ReAsk objects.
 
-    This function prunes the validated JSON of any object that is not a ReAsk object.
+    This function prunes the validated form of any object that is not a ReAsk object.
     It also keeps all of the ancestors of the ReAsk objects.
 
     Args:
-        json_object: The validated JSON.
+        obj: The validated object.
 
     Returns:
-        The pruned validated JSON.
+        The pruned validated object.
     """
     from guardrails.validators import PydanticReAsk
 
-    if isinstance(json_object, ReAsk) or isinstance(json_object, PydanticReAsk):
-        return json_object
-    elif isinstance(json_object, list):
+    if isinstance(obj, ReAsk) or isinstance(obj, PydanticReAsk):
+        return obj
+    elif isinstance(obj, list):
         pruned_list = []
-        for item in json_object:
-            pruned_output = prune_json_for_reasking(item)
+        for item in obj:
+            pruned_output = prune_obj_for_reasking(item)
             if pruned_output is not None:
                 pruned_list.append(pruned_output)
         if len(pruned_list):
             return pruned_list
         return None
-    elif isinstance(json_object, dict):
+    elif isinstance(obj, dict):
         pruned_json = {}
-        for key, value in json_object.items():
+        for key, value in obj.items():
             if isinstance(value, ReAsk) or isinstance(value, PydanticReAsk):
                 pruned_json[key] = value
             elif isinstance(value, dict):
-                pruned_output = prune_json_for_reasking(value)
+                pruned_output = prune_obj_for_reasking(value)
                 if pruned_output is not None:
                     pruned_json[key] = pruned_output
             elif isinstance(value, list):
                 pruned_list = []
                 for item in value:
-                    pruned_output = prune_json_for_reasking(item)
+                    pruned_output = prune_obj_for_reasking(item)
                     if pruned_output is not None:
                         pruned_list.append(pruned_output)
                 if len(pruned_list):
@@ -189,70 +184,20 @@ def prune_json_for_reasking(json_object: Any) -> Union[None, Dict, List]:
         return None
 
 
-def get_reask_prompt(
-    parsed_rail: ET._Element,
-    reasks: List[ReAsk],
-    reask_json: Dict,
-    reask_prompt_template: Optional[Prompt] = None,
-) -> Tuple[Prompt, ET._Element]:
-    """Construct a prompt for reasking.
+def reasks_to_dict(dict_with_reasks: Dict) -> Dict:
+    """If a ReAsk object exists in the dict, return it as a dictionary."""
 
-    Args:
-        parsed_rail: The parsed RAIL.
-        reasks: List of tuples, where each tuple contains the path to the
-            reasked element, and the ReAsk object (which contains the error
-            message describing why the reask is necessary).
-        reask_json: Pruned JSON that contains only ReAsk objects.
-
-    Returns:
-        The prompt.
-    """
-    from guardrails.schema import OutputSchema
-
-    parsed_rail_copy = deepcopy(parsed_rail)
-
-    # Get the elements that are to be reasked
-    reask_elements = get_reasks_by_element(reasks, parsed_rail_copy)
-
-    # Get the pruned JSON so that it only contains ReAsk objects
-    # Get the pruned tree
-    pruned_tree = get_pruned_tree(parsed_rail_copy, list(reask_elements.keys()))
-    pruned_tree_string = OutputSchema(pruned_tree).transpile()
-
-    if reask_prompt_template is None:
-        reask_prompt_template = Prompt(
-            constants["high_level_reask_prompt"] + constants["complete_json_suffix"]
-        )
-
-    def reask_decoder(obj):
-        return {k: v for k, v in obj.__dict__.items() if k not in ["path", "fix_value"]}
-
-    reask_prompt = reask_prompt_template.format(
-        previous_response=json.dumps(reask_json, indent=2, default=reask_decoder)
-        .replace("{", "{{")
-        .replace("}", "}}"),
-        output_schema=pruned_tree_string,
-    )
-
-    return reask_prompt, pruned_tree
-
-
-def reask_json_as_dict(json: Dict) -> Dict:
-    """If a ReAsk object exists in the JSON, return it as a dictionary."""
-
-    def _reask_json_as_dict(json_object: Any) -> Any:
-        if isinstance(json_object, dict):
-            return {
-                key: _reask_json_as_dict(value) for key, value in json_object.items()
-            }
-        elif isinstance(json_object, list):
-            return [_reask_json_as_dict(item) for item in json_object]
-        elif isinstance(json_object, ReAsk):
-            return json_object.__dict__
+    def _(dict_object: Any) -> Any:
+        if isinstance(dict_object, dict):
+            return {key: _(value) for key, value in dict_object.items()}
+        elif isinstance(dict_object, list):
+            return [_(item) for item in dict_object]
+        elif isinstance(dict_object, ReAsk):
+            return dict_object.__dict__
         else:
-            return json_object
+            return dict_object
 
-    return _reask_json_as_dict(json)
+    return _(dict_with_reasks)
 
 
 def sub_reasks_with_fixed_values(value: Any) -> Any:

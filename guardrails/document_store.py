@@ -18,8 +18,9 @@ except ImportError:
 class Document:
     """Document holds text and metadata of a document.
 
-    Examples of documents are PDFs, Word documents, etc. A collection of related text
-    in an NLP application can be thought of a document as well.
+    Examples of documents are PDFs, Word documents, etc. A collection of
+    related text in an NLP application can be thought of a document as
+    well.
     """
 
     id: str
@@ -36,7 +37,8 @@ PageCoordinates = namedtuple("PageCoordinates", ["doc_id", "page_num"])
 class Page:
     """Page holds text and metadata of a page in a document.
 
-    It also containts the coordinates of the page in the document."""
+    It also containts the coordinates of the page in the document.
+    """
 
     cordinates: PageCoordinates
     text: str
@@ -44,8 +46,8 @@ class Page:
 
 
 class DocumentStoreBase(ABC):
-    """
-    Abstract class for a store that can store text, and metadata from documents.
+    """Abstract class for a store that can store text, and metadata from
+    documents.
 
     The store can be queried by text for similar documents.
     """
@@ -64,8 +66,7 @@ class DocumentStoreBase(ABC):
 
     @abstractmethod
     def search(self, query: str, k: int = 4) -> List[Page]:
-        """Searches for pages which contain the text similar to
-        the query.
+        """Searches for pages which contain the text similar to the query.
 
         Args:
             query: Text to search for.
@@ -106,10 +107,8 @@ class DocumentStoreBase(ABC):
 
 
 class EphemeralDocumentStore(DocumentStoreBase):
-    """
-    EphemeralDocumentStore is a document store that stores the documents on
-    local disk and use a ephemeral vector store like Faiss
-    """
+    """EphemeralDocumentStore is a document store that stores the documents on
+    local disk and use a ephemeral vector store like Faiss."""
 
     def __init__(self, vector_db: VectorDBBase, path: Optional[str] = None):
         """Creates a new EphemeralDocumentStore.
