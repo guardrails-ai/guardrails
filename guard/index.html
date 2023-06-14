@@ -923,6 +923,20 @@ to get help and share your work!
   
   
     <li class="md-nav__item">
+      <a href="../integrations/openai_functions/" class="md-nav__link">
+        OpenAI Functions
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../integrations/langchain/" class="md-nav__link">
         LangChain
       </a>
@@ -947,6 +961,21 @@ to get help and share your work!
           
         </ul>
       </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://docs.google.com/spreadsheets/d/1m4yELzbGQCgj84_uSe1Ws3IdlroYdwTVUkLmZm9ZVSE/edit?usp=sharing" class="md-nav__link">
+        Join the Guardrails AI team
+      </a>
     </li>
   
 
@@ -1214,7 +1243,7 @@ the LLM and the validated output.</p>
 
 
 <h2 id="guardrails.guard.Guard.__call__" class="doc doc-heading">
-<code class="highlight language-python"><span class="fm">__call__</span><span class="p">(</span><span class="n">llm_api</span><span class="p">,</span> <span class="n">prompt_params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">num_reasks</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
+<code class="highlight language-python"><span class="fm">__call__</span><span class="p">(</span><span class="n">llm_api</span><span class="p">,</span> <span class="n">prompt_params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">num_reasks</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
 
 </h2>
 
@@ -1257,11 +1286,11 @@ the LLM and the validated output.</p>
         <tr>
           <td><code>num_reasks</code></td>
           <td>
-                <code>int</code>
+                <code><span title="typing.Optional">Optional</span>[int]</code>
           </td>
           <td><p>The max times to re-ask the LLM for invalid output.</p></td>
           <td>
-                <code>1</code>
+                <code>None</code>
           </td>
         </tr>
     </tbody>

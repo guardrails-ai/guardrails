@@ -934,6 +934,20 @@ to get help and share your work!
   
   
     <li class="md-nav__item">
+      <a href="../../integrations/openai_functions/" class="md-nav__link">
+        OpenAI Functions
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../integrations/langchain/" class="md-nav__link">
         LangChain
       </a>
@@ -958,6 +972,21 @@ to get help and share your work!
           
         </ul>
       </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://docs.google.com/spreadsheets/d/1m4yELzbGQCgj84_uSe1Ws3IdlroYdwTVUkLmZm9ZVSE/edit?usp=sharing" class="md-nav__link">
+        Join the Guardrails AI team
+      </a>
     </li>
   
 
@@ -1178,7 +1207,7 @@ After that, <span style="color: #008080; text-decoration-color: #008080; font-we
 <div class="language-xml highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nt">&lt;instructions&gt;</span>
 </span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>You<span class="w"> </span>are<span class="w"> </span>a<span class="w"> </span>helpful<span class="w"> </span>assistant<span class="w"> </span>only<span class="w"> </span>capable<span class="w"> </span>of<span class="w"> </span>communicating<span class="w"> </span>with<span class="w"> </span>valid<span class="w"> </span>JSON,<span class="w"> </span>and<span class="w"> </span>no<span class="w"> </span>other<span class="w"> </span>text.
 </span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
-</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>ONLY<span class="w"> </span>return<span class="w"> </span>a<span class="w"> </span>valid<span class="w"> </span>JSON<span class="w"> </span>object<span class="w"> </span>(no<span class="w"> </span>other<span class="w"> </span>text<span class="w"> </span>is<span class="w"> </span>necessary),<span class="w"> </span>where<span class="w"> </span>the<span class="w"> </span>key<span class="w"> </span>of<span class="w"> </span>the<span class="w"> </span>field<span class="w"> </span>in<span class="w"> </span>JSON<span class="w"> </span>is<span class="w"> </span>the<span class="w"> </span>`name`<span class="w"> </span>attribute<span class="w"> </span>of<span class="w"> </span>the<span class="w"> </span>corresponding<span class="w"> </span>XML,<span class="w"> </span>and<span class="w"> </span>the<span class="w"> </span>value<span class="w"> </span>is<span class="w"> </span>of<span class="w"> </span>the<span class="w"> </span>type<span class="w"> </span>specified<span class="w"> </span>by<span class="w"> </span>the<span class="w"> </span>corresponding<span class="w"> </span>XML&#39;s<span class="w"> </span>tag.<span class="w"> </span>The<span class="w"> </span>JSON<span class="w"> </span>MUST<span class="w"> </span>conform<span class="w"> </span>to<span class="w"> </span>the<span class="w"> </span>XML<span class="w"> </span>format,<span class="w"> </span>including<span class="w"> </span>any<span class="w"> </span>types<span class="w"> </span>and<span class="w"> </span>format<span class="w"> </span>requests<span class="w"> </span>e.g.<span class="w"> </span>requests<span class="w"> </span>for<span class="w"> </span>lists,<span class="w"> </span>objects<span class="w"> </span>and<span class="w"> </span>specific<span class="w"> </span>types.<span class="w"> </span>Be<span class="w"> </span>correct<span class="w"> </span>and<span class="w"> </span>concise.<span class="w"> </span>If<span class="w"> </span>you<span class="w"> </span>are<span class="w"> </span>unsure<span class="w"> </span>anywhere,<span class="w"> </span>enter<span class="w"> </span>`None`.
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>ONLY<span class="w"> </span>return<span class="w"> </span>a<span class="w"> </span>valid<span class="w"> </span>JSON<span class="w"> </span>object<span class="w"> </span>(no<span class="w"> </span>other<span class="w"> </span>text<span class="w"> </span>is<span class="w"> </span>necessary),<span class="w"> </span>where<span class="w"> </span>the<span class="w"> </span>key<span class="w"> </span>of<span class="w"> </span>the<span class="w"> </span>field<span class="w"> </span>in<span class="w"> </span>JSON<span class="w"> </span>is<span class="w"> </span>the<span class="w"> </span>`name`<span class="w"> </span>attribute<span class="w"> </span>of<span class="w"> </span>the<span class="w"> </span>corresponding<span class="w"> </span>XML,<span class="w"> </span>and<span class="w"> </span>the<span class="w"> </span>value<span class="w"> </span>is<span class="w"> </span>of<span class="w"> </span>the<span class="w"> </span>type<span class="w"> </span>specified<span class="w"> </span>by<span class="w"> </span>the<span class="w"> </span>corresponding<span class="w"> </span>XML&#39;s<span class="w"> </span>tag.<span class="w"> </span>The<span class="w"> </span>JSON<span class="w"> </span>MUST<span class="w"> </span>conform<span class="w"> </span>to<span class="w"> </span>the<span class="w"> </span>XML<span class="w"> </span>format,<span class="w"> </span>including<span class="w"> </span>any<span class="w"> </span>types<span class="w"> </span>and<span class="w"> </span>format<span class="w"> </span>requests<span class="w"> </span>e.g.<span class="w"> </span>requests<span class="w"> </span>for<span class="w"> </span>lists,<span class="w"> </span>objects<span class="w"> </span>and<span class="w"> </span>specific<span class="w"> </span>types.<span class="w"> </span>Be<span class="w"> </span>correct<span class="w"> </span>and<span class="w"> </span>concise.<span class="w"> </span>If<span class="w"> </span>you<span class="w"> </span>are<span class="w"> </span>unsure<span class="w"> </span>anywhere,<span class="w"> </span>enter<span class="w"> </span>`null`.
 </span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>
 </span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>Here<span class="w"> </span>are<span class="w"> </span>examples<span class="w"> </span>of<span class="w"> </span>simple<span class="w"> </span>(XML,<span class="w"> </span>JSON)<span class="w"> </span>pairs<span class="w"> </span>that<span class="w"> </span>show<span class="w"> </span>the<span class="w"> </span>expected<span class="w"> </span>behavior:
 </span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>-<span class="w"> </span>`<span class="nt">&lt;string</span><span class="w"> </span><span class="na">name=</span><span class="s">&#39;foo&#39;</span><span class="w"> </span><span class="na">format=</span><span class="s">&#39;two-words lower-case&#39;</span><span class="w"> </span><span class="nt">/&gt;</span>`<span class="w"> </span>=&gt;<span class="w"> </span>`{&#39;foo&#39;:<span class="w"> </span>&#39;example<span class="w"> </span>one&#39;}`
@@ -1211,7 +1240,7 @@ After that, <span style="color: #008080; text-decoration-color: #008080; font-we
 </span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>
 </span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>{output_schema}
 </span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>
-</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>ONLY<span class="w"> </span>return<span class="w"> </span>a<span class="w"> </span>valid<span class="w"> </span>JSON<span class="w"> </span>object<span class="w"> </span>(no<span class="w"> </span>other<span class="w"> </span>text<span class="w"> </span>is<span class="w"> </span>necessary),<span class="w"> </span>where<span class="w"> </span>the<span class="w"> </span>key<span class="w"> </span>of<span class="w"> </span>the<span class="w"> </span>field<span class="w"> </span>in<span class="w"> </span>JSON<span class="w"> </span>is<span class="w"> </span>the<span class="w"> </span>`name`<span class="w"> </span>attribute<span class="w"> </span>of<span class="w"> </span>the<span class="w"> </span>corresponding<span class="w"> </span>XML,<span class="w"> </span>and<span class="w"> </span>the<span class="w"> </span>value<span class="w"> </span>is<span class="w"> </span>of<span class="w"> </span>the<span class="w"> </span>type<span class="w"> </span>specified<span class="w"> </span>by<span class="w"> </span>the<span class="w"> </span>corresponding<span class="w"> </span>XML&#39;s<span class="w"> </span>tag.<span class="w"> </span>The<span class="w"> </span>JSON<span class="w"> </span>MUST<span class="w"> </span>conform<span class="w"> </span>to<span class="w"> </span>the<span class="w"> </span>XML<span class="w"> </span>format,<span class="w"> </span>including<span class="w"> </span>any<span class="w"> </span>types<span class="w"> </span>and<span class="w"> </span>format<span class="w"> </span>requests<span class="w"> </span>e.g.<span class="w"> </span>requests<span class="w"> </span>for<span class="w"> </span>lists,<span class="w"> </span>objects<span class="w"> </span>and<span class="w"> </span>specific<span class="w"> </span>types.<span class="w"> </span>Be<span class="w"> </span>correct<span class="w"> </span>and<span class="w"> </span>concise.<span class="w"> </span>If<span class="w"> </span>you<span class="w"> </span>are<span class="w"> </span>unsure<span class="w"> </span>anywhere,<span class="w"> </span>enter<span class="w"> </span>`None`.
+</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>ONLY<span class="w"> </span>return<span class="w"> </span>a<span class="w"> </span>valid<span class="w"> </span>JSON<span class="w"> </span>object<span class="w"> </span>(no<span class="w"> </span>other<span class="w"> </span>text<span class="w"> </span>is<span class="w"> </span>necessary),<span class="w"> </span>where<span class="w"> </span>the<span class="w"> </span>key<span class="w"> </span>of<span class="w"> </span>the<span class="w"> </span>field<span class="w"> </span>in<span class="w"> </span>JSON<span class="w"> </span>is<span class="w"> </span>the<span class="w"> </span>`name`<span class="w"> </span>attribute<span class="w"> </span>of<span class="w"> </span>the<span class="w"> </span>corresponding<span class="w"> </span>XML,<span class="w"> </span>and<span class="w"> </span>the<span class="w"> </span>value<span class="w"> </span>is<span class="w"> </span>of<span class="w"> </span>the<span class="w"> </span>type<span class="w"> </span>specified<span class="w"> </span>by<span class="w"> </span>the<span class="w"> </span>corresponding<span class="w"> </span>XML&#39;s<span class="w"> </span>tag.<span class="w"> </span>The<span class="w"> </span>JSON<span class="w"> </span>MUST<span class="w"> </span>conform<span class="w"> </span>to<span class="w"> </span>the<span class="w"> </span>XML<span class="w"> </span>format,<span class="w"> </span>including<span class="w"> </span>any<span class="w"> </span>types<span class="w"> </span>and<span class="w"> </span>format<span class="w"> </span>requests<span class="w"> </span>e.g.<span class="w"> </span>requests<span class="w"> </span>for<span class="w"> </span>lists,<span class="w"> </span>objects<span class="w"> </span>and<span class="w"> </span>specific<span class="w"> </span>types.<span class="w"> </span>Be<span class="w"> </span>correct<span class="w"> </span>and<span class="w"> </span>concise.<span class="w"> </span>If<span class="w"> </span>you<span class="w"> </span>are<span class="w"> </span>unsure<span class="w"> </span>anywhere,<span class="w"> </span>enter<span class="w"> </span>`null`.
 </span><span id="__span-4-11"><a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>
 </span><span id="__span-4-12"><a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>Here<span class="w"> </span>are<span class="w"> </span>examples<span class="w"> </span>of<span class="w"> </span>simple<span class="w"> </span>(XML,<span class="w"> </span>JSON)<span class="w"> </span>pairs<span class="w"> </span>that<span class="w"> </span>show<span class="w"> </span>the<span class="w"> </span>expected<span class="w"> </span>behavior:
 </span><span id="__span-4-13"><a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a>-<span class="w"> </span>`<span class="nt">&lt;string</span><span class="w"> </span><span class="na">name=</span><span class="s">&#39;foo&#39;</span><span class="w"> </span><span class="na">format=</span><span class="s">&#39;two-words lower-case&#39;</span><span class="w"> </span><span class="nt">/&gt;</span>`<span class="w"> </span>=&gt;<span class="w"> </span>`{&#39;foo&#39;:<span class="w"> </span>&#39;example<span class="w"> </span>one&#39;}`
@@ -1710,7 +1739,7 @@ Here are examples of simple <span style="font-weight: bold">(</span>XML, JSON<sp
 │   │ <span style="background-color: #fff0f2">│ `name` attribute of the corresponding XML, and the value is of the type specified by the corresponding  │</span> │
 │   │ <span style="background-color: #fff0f2">│ XML's tag. The JSON MUST conform to the XML format, including any types and format requests e.g.        │</span> │
 │   │ <span style="background-color: #fff0f2">│ requests for lists, objects and specific types. Be correct and concise. If you are unsure anywhere,     │</span> │
-│   │ <span style="background-color: #fff0f2">│ enter `None`.                                                                                           │</span> │
+│   │ <span style="background-color: #fff0f2">│ enter `null`.                                                                                           │</span> │
 │   │ <span style="background-color: #fff0f2">│                                                                                                         │</span> │
 │   │ <span style="background-color: #fff0f2">│ Here are examples of simple (XML, JSON) pairs that show the expected behavior:                          │</span> │
 │   │ <span style="background-color: #fff0f2">│ - `&lt;string name='foo' format='two-words lower-case' /&gt;` =&gt; `{'foo': 'example one'}`                     │</span> │
@@ -2053,7 +2082,7 @@ Here are examples of simple <span style="font-weight: bold">(</span>XML, JSON<sp
     │ <span style="background-color: #f0f8ff">│ `name` attribute of the corresponding XML, and the value is of the type specified by the corresponding  │</span> │
     │ <span style="background-color: #f0f8ff">│ XML's tag. The JSON MUST conform to the XML format, including any types and format requests e.g.        │</span> │
     │ <span style="background-color: #f0f8ff">│ requests for lists, objects and specific types. Be correct and concise. If you are unsure anywhere,     │</span> │
-    │ <span style="background-color: #f0f8ff">│ enter `None`.                                                                                           │</span> │
+    │ <span style="background-color: #f0f8ff">│ enter `null`.                                                                                           │</span> │
     │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
     │ <span style="background-color: #f0f8ff">│ Here are examples of simple (XML, JSON) pairs that show the expected behavior:                          │</span> │
     │ <span style="background-color: #f0f8ff">│ - `&lt;string name='foo' format='two-words lower-case' /&gt;` =&gt; `{{'foo': 'example one'}}`                   │</span> │
@@ -2072,7 +2101,7 @@ Here are examples of simple <span style="font-weight: bold">(</span>XML, JSON<sp
     │ <span style="background-color: #fff0f2">│ `name` attribute of the corresponding XML, and the value is of the type specified by the corresponding  │</span> │
     │ <span style="background-color: #fff0f2">│ XML's tag. The JSON MUST conform to the XML format, including any types and format requests e.g.        │</span> │
     │ <span style="background-color: #fff0f2">│ requests for lists, objects and specific types. Be correct and concise. If you are unsure anywhere,     │</span> │
-    │ <span style="background-color: #fff0f2">│ enter `None`.                                                                                           │</span> │
+    │ <span style="background-color: #fff0f2">│ enter `null`.                                                                                           │</span> │
     │ <span style="background-color: #fff0f2">│                                                                                                         │</span> │
     │ <span style="background-color: #fff0f2">│ Here are examples of simple (XML, JSON) pairs that show the expected behavior:                          │</span> │
     │ <span style="background-color: #fff0f2">│ - `&lt;string name='foo' format='two-words lower-case' /&gt;` =&gt; `{'foo': 'example one'}`                     │</span> │

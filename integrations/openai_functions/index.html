@@ -10,27 +10,27 @@
         <meta name="author" content="Shreya Rajpal">
       
       
-        <link rel="canonical" href="https://getguardrails.ai/data_types/">
+        <link rel="canonical" href="https://getguardrails.ai/integrations/openai_functions/">
       
       
-        <link rel="prev" href="../guard/">
+        <link rel="prev" href="../../examples/text_summarization_quality/">
       
       
-        <link rel="next" href="../validation/">
+        <link rel="next" href="../langchain/">
       
-      <link rel="icon" href="../img/favicon.ico">
+      <link rel="icon" href="../../img/favicon.ico">
       <meta name="generator" content="mkdocs-1.4.3, mkdocs-material-9.1.12">
     
     
       
-        <title>Data Types - Guardrails AI</title>
+        <title>OpenAI Functions - Guardrails AI</title>
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.85bb2934.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.85bb2934.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.a6bdf11c.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.a6bdf11c.min.css">
       
       
   
@@ -87,15 +87,15 @@
       
     
     
-      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
     
-      <link rel="stylesheet" href="../css/ansi-colours.css">
+      <link rel="stylesheet" href="../../css/ansi-colours.css">
     
-      <link rel="stylesheet" href="../css/jupyter-cells.css">
+      <link rel="stylesheet" href="../../css/jupyter-cells.css">
     
-      <link rel="stylesheet" href="../css/pandas-dataframe.css">
+      <link rel="stylesheet" href="../../css/pandas-dataframe.css">
     
-    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -124,7 +124,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#guardrails.datatypes.Boolean" class="md-skip">
+        <a href="#use-guardrails-with-openai-function-calling" class="md-skip">
           Skip to content
         </a>
       
@@ -159,9 +159,9 @@ to get help and share your work!
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href=".." title="Guardrails AI" class="md-header__button md-logo" aria-label="Guardrails AI" data-md-component="logo">
+    <a href="../.." title="Guardrails AI" class="md-header__button md-logo" aria-label="Guardrails AI" data-md-component="logo">
       
-  <img src="../img/tracks_white.png" alt="logo">
+  <img src="../../img/tracks_white.png" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -177,7 +177,7 @@ to get help and share your work!
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Data Types
+              OpenAI Functions
             
           </span>
         </div>
@@ -282,9 +282,9 @@ to get help and share your work!
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href=".." title="Guardrails AI" class="md-nav__button md-logo" aria-label="Guardrails AI" data-md-component="logo">
+    <a href="../.." title="Guardrails AI" class="md-nav__button md-logo" aria-label="Guardrails AI" data-md-component="logo">
       
-  <img src="../img/tracks_white.png" alt="logo">
+  <img src="../../img/tracks_white.png" alt="logo">
 
     </a>
     Guardrails AI
@@ -312,7 +312,7 @@ to get help and share your work!
   
   
     <li class="md-nav__item">
-      <a href=".." class="md-nav__link">
+      <a href="../.." class="md-nav__link">
         Home
       </a>
     </li>
@@ -327,7 +327,7 @@ to get help and share your work!
   
   
     <li class="md-nav__item">
-      <a href="../getting_started/" class="md-nav__link">
+      <a href="../../getting_started/" class="md-nav__link">
         Getting Started
       </a>
     </li>
@@ -373,7 +373,7 @@ to get help and share your work!
   
   
     <li class="md-nav__item">
-      <a href="../rail/" class="md-nav__link">
+      <a href="../../rail/" class="md-nav__link">
         Overview
       </a>
     </li>
@@ -387,7 +387,7 @@ to get help and share your work!
   
   
     <li class="md-nav__item">
-      <a href="../rail/output/" class="md-nav__link">
+      <a href="../../rail/output/" class="md-nav__link">
         Output Element
       </a>
     </li>
@@ -401,7 +401,7 @@ to get help and share your work!
   
   
     <li class="md-nav__item">
-      <a href="../rail/prompt/" class="md-nav__link">
+      <a href="../../rail/prompt/" class="md-nav__link">
         Prompt Element
       </a>
     </li>
@@ -415,7 +415,7 @@ to get help and share your work!
   
   
     <li class="md-nav__item">
-      <a href="../rail/instructions/" class="md-nav__link">
+      <a href="../../rail/instructions/" class="md-nav__link">
         Instruction Element
       </a>
     </li>
@@ -429,7 +429,7 @@ to get help and share your work!
   
   
     <li class="md-nav__item">
-      <a href="../rail/script/" class="md-nav__link">
+      <a href="../../rail/script/" class="md-nav__link">
         (Experimental) Script Element
       </a>
     </li>
@@ -449,18 +449,18 @@ to get help and share your work!
 
   
   
-    
-  
   
     
       
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
       
       
       
-      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+      
+      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
       
       
       
@@ -469,7 +469,7 @@ to get help and share your work!
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_4">
           <span class="md-nav__icon md-icon"></span>
           Guardrails Reference
@@ -482,7 +482,7 @@ to get help and share your work!
   
   
     <li class="md-nav__item">
-      <a href="../guard/" class="md-nav__link">
+      <a href="../../guard/" class="md-nav__link">
         Guard
       </a>
     </li>
@@ -494,179 +494,11 @@ to get help and share your work!
               
   
   
-    
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          Data Types
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../data_types/" class="md-nav__link">
         Data Types
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.datatypes.Boolean" class="md-nav__link">
-    Boolean
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.datatypes.Case" class="md-nav__link">
-    Case
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.datatypes.Choice" class="md-nav__link">
-    Choice
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.datatypes.Date" class="md-nav__link">
-    Date
-  </a>
-  
-    <nav class="md-nav" aria-label="Date">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#guardrails.datatypes.Date.date_format" class="md-nav__link">
-    date_format
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.datatypes.Email" class="md-nav__link">
-    Email
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.datatypes.Float" class="md-nav__link">
-    Float
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.datatypes.Integer" class="md-nav__link">
-    Integer
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.datatypes.List" class="md-nav__link">
-    List
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.datatypes.Object" class="md-nav__link">
-    Object
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.datatypes.Percentage" class="md-nav__link">
-    Percentage
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.datatypes.Pydantic" class="md-nav__link">
-    Pydantic
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.datatypes.PythonCode" class="md-nav__link">
-    PythonCode
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.datatypes.SQLCode" class="md-nav__link">
-    SQLCode
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.datatypes.String" class="md-nav__link">
-    String
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.datatypes.Time" class="md-nav__link">
-    Time
-  </a>
-  
-    <nav class="md-nav" aria-label="Time">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#guardrails.datatypes.Time.time_format" class="md-nav__link">
-    time_format
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.datatypes.URL" class="md-nav__link">
-    URL
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -678,7 +510,7 @@ to get help and share your work!
   
   
     <li class="md-nav__item">
-      <a href="../validation/" class="md-nav__link">
+      <a href="../../validation/" class="md-nav__link">
         Validators
       </a>
     </li>
@@ -692,7 +524,7 @@ to get help and share your work!
   
   
     <li class="md-nav__item">
-      <a href="../llm_api_wrappers/" class="md-nav__link">
+      <a href="../../llm_api_wrappers/" class="md-nav__link">
         LLM API Wrappers
       </a>
     </li>
@@ -706,7 +538,7 @@ to get help and share your work!
   
   
     <li class="md-nav__item">
-      <a href="../logs/" class="md-nav__link">
+      <a href="../../logs/" class="md-nav__link">
         Inspecting logs
       </a>
     </li>
@@ -720,7 +552,7 @@ to get help and share your work!
   
   
     <li class="md-nav__item">
-      <a href="../cli/" class="md-nav__link">
+      <a href="../../cli/" class="md-nav__link">
         Guardrails CLI
       </a>
     </li>
@@ -773,7 +605,7 @@ to get help and share your work!
   
   
     <li class="md-nav__item">
-      <a href="../use_cases/text2sql/text2sql/" class="md-nav__link">
+      <a href="../../use_cases/text2sql/text2sql/" class="md-nav__link">
         Text to SQL
       </a>
     </li>
@@ -826,7 +658,7 @@ to get help and share your work!
   
   
     <li class="md-nav__item">
-      <a href="../examples/guardrails_with_chat_models/" class="md-nav__link">
+      <a href="../../examples/guardrails_with_chat_models/" class="md-nav__link">
         Use Guardrails with Chat Models
       </a>
     </li>
@@ -840,7 +672,7 @@ to get help and share your work!
   
   
     <li class="md-nav__item">
-      <a href="../examples/select_choice_based_on_action/" class="md-nav__link">
+      <a href="../../examples/select_choice_based_on_action/" class="md-nav__link">
         If condition: generate different JSON objects based on condition
       </a>
     </li>
@@ -854,7 +686,7 @@ to get help and share your work!
   
   
     <li class="md-nav__item">
-      <a href="../examples/extracting_entities/" class="md-nav__link">
+      <a href="../../examples/extracting_entities/" class="md-nav__link">
         Extracting entities from ToS
       </a>
     </li>
@@ -868,7 +700,7 @@ to get help and share your work!
   
   
     <li class="md-nav__item">
-      <a href="../examples/bug_free_python_code/" class="md-nav__link">
+      <a href="../../examples/bug_free_python_code/" class="md-nav__link">
         Generating bug-free Python code
       </a>
     </li>
@@ -882,7 +714,7 @@ to get help and share your work!
   
   
     <li class="md-nav__item">
-      <a href="../examples/no_secrets_in_generated_text/" class="md-nav__link">
+      <a href="../../examples/no_secrets_in_generated_text/" class="md-nav__link">
         No secrets in generated text
       </a>
     </li>
@@ -896,7 +728,7 @@ to get help and share your work!
   
   
     <li class="md-nav__item">
-      <a href="../examples/syntax_error_free_sql/" class="md-nav__link">
+      <a href="../../examples/syntax_error_free_sql/" class="md-nav__link">
         Natural language to bug-free SQL
       </a>
     </li>
@@ -910,7 +742,7 @@ to get help and share your work!
   
   
     <li class="md-nav__item">
-      <a href="../examples/recipe_generation/" class="md-nav__link">
+      <a href="../../examples/recipe_generation/" class="md-nav__link">
         Vegan Mac & Cheese Recipe Generator
       </a>
     </li>
@@ -924,7 +756,7 @@ to get help and share your work!
   
   
     <li class="md-nav__item">
-      <a href="../examples/valid_chess_moves/" class="md-nav__link">
+      <a href="../../examples/valid_chess_moves/" class="md-nav__link">
         Using GPT to play valid chess moves
       </a>
     </li>
@@ -938,7 +770,7 @@ to get help and share your work!
   
   
     <li class="md-nav__item">
-      <a href="../examples/translation_to_specific_language/" class="md-nav__link">
+      <a href="../../examples/translation_to_specific_language/" class="md-nav__link">
         Translate text with profanity filtering
       </a>
     </li>
@@ -952,7 +784,7 @@ to get help and share your work!
   
   
     <li class="md-nav__item">
-      <a href="../examples/generate_structured_data/" class="md-nav__link">
+      <a href="../../examples/generate_structured_data/" class="md-nav__link">
         Generate structured synthetic data
       </a>
     </li>
@@ -966,7 +798,7 @@ to get help and share your work!
   
   
     <li class="md-nav__item">
-      <a href="../examples/translation_with_quality_check/" class="md-nav__link">
+      <a href="../../examples/translation_with_quality_check/" class="md-nav__link">
         Ensure translated text is high quality
       </a>
     </li>
@@ -980,7 +812,7 @@ to get help and share your work!
   
   
     <li class="md-nav__item">
-      <a href="../examples/text_summarization_quality/" class="md-nav__link">
+      <a href="../../examples/text_summarization_quality/" class="md-nav__link">
         Check key info present in generated summary
       </a>
     </li>
@@ -1000,18 +832,18 @@ to get help and share your work!
 
   
   
+    
+  
   
     
       
     
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
       
       
       
-        
-      
-      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" checked>
       
       
       
@@ -1020,7 +852,7 @@ to get help and share your work!
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="true">
         <label class="md-nav__title" for="__nav_7">
           <span class="md-nav__icon md-icon"></span>
           Integrations
@@ -1031,11 +863,66 @@ to get help and share your work!
               
   
   
+    
   
-    <li class="md-nav__item">
-      <a href="../integrations/openai_functions/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          OpenAI Functions
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         OpenAI Functions
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#step-1-create-a-pydantic-model-representing-the-data-you-want-to-generate" class="md-nav__link">
+    Step 1: Create a Pydantic Model representing the data you want to generate
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-2-create-a-guard-object-with-your-pydantic-model" class="md-nav__link">
+    Step 2: Create a Guard object with your Pydantic Model
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#optional-step-3-view-logs-of-the-prompt-and-response" class="md-nav__link">
+    (Optional) Step 3: View logs of the prompt and response
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1047,7 +934,7 @@ to get help and share your work!
   
   
     <li class="md-nav__item">
-      <a href="../integrations/langchain/" class="md-nav__link">
+      <a href="../langchain/" class="md-nav__link">
         LangChain
       </a>
     </li>
@@ -1061,7 +948,7 @@ to get help and share your work!
   
   
     <li class="md-nav__item">
-      <a href="../integrations/pydantic_validation/" class="md-nav__link">
+      <a href="../pydantic_validation/" class="md-nav__link">
         Pydantic
       </a>
     </li>
@@ -1107,6 +994,8 @@ to get help and share your work!
   
   
   
+    
+  
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
@@ -1115,139 +1004,22 @@ to get help and share your work!
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#guardrails.datatypes.Boolean" class="md-nav__link">
-    Boolean
+  <a href="#step-1-create-a-pydantic-model-representing-the-data-you-want-to-generate" class="md-nav__link">
+    Step 1: Create a Pydantic Model representing the data you want to generate
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#guardrails.datatypes.Case" class="md-nav__link">
-    Case
+  <a href="#step-2-create-a-guard-object-with-your-pydantic-model" class="md-nav__link">
+    Step 2: Create a Guard object with your Pydantic Model
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#guardrails.datatypes.Choice" class="md-nav__link">
-    Choice
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.datatypes.Date" class="md-nav__link">
-    Date
-  </a>
-  
-    <nav class="md-nav" aria-label="Date">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#guardrails.datatypes.Date.date_format" class="md-nav__link">
-    date_format
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.datatypes.Email" class="md-nav__link">
-    Email
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.datatypes.Float" class="md-nav__link">
-    Float
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.datatypes.Integer" class="md-nav__link">
-    Integer
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.datatypes.List" class="md-nav__link">
-    List
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.datatypes.Object" class="md-nav__link">
-    Object
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.datatypes.Percentage" class="md-nav__link">
-    Percentage
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.datatypes.Pydantic" class="md-nav__link">
-    Pydantic
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.datatypes.PythonCode" class="md-nav__link">
-    PythonCode
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.datatypes.SQLCode" class="md-nav__link">
-    SQLCode
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.datatypes.String" class="md-nav__link">
-    String
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.datatypes.Time" class="md-nav__link">
-    Time
-  </a>
-  
-    <nav class="md-nav" aria-label="Time">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#guardrails.datatypes.Time.time_format" class="md-nav__link">
-    time_format
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guardrails.datatypes.URL" class="md-nav__link">
-    URL
+  <a href="#optional-step-3-view-logs-of-the-prompt-and-response" class="md-nav__link">
+    (Optional) Step 3: View logs of the prompt and response
   </a>
   
 </li>
@@ -1273,633 +1045,251 @@ to get help and share your work!
   
 
 
-  <h1>Data Types</h1>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+<script>
+(function() {
+  function addWidgetsRenderer() {
+    var requireJsScript = document.createElement('script');
+    requireJsScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js';
 
-<!-- ::: my_library.my_module.my_class -->
+    var mimeElement = document.querySelector('script[type="application/vnd.jupyter.widget-view+json"]');
+    var jupyterWidgetsScript = document.createElement('script');
+    var widgetRendererSrc = 'https://unpkg.com/@jupyter-widgets/html-manager@*/dist/embed-amd.js';
+    var widgetState;
 
+    // Fallback for older version:
+    try {
+      widgetState = mimeElement && JSON.parse(mimeElement.innerHTML);
 
+      if (widgetState && (widgetState.version_major < 2 || !widgetState.version_major)) {
+        widgetRendererSrc = 'jupyter-js-widgets@*/dist/embed.js';
+      }
+    } catch(e) {}
 
-<div class="doc doc-object doc-module">
+    jupyterWidgetsScript.src = widgetRendererSrc;
 
+    document.body.appendChild(requireJsScript);
+    document.body.appendChild(jupyterWidgetsScript);
+  }
 
+  document.addEventListener('DOMContentLoaded', addWidgetsRenderer);
+}());
+</script>
 
-  <div class="doc doc-contents first">
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h1 id="use-guardrails-with-openai-function-calling">Use Guardrails with OpenAI Function Calling</h1>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>You can use <code>Guardrails</code> with OpenAI's function calling API using a combination of Guardrails and Pydantic. In this notebook, we walk through an example of how to use Guardrails with OpenAI's function calling API for generating structured data.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
 
-  
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="guardrails.datatypes.Boolean" class="doc doc-heading">
-        <code>Boolean</code>
-
-
-</h2>
-
-
-  <div class="doc doc-contents ">
-      <p class="doc doc-class-bases">
-        Bases: <code><span title="guardrails.datatypes.ScalarType">ScalarType</span></code></p>
-
-  
-      <p>Element tag: <code>&lt;bool&gt;</code></p>
-
-
-
-  
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-  </div>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">import</span> <span class="nn">openai</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">import</span> <span class="nn">os</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="kn">from</span> <span class="nn">rich</span> <span class="kn">import</span> <span class="nb">print</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="kn">import</span> <span class="nn">guardrails</span> <span class="k">as</span> <span class="nn">gd</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;OPENAI_API_KEY&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;YOUR_API_KEY&quot;</span>
+</span></code></pre></div>
 
 </div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="step-1-create-a-pydantic-model-representing-the-data-you-want-to-generate">Step 1: Create a Pydantic Model representing the data you want to generate</h2>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
 
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="guardrails.datatypes.Case" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">Case</span><span class="p">(</span><span class="n">children</span><span class="p">,</span> <span class="n">format_attr</span><span class="p">,</span> <span class="n">element</span><span class="p">)</span></code>
-
-</h2>
-
-
-  <div class="doc doc-contents ">
-      <p class="doc doc-class-bases">
-        Bases: <code><span title="guardrails.datatypes.NonScalarType">NonScalarType</span></code></p>
-
-  
-      <p>Element tag: <code>&lt;case&gt;</code></p>
-
-
-
-  
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-  </div>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="k">class</span> <span class="nc">Movie</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>    <span class="n">rank</span><span class="p">:</span> <span class="nb">int</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    <span class="n">details</span><span class="p">:</span> <span class="nb">str</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="k">class</span> <span class="nc">Director</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;A movie director&quot;&quot;&quot;</span>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>    <span class="n">movies</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Movie</span><span class="p">]</span>
+</span></code></pre></div>
 
 </div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="step-2-create-a-guard-object-with-your-pydantic-model">Step 2: Create a <code>Guard</code> object with your Pydantic Model</h2>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
 
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="guardrails.datatypes.Choice" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">Choice</span><span class="p">(</span><span class="n">children</span><span class="p">,</span> <span class="n">format_attr</span><span class="p">,</span> <span class="n">element</span><span class="p">)</span></code>
-
-</h2>
-
-
-  <div class="doc doc-contents ">
-      <p class="doc doc-class-bases">
-        Bases: <code><span title="guardrails.datatypes.NonScalarType">NonScalarType</span></code></p>
-
-  
-      <p>Element tag: <code>&lt;object&gt;</code></p>
-
-
-
-  
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-  </div>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">guard</span> <span class="o">=</span> <span class="n">gd</span><span class="o">.</span><span class="n">Guard</span><span class="o">.</span><span class="n">from_pydantic</span><span class="p">(</span><span class="n">Director</span><span class="p">,</span> <span class="n">prompt</span><span class="o">=</span><span class="s2">&quot;Generate data about a movie director.&quot;</span><span class="p">)</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">raw_llm_output</span><span class="p">,</span> <span class="n">validated_output</span> <span class="o">=</span> <span class="n">guard</span><span class="p">(</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>    <span class="n">openai</span><span class="o">.</span><span class="n">ChatCompletion</span><span class="o">.</span><span class="n">create</span><span class="p">,</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>    <span class="n">model</span><span class="o">=</span><span class="s2">&quot;gpt-4-0613&quot;</span><span class="p">,</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>    <span class="n">max_tokens</span><span class="o">=</span><span class="mi">1024</span><span class="p">,</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>    <span class="n">temperature</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="p">)</span>
+</span></code></pre></div>
 
 </div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
 
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="guardrails.datatypes.Date" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">Date</span><span class="p">(</span><span class="n">children</span><span class="p">,</span> <span class="n">format_attr</span><span class="p">,</span> <span class="n">element</span><span class="p">)</span></code>
-
-</h2>
-
-
-  <div class="doc doc-contents ">
-      <p class="doc doc-class-bases">
-        Bases: <code><span title="guardrails.datatypes.ScalarType">ScalarType</span></code></p>
-
-  
-      <p>Element tag: <code>&lt;date&gt;</code></p>
-<p>To configure the date format, create a date-format attribute on the
-element. E.g. <code>&lt;date name="..." ... date-format="%Y-%m-%d" /&gt;</code></p>
-
-
-
-  
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-<div class="doc doc-object doc-attribute">
-
-
-
-<h3 id="guardrails.datatypes.Date.date_format" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">date_format</span> <span class="o">=</span> <span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">&#39;</span></code>
-  
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
-  </span>
-
-</h3>
-
-
-  <div class="doc doc-contents ">
-  </div>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nb">print</span><span class="p">(</span><span class="n">validated_output</span><span class="p">)</span>
+</span></code></pre></div>
 
 </div>
+<div class="output_wrapper">
+<div class="output">
+<div class="output_area">
+<div class="output_html rendered_html output_subarea ">
+<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace"><span style="font-weight: bold">{</span>
+    <span style="color: #008000; text-decoration-color: #008000">'name'</span>: <span style="color: #008000; text-decoration-color: #008000">'Christopher Nolan'</span>,
+    <span style="color: #008000; text-decoration-color: #008000">'movies'</span>: <span style="font-weight: bold">[</span>
+        <span style="font-weight: bold">{</span>
+            <span style="color: #008000; text-decoration-color: #008000">'rank'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">1</span>,
+            <span style="color: #008000; text-decoration-color: #008000">'title'</span>: <span style="color: #008000; text-decoration-color: #008000">'Inception'</span>,
+            <span style="color: #008000; text-decoration-color: #008000">'details'</span>: <span style="color: #008000; text-decoration-color: #008000">'A thief who steals corporate secrets through the use of dream-sharing technology is given </span>
+<span style="color: #008000; text-decoration-color: #008000">the inverse task of planting an idea into the mind of a CEO.'</span>
+        <span style="font-weight: bold">}</span>,
+        <span style="font-weight: bold">{</span>
+            <span style="color: #008000; text-decoration-color: #008000">'rank'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">2</span>,
+            <span style="color: #008000; text-decoration-color: #008000">'title'</span>: <span style="color: #008000; text-decoration-color: #008000">'The Dark Knight'</span>,
+            <span style="color: #008000; text-decoration-color: #008000">'details'</span>: <span style="color: #008000; text-decoration-color: #008000">'When the menace known as the Joker wreaks havoc and chaos on the people of Gotham, Batman </span>
+<span style="color: #008000; text-decoration-color: #008000">must accept one of the greatest psychological and physical tests of his ability to fight injustice.'</span>
+        <span style="font-weight: bold">}</span>,
+        <span style="font-weight: bold">{</span>
+            <span style="color: #008000; text-decoration-color: #008000">'rank'</span>: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">3</span>,
+            <span style="color: #008000; text-decoration-color: #008000">'title'</span>: <span style="color: #008000; text-decoration-color: #008000">'Interstellar'</span>,
+            <span style="color: #008000; text-decoration-color: #008000">'details'</span>: <span style="color: #008000; text-decoration-color: #008000">"A team of explorers travel through a wormhole in space in an attempt to ensure humanity's </span>
+<span style="color: #008000; text-decoration-color: #008000">survival."</span>
+        <span style="font-weight: bold">}</span>
+    <span style="font-weight: bold">]</span>
+<span style="font-weight: bold">}</span>
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="optional-step-3-view-logs-of-the-prompt-and-response">(Optional) Step 3: View logs of the prompt and response</h2>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
 
-
-
-
-
-  </div>
-
-  </div>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">guard</span><span class="o">.</span><span class="n">guard_state</span><span class="o">.</span><span class="n">most_recent_call</span><span class="o">.</span><span class="n">tree</span>
+</span></code></pre></div>
 
 </div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="guardrails.datatypes.Email" class="doc doc-heading">
-        <code>Email</code>
-
-
-</h2>
-
-
-  <div class="doc doc-contents ">
-      <p class="doc doc-class-bases">
-        Bases: <code><span title="guardrails.datatypes.ScalarType">ScalarType</span></code></p>
-
-  
-      <p>Element tag: <code>&lt;email&gt;</code></p>
-
-
-
-  </div>
-
+<div class="output_wrapper">
+<div class="output">
+<div class="output_area">
+<div class="output_html rendered_html output_subarea output_execute_result">
+<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">Logs
+└── ╭────────────────────────────────────────────────── Step 0 ───────────────────────────────────────────────────╮
+    │ <span style="background-color: #f0f8ff">╭──────────────────────────────────────────────── Prompt ─────────────────────────────────────────────────╮</span> │
+    │ <span style="background-color: #f0f8ff">│ Generate data about a movie director.                                                                   │</span> │
+    │ <span style="background-color: #f0f8ff">╰─────────────────────────────────────────────────────────────────────────────────────────────────────────╯</span> │
+    │ <span style="background-color: #f5f5dc">╭──────────────────────────────────────────── Raw LLM Output ─────────────────────────────────────────────╮</span> │
+    │ <span style="background-color: #f5f5dc">│ {                                                                                                       │</span> │
+    │ <span style="background-color: #f5f5dc">│   "director": {                                                                                         │</span> │
+    │ <span style="background-color: #f5f5dc">│     "name": "Christopher Nolan",                                                                        │</span> │
+    │ <span style="background-color: #f5f5dc">│     "birth_date": "1970-07-30",                                                                         │</span> │
+    │ <span style="background-color: #f5f5dc">│     "nationality": "British",                                                                           │</span> │
+    │ <span style="background-color: #f5f5dc">│     "awards": [                                                                                         │</span> │
+    │ <span style="background-color: #f5f5dc">│       {                                                                                                 │</span> │
+    │ <span style="background-color: #f5f5dc">│         "name": "Academy Award for Best Director",                                                      │</span> │
+    │ <span style="background-color: #f5f5dc">│         "year": 2010                                                                                    │</span> │
+    │ <span style="background-color: #f5f5dc">│       },                                                                                                │</span> │
+    │ <span style="background-color: #f5f5dc">│       {                                                                                                 │</span> │
+    │ <span style="background-color: #f5f5dc">│         "name": "Golden Globe Award for Best Director",                                                 │</span> │
+    │ <span style="background-color: #f5f5dc">│         "year": 2011                                                                                    │</span> │
+    │ <span style="background-color: #f5f5dc">│       },                                                                                                │</span> │
+    │ <span style="background-color: #f5f5dc">│       {                                                                                                 │</span> │
+    │ <span style="background-color: #f5f5dc">│         "name": "BAFTA Award for Best Direction",                                                       │</span> │
+    │ <span style="background-color: #f5f5dc">│         "year": 2011                                                                                    │</span> │
+    │ <span style="background-color: #f5f5dc">│       }                                                                                                 │</span> │
+    │ <span style="background-color: #f5f5dc">│     ],                                                                                                  │</span> │
+    │ <span style="background-color: #f5f5dc">│     "movies": [                                                                                         │</span> │
+    │ <span style="background-color: #f5f5dc">│       {                                                                                                 │</span> │
+    │ <span style="background-color: #f5f5dc">│         "title": "Memento",                                                                             │</span> │
+    │ <span style="background-color: #f5f5dc">│         "year": 2000,                                                                                   │</span> │
+    │ <span style="background-color: #f5f5dc">│         "genre": "Mystery/Thriller"                                                                     │</span> │
+    │ <span style="background-color: #f5f5dc">│       },                                                                                                │</span> │
+    │ <span style="background-color: #f5f5dc">│       {                                                                                                 │</span> │
+    │ <span style="background-color: #f5f5dc">│         "title": "The Dark Knight",                                                                     │</span> │
+    │ <span style="background-color: #f5f5dc">│         "year": 2008,                                                                                   │</span> │
+    │ <span style="background-color: #f5f5dc">│         "genre": "Action/Crime"                                                                         │</span> │
+    │ <span style="background-color: #f5f5dc">│       },                                                                                                │</span> │
+    │ <span style="background-color: #f5f5dc">│       {                                                                                                 │</span> │
+    │ <span style="background-color: #f5f5dc">│         "title": "Inception",                                                                           │</span> │
+    │ <span style="background-color: #f5f5dc">│         "year": 2010,                                                                                   │</span> │
+    │ <span style="background-color: #f5f5dc">│         "genre": "Science Fiction/Action"                                                               │</span> │
+    │ <span style="background-color: #f5f5dc">│       }                                                                                                 │</span> │
+    │ <span style="background-color: #f5f5dc">│     ]                                                                                                   │</span> │
+    │ <span style="background-color: #f5f5dc">│   }                                                                                                     │</span> │
+    │ <span style="background-color: #f5f5dc">│ }                                                                                                       │</span> │
+    │ <span style="background-color: #f5f5dc">╰─────────────────────────────────────────────────────────────────────────────────────────────────────────╯</span> │
+    │ <span style="background-color: #f0fff0">╭─────────────────────────────────────────── Validated Output ────────────────────────────────────────────╮</span> │
+    │ <span style="background-color: #f0fff0">│ {                                                                                                       │</span> │
+    │ <span style="background-color: #f0fff0">│     'director': {                                                                                       │</span> │
+    │ <span style="background-color: #f0fff0">│         'name': 'Christopher Nolan',                                                                    │</span> │
+    │ <span style="background-color: #f0fff0">│         'birth_date': '1970-07-30',                                                                     │</span> │
+    │ <span style="background-color: #f0fff0">│         'nationality': 'British',                                                                       │</span> │
+    │ <span style="background-color: #f0fff0">│         'awards': [                                                                                     │</span> │
+    │ <span style="background-color: #f0fff0">│             {'name': 'Academy Award for Best Director', 'year': 2010},                                  │</span> │
+    │ <span style="background-color: #f0fff0">│             {'name': 'Golden Globe Award for Best Director', 'year': 2011},                             │</span> │
+    │ <span style="background-color: #f0fff0">│             {'name': 'BAFTA Award for Best Direction', 'year': 2011}                                    │</span> │
+    │ <span style="background-color: #f0fff0">│         ],                                                                                              │</span> │
+    │ <span style="background-color: #f0fff0">│         'movies': [                                                                                     │</span> │
+    │ <span style="background-color: #f0fff0">│             {'title': 'Memento', 'year': 2000, 'genre': 'Mystery/Thriller'},                            │</span> │
+    │ <span style="background-color: #f0fff0">│             {                                                                                           │</span> │
+    │ <span style="background-color: #f0fff0">│                 'title': 'The Dark Knight',                                                             │</span> │
+    │ <span style="background-color: #f0fff0">│                 'year': 2008,                                                                           │</span> │
+    │ <span style="background-color: #f0fff0">│                 'genre': 'Action/Crime'                                                                 │</span> │
+    │ <span style="background-color: #f0fff0">│             },                                                                                          │</span> │
+    │ <span style="background-color: #f0fff0">│             {                                                                                           │</span> │
+    │ <span style="background-color: #f0fff0">│                 'title': 'Inception',                                                                   │</span> │
+    │ <span style="background-color: #f0fff0">│                 'year': 2010,                                                                           │</span> │
+    │ <span style="background-color: #f0fff0">│                 'genre': 'Science Fiction/Action'                                                       │</span> │
+    │ <span style="background-color: #f0fff0">│             }                                                                                           │</span> │
+    │ <span style="background-color: #f0fff0">│         ]                                                                                               │</span> │
+    │ <span style="background-color: #f0fff0">│     }                                                                                                   │</span> │
+    │ <span style="background-color: #f0fff0">│ }                                                                                                       │</span> │
+    │ <span style="background-color: #f0fff0">╰─────────────────────────────────────────────────────────────────────────────────────────────────────────╯</span> │
+    ╰─────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+</pre>
 </div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="guardrails.datatypes.Float" class="doc doc-heading">
-        <code>Float</code>
-
-
-</h2>
-
-
-  <div class="doc doc-contents ">
-      <p class="doc doc-class-bases">
-        Bases: <code><span title="guardrails.datatypes.ScalarType">ScalarType</span></code></p>
-
-  
-      <p>Element tag: <code>&lt;float&gt;</code></p>
-
-
-
-  
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-  </div>
-
 </div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="guardrails.datatypes.Integer" class="doc doc-heading">
-        <code>Integer</code>
-
-
-</h2>
-
-
-  <div class="doc doc-contents ">
-      <p class="doc doc-class-bases">
-        Bases: <code><span title="guardrails.datatypes.ScalarType">ScalarType</span></code></p>
-
-  
-      <p>Element tag: <code>&lt;integer&gt;</code></p>
-
-
-
-  
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-  </div>
-
 </div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="guardrails.datatypes.List" class="doc doc-heading">
-        <code>List</code>
-
-
-</h2>
-
-
-  <div class="doc doc-contents ">
-      <p class="doc doc-class-bases">
-        Bases: <code><span title="guardrails.datatypes.NonScalarType">NonScalarType</span></code></p>
-
-  
-      <p>Element tag: <code>&lt;list&gt;</code></p>
-
-
-
-  
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-  </div>
-
 </div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="guardrails.datatypes.Object" class="doc doc-heading">
-        <code>Object</code>
-
-
-</h2>
-
-
-  <div class="doc doc-contents ">
-      <p class="doc doc-class-bases">
-        Bases: <code><span title="guardrails.datatypes.NonScalarType">NonScalarType</span></code></p>
-
-  
-      <p>Element tag: <code>&lt;object&gt;</code></p>
-
-
-
-  
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-  </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="guardrails.datatypes.Percentage" class="doc doc-heading">
-        <code>Percentage</code>
-
-
-</h2>
-
-
-  <div class="doc doc-contents ">
-      <p class="doc doc-class-bases">
-        Bases: <code><span title="guardrails.datatypes.ScalarType">ScalarType</span></code></p>
-
-  
-      <p>Element tag: <code>&lt;percentage&gt;</code></p>
-
-
-
-  </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="guardrails.datatypes.Pydantic" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">Pydantic</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">children</span><span class="p">,</span> <span class="n">format_attr</span><span class="p">,</span> <span class="n">element</span><span class="p">)</span></code>
-
-</h2>
-
-
-  <div class="doc doc-contents ">
-      <p class="doc doc-class-bases">
-        Bases: <code><span title="guardrails.datatypes.NonScalarType">NonScalarType</span></code></p>
-
-  
-      <p>Element tag: <code>&lt;pydantic&gt;</code></p>
-
-
-
-  
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-  </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="guardrails.datatypes.PythonCode" class="doc doc-heading">
-        <code>PythonCode</code>
-
-
-</h2>
-
-
-  <div class="doc doc-contents ">
-      <p class="doc doc-class-bases">
-        Bases: <code><span title="guardrails.datatypes.ScalarType">ScalarType</span></code></p>
-
-  
-      <p>Element tag: <code>&lt;pythoncode&gt;</code></p>
-
-
-
-  </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="guardrails.datatypes.SQLCode" class="doc doc-heading">
-        <code>SQLCode</code>
-
-
-</h2>
-
-
-  <div class="doc doc-contents ">
-      <p class="doc doc-class-bases">
-        Bases: <code><span title="guardrails.datatypes.ScalarType">ScalarType</span></code></p>
-
-  
-      <p>Element tag: <code>&lt;sql&gt;</code></p>
-
-
-
-  </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="guardrails.datatypes.String" class="doc doc-heading">
-        <code>String</code>
-
-
-</h2>
-
-
-  <div class="doc doc-contents ">
-      <p class="doc doc-class-bases">
-        Bases: <code><span title="guardrails.datatypes.ScalarType">ScalarType</span></code></p>
-
-  
-      <p>Element tag: <code>&lt;string&gt;</code></p>
-
-
-
-  
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-  </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="guardrails.datatypes.Time" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">Time</span><span class="p">(</span><span class="n">children</span><span class="p">,</span> <span class="n">format_attr</span><span class="p">,</span> <span class="n">element</span><span class="p">)</span></code>
-
-</h2>
-
-
-  <div class="doc doc-contents ">
-      <p class="doc doc-class-bases">
-        Bases: <code><span title="guardrails.datatypes.ScalarType">ScalarType</span></code></p>
-
-  
-      <p>Element tag: <code>&lt;time&gt;</code></p>
-<p>To configure the date format, create a date-format attribute on the
-element. E.g. <code>&lt;time name="..." ... time-format="%H:%M:%S" /&gt;</code></p>
-
-
-
-  
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-<div class="doc doc-object doc-attribute">
-
-
-
-<h3 id="guardrails.datatypes.Time.time_format" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">time_format</span> <span class="o">=</span> <span class="s1">&#39;%H:%M:%S&#39;</span></code>
-  
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
-  </span>
-
-</h3>
-
-
-  <div class="doc doc-contents ">
-  </div>
-
-</div>
-
-
-
-
-
-  </div>
-
-  </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="guardrails.datatypes.URL" class="doc doc-heading">
-        <code>URL</code>
-
-
-</h2>
-
-
-  <div class="doc doc-contents ">
-      <p class="doc doc-class-bases">
-        Bases: <code><span title="guardrails.datatypes.ScalarType">ScalarType</span></code></p>
-
-  
-      <p>Element tag: <code>&lt;url&gt;</code></p>
-
-
-
-  </div>
-
-</div>
-
-
-
-
-  </div>
-
-  </div>
-
 </div>
 
 
@@ -1982,10 +1372,10 @@ element. E.g. <code>&lt;time name="..." ... time-format="%H:%M:%S" /&gt;</code><
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": "..", "features": ["navigation.instant", "navigation.tracking", "navigation.expand", "navigation.sections", "content.code.annotate", "toc.follow"], "search": "../assets/javascripts/workers/search.208ed371.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.instant", "navigation.tracking", "navigation.expand", "navigation.sections", "content.code.annotate", "toc.follow"], "search": "../../assets/javascripts/workers/search.208ed371.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.c2be25ad.min.js"></script>
+      <script src="../../assets/javascripts/bundle.c2be25ad.min.js"></script>
       
     
   </body>
