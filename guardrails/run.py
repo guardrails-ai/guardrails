@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from typing import Callable, Dict, List, Optional, Tuple
 
 from eliot import add_destinations, start_action
+from pydantic import BaseModel
 
 from guardrails.llm_providers import PromptCallable
 from guardrails.prompt import Instructions, Prompt
@@ -52,6 +53,7 @@ class Runner:
     output: str = None
     reask_prompt: Optional[Prompt] = None
     guard_history: GuardHistory = field(default_factory=lambda: GuardHistory([]))
+    base_model: Optional[BaseModel] = None
 
     def _reset_guard_history(self):
         """Reset the guard history."""
@@ -235,10 +237,21 @@ class Runner:
         3. Log the output
         """
         with start_action(action_type="call", index=index, prompt=prompt) as action:
-            if prompt and instructions:
-                output = api(prompt.source, instructions=instructions.source)
-            elif prompt:
-                output = api(prompt.source)
+            try:
+                if prompt and instructions:
+                    output = api(
+                        prompt.source,
+                        instructions=instructions.source,
+                        base_model=self.base_model,
+                    )
+                elif prompt:
+                    output = api(prompt.source, base_model=self.base_model)
+            except Exception as e:
+                # If the API call fails, try calling the API again without the instructions.
+                if prompt and instructions:
+                    output = api(prompt.source, instructions=instructions.source)
+                elif prompt:
+                    output = api(prompt.source)
 
             # Post-process the output before loading it as JSON.
             output = self.post_process(output)

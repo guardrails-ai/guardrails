@@ -33,12 +33,14 @@ class Guard:
         self,
         rail: Rail,
         num_reasks: int = 1,
+        base_model: Optional[BaseModel] = None,
     ):
         """Initialize the Guard."""
         self.rail = rail
         self.num_reasks = num_reasks
         self.guard_state = GuardState([])
         self._reask_prompt = None
+        self.base_model = base_model
 
     @property
     def input_schema(self) -> InputSchema:
@@ -144,7 +146,7 @@ class Guard:
         rail = Rail.from_pydantic(
             output_class=output_class, prompt=prompt, instructions=instructions
         )
-        return cls(rail, num_reasks=num_reasks)
+        return cls(rail, num_reasks=num_reasks, base_model=output_class)
 
     def __call__(
         self,
@@ -180,6 +182,7 @@ class Guard:
                 output_schema=self.output_schema,
                 num_reasks=num_reasks,
                 reask_prompt=self.reask_prompt,
+                base_model=self.base_model,
             )
             guard_history = runner(prompt_params=prompt_params)
             self.guard_state = self.guard_state.push(guard_history)
