@@ -6,7 +6,7 @@ from typing import Any, Awaitable, Callable, Dict, Optional, Tuple, Union
 from eliot import add_destinations, start_action
 from pydantic import BaseModel
 
-from guardrails.llm_providers import PromptCallable, get_async_llm_ask, get_llm_ask
+from guardrails.llm_providers import get_async_llm_ask, get_llm_ask
 from guardrails.prompt import Instructions, Prompt
 from guardrails.rail import Rail
 from guardrails.run import AsyncRunner, Runner
