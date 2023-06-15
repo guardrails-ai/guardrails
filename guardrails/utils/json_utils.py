@@ -47,6 +47,8 @@ def verify_schema_against_json(
     type_skeleton = generate_type_skeleton_from_schema(xml_schema)
 
     def _verify_dict(schema, json):
+        if not schema.keys():
+            return True
         extra_keys = set(json.keys()) - set(schema.keys())
         if prune_extra_keys and extra_keys:
             for key in extra_keys:
