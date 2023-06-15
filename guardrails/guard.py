@@ -258,7 +258,46 @@ class Guard:
     def parse(
         self,
         llm_output: str,
-        llm_api: PromptCallable = None,
+        llm_api: Union[Callable, Callable[[Any], Awaitable[Any]]] = None,
+        num_reasks: int = 1,
+        prompt_params: Dict = None,
+        *args,
+        **kwargs,
+    ) -> Union[Tuple[str, Dict], Awaitable[Tuple[str, Dict]]]:
+        """Alternate flow to using Guard where the llm_output is known.
+
+        Args:
+            llm_output: The output from the LLM.
+            llm_api: The LLM API to use to re-ask the LLM.
+            num_reasks: The max times to re-ask the LLM for invalid output.
+
+        Returns:
+            The validated response.
+        """
+        # If the LLM API is async, return a coroutine
+        if asyncio.iscoroutinefunction(llm_api):
+            return self._async_parse(
+                llm_output,
+                llm_api=llm_api,
+                num_reasks=num_reasks,
+                prompt_params=prompt_params,
+                *args,
+                **kwargs,
+            )
+        # Otherwise, call the LLM synchronously
+        return self._sync_parse(
+            llm_output,
+            llm_api=llm_api,
+            num_reasks=num_reasks,
+            prompt_params=prompt_params,
+            *args,
+            **kwargs,
+        )
+
+    def _sync_parse(
+        self,
+        llm_output: str,
+        llm_api: Callable = None,
         num_reasks: int = 1,
         prompt_params: Dict = None,
         *args,
@@ -286,5 +325,39 @@ class Guard:
                 reask_prompt=self.reask_prompt,
             )
             guard_history = runner(prompt_params=prompt_params)
+            self.guard_state = self.guard_state.push(guard_history)
+            return sub_reasks_with_fixed_values(guard_history.validated_output)
+
+    async def _async_parse(
+        self,
+        llm_output: str,
+        llm_api: Callable[[Any], Awaitable[Any]] = None,
+        num_reasks: int = 1,
+        prompt_params: Dict = None,
+        *args,
+        **kwargs,
+    ) -> Dict:
+        """Alternate flow to using Guard where the llm_output is known.
+
+        Args:
+            llm_output: The output from the LLM.
+            llm_api: The LLM API to use to re-ask the LLM.
+            num_reasks: The max times to re-ask the LLM for invalid output.
+
+        Returns:
+            The validated response.
+        """
+        with start_action(action_type="guard_parse"):
+            runner = AsyncRunner(
+                instructions=None,
+                prompt=None,
+                api=get_async_llm_ask(llm_api, *args, **kwargs) if llm_api else None,
+                input_schema=None,
+                output_schema=self.output_schema,
+                num_reasks=num_reasks,
+                output=llm_output,
+                reask_prompt=self.reask_prompt,
+            )
+            guard_history = await runner.async_run(prompt_params=prompt_params)
             self.guard_state = self.guard_state.push(guard_history)
             return sub_reasks_with_fixed_values(guard_history.validated_output)
