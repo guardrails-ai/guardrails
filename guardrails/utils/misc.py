@@ -1,7 +1,11 @@
 import os
+import random
+from typing import List
 
+from lxml.builder import E
 from rich.pretty import pretty_repr
 
+from guardrails import datatypes as dt
 from guardrails.utils.logs_utils import GuardHistory
 from guardrails.utils.reask_utils import gather_reasks
 
@@ -72,3 +76,66 @@ def generate_test_artifacts(
 
             validated_output_repr = pretty_repr(validated_output, max_string=None)
             f.write(f"\nVALIDATED_OUTPUT = {validated_output_repr}")
+
+
+def generate_random_schemas(n: int, depth: int = 4, width: int = 10) -> List[str]:
+    """Generate random schemas that represent a valid schema.
+
+    Args:
+        n: The number of schemas to generate.
+        depth: The depth of nesting
+    """
+
+    def random_scalar_datatype():
+        selected_datatype = random.choice(
+            [
+                dt.String,
+                dt.Integer,
+                dt.Float,
+                dt.Boolean,
+                dt.Date,
+                dt.Time,
+            ]
+        )
+        return selected_datatype(None, None, None).rail_alias
+
+    def generate_schema(curr_depth):
+        if curr_depth < depth:
+            # Type of current node is choice between "object", "list", "scalar"
+            node_type = random.choice(["object", "list", "scalar"])
+
+            if node_type == "object":
+                # If "object", then generate random number of children
+                num_children = random.randint(1, width)
+                children = []
+                for _ in range(num_children):
+                    children.append(generate_schema(curr_depth + 1))
+                return E.object(
+                    *children, name=f"random_object_{random.randint(0, 1000)}"
+                )
+            elif node_type == "list":
+                # If "list", then generate a single child
+                return E.list(
+                    generate_schema(curr_depth + 1),
+                    name=f"random_list_{random.randint(0, 1000)}",
+                )
+            else:
+                # If "scalar", then return a random primitive type
+                datatype = random_scalar_datatype()
+                return E(datatype, name=f"random_{datatype}_{random.randint(0, 1000)}")
+
+        else:
+            datatype = random_scalar_datatype()
+            return E(datatype, name=f"random_{datatype}_{random.randint(0, 1000)}")
+
+    schemas = []
+    for _ in range(n):
+        root = E("output")
+        children = []
+        num_children = random.randint(1, width)
+        for _ in range(num_children):
+            children.append(generate_schema(curr_depth=1))
+        root.extend(children)
+
+        schemas.append(root)
+    return schemas
