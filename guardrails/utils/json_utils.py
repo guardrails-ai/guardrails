@@ -36,14 +36,20 @@ def generate_type_skeleton_from_schema(schema: ET._Element) -> Dict[str, Any]:
     return {child.attrib["name"]: _recurse_schema(child) for child in schema}
 
 
-def verify_schema_against_json(xml_schema: ET._Element, generated_json: Dict[str, Any]):
+def verify_schema_against_json(
+    xml_schema: ET._Element,
+    generated_json: Dict[str, Any],
+    prune_extra_keys: bool = False,
+):
     """Verify that a JSON schema is valid for a given XML."""
 
     type_skeleton = generate_type_skeleton_from_schema(xml_schema)
 
     def _verify_dict(schema, json):
-        if set(schema.keys()) != set(json.keys()):
-            return False
+        extra_keys = set(json.keys()) - set(schema.keys())
+        if prune_extra_keys and extra_keys:
+            for key in extra_keys:
+                del json[key]
 
         for key in schema.keys():
             if isinstance(schema[key], Placeholder):
@@ -96,6 +102,3 @@ def verify_schema_against_json(xml_schema: ET._Element, generated_json: Dict[str
         return True
 
     return _verify_dict(type_skeleton, generated_json)
-
-
-# TODO prune superfluous fields here
