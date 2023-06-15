@@ -62,6 +62,7 @@ EXTRAS = {
         "pytest-mock",
         "pypdfium2",
         "pytest",
+        "pytest-asyncio",
         *SQL_REQUIREMENTS,
         *VECTORDB_REQUIREMENTS,
     ]

@@ -20,6 +20,10 @@ def openai_completion_create(prompt, *args, **kwargs):
         raise ValueError("Compiled prompt not found")
 
 
+async def async_openai_completion_create(prompt, *args, **kwargs):
+    return openai_completion_create(prompt, *args, **kwargs)
+
+
 def openai_chat_completion_create(prompt, instructions, *args, **kwargs):
     """Mock the OpenAI API call to ChatCompletion.create."""
     mock_llm_responses = {

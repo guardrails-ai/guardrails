@@ -1,7 +1,7 @@
 import os
 from dataclasses import dataclass
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, cast
+from typing import Any, Awaitable, Callable, Dict, List, Optional, cast
 
 import openai
 from pydantic import BaseModel
@@ -26,6 +26,11 @@ RETRYABLE_ERRORS = tuple(OPENAI_RETRYABLE_ERRORS)
 
 class PromptCallableException(Exception):
     pass
+
+
+###
+# Synchronous wrappers
+###
 
 
 @dataclass
@@ -172,7 +177,7 @@ def manifest_wrapper(
     return manifest_response
 
 
-def get_llm_ask(llm_api: Callable, *args, **kwargs):
+def get_llm_ask(llm_api: Callable, *args, **kwargs) -> PromptCallable:
     if llm_api == openai.Completion.create:
         fn = partial(openai_wrapper, *args, **kwargs)
     elif llm_api == openai.ChatCompletion.create:
@@ -184,3 +189,120 @@ def get_llm_ask(llm_api: Callable, *args, **kwargs):
         fn = partial(llm_api, *args, **kwargs)
 
     return PromptCallable(fn=fn)
+
+
+###
+# Async wrappers
+###
+
+
+@dataclass
+class AsyncPromptCallable:
+    """A wrapper around a callable that takes in a prompt.
+
+    Catches exceptions to let the user know clearly if the callable
+    failed, and how to fix it.
+    """
+
+    fn: Callable[[Any], Awaitable[Any]]
+
+    @retry(
+        wait=wait_exponential_jitter(max=60),
+        retry=retry_if_exception_type(RETRYABLE_ERRORS),
+    )
+    async def __call__(self, *args, **kwargs):
+        try:
+            result = await self.fn(*args, **kwargs)
+        except Exception as e:
+            raise PromptCallableException(
+                "The callable `fn` passed to `Guard(fn, ...)` failed"
+                f" with the following error: `{e}`. "
+                "Make sure that `fn` can be called as a function that"
+                " takes in a single prompt string "
+                "and returns a string."
+            )
+        if not isinstance(result, str):
+            raise PromptCallableException(
+                "The callable `fn` passed to `Guard(fn, ...)` returned"
+                f" a non-string value: {result}. "
+                "Make sure that `fn` can be called as a function that"
+                " takes in a single prompt string "
+                "and returns a string."
+            )
+        return result
+
+
+async def async_openai_wrapper(
+    text: str,
+    engine: str = "text-davinci-003",
+    instructions: Optional[str] = None,
+    *args,
+    **kwargs,
+):
+    api_key = os.environ.get("OPENAI_API_KEY")
+    openai_response = await openai.Completion.create(
+        api_key=api_key,
+        engine=engine,
+        prompt=nonchat_prompt(text, instructions, **kwargs),
+        *args,
+        **kwargs,
+    )
+    return openai_response["choices"][0]["text"]
+
+
+async def async_openai_chat_wrapper(
+    text: str,
+    model="gpt-3.5-turbo",
+    instructions: Optional[str] = None,
+    *args,
+    **kwargs,
+):
+    api_key = os.environ.get("OPENAI_API_KEY")
+    openai_response = await openai.ChatCompletion.create(
+        api_key=api_key,
+        model=model,
+        messages=chat_prompt(text, instructions, **kwargs),
+        *args,
+        **kwargs,
+    )
+    return openai_response["choices"][0]["message"]["content"]
+
+
+async def async_manifest_wrapper(
+    text: str, client: Any, instructions: Optional[str] = None, *args, **kwargs
+):
+    """Async wrapper for manifest client.
+
+    To use manifest for guardrails, do
+    ```
+    client = Manifest(client_name=..., client_connection=...)
+    raw_llm_response, validated_response = guard(
+        client,
+        prompt_params={...},
+        ...
+    ```
+    """
+    if not MANIFEST:
+        raise PromptCallableException(
+            "The `manifest` package is not installed. "
+            "Install with `pip install manifest-ml`"
+        )
+    client = cast(manifest.Manifest, client)
+    manifest_response = await client.run(
+        nonchat_prompt(text, instructions, **kwargs), *args, **kwargs
+    )
+    return manifest_response
+
+
+def get_async_llm_ask(llm_api: Callable[[Any], Awaitable[Any]], *args, **kwargs):
+    if llm_api == openai.Completion.acreate:
+        fn = partial(async_openai_wrapper, *args, **kwargs)
+    elif llm_api == openai.ChatCompletion.acreate:
+        fn = partial(async_openai_chat_wrapper, *args, **kwargs)
+    elif MANIFEST and isinstance(llm_api, manifest.Manifest):
+        fn = partial(async_manifest_wrapper, client=llm_api, *args, **kwargs)
+    else:
+        # Let the user pass in an arbitrary callable.
+        fn = partial(llm_api, *args, **kwargs)
+
+    return AsyncPromptCallable(fn=fn)
