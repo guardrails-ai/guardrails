@@ -18,9 +18,10 @@ from guardrails.utils.constants import constants
 from guardrails.utils.json_utils import verify_schema_against_json
 from guardrails.utils.reask_utils import (
     FieldReAsk,
+    SkeletonReAsk,
     gather_reasks,
     get_pruned_tree,
-    get_reasks_by_element, SkeletonReAsk,
+    get_reasks_by_element,
 )
 from guardrails.validators import Validator, check_refrain_in_dict, filter_in_dict
 
@@ -357,7 +358,7 @@ class Schema:
         reasks: List[FieldReAsk],
         reask_value: Any,
         reask_prompt_template: Optional[Prompt] = None,
-    ) -> Tuple['Schema', Prompt]:
+    ) -> Tuple["Schema", Prompt]:
         """Construct a schema for reasking, and a prompt for reasking.
 
         Args:
@@ -395,7 +396,7 @@ class JsonSchema(Schema):
         reasks: List[FieldReAsk],
         reask_value: Any,
         reask_prompt_template: Optional[Prompt] = None,
-    ) -> Tuple['Schema', Prompt]:
+    ) -> Tuple["Schema", Prompt]:
         parsed_rail = deepcopy(self.root)
 
         is_skeleton_reask = not any(isinstance(reask, FieldReAsk) for reask in reasks)

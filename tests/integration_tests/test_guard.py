@@ -86,7 +86,8 @@ def validated_output():
 def guard_initializer(
     rail: Union[str, BaseModel], prompt: str, instructions: Optional[str] = None
 ) -> Guard:
-    """Helper function to initialize a Guard object using the correct method."""
+    """Helper function to initialize a Guard object using the correct
+    method."""
 
     if isinstance(rail, str):
         return Guard.from_rail_string(rail)
@@ -424,15 +425,21 @@ def test_skeleton_reask(mocker):
     assert len(guard_history) == 2
 
     # For orginal prompt and output
-    assert guard_history[0].prompt == gd.Prompt(entity_extraction.COMPILED_PROMPT_SKELETON_REASK_1)
+    assert guard_history[0].prompt == gd.Prompt(
+        entity_extraction.COMPILED_PROMPT_SKELETON_REASK_1
+    )
     assert guard_history[0].output == entity_extraction.LLM_OUTPUT_SKELETON_REASK_1
     assert (
-        guard_history[0].validated_output == entity_extraction.VALIDATED_OUTPUT_SKELETON_REASK_1
+        guard_history[0].validated_output
+        == entity_extraction.VALIDATED_OUTPUT_SKELETON_REASK_1
     )
 
     # For re-asked prompt and output
-    assert guard_history[1].prompt == gd.Prompt(entity_extraction.COMPILED_PROMPT_SKELETON_REASK_2)
+    assert guard_history[1].prompt == gd.Prompt(
+        entity_extraction.COMPILED_PROMPT_SKELETON_REASK_2
+    )
     assert guard_history[1].output == entity_extraction.LLM_OUTPUT_SKELETON_REASK_2
     assert (
-        guard_history[1].validated_output == entity_extraction.VALIDATED_OUTPUT_SKELETON_REASK_2
+        guard_history[1].validated_output
+        == entity_extraction.VALIDATED_OUTPUT_SKELETON_REASK_2
     )

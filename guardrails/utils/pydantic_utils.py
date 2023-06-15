@@ -185,8 +185,9 @@ def prepare_type_annotation(type_annotation: Any) -> Type:
 def type_annotation_to_string(type_annotation: Any) -> str:
     """Map a type_annotation to the name of the corresponding field type.
 
-    This function checks if the type_annotation is a list, dict, or a primitive type,
-    and returns the corresponding type name, e.g. "list", "object", "bool", "date", etc.
+    This function checks if the type_annotation is a list, dict, or a
+    primitive type, and returns the corresponding type name, e.g.
+    "list", "object", "bool", "date", etc.
     """
 
     # Get the type annotation from the type_annotation
@@ -216,7 +217,7 @@ def type_annotation_to_string(type_annotation: Any) -> str:
 
 
 def add_validators_to_xml_element(field_info: ModelField, element: Element) -> Element:
-    """Extract validators from a pydantic ModelField and add to XML element
+    """Extract validators from a pydantic ModelField and add to XML element.
 
     Args:
         field_info: The field info to extract validators from
@@ -463,7 +464,6 @@ def add_pydantic_validators_as_guardrails_validators(
     """
 
     def process_validators(vals, fld):
-
         if not vals:
             return
 

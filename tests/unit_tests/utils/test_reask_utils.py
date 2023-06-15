@@ -162,7 +162,9 @@ Here are examples of simple (XML, JSON) pairs that show the expected behavior:
 - `<object name='baz'><string name="foo" format="capitalize two-words" /><integer name="index" format="1-indexed" /></object>` => `{{'baz': {{'foo': 'Some String', 'index': 1}}}}`
 """  # noqa: E501
     output_schema = JsonSchema(ET.fromstring(example_rail))
-    reask_schema, result_prompt = output_schema.get_reask_schema_and_prompt(reasks, reask_json)
+    reask_schema, result_prompt = output_schema.get_reask_schema_and_prompt(
+        reasks, reask_json
+    )
 
     assert result_prompt == Prompt(
         expected_result_template
