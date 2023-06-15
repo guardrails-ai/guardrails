@@ -17,7 +17,7 @@ from pydantic import BaseModel, ValidationError
 
 from guardrails.datatypes import registry as types_registry
 from guardrails.utils.docs_utils import sentence_split
-from guardrails.utils.reask_utils import ReAsk
+from guardrails.utils.reask_utils import FieldReAsk
 from guardrails.utils.sql_utils import SQLDriver, create_sql_driver
 
 try:
@@ -222,7 +222,7 @@ class Validator:
         """Reask disambiguates the validation failure into a helpful error
         message."""
 
-        error.schema[error.key] = ReAsk(
+        error.schema[error.key] = FieldReAsk(
             incorrect_value=error.value,
             error_message=error.error_message,
             fix_value=error.fix_value,

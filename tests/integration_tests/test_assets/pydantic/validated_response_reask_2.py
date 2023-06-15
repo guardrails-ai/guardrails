@@ -2,7 +2,7 @@
 from pydantic import BaseModel, validator
 
 from guardrails.utils.pydantic_utils import register_pydantic
-from guardrails.utils.reask_utils import ReAsk
+from guardrails.utils.reask_utils import FieldReAsk
 
 
 @register_pydantic
@@ -45,7 +45,7 @@ VALIDATED_OUTPUT = {
         {
             "name": "John Doe",
             "age": 28,
-            "zip_code": ReAsk(
+            "zip_code": FieldReAsk(
                 incorrect_value="None",
                 error_message="Zip code must be numeric.",
                 fix_value=None,

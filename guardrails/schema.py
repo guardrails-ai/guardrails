@@ -16,7 +16,7 @@ from guardrails.llm_providers import PromptCallable, openai_chat_wrapper, openai
 from guardrails.prompt import Instructions, Prompt
 from guardrails.utils.constants import constants
 from guardrails.utils.reask_utils import (
-    ReAsk,
+    FieldReAsk,
     gather_reasks,
     get_pruned_tree,
     get_reasks_by_element,
@@ -331,7 +331,7 @@ class Schema:
 
     def get_reask_schema(
         self,
-        reasks: List[ReAsk],
+        reasks: List[FieldReAsk],
     ) -> "Schema":
         """Construct a schema for reasking.
 
@@ -356,7 +356,7 @@ class Schema:
         """
         raise NotImplementedError
 
-    def introspect(self, data: Any) -> List[ReAsk]:
+    def introspect(self, data: Any) -> List[FieldReAsk]:
         """Inspect the data for reasks.
 
         Args:
@@ -411,7 +411,7 @@ class Schema:
 class JsonSchema(Schema):
     def get_reask_schema(
         self,
-        reasks: List[ReAsk],
+        reasks: List[FieldReAsk],
     ) -> "Schema":
         parsed_rail = deepcopy(self.root)
 
@@ -503,6 +503,9 @@ class JsonSchema(Schema):
         if not isinstance(data, dict):
             raise TypeError(f"Argument `data` must be a dictionary, not {type(data)}.")
 
+        # TODO check skeleton, return a single ReAsk if invalid
+        #  if superfluous keys is only error, submit fix value
+
         validated_response = deepcopy(data)
 
         for field, value in validated_response.items():
@@ -578,7 +581,7 @@ class StringSchema(Schema):
 
     def get_reask_schema(
         self,
-        reasks: List[ReAsk],
+        reasks: List[FieldReAsk],
     ) -> "Schema":
         return self
 
@@ -590,7 +593,7 @@ class StringSchema(Schema):
 
     def get_reask_prompt(
         self,
-        reask_value: ReAsk,
+        reask_value: FieldReAsk,
         reask_prompt_template: Optional[Prompt] = None,
     ) -> Prompt:
         pruned_tree_string = self.transpile()
@@ -646,8 +649,8 @@ class StringSchema(Schema):
             return validated_response[self.string_key]
         return None
 
-    def introspect(self, data: Any) -> List[ReAsk]:
-        if isinstance(data, ReAsk):
+    def introspect(self, data: Any) -> List[FieldReAsk]:
+        if isinstance(data, FieldReAsk):
             return [data]
         return []
 

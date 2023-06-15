@@ -96,3 +96,6 @@ def verify_schema_against_json(xml_schema: ET._Element, generated_json: Dict[str
         return True
 
     return _verify_dict(type_skeleton, generated_json)
+
+
+# TODO prune superfluous fields here
