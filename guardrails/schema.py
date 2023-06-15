@@ -329,22 +329,6 @@ class Schema:
         """
         raise NotImplementedError
 
-    def get_reask_schema(
-        self,
-        reasks: List[FieldReAsk],
-    ) -> "Schema":
-        """Construct a schema for reasking.
-
-        Args:
-            reasks: List of tuples, where each tuple contains the path to the
-                reasked element, and the ReAsk object (which contains the error
-                message describing why the reask is necessary).
-
-        Returns:
-            The prompt.
-        """
-        raise NotImplementedError
-
     def parse(self, output: str) -> Tuple[Any, Optional[Exception]]:
         """Parse the output from the large language model.
 
@@ -367,27 +351,23 @@ class Schema:
         """
         raise NotImplementedError
 
-    def get_default_reask_prompt(self) -> Prompt:
-        """Get the default reask prompt for the schema.
-
-        Returns:
-            The default reask prompt.
-        """
-        raise NotImplementedError
-
-    def get_reask_prompt(
+    def get_reask_schema_and_prompt(
         self,
+        reasks: List[FieldReAsk],
         reask_value: Any,
         reask_prompt_template: Optional[Prompt] = None,
-    ) -> Prompt:
-        """Get a reask prompt for the schema.
+    ) -> Tuple['Schema', Prompt]:
+        """Construct a schema for reasking, and a prompt for reasking.
 
         Args:
+            reasks: List of tuples, where each tuple contains the path to the
+                reasked element, and the ReAsk object (which contains the error
+                message describing why the reask is necessary).
             reask_value: The value that was returned from the API, with reasks.
             reask_prompt_template: The template to use for the reask prompt.
 
         Returns:
-            The reask prompt.
+            The schema for reasking, and the prompt for reasking.
         """
         raise NotImplementedError
 
@@ -409,10 +389,12 @@ class Schema:
 
 
 class JsonSchema(Schema):
-    def get_reask_schema(
+    def get_reask_schema_and_prompt(
         self,
         reasks: List[FieldReAsk],
-    ) -> "Schema":
+        reask_value: Any,
+        reask_prompt_template: Optional[Prompt] = None,
+    ) -> Tuple['Schema', Prompt]:
         parsed_rail = deepcopy(self.root)
 
         # Get the elements that are to be reasked
@@ -422,29 +404,26 @@ class JsonSchema(Schema):
         pruned_tree = get_pruned_tree(parsed_rail, list(reask_elements.keys()))
         pruned_tree_schema = type(self)(pruned_tree)
 
-        return pruned_tree_schema
-
-    def get_reask_prompt(
-        self,
-        reask_value: Any,
-        reask_prompt_template: Optional[Prompt] = None,
-    ) -> Prompt:
-        pruned_tree_string = self.transpile()
+        pruned_tree_string = pruned_tree_schema.transpile()
 
         if reask_prompt_template is None:
-            reask_prompt_template = self.get_default_reask_prompt()
+            reask_prompt_template = Prompt(
+                constants["high_level_json_reask_prompt"]
+                + constants["complete_json_suffix"]
+            )
 
         def reask_decoder(obj):
             return {
                 k: v for k, v in obj.__dict__.items() if k not in ["path", "fix_value"]
             }
 
-        return reask_prompt_template.format(
+        prompt = reask_prompt_template.format(
             previous_response=json.dumps(reask_value, indent=2, default=reask_decoder)
             .replace("{", "{{")
             .replace("}", "}}"),
             output_schema=pruned_tree_string,
         )
+        return pruned_tree_schema, prompt
 
     def setup_schema(self, root: ET._Element) -> None:
         from guardrails.datatypes import registry as types_registry
@@ -478,12 +457,6 @@ class JsonSchema(Schema):
             output_as_dict = None
             error = e
         return output_as_dict, error
-
-    def get_default_reask_prompt(self):
-        return Prompt(
-            constants["high_level_json_reask_prompt"]
-            + constants["complete_json_suffix"]
-        )
 
     def validate(
         self,
@@ -579,33 +552,26 @@ class StringSchema(Schema):
         root_string = ET.Element("string", root.attrib)
         self[self.string_key] = String.from_xml(root_string)
 
-    def get_reask_schema(
+    def get_reask_schema_and_prompt(
         self,
         reasks: List[FieldReAsk],
-    ) -> "Schema":
-        return self
-
-    def get_default_reask_prompt(self):
-        return Prompt(
-            constants["high_level_string_reask_prompt"]
-            + constants["complete_string_suffix"]
-        )
-
-    def get_reask_prompt(
-        self,
         reask_value: FieldReAsk,
         reask_prompt_template: Optional[Prompt] = None,
-    ) -> Prompt:
+    ) -> Tuple[Schema, Prompt]:
         pruned_tree_string = self.transpile()
 
         if reask_prompt_template is None:
-            reask_prompt_template = self.get_default_reask_prompt()
+            reask_prompt_template = Prompt(
+                constants["high_level_string_reask_prompt"]
+                + constants["complete_string_suffix"]
+            )
 
-        return reask_prompt_template.format(
+        prompt = reask_prompt_template.format(
             previous_response=reask_value.incorrect_value,
             error_messages=f"- {reask_value.error_message}",
             output_schema=pruned_tree_string,
         )
+        return self, prompt
 
     def parse(self, output: str) -> Tuple[Any, Optional[Exception]]:
         return output, None

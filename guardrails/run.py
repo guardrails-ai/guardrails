@@ -346,10 +346,8 @@ class Runner:
         output_schema: Schema,
     ) -> Tuple[Prompt, Schema]:
         """Prepare to loop again."""
-        output_schema = output_schema.get_reask_schema(
+        output_schema, prompt = output_schema.get_reask_schema_and_prompt(
             reasks=reasks,
-        )
-        prompt = output_schema.get_reask_prompt(
             reask_value=prune_obj_for_reasking(validated_output),
             reask_prompt_template=self.reask_prompt,
         )
