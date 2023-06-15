@@ -49,10 +49,14 @@ def verify_schema_against_json(
     def _verify_dict(schema, json):
         if not schema.keys():
             return True
-        extra_keys = set(json.keys()) - set(schema.keys())
+        json_keys = set(json.keys())
+        schema_keys = set(schema.keys())
+        extra_keys = json_keys - schema_keys
         if prune_extra_keys and extra_keys:
             for key in extra_keys:
                 del json[key]
+        if any(key not in json_keys for key in schema_keys):
+            return False
 
         for key in schema.keys():
             if isinstance(schema[key], Placeholder):
