@@ -40,6 +40,7 @@ def verify_schema_against_json(
     xml_schema: ET._Element,
     generated_json: Dict[str, Any],
     prune_extra_keys: bool = False,
+    coerce_types: bool = False,
 ):
     """Verify that a JSON schema is valid for a given XML."""
 
@@ -55,7 +56,12 @@ def verify_schema_against_json(
             if isinstance(schema[key], Placeholder):
                 expected_type = schema[key].type_object
                 if not isinstance(json[key], expected_type):
-                    return False
+                    if not coerce_types:
+                        return False
+                    try:
+                        json[key] = expected_type(json[key])
+                    except ValueError:
+                        return False
             elif isinstance(schema[key], dict):
                 if not isinstance(json[key], dict):
                     return False
@@ -81,9 +87,14 @@ def verify_schema_against_json(
         if isinstance(child_schema, Placeholder):
             expected_type = child_schema.type_object
 
-            for item in json:
+            for i, item in enumerate(json):
                 if not isinstance(item, expected_type):
-                    return False
+                    if not coerce_types:
+                        return False
+                    try:
+                        json[i] = expected_type(item)
+                    except ValueError:
+                        return False
         elif isinstance(child_schema, dict):
             for item in json:
                 if not isinstance(item, dict):
