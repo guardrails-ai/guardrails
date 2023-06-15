@@ -1,0 +1,132 @@
+
+Given the following document, answer the following questions. If the answer doesn't exist in the document, enter
+'None'.
+
+2/25/23, 7:59 PM about:blank
+about:blank 1/4
+PRICING INFORMATION
+INTEREST RATES AND INTEREST CHARGES
+Purchase Annual
+Percentage Rate (APR) 0% Intro APR for the first 18 months that your Account is open.
+After that, 19.49%. This APR will vary with the market based on the Prime
+Rate.
+a
+My Chase Loan
+SM APR 19.49%. This APR will vary with the market based on the Prime Rate.
+a
+Promotional offers with fixed APRs and varying durations may be available from
+time to time on some accounts.
+Balance Transfer APR 0% Intro APR for the first 18 months that your Account is open.
+After that, 19.49%. This APR will vary with the market based on the Prime
+Rate.
+a
+Cash Advance APR 29.49%. This APR will vary with the market based on the Prime Rate.
+b
+Penalty APR and When
+It Applies
+Up to 29.99%. This APR will vary with the market based on the Prime Rate.
+c
+We may apply the Penalty APR to your account if you:
+fail to make a Minimum Payment by the date and time that it is due; or
+make a payment to us that is returned unpaid.
+How Long Will the Penalty APR Apply?: If we apply the Penalty APR for
+either of these reasons, the Penalty APR could potentially remain in effect
+indefinitely.
+How to Avoid Paying
+Interest on Purchases
+Your due date will be a minimum of 21 days after the close of each billing cycle.
+We will not charge you interest on new purchases if you pay your entire balance
+or Interest Saving Balance by the due date each month. We will begin charging
+interest on balance transfers and cash advances on the transaction date.
+Minimum Interest
+Charge
+None
+Credit Card Tips from
+the Consumer Financial
+Protection Bureau
+To learn more about factors to consider when applying for or using a credit card,
+visit the website of the Consumer Financial Protection Bureau at
+http://www.consumerfinance.gov/learnmore.
+FEES
+Annual Membership
+Fee
+None
+My Chase Plan
+SM Fee
+(fixed finance charge)
+Monthly fee of 0% of the amount of each eligible purchase transaction or
+amount selected to create a My Chase Plan while in the 0% Intro Purchase
+APR period.
+After that, monthly fee of 1.72% of the amount of each eligible purchase
+transaction or amount selected to create a My Chase Plan. The My Chase Plan
+Fee will be determined at the time each My Chase Plan is created and will
+remain the same until the My Chase Plan is paid in full.
+d
+Transaction Fees
+Balance Transfers Intro fee of either $5 or 3% of the amount of each transfer, whichever is greater,
+on transfers made within 60 days of account opening. After that: Either $5 or 5%
+of the amount of each transfer, whichever is greater.
+Cash Advances Either $10 or 5% of the amount of each transaction, whichever is greater.
+2/25/23, 7:59 PM about:blank
+about:blank 2/4
+Foreign Transactions 3% of the amount of each transaction in U.S. dollars.
+Penalty Fees
+Late Payment Up to $40.
+Over-the-Credit-Limit None
+Return Payment Up to $40.
+Return Check None
+Note: This account may not be eligible for balance transfers.
+Loss of Intro APR: We will end your introductory APR if any required Minimum Payment is 60 days late, and
+apply the Penalty APR.
+How We Will Calculate Your Balance: We use the daily balance method (including new transactions).
+Prime Rate: Variable APRs are based on the 7.75% Prime Rate as of 2/7/2023.
+aWe add 11.74% to the Prime Rate to determine the Purchase/My Chase Loan/Balance Transfer APR.
+Maximum APR 29.99%.
+bWe add 21.74% to the Prime Rate to determine the Cash Advance APR. Maximum APR 29.99%.
+cWe add up to 26.99% to the Prime Rate to determine the Penalty APR. Maximum APR 29.99%.
+dMy Chase Plan Fee: The My Chase Plan Fee is calculated at the time each plan is created and is based on
+the amount of each purchase transaction or amount selected to create the plan, the number of billing periods
+you choose to pay the balance in full, and other factors. The monthly and aggregate dollar amount of your My
+Chase Plan Fee will be disclosed during the activation of each My Chase Plan.
+MILITARY LENDING ACT NOTICE: Federal law provides important protections to members of the Armed
+Forces and their dependents relating to extensions of consumer credit. In general, the cost of consumer credit
+to a member of the Armed Forces and his or her dependent may not exceed an annual percentage rate of 36
+percent. This rate must include, as applicable to the credit transaction or account: the costs associated with
+credit insurance premiums; fees for ancillary products sold in connection with the credit transaction; any
+application fee charged (other than certain application fees for specified credit transactions or accounts); and
+any participation fee charged (other than certain participation fees for a credit card account). To receive this
+information and a description of your payment obligation verbally, please call 1-800-235-9978.
+TERMS & CONDITIONS
+Authorization: When you respond to this credit card offer from JPMorgan Chase Bank, N.A., Member FDIC, a
+subsidiary of JPMorgan Chase & Co. ("Chase", "we", or "us"), you agree to the following:
+1. You authorize us to obtain credit bureau reports, employment, and income information about you that we
+will use when considering your application for credit. We may obtain and use information about your
+accounts with us and others such as Checking, Deposit, Investment, and Utility accounts from credit
+bureaus and other entities. You also authorize us to obtain credit bureau reports and any other
+information about you in connection with: 1) extensions of credit on your account; 2) the administration,
+review or collection of your account; and 3) offering you enhanced or additional products and services. If
+you ask, we will tell you the name and address of the credit bureau from which we obtained a report
+about you.
+2. If an account is opened, you will receive a Cardmember Agreement with your card(s). You agree to the
+terms of this agreement by: using the account or any card, authorizing their use, or making any payment
+on the account.
+3. By providing your mobile ph
+
+
+Given below is XML that describes the information to extract from this document and the tags to extract it into.
+
+
+<output>
+    <list name="fees" description="What fees and charges are associated with my account?">
+        <object>
+            <string name="name" format="lower-case; two-words"/>
+            <string name="explanation" format="one-line"/>
+            <float name="value" format="percentage"/>
+        </object>
+    </list>
+    <object name="interest_rates" description="What are the interest rates offered by the bank on savings and checking accounts, loans, and credit products?"/>
+</output>
+
+
+
+ONLY return a valid JSON object (no other text is necessary). The JSON MUST conform to the XML format, including any types and format requests e.g. requests for lists, objects and specific types. Be correct and concise.

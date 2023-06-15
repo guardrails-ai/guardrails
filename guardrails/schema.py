@@ -15,11 +15,12 @@ from guardrails.datatypes import DataType, String
 from guardrails.llm_providers import PromptCallable, openai_chat_wrapper, openai_wrapper
 from guardrails.prompt import Instructions, Prompt
 from guardrails.utils.constants import constants
+from guardrails.utils.json_utils import verify_schema_against_json
 from guardrails.utils.reask_utils import (
     FieldReAsk,
     gather_reasks,
     get_pruned_tree,
-    get_reasks_by_element,
+    get_reasks_by_element, SkeletonReAsk,
 )
 from guardrails.validators import Validator, check_refrain_in_dict, filter_in_dict
 
@@ -397,20 +398,31 @@ class JsonSchema(Schema):
     ) -> Tuple['Schema', Prompt]:
         parsed_rail = deepcopy(self.root)
 
-        # Get the elements that are to be reasked
-        reask_elements = get_reasks_by_element(reasks, parsed_rail)
+        is_skeleton_reask = not any(isinstance(reask, FieldReAsk) for reask in reasks)
 
-        # Get the pruned tree so that it only contains ReAsk objects
-        pruned_tree = get_pruned_tree(parsed_rail, list(reask_elements.keys()))
-        pruned_tree_schema = type(self)(pruned_tree)
+        if not is_skeleton_reask:
+            # Get the elements that are to be reasked
+            reask_elements = get_reasks_by_element(reasks, parsed_rail)
+
+            # Get the pruned tree so that it only contains ReAsk objects
+            pruned_tree = get_pruned_tree(parsed_rail, list(reask_elements.keys()))
+            pruned_tree_schema = type(self)(pruned_tree)
+        else:
+            pruned_tree_schema = self
 
         pruned_tree_string = pruned_tree_schema.transpile()
 
         if reask_prompt_template is None:
-            reask_prompt_template = Prompt(
-                constants["high_level_json_reask_prompt"]
-                + constants["complete_json_suffix"]
-            )
+            if is_skeleton_reask:
+                reask_prompt_template = Prompt(
+                    constants["high_level_skeleton_reask_prompt"]
+                    + constants["complete_json_suffix"]
+                )
+            else:
+                reask_prompt_template = Prompt(
+                    constants["high_level_json_reask_prompt"]
+                    + constants["complete_json_suffix"]
+                )
 
         def reask_decoder(obj):
             return {
@@ -476,10 +488,19 @@ class JsonSchema(Schema):
         if not isinstance(data, dict):
             raise TypeError(f"Argument `data` must be a dictionary, not {type(data)}.")
 
-        # TODO check skeleton, return a single ReAsk if invalid
-        #  if superfluous keys is only error, submit fix value
-
         validated_response = deepcopy(data)
+
+        if not verify_schema_against_json(
+            self.root,
+            validated_response,
+            prune_extra_keys=True,
+            coerce_types=True,
+        ):
+            return SkeletonReAsk(
+                incorrect_value=validated_response,
+                fix_value=None,
+                error_message="JSON does not match schema",
+            )
 
         for field, value in validated_response.items():
             if field not in self:
@@ -505,7 +526,9 @@ class JsonSchema(Schema):
 
         return validated_response
 
-    def introspect(self, data: Dict) -> list:
+    def introspect(self, data: Any) -> list:
+        if isinstance(data, SkeletonReAsk):
+            return [data]
         return gather_reasks(data)
 
     def preprocess_prompt(

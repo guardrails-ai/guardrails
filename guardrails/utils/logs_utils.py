@@ -8,7 +8,7 @@ from rich.pretty import pretty_repr
 from rich.tree import Tree
 
 from guardrails.prompt import Prompt
-from guardrails.utils.reask_utils import FieldReAsk, gather_reasks, prune_obj_for_reasking
+from guardrails.utils.reask_utils import gather_reasks, prune_obj_for_reasking, ReAsk
 
 
 @dataclass
@@ -18,10 +18,10 @@ class GuardLogs:
     output: str
     parsed_output: dict
     validated_output: dict
-    reasks: List[FieldReAsk]
+    reasks: List[ReAsk]
 
     @property
-    def failed_validations(self) -> List[FieldReAsk]:
+    def failed_validations(self) -> List[ReAsk]:
         """Returns the failed validations."""
         return gather_reasks(self.validated_output)
 
@@ -95,7 +95,7 @@ class GuardHistory:
         return self.history[-1].parsed_output
 
     @property
-    def failed_validations(self) -> List[FieldReAsk]:
+    def failed_validations(self) -> List[ReAsk]:
         """Returns all failed validations."""
         return [log.failed_validations for log in self.history]
 
@@ -142,7 +142,7 @@ def merge_reask_output(prev_logs: GuardLogs, current_logs: GuardLogs) -> Dict:
 
     previous_response = prev_logs.validated_output
     reask_response = current_logs.validated_output
-    if isinstance(previous_response, FieldReAsk):
+    if isinstance(previous_response, ReAsk):
         return reask_response
 
     pruned_reask_json = prune_obj_for_reasking(previous_response)
@@ -157,14 +157,14 @@ def merge_reask_output(prev_logs: GuardLogs, current_logs: GuardLogs) -> Dict:
             corrected_value = reask_response_dict
             # Get the path from any of the ReAsk objects in the PydanticReAsk object
             # all of them have the same path.
-            path = [v.path for v in pruned_reask_json.values() if isinstance(v, FieldReAsk)][
+            path = [v.path for v in pruned_reask_json.values() if isinstance(v, ReAsk)][
                 0
             ]
             update_response_by_path(merged_json, path, corrected_value)
 
         elif isinstance(pruned_reask_json, dict):
             for key, value in pruned_reask_json.items():
-                if isinstance(value, FieldReAsk):
+                if isinstance(value, ReAsk):
                     corrected_value = reask_response_dict[key]
                     update_response_by_path(merged_json, value.path, corrected_value)
                 else:
@@ -173,7 +173,7 @@ def merge_reask_output(prev_logs: GuardLogs, current_logs: GuardLogs) -> Dict:
                     )
         elif isinstance(pruned_reask_json, list):
             for i, item in enumerate(pruned_reask_json):
-                if isinstance(item, FieldReAsk):
+                if isinstance(item, ReAsk):
                     corrected_value = reask_response_dict[i]
                     update_response_by_path(merged_json, item.path, corrected_value)
                 else:

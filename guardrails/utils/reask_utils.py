@@ -158,7 +158,7 @@ def prune_obj_for_reasking(obj: Any) -> Union[None, Dict, List]:
     """
     from guardrails.validators import PydanticReAsk
 
-    if isinstance(obj, FieldReAsk) or isinstance(obj, PydanticReAsk):
+    if isinstance(obj, ReAsk) or isinstance(obj, PydanticReAsk):
         return obj
     elif isinstance(obj, list):
         pruned_list = []
