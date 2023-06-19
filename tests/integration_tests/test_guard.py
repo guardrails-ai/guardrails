@@ -86,7 +86,8 @@ def validated_output():
 def guard_initializer(
     rail: Union[str, BaseModel], prompt: str, instructions: Optional[str] = None
 ) -> Guard:
-    """Helper function to initialize a Guard object using the correct method."""
+    """Helper function to initialize a Guard object using the correct
+    method."""
 
     if isinstance(rail, str):
         return Guard.from_rail_string(rail)
