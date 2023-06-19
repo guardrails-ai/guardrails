@@ -3,6 +3,7 @@ import pytest
 
 import guardrails as gd
 
+from .test_guard import rail_spec, llm_output, validated_output
 from .mock_llm_outputs import async_openai_completion_create, entity_extraction
 
 
@@ -43,3 +44,14 @@ async def test_entity_extraction_with_reask(mocker):
     assert (
         guard_history[1].validated_output == entity_extraction.VALIDATED_OUTPUT_REASK_2
     )
+
+
+@pytest.mark.asyncio
+async def test_rail_spec_output_parse(rail_spec, llm_output, validated_output):
+    """Test that the rail_spec fixture is working."""
+    guard = gd.Guard.from_rail_string(rail_spec)
+    output = await guard.parse(
+        llm_output,
+        llm_api=openai.Completion.acreate,
+    )
+    assert output == validated_output
