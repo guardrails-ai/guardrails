@@ -14,11 +14,18 @@ class Placeholder:
         "object": dict,
         "list": list,
     }
+    ignore_types = [
+        "pydantic",
+        "email",  # email and url should become string validators
+        "url",
+    ]
 
     type_string: str
 
     @property
     def type_object(self):
+        if self.type_string in self.ignore_types:
+            return Any
         return self.type_map[self.type_string]
 
 
@@ -63,6 +70,8 @@ def verify_schema_against_json(
         for key in schema.keys():
             if isinstance(schema[key], Placeholder):
                 expected_type = schema[key].type_object
+                if expected_type == Any:
+                    continue
                 if not isinstance(json[key], expected_type):
                     if not coerce_types:
                         return False
@@ -97,6 +106,8 @@ def verify_schema_against_json(
 
         if isinstance(child_schema, Placeholder):
             expected_type = child_schema.type_object
+            if expected_type == Any:
+                return True
 
             for i, item in enumerate(json):
                 if not isinstance(item, expected_type):
