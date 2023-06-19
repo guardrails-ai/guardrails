@@ -29,6 +29,8 @@ def generate_type_skeleton_from_schema(schema: ET._Element) -> Dict[str, Any]:
         if schema.tag == "object":
             return {child.attrib["name"]: _recurse_schema(child) for child in schema}
         elif schema.tag == "list":
+            if len(schema) == 0:
+                return []
             return [_recurse_schema(schema[0])]
         else:
             return Placeholder(schema.tag)
@@ -84,7 +86,10 @@ def verify_schema_against_json(
         return True
 
     def _verify_list(schema, json):
-        assert len(schema) == 1  # Schema for a list should only have one child
+        if len(schema) == 0:
+            return True
+        if len(schema) > 1:
+            raise ValueError("List schema should only have one child")
         if not isinstance(json, list):
             return False
 
