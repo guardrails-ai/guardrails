@@ -13,6 +13,8 @@ class Placeholder:
         "bool": bool,
         "object": dict,
         "list": list,
+        "date": str,
+        "time": str
     }
     ignore_types = [
         "pydantic",
