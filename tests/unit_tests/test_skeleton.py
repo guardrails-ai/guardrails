@@ -120,18 +120,12 @@ def test_skeleton():
         "my_list3": [
             {
                 "action": "fight",
-                "fight": [
-                    "punch",
-                    "kick"
-                ],
+                "fight": ["punch", "kick"],
             },
             {
                 "action": "flight",
-                "flight": {
-                    "flight_direction": "north",
-                    "flight_speed": 1
-                }
-            }
+                "flight": {"flight_direction": "north", "flight_speed": 1},
+            },
         ],
         "mychoices": {
             "some random thing": "string",
