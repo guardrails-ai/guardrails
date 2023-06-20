@@ -76,8 +76,14 @@ def verify_schema_against_json(
         if not schema.keys():
             return True
         json_keys = set(json.keys())
+
         schema_keys = set(schema.keys())
-        extra_keys = json_keys - schema_keys
+        choice_keys = set()
+        for key in schema_keys:
+            if isinstance(schema[key], Choice):
+                choice_keys.update(schema[key].cases.keys())
+
+        extra_keys = json_keys - schema_keys - choice_keys
         if prune_extra_keys and extra_keys:
             for key in extra_keys:
                 del json[key]
