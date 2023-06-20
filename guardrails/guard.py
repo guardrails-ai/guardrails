@@ -157,10 +157,12 @@ class Guard:
         *args,
         **kwargs,
     ) -> Union[Tuple[str, Dict], Awaitable[Tuple[str, Dict]]]:
-        """Call the LLM and validate the output.
+        """Call the LLM and validate the output. Pass an async LLM API to
+        return a coroutine.
 
         Args:
-            llm_api: The LLM API to call (e.g. openai.Completion.create)
+            llm_api: The LLM API to call
+                     (e.g. openai.Completion.create or openai.Completion.acreate)
             prompt_params: The parameters to pass to the prompt.format() method.
             num_reasks: The max times to re-ask the LLM for invalid output.
 
@@ -267,8 +269,8 @@ class Guard:
         """Alternate flow to using Guard where the llm_output is known.
 
         Args:
-            llm_output: The output from the LLM.
-            llm_api: The LLM API to use to re-ask the LLM.
+            llm_api: The LLM API to call
+                     (e.g. openai.Completion.create or openai.Completion.acreate)
             num_reasks: The max times to re-ask the LLM for invalid output.
 
         Returns:
