@@ -115,7 +115,6 @@ def openai_chat_wrapper(
     *args,
     **kwargs,
 ):
-
     if base_model:
         base_model_schema = base_model.schema()
         function_params = {
