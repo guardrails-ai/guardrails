@@ -31,6 +31,12 @@ class Placeholder:
         return self.type_map[self.type_string]
 
 
+@dataclass
+class Choice:
+    name: str
+    cases: Dict[str, Any]
+
+
 def generate_type_skeleton_from_schema(schema: ET._Element) -> Dict[str, Any]:
     """Generate a JSON skeleton from an XML schema."""
 
@@ -41,6 +47,15 @@ def generate_type_skeleton_from_schema(schema: ET._Element) -> Dict[str, Any]:
             if len(schema) == 0:
                 return []
             return [_recurse_schema(schema[0])]
+        elif schema.tag == "choice":
+            return Choice(
+                schema.attrib["name"],
+                {
+                    child.attrib["name"]: _recurse_schema(child[0])
+                    for child in schema
+                    if child.tag == "case"
+                },
+            )
         else:
             return Placeholder(schema.tag)
 
@@ -91,6 +106,9 @@ def verify_schema_against_json(
                     return False
                 if not _verify_list(schema[key], json[key]):
                     return False
+            elif isinstance(schema[key], Choice):
+                if not _verify_choice(schema[key], json):
+                    return False
             else:
                 raise ValueError(f"Unknown type {type(schema[key])}")
 
@@ -131,8 +149,55 @@ def verify_schema_against_json(
                     return False
                 if not _verify_list(child_schema, item):
                     return False
+        elif isinstance(child_schema, Choice):
+            for item in json:
+                if not isinstance(item, dict):
+                    return False
+                if not _verify_choice(child_schema, item):
+                    return False
         else:
             raise ValueError(f"Unknown type {type(child_schema)}")
+
+        return True
+
+    def _verify_choice(schema, json):
+        if not isinstance(json, dict):
+            return False
+        if schema.name not in json:
+            return False
+        value_name = json[schema.name]
+        if value_name not in schema.cases:
+            return False
+        if value_name not in json:
+            return False
+        value_schema = schema.cases[value_name]
+        value = json[value_name]
+        if isinstance(value_schema, Placeholder):
+            expected_type = value_schema.type_object
+            if expected_type == Any:
+                return True
+            if not isinstance(value, expected_type):
+                if not coerce_types:
+                    return False
+                try:
+                    json[value_name] = expected_type(value)
+                except ValueError:
+                    return False
+        elif isinstance(value_schema, dict):
+            if not isinstance(value, dict):
+                return False
+            if not _verify_dict(value_schema, value):
+                return False
+        elif isinstance(value_schema, list):
+            if not isinstance(value, list):
+                return False
+            if not _verify_list(value_schema, value):
+                return False
+        elif isinstance(value_schema, Choice):
+            if not _verify_choice(value_schema, value):
+                return False
+        else:
+            raise ValueError(f"Unknown type {type(value_schema)}")
 
         return True
 
