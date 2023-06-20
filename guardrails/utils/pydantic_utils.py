@@ -9,12 +9,13 @@ Guardrails lets users specify
     on-fail-pydantic="reask" / "refrain" / "raise"
 />
 """
+from functools import partial
 import logging
 import warnings
 from collections import defaultdict
 from copy import deepcopy
 from datetime import date, time
-from typing import Any, Callable, Dict, Optional, Type, Union, get_args, get_origin
+from typing import Any, Callable, Dict, Optional, Type, Union, get_args, get_origin, List
 
 from griffe.dataclasses import Docstring
 from griffe.docstrings.parsers import Parser, parse
@@ -23,7 +24,7 @@ from lxml.etree import Element
 from pydantic import BaseModel, HttpUrl, validator
 from pydantic.fields import ModelField
 
-from guardrails.validators import Validator
+from guardrails.validators import PydanticFieldValidator, Validator
 
 griffe_docstrings_google_logger = logging.getLogger("griffe.docstrings.google")
 griffe_agents_nodes_logger = logging.getLogger("griffe.agents.nodes")
@@ -234,25 +235,69 @@ def add_validators_to_xml_element(field_info: ModelField, element: Element) -> E
         if isinstance(validators, str) or isinstance(validators, Validator):
             validators = [validators]
 
-        format_prompt = []
-        on_fails = {}
-        for val in validators:
-            validator_prompt = val
-            if not isinstance(val, str):
-                # `validator` is of type gd.Validator, use the to_xml_attrib method
-                validator_prompt = val.to_xml_attrib()
-                # Set the on-fail attribute based on the on_fail value
-                on_fail = val.on_fail.__name__ if val.on_fail else "noop"
-                on_fails[val.rail_alias] = on_fail
-            format_prompt.append(validator_prompt)
-
-        if len(format_prompt) > 0:
-            format_prompt = "; ".join(format_prompt)
-            element.set("format", format_prompt)
-            for rail_alias, on_fail in on_fails.items():
-                element.set("on-fail-" + rail_alias, on_fail)
+        element = edit_element_to_add_validators(element, validators)
 
     return element
+
+
+def edit_element_to_add_validators(
+    element: Element, validators: List[Validator]
+) -> Element:
+    """Add validators to an XML element.
+
+    Args:
+        element: The XML element to add the validators to
+        validators: The validators to add to the XML element
+
+    Returns:
+        The XML element with the validators added
+    """
+
+    format_prompt = []
+    on_fails = {}
+    for val in validators:
+        validator_prompt = val
+        if not isinstance(val, str):
+            # `validator` is of type gd.Validator, use the to_xml_attrib method
+            validator_prompt = val.to_xml_attrib()
+            # Set the on-fail attribute based on the on_fail value
+            on_fail = val.on_fail.__name__ if val.on_fail else "noop"
+            on_fails[val.rail_alias] = on_fail
+        format_prompt.append(validator_prompt)
+
+    if len(format_prompt) > 0:
+        format_prompt = "; ".join(format_prompt)
+        element.set("format", format_prompt)
+        for rail_alias, on_fail in on_fails.items():
+            element.set("on-fail-" + rail_alias, on_fail)
+
+    return element
+
+
+def add_validators_to_foo(field_info: ModelField) -> List[Validator]:
+    """Extract validators from a pydantic ModelField and add to XML element
+
+    Args:
+        field_info: The field info to extract validators from
+        element: The XML element to add the validators to
+
+    Returns:
+        The XML element with the validators added
+    """
+
+    if (
+        isinstance(field_info, ModelField)
+        and "validators" in field_info.field_info.extra
+    ):
+        validators = field_info.field_info.extra["validators"]
+        if isinstance(validators, Validator):
+            validators = [validators]
+        elif isinstance(validators, str):
+            raise ValueError("This should never happen.")
+
+        return validators
+
+    return []
 
 
 def create_xml_element_for_field(
@@ -342,7 +387,7 @@ def create_xml_element_for_base_model(
         element = E("object")
 
     # Extract pydantic validators from the model and add them as guardrails validators
-    model_fields = add_pydantic_validators_as_guardrails_validators(model)
+    model_fields = extract_pydantic_validators_as_guardrails_validators(model)
 
     # Identify fields with `when` attribute
     choice_elements = defaultdict(list)
@@ -422,31 +467,31 @@ def convert_pydantic_validator_to_guardrails_validator(
 
     if hasattr(model, fn_name):
         # # Case 1: fn is a method defined in the BaseModel
-        # # Wrap the method in a Guardrails PydanticFieldValidator class
-        # field_validator = partial(callable_fn, model)
-        # return PydanticFieldValidator(field_validator=field_validator)
-        warnings.warn(
-            f"Validator {fn_name} is defined as a method in the BaseModel. "
-            "This is not supported by Guardrails. "
-            "Please define the validator using the `add_validator` function."
-        )
-        return fn_name
+        # Wrap the method in a Guardrails PydanticFieldValidator class
+        field_validator = partial(callable_fn, model)  # noqa: F821
+        return PydanticFieldValidator(field_validator=field_validator)
+        # warnings.warn(
+        #     f"Validator {fn_name} is defined as a method in the BaseModel. "
+        #     "This is not supported by Guardrails. "
+        #     "Please define the validator using the `add_validator` function."
+        # )
+        # return fn_name
 
     if issubclass(type(callable_fn), Validator):
         # Case 2: fn is a Guardrails validator
         return callable_fn
     else:
         # # Case 3: fn is a custom function
-        # return PydanticFieldValidator(field_validator=callable_fn)
-        warnings.warn(
-            f"Validator {fn_name} is defined as a custom function. "
-            "This is not supported by Guardrails. "
-            "Please define the validator using the `add_validator` function."
-        )
-        return fn_name
+        return PydanticFieldValidator(field_validator=callable_fn)
+        # warnings.warn(
+        #     f"Validator {fn_name} is defined as a custom function. "
+        #     "This is not supported by Guardrails. "
+        #     "Please define the validator using the `add_validator` function."
+        # )
+        # return fn_name
 
 
-def add_pydantic_validators_as_guardrails_validators(
+def extract_pydantic_validators_as_guardrails_validators(
     model: BaseModel,
 ) -> Dict[str, ModelField]:
     """Extract all validators for a pydantic BaseModel.

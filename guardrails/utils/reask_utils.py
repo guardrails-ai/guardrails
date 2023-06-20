@@ -184,21 +184,8 @@ def prune_obj_for_reasking(obj: Any) -> Union[None, Dict, List]:
         return None
 
 
-<<<<<<< Updated upstream
 def reasks_to_dict(dict_with_reasks: Dict) -> Dict:
     """If a ReAsk object exists in the dict, return it as a dictionary."""
-=======
-def get_reask_prompt(
-    parsed_rail: ET._Element,
-    reasks: List[ReAsk],
-    reask_json: Dict,
-    reask_prompt_template: Optional[Prompt] = None,
-) -> Tuple[Prompt, ET._Element]:
-    
-    # TODO(shreya): Make this accept and return and ELEMENT.
-
-    """Construct a prompt for reasking.
->>>>>>> Stashed changes
 
     def _(dict_object: Any) -> Any:
         if isinstance(dict_object, dict):

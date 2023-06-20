@@ -15,7 +15,6 @@ from typing import Any, Callable, Dict, List, Optional, Type, Union
 import openai
 from pydantic import BaseModel, ValidationError
 
-from guardrails.datatypes import registry as types_registry
 from guardrails.utils.docs_utils import sentence_split
 from guardrails.utils.reask_utils import ReAsk
 from guardrails.utils.sql_utils import SQLDriver, create_sql_driver
@@ -151,6 +150,7 @@ def filter_in_dict(schema: Dict) -> Dict:
 
 def register_validator(name: str, data_type: Union[str, List[str]]):
     """Register a validator for a data type."""
+    from guardrails.datatypes import registry as types_registry
 
     def decorator(cls: type):
         """Register a validator for a data type."""
@@ -766,7 +766,7 @@ class ValidUrl(Validator):
         return schema
 
 
-@register_validator(name="bug-free-python", data_type="pythoncode")
+@register_validator(name="bug-free-python", data_type="string")
 class BugFreePython(Validator):
     """Validate that there are no Python syntactic bugs in the generated code.
 
@@ -775,7 +775,7 @@ class BugFreePython(Validator):
     Only the packages in the `python` environment are available to the code snippet.
 
     - Name for `format` attribute: `bug-free-python`
-    - Supported data types: `pythoncode`
+    - Supported data types: `string`
     - Programmatic fix: None
     """
 
@@ -797,7 +797,7 @@ class BugFreePython(Validator):
         return schema
 
 
-@register_validator(name="bug-free-sql", data_type="sql")
+@register_validator(name="bug-free-sql", data_type="string")
 class BugFreeSQL(Validator):
     """Validate that there are no SQL syntactic bugs in the generated code.
 
@@ -833,7 +833,7 @@ class BugFreeSQL(Validator):
         return schema
 
 
-@register_validator(name="sql-column-presence", data_type="sql")
+@register_validator(name="sql-column-presence", data_type="string")
 class SqlColumnPresence(Validator):
     """Validate that all columns in the SQL query are present in the schema.
 
@@ -867,7 +867,7 @@ class SqlColumnPresence(Validator):
         return schema
 
 
-@register_validator(name="exclude-sql-predicates", data_type="sql")
+@register_validator(name="exclude-sql-predicates", data_type="string")
 class ExcludeSqlPredicates(Validator):
     """Validate that the SQL query does not contain certain predicates.
 

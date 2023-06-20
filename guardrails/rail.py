@@ -104,8 +104,19 @@ class Rail:
     def from_pydantic(
         cls, output_class: BaseModel, prompt: str, instructions: Optional[str] = None
     ):
-        xml = generate_xml_code(output_class, prompt, instructions)
-        return cls.from_xml(xml)
+        # xml = generate_xml_code(output_class, prompt, instructions)
+        # return cls.from_xml(xml)
+        output_schema = JsonSchema.from_pydantic(output_class)
+        return cls(
+            input_schema=None,
+            output_schema=output_schema,
+            instructions=cls.load_instructions(
+                instructions, output_schema=output_schema
+            ),
+            prompt=cls.load_prompt(prompt, output_schema=output_schema),
+            script=None,
+            version="0.1",
+        )
 
     @classmethod
     def from_file(cls, file_path: str) -> "Rail":
@@ -153,13 +164,13 @@ class Rail:
         # prepended to the prompt.
         instructions = xml.find("instructions")
         if instructions is not None:
-            instructions = cls.load_instructions(instructions, output_schema)
+            instructions = cls.load_instructions(instructions.text, output_schema)
 
         # Load <prompt />
         prompt = xml.find("prompt")
         if prompt is None:
             raise ValueError("RAIL file must contain a prompt element.")
-        prompt = cls.load_prompt(prompt, output_schema)
+        prompt = cls.load_prompt(prompt.text, output_schema)
 
         return cls(
             input_schema=input_schema,
@@ -171,7 +182,6 @@ class Rail:
         )
 
     @staticmethod
-<<<<<<< Updated upstream
     def load_schema(root: ET._Element) -> Schema:
         """Given the RAIL <input> or <output> element, create a Schema
         object."""
@@ -182,39 +192,28 @@ class Rail:
         """Given the RAIL <input> element, create a Schema object."""
         # Recast the schema as an InputSchema.
         return Schema(root)
-=======
-    def load_input_schema(root: ET._Element) -> InputSchema:
-        """Given the RAIL <input> element, create a Schema object."""
-        # Recast the schema as an InputSchema.
-        return InputSchema.from_xml(root)
->>>>>>> Stashed changes
 
     @staticmethod
     def load_output_schema(root: ET._Element) -> Schema:
         """Given the RAIL <output> element, create a Schema object."""
-<<<<<<< Updated upstream
         # If root contains a `type="string"` attribute, then it's a StringSchema
         if "type" in root.attrib and root.attrib["type"] == "string":
             return StringSchema(root)
         return JsonSchema(root)
-=======
-        # Recast the schema as an OutputSchema.
-        return OutputSchema.from_xml(root)
->>>>>>> Stashed changes
 
     @staticmethod
-    def load_instructions(root: ET._Element, output_schema: Schema) -> Instructions:
+    def load_instructions(root: str, output_schema: Schema) -> Instructions:
         """Given the RAIL <instructions> element, create Instructions."""
         return Instructions(
-            source=root.text,
+            source=root,
             output_schema=output_schema.transpile(),
         )
 
     @staticmethod
-    def load_prompt(root: ET._Element, output_schema: Schema) -> Prompt:
+    def load_prompt(root: str, output_schema: Schema) -> Prompt:
         """Given the RAIL <prompt> element, create a Prompt object."""
         return Prompt(
-            source=root.text,
+            source=root,
             output_schema=output_schema.transpile(),
         )
 

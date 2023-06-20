@@ -1,335 +1,45 @@
-from dataclasses import dataclass
 import datetime
-import re
 from types import SimpleNamespace
-from typing import Any, Dict, Generator, Optional
+from typing import TYPE_CHECKING, Any, Dict, Generator
 from typing import List as TypedList
 from typing import Tuple, Type, Union
-import warnings
 
 from lxml import etree as ET
 from pydantic import BaseModel
 
-# from guardrails.validators import Validator
-
-
-@dataclass
-class FormatAttr:
-    """Class for parsing and manipulating the `format` attribute of an element.
-
-    The format attribute is a string that contains semi-colon separated
-    validators e.g. "valid-url; is-reachable". Each validator is itself either:
-    - the name of an parameter-less validator, e.g. "valid-url"
-    - the name of a validator with parameters, separated by a colon with a
-        space-separated list of parameters, e.g. "is-in: 1 2 3"
-
-    Parameters can either be written in plain text, or in python expressions
-    enclosed in curly braces. For example, the following are all valid:
-    - "is-in: 1 2 3"
-    - "is-in: {1} {2} {3}"
-    - "is-in: {1 + 2} {2 + 3} {3 + 4}"
-    """
-
-    # The format attribute string.
-    format: Optional[str] = None
-
-    # The XML element that this format attribute is associated with.
-    element: Optional[ET._Element] = None
-
-    @property
-    def empty(self) -> bool:
-        """Return True if the format attribute is empty, False otherwise."""
-        return self.format is None
-
-    @classmethod
-    def from_element(cls, element: ET._Element) -> "FormatAttr":
-        """Create a FormatAttr object from an XML element.
-
-        Args:
-            element (ET._Element): The XML element.
-
-        Returns:
-            A FormatAttr object.
-        """
-        return cls(element.get("format"), element)
-
-    @property
-    def tokens(self) -> TypedList[str]:
-        """Split the format attribute into tokens.
-
-        For example, the format attribute "valid-url; is-reachable" will
-        be split into ["valid-url", "is-reachable"]. The semicolon is
-        used as a delimiter, but not if it is inside curly braces,
-        because the format string can contain Python expressions that
-        contain semicolons.
-        """
-        if self.format is None:
-            return []
-        pattern = re.compile(r";(?![^{}]*})")
-        tokens = re.split(pattern, self.format)
-        tokens = list(filter(None, tokens))
-        return tokens
-
-    @classmethod
-    def parse_token(cls, token: str) -> Tuple[str, TypedList[Any]]:
-        """Parse a single token in the format attribute, and return the
-        validator name and the list of arguments.
-
-        Args:
-            token (str): The token to parse, one of the tokens returned by
-                `self.tokens`.
-
-        Returns:
-            A tuple of the validator name and the list of arguments.
-        """
-        validator_with_args = token.strip().split(":", 1)
-        if len(validator_with_args) == 1:
-            return validator_with_args[0].strip(), []
-
-        validator, args_token = validator_with_args
-
-        # Split using whitespace as a delimiter, but not if it is inside curly braces or
-        # single quotes.
-        pattern = re.compile(r"\s(?![^{}]*})|(?<!')\s(?=[^']*'$)")
-        tokens = re.split(pattern, args_token)
-
-        # Filter out empty strings if any.
-        tokens = list(filter(None, tokens))
-
-        args = []
-        for t in tokens:
-            # If the token is enclosed in curly braces, it is a Python expression.
-            t = t.strip()
-            if t[0] == "{" and t[-1] == "}":
-                t = t[1:-1]
-                try:
-                    # Evaluate the Python expression.
-                    t = eval(t)
-                except (ValueError, SyntaxError, NameError) as e:
-                    raise ValueError(
-                        f"Python expression `{t}` is not valid, "
-                        f"and raised an error: {e}."
-                    )
-            args.append(t)
-
-        return validator.strip(), args
-
-    def parse(self) -> Dict:
-        """Parse the format attribute into a dictionary of validators.
-
-        Returns:
-            A dictionary of validators, where the key is the validator name, and
-            the value is a list of arguments.
-        """
-        if self.format is None:
-            return {}
-
-        # Split the format attribute into tokens: each is a validator.
-        # Then, parse each token into a validator name and a list of parameters.
-        validators = {}
-        for token in self.tokens:
-            # Parse the token into a validator name and a list of parameters.
-            validator_name, args = self.parse_token(token)
-            validators[validator_name] = args
-
-        return validators
-
-    @property
-    def validators(self) -> TypedList["Validator"]:
-        """Get the list of validators from the format attribute.
-
-        Only the validators that are registered for this element will be
-        returned.
-        """
-        try:
-            return getattr(self, "_validators")
-        except AttributeError:
-            raise AttributeError("Must call `get_validators` first.")
-
-    @property
-    def unregistered_validators(self) -> TypedList[str]:
-        """Get the list of validators from the format attribute that are not
-        registered for this element."""
-        try:
-            return getattr(self, "_unregistered_validators")
-        except AttributeError:
-            raise AttributeError("Must call `get_validators` first.")
-
-    def get_validators(self, strict: bool = False) -> TypedList["Validator"]:
-        """Get the list of validators from the format attribute. Only the
-        validators that are registered for this element will be returned.
-
-        For example, if the format attribute is "valid-url; is-reachable", and
-        "is-reachable" is not registered for this element, then only the ValidUrl
-        validator will be returned, after instantiating it with the arguments
-        specified in the format attribute (if any).
-
-        Args:
-            strict: If True, raise an error if a validator is not registered for
-                this element. If False, ignore the validator and print a warning.
-
-        Returns:
-            A list of validators.
-        """
-        from guardrails.validators import types_to_validators, validators_registry
-
-        _validators = []
-        _unregistered_validators = []
-        parsed = self.parse().items()
-        for validator_name, args in parsed:
-            # Check if the validator is registered for this element.
-            # The validators in `format` that are not registered for this element
-            # will be ignored (with an error or warning, depending on the value of
-            # `strict`), and the registered validators will be returned.
-            if validator_name not in types_to_validators[self.element.tag]:
-                if strict:
-                    raise ValueError(
-                        f"Validator {validator_name} is not valid for"
-                        f" element {self.element.tag}."
-                    )
-                else:
-                    warnings.warn(
-                        f"Validator {validator_name} is not valid for"
-                        f" element {self.element.tag}."
-                    )
-                    _unregistered_validators.append(validator_name)
-                continue
-
-            validator = validators_registry[validator_name]
-
-            # See if the formatter has an associated on_fail method.
-            on_fail = None
-            on_fail_attr_name = f"on-fail-{validator_name}"
-            if on_fail_attr_name in self.element.attrib:
-                on_fail = self.element.attrib[on_fail_attr_name]
-                # TODO(shreya): Load the on_fail method.
-                # This method should be loaded from an optional script given at the
-                # beginning of a rail file.
-
-            # Create the validator.
-            _validators.append(validator(*args, on_fail=on_fail))
-
-        self._validators = _validators
-        self._unregistered_validators = _unregistered_validators
-        return _validators
-
-    def to_prompt(self, with_keywords: bool = True) -> str:
-        """Convert the format string to another string representation for use
-        in prompting. Uses the validators' to_prompt method in order to
-        construct the string to use in prompting.
-
-        For example, the format string "valid-url; other-validator: 1.0
-        {1 + 2}" will be converted to "valid-url other-validator:
-        arg1=1.0 arg2=3".
-        """
-        if self.format is None:
-            return ""
-        # Use the validators' to_prompt method to convert the format string to
-        # another string representation.
-        prompt = "; ".join([v.to_prompt(with_keywords) for v in self.validators])
-        unreg_prompt = "; ".join(self.unregistered_validators)
-        if prompt and unreg_prompt:
-            prompt += f"; {unreg_prompt}"
-        elif unreg_prompt:
-            prompt += unreg_prompt
-        return prompt
+if TYPE_CHECKING:
+    from guardrails.schema import FormatAttr
 
 
 class DataType:
-    """
-    Basic element type. This organizes the schema into a tree structure.
-    """
     def __init__(
         self,
-        name: str,
-        description: Optional[str],
         children: Dict[str, Any],
-        value: Optional[Any] = None,
-        path: Optional[TypedList["DataType"]] = None,
-        validators: Optional[TypedList["Validator"]] = None,
-        # format_attr: "FormatAttr",
-        # element: ET._Element,
+        format_attr: "FormatAttr",
+        element: ET._Element,
     ) -> None:
-        self.name = name
-        self.description = description
         self._children = children
-        self.value = value
-        self.path = path or []
-        self.validators = validators or []
+        self.format_attr = format_attr
+        self.element = element
 
-        # self.format_attr = format_attr
-        # self.element = element
-
-    # @property
-    # def validators(self) -> TypedList:
-    #     return self.format_attr.validators
+    @property
+    def validators(self) -> TypedList:
+        return self.format_attr.validators
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self._children})"
 
-    @classmethod
-    def from_xml(cls, element: ET._Element, strict: bool = False) -> "DataType":
-
-        # TODO: don't want to pass strict through to DataType,
-        # but need to pass it to FormatAttr.from_element
-        # how to handle this?
-        format_attr = FormatAttr.from_element(element)
-        format_attr.get_validators(strict)
-
-        data_type = cls({}, format_attr, element)
-        data_type.set_children(element)
-        return data_type
-
-    @classmethod
-    def from_xml(cls, element: ET._Element) -> "DataType":
-        """Create an Element from an XML element."""
-        element_type = element.tag
-
-        if "name" in element.attrib:
-            name = element.attrib["name"]
-        else:
-            raise KeyError(f"Element {element_type} does not have a name attribute")
-
-        if "description" in element.attrib:
-            description = element.attrib["description"]
-        else:
-            description = None
-
-        if "format" in element.attrib:
-            # TODO(shreya): Get list of validators here. Can probably reuse some
-            # functions from other places.
-            validators = []
-        else:
-            validators = []
-
-        children = list(element)
-        if children:
-            children = [DataType.from_xml(child) for child in children]
-
-        return cls(
-            element_type=element_type,
-            name=name,
-            description=description,
-            children=children,
-            validators=validators,
-        )
-
-    # def iter(
-    #     self, element: ET._Element
-    # ) -> Generator[Tuple[str, "DataType", ET._Element], None, None]:
-    #     """Iterate over the children of an element.
-
-    #     Yields tuples of (name, child_data_type, child_element) for each
-    #     child.
-    #     """
-    #     for el_child in element:
-    #         if element.tag == "list":
-    #             assert len(self._children) == 1, "Must have exactly one child."
-    #             yield None, list(self._children.values())[0], el_child
-    #         else:
-    #             name: str = el_child.attrib["name"]
-    #             child_data_type: DataType = self._children[name]
-    #             yield name, child_data_type, el_child
+    def __iter__(self) -> Generator[Tuple[str, "DataType", ET._Element], None, None]:
+        """Return a tuple of (name, child_data_type, child_element) for each
+        child."""
+        for el_child in self.element:
+            if "name" in el_child.attrib:
+                name: str = el_child.attrib["name"]
+                child_data_type: DataType = self._children[name]
+                yield name, child_data_type, el_child
+            else:
+                assert len(self._children) == 1, "Must have exactly one child."
+                yield None, list(self._children.values())[0], el_child
 
     def iter(
         self, element: ET._Element
@@ -339,7 +49,6 @@ class DataType:
         Yields tuples of (name, child_data_type, child_element) for each
         child.
         """
-        assert False, "This method should not be called."
         for el_child in element:
             if element.tag == "list":
                 assert len(self._children) == 1, "Must have exactly one child."
@@ -368,6 +77,20 @@ class DataType:
 
     def set_children(self, element: ET._Element):
         raise NotImplementedError("Abstract method.")
+
+    @classmethod
+    def from_xml(cls, element: ET._Element, strict: bool = False) -> "DataType":
+        from guardrails.schema import FormatAttr
+
+        # TODO: don't want to pass strict through to DataType,
+        # but need to pass it to FormatAttr.from_element
+        # how to handle this?
+        format_attr = FormatAttr.from_element(element)
+        format_attr.get_validators(strict)
+
+        data_type = cls({}, format_attr, element)
+        data_type.set_children(element)
+        return data_type
 
     @property
     def children(self) -> SimpleNamespace:
@@ -459,7 +182,7 @@ class Date(ScalarType):
     """
 
     def __init__(
-        self, children: Dict[str, Any], format_attr: FormatAttr, element: ET._Element
+        self, children: Dict[str, Any], format_attr: "FormatAttr", element: ET._Element
     ) -> None:
         self.date_format = "%Y-%m-%d"
         super().__init__(children, format_attr, element)
@@ -490,7 +213,7 @@ class Time(ScalarType):
     """
 
     def __init__(
-        self, children: Dict[str, Any], format_attr: FormatAttr, element: ET._Element
+        self, children: Dict[str, Any], format_attr: "FormatAttr", element: ET._Element
     ) -> None:
         self.time_format = "%H:%M:%S"
         super().__init__(children, format_attr, element)
@@ -520,6 +243,16 @@ class Email(ScalarType):
 @register_type("url")
 class URL(ScalarType):
     """Element tag: `<url>`"""
+
+
+@register_type("pythoncode")
+class PythonCode(ScalarType):
+    """Element tag: `<pythoncode>`"""
+
+
+@register_type("sql")
+class SQLCode(ScalarType):
+    """Element tag: `<sql>`"""
 
 
 @register_type("percentage")
@@ -603,7 +336,7 @@ class Choice(NonScalarType):
     """Element tag: `<object>`"""
 
     def __init__(
-        self, children: Dict[str, Any], format_attr: FormatAttr, element: ET._Element
+        self, children: Dict[str, Any], format_attr: "FormatAttr", element: ET._Element
     ) -> None:
         super().__init__(children, format_attr, element)
 
@@ -644,7 +377,7 @@ class Case(NonScalarType):
     """Element tag: `<case>`"""
 
     def __init__(
-        self, children: Dict[str, Any], format_attr: FormatAttr, element: ET._Element
+        self, children: Dict[str, Any], format_attr: "FormatAttr", element: ET._Element
     ) -> None:
         super().__init__(children, format_attr, element)
 
@@ -672,18 +405,9 @@ class Pydantic(NonScalarType):
         self,
         model: Type[BaseModel],
         children: Dict[str, Any],
-        format_attr: FormatAttr,
+        format_attr: "FormatAttr",
         element: ET._Element,
     ) -> None:
-
-        # TODO(shreya): Make sure depecated warning contains the relevant context
-        # Raise deprecated warning
-        warnings.warn(
-            "The <pydantic /> data type is deprecated and will be removed in a future "
-            "version of GuardRails. Please use the <object /> data type instead.",
-            DeprecationWarning,
-        )
-
         super().__init__(children, format_attr, element)
         assert (
             format_attr.empty
@@ -713,6 +437,7 @@ class Pydantic(NonScalarType):
 
     @classmethod
     def from_xml(cls, element: ET._Element, strict: bool = False) -> "DataType":
+        from guardrails.schema import FormatAttr
         from guardrails.utils.pydantic_utils import pydantic_models
 
         model_name = element.attrib["model"]
@@ -794,3 +519,24 @@ class Pydantic(NonScalarType):
         return ET.fromstring(
             xml, parser=ET.XMLParser(encoding="utf-8", remove_blank_text=True)
         )
+
+
+# @register_type("key")
+# class Key(DataType):
+# """
+# Element tag: `<string>`
+# """
+
+
+# @register_type("value")
+# class Value(DataType):
+# """
+# Element tag: `<string>`
+# """
+
+
+# @register_type("item")
+# class Item(DataType):
+# """
+# Element tag: `<string>`
+# """
