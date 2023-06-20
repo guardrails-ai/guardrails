@@ -176,6 +176,9 @@ def verify_schema_against_json(
             return False
         if value_name not in json:
             return False
+        if any(key in json for key in schema.cases.keys()
+               if key != value_name):
+            return False
         value_schema = schema.cases[value_name]
         value = json[value_name]
         if isinstance(value_schema, Placeholder):
