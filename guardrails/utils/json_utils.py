@@ -11,10 +11,12 @@ class Placeholder:
     def verify(
         self,
         json_value,
-        prune_extra_keys: bool = True,
-        coerce_types: bool = False,
-    ) -> bool:
-        raise NotImplementedError
+        prune_extra_keys: bool,
+        coerce_types: bool,
+    ):
+        if self.optional and json_value is None:
+            return True
+        return None
 
 
 @dataclass
@@ -51,9 +53,16 @@ class ValuePlaceholder(Placeholder):
     def verify(
         self,
         json_value,
-        prune_extra_keys: bool = False,
-        coerce_types=False
+        prune_extra_keys: bool,
+        coerce_types: bool,
     ):
+        super_result = super().verify(
+            json_value,
+            prune_extra_keys=prune_extra_keys,
+            coerce_types=coerce_types,
+        )
+        if super_result is not None:
+            return super_result
         expected_type = self.type_object
         if expected_type == Any:
             return json_value
@@ -74,9 +83,17 @@ class DictPlaceholder(Placeholder):
     def verify(
         self,
         json_value,
-        prune_extra_keys: bool = False,
-        coerce_types: bool = False,
+        prune_extra_keys: bool,
+        coerce_types: bool,
     ) -> bool:
+        super_result = super().verify(
+            json_value,
+            prune_extra_keys=prune_extra_keys,
+            coerce_types=coerce_types,
+        )
+        if super_result is not None:
+            return super_result
+    
         if not isinstance(json_value, dict):
             return False
         if not self.children.keys():
@@ -131,9 +148,17 @@ class ListPlaceholder(Placeholder):
     def verify(
         self,
         json_value,
-        prune_extra_keys: bool = True,
-        coerce_types: bool = False,
+        prune_extra_keys: bool,
+        coerce_types: bool,
     ) -> bool:
+        super_result = super().verify(
+            json_value,
+            prune_extra_keys=prune_extra_keys,
+            coerce_types=coerce_types,
+        )
+        if super_result is not None:
+            return super_result
+        
         if not isinstance(json_value, list):
             return False
 
@@ -150,7 +175,11 @@ class ListPlaceholder(Placeholder):
             return True
         else:
             for item in json_value:
-                if not self.child.verify(item):
+                if not self.child.verify(
+                    item,
+                    prune_extra_keys=prune_extra_keys,
+                    coerce_types=coerce_types,
+                ):
                     return False
 
         return True
@@ -164,9 +193,17 @@ class ChoicePlaceholder(Placeholder):
     def verify(
         self,
         json_value,
-        prune_extra_keys: bool = True,
-        coerce_types: bool = False,
+        prune_extra_keys: bool,
+        coerce_types: bool,
     ) -> bool:
+        super_result = super().verify(
+            json_value,
+            prune_extra_keys=prune_extra_keys,
+            coerce_types=coerce_types,
+        )
+        if super_result is not None:
+            return super_result
+        
         if not isinstance(json_value, dict):
             return False
         if self.name not in json_value:
