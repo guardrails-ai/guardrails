@@ -93,7 +93,7 @@ class DictPlaceholder(Placeholder):
         )
         if super_result is not None:
             return super_result
-    
+
         if not isinstance(json_value, dict):
             return False
         if not self.children.keys():
@@ -110,8 +110,10 @@ class DictPlaceholder(Placeholder):
         if prune_extra_keys and extra_keys:
             for key in extra_keys:
                 del json_value[key]
-        if any(key not in json_keys and not self.children[key].optional
-               for key in schema_keys):
+        if any(
+            key not in json_keys and not self.children[key].optional
+            for key in schema_keys
+        ):
             return False
 
         for key, placeholder in self.children.items():
@@ -161,7 +163,7 @@ class ListPlaceholder(Placeholder):
         )
         if super_result is not None:
             return super_result
-        
+
         if not isinstance(json_value, list):
             return False
 
@@ -206,7 +208,7 @@ class ChoicePlaceholder(Placeholder):
         )
         if super_result is not None:
             return super_result
-        
+
         if not isinstance(json_value, dict):
             return False
         if self.name not in json_value:
@@ -250,8 +252,7 @@ def generate_type_skeleton_from_schema(schema: ET._Element) -> DictPlaceholder:
         if schema.tag == "object":
             return DictPlaceholder(
                 children={
-                    child.attrib["name"]:
-                    _recurse_schema(child) for child in schema
+                    child.attrib["name"]: _recurse_schema(child) for child in schema
                 },
                 optional=is_optional,
             )
@@ -283,10 +284,7 @@ def generate_type_skeleton_from_schema(schema: ET._Element) -> DictPlaceholder:
             )
 
     return DictPlaceholder(
-        children={
-            child.attrib["name"]:
-            _recurse_schema(child) for child in schema
-        },
+        children={child.attrib["name"]: _recurse_schema(child) for child in schema},
         optional=False,
     )
 
