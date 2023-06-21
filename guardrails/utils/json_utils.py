@@ -167,6 +167,9 @@ class ListPlaceholder(Placeholder):
         if not isinstance(json_value, list):
             return False
 
+        if self.child is None:
+            return True
+
         if isinstance(self.child, ValuePlaceholder):
             for i, item in enumerate(json_value):
                 value = self.child.verify(

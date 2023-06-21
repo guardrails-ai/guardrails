@@ -223,6 +223,20 @@ from guardrails.utils.json_utils import verify_schema_against_json
             },
             True,
         ),
+        (
+            """
+<root>
+<list
+    name="my_list"
+>
+</list>
+</root>
+            """,
+            {
+                "my_list": ["e"],
+            },
+            True,
+        ),
     ],
 )
 def test_skeleton(xml, generated_json, result):
