@@ -241,7 +241,7 @@ def add_validators_to_xml_element(field_info: ModelField, element: Element) -> E
 
 
 def edit_element_to_add_validators(
-    element: Element, validators: List[Validator]
+    element: Element, validators: List[Validator], unregistered: List[str], add_on_fail: bool = True
 ) -> Element:
     """Add validators to an XML element.
 
@@ -255,7 +255,7 @@ def edit_element_to_add_validators(
 
     format_prompt = []
     on_fails = {}
-    for val in validators:
+    for val in validators + unregistered:
         validator_prompt = val
         if not isinstance(val, str):
             # `validator` is of type gd.Validator, use the to_xml_attrib method
@@ -268,13 +268,14 @@ def edit_element_to_add_validators(
     if len(format_prompt) > 0:
         format_prompt = "; ".join(format_prompt)
         element.set("format", format_prompt)
-        for rail_alias, on_fail in on_fails.items():
-            element.set("on-fail-" + rail_alias, on_fail)
+        if add_on_fail:
+            for rail_alias, on_fail in on_fails.items():
+                element.set("on-fail-" + rail_alias, on_fail)
 
     return element
 
 
-def add_validators_to_foo(field_info: ModelField) -> List[Validator]:
+def add_validators_to_element(field_info: ModelField) -> List[Validator]:
     """Extract validators from a pydantic ModelField and add to XML element
 
     Args:

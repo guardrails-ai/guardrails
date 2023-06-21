@@ -2,13 +2,13 @@ import pytest
 from pydantic import BaseModel, Field
 
 from guardrails.utils.pydantic_utils import (
-    add_pydantic_validators_as_guardrails_validators,
+    extract_pydantic_validators_as_guardrails_validators,
     add_validator,
 )
 from guardrails.validators import EventDetail, ValidChoices, ValidLength
 
 
-def test_add_pydantic_validators_as_guardrails_validators():
+def test_extract_pydantic_validators_as_guardrails_validators():
     # TODO(shreya): Uncomment when custom validators are supported
     # def dummy_validator(name: str):
     #     if name != "Alex":
@@ -30,7 +30,7 @@ def test_add_pydantic_validators_as_guardrails_validators():
         #         raise ValueError("Name must be Alex")
         #     return name
 
-    model_fields = add_pydantic_validators_as_guardrails_validators(DummyModel)
+    model_fields = extract_pydantic_validators_as_guardrails_validators(DummyModel)
     name_field = model_fields["name"]
 
     # Should have 1 field

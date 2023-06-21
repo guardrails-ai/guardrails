@@ -199,7 +199,7 @@ class Rail:
         # If root contains a `type="string"` attribute, then it's a StringSchema
         if "type" in root.attrib and root.attrib["type"] == "string":
             return StringSchema(root)
-        return JsonSchema(root)
+        return JsonSchema.from_xml(root)
 
     @staticmethod
     def load_instructions(root: str, output_schema: Schema) -> Instructions:

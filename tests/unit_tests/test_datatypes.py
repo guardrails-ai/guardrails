@@ -1,7 +1,7 @@
 import pytest
 from lxml.builder import E
 
-import guardrails.datatypes as datatypes
+from guardrails.element import FormatAttr, Date, Time
 
 
 @pytest.mark.parametrize(
@@ -25,7 +25,7 @@ import guardrails.datatypes as datatypes
     ],
 )
 def test_get_args(input_string, expected):
-    _, args = datatypes.FormatAttr.parse_token(input_string)
+    _, args = FormatAttr.parse_token(input_string)
     assert args == expected
 
 
@@ -40,7 +40,7 @@ def test_date(date_format, date):
     from datetime import datetime
 
     date_element = E.date(**{"date-format": date_format})
-    date_datatype = datatypes.Date.from_xml(date_element)
+    date_datatype = Date.from_xml(date_element)
     assert date_datatype.from_str(date) == datetime.strptime(date, date_format).date()
 
 
@@ -54,5 +54,5 @@ def test_time(time_format, time):
     from datetime import datetime
 
     time_element = E.time(**{"time-format": time_format})
-    time_datatype = datatypes.Time.from_xml(time_element)
+    time_datatype = Time.from_xml(time_element)
     assert time_datatype.from_str(time) == datetime.strptime(time, time_format).time()

@@ -3,6 +3,11 @@ from .test_assets import entity_extraction, pydantic, python_rail, string
 
 def openai_completion_create(prompt, *args, **kwargs):
     """Mock the OpenAI API call to Completion.create."""
+
+    # Write the prompt to a file
+    with open("prompt.txt", "w") as f:
+        f.write(prompt)
+
     mock_llm_responses = {
         entity_extraction.COMPILED_PROMPT: entity_extraction.LLM_OUTPUT,
         entity_extraction.COMPILED_PROMPT_REASK: entity_extraction.LLM_OUTPUT_REASK,

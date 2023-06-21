@@ -7,7 +7,10 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 from lxml import etree as ET
 from lxml.builder import E
+from pydantic import BaseModel
 
+from guardrails.datatypes import DataType, String
+from guardrails.element import Element
 from guardrails.llm_providers import PromptCallable, openai_chat_wrapper, openai_wrapper
 from guardrails.prompt import Instructions, Prompt
 from guardrails.utils.constants import constants
@@ -17,11 +20,7 @@ from guardrails.utils.reask_utils import (
     get_pruned_tree,
     get_reasks_by_element,
 )
-from guardrails.datatypes import DataType, String
-from guardrails.element import Element
 from guardrails.validators import check_refrain_in_dict, filter_in_dict
-from pydantic import BaseModel
-from guardrails.foo import Foo
 
 if TYPE_CHECKING:
     pass
@@ -502,7 +501,7 @@ class JsonSchema(Schema):
             output_schema=pruned_tree_string,
         )
 
-    def setup_schema(self, root: "Foo") -> None:
+    def setup_schema(self, root: "Element") -> None:
         pass
 
     def parse(self, output: str) -> Tuple[Dict, Optional[Exception]]:
@@ -532,13 +531,13 @@ class JsonSchema(Schema):
 
     @classmethod
     def from_xml(cls, xml: ET._Element) -> "Schema":
-        root_foo = Foo.from_xml(xml)
-        return cls(root=root_foo)
+        root_el = Element.from_xml(xml)
+        return cls(root=root_el)
     
     @classmethod
     def from_pydantic(cls, model: BaseModel) -> "Schema":
-        root_foo = Foo.from_pydantic(model)
-        return cls(root=root_foo)
+        root_el = Element.from_pydantic(model)
+        return cls(root=root_el)
 
     def validate(
         self,
@@ -561,6 +560,9 @@ class JsonSchema(Schema):
         validated_response = deepcopy(data)
 
         for field, value in validated_response.items():
+
+            breakpoint()
+
             if field not in self:
                 # This is an extra field that is not in the schema.
                 # We remove it from the validated response.
@@ -614,9 +616,11 @@ class JsonSchema(Schema):
 
 
 class StringSchema(Schema):
-    def __init__(self, root: ET._Element) -> None:
+    def __init__(self, root: Element) -> None:
         self.string_key = "string"
         super().__init__(root)
+
+    # TODO: add a from_xml method
 
     def setup_schema(self, root: ET._Element) -> None:
         if len(root) != 0:

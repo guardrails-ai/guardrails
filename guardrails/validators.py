@@ -693,6 +693,8 @@ class TwoWords(Validator):
     def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
         logger.debug(f"Validating {value} is two words...")
 
+        breakpoint()
+
         if len(value.split()) != 2:
             raise EventDetail(
                 key,

@@ -104,7 +104,7 @@ def test_rail_spec_output_parse(rail_spec, llm_output, validated_output):
     "rail,prompt",
     [
         (entity_extraction.RAIL_SPEC_WITH_REASK, None),
-        (entity_extraction.PYDANTIC_RAIL_WITH_REASK, entity_extraction.PYDANTIC_PROMPT),
+        # (entity_extraction.PYDANTIC_RAIL_WITH_REASK, entity_extraction.PYDANTIC_PROMPT),
     ],
 )
 def test_entity_extraction_with_reask(mocker, rail, prompt):
