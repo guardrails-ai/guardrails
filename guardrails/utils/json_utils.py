@@ -72,7 +72,26 @@ def verify_schema_against_json(
 
     type_skeleton = generate_type_skeleton_from_schema(xml_schema)
 
+    def verification_failed():
+        # Sentinel value
+        pass
+
+    def _verify_and_cast_value(placeholder, value):
+        expected_type = placeholder.type_object
+        if expected_type == Any:
+            return value
+        if not isinstance(value, expected_type):
+            if not coerce_types:
+                return verification_failed
+            try:
+                return expected_type(value)
+            except ValueError:
+                return verification_failed
+        return value
+
     def _verify_dict(schema, json):
+        if not isinstance(json, dict):
+            return False
         if not schema.keys():
             return True
         json_keys = set(json.keys())
@@ -92,24 +111,14 @@ def verify_schema_against_json(
 
         for key in schema.keys():
             if isinstance(schema[key], Placeholder):
-                expected_type = schema[key].type_object
-                if expected_type == Any:
-                    continue
-                if not isinstance(json[key], expected_type):
-                    if not coerce_types:
-                        return False
-                    try:
-                        json[key] = expected_type(json[key])
-                    except ValueError:
-                        return False
-            elif isinstance(schema[key], dict):
-                if not isinstance(json[key], dict):
+                value = _verify_and_cast_value(schema[key], json[key])
+                if value is verification_failed:
                     return False
+                json[key] = value
+            elif isinstance(schema[key], dict):
                 if not _verify_dict(schema[key], json[key]):
                     return False
             elif isinstance(schema[key], list):
-                if not isinstance(json[key], list):
-                    return False
                 if not _verify_list(schema[key], json[key]):
                     return False
             elif isinstance(schema[key], Choice):
@@ -121,6 +130,8 @@ def verify_schema_against_json(
         return True
 
     def _verify_list(schema, json):
+        if not isinstance(json, list):
+            return False
         if len(schema) == 0:
             return True
         if len(schema) > 1:
@@ -131,38 +142,24 @@ def verify_schema_against_json(
         child_schema = schema[0]
 
         if isinstance(child_schema, Placeholder):
-            expected_type = child_schema.type_object
-            if expected_type == Any:
-                return True
-
             for i, item in enumerate(json):
-                if not isinstance(item, expected_type):
-                    if not coerce_types:
-                        return False
-                    try:
-                        json[i] = expected_type(item)
-                    except ValueError:
-                        return False
+                value = _verify_and_cast_value(child_schema, item)
+                if value is verification_failed:
+                    return False
+                json[i] = value
+            return True
         elif isinstance(child_schema, dict):
-            for item in json:
-                if not isinstance(item, dict):
-                    return False
-                if not _verify_dict(child_schema, item):
-                    return False
+            verification_func = _verify_dict
         elif isinstance(child_schema, list):
-            for item in json:
-                if not isinstance(item, list):
-                    return False
-                if not _verify_list(child_schema, item):
-                    return False
+            verification_func = _verify_list
         elif isinstance(child_schema, Choice):
-            for item in json:
-                if not isinstance(item, dict):
-                    return False
-                if not _verify_choice(child_schema, item):
-                    return False
+            verification_func = _verify_choice
         else:
             raise ValueError(f"Unknown type {type(child_schema)}")
+
+        for item in json:
+            if not verification_func(child_schema, item):
+                return False
 
         return True
 
@@ -181,24 +178,14 @@ def verify_schema_against_json(
         value_schema = schema.cases[value_name]
         value = json[value_name]
         if isinstance(value_schema, Placeholder):
-            expected_type = value_schema.type_object
-            if expected_type == Any:
-                return True
-            if not isinstance(value, expected_type):
-                if not coerce_types:
-                    return False
-                try:
-                    json[value_name] = expected_type(value)
-                except ValueError:
-                    return False
-        elif isinstance(value_schema, dict):
-            if not isinstance(value, dict):
+            value = _verify_and_cast_value(value_schema, value)
+            if value is verification_failed:
                 return False
+            json[value_name] = value
+        elif isinstance(value_schema, dict):
             if not _verify_dict(value_schema, value):
                 return False
         elif isinstance(value_schema, list):
-            if not isinstance(value, list):
-                return False
             if not _verify_list(value_schema, value):
                 return False
         elif isinstance(value_schema, Choice):
