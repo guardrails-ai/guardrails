@@ -83,7 +83,8 @@ Dummy prompt
 
 </rail>
 """,
-            '{"action": "flight", "flight": {"flight_direction": "north", "flight_speed": 1}}',
+            '{"action": "flight", '
+            '"flight": {"flight_direction": "north", "flight_speed": 1}}',
             True,
         ),
         (
@@ -125,7 +126,7 @@ Dummy prompt
             '{"action": null}',
             True,
         ),
-    ]
+    ],
 )
 def test_choice_validation(xml, generated_json, result):
     guard = Guard.from_rail_string(xml)
