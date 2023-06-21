@@ -110,10 +110,13 @@ class DictPlaceholder(Placeholder):
         if prune_extra_keys and extra_keys:
             for key in extra_keys:
                 del json_value[key]
-        if any(key not in json_keys for key in schema_keys):
+        if any(key not in json_keys and not self.children[key].optional
+               for key in schema_keys):
             return False
 
         for key, placeholder in self.children.items():
+            if placeholder.optional and key not in json_value:
+                continue
             if isinstance(placeholder, ValuePlaceholder):
                 value = placeholder.verify(
                     json_value[key],
