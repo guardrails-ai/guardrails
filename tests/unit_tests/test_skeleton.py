@@ -31,7 +31,6 @@ from guardrails.utils.json_utils import verify_schema_against_json
 </root>
             """,
             {
-
                 "my_list": [{"my_string": "string"}],
                 "my_integer": 1,
                 "my_string": "string",
@@ -44,7 +43,7 @@ from guardrails.utils.json_utils import verify_schema_against_json
                 },
                 "my_list2": [],
             },
-            True
+            True,
         ),
         (
             """
@@ -70,14 +69,13 @@ from guardrails.utils.json_utils import verify_schema_against_json
 </root>
             """,
             {
-
                 "my_list": [{"my_string": "string"}],
                 "my_integer": 1,
                 "my_string": "string",
                 "my_dict": {"my_string": "string"},
                 "my_list2": [],
             },
-            False
+            False,
         ),
         (
             """
@@ -111,7 +109,7 @@ from guardrails.utils.json_utils import verify_schema_against_json
                 "action": "fight",
                 "fight": "punch",
             },
-            True
+            True,
         ),
         (
             """
@@ -197,7 +195,35 @@ from guardrails.utils.json_utils import verify_schema_against_json
             },
             True,
         ),
-    ]
+        (
+            """
+<root>
+<string
+    name="my_string"
+    required="false"
+/>
+</root>
+            """,
+            {
+                "my_string": None,
+            },
+            True,
+        ),
+        (
+            """
+<root>
+<string
+    name="my_string"
+    required="false"
+/>
+</root>
+            """,
+            {
+                # "my_string": None,
+            },
+            True,
+        ),
+    ],
 )
 def test_skeleton(xml, generated_json, result):
     xml_schema = ET.fromstring(xml)
