@@ -15,11 +15,29 @@ from guardrails.utils.reask_utils import (
     reasks_to_dict,
     sub_reasks_with_fixed_values,
 )
+from guardrails.base import Callback
 
 logger = logging.getLogger(__name__)
 actions_logger = logging.getLogger(f"{__name__}.actions")
 add_destinations(actions_logger.debug)
 
+def callback_decorator(run_callback=True):
+    def decorator(func):
+        def wrapper(self, *args, **kwargs):
+            if run_callback:
+                for callback in self.callbacks:
+                    _callback = getattr(callback, f"before_{func.__name__}", None)
+                    if callable(_callback):
+                        _callback()
+            middle = func(self, *args, **kwargs)
+            if run_callback:
+                for callback in self.callbacks:
+                    _callback = getattr(callback, f"after_{func.__name__}", None)
+                    if callable(_callback):
+                        _callback()
+            return middle
+        return wrapper
+    return decorator
 
 @dataclass
 class Runner:
@@ -51,6 +69,7 @@ class Runner:
     reask_prompt: Optional[Prompt] = None
     guard_history: GuardHistory = field(default_factory=lambda: GuardHistory([]))
     base_model: Optional[BaseModel] = None
+    callbacks: Optional[List[Callback]] = []
 
     def _reset_guard_history(self):
         """Reset the guard history."""
@@ -178,6 +197,7 @@ class Runner:
 
             return validated_output, reasks
 
+    @callback_decorator()
     def prepare(
         self,
         index: int,
@@ -221,6 +241,7 @@ class Runner:
 
         return instructions, prompt
 
+    @callback_decorator()
     def call(
         self,
         index: int,
@@ -259,6 +280,7 @@ class Runner:
 
             return output
 
+    @callback_decorator()
     def parse(
         self,
         index: int,
@@ -276,6 +298,7 @@ class Runner:
 
             return parsed_output
 
+    @callback_decorator()
     def validate(
         self,
         index: int,
@@ -293,6 +316,7 @@ class Runner:
 
             return validated_output
 
+    @callback_decorator()
     def introspect(
         self,
         index: int,

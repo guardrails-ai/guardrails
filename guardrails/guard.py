@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from string import Formatter
-from typing import Any, Awaitable, Callable, Dict, Optional, Tuple, Union
+from typing import Any, Awaitable, Callable, Dict, Optional, Tuple, Union, List
 
 from eliot import add_destinations, start_action
 from pydantic import BaseModel
@@ -13,6 +13,7 @@ from guardrails.run import AsyncRunner, Runner
 from guardrails.schema import Schema
 from guardrails.utils.logs_utils import GuardState
 from guardrails.utils.reask_utils import sub_reasks_with_fixed_values
+from guardrails.base import Callback
 
 logger = logging.getLogger(__name__)
 actions_logger = logging.getLogger(f"{__name__}.actions")
@@ -35,6 +36,7 @@ class Guard:
         rail: Rail,
         num_reasks: int = 1,
         base_model: Optional[BaseModel] = None,
+        callbacks: Optional[List[Callback]] = []
     ):
         """Initialize the Guard."""
         self.rail = rail
@@ -42,6 +44,7 @@ class Guard:
         self.guard_state = GuardState([])
         self._reask_prompt = None
         self.base_model = base_model
+        self.callbacks = callbacks
 
     @property
     def input_schema(self) -> Schema:
@@ -211,6 +214,7 @@ class Guard:
                 num_reasks=num_reasks,
                 reask_prompt=self.reask_prompt,
                 base_model=self.base_model,
+                callbacks=self.callbacks,
             )
             guard_history = runner(prompt_params=prompt_params)
             self.guard_state = self.guard_state.push(guard_history)
