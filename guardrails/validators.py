@@ -729,11 +729,11 @@ class OneLine(Validator):
         return schema
 
 
-@register_validator(name="valid-url", data_type=["string", "url"])
-class ValidUrl(Validator):
-    """Validate that a value is a valid URL.
+@register_validator(name="is-reachable", data_type=["string", "url"])
+class EndpointIsReachable(Validator):
+    """Validate that a value is a reachable URL.
 
-    - Name for `format` attribute: `valid-url`
+    - Name for `format` attribute: `is-reachable`
     - Supported data types: `string`, `url`
     - Programmatic fix: None
     """
