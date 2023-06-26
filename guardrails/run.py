@@ -1,6 +1,7 @@
 import logging
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import (Any, Callable, Dict, List,
+    Optional, Tuple, Union, Iterable)
 
 from eliot import add_destinations, start_action
 from pydantic import BaseModel
@@ -15,6 +16,7 @@ from guardrails.utils.reask_utils import (
     reasks_to_dict,
     sub_reasks_with_fixed_values,
 )
+from guardrails.callback import Callback
 
 logger = logging.getLogger(__name__)
 actions_logger = logging.getLogger(f"{__name__}.actions")
@@ -51,6 +53,7 @@ class Runner:
     reask_prompt: Optional[Prompt] = None
     guard_history: GuardHistory = field(default_factory=lambda: GuardHistory([]))
     base_model: Optional[BaseModel] = None
+    callbacks: Iterable[Callback] = []
 
     def _reset_guard_history(self):
         """Reset the guard history."""
@@ -124,6 +127,7 @@ class Runner:
         input_schema: Schema,
         output_schema: Schema,
         output: str = None,
+        callbacks: Iterable[Callback] = []
     ):
         """Run a full step."""
         with start_action(
@@ -134,7 +138,19 @@ class Runner:
             prompt_params=prompt_params,
             input_schema=input_schema,
             output_schema=output_schema,
+            callbacks=callbacks
         ):
+            # Before Prepare: run callbacks before_prepare
+            for callback in callbacks:
+                callback.before_prepare(
+                    index=index,
+                    instructions=instructions,
+                    prompt=prompt,
+                    prompt_params=prompt_params,
+                    input_schema=input_schema,
+                    output_schema=output_schema,
+                )
+
             # Prepare: run pre-processing, and input validation.
             if not output:
                 instructions, prompt = self.prepare(
@@ -149,6 +165,32 @@ class Runner:
             else:
                 instructions = None
                 prompt = None
+
+            # After Prepare: run callbacks after_prepare
+            for callback in callbacks:
+                callback.after_prepare(
+                    index=index,
+                    instructions=instructions,
+                    prompt=prompt,
+                    prompt_params=prompt_params,
+                    input_schema=input_schema,
+                    output_schema=output_schema,
+                    instructions=instructions,
+                    prompt=prompt
+                )
+
+            # Before Call: run callbacks before_call
+            for callback in callbacks:
+                callback.before_call(
+                    index=index,
+                    instructions=instructions,
+                    prompt=prompt,
+                    prompt_params=prompt_params,
+                    input_schema=input_schema,
+                    output_schema=output_schema,
+                    instructions=instructions,
+                    prompt=prompt
+                )
 
             # Call: run the API.
             output = self.call(index, instructions, prompt, api, output)
@@ -422,6 +464,7 @@ class AsyncRunner(Runner):
         input_schema: Schema,
         output_schema: Schema,
         output: str = None,
+        callbacks: Iterable[Callback] = []
     ):
         """Run a full step."""
         with start_action(
@@ -432,7 +475,12 @@ class AsyncRunner(Runner):
             prompt_params=prompt_params,
             input_schema=input_schema,
             output_schema=output_schema,
+            callbacks=callbacks
         ):
+            # Before Prepare: run callbacks before_prepare
+            for callback in callbacks:
+                callback.before_prepare()
+
             # Prepare: run pre-processing, and input validation.
             if not output:
                 instructions, prompt = self.prepare(
@@ -447,6 +495,14 @@ class AsyncRunner(Runner):
             else:
                 instructions = None
                 prompt = None
+
+            # After Prepare: run callbacks after_prepare
+            for callback in callbacks:
+                callback.after_prepare()
+
+            # Before Call: run callbacks before_call
+            for callback in callbacks:
+                callback.before_call()
 
             # Call: run the API.
             output = await self.async_call(index, instructions, prompt, api, output)
