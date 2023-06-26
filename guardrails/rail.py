@@ -70,6 +70,9 @@ class Script:
             # If a string, wrap it in '' quotes.
             if isinstance(replacement, str):
                 replacement = f"'{replacement}'"
+            # Escape any double quotes.
+            replacement = str(replacement).replace('"', "&quot;")
+            # Replace the expression with the evaluated value.
             body = body.replace(f"{{{expr}}}", f"{{{replacement}}}")
 
         return body
