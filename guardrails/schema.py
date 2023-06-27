@@ -359,7 +359,7 @@ class Schema:
         reasks: List[FieldReAsk],
         reask_value: Any,
         reask_prompt_template: Optional[Prompt] = None,
-    ) -> Tuple["Schema", Prompt]:
+    ) -> Tuple["Schema", Prompt, Instructions]:
         """Construct a schema for reasking, and a prompt for reasking.
 
         Args:
@@ -397,7 +397,7 @@ class JsonSchema(Schema):
         reasks: List[FieldReAsk],
         reask_value: Any,
         reask_prompt_template: Optional[Prompt] = None,
-    ) -> Tuple["Schema", Prompt]:
+    ) -> Tuple["Schema", Prompt, Instructions]:
         parsed_rail = deepcopy(self.root)
 
         is_skeleton_reask = not any(isinstance(reask, FieldReAsk) for reask in reasks)
@@ -409,22 +409,27 @@ class JsonSchema(Schema):
             # Get the pruned tree so that it only contains ReAsk objects
             pruned_tree = get_pruned_tree(parsed_rail, list(reask_elements.keys()))
             pruned_tree_schema = type(self)(pruned_tree)
-        else:
-            pruned_tree_schema = self
 
-        pruned_tree_string = pruned_tree_schema.transpile()
-
-        if reask_prompt_template is None:
-            if is_skeleton_reask:
-                reask_prompt_template = Prompt(
-                    constants["high_level_skeleton_reask_prompt"]
-                    + constants["complete_json_suffix"]
-                )
-            else:
+            if reask_prompt_template is None:
                 reask_prompt_template = Prompt(
                     constants["high_level_json_reask_prompt"]
                     + constants["complete_json_suffix"]
                 )
+
+            reask_instructions_template = Instructions(constants["high_level_instructions"])
+        else:
+            pruned_tree_schema = self
+
+            if reask_prompt_template is None:
+                reask_prompt_template = Prompt(
+                    constants["high_level_skeleton_reask_prompt"]
+                    + constants["complete_json_suffix"]
+                )
+
+            # TODO replace me with skeleton reask equivalent
+            reask_instructions_template = Instructions(constants["high_level_instructions"])
+
+        pruned_tree_string = pruned_tree_schema.transpile()
 
         def reask_decoder(obj):
             return {
@@ -437,7 +442,9 @@ class JsonSchema(Schema):
             .replace("}", "}}"),
             output_schema=pruned_tree_string,
         )
-        return pruned_tree_schema, prompt
+        # TODO is instructions supposed to receive a format argument at all?
+        instructions = reask_instructions_template.format(**reask_value)
+        return pruned_tree_schema, prompt, instructions
 
     def setup_schema(self, root: ET._Element) -> None:
         from guardrails.datatypes import registry as types_registry
@@ -476,7 +483,7 @@ class JsonSchema(Schema):
         self,
         guard_logs: GuardLogs,
         data: Optional[Dict[str, Any]],
-    ) -> Optional[Dict[str, Any]]:
+    ) -> Any:
         """Validate a dictionary of data against the schema.
 
         Args:
@@ -593,7 +600,7 @@ class StringSchema(Schema):
         reasks: List[FieldReAsk],
         reask_value: FieldReAsk,
         reask_prompt_template: Optional[Prompt] = None,
-    ) -> Tuple[Schema, Prompt]:
+    ) -> Tuple[Schema, Prompt, Instructions]:
         pruned_tree_string = self.transpile()
 
         if reask_prompt_template is None:
@@ -602,12 +609,16 @@ class StringSchema(Schema):
                 + constants["complete_string_suffix"]
             )
 
+        reask_instructions_template = Instructions(constants["high_level_instructions"])
+
         prompt = reask_prompt_template.format(
             previous_response=reask_value.incorrect_value,
             error_messages=f"- {reask_value.error_message}",
             output_schema=pruned_tree_string,
         )
-        return self, prompt
+        # TODO what does calling format do here?
+        instructions = reask_instructions_template.format()
+        return self, prompt, instructions
 
     def parse(self, output: str) -> Tuple[Any, Optional[Exception]]:
         return output, None
