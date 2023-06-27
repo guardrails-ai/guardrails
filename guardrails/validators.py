@@ -762,6 +762,22 @@ class ValidUrl(Validator):
                 f"URL {value} could not be reached",
                 None,
             )
+        except requests.exceptions.InvalidSchema:
+            raise EventDetail(
+                key,
+                value,
+                schema,
+                f"URL {value} does not specify a valid connection adapter",
+                None,
+            )
+        except requests.exceptions.MissingSchema:
+            raise EventDetail(
+                key,
+                value,
+                schema,
+                f"URL {value} does not contain a http schema",
+                None,
+            )
 
         return schema
 
