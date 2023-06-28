@@ -1,3 +1,5 @@
+import logging
+
 import datetime
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, Dict, Generator
@@ -9,6 +11,8 @@ from pydantic import BaseModel
 
 if TYPE_CHECKING:
     from guardrails.schema import FormatAttr
+
+logger = logging.getLogger(__name__)
 
 
 class DataType:
@@ -71,7 +75,19 @@ class DataType:
         value = self.from_str(value)
 
         for validator in self.validators:
+            validator_class_name = validator.__class__.__name__
+            logger.debug(
+                f"Validating field {key} with validator {validator_class_name}..."
+            )
             schema = validator.validate_with_correction(key, value, schema)
+            if key not in schema:
+                logger.debug(
+                    f"Validator {validator_class_name} finished, key {key} is not present in schema."
+                )
+            else:
+                logger.debug(
+                    f"Validator {validator_class_name} finished, key {key} has value {schema[key]}."
+                )
 
         return schema
 

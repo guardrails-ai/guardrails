@@ -510,10 +510,18 @@ class JsonSchema(Schema):
                 logger.debug(f"Field {field} not in schema.")
                 continue
 
+            logger.debug(
+                f"Validating field {field} with value {value}."
+            )
+
             validated_response = self[field].validate(
                 key=field,
                 value=value,
                 schema=validated_response,
+            )
+
+            logger.debug(
+                f"Validated field {field} with value {validated_response[field]}."
             )
 
         if check_refrain_in_dict(validated_response):
