@@ -104,8 +104,8 @@ def test_python_rail(mocker):
             " {{director}} including release date, duration, budget, whether "
             "it's a sequel, website, and contact email.\n@complete_json_suffix_v2"
         ),
-        instructions="You are a helpful assistant only capable of communicating"
-        " with valid JSON, and no other text.\n\n@json_suffix_prompt_examples",
+        instructions="\nYou are a helpful assistant only capable of communicating"
+        " with valid JSON, and no other text.\n@json_suffix_prompt_examples",
     )
 
     # Guardrails runs validation and fixes the first failing output through reasking
@@ -225,8 +225,8 @@ def test_python_rail_add_validator(mocker):
             " {{director}} including release date, duration, budget, whether "
             "it's a sequel, website, and contact email.\n@complete_json_suffix_v2"
         ),
-        instructions="You are a helpful assistant only capable of communicating"
-        " with valid JSON, and no other text.\n\n@json_suffix_prompt_examples",
+        instructions="\nYou are a helpful assistant only capable of communicating"
+        " with valid JSON, and no other text.\n@json_suffix_prompt_examples",
     )
 
     # Guardrails runs validation and fixes the first failing output through reasking
