@@ -416,7 +416,7 @@ class JsonSchema(Schema):
                     + constants["complete_json_suffix"]
                 )
 
-            reask_instructions_template = Instructions(constants["high_level_instructions"])
+            instructions = Instructions(constants["high_level_instructions"]).format()
         else:
             pruned_tree_schema = self
 
@@ -427,7 +427,7 @@ class JsonSchema(Schema):
                 )
 
             # TODO replace me with skeleton reask equivalent
-            reask_instructions_template = Instructions(constants["high_level_instructions"])
+            instructions = Instructions(constants["high_level_instructions"]).format()
 
         pruned_tree_string = pruned_tree_schema.transpile()
 
@@ -442,8 +442,6 @@ class JsonSchema(Schema):
             .replace("}", "}}"),
             output_schema=pruned_tree_string,
         )
-        # TODO is instructions supposed to receive a format argument at all?
-        instructions = reask_instructions_template.format(**reask_value)
         return pruned_tree_schema, prompt, instructions
 
     def setup_schema(self, root: ET._Element) -> None:
@@ -609,15 +607,13 @@ class StringSchema(Schema):
                 + constants["complete_string_suffix"]
             )
 
-        reask_instructions_template = Instructions(constants["high_level_instructions"])
+        instructions = Instructions(constants["high_level_instructions"]).format()
 
         prompt = reask_prompt_template.format(
             previous_response=reask_value.incorrect_value,
             error_messages=f"- {reask_value.error_message}",
             output_schema=pruned_tree_string,
         )
-        # TODO what does calling format do here?
-        instructions = reask_instructions_template.format()
         return self, prompt, instructions
 
     def parse(self, output: str) -> Tuple[Any, Optional[Exception]]:
