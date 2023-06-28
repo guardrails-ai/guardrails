@@ -322,7 +322,7 @@ class Runner:
         reasks: list,
     ) -> None:
         """Log the step."""
-        self.guard_history = self.guard_history.push(
+        self.guard_history.push(
             GuardLogs(
                 prompt=prompt,
                 instructions=instructions,

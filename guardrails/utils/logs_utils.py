@@ -64,12 +64,12 @@ class GuardLogs:
 class GuardHistory:
     history: List[GuardLogs]
 
-    def push(self, guard_log: GuardLogs) -> "GuardHistory":
+    def push(self, guard_log: GuardLogs) -> None:
         if len(self.history) > 0:
             last_log = self.history[-1]
             guard_log.validated_output = merge_reask_output(last_log, guard_log)
 
-        return GuardHistory(self.history + [guard_log])
+        self.history += [guard_log]
 
     @property
     def tree(self) -> Tree:
@@ -104,8 +104,8 @@ class GuardHistory:
 class GuardState:
     all_histories: List[GuardHistory]
 
-    def push(self, guard_history: GuardHistory) -> "GuardState":
-        return GuardState(self.all_histories + [guard_history])
+    def push(self, guard_history: GuardHistory) -> None:
+        self.all_histories += [guard_history]
 
     @property
     def most_recent_call(self) -> GuardHistory:
