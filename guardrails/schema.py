@@ -416,7 +416,9 @@ class JsonSchema(Schema):
                     + constants["json_suffix_without_examples"]
                 )
 
-            instructions = Instructions(constants["high_level_json_instructions"]).format()
+            instructions = Instructions(
+                constants["high_level_json_instructions"]
+            ).format()
         else:
             pruned_tree_schema = self
 
@@ -426,7 +428,9 @@ class JsonSchema(Schema):
                     + constants["json_suffix_without_examples"]
                 )
 
-            instructions = Instructions(constants["high_level_json_instructions"]).format()
+            instructions = Instructions(
+                constants["high_level_json_instructions"]
+            ).format()
 
         pruned_tree_string = pruned_tree_schema.transpile()
 
@@ -606,9 +610,7 @@ class StringSchema(Schema):
                 + constants["complete_string_suffix"]
             )
 
-        instructions = Instructions(
-            "You are a helpful assistant."
-        ).format()
+        instructions = Instructions("You are a helpful assistant.").format()
 
         prompt = reask_prompt_template.format(
             previous_response=reask_value.incorrect_value,
