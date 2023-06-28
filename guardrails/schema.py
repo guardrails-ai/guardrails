@@ -413,7 +413,7 @@ class JsonSchema(Schema):
             if reask_prompt_template is None:
                 reask_prompt_template = Prompt(
                     constants["high_level_json_reask_prompt"]
-                    + constants["complete_json_suffix"]
+                    + constants["json_suffix_without_examples"]
                 )
 
             instructions = Instructions(constants["high_level_instructions"]).format()
@@ -423,7 +423,7 @@ class JsonSchema(Schema):
             if reask_prompt_template is None:
                 reask_prompt_template = Prompt(
                     constants["high_level_skeleton_reask_prompt"]
-                    + constants["complete_json_suffix"]
+                    + constants["json_suffix_without_examples"]
                 )
 
             # TODO replace me with skeleton reask equivalent
