@@ -354,7 +354,7 @@ class Schema:
         """
         raise NotImplementedError
 
-    def get_reask_schema_and_prompt(
+    def get_reask_setup(
         self,
         reasks: List[FieldReAsk],
         reask_value: Any,
@@ -392,7 +392,7 @@ class Schema:
 
 
 class JsonSchema(Schema):
-    def get_reask_schema_and_prompt(
+    def get_reask_setup(
         self,
         reasks: List[FieldReAsk],
         reask_value: Any,
@@ -593,7 +593,7 @@ class StringSchema(Schema):
         root_string = ET.Element("string", root.attrib)
         self[self.string_key] = String.from_xml(root_string)
 
-    def get_reask_schema_and_prompt(
+    def get_reask_setup(
         self,
         reasks: List[FieldReAsk],
         reask_value: FieldReAsk,

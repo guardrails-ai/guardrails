@@ -176,7 +176,7 @@ Here are examples of simple (XML, JSON) pairs that show the expected behavior:
         reask_schema,
         result_prompt,
         instructions,
-    ) = output_schema.get_reask_schema_and_prompt(reasks, reask_json)
+    ) = output_schema.get_reask_setup(reasks, reask_json)
 
     assert result_prompt == Prompt(
         expected_result_template
