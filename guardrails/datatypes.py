@@ -1,6 +1,5 @@
-import logging
-
 import datetime
+import logging
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, Dict, Generator
 from typing import List as TypedList
@@ -73,11 +72,7 @@ class DataType:
         return s
 
     def _iterate_validators(
-        self,
-        validation_logs: FieldValidationLogs,
-        key: str,
-        value: Any,
-        schema: Dict
+        self, validation_logs: FieldValidationLogs, key: str, value: Any, schema: Dict
     ) -> Dict:
         for validator in self.validators:
             validator_class_name = validator.__class__.__name__
@@ -93,20 +88,18 @@ class DataType:
             if key in schema:
                 validator_logs.value_after_validation = schema[key]
                 logger.debug(
-                    f"Validator {validator_class_name} finished, key {key} has value {schema[key]}."
+                    f"Validator {validator_class_name} finished, "
+                    f"key {key} has value {schema[key]}."
                 )
             else:
                 logger.debug(
-                    f"Validator {validator_class_name} finished, key {key} is not present in schema."
+                    f"Validator {validator_class_name} finished, "
+                    f"key {key} is not present in schema."
                 )
         return schema
 
     def validate(
-        self,
-        validation_logs: FieldValidationLogs,
-        key: str,
-        value: Any,
-        schema: Dict
+        self, validation_logs: FieldValidationLogs, key: str, value: Any, schema: Dict
     ) -> Dict:
         """Validate a value."""
         value = self.from_str(value)
@@ -303,11 +296,7 @@ class List(NonScalarType):
     """Element tag: `<list>`"""
 
     def validate(
-        self,
-        validation_logs: FieldValidationLogs,
-        key: str,
-        value: Any,
-        schema: Dict
+        self, validation_logs: FieldValidationLogs, key: str, value: Any, schema: Dict
     ) -> Dict:
         # Validators in the main list data type are applied to the list overall.
 
@@ -320,7 +309,7 @@ class List(NonScalarType):
 
         # TODO(shreya): Edge case: List of lists -- does this still work?
         for i, item in enumerate(value):
-            value = item_type.validate(i, item, value)
+            value = item_type.validate(validation_logs, i, item, value)
 
         return schema
 
@@ -340,11 +329,7 @@ class Object(NonScalarType):
     """Element tag: `<object>`"""
 
     def validate(
-        self,
-        validation_logs: FieldValidationLogs,
-        key: str,
-        value: Any,
-        schema: Dict
+        self, validation_logs: FieldValidationLogs, key: str, value: Any, schema: Dict
     ) -> Dict:
         # Validators in the main object data type are applied to the object overall.
 
@@ -366,7 +351,7 @@ class Object(NonScalarType):
             # child_key is an expected key that the schema defined
             # child_data_type is the data type of the expected key
             value = child_data_type.validate(
-                child_key, value.get(child_key, None), value
+                validation_logs, child_key, value.get(child_key, None), value
             )
 
         schema[key] = value
@@ -389,11 +374,7 @@ class Choice(NonScalarType):
         super().__init__(children, format_attr, element)
 
     def validate(
-        self,
-        validation_logs: FieldValidationLogs,
-        key: str,
-        value: Any,
-        schema: Dict
+        self, validation_logs: FieldValidationLogs, key: str, value: Any, schema: Dict
     ) -> Dict:
         # Call the validate method of the parent class
         super().validate(validation_logs, key, value, schema)
@@ -438,11 +419,7 @@ class Case(NonScalarType):
         super().__init__(children, format_attr, element)
 
     def validate(
-        self,
-        validation_logs: FieldValidationLogs,
-        key: str,
-        value: Any,
-        schema: Dict
+        self, validation_logs: FieldValidationLogs, key: str, value: Any, schema: Dict
     ) -> Dict:
         child = list(self._children.values())[0]
 

@@ -169,7 +169,9 @@ class Runner:
             guard_logs.parsed_output = parsed_output
 
             # Validate: run output validation.
-            validated_output = self.validate(guard_logs, index, parsed_output, output_schema)
+            validated_output = self.validate(
+                guard_logs, index, parsed_output, output_schema
+            )
 
             guard_logs.validated_output = validated_output
 
@@ -451,7 +453,9 @@ class AsyncRunner(Runner):
             guard_logs.parsed_output = parsed_output
 
             # Validate: run output validation.
-            validated_output = self.validate(guard_logs, index, parsed_output, output_schema)
+            validated_output = self.validate(
+                guard_logs, index, parsed_output, output_schema
+            )
 
             guard_logs.validated_output = validated_output
 

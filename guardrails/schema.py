@@ -16,7 +16,7 @@ from guardrails.llm_providers import PromptCallable, openai_chat_wrapper, openai
 from guardrails.prompt import Instructions, Prompt
 from guardrails.utils.constants import constants
 from guardrails.utils.json_utils import verify_schema_against_json
-from guardrails.utils.logs_utils import GuardLogs, FieldValidationLogs
+from guardrails.utils.logs_utils import FieldValidationLogs, GuardLogs
 from guardrails.utils.reask_utils import (
     FieldReAsk,
     SkeletonReAsk,
@@ -512,9 +512,7 @@ class JsonSchema(Schema):
                 logger.debug(f"Field {field} not in schema.")
                 continue
 
-            logger.debug(
-                f"Validating field {field} with value {value}."
-            )
+            logger.debug(f"Validating field {field} with value {value}.")
 
             validation_logs = FieldValidationLogs(
                 validated_key=field,
@@ -654,7 +652,6 @@ class StringSchema(Schema):
                 self.string_key: data,
             },
         )
-
 
         if check_refrain_in_dict(validated_response):
             # If the data contains a `Refain` value, we return an empty
