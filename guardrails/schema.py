@@ -16,6 +16,7 @@ from guardrails.llm_providers import PromptCallable, openai_chat_wrapper, openai
 from guardrails.prompt import Instructions, Prompt
 from guardrails.utils.constants import constants
 from guardrails.utils.json_utils import verify_schema_against_json
+from guardrails.utils.logs_utils import GuardLogs, FieldValidationLogs
 from guardrails.utils.reask_utils import (
     FieldReAsk,
     SkeletonReAsk,
@@ -311,7 +312,7 @@ class Schema:
         """
         raise NotImplementedError
 
-    def validate(self, data: Any) -> Any:
+    def validate(self, guard_logs: GuardLogs, data: Any) -> Any:
         """Validate a dictionary of data against the schema.
 
         Args:
@@ -473,6 +474,7 @@ class JsonSchema(Schema):
 
     def validate(
         self,
+        guard_logs: GuardLogs,
         data: Optional[Dict[str, Any]],
     ) -> Optional[Dict[str, Any]]:
         """Validate a dictionary of data against the schema.
@@ -514,10 +516,20 @@ class JsonSchema(Schema):
                 f"Validating field {field} with value {value}."
             )
 
+            validation_logs = FieldValidationLogs(
+                validated_key=field,
+                value_before_validation=value,
+            )
+            guard_logs.field_validation_logs.append(validation_logs)
+
             validated_response = self[field].validate(
                 key=field,
                 value=value,
                 schema=validated_response,
+            )
+
+            validation_logs.value_after_validation = (
+                validated_response[field] if field in validated_response else None
             )
 
             logger.debug(
@@ -610,6 +622,7 @@ class StringSchema(Schema):
 
     def validate(
         self,
+        guard_logs: GuardLogs,
         data: Any,
     ) -> Any:
         """Validate a dictionary of data against the schema.
@@ -626,6 +639,12 @@ class StringSchema(Schema):
         if not isinstance(data, str):
             raise TypeError(f"Argument `data` must be a string, not {type(data)}.")
 
+        validation_logs = FieldValidationLogs(
+            validated_key=self.string_key,
+            value_before_validation=data,
+        )
+        guard_logs.field_validation_logs.append(validation_logs)
+
         validated_response = self[self.string_key].validate(
             key=self.string_key,
             value=data,
@@ -633,6 +652,7 @@ class StringSchema(Schema):
                 self.string_key: data,
             },
         )
+
 
         if check_refrain_in_dict(validated_response):
             # If the data contains a `Refain` value, we return an empty
@@ -644,6 +664,7 @@ class StringSchema(Schema):
         validated_response = filter_in_dict(validated_response)
 
         if self.string_key in validated_response:
+            validation_logs.value_after_validation = validated_response[self.string_key]
             return validated_response[self.string_key]
         return None
 

@@ -169,7 +169,7 @@ class Runner:
             guard_logs.parsed_output = parsed_output
 
             # Validate: run output validation.
-            validated_output = self.validate(index, parsed_output, output_schema)
+            validated_output = self.validate(guard_logs, index, parsed_output, output_schema)
 
             guard_logs.validated_output = validated_output
 
@@ -286,13 +286,14 @@ class Runner:
 
     def validate(
         self,
+        guard_logs: GuardLogs,
         index: int,
         parsed_output: Any,
         output_schema: Schema,
     ):
         """Validate the output."""
         with start_action(action_type="validate", index=index) as action:
-            validated_output = output_schema.validate(parsed_output)
+            validated_output = output_schema.validate(guard_logs, parsed_output)
 
             action.log(
                 message_type="info",
@@ -450,7 +451,7 @@ class AsyncRunner(Runner):
             guard_logs.parsed_output = parsed_output
 
             # Validate: run output validation.
-            validated_output = self.validate(index, parsed_output, output_schema)
+            validated_output = self.validate(guard_logs, index, parsed_output, output_schema)
 
             guard_logs.validated_output = validated_output
 

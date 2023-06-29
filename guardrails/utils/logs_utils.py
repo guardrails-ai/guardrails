@@ -1,5 +1,5 @@
 from copy import deepcopy
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
 from rich.console import Group
@@ -12,6 +12,15 @@ from guardrails.utils.reask_utils import ReAsk, gather_reasks, prune_obj_for_rea
 
 
 @dataclass
+class FieldValidationLogs:
+    """Logs for a single field."""
+
+    validated_key: str
+    value_before_validation: Any
+    value_after_validation: Optional[Any] = None
+
+
+@dataclass
 class GuardLogs:
     prompt: Optional[Prompt] = None
     instructions: Optional[str] = None
@@ -19,6 +28,8 @@ class GuardLogs:
     parsed_output: Optional[dict] = None
     validated_output: Optional[dict] = None
     reasks: Optional[List[ReAsk]] = None
+
+    field_validation_logs: List[FieldValidationLogs] = field(default_factory=list)
 
     @property
     def failed_validations(self) -> List[ReAsk]:
