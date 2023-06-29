@@ -211,9 +211,9 @@ class Guard:
                 num_reasks=num_reasks,
                 reask_prompt=self.reask_prompt,
                 base_model=self.base_model,
+                guard_state=self.guard_state,
             )
             guard_history = runner(prompt_params=prompt_params)
-            self.guard_state.push(guard_history)
             return guard_history.output, guard_history.validated_output
 
     async def _call_async(

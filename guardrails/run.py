@@ -8,12 +8,12 @@ from pydantic import BaseModel
 from guardrails.llm_providers import AsyncPromptCallable, PromptCallable
 from guardrails.prompt import Instructions, Prompt
 from guardrails.schema import Schema
-from guardrails.utils.logs_utils import GuardHistory, GuardLogs
+from guardrails.utils.logs_utils import GuardHistory, GuardLogs, GuardState
 from guardrails.utils.reask_utils import (
     FieldReAsk,
     prune_obj_for_reasking,
     reasks_to_dict,
-    sub_reasks_with_fixed_values,
+    sub_reasks_with_fixed_values, ReAsk,
 )
 
 logger = logging.getLogger(__name__)
@@ -46,6 +46,7 @@ class Runner:
     api: PromptCallable
     input_schema: Schema
     output_schema: Schema
+    guard_state: GuardState
     num_reasks: int = 0
     output: str = None
     reask_prompt: Optional[Prompt] = None
@@ -55,6 +56,7 @@ class Runner:
     def _reset_guard_history(self):
         """Reset the guard history."""
         self.guard_history = GuardHistory([])
+        self.guard_state.push(self.guard_history)
 
     def __post_init__(self):
         assert (self.prompt and self.api and not self.output) or (
@@ -125,6 +127,9 @@ class Runner:
         output_schema: Schema,
         output: str = None,
     ):
+        guard_logs = GuardLogs()
+        self.guard_history.push(guard_logs)
+
         """Run a full step."""
         with start_action(
             action_type="step",
@@ -150,31 +155,34 @@ class Runner:
                 instructions = None
                 prompt = None
 
+            guard_logs.prompt = prompt
+            guard_logs.instructions = instructions
+
             # Call: run the API.
             output = self.call(index, instructions, prompt, api, output)
+
+            guard_logs.output = output
 
             # Parse: parse the output.
             parsed_output = self.parse(index, output, output_schema)
 
+            guard_logs.parsed_output = parsed_output
+
             # Validate: run output validation.
             validated_output = self.validate(index, parsed_output, output_schema)
 
+            guard_logs.validated_output = validated_output
+
             # Introspect: inspect validated output for reasks.
             reasks = self.introspect(index, validated_output, output_schema)
+
+            guard_logs.reasks = reasks
 
             # Replace reask values with fixed values if terminal step.
             if not self.do_loop(index, reasks):
                 validated_output = sub_reasks_with_fixed_values(validated_output)
 
-            # Log: step information.
-            self.log(
-                prompt=prompt,
-                instructions=instructions,
-                output=output,
-                parsed_output=parsed_output,
-                validated_output=validated_output,
-                reasks=reasks,
-            )
+            guard_logs.validated_output = validated_output
 
             return validated_output, reasks
 
@@ -312,28 +320,7 @@ class Runner:
 
             return reasks
 
-    def log(
-        self,
-        prompt: Prompt,
-        instructions: Optional[str],
-        output: str,
-        parsed_output: Any,
-        validated_output: Any,
-        reasks: list,
-    ) -> None:
-        """Log the step."""
-        self.guard_history.push(
-            GuardLogs(
-                prompt=prompt,
-                instructions=instructions,
-                output=output,
-                parsed_output=parsed_output,
-                validated_output=validated_output,
-                reasks=reasks,
-            )
-        )
-
-    def do_loop(self, index: int, reasks: List[FieldReAsk]) -> bool:
+    def do_loop(self, index: int, reasks: List[ReAsk]) -> bool:
         """Determine if we should loop again."""
         if reasks and index < self.num_reasks:
             return True
@@ -421,6 +408,9 @@ class AsyncRunner(Runner):
         output_schema: Schema,
         output: str = None,
     ):
+        guard_logs = GuardLogs()
+        self.guard_history.push(guard_logs)
+
         """Run a full step."""
         with start_action(
             action_type="step",
@@ -446,31 +436,34 @@ class AsyncRunner(Runner):
                 instructions = None
                 prompt = None
 
+            guard_logs.prompt = prompt
+            guard_logs.instructions = instructions
+
             # Call: run the API.
             output = await self.async_call(index, instructions, prompt, api, output)
+
+            guard_logs.output = output
 
             # Parse: parse the output.
             parsed_output = self.parse(index, output, output_schema)
 
+            guard_logs.parsed_output = parsed_output
+
             # Validate: run output validation.
             validated_output = self.validate(index, parsed_output, output_schema)
 
+            guard_logs.validated_output = validated_output
+
             # Introspect: inspect validated output for reasks.
             reasks = self.introspect(index, validated_output, output_schema)
+
+            guard_logs.reasks = reasks
 
             # Replace reask values with fixed values if terminal step.
             if not self.do_loop(index, reasks):
                 validated_output = sub_reasks_with_fixed_values(validated_output)
 
-            # Log: step information.
-            self.log(
-                prompt=prompt,
-                instructions=instructions,
-                output=output,
-                parsed_output=parsed_output,
-                validated_output=validated_output,
-                reasks=reasks,
-            )
+            guard_logs.validated_output = validated_output
 
             return validated_output, reasks
 

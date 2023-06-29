@@ -13,12 +13,12 @@ from guardrails.utils.reask_utils import ReAsk, gather_reasks, prune_obj_for_rea
 
 @dataclass
 class GuardLogs:
-    prompt: Prompt
-    instructions: Optional[str]
-    output: str
-    parsed_output: dict
-    validated_output: dict
-    reasks: List[ReAsk]
+    prompt: Optional[Prompt] = None
+    instructions: Optional[str] = None
+    output: Optional[str] = None
+    parsed_output: Optional[dict] = None
+    validated_output: Optional[dict] = None
+    reasks: Optional[List[ReAsk]] = None
 
     @property
     def failed_validations(self) -> List[ReAsk]:
