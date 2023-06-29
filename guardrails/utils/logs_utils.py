@@ -42,6 +42,15 @@ class GuardLogs:
 
     field_validation_logs: List[FieldValidationLogs] = field(default_factory=list)
 
+    _previous_logs: Optional["GuardLogs"] = None
+
+    def set_validated_output(self, validated_output):
+        if self._previous_logs is not None:
+            validated_output = merge_reask_output(
+                self._previous_logs.validated_output, validated_output
+            )
+        self.validated_output = validated_output
+
     @property
     def failed_validations(self) -> List[ReAsk]:
         """Returns the failed validations."""
@@ -89,7 +98,7 @@ class GuardHistory:
     def push(self, guard_log: GuardLogs) -> None:
         if len(self.history) > 0:
             last_log = self.history[-1]
-            guard_log.validated_output = merge_reask_output(last_log, guard_log)
+            guard_log._previous_logs = last_log
 
         self.history += [guard_log]
 
@@ -150,7 +159,7 @@ def update_response_by_path(output: dict, path: List[Any], value: Any) -> None:
     output[path[-1]] = value
 
 
-def merge_reask_output(prev_logs: GuardLogs, current_logs: GuardLogs) -> Dict:
+def merge_reask_output(previous_response, reask_response) -> Dict:
     """Merge the reask output into the original output.
 
     Args:
@@ -162,8 +171,6 @@ def merge_reask_output(prev_logs: GuardLogs, current_logs: GuardLogs) -> Dict:
     """
     from guardrails.validators import PydanticReAsk
 
-    previous_response = prev_logs.validated_output
-    reask_response = current_logs.validated_output
     if isinstance(previous_response, ReAsk):
         return reask_response
 
