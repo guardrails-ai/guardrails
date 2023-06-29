@@ -309,7 +309,11 @@ class List(NonScalarType):
 
         # TODO(shreya): Edge case: List of lists -- does this still work?
         for i, item in enumerate(value):
-            value = item_type.validate(validation_logs, i, item, value)
+            child_validation_logs = FieldValidationLogs(
+                key=i,
+            )
+            validation_logs.children.append(child_validation_logs)
+            value = item_type.validate(child_validation_logs, i, item, value)
 
         return schema
 
@@ -350,8 +354,13 @@ class Object(NonScalarType):
             # Value should be a dictionary
             # child_key is an expected key that the schema defined
             # child_data_type is the data type of the expected key
+            child_value = value.get(child_key, None)
+            child_validation_logs = FieldValidationLogs(
+                key=child_key,
+            )
+            validation_logs.children.append(child_validation_logs)
             value = child_data_type.validate(
-                validation_logs, child_key, value.get(child_key, None), value
+                child_validation_logs, child_key, child_value, value
             )
 
         schema[key] = value

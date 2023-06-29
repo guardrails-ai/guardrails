@@ -515,8 +515,7 @@ class JsonSchema(Schema):
             logger.debug(f"Validating field {field} with value {value}.")
 
             validation_logs = FieldValidationLogs(
-                validated_key=field,
-                value_before_validation=value,
+                key=field,
             )
             guard_logs.field_validation_logs.append(validation_logs)
 
@@ -525,10 +524,6 @@ class JsonSchema(Schema):
                 key=field,
                 value=value,
                 schema=validated_response,
-            )
-
-            validation_logs.value_after_validation = (
-                validated_response[field] if field in validated_response else None
             )
 
             logger.debug(
@@ -639,8 +634,7 @@ class StringSchema(Schema):
             raise TypeError(f"Argument `data` must be a string, not {type(data)}.")
 
         validation_logs = FieldValidationLogs(
-            validated_key=self.string_key,
-            value_before_validation=data,
+            key=self.string_key,
         )
         guard_logs.field_validation_logs.append(validation_logs)
 
@@ -663,7 +657,6 @@ class StringSchema(Schema):
         validated_response = filter_in_dict(validated_response)
 
         if self.string_key in validated_response:
-            validation_logs.value_after_validation = validated_response[self.string_key]
             return validated_response[self.string_key]
         return None
 

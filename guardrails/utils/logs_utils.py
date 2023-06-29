@@ -1,6 +1,6 @@
 from copy import deepcopy
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from rich.console import Group
 from rich.panel import Panel
@@ -24,11 +24,10 @@ class ValidatorLogs:
 class FieldValidationLogs:
     """Logs for a single field."""
 
-    validated_key: str
-    value_before_validation: Any
-    value_after_validation: Optional[Any] = None
+    key: Union[str, int]
 
     validator_logs: List[ValidatorLogs] = field(default_factory=list)
+    children: List["ValidationLogs"] = field(default_factory=list)
 
 
 @dataclass
