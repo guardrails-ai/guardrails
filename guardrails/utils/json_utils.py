@@ -222,7 +222,11 @@ class ChoicePlaceholder(Placeholder):
             return False
         if value_name not in json_value:
             return False
-        if any(key in json_value for key in self.cases.keys() if key != value_name):
+        if any(
+            key in json_value and json_value[key] is not None
+            for key in self.cases.keys()
+            if key != value_name
+        ):
             return False
 
         value_schema = self.cases[value_name]
