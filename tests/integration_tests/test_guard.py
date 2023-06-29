@@ -6,6 +6,7 @@ from pydantic import BaseModel
 
 import guardrails as gd
 from guardrails.guard import Guard
+from guardrails.utils.reask_utils import ReAsk
 
 from .mock_llm_outputs import (
     entity_extraction,

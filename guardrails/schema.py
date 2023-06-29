@@ -514,10 +514,8 @@ class JsonSchema(Schema):
 
             logger.debug(f"Validating field {field} with value {value}.")
 
-            validation_logs = FieldValidationLogs(
-                key=field,
-            )
-            guard_logs.field_validation_logs.append(validation_logs)
+            validation_logs = FieldValidationLogs()
+            guard_logs.field_validation_logs[field] = validation_logs
 
             validated_response = self[field].validate(
                 validation_logs=validation_logs,
@@ -633,10 +631,8 @@ class StringSchema(Schema):
         if not isinstance(data, str):
             raise TypeError(f"Argument `data` must be a string, not {type(data)}.")
 
-        validation_logs = FieldValidationLogs(
-            key=self.string_key,
-        )
-        guard_logs.field_validation_logs.append(validation_logs)
+        validation_logs = FieldValidationLogs()
+        guard_logs.field_validation_logs[self.string_key] = validation_logs
 
         validated_response = self[self.string_key].validate(
             validation_logs=validation_logs,

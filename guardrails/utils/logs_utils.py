@@ -24,10 +24,8 @@ class ValidatorLogs:
 class FieldValidationLogs:
     """Logs for a single field."""
 
-    key: Union[str, int]
-
     validator_logs: List[ValidatorLogs] = field(default_factory=list)
-    children: List["ValidationLogs"] = field(default_factory=list)
+    children: Dict[Union[int, str], "FieldValidationLogs"] = field(default_factory=dict)
 
 
 @dataclass
@@ -39,7 +37,9 @@ class GuardLogs:
     validated_output: Optional[dict] = None
     reasks: Optional[List[ReAsk]] = None
 
-    field_validation_logs: List[FieldValidationLogs] = field(default_factory=list)
+    field_validation_logs: Dict[Union[int, str], FieldValidationLogs] = field(
+        default_factory=dict
+    )
 
     _previous_logs: Optional["GuardLogs"] = None
 
