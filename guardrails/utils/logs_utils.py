@@ -12,12 +12,22 @@ from guardrails.utils.reask_utils import ReAsk, gather_reasks, prune_obj_for_rea
 
 
 @dataclass
+class ValidatorLogs:
+    """Logs for a single validator."""
+    validator_name: str
+    value_before_validation: Any
+    value_after_validation: Optional[Any] = None
+
+
+@dataclass
 class FieldValidationLogs:
     """Logs for a single field."""
 
     validated_key: str
     value_before_validation: Any
     value_after_validation: Optional[Any] = None
+
+    validator_logs: List[ValidatorLogs] = field(default_factory=list)
 
 
 @dataclass

@@ -523,6 +523,7 @@ class JsonSchema(Schema):
             guard_logs.field_validation_logs.append(validation_logs)
 
             validated_response = self[field].validate(
+                validation_logs=validation_logs,
                 key=field,
                 value=value,
                 schema=validated_response,
@@ -646,6 +647,7 @@ class StringSchema(Schema):
         guard_logs.field_validation_logs.append(validation_logs)
 
         validated_response = self[self.string_key].validate(
+            validation_logs=validation_logs,
             key=self.string_key,
             value=data,
             schema={
