@@ -1,5 +1,7 @@
 import logging
+from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
+
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from eliot import add_destinations, start_action
@@ -19,6 +21,86 @@ from guardrails.utils.reask_utils import (
 logger = logging.getLogger(__name__)
 actions_logger = logging.getLogger(f"{__name__}.actions")
 add_destinations(actions_logger.debug)
+
+
+class Callback(ABC):
+    """Abstract base class for Callbacks"""
+
+    @abstractmethod
+    def before_prepare(
+        self,
+        index: int,
+        instructions: Optional[Instructions],
+        prompt: Prompt,
+        prompt_params: Dict,
+        api: Union[PromptCallable, AsyncPromptCallable],
+        input_schema: Schema,
+        output_schema: Schema,
+    ):
+        pass
+
+    @abstractmethod
+    def after_prepare(
+        self,
+        index: int,
+        instructions: Optional[Instructions],
+        prompt: Prompt,
+        prompt_params: Dict,
+        api: Union[PromptCallable, AsyncPromptCallable],
+        input_schema: Schema,
+        output_schema: Schema,
+    ):
+        pass
+
+    @abstractmethod
+    def before_call(
+        self,
+        index: int,
+        instructions: Optional[Instructions],
+        prompt: Prompt,
+        api: Callable,
+        output: str = None,
+    ):
+        pass
+
+    @abstractmethod
+    def after_call(
+        self,
+        index: int,
+        instructions: Optional[Instructions],
+        prompt: Prompt,
+        api: Callable,
+        output: str = None,
+    ):
+        pass
+
+    @abstractmethod
+    def before_parse(self, index: int, output: str, output_schema: Schema):
+        pass
+
+    @abstractmethod
+    def after_parse(self, index: int, output: str, output_schema: Schema):
+        pass
+
+    @abstractmethod
+    def before_validate(self, index: int, parsed_output: Any, output_schema: Schema):
+        pass
+
+    @abstractmethod
+    def after_validate(self, index: int, parsed_output: Any, output_schema: Schema):
+        pass
+
+    @abstractmethod
+    def before_introspect(
+        self, index: int, validated_output: Any, output_schema: Schema
+    ):
+        pass
+
+    @abstractmethod
+    def after_introspect(
+        self, index: int, validated_output: Any, output_schema: Schema
+    ):
+        pass
 
 
 @dataclass
@@ -51,6 +133,7 @@ class Runner:
     reask_prompt: Optional[Prompt] = None
     guard_history: GuardHistory = field(default_factory=lambda: GuardHistory([]))
     base_model: Optional[BaseModel] = None
+    callbacks: Optional[List[Callback]] = []
 
     def _reset_guard_history(self):
         """Reset the guard history."""
@@ -114,6 +197,12 @@ class Runner:
 
             return self.guard_history
 
+    def _run_callbacks(self, method_name, *args, **kwargs):
+        """Helper method to run a specified method on all callbacks"""
+        for callback in self.callbacks:
+            method = getattr(callback, method_name)
+            method(*args, **kwargs)
+
     def step(
         self,
         index: int,
@@ -135,6 +224,17 @@ class Runner:
             input_schema=input_schema,
             output_schema=output_schema,
         ):
+
+            self._run_callbacks(
+                "before_prepare",
+                index,
+                instructions,
+                prompt,
+                prompt_params,
+                api,
+                input_schema,
+                output_schema,
+            )
             # Prepare: run pre-processing, and input validation.
             if not output:
                 instructions, prompt = self.prepare(
@@ -150,17 +250,48 @@ class Runner:
                 instructions = None
                 prompt = None
 
+            self._run_callbacks(
+                "after_prepare",
+                index,
+                instructions,
+                prompt,
+                prompt_params,
+                api,
+                input_schema,
+                output_schema,
+            )
+
+            self._run_callbacks("before_call", index, instructions, prompt, api, output)
+
             # Call: run the API.
             output = self.call(index, instructions, prompt, api, output)
+
+            self._run_callbacks("after_call", index, instructions, prompt, api, output)
+
+            self._run_callbacks("before_parse", index, output, output_schema)
 
             # Parse: parse the output.
             parsed_output = self.parse(index, output, output_schema)
 
+            self._run_callbacks("after_parse", index, output, output_schema)
+
+            self._run_callbacks("before_validate", index, parsed_output, output_schema)
+
             # Validate: run output validation.
             validated_output = self.validate(index, parsed_output, output_schema)
 
+            self._run_callbacks("after_validate", index, parsed_output, output_schema)
+
+            self._run_callbacks(
+                "before_introspect", index, validated_output, output_schema
+            )
+
             # Introspect: inspect validated output for reasks.
             reasks = self.introspect(index, validated_output, output_schema)
+
+            self._run_callbacks(
+                "after_introspect", index, validated_output, output_schema
+            )
 
             # Replace reask values with fixed values if terminal step.
             if not self.do_loop(index, reasks):
