@@ -29,9 +29,11 @@ Given the following doctor's notes about a patient, please extract a dictionary 
 
 LLM_OUTPUT = """
 {
-    "gender": "Male",
-    "age": 49,
-    "symptoms": "Chronic macular rash to face & hair, worse in beard, eyebrows & nares. Itchy, flaky, slightly scaly. Moderate response to OTC steroid cream"
+    "patient_info": {
+        "gender": "Male",
+        "age": 49,
+        "symptoms": "Chronic macular rash to face & hair, worse in beard, eyebrows & nares. Itchy, flaky, slightly scaly. Moderate response to OTC steroid cream"
+    }
 }
 """
 
