@@ -1,4 +1,5 @@
 import pytest
+
 from guardrails.run import Callback
 
 
@@ -91,6 +92,39 @@ def test_concrete_class_can_be_instantiated():
             assert callable(
                 getattr(c, method)
             ), f"Method {method} not implemented in ConcreteCallback"
+
+    except Exception as e:
+        pytest.fail(f"Unexpected error: {e}")
+
+
+def test_callback_methods():
+    try:
+        c = ConcreteCallback()  # Should not raise any error
+
+        # Call one of the methods and verify it returns the expected output
+        result = c.before_prepare(
+            0,
+            "instructions",
+            "prompt",
+            {"param": "value"},
+            "api",
+            "input_schema",
+            "output_schema",
+        )
+
+        expected_result = (
+            0,
+            "instructions",
+            "prompt",
+            {"param": "value"},
+            "api",
+            "input_schema",
+            "output_schema",
+        )
+
+        assert (
+            result == expected_result
+        ), "Method before_prepare did not return the expected result"
 
     except Exception as e:
         pytest.fail(f"Unexpected error: {e}")

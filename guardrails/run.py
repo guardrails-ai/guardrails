@@ -1,7 +1,6 @@
 import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from eliot import add_destinations, start_action
@@ -24,7 +23,7 @@ add_destinations(actions_logger.debug)
 
 
 class Callback(ABC):
-    """Abstract base class for Callbacks"""
+    """Abstract base class for Callbacks."""
 
     @abstractmethod
     def before_prepare(
@@ -103,6 +102,7 @@ class Callback(ABC):
         pass
 
 
+
 @dataclass
 class Runner:
     """Runner class that calls an LLM API with a prompt, and performs input and
@@ -133,7 +133,7 @@ class Runner:
     reask_prompt: Optional[Prompt] = None
     guard_history: GuardHistory = field(default_factory=lambda: GuardHistory([]))
     base_model: Optional[BaseModel] = None
-    callbacks: Optional[List[Callback]] = []
+    callbacks: Optional[List[Callback]] = field(default_factory=list)
 
     def _reset_guard_history(self):
         """Reset the guard history."""
@@ -198,7 +198,7 @@ class Runner:
             return self.guard_history
 
     def _run_callbacks(self, method_name, *args, **kwargs):
-        """Helper method to run a specified method on all callbacks"""
+        """Helper method to run a specified method on all callbacks."""
         for callback in self.callbacks:
             method = getattr(callback, method_name)
             method(*args, **kwargs)
