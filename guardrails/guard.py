@@ -390,6 +390,6 @@ class Guard:
         }
     
     def upsert_guard(self, api_key: str = None):
-        gr_client = GuardrailsApiClient(api_key_override=api_key)
+        gr_client = GuardrailsApiClient(api_key=api_key)
         guard_dict = self._to_request()
         gr_client.upsert_guard(GuardModel.from_dict(guard_dict))

@@ -232,10 +232,12 @@ class Rail:
             "version": self.version
         }
 
-      if self.input_schema is not None:
-          rail["inputSchema"] = self.input_schema._to_request()
-      if self.output_schema is not None:
-          rail["outputSchema"] = self.output_schema._to_request()
+      input_schema = self.input_schema._to_request() if self.input_schema is not None else None
+      if input_schema is not None:
+          rail["inputSchema"] = input_schema
+      output_schema = self.output_schema._to_request() if self.output_schema is not None else None
+      if output_schema is not None:
+          rail["outputSchema"] = output_schema
       if self.instructions is not None:
           rail["instructions"] = self.instructions._to_request()
       if self.prompt is not None:

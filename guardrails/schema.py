@@ -414,7 +414,7 @@ class Schema:
         for key in inner_schema:
             schema_element = inner_schema[key]
             schema[key] = schema_element._to_request()
-        return { "schema": schema }
+        return { "schema": schema } if len(schema.keys()) > 0 else None
 
 
 class JsonSchema(Schema):
