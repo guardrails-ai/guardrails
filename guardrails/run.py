@@ -11,9 +11,10 @@ from guardrails.schema import Schema
 from guardrails.utils.logs_utils import GuardHistory, GuardLogs, GuardState
 from guardrails.utils.reask_utils import (
     FieldReAsk,
+    ReAsk,
     prune_obj_for_reasking,
     reasks_to_dict,
-    sub_reasks_with_fixed_values, ReAsk,
+    sub_reasks_with_fixed_values,
 )
 
 logger = logging.getLogger(__name__)
