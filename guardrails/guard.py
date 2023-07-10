@@ -1,10 +1,15 @@
+import os
 import asyncio
 import logging
+import random
 from string import Formatter
+import string
 from typing import Any, Awaitable, Callable, Dict, Optional, Tuple, Union
 
 from eliot import add_destinations, start_action
 from pydantic import BaseModel
+from guardrails.api import GuardrailsApiClient
+from guard_rails_api_client.models import Guard as GuardModel
 
 from guardrails.llm_providers import get_async_llm_ask, get_llm_ask
 from guardrails.prompt import Instructions, Prompt
@@ -32,9 +37,10 @@ class Guard:
 
     def __init__(
         self,
-        rail: Rail,
+        rail: Rail, # TODO: Make optional in next major version so existing guards can be retrieved by name
         num_reasks: int = 1,
         base_model: Optional[BaseModel] = None,
+        name: Optional[str] = None # TODO: Make name mandatory on next major version
     ):
         """Initialize the Guard."""
         self.rail = rail
@@ -42,6 +48,18 @@ class Guard:
         self.guard_state = GuardState([])
         self._reask_prompt = None
         self.base_model = base_model
+
+        if name is None:
+            print('Warning: No name passed to guard!')
+            name = ''.join(random.choices(string.ascii_uppercase +
+                             string.digits, k=12))
+            print('Use this auto-generated name to re-use this guard: {name}'.format(name=name))
+        
+        self.name = name
+
+        api_key = os.environ.get("GUARDRAILS_API_KEY")
+        if api_key is not None:
+            self.upsert_guard(api_key)
 
     @property
     def input_schema(self) -> Schema:
@@ -363,3 +381,15 @@ class Guard:
             guard_history = await runner.async_run(prompt_params=prompt_params)
             self.guard_state = self.guard_state.push(guard_history)
             return sub_reasks_with_fixed_values(guard_history.validated_output)
+
+    def _to_request(self) -> Dict:
+        return {
+            "name": self.name,
+            "railspec": self.rail._to_request(),
+            "numReasks": self.num_reasks
+        }
+    
+    def upsert_guard(self, api_key: str = None):
+        gr_client = GuardrailsApiClient(api_key_override=api_key)
+        guard_dict = self._to_request()
+        gr_client.upsert_guard(GuardModel.from_dict(guard_dict))

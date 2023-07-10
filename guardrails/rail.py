@@ -1,6 +1,6 @@
 """Rail class."""
 from dataclasses import dataclass, field
-from typing import List, Optional, Type
+from typing import Dict, List, Optional, Type
 
 from lxml import etree as ET
 from lxml.etree import Element, SubElement
@@ -18,6 +18,7 @@ XMLPARSER = ET.XMLParser(encoding="utf-8")
 class Script:
     variables: dict = field(default_factory=dict)
     language: str = "python"
+    element: ET._Element = None
 
     @classmethod
     def from_xml(cls, root: ET._Element) -> "Script":
@@ -34,7 +35,7 @@ class Script:
         exec(root.text, globals())
         new_keys = globals().keys()
         variables = {k: globals()[k] for k in new_keys if k not in keys}
-        return cls(variables, language)
+        return cls(variables, language, root)
 
     @staticmethod
     def find_expressions(body) -> List[str]:
@@ -77,6 +78,21 @@ class Script:
     def __call__(self, expr: str):
         """Eval expression in the script's namespace."""
         return eval(expr, {**globals(), **self.variables})
+    
+    def _to_request(self) -> dict:
+      script = None
+
+      if self.element is not None and self.element.text is not None:
+          script = {}
+          script["text"] = self.element.text
+
+          if self.language is not None:
+              script["language"] = self.language
+
+          if self.variables is not None:
+              script["variables"] = self.variables
+      
+      return script
 
 
 @dataclass
@@ -210,7 +226,23 @@ class Rail:
     def load_script(root: ET._Element) -> Script:
         """Given the RAIL <script> element, load and execute the script."""
         return Script.from_xml(root)
+    
+    def _to_request(self) -> Dict:
+      rail = {
+            "version": self.version
+        }
 
+      if self.input_schema is not None:
+          rail["inputSchema"] = self.input_schema._to_request()
+      if self.output_schema is not None:
+          rail["outputSchema"] = self.output_schema._to_request()
+      if self.instructions is not None:
+          rail["instructions"] = self.instructions._to_request()
+      if self.prompt is not None:
+          rail["prompt"] = self.prompt._to_request()
+      if self.script is not None and self.script.element is not None and self.script.element.text is not None:
+          rail["script"] = self.script._to_request()
+      return rail
 
 def generate_xml_code(
     output_class: Type[BaseModel],
