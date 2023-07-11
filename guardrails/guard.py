@@ -9,7 +9,7 @@ from typing import Any, Awaitable, Callable, Dict, Optional, Tuple, Union
 from eliot import add_destinations, start_action
 from pydantic import BaseModel
 from guardrails.api import GuardrailsApiClient
-from guard_rails_api_client.models import Guard as GuardModel
+from guard_rails_api_client.models import Guard as GuardModel, ValidatePayload
 
 from guardrails.llm_providers import get_async_llm_ask, get_llm_ask
 from guardrails.prompt import Instructions, Prompt
@@ -34,7 +34,7 @@ class Guard:
     API, and optional prompt parameters, and returns the raw output from
     the LLM and the validated output.
     """
-
+    _api_client: GuardrailsApiClient = None
     def __init__(
         self,
         rail: Rail, # TODO: Make optional in next major version so existing guards can be retrieved by name
@@ -48,18 +48,17 @@ class Guard:
         self.guard_state = GuardState([])
         self._reask_prompt = None
         self.base_model = base_model
-
-        if name is None:
-            print('Warning: No name passed to guard!')
-            name = ''.join(random.choices(string.ascii_uppercase +
-                             string.digits, k=12))
-            print('Use this auto-generated name to re-use this guard: {name}'.format(name=name))
-        
         self.name = name
+
 
         api_key = os.environ.get("GUARDRAILS_API_KEY")
         if api_key is not None:
-            self.upsert_guard(api_key)
+            if name is None:
+                self.name = ''.join(random.choices(string.ascii_uppercase + string.digits, k=12))
+                print('Warning: No name passed to guard!')
+                print('Use this auto-generated name to re-use this guard: {name}'.format(name=self.name))
+            self._api_client = GuardrailsApiClient(api_key=api_key)
+            self.upsert_guard()
 
     @property
     def input_schema(self) -> Schema:
@@ -128,7 +127,7 @@ class Guard:
         self.num_reasks = num_reasks
 
     @classmethod
-    def from_rail(cls, rail_file: str, num_reasks: int = 1) -> "Guard":
+    def from_rail(cls, rail_file: str, num_reasks: int = 1, name: Optional[str] = None) -> "Guard":
         """Create a Schema from a `.rail` file.
 
         Args:
@@ -138,10 +137,10 @@ class Guard:
         Returns:
             An instance of the `Guard` class.
         """
-        return cls(Rail.from_file(rail_file), num_reasks=num_reasks)
+        return cls(Rail.from_file(rail_file), num_reasks=num_reasks, name=name)
 
     @classmethod
-    def from_rail_string(cls, rail_string: str, num_reasks: int = 1) -> "Guard":
+    def from_rail_string(cls, rail_string: str, num_reasks: int = 1, name: Optional[str] = None) -> "Guard":
         """Create a Schema from a `.rail` string.
 
         Args:
@@ -151,7 +150,7 @@ class Guard:
         Returns:
             An instance of the `Guard` class.
         """
-        return cls(Rail.from_string(rail_string), num_reasks=num_reasks)
+        return cls(Rail.from_string(rail_string), num_reasks=num_reasks, name=name)
 
     @classmethod
     def from_pydantic(
@@ -160,12 +159,13 @@ class Guard:
         prompt: str,
         instructions: Optional[str] = None,
         num_reasks: int = 1,
+        name: Optional[str] = None
     ) -> "Guard":
         """Create a Guard instance from a Pydantic model and prompt."""
         rail = Rail.from_pydantic(
             output_class=output_class, prompt=prompt, instructions=instructions
         )
-        return cls(rail, num_reasks=num_reasks, base_model=output_class)
+        return cls(rail, num_reasks=num_reasks, base_model=output_class, name=name)
 
     def __call__(
         self,
@@ -279,7 +279,7 @@ class Guard:
         self,
         llm_output: str,
         llm_api: Union[Callable, Callable[[Any], Awaitable[Any]]] = None,
-        num_reasks: int = 1,
+        num_reasks: int = None,
         prompt_params: Dict = None,
         *args,
         **kwargs,
@@ -294,6 +294,13 @@ class Guard:
         Returns:
             The validated response.
         """
+
+        if self._api_client is not None:
+            return self.validate(llm_output=llm_output, num_reasks=num_reasks, prompt_params=prompt_params)
+
+        if num_reasks is None:
+            num_reasks = self.num_reasks if self.num_reasks is not None else 1
+
         # If the LLM API is async, return a coroutine
         if asyncio.iscoroutinefunction(llm_api):
             return self._async_parse(
@@ -389,7 +396,21 @@ class Guard:
             "numReasks": self.num_reasks
         }
     
-    def upsert_guard(self, api_key: str = None):
-        gr_client = GuardrailsApiClient(api_key=api_key)
+    def upsert_guard(self):
         guard_dict = self._to_request()
-        gr_client.upsert_guard(GuardModel.from_dict(guard_dict))
+        self._api_client.upsert_guard(GuardModel.from_dict(guard_dict))
+
+    def validate(
+            self,
+            llm_output: str,
+            num_reasks: int = None,
+            prompt_params: Dict = None
+        ):
+        payload = {
+            "llmOutput": llm_output
+        }
+        if num_reasks is not None:
+            payload["numReasks"] = num_reasks
+        if prompt_params is not None:
+            payload["promptParams"] = prompt_params
+        return self._api_client.validate(guard=self, payload=ValidatePayload.from_dict(payload))

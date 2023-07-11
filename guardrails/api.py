@@ -1,7 +1,7 @@
 import os
 from guard_rails_api_client import AuthenticatedClient
-from guard_rails_api_client.models import Guard
-from guard_rails_api_client.api.guard import update_guard
+from guard_rails_api_client.models import Guard, ValidatePayload
+from guard_rails_api_client.api.guard import update_guard, validate
 
 class GuardrailsApiClient:
     _client: AuthenticatedClient = None
@@ -15,5 +15,8 @@ class GuardrailsApiClient:
 
     def upsert_guard (self, guard: Guard):
         update_guard.sync(guard_name=guard.name, client=self._client, json_body=guard)
+
+    def validate (self, guard: Guard, payload: ValidatePayload):
+        return validate.sync(guard_name=guard.name, client=self._client, json_body=payload)
 
     
