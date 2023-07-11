@@ -21,6 +21,6 @@ class Prompt(BasePrompt):
 
         # Return another instance of the class with the formatted prompt.
         return Prompt(self.source.format(**filtered_kwargs))
-    
+
     def _to_request(self) -> str:
         return self.source

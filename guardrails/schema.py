@@ -406,15 +406,15 @@ class Schema:
             prompt: The prompt to preprocess.
         """
         raise NotImplementedError
-    
+
     def _to_request(self):
-      if self._schema is not None:
-        schema = {}
-        inner_schema = self._schema.__dict__
-        for key in inner_schema:
-            schema_element = inner_schema[key]
-            schema[key] = schema_element._to_request()
-        return { "schema": schema } if len(schema.keys()) > 0 else None
+        if self._schema is not None:
+            schema = {}
+            inner_schema = self._schema.__dict__
+            for key in inner_schema:
+                schema_element = inner_schema[key]
+                schema[key] = schema_element._to_request()
+            return {"schema": schema} if len(schema.keys()) > 0 else None
 
 
 class JsonSchema(Schema):

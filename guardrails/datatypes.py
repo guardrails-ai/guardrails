@@ -96,7 +96,7 @@ class DataType:
     def children(self) -> SimpleNamespace:
         """Return a SimpleNamespace of the children of this DataType."""
         return SimpleNamespace(**self._children)
-    
+
     def _to_request(self) -> Dict:
         datatype = {}
 
@@ -104,9 +104,7 @@ class DataType:
             datatype["formatters"] = self.format_attr.tokens
 
         if self.element is not None:
-            element = {
-              "type": self.element.tag
-            }
+            element = {"type": self.element.tag}
 
             element_name = self.element.get("name")
             element_description = self.element.get("description")
@@ -123,34 +121,40 @@ class DataType:
             element_model = self.element.get("model")
 
             if element_name is not None:
-              element["name"] = element_name
+                element["name"] = element_name
             if element_description is not None:
-              element["description"] = element_description
+                element["description"] = element_description
             if element_strict is not None:
-              element["strict"] = element_strict
+                element["strict"] = element_strict
             if element_date_format is not None:
-              element["dateFormat"] = element_date_format
+                element["dateFormat"] = element_date_format
             if element_time_format is not None:
-              element["timeFormat"] = element_time_format
+                element["timeFormat"] = element_time_format
             if on_fail is not None:
-              element["onFail"] = on_fail
+                element["onFail"] = on_fail
             if on_fail_tag is not None:
-              element["onFailTag"] = on_fail_tag
+                element["onFailTag"] = on_fail_tag
             if element_model is not None:
-              element["model"] = element_model
-            
+                element["model"] = element_model
+
             datatype["element"] = element
 
         if self.children != None:
-          serialized_children = {}
-          elem_type = self.element.tag if self.element != None else None
-          elem_is_list = elem_type == "list"
-          child_entries = self.children.__dict__.get("item", {}) if elem_is_list else self.children.__dict__
-          if hasattr(child_entries, '_children'):
-              child_entries = child_entries._children
-          for child_key in child_entries:
-              serialized_children[child_key] = child_entries[child_key]._to_request()
-          datatype["children"] = { "item": serialized_children } if elem_is_list else serialized_children
+            serialized_children = {}
+            elem_type = self.element.tag if self.element != None else None
+            elem_is_list = elem_type == "list"
+            child_entries = (
+                self.children.__dict__.get("item", {})
+                if elem_is_list
+                else self.children.__dict__
+            )
+            if hasattr(child_entries, "_children"):
+                child_entries = child_entries._children
+            for child_key in child_entries:
+                serialized_children[child_key] = child_entries[child_key]._to_request()
+            datatype["children"] = (
+                {"item": serialized_children} if elem_is_list else serialized_children
+            )
         return datatype
 
 
