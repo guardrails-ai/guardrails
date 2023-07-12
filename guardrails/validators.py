@@ -1437,7 +1437,7 @@ Make sure that topics are relevant to text, and topics are not too specific or g
         _, validated_output = guard(llm_api=self.llm_callable)
         return validated_output["topics"]
 
-    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
+    def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         topics_in_summary = self._get_topics(value, topics=self.topics)
 
         # Compute overlap between topics in document and summary
@@ -1445,18 +1445,15 @@ Make sure that topics are relevant to text, and topics are not too specific or g
         overlap = len(intersection) / len(self.topics)
 
         if overlap < self.threshold:
-            raise EventDetail(
-                key,
-                value,
-                schema,
-                (
+            return FailResult(
+                error_message=(
                     f"The summary \nSummary: {value}\n does not cover these topics:\n"
                     f"{set(self.topics).difference(intersection)}"
                 ),
-                "",
+                fix_value="",
             )
 
-        return schema
+        return PassResult()
 
 
 @register_validator(name="qa-relevance-llm-eval", data_type="string")
