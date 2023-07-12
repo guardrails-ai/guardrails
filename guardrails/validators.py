@@ -940,7 +940,7 @@ class SimilarToDocument(Validator):
         """
         return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
 
-    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
+    def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         logger.debug(f"Validating {value} is similar to document...")
 
         value_embedding = np.array(
@@ -954,15 +954,11 @@ class SimilarToDocument(Validator):
             value_embedding,
         )
         if similarity < self._threshold:
-            raise EventDetail(
-                key,
-                value,
-                schema,
-                f"Value {value} is not similar enough to document {self._document}.",
-                None,
+            return FailResult(
+                error_message=f"Value {value} is not similar enough to document {self._document}.",
             )
 
-        return schema
+        return PassResult()
 
     def to_prompt(self, with_keywords: bool = True) -> str:
         return ""
