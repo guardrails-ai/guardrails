@@ -361,9 +361,7 @@ class Pydantic(Validator):
 
         self.model = model
 
-    def validate_with_correction(
-        self, key: str, value: Dict, schema: Union[Dict, List]
-    ) -> Dict:
+    def validate_with_correction(self, value: Dict, metadata: Dict) -> Any:
         """Validate an object using Pydantic.
 
         For example, consider the following data for a `Person` model
@@ -400,7 +398,7 @@ class Pydantic(Validator):
         """
         try:
             # Run the Pydantic model on the value.
-            schema[key] = self.model(**value)
+            return self.model(**value)
         except ValidationError as e:
             # Create a copy of the value so that we can modify it
             # to insert e.g. ReAsk objects.
@@ -411,21 +409,18 @@ class Pydantic(Validator):
                 ), "Pydantic validation errors should only have one location."
 
                 field_name = error["loc"][0]
-                event_detail = EventDetail(
-                    key=field_name,
-                    value=new_value[field_name],
-                    schema=new_value,
+                field_value = value[field_name]
+
+                fail_result = FailResult(
                     error_message=error["msg"],
                     fix_value=None,
                 )
                 # Call the on_fail method and reassign the value.
-                new_value = self.on_fail(event_detail)
+                new_value[field_name] = self.on_fail(field_value, fail_result)
 
             # Insert the new `value` dictionary into the schema.
             # This now contains e.g. ReAsk objects.
-            schema[key] = PydanticReAsk(new_value)
-
-        return schema
+            return PydanticReAsk(new_value)
 
 
 @register_validator(name="pydantic_field_validator", data_type="all")
