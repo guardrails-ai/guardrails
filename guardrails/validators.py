@@ -9,7 +9,6 @@ import os
 import re
 from collections import defaultdict
 from copy import deepcopy
-from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Literal, Optional, Type, Union
 
 import openai
@@ -472,8 +471,10 @@ class Choice(Validator):
         logger.debug(f"Validating {value} is in {self._choices}...")
 
         # This validator is only
-        assert '__schema' in metadata, "Validator should only be invoked by Choice datatype"
-        schema = metadata['__schema']
+        assert (
+            "__schema" in metadata
+        ), "Validator should only be invoked by Choice datatype"
+        schema = metadata["__schema"]
 
         if value not in self._choices:
             return FailResult(
@@ -752,7 +753,8 @@ class EndpointIsReachable(Validator):
             response = requests.get(value)
             if response.status_code != 200:
                 return FailResult(
-                    error_message=f"URL {value} returned status code {response.status_code}",
+                    error_message=f"URL {value} returned "
+                    f"status code {response.status_code}",
                 )
         except requests.exceptions.ConnectionError:
             return FailResult(
@@ -760,11 +762,12 @@ class EndpointIsReachable(Validator):
             )
         except requests.exceptions.InvalidSchema:
             return FailResult(
-                error_message=f"URL {value} does not specify a valid connection adapter",
+                error_message=f"URL {value} does not specify "
+                f"a valid connection adapter",
             )
         except requests.exceptions.MissingSchema:
             return FailResult(
-                error_message=f"URL {value} does not contain a http schema",
+                error_message=f"URL {value} does not contain " f"a http schema",
             )
 
         return PassResult()
@@ -853,7 +856,8 @@ class SqlColumnPresence(Validator):
         diff = cols.difference(self._cols)
         if len(diff) > 0:
             return FailResult(
-                error_message=f"Columns [{', '.join(diff)}] not in [{', '.join(self._cols)}]",
+                error_message=f"Columns [{', '.join(diff)}] "
+                f"not in [{', '.join(self._cols)}]",
             )
 
         return PassResult()
@@ -955,7 +959,8 @@ class SimilarToDocument(Validator):
         )
         if similarity < self._threshold:
             return FailResult(
-                error_message=f"Value {value} is not similar enough to document {self._document}.",
+                error_message=f"Value {value} is not similar enough "
+                f"to document {self._document}.",
             )
 
         return PassResult()
@@ -988,7 +993,8 @@ class IsProfanityFree(Validator):
         prediction = predict([value])
         if prediction[0] == 1:
             return FailResult(
-                error_message=f"{value} contains profanity. Please return a profanity-free output.",
+                error_message=f"{value} contains profanity. "
+                f"Please return a profanity-free output.",
                 fix_value="",
             )
         return PassResult()
@@ -1017,12 +1023,12 @@ class IsHighQualityTranslation(Validator):
             )
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
-        if 'translation_source' not in metadata:
+        if "translation_source" not in metadata:
             raise RuntimeError(
-                'is-high-quality-translation validator expects '
-                '`translation_source` key in metadata'
+                "is-high-quality-translation validator expects "
+                "`translation_source` key in metadata"
             )
-        src = metadata['translation_source']
+        src = metadata["translation_source"]
         prediction = self.critique.evaluate(
             metric="comet",
             config={"model": "unbabel_comet/wmt21-comet-qe-da"},
@@ -1081,20 +1087,21 @@ class ExtractedSummarySentencesMatch(Validator):
 
     @staticmethod
     def _instantiate_store(metadata):
-        if 'document_store' in metadata:
-            return metadata['document_store']
+        if "document_store" in metadata:
+            return metadata["document_store"]
 
         from guardrails.document_store import EphemeralDocumentStore
 
-        if 'vector_db' not in metadata:
-            vector_db = metadata['vector_db']
+        if "vector_db" not in metadata:
+            vector_db = metadata["vector_db"]
         else:
             from guardrails.vectordb import Faiss
 
-            if 'embedding_model' not in metadata:
-                embedding_model = metadata['embedding_model']
+            if "embedding_model" not in metadata:
+                embedding_model = metadata["embedding_model"]
             else:
                 from guardrails.embedding import OpenAIEmbedding
+
                 embedding_model = OpenAIEmbedding()
 
             vector_db = Faiss.new_flat_ip_index(
@@ -1106,8 +1113,8 @@ class ExtractedSummarySentencesMatch(Validator):
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         if "filepaths" not in metadata:
             raise RuntimeError(
-                'extracted-sentences-summary-match validator expects '
-                '`filepaths` key in metadata'
+                "extracted-sentences-summary-match validator expects "
+                "`filepaths` key in metadata"
             )
         filepaths = metadata["filepaths"]
 
@@ -1116,9 +1123,7 @@ class ExtractedSummarySentencesMatch(Validator):
         for filepath in filepaths:
             with open(filepath) as f:
                 doc = f.read()
-                store.add_text(
-                    doc, {"path": filepath}
-                )
+                store.add_text(doc, {"path": filepath})
 
         # Split the value into sentences.
         sentences = re.split(r"(?<=[.!?]) +", value)
@@ -1137,8 +1142,10 @@ class ExtractedSummarySentencesMatch(Validator):
                 verified.append(sentence + f" [{citation_count}] ")
                 citations[id_] = page[0].metadata["path"]
 
-        fixed_summary = " ".join(verified) + "\n\n" + "\n".join(
-            f"[{i}] {c}" for i, c in citations.items()
+        fixed_summary = (
+            " ".join(verified)
+            + "\n\n"
+            + "\n".join(f"[{i}] {c}" for i, c in citations.items())
         )
         metadata["summary_with_citations"] = fixed_summary
         metadata["citations"] = citations
@@ -1181,7 +1188,8 @@ class ReadingTime(Validator):
         if abs(reading_time - self._max_time) > 1:
             logger.error(f"{value} took {reading_time} to read")
             return FailResult(
-                error_message=f"String should be readable within {self._max_time} minutes.",
+                error_message=f"String should be readable "
+                f"within {self._max_time} minutes.",
                 fix_value=value,
             )
 
@@ -1214,13 +1222,12 @@ class ExtractiveSummary(Validator):
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         """Make sure each sentence was precisely copied from the document."""
 
-        if 'filepaths' not in metadata:
+        if "filepaths" not in metadata:
             raise RuntimeError(
-                'extractive-summary validator expects '
-                '`filepaths` key in metadata'
+                "extractive-summary validator expects " "`filepaths` key in metadata"
             )
 
-        filepaths = metadata['filepaths']
+        filepaths = metadata["filepaths"]
 
         # Load documents
         store = {}
@@ -1265,8 +1272,10 @@ class ExtractiveSummary(Validator):
                 verified.append(f"{sentence} [{citation_count}]")
                 citations[id_] = highest_ratio_doc
 
-        verified_sentences = " ".join(verified) + "\n\n" + "\n".join(
-            f"[{i}] {c}" for i, c in citations.items()
+        verified_sentences = (
+            " ".join(verified)
+            + "\n\n"
+            + "\n".join(f"[{i}] {c}" for i, c in citations.items())
         )
 
         metadata["summary_with_citations"] = verified_sentences
@@ -1501,11 +1510,10 @@ Relevant (as a JSON with a single boolean key, "relevant"):\
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         if "question" not in metadata:
             raise RuntimeError(
-                'qa-relevance-llm-eval validator expects '
-                '`question` key in metadata'
+                "qa-relevance-llm-eval validator expects " "`question` key in metadata"
             )
 
-        question = metadata['question']
+        question = metadata["question"]
 
         relevant = self.selfeval(question, value)["relevant"]
         if relevant:
@@ -1513,7 +1521,8 @@ Relevant (as a JSON with a single boolean key, "relevant"):\
 
         fixed_answer = "No relevant answer found."
         return FailResult(
-            error_message=f"The answer {value} is not relevant to the question {question}.",
+            error_message=f"The answer {value} is not relevant "
+            f"to the question {question}.",
             fix_value=fixed_answer,
         )
 
