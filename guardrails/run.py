@@ -17,6 +17,7 @@ from guardrails.utils.reask_utils import (
 )
 
 from src.modules.otel_tracer import otel_tracer
+from src.modules.otel_logger import otel_logger
 
 logger = logging.getLogger(__name__)
 actions_logger = logging.getLogger(f"{__name__}.actions")
@@ -335,6 +336,12 @@ class Runner:
                 reasks=reasks,
             )
         )
+        """Log in OpenSearch"""
+        otel_logger.info(f"Prompt: {prompt.source}")
+        if instructions is not None:
+            otel_logger.info(f"Instructions: {instructions}")
+        otel_logger.info(f"Output: {output}")
+        otel_logger.info(f"Validated Output: {validated_output}")
 
     def do_loop(self, index: int, reasks: List[FieldReAsk]) -> bool:
         """Determine if we should loop again."""
