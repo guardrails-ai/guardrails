@@ -1498,20 +1498,23 @@ Relevant (as a JSON with a single boolean key, "relevant"):\
             temperature=0.1,
         )[1]
 
-    def validate(self, key, value, schema) -> Dict:
-        assert "question" in schema, "The schema must contain a `question` key."
+    def validate(self, value: Any, metadata: Dict) -> ValidationResult:
+        if "question" not in metadata:
+            raise RuntimeError(
+                'qa-relevance-llm-eval validator expects '
+                '`question` key in metadata'
+            )
 
-        relevant = self.selfeval(schema["question"], value)["relevant"]
+        question = metadata['question']
+
+        relevant = self.selfeval(question, value)["relevant"]
         if relevant:
-            return schema
+            return PassResult()
 
         fixed_answer = "No relevant answer found."
-        raise EventDetail(
-            key,
-            value,
-            schema,
-            f"The answer {value} is not relevant to the question {schema['question']}.",
-            fixed_answer,
+        return FailResult(
+            error_message=f"The answer {value} is not relevant to the question {question}.",
+            fix_value=fixed_answer,
         )
 
     def to_prompt(self, with_keywords: bool = True) -> str:
