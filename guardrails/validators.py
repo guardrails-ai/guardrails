@@ -1016,23 +1016,26 @@ class IsHighQualityTranslation(Validator):
                 "package. Please install it with `pip install inspiredco`."
             )
 
-    def validate(self, key, value, schema) -> Dict:
+    def validate(self, value: Any, metadata: Dict) -> ValidationResult:
+        if 'translation_source' not in metadata:
+            raise RuntimeError(
+                'is-high-quality-translation validator expects '
+                '`translation_source` key in metadata'
+            )
+        src = metadata['translation_source']
         prediction = self.critique.evaluate(
             metric="comet",
             config={"model": "unbabel_comet/wmt21-comet-qe-da"},
-            dataset=[{"source": key, "target": value}],
+            dataset=[{"source": src, "target": value}],
         )
         quality = prediction["examples"][0]["value"]
         if quality < -0.1:
-            raise EventDetail(
-                key,
-                value,
-                schema,
-                f"{value} is a low quality translation."
+            return FailResult(
+                error_message=f"{value} is a low quality translation."
                 "Please return a higher quality output.",
-                "",
+                fix_value="",
             )
-        return schema
+        return PassResult()
 
 
 @register_validator(name="ends-with", data_type="list")
