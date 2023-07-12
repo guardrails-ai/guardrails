@@ -1203,7 +1203,6 @@ class ExtractiveSummary(Validator):
 
     def __init__(
         self,
-        documents_dir: str,
         threshold: int = 85,
         on_fail: Optional[Callable] = None,
         **kwargs,
@@ -1212,15 +1211,23 @@ class ExtractiveSummary(Validator):
 
         self.threshold = threshold
 
-        # Load documents
-        self._document_store = {}
-        for doc_path in os.listdir(documents_dir):
-            with open(os.path.join(documents_dir, doc_path)) as f:
-                doc = f.read()
-            self._document_store[doc_path] = sentence_split(doc)
-
-    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
+    def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         """Make sure each sentence was precisely copied from the document."""
+
+        if 'filepaths' not in metadata:
+            raise RuntimeError(
+                'extractive-summary validator expects '
+                '`filepaths` key in metadata'
+            )
+
+        filepaths = metadata['filepaths']
+
+        # Load documents
+        store = {}
+        for filepath in filepaths:
+            with open(filepath) as f:
+                doc = f.read()
+            store[filepath] = sentence_split(doc)
 
         try:
             from thefuzz import fuzz
@@ -1237,14 +1244,14 @@ class ExtractiveSummary(Validator):
         # # in the documents.
         unverified = []
         verified = []
-        citations = []
+        citations = {}
 
-        for sentence in sentences:
+        for id_, sentence in enumerate(sentences):
             highest_ratio = 0
             highest_ratio_doc = None
 
             # Check fuzzy match against all sentences in all documents
-            for doc_path, doc_sentences in self._document_store.items():
+            for doc_path, doc_sentences in store.items():
                 for doc_sentence in doc_sentences:
                     ratio = fuzz.ratio(sentence, doc_sentence)
                     if ratio > highest_ratio:
@@ -1256,28 +1263,31 @@ class ExtractiveSummary(Validator):
             else:
                 citation_count = len(citations) + 1
                 verified.append(f"{sentence} [{citation_count}]")
-                citations.append(f"[{citation_count}] {highest_ratio_doc}\n")
+                citations[id_] = highest_ratio_doc
 
-        verified_sentences = " ".join(verified) + "\n\n" + "".join(citations)
+        verified_sentences = " ".join(verified) + "\n\n" + "\n".join(
+            f"[{i}] {c}" for i, c in citations.items()
+        )
+
+        metadata["summary_with_citations"] = verified_sentences
+        metadata["citations"] = citations
 
         if len(unverified):
             unverified_sentences = "\n".join(
                 "- " + s for i, s in enumerate(sentences) if i in unverified
             )
-            raise EventDetail(
-                key,
-                value,
-                schema,
-                (
+            return FailResult(
+                metadata=metadata,
+                error_message=(
                     f"The summary \nSummary: {value}\n has sentences\n"
                     f"{unverified_sentences}\n that are not similar to any document."
                 ),
-                verified_sentences,
+                fix_value="\n".join(verified_sentences),
             )
 
-        schema[key] = verified_sentences
-
-        return schema
+        return PassResult(
+            metadata=metadata,
+        )
 
 
 @register_validator(name="remove-redundant-sentences", data_type="string")
