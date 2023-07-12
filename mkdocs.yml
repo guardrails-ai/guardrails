@@ -14,6 +14,7 @@ copyright: |
 nav:
     - 'Home': index.md
     - 'Getting Started': getting_started.ipynb
+    - 'FAQ': faq.md
     - 'RAIL Specification':
       - 'Overview': rail/index.md
       - 'Output Element': rail/output.md

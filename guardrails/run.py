@@ -10,7 +10,7 @@ from guardrails.prompt import Instructions, Prompt
 from guardrails.schema import Schema
 from guardrails.utils.logs_utils import GuardHistory, GuardLogs
 from guardrails.utils.reask_utils import (
-    ReAsk,
+    FieldReAsk,
     prune_obj_for_reasking,
     reasks_to_dict,
     sub_reasks_with_fixed_values,
@@ -298,7 +298,7 @@ class Runner:
         index: int,
         validated_output: Any,
         output_schema: Schema,
-    ) -> List[ReAsk]:
+    ) -> List[FieldReAsk]:
         """Introspect the validated output."""
         with start_action(action_type="introspect", index=index) as action:
             if validated_output is None:
@@ -333,7 +333,7 @@ class Runner:
             )
         )
 
-    def do_loop(self, index: int, reasks: List[ReAsk]) -> bool:
+    def do_loop(self, index: int, reasks: List[FieldReAsk]) -> bool:
         """Determine if we should loop again."""
         if reasks and index < self.num_reasks:
             return True
@@ -346,10 +346,8 @@ class Runner:
         output_schema: Schema,
     ) -> Tuple[Prompt, Schema]:
         """Prepare to loop again."""
-        output_schema = output_schema.get_reask_schema(
+        output_schema, prompt = output_schema.get_reask_schema_and_prompt(
             reasks=reasks,
-        )
-        prompt = output_schema.get_reask_prompt(
             reask_value=prune_obj_for_reasking(validated_output),
             reask_prompt_template=self.reask_prompt,
         )

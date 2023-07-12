@@ -15,8 +15,10 @@ from guardrails.datatypes import DataType, String
 from guardrails.llm_providers import PromptCallable, openai_chat_wrapper, openai_wrapper
 from guardrails.prompt import Instructions, Prompt
 from guardrails.utils.constants import constants
+from guardrails.utils.json_utils import verify_schema_against_json
 from guardrails.utils.reask_utils import (
-    ReAsk,
+    FieldReAsk,
+    SkeletonReAsk,
     gather_reasks,
     get_pruned_tree,
     get_reasks_by_element,
@@ -329,22 +331,6 @@ class Schema:
         """
         raise NotImplementedError
 
-    def get_reask_schema(
-        self,
-        reasks: List[ReAsk],
-    ) -> "Schema":
-        """Construct a schema for reasking.
-
-        Args:
-            reasks: List of tuples, where each tuple contains the path to the
-                reasked element, and the ReAsk object (which contains the error
-                message describing why the reask is necessary).
-
-        Returns:
-            The prompt.
-        """
-        raise NotImplementedError
-
     def parse(self, output: str) -> Tuple[Any, Optional[Exception]]:
         """Parse the output from the large language model.
 
@@ -356,7 +342,7 @@ class Schema:
         """
         raise NotImplementedError
 
-    def introspect(self, data: Any) -> List[ReAsk]:
+    def introspect(self, data: Any) -> List[FieldReAsk]:
         """Inspect the data for reasks.
 
         Args:
@@ -367,27 +353,23 @@ class Schema:
         """
         raise NotImplementedError
 
-    def get_default_reask_prompt(self) -> Prompt:
-        """Get the default reask prompt for the schema.
-
-        Returns:
-            The default reask prompt.
-        """
-        raise NotImplementedError
-
-    def get_reask_prompt(
+    def get_reask_schema_and_prompt(
         self,
+        reasks: List[FieldReAsk],
         reask_value: Any,
         reask_prompt_template: Optional[Prompt] = None,
-    ) -> Prompt:
-        """Get a reask prompt for the schema.
+    ) -> Tuple["Schema", Prompt]:
+        """Construct a schema for reasking, and a prompt for reasking.
 
         Args:
+            reasks: List of tuples, where each tuple contains the path to the
+                reasked element, and the ReAsk object (which contains the error
+                message describing why the reask is necessary).
             reask_value: The value that was returned from the API, with reasks.
             reask_prompt_template: The template to use for the reask prompt.
 
         Returns:
-            The reask prompt.
+            The schema for reasking, and the prompt for reasking.
         """
         raise NotImplementedError
 
@@ -409,42 +391,52 @@ class Schema:
 
 
 class JsonSchema(Schema):
-    def get_reask_schema(
+    def get_reask_schema_and_prompt(
         self,
-        reasks: List[ReAsk],
-    ) -> "Schema":
-        parsed_rail = deepcopy(self.root)
-
-        # Get the elements that are to be reasked
-        reask_elements = get_reasks_by_element(reasks, parsed_rail)
-
-        # Get the pruned tree so that it only contains ReAsk objects
-        pruned_tree = get_pruned_tree(parsed_rail, list(reask_elements.keys()))
-        pruned_tree_schema = type(self)(pruned_tree)
-
-        return pruned_tree_schema
-
-    def get_reask_prompt(
-        self,
+        reasks: List[FieldReAsk],
         reask_value: Any,
         reask_prompt_template: Optional[Prompt] = None,
-    ) -> Prompt:
-        pruned_tree_string = self.transpile()
+    ) -> Tuple["Schema", Prompt]:
+        parsed_rail = deepcopy(self.root)
+
+        is_skeleton_reask = not any(isinstance(reask, FieldReAsk) for reask in reasks)
+
+        if not is_skeleton_reask:
+            # Get the elements that are to be reasked
+            reask_elements = get_reasks_by_element(reasks, parsed_rail)
+
+            # Get the pruned tree so that it only contains ReAsk objects
+            pruned_tree = get_pruned_tree(parsed_rail, list(reask_elements.keys()))
+            pruned_tree_schema = type(self)(pruned_tree)
+        else:
+            pruned_tree_schema = self
+
+        pruned_tree_string = pruned_tree_schema.transpile()
 
         if reask_prompt_template is None:
-            reask_prompt_template = self.get_default_reask_prompt()
+            if is_skeleton_reask:
+                reask_prompt_template = Prompt(
+                    constants["high_level_skeleton_reask_prompt"]
+                    + constants["complete_json_suffix"]
+                )
+            else:
+                reask_prompt_template = Prompt(
+                    constants["high_level_json_reask_prompt"]
+                    + constants["complete_json_suffix"]
+                )
 
         def reask_decoder(obj):
             return {
                 k: v for k, v in obj.__dict__.items() if k not in ["path", "fix_value"]
             }
 
-        return reask_prompt_template.format(
+        prompt = reask_prompt_template.format(
             previous_response=json.dumps(reask_value, indent=2, default=reask_decoder)
             .replace("{", "{{")
             .replace("}", "}}"),
             output_schema=pruned_tree_string,
         )
+        return pruned_tree_schema, prompt
 
     def setup_schema(self, root: ET._Element) -> None:
         from guardrails.datatypes import registry as types_registry
@@ -479,12 +471,6 @@ class JsonSchema(Schema):
             error = e
         return output_as_dict, error
 
-    def get_default_reask_prompt(self):
-        return Prompt(
-            constants["high_level_json_reask_prompt"]
-            + constants["complete_json_suffix"]
-        )
-
     def validate(
         self,
         data: Optional[Dict[str, Any]],
@@ -504,6 +490,18 @@ class JsonSchema(Schema):
             raise TypeError(f"Argument `data` must be a dictionary, not {type(data)}.")
 
         validated_response = deepcopy(data)
+
+        if not verify_schema_against_json(
+            self.root,
+            validated_response,
+            prune_extra_keys=True,
+            coerce_types=True,
+        ):
+            return SkeletonReAsk(
+                incorrect_value=validated_response,
+                fix_value=None,
+                error_message="JSON does not match schema",
+            )
 
         for field, value in validated_response.items():
             if field not in self:
@@ -529,7 +527,9 @@ class JsonSchema(Schema):
 
         return validated_response
 
-    def introspect(self, data: Dict) -> list:
+    def introspect(self, data: Any) -> list:
+        if isinstance(data, SkeletonReAsk):
+            return [data]
         return gather_reasks(data)
 
     def preprocess_prompt(
@@ -576,33 +576,26 @@ class StringSchema(Schema):
         root_string = ET.Element("string", root.attrib)
         self[self.string_key] = String.from_xml(root_string)
 
-    def get_reask_schema(
+    def get_reask_schema_and_prompt(
         self,
-        reasks: List[ReAsk],
-    ) -> "Schema":
-        return self
-
-    def get_default_reask_prompt(self):
-        return Prompt(
-            constants["high_level_string_reask_prompt"]
-            + constants["complete_string_suffix"]
-        )
-
-    def get_reask_prompt(
-        self,
-        reask_value: ReAsk,
+        reasks: List[FieldReAsk],
+        reask_value: FieldReAsk,
         reask_prompt_template: Optional[Prompt] = None,
-    ) -> Prompt:
+    ) -> Tuple[Schema, Prompt]:
         pruned_tree_string = self.transpile()
 
         if reask_prompt_template is None:
-            reask_prompt_template = self.get_default_reask_prompt()
+            reask_prompt_template = Prompt(
+                constants["high_level_string_reask_prompt"]
+                + constants["complete_string_suffix"]
+            )
 
-        return reask_prompt_template.format(
+        prompt = reask_prompt_template.format(
             previous_response=reask_value.incorrect_value,
             error_messages=f"- {reask_value.error_message}",
             output_schema=pruned_tree_string,
         )
+        return self, prompt
 
     def parse(self, output: str) -> Tuple[Any, Optional[Exception]]:
         return output, None
@@ -646,8 +639,8 @@ class StringSchema(Schema):
             return validated_response[self.string_key]
         return None
 
-    def introspect(self, data: Any) -> List[ReAsk]:
-        if isinstance(data, ReAsk):
+    def introspect(self, data: Any) -> List[FieldReAsk]:
+        if isinstance(data, FieldReAsk):
             return [data]
         return []
 
