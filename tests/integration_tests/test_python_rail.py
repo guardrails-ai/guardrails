@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field, root_validator, validator
 import guardrails as gd
 from guardrails.utils.pydantic_utils import add_validator
 from guardrails.validators import (
-    EventDetail,
+    FailResult,
     Validator,
     ValidChoices,
     ValidLength,
@@ -31,7 +31,7 @@ class IsValidDirector(Validator):
             "James Cameron",
         ]
         if value not in valid_names:
-            raise EventDetail(
+            raise FailResult(
                 key,
                 value,
                 schema,

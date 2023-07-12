@@ -10,9 +10,10 @@ import re
 from collections import defaultdict
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Optional, Type, Union
+from typing import Any, Callable, Dict, List, Literal, Optional, Type, Union
 
 import openai
+import pydantic
 from pydantic import BaseModel, ValidationError
 
 from guardrails.datatypes import registry as types_registry
@@ -173,15 +174,20 @@ def register_validator(name: str, data_type: Union[str, List[str]]):
     return decorator
 
 
-@dataclass
-class EventDetail(BaseException):
-    """Event detail."""
+class ValidationResult(pydantic.BaseModel):
+    outcome: str
+    metadata: Optional[Dict[str, Any]] = None
 
-    key: str
-    value: Any
-    schema: Dict[str, Any]
+
+class PassResult(ValidationResult):
+    outcome: Literal["success"] = "pass"
+
+
+class FailResult(ValidationResult):
+    outcome: Literal["error"] = "fail"
+
     error_message: str
-    fix_value: Any
+    fix_value: Optional[Any] = None
 
 
 class Validator:
@@ -200,71 +206,78 @@ class Validator:
             self.rail_alias in validators_registry
         ), f"Validator {self.__class__.__name__} is not registered. "
 
-    def validate_with_correction(self, key, value, schema) -> Dict:
-        try:
-            return self.validate(key, value, schema)
-        except EventDetail as e:
-            logger.debug(
-                f"Validator {self.__class__.__name__} failed for {key} with error {e}."
-            )
-            return self.on_fail(e)
+    def validate_with_correction(self, value: Any, metadata: Dict) -> Any:
+        """Validate a value and return either:
 
-    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
-        """Validate a value."""
+        - the value
+        - a fixed value
+        - a reask object
+        - a refrain object
+        - a filter object
+        """
+        result = self.validate(value, metadata)
+        if result.metadata is None:
+            result.metadata = metadata
+
+        if isinstance(result, FailResult):
+            logger.debug(
+                f"Validator {self.__class__.__name__} failed for {value} "
+                f"with error {result.error_message}."
+            )
+            return self.on_fail(value, result)
+        return value
+
+    def validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
+        """Validate a value and return a validation result."""
         raise NotImplementedError
 
-    def fix(self, error: EventDetail) -> Dict:
+    def fix(self, value: Any, error: FailResult) -> Any:
         """Debug the incorrect value."""
-        error.schema[error.key] = error.fix_value
-        return error.schema
+        return error.fix_value
 
-    def reask(self, error: EventDetail) -> Dict:
+    def reask(self, value: Any, error: FailResult) -> Any:
         """Reask disambiguates the validation failure into a helpful error
         message."""
-
-        error.schema[error.key] = FieldReAsk(
-            incorrect_value=error.value,
+        return FieldReAsk(
+            incorrect_value=value,
             error_message=error.error_message,
             fix_value=error.fix_value,
         )
-        return error.schema
 
-    def filter(self, error: EventDetail) -> Dict:
+    def filter(self, value: Any, error: FailResult) -> Any:
         """If validation fails, filter the offending key from the schema."""
-        logger.debug(f"Filtering {error.key} from schema...")
+        # logger.debug(f"Filtering {error.key} from schema...")
+        return Filter()
 
-        error.schema[error.key] = Filter()
-
-        return error.schema
-
-    def refrain(self, error: EventDetail) -> Optional[Dict]:
+    def refrain(self, value: Any, error: FailResult) -> Any:
         """If validation fails, refrain from answering."""
-        logger.debug(f"Refusing to answer {error.key}...")
+        # logger.debug(f"Refusing to answer {error.key}...")
+        return Refrain()
 
-        error.schema[error.key] = Refrain()
-        return error.schema
-
-    def noop(self, error: EventDetail) -> Dict:
+    def noop(self, value: Any, error: FailResult) -> Any:
         """If validation fails, do nothing."""
-        logger.debug(
-            f"Validator {self.__class__.__name__} failed for {error.key}, "
-            "but doing nothing..."
-        )
+        # logger.debug(
+        #     f"Validator {self.__class__.__name__} failed for {error.key}, "
+        #     "but doing nothing..."
+        # )
+        return value
 
-        return error.schema
-
-    def exception(self, error: EventDetail) -> None:
+    def exception(self, value: Any, error: FailResult) -> None:
         """Raise an exception."""
         raise ValidatorError(error.error_message)
 
-    def fix_reask(self, error: EventDetail) -> Dict:
+    def fix_reask(self, value: Any, error: FailResult) -> Dict:
         """If validation fails, fix the value and reask."""
-        schema = self.fix(error)
+        fixed_value = self.fix(value, error)
 
-        try:
-            self.validate(error.key, error.fix_value, schema)
-        except EventDetail as e:
-            return self.reask(e)
+        result = self.validate(fixed_value, error.metadata)
+        if result.metadata is None:
+            result.metadata = error.metadata
+
+        if isinstance(result, FailResult):
+            return self.reask(fixed_value, result)
+
+        return fixed_value
 
     def to_prompt(self, with_keywords: bool = True) -> str:
         """Convert the validator to a prompt.
@@ -308,7 +321,7 @@ class Validator:
         return f"{self.rail_alias}: {params}"
 
     def __call__(self, v: Any) -> Any:
-        return self.validate("dummy_key", v, {"dummy_key": v})["dummy_key"]
+        return self.validate_with_correction(v, {})
 
 
 # @register_validator('required', 'all')

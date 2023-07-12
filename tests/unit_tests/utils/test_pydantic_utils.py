@@ -5,7 +5,7 @@ from guardrails.utils.pydantic_utils import (
     add_pydantic_validators_as_guardrails_validators,
     add_validator,
 )
-from guardrails.validators import EventDetail, ValidChoices, ValidLength
+from guardrails.validators import FailResult, ValidChoices, ValidLength
 
 
 def test_add_pydantic_validators_as_guardrails_validators():
@@ -49,7 +49,7 @@ def test_add_pydantic_validators_as_guardrails_validators():
         validators[0], ValidLength
     ), "First validator should be ValidLength"
     validators[0].validate(None, "Beatrice", None)
-    with pytest.raises(EventDetail):
+    with pytest.raises(FailResult):
         validators[0].validate(None, "MrAlexander", None)
 
     # The second validator should be the ValidChoices validator
@@ -58,7 +58,7 @@ def test_add_pydantic_validators_as_guardrails_validators():
     ), "Second validator should be ValidChoices"
     validators[1].validate(None, "Alex", None)
     validators[1].validate(None, "Bob", None)
-    with pytest.raises(EventDetail):
+    with pytest.raises(FailResult):
         validators[1].validate(None, "Candace", None)
 
     # TODO(shreya): Uncomment when custom validators are supported
