@@ -434,17 +434,16 @@ class PydanticFieldValidator(Validator):
         self.field_validator = field_validator
         super().__init__(on_fail, **kwargs)
 
-    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
+    def validate_with_correction(self, value: Any, metadata: Dict) -> ValidationResult:
         try:
-            return self.field_validator(value)
+            validated_field = self.field_validator(value)
         except Exception as e:
-            raise EventDetail(
-                key=key,
-                value=value,
-                schema=schema,
+            result = FailResult(
                 error_message=str(e),
                 fix_value=None,
             )
+            return self.on_fail(value, result)
+        return validated_field
 
     def to_prompt(self, with_keywords: bool = True) -> str:
         return self.field_validator.__func__.__name__
