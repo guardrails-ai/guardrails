@@ -824,18 +824,14 @@ class BugFreeSQL(Validator):
         super().__init__(on_fail=on_fail)
         self._driver: SQLDriver = create_sql_driver(schema_file=schema_file, conn=conn)
 
-    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
+    def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         errors = self._driver.validate_sql(value)
         if len(errors) > 0:
-            raise EventDetail(
-                key,
-                value,
-                schema,
-                ". ".join(errors),
-                None,
+            return FailResult(
+                error_message=". ".join(errors),
             )
 
-        return schema
+        return PassResult()
 
 
 @register_validator(name="sql-column-presence", data_type="sql")
@@ -850,7 +846,7 @@ class SqlColumnPresence(Validator):
         super().__init__(on_fail=on_fail, cols=cols)
         self._cols = set(cols)
 
-    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
+    def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         from sqlglot import exp, parse
 
         expressions = parse(value)
@@ -861,15 +857,11 @@ class SqlColumnPresence(Validator):
 
         diff = cols.difference(self._cols)
         if len(diff) > 0:
-            raise EventDetail(
-                key,
-                value,
-                schema,
-                f"Columns [{', '.join(diff)}] not in [{', '.join(self._cols)}]",
-                None,
+            return FailResult(
+                error_message=f"Columns [{', '.join(diff)}] not in [{', '.join(self._cols)}]",
             )
 
-        return schema
+        return PassResult()
 
 
 @register_validator(name="exclude-sql-predicates", data_type="sql")
@@ -884,7 +876,7 @@ class ExcludeSqlPredicates(Validator):
         super().__init__(on_fail=on_fail, predicates=predicates)
         self._predicates = set(predicates)
 
-    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
+    def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         from sqlglot import exp, parse
 
         expressions = parse(value)
@@ -897,15 +889,12 @@ class ExcludeSqlPredicates(Validator):
                 except AttributeError:
                     raise ValueError(f"Predicate {pred} does not exist")
                 if len(list(expression.find_all(getattr(exp, pred)))):
-                    raise EventDetail(
-                        key,
-                        value,
-                        schema,
-                        f"SQL query contains predicate {pred}",
-                        "",
+                    return FailResult(
+                        error_message=f"SQL query contains predicate {pred}",
+                        fix_value="",
                     )
 
-        return schema
+        return PassResult()
 
 
 @register_validator(name="similar-to-document", data_type="string")
