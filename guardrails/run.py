@@ -16,6 +16,8 @@ from guardrails.utils.reask_utils import (
     sub_reasks_with_fixed_values,
 )
 
+from src.modules.otel_tracer import otel_tracer
+
 logger = logging.getLogger(__name__)
 actions_logger = logging.getLogger(f"{__name__}.actions")
 add_destinations(actions_logger.debug)
@@ -90,27 +92,28 @@ class Runner:
                 self.output_schema,
             )
             for index in range(self.num_reasks + 1):
-                # Run a single step.
-                validated_output, reasks = self.step(
-                    index=index,
-                    api=self.api,
-                    instructions=instructions,
-                    prompt=prompt,
-                    prompt_params=prompt_params,
-                    input_schema=input_schema,
-                    output_schema=output_schema,
-                    output=self.output if index == 0 else None,
-                )
+                with otel_tracer.start_as_current_span(f'step-{index}'):
+                    # Run a single step.
+                    validated_output, reasks = self.step(
+                        index=index,
+                        api=self.api,
+                        instructions=instructions,
+                        prompt=prompt,
+                        prompt_params=prompt_params,
+                        input_schema=input_schema,
+                        output_schema=output_schema,
+                        output=self.output if index == 0 else None,
+                    )
 
-                # Loop again?
-                if not self.do_loop(index, reasks):
-                    break
-                # Get new prompt and output schema.
-                prompt, output_schema = self.prepare_to_loop(
-                    reasks,
-                    validated_output,
-                    output_schema,
-                )
+                    # Loop again?
+                    if not self.do_loop(index, reasks):
+                        break
+                    # Get new prompt and output schema.
+                    prompt, output_schema = self.prepare_to_loop(
+                        reasks,
+                        validated_output,
+                        output_schema,
+                    )
 
             return self.guard_history
 
