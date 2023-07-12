@@ -1051,19 +1051,16 @@ class EndsWith(Validator):
         super().__init__(on_fail=on_fail, end=end)
         self._end = end
 
-    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
+    def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         logger.debug(f"Validating {value} ends with {self._end}...")
 
         if not value[-1] == self._end:
-            raise EventDetail(
-                key,
-                value,
-                schema,
-                f"{value} must end with {self._end}",
-                value + [self._end],
+            return FailResult(
+                error_message=f"{value} must end with {self._end}",
+                fix_value=value + [self._end],
             )
 
-        return schema
+        return PassResult()
 
 
 @register_validator(name="extracted-summary-sentences-match", data_type="string")
