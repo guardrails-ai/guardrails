@@ -1169,7 +1169,7 @@ class ReadingTime(Validator):
         super().__init__(on_fail=on_fail, max_time=reading_time)
         self._max_time = reading_time
 
-    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
+    def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         logger.debug(
             f"Validating {value} can be read in less than {self._max_time} seconds..."
         )
@@ -1180,15 +1180,12 @@ class ReadingTime(Validator):
 
         if abs(reading_time - self._max_time) > 1:
             logger.error(f"{value} took {reading_time} to read")
-            raise EventDetail(
-                key,
-                value,
-                schema,
-                f"String should be readable within {self._max_time} minutes.",
-                value,
+            return FailResult(
+                error_message=f"String should be readable within {self._max_time} minutes.",
+                fix_value=value,
             )
 
-        return schema
+        return PassResult()
 
 
 @register_validator(name="extractive-summary", data_type="string")
