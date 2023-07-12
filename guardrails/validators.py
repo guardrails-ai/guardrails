@@ -976,7 +976,7 @@ class IsProfanityFree(Validator):
     - Programmatic fix: ""
     """
 
-    def validate(self, key, value, schema) -> Dict:
+    def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         try:
             from profanity_check import predict
         except ImportError:
@@ -987,14 +987,11 @@ class IsProfanityFree(Validator):
 
         prediction = predict([value])
         if prediction[0] == 1:
-            raise EventDetail(
-                key,
-                value,
-                schema,
-                f"{value} contains profanity. Please return a profanity-free output.",
-                "",
+            return FailResult(
+                error_message=f"{value} contains profanity. Please return a profanity-free output.",
+                fix_value="",
             )
-        return schema
+        return PassResult()
 
 
 @register_validator(name="is-high-quality-translation", data_type="string")
