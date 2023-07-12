@@ -1070,45 +1070,56 @@ class ExtractedSummarySentencesMatch(Validator):
 
     def __init__(
         self,
-        documents_dir: str,
         threshold: float = 0.7,
-        embedding_model: Optional["EmbeddingBase"] = None,  # noqa: F821
-        vector_db: Optional["VectorDBBase"] = None,  # noqa: F821
-        document_store: Optional["DocumentStoreBase"] = None,  # noqa: F821
         on_fail: Optional[Callable] = None,
         **kwargs,
     ):
         super().__init__(on_fail, **kwargs)
         # TODO(shreya): Pass embedding_model, vector_db, document_store from spec
 
-        if document_store is None:
-            from guardrails.document_store import EphemeralDocumentStore
-
-            if vector_db is None:
-                from guardrails.vectordb import Faiss
-
-                if embedding_model is None:
-                    from guardrails.embedding import OpenAIEmbedding
-
-                    embedding_model = OpenAIEmbedding()
-
-                vector_db = Faiss.new_flat_ip_index(
-                    embedding_model.output_dim, embedder=embedding_model
-                )
-            self.store = EphemeralDocumentStore(vector_db)
-        else:
-            self.store = document_store
-
-        for doc_path in os.listdir(documents_dir):
-            with open(os.path.join(documents_dir, doc_path)) as f:
-                doc = f.read()
-                self.store.add_text(
-                    doc, {"path": os.path.join(documents_dir, doc_path)}
-                )
-
         self._threshold = float(threshold)
 
-    def validate(self, key, value, schema) -> Dict:
+    @staticmethod
+    def _instantiate_store(metadata):
+        if 'document_store' in metadata:
+            return metadata['document_store']
+
+        from guardrails.document_store import EphemeralDocumentStore
+
+        if 'vector_db' not in metadata:
+            vector_db = metadata['vector_db']
+        else:
+            from guardrails.vectordb import Faiss
+
+            if 'embedding_model' not in metadata:
+                embedding_model = metadata['embedding_model']
+            else:
+                from guardrails.embedding import OpenAIEmbedding
+                embedding_model = OpenAIEmbedding()
+
+            vector_db = Faiss.new_flat_ip_index(
+                embedding_model.output_dim, embedder=embedding_model
+            )
+
+        return EphemeralDocumentStore(vector_db)
+
+    def validate(self, value: Any, metadata: Dict) -> ValidationResult:
+        if "filepaths" not in metadata:
+            raise RuntimeError(
+                'extracted-sentences-summary-match validator expects '
+                '`filepaths` key in metadata'
+            )
+        filepaths = metadata["filepaths"]
+
+        store = self._instantiate_store(metadata)
+
+        for filepath in filepaths:
+            with open(filepath) as f:
+                doc = f.read()
+                store.add_text(
+                    doc, {"path": filepath}
+                )
+
         # Split the value into sentences.
         sentences = re.split(r"(?<=[.!?]) +", value)
 
@@ -1116,33 +1127,34 @@ class ExtractedSummarySentencesMatch(Validator):
         # in the documents.
         unverified = []
         verified = []
-        citations = []
-        for sentence in sentences:
-            page = self.store.search_with_threshold(sentence, self._threshold)
+        citations = {}
+        for id_, sentence in enumerate(sentences):
+            page = store.search_with_threshold(sentence, self._threshold)
             if not page:
                 unverified.append(sentence)
             else:
                 citation_count = len(citations) + 1
                 verified.append(sentence + f" [{citation_count}] ")
-                citations.append(f"\n[{citation_count}] {page[0].metadata['path']}")
+                citations[id_] = page[0].metadata["path"]
 
-        fixed_summary = " ".join(verified) + "\n\n" + "".join(citations)
+        fixed_summary = " ".join(verified) + "\n\n" + "\n".join(
+            f"[{i}] {c}" for i, c in citations.items()
+        )
+        metadata["summary_with_citations"] = fixed_summary
+        metadata["citations"] = citations
 
         if unverified:
             unverified_sentences = "\n".join(unverified)
-            raise EventDetail(
-                key,
-                value,
-                schema,
-                (
+            return FailResult(
+                metadata=metadata,
+                error_message=(
                     f"The summary \nSummary: {value}\n has sentences\n"
                     f"{unverified_sentences}\n that are not similar to any document."
                 ),
-                fixed_summary,
+                fix_value=fixed_summary,
             )
 
-        schema[key] = fixed_summary
-        return schema
+        return PassResult(metadata=metadata)
 
     def to_prompt(self, with_keywords: bool = True) -> str:
         return ""
