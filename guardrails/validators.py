@@ -1305,7 +1305,7 @@ class RemoveRedundantSentences(Validator):
         super().__init__(on_fail, **kwargs)
         self.threshold = threshold
 
-    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
+    def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         """Remove redundant sentences from a string."""
 
         try:
@@ -1342,18 +1342,15 @@ class RemoveRedundantSentences(Validator):
 
         if len(redundant_sentences):
             redundant_sentences = "\n".join(redundant_sentences)
-            raise EventDetail(
-                key,
-                value,
-                schema,
-                (
+            return FailResult(
+                error_message=(
                     f"The summary \nSummary: {value}\n has sentences\n"
                     f"{redundant_sentences}\n that are similar to other sentences."
                 ),
-                filtered_summary,
+                fix_value=filtered_summary,
             )
 
-        return schema
+        return PassResult()
 
 
 @register_validator(name="saliency-check", data_type="string")
