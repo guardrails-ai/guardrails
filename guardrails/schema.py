@@ -312,7 +312,7 @@ class Schema:
         """
         raise NotImplementedError
 
-    def validate(self, guard_logs: GuardLogs, data: Any) -> Any:
+    def validate(self, guard_logs: GuardLogs, data: Any, metadata: Dict) -> Any:
         """Validate a dictionary of data against the schema.
 
         Args:
@@ -476,6 +476,7 @@ class JsonSchema(Schema):
         self,
         guard_logs: GuardLogs,
         data: Optional[Dict[str, Any]],
+        metadata: Dict,
     ) -> Optional[Dict[str, Any]]:
         """Validate a dictionary of data against the schema.
 
@@ -522,6 +523,7 @@ class JsonSchema(Schema):
                 key=field,
                 value=value,
                 schema=validated_response,
+                metadata=metadata,
             )
 
             logger.debug(
@@ -616,6 +618,7 @@ class StringSchema(Schema):
         self,
         guard_logs: GuardLogs,
         data: Any,
+        metadata: Dict,
     ) -> Any:
         """Validate a dictionary of data against the schema.
 
@@ -641,6 +644,7 @@ class StringSchema(Schema):
             schema={
                 self.string_key: data,
             },
+            metadata=metadata,
         )
 
         if check_refrain_in_dict(validated_response):
