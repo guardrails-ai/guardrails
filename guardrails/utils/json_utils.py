@@ -56,6 +56,8 @@ class ValuePlaceholder(Placeholder):
         prune_extra_keys: bool,
         coerce_types: bool,
     ):
+        if not json_value:
+            return self.verification_failed
         super_result = super().verify(
             json_value,
             prune_extra_keys=prune_extra_keys,
