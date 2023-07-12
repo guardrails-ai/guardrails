@@ -467,25 +467,23 @@ class Choice(Validator):
 
         self._choices = choices
 
-    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
+    def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         """Validate that a value is one of a set of choices."""
         logger.debug(f"Validating {value} is in {self._choices}...")
 
+        # This validator is only
+        assert '__schema' in metadata, "Validator should only be invoked by Choice datatype"
+        schema = metadata['__schema']
+
         if value not in self._choices:
-            raise EventDetail(
-                key=key,
-                value=value,
-                schema=schema,
+            return FailResult(
                 error_message=f"{value} is not in {self._choices}",
                 fix_value=None,
             )
 
         selected_choice = value
         if selected_choice not in schema:
-            raise EventDetail(
-                key=key,
-                value=value,
-                schema=schema,
+            return FailResult(
                 error_message=f"{schema} must contain a key called {value}",
                 fix_value=None,
             )
@@ -495,10 +493,7 @@ class Choice(Validator):
             if choice == selected_choice:
                 continue
             if choice in schema:
-                raise EventDetail(
-                    key=key,
-                    value=value,
-                    schema=schema,
+                return FailResult(
                     error_message=(
                         f"{schema} must not contain a key called {choice}, "
                         f"since {selected_choice} is selected"
@@ -506,7 +501,7 @@ class Choice(Validator):
                     fix_value=None,
                 )
 
-        return schema
+        return PassResult()
 
 
 @register_validator(name="valid-range", data_type=["integer", "float", "percentage"])

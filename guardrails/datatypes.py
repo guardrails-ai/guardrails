@@ -401,8 +401,15 @@ class Choice(NonScalarType):
         schema: Dict,
         metadata: Dict,
     ) -> Dict:
+        # Until we refactor the discriminator into the choice object,
+        # we expose the schema to the choice validator via metadata
+        choice_metadata = {
+            **metadata,
+            "__schema": schema,
+        }
+
         # Call the validate method of the parent class
-        super().validate(validation_logs, key, value, schema, metadata)
+        super().validate(validation_logs, key, value, schema, choice_metadata)
 
         # Validate the selected choice
         selected_key = value
