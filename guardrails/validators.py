@@ -526,31 +526,25 @@ class ValidRange(Validator):
         self._min = min
         self._max = max
 
-    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
+    def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         """Validate that a value is within a range."""
         logger.debug(f"Validating {value} is in range {self._min} - {self._max}...")
 
         val_type = type(value)
 
         if self._min is not None and value < val_type(self._min):
-            raise EventDetail(
-                key,
-                value,
-                schema,
-                f"Value {value} is less than {self._min}.",
-                self._min,
+            return FailResult(
+                error_message=f"Value {value} is less than {self._min}.",
+                fix_value=self._min,
             )
 
         if self._max is not None and value > val_type(self._max):
-            raise EventDetail(
-                key,
-                value,
-                schema,
-                f"Value {value} is greater than {self._max}.",
-                self._max,
+            return FailResult(
+                error_message=f"Value {value} is greater than {self._max}.",
+                fix_value=self._max,
             )
 
-        return schema
+        return PassResult()
 
 
 @register_validator(name="valid-choices", data_type="all")
@@ -566,20 +560,16 @@ class ValidChoices(Validator):
         super().__init__(on_fail=on_fail, choices=choices)
         self._choices = choices
 
-    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
+    def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         """Validate that a value is within a range."""
         logger.debug(f"Validating {value} is in choices {self._choices}...")
 
         if value not in self._choices:
-            raise EventDetail(
-                key,
-                value,
-                schema,
-                f"Value {value} is not in choices {self._choices}.",
-                None,
+            return FailResult(
+                error_message=f"Value {value} is not in choices {self._choices}.",
             )
 
-        return schema
+        return PassResult()
 
 
 @register_validator(name="lower-case", data_type="string")
@@ -591,19 +581,16 @@ class LowerCase(Validator):
     - Programmatic fix: Manually convert to lower case.
     """
 
-    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
+    def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         logger.debug(f"Validating {value} is lower case...")
 
         if value.lower() != value:
-            raise EventDetail(
-                key,
-                value,
-                schema,
-                f"Value {value} is not lower case.",
-                value.lower(),
+            return FailResult(
+                error_message=f"Value {value} is not lower case.",
+                fix_value=value.lower(),
             )
 
-        return schema
+        return PassResult()
 
 
 @register_validator(name="upper-case", data_type="string")
@@ -615,19 +602,16 @@ class UpperCase(Validator):
     - Programmatic fix: Manually convert to upper case.
     """
 
-    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
+    def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         logger.debug(f"Validating {value} is upper case...")
 
         if value.upper() != value:
-            raise EventDetail(
-                key,
-                value,
-                schema,
-                f"Value {value} is not upper case.",
-                value.upper(),
+            return FailResult(
+                error_message=f"Value {value} is not upper case.",
+                fix_value=value.upper(),
             )
 
-        return schema
+        return PassResult()
 
 
 @register_validator(name="length", data_type=["string", "list"])
@@ -647,7 +631,7 @@ class ValidLength(Validator):
         self._min = int(min) if min is not None else None
         self._max = int(max) if max is not None else None
 
-    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
+    def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         """Validate that a value is within a range."""
         logger.debug(
             f"Validating {value} is in length range {self._min} - {self._max}..."
@@ -663,29 +647,23 @@ class ValidLength(Validator):
                 last_val = [value[-1]]
 
             corrected_value = value + last_val * (self._min - len(value))
-            raise EventDetail(
-                key,
-                value,
-                schema,
-                f"Value has length less than {self._min}. "
+            return FailResult(
+                error_message=f"Value has length less than {self._min}. "
                 f"Please return a longer output, "
                 f"that is shorter than {self._max} characters.",
-                corrected_value,
+                fix_value=corrected_value,
             )
 
         if self._max is not None and len(value) > self._max:
             logger.debug(f"Value {value} is greater than {self._max}.")
-            raise EventDetail(
-                key,
-                value,
-                schema,
-                f"Value has length greater than {self._max}. "
+            return FailResult(
+                error_message=f"Value has length greater than {self._max}. "
                 f"Please return a shorter output, "
                 f"that is shorter than {self._max} characters.",
-                value[: self._max],
+                fix_value=value[: self._max],
             )
 
-        return schema
+        return PassResult()
 
 
 @register_validator(name="two-words", data_type="string")
@@ -697,19 +675,16 @@ class TwoWords(Validator):
     - Programmatic fix: Pick the first two words.
     """
 
-    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
+    def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         logger.debug(f"Validating {value} is two words...")
 
         if len(value.split()) != 2:
-            raise EventDetail(
-                key,
-                value,
-                schema,
-                "must be exactly two words",
-                " ".join(value.split()[:2]),
+            return FailResult(
+                error_message="must be exactly two words",
+                fix_value=" ".join(value.split()[:2]),
             )
 
-        return schema
+        return PassResult()
 
 
 @register_validator(name="one-line", data_type="string")
@@ -721,19 +696,16 @@ class OneLine(Validator):
     - Programmatic fix: Pick the first line.
     """
 
-    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
+    def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         logger.debug(f"Validating {value} is a single line...")
 
         if len(value.splitlines()) > 1:
-            raise EventDetail(
-                key,
-                value,
-                schema,
-                f"Value {value} is not a single line.",
-                value.splitlines()[0],
+            return FailResult(
+                error_message=f"Value {value} is not a single line.",
+                fix_value=value.splitlines()[0],
             )
 
-        return schema
+        return PassResult()
 
 
 @register_validator(name="valid-url", data_type=["string", "url"])
@@ -745,7 +717,7 @@ class ValidURL(Validator):
     - Programmatic fix: None
     """
 
-    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
+    def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         logger.debug(f"Validating {value} is a valid URL...")
 
         from urllib.parse import urlparse
@@ -755,23 +727,15 @@ class ValidURL(Validator):
             result = urlparse(value)
             # Check that the URL has a scheme and network location
             if not result.scheme or not result.netloc:
-                raise EventDetail(
-                    key,
-                    value,
-                    schema,
-                    f"URL {value} is not valid.",
-                    None,
+                return FailResult(
+                    error_message=f"URL {value} is not valid.",
                 )
         except ValueError:
-            raise EventDetail(
-                key,
-                value,
-                schema,
-                f"URL {value} is not valid.",
-                None,
+            return FailResult(
+                error_message=f"URL {value} is not valid.",
             )
 
-        return schema
+        return PassResult()
 
 
 @register_validator(name="is-reachable", data_type=["string", "url"])
@@ -783,7 +747,7 @@ class EndpointIsReachable(Validator):
     - Programmatic fix: None
     """
 
-    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
+    def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         logger.debug(f"Validating {value} is a valid URL...")
 
         import requests
@@ -792,39 +756,23 @@ class EndpointIsReachable(Validator):
         try:
             response = requests.get(value)
             if response.status_code != 200:
-                raise EventDetail(
-                    key,
-                    value,
-                    schema,
-                    f"URL {value} returned status code {response.status_code}",
-                    None,
+                return FailResult(
+                    error_message=f"URL {value} returned status code {response.status_code}",
                 )
         except requests.exceptions.ConnectionError:
-            raise EventDetail(
-                key,
-                value,
-                schema,
-                f"URL {value} could not be reached",
-                None,
+            return FailResult(
+                error_message=f"URL {value} could not be reached",
             )
         except requests.exceptions.InvalidSchema:
-            raise EventDetail(
-                key,
-                value,
-                schema,
-                f"URL {value} does not specify a valid connection adapter",
-                None,
+            return FailResult(
+                error_message=f"URL {value} does not specify a valid connection adapter",
             )
         except requests.exceptions.MissingSchema:
-            raise EventDetail(
-                key,
-                value,
-                schema,
-                f"URL {value} does not contain a http schema",
-                None,
+            return FailResult(
+                error_message=f"URL {value} does not contain a http schema",
             )
 
-        return schema
+        return PassResult()
 
 
 @register_validator(name="bug-free-python", data_type="pythoncode")
@@ -840,22 +788,18 @@ class BugFreePython(Validator):
     - Programmatic fix: None
     """
 
-    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
+    def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         logger.debug(f"Validating {value} is not a bug...")
 
         # The value is a Python code snippet. We need to check for syntax errors.
         try:
             ast.parse(value)
         except SyntaxError as e:
-            raise EventDetail(
-                key,
-                value,
-                schema,
-                e,
-                None,
+            return FailResult(
+                error_message=f"Syntax error: {e.msg}",
             )
 
-        return schema
+        return PassResult()
 
 
 @register_validator(name="bug-free-sql", data_type="sql")
