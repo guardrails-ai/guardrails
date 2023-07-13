@@ -45,7 +45,7 @@ class Guard:
 
     def __init__(
         self,
-        rail: Rail,  # TODO: Make optional in next major version so existing guards can be retrieved by name
+        rail: Rail,  # TODO: Make optional next major version, allow retrieval by name
         num_reasks: int = 1,
         base_model: Optional[BaseModel] = None,
         name: Optional[str] = None,  # TODO: Make name mandatory on next major version

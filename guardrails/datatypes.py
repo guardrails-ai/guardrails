@@ -139,9 +139,9 @@ class DataType:
 
             datatype["element"] = element
 
-        if self.children != None:
+        if self.children is not None:
             serialized_children = {}
-            elem_type = self.element.tag if self.element != None else None
+            elem_type = self.element.tag if self.element is not None else None
             elem_is_list = elem_type == "list"
             child_entries = (
                 self.children.__dict__.get("item", {})
