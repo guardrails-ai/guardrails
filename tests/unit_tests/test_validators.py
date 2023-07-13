@@ -4,6 +4,7 @@ from guardrails.validators import (
     BugFreeSQL,
     FailResult,
     Filter,
+    PassResult,
     Refrain,
     SimilarToDocument,
     SqlColumnPresence,
@@ -61,8 +62,7 @@ def test_similar_to_document_validator():
     )
     summary = "All legislative powers are held by a Congress"
     " consisting of two chambers, the Senate and the House of Representatives."
-    schema = {"key": summary}
-    assert val.validate("key", summary, schema) == schema
+    assert isinstance(val.validate(summary, {}), PassResult)
 
 
 class TestBugFreeSQLValidator:
@@ -74,13 +74,12 @@ class TestBugFreeSQLValidator:
             conn="sqlite://",
         )
         bad_query = "select name, fro employees"
-        with pytest.raises(FailResult) as context:
-            val.validate("sql-query", bad_query, {})
-        assert context.type is FailResult
-        assert context.value.error_message != ""
+        result = val.validate(bad_query, {})
+        assert isinstance(result, FailResult)
+        assert result.error_message != ""
 
         good_query = "select name from employees;"
-        val.validate("sql-query", good_query, {})
+        assert isinstance(val.validate(good_query, {}), PassResult)
 
     def test_long_sql_schema_no_exception(self):
         val = BugFreeSQL(
@@ -92,22 +91,22 @@ class TestBugFreeSQLValidator:
     def test_bug_free_sql_simple(self):
         val = BugFreeSQL()
         bad_query = "select name, fro employees"
-        with pytest.raises(FailResult) as context:
-            val.validate("sql-query", bad_query, {})
-        assert context.type is FailResult
-        assert context.value.error_message != ""
+
+        result = val.validate(bad_query, {})
+        assert isinstance(result, FailResult)
+        assert result.error_message != ""
 
         good_query = "select name from employees;"
-        val.validate("sql-query", good_query, {})
+        assert isinstance(val.validate(good_query, {}), PassResult)
 
     def test_sql_column_presense(self):
         sql = "select name, age from employees;"
         columns = ["name", "address"]
         val = SqlColumnPresence(cols=columns)
-        with pytest.raises(FailResult) as context:
-            val.validate("sql-query", sql, {})
-        assert context.type is FailResult
-        assert context.value.error_message in (
+
+        result = val.validate(sql, {})
+        assert isinstance(result, FailResult)
+        assert result.error_message in (
             "Columns [age] not in [name, address]",
             "Columns [age] not in [address, name]",
         )
