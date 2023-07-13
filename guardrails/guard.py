@@ -17,7 +17,12 @@ from guard_rails_api_client.models import (
 from pydantic import BaseModel
 
 from guardrails.api import GuardrailsApiClient
-from guardrails.llm_providers import get_async_llm_ask, get_llm_api_enum, get_llm_ask
+from guardrails.llm_providers import (
+    get_async_llm_ask,
+    get_llm_api_enum,
+    get_llm_ask,
+    llm_api_is_manifest,
+)
 from guardrails.prompt import Instructions, Prompt
 from guardrails.rail import Rail
 from guardrails.run import AsyncRunner, Runner
@@ -210,7 +215,7 @@ class Guard:
         Returns:
             The raw text output from the LLM and the validated output.
         """
-        if self._api_client is not None:
+        if self._api_client is not None and llm_api_is_manifest(llm_api) is not True:
             # TODO: Run locally if llm_api is Manifest
             return self.validate(
                 llm_api=llm_api,
@@ -332,7 +337,7 @@ class Guard:
             The validated response.
         """
 
-        if self._api_client is not None:
+        if self._api_client is not None and llm_api_is_manifest(llm_api) is not True:
             return self.validate(
                 llm_output=llm_output,
                 llm_api=llm_api,

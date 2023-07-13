@@ -200,7 +200,7 @@ def get_llm_ask(
         fn = partial(
             openai_chat_wrapper, openai_api_key=openai_api_key, *args, **kwargs
         )
-    elif MANIFEST and isinstance(llm_api, manifest.Manifest):
+    elif llm_api_is_manifest(llm_api):
         fn = partial(manifest_wrapper, client=llm_api, *args, **kwargs)
     else:
         # Let the user pass in an arbitrary callable.
@@ -341,7 +341,7 @@ def get_async_llm_ask(
         fn = partial(
             async_openai_chat_wrapper, openai_api_key=openai_api_key, *args, **kwargs
         )
-    elif MANIFEST and isinstance(llm_api, manifest.Manifest):
+    elif llm_api_is_manifest(llm_api):
         fn = partial(async_manifest_wrapper, client=llm_api, *args, **kwargs)
     else:
         # Let the user pass in an arbitrary callable.
@@ -361,3 +361,7 @@ def get_llm_api_enum(llm_api: Callable[[Any], Awaitable[Any]]) -> ValidatePayloa
         return ValidatePayloadLlmApi.OPENAI_CHATCOMPLETION_ACREATE
     else:
         return None
+
+
+def llm_api_is_manifest(llm_api: Callable[[Any], Awaitable[Any]]) -> bool:
+    return MANIFEST and isinstance(llm_api, manifest.Manifest)
