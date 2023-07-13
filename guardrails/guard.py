@@ -8,7 +8,12 @@ from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Union
 
 from eliot import add_destinations, start_action
 from guard_rails_api_client.models import Guard as GuardModel
-from guard_rails_api_client.models import ValidatePayload, ValidationOutput, HistoryEvent, History
+from guard_rails_api_client.models import (
+    History,
+    HistoryEvent,
+    ValidatePayload,
+    ValidationOutput,
+)
 from pydantic import BaseModel
 
 from guardrails.api import GuardrailsApiClient
@@ -44,7 +49,7 @@ class Guard:
         num_reasks: int = 1,
         base_model: Optional[BaseModel] = None,
         name: Optional[str] = None,  # TODO: Make name mandatory on next major version
-        openai_api_key: Optional[str] = None
+        openai_api_key: Optional[str] = None,
     ):
         """Initialize the Guard."""
         self.rail = rail
@@ -53,7 +58,11 @@ class Guard:
         self._reask_prompt = None
         self.base_model = base_model
         self.name = name
-        self.openai_api_key = openai_api_key if openai_api_key is not None else os.environ.get("OPENAI_API_KEY")
+        self.openai_api_key = (
+            openai_api_key
+            if openai_api_key is not None
+            else os.environ.get("OPENAI_API_KEY")
+        )
 
         api_key = os.environ.get("GUARDRAILS_API_KEY")
         if api_key is not None:
@@ -208,7 +217,7 @@ class Guard:
                 num_reasks=num_reasks,
                 prompt_params=prompt_params,
                 *args,
-                **kwargs
+                **kwargs,
             )
 
         if num_reasks is None:
@@ -247,7 +256,9 @@ class Guard:
             runner = Runner(
                 instructions=kwargs.get("instructions", self.instructions),
                 prompt=self.prompt,
-                api=get_llm_ask(llm_api, openai_api_key=self.openai_api_key, *args, **kwargs),
+                api=get_llm_ask(
+                    llm_api, openai_api_key=self.openai_api_key, *args, **kwargs
+                ),
                 input_schema=self.input_schema,
                 output_schema=self.output_schema,
                 num_reasks=num_reasks,
@@ -283,7 +294,9 @@ class Guard:
             runner = AsyncRunner(
                 instructions=kwargs.get("instructions", self.instructions),
                 prompt=self.prompt,
-                api=get_async_llm_ask(llm_api, openai_api_key=self.openai_api_key *args, **kwargs),
+                api=get_async_llm_ask(
+                    llm_api, openai_api_key=self.openai_api_key * args, **kwargs
+                ),
                 input_schema=self.input_schema,
                 output_schema=self.output_schema,
                 num_reasks=num_reasks,
@@ -326,7 +339,7 @@ class Guard:
                 num_reasks=num_reasks,
                 prompt_params=prompt_params,
                 *args,
-                **kwargs
+                **kwargs,
             )
 
         if num_reasks is None:
@@ -375,7 +388,11 @@ class Guard:
             runner = Runner(
                 instructions=None,
                 prompt=None,
-                api=get_llm_ask(llm_api, openai_api_key=self.openai_api_key, *args, **kwargs) if llm_api else None,
+                api=get_llm_ask(
+                    llm_api, openai_api_key=self.openai_api_key, *args, **kwargs
+                )
+                if llm_api
+                else None,
                 input_schema=None,
                 output_schema=self.output_schema,
                 num_reasks=num_reasks,
@@ -409,7 +426,11 @@ class Guard:
             runner = AsyncRunner(
                 instructions=None,
                 prompt=None,
-                api=get_async_llm_ask(llm_api, openai_api_key=self.openai_api_key, *args, **kwargs) if llm_api else None,
+                api=get_async_llm_ask(
+                    llm_api, openai_api_key=self.openai_api_key, *args, **kwargs
+                )
+                if llm_api
+                else None,
                 input_schema=None,
                 output_schema=self.output_schema,
                 num_reasks=num_reasks,
@@ -454,32 +475,47 @@ class Guard:
         validation_output: ValidationOutput = self._api_client.validate(
             guard=self,
             payload=ValidatePayload.from_dict(payload),
-            openai_api_key=self.openai_api_key
+            openai_api_key=self.openai_api_key,
         )
-    
-        session_history = validation_output.session_history if validation_output.session_history else []
+
+        session_history = (
+            validation_output.session_history
+            if validation_output.session_history
+            else []
+        )
         history: History
         for history in session_history:
-          history_events: List[HistoryEvent] = history.history
-          if history_events is None:
-              continue
+            history_events: List[HistoryEvent] = history.history
+            if history_events is None:
+                continue
 
-          history_logs = [GuardLogs(
-              instructions=h.instructions,
-              output=h.output,
-              parsed_output=h.parsed_output.to_dict(),
-              prompt=Prompt(h.prompt.source) if h.prompt.source is not None else None,
-              reasks=[ReAsk(
-                incorrect_value=r.to_dict().get("incorrect_value"),
-                error_message=r.to_dict().get("error_message"),
-                fix_value=r.to_dict().get("fix_value"),
-                path=r.to_dict().get("path")
-              ) for r in h.reasks],
-              validated_output=h.validated_output.to_dict()
-            ) for h in history_events]
-          self.guard_state = self.guard_state.push(GuardHistory(history=history_logs))
-        
+            history_logs = [
+                GuardLogs(
+                    instructions=h.instructions,
+                    output=h.output,
+                    parsed_output=h.parsed_output.to_dict(),
+                    prompt=Prompt(h.prompt.source)
+                    if h.prompt.source is not None
+                    else None,
+                    reasks=[
+                        ReAsk(
+                            incorrect_value=r.to_dict().get("incorrect_value"),
+                            error_message=r.to_dict().get("error_message"),
+                            fix_value=r.to_dict().get("fix_value"),
+                            path=r.to_dict().get("path"),
+                        )
+                        for r in h.reasks
+                    ],
+                    validated_output=h.validated_output.to_dict(),
+                )
+                for h in history_events
+            ]
+            self.guard_state = self.guard_state.push(GuardHistory(history=history_logs))
+
         if llm_output is not None:
             return validation_output.validated_output
         else:
-          return validation_output.raw_llm_response, validation_output.validated_output
+            return (
+                validation_output.raw_llm_response,
+                validation_output.validated_output,
+            )

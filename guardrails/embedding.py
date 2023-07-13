@@ -103,10 +103,14 @@ class OpenAIEmbedding(EmbeddingBase):
         model: Optional[str] = "text-embedding-ada-002",
         encoding_name: Optional[str] = "cl100k_base",
         max_tokens: Optional[int] = 8191,
-        openai_api_key: Optional[str] = None
+        openai_api_key: Optional[str] = None,
     ):
         super().__init__(model, encoding_name, max_tokens)
-        openai_api_key = openai_api_key if openai_api_key is not None else os.environ.get("OPENAI_API_KEY")
+        openai_api_key = (
+            openai_api_key
+            if openai_api_key is not None
+            else os.environ.get("OPENAI_API_KEY")
+        )
         self._model = model
         self.openai_api_key = openai_api_key
 
@@ -124,7 +128,9 @@ class OpenAIEmbedding(EmbeddingBase):
         return resp[0]
 
     def _get_embedding(self, texts: List[str]) -> List[float]:
-        resp = openai.Embedding.create(api_key=self.openai_api_key, model=self._model, input=texts)
+        resp = openai.Embedding.create(
+            api_key=self.openai_api_key, model=self._model, input=texts
+        )
         return [r["embedding"] for r in resp["data"]]
 
     @property
