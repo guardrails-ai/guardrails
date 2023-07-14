@@ -286,6 +286,11 @@ def create_xml_element_for_field(
         if field.field_info.description is not None:
             element.set("description", field.field_info.description)
 
+        # Add other attributes from the field_info
+        for key, value in field.field_info.extra.items():
+            if key not in ["validators", "description", "when"]:
+                element.set(key, value)
+
     # Create XML elements for the field's children
     if field_type in ["list", "object"]:
         type_annotation = prepare_type_annotation(field)
