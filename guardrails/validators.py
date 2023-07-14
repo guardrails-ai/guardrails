@@ -1092,12 +1092,12 @@ class ExtractedSummarySentencesMatch(Validator):
 
         from guardrails.document_store import EphemeralDocumentStore
 
-        if "vector_db" not in metadata:
+        if "vector_db" in metadata:
             vector_db = metadata["vector_db"]
         else:
             from guardrails.vectordb import Faiss
 
-            if "embedding_model" not in metadata:
+            if "embedding_model" in metadata:
                 embedding_model = metadata["embedding_model"]
             else:
                 from guardrails.embedding import OpenAIEmbedding
@@ -1120,10 +1120,12 @@ class ExtractedSummarySentencesMatch(Validator):
 
         store = self._instantiate_store(metadata)
 
+        sources = []
         for filepath in filepaths:
             with open(filepath) as f:
                 doc = f.read()
                 store.add_text(doc, {"path": filepath})
+                sources.append(filepath)
 
         # Split the value into sentences.
         sentences = re.split(r"(?<=[.!?]) +", value)
@@ -1135,17 +1137,20 @@ class ExtractedSummarySentencesMatch(Validator):
         citations = {}
         for id_, sentence in enumerate(sentences):
             page = store.search_with_threshold(sentence, self._threshold)
-            if not page:
+            if not page or page[0].metadata["path"] not in sources:
                 unverified.append(sentence)
             else:
-                citation_count = len(citations) + 1
-                verified.append(sentence + f" [{citation_count}] ")
-                citations[id_] = page[0].metadata["path"]
+                sentence_id = id_ + 1
+                citation_path = page[0].metadata["path"]
+                citation_id = sources.index(citation_path) + 1
+
+                citations[sentence_id] = citation_id
+                verified.append(sentence + f" [{citation_id}]")
 
         fixed_summary = (
             " ".join(verified)
             + "\n\n"
-            + "\n".join(f"[{i}] {c}" for i, c in citations.items())
+            + "\n".join(f"[{i + 1}] {s}" for i, s in enumerate(sources))
         )
         metadata["summary_with_citations"] = fixed_summary
         metadata["citations"] = citations
@@ -1268,14 +1273,16 @@ class ExtractiveSummary(Validator):
             if highest_ratio < self.threshold:
                 unverified.append(sentence)
             else:
-                citation_count = len(citations) + 1
-                verified.append(f"{sentence} [{citation_count}]")
-                citations[id_] = highest_ratio_doc
+                sentence_id = id_ + 1
+                citation_id = list(store).index(highest_ratio_doc) + 1
+
+                citations[sentence_id] = citation_id
+                verified.append(sentence + f" [{citation_id}]")
 
         verified_sentences = (
             " ".join(verified)
             + "\n\n"
-            + "\n".join(f"[{i}] {c}" for i, c in citations.items())
+            + "\n".join(f"[{i + 1}] {s}" for i, s in enumerate(store))
         )
 
         metadata["summary_with_citations"] = verified_sentences

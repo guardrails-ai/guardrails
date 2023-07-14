@@ -1,7 +1,10 @@
+# noqa:W291
 import pytest
 
 from guardrails.validators import (
     BugFreeSQL,
+    ExtractedSummarySentencesMatch,
+    ExtractiveSummary,
     FailResult,
     Filter,
     PassResult,
@@ -110,3 +113,43 @@ class TestBugFreeSQLValidator:
             "Columns [age] not in [name, address]",
             "Columns [age] not in [address, name]",
         )
+
+
+def test_summary_validators():
+    summary = "It was a nice day. I went to the park. I saw a dog."
+    metadata = {
+        "filepaths": [
+            "./tests/unit_tests/test_assets/article1.txt",
+            "./tests/unit_tests/test_assets/article2.txt",
+        ]
+    }
+
+    val = ExtractedSummarySentencesMatch()
+    result = val.validate(summary, metadata)
+    assert isinstance(result, PassResult)
+    assert "citations" in result.metadata
+    assert "summary_with_citations" in result.metadata
+    assert result.metadata["citations"] == {1: 2, 2: 1, 3: 1}
+    assert (
+        result.metadata["summary_with_citations"]
+        == """It was a nice day. [2]  I went to the park. [1]  I saw a dog. [1]
+
+[1] ./tests/unit_tests/test_assets/article1.txt
+[2] ./tests/unit_tests/test_assets/article2.txt"""
+    )
+
+    val = ExtractiveSummary(
+        threshold=30,
+    )
+    result = val.validate(summary, metadata)
+    assert isinstance(result, PassResult)
+    assert "citations" in result.metadata
+    assert "summary_with_citations" in result.metadata
+    assert result.metadata["citations"] == {1: 1, 2: 2, 3: 1}
+    assert (
+        result.metadata["summary_with_citations"]
+        == """It was a nice day. [1]  I went to the park. [2]  I saw a dog. [1]
+
+[1] ./tests/unit_tests/test_assets/article1.txt
+[2] ./tests/unit_tests/test_assets/article2.txt"""
+    )
