@@ -288,7 +288,7 @@ def create_xml_element_for_field(
 
         # Add other attributes from the field_info
         for key, value in field.field_info.extra.items():
-            if key not in ["validators", "description"]:
+            if key not in ["validators", "description", "when"]:
                 element.set(key, value)
 
     # Create XML elements for the field's children
