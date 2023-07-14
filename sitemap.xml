@@ -2,147 +2,152 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://getguardrails.ai/</loc>
-         <lastmod>2023-06-14</lastmod>
+         <lastmod>2023-07-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://getguardrails.ai/cli/</loc>
-         <lastmod>2023-06-14</lastmod>
+         <lastmod>2023-07-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://getguardrails.ai/data_types/</loc>
-         <lastmod>2023-06-14</lastmod>
+         <lastmod>2023-07-14</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://getguardrails.ai/faq/</loc>
+         <lastmod>2023-07-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://getguardrails.ai/getting_started/</loc>
-         <lastmod>2023-06-14</lastmod>
+         <lastmod>2023-07-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://getguardrails.ai/guard/</loc>
-         <lastmod>2023-06-14</lastmod>
+         <lastmod>2023-07-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://getguardrails.ai/llm_api_wrappers/</loc>
-         <lastmod>2023-06-14</lastmod>
+         <lastmod>2023-07-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://getguardrails.ai/logs/</loc>
-         <lastmod>2023-06-14</lastmod>
+         <lastmod>2023-07-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://getguardrails.ai/validation/</loc>
-         <lastmod>2023-06-14</lastmod>
+         <lastmod>2023-07-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://getguardrails.ai/examples/bug_free_python_code/</loc>
-         <lastmod>2023-06-14</lastmod>
+         <lastmod>2023-07-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://getguardrails.ai/examples/extracting_entities/</loc>
-         <lastmod>2023-06-14</lastmod>
+         <lastmod>2023-07-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://getguardrails.ai/examples/generate_structured_data/</loc>
-         <lastmod>2023-06-14</lastmod>
+         <lastmod>2023-07-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://getguardrails.ai/examples/guardrails_with_chat_models/</loc>
-         <lastmod>2023-06-14</lastmod>
+         <lastmod>2023-07-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://getguardrails.ai/examples/no_secrets_in_generated_text/</loc>
-         <lastmod>2023-06-14</lastmod>
+         <lastmod>2023-07-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://getguardrails.ai/examples/recipe_generation/</loc>
-         <lastmod>2023-06-14</lastmod>
+         <lastmod>2023-07-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://getguardrails.ai/examples/select_choice_based_on_action/</loc>
-         <lastmod>2023-06-14</lastmod>
+         <lastmod>2023-07-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://getguardrails.ai/examples/syntax_error_free_sql/</loc>
-         <lastmod>2023-06-14</lastmod>
+         <lastmod>2023-07-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://getguardrails.ai/examples/text_summarization_quality/</loc>
-         <lastmod>2023-06-14</lastmod>
+         <lastmod>2023-07-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://getguardrails.ai/examples/translation_to_specific_language/</loc>
-         <lastmod>2023-06-14</lastmod>
+         <lastmod>2023-07-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://getguardrails.ai/examples/translation_with_quality_check/</loc>
-         <lastmod>2023-06-14</lastmod>
+         <lastmod>2023-07-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://getguardrails.ai/examples/valid_chess_moves/</loc>
-         <lastmod>2023-06-14</lastmod>
+         <lastmod>2023-07-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://getguardrails.ai/integrations/langchain/</loc>
-         <lastmod>2023-06-14</lastmod>
+         <lastmod>2023-07-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://getguardrails.ai/integrations/openai_functions/</loc>
-         <lastmod>2023-06-14</lastmod>
+         <lastmod>2023-07-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://getguardrails.ai/integrations/pydantic_validation/</loc>
-         <lastmod>2023-06-14</lastmod>
+         <lastmod>2023-07-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://getguardrails.ai/rail/</loc>
-         <lastmod>2023-06-14</lastmod>
+         <lastmod>2023-07-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://getguardrails.ai/rail/instructions/</loc>
-         <lastmod>2023-06-14</lastmod>
+         <lastmod>2023-07-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://getguardrails.ai/rail/output/</loc>
-         <lastmod>2023-06-14</lastmod>
+         <lastmod>2023-07-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://getguardrails.ai/rail/prompt/</loc>
-         <lastmod>2023-06-14</lastmod>
+         <lastmod>2023-07-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://getguardrails.ai/rail/script/</loc>
-         <lastmod>2023-06-14</lastmod>
+         <lastmod>2023-07-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://getguardrails.ai/use_cases/text2sql/text2sql/</loc>
-         <lastmod>2023-06-14</lastmod>
+         <lastmod>2023-07-14</lastmod>
          <changefreq>daily</changefreq>
     </url>
 </urlset>
