@@ -230,7 +230,7 @@ class Time(ScalarType):
     def from_xml(cls, element: ET._Element, strict: bool = False) -> "DataType":
         datatype = super().from_xml(element, strict)
 
-        if "time-format" in element.attrib:
+        if "time-format" in element.attrib or "time_format" in element.attrib:
             datatype.date_format = element.attrib["time-format"]
 
         return datatype
