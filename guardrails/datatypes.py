@@ -199,7 +199,7 @@ class Date(ScalarType):
     def from_xml(cls, element: ET._Element, strict: bool = False) -> "DataType":
         datatype = super().from_xml(element, strict)
 
-        if "date-format" in element.attrib:
+        if "date-format" in element.attrib or "date_format" in element.attrib:
             datatype.date_format = element.attrib["date-format"]
 
         return datatype
