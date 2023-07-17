@@ -86,6 +86,7 @@ class DataType:
             )
             schema = validator.validate_with_correction(key, value, schema)
             if key in schema:
+                value = schema[key]
                 validator_logs.value_after_validation = schema[key]
                 logger.debug(
                     f"Validator {validator_class_name} finished, "
