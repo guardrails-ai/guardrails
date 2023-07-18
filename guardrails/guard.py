@@ -485,7 +485,7 @@ class Guard:
 
         session_history = (
             validation_output.session_history
-            if validation_output.session_history
+            if validation_output is not None and validation_output.session_history
             else []
         )
         history: History
