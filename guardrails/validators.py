@@ -15,7 +15,6 @@ import openai
 import pydantic
 from pydantic import BaseModel, ValidationError
 
-from guardrails.datatypes import registry as types_registry
 from guardrails.utils.docs_utils import sentence_split
 from guardrails.utils.reask_utils import FieldReAsk
 from guardrails.utils.sql_utils import SQLDriver, create_sql_driver
@@ -151,6 +150,7 @@ def filter_in_dict(schema: Dict) -> Dict:
 
 def register_validator(name: str, data_type: Union[str, List[str]]):
     """Register a validator for a data type."""
+    from guardrails.datatypes import registry as types_registry
 
     def decorator(cls: type):
         """Register a validator for a data type."""
@@ -470,7 +470,7 @@ class Choice(Validator):
         """Validate that a value is one of a set of choices."""
         logger.debug(f"Validating {value} is in {self._choices}...")
 
-        # This validator is only
+        # This validator is only invoked by the Choice datatype
         assert (
             "__schema" in metadata
         ), "Validator should only be invoked by Choice datatype"

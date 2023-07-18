@@ -24,6 +24,7 @@ from guardrails.utils.reask_utils import (
     get_pruned_tree,
     get_reasks_by_element,
 )
+from guardrails.validator_service import ValidatorService, FieldValidation
 from guardrails.validators import Validator, check_refrain_in_dict, filter_in_dict
 
 if TYPE_CHECKING:
@@ -506,6 +507,13 @@ class JsonSchema(Schema):
                 error_message="JSON does not match schema",
             )
 
+        validation = FieldValidation(
+            key="",
+            value=validated_response,
+            validators=[],
+            children=[],
+        )
+
         for field, value in validated_response.items():
             if field not in self:
                 # This is an extra field that is not in the schema.
@@ -516,19 +524,29 @@ class JsonSchema(Schema):
             logger.debug(f"Validating field {field} with value {value}.")
 
             validation_logs = FieldValidationLogs()
-            guard_logs.field_validation_logs[field] = validation_logs
 
-            validated_response = self[field].validate(
+            field_validation = self[field].validate(
                 validation_logs=validation_logs,
                 key=field,
                 value=value,
                 schema=validated_response,
                 metadata=metadata,
             )
+            validation.children.append(field_validation)
 
             logger.debug(
                 f"Validated field {field} with value {validated_response[field]}."
             )
+
+        validation_logs = FieldValidationLogs()
+
+        validator_service = ValidatorService()
+        validated_response, metadata = validator_service.validate(
+            value=data,
+            metadata=metadata,
+            validator_setup=validation,
+            validation_logs=validation_logs,
+        )
 
         if check_refrain_in_dict(validated_response):
             # If the data contains a `Refain` value, we return an empty
@@ -637,7 +655,7 @@ class StringSchema(Schema):
         validation_logs = FieldValidationLogs()
         guard_logs.field_validation_logs[self.string_key] = validation_logs
 
-        validated_response = self[self.string_key].validate(
+        validation = self[self.string_key].validate(
             validation_logs=validation_logs,
             key=self.string_key,
             value=data,
@@ -646,6 +664,19 @@ class StringSchema(Schema):
             },
             metadata=metadata,
         )
+
+        validation_logs = FieldValidationLogs()
+        validator_service = ValidatorService()
+        validated_response, metadata = validator_service.validate(
+            value=data,
+            metadata=metadata,
+            validator_setup=validation,
+            validation_logs=validation_logs,
+        )
+
+        validated_response = {
+            self.string_key: validated_response
+        }
 
         if check_refrain_in_dict(validated_response):
             # If the data contains a `Refain` value, we return an empty
