@@ -24,7 +24,7 @@ from guardrails.utils.reask_utils import (
     get_pruned_tree,
     get_reasks_by_element,
 )
-from guardrails.validator_service import ValidatorService, FieldValidation
+from guardrails.validator_service import FieldValidation, ValidatorService
 from guardrails.validators import Validator, check_refrain_in_dict, filter_in_dict
 
 if TYPE_CHECKING:
@@ -523,14 +523,10 @@ class JsonSchema(Schema):
 
             logger.debug(f"Validating field {field} with value {value}.")
 
-            validation_logs = FieldValidationLogs()
-
             field_validation = self[field].collect_validation(
-                validation_logs=validation_logs,
                 key=field,
                 value=value,
                 schema=validated_response,
-                metadata=metadata,
             )
             validation.children.append(field_validation)
 
@@ -539,6 +535,7 @@ class JsonSchema(Schema):
             )
 
         validation_logs = FieldValidationLogs()
+        guard_logs.field_validation_logs = validation_logs
 
         validator_service = ValidatorService()
         validated_response, metadata = validator_service.validate(
@@ -653,19 +650,16 @@ class StringSchema(Schema):
             raise TypeError(f"Argument `data` must be a string, not {type(data)}.")
 
         validation_logs = FieldValidationLogs()
-        guard_logs.field_validation_logs[self.string_key] = validation_logs
+        guard_logs.field_validation_logs = validation_logs
 
         validation = self[self.string_key].collect_validation(
-            validation_logs=validation_logs,
             key=self.string_key,
             value=data,
             schema={
                 self.string_key: data,
             },
-            metadata=metadata,
         )
 
-        validation_logs = FieldValidationLogs()
         validator_service = ValidatorService()
         validated_response, metadata = validator_service.validate(
             value=data,
@@ -674,9 +668,7 @@ class StringSchema(Schema):
             validation_logs=validation_logs,
         )
 
-        validated_response = {
-            self.string_key: validated_response
-        }
+        validated_response = {self.string_key: validated_response}
 
         if check_refrain_in_dict(validated_response):
             # If the data contains a `Refain` value, we return an empty

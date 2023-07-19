@@ -37,9 +37,7 @@ class GuardLogs:
     validated_output: Optional[dict] = None
     reasks: Optional[List[ReAsk]] = None
 
-    field_validation_logs: Dict[Union[int, str], FieldValidationLogs] = field(
-        default_factory=dict
-    )
+    field_validation_logs: Optional[FieldValidationLogs] = None
 
     _previous_logs: Optional["GuardLogs"] = None
 

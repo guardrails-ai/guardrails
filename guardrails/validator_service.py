@@ -1,10 +1,8 @@
 import logging
-from typing import Any, Callable, Tuple
-
-import pydantic
+from typing import Any, Tuple
 
 from guardrails.datatypes import FieldValidation
-from guardrails.utils.logs_utils import ValidatorLogs, FieldValidationLogs
+from guardrails.utils.logs_utils import FieldValidationLogs, ValidatorLogs
 
 logger = logging.getLogger(__name__)
 
@@ -20,11 +18,13 @@ class ValidatorService:
         # Validate children first
         for child_setup in validator_setup.children:
             child_schema = value[child_setup.key]
+            child_validation_logs = FieldValidationLogs()
+            validation_logs.children[child_setup.key] = child_validation_logs
             child_schema, metadata = self.validate(
                 child_schema,
                 metadata,
                 child_setup,
-                validation_logs,
+                child_validation_logs,
             )
             value[child_setup.key] = child_schema
 

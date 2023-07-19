@@ -9,8 +9,6 @@ import pydantic
 from lxml import etree as ET
 from pydantic import BaseModel
 
-from guardrails.utils.logs_utils import FieldValidationLogs, ValidatorLogs
-
 if TYPE_CHECKING:
     from guardrails.schema import FormatAttr
 
@@ -81,30 +79,22 @@ class DataType:
 
     def _constructor_validation(
         self,
-        validation_logs: FieldValidationLogs,
         key: str,
         value: Any,
-        schema: Dict,
-        metadata: Dict,
     ) -> FieldValidation:
         return FieldValidation(
-            key=key,
-            value=value,
-            validators=self.validators,
-            children=[]
+            key=key, value=value, validators=self.validators, children=[]
         )
 
     def collect_validation(
         self,
-        validation_logs: FieldValidationLogs,
         key: str,
         value: Any,
         schema: Dict,
-        metadata: Dict,
     ) -> FieldValidation:
         """Gather validators on a value."""
         value = self.from_str(value)
-        return self._constructor_validation(validation_logs, key, value, schema, metadata)
+        return self._constructor_validation(key, value)
 
     def set_children(self, element: ET._Element):
         raise NotImplementedError("Abstract method.")
@@ -298,15 +288,13 @@ class List(NonScalarType):
 
     def collect_validation(
         self,
-        validation_logs: FieldValidationLogs,
         key: str,
         value: Any,
         schema: Dict,
-        metadata: Dict,
     ) -> FieldValidation:
         # Validators in the main list data type are applied to the list overall.
 
-        validation = self._constructor_validation(validation_logs, key, value, schema, metadata)
+        validation = self._constructor_validation(key, value)
 
         if len(self._children) == 0:
             return validation
@@ -315,9 +303,7 @@ class List(NonScalarType):
 
         # TODO(shreya): Edge case: List of lists -- does this still work?
         for i, item in enumerate(value):
-            child_validation_logs = FieldValidationLogs()
-            validation_logs.children[i] = child_validation_logs
-            child_validation = item_type.collect_validation(child_validation_logs, i, item, value, metadata)
+            child_validation = item_type.collect_validation(i, item, value)
             validation.children.append(child_validation)
 
         return validation
@@ -339,15 +325,13 @@ class Object(NonScalarType):
 
     def collect_validation(
         self,
-        validation_logs: FieldValidationLogs,
         key: str,
         value: Any,
         schema: Dict,
-        metadata: Dict,
     ) -> FieldValidation:
         # Validators in the main object data type are applied to the object overall.
 
-        validation = self._constructor_validation(validation_logs, key, value, schema, metadata)
+        validation = self._constructor_validation(key, value)
 
         if len(self._children) == 0:
             return validation
@@ -365,10 +349,10 @@ class Object(NonScalarType):
             # child_key is an expected key that the schema defined
             # child_data_type is the data type of the expected key
             child_value = value.get(child_key, None)
-            child_validation_logs = FieldValidationLogs()
-            validation_logs.children[child_key] = child_validation_logs
             child_validation = child_data_type.collect_validation(
-                child_validation_logs, child_key, child_value, value, metadata
+                child_key,
+                child_value,
+                value,
             )
             validation.children.append(child_validation)
 
@@ -391,28 +375,18 @@ class Choice(NonScalarType):
 
     def collect_validation(
         self,
-        validation_logs: FieldValidationLogs,
         key: str,
         value: Any,
         schema: Dict,
-        metadata: Dict,
     ) -> FieldValidation:
-        # Until we refactor the discriminator into the choice object,
-        # we expose the schema to the choice validator via metadata
-        # choice_metadata = {
-        #     **metadata,
-        #     "__schema": schema,
-        # }
-
-        # Call the collect_validation method of the parent class
-        # validation = super().collect_validation(validation_logs, key, value, schema, choice_metadata)
-
         # Validate the selected choice
         selected_key = value
         selected_value = schema[selected_key]
 
         validation = self._children[selected_key].collect_validation(
-            validation_logs, selected_key, selected_value, schema, metadata
+            selected_key,
+            selected_value,
+            schema,
         )
 
         return validation
@@ -448,14 +422,12 @@ class Case(NonScalarType):
 
     def collect_validation(
         self,
-        validation_logs: FieldValidationLogs,
         key: str,
         value: Any,
         schema: Dict,
-        metadata: Dict,
     ) -> Dict:
         child = list(self._children.values())[0]
-        return child.collect_validation(validation_logs, key, value, schema, metadata)
+        return child.collect_validation(key, value, schema)
 
     def set_children(self, element: ET._Element):
         assert len(element) == 1, "Case must have exactly one child."

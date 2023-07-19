@@ -142,7 +142,7 @@ def test_entity_extraction_with_reask(mocker, rail, prompt):
     # For reask validator logs
     nested_validator_log = (
         guard_history[0]
-        .field_validation_logs["fees"]
+        .field_validation_logs.children["fees"]
         .children[1]
         .children["name"]
         .validator_logs[1]
