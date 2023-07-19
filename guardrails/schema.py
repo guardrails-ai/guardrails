@@ -16,6 +16,7 @@ from guardrails.llm_providers import PromptCallable, openai_chat_wrapper, openai
 from guardrails.prompt import Instructions, Prompt
 from guardrails.utils.constants import constants
 from guardrails.utils.json_utils import verify_schema_against_json
+from guardrails.utils.logs_utils import FieldValidationLogs, GuardLogs
 from guardrails.utils.reask_utils import (
     FieldReAsk,
     SkeletonReAsk,
@@ -311,7 +312,7 @@ class Schema:
         """
         raise NotImplementedError
 
-    def validate(self, data: Any) -> Any:
+    def validate(self, guard_logs: GuardLogs, data: Any) -> Any:
         """Validate a dictionary of data against the schema.
 
         Args:
@@ -473,6 +474,7 @@ class JsonSchema(Schema):
 
     def validate(
         self,
+        guard_logs: GuardLogs,
         data: Optional[Dict[str, Any]],
     ) -> Optional[Dict[str, Any]]:
         """Validate a dictionary of data against the schema.
@@ -510,10 +512,20 @@ class JsonSchema(Schema):
                 logger.debug(f"Field {field} not in schema.")
                 continue
 
+            logger.debug(f"Validating field {field} with value {value}.")
+
+            validation_logs = FieldValidationLogs()
+            guard_logs.field_validation_logs[field] = validation_logs
+
             validated_response = self[field].validate(
+                validation_logs=validation_logs,
                 key=field,
                 value=value,
                 schema=validated_response,
+            )
+
+            logger.debug(
+                f"Validated field {field} with value {validated_response[field]}."
             )
 
         if check_refrain_in_dict(validated_response):
@@ -602,6 +614,7 @@ class StringSchema(Schema):
 
     def validate(
         self,
+        guard_logs: GuardLogs,
         data: Any,
     ) -> Any:
         """Validate a dictionary of data against the schema.
@@ -618,7 +631,11 @@ class StringSchema(Schema):
         if not isinstance(data, str):
             raise TypeError(f"Argument `data` must be a string, not {type(data)}.")
 
+        validation_logs = FieldValidationLogs()
+        guard_logs.field_validation_logs[self.string_key] = validation_logs
+
         validated_response = self[self.string_key].validate(
+            validation_logs=validation_logs,
             key=self.string_key,
             value=data,
             schema={

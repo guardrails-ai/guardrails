@@ -211,9 +211,9 @@ class Guard:
                 num_reasks=num_reasks,
                 reask_prompt=self.reask_prompt,
                 base_model=self.base_model,
+                guard_state=self.guard_state,
             )
             guard_history = runner(prompt_params=prompt_params)
-            self.guard_state = self.guard_state.push(guard_history)
             return guard_history.output, guard_history.validated_output
 
     async def _call_async(
@@ -247,9 +247,9 @@ class Guard:
                 num_reasks=num_reasks,
                 reask_prompt=self.reask_prompt,
                 base_model=self.base_model,
+                guard_state=self.guard_state,
             )
             guard_history = await runner.async_run(prompt_params=prompt_params)
-            self.guard_state = self.guard_state.push(guard_history)
             return guard_history.output, guard_history.validated_output
 
     def __repr__(self):
@@ -327,9 +327,9 @@ class Guard:
                 output=llm_output,
                 reask_prompt=self.reask_prompt,
                 base_model=self.base_model,
+                guard_state=self.guard_state,
             )
             guard_history = runner(prompt_params=prompt_params)
-            self.guard_state = self.guard_state.push(guard_history)
             return sub_reasks_with_fixed_values(guard_history.validated_output)
 
     async def _async_parse(
@@ -362,7 +362,7 @@ class Guard:
                 output=llm_output,
                 reask_prompt=self.reask_prompt,
                 base_model=self.base_model,
+                guard_state=self.guard_state,
             )
             guard_history = await runner.async_run(prompt_params=prompt_params)
-            self.guard_state = self.guard_state.push(guard_history)
             return sub_reasks_with_fixed_values(guard_history.validated_output)
