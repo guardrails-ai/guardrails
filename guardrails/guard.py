@@ -246,6 +246,7 @@ class Guard:
                 output_schema=self.output_schema,
                 num_reasks=num_reasks,
                 reask_prompt=self.reask_prompt,
+                base_model=self.base_model,
                 guard_state=self.guard_state,
             )
             guard_history = await runner.async_run(prompt_params=prompt_params)
@@ -325,6 +326,7 @@ class Guard:
                 num_reasks=num_reasks,
                 output=llm_output,
                 reask_prompt=self.reask_prompt,
+                base_model=self.base_model,
                 guard_state=self.guard_state,
             )
             guard_history = runner(prompt_params=prompt_params)
@@ -359,6 +361,7 @@ class Guard:
                 num_reasks=num_reasks,
                 output=llm_output,
                 reask_prompt=self.reask_prompt,
+                base_model=self.base_model,
                 guard_state=self.guard_state,
             )
             guard_history = await runner.async_run(prompt_params=prompt_params)

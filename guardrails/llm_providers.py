@@ -128,7 +128,7 @@ def openai_chat_wrapper(
     api_key = os.environ.get("OPENAI_API_KEY")
 
     # TODO: update this as new models are released
-    if base_model and model in ["gpt-3.5-turbo-0613", "gpt-4-0613"]:
+    if base_model:
         openai_response = openai.ChatCompletion.create(
             api_key=api_key,
             model=model,
