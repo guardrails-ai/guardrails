@@ -79,7 +79,7 @@ class DataType:
         """
         return s
 
-    def _iterate_validators(
+    def _constructor_validation(
         self,
         validation_logs: FieldValidationLogs,
         key: str,
@@ -94,7 +94,7 @@ class DataType:
             children=[]
         )
 
-    def validate(
+    def collect_validation(
         self,
         validation_logs: FieldValidationLogs,
         key: str,
@@ -102,9 +102,9 @@ class DataType:
         schema: Dict,
         metadata: Dict,
     ) -> FieldValidation:
-        """Validate a value."""
+        """Gather validators on a value."""
         value = self.from_str(value)
-        return self._iterate_validators(validation_logs, key, value, schema, metadata)
+        return self._constructor_validation(validation_logs, key, value, schema, metadata)
 
     def set_children(self, element: ET._Element):
         raise NotImplementedError("Abstract method.")
@@ -296,7 +296,7 @@ class Percentage(ScalarType):
 class List(NonScalarType):
     """Element tag: `<list>`"""
 
-    def validate(
+    def collect_validation(
         self,
         validation_logs: FieldValidationLogs,
         key: str,
@@ -306,7 +306,7 @@ class List(NonScalarType):
     ) -> FieldValidation:
         # Validators in the main list data type are applied to the list overall.
 
-        validation = self._iterate_validators(validation_logs, key, value, schema, metadata)
+        validation = self._constructor_validation(validation_logs, key, value, schema, metadata)
 
         if len(self._children) == 0:
             return validation
@@ -317,7 +317,7 @@ class List(NonScalarType):
         for i, item in enumerate(value):
             child_validation_logs = FieldValidationLogs()
             validation_logs.children[i] = child_validation_logs
-            child_validation = item_type.validate(child_validation_logs, i, item, value, metadata)
+            child_validation = item_type.collect_validation(child_validation_logs, i, item, value, metadata)
             validation.children.append(child_validation)
 
         return validation
@@ -337,7 +337,7 @@ class List(NonScalarType):
 class Object(NonScalarType):
     """Element tag: `<object>`"""
 
-    def validate(
+    def collect_validation(
         self,
         validation_logs: FieldValidationLogs,
         key: str,
@@ -347,7 +347,7 @@ class Object(NonScalarType):
     ) -> FieldValidation:
         # Validators in the main object data type are applied to the object overall.
 
-        validation = self._iterate_validators(validation_logs, key, value, schema, metadata)
+        validation = self._constructor_validation(validation_logs, key, value, schema, metadata)
 
         if len(self._children) == 0:
             return validation
@@ -367,7 +367,7 @@ class Object(NonScalarType):
             child_value = value.get(child_key, None)
             child_validation_logs = FieldValidationLogs()
             validation_logs.children[child_key] = child_validation_logs
-            child_validation = child_data_type.validate(
+            child_validation = child_data_type.collect_validation(
                 child_validation_logs, child_key, child_value, value, metadata
             )
             validation.children.append(child_validation)
@@ -389,7 +389,7 @@ class Choice(NonScalarType):
     ) -> None:
         super().__init__(children, format_attr, element)
 
-    def validate(
+    def collect_validation(
         self,
         validation_logs: FieldValidationLogs,
         key: str,
@@ -404,14 +404,14 @@ class Choice(NonScalarType):
         #     "__schema": schema,
         # }
 
-        # Call the validate method of the parent class
-        # validation = super().validate(validation_logs, key, value, schema, choice_metadata)
+        # Call the collect_validation method of the parent class
+        # validation = super().collect_validation(validation_logs, key, value, schema, choice_metadata)
 
         # Validate the selected choice
         selected_key = value
         selected_value = schema[selected_key]
 
-        validation = self._children[selected_key].validate(
+        validation = self._children[selected_key].collect_validation(
             validation_logs, selected_key, selected_value, schema, metadata
         )
 
@@ -446,7 +446,7 @@ class Case(NonScalarType):
     ) -> None:
         super().__init__(children, format_attr, element)
 
-    def validate(
+    def collect_validation(
         self,
         validation_logs: FieldValidationLogs,
         key: str,
@@ -455,7 +455,7 @@ class Case(NonScalarType):
         metadata: Dict,
     ) -> Dict:
         child = list(self._children.values())[0]
-        return child.validate(validation_logs, key, value, schema, metadata)
+        return child.collect_validation(validation_logs, key, value, schema, metadata)
 
     def set_children(self, element: ET._Element):
         assert len(element) == 1, "Case must have exactly one child."

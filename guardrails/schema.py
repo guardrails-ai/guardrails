@@ -525,7 +525,7 @@ class JsonSchema(Schema):
 
             validation_logs = FieldValidationLogs()
 
-            field_validation = self[field].validate(
+            field_validation = self[field].collect_validation(
                 validation_logs=validation_logs,
                 key=field,
                 value=value,
@@ -655,7 +655,7 @@ class StringSchema(Schema):
         validation_logs = FieldValidationLogs()
         guard_logs.field_validation_logs[self.string_key] = validation_logs
 
-        validation = self[self.string_key].validate(
+        validation = self[self.string_key].collect_validation(
             validation_logs=validation_logs,
             key=self.string_key,
             value=data,
