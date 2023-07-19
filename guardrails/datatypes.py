@@ -400,15 +400,6 @@ class Choice(NonScalarType):
     @property
     def validators(self) -> TypedList:
         return []
-        # from guardrails.validators import Choice as ChoiceValidator
-        #
-        # # Check if the <choice ... /> element has an `on-fail` attribute.
-        # # If so, use that as the `on_fail` argument for the PydanticValidator.
-        # on_fail = None
-        # on_fail_attr_name = "on-fail-choice"
-        # if on_fail_attr_name in self.element.attrib:
-        #     on_fail = self.element.attrib[on_fail_attr_name]
-        # return [ChoiceValidator(choices=list(self._children.keys()), on_fail=on_fail)]
 
 
 @register_type("case")

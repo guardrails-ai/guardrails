@@ -448,63 +448,6 @@ class PydanticFieldValidator(Validator):
         return self.field_validator.__func__.__name__
 
 
-@register_validator(name="choice", data_type="choice")
-class Choice(Validator):
-    """Validate that a value is one of a set of choices.
-
-    - Name for `format` attribute: `choice`
-    - Supported data types: `string`
-    - Programmatic fix: Closest value within the set of choices.
-    """
-
-    def __init__(
-        self,
-        choices: List[str],
-        on_fail: Optional[Callable] = None,
-    ):
-        super().__init__(on_fail=on_fail, choices=choices)
-
-        self._choices = choices
-
-    def validate(self, value: Any, metadata: Dict) -> ValidationResult:
-        """Validate that a value is one of a set of choices."""
-        logger.debug(f"Validating {value} is in {self._choices}...")
-
-        # This validator is only invoked by the Choice datatype
-        assert (
-            "__schema" in metadata
-        ), "Validator should only be invoked by Choice datatype"
-        schema = metadata["__schema"]
-
-        if value not in self._choices:
-            return FailResult(
-                error_message=f"{value} is not in {self._choices}",
-                fix_value=None,
-            )
-
-        selected_choice = value
-        if selected_choice not in schema:
-            return FailResult(
-                error_message=f"{schema} must contain a key called {value}",
-                fix_value=None,
-            )
-
-        # Make sure that no other choice is selected.
-        for choice in self._choices:
-            if choice == selected_choice:
-                continue
-            if choice in schema:
-                return FailResult(
-                    error_message=(
-                        f"{schema} must not contain a key called {choice}, "
-                        f"since {selected_choice} is selected"
-                    ),
-                    fix_value=None,
-                )
-
-        return PassResult()
-
-
 @register_validator(name="valid-range", data_type=["integer", "float", "percentage"])
 class ValidRange(Validator):
     """Validate that a value is within a range.

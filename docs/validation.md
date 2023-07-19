@@ -11,4 +11,3 @@
             - "!validate"
             - "!register_validator"
             - "!__*"
-            - "!Choice"
