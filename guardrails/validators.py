@@ -9,10 +9,10 @@ import os
 import re
 from collections import defaultdict
 from copy import deepcopy
-from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Optional, Type, Union
+from typing import Any, Callable, Dict, List, Literal, Optional, Type, Union
 
 import openai
+import pydantic
 from pydantic import BaseModel, ValidationError
 
 from guardrails.datatypes import registry as types_registry
@@ -173,15 +173,20 @@ def register_validator(name: str, data_type: Union[str, List[str]]):
     return decorator
 
 
-@dataclass
-class EventDetail(BaseException):
-    """Event detail."""
+class ValidationResult(pydantic.BaseModel):
+    outcome: str
+    metadata: Optional[Dict[str, Any]] = None
 
-    key: str
-    value: Any
-    schema: Dict[str, Any]
+
+class PassResult(ValidationResult):
+    outcome: Literal["pass"] = "pass"
+
+
+class FailResult(ValidationResult):
+    outcome: Literal["fail"] = "fail"
+
     error_message: str
-    fix_value: Any
+    fix_value: Optional[Any] = None
 
 
 class Validator:
@@ -200,71 +205,78 @@ class Validator:
             self.rail_alias in validators_registry
         ), f"Validator {self.__class__.__name__} is not registered. "
 
-    def validate_with_correction(self, key, value, schema) -> Dict:
-        try:
-            return self.validate(key, value, schema)
-        except EventDetail as e:
-            logger.debug(
-                f"Validator {self.__class__.__name__} failed for {key} with error {e}."
-            )
-            return self.on_fail(e)
+    def validate_with_correction(self, value: Any, metadata: Dict) -> Any:
+        """Validate a value and return either:
 
-    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
-        """Validate a value."""
+        - the value
+        - a fixed value
+        - a reask object
+        - a refrain object
+        - a filter object
+        """
+        result = self.validate(value, metadata)
+        if result.metadata is None:
+            result.metadata = metadata
+
+        if isinstance(result, FailResult):
+            logger.debug(
+                f"Validator {self.__class__.__name__} failed for {value} "
+                f"with error {result.error_message}."
+            )
+            return self.on_fail(value, result)
+        return value
+
+    def validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
+        """Validate a value and return a validation result."""
         raise NotImplementedError
 
-    def fix(self, error: EventDetail) -> Dict:
+    def fix(self, value: Any, error: FailResult) -> Any:
         """Debug the incorrect value."""
-        error.schema[error.key] = error.fix_value
-        return error.schema
+        return error.fix_value
 
-    def reask(self, error: EventDetail) -> Dict:
+    def reask(self, value: Any, error: FailResult) -> Any:
         """Reask disambiguates the validation failure into a helpful error
         message."""
-
-        error.schema[error.key] = FieldReAsk(
-            incorrect_value=error.value,
+        return FieldReAsk(
+            incorrect_value=value,
             error_message=error.error_message,
             fix_value=error.fix_value,
         )
-        return error.schema
 
-    def filter(self, error: EventDetail) -> Dict:
+    def filter(self, value: Any, error: FailResult) -> Any:
         """If validation fails, filter the offending key from the schema."""
-        logger.debug(f"Filtering {error.key} from schema...")
+        # logger.debug(f"Filtering {error.key} from schema...")
+        return Filter()
 
-        error.schema[error.key] = Filter()
-
-        return error.schema
-
-    def refrain(self, error: EventDetail) -> Optional[Dict]:
+    def refrain(self, value: Any, error: FailResult) -> Any:
         """If validation fails, refrain from answering."""
-        logger.debug(f"Refusing to answer {error.key}...")
+        # logger.debug(f"Refusing to answer {error.key}...")
+        return Refrain()
 
-        error.schema[error.key] = Refrain()
-        return error.schema
-
-    def noop(self, error: EventDetail) -> Dict:
+    def noop(self, value: Any, error: FailResult) -> Any:
         """If validation fails, do nothing."""
-        logger.debug(
-            f"Validator {self.__class__.__name__} failed for {error.key}, "
-            "but doing nothing..."
-        )
+        # logger.debug(
+        #     f"Validator {self.__class__.__name__} failed for {error.key}, "
+        #     "but doing nothing..."
+        # )
+        return value
 
-        return error.schema
-
-    def exception(self, error: EventDetail) -> None:
+    def exception(self, value: Any, error: FailResult) -> None:
         """Raise an exception."""
         raise ValidatorError(error.error_message)
 
-    def fix_reask(self, error: EventDetail) -> Dict:
+    def fix_reask(self, value: Any, error: FailResult) -> Dict:
         """If validation fails, fix the value and reask."""
-        schema = self.fix(error)
+        fixed_value = self.fix(value, error)
 
-        try:
-            self.validate(error.key, error.fix_value, schema)
-        except EventDetail as e:
-            return self.reask(e)
+        result = self.validate(fixed_value, error.metadata)
+        if result.metadata is None:
+            result.metadata = error.metadata
+
+        if isinstance(result, FailResult):
+            return self.reask(fixed_value, result)
+
+        return fixed_value
 
     def to_prompt(self, with_keywords: bool = True) -> str:
         """Convert the validator to a prompt.
@@ -308,7 +320,7 @@ class Validator:
         return f"{self.rail_alias}: {params}"
 
     def __call__(self, v: Any) -> Any:
-        return self.validate("dummy_key", v, {"dummy_key": v})["dummy_key"]
+        return self.validate_with_correction(v, {})
 
 
 # @register_validator('required', 'all')
@@ -348,9 +360,7 @@ class Pydantic(Validator):
 
         self.model = model
 
-    def validate_with_correction(
-        self, key: str, value: Dict, schema: Union[Dict, List]
-    ) -> Dict:
+    def validate_with_correction(self, value: Dict, metadata: Dict) -> Any:
         """Validate an object using Pydantic.
 
         For example, consider the following data for a `Person` model
@@ -387,7 +397,7 @@ class Pydantic(Validator):
         """
         try:
             # Run the Pydantic model on the value.
-            schema[key] = self.model(**value)
+            return self.model(**value)
         except ValidationError as e:
             # Create a copy of the value so that we can modify it
             # to insert e.g. ReAsk objects.
@@ -398,21 +408,18 @@ class Pydantic(Validator):
                 ), "Pydantic validation errors should only have one location."
 
                 field_name = error["loc"][0]
-                event_detail = EventDetail(
-                    key=field_name,
-                    value=new_value[field_name],
-                    schema=new_value,
+                field_value = value[field_name]
+
+                fail_result = FailResult(
                     error_message=error["msg"],
                     fix_value=None,
                 )
                 # Call the on_fail method and reassign the value.
-                new_value = self.on_fail(event_detail)
+                new_value[field_name] = self.on_fail(field_value, fail_result)
 
             # Insert the new `value` dictionary into the schema.
             # This now contains e.g. ReAsk objects.
-            schema[key] = PydanticReAsk(new_value)
-
-        return schema
+            return PydanticReAsk(new_value)
 
 
 @register_validator(name="pydantic_field_validator", data_type="all")
@@ -426,17 +433,16 @@ class PydanticFieldValidator(Validator):
         self.field_validator = field_validator
         super().__init__(on_fail, **kwargs)
 
-    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
+    def validate_with_correction(self, value: Any, metadata: Dict) -> ValidationResult:
         try:
-            return self.field_validator(value)
+            validated_field = self.field_validator(value)
         except Exception as e:
-            raise EventDetail(
-                key=key,
-                value=value,
-                schema=schema,
+            result = FailResult(
                 error_message=str(e),
                 fix_value=None,
             )
+            return self.on_fail(value, result)
+        return validated_field
 
     def to_prompt(self, with_keywords: bool = True) -> str:
         return self.field_validator.__func__.__name__
@@ -460,25 +466,25 @@ class Choice(Validator):
 
         self._choices = choices
 
-    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
+    def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         """Validate that a value is one of a set of choices."""
         logger.debug(f"Validating {value} is in {self._choices}...")
 
+        # This validator is only
+        assert (
+            "__schema" in metadata
+        ), "Validator should only be invoked by Choice datatype"
+        schema = metadata["__schema"]
+
         if value not in self._choices:
-            raise EventDetail(
-                key=key,
-                value=value,
-                schema=schema,
+            return FailResult(
                 error_message=f"{value} is not in {self._choices}",
                 fix_value=None,
             )
 
         selected_choice = value
         if selected_choice not in schema:
-            raise EventDetail(
-                key=key,
-                value=value,
-                schema=schema,
+            return FailResult(
                 error_message=f"{schema} must contain a key called {value}",
                 fix_value=None,
             )
@@ -488,10 +494,7 @@ class Choice(Validator):
             if choice == selected_choice:
                 continue
             if choice in schema:
-                raise EventDetail(
-                    key=key,
-                    value=value,
-                    schema=schema,
+                return FailResult(
                     error_message=(
                         f"{schema} must not contain a key called {choice}, "
                         f"since {selected_choice} is selected"
@@ -499,7 +502,7 @@ class Choice(Validator):
                     fix_value=None,
                 )
 
-        return schema
+        return PassResult()
 
 
 @register_validator(name="valid-range", data_type=["integer", "float", "percentage"])
@@ -519,31 +522,25 @@ class ValidRange(Validator):
         self._min = min
         self._max = max
 
-    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
+    def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         """Validate that a value is within a range."""
         logger.debug(f"Validating {value} is in range {self._min} - {self._max}...")
 
         val_type = type(value)
 
         if self._min is not None and value < val_type(self._min):
-            raise EventDetail(
-                key,
-                value,
-                schema,
-                f"Value {value} is less than {self._min}.",
-                self._min,
+            return FailResult(
+                error_message=f"Value {value} is less than {self._min}.",
+                fix_value=self._min,
             )
 
         if self._max is not None and value > val_type(self._max):
-            raise EventDetail(
-                key,
-                value,
-                schema,
-                f"Value {value} is greater than {self._max}.",
-                self._max,
+            return FailResult(
+                error_message=f"Value {value} is greater than {self._max}.",
+                fix_value=self._max,
             )
 
-        return schema
+        return PassResult()
 
 
 @register_validator(name="valid-choices", data_type="all")
@@ -559,20 +556,16 @@ class ValidChoices(Validator):
         super().__init__(on_fail=on_fail, choices=choices)
         self._choices = choices
 
-    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
+    def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         """Validate that a value is within a range."""
         logger.debug(f"Validating {value} is in choices {self._choices}...")
 
         if value not in self._choices:
-            raise EventDetail(
-                key,
-                value,
-                schema,
-                f"Value {value} is not in choices {self._choices}.",
-                None,
+            return FailResult(
+                error_message=f"Value {value} is not in choices {self._choices}.",
             )
 
-        return schema
+        return PassResult()
 
 
 @register_validator(name="lower-case", data_type="string")
@@ -584,19 +577,16 @@ class LowerCase(Validator):
     - Programmatic fix: Manually convert to lower case.
     """
 
-    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
+    def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         logger.debug(f"Validating {value} is lower case...")
 
         if value.lower() != value:
-            raise EventDetail(
-                key,
-                value,
-                schema,
-                f"Value {value} is not lower case.",
-                value.lower(),
+            return FailResult(
+                error_message=f"Value {value} is not lower case.",
+                fix_value=value.lower(),
             )
 
-        return schema
+        return PassResult()
 
 
 @register_validator(name="upper-case", data_type="string")
@@ -608,19 +598,16 @@ class UpperCase(Validator):
     - Programmatic fix: Manually convert to upper case.
     """
 
-    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
+    def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         logger.debug(f"Validating {value} is upper case...")
 
         if value.upper() != value:
-            raise EventDetail(
-                key,
-                value,
-                schema,
-                f"Value {value} is not upper case.",
-                value.upper(),
+            return FailResult(
+                error_message=f"Value {value} is not upper case.",
+                fix_value=value.upper(),
             )
 
-        return schema
+        return PassResult()
 
 
 @register_validator(name="length", data_type=["string", "list"])
@@ -640,7 +627,7 @@ class ValidLength(Validator):
         self._min = int(min) if min is not None else None
         self._max = int(max) if max is not None else None
 
-    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
+    def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         """Validate that a value is within a range."""
         logger.debug(
             f"Validating {value} is in length range {self._min} - {self._max}..."
@@ -656,29 +643,23 @@ class ValidLength(Validator):
                 last_val = [value[-1]]
 
             corrected_value = value + last_val * (self._min - len(value))
-            raise EventDetail(
-                key,
-                value,
-                schema,
-                f"Value has length less than {self._min}. "
+            return FailResult(
+                error_message=f"Value has length less than {self._min}. "
                 f"Please return a longer output, "
                 f"that is shorter than {self._max} characters.",
-                corrected_value,
+                fix_value=corrected_value,
             )
 
         if self._max is not None and len(value) > self._max:
             logger.debug(f"Value {value} is greater than {self._max}.")
-            raise EventDetail(
-                key,
-                value,
-                schema,
-                f"Value has length greater than {self._max}. "
+            return FailResult(
+                error_message=f"Value has length greater than {self._max}. "
                 f"Please return a shorter output, "
                 f"that is shorter than {self._max} characters.",
-                value[: self._max],
+                fix_value=value[: self._max],
             )
 
-        return schema
+        return PassResult()
 
 
 @register_validator(name="two-words", data_type="string")
@@ -690,19 +671,16 @@ class TwoWords(Validator):
     - Programmatic fix: Pick the first two words.
     """
 
-    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
+    def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         logger.debug(f"Validating {value} is two words...")
 
         if len(value.split()) != 2:
-            raise EventDetail(
-                key,
-                value,
-                schema,
-                "must be exactly two words",
-                " ".join(value.split()[:2]),
+            return FailResult(
+                error_message="must be exactly two words",
+                fix_value=" ".join(value.split()[:2]),
             )
 
-        return schema
+        return PassResult()
 
 
 @register_validator(name="one-line", data_type="string")
@@ -714,19 +692,16 @@ class OneLine(Validator):
     - Programmatic fix: Pick the first line.
     """
 
-    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
+    def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         logger.debug(f"Validating {value} is a single line...")
 
         if len(value.splitlines()) > 1:
-            raise EventDetail(
-                key,
-                value,
-                schema,
-                f"Value {value} is not a single line.",
-                value.splitlines()[0],
+            return FailResult(
+                error_message=f"Value {value} is not a single line.",
+                fix_value=value.splitlines()[0],
             )
 
-        return schema
+        return PassResult()
 
 
 @register_validator(name="valid-url", data_type=["string", "url"])
@@ -738,7 +713,7 @@ class ValidURL(Validator):
     - Programmatic fix: None
     """
 
-    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
+    def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         logger.debug(f"Validating {value} is a valid URL...")
 
         from urllib.parse import urlparse
@@ -748,23 +723,15 @@ class ValidURL(Validator):
             result = urlparse(value)
             # Check that the URL has a scheme and network location
             if not result.scheme or not result.netloc:
-                raise EventDetail(
-                    key,
-                    value,
-                    schema,
-                    f"URL {value} is not valid.",
-                    None,
+                return FailResult(
+                    error_message=f"URL {value} is not valid.",
                 )
         except ValueError:
-            raise EventDetail(
-                key,
-                value,
-                schema,
-                f"URL {value} is not valid.",
-                None,
+            return FailResult(
+                error_message=f"URL {value} is not valid.",
             )
 
-        return schema
+        return PassResult()
 
 
 @register_validator(name="is-reachable", data_type=["string", "url"])
@@ -776,7 +743,7 @@ class EndpointIsReachable(Validator):
     - Programmatic fix: None
     """
 
-    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
+    def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         logger.debug(f"Validating {value} is a valid URL...")
 
         import requests
@@ -785,39 +752,25 @@ class EndpointIsReachable(Validator):
         try:
             response = requests.get(value)
             if response.status_code != 200:
-                raise EventDetail(
-                    key,
-                    value,
-                    schema,
-                    f"URL {value} returned status code {response.status_code}",
-                    None,
+                return FailResult(
+                    error_message=f"URL {value} returned "
+                    f"status code {response.status_code}",
                 )
         except requests.exceptions.ConnectionError:
-            raise EventDetail(
-                key,
-                value,
-                schema,
-                f"URL {value} could not be reached",
-                None,
+            return FailResult(
+                error_message=f"URL {value} could not be reached",
             )
         except requests.exceptions.InvalidSchema:
-            raise EventDetail(
-                key,
-                value,
-                schema,
-                f"URL {value} does not specify a valid connection adapter",
-                None,
+            return FailResult(
+                error_message=f"URL {value} does not specify "
+                f"a valid connection adapter",
             )
         except requests.exceptions.MissingSchema:
-            raise EventDetail(
-                key,
-                value,
-                schema,
-                f"URL {value} does not contain a http schema",
-                None,
+            return FailResult(
+                error_message=f"URL {value} does not contain " f"a http schema",
             )
 
-        return schema
+        return PassResult()
 
 
 @register_validator(name="bug-free-python", data_type="pythoncode")
@@ -833,22 +786,18 @@ class BugFreePython(Validator):
     - Programmatic fix: None
     """
 
-    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
+    def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         logger.debug(f"Validating {value} is not a bug...")
 
         # The value is a Python code snippet. We need to check for syntax errors.
         try:
             ast.parse(value)
         except SyntaxError as e:
-            raise EventDetail(
-                key,
-                value,
-                schema,
-                e,
-                None,
+            return FailResult(
+                error_message=f"Syntax error: {e.msg}",
             )
 
-        return schema
+        return PassResult()
 
 
 @register_validator(name="bug-free-sql", data_type="sql")
@@ -873,18 +822,14 @@ class BugFreeSQL(Validator):
         super().__init__(on_fail=on_fail)
         self._driver: SQLDriver = create_sql_driver(schema_file=schema_file, conn=conn)
 
-    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
+    def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         errors = self._driver.validate_sql(value)
         if len(errors) > 0:
-            raise EventDetail(
-                key,
-                value,
-                schema,
-                ". ".join(errors),
-                None,
+            return FailResult(
+                error_message=". ".join(errors),
             )
 
-        return schema
+        return PassResult()
 
 
 @register_validator(name="sql-column-presence", data_type="sql")
@@ -899,7 +844,7 @@ class SqlColumnPresence(Validator):
         super().__init__(on_fail=on_fail, cols=cols)
         self._cols = set(cols)
 
-    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
+    def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         from sqlglot import exp, parse
 
         expressions = parse(value)
@@ -910,15 +855,12 @@ class SqlColumnPresence(Validator):
 
         diff = cols.difference(self._cols)
         if len(diff) > 0:
-            raise EventDetail(
-                key,
-                value,
-                schema,
-                f"Columns [{', '.join(diff)}] not in [{', '.join(self._cols)}]",
-                None,
+            return FailResult(
+                error_message=f"Columns [{', '.join(diff)}] "
+                f"not in [{', '.join(self._cols)}]",
             )
 
-        return schema
+        return PassResult()
 
 
 @register_validator(name="exclude-sql-predicates", data_type="sql")
@@ -933,7 +875,7 @@ class ExcludeSqlPredicates(Validator):
         super().__init__(on_fail=on_fail, predicates=predicates)
         self._predicates = set(predicates)
 
-    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
+    def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         from sqlglot import exp, parse
 
         expressions = parse(value)
@@ -946,15 +888,12 @@ class ExcludeSqlPredicates(Validator):
                 except AttributeError:
                     raise ValueError(f"Predicate {pred} does not exist")
                 if len(list(expression.find_all(getattr(exp, pred)))):
-                    raise EventDetail(
-                        key,
-                        value,
-                        schema,
-                        f"SQL query contains predicate {pred}",
-                        "",
+                    return FailResult(
+                        error_message=f"SQL query contains predicate {pred}",
+                        fix_value="",
                     )
 
-        return schema
+        return PassResult()
 
 
 @register_validator(name="similar-to-document", data_type="string")
@@ -1005,7 +944,7 @@ class SimilarToDocument(Validator):
         """
         return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
 
-    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
+    def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         logger.debug(f"Validating {value} is similar to document...")
 
         value_embedding = np.array(
@@ -1019,15 +958,12 @@ class SimilarToDocument(Validator):
             value_embedding,
         )
         if similarity < self._threshold:
-            raise EventDetail(
-                key,
-                value,
-                schema,
-                f"Value {value} is not similar enough to document {self._document}.",
-                None,
+            return FailResult(
+                error_message=f"Value {value} is not similar enough "
+                f"to document {self._document}.",
             )
 
-        return schema
+        return PassResult()
 
     def to_prompt(self, with_keywords: bool = True) -> str:
         return ""
@@ -1045,7 +981,7 @@ class IsProfanityFree(Validator):
     - Programmatic fix: ""
     """
 
-    def validate(self, key, value, schema) -> Dict:
+    def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         try:
             from profanity_check import predict
         except ImportError:
@@ -1056,14 +992,12 @@ class IsProfanityFree(Validator):
 
         prediction = predict([value])
         if prediction[0] == 1:
-            raise EventDetail(
-                key,
-                value,
-                schema,
-                f"{value} contains profanity. Please return a profanity-free output.",
-                "",
+            return FailResult(
+                error_message=f"{value} contains profanity. "
+                f"Please return a profanity-free output.",
+                fix_value="",
             )
-        return schema
+        return PassResult()
 
 
 @register_validator(name="is-high-quality-translation", data_type="string")
@@ -1088,23 +1022,26 @@ class IsHighQualityTranslation(Validator):
                 "package. Please install it with `pip install inspiredco`."
             )
 
-    def validate(self, key, value, schema) -> Dict:
+    def validate(self, value: Any, metadata: Dict) -> ValidationResult:
+        if "translation_source" not in metadata:
+            raise RuntimeError(
+                "is-high-quality-translation validator expects "
+                "`translation_source` key in metadata"
+            )
+        src = metadata["translation_source"]
         prediction = self.critique.evaluate(
             metric="comet",
             config={"model": "unbabel_comet/wmt21-comet-qe-da"},
-            dataset=[{"source": key, "target": value}],
+            dataset=[{"source": src, "target": value}],
         )
         quality = prediction["examples"][0]["value"]
         if quality < -0.1:
-            raise EventDetail(
-                key,
-                value,
-                schema,
-                f"{value} is a low quality translation."
+            return FailResult(
+                error_message=f"{value} is a low quality translation."
                 "Please return a higher quality output.",
-                "",
+                fix_value="",
             )
-        return schema
+        return PassResult()
 
 
 @register_validator(name="ends-with", data_type="list")
@@ -1120,19 +1057,16 @@ class EndsWith(Validator):
         super().__init__(on_fail=on_fail, end=end)
         self._end = end
 
-    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
+    def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         logger.debug(f"Validating {value} ends with {self._end}...")
 
         if not value[-1] == self._end:
-            raise EventDetail(
-                key,
-                value,
-                schema,
-                f"{value} must end with {self._end}",
-                value + [self._end],
+            return FailResult(
+                error_message=f"{value} must end with {self._end}",
+                fix_value=value + [self._end],
             )
 
-        return schema
+        return PassResult()
 
 
 @register_validator(name="extracted-summary-sentences-match", data_type="string")
@@ -1142,45 +1076,57 @@ class ExtractedSummarySentencesMatch(Validator):
 
     def __init__(
         self,
-        documents_dir: str,
         threshold: float = 0.7,
-        embedding_model: Optional["EmbeddingBase"] = None,  # noqa: F821
-        vector_db: Optional["VectorDBBase"] = None,  # noqa: F821
-        document_store: Optional["DocumentStoreBase"] = None,  # noqa: F821
         on_fail: Optional[Callable] = None,
         **kwargs,
     ):
         super().__init__(on_fail, **kwargs)
         # TODO(shreya): Pass embedding_model, vector_db, document_store from spec
 
-        if document_store is None:
-            from guardrails.document_store import EphemeralDocumentStore
-
-            if vector_db is None:
-                from guardrails.vectordb import Faiss
-
-                if embedding_model is None:
-                    from guardrails.embedding import OpenAIEmbedding
-
-                    embedding_model = OpenAIEmbedding()
-
-                vector_db = Faiss.new_flat_ip_index(
-                    embedding_model.output_dim, embedder=embedding_model
-                )
-            self.store = EphemeralDocumentStore(vector_db)
-        else:
-            self.store = document_store
-
-        for doc_path in os.listdir(documents_dir):
-            with open(os.path.join(documents_dir, doc_path)) as f:
-                doc = f.read()
-                self.store.add_text(
-                    doc, {"path": os.path.join(documents_dir, doc_path)}
-                )
-
         self._threshold = float(threshold)
 
-    def validate(self, key, value, schema) -> Dict:
+    @staticmethod
+    def _instantiate_store(metadata):
+        if "document_store" in metadata:
+            return metadata["document_store"]
+
+        from guardrails.document_store import EphemeralDocumentStore
+
+        if "vector_db" in metadata:
+            vector_db = metadata["vector_db"]
+        else:
+            from guardrails.vectordb import Faiss
+
+            if "embedding_model" in metadata:
+                embedding_model = metadata["embedding_model"]
+            else:
+                from guardrails.embedding import OpenAIEmbedding
+
+                embedding_model = OpenAIEmbedding()
+
+            vector_db = Faiss.new_flat_ip_index(
+                embedding_model.output_dim, embedder=embedding_model
+            )
+
+        return EphemeralDocumentStore(vector_db)
+
+    def validate(self, value: Any, metadata: Dict) -> ValidationResult:
+        if "filepaths" not in metadata:
+            raise RuntimeError(
+                "extracted-sentences-summary-match validator expects "
+                "`filepaths` key in metadata"
+            )
+        filepaths = metadata["filepaths"]
+
+        store = self._instantiate_store(metadata)
+
+        sources = []
+        for filepath in filepaths:
+            with open(filepath) as f:
+                doc = f.read()
+                store.add_text(doc, {"path": filepath})
+                sources.append(filepath)
+
         # Split the value into sentences.
         sentences = re.split(r"(?<=[.!?]) +", value)
 
@@ -1188,33 +1134,39 @@ class ExtractedSummarySentencesMatch(Validator):
         # in the documents.
         unverified = []
         verified = []
-        citations = []
-        for sentence in sentences:
-            page = self.store.search_with_threshold(sentence, self._threshold)
-            if not page:
+        citations = {}
+        for id_, sentence in enumerate(sentences):
+            page = store.search_with_threshold(sentence, self._threshold)
+            if not page or page[0].metadata["path"] not in sources:
                 unverified.append(sentence)
             else:
-                citation_count = len(citations) + 1
-                verified.append(sentence + f" [{citation_count}] ")
-                citations.append(f"\n[{citation_count}] {page[0].metadata['path']}")
+                sentence_id = id_ + 1
+                citation_path = page[0].metadata["path"]
+                citation_id = sources.index(citation_path) + 1
 
-        fixed_summary = " ".join(verified) + "\n\n" + "".join(citations)
+                citations[sentence_id] = citation_id
+                verified.append(sentence + f" [{citation_id}]")
+
+        fixed_summary = (
+            " ".join(verified)
+            + "\n\n"
+            + "\n".join(f"[{i + 1}] {s}" for i, s in enumerate(sources))
+        )
+        metadata["summary_with_citations"] = fixed_summary
+        metadata["citations"] = citations
 
         if unverified:
             unverified_sentences = "\n".join(unverified)
-            raise EventDetail(
-                key,
-                value,
-                schema,
-                (
+            return FailResult(
+                metadata=metadata,
+                error_message=(
                     f"The summary \nSummary: {value}\n has sentences\n"
                     f"{unverified_sentences}\n that are not similar to any document."
                 ),
-                fixed_summary,
+                fix_value=fixed_summary,
             )
 
-        schema[key] = fixed_summary
-        return schema
+        return PassResult(metadata=metadata)
 
     def to_prompt(self, with_keywords: bool = True) -> str:
         return ""
@@ -1229,7 +1181,7 @@ class ReadingTime(Validator):
         super().__init__(on_fail=on_fail, max_time=reading_time)
         self._max_time = reading_time
 
-    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
+    def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         logger.debug(
             f"Validating {value} can be read in less than {self._max_time} seconds..."
         )
@@ -1240,15 +1192,13 @@ class ReadingTime(Validator):
 
         if abs(reading_time - self._max_time) > 1:
             logger.error(f"{value} took {reading_time} to read")
-            raise EventDetail(
-                key,
-                value,
-                schema,
-                f"String should be readable within {self._max_time} minutes.",
-                value,
+            return FailResult(
+                error_message=f"String should be readable "
+                f"within {self._max_time} minutes.",
+                fix_value=value,
             )
 
-        return schema
+        return PassResult()
 
 
 @register_validator(name="extractive-summary", data_type="string")
@@ -1266,7 +1216,6 @@ class ExtractiveSummary(Validator):
 
     def __init__(
         self,
-        documents_dir: str,
         threshold: int = 85,
         on_fail: Optional[Callable] = None,
         **kwargs,
@@ -1275,15 +1224,22 @@ class ExtractiveSummary(Validator):
 
         self.threshold = threshold
 
-        # Load documents
-        self._document_store = {}
-        for doc_path in os.listdir(documents_dir):
-            with open(os.path.join(documents_dir, doc_path)) as f:
-                doc = f.read()
-            self._document_store[doc_path] = sentence_split(doc)
-
-    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
+    def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         """Make sure each sentence was precisely copied from the document."""
+
+        if "filepaths" not in metadata:
+            raise RuntimeError(
+                "extractive-summary validator expects " "`filepaths` key in metadata"
+            )
+
+        filepaths = metadata["filepaths"]
+
+        # Load documents
+        store = {}
+        for filepath in filepaths:
+            with open(filepath) as f:
+                doc = f.read()
+            store[filepath] = sentence_split(doc)
 
         try:
             from thefuzz import fuzz
@@ -1300,14 +1256,14 @@ class ExtractiveSummary(Validator):
         # # in the documents.
         unverified = []
         verified = []
-        citations = []
+        citations = {}
 
-        for sentence in sentences:
+        for id_, sentence in enumerate(sentences):
             highest_ratio = 0
             highest_ratio_doc = None
 
             # Check fuzzy match against all sentences in all documents
-            for doc_path, doc_sentences in self._document_store.items():
+            for doc_path, doc_sentences in store.items():
                 for doc_sentence in doc_sentences:
                     ratio = fuzz.ratio(sentence, doc_sentence)
                     if ratio > highest_ratio:
@@ -1317,30 +1273,37 @@ class ExtractiveSummary(Validator):
             if highest_ratio < self.threshold:
                 unverified.append(sentence)
             else:
-                citation_count = len(citations) + 1
-                verified.append(f"{sentence} [{citation_count}]")
-                citations.append(f"[{citation_count}] {highest_ratio_doc}\n")
+                sentence_id = id_ + 1
+                citation_id = list(store).index(highest_ratio_doc) + 1
 
-        verified_sentences = " ".join(verified) + "\n\n" + "".join(citations)
+                citations[sentence_id] = citation_id
+                verified.append(sentence + f" [{citation_id}]")
+
+        verified_sentences = (
+            " ".join(verified)
+            + "\n\n"
+            + "\n".join(f"[{i + 1}] {s}" for i, s in enumerate(store))
+        )
+
+        metadata["summary_with_citations"] = verified_sentences
+        metadata["citations"] = citations
 
         if len(unverified):
             unverified_sentences = "\n".join(
                 "- " + s for i, s in enumerate(sentences) if i in unverified
             )
-            raise EventDetail(
-                key,
-                value,
-                schema,
-                (
+            return FailResult(
+                metadata=metadata,
+                error_message=(
                     f"The summary \nSummary: {value}\n has sentences\n"
                     f"{unverified_sentences}\n that are not similar to any document."
                 ),
-                verified_sentences,
+                fix_value="\n".join(verified_sentences),
             )
 
-        schema[key] = verified_sentences
-
-        return schema
+        return PassResult(
+            metadata=metadata,
+        )
 
 
 @register_validator(name="remove-redundant-sentences", data_type="string")
@@ -1358,7 +1321,7 @@ class RemoveRedundantSentences(Validator):
         super().__init__(on_fail, **kwargs)
         self.threshold = threshold
 
-    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
+    def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         """Remove redundant sentences from a string."""
 
         try:
@@ -1395,18 +1358,15 @@ class RemoveRedundantSentences(Validator):
 
         if len(redundant_sentences):
             redundant_sentences = "\n".join(redundant_sentences)
-            raise EventDetail(
-                key,
-                value,
-                schema,
-                (
+            return FailResult(
+                error_message=(
                     f"The summary \nSummary: {value}\n has sentences\n"
                     f"{redundant_sentences}\n that are similar to other sentences."
                 ),
-                filtered_summary,
+                fix_value=filtered_summary,
             )
 
-        return schema
+        return PassResult()
 
 
 @register_validator(name="saliency-check", data_type="string")
@@ -1493,7 +1453,7 @@ Make sure that topics are relevant to text, and topics are not too specific or g
         _, validated_output = guard(llm_api=self.llm_callable)
         return validated_output["topics"]
 
-    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
+    def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         topics_in_summary = self._get_topics(value, topics=self.topics)
 
         # Compute overlap between topics in document and summary
@@ -1501,18 +1461,15 @@ Make sure that topics are relevant to text, and topics are not too specific or g
         overlap = len(intersection) / len(self.topics)
 
         if overlap < self.threshold:
-            raise EventDetail(
-                key,
-                value,
-                schema,
-                (
+            return FailResult(
+                error_message=(
                     f"The summary \nSummary: {value}\n does not cover these topics:\n"
                     f"{set(self.topics).difference(intersection)}"
                 ),
-                "",
+                fix_value="",
             )
 
-        return schema
+        return PassResult()
 
 
 @register_validator(name="qa-relevance-llm-eval", data_type="string")
@@ -1557,20 +1514,23 @@ Relevant (as a JSON with a single boolean key, "relevant"):\
             temperature=0.1,
         )[1]
 
-    def validate(self, key, value, schema) -> Dict:
-        assert "question" in schema, "The schema must contain a `question` key."
+    def validate(self, value: Any, metadata: Dict) -> ValidationResult:
+        if "question" not in metadata:
+            raise RuntimeError(
+                "qa-relevance-llm-eval validator expects " "`question` key in metadata"
+            )
 
-        relevant = self.selfeval(schema["question"], value)["relevant"]
+        question = metadata["question"]
+
+        relevant = self.selfeval(question, value)["relevant"]
         if relevant:
-            return schema
+            return PassResult()
 
         fixed_answer = "No relevant answer found."
-        raise EventDetail(
-            key,
-            value,
-            schema,
-            f"The answer {value} is not relevant to the question {schema['question']}.",
-            fixed_answer,
+        return FailResult(
+            error_message=f"The answer {value} is not relevant "
+            f"to the question {question}.",
+            fix_value=fixed_answer,
         )
 
     def to_prompt(self, with_keywords: bool = True) -> str:

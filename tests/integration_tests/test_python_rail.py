@@ -9,7 +9,9 @@ from pydantic import BaseModel, Field, root_validator, validator
 import guardrails as gd
 from guardrails.utils.pydantic_utils import add_validator
 from guardrails.validators import (
-    EventDetail,
+    FailResult,
+    PassResult,
+    ValidationResult,
     Validator,
     ValidChoices,
     ValidLength,
@@ -22,7 +24,7 @@ from .test_assets import python_rail
 
 @register_validator(name="is-valid-director", data_type="string")
 class IsValidDirector(Validator):
-    def validate(self, key, value, schema) -> dict:
+    def validate(self, value, metadata) -> ValidationResult:
         valid_names = [
             "Christopher Nolan",
             "Steven Spielberg",
@@ -31,15 +33,11 @@ class IsValidDirector(Validator):
             "James Cameron",
         ]
         if value not in valid_names:
-            raise EventDetail(
-                key,
-                value,
-                schema,
-                f"Value {value} is not a valid director name. "
+            return FailResult(
+                error_message=f"Value {value} is not a valid director name. "
                 f"Valid choices are {valid_names}.",
-                None,
             )
-        return schema
+        return PassResult()
 
 
 def test_python_rail(mocker):

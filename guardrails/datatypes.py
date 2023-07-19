@@ -72,7 +72,12 @@ class DataType:
         return s
 
     def _iterate_validators(
-        self, validation_logs: FieldValidationLogs, key: str, value: Any, schema: Dict
+        self,
+        validation_logs: FieldValidationLogs,
+        key: str,
+        value: Any,
+        schema: Dict,
+        metadata: Dict,
     ) -> Dict:
         for validator in self.validators:
             validator_class_name = validator.__class__.__name__
@@ -84,27 +89,26 @@ class DataType:
             logger.debug(
                 f"Validating field {key} with validator {validator_class_name}..."
             )
-            schema = validator.validate_with_correction(key, value, schema)
-            if key in schema:
-                value = schema[key]
-                validator_logs.value_after_validation = schema[key]
-                logger.debug(
-                    f"Validator {validator_class_name} finished, "
-                    f"key {key} has value {schema[key]}."
-                )
-            else:
-                logger.debug(
-                    f"Validator {validator_class_name} finished, "
-                    f"key {key} is not present in schema."
-                )
+            value = validator.validate_with_correction(value, metadata)
+            validator_logs.value_after_validation = value
+            logger.debug(
+                f"Validator {validator_class_name} finished, "
+                f"key {key} has value {value}."
+            )
+            schema[key] = value
         return schema
 
     def validate(
-        self, validation_logs: FieldValidationLogs, key: str, value: Any, schema: Dict
+        self,
+        validation_logs: FieldValidationLogs,
+        key: str,
+        value: Any,
+        schema: Dict,
+        metadata: Dict,
     ) -> Dict:
         """Validate a value."""
         value = self.from_str(value)
-        return self._iterate_validators(validation_logs, key, value, schema)
+        return self._iterate_validators(validation_logs, key, value, schema, metadata)
 
     def set_children(self, element: ET._Element):
         raise NotImplementedError("Abstract method.")
@@ -297,11 +301,16 @@ class List(NonScalarType):
     """Element tag: `<list>`"""
 
     def validate(
-        self, validation_logs: FieldValidationLogs, key: str, value: Any, schema: Dict
+        self,
+        validation_logs: FieldValidationLogs,
+        key: str,
+        value: Any,
+        schema: Dict,
+        metadata: Dict,
     ) -> Dict:
         # Validators in the main list data type are applied to the list overall.
 
-        self._iterate_validators(validation_logs, key, value, schema)
+        self._iterate_validators(validation_logs, key, value, schema, metadata)
 
         if len(self._children) == 0:
             return schema
@@ -312,7 +321,7 @@ class List(NonScalarType):
         for i, item in enumerate(value):
             child_validation_logs = FieldValidationLogs()
             validation_logs.children[i] = child_validation_logs
-            value = item_type.validate(child_validation_logs, i, item, value)
+            value = item_type.validate(child_validation_logs, i, item, value, metadata)
 
         return schema
 
@@ -332,11 +341,16 @@ class Object(NonScalarType):
     """Element tag: `<object>`"""
 
     def validate(
-        self, validation_logs: FieldValidationLogs, key: str, value: Any, schema: Dict
+        self,
+        validation_logs: FieldValidationLogs,
+        key: str,
+        value: Any,
+        schema: Dict,
+        metadata: Dict,
     ) -> Dict:
         # Validators in the main object data type are applied to the object overall.
 
-        schema = self._iterate_validators(validation_logs, key, value, schema)
+        schema = self._iterate_validators(validation_logs, key, value, schema, metadata)
 
         if len(self._children) == 0:
             return schema
@@ -357,7 +371,7 @@ class Object(NonScalarType):
             child_validation_logs = FieldValidationLogs()
             validation_logs.children[child_key] = child_validation_logs
             value = child_data_type.validate(
-                child_validation_logs, child_key, child_value, value
+                child_validation_logs, child_key, child_value, value, metadata
             )
 
         schema[key] = value
@@ -380,17 +394,29 @@ class Choice(NonScalarType):
         super().__init__(children, format_attr, element)
 
     def validate(
-        self, validation_logs: FieldValidationLogs, key: str, value: Any, schema: Dict
+        self,
+        validation_logs: FieldValidationLogs,
+        key: str,
+        value: Any,
+        schema: Dict,
+        metadata: Dict,
     ) -> Dict:
+        # Until we refactor the discriminator into the choice object,
+        # we expose the schema to the choice validator via metadata
+        choice_metadata = {
+            **metadata,
+            "__schema": schema,
+        }
+
         # Call the validate method of the parent class
-        super().validate(validation_logs, key, value, schema)
+        super().validate(validation_logs, key, value, schema, choice_metadata)
 
         # Validate the selected choice
         selected_key = value
         selected_value = schema[selected_key]
 
         self._children[selected_key].validate(
-            validation_logs, selected_key, selected_value, schema
+            validation_logs, selected_key, selected_value, schema, metadata
         )
 
         schema[key] = value
@@ -425,11 +451,16 @@ class Case(NonScalarType):
         super().__init__(children, format_attr, element)
 
     def validate(
-        self, validation_logs: FieldValidationLogs, key: str, value: Any, schema: Dict
+        self,
+        validation_logs: FieldValidationLogs,
+        key: str,
+        value: Any,
+        schema: Dict,
+        metadata: Dict,
     ) -> Dict:
         child = list(self._children.values())[0]
 
-        child.validate(validation_logs, key, value, schema)
+        child.validate(validation_logs, key, value, schema, metadata)
 
         schema[key] = value
 
