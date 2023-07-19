@@ -14,6 +14,7 @@ from guardrails.validators import (
     check_refrain_in_dict,
     filter_in_dict,
 )
+from tests.unit_tests.mock_embeddings import mock_create_embedding
 
 
 @pytest.mark.parametrize(
@@ -115,7 +116,10 @@ class TestBugFreeSQLValidator:
         )
 
 
-def test_summary_validators():
+def test_summary_validators(mocker):
+    mocker.patch("openai.Embedding.create", new=mock_create_embedding)
+    mocker.patch("guardrails.embedding.OpenAIEmbedding.output_dim", new=2)
+
     summary = "It was a nice day. I went to the park. I saw a dog."
     metadata = {
         "filepaths": [
@@ -124,15 +128,15 @@ def test_summary_validators():
         ]
     }
 
-    val = ExtractedSummarySentencesMatch()
+    val = ExtractedSummarySentencesMatch(threshold=0.1)
     result = val.validate(summary, metadata)
     assert isinstance(result, PassResult)
     assert "citations" in result.metadata
     assert "summary_with_citations" in result.metadata
-    assert result.metadata["citations"] == {1: 2, 2: 1, 3: 1}
+    assert result.metadata["citations"] == {1: 1, 2: 1, 3: 1}
     assert (
         result.metadata["summary_with_citations"]
-        == """It was a nice day. [2]  I went to the park. [1]  I saw a dog. [1]
+        == """It was a nice day. [1] I went to the park. [1] I saw a dog. [1]
 
 [1] ./tests/unit_tests/test_assets/article1.txt
 [2] ./tests/unit_tests/test_assets/article2.txt"""
@@ -148,7 +152,7 @@ def test_summary_validators():
     assert result.metadata["citations"] == {1: 1, 2: 2, 3: 1}
     assert (
         result.metadata["summary_with_citations"]
-        == """It was a nice day. [1]  I went to the park. [2]  I saw a dog. [1]
+        == """It was a nice day. [1] I went to the park. [2] I saw a dog. [1]
 
 [1] ./tests/unit_tests/test_assets/article1.txt
 [2] ./tests/unit_tests/test_assets/article2.txt"""
