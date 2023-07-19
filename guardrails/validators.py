@@ -179,11 +179,11 @@ class ValidationResult(pydantic.BaseModel):
 
 
 class PassResult(ValidationResult):
-    outcome: Literal["success"] = "pass"
+    outcome: Literal["pass"] = "pass"
 
 
 class FailResult(ValidationResult):
-    outcome: Literal["error"] = "fail"
+    outcome: Literal["fail"] = "fail"
 
     error_message: str
     fix_value: Optional[Any] = None
