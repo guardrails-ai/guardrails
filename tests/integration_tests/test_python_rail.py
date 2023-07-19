@@ -1,3 +1,4 @@
+import datetime
 import json
 from datetime import date, time
 from typing import List, Optional
@@ -114,9 +115,7 @@ def test_python_rail(mocker):
     )
 
     # Assertions are made on the guard state object.
-    expected_gd_output = json.loads(
-        python_rail.LLM_OUTPUT_2_SUCCEED_GUARDRAILS_BUT_FAIL_PYDANTIC_VALIDATION
-    )
+    expected_gd_output = python_rail.VALIDATED_OUTPUT_2
     assert final_output == expected_gd_output
 
     guard_history = guard.guard_state.most_recent_call.history
@@ -235,9 +234,7 @@ def test_python_rail_add_validator(mocker):
     )
 
     # Assertions are made on the guard state object.
-    expected_gd_output = json.loads(
-        python_rail.LLM_OUTPUT_2_SUCCEED_GUARDRAILS_BUT_FAIL_PYDANTIC_VALIDATION
-    )
+    expected_gd_output = python_rail.VALIDATED_OUTPUT_2
     assert final_output == expected_gd_output
 
     guard_history = guard.guard_state.most_recent_call.history

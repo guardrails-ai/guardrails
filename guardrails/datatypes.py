@@ -95,7 +95,7 @@ class DataType:
                 f"Validator {validator_class_name} finished, "
                 f"key {key} has value {value}."
             )
-            schema[key] = value
+        schema[key] = value
         return schema
 
     def validate(

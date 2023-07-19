@@ -1,6 +1,8 @@
 # flake8: noqa: E501
 import os
 
+from tests.integration_tests.test_assets.python_rail.validated_output_2 import llm_2_out
+
 DATA_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)))
 reader = (
     lambda filename: open(os.path.join(DATA_DIR, filename)).read().replace("\r", "")
@@ -16,6 +18,7 @@ LLM_OUTPUT_1_FAIL_GUARDRAILS_VALIDATION = reader(
 LLM_OUTPUT_2_SUCCEED_GUARDRAILS_BUT_FAIL_PYDANTIC_VALIDATION = reader(
     "llm_output_2_succeed_gd_but_fail_pydantic_validation.txt"
 )
+VALIDATED_OUTPUT_2 = llm_2_out
 LLM_OUTPUT_3_SUCCEED_GUARDRAILS_AND_PYDANTIC = reader(
     "llm_output_3_succeed_gd_and_pydantic.txt"
 )

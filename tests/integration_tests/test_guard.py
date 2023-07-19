@@ -1,3 +1,4 @@
+import datetime
 from typing import Optional, Union
 
 import openai
@@ -77,8 +78,8 @@ def validated_output():
         "dummy_boolean": True,
         "dummy_email": "example@example.com",
         "dummy_url": "https://www.example.com",
-        "dummy_date": "2020-01-01",
-        "dummy_time": "12:00:00",
+        "dummy_date": datetime.date(2020, 1, 1),
+        "dummy_time": datetime.time(12, 0),
         "dummy_list": ["item1", "item2", "item3"],
         "dummy_object": {"key1": "value1", "key2": "value2"},
     }
