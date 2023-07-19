@@ -10,10 +10,19 @@ class ReAsk:
     incorrect_value: Any
     error_message: str
     fix_value: Any
+
+
+@dataclass
+class FieldReAsk(ReAsk):
     path: List[Any] = None
 
 
-def gather_reasks(validated_output: Dict) -> List[ReAsk]:
+@dataclass
+class SkeletonReAsk(ReAsk):
+    pass
+
+
+def gather_reasks(validated_output: Dict) -> List[FieldReAsk]:
     """Traverse output and gather all ReAsk objects.
 
     Args:
@@ -30,7 +39,7 @@ def gather_reasks(validated_output: Dict) -> List[ReAsk]:
     def _gather_reasks_in_dict(output: Dict, path: List[str] = []) -> None:
         is_pydantic = isinstance(output, PydanticReAsk)
         for field, value in output.items():
-            if isinstance(value, ReAsk):
+            if isinstance(value, FieldReAsk):
                 if is_pydantic:
                     value.path = path
                 else:
@@ -46,7 +55,7 @@ def gather_reasks(validated_output: Dict) -> List[ReAsk]:
 
     def _gather_reasks_in_list(output: List, path: List[str] = []) -> None:
         for idx, item in enumerate(output):
-            if isinstance(item, ReAsk):
+            if isinstance(item, FieldReAsk):
                 item.path = path + [idx]
                 reasks.append(item)
             elif isinstance(item, dict):
@@ -60,7 +69,7 @@ def gather_reasks(validated_output: Dict) -> List[ReAsk]:
 
 
 def get_reasks_by_element(
-    reasks: List[ReAsk],
+    reasks: List[FieldReAsk],
     parsed_rail: ET._Element,
 ) -> Dict[ET._Element, List[tuple]]:
     """Cluster reasks by the XML element they are associated with."""
@@ -163,7 +172,7 @@ def prune_obj_for_reasking(obj: Any) -> Union[None, Dict, List]:
     elif isinstance(obj, dict):
         pruned_json = {}
         for key, value in obj.items():
-            if isinstance(value, ReAsk) or isinstance(value, PydanticReAsk):
+            if isinstance(value, FieldReAsk) or isinstance(value, PydanticReAsk):
                 pruned_json[key] = value
             elif isinstance(value, dict):
                 pruned_output = prune_obj_for_reasking(value)
@@ -192,7 +201,7 @@ def reasks_to_dict(dict_with_reasks: Dict) -> Dict:
             return {key: _(value) for key, value in dict_object.items()}
         elif isinstance(dict_object, list):
             return [_(item) for item in dict_object]
-        elif isinstance(dict_object, ReAsk):
+        elif isinstance(dict_object, FieldReAsk):
             return dict_object.__dict__
         else:
             return dict_object
@@ -215,7 +224,7 @@ def sub_reasks_with_fixed_values(value: Any) -> Any:
     elif isinstance(value, dict):
         for dict_key, dict_value in value.items():
             value[dict_key] = sub_reasks_with_fixed_values(dict_value)
-    elif isinstance(value, ReAsk):
+    elif isinstance(value, FieldReAsk):
         value = value.fix_value
 
     return value

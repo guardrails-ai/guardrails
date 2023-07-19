@@ -17,7 +17,7 @@ from pydantic import BaseModel, ValidationError
 
 from guardrails.datatypes import registry as types_registry
 from guardrails.utils.docs_utils import sentence_split
-from guardrails.utils.reask_utils import ReAsk
+from guardrails.utils.reask_utils import FieldReAsk
 from guardrails.utils.sql_utils import SQLDriver, create_sql_driver
 
 try:
@@ -222,7 +222,7 @@ class Validator:
         """Reask disambiguates the validation failure into a helpful error
         message."""
 
-        error.schema[error.key] = ReAsk(
+        error.schema[error.key] = FieldReAsk(
             incorrect_value=error.value,
             error_message=error.error_message,
             fix_value=error.fix_value,
@@ -730,10 +730,48 @@ class OneLine(Validator):
 
 
 @register_validator(name="valid-url", data_type=["string", "url"])
-class ValidUrl(Validator):
+class ValidURL(Validator):
     """Validate that a value is a valid URL.
 
     - Name for `format` attribute: `valid-url`
+    - Supported data types: `string`, `url`
+    - Programmatic fix: None
+    """
+
+    def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
+        logger.debug(f"Validating {value} is a valid URL...")
+
+        from urllib.parse import urlparse
+
+        # Check that the URL is valid
+        try:
+            result = urlparse(value)
+            # Check that the URL has a scheme and network location
+            if not result.scheme or not result.netloc:
+                raise EventDetail(
+                    key,
+                    value,
+                    schema,
+                    f"URL {value} is not valid.",
+                    None,
+                )
+        except ValueError:
+            raise EventDetail(
+                key,
+                value,
+                schema,
+                f"URL {value} is not valid.",
+                None,
+            )
+
+        return schema
+
+
+@register_validator(name="is-reachable", data_type=["string", "url"])
+class EndpointIsReachable(Validator):
+    """Validate that a value is a reachable URL.
+
+    - Name for `format` attribute: `is-reachable`
     - Supported data types: `string`, `url`
     - Programmatic fix: None
     """

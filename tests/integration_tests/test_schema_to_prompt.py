@@ -43,5 +43,13 @@ Dummy prompt
 
     guard = Guard.from_rail_string(rail_spec)
     schema_2_prompt = guard.output_schema.transpile()
-    expected_schema_2_prompt = '<output>\n    <string name="action" choices="fight,flight"/>\n    <string name="fight" format="valid-choices: choices=[\'punch\', \'kick\', \'headbutt\']" description="fight_move" if="action==fight"/>\n    <object name="flight" description="flight" if="action==flight">\n        <string name="flight_direction" format="valid-choices: choices=[\'north\', \'south\', \'east\', \'west\']"/>\n        <integer name="flight_speed" format="valid-choices: choices=[1, 2, 3, 4]"/>\n    </object>\n</output>\n'
+    expected_schema_2_prompt = """<output>
+    <string name="action" choices="fight,flight"/>
+    <string name="fight" format="valid-choices: choices=['punch', 'kick', 'headbutt']" description="fight_move" if="action==fight"/>
+    <object name="flight" description="flight" if="action==flight">
+        <string name="flight_direction" format="valid-choices: choices=['north', 'south', 'east', 'west']"/>
+        <integer name="flight_speed" format="valid-choices: choices=[1, 2, 3, 4]"/>
+    </object>
+</output>
+"""
     assert schema_2_prompt == expected_schema_2_prompt

@@ -1,6 +1,6 @@
 from copy import deepcopy
-from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from dataclasses import dataclass, field
+from typing import Any, Dict, List, Optional, Union
 
 from rich.console import Group
 from rich.panel import Panel
@@ -12,13 +12,43 @@ from guardrails.utils.reask_utils import ReAsk, gather_reasks, prune_obj_for_rea
 
 
 @dataclass
+class ValidatorLogs:
+    """Logs for a single validator."""
+
+    validator_name: str
+    value_before_validation: Any
+    value_after_validation: Optional[Any] = None
+
+
+@dataclass
+class FieldValidationLogs:
+    """Logs for a single field."""
+
+    validator_logs: List[ValidatorLogs] = field(default_factory=list)
+    children: Dict[Union[int, str], "FieldValidationLogs"] = field(default_factory=dict)
+
+
+@dataclass
 class GuardLogs:
-    prompt: Prompt
-    instructions: Optional[str]
-    output: str
-    parsed_output: dict
-    validated_output: dict
-    reasks: List[ReAsk]
+    prompt: Optional[Prompt] = None
+    instructions: Optional[str] = None
+    output: Optional[str] = None
+    parsed_output: Optional[dict] = None
+    validated_output: Optional[dict] = None
+    reasks: Optional[List[ReAsk]] = None
+
+    field_validation_logs: Dict[Union[int, str], FieldValidationLogs] = field(
+        default_factory=dict
+    )
+
+    _previous_logs: Optional["GuardLogs"] = None
+
+    def set_validated_output(self, validated_output):
+        if self._previous_logs is not None:
+            validated_output = merge_reask_output(
+                self._previous_logs.validated_output, validated_output
+            )
+        self.validated_output = validated_output
 
     @property
     def failed_validations(self) -> List[ReAsk]:
@@ -64,12 +94,12 @@ class GuardLogs:
 class GuardHistory:
     history: List[GuardLogs]
 
-    def push(self, guard_log: GuardLogs) -> "GuardHistory":
+    def push(self, guard_log: GuardLogs) -> None:
         if len(self.history) > 0:
             last_log = self.history[-1]
-            guard_log.validated_output = merge_reask_output(last_log, guard_log)
+            guard_log._previous_logs = last_log
 
-        return GuardHistory(self.history + [guard_log])
+        self.history += [guard_log]
 
     @property
     def tree(self) -> Tree:
@@ -104,8 +134,8 @@ class GuardHistory:
 class GuardState:
     all_histories: List[GuardHistory]
 
-    def push(self, guard_history: GuardHistory) -> "GuardState":
-        return GuardState(self.all_histories + [guard_history])
+    def push(self, guard_history: GuardHistory) -> None:
+        self.all_histories += [guard_history]
 
     @property
     def most_recent_call(self) -> GuardHistory:
@@ -128,7 +158,7 @@ def update_response_by_path(output: dict, path: List[Any], value: Any) -> None:
     output[path[-1]] = value
 
 
-def merge_reask_output(prev_logs: GuardLogs, current_logs: GuardLogs) -> Dict:
+def merge_reask_output(previous_response, reask_response) -> Dict:
     """Merge the reask output into the original output.
 
     Args:
@@ -140,8 +170,6 @@ def merge_reask_output(prev_logs: GuardLogs, current_logs: GuardLogs) -> Dict:
     """
     from guardrails.validators import PydanticReAsk
 
-    previous_response = prev_logs.validated_output
-    reask_response = current_logs.validated_output
     if isinstance(previous_response, ReAsk):
         return reask_response
 
