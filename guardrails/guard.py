@@ -57,6 +57,7 @@ class Guard:
         openai_api_key: Optional[str] = None,
     ):
         """Initialize the Guard."""
+        print( "Initialize the Guard.")
         self.rail = rail
         self.num_reasks = num_reasks
         self.guard_state = GuardState([])

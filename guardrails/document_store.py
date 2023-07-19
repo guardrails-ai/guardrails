@@ -111,6 +111,7 @@ class EphemeralDocumentStore(DocumentStoreBase):
     local disk and use a ephemeral vector store like Faiss."""
 
     def __init__(self, vector_db: VectorDBBase, path: Optional[str] = None):
+        print('getting started!!!!!!')
         """Creates a new EphemeralDocumentStore.
 
         Args:

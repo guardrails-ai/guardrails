@@ -938,6 +938,7 @@ class SimilarToDocument(Validator):
         threshold: float = 0.7,
         model: str = "text-embedding-ada-002",
         on_fail: Optional[Callable] = None,
+        document_store: Optional["DocumentStoreBase"] = None,
     ):
         super().__init__(on_fail=on_fail)
         if not _HAS_NUMPY:
@@ -947,12 +948,13 @@ class SimilarToDocument(Validator):
             )
 
         self._document = document
-        embedding = openai.Embedding.create(input=[document], model=model)["data"][0][
-            "embedding"
-        ]
-        self._document_embedding = np.array(embedding)
         self._model = model
         self._threshold = float(threshold)
+        if document_store is None:
+            from guardrails.ingestion_service import IngestionServiceDocumentStore
+            self.store = IngestionServiceDocumentStore()
+        else:
+            self.store = document_store
 
     @staticmethod
     def cosine_similarity(a: "np.ndarray", b: "np.ndarray") -> float:
@@ -969,15 +971,12 @@ class SimilarToDocument(Validator):
 
     def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
         logger.debug(f"Validating {value} is similar to document...")
-
-        value_embedding = np.array(
-            openai.Embedding.create(input=[value], model=self._model)["data"][0][
-                "embedding"
-            ]
-        )
+        
+        document_embedding = self.store.add_text(self._document, {})['embeddings']
+        value_embedding = self.store.add_text(value, schema)['embeddings']
 
         similarity = SimilarToDocument.cosine_similarity(
-            self._document_embedding,
+            document_embedding,
             value_embedding,
         )
         if similarity < self._threshold:
@@ -992,6 +991,7 @@ class SimilarToDocument(Validator):
         return schema
 
     def to_prompt(self, with_keywords: bool = True) -> str:
+        print('to prompt')
         return ""
 
 
