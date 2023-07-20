@@ -14,6 +14,7 @@ class Prompt(BasePrompt):
         return isinstance(__value, Prompt) and self.source == __value.source
 
     def format(self, **kwargs):
+        super().format()
         """Format the prompt using the given keyword arguments."""
         # Only use the keyword arguments that are present in the prompt.
         vars = [x[1] for x in Formatter().parse(self.source) if x[1] is not None]

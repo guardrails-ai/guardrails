@@ -11,15 +11,10 @@ class BasePrompt:
 
     def __init__(self, source: str, output_schema: Optional[str] = None):
         self.format_instructions_start = self.get_format_instructions_idx(source)
-
-        # Substitute constants in the prompt.
-        source = self.substitute_constants(source)
-
-        # If an output schema is provided, substitute it in the prompt.
-        if output_schema:
-            self.source = source.format(output_schema=output_schema)
-        else:
-            self.source = source
+        self.source = source
+        # Store the original source
+        self._source = source
+        self._output_schema = output_schema
 
     def __repr__(self) -> str:
         # Truncate the prompt to 50 characters and add ellipsis if it's longer.
@@ -56,7 +51,18 @@ class BasePrompt:
         return self.variable_names
 
     def format(self, **kwargs):
-        raise NotImplementedError("Subclasses must implement this method.")
+        # We need to format on command rather than on instantiation,
+        # otherwise we end up with unescaped params.
+        # Now this will be called from the child classes during the prepare step.
+
+        # Substitute constants in the prompt.
+        source = self.substitute_constants(self._source)
+
+        # If an output schema is provided, substitute it in the prompt.
+        if self._output_schema:
+            self.source = source.format(output_schema=self._output_schema)
+        else:
+            self.source = source
 
     def make_vars_optional(self):
         """Make all variables in the prompt optional."""
