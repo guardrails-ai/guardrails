@@ -16,6 +16,7 @@ import openai
 from pydantic import BaseModel, ValidationError
 
 from guardrails.datatypes import registry as types_registry
+from guardrails.document_store import DocumentStoreBase
 from guardrails.utils.docs_utils import sentence_split
 from guardrails.utils.reask_utils import ReAsk
 from guardrails.utils.sql_utils import SQLDriver, create_sql_driver
@@ -187,7 +188,7 @@ class EventDetail(BaseException):
 class Validator:
     """Base class for validators."""
 
-    def __init__(self, on_fail: Optional[Callable] = None, **kwargs):
+    def __init__(self, document_store: DocumentStoreBase, on_fail: Optional[Callable] = None, **kwargs):
         if isinstance(on_fail, str):
             self.on_fail = getattr(self, on_fail, self.noop)
         else:
@@ -195,6 +196,7 @@ class Validator:
 
         # Store the kwargs for the validator.
         self._kwargs = kwargs
+        self._store = document_store
 
         assert (
             self.rail_alias in validators_registry
@@ -935,10 +937,10 @@ class SimilarToDocument(Validator):
     def __init__(
         self,
         document: str,
+        document_store: DocumentStoreBase,
         threshold: float = 0.7,
         model: str = "text-embedding-ada-002",
-        on_fail: Optional[Callable] = None,
-        document_store: Optional["DocumentStoreBase"] = None,
+        on_fail: Optional[Callable] = None
     ):
         super().__init__(on_fail=on_fail)
         if not _HAS_NUMPY:
@@ -950,11 +952,12 @@ class SimilarToDocument(Validator):
         self._document = document
         self._model = model
         self._threshold = float(threshold)
-        if document_store is None:
+        '''if document_store is None:
             from guardrails.ingestion_service import IngestionServiceDocumentStore
             self.store = IngestionServiceDocumentStore()
         else:
-            self.store = document_store
+            self.store = document_store '''
+        self.store = document_store
 
     @staticmethod
     def cosine_similarity(a: "np.ndarray", b: "np.ndarray") -> float:
@@ -1105,10 +1108,11 @@ class ExtractedSummarySentencesMatch(Validator):
     def __init__(
         self,
         documents_dir: str,
+        document_store: DocumentStoreBase,
         threshold: float = 0.7,
         embedding_model: Optional["EmbeddingBase"] = None,  # noqa: F821
         vector_db: Optional["VectorDBBase"] = None,  # noqa: F821
-        document_store: Optional["DocumentStoreBase"] = None,  # noqa: F821
+        
         on_fail: Optional[Callable] = None,
         **kwargs,
     ):

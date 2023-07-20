@@ -7,6 +7,8 @@ from typing import Tuple, Type, Union
 from lxml import etree as ET
 from pydantic import BaseModel
 
+from guardrails.document_store import DocumentStoreBase
+
 if TYPE_CHECKING:
     from guardrails.schema import FormatAttr
 
@@ -17,10 +19,12 @@ class DataType:
         children: Dict[str, Any],
         format_attr: "FormatAttr",
         element: ET._Element,
+        document_store: DocumentStoreBase
     ) -> None:
         self._children = children
         self.format_attr = format_attr
-        self.element = element
+        self.element = element, 
+        self.store = document_store
 
     @property
     def validators(self) -> TypedList:
@@ -86,7 +90,7 @@ class DataType:
         # but need to pass it to FormatAttr.from_element
         # how to handle this?
         format_attr = FormatAttr.from_element(element)
-        format_attr.get_validators(strict)
+        format_attr.get_validators(cls.store, strict)
 
         data_type = cls({}, format_attr, element)
         data_type.set_children(element)

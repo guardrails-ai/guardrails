@@ -17,6 +17,7 @@ from guard_rails_api_client.models import (
 from pydantic import BaseModel
 
 from guardrails.api import GuardrailsApiClient
+from guardrails.document_store import DocumentStoreBase, EphemeralDocumentStore
 from guardrails.llm_providers import (
     get_async_llm_ask,
     get_llm_api_enum,
@@ -70,8 +71,11 @@ class Guard:
             else os.environ.get("OPENAI_API_KEY")
         )
 
-        api_key = os.environ.get("GUARDRAILS_API_KEY")
+        
+        api_key = os.environ.get("GUARDRAILS_API_KEY") or 'test-token'
         if api_key is not None:
+            from guardrails.ingestion_service import IngestionServiceDocumentStore
+            document_store = IngestionServiceDocumentStore(api_key=api_key)
             if name is None:
                 self.name = "".join(
                     random.choices(string.ascii_uppercase + string.digits, k=12)
@@ -84,11 +88,20 @@ class Guard:
                 )
             self._api_client = GuardrailsApiClient(api_key=api_key)
             self.upsert_guard()
+        else:
+            document_store = EphemeralDocumentStore()
+
+        self.store = document_store
 
     @property
     def input_schema(self) -> Schema:
         """Return the input schema."""
         return self.rail.input_schema
+    
+    @property
+    def store(self) -> DocumentStoreBase:
+        """Return the document store."""
+        return self.store
 
     @property
     def output_schema(self) -> Schema:
@@ -164,7 +177,8 @@ class Guard:
         Returns:
             An instance of the `Guard` class.
         """
-        return cls(Rail.from_file(rail_file), num_reasks=num_reasks, name=name)
+
+        return cls(Rail.from_file(rail_file, cls.store), num_reasks=num_reasks, name=name)
 
     @classmethod
     def from_rail_string(
@@ -179,7 +193,7 @@ class Guard:
         Returns:
             An instance of the `Guard` class.
         """
-        return cls(Rail.from_string(rail_string), num_reasks=num_reasks, name=name)
+        return cls(Rail.from_string(rail_string, document_store=cls.store), num_reasks=num_reasks, name=name)
 
     @classmethod
     def from_pydantic(
@@ -192,7 +206,7 @@ class Guard:
     ) -> "Guard":
         """Create a Guard instance from a Pydantic model and prompt."""
         rail = Rail.from_pydantic(
-            output_class=output_class, prompt=prompt, instructions=instructions
+            output_class=output_class, prompt=prompt, instructions=instructions, document_store=cls.store
         )
         return cls(rail, num_reasks=num_reasks, base_model=output_class, name=name)
 
