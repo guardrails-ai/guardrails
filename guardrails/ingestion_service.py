@@ -19,7 +19,7 @@ class IngestionServiceDocumentStore(DocumentStoreBase):
         self.base_url = (
             base_url
             if base_url is not None
-            else 'http://localhost:5000' #os.environ.get("GUARDRAILS_BASE_URL", "http://localhost:5000")
+            else os.environ.get("GUARDRAILS_BASE_URL", "http://localhost:5000")
         )
         self.api_key = (
             api_key if api_key is not None else os.environ.get("GUARDRAILS_API_KEY")
@@ -30,8 +30,6 @@ class IngestionServiceDocumentStore(DocumentStoreBase):
             token=self.api_key,
             timeout=300,
         )
-
-        #self._client = AuthenticatedClient(base_url="http://localhost:5000", follow_redirects=True, token="test-token")
     
     def add_document(self, document: Document, openai_api_key: Optional[str] = None):
         openai_api_key = (

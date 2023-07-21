@@ -936,13 +936,13 @@ class SimilarToDocument(Validator):
 
     def __init__(
         self,
-        document: str,
         document_store: DocumentStoreBase,
+        document: str,
         threshold: float = 0.7,
         model: str = "text-embedding-ada-002",
-        on_fail: Optional[Callable] = None
+        on_fail: Optional[Callable] = None, 
     ):
-        super().__init__(on_fail=on_fail)
+        super().__init__(document_store, on_fail=on_fail)
         if not _HAS_NUMPY:
             raise ImportError(
                 f"The {self.__class__.__name__} validator requires the numpy package.\n"
@@ -952,12 +952,7 @@ class SimilarToDocument(Validator):
         self._document = document
         self._model = model
         self._threshold = float(threshold)
-        '''if document_store is None:
-            from guardrails.ingestion_service import IngestionServiceDocumentStore
-            self.store = IngestionServiceDocumentStore()
-        else:
-            self.store = document_store '''
-        self.store = document_store
+        self.document_store = document_store
 
     @staticmethod
     def cosine_similarity(a: "np.ndarray", b: "np.ndarray") -> float:
@@ -974,9 +969,9 @@ class SimilarToDocument(Validator):
 
     def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
         logger.debug(f"Validating {value} is similar to document...")
-        
-        document_embedding = self.store.add_text(self._document, {})['embeddings']
-        value_embedding = self.store.add_text(value, schema)['embeddings']
+
+        document_embedding = self.document_store.add_text(self._document, {})['embeddings']
+        value_embedding = self.document_store.add_text(value, schema)['embeddings']
 
         similarity = SimilarToDocument.cosine_similarity(
             document_embedding,
@@ -994,7 +989,6 @@ class SimilarToDocument(Validator):
         return schema
 
     def to_prompt(self, with_keywords: bool = True) -> str:
-        print('to prompt')
         return ""
 
 

@@ -18,13 +18,11 @@ class DataType:
         self,
         children: Dict[str, Any],
         format_attr: "FormatAttr",
-        element: ET._Element,
-        document_store: DocumentStoreBase
+        element: ET._Element
     ) -> None:
         self._children = children
         self.format_attr = format_attr
-        self.element = element, 
-        self.store = document_store
+        self.element = element
 
     @property
     def validators(self) -> TypedList:
@@ -83,14 +81,14 @@ class DataType:
         raise NotImplementedError("Abstract method.")
 
     @classmethod
-    def from_xml(cls, element: ET._Element, strict: bool = False) -> "DataType":
+    def from_xml(cls, element: ET._Element, document_store: DocumentStoreBase, strict: bool = False) -> "DataType":
         from guardrails.schema import FormatAttr
 
         # TODO: don't want to pass strict through to DataType,
         # but need to pass it to FormatAttr.from_element
         # how to handle this?
         format_attr = FormatAttr.from_element(element)
-        format_attr.get_validators(cls.store, strict)
+        format_attr.get_validators(document_store, strict)
 
         data_type = cls({}, format_attr, element)
         data_type.set_children(element)

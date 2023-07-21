@@ -224,7 +224,7 @@ class FormatAttr:
                 # beginning of a rail file.
 
             # Create the validator.
-            _validators.append(validator(*args, document_store=document_store, on_fail=on_fail))
+            _validators.append(validator(document_store, *args, on_fail=on_fail))
 
         self._validators = _validators
         self._unregistered_validators = _unregistered_validators
@@ -266,7 +266,7 @@ class Schema:
 
         self._schema = SimpleNamespace(**schema)
         self.root = root
-        self.store = document_store
+        self._store = document_store
 
         if root is not None:
             self.setup_schema(root)
@@ -421,8 +421,8 @@ class Schema:
 
 
 class JsonSchema(Schema):
-    '''def __init__(self, root: ET._Element, document_store: DocumentStoreBase) -> None:
-        super().__init__(document_store, root)'''
+    def __init__(self, root: ET._Element, document_store: DocumentStoreBase) -> None:
+        super().__init__(document_store, root=root)
 
     def get_reask_schema(
         self,
@@ -472,7 +472,7 @@ class JsonSchema(Schema):
             if isinstance(child, ET._Comment):
                 continue
             child_name = child.attrib["name"]
-            child_data = types_registry[child.tag].from_xml(child, strict=strict)
+            child_data = types_registry[child.tag].from_xml(child, self._store, strict=strict)
             self[child_name] = child_data
 
     def parse(self, output: str) -> Tuple[Dict, Optional[Exception]]:
@@ -574,10 +574,9 @@ class JsonSchema(Schema):
 
 
 class StringSchema(Schema):
-    print('hi')
     def __init__(self, root: ET._Element, document_store: DocumentStoreBase) -> None:
         self.string_key = "string"
-        super().__init__(document_store, root)
+        super().__init__(document_store, root=root)
 
     def setup_schema(self, root: ET._Element) -> None:
         if len(root) != 0:
