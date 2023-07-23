@@ -14,7 +14,7 @@ from guardrails.validators import (
     check_refrain_in_dict,
     filter_in_dict,
 )
-from tests.unit_tests.mock_embeddings import mock_create_embedding
+from .mock_embeddings import mock_create_embedding
 
 
 @pytest.mark.parametrize(
