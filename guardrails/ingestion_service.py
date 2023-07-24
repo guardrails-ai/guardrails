@@ -19,7 +19,7 @@ class IngestionServiceDocumentStore(DocumentStoreBase):
         self.base_url = (
             base_url
             if base_url is not None
-            else os.environ.get("GUARDRAILS_BASE_URL", "http://localhost:5000")
+            else os.environ.get("GUARDRAILS_BASE_URL", "http://localhost:5000") # TODO: switch the default from localhost to our hosted endpoint
         )
         self.api_key = (
             api_key if api_key is not None else os.environ.get("GUARDRAILS_API_KEY")
@@ -59,7 +59,7 @@ class IngestionServiceDocumentStore(DocumentStoreBase):
         toIngest = {
             'articles': [text], 
             'metadata': meta, 
-            'guardId': id
+            'guardId': id #TODO: pass in the actual guardId
         }
 
         ingested = ingest.sync(
