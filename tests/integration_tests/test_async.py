@@ -8,11 +8,16 @@ from .test_guard import *  # noqa: F403, F401
 
 
 @pytest.mark.asyncio
-async def test_entity_extraction_with_reask(mocker):
+@pytest.mark.parametrize("multiprocessing_validators", (True, False))
+async def test_entity_extraction_with_reask(mocker, multiprocessing_validators: bool):
     """Test that the entity extraction works with re-asking."""
     mocker.patch(
         "guardrails.llm_providers.async_openai_wrapper",
         new=async_openai_completion_create,
+    )
+    mocker.patch(
+        "guardrails.validators.Validator.run_in_separate_process",
+        new=multiprocessing_validators,
     )
 
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
