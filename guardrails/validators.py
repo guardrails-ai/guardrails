@@ -192,6 +192,8 @@ class FailResult(ValidationResult):
 class Validator:
     """Base class for validators."""
 
+    run_in_separate_process = False
+
     def __init__(self, on_fail: Optional[Callable] = None, **kwargs):
         if isinstance(on_fail, str):
             self.on_fail = getattr(self, on_fail, self.noop)
