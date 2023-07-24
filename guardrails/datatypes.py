@@ -1,4 +1,5 @@
 import datetime
+import logging
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, Dict, Generator
 from typing import List as TypedList
@@ -8,9 +9,12 @@ from lxml import etree as ET
 from pydantic import BaseModel
 
 from guardrails.document_store import DocumentStoreBase
+from guardrails.utils.logs_utils import FieldValidationLogs, ValidatorLogs
 
 if TYPE_CHECKING:
     from guardrails.schema import FormatAttr
+
+logger = logging.getLogger(__name__)
 
 
 class DataType:
@@ -68,14 +72,40 @@ class DataType:
         """
         return s
 
-    def validate(self, key: str, value: Any, schema: Dict) -> Dict:
+    def _iterate_validators(
+        self, validation_logs: FieldValidationLogs, key: str, value: Any, schema: Dict
+    ) -> Dict:
+        for validator in self.validators:
+            validator_class_name = validator.__class__.__name__
+            validator_logs = ValidatorLogs(
+                validator_name=validator_class_name,
+                value_before_validation=value,
+            )
+            validation_logs.validator_logs.append(validator_logs)
+            logger.debug(
+                f"Validating field {key} with validator {validator_class_name}..."
+            )
+            schema = validator.validate_with_correction(key, value, schema)
+            if key in schema:
+                value = schema[key]
+                validator_logs.value_after_validation = schema[key]
+                logger.debug(
+                    f"Validator {validator_class_name} finished, "
+                    f"key {key} has value {schema[key]}."
+                )
+            else:
+                logger.debug(
+                    f"Validator {validator_class_name} finished, "
+                    f"key {key} is not present in schema."
+                )
+        return schema
+
+    def validate(
+        self, validation_logs: FieldValidationLogs, key: str, value: Any, schema: Dict
+    ) -> Dict:
         """Validate a value."""
         value = self.from_str(value)
-
-        for validator in self.validators:
-            schema = validator.validate_with_correction(key, value, schema)
-
-        return schema
+        return self._iterate_validators(validation_logs, key, value, schema)
 
     def set_children(self, element: ET._Element):
         raise NotImplementedError("Abstract method.")
@@ -261,7 +291,7 @@ class Date(ScalarType):
     def from_xml(cls, element: ET._Element, strict: bool = False) -> "DataType":
         datatype = super().from_xml(element, strict)
 
-        if "date-format" in element.attrib:
+        if "date-format" in element.attrib or "date_format" in element.attrib:
             datatype.date_format = element.attrib["date-format"]
 
         return datatype
@@ -292,7 +322,7 @@ class Time(ScalarType):
     def from_xml(cls, element: ET._Element, strict: bool = False) -> "DataType":
         datatype = super().from_xml(element, strict)
 
-        if "time-format" in element.attrib:
+        if "time-format" in element.attrib or "time_format" in element.attrib:
             datatype.date_format = element.attrib["time-format"]
 
         return datatype
@@ -327,11 +357,12 @@ class Percentage(ScalarType):
 class List(NonScalarType):
     """Element tag: `<list>`"""
 
-    def validate(self, key: str, value: Any, schema: Dict) -> Dict:
+    def validate(
+        self, validation_logs: FieldValidationLogs, key: str, value: Any, schema: Dict
+    ) -> Dict:
         # Validators in the main list data type are applied to the list overall.
 
-        for validator in self.validators:
-            schema = validator.validate_with_correction(key, value, schema)
+        self._iterate_validators(validation_logs, key, value, schema)
 
         if len(self._children) == 0:
             return schema
@@ -340,7 +371,9 @@ class List(NonScalarType):
 
         # TODO(shreya): Edge case: List of lists -- does this still work?
         for i, item in enumerate(value):
-            value = item_type.validate(i, item, value)
+            child_validation_logs = FieldValidationLogs()
+            validation_logs.children[i] = child_validation_logs
+            value = item_type.validate(child_validation_logs, i, item, value)
 
         return schema
 
@@ -359,11 +392,12 @@ class List(NonScalarType):
 class Object(NonScalarType):
     """Element tag: `<object>`"""
 
-    def validate(self, key: str, value: Any, schema: Dict) -> Dict:
+    def validate(
+        self, validation_logs: FieldValidationLogs, key: str, value: Any, schema: Dict
+    ) -> Dict:
         # Validators in the main object data type are applied to the object overall.
 
-        for validator in self.validators:
-            schema = validator.validate_with_correction(key, value, schema)
+        schema = self._iterate_validators(validation_logs, key, value, schema)
 
         if len(self._children) == 0:
             return schema
@@ -380,8 +414,11 @@ class Object(NonScalarType):
             # Value should be a dictionary
             # child_key is an expected key that the schema defined
             # child_data_type is the data type of the expected key
+            child_value = value.get(child_key, None)
+            child_validation_logs = FieldValidationLogs()
+            validation_logs.children[child_key] = child_validation_logs
             value = child_data_type.validate(
-                child_key, value.get(child_key, None), value
+                child_validation_logs, child_key, child_value, value
             )
 
         schema[key] = value
@@ -403,15 +440,19 @@ class Choice(NonScalarType):
     ) -> None:
         super().__init__(children, format_attr, element)
 
-    def validate(self, key: str, value: Any, schema: Dict) -> Dict:
+    def validate(
+        self, validation_logs: FieldValidationLogs, key: str, value: Any, schema: Dict
+    ) -> Dict:
         # Call the validate method of the parent class
-        super().validate(key, value, schema)
+        super().validate(validation_logs, key, value, schema)
 
         # Validate the selected choice
         selected_key = value
         selected_value = schema[selected_key]
 
-        self._children[selected_key].validate(selected_key, selected_value, schema)
+        self._children[selected_key].validate(
+            validation_logs, selected_key, selected_value, schema
+        )
 
         schema[key] = value
         return schema
@@ -444,9 +485,12 @@ class Case(NonScalarType):
     ) -> None:
         super().__init__(children, format_attr, element)
 
-    def validate(self, key: str, value: Any, schema: Dict) -> Dict:
+    def validate(
+        self, validation_logs: FieldValidationLogs, key: str, value: Any, schema: Dict
+    ) -> Dict:
         child = list(self._children.values())[0]
-        child.validate(key, value, schema)
+
+        child.validate(validation_logs, key, value, schema)
 
         schema[key] = value
 

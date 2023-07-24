@@ -6,6 +6,7 @@ from pydantic import BaseModel
 
 import guardrails as gd
 from guardrails.guard import Guard
+from guardrails.utils.reask_utils import FieldReAsk
 
 from .mock_llm_outputs import (
     entity_extraction,
@@ -136,6 +137,22 @@ def test_entity_extraction_with_reask(mocker, rail, prompt):
     assert guard_history[0].output == entity_extraction.LLM_OUTPUT
     assert (
         guard_history[0].validated_output == entity_extraction.VALIDATED_OUTPUT_REASK_1
+    )
+
+    # For reask validator logs
+    nested_validator_log = (
+        guard_history[0]
+        .field_validation_logs["fees"]
+        .children[1]
+        .children["name"]
+        .validator_logs[1]
+    )
+    assert nested_validator_log.value_before_validation == "my chase plan"
+    assert nested_validator_log.value_after_validation == FieldReAsk(
+        incorrect_value="my chase plan",
+        fix_value="my chase",
+        error_message="must be exactly two words",
+        path=["fees", 1, "name"],
     )
 
     # For re-asked prompt and output
@@ -400,3 +417,46 @@ def test_string_reask(mocker):
     assert guard_history[1].prompt == gd.Prompt(string.COMPILED_PROMPT_REASK)
     assert guard_history[1].output == string.LLM_OUTPUT_REASK
     assert guard_history[1].validated_output == string.LLM_OUTPUT_REASK
+
+
+def test_skeleton_reask(mocker):
+    mocker.patch(
+        "guardrails.llm_providers.openai_wrapper", new=openai_completion_create
+    )
+
+    content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
+    guard = gd.Guard.from_rail_string(entity_extraction.RAIL_SPEC_WITH_SKELETON_REASK)
+    _, final_output = guard(
+        llm_api=openai.Completion.create,
+        prompt_params={"document": content[:6000]},
+        max_tokens=1000,
+        num_reasks=1,
+    )
+
+    # Assertions are made on the guard state object.
+    assert final_output == entity_extraction.VALIDATED_OUTPUT_SKELETON_REASK_2
+
+    guard_history = guard.guard_state.most_recent_call.history
+
+    # Check that the guard state object has the correct number of re-asks.
+    assert len(guard_history) == 2
+
+    # For orginal prompt and output
+    assert guard_history[0].prompt == gd.Prompt(
+        entity_extraction.COMPILED_PROMPT_SKELETON_REASK_1
+    )
+    assert guard_history[0].output == entity_extraction.LLM_OUTPUT_SKELETON_REASK_1
+    assert (
+        guard_history[0].validated_output
+        == entity_extraction.VALIDATED_OUTPUT_SKELETON_REASK_1
+    )
+
+    # For re-asked prompt and output
+    assert guard_history[1].prompt == gd.Prompt(
+        entity_extraction.COMPILED_PROMPT_SKELETON_REASK_2
+    )
+    assert guard_history[1].output == entity_extraction.LLM_OUTPUT_SKELETON_REASK_2
+    assert (
+        guard_history[1].validated_output
+        == entity_extraction.VALIDATED_OUTPUT_SKELETON_REASK_2
+    )

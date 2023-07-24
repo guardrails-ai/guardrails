@@ -271,9 +271,9 @@ class Guard:
                 num_reasks=num_reasks,
                 reask_prompt=self.reask_prompt,
                 base_model=self.base_model,
+                guard_state=self.guard_state,
             )
             guard_history = runner(prompt_params=prompt_params)
-            self.guard_state = self.guard_state.push(guard_history)
             return guard_history.output, guard_history.validated_output
 
     async def _call_async(
@@ -308,9 +308,10 @@ class Guard:
                 output_schema=self.output_schema,
                 num_reasks=num_reasks,
                 reask_prompt=self.reask_prompt,
+                base_model=self.base_model,
+                guard_state=self.guard_state,
             )
             guard_history = await runner.async_run(prompt_params=prompt_params)
-            self.guard_state = self.guard_state.push(guard_history)
             return guard_history.output, guard_history.validated_output
 
     def __repr__(self):
@@ -405,9 +406,10 @@ class Guard:
                 num_reasks=num_reasks,
                 output=llm_output,
                 reask_prompt=self.reask_prompt,
+                base_model=self.base_model,
+                guard_state=self.guard_state,
             )
             guard_history = runner(prompt_params=prompt_params)
-            self.guard_state = self.guard_state.push(guard_history)
             return sub_reasks_with_fixed_values(guard_history.validated_output)
 
     async def _async_parse(
@@ -443,9 +445,10 @@ class Guard:
                 num_reasks=num_reasks,
                 output=llm_output,
                 reask_prompt=self.reask_prompt,
+                base_model=self.base_model,
+                guard_state=self.guard_state,
             )
             guard_history = await runner.async_run(prompt_params=prompt_params)
-            self.guard_state = self.guard_state.push(guard_history)
             return sub_reasks_with_fixed_values(guard_history.validated_output)
 
     def _to_request(self) -> Dict:
@@ -487,7 +490,7 @@ class Guard:
 
         session_history = (
             validation_output.session_history
-            if validation_output.session_history
+            if validation_output is not None and validation_output.session_history
             else []
         )
         history: History

@@ -1,5 +1,5 @@
 # flake8: noqa: E501
-from guardrails.utils.reask_utils import ReAsk
+from guardrails.utils.reask_utils import FieldReAsk
 
 VALIDATED_OUTPUT_REASK_1 = {
     "fees": [
@@ -11,7 +11,7 @@ VALIDATED_OUTPUT_REASK_1 = {
         },
         {
             "index": 2,
-            "name": ReAsk(
+            "name": FieldReAsk(
                 incorrect_value="my chase plan",
                 error_message="must be exactly two words",
                 fix_value="my chase",
@@ -46,7 +46,7 @@ VALIDATED_OUTPUT_REASK_1 = {
         },
         {
             "index": 7,
-            "name": ReAsk(
+            "name": FieldReAsk(
                 incorrect_value="over-the-credit-limit",
                 error_message="must be exactly two words",
                 fix_value="over-the-credit-limit",
