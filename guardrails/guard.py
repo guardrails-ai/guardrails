@@ -137,9 +137,7 @@ class Guard:
             reask_prompt = Prompt(reask_prompt)
 
         # Check that the reask prompt has the correct variables
-        variables = [
-            t[1] for t in Formatter().parse(reask_prompt.source) if t[1] is not None
-        ]
+        variables = reask_prompt.variable_names
         assert set(variables) == {"previous_response", "output_schema"}
         self._reask_prompt = reask_prompt
 
@@ -300,7 +298,7 @@ class Guard:
                 instructions=kwargs.get("instructions", self.instructions),
                 prompt=self.prompt,
                 api=get_async_llm_ask(
-                    llm_api, openai_api_key=self.openai_api_key * args, **kwargs
+                    llm_api, openai_api_key=self.openai_api_key, *args, **kwargs
                 ),
                 input_schema=self.input_schema,
                 output_schema=self.output_schema,

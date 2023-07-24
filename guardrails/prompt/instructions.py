@@ -23,14 +23,14 @@ class Instructions(BasePrompt):
         return isinstance(__value, Instructions) and self.source == __value.source
 
     def format(self, **kwargs):
-        super().format()
         """Format the prompt using the given keyword arguments."""
         # Only use the keyword arguments that are present in the prompt.
-        vars = [x[1] for x in Formatter().parse(self.source) if x[1] is not None]
-        filtered_kwargs = {k: v for k, v in kwargs.items() if k in vars}
+        filtered_kwargs = {k: v for k, v in kwargs.items() if k in self.variable_names}
 
         # Return another instance of the class with the formatted prompt.
-        return Instructions(self.source.format(**filtered_kwargs))
+        # If the convention of double escaping prompt params changes, send filtered_kwarfs to super.format instead
+        formatted_source = super().format()
+        return Instructions(formatted_source.format(**filtered_kwargs), format_instructions_start=self.format_instructions_start)
 
     def _to_request(self) -> str:
         return self.source
