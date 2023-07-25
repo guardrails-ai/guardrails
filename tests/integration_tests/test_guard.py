@@ -109,10 +109,15 @@ def test_rail_spec_output_parse(rail_spec, llm_output, validated_output):
         (entity_extraction.PYDANTIC_RAIL_WITH_REASK, entity_extraction.PYDANTIC_PROMPT),
     ],
 )
-def test_entity_extraction_with_reask(mocker, rail, prompt):
+@pytest.mark.parametrize("multiprocessing_validators", (True, False))
+def test_entity_extraction_with_reask(mocker, rail, prompt, multiprocessing_validators):
     """Test that the entity extraction works with re-asking."""
     mocker.patch(
         "guardrails.llm_providers.openai_wrapper", new=openai_completion_create
+    )
+    mocker.patch(
+        "guardrails.validators.Validator.run_in_separate_process",
+        new=multiprocessing_validators,
     )
 
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
