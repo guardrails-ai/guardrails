@@ -25,10 +25,9 @@ from guardrails.utils.reask_utils import (
     get_reasks_by_element,
 )
 from guardrails.validator_service import (
-    AsyncValidatorService,
     FieldValidation,
-    ValidatorService,
 )
+from guardrails import validator_service
 from guardrails.validators import Validator, check_refrain_in_dict, filter_in_dict
 
 if TYPE_CHECKING:
@@ -554,7 +553,6 @@ class JsonSchema(Schema):
         validation_logs = FieldValidationLogs()
         guard_logs.field_validation_logs = validation_logs
 
-        validator_service = ValidatorService()
         validated_response, metadata = validator_service.validate(
             value=data,
             metadata=metadata,
@@ -637,7 +635,6 @@ class JsonSchema(Schema):
         validation_logs = FieldValidationLogs()
         guard_logs.field_validation_logs = validation_logs
 
-        validator_service = AsyncValidatorService()
         validated_response, metadata = await validator_service.async_validate(
             value=data,
             metadata=metadata,
@@ -760,7 +757,6 @@ class StringSchema(Schema):
             },
         )
 
-        validator_service = ValidatorService()
         validated_response, metadata = validator_service.validate(
             value=data,
             metadata=metadata,
@@ -814,7 +810,6 @@ class StringSchema(Schema):
             },
         )
 
-        validator_service = AsyncValidatorService()
         validated_response, metadata = await validator_service.async_validate(
             value=data,
             metadata=metadata,

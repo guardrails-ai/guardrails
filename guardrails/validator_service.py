@@ -10,7 +10,7 @@ from guardrails.utils.logs_utils import FieldValidationLogs, ValidatorLogs
 logger = logging.getLogger(__name__)
 
 
-class ValidatorService:
+class SequentialValidatorService:
     def run_validators(self, validation_logs, validator_setup, value, metadata):
         # Validate the field
         for validator in validator_setup.validators:
@@ -25,12 +25,12 @@ class ValidatorService:
                 f"with validator {validator_class_name}..."
             )
 
-            if validator.run_in_separate_process:
-                logger.warning(
-                    "Running validators in a separate processes "
-                    "is not supported in synchronously, "
-                    "try invoking `guard` asynchronously instead."
-                )
+            # if validator.run_in_separate_process:
+            #     logger.warning(
+            #         "Running validators in a separate processes "
+            #         "is not supported in synchronously, "
+            #         "try invoking `guard` asynchronously instead."
+            #     )
             value = validator.validate_with_correction(value, metadata)
 
             validator_logs.value_after_validation = value
@@ -192,3 +192,39 @@ class AsyncValidatorService(MultiprocMixin):
             )
         )
         return value, metadata
+
+
+def validate(
+    value: Any,
+    metadata: dict,
+    validator_setup: FieldValidation,
+    validation_logs: FieldValidationLogs,
+):
+    loop = asyncio.get_event_loop()
+    if loop.is_running():
+        logger.warning("Async event loop found, but guard was invoked synchronously."
+                       "For validator parallelization, please call `validate_async` instead.")
+        validator_service = SequentialValidatorService()
+    else:
+        validator_service = AsyncValidatorService()
+    return validator_service.validate(
+        value,
+        metadata,
+        validator_setup,
+        validation_logs,
+    )
+
+
+async def async_validate(
+    value: Any,
+    metadata: dict,
+    validator_setup: FieldValidation,
+    validation_logs: FieldValidationLogs,
+):
+    validator_service = AsyncValidatorService()
+    return await validator_service.async_validate(
+        value,
+        metadata,
+        validator_setup,
+        validation_logs,
+    )
