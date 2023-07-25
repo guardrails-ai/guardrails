@@ -136,4 +136,5 @@ def test_format_instructions():
 def test_substitute_constants(prompt_str, final_prompt):
     """Test substituting constants in a prompt."""
     prompt = gd.Prompt(prompt_str)
-    assert prompt.source == final_prompt
+    substituted_prompt = prompt.substitute_constants(prompt.source)
+    assert substituted_prompt == final_prompt

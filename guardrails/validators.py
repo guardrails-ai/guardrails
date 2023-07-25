@@ -149,7 +149,9 @@ def filter_in_dict(schema: Dict) -> Dict:
     return filtered_dict
 
 
-def register_validator(name: str, data_type: Union[str, List[str]]):
+def register_validator(
+    name: str, data_type: Union[str, List[str]], namespace: Optional[str] = None
+):
     """Register a validator for a data type."""
 
     def decorator(cls: type):
@@ -164,10 +166,23 @@ def register_validator(name: str, data_type: Union[str, List[str]]):
             if dt not in types_registry:
                 raise ValueError(f"Data type {dt} is not registered.")
 
-            types_to_validators[dt].append(name)
+            if namespace is not None:
+                namespace_entries = types_to_validators.get(namespace, {})
+                data_type_entries = namespace_entries.get(dt, [])
+                data_type_entries.append(name)
+                namespace_entries[dt] = data_type_entries
+                types_to_validators[namespace] = namespace_entries
+            else:
+                types_to_validators[dt].append(name)
 
-        validators_registry[name] = cls
+        if namespace is not None:
+            namespace_validators = validators_registry.get(namespace, {})
+            namespace_validators[name] = cls
+            validators_registry[namespace] = namespace_validators
+        else:
+            validators_registry[name] = cls
         cls.rail_alias = name
+        cls.namespace = namespace
         return cls
 
     return decorator
@@ -196,9 +211,15 @@ class Validator:
         # Store the kwargs for the validator.
         self._kwargs = kwargs
 
-        assert (
-            self.rail_alias in validators_registry
-        ), f"Validator {self.__class__.__name__} is not registered. "
+        if self.namespace is not None:
+            assert (
+                self.namespace in validators_registry
+                and self.rail_alias in validators_registry[self.namespace]
+            ), f"Validator {self.__class__.__name__} is not registered. "
+        else:
+            assert (
+                self.rail_alias in validators_registry
+            ), f"Validator {self.__class__.__name__} is not registered. "
 
     def validate_with_correction(self, key, value, schema) -> Dict:
         try:

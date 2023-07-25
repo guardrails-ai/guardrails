@@ -133,6 +133,8 @@ class DataType:
 
         if self.format_attr is not None:
             datatype["formatters"] = self.format_attr.tokens
+            if self.format_attr.namespaces is not None:
+                datatype["plugins"] = self.format_attr.namespaces
 
         if self.element is not None:
             element = {"type": self.element.tag}

@@ -27,8 +27,8 @@ from guardrails.prompt import Instructions, Prompt
 from guardrails.rail import Rail
 from guardrails.run import AsyncRunner, Runner
 from guardrails.schema import Schema
-from guardrails.utils.logs_utils import GuardHistory, GuardLogs, GuardState, ReAsk
-from guardrails.utils.reask_utils import sub_reasks_with_fixed_values
+from guardrails.utils.logs_utils import GuardHistory, GuardLogs, GuardState
+from guardrails.utils.reask_utils import FieldReAsk, sub_reasks_with_fixed_values
 
 logger = logging.getLogger(__name__)
 actions_logger = logging.getLogger(f"{__name__}.actions")
@@ -137,9 +137,7 @@ class Guard:
             reask_prompt = Prompt(reask_prompt)
 
         # Check that the reask prompt has the correct variables
-        variables = [
-            t[1] for t in Formatter().parse(reask_prompt.source) if t[1] is not None
-        ]
+        variables = reask_prompt.variable_names
         assert set(variables) == {"previous_response", "output_schema"}
         self._reask_prompt = reask_prompt
 
@@ -300,7 +298,7 @@ class Guard:
                 instructions=kwargs.get("instructions", self.instructions),
                 prompt=self.prompt,
                 api=get_async_llm_ask(
-                    llm_api, openai_api_key=self.openai_api_key * args, **kwargs
+                    llm_api, openai_api_key=self.openai_api_key, *args, **kwargs
                 ),
                 input_schema=self.input_schema,
                 output_schema=self.output_schema,
@@ -506,7 +504,7 @@ class Guard:
                     if h.prompt.source is not None
                     else None,
                     reasks=[
-                        ReAsk(
+                        FieldReAsk(
                             incorrect_value=r.to_dict().get("incorrect_value"),
                             error_message=r.to_dict().get("error_message"),
                             fix_value=r.to_dict().get("fix_value"),

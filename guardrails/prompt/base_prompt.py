@@ -9,17 +9,12 @@ from guardrails.utils.constants import constants
 class BasePrompt:
     """Base class for representing an LLM prompt."""
 
-    def __init__(self, source: str, output_schema: Optional[str] = None):
-        self.format_instructions_start = self.get_format_instructions_idx(source)
-
-        # Substitute constants in the prompt.
-        source = self.substitute_constants(source)
-
-        # If an output schema is provided, substitute it in the prompt.
-        if output_schema:
-            self.source = source.format(output_schema=output_schema)
-        else:
-            self.source = source
+    def __init__(self, source: str, output_schema: Optional[str] = None, format_instructions_start: Optional[int] = None):
+        self.format_instructions_start = self.get_format_instructions_idx(source) if format_instructions_start is None else format_instructions_start
+        self.source = source
+        # Store the original source
+        self._source = source
+        self._output_schema = output_schema
 
     def __repr__(self) -> str:
         # Truncate the prompt to 50 characters and add ellipsis if it's longer.
@@ -33,11 +28,16 @@ class BasePrompt:
 
     @property
     def variable_names(self):
-        return [x[1] for x in Formatter().parse(self.source) if x[1] is not None]
+        # This is now idempotent
+        formatted_source = BasePrompt(self._source, self._output_schema).format()
+        parsed_source = Formatter().parse(formatted_source)
+        return [x[1] for x in parsed_source if x[1] is not None]
 
     @property
     def format_instructions(self):
-        return self.source[self.format_instructions_start :]
+        # Now idempotent
+        hydrated_source = BasePrompt(self._source, self._output_schema).format()
+        return hydrated_source[self.format_instructions_start :]
 
     def substitute_constants(self, text):
         """Substitute constants in the prompt."""
@@ -55,8 +55,19 @@ class BasePrompt:
     def get_prompt_variables(self):
         return self.variable_names
 
-    def format(self, **kwargs):
-        raise NotImplementedError("Subclasses must implement this method.")
+    def format(self, **kwargs) -> str:
+        # We need to format on command rather than on instantiation,
+        # otherwise we end up with unescaped params.
+        # Now this will be called from the child classes during the prepare step.
+
+        # Substitute constants in the prompt.
+        source = self.substitute_constants(self._source)
+
+        # If an output schema is provided, substitute it in the prompt.
+        if self._output_schema is not None:
+            return source.format(output_schema=self._output_schema, **kwargs)
+        else:
+            return source
 
     def make_vars_optional(self):
         """Make all variables in the prompt optional."""
