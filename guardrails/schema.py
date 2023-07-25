@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 from lxml import etree as ET
 from lxml.builder import E
 
+from guardrails import validator_service
 from guardrails.datatypes import DataType, String
 from guardrails.llm_providers import PromptCallable, openai_chat_wrapper, openai_wrapper
 from guardrails.prompt import Instructions, Prompt
@@ -24,10 +25,7 @@ from guardrails.utils.reask_utils import (
     get_pruned_tree,
     get_reasks_by_element,
 )
-from guardrails.validator_service import (
-    FieldValidation,
-)
-from guardrails import validator_service
+from guardrails.validator_service import FieldValidation
 from guardrails.validators import Validator, check_refrain_in_dict, filter_in_dict
 
 if TYPE_CHECKING:

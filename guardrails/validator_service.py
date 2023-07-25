@@ -202,8 +202,10 @@ def validate(
 ):
     loop = asyncio.get_event_loop()
     if loop.is_running():
-        logger.warning("Async event loop found, but guard was invoked synchronously."
-                       "For validator parallelization, please call `validate_async` instead.")
+        logger.warning(
+            "Async event loop found, but guard was invoked synchronously."
+            "For validator parallelization, please call `validate_async` instead."
+        )
         validator_service = SequentialValidatorService()
     else:
         validator_service = AsyncValidatorService()
