@@ -7,7 +7,7 @@ from guardrails import Prompt
 from guardrails.schema import JsonSchema
 from guardrails.utils import reask_utils
 from guardrails.utils.reask_utils import (
-    ReAsk,
+    FieldReAsk,
     gather_reasks,
     sub_reasks_with_fixed_values,
 )
@@ -16,21 +16,21 @@ from guardrails.utils.reask_utils import (
 @pytest.mark.parametrize(
     "input_dict, expected_dict",
     [
-        ({"a": 1, "b": ReAsk(-1, "Error Msg", 1)}, {"a": 1, "b": 1}),
+        ({"a": 1, "b": FieldReAsk(-1, "Error Msg", 1)}, {"a": 1, "b": 1}),
         (
-            {"a": 1, "b": {"c": 2, "d": ReAsk(-1, "Error Msg", 2)}},
+            {"a": 1, "b": {"c": 2, "d": FieldReAsk(-1, "Error Msg", 2)}},
             {"a": 1, "b": {"c": 2, "d": 2}},
         ),
         (
-            {"a": [1, 2, ReAsk(-1, "Error Msg", 3)], "b": 4},
+            {"a": [1, 2, FieldReAsk(-1, "Error Msg", 3)], "b": 4},
             {"a": [1, 2, 3], "b": 4},
         ),
         (
-            {"a": [1, 2, {"c": ReAsk(-1, "Error Msg", 3)}]},
+            {"a": [1, 2, {"c": FieldReAsk(-1, "Error Msg", 3)}]},
             {"a": [1, 2, {"c": 3}]},
         ),
         (
-            {"a": [1, 2, [3, 4, ReAsk(-1, "Error Msg", 5)]]},
+            {"a": [1, 2, [3, 4, FieldReAsk(-1, "Error Msg", 5)]]},
             {"a": [1, 2, [3, 4, 5]]},
         ),
         ({"a": 1}, {"a": 1}),
@@ -45,18 +45,18 @@ def test_gather_reasks():
     """Test that reasks are gathered."""
     input_dict = {
         "a": 1,
-        "b": ReAsk("b0", "Error Msg", "b1", None),
-        "c": {"d": ReAsk("c0", "Error Msg", "c1", "None")},
-        "e": [1, 2, ReAsk("e0", "Error Msg", "e1", "None")],
-        "f": [1, 2, {"g": ReAsk("f0", "Error Msg", "f1", "None")}],
-        "h": [1, 2, [3, 4, ReAsk("h0", "Error Msg", "h1", "None")]],
+        "b": FieldReAsk("b0", "Error Msg", "b1", None),
+        "c": {"d": FieldReAsk("c0", "Error Msg", "c1", "None")},
+        "e": [1, 2, FieldReAsk("e0", "Error Msg", "e1", "None")],
+        "f": [1, 2, {"g": FieldReAsk("f0", "Error Msg", "f1", "None")}],
+        "h": [1, 2, [3, 4, FieldReAsk("h0", "Error Msg", "h1", "None")]],
     }
     expected_reasks = [
-        ReAsk("b0", "Error Msg", "b1", ["b"]),
-        ReAsk("c0", "Error Msg", "c1", ["c", "d"]),
-        ReAsk("e0", "Error Msg", "e1", ["e", 2]),
-        ReAsk("f0", "Error Msg", "f1", ["f", 2, "g"]),
-        ReAsk("h0", "Error Msg", "h1", ["h", 2, 2]),
+        FieldReAsk("b0", "Error Msg", "b1", ["b"]),
+        FieldReAsk("c0", "Error Msg", "c1", ["c", "d"]),
+        FieldReAsk("e0", "Error Msg", "e1", ["e", 2]),
+        FieldReAsk("f0", "Error Msg", "f1", ["f", 2, "g"]),
+        FieldReAsk("h0", "Error Msg", "h1", ["h", 2, 2]),
     ]
     assert gather_reasks(input_dict) == expected_reasks
 
@@ -65,27 +65,27 @@ def test_gather_reasks():
     "input_dict, expected_dict",
     [
         (
-            {"a": 1, "b": ReAsk(-1, "Error Msg", 1)},
-            {"b": ReAsk(-1, "Error Msg", 1)},
+            {"a": 1, "b": FieldReAsk(-1, "Error Msg", 1)},
+            {"b": FieldReAsk(-1, "Error Msg", 1)},
         ),
         (
-            {"a": 1, "b": {"c": 2, "d": ReAsk(-1, "Error Msg", 2)}},
-            {"b": {"d": ReAsk(-1, "Error Msg", 2)}},
+            {"a": 1, "b": {"c": 2, "d": FieldReAsk(-1, "Error Msg", 2)}},
+            {"b": {"d": FieldReAsk(-1, "Error Msg", 2)}},
         ),
         (
-            {"a": [1, 2, ReAsk(-1, "Error Msg", 3)], "b": 4},
+            {"a": [1, 2, FieldReAsk(-1, "Error Msg", 3)], "b": 4},
             {
                 "a": [
-                    ReAsk(-1, "Error Msg", 3),
+                    FieldReAsk(-1, "Error Msg", 3),
                 ]
             },
         ),
         (
-            {"a": [1, 2, {"c": ReAsk(-1, "Error Msg", 3)}]},
+            {"a": [1, 2, {"c": FieldReAsk(-1, "Error Msg", 3)}]},
             {
                 "a": [
                     {
-                        "c": ReAsk(-1, "Error Msg", 3),
+                        "c": FieldReAsk(-1, "Error Msg", 3),
                     }
                 ]
             },
@@ -107,7 +107,7 @@ def test_prune_json_for_reasking(input_dict, expected_dict):
     <string name="name" required="true"/>
 </output>
 """,
-            [reask_utils.ReAsk(-1, "Error Msg", "name", ["name"])],
+            [reask_utils.FieldReAsk(-1, "Error Msg", "name", ["name"])],
             {
                 "name": {
                     "incorrect_value": -1,
@@ -124,8 +124,8 @@ def test_prune_json_for_reasking(input_dict, expected_dict):
 </output>
 """,
             [
-                reask_utils.ReAsk(-1, "Error Msg", "name", ["name"]),
-                reask_utils.ReAsk(-1, "Error Msg", "age", ["age"]),
+                reask_utils.FieldReAsk(-1, "Error Msg", "name", ["name"]),
+                reask_utils.FieldReAsk(-1, "Error Msg", "age", ["age"]),
             ],
             {
                 "name": {
@@ -162,8 +162,9 @@ Here are examples of simple (XML, JSON) pairs that show the expected behavior:
 - `<object name='baz'><string name="foo" format="capitalize two-words" /><integer name="index" format="1-indexed" /></object>` => `{{'baz': {{'foo': 'Some String', 'index': 1}}}}`
 """  # noqa: E501
     output_schema = JsonSchema(ET.fromstring(example_rail))
-    reask_schema = output_schema.get_reask_schema(reasks)
-    result_prompt = reask_schema.get_reask_prompt(reask_json)
+    reask_schema, result_prompt = output_schema.get_reask_schema_and_prompt(
+        reasks, reask_json
+    )
 
     assert result_prompt == Prompt(
         expected_result_template

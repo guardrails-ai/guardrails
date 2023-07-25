@@ -17,6 +17,8 @@ from .validated_output_noop import VALIDATED_OUTPUT_NOOP
 from .validated_output_reask_1 import VALIDATED_OUTPUT_REASK_1
 from .validated_output_reask_2 import VALIDATED_OUTPUT_REASK_2
 from .validated_output_refrain import VALIDATED_OUTPUT_REFRAIN
+from .validated_output_skeleton_reask_1 import VALIDATED_OUTPUT_SKELETON_REASK_1
+from .validated_output_skeleton_reask_2 import VALIDATED_OUTPUT_SKELETON_REASK_2
 
 DATA_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)))
 reader = (
@@ -29,14 +31,19 @@ COMPILED_PROMPT_WITHOUT_INSTRUCTIONS = reader(
     "compiled_prompt_without_instructions.txt"
 )
 COMPILED_INSTRUCTIONS = reader("compiled_instructions.txt")
+COMPILED_PROMPT_SKELETON_REASK_1 = reader("compiled_prompt_skeleton_reask_1.txt")
+COMPILED_PROMPT_SKELETON_REASK_2 = reader("compiled_prompt_skeleton_reask_2.txt")
 
 LLM_OUTPUT = reader("llm_output.txt")
 LLM_OUTPUT_REASK = reader("llm_output_reask.txt")
+LLM_OUTPUT_SKELETON_REASK_1 = reader("llm_output_skeleton_reask_1.txt")
+LLM_OUTPUT_SKELETON_REASK_2 = reader("llm_output_skeleton_reask_2.txt")
 
 RAIL_SPEC_WITH_FILTER = reader("filter.rail")
 RAIL_SPEC_WITH_FIX = reader("fix.rail")
 RAIL_SPEC_WITH_NOOP = reader("noop.rail")
 RAIL_SPEC_WITH_REASK = reader("reask.rail")
+RAIL_SPEC_WITH_SKELETON_REASK = reader("skeleton_reask.rail")
 RAIL_SPEC_WITH_REFRAIN = reader("refrain.rail")
 RAIL_SPEC_WITH_FIX_CHAT_MODEL = reader("fix_chat_model.rail")
 
@@ -70,4 +77,6 @@ __all__ = [
     "VALIDATED_OUTPUT_REASK_1",
     "VALIDATED_OUTPUT_REASK_2",
     "VALIDATED_OUTPUT_REFRAIN",
+    "VALIDATED_OUTPUT_SKELETON_REASK_1",
+    "VALIDATED_OUTPUT_SKELETON_REASK_2",
 ]

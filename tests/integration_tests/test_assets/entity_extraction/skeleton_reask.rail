@@ -1,0 +1,27 @@
+<rail version="0.1">
+<output>
+
+    <list name="fees" description="What fees and charges are associated with my account?">
+        <object>
+            <string name="name" format="lower-case; two-words" on-fail-lower-case="noop" on-fail-two-words="reask"/>
+            <string name="explanation" format="one-line" on-fail-one-line="noop" />
+            <float name="value" format="percentage"/>
+        </object>
+    </list>
+    <object name="interest_rates" description="What are the interest rates offered by the bank on savings and checking accounts, loans, and credit products?" />
+</output>
+
+
+<prompt>
+Given the following document, answer the following questions. If the answer doesn't exist in the document, enter
+'None'.
+
+{{document}}
+
+@xml_prefix_prompt
+
+{output_schema}
+
+@json_suffix_prompt_v2_wo_none</prompt>
+
+</rail>
