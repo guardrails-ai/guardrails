@@ -224,7 +224,7 @@ class FormatAttr:
                 # beginning of a rail file.
 
             # Create the validator.
-            _validators.append(validator(document_store, *args, on_fail=on_fail))
+            _validators.append(validator(*args, document_store=document_store, on_fail=on_fail))
 
         self._validators = _validators
         self._unregistered_validators = _unregistered_validators

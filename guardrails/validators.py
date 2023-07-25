@@ -188,7 +188,7 @@ class EventDetail(BaseException):
 class Validator:
     """Base class for validators."""
 
-    def __init__(self, document_store: DocumentStoreBase, on_fail: Optional[Callable] = None, **kwargs):
+    def __init__(self, document_store: Optional[DocumentStoreBase] = None, on_fail: Optional[Callable] = None, **kwargs):
         if isinstance(on_fail, str):
             self.on_fail = getattr(self, on_fail, self.noop)
         else:
@@ -344,9 +344,10 @@ class Pydantic(Validator):
     def __init__(
         self,
         model: Type[BaseModel],
-        on_fail: Optional[Callable] = None,
+        document_store: Optional[DocumentStoreBase] = None,
+        on_fail: Optional[Callable] = None
     ):
-        super().__init__(on_fail=on_fail)
+        super().__init__(document_store=document_store, on_fail=on_fail)
 
         self.model = model
 
@@ -422,11 +423,12 @@ class PydanticFieldValidator(Validator):
     def __init__(
         self,
         field_validator: Callable,
+        document_store: Optional[DocumentStoreBase] = None,
         on_fail: Optional[Callable[..., Any]] = None,
         **kwargs,
     ):
         self.field_validator = field_validator
-        super().__init__(on_fail, **kwargs)
+        super().__init__(document_store=document_store, on_fail=on_fail, **kwargs)
 
     def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
         try:
@@ -456,9 +458,10 @@ class Choice(Validator):
     def __init__(
         self,
         choices: List[str],
+        document_store: Optional[DocumentStoreBase] = None,
         on_fail: Optional[Callable] = None,
     ):
-        super().__init__(on_fail=on_fail, choices=choices)
+        super().__init__(document_store=document_store, on_fail=on_fail, choices=choices)
 
         self._choices = choices
 
@@ -514,9 +517,9 @@ class ValidRange(Validator):
     """
 
     def __init__(
-        self, min: int = None, max: int = None, on_fail: Optional[Callable] = None
+        self, min: int = None, max: int = None, document_store: Optional[DocumentStoreBase] = None, on_fail: Optional[Callable] = None
     ):
-        super().__init__(on_fail=on_fail, min=min, max=max)
+        super().__init__(document_store=document_store, on_fail=on_fail, min=min, max=max)
 
         self._min = min
         self._max = max
@@ -557,8 +560,8 @@ class ValidChoices(Validator):
     - Programmatic fix: None.
     """
 
-    def __init__(self, choices: List[Any], on_fail: Optional[Callable] = None):
-        super().__init__(on_fail=on_fail, choices=choices)
+    def __init__(self, choices: List[Any], document_store: Optional[DocumentStoreBase] = None, on_fail: Optional[Callable] = None):
+        super().__init__(document_store=document_store, on_fail=on_fail, choices=choices)
         self._choices = choices
 
     def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
@@ -636,9 +639,9 @@ class ValidLength(Validator):
     """
 
     def __init__(
-        self, min: int = None, max: int = None, on_fail: Optional[Callable] = None
+        self, min: int = None, max: int = None, document_store: Optional[DocumentStoreBase] = None, on_fail: Optional[Callable] = None
     ):
-        super().__init__(on_fail=on_fail, min=min, max=max)
+        super().__init__(document_store=document_store, on_fail=on_fail, min=min, max=max)
         self._min = int(min) if min is not None else None
         self._max = int(max) if max is not None else None
 
@@ -832,9 +835,10 @@ class BugFreeSQL(Validator):
         self,
         conn: Optional[str] = None,
         schema_file: Optional[str] = None,
+        document_store: Optional[DocumentStoreBase] = None,
         on_fail: Optional[Callable] = None,
     ):
-        super().__init__(on_fail=on_fail)
+        super().__init__(document_store=document_store, on_fail=on_fail)
         self._driver: SQLDriver = create_sql_driver(schema_file=schema_file, conn=conn)
 
     def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
@@ -859,8 +863,8 @@ class SqlColumnPresence(Validator):
     - Supported data types: `string`
     """
 
-    def __init__(self, cols: List[str], on_fail: Optional[Callable] = None):
-        super().__init__(on_fail=on_fail, cols=cols)
+    def __init__(self, cols: List[str], document_store: Optional[DocumentStoreBase] = None, on_fail: Optional[Callable] = None):
+        super().__init__(documnet_store=document_store, on_fail=on_fail, cols=cols)
         self._cols = set(cols)
 
     def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
@@ -893,8 +897,8 @@ class ExcludeSqlPredicates(Validator):
     - Supported data types: `sql`
     """
 
-    def __init__(self, predicates: List[str], on_fail: Optional[Callable] = None):
-        super().__init__(on_fail=on_fail, predicates=predicates)
+    def __init__(self, predicates: List[str], document_store: Optional[DocumentStoreBase] = None, on_fail: Optional[Callable] = None):
+        super().__init__(document_store=document_store, on_fail=on_fail, predicates=predicates)
         self._predicates = set(predicates)
 
     def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
@@ -942,7 +946,7 @@ class SimilarToDocument(Validator):
         model: str = "text-embedding-ada-002",
         on_fail: Optional[Callable] = None, 
     ):
-        super().__init__(document_store, on_fail=on_fail)
+        super().__init__(document_store=document_store, on_fail=on_fail)
         if not _HAS_NUMPY:
             raise ImportError(
                 f"The {self.__class__.__name__} validator requires the numpy package.\n"
@@ -1075,8 +1079,8 @@ class EndsWith(Validator):
     - Programmatic fix: Append the given value to the list.
     """
 
-    def __init__(self, end: str, on_fail: str = "fix"):
-        super().__init__(on_fail=on_fail, end=end)
+    def __init__(self, end: str, document_store: Optional[DocumentStoreBase] = None, on_fail: str = "fix"):
+        super().__init__(document_store=document_store, on_fail=on_fail, end=end)
         self._end = end
 
     def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
@@ -1103,33 +1107,12 @@ class ExtractedSummarySentencesMatch(Validator):
         self,
         documents_dir: str,
         document_store: DocumentStoreBase,
-        threshold: float = 0.7,
-        embedding_model: Optional["EmbeddingBase"] = None,  # noqa: F821
-        vector_db: Optional["VectorDBBase"] = None,  # noqa: F821
-        
+        threshold: float = 0.7,   
         on_fail: Optional[Callable] = None,
         **kwargs,
     ):
-        super().__init__(on_fail, **kwargs)
+        super().__init__(document_store=document_store, on_fail=on_fail, **kwargs)
         # TODO(shreya): Pass embedding_model, vector_db, document_store from spec
-
-        if document_store is None:
-            from guardrails.document_store import EphemeralDocumentStore
-
-            if vector_db is None:
-                from guardrails.vectordb import Faiss
-
-                if embedding_model is None:
-                    from guardrails.embedding import OpenAIEmbedding
-
-                    embedding_model = OpenAIEmbedding()
-
-                vector_db = Faiss.new_flat_ip_index(
-                    embedding_model.output_dim, embedder=embedding_model
-                )
-            self.store = EphemeralDocumentStore(vector_db)
-        else:
-            self.store = document_store
 
         for doc_path in os.listdir(documents_dir):
             with open(os.path.join(documents_dir, doc_path)) as f:
@@ -1139,6 +1122,7 @@ class ExtractedSummarySentencesMatch(Validator):
                 )
 
         self._threshold = float(threshold)
+        self.store = document_store
 
     def validate(self, key, value, schema) -> Dict:
         # Split the value into sentences.
@@ -1185,8 +1169,8 @@ class ReadingTime(Validator):
     """Validate that the a string can be read in less than a certain amount of
     time."""
 
-    def __init__(self, reading_time: int, on_fail: str = "fix"):
-        super().__init__(on_fail=on_fail, max_time=reading_time)
+    def __init__(self, reading_time: int, document_store: Optional[DocumentStoreBase] = None, on_fail: str = "fix"):
+        super().__init__(documnet_store=document_store, on_fail=on_fail, max_time=reading_time)
         self._max_time = reading_time
 
     def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
@@ -1228,10 +1212,11 @@ class ExtractiveSummary(Validator):
         self,
         documents_dir: str,
         threshold: int = 85,
+        document_store: Optional[DocumentStoreBase] = None,
         on_fail: Optional[Callable] = None,
         **kwargs,
     ):
-        super().__init__(on_fail, **kwargs)
+        super().__init__(document_store=document_store, on_fail=on_fail, **kwargs)
 
         self.threshold = threshold
 
@@ -1313,9 +1298,9 @@ class RemoveRedundantSentences(Validator):
     """
 
     def __init__(
-        self, threshold: int = 70, on_fail: Optional[Callable] = None, **kwargs
+        self, threshold: int = 70, document_store: Optional[DocumentStoreBase] = None, on_fail: Optional[Callable] = None, **kwargs
     ):
-        super().__init__(on_fail, **kwargs)
+        super().__init__(document_store=document_store, on_fail=on_fail, **kwargs)
         self.threshold = threshold
 
     def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
@@ -1378,6 +1363,7 @@ class SaliencyCheck(Validator):
         self,
         docs_dir: str,
         llm_callable: Callable = None,
+        document_store: Optional[DocumentStoreBase] = None,
         on_fail: Optional[Callable] = None,
         threshold: int = 0.25,
         **kwargs,
@@ -1390,7 +1376,7 @@ class SaliencyCheck(Validator):
             threshold: Threshold for overlap between topics in document and summary.
         """
 
-        super().__init__(on_fail, **kwargs)
+        super().__init__(document_store=document_store, on_fail=on_fail, **kwargs)
 
         self.llm_callable = (
             llm_callable if llm_callable else openai.ChatCompletion.create
@@ -1480,10 +1466,11 @@ class QARelevanceLLMEval(Validator):
     def __init__(
         self,
         llm_callable: Callable = None,
+        document_store: Optional[DocumentStoreBase] = None,
         on_fail: Optional[Callable] = None,
         **kwargs,
     ):
-        super().__init__(on_fail, **kwargs)
+        super().__init__(document_store=document_store, on_fail=on_fail, **kwargs)
         self.llm_callable = (
             llm_callable if llm_callable else openai.ChatCompletion.create
         )

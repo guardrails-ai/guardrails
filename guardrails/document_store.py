@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from collections import namedtuple
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
+from guardrails.embedding import EmbeddingBase
 
 from guardrails.vectordb import VectorDBBase
 
@@ -110,7 +111,7 @@ class EphemeralDocumentStore(DocumentStoreBase):
     """EphemeralDocumentStore is a document store that stores the documents on
     local disk and use a ephemeral vector store like Faiss."""
 
-    def __init__(self, vector_db: Optional["VectorDBBase"] = None, path: Optional[str] = None):
+    def __init__(self, vector_db: Optional["VectorDBBase"] = None, path: Optional[str] = None, embedding_model: Optional["EmbeddingBase"] = None):
         """Creates a new EphemeralDocumentStore.
 
         Args:
