@@ -38,9 +38,8 @@ class IngestionServiceDocumentStore(DocumentStoreBase):
             else os.environ.get("OPENAI_API_KEY")
         )
         toIngest = {
-            'articles': list(document.pages.values()), 
-            'metadata': document.metadata, 
-            'guardId': document.id
+            'articles': document, 
+            'guardId': document.id #TODO: pass in the actual guardId
         }
         return ingest.sync(
             x_openai_api_key=openai_api_key, 
@@ -56,9 +55,10 @@ class IngestionServiceDocumentStore(DocumentStoreBase):
         hash = hashlib.md5()
         id = hash.hexdigest()
 
+        doc = Document(id, {0: text}, meta)
+
         toIngest = {
-            'articles': [text], 
-            'metadata': meta, 
+            'articles': doc, 
             'guardId': id #TODO: pass in the actual guardId
         }
 
