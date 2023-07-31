@@ -354,12 +354,12 @@ class Schema:
         """
         raise NotImplementedError
 
-    def get_reask_schema_and_prompt(
+    def get_reask_setup(
         self,
         reasks: List[FieldReAsk],
         reask_value: Any,
         reask_prompt_template: Optional[Prompt] = None,
-    ) -> Tuple["Schema", Prompt]:
+    ) -> Tuple["Schema", Prompt, Instructions]:
         """Construct a schema for reasking, and a prompt for reasking.
 
         Args:
@@ -392,12 +392,12 @@ class Schema:
 
 
 class JsonSchema(Schema):
-    def get_reask_schema_and_prompt(
+    def get_reask_setup(
         self,
         reasks: List[FieldReAsk],
         reask_value: Any,
         reask_prompt_template: Optional[Prompt] = None,
-    ) -> Tuple["Schema", Prompt]:
+    ) -> Tuple["Schema", Prompt, Instructions]:
         parsed_rail = deepcopy(self.root)
 
         is_skeleton_reask = not any(isinstance(reask, FieldReAsk) for reask in reasks)
@@ -409,22 +409,30 @@ class JsonSchema(Schema):
             # Get the pruned tree so that it only contains ReAsk objects
             pruned_tree = get_pruned_tree(parsed_rail, list(reask_elements.keys()))
             pruned_tree_schema = type(self)(pruned_tree)
+
+            if reask_prompt_template is None:
+                reask_prompt_template = Prompt(
+                    constants["high_level_json_reask_prompt"]
+                    + constants["json_suffix_without_examples"]
+                )
+
+            instructions = Instructions(
+                constants["high_level_json_instructions"]
+            ).format()
         else:
             pruned_tree_schema = self
 
-        pruned_tree_string = pruned_tree_schema.transpile()
-
-        if reask_prompt_template is None:
-            if is_skeleton_reask:
+            if reask_prompt_template is None:
                 reask_prompt_template = Prompt(
                     constants["high_level_skeleton_reask_prompt"]
-                    + constants["complete_json_suffix"]
+                    + constants["json_suffix_without_examples"]
                 )
-            else:
-                reask_prompt_template = Prompt(
-                    constants["high_level_json_reask_prompt"]
-                    + constants["complete_json_suffix"]
-                )
+
+            instructions = Instructions(
+                constants["high_level_json_instructions"]
+            ).format()
+
+        pruned_tree_string = pruned_tree_schema.transpile()
 
         def reask_decoder(obj):
             return {
@@ -437,7 +445,7 @@ class JsonSchema(Schema):
             .replace("}", "}}"),
             output_schema=pruned_tree_string,
         )
-        return pruned_tree_schema, prompt
+        return pruned_tree_schema, prompt, instructions
 
     def setup_schema(self, root: ET._Element) -> None:
         from guardrails.datatypes import registry as types_registry
@@ -476,7 +484,7 @@ class JsonSchema(Schema):
         self,
         guard_logs: GuardLogs,
         data: Optional[Dict[str, Any]],
-    ) -> Optional[Dict[str, Any]]:
+    ) -> Any:
         """Validate a dictionary of data against the schema.
 
         Args:
@@ -588,12 +596,12 @@ class StringSchema(Schema):
         root_string = ET.Element("string", root.attrib)
         self[self.string_key] = String.from_xml(root_string)
 
-    def get_reask_schema_and_prompt(
+    def get_reask_setup(
         self,
         reasks: List[FieldReAsk],
         reask_value: FieldReAsk,
         reask_prompt_template: Optional[Prompt] = None,
-    ) -> Tuple[Schema, Prompt]:
+    ) -> Tuple[Schema, Prompt, Instructions]:
         pruned_tree_string = self.transpile()
 
         if reask_prompt_template is None:
@@ -602,12 +610,14 @@ class StringSchema(Schema):
                 + constants["complete_string_suffix"]
             )
 
+        instructions = Instructions("You are a helpful assistant.").format()
+
         prompt = reask_prompt_template.format(
             previous_response=reask_value.incorrect_value,
             error_messages=f"- {reask_value.error_message}",
             output_schema=pruned_tree_string,
         )
-        return self, prompt
+        return self, prompt, instructions
 
     def parse(self, output: str) -> Tuple[Any, Optional[Exception]]:
         return output, None

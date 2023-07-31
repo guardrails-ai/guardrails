@@ -3,7 +3,7 @@ import json
 import pytest
 from lxml import etree as ET
 
-from guardrails import Prompt
+from guardrails import Instructions, Prompt
 from guardrails.schema import JsonSchema
 from guardrails.utils import reask_utils
 from guardrails.utils.reask_utils import (
@@ -155,6 +155,11 @@ Given below is XML that describes the information to extract from this document 
 %s
 
 ONLY return a valid JSON object (no other text is necessary), where the key of the field in JSON is the `name` attribute of the corresponding XML, and the value is of the type specified by the corresponding XML's tag. The JSON MUST conform to the XML format, including any types and format requests e.g. requests for lists, objects and specific types. Be correct and concise. If you are unsure anywhere, enter `null`.
+"""  # noqa: E501
+    expected_instructions = """
+You are a helpful assistant only capable of communicating with valid JSON, and no other text.
+
+ONLY return a valid JSON object (no other text is necessary), where the key of the field in JSON is the `name` attribute of the corresponding XML, and the value is of the type specified by the corresponding XML's tag. The JSON MUST conform to the XML format, including any types and format requests e.g. requests for lists, objects and specific types. Be correct and concise. If you are unsure anywhere, enter `null`.
 
 Here are examples of simple (XML, JSON) pairs that show the expected behavior:
 - `<string name='foo' format='two-words lower-case' />` => `{{'foo': 'example one'}}`
@@ -162,9 +167,11 @@ Here are examples of simple (XML, JSON) pairs that show the expected behavior:
 - `<object name='baz'><string name="foo" format="capitalize two-words" /><integer name="index" format="1-indexed" /></object>` => `{{'baz': {{'foo': 'Some String', 'index': 1}}}}`
 """  # noqa: E501
     output_schema = JsonSchema(ET.fromstring(example_rail))
-    reask_schema, result_prompt = output_schema.get_reask_schema_and_prompt(
-        reasks, reask_json
-    )
+    (
+        reask_schema,
+        result_prompt,
+        instructions,
+    ) = output_schema.get_reask_setup(reasks, reask_json)
 
     assert result_prompt == Prompt(
         expected_result_template
@@ -173,3 +180,4 @@ Here are examples of simple (XML, JSON) pairs that show the expected behavior:
             example_rail,
         )
     )
+    assert instructions == Instructions(expected_instructions)
