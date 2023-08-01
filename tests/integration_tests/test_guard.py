@@ -316,7 +316,7 @@ def test_entity_extraction_with_refrain(mocker, rail, prompt):
 @pytest.mark.parametrize(
     "rail,prompt,instructions",
     [
-        # (entity_extraction.RAIL_SPEC_WITH_FIX_CHAT_MODEL, None, None),
+        (entity_extraction.RAIL_SPEC_WITH_FIX_CHAT_MODEL, None, None),
         (
             entity_extraction.PYDANTIC_RAIL_WITH_FIX,
             entity_extraction.PYDANTIC_PROMPT_CHAT_MODEL,
@@ -460,3 +460,111 @@ def test_skeleton_reask(mocker):
         guard_history[1].validated_output
         == entity_extraction.VALIDATED_OUTPUT_SKELETON_REASK_2
     )
+
+
+@pytest.mark.parametrize(
+    "rail,prompt,instructions,history,llm_api,expected_prompt,expected_instructions,expected_reask_prompt,expected_reask_instructions",
+    [
+        (
+            entity_extraction.RAIL_SPEC_WITH_REASK_NO_PROMPT,
+            entity_extraction.OPTIONAL_PROMPT_COMPLETION_MODEL,
+            None,
+            None,
+            openai.Completion.create,
+            entity_extraction.COMPILED_PROMPT,
+            None,
+            entity_extraction.COMPILED_PROMPT_REASK,
+            None,
+        ),
+        (
+            entity_extraction.RAIL_SPEC_WITH_REASK_NO_PROMPT,
+            entity_extraction.OPTIONAL_PROMPT_CHAT_MODEL,
+            entity_extraction.OPTIONAL_INSTRUCTIONS_CHAT_MODEL,
+            None,
+            openai.ChatCompletion.create,
+            entity_extraction.COMPILED_PROMPT_WITHOUT_INSTRUCTIONS,
+            entity_extraction.COMPILED_INSTRUCTIONS,
+            entity_extraction.COMPILED_PROMPT_REASK,
+            entity_extraction.COMPILED_INSTRUCTIONS_REASK,
+        ),
+    ],
+)
+def test_entity_extraction_with_reask_with_optional_prompts(
+    mocker,
+    rail,
+    prompt,
+    instructions,
+    history,
+    llm_api,
+    expected_prompt,
+    expected_instructions,
+    expected_reask_prompt,
+    expected_reask_instructions,
+):
+    """Test that the entity extraction works with re-asking."""
+    if llm_api == openai.Completion.create:
+        mocker.patch(
+            "guardrails.llm_providers.openai_wrapper", new=openai_completion_create
+        )
+    else:
+        mocker.patch(
+            "guardrails.llm_providers.openai_chat_wrapper",
+            new=openai_chat_completion_create,
+        )
+
+    content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
+    # guard = guard_initializer(rail, prompt)
+    guard = Guard.from_rail_string(rail)
+
+    _, final_output = guard(
+        llm_api=llm_api,
+        prompt=prompt,
+        instructions=instructions,
+        chat_history=history,
+        prompt_params={"document": content[:6000]},
+        num_reasks=1,
+    )
+
+    # Assertions are made on the guard state object.
+    assert final_output == entity_extraction.VALIDATED_OUTPUT_REASK_2
+
+    guard_history = guard.guard_state.most_recent_call.history
+
+    # Check that the guard state object has the correct number of re-asks.
+    assert len(guard_history) == 2
+
+    # For orginal prompt and output
+    assert guard_history[0].prompt == gd.Prompt(expected_prompt)
+    assert guard_history[0].output == entity_extraction.LLM_OUTPUT
+    assert (
+        guard_history[0].validated_output == entity_extraction.VALIDATED_OUTPUT_REASK_1
+    )
+    if expected_instructions:
+        assert guard_history[0].instructions == gd.Instructions(expected_instructions)
+
+    # For reask validator logs
+    nested_validator_log = (
+        guard_history[0]
+        .field_validation_logs["fees"]
+        .children[1]
+        .children["name"]
+        .validator_logs[1]
+    )
+    assert nested_validator_log.value_before_validation == "my chase plan"
+    assert nested_validator_log.value_after_validation == FieldReAsk(
+        incorrect_value="my chase plan",
+        fix_value="my chase",
+        error_message="must be exactly two words",
+        path=["fees", 1, "name"],
+    )
+
+    # For re-asked prompt and output
+    assert guard_history[1].prompt == gd.Prompt(expected_reask_prompt)
+    assert guard_history[1].output == entity_extraction.LLM_OUTPUT_REASK
+    assert (
+        guard_history[1].validated_output == entity_extraction.VALIDATED_OUTPUT_REASK_2
+    )
+    if expected_reask_instructions:
+        assert guard_history[1].instructions == gd.Instructions(
+            expected_reask_instructions
+        )

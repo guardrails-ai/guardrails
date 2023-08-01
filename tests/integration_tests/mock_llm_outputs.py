@@ -32,11 +32,16 @@ async def async_openai_completion_create(prompt, *args, **kwargs):
 
 def openai_chat_completion_create(prompt, instructions, *args, **kwargs):
     """Mock the OpenAI API call to ChatCompletion.create."""
+
     mock_llm_responses = {
         (
             entity_extraction.COMPILED_PROMPT_WITHOUT_INSTRUCTIONS,
             entity_extraction.COMPILED_INSTRUCTIONS,
         ): entity_extraction.LLM_OUTPUT,
+        (
+            entity_extraction.COMPILED_PROMPT_REASK,
+            entity_extraction.COMPILED_INSTRUCTIONS_REASK,
+        ): entity_extraction.LLM_OUTPUT_REASK,
         (
             python_rail.COMPILED_PROMPT_1_WITHOUT_INSTRUCTIONS,
             python_rail.COMPILED_INSTRUCTIONS,

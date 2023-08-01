@@ -1,6 +1,11 @@
 # flake8: noqa: E501
 import os
 
+from .optional_prompts import (
+    OPTIONAL_INSTRUCTIONS_CHAT_MODEL,
+    OPTIONAL_PROMPT_CHAT_MODEL,
+    OPTIONAL_PROMPT_COMPLETION_MODEL,
+)
 from .pydantic_models import (
     INSTRUCTIONS_CHAT_MODEL,
     PROMPT,
@@ -25,20 +30,24 @@ reader = (
     lambda filename: open(os.path.join(DATA_DIR, filename)).read().replace("\r", "")
 )
 
+# Compiled prompts
 COMPILED_PROMPT = reader("compiled_prompt.txt")
 COMPILED_PROMPT_REASK = reader("compiled_prompt_reask.txt")
 COMPILED_PROMPT_WITHOUT_INSTRUCTIONS = reader(
     "compiled_prompt_without_instructions.txt"
 )
 COMPILED_INSTRUCTIONS = reader("compiled_instructions.txt")
+COMPILED_INSTRUCTIONS_REASK = reader("compiled_instructions_reask.txt")
 COMPILED_PROMPT_SKELETON_REASK_1 = reader("compiled_prompt_skeleton_reask_1.txt")
 COMPILED_PROMPT_SKELETON_REASK_2 = reader("compiled_prompt_skeleton_reask_2.txt")
 
+# LLM outputs
 LLM_OUTPUT = reader("llm_output.txt")
 LLM_OUTPUT_REASK = reader("llm_output_reask.txt")
 LLM_OUTPUT_SKELETON_REASK_1 = reader("llm_output_skeleton_reask_1.txt")
 LLM_OUTPUT_SKELETON_REASK_2 = reader("llm_output_skeleton_reask_2.txt")
 
+# Rail specs
 RAIL_SPEC_WITH_FILTER = reader("filter.rail")
 RAIL_SPEC_WITH_FIX = reader("fix.rail")
 RAIL_SPEC_WITH_NOOP = reader("noop.rail")
@@ -47,7 +56,10 @@ RAIL_SPEC_WITH_SKELETON_REASK = reader("skeleton_reask.rail")
 RAIL_SPEC_WITH_REFRAIN = reader("refrain.rail")
 RAIL_SPEC_WITH_FIX_CHAT_MODEL = reader("fix_chat_model.rail")
 
+# Rail specs without prompts and instructions
+RAIL_SPEC_WITH_REASK_NO_PROMPT = reader("reask_without_prompt.rail")
 
+# Pydantic models
 PYDANTIC_RAIL_WITH_FILTER = ContractDetailsFilter
 PYDANTIC_RAIL_WITH_FIX = ContractDetailsFix
 PYDANTIC_RAIL_WITH_NOOP = ContractDetailsNoop
@@ -63,6 +75,7 @@ __all__ = [
     "COMPILED_PROMPT_REASK",
     "COMPILED_PROMPT_WITHOUT_INSTRUCTIONS",
     "COMPILED_INSTRUCTIONS",
+    "COMPILED_INSTRUCTIONS_REASK",
     "LLM_OUTPUT",
     "LLM_OUTPUT_REASK",
     "RAIL_SPEC_WITH_FILTER",
@@ -79,4 +92,7 @@ __all__ = [
     "VALIDATED_OUTPUT_REFRAIN",
     "VALIDATED_OUTPUT_SKELETON_REASK_1",
     "VALIDATED_OUTPUT_SKELETON_REASK_2",
+    "OPTIONAL_PROMPT_COMPLETION_MODEL",
+    "OPTIONAL_PROMPT_CHAT_MODEL",
+    "OPTIONAL_INSTRUCTIONS_CHAT_MODEL",
 ]
