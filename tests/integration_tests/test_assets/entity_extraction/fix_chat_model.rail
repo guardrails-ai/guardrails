@@ -22,8 +22,7 @@ You are a helpful assistant only capable of communicating with valid JSON, and n
 
 
 <prompt>
-Given the following document, answer the following questions. If the answer doesn't exist in the document, enter 
-`null`.
+Given the following document, answer the following questions. If the answer doesn't exist in the document, enter `null`.
 
 {{document}}
 

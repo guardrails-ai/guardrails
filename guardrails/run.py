@@ -60,9 +60,19 @@ class Runner:
         self.guard_state.push(self.guard_history)
 
     def __post_init__(self):
-        assert (self.prompt and self.api and not self.output) or (
-            self.output and not self.prompt
-        ), "Must provide either prompt and api or output."
+        if self.prompt:
+            assert self.api, "Must provide an API if a prompt is provided."
+            assert not self.output, "Cannot provide both a prompt and output."
+
+        if isinstance(self.prompt, str):
+            self.prompt = Prompt(
+                self.prompt, output_schema=self.output_schema.transpile()
+            )
+
+        if isinstance(self.instructions, str):
+            self.instructions = Instructions(
+                self.instructions, output_schema=self.output_schema.transpile()
+            )
 
     def __call__(self, prompt_params: Dict = None) -> GuardHistory:
         """Execute the runner by repeatedly calling step until the reask budget
