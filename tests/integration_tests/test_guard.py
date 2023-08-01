@@ -463,7 +463,8 @@ def test_skeleton_reask(mocker):
 
 
 @pytest.mark.parametrize(
-    "rail,prompt,instructions,history,llm_api,expected_prompt,expected_instructions,expected_reask_prompt,expected_reask_instructions",
+    "rail,prompt,instructions,history,llm_api,expected_prompt,"
+    "expected_instructions,expected_reask_prompt,expected_reask_instructions",
     [
         (
             entity_extraction.RAIL_SPEC_WITH_REASK_NO_PROMPT,
