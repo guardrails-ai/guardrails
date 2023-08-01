@@ -26,7 +26,7 @@ from guardrails.utils.reask_utils import (
     get_reasks_by_element,
 )
 from guardrails.validator_service import FieldValidation
-from guardrails.validators import Validator, check_refrain_in_dict, filter_in_dict
+from guardrails.validators import Validator, check_refrain_in_dict, filter_in_dict, FailResult
 
 if TYPE_CHECKING:
     pass
@@ -417,15 +417,15 @@ class JsonSchema(Schema):
 
         is_skeleton_reask = not any(isinstance(reask, FieldReAsk) for reask in reasks)
 
-        if not is_skeleton_reask:
+        if is_skeleton_reask:
+            pruned_tree_schema = self
+        else:
             # Get the elements that are to be reasked
             reask_elements = get_reasks_by_element(reasks, parsed_rail)
 
             # Get the pruned tree so that it only contains ReAsk objects
             pruned_tree = get_pruned_tree(parsed_rail, list(reask_elements.keys()))
             pruned_tree_schema = type(self)(pruned_tree)
-        else:
-            pruned_tree_schema = self
 
         pruned_tree_string = pruned_tree_schema.transpile()
 
@@ -442,9 +442,18 @@ class JsonSchema(Schema):
                 )
 
         def reask_decoder(obj):
-            return {
-                k: v for k, v in obj.__dict__.items() if k not in ["path", "fix_value"]
-            }
+            decoded = {}
+            for k, v in obj.__dict__.items():
+                if k in ["path"]:
+                    continue
+                if k == "fail_results":
+                    k = "error_messages"
+                    v = [
+                        result.error_message
+                        for result in v
+                    ]
+                decoded[k] = v
+            return decoded
 
         prompt = reask_prompt_template.format(
             previous_response=json.dumps(reask_value, indent=2, default=reask_decoder)
@@ -517,8 +526,10 @@ class JsonSchema(Schema):
         ):
             return SkeletonReAsk(
                 incorrect_value=validated_response,
-                fix_value=None,
-                error_message="JSON does not match schema",
+                fail_results=[FailResult(
+                    fix_value=None,
+                    error_message="JSON does not match schema",
+                )],
             )
 
         validation = FieldValidation(

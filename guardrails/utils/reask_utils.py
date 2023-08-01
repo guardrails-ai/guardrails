@@ -2,22 +2,21 @@ from collections import defaultdict
 from dataclasses import dataclass
 from typing import Any, Dict, List, Union
 
+import pydantic
 from lxml import etree as ET
 
+from guardrails.validators import FailResult
 
-@dataclass
-class ReAsk:
+
+class ReAsk(pydantic.BaseModel):
     incorrect_value: Any
-    error_message: str
-    fix_value: Any
+    fail_results: list[FailResult]
 
 
-@dataclass
 class FieldReAsk(ReAsk):
     path: List[Any] = None
 
 
-@dataclass
 class SkeletonReAsk(ReAsk):
     pass
 

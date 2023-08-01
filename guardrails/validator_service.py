@@ -1,4 +1,5 @@
 import asyncio
+import itertools
 import logging
 import os
 from concurrent.futures import ProcessPoolExecutor
@@ -6,38 +7,83 @@ from typing import Any, Tuple
 
 from guardrails.datatypes import FieldValidation
 from guardrails.utils.logs_utils import FieldValidationLogs, ValidatorLogs
+from guardrails.utils.reask_utils import FieldReAsk
+from guardrails.validators import FailResult, ValidatorError, Filter, Refrain, PassResult
 
 logger = logging.getLogger(__name__)
 
+class ValidatorServiceBase:
+    def perform_correction(self, results: list[FailResult], value: Any, validator, on_fail_descriptor: str):
+        if on_fail_descriptor == "fix":
+            return results[0].fix_value
+        elif on_fail_descriptor == "fix_reask":
+            fixed_value = results[0].fix_value
+            result = validator.validate(fixed_value, results[0].metadata)
+            if result.metadata is None:
+                result.metadata = result.metadata
 
-class SequentialValidatorService:
+            if isinstance(result, FailResult):
+                return FieldReAsk(
+                    incorrect_value=fixed_value,
+                    fail_results=results,
+                )
+
+            return fixed_value
+        if on_fail_descriptor == "custom":
+            return validator.on_fail_method(value, results[0])
+        if on_fail_descriptor == "reask":
+            return FieldReAsk(
+                incorrect_value=value,
+                fail_results=results,
+            )
+        if on_fail_descriptor == "exception":
+            raise ValidatorError(
+                f"Validation failed for field with errors: " +
+                ", ".join([result.error_message for result in results])
+            )
+        if on_fail_descriptor == "filter":
+            return Filter()
+        if on_fail_descriptor == "refrain":
+            return Refrain()
+        if on_fail_descriptor == "noop":
+            return value
+        else:
+            raise ValueError(
+                f"Invalid on_fail_descriptor {on_fail_descriptor}, "
+                f"expected 'fix' or 'exception'."
+            )
+
+    def run_validator(self, validation_logs, validator, value, metadata) -> ValidatorLogs:
+        validator_class_name = validator.__class__.__name__
+        validator_logs = ValidatorLogs(
+            validator_name=validator_class_name,
+            value_before_validation=value,
+        )
+        validation_logs.validator_logs.append(validator_logs)
+
+        result = validator.validate(value, metadata)
+        if result is None:
+            result = PassResult()
+
+        validator_logs.validation_result = result
+        return validator_logs
+
+
+class SequentialValidatorService(ValidatorServiceBase):
     def run_validators(self, validation_logs, validator_setup, value, metadata):
         # Validate the field
         for validator in validator_setup.validators:
-            validator_class_name = validator.__class__.__name__
-            validator_logs = ValidatorLogs(
-                validator_name=validator_class_name,
-                value_before_validation=value,
-            )
+            validator_logs = self.run_validator(validation_logs, validator, value, metadata)
             validation_logs.validator_logs.append(validator_logs)
-            logger.debug(
-                f"Validating field {validator_setup.key} "
-                f"with validator {validator_class_name}..."
-            )
 
-            # if validator.run_in_separate_process:
-            #     logger.warning(
-            #         "Running validators in a separate processes "
-            #         "is not supported in synchronously, "
-            #         "try invoking `guard` asynchronously instead."
-            #     )
-            value = validator.validate_with_correction(value, metadata)
+            if isinstance(validator_logs.validation_result, FailResult):
+                value = self.perform_correction([validator_logs.validation_result],
+                                                value, validator, validator_setup.on_fail)
 
             validator_logs.value_after_validation = value
-            logger.debug(
-                f"Validator {validator_class_name} finished, "
-                f"key {validator_setup.key} has value {value}."
-            )
+
+            if isinstance(value, (Refrain, Filter, FieldReAsk)):
+                return value, metadata
         return value, metadata
 
     def validate_dependents(self, value, metadata, validator_setup, validation_logs):
@@ -83,46 +129,62 @@ class MultiprocMixin:
             )
 
 
-class AsyncValidatorService(MultiprocMixin):
-    def process_entrypoint(self, validator, value, metadata) -> tuple[Any, dict]:
-        value = validator.validate_with_correction(value, metadata)
-        return value, metadata
+class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
+    def group_validators(self, validators):
+        groups = itertools.groupby(validators, key=lambda v: v.on_fail_descriptor)
+        for on_fail_descriptor, group in groups:
+            if on_fail_descriptor in ["fix", "fix_reask", "custom"]:
+                for validator in group:
+                    yield on_fail_descriptor, [validator]
+            else:
+                yield on_fail_descriptor, list(group)
 
     async def run_validators(self, validation_logs, validator_setup, value, metadata):
-        # Validate the field
-        for validator in validator_setup.validators:
-            validator_class_name = validator.__class__.__name__
-            validator_logs = ValidatorLogs(
-                validator_name=validator_class_name,
-                value_before_validation=value,
-            )
-            validation_logs.validator_logs.append(validator_logs)
-            logger.debug(
-                f"Validating field {validator_setup.key} "
-                f"with validator {validator_class_name}..."
-            )
+        loop = asyncio.get_running_loop()
+        for on_fail, validator_group in \
+                self.group_validators(validator_setup.validators):
+            parallel_tasks = []
+            validators_logs = []
+            for validator in validator_group:
+                if validator.run_in_separate_process:
+                    # queue the validators to run in a separate process
+                    parallel_tasks.append(
+                        loop.run_in_executor(
+                            self.multiprocessing_executor,
+                            validator.validate,
+                            validation_logs,
+                            validator,
+                            value,
+                            metadata,
+                        )
+                    )
+                else:
+                    # run the validators in the current process
+                    result = self.run_validator(validation_logs,
+                                                validator,
+                                                value,
+                                                metadata)
+                    validators_logs.append(result)
 
-            if validator.run_in_separate_process:
-                loop = asyncio.get_running_loop()
-                task = loop.run_in_executor(
-                    self.multiprocessing_executor,
-                    self.process_entrypoint,
-                    validator,
-                    value,
-                    metadata,
-                )
-                completed, pending = await asyncio.wait([task])
-                if any(pending):
-                    raise RuntimeError("Pending futures left?")
-                value, metadata = [t.result() for t in completed][0]
-            else:
-                value = validator.validate_with_correction(value, metadata)
+            # wait for the parallel tasks to finish
+            if parallel_tasks:
+                parallel_results = await asyncio.gather(*parallel_tasks)
+                validators_logs.extend(parallel_results)
 
-            validator_logs.value_after_validation = value
-            logger.debug(
-                f"Validator {validator_class_name} finished, "
-                f"key {validator_setup.key} has value {value}."
-            )
+            # process the results, handle failures
+            fails = [logs for logs in validators_logs
+                     if isinstance(logs.validation_result, FailResult)]
+            if fails:
+                fail_results = [logs.validation_result for logs in fails]
+                value = self.perform_correction(fail_results, value, validator_group[0], on_fail)
+
+            for logs in validators_logs:
+                logs.value_after_validation = value
+
+            # return early if we have a filter, refrain, or reask
+            if isinstance(value, (Filter, Refrain, FieldReAsk)):
+                return value, metadata
+
         return value, metadata
 
     async def validate_dependents(

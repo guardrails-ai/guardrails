@@ -16,7 +16,6 @@ import pydantic
 from pydantic import BaseModel, ValidationError
 
 from guardrails.utils.docs_utils import sentence_split
-from guardrails.utils.reask_utils import FieldReAsk
 from guardrails.utils.sql_utils import SQLDriver, create_sql_driver
 
 try:
@@ -196,9 +195,11 @@ class Validator:
 
     def __init__(self, on_fail: Optional[Callable] = None, **kwargs):
         if isinstance(on_fail, str):
-            self.on_fail = getattr(self, on_fail, self.noop)
+            self.on_fail_descriptor = on_fail
+            self.on_fail_method = None
         else:
-            self.on_fail = on_fail or self.noop
+            self.on_fail_descriptor = "custom"
+            self.on_fail_method = on_fail
 
         # Store the kwargs for the validator.
         self._kwargs = kwargs
@@ -207,78 +208,9 @@ class Validator:
             self.rail_alias in validators_registry
         ), f"Validator {self.__class__.__name__} is not registered. "
 
-    def validate_with_correction(self, value: Any, metadata: Dict) -> Any:
-        """Validate a value and return either:
-
-        - the value
-        - a fixed value
-        - a reask object
-        - a refrain object
-        - a filter object
-        """
-        result = self.validate(value, metadata)
-        if result.metadata is None:
-            result.metadata = metadata
-
-        if isinstance(result, FailResult):
-            logger.debug(
-                f"Validator {self.__class__.__name__} failed for {value} "
-                f"with error {result.error_message}."
-            )
-            return self.on_fail(value, result)
-        return value
-
     def validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
         """Validate a value and return a validation result."""
         raise NotImplementedError
-
-    def fix(self, value: Any, error: FailResult) -> Any:
-        """Debug the incorrect value."""
-        return error.fix_value
-
-    def reask(self, value: Any, error: FailResult) -> Any:
-        """Reask disambiguates the validation failure into a helpful error
-        message."""
-        return FieldReAsk(
-            incorrect_value=value,
-            error_message=error.error_message,
-            fix_value=error.fix_value,
-        )
-
-    def filter(self, value: Any, error: FailResult) -> Any:
-        """If validation fails, filter the offending key from the schema."""
-        # logger.debug(f"Filtering {error.key} from schema...")
-        return Filter()
-
-    def refrain(self, value: Any, error: FailResult) -> Any:
-        """If validation fails, refrain from answering."""
-        # logger.debug(f"Refusing to answer {error.key}...")
-        return Refrain()
-
-    def noop(self, value: Any, error: FailResult) -> Any:
-        """If validation fails, do nothing."""
-        # logger.debug(
-        #     f"Validator {self.__class__.__name__} failed for {error.key}, "
-        #     "but doing nothing..."
-        # )
-        return value
-
-    def exception(self, value: Any, error: FailResult) -> None:
-        """Raise an exception."""
-        raise ValidatorError(error.error_message)
-
-    def fix_reask(self, value: Any, error: FailResult) -> Dict:
-        """If validation fails, fix the value and reask."""
-        fixed_value = self.fix(value, error)
-
-        result = self.validate(fixed_value, error.metadata)
-        if result.metadata is None:
-            result.metadata = error.metadata
-
-        if isinstance(result, FailResult):
-            return self.reask(fixed_value, result)
-
-        return fixed_value
 
     def to_prompt(self, with_keywords: bool = True) -> str:
         """Convert the validator to a prompt.
@@ -320,9 +252,6 @@ class Validator:
 
         params = " ".join(validator_args)
         return f"{self.rail_alias}: {params}"
-
-    def __call__(self, v: Any) -> Any:
-        return self.validate_with_correction(v, {})
 
 
 # @register_validator('required', 'all')
@@ -397,6 +326,7 @@ class Pydantic(Validator):
             }
         }
         """
+        # TODO move this alternate handling to ValidatorService
         try:
             # Run the Pydantic model on the value.
             return self.model(**value)
