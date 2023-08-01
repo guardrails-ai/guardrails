@@ -1,3 +1,4 @@
+import itertools
 import json
 import logging
 import pprint
@@ -725,9 +726,15 @@ class StringSchema(Schema):
                 + constants["complete_string_suffix"]
             )
 
+        error_messages = "\n".join(
+            [f"- {fail_result.error_message}"
+             for reask in reasks
+             for fail_result in reask.fail_results]
+        )
+
         prompt = reask_prompt_template.format(
             previous_response=reask_value.incorrect_value,
-            error_messages=f"- {reask_value.error_message}",
+            error_messages=error_messages,
             output_schema=pruned_tree_string,
         )
         return self, prompt

@@ -7,7 +7,9 @@ I was given the following JSON response, which had problems due to incorrect val
       "details": {
         "website": {
           "incorrect_value": "a.b.c",
-          "error_message": "Value has length less than 9. Please return a longer output, that is shorter than 100 characters."
+          "error_messages": [
+            "Value has length less than 9. Please return a longer output, that is shorter than 100 characters."
+          ]
         }
       }
     }

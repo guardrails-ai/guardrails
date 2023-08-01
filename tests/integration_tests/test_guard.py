@@ -7,6 +7,7 @@ from pydantic import BaseModel
 import guardrails as gd
 from guardrails.guard import Guard
 from guardrails.utils.reask_utils import FieldReAsk
+from guardrails.validators import FailResult
 
 from .mock_llm_outputs import (
     entity_extraction,
@@ -155,8 +156,10 @@ def test_entity_extraction_with_reask(mocker, rail, prompt, multiprocessing_vali
     assert nested_validator_log.value_before_validation == "my chase plan"
     assert nested_validator_log.value_after_validation == FieldReAsk(
         incorrect_value="my chase plan",
-        fix_value="my chase",
-        error_message="must be exactly two words",
+        fail_results=[FailResult(
+            fix_value="my chase",
+            error_message="must be exactly two words",
+        )],
         path=["fees", 1, "name"],
     )
 

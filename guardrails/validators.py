@@ -13,7 +13,7 @@ from typing import Any, Callable, Dict, List, Literal, Optional, Type, Union
 
 import openai
 import pydantic
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, ValidationError, Field
 
 from guardrails.utils.docs_utils import sentence_split
 from guardrails.utils.sql_utils import SQLDriver, create_sql_driver
@@ -180,6 +180,11 @@ class ValidationResult(pydantic.BaseModel):
 class PassResult(ValidationResult):
     outcome: Literal["pass"] = "pass"
 
+    class ValueOverrideSentinel:
+        pass
+    # should only be used if Validator.override_value_on_pass is True
+    value_override: Optional[Any] = Field(default=ValueOverrideSentinel)
+
 
 class FailResult(ValidationResult):
     outcome: Literal["fail"] = "fail"
@@ -192,6 +197,7 @@ class Validator:
     """Base class for validators."""
 
     run_in_separate_process = False
+    override_value_on_pass = False
 
     def __init__(self, on_fail: Optional[Callable] = None, **kwargs):
         if isinstance(on_fail, str):
@@ -253,6 +259,14 @@ class Validator:
         params = " ".join(validator_args)
         return f"{self.rail_alias}: {params}"
 
+    def __call__(self, value):
+        result = self.validate(value, {})
+        if isinstance(result, FailResult):
+            from guardrails.validator_service import ValidatorServiceBase
+            validator_service = ValidatorServiceBase()
+            return validator_service.perform_correction([result], value, self, self.on_fail_descriptor)
+        return value
+
 
 # @register_validator('required', 'all')
 # class Required(Validator):
@@ -282,6 +296,8 @@ class PydanticReAsk(dict):
 class Pydantic(Validator):
     """Validate an object using Pydantic."""
 
+    override_value_on_pass = True
+
     def __init__(
         self,
         model: Type[BaseModel],
@@ -291,7 +307,7 @@ class Pydantic(Validator):
 
         self.model = model
 
-    def validate_with_correction(self, value: Dict, metadata: Dict) -> Any:
+    def validate(self, value: Dict, metadata: Dict) -> ValidationResult:
         """Validate an object using Pydantic.
 
         For example, consider the following data for a `Person` model
@@ -326,10 +342,9 @@ class Pydantic(Validator):
             }
         }
         """
-        # TODO move this alternate handling to ValidatorService
         try:
             # Run the Pydantic model on the value.
-            return self.model(**value)
+            m = self.model(**value)
         except ValidationError as e:
             # Create a copy of the value so that we can modify it
             # to insert e.g. ReAsk objects.
@@ -346,16 +361,27 @@ class Pydantic(Validator):
                     error_message=error["msg"],
                     fix_value=None,
                 )
+
                 # Call the on_fail method and reassign the value.
-                new_value[field_name] = self.on_fail(field_value, fail_result)
+                from guardrails.validator_service import ValidatorServiceBase
+                validator_service = ValidatorServiceBase()
+                new_value[field_name] = validator_service.perform_correction([fail_result], field_value, self, self.on_fail_descriptor)
 
             # Insert the new `value` dictionary into the schema.
             # This now contains e.g. ReAsk objects.
-            return PydanticReAsk(new_value)
+            return PassResult(
+                value_override=PydanticReAsk(new_value),
+            )
+
+        return PassResult(
+            value_override=m,
+        )
 
 
 @register_validator(name="pydantic_field_validator", data_type="all")
 class PydanticFieldValidator(Validator):
+    override_value_on_pass = True
+
     def __init__(
         self,
         field_validator: Callable,
@@ -365,16 +391,17 @@ class PydanticFieldValidator(Validator):
         self.field_validator = field_validator
         super().__init__(on_fail, **kwargs)
 
-    def validate_with_correction(self, value: Any, metadata: Dict) -> ValidationResult:
+    def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         try:
             validated_field = self.field_validator(value)
         except Exception as e:
-            result = FailResult(
+            return FailResult(
                 error_message=str(e),
                 fix_value=None,
             )
-            return self.on_fail(value, result)
-        return validated_field
+        return PassResult(
+            value_override=validated_field,
+        )
 
     def to_prompt(self, with_keywords: bool = True) -> str:
         return self.field_validator.__func__.__name__

@@ -3,6 +3,7 @@ from pydantic import BaseModel, validator
 
 from guardrails.utils.pydantic_utils import register_pydantic
 from guardrails.utils.reask_utils import FieldReAsk
+from guardrails.validators import FailResult
 
 
 @register_pydantic
@@ -47,8 +48,10 @@ VALIDATED_OUTPUT = {
             "age": 28,
             "zip_code": FieldReAsk(
                 incorrect_value="90210",
-                error_message="Zip code must not be Beverly Hills.",
-                fix_value=None,
+                fail_results=[FailResult(
+                    error_message="Zip code must not be Beverly Hills.",
+                    fix_value=None,
+                )],
                 path=["people", 0],
             ),
         },

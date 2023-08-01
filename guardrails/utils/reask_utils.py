@@ -224,6 +224,7 @@ def sub_reasks_with_fixed_values(value: Any) -> Any:
         for dict_key, dict_value in value.items():
             value[dict_key] = sub_reasks_with_fixed_values(dict_value)
     elif isinstance(value, FieldReAsk):
-        value = value.fix_value
+        # TODO handle multiple fail results
+        value = value.fail_results[0].fix_value
 
     return value

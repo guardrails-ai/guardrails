@@ -7,10 +7,12 @@ from typing import Any, Tuple
 
 from guardrails.datatypes import FieldValidation
 from guardrails.utils.logs_utils import FieldValidationLogs, ValidatorLogs
-from guardrails.utils.reask_utils import FieldReAsk
-from guardrails.validators import FailResult, ValidatorError, Filter, Refrain, PassResult
+from guardrails.utils.reask_utils import FieldReAsk, ReAsk
+from guardrails.validators import FailResult, ValidatorError, Filter, Refrain, PassResult, PydanticFieldValidator, \
+    PydanticReAsk
 
 logger = logging.getLogger(__name__)
+
 
 class ValidatorServiceBase:
     def perform_correction(self, results: list[FailResult], value: Any, validator, on_fail_descriptor: str):
@@ -76,13 +78,23 @@ class SequentialValidatorService(ValidatorServiceBase):
             validator_logs = self.run_validator(validation_logs, validator, value, metadata)
             validation_logs.validator_logs.append(validator_logs)
 
-            if isinstance(validator_logs.validation_result, FailResult):
-                value = self.perform_correction([validator_logs.validation_result],
+            result = validator_logs.validation_result
+            if isinstance(result, FailResult):
+                value = self.perform_correction([result],
                                                 value, validator, validator_setup.on_fail)
+            elif (
+                isinstance(result, PassResult) and
+                validator.override_value_on_pass and
+                result.value_override is not result.ValueOverrideSentinel
+            ):
+                value = result.value_override
+            else:
+                raise RuntimeError(f"Unexpected result type {type(result)}")
 
             validator_logs.value_after_validation = value
+            metadata = validator_logs.validation_result.metadata
 
-            if isinstance(value, (Refrain, Filter, FieldReAsk)):
+            if isinstance(value, (Refrain, Filter, ReAsk, PydanticReAsk)):
                 return value, metadata
         return value, metadata
 
@@ -131,9 +143,11 @@ class MultiprocMixin:
 
 class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
     def group_validators(self, validators):
-        groups = itertools.groupby(validators, key=lambda v: v.on_fail_descriptor)
-        for on_fail_descriptor, group in groups:
-            if on_fail_descriptor in ["fix", "fix_reask", "custom"]:
+        groups = itertools.groupby(validators,
+                                   key=lambda v:
+                                   (v.on_fail_descriptor, v.override_value_on_pass))
+        for (on_fail_descriptor, override_on_pass), group in groups:
+            if override_on_pass or on_fail_descriptor in ["fix", "fix_reask", "custom"]:
                 for validator in group:
                     yield on_fail_descriptor, [validator]
             else:
@@ -151,7 +165,7 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
                     parallel_tasks.append(
                         loop.run_in_executor(
                             self.multiprocessing_executor,
-                            validator.validate,
+                            self.run_validator,
                             validation_logs,
                             validator,
                             value,
@@ -169,6 +183,7 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
             # wait for the parallel tasks to finish
             if parallel_tasks:
                 parallel_results = await asyncio.gather(*parallel_tasks)
+                validation_logs.validator_logs.extend(parallel_results)
                 validators_logs.extend(parallel_results)
 
             # process the results, handle failures
@@ -178,11 +193,20 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
                 fail_results = [logs.validation_result for logs in fails]
                 value = self.perform_correction(fail_results, value, validator_group[0], on_fail)
 
+            # handle overrides
+            if (
+                len(validator_group) == 1 and
+                validator_group[0].override_value_on_pass and
+                isinstance(validators_logs[0].validation_result, PassResult) and
+                validators_logs[0].validation_result.value_override is not PassResult.ValueOverrideSentinel
+            ):
+                value = validators_logs[0].validation_result.value_override
+
             for logs in validators_logs:
                 logs.value_after_validation = value
 
             # return early if we have a filter, refrain, or reask
-            if isinstance(value, (Filter, Refrain, FieldReAsk)):
+            if isinstance(value, (Filter, Refrain, FieldReAsk, PydanticReAsk)):
                 return value, metadata
 
         return value, metadata

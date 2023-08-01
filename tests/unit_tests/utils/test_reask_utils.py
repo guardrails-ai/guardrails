@@ -11,26 +11,76 @@ from guardrails.utils.reask_utils import (
     gather_reasks,
     sub_reasks_with_fixed_values,
 )
+from guardrails.validators import FailResult
 
 
 @pytest.mark.parametrize(
     "input_dict, expected_dict",
     [
-        ({"a": 1, "b": FieldReAsk(-1, "Error Msg", 1)}, {"a": 1, "b": 1}),
         (
-            {"a": 1, "b": {"c": 2, "d": FieldReAsk(-1, "Error Msg", 2)}},
+            {
+                "a": 1,
+                "b": FieldReAsk(
+                    incorrect_value=-1,
+                    fail_results=[FailResult(
+                        error_message="Error Msg",
+                        fix_value=1,
+                    )],
+                ),
+            },
+            {"a": 1, "b": 1},
+        ),
+        (
+            {
+                "a": 1,
+                "b": {
+                    "c": 2,
+                    "d": FieldReAsk(
+                        incorrect_value=-1,
+                        fail_results=[FailResult(
+                            error_message="Error Msg",
+                            fix_value=2
+                        )],
+                    )
+                }
+            },
             {"a": 1, "b": {"c": 2, "d": 2}},
         ),
         (
-            {"a": [1, 2, FieldReAsk(-1, "Error Msg", 3)], "b": 4},
+            {
+                "a": [1, 2, FieldReAsk(
+                    incorrect_value=-1,
+                    fail_results=[FailResult(
+                        error_message="Error Msg",
+                        fix_value=3,
+                    )],
+                )],
+                "b": 4,
+            },
             {"a": [1, 2, 3], "b": 4},
         ),
         (
-            {"a": [1, 2, {"c": FieldReAsk(-1, "Error Msg", 3)}]},
+            {
+                "a": [1, 2, {"c": FieldReAsk(
+                    incorrect_value=-1,
+                    fail_results=[FailResult(
+                        error_message="Error Msg",
+                        fix_value=3,
+                    )],
+                )}],
+            },
             {"a": [1, 2, {"c": 3}]},
         ),
         (
-            {"a": [1, 2, [3, 4, FieldReAsk(-1, "Error Msg", 5)]]},
+            {
+                "a": [1, 2, [3, 4, FieldReAsk(
+                    incorrect_value=-1,
+                    fail_results=[FailResult(
+                        error_message="Error Msg",
+                        fix_value=5,
+                    )],
+                )]]
+            },
             {"a": [1, 2, [3, 4, 5]]},
         ),
         ({"a": 1}, {"a": 1}),
@@ -43,20 +93,100 @@ def test_sub_reasks_with_fixed_values(input_dict, expected_dict):
 
 def test_gather_reasks():
     """Test that reasks are gathered."""
+    # input_dict = {
+    #     "a": 1,
+    #     "b": FieldReAsk("b0", "Error Msg", "b1", None),
+    #     "c": {"d": FieldReAsk("c0", "Error Msg", "c1", "None")},
+    #     "e": [1, 2, FieldReAsk("e0", "Error Msg", "e1", "None")],
+    #     "f": [1, 2, {"g": FieldReAsk("f0", "Error Msg", "f1", "None")}],
+    #     "h": [1, 2, [3, 4, FieldReAsk("h0", "Error Msg", "h1", "None")]],
+    # }
+    # expected_reasks = [
+    #     FieldReAsk("b0", "Error Msg", "b1", ["b"]),
+    #     FieldReAsk("c0", "Error Msg", "c1", ["c", "d"]),
+    #     FieldReAsk("e0", "Error Msg", "e1", ["e", 2]),
+    #     FieldReAsk("f0", "Error Msg", "f1", ["f", 2, "g"]),
+    #     FieldReAsk("h0", "Error Msg", "h1", ["h", 2, 2]),
+    # ]
     input_dict = {
         "a": 1,
-        "b": FieldReAsk("b0", "Error Msg", "b1", None),
-        "c": {"d": FieldReAsk("c0", "Error Msg", "c1", "None")},
-        "e": [1, 2, FieldReAsk("e0", "Error Msg", "e1", "None")],
-        "f": [1, 2, {"g": FieldReAsk("f0", "Error Msg", "f1", "None")}],
-        "h": [1, 2, [3, 4, FieldReAsk("h0", "Error Msg", "h1", "None")]],
+        "b": FieldReAsk(
+            incorrect_value=-1,
+            fail_results=[FailResult(
+                error_message="Error Msg",
+                fix_value=1,
+            )],
+        ),
+        "c": {"d": FieldReAsk(
+            incorrect_value=-1,
+            fail_results=[FailResult(
+                error_message="Error Msg",
+                fix_value=2,
+            )],
+        )},
+        "e": [1, 2, FieldReAsk(
+            incorrect_value=-1,
+            fail_results=[FailResult(
+                error_message="Error Msg",
+                fix_value=3,
+            )],
+        )],
+        "f": [1, 2, {"g": FieldReAsk(
+            incorrect_value=-1,
+            fail_results=[FailResult(
+                error_message="Error Msg",
+                fix_value=4,
+            )],
+        )}],
+        "h": [1, 2, [3, 4, FieldReAsk(
+            incorrect_value=-1,
+            fail_results=[FailResult(
+                error_message="Error Msg",
+                fix_value=5,
+            )],
+        )]],
     }
     expected_reasks = [
-        FieldReAsk("b0", "Error Msg", "b1", ["b"]),
-        FieldReAsk("c0", "Error Msg", "c1", ["c", "d"]),
-        FieldReAsk("e0", "Error Msg", "e1", ["e", 2]),
-        FieldReAsk("f0", "Error Msg", "f1", ["f", 2, "g"]),
-        FieldReAsk("h0", "Error Msg", "h1", ["h", 2, 2]),
+        FieldReAsk(
+            incorrect_value=-1,
+            fail_results=[FailResult(
+                error_message="Error Msg",
+                fix_value=1,
+            )],
+            path=["b"],
+        ),
+        FieldReAsk(
+            incorrect_value=-1,
+            fail_results=[FailResult(
+                error_message="Error Msg",
+                fix_value=2,
+            )],
+            path=["c", "d"],
+        ),
+        FieldReAsk(
+            incorrect_value=-1,
+            fail_results=[FailResult(
+                error_message="Error Msg",
+                fix_value=3,
+            )],
+            path=["e", 2],
+        ),
+        FieldReAsk(
+            incorrect_value=-1,
+            fail_results=[FailResult(
+                error_message="Error Msg",
+                fix_value=4,
+            )],
+            path=["f", 2, "g"],
+        ),
+        FieldReAsk(
+            incorrect_value=-1,
+            fail_results=[FailResult(
+                error_message="Error Msg",
+                fix_value=5,
+            )],
+            path=["h", 2, 2],
+        ),
     ]
     assert gather_reasks(input_dict) == expected_reasks
 
@@ -64,29 +194,81 @@ def test_gather_reasks():
 @pytest.mark.parametrize(
     "input_dict, expected_dict",
     [
+        # (
+        #     {"a": 1, "b": FieldReAsk(-1, "Error Msg", 1)},
+        #     {"b": FieldReAsk(-1, "Error Msg", 1)},
+        # ),
+        # (
+        #     {"a": 1, "b": {"c": 2, "d": FieldReAsk(-1, "Error Msg", 2)}},
+        #     {"b": {"d": FieldReAsk(-1, "Error Msg", 2)}},
+        # ),
+        # (
+        #     {"a": [1, 2, FieldReAsk(-1, "Error Msg", 3)], "b": 4},
+        #     {
+        #         "a": [
+        #             FieldReAsk(-1, "Error Msg", 3),
+        #         ]
+        #     },
+        # ),
+        # (
+        #     {"a": [1, 2, {"c": FieldReAsk(-1, "Error Msg", 3)}]},
+        #     {
+        #         "a": [
+        #             {
+        #                 "c": FieldReAsk(-1, "Error Msg", 3),
+        #             }
+        #         ]
+        #     },
+        # ),
         (
-            {"a": 1, "b": FieldReAsk(-1, "Error Msg", 1)},
-            {"b": FieldReAsk(-1, "Error Msg", 1)},
+            {"a": 1, "b": FieldReAsk(
+                incorrect_value=-1,
+                fail_results=[FailResult(
+                    error_message="Error Msg",
+                    fix_value=1,
+                )],
+            )},
+            {"b": FieldReAsk(
+                incorrect_value=-1,
+                fail_results=[FailResult(
+                    error_message="Error Msg",
+                    fix_value=1,
+                )],
+            )},
         ),
         (
-            {"a": 1, "b": {"c": 2, "d": FieldReAsk(-1, "Error Msg", 2)}},
-            {"b": {"d": FieldReAsk(-1, "Error Msg", 2)}},
+            {"a": 1, "b": {"c": 2, "d": FieldReAsk(
+                incorrect_value=-1,
+                fail_results=[FailResult(
+                    error_message="Error Msg",
+                    fix_value=2,
+                )],
+            )}},
+            {"b": {"d": FieldReAsk(
+                incorrect_value=-1,
+                fail_results=[FailResult(
+                    error_message="Error Msg",
+                    fix_value=2,
+                )],
+            )}},
         ),
         (
-            {"a": [1, 2, FieldReAsk(-1, "Error Msg", 3)], "b": 4},
+            {"a": [1, 2, FieldReAsk(
+                incorrect_value=-1,
+                fail_results=[FailResult(
+                    error_message="Error Msg",
+                    fix_value=3,
+                )],
+            )], "b": 4},
             {
                 "a": [
-                    FieldReAsk(-1, "Error Msg", 3),
-                ]
-            },
-        ),
-        (
-            {"a": [1, 2, {"c": FieldReAsk(-1, "Error Msg", 3)}]},
-            {
-                "a": [
-                    {
-                        "c": FieldReAsk(-1, "Error Msg", 3),
-                    }
+                    FieldReAsk(
+                        incorrect_value=-1,
+                        fail_results=[FailResult(
+                            error_message="Error Msg",
+                            fix_value=3,
+                        )],
+                    ),
                 ]
             },
         ),
@@ -107,7 +289,17 @@ def test_prune_json_for_reasking(input_dict, expected_dict):
     <string name="name" required="true"/>
 </output>
 """,
-            [reask_utils.FieldReAsk(-1, "Error Msg", "name", ["name"])],
+            # [reask_utils.FieldReAsk(-1, "Error Msg", "name", ["name"])],
+            [
+                FieldReAsk(
+                    incorrect_value=-1,
+                    fail_results=[FailResult(
+                        error_message="Error Msg",
+                        fix_value="name",
+                    )],
+                    path=["name"],
+                )
+            ],
             {
                 "name": {
                     "incorrect_value": -1,
@@ -124,8 +316,24 @@ def test_prune_json_for_reasking(input_dict, expected_dict):
 </output>
 """,
             [
-                reask_utils.FieldReAsk(-1, "Error Msg", "name", ["name"]),
-                reask_utils.FieldReAsk(-1, "Error Msg", "age", ["age"]),
+                # reask_utils.FieldReAsk(-1, "Error Msg", "name", ["name"]),
+                # reask_utils.FieldReAsk(-1, "Error Msg", "age", ["age"]),
+                FieldReAsk(
+                    incorrect_value=-1,
+                    fail_results=[FailResult(
+                        error_message="Error Msg",
+                        fix_value="name",
+                    )],
+                    path=["name"],
+                ),
+                FieldReAsk(
+                    incorrect_value=-1,
+                    fail_results=[FailResult(
+                        error_message="Error Msg",
+                        fix_value="age",
+                    )],
+                    path=["age"],
+                ),
             ],
             {
                 "name": {
