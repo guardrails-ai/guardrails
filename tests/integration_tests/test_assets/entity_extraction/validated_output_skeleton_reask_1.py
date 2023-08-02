@@ -36,8 +36,10 @@ VALIDATED_OUTPUT_SKELETON_REASK_1 = SkeletonReAsk(
             },
         },
     },
-    fail_results=[FailResult(
-        error_message="JSON does not match schema",
-        fix_value=None,
-    )],
+    fail_results=[
+        FailResult(
+            error_message="JSON does not match schema",
+            fix_value=None,
+        )
+    ],
 )

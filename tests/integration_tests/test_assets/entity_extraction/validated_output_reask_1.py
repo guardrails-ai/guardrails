@@ -14,10 +14,12 @@ VALIDATED_OUTPUT_REASK_1 = {
             "index": 2,
             "name": FieldReAsk(
                 incorrect_value="my chase plan",
-                fail_results=[FailResult(
-                    error_message="must be exactly two words",
-                    fix_value="my chase",
-                )],
+                fail_results=[
+                    FailResult(
+                        error_message="must be exactly two words",
+                        fix_value="my chase",
+                    )
+                ],
                 path=["fees", 1, "name"],
             ),
             "explanation": "My Chase Plan Fee (fixed finance charge)",
@@ -51,10 +53,12 @@ VALIDATED_OUTPUT_REASK_1 = {
             "index": 7,
             "name": FieldReAsk(
                 incorrect_value="over-the-credit-limit",
-                fail_results=[FailResult(
-                    error_message="must be exactly two words",
-                    fix_value="over-the-credit-limit",
-                )],
+                fail_results=[
+                    FailResult(
+                        error_message="must be exactly two words",
+                        fix_value="over-the-credit-limit",
+                    )
+                ],
                 path=["fees", 6, "name"],
             ),
             "explanation": "Over-the-Credit-Limit None",

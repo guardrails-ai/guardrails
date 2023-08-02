@@ -48,10 +48,12 @@ VALIDATED_OUTPUT = {
             "age": 28,
             "zip_code": FieldReAsk(
                 incorrect_value="90210",
-                fail_results=[FailResult(
-                    error_message="Zip code must not be Beverly Hills.",
-                    fix_value=None,
-                )],
+                fail_results=[
+                    FailResult(
+                        error_message="Zip code must not be Beverly Hills.",
+                        fix_value=None,
+                    )
+                ],
                 path=["people", 0],
             ),
         },

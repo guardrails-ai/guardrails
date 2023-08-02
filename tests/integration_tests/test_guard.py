@@ -156,10 +156,12 @@ def test_entity_extraction_with_reask(mocker, rail, prompt, multiprocessing_vali
     assert nested_validator_log.value_before_validation == "my chase plan"
     assert nested_validator_log.value_after_validation == FieldReAsk(
         incorrect_value="my chase plan",
-        fail_results=[FailResult(
-            fix_value="my chase",
-            error_message="must be exactly two words",
-        )],
+        fail_results=[
+            FailResult(
+                fix_value="my chase",
+                error_message="must be exactly two words",
+            )
+        ],
         path=["fees", 1, "name"],
     )
 

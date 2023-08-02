@@ -1,4 +1,3 @@
-import itertools
 import json
 import logging
 import pprint
@@ -27,7 +26,12 @@ from guardrails.utils.reask_utils import (
     get_reasks_by_element,
 )
 from guardrails.validator_service import FieldValidation
-from guardrails.validators import Validator, check_refrain_in_dict, filter_in_dict, FailResult
+from guardrails.validators import (
+    FailResult,
+    Validator,
+    check_refrain_in_dict,
+    filter_in_dict,
+)
 
 if TYPE_CHECKING:
     pass
@@ -449,10 +453,7 @@ class JsonSchema(Schema):
                     continue
                 if k == "fail_results":
                     k = "error_messages"
-                    v = [
-                        result.error_message
-                        for result in v
-                    ]
+                    v = [result.error_message for result in v]
                 decoded[k] = v
             return decoded
 
@@ -527,10 +528,12 @@ class JsonSchema(Schema):
         ):
             return SkeletonReAsk(
                 incorrect_value=validated_response,
-                fail_results=[FailResult(
-                    fix_value=None,
-                    error_message="JSON does not match schema",
-                )],
+                fail_results=[
+                    FailResult(
+                        fix_value=None,
+                        error_message="JSON does not match schema",
+                    )
+                ],
             )
 
         validation = FieldValidation(
@@ -727,9 +730,11 @@ class StringSchema(Schema):
             )
 
         error_messages = "\n".join(
-            [f"- {fail_result.error_message}"
-             for reask in reasks
-             for fail_result in reask.fail_results]
+            [
+                f"- {fail_result.error_message}"
+                for reask in reasks
+                for fail_result in reask.fail_results
+            ]
         )
 
         prompt = reask_prompt_template.format(

@@ -22,10 +22,12 @@ from guardrails.validators import FailResult
                 "a": 1,
                 "b": FieldReAsk(
                     incorrect_value=-1,
-                    fail_results=[FailResult(
-                        error_message="Error Msg",
-                        fix_value=1,
-                    )],
+                    fail_results=[
+                        FailResult(
+                            error_message="Error Msg",
+                            fix_value=1,
+                        )
+                    ],
                 ),
             },
             {"a": 1, "b": 1},
@@ -37,49 +39,72 @@ from guardrails.validators import FailResult
                     "c": 2,
                     "d": FieldReAsk(
                         incorrect_value=-1,
-                        fail_results=[FailResult(
-                            error_message="Error Msg",
-                            fix_value=2
-                        )],
-                    )
-                }
+                        fail_results=[
+                            FailResult(error_message="Error Msg", fix_value=2)
+                        ],
+                    ),
+                },
             },
             {"a": 1, "b": {"c": 2, "d": 2}},
         ),
         (
             {
-                "a": [1, 2, FieldReAsk(
-                    incorrect_value=-1,
-                    fail_results=[FailResult(
-                        error_message="Error Msg",
-                        fix_value=3,
-                    )],
-                )],
+                "a": [
+                    1,
+                    2,
+                    FieldReAsk(
+                        incorrect_value=-1,
+                        fail_results=[
+                            FailResult(
+                                error_message="Error Msg",
+                                fix_value=3,
+                            )
+                        ],
+                    ),
+                ],
                 "b": 4,
             },
             {"a": [1, 2, 3], "b": 4},
         ),
         (
             {
-                "a": [1, 2, {"c": FieldReAsk(
-                    incorrect_value=-1,
-                    fail_results=[FailResult(
-                        error_message="Error Msg",
-                        fix_value=3,
-                    )],
-                )}],
+                "a": [
+                    1,
+                    2,
+                    {
+                        "c": FieldReAsk(
+                            incorrect_value=-1,
+                            fail_results=[
+                                FailResult(
+                                    error_message="Error Msg",
+                                    fix_value=3,
+                                )
+                            ],
+                        )
+                    },
+                ],
             },
             {"a": [1, 2, {"c": 3}]},
         ),
         (
             {
-                "a": [1, 2, [3, 4, FieldReAsk(
-                    incorrect_value=-1,
-                    fail_results=[FailResult(
-                        error_message="Error Msg",
-                        fix_value=5,
-                    )],
-                )]]
+                "a": [
+                    1,
+                    2,
+                    [
+                        3,
+                        4,
+                        FieldReAsk(
+                            incorrect_value=-1,
+                            fail_results=[
+                                FailResult(
+                                    error_message="Error Msg",
+                                    fix_value=5,
+                                )
+                            ],
+                        ),
+                    ],
+                ]
             },
             {"a": [1, 2, [3, 4, 5]]},
         ),
@@ -112,79 +137,119 @@ def test_gather_reasks():
         "a": 1,
         "b": FieldReAsk(
             incorrect_value=-1,
-            fail_results=[FailResult(
-                error_message="Error Msg",
-                fix_value=1,
-            )],
+            fail_results=[
+                FailResult(
+                    error_message="Error Msg",
+                    fix_value=1,
+                )
+            ],
         ),
-        "c": {"d": FieldReAsk(
-            incorrect_value=-1,
-            fail_results=[FailResult(
-                error_message="Error Msg",
-                fix_value=2,
-            )],
-        )},
-        "e": [1, 2, FieldReAsk(
-            incorrect_value=-1,
-            fail_results=[FailResult(
-                error_message="Error Msg",
-                fix_value=3,
-            )],
-        )],
-        "f": [1, 2, {"g": FieldReAsk(
-            incorrect_value=-1,
-            fail_results=[FailResult(
-                error_message="Error Msg",
-                fix_value=4,
-            )],
-        )}],
-        "h": [1, 2, [3, 4, FieldReAsk(
-            incorrect_value=-1,
-            fail_results=[FailResult(
-                error_message="Error Msg",
-                fix_value=5,
-            )],
-        )]],
+        "c": {
+            "d": FieldReAsk(
+                incorrect_value=-1,
+                fail_results=[
+                    FailResult(
+                        error_message="Error Msg",
+                        fix_value=2,
+                    )
+                ],
+            )
+        },
+        "e": [
+            1,
+            2,
+            FieldReAsk(
+                incorrect_value=-1,
+                fail_results=[
+                    FailResult(
+                        error_message="Error Msg",
+                        fix_value=3,
+                    )
+                ],
+            ),
+        ],
+        "f": [
+            1,
+            2,
+            {
+                "g": FieldReAsk(
+                    incorrect_value=-1,
+                    fail_results=[
+                        FailResult(
+                            error_message="Error Msg",
+                            fix_value=4,
+                        )
+                    ],
+                )
+            },
+        ],
+        "h": [
+            1,
+            2,
+            [
+                3,
+                4,
+                FieldReAsk(
+                    incorrect_value=-1,
+                    fail_results=[
+                        FailResult(
+                            error_message="Error Msg",
+                            fix_value=5,
+                        )
+                    ],
+                ),
+            ],
+        ],
     }
     expected_reasks = [
         FieldReAsk(
             incorrect_value=-1,
-            fail_results=[FailResult(
-                error_message="Error Msg",
-                fix_value=1,
-            )],
+            fail_results=[
+                FailResult(
+                    error_message="Error Msg",
+                    fix_value=1,
+                )
+            ],
             path=["b"],
         ),
         FieldReAsk(
             incorrect_value=-1,
-            fail_results=[FailResult(
-                error_message="Error Msg",
-                fix_value=2,
-            )],
+            fail_results=[
+                FailResult(
+                    error_message="Error Msg",
+                    fix_value=2,
+                )
+            ],
             path=["c", "d"],
         ),
         FieldReAsk(
             incorrect_value=-1,
-            fail_results=[FailResult(
-                error_message="Error Msg",
-                fix_value=3,
-            )],
+            fail_results=[
+                FailResult(
+                    error_message="Error Msg",
+                    fix_value=3,
+                )
+            ],
             path=["e", 2],
         ),
         FieldReAsk(
             incorrect_value=-1,
-            fail_results=[FailResult(
-                error_message="Error Msg",
-                fix_value=4,
-            )],
+            fail_results=[
+                FailResult(
+                    error_message="Error Msg",
+                    fix_value=4,
+                )
+            ],
             path=["f", 2, "g"],
         ),
         FieldReAsk(
             incorrect_value=-1,
-            fail_results=[FailResult(
-                error_message="Error Msg",
-                fix_value=5,
-            )],
+            fail_results=[
+                FailResult(
+                    error_message="Error Msg",
+                    fix_value=5,
+                )
+            ],
             path=["h", 2, 2],
         ),
     ]
@@ -221,53 +286,87 @@ def test_gather_reasks():
         #     },
         # ),
         (
-            {"a": 1, "b": FieldReAsk(
-                incorrect_value=-1,
-                fail_results=[FailResult(
-                    error_message="Error Msg",
-                    fix_value=1,
-                )],
-            )},
-            {"b": FieldReAsk(
-                incorrect_value=-1,
-                fail_results=[FailResult(
-                    error_message="Error Msg",
-                    fix_value=1,
-                )],
-            )},
+            {
+                "a": 1,
+                "b": FieldReAsk(
+                    incorrect_value=-1,
+                    fail_results=[
+                        FailResult(
+                            error_message="Error Msg",
+                            fix_value=1,
+                        )
+                    ],
+                ),
+            },
+            {
+                "b": FieldReAsk(
+                    incorrect_value=-1,
+                    fail_results=[
+                        FailResult(
+                            error_message="Error Msg",
+                            fix_value=1,
+                        )
+                    ],
+                )
+            },
         ),
         (
-            {"a": 1, "b": {"c": 2, "d": FieldReAsk(
-                incorrect_value=-1,
-                fail_results=[FailResult(
-                    error_message="Error Msg",
-                    fix_value=2,
-                )],
-            )}},
-            {"b": {"d": FieldReAsk(
-                incorrect_value=-1,
-                fail_results=[FailResult(
-                    error_message="Error Msg",
-                    fix_value=2,
-                )],
-            )}},
+            {
+                "a": 1,
+                "b": {
+                    "c": 2,
+                    "d": FieldReAsk(
+                        incorrect_value=-1,
+                        fail_results=[
+                            FailResult(
+                                error_message="Error Msg",
+                                fix_value=2,
+                            )
+                        ],
+                    ),
+                },
+            },
+            {
+                "b": {
+                    "d": FieldReAsk(
+                        incorrect_value=-1,
+                        fail_results=[
+                            FailResult(
+                                error_message="Error Msg",
+                                fix_value=2,
+                            )
+                        ],
+                    )
+                }
+            },
         ),
         (
-            {"a": [1, 2, FieldReAsk(
-                incorrect_value=-1,
-                fail_results=[FailResult(
-                    error_message="Error Msg",
-                    fix_value=3,
-                )],
-            )], "b": 4},
+            {
+                "a": [
+                    1,
+                    2,
+                    FieldReAsk(
+                        incorrect_value=-1,
+                        fail_results=[
+                            FailResult(
+                                error_message="Error Msg",
+                                fix_value=3,
+                            )
+                        ],
+                    ),
+                ],
+                "b": 4,
+            },
             {
                 "a": [
                     FieldReAsk(
                         incorrect_value=-1,
-                        fail_results=[FailResult(
-                            error_message="Error Msg",
-                            fix_value=3,
-                        )],
+                        fail_results=[
+                            FailResult(
+                                error_message="Error Msg",
+                                fix_value=3,
+                            )
+                        ],
                     ),
                 ]
             },
@@ -293,10 +392,12 @@ def test_prune_json_for_reasking(input_dict, expected_dict):
             [
                 FieldReAsk(
                     incorrect_value=-1,
-                    fail_results=[FailResult(
-                        error_message="Error Msg",
-                        fix_value="name",
-                    )],
+                    fail_results=[
+                        FailResult(
+                            error_message="Error Msg",
+                            fix_value="name",
+                        )
+                    ],
                     path=["name"],
                 )
             ],
@@ -320,18 +421,22 @@ def test_prune_json_for_reasking(input_dict, expected_dict):
                 # reask_utils.FieldReAsk(-1, "Error Msg", "age", ["age"]),
                 FieldReAsk(
                     incorrect_value=-1,
-                    fail_results=[FailResult(
-                        error_message="Error Msg",
-                        fix_value="name",
-                    )],
+                    fail_results=[
+                        FailResult(
+                            error_message="Error Msg",
+                            fix_value="name",
+                        )
+                    ],
                     path=["name"],
                 ),
                 FieldReAsk(
                     incorrect_value=-1,
-                    fail_results=[FailResult(
-                        error_message="Error Msg",
-                        fix_value="age",
-                    )],
+                    fail_results=[
+                        FailResult(
+                            error_message="Error Msg",
+                            fix_value="age",
+                        )
+                    ],
                     path=["age"],
                 ),
             ],

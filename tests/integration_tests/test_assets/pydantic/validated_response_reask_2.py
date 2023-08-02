@@ -48,10 +48,12 @@ VALIDATED_OUTPUT = {
             "age": 28,
             "zip_code": FieldReAsk(
                 incorrect_value="None",
-                fail_results=[FailResult(
-                    error_message="Zip code must be numeric.",
-                    fix_value=None,
-                )],
+                fail_results=[
+                    FailResult(
+                        error_message="Zip code must be numeric.",
+                        fix_value=None,
+                    )
+                ],
                 path=["people", 0],
             ),
         },

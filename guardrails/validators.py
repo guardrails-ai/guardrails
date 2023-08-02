@@ -13,7 +13,7 @@ from typing import Any, Callable, Dict, List, Literal, Optional, Type, Union
 
 import openai
 import pydantic
-from pydantic import BaseModel, ValidationError, Field
+from pydantic import BaseModel, Field, ValidationError
 
 from guardrails.utils.docs_utils import sentence_split
 from guardrails.utils.sql_utils import SQLDriver, create_sql_driver
@@ -182,6 +182,7 @@ class PassResult(ValidationResult):
 
     class ValueOverrideSentinel:
         pass
+
     # should only be used if Validator.override_value_on_pass is True
     value_override: Optional[Any] = Field(default=ValueOverrideSentinel)
 
@@ -263,8 +264,11 @@ class Validator:
         result = self.validate(value, {})
         if isinstance(result, FailResult):
             from guardrails.validator_service import ValidatorServiceBase
+
             validator_service = ValidatorServiceBase()
-            return validator_service.perform_correction([result], value, self, self.on_fail_descriptor)
+            return validator_service.perform_correction(
+                [result], value, self, self.on_fail_descriptor
+            )
         return value
 
 
@@ -364,8 +368,11 @@ class Pydantic(Validator):
 
                 # Call the on_fail method and reassign the value.
                 from guardrails.validator_service import ValidatorServiceBase
+
                 validator_service = ValidatorServiceBase()
-                new_value[field_name] = validator_service.perform_correction([fail_result], field_value, self, self.on_fail_descriptor)
+                new_value[field_name] = validator_service.perform_correction(
+                    [fail_result], field_value, self, self.on_fail_descriptor
+                )
 
             # Insert the new `value` dictionary into the schema.
             # This now contains e.g. ReAsk objects.

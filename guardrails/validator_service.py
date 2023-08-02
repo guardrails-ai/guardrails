@@ -8,14 +8,22 @@ from typing import Any, Tuple
 from guardrails.datatypes import FieldValidation
 from guardrails.utils.logs_utils import FieldValidationLogs, ValidatorLogs
 from guardrails.utils.reask_utils import FieldReAsk, ReAsk
-from guardrails.validators import FailResult, ValidatorError, Filter, Refrain, PassResult, PydanticFieldValidator, \
-    PydanticReAsk
+from guardrails.validators import (
+    FailResult,
+    Filter,
+    PassResult,
+    PydanticReAsk,
+    Refrain,
+    ValidatorError,
+)
 
 logger = logging.getLogger(__name__)
 
 
 class ValidatorServiceBase:
-    def perform_correction(self, results: list[FailResult], value: Any, validator, on_fail_descriptor: str):
+    def perform_correction(
+        self, results: list[FailResult], value: Any, validator, on_fail_descriptor: str
+    ):
         if on_fail_descriptor == "fix":
             return results[0].fix_value
         elif on_fail_descriptor == "fix_reask":
@@ -40,8 +48,8 @@ class ValidatorServiceBase:
             )
         if on_fail_descriptor == "exception":
             raise ValidatorError(
-                f"Validation failed for field with errors: " +
-                ", ".join([result.error_message for result in results])
+                "Validation failed for field with errors: "
+                + ", ".join([result.error_message for result in results])
             )
         if on_fail_descriptor == "filter":
             return Filter()
@@ -55,7 +63,9 @@ class ValidatorServiceBase:
                 f"expected 'fix' or 'exception'."
             )
 
-    def run_validator(self, validation_logs, validator, value, metadata) -> ValidatorLogs:
+    def run_validator(
+        self, validation_logs, validator, value, metadata
+    ) -> ValidatorLogs:
         validator_class_name = validator.__class__.__name__
         validator_logs = ValidatorLogs(
             validator_name=validator_class_name,
@@ -75,17 +85,20 @@ class SequentialValidatorService(ValidatorServiceBase):
     def run_validators(self, validation_logs, validator_setup, value, metadata):
         # Validate the field
         for validator in validator_setup.validators:
-            validator_logs = self.run_validator(validation_logs, validator, value, metadata)
+            validator_logs = self.run_validator(
+                validation_logs, validator, value, metadata
+            )
             validation_logs.validator_logs.append(validator_logs)
 
             result = validator_logs.validation_result
             if isinstance(result, FailResult):
-                value = self.perform_correction([result],
-                                                value, validator, validator_setup.on_fail)
+                value = self.perform_correction(
+                    [result], value, validator, validator_setup.on_fail
+                )
             elif (
-                isinstance(result, PassResult) and
-                validator.override_value_on_pass and
-                result.value_override is not result.ValueOverrideSentinel
+                isinstance(result, PassResult)
+                and validator.override_value_on_pass
+                and result.value_override is not result.ValueOverrideSentinel
             ):
                 value = result.value_override
             else:
@@ -143,9 +156,9 @@ class MultiprocMixin:
 
 class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
     def group_validators(self, validators):
-        groups = itertools.groupby(validators,
-                                   key=lambda v:
-                                   (v.on_fail_descriptor, v.override_value_on_pass))
+        groups = itertools.groupby(
+            validators, key=lambda v: (v.on_fail_descriptor, v.override_value_on_pass)
+        )
         for (on_fail_descriptor, override_on_pass), group in groups:
             if override_on_pass or on_fail_descriptor in ["fix", "fix_reask", "custom"]:
                 for validator in group:
@@ -155,8 +168,9 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
 
     async def run_validators(self, validation_logs, validator_setup, value, metadata):
         loop = asyncio.get_running_loop()
-        for on_fail, validator_group in \
-                self.group_validators(validator_setup.validators):
+        for on_fail, validator_group in self.group_validators(
+            validator_setup.validators
+        ):
             parallel_tasks = []
             validators_logs = []
             for validator in validator_group:
@@ -174,10 +188,9 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
                     )
                 else:
                     # run the validators in the current process
-                    result = self.run_validator(validation_logs,
-                                                validator,
-                                                value,
-                                                metadata)
+                    result = self.run_validator(
+                        validation_logs, validator, value, metadata
+                    )
                     validators_logs.append(result)
 
             # wait for the parallel tasks to finish
@@ -187,18 +200,24 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
                 validators_logs.extend(parallel_results)
 
             # process the results, handle failures
-            fails = [logs for logs in validators_logs
-                     if isinstance(logs.validation_result, FailResult)]
+            fails = [
+                logs
+                for logs in validators_logs
+                if isinstance(logs.validation_result, FailResult)
+            ]
             if fails:
                 fail_results = [logs.validation_result for logs in fails]
-                value = self.perform_correction(fail_results, value, validator_group[0], on_fail)
+                value = self.perform_correction(
+                    fail_results, value, validator_group[0], on_fail
+                )
 
             # handle overrides
             if (
-                len(validator_group) == 1 and
-                validator_group[0].override_value_on_pass and
-                isinstance(validators_logs[0].validation_result, PassResult) and
-                validators_logs[0].validation_result.value_override is not PassResult.ValueOverrideSentinel
+                len(validator_group) == 1
+                and validator_group[0].override_value_on_pass
+                and isinstance(validators_logs[0].validation_result, PassResult)
+                and validators_logs[0].validation_result.value_override
+                is not PassResult.ValueOverrideSentinel
             ):
                 value = validators_logs[0].validation_result.value_override
 
