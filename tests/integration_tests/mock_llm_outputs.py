@@ -30,8 +30,12 @@ async def async_openai_completion_create(prompt, *args, **kwargs):
     return openai_completion_create(prompt, *args, **kwargs)
 
 
-def openai_chat_completion_create(prompt, instructions, *args, **kwargs):
+def openai_chat_completion_create(
+    prompt=None, instructions=None, msg_history=None, *args, **kwargs
+):
     """Mock the OpenAI API call to ChatCompletion.create."""
+
+    breakpoint()
 
     mock_llm_responses = {
         (
@@ -52,7 +56,20 @@ def openai_chat_completion_create(prompt, instructions, *args, **kwargs):
         ): python_rail.LLM_OUTPUT_2_SUCCEED_GUARDRAILS_BUT_FAIL_PYDANTIC_VALIDATION,
     }
 
+    if msg_history:
+        fixed_history = []
+        for msg in msg_history:
+            msg["content"] = msg["content"].source
+            fixed_history.append(msg)
+        msg_history = fixed_history
+
     try:
-        return mock_llm_responses[(prompt, instructions)]
+        if prompt and instructions and not msg_history:
+            return mock_llm_responses[(prompt, instructions)]
+        elif msg_history and not prompt and not instructions:
+            if msg_history == entity_extraction.OPTIONAL_MSG_HISTORY:
+                return entity_extraction.LLM_OUTPUT
+            else:
+                raise ValueError("msg_history not found")
     except KeyError:
         raise ValueError("Compiled prompt not found")

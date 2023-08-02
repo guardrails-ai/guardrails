@@ -1,3 +1,4 @@
+import copy
 import logging
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
@@ -44,6 +45,7 @@ class Runner:
 
     instructions: Optional[Instructions]
     prompt: Prompt
+    msg_history: Optional[List[Dict]]
     api: PromptCallable
     input_schema: Schema
     output_schema: Schema
@@ -74,6 +76,15 @@ class Runner:
                 self.instructions, output_schema=self.output_schema.transpile()
             )
 
+        if len(self.msg_history):
+            msg_history = []
+            for msg in self.msg_history:
+                msg["content"] = Prompt(
+                    msg["content"], output_schema=self.output_schema.transpile()
+                )
+                msg_history.append(msg)
+            self.msg_history = msg_history
+
     def __call__(self, prompt_params: Dict = None) -> GuardHistory:
         """Execute the runner by repeatedly calling step until the reask budget
         is exhausted.
@@ -96,9 +107,10 @@ class Runner:
             output_schema=self.output_schema,
             num_reasks=self.num_reasks,
         ):
-            instructions, prompt, input_schema, output_schema = (
+            instructions, prompt, msg_history, input_schema, output_schema = (
                 self.instructions,
                 self.prompt,
+                self.msg_history,
                 self.input_schema,
                 self.output_schema,
             )
@@ -109,6 +121,7 @@ class Runner:
                     api=self.api,
                     instructions=instructions,
                     prompt=prompt,
+                    msg_history=msg_history,
                     prompt_params=prompt_params,
                     input_schema=input_schema,
                     output_schema=output_schema,
@@ -132,7 +145,8 @@ class Runner:
         index: int,
         api: PromptCallable,
         instructions: Optional[Instructions],
-        prompt: Prompt,
+        prompt: Optional[Prompt],
+        msg_history: Optional[List[Dict]],
         prompt_params: Dict,
         input_schema: Schema,
         output_schema: Schema,
@@ -152,25 +166,28 @@ class Runner:
             output_schema=output_schema,
         ):
             # Prepare: run pre-processing, and input validation.
-            if not output:
-                instructions, prompt = self.prepare(
+            if output:
+                instructions = None
+                prompt = None
+                msg_history = None
+            else:
+                instructions, prompt, msg_history = self.prepare(
                     index,
                     instructions,
                     prompt,
+                    msg_history,
                     prompt_params,
                     api,
                     input_schema,
                     output_schema,
                 )
-            else:
-                instructions = None
-                prompt = None
 
             guard_logs.prompt = prompt
             guard_logs.instructions = instructions
+            guard_logs.msg_history = msg_history
 
             # Call: run the API.
-            output = self.call(index, instructions, prompt, api, output)
+            output = self.call(index, instructions, prompt, msg_history, api, output)
 
             guard_logs.output = output
 
@@ -204,29 +221,37 @@ class Runner:
         index: int,
         instructions: Optional[Instructions],
         prompt: Prompt,
+        msg_history: Optional[List[Dict]],
         prompt_params: Dict,
         api: Union[PromptCallable, AsyncPromptCallable],
         input_schema: Schema,
         output_schema: Schema,
-    ) -> Tuple[Instructions, Prompt]:
-        """Prepare by running pre-processing and input validation."""
+    ) -> Tuple[Instructions, Prompt, List[Dict]]:
+        """Prepare by running pre-processing and input validation.
+
+        Returns:
+            The instructions, prompt, and message history.
+        """
         with start_action(action_type="prepare", index=index) as action:
             if prompt_params is None:
                 prompt_params = {}
 
-            # if input_schema:
-            #     validated_prompt_params = input_schema.validate(prompt_params)
-            # else:
-            validated_prompt_params = prompt_params
+            if len(msg_history):
+                msg_history = copy.deepcopy(msg_history)
+                # Format any variables in the message history with the prompt params.
+                for msg in msg_history:
+                    msg["content"] = msg["content"].format(**prompt_params)
 
-            if isinstance(prompt, str):
-                prompt = Prompt(prompt)
+                prompt, instructions = None, None
+            else:
+                if isinstance(prompt, str):
+                    prompt = Prompt(prompt)
 
-            prompt = prompt.format(**validated_prompt_params)
+                prompt = prompt.format(**prompt_params)
 
-            # TODO(shreya): should there be any difference to parsing params for prompt?
-            if instructions is not None and isinstance(instructions, Instructions):
-                instructions = instructions.format(**validated_prompt_params)
+                # TODO(shreya): should there be any difference to parsing params for prompt?
+                if instructions is not None and isinstance(instructions, Instructions):
+                    instructions = instructions.format(**prompt_params)
 
             instructions, prompt = output_schema.preprocess_prompt(
                 api, instructions, prompt
@@ -237,16 +262,17 @@ class Runner:
                 instructions=instructions,
                 prompt=prompt,
                 prompt_params=prompt_params,
-                validated_prompt_params=validated_prompt_params,
+                validated_prompt_params=prompt_params,
             )
 
-        return instructions, prompt
+        return instructions, prompt, msg_history
 
     def call(
         self,
         index: int,
         instructions: Optional[Instructions],
         prompt: Prompt,
+        msg_history: Optional[List[Dict[str, str]]],
         api: Callable,
         output: str = None,
     ) -> str:
@@ -258,20 +284,29 @@ class Runner:
         """
         with start_action(action_type="call", index=index, prompt=prompt) as action:
             try:
-                if prompt and instructions:
+                if msg_history:
                     output = api(
-                        prompt.source,
-                        instructions=instructions.source,
+                        msg_history=msg_history,
                         base_model=self.base_model,
                     )
-                elif prompt:
-                    output = api(prompt.source, base_model=self.base_model)
+                else:
+                    if prompt and instructions:
+                        output = api(
+                            prompt.source,
+                            instructions=instructions.source,
+                            base_model=self.base_model,
+                        )
+                    elif prompt:
+                        output = api(prompt.source, base_model=self.base_model)
             except Exception:
                 # If the API call fails, try calling again without the base model.
-                if prompt and instructions:
-                    output = api(prompt.source, instructions=instructions.source)
-                elif prompt:
-                    output = api(prompt.source)
+                if msg_history:
+                    output = api(msg_history=msg_history)
+                else:
+                    if prompt and instructions:
+                        output = api(prompt.source, instructions=instructions.source)
+                    elif prompt:
+                        output = api(prompt.source)
 
             action.log(
                 message_type="info",
@@ -380,9 +415,10 @@ class AsyncRunner(Runner):
             output_schema=self.output_schema,
             num_reasks=self.num_reasks,
         ):
-            instructions, prompt, input_schema, output_schema = (
+            instructions, prompt, msg_history, input_schema, output_schema = (
                 self.instructions,
                 self.prompt,
+                self.msg_history,
                 self.input_schema,
                 self.output_schema,
             )
@@ -393,6 +429,7 @@ class AsyncRunner(Runner):
                     api=self.api,
                     instructions=instructions,
                     prompt=prompt,
+                    msg_history=msg_history,
                     prompt_params=prompt_params,
                     input_schema=input_schema,
                     output_schema=output_schema,
@@ -417,6 +454,7 @@ class AsyncRunner(Runner):
         api: AsyncPromptCallable,
         instructions: Optional[Instructions],
         prompt: Prompt,
+        msg_history: Optional[List[Dict]],
         prompt_params: Dict,
         input_schema: Schema,
         output_schema: Schema,
@@ -437,10 +475,11 @@ class AsyncRunner(Runner):
         ):
             # Prepare: run pre-processing, and input validation.
             if not output:
-                instructions, prompt = self.prepare(
+                instructions, prompt, msg_history = self.prepare(
                     index,
                     instructions,
                     prompt,
+                    msg_history,
                     prompt_params,
                     api,
                     input_schema,
@@ -452,9 +491,12 @@ class AsyncRunner(Runner):
 
             guard_logs.prompt = prompt
             guard_logs.instructions = instructions
+            guard_logs.msg_history = msg_history
 
             # Call: run the API.
-            output = await self.async_call(index, instructions, prompt, api, output)
+            output = await self.async_call(
+                index, instructions, prompt, msg_history, api, output
+            )
 
             guard_logs.output = output
 
