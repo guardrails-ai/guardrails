@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from string import Formatter
-from typing import Any, Awaitable, Callable, Dict, Optional, Tuple, Union
+from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Union
 
 from eliot import add_destinations, start_action
 from pydantic import BaseModel
@@ -154,6 +154,9 @@ class Guard:
         llm_api: Union[Callable, Callable[[Any], Awaitable[Any]]],
         prompt_params: Dict = None,
         num_reasks: Optional[int] = None,
+        prompt: Optional[str] = None,
+        instructions: Optional[str] = None,
+        msg_history: Optional[List[Dict]] = None,
         metadata: Optional[Dict] = None,
         *args,
         **kwargs,
@@ -181,6 +184,9 @@ class Guard:
                 llm_api,
                 prompt_params=prompt_params,
                 num_reasks=num_reasks,
+                prompt=prompt,
+                instructions=instructions,
+                msg_history=msg_history,
                 metadata=metadata,
                 *args,
                 **kwargs,
@@ -190,6 +196,9 @@ class Guard:
             llm_api,
             prompt_params=prompt_params,
             num_reasks=num_reasks,
+            prompt=prompt,
+            instructions=instructions,
+            msg_history=msg_history,
             metadata=metadata,
             *args,
             **kwargs,
@@ -200,17 +209,28 @@ class Guard:
         llm_api: Callable,
         prompt_params: Dict,
         num_reasks: int,
+        prompt: Optional[str],
+        instructions: Optional[str],
+        msg_history: Optional[List[Dict]],
         metadata: Dict,
         *args,
         **kwargs,
     ) -> Tuple[str, Dict]:
+        instructions = instructions or self.instructions
+        prompt = prompt or self.prompt
+        msg_history = msg_history or []
+        if prompt is None:
+            if not len(msg_history):
+                raise RuntimeError(
+                    "You must provide a prompt if msg_history is empty. "
+                    "Alternatively, you can provide a prompt in the Schema constructor."
+                )
+
         with start_action(action_type="guard_call", prompt_params=prompt_params):
-            if "instructions" in kwargs:
-                logger.info("Instructions overridden at call time")
-                # TODO(shreya): should we overwrite self.instructions for this run?
             runner = Runner(
-                instructions=kwargs.get("instructions", self.instructions),
-                prompt=self.prompt,
+                instructions=instructions,
+                prompt=prompt,
+                msg_history=msg_history,
                 api=get_llm_ask(llm_api, *args, **kwargs),
                 input_schema=self.input_schema,
                 output_schema=self.output_schema,
@@ -228,6 +248,9 @@ class Guard:
         llm_api: Callable[[Any], Awaitable[Any]],
         prompt_params: Dict,
         num_reasks: int,
+        prompt: Optional[str],
+        instructions: Optional[str],
+        msg_history: Optional[List[Dict]],
         metadata: Dict,
         *args,
         **kwargs,
@@ -242,19 +265,27 @@ class Guard:
         Returns:
             The raw text output from the LLM and the validated output.
         """
+        instructions = instructions or self.instructions
+        prompt = prompt or self.prompt
+        msg_history = msg_history or []
+        if prompt is None:
+            if not len(msg_history):
+                raise RuntimeError(
+                    "You must provide a prompt if msg_history is empty. "
+                    "Alternatively, you can provide a prompt in the RAIL spec."
+                )
         with start_action(action_type="guard_call", prompt_params=prompt_params):
-            if "instructions" in kwargs:
-                logger.info("Instructions overridden at call time")
-                # TODO(shreya): should we overwrite self.instructions for this run?
             runner = AsyncRunner(
-                instructions=kwargs.get("instructions", self.instructions),
-                prompt=self.prompt,
+                instructions=instructions,
+                prompt=prompt,
+                msg_history=msg_history,
                 api=get_async_llm_ask(llm_api, *args, **kwargs),
                 input_schema=self.input_schema,
                 output_schema=self.output_schema,
                 num_reasks=num_reasks,
                 metadata=metadata,
                 reask_prompt=self.reask_prompt,
+                base_model=self.base_model,
                 guard_state=self.guard_state,
             )
             guard_history = await runner.async_run(prompt_params=prompt_params)
@@ -328,12 +359,14 @@ class Guard:
             runner = Runner(
                 instructions=None,
                 prompt=None,
+                msg_history=None,
                 api=get_llm_ask(llm_api, *args, **kwargs) if llm_api else None,
                 input_schema=None,
                 output_schema=self.output_schema,
                 num_reasks=num_reasks,
                 output=llm_output,
                 reask_prompt=self.reask_prompt,
+                base_model=self.base_model,
                 guard_state=self.guard_state,
             )
             guard_history = runner(prompt_params=prompt_params)
@@ -362,12 +395,14 @@ class Guard:
             runner = AsyncRunner(
                 instructions=None,
                 prompt=None,
+                msg_history=None,
                 api=get_async_llm_ask(llm_api, *args, **kwargs) if llm_api else None,
                 input_schema=None,
                 output_schema=self.output_schema,
                 num_reasks=num_reasks,
                 output=llm_output,
                 reask_prompt=self.reask_prompt,
+                base_model=self.base_model,
                 guard_state=self.guard_state,
             )
             guard_history = await runner.async_run(prompt_params=prompt_params)

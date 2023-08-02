@@ -1,0 +1,17 @@
+<rail version="0.1">
+
+<output>
+
+    <list name="fees" description="What fees and charges are associated with my account?">
+        <object>
+            <integer name="index" format="1-indexed" />
+            <string name="name" format="lower-case; two-words" on-fail-lower-case="noop" 
+on-fail-two-words="reask"/>
+            <string name="explanation" format="one-line" on-fail-one-line="noop" />
+            <float name="value" format="percentage"/>
+        </object>
+    </list>
+    <object name="interest_rates" description="What are the interest rates offered by the bank on savings and checking accounts, loans, and credit products?" />
+</output>
+
+</rail>

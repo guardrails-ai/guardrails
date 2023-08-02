@@ -78,11 +78,18 @@ def nonchat_prompt(prompt: str, instructions: Optional[str] = None, **kwargs) ->
 
 
 def chat_prompt(
-    prompt: str, instructions: Optional[str] = None, **kwargs
+    prompt: str,
+    instructions: Optional[str] = None,
+    msg_history: Optional[List[Dict]] = None,
+    **kwargs,
 ) -> List[Dict[str, str]]:
     """Prepare final prompt for chat engine."""
+    if msg_history:
+        return msg_history
+
     if not instructions:
         instructions = "You are a helpful assistant."
+
     return [
         {"role": "system", "content": instructions},
         {"role": "user", "content": prompt},
@@ -111,6 +118,7 @@ def openai_chat_wrapper(
     text: str,
     model="gpt-3.5-turbo",
     instructions: Optional[str] = None,
+    msg_history: Optional[List[Dict]] = None,
     base_model: Optional[BaseModel] = None,
     *args,
     **kwargs,
@@ -128,11 +136,11 @@ def openai_chat_wrapper(
     api_key = os.environ.get("OPENAI_API_KEY")
 
     # TODO: update this as new models are released
-    if base_model and model in ["gpt-3.5-turbo-0613", "gpt-4-0613"]:
+    if base_model:
         openai_response = openai.ChatCompletion.create(
             api_key=api_key,
             model=model,
-            messages=chat_prompt(text, instructions, **kwargs),
+            messages=chat_prompt(text, instructions, msg_history, **kwargs),
             functions=[function_params],
             function_call={"name": function_params["name"]},
             *args,
@@ -143,7 +151,7 @@ def openai_chat_wrapper(
         openai_response = openai.ChatCompletion.create(
             api_key=api_key,
             model=model,
-            messages=chat_prompt(text, instructions, **kwargs),
+            messages=chat_prompt(text, instructions, msg_history, **kwargs),
             *args,
             **kwargs,
         )

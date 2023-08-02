@@ -71,7 +71,7 @@ class ValuePlaceholder(Placeholder):
                 return self.verification_failed
             try:
                 return expected_type(json_value)
-            except ValueError:
+            except (ValueError, TypeError):
                 return self.verification_failed
         return json_value
 
