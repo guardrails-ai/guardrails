@@ -525,7 +525,6 @@ def test_entity_extraction_with_reask_with_optional_prompts(
         )
 
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
-    # guard = guard_initializer(rail, prompt)
     guard = Guard.from_rail_string(rail)
 
     _, final_output = guard(
@@ -573,6 +572,9 @@ def test_entity_extraction_with_reask_with_optional_prompts(
     # For re-asked prompt and output
     assert guard_history[1].prompt == gd.Prompt(expected_reask_prompt)
     assert guard_history[1].output == entity_extraction.LLM_OUTPUT_REASK
+
+    breakpoint()
+
     assert (
         guard_history[1].validated_output == entity_extraction.VALIDATED_OUTPUT_REASK_2
     )

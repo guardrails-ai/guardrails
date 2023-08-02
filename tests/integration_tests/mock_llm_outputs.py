@@ -61,10 +61,16 @@ def openai_chat_completion_create(
             fixed_history.append(msg)
         msg_history = fixed_history
 
+    # breakpoint()
+
     try:
         if prompt and instructions and not msg_history:
             return mock_llm_responses[(prompt, instructions)]
         elif msg_history and not prompt and not instructions:
+
+            with open("msg_history_content.txt", "w") as f:
+                f.write(msg_history[1]["content"])
+
             if msg_history == entity_extraction.COMPILED_MSG_HISTORY:
                 return entity_extraction.LLM_OUTPUT
             else:
