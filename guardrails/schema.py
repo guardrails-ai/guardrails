@@ -445,7 +445,6 @@ class JsonSchema(Schema):
                 )
 
         instructions = Instructions(constants["high_level_json_instructions"]).format()
-
         pruned_tree_string = pruned_tree_schema.transpile()
 
         def reask_decoder(obj):
@@ -591,7 +590,7 @@ class JsonSchema(Schema):
         guard_logs: GuardLogs,
         data: Optional[Dict[str, Any]],
         metadata: Dict,
-    ) -> Optional[Dict[str, Any]]:
+    ) -> Any:
         """Validate a dictionary of data against the schema.
 
         Args:
