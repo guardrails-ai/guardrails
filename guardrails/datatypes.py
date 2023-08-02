@@ -5,15 +5,21 @@ from typing import TYPE_CHECKING, Any, Dict, Generator
 from typing import List as TypedList
 from typing import Tuple, Type, Union
 
+import pydantic
 from lxml import etree as ET
 from pydantic import BaseModel
-
-from guardrails.utils.logs_utils import FieldValidationLogs, ValidatorLogs
 
 if TYPE_CHECKING:
     from guardrails.schema import FormatAttr
 
 logger = logging.getLogger(__name__)
+
+
+class FieldValidation(pydantic.BaseModel):
+    key: Any
+    value: Any
+    validators: list
+    children: list["FieldValidation"]
 
 
 class DataType:
@@ -71,44 +77,29 @@ class DataType:
         """
         return s
 
-    def _iterate_validators(
+    def _constructor_validation(
         self,
-        validation_logs: FieldValidationLogs,
         key: str,
         value: Any,
-        schema: Dict,
-        metadata: Dict,
-    ) -> Dict:
-        for validator in self.validators:
-            validator_class_name = validator.__class__.__name__
-            validator_logs = ValidatorLogs(
-                validator_name=validator_class_name,
-                value_before_validation=value,
-            )
-            validation_logs.validator_logs.append(validator_logs)
-            logger.debug(
-                f"Validating field {key} with validator {validator_class_name}..."
-            )
-            value = validator.validate_with_correction(value, metadata)
-            validator_logs.value_after_validation = value
-            logger.debug(
-                f"Validator {validator_class_name} finished, "
-                f"key {key} has value {value}."
-            )
-            schema[key] = value
-        return schema
+    ) -> FieldValidation:
+        """
+        Creates a "FieldValidation" object for ValidatorService to run over,
+        which specifies the key, value, and validators for a given field.
+        Its children should be populated by its nested fields' FieldValidations.
+        """
+        return FieldValidation(
+            key=key, value=value, validators=self.validators, children=[]
+        )
 
-    def validate(
+    def collect_validation(
         self,
-        validation_logs: FieldValidationLogs,
         key: str,
         value: Any,
         schema: Dict,
-        metadata: Dict,
-    ) -> Dict:
-        """Validate a value."""
+    ) -> FieldValidation:
+        """Gather validators on a value."""
         value = self.from_str(value)
-        return self._iterate_validators(validation_logs, key, value, schema, metadata)
+        return self._constructor_validation(key, value)
 
     def set_children(self, element: ET._Element):
         raise NotImplementedError("Abstract method.")
@@ -300,30 +291,27 @@ class Percentage(ScalarType):
 class List(NonScalarType):
     """Element tag: `<list>`"""
 
-    def validate(
+    def collect_validation(
         self,
-        validation_logs: FieldValidationLogs,
         key: str,
         value: Any,
         schema: Dict,
-        metadata: Dict,
-    ) -> Dict:
+    ) -> FieldValidation:
         # Validators in the main list data type are applied to the list overall.
 
-        self._iterate_validators(validation_logs, key, value, schema, metadata)
+        validation = self._constructor_validation(key, value)
 
         if len(self._children) == 0:
-            return schema
+            return validation
 
         item_type = list(self._children.values())[0]
 
         # TODO(shreya): Edge case: List of lists -- does this still work?
         for i, item in enumerate(value):
-            child_validation_logs = FieldValidationLogs()
-            validation_logs.children[i] = child_validation_logs
-            value = item_type.validate(child_validation_logs, i, item, value, metadata)
+            child_validation = item_type.collect_validation(i, item, value)
+            validation.children.append(child_validation)
 
-        return schema
+        return validation
 
     def set_children(self, element: ET._Element):
         for idx, child in enumerate(element, start=1):
@@ -340,20 +328,18 @@ class List(NonScalarType):
 class Object(NonScalarType):
     """Element tag: `<object>`"""
 
-    def validate(
+    def collect_validation(
         self,
-        validation_logs: FieldValidationLogs,
         key: str,
         value: Any,
         schema: Dict,
-        metadata: Dict,
-    ) -> Dict:
+    ) -> FieldValidation:
         # Validators in the main object data type are applied to the object overall.
 
-        schema = self._iterate_validators(validation_logs, key, value, schema, metadata)
+        validation = self._constructor_validation(key, value)
 
         if len(self._children) == 0:
-            return schema
+            return validation
 
         # Types of supported children
         # 1. key_type
@@ -368,15 +354,14 @@ class Object(NonScalarType):
             # child_key is an expected key that the schema defined
             # child_data_type is the data type of the expected key
             child_value = value.get(child_key, None)
-            child_validation_logs = FieldValidationLogs()
-            validation_logs.children[child_key] = child_validation_logs
-            value = child_data_type.validate(
-                child_validation_logs, child_key, child_value, value, metadata
+            child_validation = child_data_type.collect_validation(
+                child_key,
+                child_value,
+                value,
             )
+            validation.children.append(child_validation)
 
-        schema[key] = value
-
-        return schema
+        return validation
 
     def set_children(self, element: ET._Element):
         for child in element:
@@ -393,34 +378,23 @@ class Choice(NonScalarType):
     ) -> None:
         super().__init__(children, format_attr, element)
 
-    def validate(
+    def collect_validation(
         self,
-        validation_logs: FieldValidationLogs,
         key: str,
         value: Any,
         schema: Dict,
-        metadata: Dict,
-    ) -> Dict:
-        # Until we refactor the discriminator into the choice object,
-        # we expose the schema to the choice validator via metadata
-        choice_metadata = {
-            **metadata,
-            "__schema": schema,
-        }
-
-        # Call the validate method of the parent class
-        super().validate(validation_logs, key, value, schema, choice_metadata)
-
+    ) -> FieldValidation:
         # Validate the selected choice
         selected_key = value
         selected_value = schema[selected_key]
 
-        self._children[selected_key].validate(
-            validation_logs, selected_key, selected_value, schema, metadata
+        validation = self._children[selected_key].collect_validation(
+            selected_key,
+            selected_value,
+            schema,
         )
 
-        schema[key] = value
-        return schema
+        return validation
 
     def set_children(self, element: ET._Element):
         for child in element:
@@ -430,15 +404,7 @@ class Choice(NonScalarType):
 
     @property
     def validators(self) -> TypedList:
-        from guardrails.validators import Choice as ChoiceValidator
-
-        # Check if the <choice ... /> element has an `on-fail` attribute.
-        # If so, use that as the `on_fail` argument for the PydanticValidator.
-        on_fail = None
-        on_fail_attr_name = "on-fail-choice"
-        if on_fail_attr_name in self.element.attrib:
-            on_fail = self.element.attrib[on_fail_attr_name]
-        return [ChoiceValidator(choices=list(self._children.keys()), on_fail=on_fail)]
+        return []
 
 
 @register_type("case")
@@ -450,21 +416,14 @@ class Case(NonScalarType):
     ) -> None:
         super().__init__(children, format_attr, element)
 
-    def validate(
+    def collect_validation(
         self,
-        validation_logs: FieldValidationLogs,
         key: str,
         value: Any,
         schema: Dict,
-        metadata: Dict,
     ) -> Dict:
         child = list(self._children.values())[0]
-
-        child.validate(validation_logs, key, value, schema, metadata)
-
-        schema[key] = value
-
-        return schema
+        return child.collect_validation(key, value, schema)
 
     def set_children(self, element: ET._Element):
         assert len(element) == 1, "Case must have exactly one child."

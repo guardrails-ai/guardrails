@@ -243,7 +243,7 @@ def add_validators_to_xml_element(field_info: ModelField, element: Element) -> E
                 # `validator` is of type gd.Validator, use the to_xml_attrib method
                 validator_prompt = val.to_xml_attrib()
                 # Set the on-fail attribute based on the on_fail value
-                on_fail = val.on_fail.__name__ if val.on_fail else "noop"
+                on_fail = val.on_fail_descriptor
                 on_fails[val.rail_alias] = on_fail
             format_prompt.append(validator_prompt)
 

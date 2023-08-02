@@ -1,0 +1,22 @@
+
+I was given the following string, delimited by +++:
+
++++
+Hello a you
+and me
++++
+
+It had the following problems:
+- must be exactly two words
+- Value Hello a you
+and me is not lower case.
+
+
+
+Your generated response should satisfy the following properties:
+- two-words
+- lower-case
+- one-line
+- valid-url
+- valid-choices: choices=a
+- length: min=1 max=10

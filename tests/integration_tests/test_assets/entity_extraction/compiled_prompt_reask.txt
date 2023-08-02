@@ -6,13 +6,17 @@ I was given the following JSON response, which had problems due to incorrect val
     {
       "name": {
         "incorrect_value": "my chase plan",
-        "error_message": "must be exactly two words"
+        "error_messages": [
+          "must be exactly two words"
+        ]
       }
     },
     {
       "name": {
         "incorrect_value": "over-the-credit-limit",
-        "error_message": "must be exactly two words"
+        "error_messages": [
+          "must be exactly two words"
+        ]
       }
     }
   ]

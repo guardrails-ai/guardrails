@@ -8,7 +8,13 @@ from rich.pretty import pretty_repr
 from rich.tree import Tree
 
 from guardrails.prompt import Prompt
-from guardrails.utils.reask_utils import ReAsk, gather_reasks, prune_obj_for_reasking
+from guardrails.utils.reask_utils import (
+    ReAsk,
+    SkeletonReAsk,
+    gather_reasks,
+    prune_obj_for_reasking,
+)
+from guardrails.validators import ValidationResult
 
 
 @dataclass
@@ -17,6 +23,7 @@ class ValidatorLogs:
 
     validator_name: str
     value_before_validation: Any
+    validation_result: Optional[ValidationResult] = None
     value_after_validation: Optional[Any] = None
 
 
@@ -37,14 +44,14 @@ class GuardLogs:
     validated_output: Optional[dict] = None
     reasks: Optional[List[ReAsk]] = None
 
-    field_validation_logs: Dict[Union[int, str], FieldValidationLogs] = field(
-        default_factory=dict
-    )
+    field_validation_logs: Optional[FieldValidationLogs] = None
 
     _previous_logs: Optional["GuardLogs"] = None
 
     def set_validated_output(self, validated_output):
-        if self._previous_logs is not None:
+        if self._previous_logs is not None and not isinstance(
+            validated_output, SkeletonReAsk
+        ):
             validated_output = merge_reask_output(
                 self._previous_logs.validated_output, validated_output
             )

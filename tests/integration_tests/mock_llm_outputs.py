@@ -13,6 +13,9 @@ def openai_completion_create(prompt, *args, **kwargs):
         pydantic.COMPILED_PROMPT_REASK_2: pydantic.LLM_OUTPUT_REASK_2,
         string.COMPILED_PROMPT: string.LLM_OUTPUT,
         string.COMPILED_PROMPT_REASK: string.LLM_OUTPUT_REASK,
+        python_rail.VALIDATOR_PARALLELISM_PROMPT_1: python_rail.VALIDATOR_PARALLELISM_RESPONSE_1,  # noqa: E501
+        python_rail.VALIDATOR_PARALLELISM_PROMPT_2: python_rail.VALIDATOR_PARALLELISM_RESPONSE_2,  # noqa: E501
+        python_rail.VALIDATOR_PARALLELISM_PROMPT_3: python_rail.VALIDATOR_PARALLELISM_RESPONSE_3,  # noqa: E501
     }
 
     try:

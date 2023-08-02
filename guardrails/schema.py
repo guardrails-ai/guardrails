@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 from lxml import etree as ET
 from lxml.builder import E
 
+from guardrails import validator_service
 from guardrails.datatypes import DataType, String
 from guardrails.llm_providers import PromptCallable, openai_chat_wrapper, openai_wrapper
 from guardrails.prompt import Instructions, Prompt
@@ -24,7 +25,13 @@ from guardrails.utils.reask_utils import (
     get_pruned_tree,
     get_reasks_by_element,
 )
-from guardrails.validators import Validator, check_refrain_in_dict, filter_in_dict
+from guardrails.validator_service import FieldValidation
+from guardrails.validators import (
+    FailResult,
+    Validator,
+    check_refrain_in_dict,
+    filter_in_dict,
+)
 
 if TYPE_CHECKING:
     pass
@@ -323,6 +330,19 @@ class Schema:
         """
         raise NotImplementedError
 
+    async def async_validate(
+        self, guard_logs: GuardLogs, data: Any, metadata: Dict
+    ) -> Any:
+        """Asynchronously validate a dictionary of data against the schema.
+
+        Args:
+            data: The data to validate.
+
+        Returns:
+            The validated data.
+        """
+        raise NotImplementedError
+
     def transpile(self, method: str = "default") -> str:
         """Convert the XML schema to a string that is used for prompting a
         large language model.
@@ -402,15 +422,15 @@ class JsonSchema(Schema):
 
         is_skeleton_reask = not any(isinstance(reask, FieldReAsk) for reask in reasks)
 
-        if not is_skeleton_reask:
+        if is_skeleton_reask:
+            pruned_tree_schema = self
+        else:
             # Get the elements that are to be reasked
             reask_elements = get_reasks_by_element(reasks, parsed_rail)
 
             # Get the pruned tree so that it only contains ReAsk objects
             pruned_tree = get_pruned_tree(parsed_rail, list(reask_elements.keys()))
             pruned_tree_schema = type(self)(pruned_tree)
-        else:
-            pruned_tree_schema = self
 
         pruned_tree_string = pruned_tree_schema.transpile()
 
@@ -427,9 +447,15 @@ class JsonSchema(Schema):
                 )
 
         def reask_decoder(obj):
-            return {
-                k: v for k, v in obj.__dict__.items() if k not in ["path", "fix_value"]
-            }
+            decoded = {}
+            for k, v in obj.__dict__.items():
+                if k in ["path"]:
+                    continue
+                if k == "fail_results":
+                    k = "error_messages"
+                    v = [result.error_message for result in v]
+                decoded[k] = v
+            return decoded
 
         prompt = reask_prompt_template.format(
             previous_response=json.dumps(reask_value, indent=2, default=reask_decoder)
@@ -502,9 +528,20 @@ class JsonSchema(Schema):
         ):
             return SkeletonReAsk(
                 incorrect_value=validated_response,
-                fix_value=None,
-                error_message="JSON does not match schema",
+                fail_results=[
+                    FailResult(
+                        fix_value=None,
+                        error_message="JSON does not match schema",
+                    )
+                ],
             )
+
+        validation = FieldValidation(
+            key="",
+            value=validated_response,
+            validators=[],
+            children=[],
+        )
 
         for field, value in validated_response.items():
             if field not in self:
@@ -515,20 +552,108 @@ class JsonSchema(Schema):
 
             logger.debug(f"Validating field {field} with value {value}.")
 
-            validation_logs = FieldValidationLogs()
-            guard_logs.field_validation_logs[field] = validation_logs
-
-            validated_response = self[field].validate(
-                validation_logs=validation_logs,
+            field_validation = self[field].collect_validation(
                 key=field,
                 value=value,
                 schema=validated_response,
-                metadata=metadata,
             )
+            validation.children.append(field_validation)
 
             logger.debug(
                 f"Validated field {field} with value {validated_response[field]}."
             )
+
+        validation_logs = FieldValidationLogs()
+        guard_logs.field_validation_logs = validation_logs
+
+        validated_response, metadata = validator_service.validate(
+            value=data,
+            metadata=metadata,
+            validator_setup=validation,
+            validation_logs=validation_logs,
+        )
+
+        if check_refrain_in_dict(validated_response):
+            # If the data contains a `Refain` value, we return an empty
+            # dictionary.
+            logger.debug("Refrain detected.")
+            validated_response = {}
+
+        # Remove all keys that have `Filter` values.
+        validated_response = filter_in_dict(validated_response)
+
+        return validated_response
+
+    async def async_validate(
+        self,
+        guard_logs: GuardLogs,
+        data: Optional[Dict[str, Any]],
+        metadata: Dict,
+    ) -> Optional[Dict[str, Any]]:
+        """Validate a dictionary of data against the schema.
+
+        Args:
+            data: The data to validate.
+
+        Returns:
+            The validated data.
+        """
+        if data is None:
+            return None
+
+        if not isinstance(data, dict):
+            raise TypeError(f"Argument `data` must be a dictionary, not {type(data)}.")
+
+        validated_response = deepcopy(data)
+
+        if not verify_schema_against_json(
+            self.root,
+            validated_response,
+            prune_extra_keys=True,
+            coerce_types=True,
+        ):
+            return SkeletonReAsk(
+                incorrect_value=validated_response,
+                fix_value=None,
+                error_message="JSON does not match schema",
+            )
+
+        validation = FieldValidation(
+            key="",
+            value=validated_response,
+            validators=[],
+            children=[],
+        )
+
+        for field, value in validated_response.items():
+            if field not in self:
+                # This is an extra field that is not in the schema.
+                # We remove it from the validated response.
+                logger.debug(f"Field {field} not in schema.")
+                continue
+
+            logger.debug(f"Validating field {field} with value {value}.")
+
+            field_validation = self[field].collect_validation(
+                key=field,
+                value=value,
+                schema=validated_response,
+            )
+            validation.children.append(field_validation)
+
+            logger.debug(
+                f"Validated field {field} with value {validated_response[field]}."
+            )
+
+        validation_logs = FieldValidationLogs()
+        guard_logs.field_validation_logs = validation_logs
+
+        validated_response, metadata = await validator_service.async_validate(
+            value=data,
+            metadata=metadata,
+            validator_setup=validation,
+            validation_logs=validation_logs,
+        )
 
         if check_refrain_in_dict(validated_response):
             # If the data contains a `Refain` value, we return an empty
@@ -604,9 +729,17 @@ class StringSchema(Schema):
                 + constants["complete_string_suffix"]
             )
 
+        error_messages = "\n".join(
+            [
+                f"- {fail_result.error_message}"
+                for reask in reasks
+                for fail_result in reask.fail_results
+            ]
+        )
+
         prompt = reask_prompt_template.format(
             previous_response=reask_value.incorrect_value,
-            error_messages=f"- {reask_value.error_message}",
+            error_messages=error_messages,
             output_schema=pruned_tree_string,
         )
         return self, prompt
@@ -635,17 +768,77 @@ class StringSchema(Schema):
             raise TypeError(f"Argument `data` must be a string, not {type(data)}.")
 
         validation_logs = FieldValidationLogs()
-        guard_logs.field_validation_logs[self.string_key] = validation_logs
+        guard_logs.field_validation_logs = validation_logs
 
-        validated_response = self[self.string_key].validate(
-            validation_logs=validation_logs,
+        validation = self[self.string_key].collect_validation(
             key=self.string_key,
             value=data,
             schema={
                 self.string_key: data,
             },
-            metadata=metadata,
         )
+
+        validated_response, metadata = validator_service.validate(
+            value=data,
+            metadata=metadata,
+            validator_setup=validation,
+            validation_logs=validation_logs,
+        )
+
+        validated_response = {self.string_key: validated_response}
+
+        if check_refrain_in_dict(validated_response):
+            # If the data contains a `Refain` value, we return an empty
+            # dictionary.
+            logger.debug("Refrain detected.")
+            validated_response = {}
+
+        # Remove all keys that have `Filter` values.
+        validated_response = filter_in_dict(validated_response)
+
+        if self.string_key in validated_response:
+            return validated_response[self.string_key]
+        return None
+
+    async def async_validate(
+        self,
+        guard_logs: GuardLogs,
+        data: Any,
+        metadata: Dict,
+    ) -> Any:
+        """Validate a dictionary of data against the schema.
+
+        Args:
+            data: The data to validate.
+
+        Returns:
+            The validated data.
+        """
+        if data is None:
+            return None
+
+        if not isinstance(data, str):
+            raise TypeError(f"Argument `data` must be a string, not {type(data)}.")
+
+        validation_logs = FieldValidationLogs()
+        guard_logs.field_validation_logs = validation_logs
+
+        validation = self[self.string_key].collect_validation(
+            key=self.string_key,
+            value=data,
+            schema={
+                self.string_key: data,
+            },
+        )
+
+        validated_response, metadata = await validator_service.async_validate(
+            value=data,
+            metadata=metadata,
+            validator_setup=validation,
+            validation_logs=validation_logs,
+        )
+
+        validated_response = {self.string_key: validated_response}
 
         if check_refrain_in_dict(validated_response):
             # If the data contains a `Refain` value, we return an empty
