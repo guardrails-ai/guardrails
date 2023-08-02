@@ -77,6 +77,7 @@ class Runner:
             )
 
         if self.msg_history is not None and len(self.msg_history):
+            self.msg_history = copy.deepcopy(self.msg_history)
             msg_history = []
             for msg in self.msg_history:
                 msg["content"] = Prompt(
@@ -132,7 +133,7 @@ class Runner:
                 if not self.do_loop(index, reasks):
                     break
                 # Get new prompt and output schema.
-                prompt, instructions, output_schema = self.prepare_to_loop(
+                prompt, instructions, output_schema, msg_history = self.prepare_to_loop(
                     reasks,
                     validated_output,
                     output_schema,
@@ -236,7 +237,7 @@ class Runner:
             if prompt_params is None:
                 prompt_params = {}
 
-            if len(msg_history):
+            if msg_history:
                 msg_history = copy.deepcopy(msg_history)
                 # Format any variables in the message history with the prompt params.
                 for msg in msg_history:
@@ -249,7 +250,8 @@ class Runner:
 
                 prompt = prompt.format(**prompt_params)
 
-                # TODO(shreya): should there be any difference to parsing params for prompt?
+                # TODO(shreya): should there be any difference
+                #  to parsing params for prompt?
                 if instructions is not None and isinstance(instructions, Instructions):
                     instructions = instructions.format(**prompt_params)
 
@@ -380,14 +382,15 @@ class Runner:
         reasks: list,
         validated_output: Optional[Dict],
         output_schema: Schema,
-    ) -> Tuple[Prompt, Instructions, Schema]:
+    ) -> Tuple[Prompt, Instructions, Schema, Optional[List[Dict]]]:
         """Prepare to loop again."""
         output_schema, prompt, instructions = output_schema.get_reask_setup(
             reasks=reasks,
             reask_value=prune_obj_for_reasking(validated_output),
             reask_prompt_template=self.reask_prompt,
         )
-        return prompt, instructions, output_schema
+        msg_history = None  # clear msg history for reasking
+        return prompt, instructions, output_schema, msg_history
 
 
 class AsyncRunner(Runner):
@@ -440,7 +443,7 @@ class AsyncRunner(Runner):
                 if not self.do_loop(index, reasks):
                     break
                 # Get new prompt and output schema.
-                prompt, instructions, output_schema = self.prepare_to_loop(
+                prompt, instructions, output_schema, msg_history = self.prepare_to_loop(
                     reasks,
                     validated_output,
                     output_schema,
@@ -530,6 +533,7 @@ class AsyncRunner(Runner):
         index: int,
         instructions: Optional[Instructions],
         prompt: Prompt,
+        msg_history: Optional[List[Dict]],
         api: AsyncPromptCallable,
         output: str = None,
     ) -> str:
@@ -539,11 +543,39 @@ class AsyncRunner(Runner):
         2. Convert the response string to a dict,
         3. Log the output
         """
+        """Run a step.
+
+        1. Query the LLM API,
+        2. Convert the response string to a dict,
+        3. Log the output
+        """
         with start_action(action_type="call", index=index, prompt=prompt) as action:
-            if prompt and instructions:
-                output = await api(prompt.source, instructions=instructions.source)
-            elif prompt:
-                output = await api(prompt.source)
+            try:
+                if msg_history:
+                    output = await api(
+                        msg_history=msg_history,
+                        base_model=self.base_model,
+                    )
+                else:
+                    if prompt and instructions:
+                        output = await api(
+                            prompt.source,
+                            instructions=instructions.source,
+                            base_model=self.base_model,
+                        )
+                    elif prompt:
+                        output = await api(prompt.source, base_model=self.base_model)
+            except Exception:
+                # If the API call fails, try calling again without the base model.
+                if msg_history:
+                    output = await api(msg_history=msg_history)
+                else:
+                    if prompt and instructions:
+                        output = await api(
+                            prompt.source, instructions=instructions.source
+                        )
+                    elif prompt:
+                        output = await api(prompt.source)
 
             action.log(
                 message_type="info",

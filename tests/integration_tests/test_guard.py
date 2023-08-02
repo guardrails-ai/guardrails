@@ -545,18 +545,25 @@ def test_entity_extraction_with_reask_with_optional_prompts(
     assert len(guard_history) == 2
 
     # For orginal prompt and output
-    assert guard_history[0].prompt == gd.Prompt(expected_prompt)
+    expected_prompt = (
+        gd.Prompt(expected_prompt) if expected_prompt is not None else None
+    )
+    assert guard_history[0].prompt == expected_prompt
     assert guard_history[0].output == entity_extraction.LLM_OUTPUT
     assert (
         guard_history[0].validated_output == entity_extraction.VALIDATED_OUTPUT_REASK_1
     )
-    if expected_instructions:
-        assert guard_history[0].instructions == gd.Instructions(expected_instructions)
+    expected_instructions = (
+        gd.Instructions(expected_instructions)
+        if expected_instructions is not None
+        else None
+    )
+    assert guard_history[0].instructions == expected_instructions
 
     # For reask validator logs
     nested_validator_log = (
         guard_history[0]
-        .field_validation_logs["fees"]
+        .field_validation_logs.children["fees"]
         .children[1]
         .children["name"]
         .validator_logs[1]
@@ -564,16 +571,18 @@ def test_entity_extraction_with_reask_with_optional_prompts(
     assert nested_validator_log.value_before_validation == "my chase plan"
     assert nested_validator_log.value_after_validation == FieldReAsk(
         incorrect_value="my chase plan",
-        fix_value="my chase",
-        error_message="must be exactly two words",
+        fail_results=[
+            FailResult(
+                fix_value="my chase",
+                error_message="must be exactly two words",
+            )
+        ],
         path=["fees", 1, "name"],
     )
 
     # For re-asked prompt and output
     assert guard_history[1].prompt == gd.Prompt(expected_reask_prompt)
     assert guard_history[1].output == entity_extraction.LLM_OUTPUT_REASK
-
-    breakpoint()
 
     assert (
         guard_history[1].validated_output == entity_extraction.VALIDATED_OUTPUT_REASK_2

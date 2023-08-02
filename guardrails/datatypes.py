@@ -71,33 +71,20 @@ class DataType:
         """
         return s
 
-    def _iterate_validators(
-        self, validation_logs: FieldValidationLogs, key: str, value: Any, schema: Dict
-    ) -> Dict:
-        for validator in self.validators:
-            validator_class_name = validator.__class__.__name__
-            validator_logs = ValidatorLogs(
-                validator_name=validator_class_name,
-                value_before_validation=value,
-            )
-            validation_logs.validator_logs.append(validator_logs)
-            logger.debug(
-                f"Validating field {key} with validator {validator_class_name}..."
-            )
-            schema = validator.validate_with_correction(key, value, schema)
-            if key in schema:
-                value = schema[key]
-                validator_logs.value_after_validation = schema[key]
-                logger.debug(
-                    f"Validator {validator_class_name} finished, "
-                    f"key {key} has value {schema[key]}."
-                )
-            else:
-                logger.debug(
-                    f"Validator {validator_class_name} finished, "
-                    f"key {key} is not present in schema."
-                )
-        return schema
+    def _constructor_validation(
+        self,
+        key: str,
+        value: Any,
+    ) -> FieldValidation:
+        """Creates a "FieldValidation" object for ValidatorService to run over,
+        which specifies the key, value, and validators for a given field.
+
+        Its children should be populated by its nested fields'
+        FieldValidations.
+        """
+        return FieldValidation(
+            key=key, value=value, validators=self.validators, children=[]
+        )
 
     def validate(
         self, validation_logs: FieldValidationLogs, key: str, value: Any, schema: Dict
