@@ -82,6 +82,11 @@ class DataType:
         key: str,
         value: Any,
     ) -> FieldValidation:
+        """
+        Creates a "FieldValidation" object for ValidatorService to run over,
+        which specifies the key, value, and validators for a given field.
+        Its children should be populated by its nested fields' FieldValidations.
+        """
         return FieldValidation(
             key=key, value=value, validators=self.validators, children=[]
         )
