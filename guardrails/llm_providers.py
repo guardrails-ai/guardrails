@@ -4,6 +4,7 @@ from functools import partial
 from typing import Any, Awaitable, Callable, Dict, List, Optional, cast
 
 import openai
+from litellm import completion
 from pydantic import BaseModel
 from tenacity import retry, retry_if_exception_type, wait_exponential_jitter
 
@@ -128,8 +129,9 @@ def openai_chat_wrapper(
     api_key = os.environ.get("OPENAI_API_KEY")
 
     # TODO: update this as new models are released
+    # Supported models here: https://litellm.readthedocs.io/en/latest/supported/
     if base_model:
-        openai_response = openai.ChatCompletion.create(
+        openai_response = completion(
             api_key=api_key,
             model=model,
             messages=chat_prompt(text, instructions, **kwargs),
@@ -140,7 +142,7 @@ def openai_chat_wrapper(
         )
         return openai_response["choices"][0]["message"]["function_call"]["arguments"]
     else:
-        openai_response = openai.ChatCompletion.create(
+        openai_response = completion(
             api_key=api_key,
             model=model,
             messages=chat_prompt(text, instructions, **kwargs),
