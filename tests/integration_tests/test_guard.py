@@ -7,6 +7,7 @@ from pydantic import BaseModel
 import guardrails as gd
 from guardrails.guard import Guard
 from guardrails.utils.reask_utils import FieldReAsk
+from guardrails.validators import FailResult
 
 from .mock_llm_outputs import (
     entity_extraction,
@@ -109,10 +110,15 @@ def test_rail_spec_output_parse(rail_spec, llm_output, validated_output):
         (entity_extraction.PYDANTIC_RAIL_WITH_REASK, entity_extraction.PYDANTIC_PROMPT),
     ],
 )
-def test_entity_extraction_with_reask(mocker, rail, prompt):
+@pytest.mark.parametrize("multiprocessing_validators", (True, False))
+def test_entity_extraction_with_reask(mocker, rail, prompt, multiprocessing_validators):
     """Test that the entity extraction works with re-asking."""
     mocker.patch(
         "guardrails.llm_providers.openai_wrapper", new=openai_completion_create
+    )
+    mocker.patch(
+        "guardrails.validators.Validator.run_in_separate_process",
+        new=multiprocessing_validators,
     )
 
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
@@ -142,7 +148,7 @@ def test_entity_extraction_with_reask(mocker, rail, prompt):
     # For reask validator logs
     nested_validator_log = (
         guard_history[0]
-        .field_validation_logs["fees"]
+        .field_validation_logs.children["fees"]
         .children[1]
         .children["name"]
         .validator_logs[1]
@@ -150,8 +156,12 @@ def test_entity_extraction_with_reask(mocker, rail, prompt):
     assert nested_validator_log.value_before_validation == "my chase plan"
     assert nested_validator_log.value_after_validation == FieldReAsk(
         incorrect_value="my chase plan",
-        fix_value="my chase",
-        error_message="must be exactly two words",
+        fail_results=[
+            FailResult(
+                fix_value="my chase",
+                error_message="must be exactly two words",
+            )
+        ],
         path=["fees", 1, "name"],
     )
 

@@ -51,6 +51,7 @@ class Runner:
     output_schema: Schema
     guard_state: GuardState
     num_reasks: int = 0
+    metadata: Dict[str, Any] = field(default_factory=dict)
     output: str = None
     reask_prompt: Optional[Prompt] = None
     guard_history: GuardHistory = field(default_factory=lambda: GuardHistory([]))
@@ -107,6 +108,7 @@ class Runner:
             input_schema=self.input_schema,
             output_schema=self.output_schema,
             num_reasks=self.num_reasks,
+            metadata=self.metadata,
         ):
             instructions, prompt, msg_history, input_schema, output_schema = (
                 self.instructions,
@@ -343,7 +345,9 @@ class Runner:
     ):
         """Validate the output."""
         with start_action(action_type="validate", index=index) as action:
-            validated_output = output_schema.validate(guard_logs, parsed_output)
+            validated_output = output_schema.validate(
+                guard_logs, parsed_output, self.metadata
+            )
 
             action.log(
                 message_type="info",
@@ -417,6 +421,7 @@ class AsyncRunner(Runner):
             input_schema=self.input_schema,
             output_schema=self.output_schema,
             num_reasks=self.num_reasks,
+            metadata=self.metadata,
         ):
             instructions, prompt, msg_history, input_schema, output_schema = (
                 self.instructions,
@@ -509,7 +514,7 @@ class AsyncRunner(Runner):
             guard_logs.parsed_output = parsed_output
 
             # Validate: run output validation.
-            validated_output = self.validate(
+            validated_output = await self.async_validate(
                 guard_logs, index, parsed_output, output_schema
             )
 
@@ -583,3 +588,23 @@ class AsyncRunner(Runner):
             )
 
             return output
+
+    async def async_validate(
+        self,
+        guard_logs: GuardLogs,
+        index: int,
+        parsed_output: Any,
+        output_schema: Schema,
+    ):
+        """Validate the output."""
+        with start_action(action_type="validate", index=index) as action:
+            validated_output = await output_schema.async_validate(
+                guard_logs, parsed_output, self.metadata
+            )
+
+            action.log(
+                message_type="info",
+                validated_output=reasks_to_dict(validated_output),
+            )
+
+            return validated_output

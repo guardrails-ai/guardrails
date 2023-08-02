@@ -3,9 +3,9 @@ import os
 
 from .optional_prompts import (
     OPTIONAL_INSTRUCTIONS_CHAT_MODEL,
+    OPTIONAL_MSG_HISTORY,
     OPTIONAL_PROMPT_CHAT_MODEL,
     OPTIONAL_PROMPT_COMPLETION_MODEL,
-    OPTIONAL_MSG_HISTORY,
 )
 from .pydantic_models import (
     INSTRUCTIONS_CHAT_MODEL,

@@ -1,15 +1,21 @@
+# noqa:W291
 import pytest
 
 from guardrails.validators import (
     BugFreeSQL,
-    EventDetail,
+    ExtractedSummarySentencesMatch,
+    ExtractiveSummary,
+    FailResult,
     Filter,
+    PassResult,
     Refrain,
     SimilarToDocument,
     SqlColumnPresence,
     check_refrain_in_dict,
     filter_in_dict,
 )
+
+from .mock_embeddings import mock_create_embedding
 
 
 @pytest.mark.parametrize(
@@ -61,8 +67,7 @@ def test_similar_to_document_validator():
     )
     summary = "All legislative powers are held by a Congress"
     " consisting of two chambers, the Senate and the House of Representatives."
-    schema = {"key": summary}
-    assert val.validate("key", summary, schema) == schema
+    assert isinstance(val.validate(summary, {}), PassResult)
 
 
 class TestBugFreeSQLValidator:
@@ -74,13 +79,12 @@ class TestBugFreeSQLValidator:
             conn="sqlite://",
         )
         bad_query = "select name, fro employees"
-        with pytest.raises(EventDetail) as context:
-            val.validate("sql-query", bad_query, {})
-        assert context.type is EventDetail
-        assert context.value.error_message != ""
+        result = val.validate(bad_query, {})
+        assert isinstance(result, FailResult)
+        assert result.error_message != ""
 
         good_query = "select name from employees;"
-        val.validate("sql-query", good_query, {})
+        assert isinstance(val.validate(good_query, {}), PassResult)
 
     def test_long_sql_schema_no_exception(self):
         val = BugFreeSQL(
@@ -92,22 +96,65 @@ class TestBugFreeSQLValidator:
     def test_bug_free_sql_simple(self):
         val = BugFreeSQL()
         bad_query = "select name, fro employees"
-        with pytest.raises(EventDetail) as context:
-            val.validate("sql-query", bad_query, {})
-        assert context.type is EventDetail
-        assert context.value.error_message != ""
+
+        result = val.validate(bad_query, {})
+        assert isinstance(result, FailResult)
+        assert result.error_message != ""
 
         good_query = "select name from employees;"
-        val.validate("sql-query", good_query, {})
+        assert isinstance(val.validate(good_query, {}), PassResult)
 
     def test_sql_column_presense(self):
         sql = "select name, age from employees;"
         columns = ["name", "address"]
         val = SqlColumnPresence(cols=columns)
-        with pytest.raises(EventDetail) as context:
-            val.validate("sql-query", sql, {})
-        assert context.type is EventDetail
-        assert context.value.error_message in (
+
+        result = val.validate(sql, {})
+        assert isinstance(result, FailResult)
+        assert result.error_message in (
             "Columns [age] not in [name, address]",
             "Columns [age] not in [address, name]",
         )
+
+
+def test_summary_validators(mocker):
+    mocker.patch("openai.Embedding.create", new=mock_create_embedding)
+    mocker.patch("guardrails.embedding.OpenAIEmbedding.output_dim", new=2)
+
+    summary = "It was a nice day. I went to the park. I saw a dog."
+    metadata = {
+        "filepaths": [
+            "./tests/unit_tests/test_assets/article1.txt",
+            "./tests/unit_tests/test_assets/article2.txt",
+        ]
+    }
+
+    val = ExtractedSummarySentencesMatch(threshold=0.1)
+    result = val.validate(summary, metadata)
+    assert isinstance(result, PassResult)
+    assert "citations" in result.metadata
+    assert "summary_with_citations" in result.metadata
+    assert result.metadata["citations"] == {1: 1, 2: 1, 3: 1}
+    assert (
+        result.metadata["summary_with_citations"]
+        == """It was a nice day. [1] I went to the park. [1] I saw a dog. [1]
+
+[1] ./tests/unit_tests/test_assets/article1.txt
+[2] ./tests/unit_tests/test_assets/article2.txt"""
+    )
+
+    val = ExtractiveSummary(
+        threshold=30,
+    )
+    result = val.validate(summary, metadata)
+    assert isinstance(result, PassResult)
+    assert "citations" in result.metadata
+    assert "summary_with_citations" in result.metadata
+    assert result.metadata["citations"] == {1: 1, 2: 2, 3: 1}
+    assert (
+        result.metadata["summary_with_citations"]
+        == """It was a nice day. [1] I went to the park. [2] I saw a dog. [1]
+
+[1] ./tests/unit_tests/test_assets/article1.txt
+[2] ./tests/unit_tests/test_assets/article2.txt"""
+    )

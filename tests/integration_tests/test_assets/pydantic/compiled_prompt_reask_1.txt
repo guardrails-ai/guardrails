@@ -8,7 +8,9 @@ I was given the following JSON response, which had problems due to incorrect val
       "age": 28,
       "zip_code": {
         "incorrect_value": "90210",
-        "error_message": "Zip code must not be Beverly Hills."
+        "error_messages": [
+          "Zip code must not be Beverly Hills."
+        ]
       }
     }
   ]

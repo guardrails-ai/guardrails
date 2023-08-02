@@ -1,0 +1,19 @@
+
+I was given the following string, delimited by +++:
+
++++
+hi theremynameispete
++++
+
+It had the following problems:
+- Value has length greater than 10. Please return a shorter output, that is shorter than 10 characters.
+
+
+
+Your generated response should satisfy the following properties:
+- two-words
+- lower-case
+- one-line
+- valid-url
+- valid-choices: choices=a
+- length: min=1 max=10

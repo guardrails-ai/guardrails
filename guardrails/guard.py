@@ -157,6 +157,7 @@ class Guard:
         prompt: Optional[str] = None,
         instructions: Optional[str] = None,
         msg_history: Optional[List[Dict]] = None,
+        metadata: Optional[Dict] = None,
         *args,
         **kwargs,
     ) -> Union[Tuple[str, Dict], Awaitable[Tuple[str, Dict]]]:
@@ -174,6 +175,8 @@ class Guard:
         """
         if num_reasks is None:
             num_reasks = self.num_reasks
+        if metadata is None:
+            metadata = {}
 
         # If the LLM API is async, return a coroutine
         if asyncio.iscoroutinefunction(llm_api):
@@ -184,6 +187,7 @@ class Guard:
                 prompt=prompt,
                 instructions=instructions,
                 msg_history=msg_history,
+                metadata=metadata,
                 *args,
                 **kwargs,
             )
@@ -195,6 +199,7 @@ class Guard:
             prompt=prompt,
             instructions=instructions,
             msg_history=msg_history,
+            metadata=metadata,
             *args,
             **kwargs,
         )
@@ -202,11 +207,12 @@ class Guard:
     def _call_sync(
         self,
         llm_api: Callable,
-        prompt_params: Dict = None,
-        num_reasks: int = 1,
-        prompt: Optional[str] = None,
-        instructions: Optional[str] = None,
-        msg_history: Optional[List[Dict]] = None,
+        prompt_params: Dict,
+        num_reasks: int,
+        prompt: Optional[str],
+        instructions: Optional[str],
+        msg_history: Optional[List[Dict]],
+        metadata: Dict,
         *args,
         **kwargs,
     ) -> Tuple[str, Dict]:
@@ -229,6 +235,7 @@ class Guard:
                 input_schema=self.input_schema,
                 output_schema=self.output_schema,
                 num_reasks=num_reasks,
+                metadata=metadata,
                 reask_prompt=self.reask_prompt,
                 base_model=self.base_model,
                 guard_state=self.guard_state,
@@ -239,11 +246,12 @@ class Guard:
     async def _call_async(
         self,
         llm_api: Callable[[Any], Awaitable[Any]],
-        prompt_params: Dict = None,
-        num_reasks: int = 1,
-        prompt: Optional[str] = None,
-        instructions: Optional[str] = None,
-        msg_history: Optional[List[Dict]] = None,
+        prompt_params: Dict,
+        num_reasks: int,
+        prompt: Optional[str],
+        instructions: Optional[str],
+        msg_history: Optional[List[Dict]],
+        metadata: Dict,
         *args,
         **kwargs,
     ) -> Tuple[str, Dict]:
@@ -275,6 +283,7 @@ class Guard:
                 input_schema=self.input_schema,
                 output_schema=self.output_schema,
                 num_reasks=num_reasks,
+                metadata=metadata,
                 reask_prompt=self.reask_prompt,
                 base_model=self.base_model,
                 guard_state=self.guard_state,
