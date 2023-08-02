@@ -35,8 +35,6 @@ def openai_chat_completion_create(
 ):
     """Mock the OpenAI API call to ChatCompletion.create."""
 
-    breakpoint()
-
     mock_llm_responses = {
         (
             entity_extraction.COMPILED_PROMPT_WITHOUT_INSTRUCTIONS,
@@ -67,7 +65,7 @@ def openai_chat_completion_create(
         if prompt and instructions and not msg_history:
             return mock_llm_responses[(prompt, instructions)]
         elif msg_history and not prompt and not instructions:
-            if msg_history == entity_extraction.OPTIONAL_MSG_HISTORY:
+            if msg_history == entity_extraction.COMPILED_MSG_HISTORY:
                 return entity_extraction.LLM_OUTPUT
             else:
                 raise ValueError("msg_history not found")

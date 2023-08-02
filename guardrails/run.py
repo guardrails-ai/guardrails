@@ -76,7 +76,7 @@ class Runner:
                 self.instructions, output_schema=self.output_schema.transpile()
             )
 
-        if len(self.msg_history):
+        if self.msg_history is not None and len(self.msg_history):
             msg_history = []
             for msg in self.msg_history:
                 msg["content"] = Prompt(

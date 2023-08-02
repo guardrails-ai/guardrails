@@ -350,6 +350,7 @@ class Guard:
             runner = Runner(
                 instructions=None,
                 prompt=None,
+                msg_history=None,
                 api=get_llm_ask(llm_api, *args, **kwargs) if llm_api else None,
                 input_schema=None,
                 output_schema=self.output_schema,
@@ -385,6 +386,7 @@ class Guard:
             runner = AsyncRunner(
                 instructions=None,
                 prompt=None,
+                msg_history=None,
                 api=get_async_llm_ask(llm_api, *args, **kwargs) if llm_api else None,
                 input_schema=None,
                 output_schema=self.output_schema,
