@@ -37,6 +37,7 @@ REQUIRED = [
     "typer",
     "griffe",
     "tenacity>=8.1.0",
+    "pytest",
 ]
 
 # Read in docs/requirements.txt
@@ -49,30 +50,44 @@ SUMMARY_REQUIREMENTS = ["thefuzz", "nltk"]
 
 VECTORDB_REQUIREMENTS = ["faiss-cpu", "numpy", "tiktoken"]
 
+DEV_REQUIREMENTS = [
+    "black==22.12.0",
+    "isort>=5.12.0",
+    "flake8>=3.8.4",
+    "docformatter>=1.4",
+    "pytest-cov>=2.10.1",
+    "pre-commit>=2.9.3",
+    "twine",
+    "pytest-mock",
+    "pypdfium2",
+    "pytest",
+    "pytest-asyncio",
+    *SQL_REQUIREMENTS,
+    *VECTORDB_REQUIREMENTS,
+] + DOCS_REQUIREMENTS
+
+MANIFEST_REQUIREMENTS = ["manifest-ml"]
+
+PROFANITY_REQUIREMENTS = ["alt-profanity-check"]
+
+CRITIQUE_REQUIREMENTS = ["inspiredco"]
+
 # What packages are optional?
 EXTRAS = {
-    "dev": [
-        "black==22.12.0",
-        "isort>=5.12.0",
-        "flake8>=3.8.4",
-        "docformatter>=1.4",
-        "pytest-cov>=2.10.1",
-        "pre-commit>=2.9.3",
-        "twine",
-        "pytest-mock",
-        "pypdfium2",
-        "pytest",
-        "pytest-asyncio",
-        *SQL_REQUIREMENTS,
-        *VECTORDB_REQUIREMENTS,
-    ]
-    + DOCS_REQUIREMENTS,
+    "dev": DEV_REQUIREMENTS,
     "sql": SQL_REQUIREMENTS,
-    "manifest": "manifest-ml",
+    "manifest": MANIFEST_REQUIREMENTS,
     "vectordb": VECTORDB_REQUIREMENTS,
-    "profanity": ["alt-profanity-check"],
-    "critique": ["inspiredco"],
+    "profanity": PROFANITY_REQUIREMENTS,
+    "critique": CRITIQUE_REQUIREMENTS,
     "summary": SUMMARY_REQUIREMENTS,
+    "all": [
+        *DEV_REQUIREMENTS,
+        *MANIFEST_REQUIREMENTS,
+        *PROFANITY_REQUIREMENTS,
+        *CRITIQUE_REQUIREMENTS,
+        *SUMMARY_REQUIREMENTS,
+    ],
 }
 
 # The rest you shouldn't have to touch too much :)

@@ -13,6 +13,12 @@ try:
 except ImportError:
     MANIFEST = False
 
+try:
+    import cohere
+except ImportError:
+    cohere = None
+
+
 OPENAI_RETRYABLE_ERRORS = [
     openai.error.APIConnectionError,
     openai.error.APIError,
@@ -184,6 +190,27 @@ def manifest_wrapper(
     return manifest_response
 
 
+def cohere_wrapper(
+    prompt: str, client_callable: Any, model: str, *args, **kwargs
+) -> str:
+    """Wrapper for cohere client.
+
+    To use cohere for guardrails, do
+    ```
+    client = cohere.Client(api_key=...)
+
+    raw_llm_response, validated_response = guard(
+        client.generate,
+        prompt_params={...},
+        model="command-nightly",
+        ...
+    )
+    ```
+    """
+    cohere_response = client_callable(prompt=prompt, model=model, *args, **kwargs)
+    return cohere_response[0].text
+
+
 def get_llm_ask(llm_api: Callable, *args, **kwargs) -> PromptCallable:
     if llm_api == openai.Completion.create:
         fn = partial(openai_wrapper, *args, **kwargs)
@@ -191,6 +218,12 @@ def get_llm_ask(llm_api: Callable, *args, **kwargs) -> PromptCallable:
         fn = partial(openai_chat_wrapper, *args, **kwargs)
     elif MANIFEST and isinstance(llm_api, manifest.Manifest):
         fn = partial(manifest_wrapper, client=llm_api, *args, **kwargs)
+    elif (
+        cohere
+        and isinstance(getattr(llm_api, "__self__", None), cohere.Client)
+        and getattr(llm_api, "__name__", None) == "generate"
+    ):
+        fn = partial(cohere_wrapper, client_callable=llm_api, *args, **kwargs)
     else:
         # Let the user pass in an arbitrary callable.
         fn = partial(llm_api, *args, **kwargs)

@@ -3,7 +3,7 @@ import itertools
 import logging
 import os
 from concurrent.futures import ProcessPoolExecutor
-from typing import Any, Tuple
+from typing import Any, List, Tuple
 
 from guardrails.datatypes import FieldValidation
 from guardrails.utils.logs_utils import FieldValidationLogs, ValidatorLogs
@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 class ValidatorServiceBase:
     def perform_correction(
-        self, results: list[FailResult], value: Any, validator, on_fail_descriptor: str
+        self, results: List[FailResult], value: Any, validator, on_fail_descriptor: str
     ):
         if on_fail_descriptor == "fix":
             return results[0].fix_value

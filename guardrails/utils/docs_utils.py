@@ -62,6 +62,14 @@ def sentence_split(text: str) -> t.List[str]:
             "`pip install nltk`"
         )
 
+    # Download the nltk punkt tokenizer if it's not already downloaded.
+    import nltk
+
+    try:
+        nltk.data.find("tokenizers/punkt")
+    except LookupError:
+        nltk.download("punkt")
+
     return sent_tokenize(text)
 
 
