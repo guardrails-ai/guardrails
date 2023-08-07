@@ -19,7 +19,7 @@ class FieldValidation(pydantic.BaseModel):
     key: Any
     value: Any
     validators: list
-    children: list["FieldValidation"]
+    children: TypedList["FieldValidation"]
 
 
 class DataType:
