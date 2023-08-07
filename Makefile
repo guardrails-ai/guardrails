@@ -30,4 +30,7 @@ docs-deploy:
 dev:
 	pip install -e ".[dev]"
 
+full:
+	pip install -e ".[all]"
+
 all: autoformat lint docs test

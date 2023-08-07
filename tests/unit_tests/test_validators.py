@@ -118,6 +118,9 @@ class TestBugFreeSQLValidator:
 
 
 def test_summary_validators(mocker):
+    pytest.importorskip("nltk", reason="nltk is not installed")
+    pytest.importorskip("thefuzz", reason="thefuzz is not installed")
+
     mocker.patch("openai.Embedding.create", new=mock_create_embedding)
     mocker.patch("guardrails.embedding.OpenAIEmbedding.output_dim", new=2)
 
