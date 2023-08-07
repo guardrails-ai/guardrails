@@ -9,7 +9,7 @@ from guardrails.validators import FailResult
 
 class ReAsk(pydantic.BaseModel):
     incorrect_value: Any
-    fail_results: list[FailResult]
+    fail_results: List[FailResult]
 
 
 class FieldReAsk(ReAsk):
