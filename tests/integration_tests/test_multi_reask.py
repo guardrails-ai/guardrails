@@ -1,8 +1,9 @@
 import openai
 
 import guardrails as gd
-from tests.integration_tests.mock_llm_outputs import openai_completion_create
-from tests.integration_tests.test_assets import python_rail
+
+from .mock_llm_outputs import openai_completion_create
+from .test_assets import python_rail
 
 
 def test_multi_reask(mocker):
