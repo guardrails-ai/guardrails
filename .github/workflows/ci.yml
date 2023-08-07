@@ -71,8 +71,9 @@ jobs:
                     make test-cov
 
             -   name: Upload to codecov.io
-                uses: codecov/codecov-action@v1
+                uses: codecov/codecov-action@v3
                 with:
+                    token: ${{ secrets.CODECOV_TOKEN }}
                     file: ./coverage.xml
                     flags: unittests
                     name: codecov-umbrella
