@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional, Type, Union
 
 import lxml.etree as ET
 
@@ -45,8 +45,7 @@ class ValuePlaceholder(Placeholder):
             return Any
         return self.type_map[self.type_string]
 
-    @staticmethod
-    def verification_failed():
+    class VerificationFailed:
         # Sentinel value
         pass
 
@@ -55,7 +54,7 @@ class ValuePlaceholder(Placeholder):
         json_value,
         prune_extra_keys: bool,
         coerce_types: bool,
-    ) -> Union[verification_failed, Any]:
+    ) -> Union[Type[VerificationFailed], Any]:
         super_result = super().verify(
             json_value,
             prune_extra_keys=prune_extra_keys,
@@ -68,11 +67,11 @@ class ValuePlaceholder(Placeholder):
             return json_value
         if not isinstance(json_value, expected_type):
             if not coerce_types:
-                return self.verification_failed
+                return self.VerificationFailed
             try:
                 return expected_type(json_value)
             except (ValueError, TypeError):
-                return self.verification_failed
+                return self.VerificationFailed
         return json_value
 
 
@@ -131,7 +130,7 @@ class DictPlaceholder(Placeholder):
                     prune_extra_keys=prune_extra_keys,
                     coerce_types=coerce_types,
                 )
-                if value is ValuePlaceholder.verification_failed:
+                if value is ValuePlaceholder.VerificationFailed:
                     return False
                 json_value[key] = value
             else:
@@ -176,7 +175,7 @@ class ListPlaceholder(Placeholder):
                     prune_extra_keys=prune_extra_keys,
                     coerce_types=coerce_types,
                 )
-                if value is ValuePlaceholder.verification_failed:
+                if value is ValuePlaceholder.VerificationFailed:
                     return False
                 json_value[i] = value
             return True
