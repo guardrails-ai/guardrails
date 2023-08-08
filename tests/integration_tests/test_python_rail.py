@@ -1,6 +1,6 @@
 import json
 from datetime import date, time
-from typing import List, Optional, Literal, Union
+from typing import List, Literal, Union
 
 import openai
 import pytest
@@ -13,7 +13,6 @@ from guardrails.validators import (
     PassResult,
     ValidationResult,
     Validator,
-    ValidChoices,
     ValidLength,
     register_validator,
 )
@@ -70,7 +69,9 @@ def test_python_rail(mocker):
         is_sequel: bool = Field(default=False)
         website: str = Field(validators=[ValidLength(min=9, max=100, on_fail="reask")])
         contact_email: str
-        revenue: Union[BoxOfficeRevenue, StreamingRevenue] = Field(..., discriminator="revenue_type")
+        revenue: Union[BoxOfficeRevenue, StreamingRevenue] = Field(
+            ..., discriminator="revenue_type"
+        )
 
         # Root-level validation using Pydantic (Not in Guardrails)
         @root_validator
@@ -179,7 +180,9 @@ def test_python_rail_add_validator(mocker):
         is_sequel: bool = Field(default=False)
         website: str
         contact_email: str
-        revenue: Union[BoxOfficeRevenue, StreamingRevenue] = Field(..., discriminator="revenue_type")
+        revenue: Union[BoxOfficeRevenue, StreamingRevenue] = Field(
+            ..., discriminator="revenue_type"
+        )
 
         # Register guardrails validators
         _website_validator = add_validator(
@@ -196,6 +199,7 @@ def test_python_rail_add_validator(mocker):
                 if budget >= gross:
                     raise ValueError("Budget must be less than gross revenue")
             return values
+
     class Movie(BaseModel):
         rank: int
         title: str

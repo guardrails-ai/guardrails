@@ -192,7 +192,7 @@ from guardrails.utils.json_utils import verify_schema_against_json
                     "action": {
                         "action_type": "fight",
                         "fight_move": "punch",
-                    }
+                    },
                 },
             },
             True,

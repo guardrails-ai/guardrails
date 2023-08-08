@@ -1,5 +1,5 @@
 # flake8: noqa: E501
-from typing import Optional, Union, Literal
+from typing import Literal, Optional, Union
 
 import pytest
 from pydantic import BaseModel, Field
@@ -7,7 +7,6 @@ from pydantic import BaseModel, Field
 from guardrails import Guard
 from guardrails.utils.reask_utils import ReAsk
 from guardrails.validators import ValidChoices
-
 
 test_cases = [
     ('{"choice": {"action": "fight", "fight_move": "kick"}}', False),
@@ -26,10 +25,7 @@ test_cases = [
 ]
 
 
-@pytest.mark.parametrize(
-    "llm_output, raises",
-    test_cases
-)
+@pytest.mark.parametrize("llm_output, raises", test_cases)
 def test_choice_validation(llm_output, raises):
     rail_spec = """
 <rail version="0.1">
@@ -66,10 +62,7 @@ Dummy prompt.
         assert not isinstance(result, ReAsk)
 
 
-@pytest.mark.parametrize(
-    "llm_output, raises",
-    test_cases
-)
+@pytest.mark.parametrize("llm_output, raises", test_cases)
 def test_choice_validation_pydantic(llm_output, raises):
     class Fight(BaseModel):
         action: Literal["fight"]
