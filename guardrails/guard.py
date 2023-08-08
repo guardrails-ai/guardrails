@@ -55,6 +55,7 @@ class Guard:
         base_model: Optional[BaseModel] = None,
         name: Optional[str] = None,  # TODO: Make name mandatory on next major version
         openai_api_key: Optional[str] = None,
+        description: Optional[str] = None
     ):
         """Initialize the Guard."""
         self.rail = rail
@@ -68,6 +69,7 @@ class Guard:
             if openai_api_key is not None
             else os.environ.get("OPENAI_API_KEY")
         )
+        self.description = description
 
         
         api_key = os.environ.get("GUARDRAILS_API_KEY")
@@ -452,6 +454,7 @@ class Guard:
     def _to_request(self) -> Dict:
         return {
             "name": self.name,
+            "description": self.description,
             "railspec": self.rail._to_request(),
             "numReasks": self.num_reasks,
         }
