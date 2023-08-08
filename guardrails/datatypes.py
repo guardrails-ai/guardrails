@@ -381,6 +381,8 @@ class Choice(NonScalarType):
         self, children: Dict[str, Any], format_attr: "FormatAttr", element: ET._Element
     ) -> None:
         super().__init__(children, format_attr, element)
+        # grab `discriminator` attribute
+        self.discriminator_key = element.attrib.get("discriminator", "discriminator")
 
     def collect_validation(
         self,
@@ -389,12 +391,11 @@ class Choice(NonScalarType):
         schema: Dict,
     ) -> FieldValidation:
         # Validate the selected choice
-        selected_key = value
-        selected_value = schema[selected_key]
+        discriminator_value = value[self.discriminator_key]
 
-        validation = self._children[selected_key].collect_validation(
-            selected_key,
-            selected_value,
+        validation = self._children[discriminator_value].collect_validation(
+            key,
+            value,
             schema,
         )
 
@@ -425,13 +426,26 @@ class Case(NonScalarType):
         key: str,
         value: Any,
         schema: Dict,
-    ) -> Dict:
-        child = list(self._children.values())[0]
-        return child.collect_validation(key, value, schema)
+    ) -> FieldValidation:
+        # Validate the selected choice
+        validation = self._constructor_validation(key, value)
+
+        # Collect validation for all children
+        for child_key, child_data_type in self._children.items():
+            # Value should be a dictionary
+            # child_key is an expected key that the schema defined
+            # child_data_type is the data type of the expected key
+            child_value = value.get(child_key, None)
+            child_validation = child_data_type.collect_validation(
+                child_key,
+                child_value,
+                value,
+            )
+            validation.children.append(child_validation)
+
+        return validation
 
     def set_children(self, element: ET._Element):
-        assert len(element) == 1, "Case must have exactly one child."
-
         for child in element:
             child_data_type = registry[child.tag]
             self._children[child.attrib["name"]] = child_data_type.from_xml(child)
