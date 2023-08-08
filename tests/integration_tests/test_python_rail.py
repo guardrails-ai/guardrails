@@ -1,6 +1,6 @@
 import json
 from datetime import date, time
-from typing import List, Optional
+from typing import List, Optional, Literal, Union
 
 import openai
 import pytest
@@ -47,6 +47,7 @@ def test_python_rail(mocker):
     )
 
     class BoxOfficeRevenue(BaseModel):
+        revenue_type: Literal["box_office"]
         gross: float
         opening_weekend: float
 
@@ -58,6 +59,7 @@ def test_python_rail(mocker):
             return gross
 
     class StreamingRevenue(BaseModel):
+        revenue_type: Literal["streaming"]
         subscriptions: int
         subscription_fee: float
 
@@ -68,20 +70,15 @@ def test_python_rail(mocker):
         is_sequel: bool = Field(default=False)
         website: str = Field(validators=[ValidLength(min=9, max=100, on_fail="reask")])
         contact_email: str
-        revenue_type: str = Field(
-            validators=[ValidChoices(choices=["box_office", "streaming"])]
-        )
-        box_office: Optional[BoxOfficeRevenue] = Field(when="revenue_type")
-        streaming: Optional[StreamingRevenue] = Field(when="revenue_type")
+        revenue: Union[BoxOfficeRevenue, StreamingRevenue] = Field(..., discriminator="revenue_type")
 
         # Root-level validation using Pydantic (Not in Guardrails)
         @root_validator
         def validate_budget_and_gross(cls, values):
             budget = values.get("budget")
-            revenue_type = values.get("revenue_type")
-            box_office_revenue = values.get("box_office")
-            if revenue_type == "box_office" and box_office_revenue:
-                gross = box_office_revenue.gross
+            revenue = values.get("revenue")
+            if isinstance(revenue, BoxOfficeRevenue):
+                gross = revenue.gross
                 if budget >= gross:
                     raise ValueError("Budget must be less than gross revenue")
             return values
@@ -159,6 +156,7 @@ def test_python_rail_add_validator(mocker):
     )
 
     class BoxOfficeRevenue(BaseModel):
+        revenue_type: Literal["box_office"]
         gross: float
         opening_weekend: float
 
@@ -170,6 +168,7 @@ def test_python_rail_add_validator(mocker):
             return gross
 
     class StreamingRevenue(BaseModel):
+        revenue_type: Literal["streaming"]
         subscriptions: int
         subscription_fee: float
 
@@ -180,14 +179,9 @@ def test_python_rail_add_validator(mocker):
         is_sequel: bool = Field(default=False)
         website: str
         contact_email: str
-        revenue_type: str
-        box_office: Optional[BoxOfficeRevenue] = Field(when="revenue_type")
-        streaming: Optional[StreamingRevenue] = Field(when="revenue_type")
+        revenue: Union[BoxOfficeRevenue, StreamingRevenue] = Field(..., discriminator="revenue_type")
 
         # Register guardrails validators
-        _revenue_type_validator = add_validator(
-            "revenue_type", fn=ValidChoices(choices=["box_office", "streaming"])
-        )
         _website_validator = add_validator(
             "website", fn=ValidLength(min=9, max=100, on_fail="reask")
         )
@@ -196,14 +190,12 @@ def test_python_rail_add_validator(mocker):
         @root_validator
         def validate_budget_and_gross(cls, values):
             budget = values.get("budget")
-            revenue_type = values.get("revenue_type")
-            box_office_revenue = values.get("box_office")
-            if revenue_type == "box_office" and box_office_revenue:
-                gross = box_office_revenue.gross
+            revenue = values.get("revenue")
+            if isinstance(revenue, BoxOfficeRevenue):
+                gross = revenue.gross
                 if budget >= gross:
                     raise ValueError("Budget must be less than gross revenue")
             return values
-
     class Movie(BaseModel):
         rank: int
         title: str
