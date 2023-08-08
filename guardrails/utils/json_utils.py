@@ -221,11 +221,7 @@ class ChoicePlaceholder(Placeholder):
             return False
 
         discriminator_schema = self.cases[discriminator_value]
-        value = {
-            k: v
-            for k, v in json_value.items()
-            if k != self.discriminator
-        }
+        value = {k: v for k, v in json_value.items() if k != self.discriminator}
 
         if not isinstance(discriminator_schema, DictPlaceholder):
             raise ValueError("Choice cases must be objects")
@@ -266,8 +262,8 @@ def generate_type_skeleton_from_schema(schema: ET._Element) -> Placeholder:
                 cases={
                     case.attrib["name"]: DictPlaceholder(
                         children={
-                            child.attrib["name"]:
-                            _recurse_schema(child) for child in case
+                            child.attrib["name"]: _recurse_schema(child)
+                            for child in case
                         },
                         optional=is_optional,
                     )

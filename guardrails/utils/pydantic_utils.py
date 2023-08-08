@@ -2,7 +2,6 @@
 import logging
 import typing
 import warnings
-from collections import defaultdict
 from copy import deepcopy
 from datetime import date, time
 from typing import (
@@ -266,8 +265,7 @@ def create_xml_element_for_field(
                 discriminator_value = typing.get_args(case_discriminator_type)[0]
                 case_element = E("case", name=discriminator_value)
                 nested_element = create_xml_element_for_field(
-                    case,
-                    exclude_subfields=[discriminator]
+                    case, exclude_subfields=[discriminator]
                 )
                 for child in nested_element:
                     case_element.append(child)
