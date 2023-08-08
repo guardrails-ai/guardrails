@@ -69,6 +69,7 @@ class Guard:
             else os.environ.get("OPENAI_API_KEY")
         )
 
+        
         api_key = os.environ.get("GUARDRAILS_API_KEY")
         if api_key is not None:
             if name is None:
@@ -161,6 +162,7 @@ class Guard:
         Returns:
             An instance of the `Guard` class.
         """
+
         return cls(Rail.from_file(rail_file), num_reasks=num_reasks, name=name)
 
     @classmethod

@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from collections import namedtuple
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
+from guardrails.embedding import EmbeddingBase
 
 from guardrails.vectordb import VectorDBBase
 
@@ -110,7 +111,7 @@ class EphemeralDocumentStore(DocumentStoreBase):
     """EphemeralDocumentStore is a document store that stores the documents on
     local disk and use a ephemeral vector store like Faiss."""
 
-    def __init__(self, vector_db: VectorDBBase, path: Optional[str] = None):
+    def __init__(self, vector_db: Optional["VectorDBBase"] = None, path: Optional[str] = None, embedding_model: Optional["EmbeddingBase"] = None):
         """Creates a new EphemeralDocumentStore.
 
         Args:
@@ -122,6 +123,16 @@ class EphemeralDocumentStore(DocumentStoreBase):
                 "SQLAlchemy is required for EphemeralDocumentStore"
                 "Please install it using `pip install SqlAlchemy`"
             )
+        if vector_db is None:
+            from guardrails.vectordb import Faiss
+
+            if embedding_model is None:
+                from guardrails.embedding import OpenAIEmbedding
+
+                embedding_model = OpenAIEmbedding()
+
+            vector_db = Faiss.new_flat_ip_index(
+                embedding_model.output_dim, embedder=embedding_model)
         self._vector_db = vector_db
         self._storage = SQLMetadataStore(path=path)
 

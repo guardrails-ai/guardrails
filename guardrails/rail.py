@@ -1,10 +1,13 @@
 """Rail class."""
+import os
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Type
 
 from lxml import etree as ET
 from lxml.etree import Element, SubElement
 from pydantic import BaseModel
+from guardrails import document_store
+from guardrails.document_store import DocumentStoreBase, EphemeralDocumentStore
 
 from guardrails.prompt import Instructions, Prompt
 from guardrails.schema import JsonSchema, Schema, StringSchema
@@ -111,6 +114,13 @@ class Rail:
         3. `<output strict=True/False>`, which contains the output schema
         4. `<prompt>`, which contains the prompt to be passed to the LLM
     """
+    api_key = os.environ.get("GUARDRAILS_API_KEY")
+    if api_key is not None:
+        from guardrails.ingestion_service import IngestionServiceDocumentStore
+        document_store  = IngestionServiceDocumentStore(api_key=api_key)
+    else:
+        document_store = EphemeralDocumentStore()
+    
 
     input_schema: Optional[Schema] = (None,)
     output_schema: Optional[Schema] = (None,)
@@ -118,6 +128,7 @@ class Rail:
     prompt: Optional[Prompt] = (None,)
     script: Optional[Script] = (None,)
     version: Optional[str] = ("0.1",)
+
 
     @classmethod
     def from_pydantic(
@@ -134,7 +145,8 @@ class Rail:
 
     @classmethod
     def from_string(cls, string: str) -> "Rail":
-        return cls.from_xml(ET.fromstring(string, parser=XMLPARSER))
+        parsed_xml = ET.fromstring(string, parser=XMLPARSER)
+        return cls.from_xml(parsed_xml)
 
     @classmethod
     def from_xml(cls, xml: ET._Element):
@@ -155,10 +167,9 @@ class Rail:
         raw_input_schema = xml.find("input")
         if raw_input_schema is None:
             # No input schema, so do no input checking.
-            input_schema = Schema()
+            input_schema = Schema(document_store=cls.document_store)
         else:
-            input_schema = cls.load_input_schema(raw_input_schema)
-
+            input_schema = cls.load_input_schema(raw_input_schema, cls.document_store)
         # Load <output /> schema
         raw_output_schema = xml.find("output")
         if raw_output_schema is None:
@@ -166,7 +177,7 @@ class Rail:
         # Replace all expressions in the <output /> schema.
         raw_output_schema = script.replace_expressions(ET.tostring(raw_output_schema))
         raw_output_schema = ET.fromstring(raw_output_schema, parser=XMLPARSER)
-        output_schema = cls.load_output_schema(raw_output_schema)
+        output_schema = cls.load_output_schema(raw_output_schema, cls.document_store)
         # Parse instructions for the LLM. These are optional but if given,
         # LLMs can use them to improve their output. Commonly these are
         # prepended to the prompt.
@@ -190,24 +201,25 @@ class Rail:
         )
 
     @staticmethod
-    def load_schema(root: ET._Element) -> Schema:
+    def load_schema(root: ET._Element, document_store: DocumentStoreBase) -> Schema:
         """Given the RAIL <input> or <output> element, create a Schema
         object."""
-        return Schema(root)
+        return Schema(document_store, root=root)
 
     @staticmethod
-    def load_input_schema(root: ET._Element) -> Schema:
+    def load_input_schema(root: ET._Element, document_store: DocumentStoreBase) -> Schema:
         """Given the RAIL <input> element, create a Schema object."""
         # Recast the schema as an InputSchema.
-        return Schema(root)
+        return Schema(document_store, root=root)
 
     @staticmethod
-    def load_output_schema(root: ET._Element) -> Schema:
+    def load_output_schema(root: ET._Element, document_store: DocumentStoreBase) -> Schema:
         """Given the RAIL <output> element, create a Schema object."""
         # If root contains a `type="string"` attribute, then it's a StringSchema
         if "type" in root.attrib and root.attrib["type"] == "string":
-            return StringSchema(root)
-        return JsonSchema(root)
+            return StringSchema(root, document_store)
+        schema = JsonSchema(root, document_store)
+        return schema
 
     @staticmethod
     def load_instructions(root: ET._Element, output_schema: Schema) -> Instructions:
@@ -220,10 +232,11 @@ class Rail:
     @staticmethod
     def load_prompt(root: ET._Element, output_schema: Schema) -> Prompt:
         """Given the RAIL <prompt> element, create a Prompt object."""
-        return Prompt(
+        prompt = Prompt(
             source=root.text,
             output_schema=output_schema.transpile(),
         )
+        return prompt
 
     @staticmethod
     def load_script(root: ET._Element) -> Script:

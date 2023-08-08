@@ -12,6 +12,7 @@ from lxml import etree as ET
 from lxml.builder import E
 
 from guardrails.datatypes import DataType, String
+from guardrails.document_store import DocumentStoreBase
 from guardrails.llm_providers import PromptCallable, openai_chat_wrapper, openai_wrapper
 from guardrails.prompt import Instructions, Prompt
 from guardrails.utils.constants import constants
@@ -187,7 +188,7 @@ class FormatAttr:
         except AttributeError:
             raise AttributeError("Must call `get_validators` first.")
 
-    def get_validators(self, strict: bool = False) -> List[Validator]:
+    def get_validators(self, document_store: DocumentStoreBase, strict: bool = False) -> List[Validator]:
         """Get the list of validators from the format attribute. Only the
         validators that are registered for this element will be returned.
 
@@ -256,7 +257,7 @@ class FormatAttr:
                 # beginning of a rail file.
 
             # Create the validator.
-            _validators.append(validator(*args, on_fail=on_fail))
+            _validators.append(validator(*args, document_store=document_store, on_fail=on_fail))
 
         self._validators = _validators
         self._unregistered_validators = _unregistered_validators
@@ -289,6 +290,7 @@ class Schema:
 
     def __init__(
         self,
+        document_store: DocumentStoreBase,
         root: Optional[ET._Element] = None,
         schema: Optional[Dict[str, DataType]] = None,
     ) -> None:
@@ -297,6 +299,7 @@ class Schema:
 
         self._schema = SimpleNamespace(**schema)
         self.root = root
+        self._store = document_store
 
         if root is not None:
             self.setup_schema(root)
@@ -431,6 +434,9 @@ class Schema:
 
 
 class JsonSchema(Schema):
+    def __init__(self, root: ET._Element, document_store: DocumentStoreBase) -> None:
+        super().__init__(document_store, root=root)
+
     def get_reask_schema_and_prompt(
         self,
         reasks: List[FieldReAsk],
@@ -489,7 +495,7 @@ class JsonSchema(Schema):
             if isinstance(child, ET._Comment):
                 continue
             child_name = child.attrib["name"]
-            child_data = types_registry[child.tag].from_xml(child, strict=strict)
+            child_data = types_registry[child.tag].from_xml(child, self._store, strict=strict)
             self[child_name] = child_data
 
     def parse(self, output: str) -> Tuple[Dict, Optional[Exception]]:
@@ -613,9 +619,9 @@ class JsonSchema(Schema):
 
 
 class StringSchema(Schema):
-    def __init__(self, root: ET._Element) -> None:
+    def __init__(self, root: ET._Element, document_store: DocumentStoreBase) -> None:
         self.string_key = "string"
-        super().__init__(root)
+        super().__init__(document_store, root=root)
 
     def setup_schema(self, root: ET._Element) -> None:
         if len(root) != 0:
