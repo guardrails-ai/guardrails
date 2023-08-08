@@ -1,5 +1,6 @@
 """Utilities for working with Pydantic models."""
 import logging
+import typing
 import warnings
 from collections import defaultdict
 from copy import deepcopy
@@ -119,13 +120,12 @@ def prepare_type_annotation(type_annotation: Any) -> Type:
 
     # Strip a Union type annotation to the first non-None type
     if get_origin(type_annotation) == Union:
-        type_annotation = [
+        non_none_type_annotation = [
             t for t in get_args(type_annotation) if t != type(None)  # noqa E721
         ]
-        assert (
-            len(type_annotation) == 1
-        ), "Union type must have exactly one non-None type"
-        type_annotation = type_annotation[0]
+        if len(non_none_type_annotation) == 1:
+            return non_none_type_annotation[0]
+        return type_annotation
 
     return type_annotation
 
@@ -154,12 +154,14 @@ def type_annotation_to_string(type_annotation: Any) -> str:
         return "float"
     elif type_annotation == int:
         return "integer"
-    elif type_annotation == str:
+    elif type_annotation == str or typing.get_origin(type_annotation) == typing.Literal:
         return "string"
     elif type_annotation == time:
         return "time"
     elif type_annotation == HttpUrl:
         return "url"
+    elif typing.get_origin(type_annotation) == Union:
+        return "choice"
     else:
         raise ValueError(f"Unsupported type: {type_annotation}")
 
@@ -175,21 +177,27 @@ def add_validators_to_xml_element(field_info: ModelField, element: Element) -> E
         The XML element with the validators added
     """
 
-    if (
-        isinstance(field_info, ModelField)
-        and "validators" in field_info.field_info.extra
-    ):
+    if not isinstance(field_info, ModelField):
+        return element
+    if "validators" in field_info.field_info.extra:
         validators = field_info.field_info.extra["validators"]
         if isinstance(validators, str) or isinstance(validators, Validator):
             validators = [validators]
 
         attach_validators_to_element(element, validators)
 
+    # construct a valid-choices validator for Literal types
+    if typing.get_origin(field_info.annotation) is typing.Literal:
+        valid_choices = typing.get_args(field_info.annotation)
+        element.set("format", "valid-choices")
+        element.set("valid-choices", ",".join(valid_choices))
+
     return element
 
 
 def attach_validators_to_element(
-    element: Element, validators: Union[List[Validator], List[str]]
+    element: Element,
+    validators: Union[List[Validator], List[str]],
 ):
     format_prompt = []
     on_fails = {}
@@ -208,22 +216,27 @@ def attach_validators_to_element(
         element.set("format", format_prompt)
         for rail_alias, on_fail in on_fails.items():
             element.set("on-fail-" + rail_alias, on_fail)
+
     return element
 
 
 def create_xml_element_for_field(
     field: Union[ModelField, Type, type],
     field_name: Optional[str] = None,
+    exclude_subfields: Optional[typing.List[str]] = None,
 ) -> Element:
     """Create an XML element corresponding to a field.
 
     Args:
         field_info: Field's type. This could be a Pydantic ModelField or a type.
         field_name: Field's name. For some fields (e.g. list), this is not required.
+        exclude_fields: List of fields to exclude from the XML element.
 
     Returns:
         The XML element corresponding to the field.
     """
+    if exclude_subfields is None:
+        exclude_subfields = []
 
     # Create the element based on the field type
     field_type = type_annotation_to_string(field)
@@ -241,9 +254,28 @@ def create_xml_element_for_field(
         if field.field_info.description is not None:
             element.set("description", field.field_info.description)
 
+        if field.field_info.discriminator is not None:
+            assert field_type == "choice"
+            assert typing.get_origin(field.annotation) is Union
+            discriminator = field.field_info.discriminator
+            element.set("discriminator", discriminator)
+            for case in typing.get_args(field.annotation):
+                case_discriminator_type = case.__fields__[discriminator].type_
+                assert typing.get_origin(case_discriminator_type) is typing.Literal
+                assert len(typing.get_args(case_discriminator_type)) == 1
+                discriminator_value = typing.get_args(case_discriminator_type)[0]
+                case_element = E("case", name=discriminator_value)
+                nested_element = create_xml_element_for_field(
+                    case,
+                    exclude_subfields=[discriminator]
+                )
+                for child in nested_element:
+                    case_element.append(child)
+                element.append(case_element)
+
         # Add other attributes from the field_info
         for key, value in field.field_info.extra.items():
-            if key not in ["validators", "description", "when"]:
+            if key not in ["validators", "description"]:
                 element.set(key, value)
 
     # Create XML elements for the field's children
@@ -266,7 +298,11 @@ def create_xml_element_for_field(
 
         elif is_dict(type_annotation):
             if is_pydantic_base_model(type_annotation):
-                element = create_xml_element_for_base_model(type_annotation, element)
+                element = create_xml_element_for_base_model(
+                    type_annotation,
+                    element,
+                    exclude_subfields=exclude_subfields,
+                )
             else:
                 dict_args = get_args(type_annotation)
                 if len(dict_args) == 2:
@@ -281,23 +317,26 @@ def create_xml_element_for_field(
 
 
 def create_xml_element_for_base_model(
-    model: BaseModel, element: Optional[Element] = None
+    model: BaseModel,
+    element: Optional[Element] = None,
+    exclude_subfields: Optional[typing.List[str]] = None,
 ) -> Element:
     """Create an XML element for a Pydantic BaseModel.
 
     This function does the following:
         1. Iterates through fields of the model and creates XML elements for each field
         2. If a field is a Pydantic BaseModel, it creates a nested XML element
-        3. If the BaseModel contains a field with a `when` attribute, it creates
-           `Choice` and `Case` elements for the field.
 
     Args:
         model: The Pydantic BaseModel to create an XML element for
         element: The XML element to add the fields to. If None, a new XML element
+        exclude_subfields: List of fields to exclude from the XML element.
 
     Returns:
         The XML element with the fields added
     """
+    if exclude_subfields is None:
+        exclude_subfields = []
 
     if element is None:
         element = E("object")
@@ -305,34 +344,12 @@ def create_xml_element_for_base_model(
     # Extract pydantic validators from the model and add them as guardrails validators
     model_fields = add_pydantic_validators_as_guardrails_validators(model)
 
-    # Identify fields with `when` attribute
-    choice_elements = defaultdict(list)
-    case_elements = set()
-    for field_name, field in model_fields.items():
-        if "when" in field.field_info.extra:
-            choice_elements[field.field_info.extra["when"]].append((field_name, field))
-            case_elements.add(field_name)
-
     # Add fields to the XML element, except for fields with `when` attribute
     for field_name, field in model_fields.items():
-        if field_name in choice_elements or field_name in case_elements:
+        if field_name in exclude_subfields:
             continue
         field_element = create_xml_element_for_field(field, field_name)
         element.append(field_element)
-
-    # Add `Choice` and `Case` elements for fields with `when` attribute
-    for when, discriminator_fields in choice_elements.items():
-        choice_element = E("choice", name=when)
-        # TODO(shreya): DONT MERGE WTHOUT SOLVING THIS: How do you set this via SDK?
-        choice_element.set("on-fail-choice", "exception")
-
-        for field_name, field in discriminator_fields:
-            case_element = E("case", name=field_name)
-            field_element = create_xml_element_for_field(field, field_name)
-            case_element.append(field_element)
-            choice_element.append(case_element)
-
-        element.append(choice_element)
 
     return element
 
