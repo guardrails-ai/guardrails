@@ -19,7 +19,7 @@ class IngestionServiceDocumentStore(DocumentStoreBase):
         self.base_url = (
             base_url
             if base_url is not None
-            else os.environ.get("GUARDRAILS_BASE_URL", "http://localhost:5000") # TODO: switch the default from localhost to our hosted endpoint
+            else os.environ.get("GUARDRAILS_INGESTION_SERVICE", "http://localhost:8080") # TODO: switch the default from localhost to our hosted endpoint
         )
         self.api_key = (
             api_key if api_key is not None else os.environ.get("GUARDRAILS_API_KEY")
