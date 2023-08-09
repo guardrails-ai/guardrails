@@ -65,8 +65,8 @@ def sentence_split(text: str, split_newlines: bool = False) -> t.List[str]:
 
     sentences = sent_tokenize(text)
     if split_newlines:
-        return list(chain.from_iterable(s.split('\n') for s in sentences))
-    return sentences
+        sentence = list(chain.from_iterable(s.split('\n') for s in sentences))
+    return [s for s in sentences if len(s) > 2]
 
 
 def read_pdf(path) -> str:
