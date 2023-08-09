@@ -88,13 +88,12 @@ def get_reasks_by_element(
         query = "."
         for part in path:
             if isinstance(part, int):
-                query += "/*"
+                query += "///*"
             else:
-                query += f"/*[@name='{part}']"
+                query += f"///*[@name='{part}']"
 
         # Find the element
         element = parsed_rail.find(query)
-
         reasks_by_element[element].append(reask)
 
     return reasks_by_element
