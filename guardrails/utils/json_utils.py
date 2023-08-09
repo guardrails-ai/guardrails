@@ -86,6 +86,8 @@ class DictPlaceholder(Placeholder):
         prune_extra_keys: bool,
         coerce_types: bool,
     ) -> bool:
+
+        # If json value is None, and the placeholder is optional, return True
         super_result = super().verify(
             json_value,
             prune_extra_keys=prune_extra_keys,
@@ -94,31 +96,42 @@ class DictPlaceholder(Placeholder):
         if super_result is not None:
             return super_result
 
+        # If the json value is not a dict, return False
         if not isinstance(json_value, dict):
             return False
+
+        # If expected dictionary does not specify any keys, then varification passes.
         if not self.children.keys():
             return True
-        json_keys = set(json_value.keys())
 
+        # Compare the keys in the json value to the keys in the schema.
+        json_keys = set(json_value.keys())
         schema_keys = set(self.children.keys())
+
+        # Separate out the choice keys from the schema keys.
         choice_keys = set()
         for key in schema_keys:
             if isinstance(self.children[key], ChoicePlaceholder):
                 choice_keys.update(self.children[key].cases.keys())
 
+        # Prune extra keys if necessary.
         extra_keys = json_keys - schema_keys - choice_keys
         if prune_extra_keys and extra_keys:
             for key in extra_keys:
                 del json_value[key]
+
+        # If the json value does not contain all the required keys, return False.
         if any(
             key not in json_keys and not self.children[key].optional
             for key in schema_keys
         ):
             return False
 
+        # Verify each key in the json value.
         for key, placeholder in self.children.items():
             if placeholder.optional and key not in json_value:
                 continue
+
             if isinstance(placeholder, ValuePlaceholder):
                 value = placeholder.verify(
                     json_value[key],

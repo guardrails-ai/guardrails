@@ -100,6 +100,11 @@ class Runner:
         """
         self._reset_guard_history()
 
+        # Figure out if we need to include instructions in the prompt.
+        include_instructions = not (
+            self.instructions is None and self.msg_history is None
+        )
+
         with start_action(
             action_type="run",
             instructions=self.instructions,
@@ -139,6 +144,7 @@ class Runner:
                     reasks,
                     validated_output,
                     output_schema,
+                    include_instructions=include_instructions,
                 )
 
             return self.guard_history
@@ -386,6 +392,7 @@ class Runner:
         reasks: list,
         validated_output: Optional[Dict],
         output_schema: Schema,
+        include_instructions: bool = False,
     ) -> Tuple[Prompt, Instructions, Schema, Optional[List[Dict]]]:
         """Prepare to loop again."""
         output_schema, prompt, instructions = output_schema.get_reask_setup(
@@ -393,6 +400,8 @@ class Runner:
             reask_value=prune_obj_for_reasking(validated_output),
             reask_prompt_template=self.reask_prompt,
         )
+        if not include_instructions:
+            instructions = None
         msg_history = None  # clear msg history for reasking
         return prompt, instructions, output_schema, msg_history
 
