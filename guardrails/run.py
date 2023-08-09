@@ -292,11 +292,18 @@ class Runner:
         2. Convert the response string to a dict,
         3. Log the output
         """
+
+        def msg_history_source(msg_history) -> List[Dict[str, str]]:
+            msg_history_copy = copy.deepcopy(msg_history)
+            for msg in msg_history_copy:
+                msg["content"] = msg["content"].source
+            return msg_history_copy
+
         with start_action(action_type="call", index=index, prompt=prompt) as action:
             try:
                 if msg_history:
                     output = api(
-                        msg_history=msg_history,
+                        msg_history=msg_history_source(msg_history),
                         base_model=self.base_model,
                     )
                 else:
@@ -311,7 +318,7 @@ class Runner:
             except Exception:
                 # If the API call fails, try calling again without the base model.
                 if msg_history:
-                    output = api(msg_history=msg_history)
+                    output = api(msg_history=msg_history_source(msg_history))
                 else:
                     if prompt and instructions:
                         output = api(prompt.source, instructions=instructions.source)

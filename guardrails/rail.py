@@ -106,7 +106,10 @@ class Rail:
 
     @classmethod
     def from_pydantic(
-        cls, output_class: BaseModel, prompt: str, instructions: Optional[str] = None
+        cls,
+        output_class: BaseModel,
+        prompt: Optional[str] = None,
+        instructions: Optional[str] = None,
     ):
         xml = generate_xml_code(output_class, prompt, instructions)
         return cls.from_xml(xml)
@@ -162,10 +165,7 @@ class Rail:
         # Load <prompt />
         prompt = xml.find("prompt")
         if prompt is None:
-            warnings.warn(
-                "RAIL file must contain a prompt element. "
-                "Prompt must be provided during __call__."
-            )
+            warnings.warn("Prompt must be provided during __call__.")
         else:
             prompt = cls.load_prompt(prompt, output_schema)
 
@@ -237,10 +237,11 @@ def generate_xml_code(
     # Create XML elements for the output_class
     create_xml_element_for_base_model(output_class, output_element)
 
-    # Create the prompt element
-    prompt_element = SubElement(root, "prompt")
-    prompt_text = f"{prompt}"
-    prompt_element.text = prompt_text
+    if prompt is not None:
+        # Create the prompt element
+        prompt_element = SubElement(root, "prompt")
+        prompt_text = f"{prompt}"
+        prompt_element.text = prompt_text
 
     if instructions is not None:
         # Create the instructions element

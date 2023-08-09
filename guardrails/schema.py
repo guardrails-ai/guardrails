@@ -883,17 +883,18 @@ class StringSchema(Schema):
         obj = self[self.string_key]
         schema = ""
         if "description" in obj.element.attrib:
-            schema += f"""String description, delimited by +++:
-
-+++
-{obj.element.attrib["description"]}
-+++"""
+            schema += (
+                "Here's a description of what I want you to generate: "
+                f"{obj.element.attrib['description']}"
+            )
         if not obj.format_attr.empty:
             schema += (
                 "\n\nYour generated response should satisfy the following properties:"
             )
             for validator in obj.format_attr.validators:
                 schema += f"\n- {validator.to_prompt()}"
+
+        schema += "\n\nDon't talk; just go."
         return schema
 
 

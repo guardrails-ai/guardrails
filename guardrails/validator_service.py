@@ -3,7 +3,7 @@ import itertools
 import logging
 import os
 from concurrent.futures import ProcessPoolExecutor
-from typing import Any, List, Tuple
+from typing import Any, Dict, List, Tuple
 
 from guardrails.datatypes import FieldValidation
 from guardrails.utils.logs_utils import FieldValidationLogs, ValidatorLogs
@@ -14,6 +14,7 @@ from guardrails.validators import (
     PassResult,
     PydanticReAsk,
     Refrain,
+    Validator,
     ValidatorError,
 )
 
@@ -21,8 +22,14 @@ logger = logging.getLogger(__name__)
 
 
 class ValidatorServiceBase:
+    """Base class for validator services."""
+
     def perform_correction(
-        self, results: List[FailResult], value: Any, validator, on_fail_descriptor: str
+        self,
+        results: List[FailResult],
+        value: Any,
+        validator: Validator,
+        on_fail_descriptor: str,
     ):
         if on_fail_descriptor == "fix":
             return results[0].fix_value
@@ -82,7 +89,13 @@ class ValidatorServiceBase:
 
 
 class SequentialValidatorService(ValidatorServiceBase):
-    def run_validators(self, validation_logs, validator_setup, value, metadata):
+    def run_validators(
+        self,
+        validation_logs: FieldValidationLogs,
+        validator_setup: FieldValidation,
+        value: Any,
+        metadata: Dict[str, Any],
+    ):
         # Validate the field
         for validator in validator_setup.validators:
             validator_logs = self.run_validator(
@@ -93,14 +106,14 @@ class SequentialValidatorService(ValidatorServiceBase):
             result = validator_logs.validation_result
             if isinstance(result, FailResult):
                 value = self.perform_correction(
-                    [result], value, validator, validator_setup.on_fail
+                    [result], value, validator, validator.on_fail_descriptor
                 )
-            elif (
-                isinstance(result, PassResult)
-                and validator.override_value_on_pass
-                and result.value_override is not result.ValueOverrideSentinel
-            ):
-                value = result.value_override
+            elif isinstance(result, PassResult):
+                if (
+                    validator.override_value_on_pass
+                    and result.value_override is not result.ValueOverrideSentinel
+                ):
+                    value = result.value_override
             else:
                 raise RuntimeError(f"Unexpected result type {type(result)}")
 

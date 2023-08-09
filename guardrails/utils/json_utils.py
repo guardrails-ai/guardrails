@@ -86,7 +86,6 @@ class DictPlaceholder(Placeholder):
         prune_extra_keys: bool,
         coerce_types: bool,
     ) -> bool:
-
         # If json value is None, and the placeholder is optional, return True
         super_result = super().verify(
             json_value,

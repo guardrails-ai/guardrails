@@ -1,13 +1,15 @@
 import datetime
 import logging
+from dataclasses import dataclass
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, Dict, Generator
 from typing import List as TypedList
 from typing import Tuple, Type, Union
 
-import pydantic
 from lxml import etree as ET
 from pydantic import BaseModel
+
+from guardrails.validators import Validator
 
 if TYPE_CHECKING:
     from guardrails.schema import FormatAttr
@@ -15,10 +17,11 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class FieldValidation(pydantic.BaseModel):
+@dataclass
+class FieldValidation:
     key: Any
     value: Any
-    validators: list
+    validators: TypedList[Validator]
     children: TypedList["FieldValidation"]
 
 
