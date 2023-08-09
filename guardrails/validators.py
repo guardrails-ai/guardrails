@@ -1316,6 +1316,8 @@ class ExtractiveSummary(Validator):
 
         # Split the value into sentences.
         sentences = sentence_split(value, True)
+        if not sentences:
+            return schema # TODO: is this expected?
 
         # Check if any of the sentences in the value match any of the sentences
         # # in the documents.
