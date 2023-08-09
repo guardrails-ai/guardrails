@@ -491,7 +491,6 @@ def add_pydantic_validators_as_guardrails_validators(
     return model_fields
 
 
-
 def convert_pydantic_model_to_openai_fn(model: BaseModel) -> Dict:
     """Convert a Pydantic BaseModel to an OpenAI function.
 

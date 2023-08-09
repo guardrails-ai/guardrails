@@ -159,7 +159,7 @@ def openai_chat_wrapper(
         function_params = [convert_pydantic_model_to_openai_fn(base_model)]
         if function_call is None:
             function_call = {"name": function_params[0]["name"]}
-        fn_kwargs = {'functions': function_params, 'function_call': function_call}
+        fn_kwargs = {"functions": function_params, "function_call": function_call}
     else:
         fn_kwargs = {}
 

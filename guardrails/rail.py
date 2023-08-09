@@ -165,9 +165,7 @@ class Rail:
         # Load <prompt />
         prompt = xml.find("prompt")
         if prompt is None:
-            warnings.warn(
-                "Prompt must be provided during __call__."
-            )
+            warnings.warn("Prompt must be provided during __call__.")
         else:
             prompt = cls.load_prompt(prompt, output_schema)
 
