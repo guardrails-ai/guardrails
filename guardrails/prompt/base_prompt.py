@@ -1,6 +1,6 @@
 """Class for representing a prompt entry."""
 import re
-from string import Formatter
+from string import Formatter, Template
 from typing import Optional
 
 from guardrails.utils.constants import constants
@@ -43,12 +43,16 @@ class BasePrompt:
         """Substitute constants in the prompt."""
         # Substitute constants by reading the constants file.
         # Regex to extract all occurrences of @<constant_name>
-        matches = re.findall(r"@(\w+)", text)
+        #matches = re.findall(r"@(\w+)", text)
+        
+        matches = re.findall(r"\${(\w+)}", text)
 
         # Substitute all occurrences of @<constant_name> with the value of the constant.
         for match in matches:
             if match in constants:
-                text = text.replace(f"@{match}", constants[match])
+                template = Template(text)
+                mapping = {match: constants[match]}
+                text = template.safe_substitute(**mapping)
 
         return text
 
@@ -75,8 +79,8 @@ class BasePrompt:
         # TODO(shreya): Optionally add support for special character demarcation.
 
         # Regex to extract first occurrence of @<constant_name>
-
-        matches = re.finditer(r"@(\w+)", text)
+        
+        matches = re.finditer(r"\${(\w+)}", text)
 
         earliest_match_idx = None
         earliest_match = None
