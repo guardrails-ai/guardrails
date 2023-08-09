@@ -1278,6 +1278,7 @@ class ExtractiveSummary(Validator):
         self,
         documents_dir: str,
         threshold: int = 85,
+        sentences_threshold: int = 99,
         include_citations: bool = True,
         on_fail: Optional[Callable] = None,
         **kwargs,
@@ -1285,10 +1286,12 @@ class ExtractiveSummary(Validator):
         super().__init__(on_fail,
             documents_dir=documents_dir,
             threshold=threshold,
+            sentences_threshold=sentences_threshold,
             include_citations=include_citations,
             **kwargs,
         )
         self.threshold = int(threshold)
+        self.sentences_threshold = int(sentences_threshold)
         self.include_citations = str(include_citations).lower() == "true"
 
         # Load documents
@@ -1340,7 +1343,7 @@ class ExtractiveSummary(Validator):
 
         verified_sentences = " ".join(verified) + "\n\n" + "".join(citations)
 
-        if len(unverified):
+        if 100 * len(unverified) / len(sentences) < self.sentences_threshold:
             unverified_sentences = "\n".join(
                 "- " + s for i, s in enumerate(sentences) if i in unverified
             )
@@ -1349,8 +1352,8 @@ class ExtractiveSummary(Validator):
                 value,
                 schema,
                 (
-                    f"The summary \nSummary: {value}\n has sentences\n"
-                    f"{unverified_sentences}\n that are not similar to any document."
+                    f"The summary has sentences that are not similar to any document:\n"
+                    f"{unverified_sentences}"
                 ),
                 verified_sentences,
             )
