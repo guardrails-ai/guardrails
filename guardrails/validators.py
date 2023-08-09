@@ -1279,6 +1279,7 @@ class ExtractiveSummary(Validator):
         documents_dir: str,
         threshold: int = 85,
         split_newlines: bool = False,
+        include_citations: bool = True,
         on_fail: Optional[Callable] = None,
         **kwargs,
     ):
@@ -1286,10 +1287,12 @@ class ExtractiveSummary(Validator):
             documents_dir=documents_dir,
             threshold=threshold,
             split_newlines=split_newlines,
+            include_citations=include_citations,
             **kwargs,
         )
         self.threshold = int(threshold)
         self.split_newlines = str(split_newlines).lower() == "true"
+        self.include_citations = str(include_citations).lower() == "true"
 
         # Load documents
         self._document_store = {}
@@ -1317,7 +1320,6 @@ class ExtractiveSummary(Validator):
         unverified = []
         verified = []
         citations = []
-
         for sentence in sentences:
             highest_ratio = 0
             highest_ratio_doc = None
@@ -1325,7 +1327,7 @@ class ExtractiveSummary(Validator):
             # Check fuzzy match against all sentences in all documents
             for doc_path, doc_sentences in self._document_store.items():
                 for doc_sentence in doc_sentences:
-                    ratio = fuzz.ratio(sentence, doc_sentence)
+                    ratio = fuzz.ratio(sentence.lower(), doc_sentence.lower())
                     if ratio > highest_ratio:
                         highest_ratio = ratio
                         highest_ratio_doc = doc_path
@@ -1354,8 +1356,8 @@ class ExtractiveSummary(Validator):
                 verified_sentences,
             )
 
-        schema[key] = verified_sentences
-
+        if self.include_citations:
+            schema[key] = verified_sentences
         return schema
 
 
