@@ -65,7 +65,7 @@ def sentence_split(text: str, split_newlines: bool = False) -> t.List[str]:
 
     sentences = sent_tokenize(text)
     if split_newlines:
-        sentence = list(chain.from_iterable(s.split('\n') for s in sentences))
+        sentences = list(chain.from_iterable(s.split('\n') for s in sentences))
     return [s for s in sentences if len(s) > 2]
 
 
