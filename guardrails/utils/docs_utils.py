@@ -1,4 +1,5 @@
 import typing as t
+from itertools import chain
 
 from guardrails.prompt import Prompt
 
@@ -52,7 +53,7 @@ class TextSplitter:
         return self.split(*args, **kwds)
 
 
-def sentence_split(text: str) -> t.List[str]:
+def sentence_split(text: str, split_newlines: bool = False) -> t.List[str]:
     """Split the text into sentences."""
     try:
         from nltk import sent_tokenize
@@ -62,7 +63,10 @@ def sentence_split(text: str) -> t.List[str]:
             "`pip install nltk`"
         )
 
-    return sent_tokenize(text)
+    sentences = sent_tokenize(text)
+    if split_newlines:
+        return list(chain.from_iterable(s.split('\n') for s in sentences))
+    return sentences
 
 
 def read_pdf(path) -> str:

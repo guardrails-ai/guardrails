@@ -1278,18 +1278,25 @@ class ExtractiveSummary(Validator):
         self,
         documents_dir: str,
         threshold: int = 85,
+        split_newlines: bool = False,
         on_fail: Optional[Callable] = None,
         **kwargs,
     ):
-        super().__init__(on_fail, documents_dir=documents_dir, threshold=threshold, **kwargs)
+        super().__init__(on_fail,
+            documents_dir=documents_dir,
+            threshold=threshold,
+            split_newlines=split_newlines,
+            **kwargs,
+        )
         self.threshold = int(threshold)
+        self.split_newlines = str(split_newlines).lower() == "true"
 
         # Load documents
         self._document_store = {}
         for doc_path in os.listdir(documents_dir):
             with open(os.path.join(documents_dir, doc_path)) as f:
                 doc = f.read()
-            self._document_store[doc_path] = sentence_split(doc)
+            self._document_store[doc_path] = sentence_split(doc, self.split_newlines)
 
     def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
         """Make sure each sentence was precisely copied from the document."""
@@ -1303,7 +1310,7 @@ class ExtractiveSummary(Validator):
             )
 
         # Split the value into sentences.
-        sentences = sentence_split(value)
+        sentences = sentence_split(value, self.split_newlines)
 
         # Check if any of the sentences in the value match any of the sentences
         # # in the documents.
