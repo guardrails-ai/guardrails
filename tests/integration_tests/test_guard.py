@@ -626,8 +626,8 @@ def test_string_with_message_history_reask(mocker):
     # Check that the guard state object has the correct number of re-asks.
     assert len(guard_history) == 2
 
-    assert guard_history[0].instructions == None
-    assert guard_history[0].prompt == None
+    assert guard_history[0].instructions is None
+    assert guard_history[0].prompt is None
     assert guard_history[0].output == string.MSG_LLM_OUTPUT_INCORRECT
     assert guard_history[0].validated_output == string.MSG_VALIDATED_OUTPUT_REASK
 
@@ -663,8 +663,8 @@ def test_pydantic_with_message_history_reask(mocker):
     # Check that the guard state object has the correct number of re-asks.
     assert len(guard_history) == 2
 
-    assert guard_history[0].instructions == None
-    assert guard_history[0].prompt == None
+    assert guard_history[0].instructions is None
+    assert guard_history[0].prompt is None
     assert guard_history[0].output == pydantic.MSG_HISTORY_LLM_OUTPUT_INCORRECT
     assert guard_history[0].validated_output == pydantic.MSG_VALIDATED_OUTPUT_REASK
 
