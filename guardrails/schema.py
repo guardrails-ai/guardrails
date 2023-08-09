@@ -2,6 +2,7 @@ import json
 import logging
 import pprint
 import re
+from string import Formatter
 import warnings
 from copy import deepcopy
 from dataclasses import dataclass
@@ -268,15 +269,28 @@ class Schema:
         self,
         root: Optional[ET._Element] = None,
         schema: Optional[Dict[str, DataType]] = None,
+        reask_prompt_template: Optional[str] = None,
+        reask_instructions_template: Optional[str] = None,
     ) -> None:
+
+        # Setup schema
         if schema is None:
             schema = {}
-
         self._schema = SimpleNamespace(**schema)
-        self.root = root
 
+        # Setup root
+        self.root = root
         if root is not None:
             self.setup_schema(root)
+
+        # Setup reask templates
+        self.check_valid_reask_prompt(reask_prompt_template)
+        self._reask_prompt_template = reask_prompt_template
+        if reask_prompt_template is not None:
+            reask_prompt_template = Prompt(reask_prompt_template)
+        self.reask_instructions_template = reask_instructions_template
+        if reask_instructions_template is not None:
+            reask_instructions_template = Prompt(reask_instructions_template)
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({pprint.pformat(vars(self._schema))})"
@@ -310,6 +324,10 @@ class Schema:
     @property
     def parsed_rail(self) -> Optional[ET._Element]:
         return self.root
+
+    @property
+    def reask_prompt_template(self) -> Optional[Prompt]:
+        return self._reask_prompt_template
 
     def setup_schema(self, root: ET._Element) -> None:
         """Parse the schema specification.
@@ -378,7 +396,6 @@ class Schema:
         self,
         reasks: List[FieldReAsk],
         reask_value: Any,
-        reask_prompt_template: Optional[Prompt] = None,
     ) -> Tuple["Schema", Prompt, Instructions]:
         """Construct a schema for reasking, and a prompt for reasking.
 
@@ -410,13 +427,25 @@ class Schema:
         """
         raise NotImplementedError
 
+    def check_valid_reask_prompt(self, reask_prompt: Optional[str]) -> None:
+        if reask_prompt is None:
+            return
+
+        # Check that the reask prompt has the correct variables
+        variables = [
+            t[1] for t in Formatter().parse(reask_prompt) if t[1] is not None
+        ]
+        assert set(variables) == self.reask_prompt_vars
+
 
 class JsonSchema(Schema):
+
+    reask_prompt_vars = {"previous_response", "output_schema"}
+
     def get_reask_setup(
         self,
         reasks: List[FieldReAsk],
         reask_value: Any,
-        reask_prompt_template: Optional[Prompt] = None,
     ) -> Tuple["Schema", Prompt, Instructions]:
         parsed_rail = deepcopy(self.root)
 
@@ -425,6 +454,7 @@ class JsonSchema(Schema):
         if is_skeleton_reask:
             pruned_tree_schema = self
 
+            reask_prompt_template = self.reask_prompt_template
             if reask_prompt_template is None:
                 reask_prompt_template = Prompt(
                     constants["high_level_skeleton_reask_prompt"]
@@ -438,13 +468,13 @@ class JsonSchema(Schema):
             pruned_tree = get_pruned_tree(parsed_rail, list(reask_elements.keys()))
             pruned_tree_schema = type(self)(pruned_tree)
 
+            reask_prompt_template = self.reask_prompt_template
             if reask_prompt_template is None:
                 reask_prompt_template = Prompt(
                     constants["high_level_json_reask_prompt"]
                     + constants["json_suffix_without_examples"]
                 )
 
-        instructions = Instructions(constants["high_level_json_instructions"]).format()
         pruned_tree_string = pruned_tree_schema.transpile()
 
         def reask_decoder(obj):
@@ -464,6 +494,12 @@ class JsonSchema(Schema):
             .replace("}", "}}"),
             output_schema=pruned_tree_string,
         )
+
+        instructions = self.reask_instructions_template
+        if instructions is None:
+            instructions = Instructions(constants["high_level_json_instructions"])
+        instructions = instructions.format()
+
         return pruned_tree_schema, prompt, instructions
 
     def setup_schema(self, root: ET._Element) -> None:
@@ -699,9 +735,25 @@ class JsonSchema(Schema):
 
 
 class StringSchema(Schema):
-    def __init__(self, root: ET._Element) -> None:
+
+    reask_prompt_vars = {"previous_response", "output_schema", "error_messages"}
+
+    def __init__(
+        self,
+        root: ET._Element,
+        reask_prompt_template: Optional[str] = None,
+        reask_instructions_template: Optional[str] = None,
+    ) -> None:
         self.string_key = "string"
         super().__init__(root)
+
+        # Setup reask templates
+        self._reask_prompt_template = reask_prompt_template
+        if self._reask_prompt_template is not None:
+            self._reask_prompt_template = Prompt(reask_prompt_template)
+        self.reask_instructions_template = reask_instructions_template
+        if self.reask_instructions_template is not None:
+            self.reask_instructions_template = Prompt(self.reask_instructions_template)
 
     def setup_schema(self, root: ET._Element) -> None:
         if len(root) != 0:
@@ -720,17 +772,16 @@ class StringSchema(Schema):
         self,
         reasks: List[FieldReAsk],
         reask_value: FieldReAsk,
-        reask_prompt_template: Optional[Prompt] = None,
     ) -> Tuple[Schema, Prompt, Instructions]:
         pruned_tree_string = self.transpile()
 
+        reask_prompt_template = self.reask_prompt_template
         if reask_prompt_template is None:
             reask_prompt_template = Prompt(
                 constants["high_level_string_reask_prompt"]
                 + constants["complete_string_suffix"]
             )
 
-        instructions = Instructions("You are a helpful assistant.").format()
         error_messages = "\n".join(
             [
                 f"- {fail_result.error_message}"
@@ -744,6 +795,12 @@ class StringSchema(Schema):
             error_messages=error_messages,
             output_schema=pruned_tree_string,
         )
+
+        instructions = self.reask_instructions_template
+        if instructions is None:
+            instructions = Instructions("You are a helpful assistant.")
+        instructions = instructions.format()
+
         return self, prompt, instructions
 
     def parse(self, output: str) -> Tuple[Any, Optional[Exception]]:

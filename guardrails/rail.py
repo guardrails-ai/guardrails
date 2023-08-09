@@ -110,8 +110,12 @@ class Rail:
         output_class: BaseModel,
         prompt: Optional[str] = None,
         instructions: Optional[str] = None,
+        reask_prompt: Optional[str] = None,
+        reask_instructions: Optional[str] = None,
     ):
-        xml = generate_xml_code(output_class, prompt, instructions)
+        xml = generate_xml_code(
+            output_class, prompt, instructions, reask_prompt, reask_instructions
+        )
         return cls.from_xml(xml)
 
     @classmethod
@@ -154,7 +158,19 @@ class Rail:
         # Replace all expressions in the <output /> schema.
         raw_output_schema = script.replace_expressions(ET.tostring(raw_output_schema))
         raw_output_schema = ET.fromstring(raw_output_schema, parser=XMLPARSER)
-        output_schema = cls.load_output_schema(raw_output_schema)
+        # If reasking prompt and instructions are provided, add them to the schema.
+        reask_prompt = xml.find("reask_prompt")
+        if reask_prompt is not None:
+            reask_prompt = reask_prompt.text
+        reask_instructions = xml.find("reask_instructions")
+        if reask_instructions is not None:
+            reask_instructions = reask_instructions.text
+        output_schema = cls.load_output_schema(
+            raw_output_schema,
+            reask_prompt=reask_prompt,
+            reask_instructions=reask_instructions,
+        )
+
         # Parse instructions for the LLM. These are optional but if given,
         # LLMs can use them to improve their output. Commonly these are
         # prepended to the prompt.
@@ -191,12 +207,33 @@ class Rail:
         return Schema(root)
 
     @staticmethod
-    def load_output_schema(root: ET._Element) -> Schema:
-        """Given the RAIL <output> element, create a Schema object."""
+    def load_output_schema(
+        root: ET._Element,
+        reask_prompt: Optional[str] = None,
+        reask_instructions: Optional[str] = None,
+    ) -> Schema:
+        """Given the RAIL <output> element, create a Schema object.
+
+        Args:
+            root: The root element of the output schema.
+            reask_prompt: If provided, the prompt when reasking the LLM.
+            reask_instructions: If provided, the instructions when reasking the LLM.
+
+        Returns:
+            A Schema object.
+        """
         # If root contains a `type="string"` attribute, then it's a StringSchema
         if "type" in root.attrib and root.attrib["type"] == "string":
-            return StringSchema(root)
-        return JsonSchema(root)
+            return StringSchema(
+                root,
+                reask_prompt_template=reask_prompt,
+                reask_instructions_template=reask_instructions,
+            )
+        return JsonSchema(
+            root,
+            reask_prompt_template=reask_prompt,
+            reask_instructions_template=reask_instructions,
+        )
 
     @staticmethod
     def load_instructions(root: ET._Element, output_schema: Schema) -> Instructions:
@@ -224,6 +261,8 @@ def generate_xml_code(
     output_class: Type[BaseModel],
     prompt: str,
     instructions: Optional[str] = None,
+    reask_prompt: Optional[str] = None,
+    reask_instructions: Optional[str] = None,
 ) -> ET._Element:
     """Generate XML RAIL Spec from a pydantic model and a prompt."""
 
@@ -248,5 +287,17 @@ def generate_xml_code(
         instructions_element = SubElement(root, "instructions")
         instructions_text = f"{instructions}"
         instructions_element.text = instructions_text
+
+    if reask_prompt is not None:
+        # Create the reask_prompt element
+        reask_prompt_element = SubElement(root, "reask_prompt")
+        reask_prompt_text = f"{reask_prompt}"
+        reask_prompt_element.text = reask_prompt_text
+
+    if reask_instructions is not None:
+        # Create the reask_instructions element
+        reask_instructions_element = SubElement(root, "reask_instructions")
+        reask_instructions_text = f"{reask_instructions}"
+        reask_instructions_element.text = reask_instructions_text
 
     return root
