@@ -63,7 +63,10 @@ def openai_chat_completion_create(
         elif msg_history and not prompt and not instructions:
             if msg_history == entity_extraction.COMPILED_MSG_HISTORY:
                 return entity_extraction.LLM_OUTPUT
-            elif msg_history == string.MOVIE_MSG_HISTORY and base_model == pydantic.WITH_MSG_HISTORY:
+            elif (
+                msg_history == string.MOVIE_MSG_HISTORY
+                and base_model == pydantic.WITH_MSG_HISTORY
+            ):
                 return pydantic.MSG_HISTORY_LLM_OUTPUT
             elif msg_history == string.MOVIE_MSG_HISTORY:
                 return string.MSG_LLM_OUTPUT_CORRECT

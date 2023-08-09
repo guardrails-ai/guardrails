@@ -22,7 +22,7 @@ MSG_LLM_OUTPUT_INCORRECT = reader("message_history_output.txt")
 MSG_LLM_OUTPUT_CORRECT = reader("message_history_reask_output.txt")
 MOVIE_MSG_HISTORY = [
     {"role": "system", "content": "You are a helpful assistant."},
-    {"role": "user", "content": "Can you give me your favorite movie?"}
+    {"role": "user", "content": "Can you give me your favorite movie?"},
 ]
 
 __all__ = [
@@ -36,5 +36,5 @@ __all__ = [
     "RAIL_SPEC_FOR_MSG_HISTORY",
     "MSG_LLM_OUTPUT_INCORRECT",
     "MSG_LLM_OUTPUT_CORRECT",
-    "MOVIE_MSG_HISTORY"
+    "MOVIE_MSG_HISTORY",
 ]

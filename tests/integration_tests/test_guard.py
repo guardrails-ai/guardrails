@@ -1,8 +1,8 @@
+import json
 from typing import Optional, Union
 
 import openai
 import pytest
-import json
 from pydantic import BaseModel
 
 import guardrails as gd
@@ -15,7 +15,7 @@ from .mock_llm_outputs import (
     openai_chat_completion_create,
     openai_completion_create,
 )
-from .test_assets import string, pydantic
+from .test_assets import pydantic, string
 
 
 @pytest.fixture(scope="module")
@@ -603,24 +603,15 @@ def test_entity_extraction_with_reask_with_optional_prompts(
             expected_reask_instructions
         )
 
+
 def test_string_with_message_history(mocker):
     """Test single string (non-JSON) generation with message history."""
     mocker.patch(
-        "guardrails.llm_providers.openai_chat_wrapper", new=openai_chat_completion_create
+        "guardrails.llm_providers.openai_chat_wrapper",
+        new=openai_chat_completion_create,
     )
 
-    rail_str = """
-<rail version="0.1">
-<output
-    type="string"
-    description="Generate a movie"
-    format="two-words"
-    on-fail-two-words="reask">
-</output>
-</rail>
-"""
-
-    guard = gd.Guard.from_rail_string(rail_str)
+    guard = gd.Guard.from_rail_string(string.RAIL_SPEC_FOR_MSG_HISTORY)
     _, final_output = guard(
         llm_api=openai.ChatCompletion.create,
         msg_history=string.MOVIE_MSG_HISTORY,
@@ -635,10 +626,12 @@ def test_string_with_message_history(mocker):
     # Check that the guard state object has the correct number of re-asks.
     assert len(guard_history) == 1
 
+
 def test_pydantic_with_message_history(mocker):
     """Test JSON generation with message history re-asking."""
     mocker.patch(
-        "guardrails.llm_providers.openai_chat_wrapper", new=openai_chat_completion_create
+        "guardrails.llm_providers.openai_chat_wrapper",
+        new=openai_chat_completion_create,
     )
 
     guard = gd.Guard.from_pydantic(output_class=pydantic.WITH_MSG_HISTORY)

@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
 
+
 class Movie(BaseModel):
     # """Details about a movie."""
     name: str = Field(..., description="The name of the movie.")
