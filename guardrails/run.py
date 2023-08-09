@@ -405,7 +405,6 @@ class Runner:
         output_schema, prompt, instructions = output_schema.get_reask_setup(
             reasks=reasks,
             reask_value=prune_obj_for_reasking(validated_output),
-            reask_prompt_template=self.reask_prompt,
         )
         if not include_instructions:
             instructions = None

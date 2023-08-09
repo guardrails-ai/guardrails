@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Optional, Union
 from rich.console import Group
 from rich.panel import Panel
 from rich.pretty import pretty_repr
+from rich.table import Table
 from rich.tree import Tree
 
 from guardrails.prompt import Prompt
@@ -39,6 +40,7 @@ class FieldValidationLogs:
 class GuardLogs:
     prompt: Optional[Prompt] = None
     instructions: Optional[str] = None
+    msg_history: Optional[List[Dict[str, Prompt]]] = None
     output: Optional[str] = None
     parsed_output: Optional[dict] = None
     validated_output: Optional[dict] = None
@@ -64,6 +66,22 @@ class GuardLogs:
 
     @property
     def rich_group(self) -> Group:
+        def create_msg_history_table(
+            msg_history: Optional[List[Dict[str, Prompt]]]
+        ) -> Table:
+            if msg_history is None:
+                return "No message history."
+            table = Table(show_lines=True)
+            table.add_column("Role", justify="right", no_wrap=True)
+            table.add_column("Content")
+
+            for msg in msg_history:
+                table.add_row(msg["role"], msg["content"].source)
+
+            return table
+
+        table = create_msg_history_table(self.msg_history)
+
         if self.instructions is not None:
             return Group(
                 Panel(
@@ -74,6 +92,7 @@ class GuardLogs:
                 Panel(
                     self.instructions.source, title="Instructions", style="on #FFF0F2"
                 ),
+                Panel(table, title="Message History", style="on #E7DFEB"),
                 Panel(self.output, title="Raw LLM Output", style="on #F5F5DC"),
                 Panel(
                     pretty_repr(self.validated_output),
@@ -88,6 +107,7 @@ class GuardLogs:
                     title="Prompt",
                     style="on #F0F8FF",
                 ),
+                Panel(table, title="Message History", style="on #E7DFEB"),
                 Panel(self.output, title="Raw LLM Output", style="on #F5F5DC"),
                 Panel(
                     pretty_repr(self.validated_output),
