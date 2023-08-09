@@ -489,3 +489,28 @@ def add_pydantic_validators_as_guardrails_validators(
 
     # TODO(shreya): Before merging handle root validators
     return model_fields
+
+
+
+def convert_pydantic_model_to_openai_fn(model: BaseModel) -> Dict:
+    """Convert a Pydantic BaseModel to an OpenAI function.
+
+    Args:
+        model: The Pydantic BaseModel to convert.
+
+    Returns:
+        OpenAI function paramters.
+    """
+
+    # Convert Pydantic model to JSON schema
+    json_schema = model.schema()
+
+    # Create OpenAI function parameters
+    fn_params = {
+        "name": json_schema["title"],
+        "parameters": json_schema,
+    }
+    if "description" in json_schema and json_schema["description"] is not None:
+        fn_params["description"] = json_schema["description"]
+
+    return fn_params

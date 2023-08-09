@@ -57,13 +57,6 @@ def openai_chat_completion_create(
         ): python_rail.LLM_OUTPUT_2_SUCCEED_GUARDRAILS_BUT_FAIL_PYDANTIC_VALIDATION,
     }
 
-    if msg_history:
-        fixed_history = []
-        for msg in msg_history:
-            msg["content"] = msg["content"].source
-            fixed_history.append(msg)
-        msg_history = fixed_history
-
     try:
         if prompt and instructions and not msg_history:
             return mock_llm_responses[(prompt, instructions)]

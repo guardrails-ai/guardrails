@@ -71,6 +71,8 @@ class Guard:
     @property
     def base_prompt(self) -> str:
         """Return the base prompt i.e. prompt.source."""
+        if self.prompt is None:
+            return None
         return self.prompt.source
 
     @property
@@ -139,7 +141,7 @@ class Guard:
     def from_pydantic(
         cls,
         output_class: BaseModel,
-        prompt: str,
+        prompt: Optional[str] = None,
         instructions: Optional[str] = None,
         num_reasks: int = 1,
     ) -> "Guard":
