@@ -1278,7 +1278,6 @@ class ExtractiveSummary(Validator):
         self,
         documents_dir: str,
         threshold: int = 85,
-        split_newlines: bool = False,
         include_citations: bool = True,
         on_fail: Optional[Callable] = None,
         **kwargs,
@@ -1286,12 +1285,10 @@ class ExtractiveSummary(Validator):
         super().__init__(on_fail,
             documents_dir=documents_dir,
             threshold=threshold,
-            split_newlines=split_newlines,
             include_citations=include_citations,
             **kwargs,
         )
         self.threshold = int(threshold)
-        self.split_newlines = str(split_newlines).lower() == "true"
         self.include_citations = str(include_citations).lower() == "true"
 
         # Load documents
@@ -1299,7 +1296,9 @@ class ExtractiveSummary(Validator):
         for doc_path in os.listdir(documents_dir):
             with open(os.path.join(documents_dir, doc_path)) as f:
                 doc = f.read()
-            self._document_store[doc_path] = sentence_split(doc, self.split_newlines)
+            self._document_store[doc_path] = (
+                sentence_split(doc, True) + sentence_split(doc, False)
+            )
 
     def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
         """Make sure each sentence was precisely copied from the document."""
@@ -1313,7 +1312,7 @@ class ExtractiveSummary(Validator):
             )
 
         # Split the value into sentences.
-        sentences = sentence_split(value, self.split_newlines)
+        sentences = sentence_split(value, True)
 
         # Check if any of the sentences in the value match any of the sentences
         # # in the documents.
