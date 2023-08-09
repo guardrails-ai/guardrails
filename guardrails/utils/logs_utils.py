@@ -5,8 +5,8 @@ from typing import Any, Dict, List, Optional, Union
 from rich.console import Group
 from rich.panel import Panel
 from rich.pretty import pretty_repr
-from rich.tree import Tree
 from rich.table import Table
+from rich.tree import Tree
 
 from guardrails.prompt import Prompt
 from guardrails.utils.reask_utils import (
@@ -66,8 +66,9 @@ class GuardLogs:
 
     @property
     def rich_group(self) -> Group:
-
-        def create_msg_history_table(msg_history: Optional[List[Dict[str, Prompt]]]) -> Table:
+        def create_msg_history_table(
+            msg_history: Optional[List[Dict[str, Prompt]]]
+        ) -> Table:
             if msg_history is None:
                 return "No message history."
             table = Table(show_lines=True)

@@ -2,10 +2,10 @@ import json
 import logging
 import pprint
 import re
-from string import Formatter
 import warnings
 from copy import deepcopy
 from dataclasses import dataclass
+from string import Formatter
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
@@ -432,9 +432,7 @@ class Schema:
             return
 
         # Check that the reask prompt has the correct variables
-        variables = [
-            t[1] for t in Formatter().parse(reask_prompt) if t[1] is not None
-        ]
+        variables = [t[1] for t in Formatter().parse(reask_prompt) if t[1] is not None]
         assert set(variables) == self.reask_prompt_vars
 
 
