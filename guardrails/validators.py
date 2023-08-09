@@ -4,6 +4,7 @@ The name with which a validator is registered is the name that is used
 in the `RAIL` spec to specify formatters.
 """
 import ast
+import inspect
 import logging
 import os
 import re
@@ -298,9 +299,10 @@ class Validator:
             return self.rail_alias
 
         validator_args = []
-        for arg in self.__init__.__code__.co_varnames[1:]:
-            if arg not in ("on_fail", "args", "kwargs"):
-                str_arg = str(self._kwargs[arg])
+        signature = inspect.signature(self.__init__)
+        for arg in signature.parameters.values():
+            if arg.name not in ("self", "on_fail", "args", "kwargs"):
+                str_arg = str(self._kwargs[arg.name])
                 str_arg = "{" + str_arg + "}" if " " in str_arg else str_arg
                 validator_args.append(str_arg)
 
@@ -870,7 +872,7 @@ class BugFreeSQL(Validator):
         schema_file: Optional[str] = None,
         on_fail: Optional[Callable] = None,
     ):
-        super().__init__(on_fail=on_fail)
+        super().__init__(on_fail=on_fail, conn=conn, schema_file=schema_file)
         self._driver: SQLDriver = create_sql_driver(schema_file=schema_file, conn=conn)
 
     def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
@@ -977,7 +979,7 @@ class SimilarToDocument(Validator):
         model: str = "text-embedding-ada-002",
         on_fail: Optional[Callable] = None,
     ):
-        super().__init__(on_fail=on_fail)
+        super().__init__(on_fail=on_fail, document=document, threshold=threshold, model=model)
         if not _HAS_NUMPY:
             raise ImportError(
                 f"The {self.__class__.__name__} validator requires the numpy package.\n"
@@ -1150,7 +1152,15 @@ class ExtractedSummarySentencesMatch(Validator):
         on_fail: Optional[Callable] = None,
         **kwargs,
     ):
-        super().__init__(on_fail, **kwargs)
+        super().__init__(
+            on_fail,
+            documents_dir=documents_dir,
+            threshold=threshold,
+            embedding_model=embedding_model,
+            vector_db=vector_db,
+            document_store=document_store,
+            **kwargs,
+        )
         # TODO(shreya): Pass embedding_model, vector_db, document_store from spec
 
         if document_store is None:
@@ -1227,7 +1237,7 @@ class ReadingTime(Validator):
 
     def __init__(self, reading_time: int, on_fail: str = "fix"):
         super().__init__(on_fail=on_fail, max_time=reading_time)
-        self._max_time = reading_time
+        self._max_time = int(reading_time)
 
     def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
         logger.debug(
@@ -1271,9 +1281,8 @@ class ExtractiveSummary(Validator):
         on_fail: Optional[Callable] = None,
         **kwargs,
     ):
-        super().__init__(on_fail, **kwargs)
-
-        self.threshold = threshold
+        super().__init__(on_fail, documents_dir=documents_dir, threshold=threshold, **kwargs)
+        self.threshold = int(threshold)
 
         # Load documents
         self._document_store = {}
@@ -1355,8 +1364,8 @@ class RemoveRedundantSentences(Validator):
     def __init__(
         self, threshold: int = 70, on_fail: Optional[Callable] = None, **kwargs
     ):
-        super().__init__(on_fail, **kwargs)
-        self.threshold = threshold
+        super().__init__(on_fail, threshold=threshold, **kwargs)
+        self.threshold = int(threshold)
 
     def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> Dict:
         """Remove redundant sentences from a string."""
@@ -1430,13 +1439,16 @@ class SaliencyCheck(Validator):
             threshold: Threshold for overlap between topics in document and summary.
         """
 
-        super().__init__(on_fail, **kwargs)
-
+        super().__init__(
+            on_fail,
+            docs_dir=docs_dir,
+            threshold=threshold,
+            **kwargs,
+        ) # TODO: any ideas how to serialize Callable?
         self.llm_callable = (
             llm_callable if llm_callable else openai.ChatCompletion.create
         )
-
-        self.threshold = threshold
+        self.threshold = float(threshold)
 
         # Load documents
         self._document_store = {}
@@ -1523,7 +1535,7 @@ class QARelevanceLLMEval(Validator):
         on_fail: Optional[Callable] = None,
         **kwargs,
     ):
-        super().__init__(on_fail, **kwargs)
+        super().__init__(on_fail, **kwargs)  # TODO: any ideas how to serialize Callable?
         self.llm_callable = (
             llm_callable if llm_callable else openai.ChatCompletion.create
         )
