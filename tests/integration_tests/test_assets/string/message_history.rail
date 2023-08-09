@@ -1,0 +1,8 @@
+<rail version="0.1">
+<output
+    type="string"
+    description="Generate a movie"
+    format="two-words"
+    on-fail-two-words="reask">
+</output>
+</rail>

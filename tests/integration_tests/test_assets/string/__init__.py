@@ -17,6 +17,14 @@ COMPILED_PROMPT_REASK = reader("compiled_prompt_reask.txt")
 RAIL_SPEC_FOR_STRING_REASK = reader("string_reask.rail")
 LLM_OUTPUT_REASK = reader("llm_output_reask.txt")
 
+RAIL_SPEC_FOR_MSG_HISTORY = reader("message_history.rail")
+MSG_LLM_OUTPUT_INCORRECT = reader("message_history_output.txt")
+MSG_LLM_OUTPUT_CORRECT = reader("message_history_reask_output.txt")
+MOVIE_MSG_HISTORY = [
+    {"role": "system", "content": "You are a helpful assistant."},
+    {"role": "user", "content": "Can you give me your favorite movie?"}
+]
+
 __all__ = [
     "COMPILED_PROMPT",
     "LLM_OUTPUT",
@@ -25,4 +33,8 @@ __all__ = [
     "RAIL_SPEC_FOR_STRING_REASK",
     "LLM_OUTPUT_REASK",
     "VALIDATED_OUTPUT_REASK",
+    "RAIL_SPEC_FOR_MSG_HISTORY",
+    "MSG_LLM_OUTPUT_INCORRECT",
+    "MSG_LLM_OUTPUT_CORRECT",
+    "MOVIE_MSG_HISTORY"
 ]

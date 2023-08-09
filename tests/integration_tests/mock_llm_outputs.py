@@ -34,7 +34,7 @@ async def async_openai_completion_create(prompt, *args, **kwargs):
 
 
 def openai_chat_completion_create(
-    prompt=None, instructions=None, msg_history=None, *args, **kwargs
+    prompt=None, instructions=None, msg_history=None, base_model=None, *args, **kwargs
 ):
     """Mock the OpenAI API call to ChatCompletion.create."""
 
@@ -63,6 +63,10 @@ def openai_chat_completion_create(
         elif msg_history and not prompt and not instructions:
             if msg_history == entity_extraction.COMPILED_MSG_HISTORY:
                 return entity_extraction.LLM_OUTPUT
+            elif msg_history == string.MOVIE_MSG_HISTORY and base_model == pydantic.WITH_MSG_HISTORY:
+                return pydantic.MSG_HISTORY_LLM_OUTPUT
+            elif msg_history == string.MOVIE_MSG_HISTORY:
+                return string.MSG_LLM_OUTPUT_CORRECT
             else:
                 raise ValueError("msg_history not found")
     except KeyError:
