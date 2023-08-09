@@ -1,8 +1,8 @@
 # flake8: noqa: E501
 import os
 
-from .validated_output_reask import VALIDATED_OUTPUT_REASK
 from .msg_validated_output_reask import MSG_VALIDATED_OUTPUT_REASK
+from .validated_output_reask import VALIDATED_OUTPUT_REASK
 
 DATA_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)))
 reader = (

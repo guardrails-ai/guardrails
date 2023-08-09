@@ -633,7 +633,9 @@ def test_string_with_message_history_reask(mocker):
 
     # For re-asked prompt and output
     assert guard_history[1].prompt == gd.Prompt(string.MSG_COMPILED_PROMPT_REASK)
-    assert guard_history[1].instructions == gd.Instructions(string.MSG_COMPILED_INSTRUCTIONS_REASK)
+    assert guard_history[1].instructions == gd.Instructions(
+        string.MSG_COMPILED_INSTRUCTIONS_REASK
+    )
     assert guard_history[1].output == string.MSG_LLM_OUTPUT_CORRECT
     assert guard_history[1].validated_output == string.MSG_LLM_OUTPUT_CORRECT
 
@@ -668,6 +670,10 @@ def test_pydantic_with_message_history_reask(mocker):
 
     # For re-asked prompt and output
     assert guard_history[1].prompt == gd.Prompt(pydantic.MSG_COMPILED_PROMPT_REASK)
-    assert guard_history[1].instructions == gd.Instructions(pydantic.MSG_COMPILED_INSTRUCTIONS_REASK)
+    assert guard_history[1].instructions == gd.Instructions(
+        pydantic.MSG_COMPILED_INSTRUCTIONS_REASK
+    )
     assert guard_history[1].output == pydantic.MSG_HISTORY_LLM_OUTPUT_CORRECT
-    assert guard_history[1].validated_output == json.loads(pydantic.MSG_HISTORY_LLM_OUTPUT_CORRECT)
+    assert guard_history[1].validated_output == json.loads(
+        pydantic.MSG_HISTORY_LLM_OUTPUT_CORRECT
+    )
