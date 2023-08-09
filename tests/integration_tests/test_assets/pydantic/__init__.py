@@ -5,6 +5,7 @@ from .validated_response_reask_1 import VALIDATED_OUTPUT as VALIDATED_OUTPUT_REA
 from .validated_response_reask_2 import VALIDATED_OUTPUT as VALIDATED_OUTPUT_REASK_2
 from .validated_response_reask_3 import VALIDATED_OUTPUT as VALIDATED_OUTPUT_REASK_3
 from .with_msg_history import Movie as WITH_MSG_HISTORY
+from .msg_validated_output_reask import MSG_VALIDATED_OUTPUT_REASK
 
 DATA_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)))
 reader = (
@@ -21,7 +22,10 @@ LLM_OUTPUT_REASK_2 = reader("llm_output_reask_2.txt")
 
 RAIL_SPEC_WITH_REASK = reader("reask.rail")
 
-MSG_HISTORY_LLM_OUTPUT = reader("msg_history_llm_output.txt")
+MSG_HISTORY_LLM_OUTPUT_INCORRECT = reader("msg_history_llm_output_incorrect.txt")
+MSG_HISTORY_LLM_OUTPUT_CORRECT = reader("msg_history_llm_output_correct.txt")
+MSG_COMPILED_PROMPT_REASK = reader("msg_compiled_prompt_reask.txt")
+MSG_COMPILED_INSTRUCTIONS_REASK = reader("msg_compiled_instructions_reask.txt")
 
 __all__ = [
     "COMPILED_PROMPT",
@@ -35,5 +39,9 @@ __all__ = [
     "VALIDATED_OUTPUT_REASK_2",
     "VALIDATED_OUTPUT_REASK_3",
     "WITH_MSG_HISTORY",
-    "MSG_HISTORY_LLM_OUTPUT",
+    "MSG_HISTORY_LLM_OUTPUT_INCORRECT",
+    "MSG_HISTORY_LLM_OUTPUT_CORRECT",
+    "MSG_COMPILED_PROMPT_REASK",
+    "MSG_COMPILED_INSTRUCTIONS_REASK",
+    "MSG_VALIDATED_OUTPUT_REASK",
 ]
