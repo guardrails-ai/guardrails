@@ -79,7 +79,6 @@ def get_reasks_by_element(
     # This is because ReAsk objects are only created for elements
     # with corresponding validators i.e. the element must have been
     # in the tree in the first place for the ReAsk to be created.
-
     reasks_by_element = defaultdict(list)
 
     for reask in reasks:
@@ -88,9 +87,9 @@ def get_reasks_by_element(
         query = "."
         for part in path:
             if isinstance(part, int):
-                query += "///*"
+                query += "//*"
             else:
-                query += f"///*[@name='{part}']"
+                query += f"//*[@name='{part}']"
 
         # Find the element
         element = parsed_rail.find(query)
