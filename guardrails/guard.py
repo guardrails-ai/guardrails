@@ -153,7 +153,7 @@ class Guard:
 
     @classmethod
     def from_rail(
-        cls, rail_file: str, num_reasks: int = 1, name: Optional[str] = None
+        cls, rail_file: str, num_reasks: int = 1, name: Optional[str] = None, description: Optional[str] = None
     ) -> "Guard":
         """Create a Schema from a `.rail` file.
 
@@ -165,11 +165,11 @@ class Guard:
             An instance of the `Guard` class.
         """
 
-        return cls(Rail.from_file(rail_file), num_reasks=num_reasks, name=name)
+        return cls(Rail.from_file(rail_file), num_reasks=num_reasks, name=name, description=description)
 
     @classmethod
     def from_rail_string(
-        cls, rail_string: str, num_reasks: int = 1, name: Optional[str] = None
+        cls, rail_string: str, num_reasks: int = 1, name: Optional[str] = None, description: Optional[str] = None
     ) -> "Guard":
         """Create a Schema from a `.rail` string.
 
@@ -180,7 +180,7 @@ class Guard:
         Returns:
             An instance of the `Guard` class.
         """
-        return cls(Rail.from_string(rail_string), num_reasks=num_reasks, name=name)
+        return cls(Rail.from_string(rail_string), num_reasks=num_reasks, name=name, description=description)
 
     @classmethod
     def from_pydantic(
@@ -190,12 +190,13 @@ class Guard:
         instructions: Optional[str] = None,
         num_reasks: int = 1,
         name: Optional[str] = None,
+        description: Optional[str] = None
     ) -> "Guard":
         """Create a Guard instance from a Pydantic model and prompt."""
         rail = Rail.from_pydantic(
             output_class=output_class, prompt=prompt, instructions=instructions
         )
-        return cls(rail, num_reasks=num_reasks, base_model=output_class, name=name)
+        return cls(rail, num_reasks=num_reasks, base_model=output_class, name=name, description=description)
 
     def __call__(
         self,
