@@ -13,7 +13,6 @@ from guardrails.utils.logs_utils import GuardHistory, GuardLogs, GuardState
 from guardrails.utils.reask_utils import (
     FieldReAsk,
     ReAsk,
-    prune_obj_for_reasking,
     reasks_to_dict,
     sub_reasks_with_fixed_values,
 )
@@ -56,6 +55,7 @@ class Runner:
     reask_prompt: Optional[Prompt] = None
     guard_history: GuardHistory = field(default_factory=lambda: GuardHistory([]))
     base_model: Optional[BaseModel] = None
+    full_schema_reask: bool = False
 
     def _reset_guard_history(self):
         """Reset the guard history."""
@@ -210,7 +210,7 @@ class Runner:
                 guard_logs, index, parsed_output, output_schema
             )
 
-            guard_logs.set_validated_output(validated_output)
+            guard_logs.set_validated_output(validated_output, self.full_schema_reask)
 
             # Introspect: inspect validated output for reasks.
             reasks = self.introspect(index, validated_output, output_schema)
@@ -221,7 +221,7 @@ class Runner:
             if not self.do_loop(index, reasks):
                 validated_output = sub_reasks_with_fixed_values(validated_output)
 
-            guard_logs.set_validated_output(validated_output)
+            guard_logs.set_validated_output(validated_output, self.full_schema_reask)
 
             return validated_output, reasks
 
@@ -404,7 +404,8 @@ class Runner:
         """Prepare to loop again."""
         output_schema, prompt, instructions = output_schema.get_reask_setup(
             reasks=reasks,
-            reask_value=prune_obj_for_reasking(validated_output),
+            original_response=validated_output,
+            use_full_schema=self.full_schema_reask,
         )
         if not include_instructions:
             instructions = None
@@ -533,7 +534,7 @@ class AsyncRunner(Runner):
                 guard_logs, index, parsed_output, output_schema
             )
 
-            guard_logs.set_validated_output(validated_output)
+            guard_logs.set_validated_output(validated_output, self.full_schema_reask)
 
             # Introspect: inspect validated output for reasks.
             reasks = self.introspect(index, validated_output, output_schema)
@@ -544,7 +545,7 @@ class AsyncRunner(Runner):
             if not self.do_loop(index, reasks):
                 validated_output = sub_reasks_with_fixed_values(validated_output)
 
-            guard_logs.set_validated_output(validated_output)
+            guard_logs.set_validated_output(validated_output, self.full_schema_reask)
 
             return validated_output, reasks
 
