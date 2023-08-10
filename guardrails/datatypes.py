@@ -145,13 +145,18 @@ class DataType:
             element_strict = self.element.get("strict")
             element_date_format = self.element.get("date-format")
             element_time_format = self.element.get("time-format")
-            on_fail = None
-            on_fail_tag = None
+            on_fail = self.element.get("on-fail")
+            on_fails = []
             attr_keys = self.element.keys()
             for attr_key in attr_keys:
-                if attr_key.startswith("on-fail"):
-                    on_fail = self.element.get(attr_key)
-                    on_fail_tag = attr_key
+                if attr_key.startswith("on-fail") and attr_key != "on-fail":
+                    on_fail_method = self.element.get(attr_key)
+                    validator_tag = attr_key
+                    validator_on_fail = {
+                        "validatorTag": validator_tag,
+                        "method": on_fail_method
+                    }
+                    on_fails.append(validator_on_fail)
             element_model = self.element.get("model")
 
             if element_name is not None:
@@ -166,8 +171,8 @@ class DataType:
                 element["timeFormat"] = element_time_format
             if on_fail is not None:
                 element["onFail"] = on_fail
-            if on_fail_tag is not None:
-                element["onFailTag"] = on_fail_tag
+            if len(on_fails) > 0:
+                element["onFails"] = on_fails
             if element_model is not None:
                 element["model"] = element_model
 
