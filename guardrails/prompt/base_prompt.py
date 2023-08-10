@@ -18,7 +18,6 @@ class BasePrompt:
         # If an output schema is provided, substitute it in the prompt.
         if output_schema:
             self.source = Template(source).safe_substitute(output_schema=output_schema)
-            #self.source = source.format(output_schema=output_schema)
         else:
             self.source = source
 
