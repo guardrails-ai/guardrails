@@ -1,6 +1,9 @@
 # noqa:W291
+from typing import Any, Dict
+
 import pytest
 
+from guardrails import Guard
 from guardrails.validators import (
     BugFreeSQL,
     ExtractedSummarySentencesMatch,
@@ -11,8 +14,10 @@ from guardrails.validators import (
     Refrain,
     SimilarToDocument,
     SqlColumnPresence,
+    ValidationResult,
     check_refrain_in_dict,
     filter_in_dict,
+    register_validator,
 )
 
 from .mock_embeddings import mock_create_embedding
@@ -160,4 +165,45 @@ def test_summary_validators(mocker):
 
 [1] ./tests/unit_tests/test_assets/article1.txt
 [2] ./tests/unit_tests/test_assets/article2.txt"""
+    )
+
+
+@register_validator("mycustomhellovalidator", data_type="string")
+def validate(value: Any, metadata: Dict[str, Any]) -> ValidationResult:
+    if "hello" in value.lower():
+        return FailResult(
+            error_message="Hello is too basic, try something more creative.",
+            fix_value="hullo",
+        )
+    return PassResult()
+
+
+def test_custom_func_validator():
+    rail_str = """
+    <rail version="0.1">
+    <output>
+        <string name="greeting"
+                format="mycustomhellovalidator"
+                on-fail-mycustomhellovalidator="fix"/>
+    </output>
+    </rail>
+    """
+
+    guard = Guard.from_rail_string(rail_str)
+
+    output = guard.parse(
+        '{"greeting": "hello"}',
+        num_reasks=0,
+    )
+    assert output == {"greeting": "hullo"}
+
+    guard_history = guard.guard_state.all_histories[0].history
+    assert len(guard_history) == 1
+    validator_log = (
+        guard_history[0].field_validation_logs.children["greeting"].validator_logs[0]
+    )
+    assert validator_log.validator_name == "mycustomhellovalidator"
+    assert validator_log.validation_result == FailResult(
+        error_message="Hello is too basic, try something more creative.",
+        fix_value="hullo",
     )
