@@ -1,5 +1,5 @@
 """The LLM prompt."""
-from string import Formatter
+from string import Formatter, Template
 
 from .base_prompt import BasePrompt
 
@@ -20,4 +20,5 @@ class Prompt(BasePrompt):
         filtered_kwargs = {k: v for k, v in kwargs.items() if k in vars}
 
         # Return another instance of the class with the formatted prompt.
-        return Prompt(self.source.format(**filtered_kwargs))
+        formatted_prompt = Template(self.source).safe_substitute(**filtered_kwargs)
+        return Prompt(formatted_prompt)

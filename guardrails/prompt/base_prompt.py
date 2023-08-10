@@ -17,7 +17,8 @@ class BasePrompt:
 
         # If an output schema is provided, substitute it in the prompt.
         if output_schema:
-            self.source = source.format(output_schema=output_schema)
+            self.source = Template(source).safe_substitute(output_schema=output_schema)
+            #self.source = source.format(output_schema=output_schema)
         else:
             self.source = source
 
@@ -43,7 +44,6 @@ class BasePrompt:
         """Substitute constants in the prompt."""
         # Substitute constants by reading the constants file.
         # Regex to extract all occurrences of @<constant_name>
-        #matches = re.findall(r"@(\w+)", text)
         
         matches = re.findall(r"\${(\w+)}", text)
 
@@ -53,7 +53,7 @@ class BasePrompt:
                 template = Template(text)
                 mapping = {match: constants[match]}
                 text = template.safe_substitute(**mapping)
-
+        
         return text
 
     def get_prompt_variables(self):
