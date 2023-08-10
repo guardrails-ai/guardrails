@@ -207,3 +207,11 @@ def test_custom_func_validator():
         error_message="Hello is too basic, try something more creative.",
         fix_value="hullo",
     )
+
+
+def test_bad_validator():
+    with pytest.raises(ValueError):
+
+        @register_validator("mycustombadvalidator", data_type="string")
+        def validate(value: Any) -> ValidationResult:
+            pass
