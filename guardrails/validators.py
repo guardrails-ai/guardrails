@@ -1345,7 +1345,9 @@ class ExtractiveSummary(Validator):
 
         verified_sentences = " ".join(verified) + "\n\n" + "".join(citations)
 
-        if 100 * len(unverified) / len(sentences) < self.sentences_threshold:
+        n_all = len(sentences)
+        n_verified = n_all - len(unverified)
+        if 100 * n_verified / n_all < self.sentences_threshold:
             unverified_sentences = "\n".join(
                 "- " + s for i, s in enumerate(sentences) if i in unverified
             )

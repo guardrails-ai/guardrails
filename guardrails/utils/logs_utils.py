@@ -185,9 +185,7 @@ def merge_reask_output(previous_response, reask_response) -> Dict:
             corrected_value = reask_response_dict
             # Get the path from any of the ReAsk objects in the PydanticReAsk object
             # all of them have the same path.
-            path = [v.path for v in pruned_reask_json.values() if isinstance(v, ReAsk)][
-                0
-            ]
+            path = [v.path for v in pruned_reask_json.values() if isinstance(v, ReAsk)][0]
             update_response_by_path(merged_json, path, corrected_value)
 
         elif isinstance(pruned_reask_json, dict):
