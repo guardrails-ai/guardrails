@@ -272,7 +272,6 @@ class Schema:
         reask_prompt_template: Optional[str] = None,
         reask_instructions_template: Optional[str] = None,
     ) -> None:
-
         # Setup schema
         if schema is None:
             schema = {}
@@ -437,7 +436,6 @@ class Schema:
 
 
 class JsonSchema(Schema):
-
     reask_prompt_vars = {"previous_response", "output_schema"}
 
     def get_reask_setup(
@@ -733,7 +731,6 @@ class JsonSchema(Schema):
 
 
 class StringSchema(Schema):
-
     reask_prompt_vars = {"previous_response", "output_schema", "error_messages"}
 
     def __init__(
