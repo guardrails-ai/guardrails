@@ -514,8 +514,12 @@ def convert_pydantic_model_to_openai_fn(model: BaseModel) -> Dict:
         OpenAI function paramters.
     """
 
+    # Create a bare model with no extra fields
+    class BareModel(BaseModel):
+        __annotations__ = model.__annotations__
+
     # Convert Pydantic model to JSON schema
-    json_schema = model.schema()
+    json_schema = BareModel.schema()
 
     # Create OpenAI function parameters
     fn_params = {
