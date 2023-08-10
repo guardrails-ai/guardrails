@@ -1279,20 +1279,24 @@ class ExtractiveSummary(Validator):
         documents_dir: str,
         threshold: int = 85,
         sentences_threshold: int = 99,
+        fuzz_method: str = 'partial',
         include_citations: bool = True,
         on_fail: Optional[Callable] = None,
         **kwargs,
     ):
+        assert fuzz_method in ['simple', 'partial', 'sort', 'set']
         super().__init__(on_fail,
             documents_dir=documents_dir,
             threshold=threshold,
             sentences_threshold=sentences_threshold,
+            fuzz_method=fuzz_method,
             include_citations=include_citations,
             **kwargs,
         )
         self.threshold = int(threshold)
         self.sentences_threshold = int(sentences_threshold)
         self.include_citations = str(include_citations).lower() == "true"
+        self.fuzz_method = fuzz_method
 
         # Load documents
         self._document_store = {}
@@ -1313,6 +1317,14 @@ class ExtractiveSummary(Validator):
                 "`thefuzz` library is required for `extractive-summary` validator. "
                 "Please install it with `pip install thefuzz`."
             )
+        
+        # Pick the fuzzy comparator. Should be already asserted in the __init__
+        fuzz_method = {
+            "simple": fuzz.ratio,
+            "partial": fuzz.partial_ratio,
+            "sort": fuzz.token_sort_ratio,
+            "set": fuzz.token_set_ratio,
+        }[self.fuzz_method]
 
         # Split the value into sentences.
         sentences = sentence_split(value, True)
@@ -1331,7 +1343,7 @@ class ExtractiveSummary(Validator):
             # Check fuzzy match against all sentences in all documents
             for doc_path, doc_sentences in self._document_store.items():
                 for doc_sentence in doc_sentences:
-                    ratio = fuzz.ratio(sentence.lower(), doc_sentence.lower())
+                    ratio = fuzz_method(sentence.lower(), doc_sentence.lower())
                     if ratio > highest_ratio:
                         highest_ratio = ratio
                         highest_ratio_doc = doc_path
