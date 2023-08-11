@@ -4,3 +4,6 @@ class MockLoop:
     
     def is_running(self):
         return self.loop_is_running
+    
+    def run_until_complete(self, future):
+        return future
