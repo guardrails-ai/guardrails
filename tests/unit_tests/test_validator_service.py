@@ -2,7 +2,7 @@ import pytest
 import guardrails.validator_service as vs
 from guardrails.datatypes import FieldValidation
 from guardrails.utils.logs_utils import FieldValidationLogs
-from .mocks import MockAsyncValidatorService
+from .mocks import MockAsyncValidatorService, MockSequentialValidatorService, MockLoop
 
 
 empty_field_validation=FieldValidation(
@@ -18,7 +18,7 @@ empty_field_validation_logs=FieldValidationLogs(
 
 @pytest.mark.asyncio
 async def test_async_validate(mocker):
-    mocker.patch(
+    mockAsyncValidatorService = mocker.patch(
         "guardrails.validator_service.AsyncValidatorService",
         new=MockAsyncValidatorService
     )
@@ -29,5 +29,58 @@ async def test_async_validate(mocker):
         validation_logs=empty_field_validation_logs
     )
 
-    assert validated_value is True
+    assert validated_value == 'MockAsyncValidatorService.async_validate'
     assert validated_metadata == { 'async': True }
+
+def test_validate_with_running_loop(mocker):
+    mockLoop = MockLoop(True)
+    mocker.patch(
+        "guardrails.validator_service.AsyncValidatorService",
+        new=MockAsyncValidatorService
+    )
+    mocker.patch(
+        "guardrails.validator_service.SequentialValidatorService",
+        new=MockSequentialValidatorService
+    )
+    mocker.patch(
+        "asyncio.get_event_loop",
+        return_value=mockLoop
+    )
+
+    warn_spy = mocker.spy(vs.logger, 'warning')
+
+    validated_value, validated_metadata = vs.validate(
+        value=True,
+        metadata={},
+        validator_setup=empty_field_validation,
+        validation_logs=empty_field_validation_logs
+    )
+
+    assert warn_spy.call_count == 1
+    warn_spy.assert_called_with('Async event loop found, but guard was invoked synchronously.For validator parallelization, please call `validate_async` instead.')
+    assert validated_value == 'MockSequentialValidatorService.validate'
+    assert validated_metadata == { 'sync': True }
+
+def test_validate_without_running_loop(mocker):
+    mockLoop = MockLoop(False)
+    mocker.patch(
+        "guardrails.validator_service.AsyncValidatorService",
+        new=MockAsyncValidatorService
+    )
+    mocker.patch(
+        "guardrails.validator_service.SequentialValidatorService",
+        new=MockSequentialValidatorService
+    )
+    mocker.patch(
+        "asyncio.get_event_loop",
+        return_value=mockLoop
+    )
+    validated_value, validated_metadata = vs.validate(
+        value=True,
+        metadata={},
+        validator_setup=empty_field_validation,
+        validation_logs=empty_field_validation_logs
+    )
+
+    assert validated_value == 'MockAsyncValidatorService.validate'
+    assert validated_metadata == { 'sync': True }
