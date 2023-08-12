@@ -25,6 +25,12 @@ except ImportError:
 else:
     _HAS_NUMPY = True
 
+import nltk
+try:
+    nltk.data.find("tokenizers/punkt")
+except LookupError:
+    nltk.download("punkt")
+
 
 validators_registry = {}
 types_to_validators = defaultdict(list)
@@ -1441,6 +1447,119 @@ Relevant (as a JSON with a single boolean key, "relevant"):\
             f"to the question {question}.",
             fix_value=fixed_answer,
         )
+
+    def to_prompt(self, with_keywords: bool = True) -> str:
+        return ""
+
+
+@register_validator(name="provenance-v0", data_type="string")
+class ProvenanceV0(Validator):
+    """Validate that LLM-generated text matches some source text based on
+    distance in embedding space.
+
+    Args:
+        threshold: The minimum cosine similarity between the generated text and
+            the source text. Defaults to 0.8.
+
+    In order to use this validator, you must provide a query function in the
+    metadata. This function should take a string as input and return a list of
+    (chunk, score) tuples. The chunk is a string and the score is a float representing
+    the cosine similarity between the chunk and the input string. The list should be
+    sorted in ascending order by score.
+
+    Example:
+        >>> def query_function(text: str, k: int) -> List[Tuple[str, float]]:
+        ...     return [("This is a chunk", 0.9), ("This is another chunk", 0.8)]
+
+        >>> guard = Guard.from_rail(...)
+        >>> guard(
+        ...     openai.ChatCompletion.create(...),
+        ...     prompt_params={...},
+        ...     temperature=0.0,
+        ...     metadata={"query_function": query_function},
+        ... )
+    """
+
+    def __init__(
+        self,
+        threshold: float = 0.8,
+        validation_method: str = "sentence",
+        on_fail: Optional[Callable] = None,
+        **kwargs,
+    ):
+        super().__init__(on_fail, **kwargs)
+        self._threshold = float(threshold)
+        if validation_method not in ["sentence", "full"]:
+            raise ValueError("validation_method must be 'sentence' or 'full'.")
+        self._validation_method = validation_method
+
+    def validate_each_sentence(
+        self, value: Any, query_function: Callable, metadata: Dict[str, Any]
+    ) -> ValidationResult:
+        # Split the value into sentences using nltk sentence tokenizer.
+        sentences = nltk.sent_tokenize(value)
+
+        unsupported_sentences = []
+        supported_sentences = []
+        for sentence in sentences:
+            most_similar_chunks = query_function(text=sentence, k=1)
+            if most_similar_chunks is None:
+                unsupported_sentences.append(sentence)
+                continue
+            most_similar_chunk = most_similar_chunks[0]
+            if most_similar_chunk[1] < self._threshold:
+                supported_sentences.append(sentence)
+            else:
+                unsupported_sentences.append(sentence)
+
+        if unsupported_sentences:
+            unsupported_sentences = "- " + "\n- ".join(unsupported_sentences)
+            return FailResult(
+                metadata=metadata,
+                error_message=(
+                    f"None of the following sentences in your response are supported "
+                    "by provided context:"
+                    f"\n{unsupported_sentences}"
+                ),
+                fix_value="\n".join(supported_sentences),
+            )
+        return PassResult(metadata=metadata)
+
+    def validate_full_text(
+        self, value: Any, query_function: Callable, metadata: Dict[str, Any]
+    ) -> ValidationResult:
+        most_similar_chunks = query_function(text=value, k=1)
+        if most_similar_chunks is None:
+            return FailResult(
+                metadata=metadata,
+                error_message=(
+                    "The following text in your response is not supported by the "
+                    "supported by the provided context:\n" + value
+                ),
+            )
+        most_similar_chunk = most_similar_chunks[0]
+        if most_similar_chunk[1] > self._threshold:
+            return FailResult(
+                metadata=metadata,
+                error_message=(
+                    "The following text in your response is not supported by the "
+                    "supported by the provided context:\n" + value
+                ),
+            )
+
+        return PassResult(metadata=metadata)
+
+    def validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
+        query_function = metadata.get("query_function", None)
+        if query_function is None:
+            raise ValueError("The metadata must contain a query function.")
+
+        if self._validation_method == "sentence":
+            return self.validate_each_sentence(value, query_function, metadata)
+        elif self._validation_method == "full":
+            return self.validate_full_text(value, query_function, metadata)
+        else:
+            raise ValueError("validation_method must be 'sentence' or 'full'.")
 
     def to_prompt(self, with_keywords: bool = True) -> str:
         return ""
