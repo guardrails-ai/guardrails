@@ -302,7 +302,7 @@ class Guard:
     def parse(
         self,
         llm_output: str,
-        metadata: Dict,
+        metadata: Optional[Dict] = None,
         llm_api: Union[Callable, Callable[[Any], Awaitable[Any]]] = None,
         num_reasks: int = 1,
         prompt_params: Dict = None,
@@ -319,6 +319,8 @@ class Guard:
         Returns:
             The validated response.
         """
+        metadata = metadata or {}
+
         # If the LLM API is async, return a coroutine
         if asyncio.iscoroutinefunction(llm_api):
             return self._async_parse(
