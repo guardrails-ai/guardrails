@@ -13,7 +13,8 @@ except ImportError:
     nltk = None
 
 try:
-    nltk.data.find("tokenizers/punkt")
+    if nltk is not None:
+        nltk.data.find("tokenizers/punkt")
 except LookupError:
     nltk.download("punkt")
 

@@ -56,26 +56,25 @@ class PromptCallable:
         retry=retry_if_exception_type(RETRYABLE_ERRORS),
     )
     def __call__(self, *args, **kwargs):
-        # try:
-        #     result = self.fn(*args, **kwargs)
-        # except Exception as e:
-        #     raise PromptCallableException(
-        #         "The callable `fn` passed to `Guard(fn, ...)` failed"
-        #         f" with the following error: `{e}`. "
-        #         "Make sure that `fn` can be called as a function that"
-        #         " takes in a single prompt string "
-        #         "and returns a string."
-        #     )
-        # if not isinstance(result, str):
-        #     raise PromptCallableException(
-        #         "The callable `fn` passed to `Guard(fn, ...)` returned"
-        #         f" a non-string value: {result}. "
-        #         "Make sure that `fn` can be called as a function that"
-        #         " takes in a single prompt string "
-        #         "and returns a string."
-        #     )
-        # return result
-        return self.fn(*args, **kwargs)
+        try:
+            result = self.fn(*args, **kwargs)
+        except Exception as e:
+            raise PromptCallableException(
+                "The callable `fn` passed to `Guard(fn, ...)` failed"
+                f" with the following error: `{e}`. "
+                "Make sure that `fn` can be called as a function that"
+                " takes in a single prompt string "
+                "and returns a string."
+            )
+        if not isinstance(result, str):
+            raise PromptCallableException(
+                "The callable `fn` passed to `Guard(fn, ...)` returned"
+                f" a non-string value: {result}. "
+                "Make sure that `fn` can be called as a function that"
+                " takes in a single prompt string "
+                "and returns a string."
+            )
+        return result
 
 
 def nonchat_prompt(prompt: str, instructions: Optional[str] = None) -> str:
@@ -270,26 +269,25 @@ class AsyncPromptCallable:
         retry=retry_if_exception_type(RETRYABLE_ERRORS),
     )
     async def __call__(self, *args, **kwargs):
-        # try:
-        #     result = await self.fn(*args, **kwargs)
-        # except Exception as e:
-        #     raise PromptCallableException(
-        #         "The callable `fn` passed to `Guard(fn, ...)` failed"
-        #         f" with the following error: `{e}`. "
-        #         "Make sure that `fn` can be called as a function that"
-        #         " takes in a single prompt string "
-        #         "and returns a string."
-        #     )
-        # if not isinstance(result, str):
-        #     raise PromptCallableException(
-        #         "The callable `fn` passed to `Guard(fn, ...)` returned"
-        #         f" a non-string value: {result}. "
-        #         "Make sure that `fn` can be called as a function that"
-        #         " takes in a single prompt string "
-        #         "and returns a string."
-        #     )
-        # return result
-        return await self.fn(*args, **kwargs)
+        try:
+            result = await self.fn(*args, **kwargs)
+        except Exception as e:
+            raise PromptCallableException(
+                "The callable `fn` passed to `Guard(fn, ...)` failed"
+                f" with the following error: `{e}`. "
+                "Make sure that `fn` can be called as a function that"
+                " takes in a single prompt string "
+                "and returns a string."
+            )
+        if not isinstance(result, str):
+            raise PromptCallableException(
+                "The callable `fn` passed to `Guard(fn, ...)` returned"
+                f" a non-string value: {result}. "
+                "Make sure that `fn` can be called as a function that"
+                " takes in a single prompt string "
+                "and returns a string."
+            )
+        return result
 
 
 async def async_openai_wrapper(
