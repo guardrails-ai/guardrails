@@ -921,6 +921,11 @@ class StringSchema(Schema):
         instructions: Optional[Instructions],
         prompt: Prompt,
     ):
+        if prompt_callable is None:
+            raise RuntimeError(
+                "In order to support reasking, a `prompt_callable` is required."
+            )
+
         if not hasattr(prompt_callable.fn, "func"):
             # Only apply preprocessing to guardrails wrappers.
             return instructions, prompt
