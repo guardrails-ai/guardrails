@@ -2,8 +2,9 @@ import asyncio
 import pytest
 from guardrails.validator_service import AsyncValidatorService
 from guardrails.datatypes import FieldValidation
-from guardrails.utils.logs_utils import FieldValidationLogs
-from .mocks import MockAsyncValidatorService, MockSequentialValidatorService, MockLoop
+from guardrails.utils.logs_utils import FieldValidationLogs, ValidatorLogs
+from guardrails.validators import PassResult
+from .mocks import MockLoop, MockValidator
 
 
 empty_field_validation=FieldValidation(
@@ -206,5 +207,51 @@ async def test_validate_dependents(mocker):
     assert validated_value == {'child-one-key': 'new-child-one-value', 'child-two-key': 'new-child-two-value'}
     assert validated_metadata == {}
 
-# @pytest.mark.asyncio
-# async def test_run_validators()
+@pytest.mark.asyncio
+async def test_run_validators(mocker):
+    group_validators_mock = mocker.patch.object(
+        avs,
+        'group_validators'
+    )
+    fix_validator = MockValidator("fix_validator", "fix")
+    noop_validator_1 = MockValidator("noop_validator_1")
+    noop_validator_2 = MockValidator("noop_validator_2")
+    noop_validator_2.run_in_separate_process = True
+    group_validators_mock.return_value = [
+        ("fix", [fix_validator]),
+        ("noop", [noop_validator_1, noop_validator_2])
+    ]
+
+    def mock_run_validator(validation_logs, validator, value, metadata):
+        return ValidatorLogs(
+            validator_name=validator.name,
+            value_before_validation=value,
+            validation_result=PassResult()
+        )
+    run_validator_mock = mocker.patch.object(avs, 'run_validator', side_effect=mock_run_validator)
+
+    mockLoop = MockLoop(True)
+    mocker.patch(
+        "asyncio.get_running_loop",
+        return_value=mockLoop
+    )
+
+    async def mock_gather (*args):
+        return args
+    mocker.patch(
+        "asyncio.gather",
+        side_effect=mock_gather
+    )
+
+    value, metadata = await avs.run_validators(
+        value=empty_field_validation.value,
+        metadata={},
+        validator_setup=empty_field_validation,
+        validation_logs=empty_field_validation_logs
+    )
+
+    print("value: ", value)
+    print("metadata: ", metadata)
+
+    # TODO: Assertions
+

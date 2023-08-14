@@ -7,3 +7,6 @@ class MockLoop:
     
     def run_until_complete(self, future):
         return future
+
+    def run_in_executor(self, executor, func, *args):
+        return func(*args)
