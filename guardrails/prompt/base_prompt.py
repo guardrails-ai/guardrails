@@ -43,7 +43,7 @@ class BasePrompt:
         """Substitute constants in the prompt."""
         # Substitute constants by reading the constants file.
         # Regex to extract all occurrences of @<constant_name>
-        
+
         matches = re.findall(r"\${(\w+)}", text)
 
         # Substitute all occurrences of @<constant_name> with the value of the constant.
@@ -52,7 +52,7 @@ class BasePrompt:
                 template = Template(text)
                 mapping = {match: constants[match]}
                 text = template.safe_substitute(**mapping)
-        
+
         return text
 
     def get_prompt_variables(self):
@@ -78,7 +78,7 @@ class BasePrompt:
         # TODO(shreya): Optionally add support for special character demarcation.
 
         # Regex to extract first occurrence of @<constant_name>
-        
+
         matches = re.finditer(r"\${(\w+)}", text)
 
         earliest_match_idx = None

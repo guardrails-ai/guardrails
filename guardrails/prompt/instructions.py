@@ -29,5 +29,7 @@ class Instructions(BasePrompt):
         filtered_kwargs = {k: v for k, v in kwargs.items() if k in vars}
 
         # Return another instance of the class with the formatted prompt.
-        formatted_instructions = Template(self.source).safe_substitute(**filtered_kwargs)
+        formatted_instructions = Template(self.source).safe_substitute(
+            **filtered_kwargs
+        )
         return Instructions(formatted_instructions)
