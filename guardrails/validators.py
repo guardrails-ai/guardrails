@@ -4,18 +4,21 @@ The name with which a validator is registered is the name that is used
 in the `RAIL` spec to specify formatters.
 """
 import ast
+import itertools
 import logging
 import os
 import re
+import warnings
 from collections import defaultdict
 from copy import deepcopy
-from typing import Any, Callable, Dict, List, Literal, Optional, Type, Union
+from functools import partial
+from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Type, Union
 
 import openai
 import pydantic
 from pydantic import BaseModel, Field, ValidationError
 
-from guardrails.utils.docs_utils import sentence_split
+from guardrails.utils.docs_utils import get_chunks_from_text, sentence_split
 from guardrails.utils.sql_utils import SQLDriver, create_sql_driver
 
 try:
@@ -24,6 +27,17 @@ except ImportError:
     _HAS_NUMPY = False
 else:
     _HAS_NUMPY = True
+
+try:
+    import nltk
+except ImportError:
+    nltk = None
+
+try:
+    if nltk is not None:
+        nltk.data.find("tokenizers/punkt")
+except LookupError:
+    nltk.download("punkt")
 
 
 validators_registry = {}
@@ -201,6 +215,8 @@ class Validator:
     override_value_on_pass = False
 
     def __init__(self, on_fail: Optional[Callable] = None, **kwargs):
+        if on_fail is None:
+            on_fail = "noop"
         if isinstance(on_fail, str):
             self.on_fail_descriptor = on_fail
             self.on_fail_method = None
@@ -1441,6 +1457,245 @@ Relevant (as a JSON with a single boolean key, "relevant"):\
             f"to the question {question}.",
             fix_value=fixed_answer,
         )
+
+    def to_prompt(self, with_keywords: bool = True) -> str:
+        return ""
+
+
+@register_validator(name="provenance-v0", data_type="string")
+class ProvenanceV0(Validator):
+    """Validate that LLM-generated text matches some source text based on
+    distance in embedding space.
+
+    Args:
+        threshold: The minimum cosine similarity between the generated text and
+            the source text. Defaults to 0.8.
+
+    In order to use this validator, you must provide either a `query_function` or
+    `sources` with an `embed_function` in the metadata.
+
+    If providing query_function, it should take a string as input and return a list of
+    (chunk, score) tuples. The chunk is a string and the score is a float representing
+    the cosine similarity between the chunk and the input string. The list should be
+    sorted in ascending order by score.
+
+    Example:
+        >>> def query_function(text: str, k: int) -> List[Tuple[str, float]]:
+        ...     return [("This is a chunk", 0.9), ("This is another chunk", 0.8)]
+
+        >>> guard = Guard.from_rail(...)
+        >>> guard(
+        ...     openai.ChatCompletion.create(...),
+        ...     prompt_params={...},
+        ...     temperature=0.0,
+        ...     metadata={"query_function": query_function},
+        ... )
+
+
+    If providing sources, it should be a list of strings. The embed_function should
+    take a string or a list of strings as input and return a np array of floats.
+    The vector should be normalized to unit length.
+
+    Example:
+        >>> def embed_function(text: Union[str, List[str]]) -> np.ndarray:
+        ...     return np.array([[0.1, 0.2, 0.3]])
+
+        >>> guard = Guard.from_rail(...)
+        >>> guard(
+        ...     openai.ChatCompletion.create(...),
+        ...     prompt_params={...},
+        ...     temperature=0.0,
+        ...     metadata={
+                    "sources": ["This is a source text"],
+                    "embed_function": embed_function
+                },
+        ... )
+    """
+
+    def __init__(
+        self,
+        threshold: float = 0.8,
+        validation_method: str = "sentence",
+        on_fail: Optional[Callable] = None,
+        **kwargs,
+    ):
+        super().__init__(on_fail, **kwargs)
+        self._threshold = float(threshold)
+        if validation_method not in ["sentence", "full"]:
+            raise ValueError("validation_method must be 'sentence' or 'full'.")
+        self._validation_method = validation_method
+
+    def get_query_function(self, metadata: Dict[str, Any]) -> None:
+        query_fn = metadata.get("query_function", None)
+        sources = metadata.get("sources", None)
+
+        # Check that query_fn or sources are provided
+        if query_fn is not None and sources is not None:
+            warnings.warn(
+                "Both `query_function` and `sources` are provided in metadata. "
+                "`query_function` will be used."
+            )
+        elif query_fn is None and sources is None:
+            raise ValueError(
+                "You must provide either `query_function` or `sources` in metadata."
+            )
+        elif query_fn is None and sources is not None:
+
+            # Check chunking strategy
+            chunk_strategy = metadata.get("chunk_strategy", "sentence")
+            if chunk_strategy not in ["sentence", "word", "char", "token"]:
+                raise ValueError(
+                    "`chunk_strategy` must be one of 'sentence', 'word', 'char', "
+                    "or 'token'."
+                )
+            chunk_size = metadata.get("chunk_size", 5)
+            chunk_overlap = metadata.get("chunk_overlap", 2)
+
+            # Check distance metric
+            distance_metric = metadata.get("distance_metric", "cosine")
+            if distance_metric not in ["cosine", "euclidean"]:
+                raise ValueError(
+                    "`distance_metric` must be one of 'cosine' or 'euclidean'."
+                )
+
+            # Check embed model
+            embed_function = metadata.get("embed_function", None)
+            if embed_function is None:
+                raise ValueError(
+                    "You must provide `embed_function` in metadata in order to "
+                    "use the default query function."
+                )
+            query_fn = partial(
+                ProvenanceV0.query_vector_collection,
+                sources=metadata["sources"],
+                chunk_strategy=chunk_strategy,
+                chunk_size=chunk_size,
+                chunk_overlap=chunk_overlap,
+                distance_metric=distance_metric,
+                embed_function=embed_function,
+            )
+
+        return query_fn
+
+    def validate_each_sentence(
+        self, value: Any, query_function: Callable, metadata: Dict[str, Any]
+    ) -> ValidationResult:
+        # Split the value into sentences using nltk sentence tokenizer.
+        sentences = nltk.sent_tokenize(value)
+
+        unsupported_sentences = []
+        supported_sentences = []
+        for sentence in sentences:
+            most_similar_chunks = query_function(text=sentence, k=1)
+            if most_similar_chunks is None:
+                unsupported_sentences.append(sentence)
+                continue
+            most_similar_chunk = most_similar_chunks[0]
+            if most_similar_chunk[1] < self._threshold:
+                supported_sentences.append((sentence, most_similar_chunk[0]))
+            else:
+                unsupported_sentences.append(sentence)
+
+        metadata["unsupported_sentences"] = "- " + "\n- ".join(unsupported_sentences)
+        metadata["supported_sentences"] = supported_sentences
+        if unsupported_sentences:
+            unsupported_sentences = "- " + "\n- ".join(unsupported_sentences)
+            return FailResult(
+                metadata=metadata,
+                error_message=(
+                    f"None of the following sentences in your response are supported "
+                    "by provided context:"
+                    f"\n{metadata['unsupported_sentences']}"
+                ),
+                fix_value="\n".join(s[0] for s in supported_sentences),
+            )
+        return PassResult(metadata=metadata)
+
+    def validate_full_text(
+        self, value: Any, query_function: Callable, metadata: Dict[str, Any]
+    ) -> ValidationResult:
+        most_similar_chunks = query_function(text=value, k=1)
+        if most_similar_chunks is None:
+            metadata["unsupported_text"] = value
+            metadata["supported_text_citations"] = {}
+            return FailResult(
+                metadata=metadata,
+                error_message=(
+                    "The following text in your response is not supported by the "
+                    "supported by the provided context:\n" + value
+                ),
+            )
+        most_similar_chunk = most_similar_chunks[0]
+        if most_similar_chunk[1] > self._threshold:
+            metadata["unsupported_text"] = value
+            metadata["supported_text_citations"] = {}
+            return FailResult(
+                metadata=metadata,
+                error_message=(
+                    "The following text in your response is not supported by the "
+                    "supported by the provided context:\n" + value
+                ),
+            )
+
+        metadata["unsupported_text"] = ""
+        metadata["supported_text_citations"] = {
+            value: most_similar_chunk[0],
+        }
+        return PassResult(metadata=metadata)
+
+    def validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
+        query_function = self.get_query_function(metadata)
+
+        if self._validation_method == "sentence":
+            return self.validate_each_sentence(value, query_function, metadata)
+        elif self._validation_method == "full":
+            return self.validate_full_text(value, query_function, metadata)
+        else:
+            raise ValueError("validation_method must be 'sentence' or 'full'.")
+
+    @staticmethod
+    def query_vector_collection(
+        text: str,
+        k: int,
+        sources: List[str],
+        chunk_strategy: str = "sentence",
+        chunk_size: int = 5,
+        chunk_overlap: int = 2,
+        distance_metric: str = "cosine",
+        embed_function: Optional[Callable] = None,
+    ) -> List[Tuple[str, float]]:
+        chunks = [
+            get_chunks_from_text(source, chunk_strategy, chunk_size, chunk_overlap)
+            for source in sources
+        ]
+        chunks = list(itertools.chain.from_iterable(chunks))
+
+        # Create embeddings
+        source_embeddings = np.array(embed_function(chunks)).squeeze()
+        query_embedding = embed_function(text).squeeze()
+
+        # Compute distances
+        if distance_metric == "cosine":
+            if not _HAS_NUMPY:
+                raise ValueError(
+                    "You must install numpy in order to use the cosine distance "
+                    "metric."
+                )
+
+            cos_sim = 1 - (
+                np.dot(source_embeddings, query_embedding)
+                / (
+                    np.linalg.norm(source_embeddings, axis=1)
+                    * np.linalg.norm(query_embedding)
+                )
+            )
+            top_indices = np.argsort(cos_sim)[:k]
+            top_similarities = [cos_sim[j] for j in top_indices]
+            top_chunks = [chunks[j] for j in top_indices]
+        else:
+            raise ValueError("distance_metric must be 'cosine'.")
+
+        return list(zip(top_chunks, top_similarities))
 
     def to_prompt(self, with_keywords: bool = True) -> str:
         return ""
