@@ -21,10 +21,10 @@ avs = AsyncValidatorService()
 
 def test_validate_with_running_loop(mocker):
     with pytest.raises(RuntimeError) as e_info:
-        mockLoop = MockLoop(True)
+        mock_loop = MockLoop(True)
         mocker.patch(
             "asyncio.get_event_loop",
-            return_value=mockLoop
+            return_value=mock_loop
         )
         avs.validate(
             value=True,
@@ -36,10 +36,10 @@ def test_validate_with_running_loop(mocker):
         assert str(e_info) == 'Async event loop found, please call `validate_async` instead.'
 
 def test_validate_without_running_loop(mocker):
-    mockLoop = MockLoop(False)
+    mock_loop = MockLoop(False)
     mocker.patch(
         "asyncio.get_event_loop",
-        return_value=mockLoop
+        return_value=mock_loop
     )
     async_validate_mock = mocker.MagicMock(return_value=('async_validate_mock', { 'async': True }))
     mocker.patch.object(
@@ -47,7 +47,7 @@ def test_validate_without_running_loop(mocker):
         'async_validate',
         async_validate_mock
     )
-    loop_spy = mocker.spy(mockLoop, 'run_until_complete')
+    loop_spy = mocker.spy(mock_loop, 'run_until_complete')
 
     validated_value, validated_metadata = avs.validate(
         value=True,
@@ -207,6 +207,8 @@ async def test_validate_dependents(mocker):
     assert validated_value == {'child-one-key': 'new-child-one-value', 'child-two-key': 'new-child-two-value'}
     assert validated_metadata == {}
 
+# TODO: Add fails
+# TODO: Add override_value_on_pass
 @pytest.mark.asyncio
 async def test_run_validators(mocker):
     group_validators_mock = mocker.patch.object(
@@ -230,15 +232,16 @@ async def test_run_validators(mocker):
         )
     run_validator_mock = mocker.patch.object(avs, 'run_validator', side_effect=mock_run_validator)
 
-    mockLoop = MockLoop(True)
-    mocker.patch(
+    mock_loop = MockLoop(True)
+    run_in_executor_spy = mocker.spy(mock_loop, 'run_in_executor')
+    get_running_loop_mock = mocker.patch(
         "asyncio.get_running_loop",
-        return_value=mockLoop
+        return_value=mock_loop
     )
 
     async def mock_gather (*args):
         return args
-    mocker.patch(
+    asyancio_gather_mock = mocker.patch(
         "asyncio.gather",
         side_effect=mock_gather
     )
@@ -250,8 +253,24 @@ async def test_run_validators(mocker):
         validation_logs=empty_field_validation_logs
     )
 
-    print("value: ", value)
-    print("metadata: ", metadata)
+    assert get_running_loop_mock.call_count == 1
+    
+    assert group_validators_mock.call_count == 1
+    group_validators_mock.assert_called_once_with(empty_field_validation.validators)
 
-    # TODO: Assertions
+    assert run_in_executor_spy.call_count == 1
+    run_in_executor_spy.assert_called_once_with(
+        avs.multiprocessing_executor,
+        run_validator_mock,
+        empty_field_validation_logs,
+        noop_validator_2,
+        empty_field_validation.value,
+        {}
+    )
 
+    assert run_validator_mock.call_count == 3
+
+    assert asyancio_gather_mock.call_count == 1
+    
+    assert value == empty_field_validation.value
+    assert metadata == {}
