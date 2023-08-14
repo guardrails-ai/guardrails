@@ -302,6 +302,7 @@ class Guard:
     def parse(
         self,
         llm_output: str,
+        metadata: Dict,
         llm_api: Union[Callable, Callable[[Any], Awaitable[Any]]] = None,
         num_reasks: int = 1,
         prompt_params: Dict = None,
@@ -322,6 +323,7 @@ class Guard:
         if asyncio.iscoroutinefunction(llm_api):
             return self._async_parse(
                 llm_output,
+                metadata,
                 llm_api=llm_api,
                 num_reasks=num_reasks,
                 prompt_params=prompt_params,
@@ -331,6 +333,7 @@ class Guard:
         # Otherwise, call the LLM synchronously
         return self._sync_parse(
             llm_output,
+            metadata,
             llm_api=llm_api,
             num_reasks=num_reasks,
             prompt_params=prompt_params,
@@ -341,6 +344,7 @@ class Guard:
     def _sync_parse(
         self,
         llm_output: str,
+        metadata: Dict,
         llm_api: Callable = None,
         num_reasks: int = 1,
         prompt_params: Dict = None,
@@ -366,6 +370,7 @@ class Guard:
                 input_schema=None,
                 output_schema=self.output_schema,
                 num_reasks=num_reasks,
+                metadata=metadata,
                 output=llm_output,
                 reask_prompt=self.reask_prompt,
                 base_model=self.base_model,
@@ -377,6 +382,7 @@ class Guard:
     async def _async_parse(
         self,
         llm_output: str,
+        metadata: Dict,
         llm_api: Callable[[Any], Awaitable[Any]] = None,
         num_reasks: int = 1,
         prompt_params: Dict = None,
@@ -402,6 +408,7 @@ class Guard:
                 input_schema=None,
                 output_schema=self.output_schema,
                 num_reasks=num_reasks,
+                metadata=metadata,
                 output=llm_output,
                 reask_prompt=self.reask_prompt,
                 base_model=self.base_model,
