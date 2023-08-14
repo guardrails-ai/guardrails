@@ -207,8 +207,6 @@ async def test_validate_dependents(mocker):
     assert validated_value == {'child-one-key': 'new-child-one-value', 'child-two-key': 'new-child-two-value'}
     assert validated_metadata == {}
 
-# TODO: Add fails
-# TODO: Add override_value_on_pass
 @pytest.mark.asyncio
 async def test_run_validators(mocker):
     group_validators_mock = mocker.patch.object(
@@ -274,3 +272,62 @@ async def test_run_validators(mocker):
     
     assert value == empty_field_validation.value
     assert metadata == {}
+
+@pytest.mark.asyncio
+async def test_run_validators_with_override(mocker):
+    group_validators_mock = mocker.patch.object(
+        avs,
+        'group_validators'
+    )
+    override_validator = MockValidator("override")
+    override_validator.override_value_on_pass = True
+
+    group_validators_mock.return_value = [
+        ("exception", [override_validator])
+    ]
+
+    run_validator_mock = mocker.patch.object(avs, 'run_validator')
+    run_validator_mock.return_value = ValidatorLogs(
+            validator_name="override",
+            value_before_validation="mock-value",
+            validation_result=PassResult(
+                value_override="override"
+            )
+    )
+
+    mock_loop = MockLoop(True)
+    run_in_executor_spy = mocker.spy(mock_loop, 'run_in_executor')
+    get_running_loop_mock = mocker.patch(
+        "asyncio.get_running_loop",
+        return_value=mock_loop
+    )
+
+    asyancio_gather_mock = mocker.patch(
+        "asyncio.gather"
+    )
+
+    value, metadata = await avs.run_validators(
+        value=empty_field_validation.value,
+        metadata={},
+        validator_setup=empty_field_validation,
+        validation_logs=empty_field_validation_logs
+    )
+
+    assert get_running_loop_mock.call_count == 1
+    
+    assert group_validators_mock.call_count == 1
+    group_validators_mock.assert_called_once_with(empty_field_validation.validators)
+
+    assert run_in_executor_spy.call_count == 0
+
+    assert run_validator_mock.call_count == 1
+
+    assert asyancio_gather_mock.call_count == 0
+    
+    assert value == "override"
+    assert metadata == {}
+
+# TODO
+@pytest.mark.asyncio
+async def test_run_validators_with_failures(mocker):
+    assert True == True
