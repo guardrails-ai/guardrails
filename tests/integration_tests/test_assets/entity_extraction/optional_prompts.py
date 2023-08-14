@@ -28,3 +28,15 @@ You are a helpful assistant only capable of communicating with valid JSON, and n
 
 @json_suffix_prompt_examples
 """
+
+
+OPTIONAL_MSG_HISTORY = [
+    {
+        "role": "system",
+        "content": "\nYou are a helpful assistant only capable of communicating with valid JSON, and no other text.\n\n@json_suffix_prompt_examples\n",
+    },
+    {
+        "role": "user",
+        "content": "\nGiven the following document, answer the following questions. If the answer doesn't exist in the document, enter 'None'.\n\n{{document}}\n\n@xml_prefix_prompt\n\n{output_schema}\n\n@json_suffix_prompt_v2_wo_none",
+    },
+]

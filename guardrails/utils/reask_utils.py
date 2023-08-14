@@ -1,23 +1,21 @@
 from collections import defaultdict
-from dataclasses import dataclass
 from typing import Any, Dict, List, Union
 
+import pydantic
 from lxml import etree as ET
 
+from guardrails.validators import FailResult
 
-@dataclass
-class ReAsk:
+
+class ReAsk(pydantic.BaseModel):
     incorrect_value: Any
-    error_message: str
-    fix_value: Any
+    fail_results: List[FailResult]
 
 
-@dataclass
 class FieldReAsk(ReAsk):
     path: List[Any] = None
 
 
-@dataclass
 class SkeletonReAsk(ReAsk):
     pass
 
@@ -223,6 +221,7 @@ def sub_reasks_with_fixed_values(value: Any) -> Any:
         for dict_key, dict_value in value.items():
             value[dict_key] = sub_reasks_with_fixed_values(dict_value)
     elif isinstance(value, FieldReAsk):
-        value = value.fix_value
+        # TODO handle multiple fail results
+        value = value.fail_results[0].fix_value
 
     return value

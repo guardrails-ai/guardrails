@@ -3,6 +3,7 @@ import os
 
 from .optional_prompts import (
     OPTIONAL_INSTRUCTIONS_CHAT_MODEL,
+    OPTIONAL_MSG_HISTORY,
     OPTIONAL_PROMPT_CHAT_MODEL,
     OPTIONAL_PROMPT_COMPLETION_MODEL,
 )
@@ -40,6 +41,10 @@ COMPILED_INSTRUCTIONS = reader("compiled_instructions.txt")
 COMPILED_INSTRUCTIONS_REASK = reader("compiled_instructions_reask.txt")
 COMPILED_PROMPT_SKELETON_REASK_1 = reader("compiled_prompt_skeleton_reask_1.txt")
 COMPILED_PROMPT_SKELETON_REASK_2 = reader("compiled_prompt_skeleton_reask_2.txt")
+COMPILED_MSG_HISTORY = [
+    {"role": "system", "content": COMPILED_INSTRUCTIONS},
+    {"role": "user", "content": COMPILED_PROMPT},
+]
 
 # LLM outputs
 LLM_OUTPUT = reader("llm_output.txt")
@@ -76,6 +81,8 @@ __all__ = [
     "COMPILED_PROMPT_WITHOUT_INSTRUCTIONS",
     "COMPILED_INSTRUCTIONS",
     "COMPILED_INSTRUCTIONS_REASK",
+    "COMPILED_MSG_HISTORY",
+    "COMPILED_MSG_HISTORY_PROMPT",
     "LLM_OUTPUT",
     "LLM_OUTPUT_REASK",
     "RAIL_SPEC_WITH_FILTER",
@@ -95,4 +102,5 @@ __all__ = [
     "OPTIONAL_PROMPT_COMPLETION_MODEL",
     "OPTIONAL_PROMPT_CHAT_MODEL",
     "OPTIONAL_INSTRUCTIONS_CHAT_MODEL",
+    "OPTIONAL_MSG_HISTORY",
 ]

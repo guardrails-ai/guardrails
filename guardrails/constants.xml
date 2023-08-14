@@ -94,14 +94,13 @@ Here are examples of simple (XML, JSON) pairs that show the expected behavior:
 - `<![CDATA[<object name='baz'><string name="foo" format="capitalize two-words" /><integer name="index" format="1-indexed" /></object>]]>` => `{{{{'baz': {{{{'foo': 'Some String', 'index': 1}}}}}}}}`
 </json_suffix_prompt_examples>
 
-<high_level_string_reask_prompt>
-I was given the following string, delimited by +++:
+<high_level_string_reask_prompt>This was a previous response you generated:
 
-+++
+======
 {previous_response}
-+++
+======
 
-It had the following problems:
+Generate a new response that corrects your old response such that the following issues are fixed
 {error_messages}
 </high_level_string_reask_prompt>
 

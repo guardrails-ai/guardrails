@@ -62,7 +62,9 @@ I was given the following JSON response, which had problems due to incorrect val
       }
     }
   },
-  "error_message": "JSON does not match schema"
+  "error_messages": [
+    "JSON does not match schema"
+  ]
 }
 
 Help me correct the incorrect values based on the given error messages.

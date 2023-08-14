@@ -1,5 +1,6 @@
 # flake8: noqa: E501
 from guardrails.utils.reask_utils import SkeletonReAsk
+from guardrails.validators import FailResult
 
 VALIDATED_OUTPUT_SKELETON_REASK_1 = SkeletonReAsk(
     incorrect_value={
@@ -35,6 +36,10 @@ VALIDATED_OUTPUT_SKELETON_REASK_1 = SkeletonReAsk(
             },
         },
     },
-    error_message="JSON does not match schema",
-    fix_value=None,
+    fail_results=[
+        FailResult(
+            error_message="JSON does not match schema",
+            fix_value=None,
+        )
+    ],
 )

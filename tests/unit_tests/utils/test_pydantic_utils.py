@@ -1,11 +1,10 @@
-import pytest
 from pydantic import BaseModel, Field
 
 from guardrails.utils.pydantic_utils import (
     add_pydantic_validators_as_guardrails_validators,
     add_validator,
 )
-from guardrails.validators import EventDetail, ValidChoices, ValidLength
+from guardrails.validators import FailResult, PassResult, ValidChoices, ValidLength
 
 
 def test_add_pydantic_validators_as_guardrails_validators():
@@ -48,18 +47,16 @@ def test_add_pydantic_validators_as_guardrails_validators():
     assert isinstance(
         validators[0], ValidLength
     ), "First validator should be ValidLength"
-    validators[0].validate(None, "Beatrice", None)
-    with pytest.raises(EventDetail):
-        validators[0].validate(None, "MrAlexander", None)
+    assert isinstance(validators[0].validate("Beatrice", {}), PassResult)
+    assert isinstance(validators[0].validate("MrAlexander", {}), FailResult)
 
     # The second validator should be the ValidChoices validator
     assert isinstance(
         validators[1], ValidChoices
     ), "Second validator should be ValidChoices"
-    validators[1].validate(None, "Alex", None)
-    validators[1].validate(None, "Bob", None)
-    with pytest.raises(EventDetail):
-        validators[1].validate(None, "Candace", None)
+    assert isinstance(validators[1].validate("Alex", {}), PassResult)
+    assert isinstance(validators[1].validate("Bob", {}), PassResult)
+    assert isinstance(validators[1].validate("Candace", {}), FailResult)
 
     # TODO(shreya): Uncomment when custom validators are supported
     # # The third validator should be the dummy validator
