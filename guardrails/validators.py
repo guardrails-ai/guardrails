@@ -204,9 +204,11 @@ class Validator:
         if isinstance(on_fail, str):
             self.on_fail_descriptor = on_fail
             self.on_fail_method = None
-        else:
+        elif callable(on_fail):
             self.on_fail_descriptor = "custom"
             self.on_fail_method = on_fail
+        else:
+            self.on_fail_descriptor = "noop"
 
         # Store the kwargs for the validator.
         self._kwargs = kwargs

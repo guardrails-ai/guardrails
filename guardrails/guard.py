@@ -318,6 +318,7 @@ class Guard:
         Returns:
             The validated response.
         """
+        num_reasks = num_reasks if llm_api is not None else 0
         # If the LLM API is async, return a coroutine
         if asyncio.iscoroutinefunction(llm_api):
             return self._async_parse(
