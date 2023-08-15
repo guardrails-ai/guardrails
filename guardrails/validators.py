@@ -1540,7 +1540,6 @@ class ProvenanceV0(Validator):
                 "You must provide either `query_function` or `sources` in metadata."
             )
         elif query_fn is None and sources is not None:
-
             # Check chunking strategy
             chunk_strategy = metadata.get("chunk_strategy", "sentence")
             if chunk_strategy not in ["sentence", "word", "char", "token"]:
