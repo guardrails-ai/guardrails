@@ -71,6 +71,8 @@ class Guard:
     @property
     def base_prompt(self) -> str:
         """Return the base prompt i.e. prompt.source."""
+        if self.prompt is None:
+            return None
         return self.prompt.source
 
     @property
@@ -139,7 +141,7 @@ class Guard:
     def from_pydantic(
         cls,
         output_class: BaseModel,
-        prompt: str,
+        prompt: Optional[str] = None,
         instructions: Optional[str] = None,
         num_reasks: int = 1,
     ) -> "Guard":
@@ -156,7 +158,8 @@ class Guard:
         num_reasks: Optional[int] = None,
         prompt: Optional[str] = None,
         instructions: Optional[str] = None,
-        chat_history: Optional[List[Dict]] = None,
+        msg_history: Optional[List[Dict]] = None,
+        metadata: Optional[Dict] = None,
         *args,
         **kwargs,
     ) -> Union[Tuple[str, Dict], Awaitable[Tuple[str, Dict]]]:
@@ -174,6 +177,8 @@ class Guard:
         """
         if num_reasks is None:
             num_reasks = self.num_reasks
+        if metadata is None:
+            metadata = {}
 
         # If the LLM API is async, return a coroutine
         if asyncio.iscoroutinefunction(llm_api):
@@ -183,7 +188,8 @@ class Guard:
                 num_reasks=num_reasks,
                 prompt=prompt,
                 instructions=instructions,
-                chat_history=chat_history,
+                msg_history=msg_history,
+                metadata=metadata,
                 *args,
                 **kwargs,
             )
@@ -194,7 +200,8 @@ class Guard:
             num_reasks=num_reasks,
             prompt=prompt,
             instructions=instructions,
-            chat_history=chat_history,
+            msg_history=msg_history,
+            metadata=metadata,
             *args,
             **kwargs,
         )
@@ -202,21 +209,22 @@ class Guard:
     def _call_sync(
         self,
         llm_api: Callable,
-        prompt_params: Dict = None,
-        num_reasks: int = 1,
-        prompt: Optional[str] = None,
-        instructions: Optional[str] = None,
-        chat_history: Optional[List[Dict]] = None,
+        prompt_params: Dict,
+        num_reasks: int,
+        prompt: Optional[str],
+        instructions: Optional[str],
+        msg_history: Optional[List[Dict]],
+        metadata: Dict,
         *args,
         **kwargs,
     ) -> Tuple[str, Dict]:
         instructions = instructions or self.instructions
         prompt = prompt or self.prompt
-        chat_history = chat_history or []
+        msg_history = msg_history or []
         if prompt is None:
-            if not len(chat_history):
+            if not len(msg_history):
                 raise RuntimeError(
-                    "You must provide a prompt if chat_history is empty. "
+                    "You must provide a prompt if msg_history is empty. "
                     "Alternatively, you can provide a prompt in the Schema constructor."
                 )
 
@@ -224,10 +232,12 @@ class Guard:
             runner = Runner(
                 instructions=instructions,
                 prompt=prompt,
+                msg_history=msg_history,
                 api=get_llm_ask(llm_api, *args, **kwargs),
                 input_schema=self.input_schema,
                 output_schema=self.output_schema,
                 num_reasks=num_reasks,
+                metadata=metadata,
                 reask_prompt=self.reask_prompt,
                 base_model=self.base_model,
                 guard_state=self.guard_state,
@@ -238,11 +248,12 @@ class Guard:
     async def _call_async(
         self,
         llm_api: Callable[[Any], Awaitable[Any]],
-        prompt_params: Dict = None,
-        num_reasks: int = 1,
-        prompt: Optional[str] = None,
-        instructions: Optional[str] = None,
-        chat_history: Optional[List[Dict]] = None,
+        prompt_params: Dict,
+        num_reasks: int,
+        prompt: Optional[str],
+        instructions: Optional[str],
+        msg_history: Optional[List[Dict]],
+        metadata: Dict,
         *args,
         **kwargs,
     ) -> Tuple[str, Dict]:
@@ -258,21 +269,23 @@ class Guard:
         """
         instructions = instructions or self.instructions
         prompt = prompt or self.prompt
-        chat_history = chat_history or []
+        msg_history = msg_history or []
         if prompt is None:
-            if not len(chat_history):
+            if not len(msg_history):
                 raise RuntimeError(
-                    "You must provide a prompt if chat_history is empty. "
-                    "Alternatively, you can provide a prompt in the Schema constructor."
+                    "You must provide a prompt if msg_history is empty. "
+                    "Alternatively, you can provide a prompt in the RAIL spec."
                 )
         with start_action(action_type="guard_call", prompt_params=prompt_params):
             runner = AsyncRunner(
                 instructions=instructions,
                 prompt=prompt,
+                msg_history=msg_history,
                 api=get_async_llm_ask(llm_api, *args, **kwargs),
                 input_schema=self.input_schema,
                 output_schema=self.output_schema,
                 num_reasks=num_reasks,
+                metadata=metadata,
                 reask_prompt=self.reask_prompt,
                 base_model=self.base_model,
                 guard_state=self.guard_state,
@@ -289,6 +302,7 @@ class Guard:
     def parse(
         self,
         llm_output: str,
+        metadata: Optional[Dict] = None,
         llm_api: Union[Callable, Callable[[Any], Awaitable[Any]]] = None,
         num_reasks: int = 1,
         prompt_params: Dict = None,
@@ -305,10 +319,13 @@ class Guard:
         Returns:
             The validated response.
         """
+        metadata = metadata or {}
+
         # If the LLM API is async, return a coroutine
         if asyncio.iscoroutinefunction(llm_api):
             return self._async_parse(
                 llm_output,
+                metadata,
                 llm_api=llm_api,
                 num_reasks=num_reasks,
                 prompt_params=prompt_params,
@@ -318,6 +335,7 @@ class Guard:
         # Otherwise, call the LLM synchronously
         return self._sync_parse(
             llm_output,
+            metadata,
             llm_api=llm_api,
             num_reasks=num_reasks,
             prompt_params=prompt_params,
@@ -328,6 +346,7 @@ class Guard:
     def _sync_parse(
         self,
         llm_output: str,
+        metadata: Dict,
         llm_api: Callable = None,
         num_reasks: int = 1,
         prompt_params: Dict = None,
@@ -348,10 +367,12 @@ class Guard:
             runner = Runner(
                 instructions=None,
                 prompt=None,
+                msg_history=None,
                 api=get_llm_ask(llm_api, *args, **kwargs) if llm_api else None,
                 input_schema=None,
                 output_schema=self.output_schema,
                 num_reasks=num_reasks,
+                metadata=metadata,
                 output=llm_output,
                 reask_prompt=self.reask_prompt,
                 base_model=self.base_model,
@@ -363,6 +384,7 @@ class Guard:
     async def _async_parse(
         self,
         llm_output: str,
+        metadata: Dict,
         llm_api: Callable[[Any], Awaitable[Any]] = None,
         num_reasks: int = 1,
         prompt_params: Dict = None,
@@ -383,10 +405,12 @@ class Guard:
             runner = AsyncRunner(
                 instructions=None,
                 prompt=None,
+                msg_history=None,
                 api=get_async_llm_ask(llm_api, *args, **kwargs) if llm_api else None,
                 input_schema=None,
                 output_schema=self.output_schema,
                 num_reasks=num_reasks,
+                metadata=metadata,
                 output=llm_output,
                 reask_prompt=self.reask_prompt,
                 base_model=self.base_model,

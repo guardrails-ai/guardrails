@@ -5,10 +5,17 @@ from typing import Any, Dict, List, Optional, Union
 from rich.console import Group
 from rich.panel import Panel
 from rich.pretty import pretty_repr
+from rich.table import Table
 from rich.tree import Tree
 
 from guardrails.prompt import Prompt
-from guardrails.utils.reask_utils import ReAsk, gather_reasks, prune_obj_for_reasking
+from guardrails.utils.reask_utils import (
+    ReAsk,
+    SkeletonReAsk,
+    gather_reasks,
+    prune_obj_for_reasking,
+)
+from guardrails.validators import ValidationResult
 
 
 @dataclass
@@ -17,6 +24,7 @@ class ValidatorLogs:
 
     validator_name: str
     value_before_validation: Any
+    validation_result: Optional[ValidationResult] = None
     value_after_validation: Optional[Any] = None
 
 
@@ -32,19 +40,20 @@ class FieldValidationLogs:
 class GuardLogs:
     prompt: Optional[Prompt] = None
     instructions: Optional[str] = None
+    msg_history: Optional[List[Dict[str, Prompt]]] = None
     output: Optional[str] = None
     parsed_output: Optional[dict] = None
     validated_output: Optional[dict] = None
     reasks: Optional[List[ReAsk]] = None
 
-    field_validation_logs: Dict[Union[int, str], FieldValidationLogs] = field(
-        default_factory=dict
-    )
+    field_validation_logs: Optional[FieldValidationLogs] = None
 
     _previous_logs: Optional["GuardLogs"] = None
 
     def set_validated_output(self, validated_output):
-        if self._previous_logs is not None:
+        if self._previous_logs is not None and not isinstance(
+            validated_output, SkeletonReAsk
+        ):
             validated_output = merge_reask_output(
                 self._previous_logs.validated_output, validated_output
             )
@@ -57,6 +66,22 @@ class GuardLogs:
 
     @property
     def rich_group(self) -> Group:
+        def create_msg_history_table(
+            msg_history: Optional[List[Dict[str, Prompt]]]
+        ) -> Table:
+            if msg_history is None:
+                return "No message history."
+            table = Table(show_lines=True)
+            table.add_column("Role", justify="right", no_wrap=True)
+            table.add_column("Content")
+
+            for msg in msg_history:
+                table.add_row(msg["role"], msg["content"].source)
+
+            return table
+
+        table = create_msg_history_table(self.msg_history)
+
         if self.instructions is not None:
             return Group(
                 Panel(
@@ -67,6 +92,7 @@ class GuardLogs:
                 Panel(
                     self.instructions.source, title="Instructions", style="on #FFF0F2"
                 ),
+                Panel(table, title="Message History", style="on #E7DFEB"),
                 Panel(self.output, title="Raw LLM Output", style="on #F5F5DC"),
                 Panel(
                     pretty_repr(self.validated_output),
@@ -81,6 +107,7 @@ class GuardLogs:
                     title="Prompt",
                     style="on #F0F8FF",
                 ),
+                Panel(table, title="Message History", style="on #E7DFEB"),
                 Panel(self.output, title="Raw LLM Output", style="on #F5F5DC"),
                 Panel(
                     pretty_repr(self.validated_output),

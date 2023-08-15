@@ -2,12 +2,10 @@
 You are a helpful assistant, and you are helping me come up with a name for a pizza.
 
 
-String description, delimited by +++:
-
-+++
-Name for the pizza
-+++
+Here's a description of what I want you to generate: Name for the pizza
 
 Your generated response should satisfy the following properties:
 - two-words
+
+Don't talk; just go.
 

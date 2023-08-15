@@ -243,7 +243,7 @@ def add_validators_to_xml_element(field_info: ModelField, element: Element) -> E
                 # `validator` is of type gd.Validator, use the to_xml_attrib method
                 validator_prompt = val.to_xml_attrib()
                 # Set the on-fail attribute based on the on_fail value
-                on_fail = val.on_fail.__name__ if val.on_fail else "noop"
+                on_fail = val.on_fail_descriptor
                 on_fails[val.rail_alias] = on_fail
             format_prompt.append(validator_prompt)
 
@@ -489,3 +489,27 @@ def add_pydantic_validators_as_guardrails_validators(
 
     # TODO(shreya): Before merging handle root validators
     return model_fields
+
+
+def convert_pydantic_model_to_openai_fn(model: BaseModel) -> Dict:
+    """Convert a Pydantic BaseModel to an OpenAI function.
+
+    Args:
+        model: The Pydantic BaseModel to convert.
+
+    Returns:
+        OpenAI function paramters.
+    """
+
+    # Convert Pydantic model to JSON schema
+    json_schema = model.schema()
+
+    # Create OpenAI function parameters
+    fn_params = {
+        "name": json_schema["title"],
+        "parameters": json_schema,
+    }
+    if "description" in json_schema and json_schema["description"] is not None:
+        fn_params["description"] = json_schema["description"]
+
+    return fn_params

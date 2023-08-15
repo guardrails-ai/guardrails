@@ -47,6 +47,30 @@ raw_llm_output, guardrail_output = guard(
 )
 ```
 
+## Cohere
+
+### Generate (e.g. GPT-3)
+
+```python
+import cohere
+import guardrails as gd
+
+# Create a Guard class
+guard = gd.Guard.from_rail(...)
+
+# Create a Cohere client
+cohere_client = cohere.Client(api_key="my_api_key")
+
+# Wrap cohere API call
+raw_llm_output, guardrail_output = guard(
+    cohere_client.generate,
+    prompt_params={"prompt_param_1": "value_1", "prompt_param_2": "value_2", ..},
+    model="command-nightly",
+    max_tokens=100,
+    ...
+)
+```
+
 ## Using Manifest
 [Manifest](https://github.com/HazyResearch/manifest) is a wrapper around most model APIs and supports hosting local models. It can be used as a LLM API.
 
