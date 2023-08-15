@@ -8,8 +8,7 @@ from rich.pretty import pretty_repr
 from rich.table import Table
 from rich.tree import Tree
 
-from guardrails import Instructions
-from guardrails.prompt import Prompt
+from guardrails.prompt import Instructions, Prompt
 from guardrails.utils.reask_utils import (
     ReAsk,
     SkeletonReAsk,
