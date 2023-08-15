@@ -105,6 +105,10 @@ class DocumentStoreBase(ABC):
         """Flushes the store to disk."""
         ...
 
+    def similarity_search_vector_with_metadata_filters(self, vector: List[float], k: int, metadata_filters: Dict[str, str]) -> List[int]:
+        """
+        """
+
 
 class EphemeralDocumentStore(DocumentStoreBase):
     """EphemeralDocumentStore is a document store that stores the documents on
@@ -170,6 +174,9 @@ class EphemeralDocumentStore(DocumentStoreBase):
 
     def flush(self, path: Optional[str] = None):
         self._vector_db.save(path)
+    
+    def similarity_search_vector_with_metadata_filters(self, vector: List[float], k: int, metadata_filters: Dict[str, str]) -> List[int]:
+        raise NotImplementedError
 
 
 if orm is not None:
