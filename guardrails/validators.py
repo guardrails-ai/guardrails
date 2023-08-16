@@ -4,6 +4,7 @@ The name with which a validator is registered is the name that is used
 in the `RAIL` spec to specify formatters.
 """
 import ast
+import contextvars
 import itertools
 import logging
 import os
@@ -1011,7 +1012,7 @@ class ExtractedSummarySentencesMatch(Validator):
         self._threshold = float(threshold)
 
     @staticmethod
-    def _instantiate_store(metadata):
+    def _instantiate_store(metadata, api_key: Optional[str] = None):
         if "document_store" in metadata:
             return metadata["document_store"]
 
@@ -1027,7 +1028,7 @@ class ExtractedSummarySentencesMatch(Validator):
             else:
                 from guardrails.embedding import OpenAIEmbedding
 
-                embedding_model = OpenAIEmbedding()
+                embedding_model = OpenAIEmbedding(api_key=api_key)
 
             vector_db = Faiss.new_flat_ip_index(
                 embedding_model.output_dim, embedder=embedding_model
@@ -1043,7 +1044,16 @@ class ExtractedSummarySentencesMatch(Validator):
             )
         filepaths = metadata["filepaths"]
 
-        store = self._instantiate_store(metadata)
+        kwargs = {}
+        context_copy = contextvars.copy_context()        
+        for key, value in context_copy.items():
+            if key.name == "kwargs" and isinstance(kwargs, dict):
+                kwargs = value
+                break
+
+        api_key = kwargs.get("api_key")
+
+        store = self._instantiate_store(metadata, api_key)
 
         sources = []
         for filepath in filepaths:
