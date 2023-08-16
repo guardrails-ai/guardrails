@@ -1012,7 +1012,9 @@ class ExtractedSummarySentencesMatch(Validator):
         self._threshold = float(threshold)
 
     @staticmethod
-    def _instantiate_store(metadata, api_key: Optional[str] = None, api_base: Optional[str] = None):
+    def _instantiate_store(
+        metadata, api_key: Optional[str] = None, api_base: Optional[str] = None
+    ):
         if "document_store" in metadata:
             return metadata["document_store"]
 

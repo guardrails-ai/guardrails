@@ -104,7 +104,7 @@ class OpenAIEmbedding(EmbeddingBase):
         encoding_name: Optional[str] = "cl100k_base",
         max_tokens: Optional[int] = 8191,
         api_key: Optional[str] = None,
-        api_base: Optional[str] = None
+        api_base: Optional[str] = None,
     ):
         super().__init__(model, encoding_name, max_tokens)
         self._model = model
@@ -130,7 +130,9 @@ class OpenAIEmbedding(EmbeddingBase):
             if self.api_key is not None
             else os.environ.get("OPENAI_API_KEY")
         )
-        resp = openai.Embedding.create(api_key=api_key, model=self._model, input=texts, api_base=self.api_base)
+        resp = openai.Embedding.create(
+            api_key=api_key, model=self._model, input=texts, api_base=self.api_base
+        )
         return [r["embedding"] for r in resp["data"]]
 
     @property
