@@ -1045,7 +1045,7 @@ class ExtractedSummarySentencesMatch(Validator):
         filepaths = metadata["filepaths"]
 
         kwargs = {}
-        context_copy = contextvars.copy_context()        
+        context_copy = contextvars.copy_context()
         for key, value in context_copy.items():
             if key.name == "kwargs" and isinstance(kwargs, dict):
                 kwargs = value
