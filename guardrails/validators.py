@@ -1048,9 +1048,9 @@ class ExtractedSummarySentencesMatch(Validator):
 
         kwargs = {}
         context_copy = contextvars.copy_context()
-        for key, value in context_copy.items():
+        for key, context_var in context_copy.items():
             if key.name == "kwargs" and isinstance(kwargs, dict):
-                kwargs = value
+                kwargs = context_var
                 break
 
         api_key = kwargs.get("api_key")
