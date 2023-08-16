@@ -21,6 +21,8 @@ nav:
       - 'Prompt Element': rail/prompt.md
       - 'Instruction Element': rail/instructions.md
       - '(Experimental) Script Element': rail/script.md
+    - 'Concepts':
+      - 'Validators': concepts/validators.md
     - 'Guardrails Reference':
       - 'Guard': guard.md
       - 'Data Types': data_types.md
