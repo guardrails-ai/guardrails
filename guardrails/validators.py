@@ -1012,7 +1012,7 @@ class ExtractedSummarySentencesMatch(Validator):
         self._threshold = float(threshold)
 
     @staticmethod
-    def _instantiate_store(metadata, api_key: Optional[str] = None):
+    def _instantiate_store(metadata, api_key: Optional[str] = None, api_base: Optional[str] = None):
         if "document_store" in metadata:
             return metadata["document_store"]
 
@@ -1028,7 +1028,7 @@ class ExtractedSummarySentencesMatch(Validator):
             else:
                 from guardrails.embedding import OpenAIEmbedding
 
-                embedding_model = OpenAIEmbedding(api_key=api_key)
+                embedding_model = OpenAIEmbedding(api_key=api_key, api_base=api_base)
 
             vector_db = Faiss.new_flat_ip_index(
                 embedding_model.output_dim, embedder=embedding_model
@@ -1052,8 +1052,9 @@ class ExtractedSummarySentencesMatch(Validator):
                 break
 
         api_key = kwargs.get("api_key")
+        api_base = kwargs.get("api_base")
 
-        store = self._instantiate_store(metadata, api_key)
+        store = self._instantiate_store(metadata, api_key, api_base)
 
         sources = []
         for filepath in filepaths:
