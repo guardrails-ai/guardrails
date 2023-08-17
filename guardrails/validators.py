@@ -998,13 +998,29 @@ class EndsWith(Validator):
 @register_validator(name="extracted-summary-sentences-match", data_type="string")
 class ExtractedSummarySentencesMatch(Validator):
     """Validate that the extracted summary sentences match the original text by
-    performing a cosine similarity in the embedding space."""
+    performing a cosine similarity in the embedding space.
+    
+    Parameters: Arguments:
+
+        threshold: The minimum cosine similarity to be considered 
+        similar. Default to 0.7.
+
+    Other parameters: Metadata:
+
+        filepaths (List[str]): A list of strings that specifies the filepaths for 
+        any documents that should be used for asserting the summary's similarity.
+
+        document_store (DocumentStoreBase, optional): The document store to use during
+        validation. Defaults to EphemeralDocumentStore.
+            
+        vector_db (VectorDBBase, optional): A vector database to use for embeddings.  Defaults to Faiss.
+    """
 
     def __init__(
         self,
         threshold: float = 0.7,
         on_fail: Optional[Callable] = None,
-        **kwargs,
+        **kwargs: Optional[Dict[str, Any]],
     ):
         super().__init__(on_fail, **kwargs)
         # TODO(shreya): Pass embedding_model, vector_db, document_store from spec
