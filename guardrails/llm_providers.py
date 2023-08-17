@@ -109,7 +109,7 @@ def openai_wrapper(
     *args,
     **kwargs,
 ) -> str:
-    api_key = os.environ.get("OPENAI_API_KEY")
+    api_key = kwargs.pop("api_key", os.environ.get("OPENAI_API_KEY"))
     openai_response = openai.Completion.create(
         api_key=api_key,
         engine=engine,
@@ -164,8 +164,9 @@ def openai_chat_wrapper(
         fn_kwargs = {}
 
     # Call OpenAI
+    api_key = kwargs.pop("api_key", os.environ.get("OPENAI_API_KEY"))
     openai_response = openai.ChatCompletion.create(
-        api_key=os.environ.get("OPENAI_API_KEY"),
+        api_key=api_key,
         model=model,
         messages=chat_prompt(
             prompt=text, instructions=instructions, msg_history=msg_history
@@ -297,7 +298,7 @@ async def async_openai_wrapper(
     *args,
     **kwargs,
 ):
-    api_key = os.environ.get("OPENAI_API_KEY")
+    api_key = kwargs.pop("api_key", os.environ.get("OPENAI_API_KEY"))
     openai_response = await openai.Completion.acreate(
         api_key=api_key,
         engine=engine,
@@ -315,7 +316,7 @@ async def async_openai_chat_wrapper(
     *args,
     **kwargs,
 ):
-    api_key = os.environ.get("OPENAI_API_KEY")
+    api_key = kwargs.pop("api_key", os.environ.get("OPENAI_API_KEY"))
     openai_response = await openai.ChatCompletion.acreate(
         api_key=api_key,
         model=model,
