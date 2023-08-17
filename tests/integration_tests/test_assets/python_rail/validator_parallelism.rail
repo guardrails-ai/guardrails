@@ -14,7 +14,7 @@
 <prompt>
 Say hullo to my little friend
 
-@complete_string_suffix
+${complete_string_suffix}
 </prompt>
 
 </rail>

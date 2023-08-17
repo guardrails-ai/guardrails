@@ -36,35 +36,35 @@ RAIL_WITH_PARAMS = """
 </output>
 <instructions>
 
-{{user_instructions}}
+${user_instructions}
 
 </instructions>
 
 <prompt>
 
-{{user_prompt}}
+${user_prompt}
 
 </prompt>
 </rail>
 """
 
 
-RAIL_WITH_FORMAT_INSTRUCTIONS = f"""
+RAIL_WITH_FORMAT_INSTRUCTIONS = """
 <rail version="0.1">
 <output>
     <string name="test_string" description="A string for testing." />
 </output>
 <instructions>
 
-{INSTRUCTIONS}
+You are a helpful bot, who answers only with valid JSON
 
 </instructions>
 
 <prompt>
 
-{PROMPT}
+"Extract a string from the text"
 
-@complete_json_suffix_v2
+${complete_json_suffix_v2}
 </prompt>
 </rail>
 """
@@ -127,7 +127,7 @@ def test_format_instructions():
     "prompt_str,final_prompt",
     [
         (
-            "Dummy prompt. @complete_json_suffix_v2",
+            "Dummy prompt. ${complete_json_suffix_v2}",
             f"Dummy prompt. {constants['complete_json_suffix_v2']}",
         ),
         ("Dummy prompt. some@email.com", "Dummy prompt. some@email.com"),

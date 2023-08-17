@@ -97,13 +97,13 @@ class ContractDetailsRefrain(BaseModel):
 PROMPT = """
 Given the following document, answer the following questions. If the answer doesn't exist in the document, enter 'None'.
 
-{{document}}
+${document}
 
-@xml_prefix_prompt
+${xml_prefix_prompt}
 
-{output_schema}
+${output_schema}
 
-@json_suffix_prompt_v2_wo_none"""  # noqa: E501
+${json_suffix_prompt_v2_wo_none}"""  # noqa: E501
 
 
 INSTRUCTIONS_CHAT_MODEL = """
@@ -116,11 +116,11 @@ You are a helpful assistant only capable of communicating with valid JSON, and n
 PROMPT_CHAT_MODEL = """
 Given the following document, answer the following questions. If the answer doesn't exist in the document, enter `null`.
 
-{{document}}
+${document}
 
 Extract information from this document and return a JSON that follows the correct schema.
 
-@xml_prefix_prompt
+${xml_prefix_prompt}
 
-{output_schema}
+${output_schema}
 """  # noqa: E501

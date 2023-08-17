@@ -41,7 +41,7 @@ def rail_spec():
 
 Generate a JSON of dummy data, where the data types are specified by the user.
 
-@complete_json_suffix
+${complete_json_suffix}
 
 </prompt>
 
