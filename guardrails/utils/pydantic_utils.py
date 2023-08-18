@@ -1,10 +1,3 @@
-"""Utilities for working with Pydantic models.
-
-Guardrails lets users specify
-
-<pydantic     model="Person"     name="person" description="Information
-about a person."     on-fail-pydantic="reask" / "refrain" / "raise" />
-"""
 import logging
 import warnings
 from collections import defaultdict
