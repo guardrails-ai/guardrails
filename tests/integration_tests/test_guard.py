@@ -113,7 +113,6 @@ def guard_initializer(
 )
 @pytest.mark.parametrize("multiprocessing_validators", (True, False))
 def test_entity_extraction_with_reask(mocker, rail, prompt, multiprocessing_validators):
-
     """Test that the entity extraction works with re-asking."""
     mocker.patch(
         "guardrails.llm_providers.openai_wrapper", new=openai_completion_create
@@ -174,6 +173,7 @@ def test_entity_extraction_with_reask(mocker, rail, prompt, multiprocessing_vali
     assert (
         guard_history[1].validated_output == entity_extraction.VALIDATED_OUTPUT_REASK_2
     )
+
 
 @pytest.mark.parametrize(
     "rail,prompt",
@@ -649,4 +649,4 @@ def test_pydantic_with_message_history(mocker):
     guard_history = guard.guard_state.most_recent_call.history
 
     # Check that the guard state object has the correct number of re-asks.
-    assert len(guard_history) == 1 
+    assert len(guard_history) == 1

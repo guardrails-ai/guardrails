@@ -1,10 +1,11 @@
 """Unit tests for prompt and instructions parsing."""
 
+from string import Template
+
 import pytest
 
 import guardrails as gd
 from guardrails.utils.constants import constants
-from string import Template
 
 INSTRUCTIONS = "You are a helpful bot, who answers only with valid JSON"
 

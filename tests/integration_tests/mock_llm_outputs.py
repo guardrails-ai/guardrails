@@ -38,7 +38,6 @@ def openai_chat_completion_create(
 ):
     """Mock the OpenAI API call to ChatCompletion.create."""
 
-
     mock_llm_responses = {
         (
             entity_extraction.COMPILED_PROMPT_WITHOUT_INSTRUCTIONS,
