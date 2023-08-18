@@ -1,4 +1,5 @@
 import asyncio
+import contextvars
 import logging
 from string import Formatter
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Union
@@ -182,6 +183,9 @@ class Guard:
         if metadata is None:
             metadata = {}
 
+        context = contextvars.ContextVar("kwargs")
+        context.set(kwargs)
+
         # If the LLM API is async, return a coroutine
         if asyncio.iscoroutinefunction(llm_api):
             return self._call_async(
@@ -322,6 +326,9 @@ class Guard:
             The validated response.
         """
         metadata = metadata or {}
+
+        context = contextvars.ContextVar("kwargs")
+        context.set(kwargs)
 
         # If the LLM API is async, return a coroutine
         if asyncio.iscoroutinefunction(llm_api):
