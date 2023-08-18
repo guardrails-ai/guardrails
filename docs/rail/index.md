@@ -33,13 +33,13 @@
 
 Given the following document, answer the following questions. If the answer doesn't exist in the document, enter 'None'.
 
-{document}
+${document}
 
-@xml_prefix_prompt
+${xml_prefix_prompt}
 
-{{output_schema}}
+${output_schema}
 
-@json_suffix_prompt</prompt>
+${json_suffix_prompt}</prompt>
 
 
 <script language='python'>

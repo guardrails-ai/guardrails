@@ -17,20 +17,20 @@
 <instructions>
 You are a helpful assistant only capable of communicating with valid JSON, and no other text.
 
-@json_suffix_prompt_examples
+${json_suffix_prompt_examples}
 </instructions>
 
 
 <prompt>
 Given the following document, answer the following questions. If the answer doesn't exist in the document, enter `null`.
 
-{{document}}
+${document}
 
 Extract information from this document and return a JSON that follows the correct schema.
 
-@xml_prefix_prompt
+${xml_prefix_prompt}
 
-{output_schema}
+${output_schema}
 </prompt>
 
 </rail>

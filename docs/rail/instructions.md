@@ -18,14 +18,14 @@ In addition to the high level task description, the prompt also contains the fol
 <!-- (1)! -->
 You are a helpful assistant only capable of communicating with valid JSON, and no other text.
 
-@json_suffix_prompt_examples  <!-- (2)! -->
+${json_suffix_prompt_examples}  <!-- (2)! -->
 </prompt>
 </rail>
 ```
 
 
 1. The prompt contains high level task information.
-2. `@json_suffix_prompt_examples` is a prompt primitive provided by guardrails. It is equivalent to typing the following lines in the prompt: `Given below is XML that describes the information to extract from this document and the tags to extract it into.`
+2. `${json_suffix_prompt_examples}` is a prompt primitive provided by guardrails. It is equivalent to typing the following lines in the prompt: `Given below is XML that describes the information to extract from this document and the tags to extract it into.`
 
 ```
 You are a helpful assistant only capable of communicating with valid JSON, and no other text.

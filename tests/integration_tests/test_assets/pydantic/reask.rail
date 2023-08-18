@@ -51,10 +51,10 @@ class Person(BaseModel):
 <prompt>
 Generate data for possible users in accordance with the specification below.
 
-@xml_prefix_prompt
+${xml_prefix_prompt}
 
-{output_schema}
+${output_schema}
 
-@complete_json_suffix_v2</prompt>
+${complete_json_suffix_v2}</prompt>
 
 </rail>

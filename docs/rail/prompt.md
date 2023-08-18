@@ -18,26 +18,26 @@ In addition to the high level task description, the prompt also contains the fol
 <!-- (1)! -->
 Given the following document, answer the following questions. If the answer doesn't exist in the document, enter 'None'.
 
-{document} <!-- (2)! -->
+${document} <!-- (2)! -->
 
 
-@xml_prefix_prompt  <!-- (3)! -->
+${xml_prefix_prompt}  <!-- (3)! -->
 
 
-{{output_schema}}  <!-- (4)! -->
+${output_schema}  <!-- (4)! -->
 
 
-@json_suffix_prompt  <!-- (5)! -->
+${json_suffix_prompt}  <!-- (5)! -->
 
 </prompt>
 </rail>
 ```
 
 1. The prompt contains high level task information.
-2. The variable `{{document}}` is provided by the user at runtime.
-3. `@xml_prefix_prompt` is a prompt primitive provided by guardrails. It is equivalent to typing the following lines in the prompt: `Given below is XML that describes the information to extract from this document and the tags to extract it into.`
-4. `{output_schema}` is the output schema and contains information about , which is compiled based on the `output` element.
-5. `@json_suffix_prompt` is a prompt primitive provided by guardrails. It is equivalent to typing the following lines in the prompt:
+2. The variable `${document}` is provided by the user at runtime.
+3. `${xml_prefix_prompt}` is a prompt primitive provided by guardrails. It is equivalent to typing the following lines in the prompt: `Given below is XML that describes the information to extract from this document and the tags to extract it into.`
+4. `${output_schema}` is the output schema and contains information about , which is compiled based on the `output` element.
+5. `${json_suffix_prompt}` is a prompt primitive provided by guardrails. It is equivalent to typing the following lines in the prompt:
 
 ```
 ONLY return a valid JSON object (no other text is necessary). The JSON MUST conform to the XML format, including any types and format requests e.g. requests for lists, objects and specific types. Be correct and concise. If you are unsure anywhere, enter `null`.

@@ -109,7 +109,7 @@ ${json_suffix_prompt_v2_wo_none}"""  # noqa: E501
 INSTRUCTIONS_CHAT_MODEL = """
 You are a helpful assistant only capable of communicating with valid JSON, and no other text.
 
-@json_suffix_prompt_examples
+${json_suffix_prompt_examples}
 """  # noqa: E501
 
 

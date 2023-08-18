@@ -4,6 +4,7 @@ import pytest
 
 import guardrails as gd
 from guardrails.utils.constants import constants
+from string import Template
 
 INSTRUCTIONS = "You are a helpful bot, who answers only with valid JSON"
 
@@ -104,6 +105,7 @@ def test_instructions_with_params():
     ],
 )
 def test_variable_names(rail, var_names):
+    print('var names')
     """Test extracting variable names from a prompt."""
     guard = gd.Guard.from_rail_string(rail)
 
@@ -115,8 +117,8 @@ def test_format_instructions():
     guard = gd.Guard.from_rail_string(RAIL_WITH_FORMAT_INSTRUCTIONS)
     output_schema = guard.rail.output_schema.transpile()
     expected_instructions = (
-        constants["complete_json_suffix_v2"]
-        .format(output_schema=output_schema)
+        Template(constants["complete_json_suffix_v2"])
+        .safe_substitute(output_schema=output_schema)
         .rstrip()
     )
 
