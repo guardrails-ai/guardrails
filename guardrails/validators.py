@@ -1088,6 +1088,9 @@ class IsHighQualityTranslation(Validator):
     | Name for `format` attribute   | `is-high-quality-translation`     |
     | Supported data types          | `string`                          |
     | Programmatic fix              | None                              |
+
+    Other parameters: Metadata
+        translation_source (str): The source of the translation.
     """
 
     def __init__(self, *args, **kwargs):
@@ -1095,7 +1098,7 @@ class IsHighQualityTranslation(Validator):
         try:
             from inspiredco.critique import Critique
 
-            self.critique = Critique(api_key=os.environ["INSPIREDCO_API_KEY"])
+            self._critique = Critique(api_key=os.environ["INSPIREDCO_API_KEY"])
 
         except ImportError:
             raise ImportError(
@@ -1110,7 +1113,7 @@ class IsHighQualityTranslation(Validator):
                 "`translation_source` key in metadata"
             )
         src = metadata["translation_source"]
-        prediction = self.critique.evaluate(
+        prediction = self._critique.evaluate(
             metric="comet",
             config={"model": "unbabel_comet/wmt21-comet-qe-da"},
             dataset=[{"source": src, "target": value}],
@@ -1179,6 +1182,7 @@ class ExtractedSummarySentencesMatch(Validator):
         filepaths (List[str]): A list of strings that specifies the filepaths for any documents that should be used for asserting the summary's similarity.
         document_store (DocumentStoreBase, optional): The document store to use during validation. Defaults to EphemeralDocumentStore.
         vector_db (VectorDBBase, optional): A vector database to use for embeddings.  Defaults to Faiss.
+        embedding_model (EmbeddingBase, optional): The embeddig model to use. Defaults to OpenAIEmbedding.
     """
 
     def __init__(
@@ -1655,6 +1659,9 @@ class QARelevanceLLMEval(Validator):
     | Name for `format` attribute   | `qa-relevance-llm-eval`             |
     | Supported data types          | `string`                            |
     | Programmatic fix              | None                                |
+
+    Other parameters: Metadata
+        question (str): The original question the llm was given to answer.
     """
     def __init__(
         self,
@@ -1667,7 +1674,7 @@ class QARelevanceLLMEval(Validator):
             llm_callable if llm_callable else openai.ChatCompletion.create
         )
 
-    def selfeval(self, question: str, answer: str):
+    def _selfeval(self, question: str, answer: str):
         from guardrails import Guard
 
         spec = """
@@ -1704,7 +1711,7 @@ Relevant (as a JSON with a single boolean key, "relevant"):\
 
         question = metadata["question"]
 
-        relevant = self.selfeval(question, value)["relevant"]
+        relevant = self._selfeval(question, value)["relevant"]
         if relevant:
             return PassResult()
 
@@ -1736,6 +1743,11 @@ class ProvenanceV0(Validator):
         threshold: The minimum cosine similarity between the generated text and
             the source text. Defaults to 0.8.
         validation_method: Whether to validate at the sentence level or over the full text.  Must be one of `sentence` or `full`. Defaults to `sentence`
+
+    Other parameters: Metadata
+        query_function (Callable, optional): A callable that takes a string and returns a list of (chunk, score) tuples.
+        sources (List[str], optional): The source text.
+        embed_function (Callable, optional): A callable that creates embeddings for the sources. Must accept a list of strings and return an np.array of floats.
 
     In order to use this validator, you must provide either a `query_function` or
     `sources` with an `embed_function` in the metadata.
