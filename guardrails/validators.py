@@ -324,7 +324,7 @@ class Pydantic(Validator):
     | Name for `format` attribute   | `pydantic`                        |
     | Supported data types          | `pydantic`                        |
     | Programmatic fix              | Override with return value from the model.   |
-    
+
     Parameters: Arguments
 
         model: The Pydantic model used to validate the objects structure.
@@ -458,7 +458,8 @@ class Pydantic(Validator):
 
 @register_validator(name="pydantic_field_validator", data_type="all")
 class PydanticFieldValidator(Validator):
-    """Validates a specific field in a Pydantic model with the specified validator method.
+    """Validates a specific field in a Pydantic model with the specified
+    validator method.
 
     **Key Properties**
 
@@ -467,11 +468,12 @@ class PydanticFieldValidator(Validator):
     | Name for `format` attribute   | `pydantic_field_validator`        |
     | Supported data types          | `Any`                             |
     | Programmatic fix              | Override with return value from `field_validator`.   |
-    
+
     Parameters: Arguments
 
         field_validator (Callable): A validator for a specific field in a Pydantic model.
     """
+
     override_value_on_pass = True
 
     def __init__(
@@ -1162,8 +1164,8 @@ class EndsWith(Validator):
 
 @register_validator(name="extracted-summary-sentences-match", data_type="string")
 class ExtractedSummarySentencesMatch(Validator):
-    """Validates that the extracted summary sentences match the original text by
-    performing a cosine similarity in the embedding space.
+    """Validates that the extracted summary sentences match the original text
+    by performing a cosine similarity in the embedding space.
 
     **Key Properties**
 
@@ -1172,7 +1174,7 @@ class ExtractedSummarySentencesMatch(Validator):
     | Name for `format` attribute   | `extracted-summary-sentences-match` |
     | Supported data types          | `string`                            |
     | Programmatic fix              | Remove any sentences that can not be verified. |
-    
+
     Parameters: Arguments
 
         threshold: The minimum cosine similarity to be considered similar. Default to 0.7.
@@ -1297,8 +1299,9 @@ class ExtractedSummarySentencesMatch(Validator):
 
 @register_validator(name="reading-time", data_type="string")
 class ReadingTime(Validator):
-    """Validates that the a string can be read in less than a certain amount of time.
-   
+    """Validates that the a string can be read in less than a certain amount of
+    time.
+
     **Key Properties**
 
     | Property                      | Description                         |
@@ -1306,7 +1309,7 @@ class ReadingTime(Validator):
     | Name for `format` attribute   | `reading-time`                      |
     | Supported data types          | `string`                            |
     | Programmatic fix              | None                                |
-    
+
     Parameters: Arguments
 
         reading_time: The maximum reading time.
@@ -1355,7 +1358,7 @@ class ExtractiveSummary(Validator):
     | Name for `format` attribute   | `extractive-summary`                |
     | Supported data types          | `string`                            |
     | Programmatic fix              | Remove any sentences that can not be verified. |
-    
+
     Parameters: Arguments
 
         threshold: The minimum fuzz ratio to be considered summarized.  Defaults to 85.
@@ -1534,7 +1537,8 @@ class RemoveRedundantSentences(Validator):
 
 @register_validator(name="saliency-check", data_type="string")
 class SaliencyCheck(Validator):
-    """Checks that the summary covers the list of topics present in the document.
+    """Checks that the summary covers the list of topics present in the
+    document.
 
     **Key Properties**
 
@@ -1650,7 +1654,8 @@ Make sure that topics are relevant to text, and topics are not too specific or g
 
 @register_validator(name="qa-relevance-llm-eval", data_type="string")
 class QARelevanceLLMEval(Validator):
-    """Validates that an answer is relevant to the question asked by asking the LLM to self evaluate.
+    """Validates that an answer is relevant to the question asked by asking the
+    LLM to self evaluate.
 
     **Key Properties**
 
@@ -1663,6 +1668,7 @@ class QARelevanceLLMEval(Validator):
     Other parameters: Metadata
         question (str): The original question the llm was given to answer.
     """
+
     def __init__(
         self,
         llm_callable: Callable = None,
