@@ -222,7 +222,7 @@ def test_python_rail_add_validator(mocker):
         prompt=(
             "Provide detailed information about the top 5 grossing movies from"
             " ${director} including release date, duration, budget, whether "
-            "it's a sequel, website, and contact email." 
+            "it's a sequel, website, and contact email."
             "\n ${json_suffix_without_examples}"
         ),
         instructions="\nYou are a helpful assistant only capable of communicating"
