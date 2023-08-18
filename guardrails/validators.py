@@ -472,7 +472,7 @@ class PydanticFieldValidator(Validator):
     Parameters: Arguments
 
         field_validator (Callable): A validator for a specific field in a Pydantic model.
-    """ # noqa 
+    """  # noqa
 
     override_value_on_pass = True
 
@@ -644,7 +644,7 @@ class ValidLength(Validator):
     Parameters: Arguments
         min: The inclusive minimum length.
         max: The inclusive maximum length.
-    """ # noqa 
+    """  # noqa
 
     def __init__(
         self, min: int = None, max: int = None, on_fail: Optional[Callable] = None
@@ -982,7 +982,7 @@ class SimilarToDocument(Validator):
         document: The document to use for the similarity check.
         threshold: The minimum cosine similarity to be considered similar.  Defaults to 0.7.
         model: The embedding model to use.  Defaults to text-embedding-ada-002.
-    """ # noqa 
+    """  # noqa
 
     def __init__(
         self,
@@ -1185,7 +1185,7 @@ class ExtractedSummarySentencesMatch(Validator):
         document_store (DocumentStoreBase, optional): The document store to use during validation. Defaults to EphemeralDocumentStore.
         vector_db (VectorDBBase, optional): A vector database to use for embeddings.  Defaults to Faiss.
         embedding_model (EmbeddingBase, optional): The embeddig model to use. Defaults to OpenAIEmbedding.
-    """ # noqa 
+    """  # noqa
 
     def __init__(
         self,
@@ -1366,7 +1366,7 @@ class ExtractiveSummary(Validator):
     Other parameters: Metadata
 
         filepaths (List[str]): A list of strings that specifies the filepaths for any documents that should be used for asserting the summary's similarity.
-    """ # noqa 
+    """  # noqa
 
     def __init__(
         self,
@@ -1552,7 +1552,7 @@ class SaliencyCheck(Validator):
 
         docs_dir: Path to the directory containing the documents.
         threshold: Threshold for overlap between topics in document and summary. Defaults to 0.25
-    """ # noqa 
+    """  # noqa
 
     def __init__(
         self,
@@ -1798,7 +1798,7 @@ class ProvenanceV0(Validator):
             },
         )
         ```
-    """ # noqa 
+    """  # noqa
 
     def __init__(
         self,
