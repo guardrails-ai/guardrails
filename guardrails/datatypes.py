@@ -2,7 +2,8 @@ import datetime
 import logging
 from dataclasses import dataclass
 from types import SimpleNamespace
-from typing import TYPE_CHECKING, Any, Dict, Generator
+from typing import TYPE_CHECKING, Any, Dict, Generator, Iterable
+from typing import List
 from typing import List as TypedList
 from typing import Tuple, Type, Union
 
@@ -23,6 +24,22 @@ class FieldValidation:
     value: Any
     validators: TypedList[Validator]
     children: TypedList["FieldValidation"]
+
+
+def verify_metadata_requirements(
+    metadata: dict, datatypes: Iterable["DataType"]
+) -> List[str]:
+    missing_keys = set()
+    for datatype in datatypes:
+        for validator in datatype.validators:
+            for requirement in validator.required_metadata_keys:
+                if requirement not in metadata:
+                    missing_keys.add(requirement)
+        nested_missing_keys = verify_metadata_requirements(
+            metadata, vars(datatype.children).values()
+        )
+        missing_keys.update(nested_missing_keys)
+    return list(missing_keys)
 
 
 class DataType:

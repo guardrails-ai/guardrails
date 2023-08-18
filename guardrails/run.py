@@ -6,6 +6,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 from eliot import add_destinations, start_action
 from pydantic import BaseModel
 
+from guardrails.datatypes import verify_metadata_requirements
 from guardrails.llm_providers import AsyncPromptCallable, PromptCallable
 from guardrails.prompt import Instructions, Prompt
 from guardrails.schema import Schema
@@ -98,6 +99,15 @@ class Runner:
         Returns:
             The guard history.
         """
+        # check if validator requirements are fulfilled
+        missing_keys = verify_metadata_requirements(
+            self.metadata, self.output_schema.to_dict().values()
+        )
+        if missing_keys:
+            raise ValueError(
+                f"Missing required metadata keys: {', '.join(missing_keys)}"
+            )
+
         self._reset_guard_history()
 
         # Figure out if we need to include instructions in the prompt.
