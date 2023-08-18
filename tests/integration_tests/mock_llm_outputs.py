@@ -4,7 +4,7 @@ from .test_assets import entity_extraction, pydantic, python_rail, string
 def openai_completion_create(prompt, *args, **kwargs):
     """Mock the OpenAI API call to Completion.create."""
     # NOTE: this function normally overrides `llm_providers.openai_wrapper`,
-    # which compiles instructions and prompt into a single prompt;
+    # which compiles instructions and prompt into a single prompt
     # here the instructions are passed into kwargs and ignored
 
     mock_llm_responses = {
@@ -38,6 +38,7 @@ def openai_chat_completion_create(
 ):
     """Mock the OpenAI API call to ChatCompletion.create."""
 
+
     mock_llm_responses = {
         (
             entity_extraction.COMPILED_PROMPT_WITHOUT_INSTRUCTIONS,
@@ -56,7 +57,6 @@ def openai_chat_completion_create(
             python_rail.COMPILED_INSTRUCTIONS,
         ): python_rail.LLM_OUTPUT_2_SUCCEED_GUARDRAILS_BUT_FAIL_PYDANTIC_VALIDATION,
     }
-
     try:
         if prompt and instructions and not msg_history:
             return mock_llm_responses[(prompt, instructions)]

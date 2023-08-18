@@ -105,7 +105,6 @@ def test_instructions_with_params():
     ],
 )
 def test_variable_names(rail, var_names):
-    print('var names')
     """Test extracting variable names from a prompt."""
     guard = gd.Guard.from_rail_string(rail)
 

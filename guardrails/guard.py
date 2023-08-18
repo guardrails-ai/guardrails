@@ -101,7 +101,9 @@ class Guard:
         variables = [
             t[1] for t in Formatter().parse(reask_prompt.source) if t[1] is not None
         ]
-        assert set(variables) == {"previous_response", "output_schema"}
+        variable_set = set(variables)
+        assert variable_set.__contains__("previous_response")
+        assert variable_set.__contains__("output_schema")
         self._reask_prompt = reask_prompt
 
     def configure(

@@ -431,9 +431,9 @@ You are a helpful assistant only capable of communicating with valid JSON, and n
 ONLY return a valid JSON object (no other text is necessary), where the key of the field in JSON is the `name` attribute of the corresponding XML, and the value is of the type specified by the corresponding XML's tag. The JSON MUST conform to the XML format, including any types and format requests e.g. requests for lists, objects and specific types. Be correct and concise. If you are unsure anywhere, enter `null`.
 
 Here are examples of simple (XML, JSON) pairs that show the expected behavior:
-- `<string name='foo' format='two-words lower-case' />` => `{{'foo': 'example one'}}`
-- `<list name='bar'><string format='upper-case' /></list>` => `{{"bar": ['STRING ONE', 'STRING TWO', etc.]}}`
-- `<object name='baz'><string name="foo" format="capitalize two-words" /><integer name="index" format="1-indexed" /></object>` => `{{'baz': {{'foo': 'Some String', 'index': 1}}}}`
+- `<string name='foo' format='two-words lower-case' />` => `{'foo': 'example one'}`
+- `<list name='bar'><string format='upper-case' /></list>` => `{"bar": ['STRING ONE', 'STRING TWO', etc.]}`
+- `<object name='baz'><string name="foo" format="capitalize two-words" /><integer name="index" format="1-indexed" /></object>` => `{'baz': {'foo': 'Some String', 'index': 1}}`
 """  # noqa: E501
     output_schema = JsonSchema(ET.fromstring(example_rail))
     (
@@ -445,7 +445,7 @@ Here are examples of simple (XML, JSON) pairs that show the expected behavior:
     assert result_prompt == Prompt(
         expected_result_template
         % (
-            json.dumps(reask_json, indent=2).replace("{", "{{").replace("}", "}}"),
+            json.dumps(reask_json, indent=2),
             example_rail,
         )
     )
