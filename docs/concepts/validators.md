@@ -49,7 +49,7 @@ raw_output, guarded_output = guard(
 ```
 
 #### How do I know what metadata is required?
-First step is to check the docs.  Each validator has an API reference that documents both its initialization arguments and any required metadata that must be supplied at runtime.  Continuing with the example used above, `ExtractedSummarySentencesMatch` accepts an optional threshold argument which defaults to `0.7`; it also requires an entry in the metadata called `filepaths` which is an array of strings specifying which documents to use for the similarity comparison.  You can see and example of a Validator's metadata documentation [here](/validation/#guardrails.validators.ExtractedSummarySentencesMatch).
+First step is to check the docs.  Each validator has an API reference that documents both its initialization arguments and any required metadata that must be supplied at runtime.  Continuing with the example used above, `ExtractedSummarySentencesMatch` accepts an optional threshold argument which defaults to `0.7`; it also requires an entry in the metadata called `filepaths` which is an array of strings specifying which documents to use for the similarity comparison.  You can see an example of a Validator's metadata documentation [here](/validation/#guardrails.validators.ExtractedSummarySentencesMatch).
 
 Secondly, if a piece of metadata is required and not present, a `RuntimeError` will be raised.  For example, if the metadata requirements are not met for the above validator, an `RuntimeError` will be raised with the following message:
 
