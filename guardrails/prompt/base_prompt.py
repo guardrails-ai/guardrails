@@ -1,15 +1,10 @@
 """Class for representing a prompt entry."""
 import re
-import string
 from string import Formatter, Template
 from typing import Optional
+from guardrails.namespace_template import NamespaceTemplate
 
 from guardrails.utils.constants import constants
-
-
-class NamespaceTemplate(string.Template):
-    delimiter = "$"
-    idpattern = r"[a-z][_a-z0-9.]*"
 
 
 class BasePrompt:
