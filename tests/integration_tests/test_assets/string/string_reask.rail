@@ -9,7 +9,7 @@
 <instructions>
 You are a helpful assistant, and you are helping me come up with a name for a pizza.
 
-${complete_string_suffix}
+${gr.complete_string_suffix}
 </instructions>
 
 <prompt>

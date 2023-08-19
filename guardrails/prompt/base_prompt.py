@@ -1,9 +1,14 @@
 """Class for representing a prompt entry."""
 import re
+import string
 from string import Formatter, Template
 from typing import Optional
 
 from guardrails.utils.constants import constants
+
+class NamespaceTemplate(string.Template):
+    delimiter = '$'
+    idpattern = r'[a-z][_a-z0-9.]*'
 
 
 class BasePrompt:
@@ -44,14 +49,13 @@ class BasePrompt:
         # Substitute constants by reading the constants file.
         # Regex to extract all occurrences of @<constant_name>
 
-        matches = re.findall(r"\${(\w+)}", text)
+        matches = re.findall(r"\${gr.(\w+)}", text)
 
         # Substitute all occurrences of @<constant_name> with the value of the constant.
         for match in matches:
-            if match in constants:
-                template = Template(text)
-                mapping = {match: constants[match]}
-                text = template.safe_substitute(**mapping)
+            template = NamespaceTemplate(text)
+            mapping = {f'gr.{match}': constants[match]}
+            text = template.safe_substitute(**mapping)
 
         return text
 

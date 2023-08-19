@@ -17,7 +17,7 @@
 <instructions>
 You are a helpful assistant only capable of communicating with valid JSON, and no other text.
 
-${json_suffix_prompt_examples}
+${gr.json_suffix_prompt_examples}
 </instructions>
 
 
@@ -28,7 +28,7 @@ ${document}
 
 Extract information from this document and return a JSON that follows the correct schema.
 
-${xml_prefix_prompt}
+${gr.xml_prefix_prompt}
 
 ${output_schema}
 </prompt>

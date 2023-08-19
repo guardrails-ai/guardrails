@@ -99,17 +99,17 @@ Given the following document, answer the following questions. If the answer does
 
 ${document}
 
-${xml_prefix_prompt}
+${gr.xml_prefix_prompt}
 
 ${output_schema}
 
-${json_suffix_prompt_v2_wo_none}"""  # noqa: E501
+${gr.json_suffix_prompt_v2_wo_none}"""  # noqa: E501
 
 
 INSTRUCTIONS_CHAT_MODEL = """
 You are a helpful assistant only capable of communicating with valid JSON, and no other text.
 
-${json_suffix_prompt_examples}
+${gr.json_suffix_prompt_examples}
 """  # noqa: E501
 
 
@@ -120,7 +120,7 @@ ${document}
 
 Extract information from this document and return a JSON that follows the correct schema.
 
-${xml_prefix_prompt}
+${gr.xml_prefix_prompt}
 
 ${output_schema}
 """  # noqa: E501

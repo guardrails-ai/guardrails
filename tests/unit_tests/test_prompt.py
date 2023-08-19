@@ -66,7 +66,7 @@ You are a helpful bot, who answers only with valid JSON
 
 "Extract a string from the text"
 
-${complete_json_suffix_v2}
+${gr.complete_json_suffix_v2}
 </prompt>
 </rail>
 """
@@ -129,7 +129,7 @@ def test_format_instructions():
     "prompt_str,final_prompt",
     [
         (
-            "Dummy prompt. ${complete_json_suffix_v2}",
+            "Dummy prompt. ${gr.complete_json_suffix_v2}",
             f"Dummy prompt. {constants['complete_json_suffix_v2']}",
         ),
         ("Dummy prompt. some@email.com", "Dummy prompt. some@email.com"),

@@ -35,11 +35,11 @@ Given the following document, answer the following questions. If the answer does
 
 ${document}
 
-${xml_prefix_prompt}
+${gr.xml_prefix_prompt}
 
 ${output_schema}
 
-${json_suffix_prompt}</prompt>
+${gr.json_suffix_prompt}</prompt>
 
 
 <script language='python'>

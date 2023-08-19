@@ -12,7 +12,7 @@
 <instructions>
 You are a data scientist whose job is to write SQL queries.
 
-${complete_json_suffix_v2}
+${gr.complete_json_suffix_v2}
 
 </instructions>
 

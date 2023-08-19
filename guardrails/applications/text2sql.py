@@ -15,7 +15,7 @@ from guardrails.vectordb import Faiss, VectorDBBase
 REASK_PROMPT = """
 You are a data scientist whose job is to write SQL queries.
 
-${complete_json_suffix_v2}
+${gr.complete_json_suffix_v2}
 
 Here's schema about the database that you can use to generate the SQL query.
 Try to avoid using joins if the data can be retrieved from the same table.

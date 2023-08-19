@@ -22,7 +22,7 @@ Given the following doctor's notes about a patient, please extract a dictionary 
 
 ${doctors_notes}
 
-${complete_json_suffix_v2}
+${gr.complete_json_suffix_v2}
 </prompt>
 </rail>
 """
