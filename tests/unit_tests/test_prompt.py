@@ -64,7 +64,7 @@ You are a helpful bot, who answers only with valid JSON
 
 <prompt>
 
-"Extract a string from the text"
+Extract a string from the text
 
 ${gr.complete_json_suffix_v2}
 </prompt>
