@@ -6,9 +6,10 @@ from typing import Optional
 
 from guardrails.utils.constants import constants
 
+
 class NamespaceTemplate(string.Template):
-    delimiter = '$'
-    idpattern = r'[a-z][_a-z0-9.]*'
+    delimiter = "$"
+    idpattern = r"[a-z][_a-z0-9.]*"
 
 
 class BasePrompt:
@@ -54,7 +55,7 @@ class BasePrompt:
         # Substitute all occurrences of @<constant_name> with the value of the constant.
         for match in matches:
             template = NamespaceTemplate(text)
-            mapping = {f'gr.{match}': constants[match]}
+            mapping = {f"gr.{match}": constants[match]}
             text = template.safe_substitute(**mapping)
 
         return text
