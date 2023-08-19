@@ -2,8 +2,8 @@
 import re
 from string import Formatter, Template
 from typing import Optional
-from guardrails.namespace_template import NamespaceTemplate
 
+from guardrails.namespace_template import NamespaceTemplate
 from guardrails.utils.constants import constants
 
 
