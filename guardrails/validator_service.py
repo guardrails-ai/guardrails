@@ -158,7 +158,7 @@ class SequentialValidatorService(ValidatorServiceBase):
 
 class MultiprocMixin:
     multiprocessing_executor: ProcessPoolExecutor = None
-    process_count = os.environ.get("GUARDRAILS_PROCESS_COUNT", 10)
+    process_count = int(os.environ.get("GUARDRAILS_PROCESS_COUNT", 10))
 
     def __init__(self):
         if MultiprocMixin.multiprocessing_executor is None:
@@ -318,7 +318,7 @@ def validate(
     validator_setup: FieldValidation,
     validation_logs: FieldValidationLogs,
 ):
-    process_count = os.environ.get("GUARDRAILS_PROCESS_COUNT")
+    process_count = int(os.environ.get("GUARDRAILS_PROCESS_COUNT", 10))
     loop = asyncio.get_event_loop()
     if process_count == 1:
         logger.warning(
