@@ -1,12 +1,18 @@
 # flake8: noqa: E501
 from pydantic import BaseModel, validator
 
-from guardrails.utils.pydantic_utils import register_pydantic
 from guardrails.utils.reask_utils import FieldReAsk
 from guardrails.validators import FailResult
 
+prompt = """Generate data for possible users in accordance with the specification below.
 
-@register_pydantic
+@xml_prefix_prompt
+
+{output_schema}
+
+@complete_json_suffix_v2"""
+
+
 class Person(BaseModel):
     """Information about a person.
 
@@ -41,7 +47,17 @@ class Person(BaseModel):
         return v
 
 
-VALIDATED_OUTPUT = {
+class ListOfPeople(BaseModel):
+    """A list of people.
+
+    Args:
+        people (list[Person]): A list of people.
+    """
+
+    people: list[Person]
+
+
+VALIDATED_OUTPUT_1 = {
     "people": [
         {
             "name": "John Doe",
@@ -57,7 +73,38 @@ VALIDATED_OUTPUT = {
                 path=["people", 0],
             ),
         },
-        Person(name="Jane Doe", age=32, zip_code="94103"),
-        Person(name="James Smith", age=40, zip_code="92101"),
+        {"name": "Jane Doe", "age": 32, "zip_code": "94103"},
+        {"name": "James Smith", "age": 40, "zip_code": "92101"},
+    ]
+}
+
+
+VALIDATED_OUTPUT_2 = {
+    "people": [
+        {
+            "name": "John Doe",
+            "age": 28,
+            "zip_code": FieldReAsk(
+                incorrect_value="None",
+                fail_results=[
+                    FailResult(
+                        error_message="Zip code must be numeric.",
+                        fix_value=None,
+                    )
+                ],
+                path=["people", 0],
+            ),
+        },
+        {"name": "Jane Doe", "age": 32, "zip_code": "94103"},
+        {"name": "James Smith", "age": 40, "zip_code": "92101"},
+    ]
+}
+
+
+VALIDATED_OUTPUT_3 = {
+    "people": [
+        {"name": "John Doe", "age": 28, "zip_code": None},
+        {"name": "Jane Doe", "age": 32, "zip_code": "94103"},
+        {"name": "James Smith", "age": 40, "zip_code": "92101"},
     ]
 }

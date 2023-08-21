@@ -1,4 +1,3 @@
-
 Generate data for possible users in accordance with the specification below.
 
 
@@ -6,11 +5,11 @@ Given below is XML that describes the information to extract from this document 
 
 
 <output>
-    <list name="people" description="A list of 3 people.">
-        <object description="Information about a person." pydantic="Person">
-            <string name="name" description="The name of the person."/>
-            <integer name="age" description="The age of the person." format="age-must-be-between-0-and-150"/>
-            <string name="zip_code" description="The zip code of the person." format="zip-code-must-be-numeric; zip-code-in-california"/>
+    <list name="people">
+        <object>
+            <string name="name"/>
+            <integer name="age" format="age_must_be_between_0_and_150"/>
+            <string name="zip_code" format="zip_code_must_be_numeric; zip_code_in_california"/>
         </object>
     </list>
 </output>
@@ -20,11 +19,11 @@ Given below is XML that describes the information to extract from this document 
 Given below is XML that describes the information to extract from this document and the tags to extract it into.
 
 <output>
-    <list name="people" description="A list of 3 people.">
-        <object description="Information about a person." pydantic="Person">
-            <string name="name" description="The name of the person."/>
-            <integer name="age" description="The age of the person." format="age-must-be-between-0-and-150"/>
-            <string name="zip_code" description="The zip code of the person." format="zip-code-must-be-numeric; zip-code-in-california"/>
+    <list name="people">
+        <object>
+            <string name="name"/>
+            <integer name="age" format="age_must_be_between_0_and_150"/>
+            <string name="zip_code" format="zip_code_must_be_numeric; zip_code_in_california"/>
         </object>
     </list>
 </output>
