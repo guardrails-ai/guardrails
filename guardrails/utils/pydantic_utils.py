@@ -424,7 +424,6 @@ def add_pydantic_validators_as_guardrails_validators(
     for field_name, field in model.__fields__.items():
         field_copy = deepcopy(field)
         process_validators(field.pre_validators, field_copy)
-        # TODO support nested pydantic model validators
         process_validators(field.post_validators, field_copy)
         model_fields[field_name] = field_copy
 
