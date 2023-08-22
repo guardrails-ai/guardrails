@@ -1,9 +1,8 @@
 # flake8: noqa: E501
 from typing import Any, Dict, List
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field
 
-from guardrails.utils.pydantic_utils import add_validator
 from guardrails.utils.reask_utils import FieldReAsk
 from guardrails.validators import (
     FailResult,

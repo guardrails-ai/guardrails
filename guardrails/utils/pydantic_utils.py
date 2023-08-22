@@ -1,6 +1,4 @@
-"""Utilities for working with Pydantic models.
-
-"""
+"""Utilities for working with Pydantic models."""
 import logging
 import warnings
 from collections import defaultdict
