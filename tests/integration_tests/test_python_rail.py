@@ -11,6 +11,7 @@ from guardrails.utils.pydantic_utils import add_validator
 from guardrails.validators import (
     FailResult,
     PassResult,
+    TwoWords,
     ValidationResult,
     Validator,
     ValidChoices,
@@ -18,8 +19,8 @@ from guardrails.validators import (
     register_validator,
 )
 
-from .mock_llm_outputs import openai_chat_completion_create
-from .test_assets import python_rail
+from .mock_llm_outputs import openai_chat_completion_create, openai_completion_create
+from .test_assets import python_rail, string
 
 
 @register_validator(name="is-valid-director", data_type="string")
@@ -271,3 +272,53 @@ def test_python_rail_add_validator(mocker):
 
     # The fixed output should pass validation using Pydantic
     Director.parse_raw(python_rail.LLM_OUTPUT_3_SUCCEED_GUARDRAILS_AND_PYDANTIC)
+
+
+def test_python_string(mocker):
+    """Test single string (non-JSON) generation via pydantic with re-asking."""
+    mocker.patch(
+        "guardrails.llm_providers.openai_wrapper", new=openai_completion_create
+    )
+
+
+    validators = [TwoWords(on_fail="reask")]
+    description = "Name for the pizza"
+    instructions="""
+You are a helpful assistant, and you are helping me come up with a name for a pizza.
+
+@complete_string_suffix
+"""
+
+    prompt="""
+Given the following ingredients, what would you call this pizza?
+
+{{ingredients}}
+"""
+
+    guard = gd.Guard.from_string(validators, description, prompt=prompt, instructions=instructions)
+    _, final_output = guard(
+        llm_api=openai.Completion.create,
+        prompt_params={"ingredients": "tomato, cheese, sour cream"},
+        num_reasks=1,
+        max_tokens=100,
+    )
+
+    assert final_output == string.LLM_OUTPUT_REASK
+
+    guard_history = guard.guard_state.most_recent_call.history
+
+    # Check that the guard state object has the correct number of re-asks.
+    assert len(guard_history) == 2
+
+    # For orginal prompt and output
+    assert guard_history[0].instructions == gd.Instructions(
+        string.COMPILED_INSTRUCTIONS
+    )
+    assert guard_history[0].prompt == gd.Prompt(string.COMPILED_PROMPT)
+    assert guard_history[0].output == string.LLM_OUTPUT
+    assert guard_history[0].validated_output == string.VALIDATED_OUTPUT_REASK
+
+    # For re-asked prompt and output
+    assert guard_history[1].prompt == gd.Prompt(string.COMPILED_PROMPT_REASK)
+    assert guard_history[1].output == string.LLM_OUTPUT_REASK
+    assert guard_history[1].validated_output == string.LLM_OUTPUT_REASK

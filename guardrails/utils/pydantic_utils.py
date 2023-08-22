@@ -11,7 +11,7 @@ import warnings
 from collections import defaultdict
 from copy import deepcopy
 from datetime import date, time
-from typing import Any, Callable, Dict, Optional, Type, Union, get_args, get_origin
+from typing import Any, Callable, Dict, List, Optional, Type, Union, get_args, get_origin
 
 from griffe.dataclasses import Docstring
 from griffe.docstrings.parsers import Parser, parse
@@ -232,24 +232,31 @@ def add_validators_to_xml_element(field_info: ModelField, element: Element) -> E
         if isinstance(validators, str) or isinstance(validators, Validator):
             validators = [validators]
 
-        format_prompt = []
-        on_fails = {}
-        for val in validators:
-            validator_prompt = val
-            if not isinstance(val, str):
-                # `validator` is of type gd.Validator, use the to_xml_attrib method
-                validator_prompt = val.to_xml_attrib()
-                # Set the on-fail attribute based on the on_fail value
-                on_fail = val.on_fail_descriptor
-                on_fails[val.rail_alias] = on_fail
-            format_prompt.append(validator_prompt)
+        attach_validators_to_element(element, validators)
 
-        if len(format_prompt) > 0:
-            format_prompt = "; ".join(format_prompt)
-            element.set("format", format_prompt)
-            for rail_alias, on_fail in on_fails.items():
-                element.set("on-fail-" + rail_alias, on_fail)
+    return element
 
+def attach_validators_to_element(
+        element: Element,
+        validators: Union[List[Validator], List[str]]
+):
+    format_prompt = []
+    on_fails = {}
+    for val in validators:
+        validator_prompt = val
+        if not isinstance(val, str):
+            # `validator` is of type gd.Validator, use the to_xml_attrib method
+            validator_prompt = val.to_xml_attrib()
+            # Set the on-fail attribute based on the on_fail value
+            on_fail = val.on_fail_descriptor
+            on_fails[val.rail_alias] = on_fail
+        format_prompt.append(validator_prompt)
+
+    if len(format_prompt) > 0:
+        format_prompt = "; ".join(format_prompt)
+        element.set("format", format_prompt)
+        for rail_alias, on_fail in on_fails.items():
+            element.set("on-fail-" + rail_alias, on_fail)
     return element
 
 
