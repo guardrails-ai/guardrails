@@ -303,7 +303,7 @@ def generate_xml_code(
         reask_prompt (str, optional): An alternative prompt to use during reasks. Defaults to None.
         reask_instructions (str, optional): Alternative instructions to use during reasks. Defaults to None.
         validators (List[Validator], optional): The list of validators to apply to the string schema. Do not specify if using a Pydantic model. Defaults to None.
-        description (str, optional): The descrition for a string schema. Do not specify if using a Pydantic model. Defaults to None.
+        description (str, optional): The description for a string schema. Do not specify if using a Pydantic model. Defaults to None.
     """  # noqa
 
     # Create the root element
