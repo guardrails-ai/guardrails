@@ -1,10 +1,4 @@
-"""Utilities for working with Pydantic models.
-
-Guardrails lets users specify
-
-<pydantic     model="Person"     name="person" description="Information
-about a person."     on-fail-pydantic="reask" / "refrain" / "raise" />
-"""
+"""Utilities for working with Pydantic models."""
 import logging
 import warnings
 from collections import defaultdict
@@ -66,58 +60,6 @@ PYDANTIC_SCHEMA_TYPE_MAP = {
 
 pydantic_validators = {}
 pydantic_models = {}
-
-
-# Create a class decorator to register all the validators in a BaseModel
-def register_pydantic(cls: type):
-    """
-    Register a Pydantic BaseModel. This is a class decorator that can
-    be used in the following way:
-
-    ```
-    @register_pydantic
-    class MyModel(BaseModel):
-        ...
-    ```
-
-    This decorator does the following:
-        1. Add the model to the pydantic_models dictionary.
-        2. Register all pre and post validators.
-        3. Register all pre and post root validators.
-    """
-    # Register the model
-    pydantic_models[cls.__name__] = cls
-
-    # Create a dictionary to store all the validators
-    pydantic_validators[cls] = {}
-    # All all pre and post validators, for each field in the model
-    for field in cls.__fields__.values():
-        pydantic_validators[cls][field.name] = {}
-        if field.pre_validators:
-            for pre_validator in field.pre_validators:
-                pydantic_validators[cls][field.name][
-                    pre_validator.func_name.replace("_", "-")
-                ] = pre_validator
-        if field.post_validators:
-            for post_validator in field.post_validators:
-                pydantic_validators[cls][field.name][
-                    post_validator.func_name.replace("_", "-")
-                ] = post_validator
-
-    pydantic_validators[cls]["__root__"] = {}
-    # Add all pre and post root validators
-    if cls.__pre_root_validators__:
-        for _, pre_validator in cls.__pre_root_validators__:
-            pydantic_validators[cls]["__root__"][
-                pre_validator.__name__.replace("_", "-")
-            ] = pre_validator
-
-    if cls.__post_root_validators__:
-        for _, post_validator in cls.__post_root_validators__:
-            pydantic_validators[cls]["__root__"][
-                post_validator.__name__.replace("_", "-")
-            ] = post_validator
-    return cls
 
 
 def is_pydantic_base_model(type_annotation: Any) -> bool:

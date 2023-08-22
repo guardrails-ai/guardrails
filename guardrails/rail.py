@@ -1,7 +1,7 @@
 """Rail class."""
 import warnings
-from dataclasses import dataclass, field
-from typing import List, Optional, Type
+from dataclasses import dataclass
+from typing import Optional, Type
 
 from lxml import etree as ET
 from lxml.etree import Element, SubElement
@@ -20,74 +20,6 @@ XMLPARSER = ET.XMLParser(encoding="utf-8")
 
 
 @dataclass
-class Script:
-    variables: dict = field(default_factory=dict)
-    language: str = "python"
-
-    @classmethod
-    def from_xml(cls, root: ET._Element) -> "Script":
-        if "language" not in root.attrib:
-            raise ValueError("Script element must have a language attribute.")
-
-        language = root.attrib["language"]
-        if language != "python":
-            raise ValueError("Only python scripts are supported right now.")
-
-        # Run the script in the global namespace, returning the additional
-        # globals that were created.
-        keys = set(globals().keys())
-        exec(root.text, globals())
-        new_keys = globals().keys()
-        variables = {k: globals()[k] for k in new_keys if k not in keys}
-        return cls(variables, language)
-
-    @staticmethod
-    def find_expressions(body) -> List[str]:
-        """Get all expressions, written as {...} in a string body."""
-        expressions = []
-        stack = []
-        start = -1
-
-        for i, char in enumerate(body):
-            if char == "{":
-                if not stack:
-                    start = i
-                stack.append(char)
-            elif char == "}":
-                if stack and stack[-1] == "{":
-                    stack.pop()
-                    if not stack:
-                        expressions.append(body[start + 1 : i])
-                else:
-                    stack.append(char)
-        return expressions
-
-    def replace_expressions(self, body: str) -> str:
-        """Replace all expressions in a string body with their evaluated
-        values."""
-        # Decode the body if it's a bytes object.
-        if isinstance(body, bytes):
-            body = body.decode("utf-8")
-        for expr in self.find_expressions(body):
-            # The replacement should be inserted as a Python expression, inside
-            # curly braces.
-            replacement = self(expr)
-            # If a string, wrap it in '' quotes.
-            if isinstance(replacement, str):
-                replacement = f"'{replacement}'"
-            # Escape any double quotes.
-            replacement = str(replacement).replace('"', "&quot;")
-            # Replace the expression with the evaluated value.
-            body = body.replace(f"{{{expr}}}", f"{{{replacement}}}")
-
-        return body
-
-    def __call__(self, expr: str):
-        """Eval expression in the script's namespace."""
-        return eval(expr, {**globals(), **self.variables})
-
-
-@dataclass
 class Rail:
     """RAIL (Reliable AI Language) is a dialect of XML that allows users to
     specify guardrails for large language models (LLMs).
@@ -95,17 +27,16 @@ class Rail:
     A RAIL file contains a root element called
         `<rail version="x.y">`
     that contains the following elements as children:
-        1. `<script language="python">`, which contains the script to be executed
-        2. `<input strict=True/False>`, which contains the input schema
-        3. `<output strict=True/False>`, which contains the output schema
-        4. `<prompt>`, which contains the prompt to be passed to the LLM
+        1. `<input strict=True/False>`, which contains the input schema
+        2. `<output strict=True/False>`, which contains the output schema
+        3. `<prompt>`, which contains the prompt to be passed to the LLM
+        4. `<instructions>`, which contains the instructions to be passed to the LLM
     """
 
     input_schema: Optional[Schema] = (None,)
     output_schema: Optional[Schema] = (None,)
     instructions: Optional[Instructions] = (None,)
     prompt: Optional[Prompt] = (None,)
-    script: Optional[Script] = (None,)
     version: Optional[str] = ("0.1",)
 
     @classmethod
@@ -144,13 +75,6 @@ class Rail:
                 "Change the opening <rail> element to: <rail version='0.1'>."
             )
 
-        # Execute the script before validating the rest of the RAIL file.
-        raw_script = xml.find("script")
-        if raw_script is not None:
-            script = cls.load_script(raw_script)
-        else:
-            script = Script()
-
         # Load <input /> schema
         raw_input_schema = xml.find("input")
         if raw_input_schema is None:
@@ -163,8 +87,7 @@ class Rail:
         raw_output_schema = xml.find("output")
         if raw_output_schema is None:
             raise ValueError("RAIL file must contain a output-schema element.")
-        # Replace all expressions in the <output /> schema.
-        raw_output_schema = script.replace_expressions(ET.tostring(raw_output_schema))
+        raw_output_schema = ET.tostring(raw_output_schema, encoding="utf-8")
         raw_output_schema = ET.fromstring(raw_output_schema, parser=XMLPARSER)
         # If reasking prompt and instructions are provided, add them to the schema.
         reask_prompt = xml.find("reask_prompt")
@@ -198,7 +121,6 @@ class Rail:
             output_schema=output_schema,
             instructions=instructions,
             prompt=prompt,
-            script=script,
             version=xml.attrib["version"],
         )
 
@@ -278,11 +200,6 @@ class Rail:
             source=root.text,
             output_schema=output_schema.transpile(),
         )
-
-    @staticmethod
-    def load_script(root: ET._Element) -> Script:
-        """Given the RAIL <script> element, load and execute the script."""
-        return Script.from_xml(root)
 
 
 def generate_xml_code(
