@@ -7,6 +7,7 @@ data/*
 *.pyc
 *.env
 *.log
+*.venv
 settings.json
 site/*
 guardrails.log

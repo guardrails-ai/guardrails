@@ -227,8 +227,8 @@ def cohere_wrapper(
     ```
     """
 
-    if 'instructions' in kwargs:
-        prompt = kwargs.pop('instructions') + '\n\n' + prompt
+    if "instructions" in kwargs:
+        prompt = kwargs.pop("instructions") + "\n\n" + prompt
 
     cohere_response = client_callable(prompt=prompt, model=model, *args, **kwargs)
     return cohere_response[0].text
