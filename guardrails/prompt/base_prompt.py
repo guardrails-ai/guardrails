@@ -3,6 +3,8 @@ import re
 from string import Formatter, Template
 from typing import Optional
 
+import regex
+
 from guardrails.namespace_template import NamespaceTemplate
 from guardrails.utils.constants import constants
 
@@ -34,7 +36,7 @@ class BasePrompt:
 
     @property
     def variable_names(self):
-        return [x[1] for x in Formatter().parse(self.source) if x[1] is not None]
+        return [x[1] for x in Formatter().parse(self.escape()) if x[1] is not None]
 
     @property
     def format_instructions(self):
@@ -95,3 +97,8 @@ class BasePrompt:
             return 0
 
         return earliest_match.start()
+
+    def escape(self) -> str:
+        start_replaced = regex.sub(r"(?<!\$){", "{{", self.source)
+        # This variable length negative lookbehind is why we need `regex` over `re`
+        return regex.sub(r"(?<!\${.*)}", "}}", start_replaced)
