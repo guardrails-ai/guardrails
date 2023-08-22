@@ -304,7 +304,7 @@ def generate_xml_code(
         reask_instructions (str, optional): Alternative instructions to use during reasks. Defaults to None.
         validators (List[Validator], optional): The list of validators to apply to the string schema. Do not specify if using a Pydantic model. Defaults to None.
         description (str, optional): The descrition for a string schema. Do not specify if using a Pydantic model. Defaults to None.
-    """  #noqa
+    """  # noqa
 
     # Create the root element
     root = Element("rail")
@@ -315,7 +315,8 @@ def generate_xml_code(
 
     if output_class and validators:
         warnings.warn(
-            "Do not specify root level validators on a Pydantic model.  These validators will be ignored."
+            "Do not specify root level validators on a Pydantic model."
+            "  These validators will be ignored."
         )
 
     if output_class is not None:

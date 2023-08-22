@@ -225,7 +225,7 @@ def test_generate_xml_code_pydantic_with_validations_warning(mocker):
     assert actual_xml == expected_xml
 
     warn_spy.assert_called_once_with(
-        "Do not specify root level validators on a Pydantic model.  These validators will be ignored."
+        "Do not specify root level validators on a Pydantic model.  These validators will be ignored."  # noqa
     )
 
 
@@ -255,6 +255,6 @@ def test_generate_xml_code_string():
   <reask_prompt>That wasn't very funny.  Tell me a different joke.</reask_prompt>
   <reask_instructions>Make sure it's funny this time.</reask_instructions>
 </rail>
-"""
+"""  # noqa
 
     assert actual_xml == expected_xml
