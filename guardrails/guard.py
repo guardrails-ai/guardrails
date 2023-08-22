@@ -164,8 +164,9 @@ class Guard:
         reask_instructions: Optional[str] = None,
         num_reasks: int = 1,
     ) -> "Guard":
-        """Create a Guard instance for a string response with prompt, instructions, and validations.
-        
+        """Create a Guard instance for a string response with prompt,
+        instructions, and validations.
+
         Parameters: Arguments
             validators: (List[Validator]): The list of validators to apply to the string output.
             description (str, optional): A description for the string to be generated. Defaults to None.
@@ -174,15 +175,14 @@ class Guard:
             reask_prompt (str, optional): An alternative prompt to use during reasks. Defaults to None.
             reask_instructions (str, optional): Alternative instructions to use during reasks. Defaults to None.
             num_reasks (int, optional): The max times to re-ask the LLM for invalid output. Defaults to 1.
-
-        """
+        """  # noqa
         rail = Rail.for_string_schema(
             validators=validators,
             description=description,
             prompt=prompt,
             instructions=instructions,
             reask_prompt=reask_prompt,
-            reask_instructions=reask_instructions
+            reask_instructions=reask_instructions,
         )
         return cls(rail, num_reasks=num_reasks)
 

@@ -280,22 +280,23 @@ def test_python_string(mocker):
         "guardrails.llm_providers.openai_wrapper", new=openai_completion_create
     )
 
-
     validators = [TwoWords(on_fail="reask")]
     description = "Name for the pizza"
-    instructions="""
+    instructions = """
 You are a helpful assistant, and you are helping me come up with a name for a pizza.
 
 @complete_string_suffix
 """
 
-    prompt="""
+    prompt = """
 Given the following ingredients, what would you call this pizza?
 
 {{ingredients}}
 """
 
-    guard = gd.Guard.from_string(validators, description, prompt=prompt, instructions=instructions)
+    guard = gd.Guard.from_string(
+        validators, description, prompt=prompt, instructions=instructions
+    )
     _, final_output = guard(
         llm_api=openai.Completion.create,
         prompt_params={"ingredients": "tomato, cheese, sour cream"},

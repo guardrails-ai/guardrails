@@ -1,8 +1,10 @@
 import warnings
+
+from lxml.etree import _Element, tostring
 from pydantic import BaseModel, Field
+
 from guardrails.rail import Rail, generate_xml_code
 from guardrails.validators import OneLine
-from lxml.etree import _Element, tostring
 
 
 def test_rail_scalar_string():
@@ -152,14 +154,15 @@ Hello world
 """
     Rail.from_string(rail_spec)
 
+
 def test_generate_xml_code_pydantic():
     class Joke(BaseModel):
         joke: str = Field(validators=[OneLine()])
 
-    prompt="Tell me a joke."
-    instructions="Make sure it's funny."
-    reask_prompt="That wasn't very funny.  Tell me a different joke."
-    reask_instructions="Make sure it's funny this time."
+    prompt = "Tell me a joke."
+    instructions = "Make sure it's funny."
+    reask_prompt = "That wasn't very funny.  Tell me a different joke."
+    reask_instructions = "Make sure it's funny this time."
 
     xml: _Element = generate_xml_code(
         prompt=prompt,
@@ -184,15 +187,17 @@ def test_generate_xml_code_pydantic():
 
     assert actual_xml == expected_xml
 
+
 def test_generate_xml_code_pydantic_with_validations_warning(mocker):
     warn_spy = mocker.spy(warnings, "warn")
+
     class Joke(BaseModel):
         joke: str = Field(validators=[OneLine()])
 
-    prompt="Tell me a joke."
-    instructions="Make sure it's funny."
-    reask_prompt="That wasn't very funny.  Tell me a different joke."
-    reask_instructions="Make sure it's funny this time."
+    prompt = "Tell me a joke."
+    instructions = "Make sure it's funny."
+    reask_prompt = "That wasn't very funny.  Tell me a different joke."
+    reask_instructions = "Make sure it's funny this time."
     validations = [OneLine()]
 
     xml: _Element = generate_xml_code(
@@ -201,7 +206,7 @@ def test_generate_xml_code_pydantic_with_validations_warning(mocker):
         instructions=instructions,
         reask_prompt=reask_prompt,
         reask_instructions=reask_instructions,
-        validators=validations
+        validators=validations,
     )
 
     actual_xml = tostring(xml, encoding="unicode", pretty_print=True)
@@ -219,13 +224,16 @@ def test_generate_xml_code_pydantic_with_validations_warning(mocker):
 
     assert actual_xml == expected_xml
 
-    warn_spy.assert_called_once_with("Do not specify root level validators on a Pydantic model.  These validators will be ignored.")
+    warn_spy.assert_called_once_with(
+        "Do not specify root level validators on a Pydantic model.  These validators will be ignored."
+    )
+
 
 def test_generate_xml_code_string():
-    prompt="Tell me a joke."
-    instructions="Make sure it's funny."
-    reask_prompt="That wasn't very funny.  Tell me a different joke."
-    reask_instructions="Make sure it's funny this time."
+    prompt = "Tell me a joke."
+    instructions = "Make sure it's funny."
+    reask_prompt = "That wasn't very funny.  Tell me a different joke."
+    reask_instructions = "Make sure it's funny this time."
     validations = [OneLine()]
     description = "Tell me a joke."
 

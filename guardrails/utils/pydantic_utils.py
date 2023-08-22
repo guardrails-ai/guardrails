@@ -2,16 +2,25 @@
 
 Guardrails lets users specify
 
-<pydantic     model="Person"     name="person"
-description="Information about a person."     on-fail-pydantic="reask" /
-"refrain" / "raise" />
+<pydantic     model="Person"     name="person" description="Information
+about a person."     on-fail-pydantic="reask" / "refrain" / "raise" />
 """
 import logging
 import warnings
 from collections import defaultdict
 from copy import deepcopy
 from datetime import date, time
-from typing import Any, Callable, Dict, List, Optional, Type, Union, get_args, get_origin
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Type,
+    Union,
+    get_args,
+    get_origin,
+)
 
 from griffe.dataclasses import Docstring
 from griffe.docstrings.parsers import Parser, parse
@@ -236,9 +245,9 @@ def add_validators_to_xml_element(field_info: ModelField, element: Element) -> E
 
     return element
 
+
 def attach_validators_to_element(
-        element: Element,
-        validators: Union[List[Validator], List[str]]
+    element: Element, validators: Union[List[Validator], List[str]]
 ):
     format_prompt = []
     on_fails = {}
