@@ -11,13 +11,12 @@ import os
 import re
 import warnings
 from collections import defaultdict
-from copy import deepcopy
 from functools import partial
-from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Type, Union
+from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Union
 
 import openai
 import pydantic
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import Field
 
 from guardrails.utils.docs_utils import get_chunks_from_text, sentence_split
 from guardrails.utils.sql_utils import SQLDriver, create_sql_driver
@@ -311,149 +310,6 @@ class Validator:
 
 class PydanticReAsk(dict):
     pass
-
-
-@register_validator(name="pydantic", data_type="pydantic")
-class Pydantic(Validator):
-    """Validates an object using Pydantic.
-
-    **Key Properties**
-
-    | Property                      | Description                       |
-    | ----------------------------- | --------------------------------- |
-    | Name for `format` attribute   | `pydantic`                        |
-    | Supported data types          | `pydantic`                        |
-    | Programmatic fix              | Override with return value from the model.   |
-
-    Parameters: Arguments
-
-        model: The Pydantic model used to validate the objects structure.
-
-    Example:
-
-        Consider the following data for a `Person` model
-        with fields `name`, `age`, and `zipcode`:
-        ```json
-        {
-            "user" : {
-                "name": "John",
-                "age": 30,
-                "zipcode": "12345",
-            }
-        }
-        ```
-
-        then `key` is "user", `value` is the value of the "user" key, and
-        `schema` is the entire schema.
-
-        If this validator succeeds, then the `schema` is returned and
-        looks like:
-        ```json
-        {
-            "user": Person(name="John", age=30, zipcode="12345")
-        }
-        ```
-
-        If it fails, then the `schema` is returned and looks like e.g.
-        ```json
-        {
-            "user": {
-                "name": "John",
-                "age": 30,
-                "zipcode": ReAsk(
-                    incorrect_value="12345",
-                    error_message="...",
-                    fix_value=None,
-                    path=None,
-                )
-            }
-        }
-        ```
-    """
-
-    override_value_on_pass = True
-
-    def __init__(
-        self,
-        model: Type[BaseModel],
-        on_fail: Optional[Callable] = None,
-    ):
-        super().__init__(on_fail=on_fail)
-
-        self._model = model
-
-    def validate(self, value: Dict, metadata: Dict) -> ValidationResult:
-        """Validates an object using Pydantic.
-
-        For example, consider the following data for a `Person` model
-        with fields `name`, `age`, and `zipcode`:
-        {
-            "user" : {
-                "name": "John",
-                "age": 30,
-                "zipcode": "12345",
-            }
-        }
-        then `key` is "user", `value` is the value of the "user" key, and
-        `schema` is the entire schema.
-
-        If this validator succeeds, then the `schema` is returned and
-        looks like:
-        {
-            "user": Person(name="John", age=30, zipcode="12345")
-        }
-
-        If it fails, then the `schema` is returned and looks like e.g.
-        {
-            "user": {
-                "name": "John",
-                "age": 30,
-                "zipcode": ReAsk(
-                    incorrect_value="12345",
-                    error_message="...",
-                    fix_value=None,
-                    path=None,
-                )
-            }
-        }
-        """
-        try:
-            # Run the Pydantic model on the value.
-            m = self._model(**value)
-        except ValidationError as e:
-            # Create a copy of the value so that we can modify it
-            # to insert e.g. ReAsk objects.
-            new_value = deepcopy(value)
-            for error in e.errors():
-                assert (
-                    len(error["loc"]) == 1
-                ), "Pydantic validation errors should only have one location."
-
-                field_name = error["loc"][0]
-                field_value = value[field_name]
-
-                fail_result = FailResult(
-                    error_message=error["msg"],
-                    fix_value=None,
-                )
-
-                # Call the on_fail method and reassign the value.
-                from guardrails.validator_service import ValidatorServiceBase
-
-                validator_service = ValidatorServiceBase()
-                new_value[field_name] = validator_service.perform_correction(
-                    [fail_result], field_value, self, self.on_fail_descriptor
-                )
-
-            # Insert the new `value` dictionary into the schema.
-            # This now contains e.g. ReAsk objects.
-            return PassResult(
-                value_override=PydanticReAsk(new_value),
-            )
-
-        return PassResult(
-            value_override=m,
-        )
 
 
 @register_validator(name="pydantic_field_validator", data_type="all")
