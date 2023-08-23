@@ -604,8 +604,8 @@ def test_entity_extraction_with_reask_with_optional_prompts(
         )
 
 
-def test_string_with_message_history(mocker):
-    """Test single string (non-JSON) generation with message history."""
+def test_string_with_message_history_reask(mocker):
+    """Test single string (non-JSON) generation with message history and reask."""
     mocker.patch(
         "guardrails.llm_providers.openai_chat_wrapper",
         new=openai_chat_completion_create,
@@ -624,10 +624,23 @@ def test_string_with_message_history(mocker):
     guard_history = guard.guard_state.most_recent_call.history
 
     # Check that the guard state object has the correct number of re-asks.
-    assert len(guard_history) == 1
+    assert len(guard_history) == 2
+
+    assert guard_history[0].instructions is None
+    assert guard_history[0].prompt is None
+    assert guard_history[0].output == string.MSG_LLM_OUTPUT_INCORRECT
+    assert guard_history[0].validated_output == string.MSG_VALIDATED_OUTPUT_REASK
+
+    # For re-asked prompt and output
+    assert guard_history[1].prompt == gd.Prompt(string.MSG_COMPILED_PROMPT_REASK)
+    assert guard_history[1].instructions == gd.Instructions(
+        string.MSG_COMPILED_INSTRUCTIONS_REASK
+    )
+    assert guard_history[1].output == string.MSG_LLM_OUTPUT_CORRECT
+    assert guard_history[1].validated_output == string.MSG_LLM_OUTPUT_CORRECT
 
 
-def test_pydantic_with_message_history(mocker):
+def test_pydantic_with_message_history_reask(mocker):
     """Test JSON generation with message history re-asking."""
     mocker.patch(
         "guardrails.llm_providers.openai_chat_wrapper",
@@ -642,10 +655,25 @@ def test_pydantic_with_message_history(mocker):
         model="gpt-3.5-turbo",
     )
 
-    assert raw_output == pydantic.MSG_HISTORY_LLM_OUTPUT
-    assert guarded_output == json.loads(pydantic.MSG_HISTORY_LLM_OUTPUT)
+    assert raw_output == pydantic.MSG_HISTORY_LLM_OUTPUT_CORRECT
+    assert guarded_output == json.loads(pydantic.MSG_HISTORY_LLM_OUTPUT_CORRECT)
 
     guard_history = guard.guard_state.most_recent_call.history
 
     # Check that the guard state object has the correct number of re-asks.
-    assert len(guard_history) == 1
+    assert len(guard_history) == 2
+
+    assert guard_history[0].instructions is None
+    assert guard_history[0].prompt is None
+    assert guard_history[0].output == pydantic.MSG_HISTORY_LLM_OUTPUT_INCORRECT
+    assert guard_history[0].validated_output == pydantic.MSG_VALIDATED_OUTPUT_REASK
+
+    # For re-asked prompt and output
+    assert guard_history[1].prompt == gd.Prompt(pydantic.MSG_COMPILED_PROMPT_REASK)
+    assert guard_history[1].instructions == gd.Instructions(
+        pydantic.MSG_COMPILED_INSTRUCTIONS_REASK
+    )
+    assert guard_history[1].output == pydantic.MSG_HISTORY_LLM_OUTPUT_CORRECT
+    assert guard_history[1].validated_output == json.loads(
+        pydantic.MSG_HISTORY_LLM_OUTPUT_CORRECT
+    )

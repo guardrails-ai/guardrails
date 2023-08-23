@@ -1,0 +1,25 @@
+
+I was given the following JSON response, which had problems due to incorrect values.
+
+{
+  "incorrect_value": {
+    "name": "Inception",
+    "director": "Christopher Nolan"
+  },
+  "error_messages": [
+    "JSON does not match schema"
+  ]
+}
+
+Help me correct the incorrect values based on the given error messages.
+
+Given below is XML that describes the information to extract from this document and the tags to extract it into.
+
+<output>
+    <string name="name" description="The name of the movie."/>
+    <string name="director" description="The name of the director."/>
+    <integer name="release_year" description="The year the movie was released."/>
+</output>
+
+
+ONLY return a valid JSON object (no other text is necessary), where the key of the field in JSON is the `name` attribute of the corresponding XML, and the value is of the type specified by the corresponding XML's tag. The JSON MUST conform to the XML format, including any types and format requests e.g. requests for lists, objects and specific types. Be correct and concise. If you are unsure anywhere, enter `null`.
