@@ -45,11 +45,11 @@ class BasePrompt:
     def substitute_constants(self, text):
         """Substitute constants in the prompt."""
         # Substitute constants by reading the constants file.
-        # Regex to extract all occurrences of @<constant_name>
+        # Regex to extract all occurrences of ${gr.<constant_name>}
 
         matches = re.findall(r"\${gr.(\w+)}", text)
 
-        # Substitute all occurrences of @<constant_name> with the value of the constant.
+        # Substitute all occurrences of ${gr.<constant_name>} with the value of the constant.
         for match in matches:
             template = NamespaceTemplate(text)
             mapping = {f"gr.{match}": constants[match]}
@@ -79,7 +79,7 @@ class BasePrompt:
         """
         # TODO(shreya): Optionally add support for special character demarcation.
 
-        # Regex to extract first occurrence of @<constant_name>
+        # Regex to extract first occurrence of ${gr.<constant_name>}
 
         matches = re.finditer(r"\${gr.(\w+)}", text)
 
