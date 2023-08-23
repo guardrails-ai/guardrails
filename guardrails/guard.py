@@ -14,6 +14,7 @@ from guardrails.run import AsyncRunner, Runner
 from guardrails.schema import Schema
 from guardrails.utils.logs_utils import GuardState
 from guardrails.utils.reask_utils import sub_reasks_with_fixed_values
+from guardrails.validators import Validator
 
 logger = logging.getLogger(__name__)
 actions_logger = logging.getLogger(f"{__name__}.actions")
@@ -75,11 +76,6 @@ class Guard:
         if self.prompt is None:
             return None
         return self.prompt.source
-
-    @property
-    def script(self) -> Optional[Dict]:
-        """Return the script."""
-        return self.rail.script
 
     @property
     def state(self) -> GuardState:
@@ -151,6 +147,39 @@ class Guard:
             output_class=output_class, prompt=prompt, instructions=instructions
         )
         return cls(rail, num_reasks=num_reasks, base_model=output_class)
+
+    @classmethod
+    def from_string(
+        cls,
+        validators: List[Validator],
+        description: Optional[str] = None,
+        prompt: Optional[str] = None,
+        instructions: Optional[str] = None,
+        reask_prompt: Optional[str] = None,
+        reask_instructions: Optional[str] = None,
+        num_reasks: int = 1,
+    ) -> "Guard":
+        """Create a Guard instance for a string response with prompt,
+        instructions, and validations.
+
+        Parameters: Arguments
+            validators: (List[Validator]): The list of validators to apply to the string output.
+            description (str, optional): A description for the string to be generated. Defaults to None.
+            prompt (str, optional): The prompt used to generate the string. Defaults to None.
+            instructions (str, optional): Instructions for chat models. Defaults to None.
+            reask_prompt (str, optional): An alternative prompt to use during reasks. Defaults to None.
+            reask_instructions (str, optional): Alternative instructions to use during reasks. Defaults to None.
+            num_reasks (int, optional): The max times to re-ask the LLM for invalid output. Defaults to 1.
+        """  # noqa
+        rail = Rail.from_string_validators(
+            validators=validators,
+            description=description,
+            prompt=prompt,
+            instructions=instructions,
+            reask_prompt=reask_prompt,
+            reask_instructions=reask_instructions,
+        )
+        return cls(rail, num_reasks=num_reasks)
 
     def __call__(
         self,
