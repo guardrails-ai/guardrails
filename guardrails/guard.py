@@ -77,11 +77,6 @@ class Guard:
         return self.prompt.source
 
     @property
-    def script(self) -> Optional[Dict]:
-        """Return the script."""
-        return self.rail.script
-
-    @property
     def state(self) -> GuardState:
         """Return the state."""
         return self.guard_state
