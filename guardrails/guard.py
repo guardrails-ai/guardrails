@@ -202,6 +202,14 @@ class Guard:
                      (e.g. openai.Completion.create or openai.Completion.acreate)
             prompt_params: The parameters to pass to the prompt.format() method.
             num_reasks: The max times to re-ask the LLM for invalid output.
+            prompt: The prompt to use for the LLM.
+            instructions: Instructions for chat models.
+            msg_history: The message history to pass to the LLM.
+            metadata: Metadata to pass to the validators.
+            full_schema_reask: When reasking, whether to regenerate the full schema
+                               or just the incorrect values.
+                               Defaults to `True` if a base model is provided,
+                               `False` otherwise.
 
         Returns:
             The raw text output from the LLM and the validated output.
@@ -304,6 +312,14 @@ class Guard:
             llm_api: The LLM API to call asynchronously (e.g. openai.Completion.acreate)
             prompt_params: The parameters to pass to the prompt.format() method.
             num_reasks: The max times to re-ask the LLM for invalid output.
+            prompt: The prompt to use for the LLM.
+            instructions: Instructions for chat models.
+            msg_history: The message history to pass to the LLM.
+            metadata: Metadata to pass to the validators.
+            full_schema_reask: When reasking, whether to regenerate the full schema
+                               or just the incorrect values.
+                               Defaults to `True` if a base model is provided,
+                               `False` otherwise.
 
         Returns:
             The raw text output from the LLM and the validated output.
