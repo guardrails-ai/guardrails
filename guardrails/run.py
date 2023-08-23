@@ -163,7 +163,6 @@ class Runner:
     ):
         guard_logs = GuardLogs()
         self.guard_history.push(guard_logs)
-
         """Run a full step."""
         with start_action(
             action_type="step",
@@ -486,7 +485,6 @@ class AsyncRunner(Runner):
     ):
         guard_logs = GuardLogs()
         self.guard_history.push(guard_logs)
-
         """Run a full step."""
         with start_action(
             action_type="step",

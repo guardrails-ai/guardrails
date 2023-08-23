@@ -8,7 +8,7 @@ from rich.pretty import pretty_repr
 from rich.table import Table
 from rich.tree import Tree
 
-from guardrails.prompt import Prompt
+from guardrails.prompt import Instructions, Prompt
 from guardrails.utils.reask_utils import (
     ReAsk,
     SkeletonReAsk,
@@ -39,7 +39,7 @@ class FieldValidationLogs:
 @dataclass
 class GuardLogs:
     prompt: Optional[Prompt] = None
-    instructions: Optional[str] = None
+    instructions: Optional[Instructions] = None
     msg_history: Optional[List[Dict[str, Prompt]]] = None
     output: Optional[str] = None
     parsed_output: Optional[dict] = None
@@ -222,7 +222,7 @@ def merge_reask_output(previous_response, reask_response) -> Dict:
         elif isinstance(pruned_reask_json, dict):
             for key, value in pruned_reask_json.items():
                 if isinstance(value, ReAsk):
-                    corrected_value = reask_response_dict[key]
+                    corrected_value = reask_response_dict.get(key)
                     update_response_by_path(merged_json, value.path, corrected_value)
                 else:
                     update_reasked_elements(

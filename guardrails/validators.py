@@ -4,18 +4,21 @@ The name with which a validator is registered is the name that is used
 in the `RAIL` spec to specify formatters.
 """
 import ast
+import contextvars
+import itertools
 import logging
 import os
 import re
+import warnings
 from collections import defaultdict
-from copy import deepcopy
-from typing import Any, Callable, Dict, List, Literal, Optional, Type, Union
+from functools import partial
+from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Union
 
 import openai
 import pydantic
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import Field
 
-from guardrails.utils.docs_utils import sentence_split
+from guardrails.utils.docs_utils import get_chunks_from_text, sentence_split
 from guardrails.utils.sql_utils import SQLDriver, create_sql_driver
 
 try:
@@ -24,6 +27,17 @@ except ImportError:
     _HAS_NUMPY = False
 else:
     _HAS_NUMPY = True
+
+try:
+    import nltk
+except ImportError:
+    nltk = None
+
+try:
+    if nltk is not None:
+        nltk.data.find("tokenizers/punkt")
+except LookupError:
+    nltk.download("punkt")
 
 
 validators_registry = {}
@@ -46,7 +60,7 @@ class Refrain:
 
 
 def check_refrain_in_list(schema: List) -> bool:
-    """Check if a Refrain object exists in a list.
+    """Checks if a Refrain object exists in a list.
 
     Args:
         schema: A list that can contain lists, dicts or scalars.
@@ -68,7 +82,7 @@ def check_refrain_in_list(schema: List) -> bool:
 
 
 def check_refrain_in_dict(schema: Dict) -> bool:
-    """Check if a Refrain object exists in a dict.
+    """Checks if a Refrain object exists in a dict.
 
     Args:
         schema: A dict that can contain lists, dicts or scalars.
@@ -201,6 +215,8 @@ class Validator:
     override_value_on_pass = False
 
     def __init__(self, on_fail: Optional[Callable] = None, **kwargs):
+        if on_fail is None:
+            on_fail = "noop"
         if isinstance(on_fail, str):
             self.on_fail_descriptor = on_fail
             self.on_fail_method = None
@@ -216,7 +232,7 @@ class Validator:
         ), f"Validator {self.__class__.__name__} is not registered. "
 
     def validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
-        """Validate a value and return a validation result."""
+        """Validates a value and return a validation result."""
         raise NotImplementedError
 
     def to_prompt(self, with_keywords: bool = True) -> str:
@@ -274,20 +290,20 @@ class Validator:
 
 # @register_validator('required', 'all')
 # class Required(Validator):
-#     """Validate that a value is not None."""
+#     """Validates that a value is not None."""
 
 #     def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> bool:
-#         """Validate that a value is not None."""
+#         """Validates that a value is not None."""
 
 #         return value is not None
 
 
 # @register_validator('description', 'all')
 # class Description(Validator):
-#     """Validate that a value is not None."""
+#     """Validates that a value is not None."""
 
 #     def validate(self, key: str, value: Any, schema: Union[Dict, List]) -> bool:
-#         """Validate that a value is not None."""
+#         """Validates that a value is not None."""
 
 #         return value is not None
 
@@ -296,97 +312,24 @@ class PydanticReAsk(dict):
     pass
 
 
-@register_validator(name="pydantic", data_type="pydantic")
-class Pydantic(Validator):
-    """Validate an object using Pydantic."""
-
-    override_value_on_pass = True
-
-    def __init__(
-        self,
-        model: Type[BaseModel],
-        on_fail: Optional[Callable] = None,
-    ):
-        super().__init__(on_fail=on_fail)
-
-        self.model = model
-
-    def validate(self, value: Dict, metadata: Dict) -> ValidationResult:
-        """Validate an object using Pydantic.
-
-        For example, consider the following data for a `Person` model
-        with fields `name`, `age`, and `zipcode`:
-        {
-            "user" : {
-                "name": "John",
-                "age": 30,
-                "zipcode": "12345",
-            }
-        }
-        then `key` is "user", `value` is the value of the "user" key, and
-        `schema` is the entire schema.
-
-        If this validator succeeds, then the `schema` is returned and
-        looks like:
-        {
-            "user": Person(name="John", age=30, zipcode="12345")
-        }
-
-        If it fails, then the `schema` is returned and looks like e.g.
-        {
-            "user": {
-                "name": "John",
-                "age": 30,
-                "zipcode": ReAsk(
-                    incorrect_value="12345",
-                    error_message="...",
-                    fix_value=None,
-                    path=None,
-                )
-            }
-        }
-        """
-        try:
-            # Run the Pydantic model on the value.
-            m = self.model(**value)
-        except ValidationError as e:
-            # Create a copy of the value so that we can modify it
-            # to insert e.g. ReAsk objects.
-            new_value = deepcopy(value)
-            for error in e.errors():
-                assert (
-                    len(error["loc"]) == 1
-                ), "Pydantic validation errors should only have one location."
-
-                field_name = error["loc"][0]
-                field_value = value[field_name]
-
-                fail_result = FailResult(
-                    error_message=error["msg"],
-                    fix_value=None,
-                )
-
-                # Call the on_fail method and reassign the value.
-                from guardrails.validator_service import ValidatorServiceBase
-
-                validator_service = ValidatorServiceBase()
-                new_value[field_name] = validator_service.perform_correction(
-                    [fail_result], field_value, self, self.on_fail_descriptor
-                )
-
-            # Insert the new `value` dictionary into the schema.
-            # This now contains e.g. ReAsk objects.
-            return PassResult(
-                value_override=PydanticReAsk(new_value),
-            )
-
-        return PassResult(
-            value_override=m,
-        )
-
-
 @register_validator(name="pydantic_field_validator", data_type="all")
 class PydanticFieldValidator(Validator):
+    """Validates a specific field in a Pydantic model with the specified
+    validator method.
+
+    **Key Properties**
+
+    | Property                      | Description                       |
+    | ----------------------------- | --------------------------------- |
+    | Name for `format` attribute   | `pydantic_field_validator`        |
+    | Supported data types          | `Any`                             |
+    | Programmatic fix              | Override with return value from `field_validator`.   |
+
+    Parameters: Arguments
+
+        field_validator (Callable): A validator for a specific field in a Pydantic model.
+    """  # noqa
+
     override_value_on_pass = True
 
     def __init__(
@@ -416,11 +359,19 @@ class PydanticFieldValidator(Validator):
 
 @register_validator(name="valid-range", data_type=["integer", "float", "percentage"])
 class ValidRange(Validator):
-    """Validate that a value is within a range.
+    """Validates that a value is within a range.
 
-    - Name for `format` attribute: `valid-range`
-    - Supported data types: `integer`, `float`, `percentage`
-    - Programmatic fix: Closest value within the range.
+    **Key Properties**
+
+    | Property                      | Description                       |
+    | ----------------------------- | --------------------------------- |
+    | Name for `format` attribute   | `valid-range`                     |
+    | Supported data types          | `integer`, `float`, `percentage`  |
+    | Programmatic fix              | Closest value within the range.   |
+
+    Parameters: Arguments
+        min: The inclusive minimum value of the range.
+        max: The inclusive maximum value of the range.
     """
 
     def __init__(
@@ -432,7 +383,7 @@ class ValidRange(Validator):
         self._max = max
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
-        """Validate that a value is within a range."""
+        """Validates that a value is within a range."""
         logger.debug(f"Validating {value} is in range {self._min} - {self._max}...")
 
         val_type = type(value)
@@ -454,11 +405,18 @@ class ValidRange(Validator):
 
 @register_validator(name="valid-choices", data_type="all")
 class ValidChoices(Validator):
-    """Validate that a value is within the acceptable choices.
+    """Validates that a value is within the acceptable choices.
 
-    - Name for `format` attribute: `valid-choices`
-    - Supported data types: `all`
-    - Programmatic fix: None.
+    **Key Properties**
+
+    | Property                      | Description                       |
+    | ----------------------------- | --------------------------------- |
+    | Name for `format` attribute   | `valid-choices`                   |
+    | Supported data types          | `all`                             |
+    | Programmatic fix              | None                              |
+
+    Parameters: Arguments
+        choices: The list of valid choices.
     """
 
     def __init__(self, choices: List[Any], on_fail: Optional[Callable] = None):
@@ -466,7 +424,7 @@ class ValidChoices(Validator):
         self._choices = choices
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
-        """Validate that a value is within a range."""
+        """Validates that a value is within a range."""
         logger.debug(f"Validating {value} is in choices {self._choices}...")
 
         if value not in self._choices:
@@ -479,11 +437,15 @@ class ValidChoices(Validator):
 
 @register_validator(name="lower-case", data_type="string")
 class LowerCase(Validator):
-    """Validate that a value is lower case.
+    """Validates that a value is lower case.
 
-    - Name for `format` attribute: `lower-case`
-    - Supported data types: `string`
-    - Programmatic fix: Manually convert to lower case.
+    **Key Properties**
+
+    | Property                      | Description                       |
+    | ----------------------------- | --------------------------------- |
+    | Name for `format` attribute   | `lower-case`                      |
+    | Supported data types          | `string`                          |
+    | Programmatic fix              | Convert to lower case.            |
     """
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
@@ -500,11 +462,15 @@ class LowerCase(Validator):
 
 @register_validator(name="upper-case", data_type="string")
 class UpperCase(Validator):
-    """Validate that a value is upper case.
+    """Validates that a value is upper case.
 
-    - Name for `format` attribute: `upper-case`
-    - Supported data types: `string`
-    - Programmatic fix: Manually convert to upper case.
+    **Key Properties**
+
+    | Property                      | Description                       |
+    | ----------------------------- | --------------------------------- |
+    | Name for `format` attribute   | `upper-case`                      |
+    | Supported data types          | `string`                          |
+    | Programmatic fix              | Convert to upper case.            |
     """
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
@@ -521,13 +487,20 @@ class UpperCase(Validator):
 
 @register_validator(name="length", data_type=["string", "list"])
 class ValidLength(Validator):
-    """Validate that the length of value is within the expected range.
+    """Validates that the length of value is within the expected range.
 
-    - Name for `format` attribute: `length`
-    - Supported data types: `string`, `list`, `object`
-    - Programmatic fix: If shorter than the minimum, pad with empty last elements.
-        If longer than the maximum, truncate.
-    """
+    **Key Properties**
+
+    | Property                      | Description                       |
+    | ----------------------------- | --------------------------------- |
+    | Name for `format` attribute   | `length`                          |
+    | Supported data types          | `string`, `list`, `object`        |
+    | Programmatic fix              | If shorter than the minimum, pad with empty last elements. If longer than the maximum, truncate. |
+
+    Parameters: Arguments
+        min: The inclusive minimum length.
+        max: The inclusive maximum length.
+    """  # noqa
 
     def __init__(
         self, min: int = None, max: int = None, on_fail: Optional[Callable] = None
@@ -537,7 +510,7 @@ class ValidLength(Validator):
         self._max = int(max) if max is not None else None
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
-        """Validate that a value is within a range."""
+        """Validates that the length of value is within the expected range."""
         logger.debug(
             f"Validating {value} is in length range {self._min} - {self._max}..."
         )
@@ -573,11 +546,15 @@ class ValidLength(Validator):
 
 @register_validator(name="two-words", data_type="string")
 class TwoWords(Validator):
-    """Validate that a value is two words.
+    """Validates that a value is two words.
 
-    - Name for `format` attribute: `two-words`
-    - Supported data types: `string`
-    - Programmatic fix: Pick the first two words.
+    **Key Properties**
+
+    | Property                      | Description                       |
+    | ----------------------------- | --------------------------------- |
+    | Name for `format` attribute   | `two-words`                       |
+    | Supported data types          | `string`                          |
+    | Programmatic fix              | Pick the first two words.         |
     """
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
@@ -594,11 +571,15 @@ class TwoWords(Validator):
 
 @register_validator(name="one-line", data_type="string")
 class OneLine(Validator):
-    """Validate that a value is a single line or sentence.
+    """Validates that a value is a single line or sentence.
 
-    - Name for `format` attribute: `one-line`
-    - Supported data types: `string`
-    - Programmatic fix: Pick the first line.
+    **Key Properties**
+
+    | Property                      | Description                       |
+    | ----------------------------- | --------------------------------- |
+    | Name for `format` attribute   | `one-line`                        |
+    | Supported data types          | `string`                          |
+    | Programmatic fix              | Pick the first line.              |
     """
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
@@ -615,11 +596,15 @@ class OneLine(Validator):
 
 @register_validator(name="valid-url", data_type=["string", "url"])
 class ValidURL(Validator):
-    """Validate that a value is a valid URL.
+    """Validates that a value is a valid URL.
 
-    - Name for `format` attribute: `valid-url`
-    - Supported data types: `string`, `url`
-    - Programmatic fix: None
+    **Key Properties**
+
+    | Property                      | Description                       |
+    | ----------------------------- | --------------------------------- |
+    | Name for `format` attribute   | `valid-url`                       |
+    | Supported data types          | `string`, `url`                   |
+    | Programmatic fix              | None                              |
     """
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
@@ -645,11 +630,15 @@ class ValidURL(Validator):
 
 @register_validator(name="is-reachable", data_type=["string", "url"])
 class EndpointIsReachable(Validator):
-    """Validate that a value is a reachable URL.
+    """Validates that a value is a reachable URL.
 
-    - Name for `format` attribute: `is-reachable`
-    - Supported data types: `string`, `url`
-    - Programmatic fix: None
+    **Key Properties**
+
+    | Property                      | Description                       |
+    | ----------------------------- | --------------------------------- |
+    | Name for `format` attribute   | `is-reachable`                    |
+    | Supported data types          | `string`, `url`                   |
+    | Programmatic fix              | None                              |
     """
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
@@ -684,15 +673,19 @@ class EndpointIsReachable(Validator):
 
 @register_validator(name="bug-free-python", data_type="pythoncode")
 class BugFreePython(Validator):
-    """Validate that there are no Python syntactic bugs in the generated code.
+    """Validates that there are no Python syntactic bugs in the generated code.
 
     This validator checks for syntax errors by running `ast.parse(code)`,
     and will raise an exception if there are any.
     Only the packages in the `python` environment are available to the code snippet.
 
-    - Name for `format` attribute: `bug-free-python`
-    - Supported data types: `pythoncode`
-    - Programmatic fix: None
+    **Key Properties**
+
+    | Property                      | Description                       |
+    | ----------------------------- | --------------------------------- |
+    | Name for `format` attribute   | `bug-free-python`                 |
+    | Supported data types          | `pythoncode`                      |
+    | Programmatic fix              | None                              |
     """
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
@@ -711,15 +704,19 @@ class BugFreePython(Validator):
 
 @register_validator(name="bug-free-sql", data_type="sql")
 class BugFreeSQL(Validator):
-    """Validate that there are no SQL syntactic bugs in the generated code.
+    """Validates that there are no SQL syntactic bugs in the generated code.
 
     This is a very minimal implementation that uses the Pypi `sqlvalidator` package
     to check if the SQL query is valid. You can implement a custom SQL validator
     that uses a database connection to check if the query is valid.
 
-    - Name for `format` attribute: `bug-free-sql`
-    - Supported data types: `sql`
-    - Programmatic fix: None
+    **Key Properties**
+
+    | Property                      | Description                       |
+    | ----------------------------- | --------------------------------- |
+    | Name for `format` attribute   | `bug-free-sql`                    |
+    | Supported data types          | `sql`                             |
+    | Programmatic fix              | None                              |
     """
 
     def __init__(
@@ -743,10 +740,18 @@ class BugFreeSQL(Validator):
 
 @register_validator(name="sql-column-presence", data_type="sql")
 class SqlColumnPresence(Validator):
-    """Validate that all columns in the SQL query are present in the schema.
+    """Validates that all columns in the SQL query are present in the schema.
 
-    - Name for `format` attribute: `sql-column-presence`
-    - Supported data types: `string`
+    **Key Properties**
+
+    | Property                      | Description                       |
+    | ----------------------------- | --------------------------------- |
+    | Name for `format` attribute   | `sql-column-presence`             |
+    | Supported data types          | `sql`                             |
+    | Programmatic fix              | None                              |
+
+    Parameters: Arguments
+        cols: The list of valid columns.
     """
 
     def __init__(self, cols: List[str], on_fail: Optional[Callable] = None):
@@ -774,10 +779,18 @@ class SqlColumnPresence(Validator):
 
 @register_validator(name="exclude-sql-predicates", data_type="sql")
 class ExcludeSqlPredicates(Validator):
-    """Validate that the SQL query does not contain certain predicates.
+    """Validates that the SQL query does not contain certain predicates.
 
-    - Name for `format` attribute: `exclude-sql-predicates`
-    - Supported data types: `sql`
+    **Key Properties**
+
+    | Property                      | Description                       |
+    | ----------------------------- | --------------------------------- |
+    | Name for `format` attribute   | `exclude-sql-predicates`          |
+    | Supported data types          | `sql`                             |
+    | Programmatic fix              | None                              |
+
+    Parameters: Arguments
+        predicates: The list of predicates to avoid.
     """
 
     def __init__(self, predicates: List[str], on_fail: Optional[Callable] = None):
@@ -807,16 +820,25 @@ class ExcludeSqlPredicates(Validator):
 
 @register_validator(name="similar-to-document", data_type="string")
 class SimilarToDocument(Validator):
-    """Validate that a value is similar to the document.
+    """Validates that a value is similar to the document.
 
     This validator checks if the value is similar to the document by checking
     the cosine similarity between the value and the document, using an
     embedding.
 
-    - Name for `format` attribute: `similar-to-document`
-    - Supported data types: `string`
-    - Programmatic fix: None
-    """
+    **Key Properties**
+
+    | Property                      | Description                       |
+    | ----------------------------- | --------------------------------- |
+    | Name for `format` attribute   | `similar-to-document`             |
+    | Supported data types          | `string`                             |
+    | Programmatic fix              | None                              |
+
+    Parameters: Arguments
+        document: The document to use for the similarity check.
+        threshold: The minimum cosine similarity to be considered similar.  Defaults to 0.7.
+        model: The embedding model to use.  Defaults to text-embedding-ada-002.
+    """  # noqa
 
     def __init__(
         self,
@@ -880,14 +902,18 @@ class SimilarToDocument(Validator):
 
 @register_validator(name="is-profanity-free", data_type="string")
 class IsProfanityFree(Validator):
-    """Validate that a translated text does not contain profanity language.
+    """Validates that a translated text does not contain profanity language.
 
     This validator uses the `alt-profanity-check` package to check if a string
     contains profanity language.
 
-    - Name for `format` attribute: `is-profanity-free`
-    - Supported data types: `string`
-    - Programmatic fix: ""
+    **Key Properties**
+
+    | Property                      | Description                       |
+    | ----------------------------- | --------------------------------- |
+    | Name for `format` attribute   | `is-profanity-free`               |
+    | Supported data types          | `string`                          |
+    | Programmatic fix              | None                              |
     """
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
@@ -913,9 +939,16 @@ class IsProfanityFree(Validator):
 class IsHighQualityTranslation(Validator):
     """Using inpiredco.critique to check if a translation is high quality.
 
-    - Name for `format` attribute: `is-high-quality-translation`
-    - Supported data types: `string`
-    - Programmatic fix: ""
+    **Key Properties**
+
+    | Property                      | Description                       |
+    | ----------------------------- | --------------------------------- |
+    | Name for `format` attribute   | `is-high-quality-translation`     |
+    | Supported data types          | `string`                          |
+    | Programmatic fix              | None                              |
+
+    Other parameters: Metadata
+        translation_source (str): The source of the translation.
     """
 
     def __init__(self, *args, **kwargs):
@@ -923,7 +956,7 @@ class IsHighQualityTranslation(Validator):
         try:
             from inspiredco.critique import Critique
 
-            self.critique = Critique(api_key=os.environ["INSPIREDCO_API_KEY"])
+            self._critique = Critique(api_key=os.environ["INSPIREDCO_API_KEY"])
 
         except ImportError:
             raise ImportError(
@@ -938,7 +971,7 @@ class IsHighQualityTranslation(Validator):
                 "`translation_source` key in metadata"
             )
         src = metadata["translation_source"]
-        prediction = self.critique.evaluate(
+        prediction = self._critique.evaluate(
             metric="comet",
             config={"model": "unbabel_comet/wmt21-comet-qe-da"},
             dataset=[{"source": src, "target": value}],
@@ -955,11 +988,18 @@ class IsHighQualityTranslation(Validator):
 
 @register_validator(name="ends-with", data_type="list")
 class EndsWith(Validator):
-    """Validate that a list ends with a given value.
+    """Validates that a list ends with a given value.
 
-    - Name for `format` attribute: `ends-with`
-    - Supported data types: `list`
-    - Programmatic fix: Append the given value to the list.
+    **Key Properties**
+
+    | Property                      | Description                       |
+    | ----------------------------- | --------------------------------- |
+    | Name for `format` attribute   | `ends-with`                       |
+    | Supported data types          | `list`                            |
+    | Programmatic fix              | Append the given value to the list. |
+
+    Parameters: Arguments
+        end: The required last element.
     """
 
     def __init__(self, end: str, on_fail: str = "fix"):
@@ -980,14 +1020,34 @@ class EndsWith(Validator):
 
 @register_validator(name="extracted-summary-sentences-match", data_type="string")
 class ExtractedSummarySentencesMatch(Validator):
-    """Validate that the extracted summary sentences match the original text by
-    performing a cosine similarity in the embedding space."""
+    """Validates that the extracted summary sentences match the original text
+    by performing a cosine similarity in the embedding space.
+
+    **Key Properties**
+
+    | Property                      | Description                         |
+    | ----------------------------- | ----------------------------------- |
+    | Name for `format` attribute   | `extracted-summary-sentences-match` |
+    | Supported data types          | `string`                            |
+    | Programmatic fix              | Remove any sentences that can not be verified. |
+
+    Parameters: Arguments
+
+        threshold: The minimum cosine similarity to be considered similar. Default to 0.7.
+
+    Other parameters: Metadata
+
+        filepaths (List[str]): A list of strings that specifies the filepaths for any documents that should be used for asserting the summary's similarity.
+        document_store (DocumentStoreBase, optional): The document store to use during validation. Defaults to EphemeralDocumentStore.
+        vector_db (VectorDBBase, optional): A vector database to use for embeddings.  Defaults to Faiss.
+        embedding_model (EmbeddingBase, optional): The embeddig model to use. Defaults to OpenAIEmbedding.
+    """  # noqa
 
     def __init__(
         self,
         threshold: float = 0.7,
         on_fail: Optional[Callable] = None,
-        **kwargs,
+        **kwargs: Optional[Dict[str, Any]],
     ):
         super().__init__(on_fail, **kwargs)
         # TODO(shreya): Pass embedding_model, vector_db, document_store from spec
@@ -995,7 +1055,9 @@ class ExtractedSummarySentencesMatch(Validator):
         self._threshold = float(threshold)
 
     @staticmethod
-    def _instantiate_store(metadata):
+    def _instantiate_store(
+        metadata, api_key: Optional[str] = None, api_base: Optional[str] = None
+    ):
         if "document_store" in metadata:
             return metadata["document_store"]
 
@@ -1011,7 +1073,7 @@ class ExtractedSummarySentencesMatch(Validator):
             else:
                 from guardrails.embedding import OpenAIEmbedding
 
-                embedding_model = OpenAIEmbedding()
+                embedding_model = OpenAIEmbedding(api_key=api_key, api_base=api_base)
 
             vector_db = Faiss.new_flat_ip_index(
                 embedding_model.output_dim, embedder=embedding_model
@@ -1027,7 +1089,17 @@ class ExtractedSummarySentencesMatch(Validator):
             )
         filepaths = metadata["filepaths"]
 
-        store = self._instantiate_store(metadata)
+        kwargs = {}
+        context_copy = contextvars.copy_context()
+        for key, context_var in context_copy.items():
+            if key.name == "kwargs" and isinstance(kwargs, dict):
+                kwargs = context_var
+                break
+
+        api_key = kwargs.get("api_key")
+        api_base = kwargs.get("api_base")
+
+        store = self._instantiate_store(metadata, api_key, api_base)
 
         sources = []
         for filepath in filepaths:
@@ -1083,8 +1155,21 @@ class ExtractedSummarySentencesMatch(Validator):
 
 @register_validator(name="reading-time", data_type="string")
 class ReadingTime(Validator):
-    """Validate that the a string can be read in less than a certain amount of
-    time."""
+    """Validates that the a string can be read in less than a certain amount of
+    time.
+
+    **Key Properties**
+
+    | Property                      | Description                         |
+    | ----------------------------- | ----------------------------------- |
+    | Name for `format` attribute   | `reading-time`                      |
+    | Supported data types          | `string`                            |
+    | Programmatic fix              | None                                |
+
+    Parameters: Arguments
+
+        reading_time: The maximum reading time.
+    """
 
     def __init__(self, reading_time: int, on_fail: str = "fix"):
         super().__init__(on_fail=on_fail, max_time=reading_time)
@@ -1112,7 +1197,7 @@ class ReadingTime(Validator):
 
 @register_validator(name="extractive-summary", data_type="string")
 class ExtractiveSummary(Validator):
-    """Validate that a string is a valid extractive summary of a given
+    """Validates that a string is a valid extractive summary of a given
     document.
 
     This validator does a fuzzy match between the sentences in the
@@ -1121,7 +1206,23 @@ class ExtractiveSummary(Validator):
     After the validation, the summary is updated to include the
     sentences from the document that were matched, and the citations for
     those sentences are added to the end of the summary.
-    """
+
+    **Key Properties**
+
+    | Property                      | Description                         |
+    | ----------------------------- | ----------------------------------- |
+    | Name for `format` attribute   | `extractive-summary`                |
+    | Supported data types          | `string`                            |
+    | Programmatic fix              | Remove any sentences that can not be verified. |
+
+    Parameters: Arguments
+
+        threshold: The minimum fuzz ratio to be considered summarized.  Defaults to 85.
+
+    Other parameters: Metadata
+
+        filepaths (List[str]): A list of strings that specifies the filepaths for any documents that should be used for asserting the summary's similarity.
+    """  # noqa
 
     def __init__(
         self,
@@ -1131,7 +1232,7 @@ class ExtractiveSummary(Validator):
     ):
         super().__init__(on_fail, **kwargs)
 
-        self.threshold = threshold
+        self._threshold = threshold
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         """Make sure each sentence was precisely copied from the document."""
@@ -1179,7 +1280,7 @@ class ExtractiveSummary(Validator):
                         highest_ratio = ratio
                         highest_ratio_doc = doc_path
 
-            if highest_ratio < self.threshold:
+            if highest_ratio < self._threshold:
                 unverified.append(sentence)
             else:
                 sentence_id = id_ + 1
@@ -1217,18 +1318,30 @@ class ExtractiveSummary(Validator):
 
 @register_validator(name="remove-redundant-sentences", data_type="string")
 class RemoveRedundantSentences(Validator):
-    """Remove redundant sentences from a string.
+    """Removes redundant sentences from a string.
 
     This validator removes sentences from a string that are similar to
     other sentences in the string. This is useful for removing
     repetitive sentences from a string.
+
+    **Key Properties**
+
+    | Property                      | Description                         |
+    | ----------------------------- | ----------------------------------- |
+    | Name for `format` attribute   | `remove-redundant-sentences`        |
+    | Supported data types          | `string`                            |
+    | Programmatic fix              | Remove any redundant sentences.     |
+
+    Parameters: Arguments
+
+        threshold: The minimum fuzz ratio to be considered redundant.  Defaults to 70.
     """
 
     def __init__(
         self, threshold: int = 70, on_fail: Optional[Callable] = None, **kwargs
     ):
         super().__init__(on_fail, **kwargs)
-        self.threshold = threshold
+        self._threshold = threshold
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         """Remove redundant sentences from a string."""
@@ -1254,7 +1367,7 @@ class RemoveRedundantSentences(Validator):
             unique_sentences = []
             for other_sentence in other_sentences:
                 ratio = fuzz.ratio(sentence, other_sentence)
-                if ratio > self.threshold:
+                if ratio > self._threshold:
                     redundant_sentences.append(other_sentence)
                 else:
                     unique_sentences.append(other_sentence)
@@ -1280,15 +1393,29 @@ class RemoveRedundantSentences(Validator):
 
 @register_validator(name="saliency-check", data_type="string")
 class SaliencyCheck(Validator):
-    """Check that the summary covers the list of topics present in the
-    document."""
+    """Checks that the summary covers the list of topics present in the
+    document.
+
+    **Key Properties**
+
+    | Property                      | Description                         |
+    | ----------------------------- | ----------------------------------- |
+    | Name for `format` attribute   | `saliency-check`                    |
+    | Supported data types          | `string`                            |
+    | Programmatic fix              | None                                |
+
+    Parameters: Arguments
+
+        docs_dir: Path to the directory containing the documents.
+        threshold: Threshold for overlap between topics in document and summary. Defaults to 0.25
+    """  # noqa
 
     def __init__(
         self,
         docs_dir: str,
         llm_callable: Callable = None,
         on_fail: Optional[Callable] = None,
-        threshold: int = 0.25,
+        threshold: float = 0.25,
         **kwargs,
     ):
         """Initialize the SalienceCheck validator.
@@ -1305,7 +1432,7 @@ class SaliencyCheck(Validator):
             llm_callable if llm_callable else openai.ChatCompletion.create
         )
 
-        self.threshold = threshold
+        self._threshold = threshold
 
         # Load documents
         self._document_store = {}
@@ -1316,7 +1443,7 @@ class SaliencyCheck(Validator):
             self._document_store[doc_path] = self._get_topics(text)
 
     @property
-    def topics(self) -> List[str]:
+    def _topics(self) -> List[str]:
         """Return a list of topics that can be used in the validator."""
         # Merge topics from all documents
         topics = set()
@@ -1363,17 +1490,17 @@ Make sure that topics are relevant to text, and topics are not too specific or g
         return validated_output["topics"]
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
-        topics_in_summary = self._get_topics(value, topics=self.topics)
+        topics_in_summary = self._get_topics(value, topics=self._topics)
 
         # Compute overlap between topics in document and summary
-        intersection = set(topics_in_summary).intersection(set(self.topics))
-        overlap = len(intersection) / len(self.topics)
+        intersection = set(topics_in_summary).intersection(set(self._topics))
+        overlap = len(intersection) / len(self._topics)
 
-        if overlap < self.threshold:
+        if overlap < self._threshold:
             return FailResult(
                 error_message=(
                     f"The summary \nSummary: {value}\n does not cover these topics:\n"
-                    f"{set(self.topics).difference(intersection)}"
+                    f"{set(self._topics).difference(intersection)}"
                 ),
                 fix_value="",
             )
@@ -1383,6 +1510,21 @@ Make sure that topics are relevant to text, and topics are not too specific or g
 
 @register_validator(name="qa-relevance-llm-eval", data_type="string")
 class QARelevanceLLMEval(Validator):
+    """Validates that an answer is relevant to the question asked by asking the
+    LLM to self evaluate.
+
+    **Key Properties**
+
+    | Property                      | Description                         |
+    | ----------------------------- | ----------------------------------- |
+    | Name for `format` attribute   | `qa-relevance-llm-eval`             |
+    | Supported data types          | `string`                            |
+    | Programmatic fix              | None                                |
+
+    Other parameters: Metadata
+        question (str): The original question the llm was given to answer.
+    """
+
     def __init__(
         self,
         llm_callable: Callable = None,
@@ -1394,7 +1536,7 @@ class QARelevanceLLMEval(Validator):
             llm_callable if llm_callable else openai.ChatCompletion.create
         )
 
-    def selfeval(self, question: str, answer: str):
+    def _selfeval(self, question: str, answer: str):
         from guardrails import Guard
 
         spec = """
@@ -1431,7 +1573,7 @@ Relevant (as a JSON with a single boolean key, "relevant"):\
 
         question = metadata["question"]
 
-        relevant = self.selfeval(question, value)["relevant"]
+        relevant = self._selfeval(question, value)["relevant"]
         if relevant:
             return PassResult()
 
@@ -1441,6 +1583,262 @@ Relevant (as a JSON with a single boolean key, "relevant"):\
             f"to the question {question}.",
             fix_value=fixed_answer,
         )
+
+    def to_prompt(self, with_keywords: bool = True) -> str:
+        return ""
+
+
+@register_validator(name="provenance-v0", data_type="string")
+class ProvenanceV0(Validator):
+    """Validates that LLM-generated text matches some source text based on
+    distance in embedding space.
+
+    **Key Properties**
+
+    | Property                      | Description                         |
+    | ----------------------------- | ----------------------------------- |
+    | Name for `format` attribute   | `provenance-v0`                     |
+    | Supported data types          | `string`                            |
+    | Programmatic fix              | None                                |
+
+    Parameters: Arguments
+        threshold: The minimum cosine similarity between the generated text and
+            the source text. Defaults to 0.8.
+        validation_method: Whether to validate at the sentence level or over the full text.  Must be one of `sentence` or `full`. Defaults to `sentence`
+
+    Other parameters: Metadata
+        query_function (Callable, optional): A callable that takes a string and returns a list of (chunk, score) tuples.
+        sources (List[str], optional): The source text.
+        embed_function (Callable, optional): A callable that creates embeddings for the sources. Must accept a list of strings and return an np.array of floats.
+
+    In order to use this validator, you must provide either a `query_function` or
+    `sources` with an `embed_function` in the metadata.
+
+    If providing query_function, it should take a string as input and return a list of
+    (chunk, score) tuples. The chunk is a string and the score is a float representing
+    the cosine similarity between the chunk and the input string. The list should be
+    sorted in ascending order by score.
+
+    Example:
+        ```py
+        def query_function(text: str, k: int) -> List[Tuple[str, float]]:
+            return [("This is a chunk", 0.9), ("This is another chunk", 0.8)]
+
+        guard = Guard.from_rail(...)
+        guard(
+            openai.ChatCompletion.create(...),
+            prompt_params={...},
+            temperature=0.0,
+            metadata={"query_function": query_function},
+        )
+        ```
+
+
+    If providing sources, it should be a list of strings. The embed_function should
+    take a string or a list of strings as input and return a np array of floats.
+    The vector should be normalized to unit length.
+
+    Example:
+        ```py
+        def embed_function(text: Union[str, List[str]]) -> np.ndarray:
+            return np.array([[0.1, 0.2, 0.3]])
+
+        guard = Guard.from_rail(...)
+        guard(
+            openai.ChatCompletion.create(...),
+            prompt_params={...},
+            temperature=0.0,
+            metadata={
+                "sources": ["This is a source text"],
+                "embed_function": embed_function
+            },
+        )
+        ```
+    """  # noqa
+
+    def __init__(
+        self,
+        threshold: float = 0.8,
+        validation_method: str = "sentence",
+        on_fail: Optional[Callable] = None,
+        **kwargs,
+    ):
+        super().__init__(on_fail, **kwargs)
+        self._threshold = float(threshold)
+        if validation_method not in ["sentence", "full"]:
+            raise ValueError("validation_method must be 'sentence' or 'full'.")
+        self._validation_method = validation_method
+
+    def get_query_function(self, metadata: Dict[str, Any]) -> None:
+        query_fn = metadata.get("query_function", None)
+        sources = metadata.get("sources", None)
+
+        # Check that query_fn or sources are provided
+        if query_fn is not None and sources is not None:
+            warnings.warn(
+                "Both `query_function` and `sources` are provided in metadata. "
+                "`query_function` will be used."
+            )
+        elif query_fn is None and sources is None:
+            raise ValueError(
+                "You must provide either `query_function` or `sources` in metadata."
+            )
+        elif query_fn is None and sources is not None:
+            # Check chunking strategy
+            chunk_strategy = metadata.get("chunk_strategy", "sentence")
+            if chunk_strategy not in ["sentence", "word", "char", "token"]:
+                raise ValueError(
+                    "`chunk_strategy` must be one of 'sentence', 'word', 'char', "
+                    "or 'token'."
+                )
+            chunk_size = metadata.get("chunk_size", 5)
+            chunk_overlap = metadata.get("chunk_overlap", 2)
+
+            # Check distance metric
+            distance_metric = metadata.get("distance_metric", "cosine")
+            if distance_metric not in ["cosine", "euclidean"]:
+                raise ValueError(
+                    "`distance_metric` must be one of 'cosine' or 'euclidean'."
+                )
+
+            # Check embed model
+            embed_function = metadata.get("embed_function", None)
+            if embed_function is None:
+                raise ValueError(
+                    "You must provide `embed_function` in metadata in order to "
+                    "use the default query function."
+                )
+            query_fn = partial(
+                ProvenanceV0.query_vector_collection,
+                sources=metadata["sources"],
+                chunk_strategy=chunk_strategy,
+                chunk_size=chunk_size,
+                chunk_overlap=chunk_overlap,
+                distance_metric=distance_metric,
+                embed_function=embed_function,
+            )
+
+        return query_fn
+
+    def validate_each_sentence(
+        self, value: Any, query_function: Callable, metadata: Dict[str, Any]
+    ) -> ValidationResult:
+        # Split the value into sentences using nltk sentence tokenizer.
+        sentences = nltk.sent_tokenize(value)
+
+        unsupported_sentences = []
+        supported_sentences = []
+        for sentence in sentences:
+            most_similar_chunks = query_function(text=sentence, k=1)
+            if most_similar_chunks is None:
+                unsupported_sentences.append(sentence)
+                continue
+            most_similar_chunk = most_similar_chunks[0]
+            if most_similar_chunk[1] < self._threshold:
+                supported_sentences.append((sentence, most_similar_chunk[0]))
+            else:
+                unsupported_sentences.append(sentence)
+
+        metadata["unsupported_sentences"] = "- " + "\n- ".join(unsupported_sentences)
+        metadata["supported_sentences"] = supported_sentences
+        if unsupported_sentences:
+            unsupported_sentences = "- " + "\n- ".join(unsupported_sentences)
+            return FailResult(
+                metadata=metadata,
+                error_message=(
+                    f"None of the following sentences in your response are supported "
+                    "by provided context:"
+                    f"\n{metadata['unsupported_sentences']}"
+                ),
+                fix_value="\n".join(s[0] for s in supported_sentences),
+            )
+        return PassResult(metadata=metadata)
+
+    def validate_full_text(
+        self, value: Any, query_function: Callable, metadata: Dict[str, Any]
+    ) -> ValidationResult:
+        most_similar_chunks = query_function(text=value, k=1)
+        if most_similar_chunks is None:
+            metadata["unsupported_text"] = value
+            metadata["supported_text_citations"] = {}
+            return FailResult(
+                metadata=metadata,
+                error_message=(
+                    "The following text in your response is not supported by the "
+                    "supported by the provided context:\n" + value
+                ),
+            )
+        most_similar_chunk = most_similar_chunks[0]
+        if most_similar_chunk[1] > self._threshold:
+            metadata["unsupported_text"] = value
+            metadata["supported_text_citations"] = {}
+            return FailResult(
+                metadata=metadata,
+                error_message=(
+                    "The following text in your response is not supported by the "
+                    "supported by the provided context:\n" + value
+                ),
+            )
+
+        metadata["unsupported_text"] = ""
+        metadata["supported_text_citations"] = {
+            value: most_similar_chunk[0],
+        }
+        return PassResult(metadata=metadata)
+
+    def validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
+        query_function = self.get_query_function(metadata)
+
+        if self._validation_method == "sentence":
+            return self.validate_each_sentence(value, query_function, metadata)
+        elif self._validation_method == "full":
+            return self.validate_full_text(value, query_function, metadata)
+        else:
+            raise ValueError("validation_method must be 'sentence' or 'full'.")
+
+    @staticmethod
+    def query_vector_collection(
+        text: str,
+        k: int,
+        sources: List[str],
+        chunk_strategy: str = "sentence",
+        chunk_size: int = 5,
+        chunk_overlap: int = 2,
+        distance_metric: str = "cosine",
+        embed_function: Optional[Callable] = None,
+    ) -> List[Tuple[str, float]]:
+        chunks = [
+            get_chunks_from_text(source, chunk_strategy, chunk_size, chunk_overlap)
+            for source in sources
+        ]
+        chunks = list(itertools.chain.from_iterable(chunks))
+
+        # Create embeddings
+        source_embeddings = np.array(embed_function(chunks)).squeeze()
+        query_embedding = embed_function(text).squeeze()
+
+        # Compute distances
+        if distance_metric == "cosine":
+            if not _HAS_NUMPY:
+                raise ValueError(
+                    "You must install numpy in order to use the cosine distance "
+                    "metric."
+                )
+
+            cos_sim = 1 - (
+                np.dot(source_embeddings, query_embedding)
+                / (
+                    np.linalg.norm(source_embeddings, axis=1)
+                    * np.linalg.norm(query_embedding)
+                )
+            )
+            top_indices = np.argsort(cos_sim)[:k]
+            top_similarities = [cos_sim[j] for j in top_indices]
+            top_chunks = [chunks[j] for j in top_indices]
+        else:
+            raise ValueError("distance_metric must be 'cosine'.")
+
+        return list(zip(top_chunks, top_similarities))
 
     def to_prompt(self, with_keywords: bool = True) -> str:
         return ""

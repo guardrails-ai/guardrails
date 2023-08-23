@@ -2,16 +2,12 @@
 I was given the following JSON response, which had problems due to incorrect values.
 
 {
-  "people": [
-    {
-      "zip_code": {
-        "incorrect_value": "None",
-        "error_messages": [
-          "Zip code must be numeric.",
-          "Zip code must be in California, and start with 9."
-        ]
-      }
-    }
+  "incorrect_value": {
+    "name": "Inception",
+    "director": "Christopher Nolan"
+  },
+  "error_messages": [
+    "JSON does not match schema"
   ]
 }
 
@@ -20,11 +16,9 @@ Help me correct the incorrect values based on the given error messages.
 Given below is XML that describes the information to extract from this document and the tags to extract it into.
 
 <output>
-    <list name="people">
-        <object>
-            <string name="zip_code" format="zip_code_must_be_numeric; zip_code_in_california"/>
-        </object>
-    </list>
+    <string name="name" description="The name of the movie."/>
+    <string name="director" description="The name of the director."/>
+    <integer name="release_year" description="The year the movie was released."/>
 </output>
 
 
