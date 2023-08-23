@@ -18,3 +18,8 @@ dist/*
 .idea/*
 .cache
 scratch/
+.venv
+.coverage*
+test.db
+test.index
+htmlcov
