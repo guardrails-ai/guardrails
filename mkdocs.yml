@@ -15,6 +15,7 @@ nav:
     - 'Home': index.md
     - 'Getting Started': getting_started.ipynb
     - 'FAQ': faq.md
+    - 'Migrating to 0.2.x': 0-2-migration.ipynb
     - 'RAIL Specification':
       - 'Overview': rail/index.md
       - 'Output Element': rail/output.md
