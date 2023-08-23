@@ -158,7 +158,7 @@ class SequentialValidatorService(ValidatorServiceBase):
 
 class MultiprocMixin:
     multiprocessing_executor: ProcessPoolExecutor = None
-    process_count = os.environ.get("GUARDRAILS_PROCESS_COUNT", 10)
+    process_count = int(os.environ.get("GUARDRAILS_PROCESS_COUNT", 10))
 
     def __init__(self):
         if MultiprocMixin.multiprocessing_executor is None:
@@ -318,8 +318,18 @@ def validate(
     validator_setup: FieldValidation,
     validation_logs: FieldValidationLogs,
 ):
+    process_count = int(os.environ.get("GUARDRAILS_PROCESS_COUNT", 10))
     loop = asyncio.get_event_loop()
-    if loop.is_running():
+    if process_count == 1:
+        logger.warning(
+            "Process count was set to 1 via the GUARDRAILS_PROCESS_COUNT"
+            "environment variable."
+            "This will cause all validations to run synchronously."
+            "To run asynchronously, specify a process count"
+            "greater than 1 or unset this environment variable."
+        )
+        validator_service = SequentialValidatorService()
+    elif loop.is_running():
         logger.warning(
             "Async event loop found, but guard was invoked synchronously."
             "For validator parallelization, please call `validate_async` instead."

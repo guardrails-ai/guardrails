@@ -647,8 +647,12 @@ class JsonSchema(Schema):
         ):
             return SkeletonReAsk(
                 incorrect_value=validated_response,
-                fix_value=None,
-                error_message="JSON does not match schema",
+                fail_results=[
+                    FailResult(
+                        fix_value=None,
+                        error_message="JSON does not match schema",
+                    )
+                ],
             )
 
         validation = FieldValidation(
@@ -918,6 +922,11 @@ class StringSchema(Schema):
         instructions: Optional[Instructions],
         prompt: Prompt,
     ):
+        if prompt_callable is None:
+            raise RuntimeError(
+                "In order to support reasking, a `prompt_callable` is required."
+            )
+
         if not hasattr(prompt_callable.fn, "func"):
             # Only apply preprocessing to guardrails wrappers.
             return instructions, prompt
