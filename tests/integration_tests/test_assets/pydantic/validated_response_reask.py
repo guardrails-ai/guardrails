@@ -14,7 +14,7 @@ from guardrails.validators import (
 
 prompt = """Generate data for possible users in accordance with the specification below.
 
-${xml_prefix_prompt}
+${gr.xml_prefix_prompt}
 
 ${output_schema}
 
