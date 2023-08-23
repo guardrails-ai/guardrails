@@ -125,7 +125,7 @@ class Rail:
         )
 
     @classmethod
-    def for_string_schema(
+    def from_string_validators(
         cls,
         validators: List[Validator],
         description: Optional[str] = None,

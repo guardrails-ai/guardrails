@@ -171,7 +171,7 @@ class Guard:
             reask_instructions (str, optional): Alternative instructions to use during reasks. Defaults to None.
             num_reasks (int, optional): The max times to re-ask the LLM for invalid output. Defaults to 1.
         """  # noqa
-        rail = Rail.for_string_schema(
+        rail = Rail.from_string_validators(
             validators=validators,
             description=description,
             prompt=prompt,
