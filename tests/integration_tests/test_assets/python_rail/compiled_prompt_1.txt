@@ -15,15 +15,16 @@ Given below is XML that describes the information to extract from this document 
                 <bool name="is_sequel"/>
                 <string name="website" format="length: min=9 max=100"/>
                 <string name="contact_email"/>
-                <string name="revenue_type" choices="box_office,streaming"/>
-                <object name="box_office" description="box_office" if="revenue_type==box_office">
-                    <float name="gross" format="validate_gross"/>
-                    <float name="opening_weekend"/>
-                </object>
-                <object name="streaming" description="streaming" if="revenue_type==streaming">
-                    <integer name="subscriptions"/>
-                    <float name="subscription_fee"/>
-                </object>
+                <choice name="revenue" discriminator="revenue_type">
+                    <case name="box_office">
+                        <float name="gross" format="validate_gross"/>
+                        <float name="opening_weekend"/>
+                    </case>
+                    <case name="streaming">
+                        <integer name="subscriptions"/>
+                        <float name="subscription_fee"/>
+                    </case>
+                </choice>
             </object>
         </object>
     </list>

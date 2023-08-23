@@ -605,7 +605,8 @@ def test_entity_extraction_with_reask_with_optional_prompts(
 
 
 def test_string_with_message_history_reask(mocker):
-    """Test single string (non-JSON) generation with message history and reask."""
+    """Test single string (non-JSON) generation with message history and
+    reask."""
     mocker.patch(
         "guardrails.llm_providers.openai_chat_wrapper",
         new=openai_chat_completion_create,
