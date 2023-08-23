@@ -647,8 +647,12 @@ class JsonSchema(Schema):
         ):
             return SkeletonReAsk(
                 incorrect_value=validated_response,
-                fix_value=None,
-                error_message="JSON does not match schema",
+                fail_results=[
+                    FailResult(
+                        fix_value=None,
+                        error_message="JSON does not match schema",
+                    )
+                ],
             )
 
         validation = FieldValidation(
