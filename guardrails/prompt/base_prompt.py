@@ -49,7 +49,8 @@ class BasePrompt:
 
         matches = re.findall(r"\${gr.(\w+)}", text)
 
-        # Substitute all occurrences of ${gr.<constant_name>} with the value of the constant.
+        # Substitute all occurrences of ${gr.<constant_name>}
+        #   with the value of the constant.
         for match in matches:
             template = NamespaceTemplate(text)
             mapping = {f"gr.{match}": constants[match]}
