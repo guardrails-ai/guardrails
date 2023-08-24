@@ -66,15 +66,26 @@ class PromptCallable:
                 " takes in a single prompt string "
                 "and returns a string."
             )
-        if not isinstance(result, str):
-            raise PromptCallableException(
-                "The callable `fn` passed to `Guard(fn, ...)` returned"
-                f" a non-string value: {result}. "
-                "Make sure that `fn` can be called as a function that"
-                " takes in a single prompt string "
-                "and returns a string."
-            )
-        return result
+        # if not isinstance(result, str):
+        #     raise PromptCallableException(
+        #         "The callable `fn` passed to `Guard(fn, ...)` returned"
+        #         f" a non-string value: {result}. "
+        #         "Make sure that `fn` can be called as a function that"
+        #         " takes in a single prompt string "
+        #         "and returns a string."
+        #     )
+        if hasattr(self.fn, "func") and self.fn.func in [
+            openai_wrapper,
+            openai_chat_wrapper,
+        ]:
+            text_result = result["choices"][0]["text"]
+            prompt_token_count = result["usage"]["prompt_tokens"]
+            response_token_count = result["usage"]["completion_tokens"]
+        else:
+            text_result = result
+            prompt_token_count = None
+            response_token_count = None
+        return text_result, prompt_token_count, response_token_count
 
 
 def nonchat_prompt(prompt: str, instructions: Optional[str] = None) -> str:
@@ -108,7 +119,7 @@ def openai_wrapper(
     instructions: Optional[str] = None,
     *args,
     **kwargs,
-) -> str:
+) -> dict[str, Any]:
     api_key = kwargs.pop("api_key", os.environ.get("OPENAI_API_KEY"))
     openai_response = openai.Completion.create(
         api_key=api_key,
@@ -117,7 +128,7 @@ def openai_wrapper(
         *args,
         **kwargs,
     )
-    return openai_response["choices"][0]["text"]
+    return openai_response
 
 
 def openai_chat_wrapper(
@@ -284,15 +295,26 @@ class AsyncPromptCallable:
                 " takes in a single prompt string "
                 "and returns a string."
             )
-        if not isinstance(result, str):
-            raise PromptCallableException(
-                "The callable `fn` passed to `Guard(fn, ...)` returned"
-                f" a non-string value: {result}. "
-                "Make sure that `fn` can be called as a function that"
-                " takes in a single prompt string "
-                "and returns a string."
-            )
-        return result
+        # if not isinstance(result, str):
+        #     raise PromptCallableException(
+        #         "The callable `fn` passed to `Guard(fn, ...)` returned"
+        #         f" a non-string value: {result}. "
+        #         "Make sure that `fn` can be called as a function that"
+        #         " takes in a single prompt string "
+        #         "and returns a string."
+        #     )
+        if hasattr(self.fn, "func") and self.fn.func in [
+            async_openai_wrapper,
+            async_openai_chat_wrapper,
+        ]:
+            text_result = result["choices"][0]["text"]
+            prompt_token_count = result["usage"]["prompt_tokens"]
+            response_token_count = result["usage"]["completion_tokens"]
+        else:
+            text_result = result
+            prompt_token_count = None
+            response_token_count = None
+        return text_result, prompt_token_count, response_token_count
 
 
 async def async_openai_wrapper(

@@ -38,6 +38,8 @@ async def test_entity_extraction_with_reask(mocker, multiprocessing_validators: 
 
     # For orginal prompt and output
     assert guard_history[0].prompt == gd.Prompt(entity_extraction.COMPILED_PROMPT)
+    assert guard_history[0].prompt_token_count == 123
+    assert guard_history[0].response_token_count == 1234
     assert guard_history[0].output == entity_extraction.LLM_OUTPUT
     assert (
         guard_history[0].validated_output == entity_extraction.VALIDATED_OUTPUT_REASK_1
