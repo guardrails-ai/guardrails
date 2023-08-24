@@ -283,13 +283,13 @@ def test_python_string(mocker):
     instructions = """
 You are a helpful assistant, and you are helping me come up with a name for a pizza.
 
-@complete_string_suffix
+${gr.complete_string_suffix}
 """
 
     prompt = """
 Given the following ingredients, what would you call this pizza?
 
-{{ingredients}}
+${ingredients}
 """
 
     guard = gd.Guard.from_string(
