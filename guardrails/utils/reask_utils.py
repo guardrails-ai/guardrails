@@ -126,9 +126,10 @@ def get_pruned_tree(
             parent.remove(element)
 
             # Remove all ancestors that have no children
-            while len(parent) == 0:
+            while parent is not None and len(parent) == 0:
                 grandparent = parent.getparent()
-                grandparent.remove(parent)
+                if grandparent is not None:
+                    grandparent.remove(parent)
                 parent = grandparent
 
     pruned_elements = root.findall(".//*")

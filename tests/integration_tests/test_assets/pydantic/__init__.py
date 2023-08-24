@@ -2,9 +2,11 @@
 import os
 
 from .msg_validated_output_reask import MSG_VALIDATED_OUTPUT_REASK
-from .validated_response_reask_1 import VALIDATED_OUTPUT as VALIDATED_OUTPUT_REASK_1
-from .validated_response_reask_2 import VALIDATED_OUTPUT as VALIDATED_OUTPUT_REASK_2
-from .validated_response_reask_3 import VALIDATED_OUTPUT as VALIDATED_OUTPUT_REASK_3
+from .validated_response_reask import VALIDATED_OUTPUT_1 as VALIDATED_OUTPUT_REASK_1
+from .validated_response_reask import VALIDATED_OUTPUT_2 as VALIDATED_OUTPUT_REASK_2
+from .validated_response_reask import VALIDATED_OUTPUT_3 as VALIDATED_OUTPUT_REASK_3
+from .validated_response_reask import ListOfPeople
+from .validated_response_reask import prompt as VALIDATED_RESPONSE_REASK_PROMPT
 from .with_msg_history import Movie as WITH_MSG_HISTORY
 
 DATA_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)))
@@ -44,4 +46,7 @@ __all__ = [
     "MSG_COMPILED_PROMPT_REASK",
     "MSG_COMPILED_INSTRUCTIONS_REASK",
     "MSG_VALIDATED_OUTPUT_REASK",
+    "MSG_HISTORY_LLM_OUTPUT",
+    "VALIDATED_RESPONSE_REASK_PROMPT",
+    "ListOfPeople",
 ]
