@@ -1,6 +1,7 @@
 # flake8: noqa: E501
 import os
 
+from .msg_validated_output_reask import MSG_VALIDATED_OUTPUT_REASK
 from .validated_response_reask import VALIDATED_OUTPUT_1 as VALIDATED_OUTPUT_REASK_1
 from .validated_response_reask import VALIDATED_OUTPUT_2 as VALIDATED_OUTPUT_REASK_2
 from .validated_response_reask import VALIDATED_OUTPUT_3 as VALIDATED_OUTPUT_REASK_3
@@ -23,7 +24,10 @@ LLM_OUTPUT_REASK_2 = reader("llm_output_reask_2.txt")
 
 RAIL_SPEC_WITH_REASK = reader("reask.rail")
 
-MSG_HISTORY_LLM_OUTPUT = reader("msg_history_llm_output.txt")
+MSG_HISTORY_LLM_OUTPUT_INCORRECT = reader("msg_history_llm_output_incorrect.txt")
+MSG_HISTORY_LLM_OUTPUT_CORRECT = reader("msg_history_llm_output_correct.txt")
+MSG_COMPILED_PROMPT_REASK = reader("msg_compiled_prompt_reask.txt")
+MSG_COMPILED_INSTRUCTIONS_REASK = reader("msg_compiled_instructions_reask.txt")
 
 __all__ = [
     "COMPILED_PROMPT",
@@ -37,6 +41,11 @@ __all__ = [
     "VALIDATED_OUTPUT_REASK_2",
     "VALIDATED_OUTPUT_REASK_3",
     "WITH_MSG_HISTORY",
+    "MSG_HISTORY_LLM_OUTPUT_INCORRECT",
+    "MSG_HISTORY_LLM_OUTPUT_CORRECT",
+    "MSG_COMPILED_PROMPT_REASK",
+    "MSG_COMPILED_INSTRUCTIONS_REASK",
+    "MSG_VALIDATED_OUTPUT_REASK",
     "MSG_HISTORY_LLM_OUTPUT",
     "VALIDATED_RESPONSE_REASK_PROMPT",
     "ListOfPeople",

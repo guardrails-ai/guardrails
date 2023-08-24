@@ -80,7 +80,7 @@ from guardrails.utils.json_utils import verify_schema_against_json
         (
             """
 <root>
-<choice name="action" on-fail-choice="exception">
+<choice name="action" discriminator="action_type" on-fail-choice="exception">
     <case name="fight">
         <string
             name="fight_move"
@@ -89,60 +89,25 @@ from guardrails.utils.json_utils import verify_schema_against_json
         />
     </case>
     <case name="flight">
-        <object name="flight">
-            <string
-                name="flight_direction"
-                format="valid-choices: {['north','south','east','west']}"
-                on-fail-valid-choices="exception"
-            />
-            <integer
-                name="flight_speed"
-                format="valid-choices: {[1,2,3,4]}"
-                on-fail-valid-choices="exception"
-            />
-        </object>
-    </case>
-</choice>
-</root>
-            """,
-            {
-                "action": "fight",
-                "fight": "punch",
-            },
-            True,
-        ),
-        (
-            """
-<root>
-<choice name="action" on-fail-choice="exception">
-    <case name="fight">
         <string
-            name="fight_move"
-            format="valid-choices: {['punch','kick','headbutt']}"
+            name="flight_direction"
+            format="valid-choices: {['north','south','east','west']}"
+            on-fail-valid-choices="exception"
+        />
+        <integer
+            name="flight_speed"
+            format="valid-choices: {[1,2,3,4]}"
             on-fail-valid-choices="exception"
         />
     </case>
-    <case name="flight">
-        <object name="flight">
-            <string
-                name="flight_direction"
-                format="valid-choices: {['north','south','east','west']}"
-                on-fail-valid-choices="exception"
-            />
-            <integer
-                name="flight_speed"
-                format="valid-choices: {[1,2,3,4]}"
-                on-fail-valid-choices="exception"
-            />
-        </object>
-    </case>
 </choice>
 </root>
             """,
             {
-                "action": "fight",
-                "fight": "punch",
-                "flight": None,
+                "action": {
+                    "action_type": "fight",
+                    "fight_move": "punch",
+                }
             },
             True,
         ),
@@ -150,17 +115,16 @@ from guardrails.utils.json_utils import verify_schema_against_json
             """
 <root>
 <list name="my_list3">
-    <choice name="action" on-fail-choice="exception">
-    <case name="fight">
-        <list name="fight">
-            <string
-                format="valid-choices: {['punch','kick','headbutt']}"
-                on-fail-valid-choices="exception"
-            />
-        </list>
-    </case>
-    <case name="flight">
-        <object name="flight">
+    <choice discriminator="action_type" on-fail-choice="exception">
+        <case name="fight">
+            <list name="fight">
+                <string
+                    format="valid-choices: {['punch','kick','headbutt']}"
+                    on-fail-valid-choices="exception"
+                />
+            </list>
+        </case>
+        <case name="flight">
             <string
                 name="flight_direction"
                 format="valid-choices: {['north','south','east','west']}"
@@ -171,8 +135,7 @@ from guardrails.utils.json_utils import verify_schema_against_json
                 format="valid-choices: {[1,2,3,4]}"
                 on-fail-valid-choices="exception"
             />
-        </object>
-    </case>
+        </case>
     </choice>
 </list>
 </root>
@@ -180,12 +143,13 @@ from guardrails.utils.json_utils import verify_schema_against_json
             {
                 "my_list3": [
                     {
-                        "action": "fight",
+                        "action_type": "fight",
                         "fight": ["punch", "kick"],
                     },
                     {
-                        "action": "flight",
-                        "flight": {"flight_direction": "north", "flight_speed": 1},
+                        "action_type": "flight",
+                        "flight_direction": "north",
+                        "flight_speed": 1,
                     },
                 ],
             },
@@ -196,9 +160,10 @@ from guardrails.utils.json_utils import verify_schema_against_json
 <root>
 <object name="mychoices">
     <string name="some random thing"/>
-    <choice name="action" on-fail-choice="exception">
+    <choice name="action" discriminator="action_type" on-fail-choice="exception">
         <case name="fight">
             <string
+                name="fight_move"
                 format="valid-choices: {['punch','kick','headbutt']}"
                 on-fail-valid-choices="exception"
             />
@@ -224,8 +189,10 @@ from guardrails.utils.json_utils import verify_schema_against_json
             {
                 "mychoices": {
                     "some random thing": "string",
-                    "action": "fight",
-                    "fight": "punch",
+                    "action": {
+                        "action_type": "fight",
+                        "fight_move": "punch",
+                    },
                 },
             },
             True,
