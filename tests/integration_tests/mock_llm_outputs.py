@@ -10,6 +10,7 @@ def openai_completion_create(prompt, *args, **kwargs):
     mock_llm_responses = {
         entity_extraction.COMPILED_PROMPT: entity_extraction.LLM_OUTPUT,
         entity_extraction.COMPILED_PROMPT_REASK: entity_extraction.LLM_OUTPUT_REASK,
+        entity_extraction.COMPILED_PROMPT_FULL_REASK: entity_extraction.LLM_OUTPUT_FULL_REASK,  # noqa: E501
         entity_extraction.COMPILED_PROMPT_SKELETON_REASK_1: entity_extraction.LLM_OUTPUT_SKELETON_REASK_1,  # noqa: E501
         entity_extraction.COMPILED_PROMPT_SKELETON_REASK_2: entity_extraction.LLM_OUTPUT_SKELETON_REASK_2,  # noqa: E501
         pydantic.COMPILED_PROMPT: pydantic.LLM_OUTPUT,

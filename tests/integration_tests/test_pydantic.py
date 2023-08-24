@@ -19,6 +19,7 @@ def test_pydantic_with_reask(mocker):
         max_tokens=512,
         temperature=0.5,
         num_reasks=2,
+        full_schema_reask=False,
     )
 
     # Assertions are made on the guard state object.

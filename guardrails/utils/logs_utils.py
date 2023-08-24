@@ -50,9 +50,11 @@ class GuardLogs:
 
     _previous_logs: Optional["GuardLogs"] = None
 
-    def set_validated_output(self, validated_output):
-        if self._previous_logs is not None and not isinstance(
-            validated_output, SkeletonReAsk
+    def set_validated_output(self, validated_output, is_full_schema_reask: bool):
+        if (
+            self._previous_logs is not None
+            and not is_full_schema_reask
+            and not isinstance(validated_output, SkeletonReAsk)
         ):
             validated_output = merge_reask_output(
                 self._previous_logs.validated_output, validated_output

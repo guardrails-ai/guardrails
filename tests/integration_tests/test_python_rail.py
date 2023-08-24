@@ -110,6 +110,7 @@ def test_python_rail(mocker):
         openai.ChatCompletion.create,
         prompt_params={"director": "Christopher Nolan"},
         num_reasks=2,
+        full_schema_reask=False,
     )
 
     # Assertions are made on the guard state object.
@@ -229,6 +230,7 @@ def test_python_rail_add_validator(mocker):
         openai.ChatCompletion.create,
         prompt_params={"director": "Christopher Nolan"},
         num_reasks=2,
+        full_schema_reask=False,
     )
 
     # Assertions are made on the guard state object.
