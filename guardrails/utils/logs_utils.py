@@ -42,6 +42,8 @@ class FieldValidationLogs(ArbitraryModel):
 class GuardLogs(ArbitraryModel):
     prompt: Optional[Prompt] = None
     instructions: Optional[Instructions] = None
+    prompt_token_count: Optional[int] = None
+    response_token_count: Optional[int] = None
     msg_history: Optional[List[Dict[str, Prompt]]] = None
     output: Optional[str] = None
     parsed_output: Optional[dict] = None

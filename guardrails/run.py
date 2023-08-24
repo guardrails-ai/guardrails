@@ -209,7 +209,9 @@ class Runner:
             guard_logs.msg_history = msg_history
 
             # Call: run the API.
-            output = self.call(index, instructions, prompt, msg_history, api, output)
+            output = self.call(
+                guard_logs, index, instructions, prompt, msg_history, api, output
+            )
 
             guard_logs.output = output
 
@@ -292,6 +294,7 @@ class Runner:
 
     def call(
         self,
+        guard_logs: GuardLogs,
         index: int,
         instructions: Optional[Instructions],
         prompt: Prompt,
@@ -312,36 +315,48 @@ class Runner:
                 msg["content"] = msg["content"].source
             return msg_history_copy
 
+        prompt_tokens = None
+        response_tokens = None
+
         with start_action(action_type="call", index=index, prompt=prompt) as action:
             try:
                 if msg_history:
-                    output = api(
+                    output, prompt_tokens, response_tokens = api(
                         msg_history=msg_history_source(msg_history),
                         base_model=self.base_model,
                     )
                 else:
                     if prompt and instructions:
-                        output = api(
+                        output, prompt_tokens, response_tokens = api(
                             prompt.source,
                             instructions=instructions.source,
                             base_model=self.base_model,
                         )
                     elif prompt:
-                        output = api(prompt.source, base_model=self.base_model)
+                        output, prompt_tokens, response_tokens = api(
+                            prompt.source, base_model=self.base_model
+                        )
             except Exception:
                 # If the API call fails, try calling again without the base model.
                 if msg_history:
-                    output = api(msg_history=msg_history_source(msg_history))
+                    output, prompt_tokens, response_tokens = api(
+                        msg_history=msg_history_source(msg_history)
+                    )
                 else:
                     if prompt and instructions:
-                        output = api(prompt.source, instructions=instructions.source)
+                        output, prompt_tokens, response_tokens = api(
+                            prompt.source, instructions=instructions.source
+                        )
                     elif prompt:
-                        output = api(prompt.source)
+                        output, prompt_tokens, response_tokens = api(prompt.source)
 
             action.log(
                 message_type="info",
                 output=output,
             )
+
+            guard_logs.prompt_token_count = prompt_tokens
+            guard_logs.response_token_count = response_tokens
 
             return output
 
@@ -534,7 +549,7 @@ class AsyncRunner(Runner):
 
             # Call: run the API.
             output = await self.async_call(
-                index, instructions, prompt, msg_history, api, output
+                guard_logs, index, instructions, prompt, msg_history, api, output
             )
 
             guard_logs.output = output
@@ -566,6 +581,7 @@ class AsyncRunner(Runner):
 
     async def async_call(
         self,
+        guard_logs: GuardLogs,
         index: int,
         instructions: Optional[Instructions],
         prompt: Prompt,
@@ -579,44 +595,49 @@ class AsyncRunner(Runner):
         2. Convert the response string to a dict,
         3. Log the output
         """
-        """Run a step.
-
-        1. Query the LLM API,
-        2. Convert the response string to a dict,
-        3. Log the output
-        """
+        prompt_tokens = None
+        response_tokens = None
         with start_action(action_type="call", index=index, prompt=prompt) as action:
             try:
                 if msg_history:
-                    output = await api(
+                    output, prompt_tokens, response_tokens = await api(
                         msg_history=msg_history,
                         base_model=self.base_model,
                     )
                 else:
                     if prompt and instructions:
-                        output = await api(
+                        output, prompt_tokens, response_tokens = await api(
                             prompt.source,
                             instructions=instructions.source,
                             base_model=self.base_model,
                         )
                     elif prompt:
-                        output = await api(prompt.source, base_model=self.base_model)
+                        output, prompt_tokens, response_tokens = await api(
+                            prompt.source, base_model=self.base_model
+                        )
             except Exception:
                 # If the API call fails, try calling again without the base model.
                 if msg_history:
-                    output = await api(msg_history=msg_history)
+                    output, prompt_tokens, response_tokens = await api(
+                        msg_history=msg_history
+                    )
                 else:
                     if prompt and instructions:
-                        output = await api(
+                        output, prompt_tokens, response_tokens = await api(
                             prompt.source, instructions=instructions.source
                         )
                     elif prompt:
-                        output = await api(prompt.source)
+                        output, prompt_tokens, response_tokens = await api(
+                            prompt.source
+                        )
 
             action.log(
                 message_type="info",
                 output=output,
             )
+
+            guard_logs.prompt_token_count = prompt_tokens
+            guard_logs.response_token_count = response_tokens
 
             return output
 

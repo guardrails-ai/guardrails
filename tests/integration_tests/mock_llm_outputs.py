@@ -24,7 +24,13 @@ def openai_completion_create(prompt, *args, **kwargs):
     }
 
     try:
-        return mock_llm_responses[prompt]
+        return {
+            "choices": [{"text": mock_llm_responses[prompt]}],
+            "usage": {
+                "prompt_tokens": 123,
+                "completion_tokens": 1234,
+            },
+        }
     except KeyError:
         print(prompt)
         raise ValueError("Compiled prompt not found")
@@ -67,18 +73,25 @@ def openai_chat_completion_create(
     }
     try:
         if prompt and instructions and not msg_history:
-            return mock_llm_responses[(prompt, instructions)]
+            out_text = mock_llm_responses[(prompt, instructions)]
         elif msg_history and not prompt and not instructions:
             if msg_history == entity_extraction.COMPILED_MSG_HISTORY:
-                return entity_extraction.LLM_OUTPUT
+                out_text = entity_extraction.LLM_OUTPUT
             elif (
                 msg_history == string.MOVIE_MSG_HISTORY
                 and base_model == pydantic.WITH_MSG_HISTORY
             ):
-                return pydantic.MSG_HISTORY_LLM_OUTPUT_INCORRECT
+                out_text = pydantic.MSG_HISTORY_LLM_OUTPUT_INCORRECT
             elif msg_history == string.MOVIE_MSG_HISTORY:
-                return string.MSG_LLM_OUTPUT_INCORRECT
+                out_text = string.MSG_LLM_OUTPUT_INCORRECT
             else:
                 raise ValueError("msg_history not found")
+        return {
+            "choices": [{"text": out_text}],
+            "usage": {
+                "prompt_tokens": 123,
+                "completion_tokens": 1234,
+            },
+        }
     except KeyError:
         raise ValueError("Compiled prompt not found")
