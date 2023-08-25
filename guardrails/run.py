@@ -7,10 +7,10 @@ from eliot import add_destinations, start_action
 from pydantic import BaseModel
 
 from guardrails.datatypes import verify_metadata_requirements
-from guardrails.llm_providers import AsyncPromptCallable, PromptCallable
+from guardrails.llm_providers import AsyncPromptCallableBase, PromptCallableBase
 from guardrails.prompt import Instructions, Prompt
 from guardrails.schema import Schema
-from guardrails.utils.logs_utils import GuardHistory, GuardLogs, GuardState
+from guardrails.utils.logs_utils import GuardHistory, GuardLogs, GuardState, LLMResponse
 from guardrails.utils.reask_utils import (
     FieldReAsk,
     ReAsk,
@@ -46,7 +46,7 @@ class Runner:
     instructions: Optional[Instructions]
     prompt: Prompt
     msg_history: Optional[List[Dict]]
-    api: PromptCallable
+    api: PromptCallableBase
     input_schema: Schema
     output_schema: Schema
     guard_state: GuardState
@@ -164,7 +164,7 @@ class Runner:
     def step(
         self,
         index: int,
-        api: PromptCallable,
+        api: PromptCallableBase,
         instructions: Optional[Instructions],
         prompt: Optional[Prompt],
         msg_history: Optional[List[Dict]],
@@ -207,11 +207,9 @@ class Runner:
             guard_logs.msg_history = msg_history
 
             # Call: run the API.
-            output = self.call(
-                guard_logs, index, instructions, prompt, msg_history, api, output
-            )
+            output = self.call(index, instructions, prompt, msg_history, api, output)
 
-            guard_logs.output = output
+            guard_logs.llm_response = output
 
             # Parse: parse the output.
             parsed_output = self.parse(index, output, output_schema)
@@ -245,7 +243,7 @@ class Runner:
         prompt: Prompt,
         msg_history: Optional[List[Dict]],
         prompt_params: Dict,
-        api: Union[PromptCallable, AsyncPromptCallable],
+        api: Union[PromptCallableBase, AsyncPromptCallableBase],
         input_schema: Schema,
         output_schema: Schema,
     ) -> Tuple[Instructions, Prompt, List[Dict]]:
@@ -292,13 +290,12 @@ class Runner:
 
     def call(
         self,
-        guard_logs: GuardLogs,
         index: int,
         instructions: Optional[Instructions],
         prompt: Prompt,
         msg_history: Optional[List[Dict[str, str]]],
         api: Callable,
-        output: str = None,
+        output: Optional[LLMResponse] = None,
     ) -> str:
         """Run a step.
 
@@ -313,27 +310,22 @@ class Runner:
                 msg["content"] = msg["content"].source
             return msg_history_copy
 
-        prompt_tokens = None
-        response_tokens = None
-
         with start_action(action_type="call", index=index, prompt=prompt) as action:
             try:
                 if msg_history:
-                    output, prompt_tokens, response_tokens = api(
+                    output = api(
                         msg_history=msg_history_source(msg_history),
                         base_model=self.base_model,
                     )
                 else:
                     if prompt and instructions:
-                        output, prompt_tokens, response_tokens = api(
+                        output = api(
                             prompt.source,
                             instructions=instructions.source,
                             base_model=self.base_model,
                         )
                     elif prompt:
-                        output, prompt_tokens, response_tokens = api(
-                            prompt.source, base_model=self.base_model
-                        )
+                        output = api(prompt.source, base_model=self.base_model)
             except Exception:
                 # If the API call fails, try calling again without the base model.
                 if msg_history:
@@ -342,19 +334,14 @@ class Runner:
                     )
                 else:
                     if prompt and instructions:
-                        output, prompt_tokens, response_tokens = api(
-                            prompt.source, instructions=instructions.source
-                        )
+                        output = api(prompt.source, instructions=instructions.source)
                     elif prompt:
-                        output, prompt_tokens, response_tokens = api(prompt.source)
+                        output = api(prompt.source)
 
             action.log(
                 message_type="info",
                 output=output,
             )
-
-            guard_logs.prompt_token_count = prompt_tokens
-            guard_logs.response_token_count = response_tokens
 
             return output
 
@@ -440,7 +427,7 @@ class Runner:
 
 
 class AsyncRunner(Runner):
-    api: AsyncPromptCallable
+    api: AsyncPromptCallableBase
 
     async def async_run(self, prompt_params: Dict = None) -> GuardHistory:
         """Execute the runner by repeatedly calling step until the reask budget
@@ -501,7 +488,7 @@ class AsyncRunner(Runner):
     async def async_step(
         self,
         index: int,
-        api: AsyncPromptCallable,
+        api: AsyncPromptCallableBase,
         instructions: Optional[Instructions],
         prompt: Prompt,
         msg_history: Optional[List[Dict]],
@@ -544,10 +531,10 @@ class AsyncRunner(Runner):
 
             # Call: run the API.
             output = await self.async_call(
-                guard_logs, index, instructions, prompt, msg_history, api, output
+                index, instructions, prompt, msg_history, api, output
             )
 
-            guard_logs.output = output
+            guard_logs.llm_response = output
 
             # Parse: parse the output.
             parsed_output = self.parse(index, output, output_schema)
@@ -576,13 +563,12 @@ class AsyncRunner(Runner):
 
     async def async_call(
         self,
-        guard_logs: GuardLogs,
         index: int,
         instructions: Optional[Instructions],
         prompt: Prompt,
         msg_history: Optional[List[Dict]],
-        api: AsyncPromptCallable,
-        output: str = None,
+        api: AsyncPromptCallableBase,
+        output: Optional[LLMResponse] = None,
     ) -> str:
         """Run a step.
 
@@ -590,49 +576,38 @@ class AsyncRunner(Runner):
         2. Convert the response string to a dict,
         3. Log the output
         """
-        prompt_tokens = None
-        response_tokens = None
         with start_action(action_type="call", index=index, prompt=prompt) as action:
             try:
                 if msg_history:
-                    output, prompt_tokens, response_tokens = await api(
+                    output = await api(
                         msg_history=msg_history,
                         base_model=self.base_model,
                     )
                 else:
                     if prompt and instructions:
-                        output, prompt_tokens, response_tokens = await api(
+                        output = await api(
                             prompt.source,
                             instructions=instructions.source,
                             base_model=self.base_model,
                         )
                     elif prompt:
-                        output, prompt_tokens, response_tokens = await api(
-                            prompt.source, base_model=self.base_model
-                        )
+                        output = await api(prompt.source, base_model=self.base_model)
             except Exception:
                 # If the API call fails, try calling again without the base model.
                 if msg_history:
-                    output, prompt_tokens, response_tokens = await api(
-                        msg_history=msg_history
-                    )
+                    output = await api(msg_history=msg_history)
                 else:
                     if prompt and instructions:
-                        output, prompt_tokens, response_tokens = await api(
+                        output = await api(
                             prompt.source, instructions=instructions.source
                         )
                     elif prompt:
-                        output, prompt_tokens, response_tokens = await api(
-                            prompt.source
-                        )
+                        output = await api(prompt.source)
 
             action.log(
                 message_type="info",
                 output=output,
             )
-
-            guard_logs.prompt_token_count = prompt_tokens
-            guard_logs.response_token_count = response_tokens
 
             return output
 
