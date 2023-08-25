@@ -508,7 +508,7 @@ def add_pydantic_validators_as_guardrails_validators(
             )
             if "validators" not in fld.field_info.extra:
                 fld.field_info.extra["validators"] = []
-            fld.field_info.extra["validators"].append(gd_validator)
+            fld.field_info.extra["validators"].append((gd_validator, "reask"))
 
     model_fields = {}
     for field_name, field in model.__fields__.items():
