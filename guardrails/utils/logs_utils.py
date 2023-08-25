@@ -39,13 +39,17 @@ class FieldValidationLogs(ArbitraryModel):
     children: Dict[Union[int, str], "FieldValidationLogs"] = Field(default_factory=dict)
 
 
+class LLMResponse(ArbitraryModel):
+    prompt_token_count: Optional[int] = None
+    response_token_count: Optional[int] = None
+    output: Optional[str] = None
+
+
 class GuardLogs(ArbitraryModel):
     prompt: Optional[Prompt] = None
     instructions: Optional[Instructions] = None
-    prompt_token_count: Optional[int] = None
-    response_token_count: Optional[int] = None
+    llm_response: Optional[LLMResponse] = None
     msg_history: Optional[List[Dict[str, Prompt]]] = None
-    output: Optional[str] = None
     parsed_output: Optional[dict] = None
     validated_output: Optional[dict] = None
     reasks: Optional[List[ReAsk]] = None
