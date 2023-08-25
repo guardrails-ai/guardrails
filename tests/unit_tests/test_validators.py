@@ -2,8 +2,10 @@
 from typing import Any, Dict
 
 import pytest
+from pydantic import BaseModel, Field
 
 from guardrails import Guard
+from guardrails.utils.reask_utils import FieldReAsk
 from guardrails.validators import (
     BugFreeSQL,
     ExtractedSummarySentencesMatch,
@@ -14,6 +16,7 @@ from guardrails.validators import (
     Refrain,
     SimilarToDocument,
     SqlColumnPresence,
+    TwoWords,
     ValidationResult,
     check_refrain_in_dict,
     filter_in_dict,
@@ -169,13 +172,139 @@ def test_summary_validators(mocker):
 
 
 @register_validator("mycustomhellovalidator", data_type="string")
-def validate(value: Any, metadata: Dict[str, Any]) -> ValidationResult:
+def hello_validator(value: Any, metadata: Dict[str, Any]) -> ValidationResult:
     if "hello" in value.lower():
         return FailResult(
             error_message="Hello is too basic, try something more creative.",
             fix_value="hullo",
         )
     return PassResult()
+
+
+def test_validator_as_tuple():
+    # (Callable, on_fail) tuple fix
+    class MyModel(BaseModel):
+        a_field: str = Field(..., validators=[(hello_validator, "fix")])
+
+    guard = Guard.from_pydantic(MyModel)
+    output = guard.parse(
+        '{"a_field": "hello there yo"}',
+        num_reasks=0,
+    )
+
+    assert output == {"a_field": "hullo"}
+
+    # (string, on_fail) tuple fix
+
+    class MyModel(BaseModel):
+        a_field: str = Field(
+            ..., validators=[("two_words", "reask"), ("mycustomhellovalidator", "fix")]
+        )
+
+    guard = Guard.from_pydantic(MyModel)
+    output = guard.parse(
+        '{"a_field": "hello there yo"}',
+        num_reasks=0,
+    )
+
+    assert output == {"a_field": "hullo"}
+
+    # (Validator, on_fail) tuple fix
+
+    class MyModel(BaseModel):
+        a_field: str = Field(..., validators=[(TwoWords(), "fix")])
+
+    guard = Guard.from_pydantic(MyModel)
+    output = guard.parse(
+        '{"a_field": "hello there yo"}',
+        num_reasks=0,
+    )
+
+    assert output == {"a_field": "hello there"}
+
+    # (Validator, on_fail) tuple reask
+
+    hullo_reask = FieldReAsk(
+        incorrect_value="hello there yo",
+        fail_results=[
+            FailResult(
+                error_message="Hello is too basic, try something more creative.",
+                fix_value="hullo",
+            )
+        ],
+        path=["a_field"],
+    )
+
+    class MyModel(BaseModel):
+        a_field: str = Field(..., validators=[(hello_validator, "reask")])
+
+    guard = Guard.from_pydantic(MyModel)
+
+    output = guard.parse(
+        '{"a_field": "hello there yo"}',
+        num_reasks=0,
+    )
+
+    assert output == {"a_field": "hullo"}
+    assert (
+        guard.guard_state.all_histories[0].history[0].parsed_output["a_field"]
+        == hullo_reask
+    )
+
+    hello_reask = FieldReAsk(
+        incorrect_value="hello there yo",
+        fail_results=[
+            FailResult(
+                error_message="must be exactly two words",
+                fix_value="hello there",
+            )
+        ],
+        path=["a_field"],
+    )
+
+    # (string, on_fail) tuple reask
+
+    class MyModel(BaseModel):
+        a_field: str = Field(..., validators=[("two-words", "reask")])
+
+    guard = Guard.from_pydantic(MyModel)
+
+    output = guard.parse(
+        '{"a_field": "hello there yo"}',
+        num_reasks=0,
+    )
+
+    assert output == {"a_field": "hello there"}
+    assert (
+        guard.guard_state.all_histories[0].history[0].parsed_output["a_field"]
+        == hello_reask
+    )
+
+    # (Validator, on_fail) tuple reask
+
+    class MyModel(BaseModel):
+        a_field: str = Field(..., validators=[(TwoWords(), "reask")])
+
+    guard = Guard.from_pydantic(MyModel)
+
+    output = guard.parse(
+        '{"a_field": "hello there yo"}',
+        num_reasks=0,
+    )
+
+    assert output == {"a_field": "hello there"}
+    assert (
+        guard.guard_state.all_histories[0].history[0].parsed_output["a_field"]
+        == hello_reask
+    )
+
+    # Fail on string
+
+    class MyModel(BaseModel):
+        a_field: str = Field(..., validators=["two-words"])
+
+    with pytest.raises(ValueError):
+        Guard.from_pydantic(MyModel)
 
 
 def test_custom_func_validator():
