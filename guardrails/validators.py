@@ -1672,7 +1672,7 @@ class ProvenanceV0(Validator):
         on_fail: Optional[Callable] = None,
         **kwargs,
     ):
-        super().__init__(on_fail, **kwargs)
+        super().__init__(on_fail, threshold=threshold, validation_method=validation_method, **kwargs)
         self._threshold = float(threshold)
         if validation_method not in ["sentence", "full"]:
             raise ValueError("validation_method must be 'sentence' or 'full'.")
