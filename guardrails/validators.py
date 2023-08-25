@@ -167,6 +167,7 @@ def register_validator(name: str, data_type: Union[str, List[str]]):
             cls.rail_alias = name
         elif callable(cls_or_func):
             func = cls_or_func
+            func.rail_alias = name
             # ensure function takes two args
             if not func.__code__.co_argcount == 2:
                 raise ValueError(
