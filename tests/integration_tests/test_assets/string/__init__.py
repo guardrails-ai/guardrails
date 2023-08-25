@@ -1,6 +1,7 @@
 # flake8: noqa: E501
 import os
 
+from .msg_validated_output_reask import MSG_VALIDATED_OUTPUT_REASK
 from .validated_output_reask import VALIDATED_OUTPUT_REASK
 
 DATA_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)))
@@ -24,6 +25,8 @@ MOVIE_MSG_HISTORY = [
     {"role": "system", "content": "You are a helpful assistant."},
     {"role": "user", "content": "Can you give me your favorite movie?"},
 ]
+MSG_COMPILED_PROMPT_REASK = reader("msg_compiled_prompt_reask.txt")
+MSG_COMPILED_INSTRUCTIONS_REASK = reader("msg_compiled_instructions_reask.txt")
 
 __all__ = [
     "COMPILED_PROMPT",
@@ -37,4 +40,7 @@ __all__ = [
     "MSG_LLM_OUTPUT_INCORRECT",
     "MSG_LLM_OUTPUT_CORRECT",
     "MOVIE_MSG_HISTORY",
+    "MSG_COMPILED_PROMPT_REASK",
+    "MSG_COMPILED_INSTRUCTIONS_REASK",
+    "MSG_VALIDATED_OUTPUT_REASK",
 ]

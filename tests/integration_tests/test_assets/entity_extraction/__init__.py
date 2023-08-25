@@ -34,6 +34,7 @@ reader = (
 # Compiled prompts
 COMPILED_PROMPT = reader("compiled_prompt.txt")
 COMPILED_PROMPT_REASK = reader("compiled_prompt_reask.txt")
+COMPILED_PROMPT_FULL_REASK = reader("compiled_prompt_full_reask.txt")
 COMPILED_PROMPT_WITHOUT_INSTRUCTIONS = reader(
     "compiled_prompt_without_instructions.txt"
 )
@@ -49,6 +50,7 @@ COMPILED_MSG_HISTORY = [
 # LLM outputs
 LLM_OUTPUT = reader("llm_output.txt")
 LLM_OUTPUT_REASK = reader("llm_output_reask.txt")
+LLM_OUTPUT_FULL_REASK = reader("llm_output_full_reask.txt")
 LLM_OUTPUT_SKELETON_REASK_1 = reader("llm_output_skeleton_reask_1.txt")
 LLM_OUTPUT_SKELETON_REASK_2 = reader("llm_output_skeleton_reask_2.txt")
 

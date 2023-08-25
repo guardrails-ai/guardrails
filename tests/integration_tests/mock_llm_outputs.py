@@ -10,6 +10,7 @@ def openai_completion_create(prompt, *args, **kwargs):
     mock_llm_responses = {
         entity_extraction.COMPILED_PROMPT: entity_extraction.LLM_OUTPUT,
         entity_extraction.COMPILED_PROMPT_REASK: entity_extraction.LLM_OUTPUT_REASK,
+        entity_extraction.COMPILED_PROMPT_FULL_REASK: entity_extraction.LLM_OUTPUT_FULL_REASK,  # noqa: E501
         entity_extraction.COMPILED_PROMPT_SKELETON_REASK_1: entity_extraction.LLM_OUTPUT_SKELETON_REASK_1,  # noqa: E501
         entity_extraction.COMPILED_PROMPT_SKELETON_REASK_2: entity_extraction.LLM_OUTPUT_SKELETON_REASK_2,  # noqa: E501
         pydantic.COMPILED_PROMPT: pydantic.LLM_OUTPUT,
@@ -55,6 +56,14 @@ def openai_chat_completion_create(
             python_rail.COMPILED_PROMPT_2_WITHOUT_INSTRUCTIONS,
             python_rail.COMPILED_INSTRUCTIONS,
         ): python_rail.LLM_OUTPUT_2_SUCCEED_GUARDRAILS_BUT_FAIL_PYDANTIC_VALIDATION,
+        (
+            string.MSG_COMPILED_PROMPT_REASK,
+            string.MSG_COMPILED_INSTRUCTIONS_REASK,
+        ): string.MSG_LLM_OUTPUT_CORRECT,
+        (
+            pydantic.MSG_COMPILED_PROMPT_REASK,
+            pydantic.MSG_COMPILED_INSTRUCTIONS_REASK,
+        ): pydantic.MSG_HISTORY_LLM_OUTPUT_CORRECT,
     }
 
     try:
@@ -67,9 +76,9 @@ def openai_chat_completion_create(
                 msg_history == string.MOVIE_MSG_HISTORY
                 and base_model == pydantic.WITH_MSG_HISTORY
             ):
-                return pydantic.MSG_HISTORY_LLM_OUTPUT
+                return pydantic.MSG_HISTORY_LLM_OUTPUT_INCORRECT
             elif msg_history == string.MOVIE_MSG_HISTORY:
-                return string.MSG_LLM_OUTPUT_CORRECT
+                return string.MSG_LLM_OUTPUT_INCORRECT
             else:
                 raise ValueError("msg_history not found")
     except KeyError:

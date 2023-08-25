@@ -105,14 +105,26 @@ def test_rail_spec_output_parse(rail_spec, llm_output, validated_output):
 
 
 @pytest.mark.parametrize(
-    "rail,prompt",
+    "rail,prompt,test_full_schema_reask",
     [
-        (entity_extraction.RAIL_SPEC_WITH_REASK, None),
-        (entity_extraction.PYDANTIC_RAIL_WITH_REASK, entity_extraction.PYDANTIC_PROMPT),
+        (entity_extraction.RAIL_SPEC_WITH_REASK, None, False),
+        (entity_extraction.RAIL_SPEC_WITH_REASK, None, True),
+        (
+            entity_extraction.PYDANTIC_RAIL_WITH_REASK,
+            entity_extraction.PYDANTIC_PROMPT,
+            False,
+        ),
+        (
+            entity_extraction.PYDANTIC_RAIL_WITH_REASK,
+            entity_extraction.PYDANTIC_PROMPT,
+            True,
+        ),
     ],
 )
 @pytest.mark.parametrize("multiprocessing_validators", (True, False))
-def test_entity_extraction_with_reask(mocker, rail, prompt, multiprocessing_validators):
+def test_entity_extraction_with_reask(
+    mocker, rail, prompt, test_full_schema_reask, multiprocessing_validators
+):
     """Test that the entity extraction works with re-asking."""
     mocker.patch(
         "guardrails.llm_providers.openai_wrapper", new=openai_completion_create
@@ -129,6 +141,8 @@ def test_entity_extraction_with_reask(mocker, rail, prompt, multiprocessing_vali
         llm_api=openai.Completion.create,
         prompt_params={"document": content[:6000]},
         num_reasks=1,
+        max_tokens=2000,
+        full_schema_reask=test_full_schema_reask,
     )
 
     # Assertions are made on the guard state object.
@@ -167,8 +181,15 @@ def test_entity_extraction_with_reask(mocker, rail, prompt, multiprocessing_vali
     )
 
     # For re-asked prompt and output
-    assert guard_history[1].prompt == gd.Prompt(entity_extraction.COMPILED_PROMPT_REASK)
-    assert guard_history[1].output == entity_extraction.LLM_OUTPUT_REASK
+    if test_full_schema_reask:
+        assert (
+            guard_history[1].prompt.source
+            == entity_extraction.COMPILED_PROMPT_FULL_REASK
+        )
+        assert guard_history[1].output == entity_extraction.LLM_OUTPUT_FULL_REASK
+    else:
+        assert guard_history[1].prompt.source == entity_extraction.COMPILED_PROMPT_REASK
+        assert guard_history[1].output == entity_extraction.LLM_OUTPUT_REASK
     assert (
         guard_history[1].validated_output == entity_extraction.VALIDATED_OUTPUT_REASK_2
     )
@@ -604,8 +625,9 @@ def test_entity_extraction_with_reask_with_optional_prompts(
         )
 
 
-def test_string_with_message_history(mocker):
-    """Test single string (non-JSON) generation with message history."""
+def test_string_with_message_history_reask(mocker):
+    """Test single string (non-JSON) generation with message history and
+    reask."""
     mocker.patch(
         "guardrails.llm_providers.openai_chat_wrapper",
         new=openai_chat_completion_create,
@@ -624,10 +646,23 @@ def test_string_with_message_history(mocker):
     guard_history = guard.guard_state.most_recent_call.history
 
     # Check that the guard state object has the correct number of re-asks.
-    assert len(guard_history) == 1
+    assert len(guard_history) == 2
+
+    assert guard_history[0].instructions is None
+    assert guard_history[0].prompt is None
+    assert guard_history[0].output == string.MSG_LLM_OUTPUT_INCORRECT
+    assert guard_history[0].validated_output == string.MSG_VALIDATED_OUTPUT_REASK
+
+    # For re-asked prompt and output
+    assert guard_history[1].prompt == gd.Prompt(string.MSG_COMPILED_PROMPT_REASK)
+    assert guard_history[1].instructions == gd.Instructions(
+        string.MSG_COMPILED_INSTRUCTIONS_REASK
+    )
+    assert guard_history[1].output == string.MSG_LLM_OUTPUT_CORRECT
+    assert guard_history[1].validated_output == string.MSG_LLM_OUTPUT_CORRECT
 
 
-def test_pydantic_with_message_history(mocker):
+def test_pydantic_with_message_history_reask(mocker):
     """Test JSON generation with message history re-asking."""
     mocker.patch(
         "guardrails.llm_providers.openai_chat_wrapper",
@@ -642,10 +677,25 @@ def test_pydantic_with_message_history(mocker):
         model="gpt-3.5-turbo",
     )
 
-    assert raw_output == pydantic.MSG_HISTORY_LLM_OUTPUT
-    assert guarded_output == json.loads(pydantic.MSG_HISTORY_LLM_OUTPUT)
+    assert raw_output == pydantic.MSG_HISTORY_LLM_OUTPUT_CORRECT
+    assert guarded_output == json.loads(pydantic.MSG_HISTORY_LLM_OUTPUT_CORRECT)
 
     guard_history = guard.guard_state.most_recent_call.history
 
     # Check that the guard state object has the correct number of re-asks.
-    assert len(guard_history) == 1
+    assert len(guard_history) == 2
+
+    assert guard_history[0].instructions is None
+    assert guard_history[0].prompt is None
+    assert guard_history[0].output == pydantic.MSG_HISTORY_LLM_OUTPUT_INCORRECT
+    assert guard_history[0].validated_output == pydantic.MSG_VALIDATED_OUTPUT_REASK
+
+    # For re-asked prompt and output
+    assert guard_history[1].prompt == gd.Prompt(pydantic.MSG_COMPILED_PROMPT_REASK)
+    assert guard_history[1].instructions == gd.Instructions(
+        pydantic.MSG_COMPILED_INSTRUCTIONS_REASK
+    )
+    assert guard_history[1].output == pydantic.MSG_HISTORY_LLM_OUTPUT_CORRECT
+    assert guard_history[1].validated_output == json.loads(
+        pydantic.MSG_HISTORY_LLM_OUTPUT_CORRECT
+    )

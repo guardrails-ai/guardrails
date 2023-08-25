@@ -6,6 +6,7 @@ from lxml import etree as ET
 from guardrails import Instructions, Prompt
 from guardrails.schema import JsonSchema
 from guardrails.utils import reask_utils
+from guardrails.utils.logs_utils import GuardLogs
 from guardrails.utils.reask_utils import (
     FieldReAsk,
     gather_reasks,
@@ -339,7 +340,7 @@ def test_prune_json_for_reasking(input_dict, expected_dict):
 
 
 @pytest.mark.parametrize(
-    "example_rail, reasks, reask_json",
+    "example_rail, reasks, original_response, reask_json",
     [
         (
             """
@@ -359,6 +360,9 @@ def test_prune_json_for_reasking(input_dict, expected_dict):
                     path=["name"],
                 )
             ],
+            {
+                "name": -1,
+            },
             {
                 "name": {
                     "incorrect_value": -1,
@@ -390,12 +394,16 @@ def test_prune_json_for_reasking(input_dict, expected_dict):
                     fail_results=[
                         FailResult(
                             error_message="Error Msg",
-                            fix_value="age",
+                            fix_value=5,
                         )
                     ],
                     path=["age"],
                 ),
             ],
+            {
+                "name": -1,
+                "age": -1,
+            },
             {
                 "name": {
                     "incorrect_value": -1,
@@ -405,13 +413,13 @@ def test_prune_json_for_reasking(input_dict, expected_dict):
                 "age": {
                     "incorrect_value": -1,
                     "error_message": "Error Msg",
-                    "fix_value": "age",
+                    "fix_value": 5,
                 },
             },
         ),
     ],
 )
-def test_get_reask_prompt(example_rail, reasks, reask_json):
+def test_get_reask_prompt(example_rail, reasks, original_response, reask_json):
     """Test that get_reask_prompt function returns the correct prompt."""
     expected_result_template = """
 I was given the following JSON response, which had problems due to incorrect values.
@@ -436,11 +444,14 @@ Here are examples of simple (XML, JSON) pairs that show the expected behavior:
 - `<object name='baz'><string name="foo" format="capitalize two-words" /><integer name="index" format="1-indexed" /></object>` => `{{'baz': {{'foo': 'Some String', 'index': 1}}}}`
 """  # noqa: E501
     output_schema = JsonSchema(ET.fromstring(example_rail))
+    guard_logs = GuardLogs()
+    validated = output_schema.validate(guard_logs, original_response, {})
+    reasks = output_schema.introspect(validated)
     (
         reask_schema,
         result_prompt,
         instructions,
-    ) = output_schema.get_reask_setup(reasks, reask_json)
+    ) = output_schema.get_reask_setup(reasks, reask_json, False)
 
     assert result_prompt == Prompt(
         expected_result_template

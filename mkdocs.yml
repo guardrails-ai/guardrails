@@ -21,10 +21,13 @@ nav:
       - 'Prompt Element': rail/prompt.md
       - 'Instruction Element': rail/instructions.md
       - '(Experimental) Script Element': rail/script.md
+    - 'Concepts':
+      - 'Validators': concepts/validators.md
     - 'Guardrails Reference':
       - 'Guard': guard.md
       - 'Data Types': data_types.md
       - 'Validators': validation.md
+      - 'Response Structures': response_structures.md
       - 'LLM API Wrappers': llm_api_wrappers.md
       - 'Inspecting logs': logs.md
       - 'Guardrails CLI': cli.md
@@ -123,14 +126,23 @@ plugins:
       handlers:
         python:
           options:
+            docstring_style: google
             show_source: false
             show_bases: false
             show_if_no_docstring: true
             merge_init_into_class: true
             show_root_toc_entry: false
-            show_inheritance: true
-            show_private: false
-            show_special_members: false
+            show_inheritance: true # This is no longer a valid option
+            inherited_members: true # This might be the replacement?
+            # The below are now filters in the MD file
+            # https://mkdocstrings.github.io/python/usage/configuration/members/#filters
+            show_private: false # This is no longer a valid option
+            show_special_members: false # This is no longer a valid option
+            # Newly added options
+            annotations_path: brief
+            show_signature_annotations: true
+            separate_signature: true
+            signature_crossrefs: true
   - mknotebooks:
       execute: false
       timeout: 100

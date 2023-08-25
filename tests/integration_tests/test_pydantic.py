@@ -3,6 +3,7 @@ import openai
 import guardrails as gd
 
 from .mock_llm_outputs import openai_completion_create, pydantic
+from .test_assets.pydantic import VALIDATED_RESPONSE_REASK_PROMPT, ListOfPeople
 
 
 def test_pydantic_with_reask(mocker):
@@ -11,13 +12,14 @@ def test_pydantic_with_reask(mocker):
         "guardrails.llm_providers.openai_wrapper", new=openai_completion_create
     )
 
-    guard = gd.Guard.from_rail_string(pydantic.RAIL_SPEC_WITH_REASK)
+    guard = gd.Guard.from_pydantic(ListOfPeople, prompt=VALIDATED_RESPONSE_REASK_PROMPT)
     _, final_output = guard(
         openai.Completion.create,
         engine="text-davinci-003",
         max_tokens=512,
         temperature=0.5,
         num_reasks=2,
+        full_schema_reask=False,
     )
 
     # Assertions are made on the guard state object.
