@@ -34,27 +34,10 @@ print(guard.state.most_recent_call.tree)
 To access fine-grained logs on field validation, see the FieldValidationLogs object:
 
 ```python
-from pydantic import BaseModel
-import dataclasses
-import json
-
-
-def to_dict(obj):
-    if isinstance(obj, BaseModel):
-        return obj.dict()
-    elif isinstance(obj, list):
-        return [to_dict(e) for e in obj]
-    elif isinstance(obj, dict):
-        return {key: to_dict(value) for key, value in obj.items()}
-    elif hasattr(obj, "__dataclass_fields__"):
-        return {k: to_dict(v) for k, v in dataclasses.asdict(obj).items()}
-    else:
-        return obj
-
-
 validation_logs = guard.guard_state.all_histories[0].history[0].field_validation_logs
-print(json.dumps(to_dict(validation_logs), indent=2))
+print(validation_logs.json(indent=2))
 ```
+
 ```json
 {
   "validator_logs": [],
