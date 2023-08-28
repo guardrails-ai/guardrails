@@ -207,9 +207,12 @@ class Runner:
             guard_logs.msg_history = msg_history
 
             # Call: run the API.
-            output = self.call(index, instructions, prompt, msg_history, api, output)
+            llm_response = self.call(
+                index, instructions, prompt, msg_history, api, output
+            )
 
-            guard_logs.llm_response = output
+            guard_logs.llm_response = llm_response
+            output = llm_response.output
 
             # Parse: parse the output.
             parsed_output = self.parse(index, output, output_schema)
@@ -295,8 +298,8 @@ class Runner:
         prompt: Prompt,
         msg_history: Optional[List[Dict[str, str]]],
         api: Callable,
-        output: Optional[LLMResponse] = None,
-    ) -> str:
+        output: Optional[str] = None,
+    ) -> LLMResponse:
         """Run a step.
 
         1. Query the LLM API,
@@ -311,39 +314,45 @@ class Runner:
             return msg_history_copy
 
         with start_action(action_type="call", index=index, prompt=prompt) as action:
+            llm_response = None
             try:
                 if msg_history:
-                    output = api(
+                    llm_response = api(
                         msg_history=msg_history_source(msg_history),
                         base_model=self.base_model,
                     )
                 else:
                     if prompt and instructions:
-                        output = api(
+                        llm_response = api(
                             prompt.source,
                             instructions=instructions.source,
                             base_model=self.base_model,
                         )
                     elif prompt:
-                        output = api(prompt.source, base_model=self.base_model)
+                        llm_response = api(prompt.source, base_model=self.base_model)
             except Exception:
                 # If the API call fails, try calling again without the base model.
                 if msg_history:
-                    output, prompt_tokens, response_tokens = api(
-                        msg_history=msg_history_source(msg_history)
-                    )
+                    llm_response = api(msg_history=msg_history_source(msg_history))
                 else:
                     if prompt and instructions:
-                        output = api(prompt.source, instructions=instructions.source)
+                        llm_response = api(
+                            prompt.source, instructions=instructions.source
+                        )
                     elif prompt:
-                        output = api(prompt.source)
+                        llm_response = api(prompt.source)
+
+            if llm_response is None:
+                llm_response = LLMResponse(
+                    output=output,
+                )
 
             action.log(
                 message_type="info",
-                output=output,
+                output=llm_response,
             )
 
-            return output
+            return llm_response
 
     def parse(
         self,
@@ -530,11 +539,12 @@ class AsyncRunner(Runner):
             guard_logs.msg_history = msg_history
 
             # Call: run the API.
-            output = await self.async_call(
+            llm_response = await self.async_call(
                 index, instructions, prompt, msg_history, api, output
             )
 
-            guard_logs.llm_response = output
+            guard_logs.llm_response = llm_response
+            output = llm_response.output
 
             # Parse: parse the output.
             parsed_output = self.parse(index, output, output_schema)
@@ -568,8 +578,8 @@ class AsyncRunner(Runner):
         prompt: Prompt,
         msg_history: Optional[List[Dict]],
         api: AsyncPromptCallableBase,
-        output: Optional[LLMResponse] = None,
-    ) -> str:
+        output: Optional[str] = None,
+    ) -> LLMResponse:
         """Run a step.
 
         1. Query the LLM API,
@@ -577,39 +587,47 @@ class AsyncRunner(Runner):
         3. Log the output
         """
         with start_action(action_type="call", index=index, prompt=prompt) as action:
+            llm_response = None
             try:
                 if msg_history:
-                    output = await api(
+                    llm_response = await api.invoke_llm(
                         msg_history=msg_history,
                         base_model=self.base_model,
                     )
                 else:
                     if prompt and instructions:
-                        output = await api(
+                        llm_response = await api.invoke_llm(
                             prompt.source,
                             instructions=instructions.source,
                             base_model=self.base_model,
                         )
                     elif prompt:
-                        output = await api(prompt.source, base_model=self.base_model)
+                        llm_response = await api.invoke_llm(
+                            prompt.source, base_model=self.base_model
+                        )
             except Exception:
                 # If the API call fails, try calling again without the base model.
                 if msg_history:
-                    output = await api(msg_history=msg_history)
+                    llm_response = await api.invoke_llm(msg_history=msg_history)
                 else:
                     if prompt and instructions:
-                        output = await api(
+                        llm_response = await api.invoke_llm(
                             prompt.source, instructions=instructions.source
                         )
                     elif prompt:
-                        output = await api(prompt.source)
+                        llm_response = await api.invoke_llm(prompt.source)
+
+            if llm_response is None:
+                llm_response = LLMResponse(
+                    output=output,
+                )
 
             action.log(
                 message_type="info",
-                output=output,
+                output=llm_response,
             )
 
-            return output
+            return llm_response
 
     async def async_validate(
         self,

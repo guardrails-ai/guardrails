@@ -75,6 +75,12 @@ class GuardLogs(ArbitraryModel):
         return gather_reasks(self.validated_output)
 
     @property
+    def output(self) -> Optional[str]:
+        if self.llm_response is None:
+            return None
+        return self.llm_response.output
+
+    @property
     def rich_group(self) -> Group:
         def create_msg_history_table(
             msg_history: Optional[List[Dict[str, Prompt]]]
