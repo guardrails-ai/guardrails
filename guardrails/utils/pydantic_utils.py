@@ -140,6 +140,9 @@ def type_annotation_to_string(type_annotation: Any) -> str:
     # Get the type annotation from the type_annotation
     type_annotation = prepare_type_annotation(type_annotation)
 
+    # Use inline import to avoid circular dependency
+    from guardrails.datatypes import PythonCode
+
     # Map the type annotation to the corresponding field type
     if is_list(type_annotation):
         return "list"
@@ -161,6 +164,8 @@ def type_annotation_to_string(type_annotation: Any) -> str:
         return "url"
     elif typing.get_origin(type_annotation) == Union:
         return "choice"
+    elif type_annotation == PythonCode:
+        return "pythoncode"
     else:
         raise ValueError(f"Unsupported type: {type_annotation}")
 
