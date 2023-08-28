@@ -2,7 +2,8 @@ import datetime
 import logging
 from dataclasses import dataclass
 from types import SimpleNamespace
-from typing import TYPE_CHECKING, Any, Dict, Generator
+from typing import TYPE_CHECKING, Any, Dict, Generator, Iterable
+from typing import List
 from typing import List as TypedList
 from typing import Tuple, Type, Union
 
@@ -23,6 +24,22 @@ class FieldValidation:
     value: Any
     validators: TypedList[Validator]
     children: TypedList["FieldValidation"]
+
+
+def verify_metadata_requirements(
+    metadata: dict, datatypes: Iterable["DataType"]
+) -> List[str]:
+    missing_keys = set()
+    for datatype in datatypes:
+        for validator in datatype.validators:
+            for requirement in validator.required_metadata_keys:
+                if requirement not in metadata:
+                    missing_keys.add(requirement)
+        nested_missing_keys = verify_metadata_requirements(
+            metadata, vars(datatype.children).values()
+        )
+        missing_keys.update(nested_missing_keys)
+    return list(missing_keys)
 
 
 class DataType:
@@ -381,6 +398,8 @@ class Choice(NonScalarType):
         self, children: Dict[str, Any], format_attr: "FormatAttr", element: ET._Element
     ) -> None:
         super().__init__(children, format_attr, element)
+        # grab `discriminator` attribute
+        self.discriminator_key = element.attrib.get("discriminator", "discriminator")
 
     def collect_validation(
         self,
@@ -389,12 +408,11 @@ class Choice(NonScalarType):
         schema: Dict,
     ) -> FieldValidation:
         # Validate the selected choice
-        selected_key = value
-        selected_value = schema[selected_key]
+        discriminator_value = value[self.discriminator_key]
 
-        validation = self._children[selected_key].collect_validation(
-            selected_key,
-            selected_value,
+        validation = self._children[discriminator_value].collect_validation(
+            key,
+            value,
             schema,
         )
 
@@ -425,13 +443,26 @@ class Case(NonScalarType):
         key: str,
         value: Any,
         schema: Dict,
-    ) -> Dict:
-        child = list(self._children.values())[0]
-        return child.collect_validation(key, value, schema)
+    ) -> FieldValidation:
+        # Validate the selected choice
+        validation = self._constructor_validation(key, value)
+
+        # Collect validation for all children
+        for child_key, child_data_type in self._children.items():
+            # Value should be a dictionary
+            # child_key is an expected key that the schema defined
+            # child_data_type is the data type of the expected key
+            child_value = value.get(child_key, None)
+            child_validation = child_data_type.collect_validation(
+                child_key,
+                child_value,
+                value,
+            )
+            validation.children.append(child_validation)
+
+        return validation
 
     def set_children(self, element: ET._Element):
-        assert len(element) == 1, "Case must have exactly one child."
-
         for child in element:
             child_data_type = registry[child.tag]
             self._children[child.attrib["name"]] = child_data_type.from_xml(child)
