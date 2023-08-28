@@ -16,7 +16,7 @@ from guardrails.datatypes import DataType, String
 from guardrails.llm_providers import PromptCallable, openai_chat_wrapper, openai_wrapper
 from guardrails.prompt import Instructions, Prompt
 from guardrails.utils.constants import constants
-from guardrails.utils.json_utils import verify_schema_against_json
+from guardrails.utils.json_utils import verify_schema_against_json, extract_json_from_ouput
 from guardrails.utils.logs_utils import FieldValidationLogs, GuardLogs
 from guardrails.utils.reask_utils import (
     FieldReAsk,
@@ -525,23 +525,23 @@ class JsonSchema(Schema):
             self[child_name] = child_data
 
     def parse(self, output: str) -> Tuple[Dict, Optional[Exception]]:
-        # Remove the triple backticks from the output
-        output = output.strip()
-        if output.startswith("```"):
-            output = output[3:]
-            if output.startswith("json"):
-                output = output[4:]
-        if output.endswith("```"):
-            output = output[:-3]
+        # Try to get json code block from output.  Return error and reask if it is not parseable.
+        parsed_output, error = extract_json_from_ouput(output)
 
-        # Treat the output as a JSON string, and load it into a dict.
-        error = None
-        try:
-            output_as_dict = json.loads(output, strict=False)
-        except json.decoder.JSONDecodeError as e:
-            output_as_dict = None
-            error = e
-        return output_as_dict, error
+        if error:
+            reask = SkeletonReAsk(
+                incorrect_value=output,
+                fail_results=[
+                    FailResult(
+                        fix_value=None,
+                        error_message="Output is not parseable as JSON",
+                    )
+                ],
+            )
+            return reask, error
+        return parsed_output, None
+
+        
 
     def validate(
         self,

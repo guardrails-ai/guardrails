@@ -8,6 +8,16 @@ from .validated_response_reask import VALIDATED_OUTPUT_3 as VALIDATED_OUTPUT_REA
 from .validated_response_reask import ListOfPeople
 from .validated_response_reask import prompt as VALIDATED_RESPONSE_REASK_PROMPT
 from .with_msg_history import Movie as WITH_MSG_HISTORY
+from .parsing_reask import (
+    PersonalDetails,
+    prompt as PARSING_INITIAL_PROMPT,
+    document as PARSING_DOCUMENT,
+    expected_llm_output as PARSING_EXPECTED_LLM_OUTPUT,
+    unparseable_llm_response as PARSING_UNPARSEABLE_LLM_OUTPUT,
+    compiled_prompt as PARSING_COMPILED_PROMPT,
+    compiled_reask as PARSING_COMPILED_REASK,
+    expected_output as PARSING_EXPECTED_OUTPUT
+)
 
 DATA_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)))
 reader = (
@@ -49,4 +59,12 @@ __all__ = [
     "MSG_HISTORY_LLM_OUTPUT",
     "VALIDATED_RESPONSE_REASK_PROMPT",
     "ListOfPeople",
+    "PersonalDetails",
+    "PARSING_INITIAL_PROMPT",
+    "PARSING_DOCUMENT",
+    "PARSING_EXPECTED_LLM_OUTPUT",
+    "PARSING_UNPARSEABLE_LLM_OUTPUT",
+    "PARSING_COMPILED_PROMPT",
+    "PARSING_COMPILED_REASK",
+    "PARSING_EXPECTED_OUTPUT",
 ]
