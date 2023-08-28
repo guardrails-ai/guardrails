@@ -13,8 +13,8 @@ from guardrails.schema import Schema
 from guardrails.utils.logs_utils import GuardHistory, GuardLogs, GuardState
 from guardrails.utils.reask_utils import (
     FieldReAsk,
-    ReAsk,
     NonParseableReAsk,
+    ReAsk,
     reasks_to_dict,
     sub_reasks_with_fixed_values,
 )

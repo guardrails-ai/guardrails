@@ -453,7 +453,9 @@ class JsonSchema(Schema):
         parsed_rail = deepcopy(self.root)
 
         is_skeleton_reask = not any(isinstance(reask, FieldReAsk) for reask in reasks)
-        is_nonparseable_reask = any(isinstance(reask, NonParseableReAsk) for reask in reasks)
+        is_nonparseable_reask = any(
+            isinstance(reask, NonParseableReAsk) for reask in reasks
+        )
 
         if is_nonparseable_reask:
             pruned_tree_schema = self
