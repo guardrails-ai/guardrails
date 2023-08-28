@@ -213,6 +213,7 @@ class Validator:
 
     run_in_separate_process = False
     override_value_on_pass = False
+    required_metadata_keys = []
 
     def __init__(self, on_fail: Optional[Callable] = None, **kwargs):
         if on_fail is None:
@@ -951,6 +952,8 @@ class IsHighQualityTranslation(Validator):
         translation_source (str): The source of the translation.
     """
 
+    required_metadata_keys = ["translation_source"]
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         try:
@@ -1042,6 +1045,8 @@ class ExtractedSummarySentencesMatch(Validator):
         vector_db (VectorDBBase, optional): A vector database to use for embeddings.  Defaults to Faiss.
         embedding_model (EmbeddingBase, optional): The embeddig model to use. Defaults to OpenAIEmbedding.
     """  # noqa
+
+    required_metadata_keys = ["filepaths"]
 
     def __init__(
         self,
@@ -1223,6 +1228,8 @@ class ExtractiveSummary(Validator):
 
         filepaths (List[str]): A list of strings that specifies the filepaths for any documents that should be used for asserting the summary's similarity.
     """  # noqa
+
+    required_metadata_keys = ["filepaths"]
 
     def __init__(
         self,
@@ -1524,6 +1531,8 @@ class QARelevanceLLMEval(Validator):
     Other parameters: Metadata
         question (str): The original question the llm was given to answer.
     """
+
+    required_metadata_keys = ["question"]
 
     def __init__(
         self,

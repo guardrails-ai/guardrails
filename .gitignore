@@ -8,6 +8,7 @@ data/*
 *.pyc
 *.env
 *.log
+*.venv
 settings.json
 site/*
 guardrails.log
@@ -18,7 +19,6 @@ dist/*
 .idea/*
 .cache
 scratch/
-.venv
 .coverage*
 test.db
 test.index

@@ -10,7 +10,6 @@ from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 from lxml import etree as ET
-from lxml.builder import E
 
 from guardrails import validator_service
 from guardrails.datatypes import DataType, String
@@ -25,6 +24,7 @@ from guardrails.utils.reask_utils import (
     gather_reasks,
     get_pruned_tree,
     get_reasks_by_element,
+    prune_obj_for_reasking,
 )
 from guardrails.validator_service import FieldValidation
 from guardrails.validators import (
@@ -394,7 +394,8 @@ class Schema:
     def get_reask_setup(
         self,
         reasks: List[FieldReAsk],
-        reask_value: Any,
+        original_response: Any,
+        use_full_schema: bool,
     ) -> Tuple["Schema", Prompt, Instructions]:
         """Construct a schema for reasking, and a prompt for reasking.
 
@@ -402,8 +403,9 @@ class Schema:
             reasks: List of tuples, where each tuple contains the path to the
                 reasked element, and the ReAsk object (which contains the error
                 message describing why the reask is necessary).
-            reask_value: The value that was returned from the API, with reasks.
-            reask_prompt_template: The template to use for the reask prompt.
+            original_response: The value that was returned from the API, with reasks.
+            use_full_schema: Whether to use the full schema, or only the schema
+                for the reasked elements.
 
         Returns:
             The schema for reasking, and the prompt for reasking.
@@ -441,7 +443,8 @@ class JsonSchema(Schema):
     def get_reask_setup(
         self,
         reasks: List[FieldReAsk],
-        reask_value: Any,
+        original_response: Any,
+        use_full_schema: bool,
     ) -> Tuple["Schema", Prompt, Instructions]:
         parsed_rail = deepcopy(self.root)
 
@@ -456,13 +459,22 @@ class JsonSchema(Schema):
                     constants["high_level_skeleton_reask_prompt"]
                     + constants["json_suffix_without_examples"]
                 )
-        else:
-            # Get the elements that are to be reasked
-            reask_elements = get_reasks_by_element(reasks, parsed_rail)
 
-            # Get the pruned tree so that it only contains ReAsk objects
-            pruned_tree = get_pruned_tree(parsed_rail, list(reask_elements.keys()))
-            pruned_tree_schema = type(self)(pruned_tree)
+            reask_value = original_response
+        else:
+            if use_full_schema:
+                reask_value = original_response
+                # Don't prune the tree if we're reasking with pydantic model
+                # (and openai function calling)
+                pruned_tree_schema = self
+            else:
+                reask_value = prune_obj_for_reasking(original_response)
+                # Get the elements that are to be reasked
+                reask_elements = get_reasks_by_element(reasks, parsed_rail)
+
+                # Get the pruned tree so that it only contains ReAsk objects
+                pruned_tree = get_pruned_tree(parsed_rail, list(reask_elements.keys()))
+                pruned_tree_schema = type(self)(pruned_tree)
 
             reask_prompt_template = self.reask_prompt_template
             if reask_prompt_template is None:
@@ -647,8 +659,12 @@ class JsonSchema(Schema):
         ):
             return SkeletonReAsk(
                 incorrect_value=validated_response,
-                fix_value=None,
-                error_message="JSON does not match schema",
+                fail_results=[
+                    FailResult(
+                        fix_value=None,
+                        error_message="JSON does not match schema",
+                    )
+                ],
             )
 
         validation = FieldValidation(
@@ -766,7 +782,8 @@ class StringSchema(Schema):
     def get_reask_setup(
         self,
         reasks: List[FieldReAsk],
-        reask_value: FieldReAsk,
+        original_response: FieldReAsk,
+        use_full_schema: bool,
     ) -> Tuple[Schema, Prompt, Instructions]:
         pruned_tree_string = self.transpile()
 
@@ -786,7 +803,7 @@ class StringSchema(Schema):
         )
 
         prompt = reask_prompt_template.format(
-            previous_response=reask_value.incorrect_value,
+            previous_response=original_response.incorrect_value,
             error_messages=error_messages,
             output_schema=pruned_tree_string,
         )
@@ -1019,60 +1036,6 @@ class Schema2Prompt:
             dt_child = schema_dict[el_child.attrib["name"]]
             _inner(dt_child, el_child)
 
-    @staticmethod
-    def deconstruct_choice(root: ET._Element) -> ET._Element:
-        """Deconstruct a choice element into a string and cases."""
-
-        def _inner(el: str) -> ET._Element:
-            el = ET.fromstring(el)
-            el_copy = ET.Element(el.tag, **el.attrib)
-
-            for child in el:
-                if child.tag == "choice":
-                    # Create a high level string element.
-                    choice_str = E.string(**child.attrib)
-                    valid_choices = [x.attrib["name"] for x in child]
-                    choice_str.attrib["choices"] = ",".join(valid_choices)
-                    el_copy.append(choice_str)
-
-                    # Create a case for each choice. The child of the case element
-                    # is bubbled up to the parent of the case element. E.g.,
-                    # <choice name='bar'><case><string name='foo'/></case></choice> =>
-                    # <string name='bar'/><string name='foo' if='bar==foo'/>
-                    for case in child:
-                        case_int = case[0]  # The child of the case element
-                        case_int_name = case_int.attrib.get("name", None)
-                        case_int_description = case_int.attrib.get("description", "")
-
-                        # Copy attributes from the case element to case internal element
-                        for k, v in case.attrib.items():
-                            case_int.attrib[k] = v
-
-                        # Make sure information about the case_internal name is not lost
-                        if case_int_name is not None:
-                            if case_int_description == "":
-                                case_int.attrib["description"] = case_int_name
-                            else:
-                                case_int.attrib[
-                                    "description"
-                                ] = f"{case_int_name}: {case_int_description}"
-
-                        # Add the if attribute to the case internal element
-                        case_int.attrib[
-                            "if"
-                        ] = f"{child.attrib['name']}=={case.attrib['name']}"
-
-                        # Bubble up the case_internal element to the parent of choice
-                        case_int = _inner(ET.tostring(case_int))
-                        el_copy.append(case_int)
-                else:
-                    child = _inner(ET.tostring(child))
-                    el_copy.append(child)
-
-            return el_copy
-
-        return _inner(ET.tostring(root))
-
     @classmethod
     def default(cls, schema: Schema) -> str:
         """Default transpiler.
@@ -1099,13 +1062,11 @@ class Schema2Prompt:
         cls.validator_to_prompt(root, schema_dict)
         # Replace pydantic elements with object elements.
         cls.pydantic_to_object(root, schema_dict)
-        # Deconstruct choice elements into string and cases.
-        updated_root = cls.deconstruct_choice(root)
 
         # Return the XML as a string that is
-        ET.indent(updated_root, space="    ")
+        ET.indent(root, space="    ")
         return ET.tostring(
-            updated_root,
+            root,
             encoding="unicode",
             method="xml",
             pretty_print=True,
