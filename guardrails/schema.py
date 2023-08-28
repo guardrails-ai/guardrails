@@ -528,7 +528,8 @@ class JsonSchema(Schema):
             self[child_name] = child_data
 
     def parse(self, output: str) -> Tuple[Dict, Optional[Exception]]:
-        # Try to get json code block from output.  Return error and reask if it is not parseable.
+        # Try to get json code block from output.
+        # Return error and reask if it is not parseable.
         parsed_output, error = extract_json_from_ouput(output)
 
         if error:

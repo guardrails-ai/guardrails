@@ -15,7 +15,7 @@ def has_code_block(
         bool: Whether or not the string contains the specified type of code block.
         int: The starting index of the code block.
         int: The ending index of the code block.
-    """
+    """  # noqa
     block_border = "```"
     block_start_border = f"{block_border}{code_type}"
 
@@ -46,7 +46,7 @@ def get_code_block(
 
     Returns:
         str: The contents of the code block.
-    """
+    """  # noqa
     trimmed_input = string_value.strip()
 
     block_border = "```"

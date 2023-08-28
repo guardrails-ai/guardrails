@@ -32,7 +32,7 @@ def test_parsing_reask(mocker):
     # For orginal prompt and output
     assert guard_history[0].prompt == gd.Prompt(pydantic.PARSING_COMPILED_PROMPT)
     assert guard_history[0].output == pydantic.PARSING_UNPARSEABLE_LLM_OUTPUT
-    assert guard_history[0].validated_output == None
+    assert guard_history[0].validated_output is None
 
     # For re-asked prompt and output
     assert guard_history[1].prompt == gd.Prompt(pydantic.PARSING_COMPILED_REASK)
@@ -69,7 +69,7 @@ async def test_async_parsing_reask(mocker):
     # For orginal prompt and output
     assert guard_history[0].prompt == gd.Prompt(pydantic.PARSING_COMPILED_PROMPT)
     assert guard_history[0].output == pydantic.PARSING_UNPARSEABLE_LLM_OUTPUT
-    assert guard_history[0].validated_output == None
+    assert guard_history[0].validated_output is None
 
     # For re-asked prompt and output
     assert guard_history[1].prompt == gd.Prompt(pydantic.PARSING_COMPILED_REASK)
