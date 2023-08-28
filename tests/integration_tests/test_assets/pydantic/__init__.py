@@ -2,22 +2,20 @@
 import os
 
 from .msg_validated_output_reask import MSG_VALIDATED_OUTPUT_REASK
+from .parsing_reask import PersonalDetails
+from .parsing_reask import compiled_prompt as PARSING_COMPILED_PROMPT
+from .parsing_reask import compiled_reask as PARSING_COMPILED_REASK
+from .parsing_reask import document as PARSING_DOCUMENT
+from .parsing_reask import expected_llm_output as PARSING_EXPECTED_LLM_OUTPUT
+from .parsing_reask import expected_output as PARSING_EXPECTED_OUTPUT
+from .parsing_reask import prompt as PARSING_INITIAL_PROMPT
+from .parsing_reask import unparseable_llm_response as PARSING_UNPARSEABLE_LLM_OUTPUT
 from .validated_response_reask import VALIDATED_OUTPUT_1 as VALIDATED_OUTPUT_REASK_1
 from .validated_response_reask import VALIDATED_OUTPUT_2 as VALIDATED_OUTPUT_REASK_2
 from .validated_response_reask import VALIDATED_OUTPUT_3 as VALIDATED_OUTPUT_REASK_3
 from .validated_response_reask import ListOfPeople
 from .validated_response_reask import prompt as VALIDATED_RESPONSE_REASK_PROMPT
 from .with_msg_history import Movie as WITH_MSG_HISTORY
-from .parsing_reask import (
-    PersonalDetails,
-    prompt as PARSING_INITIAL_PROMPT,
-    document as PARSING_DOCUMENT,
-    expected_llm_output as PARSING_EXPECTED_LLM_OUTPUT,
-    unparseable_llm_response as PARSING_UNPARSEABLE_LLM_OUTPUT,
-    compiled_prompt as PARSING_COMPILED_PROMPT,
-    compiled_reask as PARSING_COMPILED_REASK,
-    expected_output as PARSING_EXPECTED_OUTPUT
-)
 
 DATA_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)))
 reader = (

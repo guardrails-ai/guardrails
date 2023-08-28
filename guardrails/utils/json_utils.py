@@ -1,9 +1,10 @@
-from dataclasses import dataclass
 import json
+from dataclasses import dataclass
 from typing import Any, Dict, Optional, Tuple, Type, Union
-from .parsing_utils import get_code_block, has_code_block
 
 import lxml.etree as ET
+
+from .parsing_utils import get_code_block, has_code_block
 
 
 @dataclass
@@ -301,12 +302,13 @@ def verify_schema_against_json(
         coerce_types=coerce_types,
     )
 
+
 def extract_json_from_ouput(output: str) -> Tuple[Dict, Optional[Exception]]:
     # Find and extract json from code blocks
     extracted_code_block = output
-    has_json_block, json_start, json_end = has_code_block(output, 'json')
+    has_json_block, json_start, json_end = has_code_block(output, "json")
     if has_json_block:
-        extracted_code_block = get_code_block(output, json_start, json_end, 'json')
+        extracted_code_block = get_code_block(output, json_start, json_end, "json")
     else:
         has_block, block_start, block_end = has_code_block(output)
         if has_block:

@@ -224,7 +224,9 @@ class Runner:
                     guard_logs, index, parsed_output, output_schema
                 )
 
-                guard_logs.set_validated_output(validated_output, self.full_schema_reask)
+                guard_logs.set_validated_output(
+                    validated_output, self.full_schema_reask
+                )
 
                 # Introspect: inspect validated output for reasks.
                 reasks = self.introspect(index, validated_output, output_schema)
@@ -551,7 +553,9 @@ class AsyncRunner(Runner):
                     guard_logs, index, parsed_output, output_schema
                 )
 
-                guard_logs.set_validated_output(validated_output, self.full_schema_reask)
+                guard_logs.set_validated_output(
+                    validated_output, self.full_schema_reask
+                )
 
                 # Introspect: inspect validated output for reasks.
                 reasks = self.introspect(index, validated_output, output_schema)

@@ -1,8 +1,9 @@
 import openai
 import pytest
+
 import guardrails as gd
 
-from .mock_llm_outputs import openai_completion_create, async_openai_completion_create
+from .mock_llm_outputs import async_openai_completion_create, openai_completion_create
 from .test_assets import pydantic
 
 
@@ -13,8 +14,7 @@ def test_parsing_reask(mocker):
     )
 
     guard = gd.Guard.from_pydantic(
-        output_class=pydantic.PersonalDetails,
-        prompt=pydantic.PARSING_INITIAL_PROMPT
+        output_class=pydantic.PersonalDetails, prompt=pydantic.PARSING_INITIAL_PROMPT
     )
     _, final_output = guard(
         llm_api=openai.Completion.create,
@@ -39,6 +39,7 @@ def test_parsing_reask(mocker):
     assert guard_history[1].output == pydantic.PARSING_EXPECTED_LLM_OUTPUT
     assert guard_history[1].validated_output == pydantic.PARSING_EXPECTED_OUTPUT
 
+
 @pytest.mark.asyncio
 async def test_async_parsing_reask(mocker):
     """Test re-asking when response is not parseable during async flow."""
@@ -48,8 +49,7 @@ async def test_async_parsing_reask(mocker):
     )
 
     guard = gd.Guard.from_pydantic(
-        output_class=pydantic.PersonalDetails,
-        prompt=pydantic.PARSING_INITIAL_PROMPT
+        output_class=pydantic.PersonalDetails, prompt=pydantic.PARSING_INITIAL_PROMPT
     )
     raw_output, final_output = await guard(
         llm_api=openai.Completion.acreate,

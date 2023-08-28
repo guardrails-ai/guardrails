@@ -16,7 +16,10 @@ from guardrails.datatypes import DataType, String
 from guardrails.llm_providers import PromptCallable, openai_chat_wrapper, openai_wrapper
 from guardrails.prompt import Instructions, Prompt
 from guardrails.utils.constants import constants
-from guardrails.utils.json_utils import verify_schema_against_json, extract_json_from_ouput
+from guardrails.utils.json_utils import (
+    extract_json_from_ouput,
+    verify_schema_against_json,
+)
 from guardrails.utils.logs_utils import FieldValidationLogs, GuardLogs
 from guardrails.utils.reask_utils import (
     FieldReAsk,
@@ -540,8 +543,6 @@ class JsonSchema(Schema):
             )
             return reask, error
         return parsed_output, None
-
-        
 
     def validate(
         self,
