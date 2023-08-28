@@ -19,6 +19,9 @@ class FieldReAsk(ReAsk):
 class SkeletonReAsk(ReAsk):
     pass
 
+class NonParseableReAsk(ReAsk):
+    pass
+
 
 def gather_reasks(validated_output: Dict) -> List[FieldReAsk]:
     """Traverse output and gather all ReAsk objects.

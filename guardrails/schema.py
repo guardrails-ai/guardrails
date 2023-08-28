@@ -23,6 +23,7 @@ from guardrails.utils.json_utils import (
 from guardrails.utils.logs_utils import FieldValidationLogs, GuardLogs
 from guardrails.utils.reask_utils import (
     FieldReAsk,
+    NonParseableReAsk,
     SkeletonReAsk,
     gather_reasks,
     get_pruned_tree,
@@ -452,8 +453,20 @@ class JsonSchema(Schema):
         parsed_rail = deepcopy(self.root)
 
         is_skeleton_reask = not any(isinstance(reask, FieldReAsk) for reask in reasks)
+        is_nonparseable_reask = any(isinstance(reask, NonParseableReAsk) for reask in reasks)
 
-        if is_skeleton_reask:
+        if is_nonparseable_reask:
+            pruned_tree_schema = self
+
+            reask_prompt_template = self.reask_prompt_template
+            if reask_prompt_template is None:
+                reask_prompt_template = Prompt(
+                    constants["high_level_json_parsing_reask_prompt"]
+                    + constants["json_suffix_without_examples"]
+                )
+
+            reask_value = original_response
+        elif is_skeleton_reask:
             pruned_tree_schema = self
 
             reask_prompt_template = self.reask_prompt_template
@@ -533,7 +546,7 @@ class JsonSchema(Schema):
         parsed_output, error = extract_json_from_ouput(output)
 
         if error:
-            reask = SkeletonReAsk(
+            reask = NonParseableReAsk(
                 incorrect_value=output,
                 fail_results=[
                     FailResult(
@@ -719,6 +732,8 @@ class JsonSchema(Schema):
 
     def introspect(self, data: Any) -> list:
         if isinstance(data, SkeletonReAsk):
+            return [data]
+        elif isinstance(data, NonParseableReAsk):
             return [data]
         return gather_reasks(data)
 

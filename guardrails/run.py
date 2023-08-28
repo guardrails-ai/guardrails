@@ -14,7 +14,7 @@ from guardrails.utils.logs_utils import GuardHistory, GuardLogs, GuardState
 from guardrails.utils.reask_utils import (
     FieldReAsk,
     ReAsk,
-    SkeletonReAsk,
+    NonParseableReAsk,
     reasks_to_dict,
     sub_reasks_with_fixed_values,
 )
@@ -216,7 +216,7 @@ class Runner:
             guard_logs.parsed_output = parsed_output
 
             validated_output = None
-            if parsing_error and isinstance(parsed_output, SkeletonReAsk):
+            if parsing_error and isinstance(parsed_output, NonParseableReAsk):
                 reasks = self.introspect(index, parsed_output, output_schema)
             else:
                 # Validate: run output validation.
@@ -239,7 +239,7 @@ class Runner:
 
             guard_logs.set_validated_output(validated_output, self.full_schema_reask)
 
-            return validated_output, reasks
+            return validated_output or parsed_output, reasks
 
     def prepare(
         self,
@@ -545,7 +545,7 @@ class AsyncRunner(Runner):
             guard_logs.parsed_output = parsed_output
 
             validated_output = None
-            if parsing_error and isinstance(parsed_output, SkeletonReAsk):
+            if parsing_error and isinstance(parsed_output, NonParseableReAsk):
                 reasks = self.introspect(index, parsed_output, output_schema)
             else:
                 # Validate: run output validation.
@@ -568,7 +568,7 @@ class AsyncRunner(Runner):
 
             guard_logs.set_validated_output(validated_output, self.full_schema_reask)
 
-            return validated_output, reasks
+            return validated_output or parsed_output, reasks
 
     async def async_call(
         self,

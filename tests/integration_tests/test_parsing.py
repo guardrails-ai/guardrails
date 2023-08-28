@@ -51,13 +51,11 @@ async def test_async_parsing_reask(mocker):
     guard = gd.Guard.from_pydantic(
         output_class=pydantic.PersonalDetails, prompt=pydantic.PARSING_INITIAL_PROMPT
     )
-    raw_output, final_output = await guard(
+    _, final_output = await guard(
         llm_api=openai.Completion.acreate,
         prompt_params={"document": pydantic.PARSING_DOCUMENT},
         num_reasks=1,
     )
-
-    print("raw_output: ", raw_output)
 
     assert final_output == pydantic.PARSING_EXPECTED_OUTPUT
 
