@@ -13,3 +13,7 @@ Your generated response should satisfy the following properties:
 - two-words
 
 Don't talk; just go.
+
+
+String Output:
+

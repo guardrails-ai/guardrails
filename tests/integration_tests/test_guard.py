@@ -11,9 +11,9 @@ from guardrails.utils.reask_utils import FieldReAsk
 from guardrails.validators import FailResult
 
 from .mock_llm_outputs import (
+    MockOpenAICallable,
+    MockOpenAIChatCallable,
     entity_extraction,
-    openai_chat_completion_create,
-    openai_completion_create,
 )
 from .test_assets import pydantic, string
 
@@ -126,9 +126,7 @@ def test_entity_extraction_with_reask(
     mocker, rail, prompt, test_full_schema_reask, multiprocessing_validators
 ):
     """Test that the entity extraction works with re-asking."""
-    mocker.patch(
-        "guardrails.llm_providers.openai_wrapper", new=openai_completion_create
-    )
+    mocker.patch("guardrails.llm_providers.OpenAICallable", new=MockOpenAICallable)
     mocker.patch(
         "guardrails.validators.Validator.run_in_separate_process",
         new=multiprocessing_validators,
@@ -155,9 +153,9 @@ def test_entity_extraction_with_reask(
 
     # For orginal prompt and output
     assert guard_history[0].prompt == gd.Prompt(entity_extraction.COMPILED_PROMPT)
-    assert guard_history[0].prompt_token_count == 123
-    assert guard_history[0].response_token_count == 1234
-    assert guard_history[0].output == entity_extraction.LLM_OUTPUT
+    assert guard_history[0].llm_response.prompt_token_count == 123
+    assert guard_history[0].llm_response.response_token_count == 1234
+    assert guard_history[0].llm_response.output == entity_extraction.LLM_OUTPUT
     assert (
         guard_history[0].validated_output == entity_extraction.VALIDATED_OUTPUT_REASK_1
     )
@@ -189,10 +187,15 @@ def test_entity_extraction_with_reask(
             guard_history[1].prompt.source
             == entity_extraction.COMPILED_PROMPT_FULL_REASK
         )
-        assert guard_history[1].output == entity_extraction.LLM_OUTPUT_FULL_REASK
+        assert (
+            guard_history[1].llm_response.output
+            == entity_extraction.LLM_OUTPUT_FULL_REASK
+        )
     else:
         assert guard_history[1].prompt.source == entity_extraction.COMPILED_PROMPT_REASK
-        assert guard_history[1].output == entity_extraction.LLM_OUTPUT_REASK
+        assert (
+            guard_history[1].llm_response.output == entity_extraction.LLM_OUTPUT_REASK
+        )
     assert (
         guard_history[1].validated_output == entity_extraction.VALIDATED_OUTPUT_REASK_2
     )
@@ -207,9 +210,7 @@ def test_entity_extraction_with_reask(
 )
 def test_entity_extraction_with_noop(mocker, rail, prompt):
     """Test that the entity extraction works with re-asking."""
-    mocker.patch(
-        "guardrails.llm_providers.openai_wrapper", new=openai_completion_create
-    )
+    mocker.patch("guardrails.llm_providers.OpenAICallable", new=MockOpenAICallable)
 
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
     guard = guard_initializer(rail, prompt)
@@ -245,9 +246,7 @@ def test_entity_extraction_with_noop(mocker, rail, prompt):
 )
 def test_entity_extraction_with_filter(mocker, rail, prompt):
     """Test that the entity extraction works with re-asking."""
-    mocker.patch(
-        "guardrails.llm_providers.openai_wrapper", new=openai_completion_create
-    )
+    mocker.patch("guardrails.llm_providers.OpenAICallable", new=MockOpenAICallable)
 
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
     guard = guard_initializer(rail, prompt)
@@ -282,9 +281,7 @@ def test_entity_extraction_with_filter(mocker, rail, prompt):
 )
 def test_entity_extraction_with_fix(mocker, rail, prompt):
     """Test that the entity extraction works with re-asking."""
-    mocker.patch(
-        "guardrails.llm_providers.openai_wrapper", new=openai_completion_create
-    )
+    mocker.patch("guardrails.llm_providers.OpenAICallable", new=MockOpenAICallable)
 
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
     guard = guard_initializer(rail, prompt)
@@ -320,9 +317,7 @@ def test_entity_extraction_with_fix(mocker, rail, prompt):
 )
 def test_entity_extraction_with_refrain(mocker, rail, prompt):
     """Test that the entity extraction works with re-asking."""
-    mocker.patch(
-        "guardrails.llm_providers.openai_wrapper", new=openai_completion_create
-    )
+    mocker.patch("guardrails.llm_providers.OpenAICallable", new=MockOpenAICallable)
 
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
     guard = guard_initializer(rail, prompt)
@@ -363,8 +358,8 @@ def test_entity_extraction_with_fix_chat_models(mocker, rail, prompt, instructio
     """Test that the entity extraction works with fix for chat models."""
 
     mocker.patch(
-        "guardrails.llm_providers.openai_chat_wrapper",
-        new=openai_chat_completion_create,
+        "guardrails.llm_providers.OpenAIChatCallable",
+        new=MockOpenAIChatCallable,
     )
 
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
@@ -396,9 +391,7 @@ def test_entity_extraction_with_fix_chat_models(mocker, rail, prompt, instructio
 
 def test_string_output(mocker):
     """Test single string (non-JSON) generation."""
-    mocker.patch(
-        "guardrails.llm_providers.openai_wrapper", new=openai_completion_create
-    )
+    mocker.patch("guardrails.llm_providers.OpenAICallable", new=MockOpenAICallable)
 
     guard = gd.Guard.from_rail_string(string.RAIL_SPEC_FOR_STRING)
     _, final_output = guard(
@@ -421,9 +414,7 @@ def test_string_output(mocker):
 
 def test_string_reask(mocker):
     """Test single string (non-JSON) generation with re-asking."""
-    mocker.patch(
-        "guardrails.llm_providers.openai_wrapper", new=openai_completion_create
-    )
+    mocker.patch("guardrails.llm_providers.OpenAICallable", new=MockOpenAICallable)
 
     guard = gd.Guard.from_rail_string(string.RAIL_SPEC_FOR_STRING_REASK)
     _, final_output = guard(
@@ -455,9 +446,7 @@ def test_string_reask(mocker):
 
 
 def test_skeleton_reask(mocker):
-    mocker.patch(
-        "guardrails.llm_providers.openai_wrapper", new=openai_completion_create
-    )
+    mocker.patch("guardrails.llm_providers.OpenAICallable", new=MockOpenAICallable)
 
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
     guard = gd.Guard.from_rail_string(entity_extraction.RAIL_SPEC_WITH_SKELETON_REASK)
@@ -520,7 +509,7 @@ def test_skeleton_reask(mocker):
             openai.ChatCompletion.create,
             entity_extraction.COMPILED_PROMPT_WITHOUT_INSTRUCTIONS,
             entity_extraction.COMPILED_INSTRUCTIONS,
-            entity_extraction.COMPILED_PROMPT_REASK,
+            entity_extraction.COMPILED_PROMPT_REASK_WITHOUT_INSTRUCTIONS,
             entity_extraction.COMPILED_INSTRUCTIONS_REASK,
         ),
         (
@@ -530,8 +519,10 @@ def test_skeleton_reask(mocker):
             entity_extraction.OPTIONAL_MSG_HISTORY,
             openai.ChatCompletion.create,
             None,
-            None,
-            entity_extraction.COMPILED_PROMPT_REASK,
+            "You are a helpful assistant, "
+            "able to express yourself purely through JSON, "
+            "strictly and precisely adhering to the provided XML schemas.",
+            entity_extraction.COMPILED_PROMPT_REASK_WITHOUT_INSTRUCTIONS,
             entity_extraction.COMPILED_INSTRUCTIONS_REASK,
         ),
     ],
@@ -550,13 +541,11 @@ def test_entity_extraction_with_reask_with_optional_prompts(
 ):
     """Test that the entity extraction works with re-asking."""
     if llm_api == openai.Completion.create:
-        mocker.patch(
-            "guardrails.llm_providers.openai_wrapper", new=openai_completion_create
-        )
+        mocker.patch("guardrails.llm_providers.OpenAICallable", new=MockOpenAICallable)
     else:
         mocker.patch(
-            "guardrails.llm_providers.openai_chat_wrapper",
-            new=openai_chat_completion_create,
+            "guardrails.llm_providers.OpenAIChatCallable",
+            new=MockOpenAIChatCallable,
         )
 
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
@@ -632,8 +621,8 @@ def test_string_with_message_history_reask(mocker):
     """Test single string (non-JSON) generation with message history and
     reask."""
     mocker.patch(
-        "guardrails.llm_providers.openai_chat_wrapper",
-        new=openai_chat_completion_create,
+        "guardrails.llm_providers.OpenAIChatCallable",
+        new=MockOpenAIChatCallable,
     )
 
     guard = gd.Guard.from_rail_string(string.RAIL_SPEC_FOR_MSG_HISTORY)
@@ -651,7 +640,10 @@ def test_string_with_message_history_reask(mocker):
     # Check that the guard state object has the correct number of re-asks.
     assert len(guard_history) == 2
 
-    assert guard_history[0].instructions is None
+    assert (
+        guard_history[0].instructions.source == "You are a helpful assistant, "
+        "expressing yourself through a string."
+    )
     assert guard_history[0].prompt is None
     assert guard_history[0].output == string.MSG_LLM_OUTPUT_INCORRECT
     assert guard_history[0].validated_output == string.MSG_VALIDATED_OUTPUT_REASK
@@ -668,8 +660,8 @@ def test_string_with_message_history_reask(mocker):
 def test_pydantic_with_message_history_reask(mocker):
     """Test JSON generation with message history re-asking."""
     mocker.patch(
-        "guardrails.llm_providers.openai_chat_wrapper",
-        new=openai_chat_completion_create,
+        "guardrails.llm_providers.OpenAIChatCallable",
+        new=MockOpenAIChatCallable,
     )
 
     guard = gd.Guard.from_pydantic(output_class=pydantic.WITH_MSG_HISTORY)
@@ -688,7 +680,11 @@ def test_pydantic_with_message_history_reask(mocker):
     # Check that the guard state object has the correct number of re-asks.
     assert len(guard_history) == 2
 
-    assert guard_history[0].instructions is None
+    assert (
+        guard_history[0].instructions.source == "You are a helpful assistant, "
+        "able to express yourself purely through JSON, "
+        "strictly and precisely adhering to the provided XML schemas."
+    )
     assert guard_history[0].prompt is None
     assert guard_history[0].output == pydantic.MSG_HISTORY_LLM_OUTPUT_INCORRECT
     assert guard_history[0].validated_output == pydantic.MSG_VALIDATED_OUTPUT_REASK
