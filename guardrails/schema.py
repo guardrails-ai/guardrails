@@ -14,6 +14,8 @@ from lxml import etree as ET
 from guardrails import validator_service
 from guardrails.datatypes import DataType, String
 from guardrails.llm_providers import (
+    AsyncOpenAICallable,
+    AsyncOpenAIChatCallable,
     OpenAICallable,
     OpenAIChatCallable,
     PromptCallableBase,
@@ -728,9 +730,14 @@ class JsonSchema(Schema):
         instructions: Optional[Instructions],
         prompt: Prompt,
     ):
-        if isinstance(prompt_callable, OpenAICallable):
+        if isinstance(prompt_callable, OpenAICallable) or isinstance(
+            prompt_callable, AsyncOpenAICallable
+        ):
             prompt.source += "\n\nJson Output:\n\n"
-        if isinstance(prompt_callable, OpenAIChatCallable) and not instructions:
+        if (
+            isinstance(prompt_callable, OpenAIChatCallable)
+            or isinstance(prompt_callable, AsyncOpenAIChatCallable)
+        ) and not instructions:
             instructions = Instructions(
                 "You are a helpful assistant, "
                 "able to express yourself purely through JSON, "
@@ -933,14 +940,14 @@ class StringSchema(Schema):
         instructions: Optional[Instructions],
         prompt: Prompt,
     ):
-        if prompt_callable is None:
-            raise RuntimeError(
-                "In order to support reasking, a `prompt_callable` is required."
-            )
-
-        if isinstance(prompt_callable, OpenAICallable):
+        if isinstance(prompt_callable, OpenAICallable) or isinstance(
+            prompt_callable, AsyncOpenAICallable
+        ):
             prompt.source += "\n\nString Output:\n\n"
-        if isinstance(prompt_callable, OpenAIChatCallable) and not instructions:
+        if (
+            isinstance(prompt_callable, OpenAIChatCallable)
+            or isinstance(prompt_callable, AsyncOpenAIChatCallable)
+        ) and not instructions:
             instructions = Instructions(
                 "You are a helpful assistant, expressing yourself through a string."
             )

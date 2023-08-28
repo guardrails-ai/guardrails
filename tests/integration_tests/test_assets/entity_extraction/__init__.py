@@ -33,18 +33,21 @@ reader = (
 
 # Compiled prompts
 COMPILED_PROMPT = reader("compiled_prompt.txt")
-COMPILED_PROMPT_REASK = reader("compiled_prompt_reask.txt")
-COMPILED_PROMPT_FULL_REASK = reader("compiled_prompt_full_reask.txt")
 COMPILED_PROMPT_WITHOUT_INSTRUCTIONS = reader(
     "compiled_prompt_without_instructions.txt"
 )
+COMPILED_PROMPT_REASK = reader("compiled_prompt_reask.txt")
+COMPILED_PROMPT_REASK_WITHOUT_INSTRUCTIONS = reader(
+    "compiled_prompt_reask_without_instructions.txt"
+)
+COMPILED_PROMPT_FULL_REASK = reader("compiled_prompt_full_reask.txt")
 COMPILED_INSTRUCTIONS = reader("compiled_instructions.txt")
 COMPILED_INSTRUCTIONS_REASK = reader("compiled_instructions_reask.txt")
 COMPILED_PROMPT_SKELETON_REASK_1 = reader("compiled_prompt_skeleton_reask_1.txt")
 COMPILED_PROMPT_SKELETON_REASK_2 = reader("compiled_prompt_skeleton_reask_2.txt")
 COMPILED_MSG_HISTORY = [
     {"role": "system", "content": COMPILED_INSTRUCTIONS},
-    {"role": "user", "content": COMPILED_PROMPT},
+    {"role": "user", "content": COMPILED_PROMPT_WITHOUT_INSTRUCTIONS},
 ]
 
 # LLM outputs
@@ -79,8 +82,9 @@ PYDANTIC_INSTRUCTIONS_CHAT_MODEL = INSTRUCTIONS_CHAT_MODEL
 
 __all__ = [
     "COMPILED_PROMPT",
-    "COMPILED_PROMPT_REASK",
     "COMPILED_PROMPT_WITHOUT_INSTRUCTIONS",
+    "COMPILED_PROMPT_REASK",
+    "COMPILED_PROMPT_REASK_WITHOUT_INSTRUCTIONS",
     "COMPILED_INSTRUCTIONS",
     "COMPILED_INSTRUCTIONS_REASK",
     "COMPILED_MSG_HISTORY",

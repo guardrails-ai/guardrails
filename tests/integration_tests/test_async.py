@@ -3,7 +3,7 @@ import pytest
 
 import guardrails as gd
 
-from .mock_llm_outputs import async_openai_completion_create, entity_extraction
+from .mock_llm_outputs import MockAsyncOpenAICallable, entity_extraction
 from .test_guard import *  # noqa: F403, F401
 
 
@@ -12,8 +12,8 @@ from .test_guard import *  # noqa: F403, F401
 async def test_entity_extraction_with_reask(mocker, multiprocessing_validators: bool):
     """Test that the entity extraction works with re-asking."""
     mocker.patch(
-        "guardrails.llm_providers.async_openai_wrapper",
-        new=async_openai_completion_create,
+        "guardrails.llm_providers.AsyncOpenAICallable",
+        new=MockAsyncOpenAICallable,
     )
     mocker.patch(
         "guardrails.validators.Validator.run_in_separate_process",
@@ -38,9 +38,9 @@ async def test_entity_extraction_with_reask(mocker, multiprocessing_validators: 
 
     # For orginal prompt and output
     assert guard_history[0].prompt == gd.Prompt(entity_extraction.COMPILED_PROMPT)
-    assert guard_history[0].prompt_token_count == 123
-    assert guard_history[0].response_token_count == 1234
-    assert guard_history[0].output == entity_extraction.LLM_OUTPUT
+    assert guard_history[0].llm_response.prompt_token_count == 123
+    assert guard_history[0].llm_response.response_token_count == 1234
+    assert guard_history[0].llm_response.output == entity_extraction.LLM_OUTPUT
     assert (
         guard_history[0].validated_output == entity_extraction.VALIDATED_OUTPUT_REASK_1
     )
