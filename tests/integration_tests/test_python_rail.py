@@ -98,11 +98,12 @@ def test_python_rail(mocker):
         output_class=Director,
         prompt=(
             "Provide detailed information about the top 5 grossing movies from"
-            " {{director}} including release date, duration, budget, whether "
-            "it's a sequel, website, and contact email.\n@json_suffix_without_examples"
+            " ${director} including release date, duration, budget, whether "
+            "it's a sequel, website, and contact email.\n"
+            "${gr.json_suffix_without_examples}"
         ),
         instructions="\nYou are a helpful assistant only capable of communicating"
-        " with valid JSON, and no other text.\n@json_suffix_prompt_examples",
+        " with valid JSON, and no other text.\n${gr.json_suffix_prompt_examples}",
     )
 
     # Guardrails runs validation and fixes the first failing output through reasking
@@ -218,11 +219,12 @@ def test_python_rail_add_validator(mocker):
         output_class=Director,
         prompt=(
             "Provide detailed information about the top 5 grossing movies from"
-            " {{director}} including release date, duration, budget, whether "
-            "it's a sequel, website, and contact email.\n@json_suffix_without_examples"
+            " ${director} including release date, duration, budget, whether "
+            "it's a sequel, website, and contact email.\n"
+            "${gr.json_suffix_without_examples}"
         ),
         instructions="\nYou are a helpful assistant only capable of communicating"
-        " with valid JSON, and no other text.\n@json_suffix_prompt_examples",
+        " with valid JSON, and no other text.\n${gr.json_suffix_prompt_examples}",
     )
 
     # Guardrails runs validation and fixes the first failing output through reasking
@@ -283,13 +285,13 @@ def test_python_string(mocker):
     instructions = """
 You are a helpful assistant, and you are helping me come up with a name for a pizza.
 
-@complete_string_suffix
+${gr.complete_string_suffix}
 """
 
     prompt = """
 Given the following ingredients, what would you call this pizza?
 
-{{ingredients}}
+${ingredients}
 """
 
     guard = gd.Guard.from_string(
