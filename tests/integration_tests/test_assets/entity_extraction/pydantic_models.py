@@ -6,12 +6,12 @@ from guardrails.validators import LowerCase, OneLine, TwoWords
 
 
 class FeeDetailsFilter(BaseModel):
-    index: int = Field(validators="1-indexed")
+    index: int = Field(validators=("1-indexed", "noop"))
     name: str = Field(
         validators=[LowerCase(on_fail="filter"), TwoWords(on_fail="filter")]
     )
     explanation: str = Field(validators=OneLine(on_fail="filter"))
-    value: float = Field(validators="percentage")
+    value: float = Field(validators=("percentage", "noop"))
 
 
 class ContractDetailsFilter(BaseModel):
@@ -25,10 +25,10 @@ class ContractDetailsFilter(BaseModel):
 
 
 class FeeDetailsFix(BaseModel):
-    index: int = Field(validators="1-indexed")
+    index: int = Field(validators=("1-indexed", "noop"))
     name: str = Field(validators=[LowerCase(on_fail="fix"), TwoWords(on_fail="fix")])
     explanation: str = Field(validators=OneLine(on_fail="fix"))
-    value: float = Field(validators="percentage")
+    value: float = Field(validators=("percentage", "noop"))
 
 
 class ContractDetailsFix(BaseModel):
@@ -42,10 +42,10 @@ class ContractDetailsFix(BaseModel):
 
 
 class FeeDetailsNoop(BaseModel):
-    index: int = Field(validators="1-indexed")
+    index: int = Field(validators=("1-indexed", "noop"))
     name: str = Field(validators=[LowerCase(on_fail="noop"), TwoWords(on_fail="noop")])
     explanation: str = Field(validators=OneLine(on_fail="noop"))
-    value: float = Field(validators="percentage")
+    value: float = Field(validators=("percentage", "noop"))
 
 
 class ContractDetailsNoop(BaseModel):
@@ -59,10 +59,10 @@ class ContractDetailsNoop(BaseModel):
 
 
 class FeeDetailsReask(BaseModel):
-    index: int = Field(validators="1-indexed")
+    index: int = Field(validators=("1-indexed", "noop"))
     name: str = Field(validators=[LowerCase(on_fail="noop"), TwoWords(on_fail="reask")])
     explanation: str = Field(validators=OneLine(on_fail="noop"))
-    value: float = Field(validators="percentage")
+    value: float = Field(validators=("percentage", "noop"))
 
 
 class ContractDetailsReask(BaseModel):
@@ -76,12 +76,12 @@ class ContractDetailsReask(BaseModel):
 
 
 class FeeDetailsRefrain(BaseModel):
-    index: int = Field(validators="1-indexed")
+    index: int = Field(validators=("1-indexed", "noop"))
     name: str = Field(
         validators=[LowerCase(on_fail="refrain"), TwoWords(on_fail="refrain")]
     )
     explanation: str = Field(validators=OneLine(on_fail="refrain"))
-    value: float = Field(validators="percentage")
+    value: float = Field(validators=("percentage", "noop"))
 
 
 class ContractDetailsRefrain(BaseModel):
