@@ -20,7 +20,6 @@ nav:
       - 'Output Element': rail/output.md
       - 'Prompt Element': rail/prompt.md
       - 'Instruction Element': rail/instructions.md
-      - '(Experimental) Script Element': rail/script.md
     - 'Concepts':
       - 'Validators': concepts/validators.md
     - 'Guardrails Reference':
