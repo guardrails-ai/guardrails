@@ -25,8 +25,14 @@ class Guard:
     """The Guard class.
 
     This class is the main entry point for using Guardrails. It is
-    initialized from either `from_rail` or `from_rail_string` methods,
-    which take in a `.rail` file or string, respectively. The `__call__`
+    initialized from one of the following class methods:
+    
+    - `from_rail`
+    - `from_rail_string`
+    - `from_pydantic`
+    - `from_string`
+
+    The `__call__`
     method functions as a wrapper around LLM APIs. It takes in an LLM
     API, and optional prompt parameters, and returns the raw output from
     the LLM and the validated output.

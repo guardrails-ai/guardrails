@@ -17,7 +17,11 @@ nav:
   - 'Installation': guardrails_ai/installation.md
   - 'FAQ': faq.md
   - 'Concepts':
-    - 'RailSpec': concepts/railspec.md
+    # - 'RailSpec': concepts/railspec.md
+    - 'RailSpec': concepts/rail.md
+    - 'Output Element': concepts/output.md
+    - 'Prompt Element': concepts/prompt.md
+    - 'Instruction Element': concepts/instructions.md
     - 'Guard': concepts/guard.md
     - 'Validators': concepts/validators.md
     - 'Logs': concepts/logs.md
@@ -26,13 +30,14 @@ nav:
     - 'Guard': api_reference/guard.md
     - 'Rail': api_reference/rail.md
     - 'Validators': api_reference/validators.md
+    - 'Response Structures': api_reference/response_structures.md
     - 'Schema': api_reference/schema.md
     - 'Document Store': api_reference/document_store.md
     - 'Data Types': api_reference/data_types.md
   - 'CLI Reference': cli.md
-  - 'Recipes':
-    - 'Generating structured data': recipes/generate_structured_data.ipynb
-    - 'Validating structured data': recipes/validate_structured_data.ipynb
+  # - 'Recipes':
+  #   - 'Generating structured data': recipes/generate_structured_data.ipynb
+  #   - 'Validating structured data': recipes/validate_structured_data.ipynb
   - 'Examples':
     - 'Text to SQL': use_cases/text2sql/text2sql.ipynb
     - 'Use Guardrails with Chat Models': examples/guardrails_with_chat_models.ipynb
