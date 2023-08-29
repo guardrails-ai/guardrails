@@ -38,6 +38,7 @@ REQUIRED = [
     "griffe",
     "tenacity>=8.1.0",
     "pytest",
+    "regex",
 ]
 
 # Read in docs/requirements.txt
