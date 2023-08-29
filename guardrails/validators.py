@@ -703,7 +703,7 @@ class BugFreePython(Validator):
         return PassResult()
 
 
-@register_validator(name="bug-free-sql", data_type="sql")
+@register_validator(name="bug-free-sql", data_type=["sql", "string"])
 class BugFreeSQL(Validator):
     """Validates that there are no SQL syntactic bugs in the generated code.
 
@@ -716,7 +716,7 @@ class BugFreeSQL(Validator):
     | Property                      | Description                       |
     | ----------------------------- | --------------------------------- |
     | Name for `format` attribute   | `bug-free-sql`                    |
-    | Supported data types          | `sql`                             |
+    | Supported data types          | `sql`, `string`                   |
     | Programmatic fix              | None                              |
     """
 
