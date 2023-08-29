@@ -35,7 +35,7 @@ class ValuePlaceholder(Placeholder):
         "pydantic",
         "email",  # email and url should become string validators
         "url",
-        "pythoncode"
+        "pythoncode",
     ]
 
     type_string: str
