@@ -176,7 +176,9 @@ def register_validator(name: str, data_type: Union[str, List[str]]):
 
     def decorator(cls_or_func: Union[type, Callable]):
         """Register a validator for a data type."""
-        if isinstance(cls_or_func, type(Validator)) or issubclass(type(cls_or_func), Validator):
+        if isinstance(cls_or_func, type(Validator)) or issubclass(
+            type(cls_or_func), Validator
+        ):
             cls = cls_or_func
             cls.rail_alias = name
         elif callable(cls_or_func):
