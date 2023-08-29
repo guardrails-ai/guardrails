@@ -165,22 +165,39 @@ def register_validator(name: str, data_type: Union[str, List[str]]):
     """Register a validator for a data type."""
     from guardrails.datatypes import registry as types_registry
 
-    def decorator(cls: type):
+    if isinstance(data_type, str):
+        data_type = list(types_registry.keys()) if data_type == "all" else [data_type]
+    # Make sure that the data type string exists in the data types registry.
+    for dt in data_type:
+        if dt not in types_registry:
+            raise ValueError(f"Data type {dt} is not registered.")
+
+        types_to_validators[dt].append(name)
+
+    def decorator(cls_or_func: Union[type, Callable]):
         """Register a validator for a data type."""
-        nonlocal data_type
-        if isinstance(data_type, str):
-            data_type = (
-                list(types_registry.keys()) if data_type == "all" else [data_type]
+        if isinstance(cls_or_func, type):
+            cls = cls_or_func
+            cls.rail_alias = name
+        elif callable(cls_or_func):
+            func = cls_or_func
+            func.rail_alias = name
+            # ensure function takes two args
+            if not func.__code__.co_argcount == 2:
+                raise ValueError(
+                    f"Validator function {func.__name__} must take two arguments."
+                )
+            # dynamically create Validator subclass with `validate` method as `func`
+            cls = type(
+                name,
+                (Validator,),
+                {"validate": staticmethod(func), "rail_alias": name},
             )
-        # Make sure that the data type string exists in the data types registry.
-        for dt in data_type:
-            if dt not in types_registry:
-                raise ValueError(f"Data type {dt} is not registered.")
-
-            types_to_validators[dt].append(name)
-
+        else:
+            raise ValueError(
+                "Only classes and functions can be registered as validators."
+            )
         validators_registry[name] = cls
-        cls.rail_alias = name
         return cls
 
     return decorator
@@ -213,6 +230,7 @@ class Validator:
 
     run_in_separate_process = False
     override_value_on_pass = False
+    required_metadata_keys = []
 
     def __init__(self, on_fail: Optional[Callable] = None, **kwargs):
         if on_fail is None:
@@ -951,6 +969,8 @@ class IsHighQualityTranslation(Validator):
         translation_source (str): The source of the translation.
     """
 
+    required_metadata_keys = ["translation_source"]
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         try:
@@ -1042,6 +1062,8 @@ class ExtractedSummarySentencesMatch(Validator):
         vector_db (VectorDBBase, optional): A vector database to use for embeddings.  Defaults to Faiss.
         embedding_model (EmbeddingBase, optional): The embeddig model to use. Defaults to OpenAIEmbedding.
     """  # noqa
+
+    required_metadata_keys = ["filepaths"]
 
     def __init__(
         self,
@@ -1223,6 +1245,8 @@ class ExtractiveSummary(Validator):
 
         filepaths (List[str]): A list of strings that specifies the filepaths for any documents that should be used for asserting the summary's similarity.
     """  # noqa
+
+    required_metadata_keys = ["filepaths"]
 
     def __init__(
         self,
@@ -1525,6 +1549,8 @@ class QARelevanceLLMEval(Validator):
         question (str): The original question the llm was given to answer.
     """
 
+    required_metadata_keys = ["question"]
+
     def __init__(
         self,
         llm_callable: Callable = None,
@@ -1663,7 +1689,9 @@ class ProvenanceV0(Validator):
         on_fail: Optional[Callable] = None,
         **kwargs,
     ):
-        super().__init__(on_fail, **kwargs)
+        super().__init__(
+            on_fail, threshold=threshold, validation_method=validation_method, **kwargs
+        )
         self._threshold = float(threshold)
         if validation_method not in ["sentence", "full"]:
             raise ValueError("validation_method must be 'sentence' or 'full'.")

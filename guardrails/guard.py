@@ -98,7 +98,9 @@ class Guard:
         variables = [
             t[1] for t in Formatter().parse(reask_prompt.source) if t[1] is not None
         ]
-        assert set(variables) == {"previous_response", "output_schema"}
+        variable_set = set(variables)
+        assert variable_set.__contains__("previous_response")
+        assert variable_set.__contains__("output_schema")
         self._reask_prompt = reask_prompt
 
     def configure(
@@ -190,6 +192,7 @@ class Guard:
         instructions: Optional[str] = None,
         msg_history: Optional[List[Dict]] = None,
         metadata: Optional[Dict] = None,
+        full_schema_reask: Optional[bool] = None,
         *args,
         **kwargs,
     ) -> Union[Tuple[str, Dict], Awaitable[Tuple[str, Dict]]]:
@@ -201,6 +204,14 @@ class Guard:
                      (e.g. openai.Completion.create or openai.Completion.acreate)
             prompt_params: The parameters to pass to the prompt.format() method.
             num_reasks: The max times to re-ask the LLM for invalid output.
+            prompt: The prompt to use for the LLM.
+            instructions: Instructions for chat models.
+            msg_history: The message history to pass to the LLM.
+            metadata: Metadata to pass to the validators.
+            full_schema_reask: When reasking, whether to regenerate the full schema
+                               or just the incorrect values.
+                               Defaults to `True` if a base model is provided,
+                               `False` otherwise.
 
         Returns:
             The raw text output from the LLM and the validated output.
@@ -209,6 +220,8 @@ class Guard:
             num_reasks = self.num_reasks
         if metadata is None:
             metadata = {}
+        if full_schema_reask is None:
+            full_schema_reask = self.base_model is not None
 
         context = contextvars.ContextVar("kwargs")
         context.set(kwargs)
@@ -223,6 +236,7 @@ class Guard:
                 instructions=instructions,
                 msg_history=msg_history,
                 metadata=metadata,
+                full_schema_reask=full_schema_reask,
                 *args,
                 **kwargs,
             )
@@ -235,6 +249,7 @@ class Guard:
             instructions=instructions,
             msg_history=msg_history,
             metadata=metadata,
+            full_schema_reask=full_schema_reask,
             *args,
             **kwargs,
         )
@@ -248,6 +263,7 @@ class Guard:
         instructions: Optional[str],
         msg_history: Optional[List[Dict]],
         metadata: Dict,
+        full_schema_reask: bool,
         *args,
         **kwargs,
     ) -> Tuple[str, Dict]:
@@ -274,6 +290,7 @@ class Guard:
                 reask_prompt=self.reask_prompt,
                 base_model=self.base_model,
                 guard_state=self.guard_state,
+                full_schema_reask=full_schema_reask,
             )
             guard_history = runner(prompt_params=prompt_params)
             return guard_history.output, guard_history.validated_output
@@ -287,6 +304,7 @@ class Guard:
         instructions: Optional[str],
         msg_history: Optional[List[Dict]],
         metadata: Dict,
+        full_schema_reask: bool,
         *args,
         **kwargs,
     ) -> Tuple[str, Dict]:
@@ -296,6 +314,14 @@ class Guard:
             llm_api: The LLM API to call asynchronously (e.g. openai.Completion.acreate)
             prompt_params: The parameters to pass to the prompt.format() method.
             num_reasks: The max times to re-ask the LLM for invalid output.
+            prompt: The prompt to use for the LLM.
+            instructions: Instructions for chat models.
+            msg_history: The message history to pass to the LLM.
+            metadata: Metadata to pass to the validators.
+            full_schema_reask: When reasking, whether to regenerate the full schema
+                               or just the incorrect values.
+                               Defaults to `True` if a base model is provided,
+                               `False` otherwise.
 
         Returns:
             The raw text output from the LLM and the validated output.
@@ -322,6 +348,7 @@ class Guard:
                 reask_prompt=self.reask_prompt,
                 base_model=self.base_model,
                 guard_state=self.guard_state,
+                full_schema_reask=full_schema_reask,
             )
             guard_history = await runner.async_run(prompt_params=prompt_params)
             return guard_history.output, guard_history.validated_output
@@ -339,6 +366,7 @@ class Guard:
         llm_api: Union[Callable, Callable[[Any], Awaitable[Any]]] = None,
         num_reasks: int = 1,
         prompt_params: Dict = None,
+        full_schema_reask: bool = None,
         *args,
         **kwargs,
     ) -> Union[Tuple[str, Dict], Awaitable[Tuple[str, Dict]]]:
@@ -352,6 +380,8 @@ class Guard:
         Returns:
             The validated response.
         """
+        if full_schema_reask is None:
+            full_schema_reask = self.base_model is not None
         metadata = metadata or {}
 
         context = contextvars.ContextVar("kwargs")
@@ -365,6 +395,7 @@ class Guard:
                 llm_api=llm_api,
                 num_reasks=num_reasks,
                 prompt_params=prompt_params,
+                full_schema_reask=full_schema_reask,
                 *args,
                 **kwargs,
             )
@@ -375,6 +406,7 @@ class Guard:
             llm_api=llm_api,
             num_reasks=num_reasks,
             prompt_params=prompt_params,
+            full_schema_reask=full_schema_reask,
             *args,
             **kwargs,
         )
@@ -386,6 +418,7 @@ class Guard:
         llm_api: Callable = None,
         num_reasks: int = 1,
         prompt_params: Dict = None,
+        full_schema_reask: bool = False,
         *args,
         **kwargs,
     ) -> Dict:
@@ -413,6 +446,7 @@ class Guard:
                 reask_prompt=self.reask_prompt,
                 base_model=self.base_model,
                 guard_state=self.guard_state,
+                full_schema_reask=full_schema_reask,
             )
             guard_history = runner(prompt_params=prompt_params)
             return sub_reasks_with_fixed_values(guard_history.validated_output)
@@ -424,6 +458,7 @@ class Guard:
         llm_api: Callable[[Any], Awaitable[Any]] = None,
         num_reasks: int = 1,
         prompt_params: Dict = None,
+        full_schema_reask: bool = False,
         *args,
         **kwargs,
     ) -> Dict:
@@ -451,6 +486,7 @@ class Guard:
                 reask_prompt=self.reask_prompt,
                 base_model=self.base_model,
                 guard_state=self.guard_state,
+                full_schema_reask=full_schema_reask,
             )
             guard_history = await runner.async_run(prompt_params=prompt_params)
             return sub_reasks_with_fixed_values(guard_history.validated_output)

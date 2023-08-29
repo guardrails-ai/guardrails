@@ -16,12 +16,12 @@
 Given the following document, answer the following questions. If the answer doesn't exist in the document, enter
 'None'.
 
-{{document}}
+${document}
 
-@xml_prefix_prompt
+${gr.xml_prefix_prompt}
 
-{output_schema}
+${output_schema}
 
-@json_suffix_prompt_v2_wo_none</prompt>
+${gr.json_suffix_prompt_v2_wo_none}</prompt>
 
 </rail>

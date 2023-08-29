@@ -24,6 +24,7 @@ from guardrails.utils.reask_utils import (
     gather_reasks,
     get_pruned_tree,
     get_reasks_by_element,
+    prune_obj_for_reasking,
 )
 from guardrails.validator_service import FieldValidation
 from guardrails.validators import (
@@ -393,7 +394,8 @@ class Schema:
     def get_reask_setup(
         self,
         reasks: List[FieldReAsk],
-        reask_value: Any,
+        original_response: Any,
+        use_full_schema: bool,
     ) -> Tuple["Schema", Prompt, Instructions]:
         """Construct a schema for reasking, and a prompt for reasking.
 
@@ -401,8 +403,9 @@ class Schema:
             reasks: List of tuples, where each tuple contains the path to the
                 reasked element, and the ReAsk object (which contains the error
                 message describing why the reask is necessary).
-            reask_value: The value that was returned from the API, with reasks.
-            reask_prompt_template: The template to use for the reask prompt.
+            original_response: The value that was returned from the API, with reasks.
+            use_full_schema: Whether to use the full schema, or only the schema
+                for the reasked elements.
 
         Returns:
             The schema for reasking, and the prompt for reasking.
@@ -440,7 +443,8 @@ class JsonSchema(Schema):
     def get_reask_setup(
         self,
         reasks: List[FieldReAsk],
-        reask_value: Any,
+        original_response: Any,
+        use_full_schema: bool,
     ) -> Tuple["Schema", Prompt, Instructions]:
         parsed_rail = deepcopy(self.root)
 
@@ -455,13 +459,22 @@ class JsonSchema(Schema):
                     constants["high_level_skeleton_reask_prompt"]
                     + constants["json_suffix_without_examples"]
                 )
-        else:
-            # Get the elements that are to be reasked
-            reask_elements = get_reasks_by_element(reasks, parsed_rail)
 
-            # Get the pruned tree so that it only contains ReAsk objects
-            pruned_tree = get_pruned_tree(parsed_rail, list(reask_elements.keys()))
-            pruned_tree_schema = type(self)(pruned_tree)
+            reask_value = original_response
+        else:
+            if use_full_schema:
+                reask_value = original_response
+                # Don't prune the tree if we're reasking with pydantic model
+                # (and openai function calling)
+                pruned_tree_schema = self
+            else:
+                reask_value = prune_obj_for_reasking(original_response)
+                # Get the elements that are to be reasked
+                reask_elements = get_reasks_by_element(reasks, parsed_rail)
+
+                # Get the pruned tree so that it only contains ReAsk objects
+                pruned_tree = get_pruned_tree(parsed_rail, list(reask_elements.keys()))
+                pruned_tree_schema = type(self)(pruned_tree)
 
             reask_prompt_template = self.reask_prompt_template
             if reask_prompt_template is None:
@@ -484,9 +497,7 @@ class JsonSchema(Schema):
             return decoded
 
         prompt = reask_prompt_template.format(
-            previous_response=json.dumps(reask_value, indent=2, default=reask_decoder)
-            .replace("{", "{{")
-            .replace("}", "}}"),
+            previous_response=json.dumps(reask_value, indent=2, default=reask_decoder),
             output_schema=pruned_tree_string,
         )
 
@@ -769,7 +780,8 @@ class StringSchema(Schema):
     def get_reask_setup(
         self,
         reasks: List[FieldReAsk],
-        reask_value: FieldReAsk,
+        original_response: FieldReAsk,
+        use_full_schema: bool,
     ) -> Tuple[Schema, Prompt, Instructions]:
         pruned_tree_string = self.transpile()
 
@@ -789,7 +801,7 @@ class StringSchema(Schema):
         )
 
         prompt = reask_prompt_template.format(
-            previous_response=reask_value.incorrect_value,
+            previous_response=original_response.incorrect_value,
             error_messages=error_messages,
             output_schema=pruned_tree_string,
         )

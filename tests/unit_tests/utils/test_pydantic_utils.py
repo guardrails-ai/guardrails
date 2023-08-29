@@ -52,11 +52,12 @@ def test_add_pydantic_validators_as_guardrails_validators():
 
     # The second validator should be the ValidChoices validator
     assert isinstance(
-        validators[1], ValidChoices
+        validators[1][0], ValidChoices
     ), "Second validator should be ValidChoices"
-    assert isinstance(validators[1].validate("Alex", {}), PassResult)
-    assert isinstance(validators[1].validate("Bob", {}), PassResult)
-    assert isinstance(validators[1].validate("Candace", {}), FailResult)
+    assert validators[1][1] == "reask"
+    assert isinstance(validators[1][0].validate("Alex", {}), PassResult)
+    assert isinstance(validators[1][0].validate("Bob", {}), PassResult)
+    assert isinstance(validators[1][0].validate("Candace", {}), FailResult)
 
     # TODO(shreya): Uncomment when custom validators are supported
     # # The third validator should be the dummy validator

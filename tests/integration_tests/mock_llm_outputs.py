@@ -4,12 +4,13 @@ from .test_assets import entity_extraction, pydantic, python_rail, string
 def openai_completion_create(prompt, *args, **kwargs):
     """Mock the OpenAI API call to Completion.create."""
     # NOTE: this function normally overrides `llm_providers.openai_wrapper`,
-    # which compiles instructions and prompt into a single prompt;
+    # which compiles instructions and prompt into a single prompt
     # here the instructions are passed into kwargs and ignored
 
     mock_llm_responses = {
         entity_extraction.COMPILED_PROMPT: entity_extraction.LLM_OUTPUT,
         entity_extraction.COMPILED_PROMPT_REASK: entity_extraction.LLM_OUTPUT_REASK,
+        entity_extraction.COMPILED_PROMPT_FULL_REASK: entity_extraction.LLM_OUTPUT_FULL_REASK,  # noqa: E501
         entity_extraction.COMPILED_PROMPT_SKELETON_REASK_1: entity_extraction.LLM_OUTPUT_SKELETON_REASK_1,  # noqa: E501
         entity_extraction.COMPILED_PROMPT_SKELETON_REASK_2: entity_extraction.LLM_OUTPUT_SKELETON_REASK_2,  # noqa: E501
         pydantic.COMPILED_PROMPT: pydantic.LLM_OUTPUT,
@@ -64,7 +65,6 @@ def openai_chat_completion_create(
             pydantic.MSG_COMPILED_INSTRUCTIONS_REASK,
         ): pydantic.MSG_HISTORY_LLM_OUTPUT_CORRECT,
     }
-
     try:
         if prompt and instructions and not msg_history:
             return mock_llm_responses[(prompt, instructions)]

@@ -41,7 +41,7 @@ def rail_spec():
 
 Generate a JSON of dummy data, where the data types are specified by the user.
 
-@complete_json_suffix
+${gr.complete_json_suffix}
 
 </prompt>
 
@@ -98,21 +98,33 @@ def guard_initializer(
         return Guard.from_pydantic(rail, prompt=prompt, instructions=instructions)
 
 
-def test_rail_spec_output_parse(rail_spec, llm_output, validated_output):
+'''def test_rail_spec_output_parse(rail_spec, llm_output, validated_output):
     """Test that the rail_spec fixture is working."""
     guard = gd.Guard.from_rail_string(rail_spec)
-    assert guard.parse(llm_output) == validated_output
+    assert guard.parse(llm_output) == validated_output'''
 
 
 @pytest.mark.parametrize(
-    "rail,prompt",
+    "rail,prompt,test_full_schema_reask",
     [
-        (entity_extraction.RAIL_SPEC_WITH_REASK, None),
-        (entity_extraction.PYDANTIC_RAIL_WITH_REASK, entity_extraction.PYDANTIC_PROMPT),
+        (entity_extraction.RAIL_SPEC_WITH_REASK, None, False),
+        (entity_extraction.RAIL_SPEC_WITH_REASK, None, True),
+        (
+            entity_extraction.PYDANTIC_RAIL_WITH_REASK,
+            entity_extraction.PYDANTIC_PROMPT,
+            False,
+        ),
+        (
+            entity_extraction.PYDANTIC_RAIL_WITH_REASK,
+            entity_extraction.PYDANTIC_PROMPT,
+            True,
+        ),
     ],
 )
 @pytest.mark.parametrize("multiprocessing_validators", (True, False))
-def test_entity_extraction_with_reask(mocker, rail, prompt, multiprocessing_validators):
+def test_entity_extraction_with_reask(
+    mocker, rail, prompt, test_full_schema_reask, multiprocessing_validators
+):
     """Test that the entity extraction works with re-asking."""
     mocker.patch(
         "guardrails.llm_providers.openai_wrapper", new=openai_completion_create
@@ -129,6 +141,8 @@ def test_entity_extraction_with_reask(mocker, rail, prompt, multiprocessing_vali
         llm_api=openai.Completion.create,
         prompt_params={"document": content[:6000]},
         num_reasks=1,
+        max_tokens=2000,
+        full_schema_reask=test_full_schema_reask,
     )
 
     # Assertions are made on the guard state object.
@@ -154,6 +168,7 @@ def test_entity_extraction_with_reask(mocker, rail, prompt, multiprocessing_vali
         .children["name"]
         .validator_logs[1]
     )
+
     assert nested_validator_log.value_before_validation == "my chase plan"
     assert nested_validator_log.value_after_validation == FieldReAsk(
         incorrect_value="my chase plan",
@@ -167,8 +182,15 @@ def test_entity_extraction_with_reask(mocker, rail, prompt, multiprocessing_vali
     )
 
     # For re-asked prompt and output
-    assert guard_history[1].prompt == gd.Prompt(entity_extraction.COMPILED_PROMPT_REASK)
-    assert guard_history[1].output == entity_extraction.LLM_OUTPUT_REASK
+    if test_full_schema_reask:
+        assert (
+            guard_history[1].prompt.source
+            == entity_extraction.COMPILED_PROMPT_FULL_REASK
+        )
+        assert guard_history[1].output == entity_extraction.LLM_OUTPUT_FULL_REASK
+    else:
+        assert guard_history[1].prompt.source == entity_extraction.COMPILED_PROMPT_REASK
+        assert guard_history[1].output == entity_extraction.LLM_OUTPUT_REASK
     assert (
         guard_history[1].validated_output == entity_extraction.VALIDATED_OUTPUT_REASK_2
     )

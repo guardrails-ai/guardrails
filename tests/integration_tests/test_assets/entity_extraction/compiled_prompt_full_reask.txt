@@ -1,0 +1,113 @@
+
+I was given the following JSON response, which had problems due to incorrect values.
+
+{
+  "fees": [
+    {
+      "index": 1,
+      "name": "annual membership",
+      "explanation": "Annual Membership Fee",
+      "value": 0
+    },
+    {
+      "index": 2,
+      "name": {
+        "incorrect_value": "my chase plan",
+        "error_messages": [
+          "must be exactly two words"
+        ]
+      },
+      "explanation": "My Chase Plan Fee (fixed finance charge)",
+      "value": 1.72
+    },
+    {
+      "index": 3,
+      "name": "balance transfers",
+      "explanation": "Balance Transfers Intro fee of either $5 or 3% of the amount of each transfer, whichever is greater, on transfers made within 60 days of account opening. After that: Either $5 or 5% of the amount of each transfer.",
+      "value": 5
+    },
+    {
+      "index": 4,
+      "name": "cash advances",
+      "explanation": "Cash Advances Either $10 or 5% of the amount of each transaction, whichever is greater.",
+      "value": 5
+    },
+    {
+      "index": 5,
+      "name": "foreign transactions",
+      "explanation": "Foreign Transactions 3% of the amount of each transaction in U.S. dollars.",
+      "value": 3
+    },
+    {
+      "index": 6,
+      "name": "late payment",
+      "explanation": "Late Payment Up to $40.",
+      "value": 0
+    },
+    {
+      "index": 7,
+      "name": {
+        "incorrect_value": "over-the-credit-limit",
+        "error_messages": [
+          "must be exactly two words"
+        ]
+      },
+      "explanation": "Over-the-Credit-Limit None",
+      "value": 0
+    },
+    {
+      "index": 8,
+      "name": "return payment",
+      "explanation": "Return Payment Up to $40.",
+      "value": 0
+    },
+    {
+      "index": 9,
+      "name": "return check",
+      "explanation": "Return Check None",
+      "value": 0
+    }
+  ],
+  "interest_rates": {
+    "purchase": {
+      "apr": 0,
+      "explanation": "Purchase Annual Percentage Rate (APR) 0% Intro APR for the first 18 months that your Account is open. After that, 19.49%. This APR will vary with the market based on the Prime Rate."
+    },
+    "my_chase_loan": {
+      "apr": 19.49,
+      "explanation": "My Chase Loan SM APR 19.49%. This APR will vary with the market based on the Prime Rate."
+    },
+    "balance_transfer": {
+      "apr": 0,
+      "explanation": "Balance Transfer APR 0% Intro APR for the first 18 months that your Account is open. After that, 19.49%. This APR will vary with the market based on the Prime Rate."
+    },
+    "cash_advance": {
+      "apr": 29.49,
+      "explanation": "Cash Advance APR 29.49%. This APR will vary with the market based on the Prime Rate."
+    },
+    "penalty": {
+      "apr": 29.99,
+      "explanation": "Up to 29.99%. This APR will vary with the market based on the Prime Rate."
+    },
+    "maximum_apr": 29.99
+  }
+}
+
+Help me correct the incorrect values based on the given error messages.
+
+Given below is XML that describes the information to extract from this document and the tags to extract it into.
+
+<output>
+    <list name="fees" description="What fees and charges are associated with my account?">
+        <object>
+            <integer name="index" format="1-indexed"/>
+            <string name="name" format="lower-case; two-words"/>
+            <string name="explanation" format="one-line"/>
+            <float name="value" format="percentage"/>
+        </object>
+    </list>
+    <object name="interest_rates" description="What are the interest rates offered by the bank on savings and checking accounts, loans, and credit products?"/>
+</output>
+
+
+ONLY return a valid JSON object (no other text is necessary), where the key of the field in JSON is the `name` attribute of the corresponding XML, and the value is of the type specified by the corresponding XML's tag. The JSON MUST conform to the XML format, including any types and format requests e.g. requests for lists, objects and specific types. Be correct and concise. If you are unsure anywhere, enter `null`.
