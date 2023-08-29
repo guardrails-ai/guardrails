@@ -14,11 +14,11 @@ from guardrails.validators import (
 
 prompt = """Generate data for possible users in accordance with the specification below.
 
-@xml_prefix_prompt
+${gr.xml_prefix_prompt}
 
-{output_schema}
+${output_schema}
 
-@complete_json_suffix_v2"""
+${gr.complete_json_suffix_v2}"""
 
 
 @register_validator(name="zip_code_must_be_numeric", data_type="string")

@@ -12,7 +12,7 @@
 <instructions>
 You are a data scientist whose job is to write SQL queries.
 
-@complete_json_suffix_v2
+${gr.complete_json_suffix_v2}
 
 </instructions>
 
@@ -20,15 +20,15 @@ You are a data scientist whose job is to write SQL queries.
 Here's schema about the database that you can use to generate the SQL query.
 Try to avoid using joins if the data can be retrieved from the same table.
 
-{{db_info}}
+${db_info}
 
 I will give you a list of examples. Write a SQL query similar to the examples below:
 
-{{examples}}
+${examples}
 
 INSTRUCTIONS:
 ---------
-{{nl_instruction}}
+${nl_instruction}
 
 QUERY:
 ---------

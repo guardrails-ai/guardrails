@@ -15,24 +15,24 @@ from guardrails.vectordb import Faiss, VectorDBBase
 REASK_PROMPT = """
 You are a data scientist whose job is to write SQL queries.
 
-@complete_json_suffix_v2
+${gr.complete_json_suffix_v2}
 
 Here's schema about the database that you can use to generate the SQL query.
 Try to avoid using joins if the data can be retrieved from the same table.
 
-{{db_info}}
+${db_info}
 
 I will give you a list of examples.
 
-{{examples}}
+${examples}
 
 I want to create a query for the following instruction:
 
-{{nl_instruction}}
+${nl_instruction}
 
 For this instruction, I was given the following JSON, which has some incorrect values.
 
-{previous_response}
+${previous_response}
 
 Help me correct the incorrect values based on the given error messages.
 """
