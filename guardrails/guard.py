@@ -26,7 +26,7 @@ class Guard:
 
     This class is the main entry point for using Guardrails. It is
     initialized from one of the following class methods:
-    
+
     - `from_rail`
     - `from_rail_string`
     - `from_pydantic`
