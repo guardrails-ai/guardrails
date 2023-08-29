@@ -20,9 +20,9 @@ RAIL_SPEC = """
 
 Given the following doctor's notes about a patient, please extract a dictionary that contains the patient's information.
 
-{{doctors_notes}}
+${doctors_notes}
 
-@complete_json_suffix_v2
+${gr.complete_json_suffix_v2}
 </prompt>
 </rail>
 """
