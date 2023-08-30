@@ -1,0 +1,34 @@
+name: Notebook Execution and Error Check
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+  workflow_dispatch:  # This enables manual triggering
+
+jobs:
+  execute_notebooks:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.x
+
+    - name: Install dependencies
+      run: |
+        pip install jupyter nbconvert
+
+    - name: Execute notebooks and check for errors
+      run: |
+        cd docs/examples
+        for notebook in $(ls *.ipynb); do
+          jupyter nbconvert --to notebook --execute "$notebook"
+          if [ $? -ne 0 ]; then
+            echo "Error found in $notebook"
+            exit 1
+          fi
+        done
