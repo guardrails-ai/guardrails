@@ -722,7 +722,7 @@ class BugFreePython(Validator):
         return PassResult()
 
 
-@register_validator(name="bug-free-sql", data_type="sql")
+@register_validator(name="bug-free-sql", data_type=["sql", "string"])
 class BugFreeSQL(Validator):
     """Validates that there are no SQL syntactic bugs in the generated code.
 
@@ -735,7 +735,7 @@ class BugFreeSQL(Validator):
     | Property                      | Description                       |
     | ----------------------------- | --------------------------------- |
     | Name for `format` attribute   | `bug-free-sql`                    |
-    | Supported data types          | `sql`                             |
+    | Supported data types          | `sql`, `string`                   |
     | Programmatic fix              | None                              |
     """
 
@@ -867,7 +867,9 @@ class SimilarToDocument(Validator):
         model: str = "text-embedding-ada-002",
         on_fail: Optional[Callable] = None,
     ):
-        super().__init__(on_fail=on_fail)
+        super().__init__(
+            on_fail=on_fail, document=document, threshold=threshold, model=model
+        )
         if not _HAS_NUMPY:
             raise ImportError(
                 f"The {self.__class__.__name__} validator requires the numpy package.\n"

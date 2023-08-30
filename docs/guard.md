@@ -6,5 +6,7 @@
         members: 
             - "from_rail"
             - "from_rail_string"
+            - "from_pydantic"
+            - "from_string"
             - "__call__"
             - "parse"
