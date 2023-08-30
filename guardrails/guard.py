@@ -385,7 +385,6 @@ class Guard:
         Returns:
             The validated response.
         """
-        # #TODO: num_reasks = num_reasks or self.num_reasks or 0
         num_reasks = (
             num_reasks if num_reasks is not None else 0 if llm_api is None else None
         )
