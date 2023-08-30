@@ -5,6 +5,7 @@ in the `RAIL` spec to specify formatters.
 """
 import ast
 import contextvars
+import inspect
 import itertools
 import logging
 import os
@@ -287,14 +288,24 @@ class Validator:
             return self.rail_alias
 
         validator_args = []
-        for arg in self.__init__.__code__.co_varnames[1:]:
+        init_args = inspect.getfullargspec(self.__init__)
+        print("inspect.getfullargspec(self.__init__): ", init_args)
+        # print("self.__init__.__code__.co_varnames[1:]", self.__init__.__code__.co_varnames[1:])
+        # for arg in self.__init__.__code__.co_varnames[1:]:
+        for arg in init_args.args[1:]:
             if arg not in ("on_fail", "args", "kwargs"):
                 str_arg = str(self._kwargs[arg])
-                str_arg = "{" + str_arg + "}" if " " in str_arg else str_arg
-                validator_args.append(str_arg)
+                print("arg: ", arg)
+                print("str_arg: ", str_arg)
+                print("type(str_arg): ", type(str_arg))
+                if str_arg is not None:
+                    str_arg = "{" + str_arg + "}" if " " in str_arg else str_arg
+                    validator_args.append(str_arg)
 
         params = " ".join(validator_args)
-        return f"{self.rail_alias}: {params}"
+        xml = f"{self.rail_alias}: {params}"
+        print("xml: ", xml)
+        return xml
 
     def __call__(self, value):
         result = self.validate(value, {})
