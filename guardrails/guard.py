@@ -49,6 +49,7 @@ class Guard:
         self.num_reasks = num_reasks
         self.guard_state = GuardState(all_histories=[])
         self._reask_prompt = None
+        self._reask_instructions = None
         self.base_model = base_model
 
     @property
@@ -108,6 +109,20 @@ class Guard:
         assert variable_set.__contains__("previous_response")
         assert variable_set.__contains__("output_schema")
         self._reask_prompt = reask_prompt
+
+    @property
+    def reask_instructions(self) -> Prompt:
+        """Return the reask prompt."""
+        return self._reask_instructions
+
+    @reask_instructions.setter
+    def reask_instructions(self, reask_instructions: Union[str, Instructions]):
+        """Set the reask prompt."""
+
+        if isinstance(reask_instructions, str):
+            reask_instructions = Instructions(reask_instructions)
+
+        self._reask_instructions = reask_instructions
 
     def configure(
         self,
@@ -299,6 +314,7 @@ class Guard:
                 num_reasks=num_reasks,
                 metadata=metadata,
                 reask_prompt=self.reask_prompt,
+                reask_instructions=self.reask_instructions,
                 base_model=self.base_model,
                 guard_state=self.guard_state,
                 full_schema_reask=full_schema_reask,
@@ -357,6 +373,7 @@ class Guard:
                 num_reasks=num_reasks,
                 metadata=metadata,
                 reask_prompt=self.reask_prompt,
+                reask_instructions=self.reask_instructions,
                 base_model=self.base_model,
                 guard_state=self.guard_state,
                 full_schema_reask=full_schema_reask,
@@ -449,9 +466,9 @@ class Guard:
         """
         with start_action(action_type="guard_parse"):
             runner = Runner(
-                instructions=None,
-                prompt=None,
-                msg_history=None,
+                instructions=kwargs.get("instructions", None),
+                prompt=kwargs.get("prompt", None),
+                msg_history=kwargs.get("msg_history", None),
                 api=get_llm_ask(llm_api, *args, **kwargs) if llm_api else None,
                 input_schema=None,
                 output_schema=self.output_schema,
@@ -459,6 +476,7 @@ class Guard:
                 metadata=metadata,
                 output=llm_output,
                 reask_prompt=self.reask_prompt,
+                reask_instructions=self.reask_instructions,
                 base_model=self.base_model,
                 guard_state=self.guard_state,
                 full_schema_reask=full_schema_reask,
@@ -499,6 +517,7 @@ class Guard:
                 metadata=metadata,
                 output=llm_output,
                 reask_prompt=self.reask_prompt,
+                reask_instructions=self.reask_instructions,
                 base_model=self.base_model,
                 guard_state=self.guard_state,
                 full_schema_reask=full_schema_reask,
