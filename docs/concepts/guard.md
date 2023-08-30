@@ -31,10 +31,65 @@ graph
 ```
 
 ## Two main flows
-__call__
-parse
+### __call__
+After instantiating a Guard you can call it in order to wrap an LLM with Guardrails and validate the output of that LLM according to the RAIL specification you provided.  Calling the guard in this way returns a tuple with the raw output from the LLM first, and the validatd output second.
+```py
+import openai
+from guardrails import Guard
 
-## Outputs
+guard = Guard.from_rail(...)
+
+raw_output, validated_output = guard(
+    openai.Completion.create,
+    engine="text-davinci-003",
+    max_tokens=1024,
+    temperature=0.3
+)
+
+print(raw_output)
+print(validated_output)
+``` 
+
+### parse
+If you would rather call the LLM yourself, at at least make the first call yourself, you can use `Guard.parse` to apply your RAIL specification to the LLM output as a post process.  You can also allow Guardrails to make re-asks to the LLM by specifying the `num_reasks` argument, or keep it purely as a post-processor by setting it to zero.  Unlike `__call__`, `Guard.parse` only returns the validated output.
+
+Calling `Guard.parse` with reasks:
+```py
+import openai
+from guardrails import Guard
+
+guard = Guard.from_rail(...)
+
+output = call_my_llm()
+
+validated_output = guard.parse(
+    llm_output=output,
+    llm_api=openai.Completion.create,
+    engine="text-davinci-003",
+    max_tokens=1024,
+    temperature=0.3,
+    num_reasks=2
+)
+
+print(validated_output)
+```
+
+Calling `Guard.parse` as a post-processor:
+```py
+import openai
+from guardrails import Guard
+
+guard = Guard.from_rail(...)
+
+output = call_my_llm()
+
+validated_output = guard.parse(
+    llm_output=output,
+    num_reasks=0
+)
+
+print(validated_output)
+```
 
 ## Error Handling and Retries
 GuardRails currently performs automatic retries with exponential backoff when any of the following errors occur when calling the LLM:
