@@ -1,7 +1,10 @@
+from unittest.mock import patch
+
 import openai
 import pytest
 
 import guardrails as gd
+from guardrails.schema import JsonSchema
 
 from .mock_llm_outputs import MockAsyncOpenAICallable, entity_extraction
 from .test_guard import *  # noqa: F403, F401
@@ -22,11 +25,18 @@ async def test_entity_extraction_with_reask(mocker, multiprocessing_validators: 
 
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
     guard = gd.Guard.from_rail_string(entity_extraction.RAIL_SPEC_WITH_REASK)
-    _, final_output = await guard(
-        llm_api=openai.Completion.acreate,
-        prompt_params={"document": content[:6000]},
-        num_reasks=1,
-    )
+
+    with patch.object(
+        JsonSchema, "preprocess_prompt", wraps=guard.output_schema.preprocess_prompt
+    ) as mock_preprocess_prompt:
+        _, final_output = await guard(
+            llm_api=openai.Completion.acreate,
+            prompt_params={"document": content[:6000]},
+            num_reasks=1,
+        )
+
+        # Check that the preprocess_prompt method was called.
+        mock_preprocess_prompt.assert_called()
 
     # Assertions are made on the guard state object.
     assert final_output == entity_extraction.VALIDATED_OUTPUT_REASK_2
