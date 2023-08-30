@@ -1,7 +1,7 @@
 from copy import deepcopy
-from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Union
 
+from pydantic import BaseModel, Field, PrivateAttr
 from rich.console import Group
 from rich.panel import Panel
 from rich.pretty import pretty_repr
@@ -18,8 +18,12 @@ from guardrails.utils.reask_utils import (
 from guardrails.validators import ValidationResult
 
 
-@dataclass
-class ValidatorLogs:
+class ArbitraryModel(BaseModel):
+    class Config:
+        arbitrary_types_allowed = True
+
+
+class ValidatorLogs(ArbitraryModel):
     """Logs for a single validator."""
 
     validator_name: str
@@ -28,16 +32,14 @@ class ValidatorLogs:
     value_after_validation: Optional[Any] = None
 
 
-@dataclass
-class FieldValidationLogs:
+class FieldValidationLogs(ArbitraryModel):
     """Logs for a single field."""
 
-    validator_logs: List[ValidatorLogs] = field(default_factory=list)
-    children: Dict[Union[int, str], "FieldValidationLogs"] = field(default_factory=dict)
+    validator_logs: List[ValidatorLogs] = Field(default_factory=list)
+    children: Dict[Union[int, str], "FieldValidationLogs"] = Field(default_factory=dict)
 
 
-@dataclass
-class GuardLogs:
+class GuardLogs(ArbitraryModel):
     prompt: Optional[Prompt] = None
     instructions: Optional[Instructions] = None
     msg_history: Optional[List[Dict[str, Prompt]]] = None
@@ -48,7 +50,7 @@ class GuardLogs:
 
     field_validation_logs: Optional[FieldValidationLogs] = None
 
-    _previous_logs: Optional["GuardLogs"] = None
+    _previous_logs: Optional["GuardLogs"] = PrivateAttr(None)
 
     def set_validated_output(self, validated_output, is_full_schema_reask: bool):
         if (
@@ -119,8 +121,7 @@ class GuardLogs:
             )
 
 
-@dataclass
-class GuardHistory:
+class GuardHistory(ArbitraryModel):
     history: List[GuardLogs]
 
     def push(self, guard_log: GuardLogs) -> None:
@@ -159,8 +160,7 @@ class GuardHistory:
         return [log.failed_validations for log in self.history]
 
 
-@dataclass
-class GuardState:
+class GuardState(ArbitraryModel):
     all_histories: List[GuardHistory]
 
     def push(self, guard_history: GuardHistory) -> None:
