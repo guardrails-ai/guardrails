@@ -51,7 +51,7 @@ print(validated_output)
 ``` 
 
 ### parse
-If you would rather call the LLM yourself, at at least make the first call yourself, you can use `Guard.parse` to apply your RAIL specification to the LLM output as a post process.  You can also allow Guardrails to make re-asks to the LLM by specifying the `num_reasks` argument, or keep it purely as a post-processor by setting it to zero.  Unlike `__call__`, `Guard.parse` only returns the validated output.
+If you would rather call the LLM yourself, or at least make the first call yourself, you can use `Guard.parse` to apply your RAIL specification to the LLM output as a post process.  You can also allow Guardrails to make re-asks to the LLM by specifying the `num_reasks` argument, or keep it purely as a post-processor by setting it to zero.  Unlike `__call__`, `Guard.parse` only returns the validated output.
 
 Calling `Guard.parse` with reasks:
 ```py
