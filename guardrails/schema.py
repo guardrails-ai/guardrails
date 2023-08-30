@@ -506,11 +506,8 @@ class JsonSchema(Schema):
 
         instructions = self.reask_instructions_template
         if instructions is None:
-            instructions = Instructions(
-                constants["high_level_json_instructions"],
-                **(prompt_params or {}),
-            )
-        instructions = instructions.format()
+            instructions = Instructions(constants["high_level_json_instructions"])
+        instructions = instructions.format(**(prompt_params or {}))
 
         return pruned_tree_schema, prompt, instructions
 
@@ -814,7 +811,6 @@ class StringSchema(Schema):
             **(prompt_params or {}),
         )
 
-        # TODO(shreya): Format reask instructions with prompt
         instructions = self.reask_instructions_template
         if instructions is None:
             instructions = Instructions("You are a helpful assistant.")
