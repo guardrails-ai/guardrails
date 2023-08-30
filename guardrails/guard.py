@@ -41,7 +41,7 @@ class Guard:
         """Initialize the Guard."""
         self.rail = rail
         self.num_reasks = num_reasks
-        self.guard_state = GuardState([])
+        self.guard_state = GuardState(all_histories=[])
         self._reask_prompt = None
         self.base_model = base_model
 

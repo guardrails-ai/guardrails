@@ -54,13 +54,15 @@ class Runner:
     metadata: Dict[str, Any] = field(default_factory=dict)
     output: str = None
     reask_prompt: Optional[Prompt] = None
-    guard_history: GuardHistory = field(default_factory=lambda: GuardHistory([]))
+    guard_history: GuardHistory = field(
+        default_factory=lambda: GuardHistory(history=[])
+    )
     base_model: Optional[BaseModel] = None
     full_schema_reask: bool = False
 
     def _reset_guard_history(self):
         """Reset the guard history."""
-        self.guard_history = GuardHistory([])
+        self.guard_history = GuardHistory(history=[])
         self.guard_state.push(self.guard_history)
 
     def __post_init__(self):
