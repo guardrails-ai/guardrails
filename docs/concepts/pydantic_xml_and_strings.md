@@ -12,35 +12,35 @@ In this simple example, we initialize a guard that validates a string output and
 
 === "XML"
 
-```py
-from guardrails import Guard
-railspec = """
-<rail version="0.1">
-    <output 
-        type="string"
-        format="length: 10 20"
-        description="Puppy name"
-    />
-</rail>
-"""
+    ```py
+    from guardrails import Guard
+    railspec = """
+    <rail version="0.1">
+        <output 
+            type="string"
+            format="length: 10 20"
+            description="Puppy name"
+        />
+    </rail>
+    """
 
-guard = Guard.from_rail_string(railspec)
-```
+    guard = Guard.from_rail_string(railspec)
+    ```
 
 === "Pydantic"
 
-N/A - Pydantic models can only be used to reprensent structured output (i.e. JSON).
+    N/A - Pydantic models can only be used to reprensent structured output (i.e. JSON).
 
 === "Single-Field String"
 
-```py
-from guardrails import Guard
-from guardrails.validators import ValidLength
+    ```py
+    from guardrails import Guard
+    from guardrails.validators import ValidLength
 
-validators = [ValidLength(10, 20)]
+    validators = [ValidLength(10, 20)]
 
-guard = Guard.from_string(
-    validators=validators
-    description="Puppy name"
-)
-```
+    guard = Guard.from_string(
+        validators=validators
+        description="Puppy name"
+    )
+    ```
