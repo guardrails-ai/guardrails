@@ -1,0 +1,6 @@
+<rail version="0.1">
+<output
+    type="string"
+    description="empty railspec"
+/>
+</rail>
