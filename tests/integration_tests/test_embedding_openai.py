@@ -1,16 +1,25 @@
 import os
+from unittest.mock import Mock, patch
 
 import pytest
-from unittest.mock import Mock, patch
 
 from guardrails.embedding import OpenAIEmbedding
 
+
 class MockOpenAIEmbedding:
-    def __init__(self, model=None, encoding_name=None, max_tokens=None, api_key=None, api_base=None):
+    def __init__(
+        self,
+        model=None,
+        encoding_name=None,
+        max_tokens=None,
+        api_key=None,
+        api_base=None,
+    ):
         pass
 
     def _len_safe_get_embedding(self, text, embedder, average=True):
         return [1.0, 2.0, 3.0]
+
 
 class MockResponse:
     def __init__(self, data=None):
@@ -19,10 +28,12 @@ class MockResponse:
     def json(self):
         return {"data": self.data}
 
+
 @pytest.fixture
 def mock_openai_embedding(monkeypatch):
     monkeypatch.setattr("openai.Embedding.create", MockOpenAIEmbedding())
     return MockOpenAIEmbedding
+
 
 @pytest.mark.skipif(
     os.environ.get("OPENAI_API_KEY") is None, reason="openai api key not set"
@@ -52,7 +63,10 @@ class TestOpenAIEmbedding:
         result = instance._get_embedding(["test text"])
         assert result == [[1.0, 2.0, 3.0]]
         mock_create.assert_called_once_with(
-            api_key="test_api_key", model="text-embedding-ada-002", input=["test text"], api_base=None
+            api_key="test_api_key",
+            model="text-embedding-ada-002",
+            input=["test text"],
+            api_base=None,
         )
 
 
