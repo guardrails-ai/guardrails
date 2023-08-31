@@ -5,6 +5,7 @@ import pytest
 from pydantic import BaseModel, Field
 
 from guardrails import Guard
+from guardrails.embedding import OpenAIEmbedding
 from guardrails.utils.reask_utils import FieldReAsk
 from guardrails.validators import (
     BugFreeSQL,
@@ -344,3 +345,32 @@ def test_bad_validator():
         @register_validator("mycustombadvalidator", data_type="string")
         def validate(value: Any) -> ValidationResult:
             pass
+
+@pytest.fixture
+def openai_embeddings_instance():
+    # You can customize this fixture creation based on your actual class initialization
+    return OpenAIEmbedding("text-embedding-ada-002")  # Initialize with a model name
+
+def test_output_dim_for_text_embedding_ada_002(openai_embeddings_instance):
+    assert openai_embeddings_instance.output_dim == 1536
+
+def test_output_dim_for_ada_model(openai_embeddings_instance):
+    openai_embeddings_instance._model = "some-ada-model"
+    assert openai_embeddings_instance.output_dim == 1024
+
+def test_output_dim_for_babbage_model(openai_embeddings_instance):
+    openai_embeddings_instance._model = "some-babbage-model"
+    assert openai_embeddings_instance.output_dim == 2048
+
+def test_output_dim_for_curie_model(openai_embeddings_instance):
+    openai_embeddings_instance._model = "some-curie-model"
+    assert openai_embeddings_instance.output_dim == 4096
+
+def test_output_dim_for_davinci_model(openai_embeddings_instance):
+    openai_embeddings_instance._model = "some-davinci-model"
+    assert openai_embeddings_instance.output_dim == 12288
+
+def test_output_dim_for_unknown_model(openai_embeddings_instance):
+    openai_embeddings_instance._model = "unknown-model"
+    with pytest.raises(ValueError):
+        openai_embeddings_instance.output_dim
