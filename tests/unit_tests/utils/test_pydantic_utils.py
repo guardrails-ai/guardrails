@@ -1,8 +1,14 @@
-from pydantic import BaseModel, Field
+from datetime import date, time
+from typing import Union
 
+import pytest
+from pydantic import BaseModel, Field, HttpUrl
+
+from guardrails.datatypes import PythonCode
 from guardrails.utils.pydantic_utils import (
     add_pydantic_validators_as_guardrails_validators,
     add_validator,
+    type_annotation_to_string,
 )
 from guardrails.validators import FailResult, PassResult, ValidChoices, ValidLength
 
@@ -52,11 +58,12 @@ def test_add_pydantic_validators_as_guardrails_validators():
 
     # The second validator should be the ValidChoices validator
     assert isinstance(
-        validators[1], ValidChoices
+        validators[1][0], ValidChoices
     ), "Second validator should be ValidChoices"
-    assert isinstance(validators[1].validate("Alex", {}), PassResult)
-    assert isinstance(validators[1].validate("Bob", {}), PassResult)
-    assert isinstance(validators[1].validate("Candace", {}), FailResult)
+    assert validators[1][1] == "reask"
+    assert isinstance(validators[1][0].validate("Alex", {}), PassResult)
+    assert isinstance(validators[1][0].validate("Bob", {}), PassResult)
+    assert isinstance(validators[1][0].validate("Candace", {}), FailResult)
 
     # TODO(shreya): Uncomment when custom validators are supported
     # # The third validator should be the dummy validator
@@ -74,3 +81,36 @@ def test_add_pydantic_validators_as_guardrails_validators():
     # validators[3].validate(None, "Bob", None)
     # with pytest.raises(EventDetail):
     #     validators[3].validate(None, "Alex", None)
+
+
+@pytest.mark.parametrize(
+    "type_annotation,expected_type_string",
+    [
+        (list, "list"),
+        (dict, "object"),
+        (bool, "bool"),
+        (date, "date"),
+        (float, "float"),
+        (int, "integer"),
+        (str, "string"),
+        (time, "time"),
+        (HttpUrl, "url"),
+        (Union[str, list], "choice"),
+        (PythonCode, "pythoncode"),
+    ],
+)
+def test_type_annotation_to_string(type_annotation, expected_type_string):
+    actual_type_string = type_annotation_to_string(type_annotation)
+
+    assert actual_type_string == expected_type_string
+
+
+def test_type_annotation_to_string_error():
+    with pytest.raises(ValueError) as error:
+
+        class UnsupportedType:
+            mock_property: str
+
+        type_annotation_to_string(UnsupportedType)
+
+        assert str(error) == f"Unsupported type: {UnsupportedType}"

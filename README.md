@@ -105,11 +105,11 @@ Using `RAIL`, we:
 <prompt>
 Explain what a bank run is in a tweet.
 
-@xml_prefix_prompt
+${gr.xml_prefix_prompt}
 
-{output_schema}
+${output_schema}
 
-@json_suffix_prompt_v2_wo_none
+${gr.json_suffix_prompt_v2_wo_none}
 </prompt>
 </rail>
 ```

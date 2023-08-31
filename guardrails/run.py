@@ -55,13 +55,16 @@ class Runner:
     metadata: Dict[str, Any] = field(default_factory=dict)
     output: str = None
     reask_prompt: Optional[Prompt] = None
-    guard_history: GuardHistory = field(default_factory=lambda: GuardHistory([]))
+    reask_instructions: Optional[Instructions] = None
+    guard_history: GuardHistory = field(
+        default_factory=lambda: GuardHistory(history=[])
+    )
     base_model: Optional[BaseModel] = None
     full_schema_reask: bool = False
 
     def _reset_guard_history(self):
         """Reset the guard history."""
-        self.guard_history = GuardHistory([])
+        self.guard_history = GuardHistory(history=[])
         self.guard_state.push(self.guard_history)
 
     def __post_init__(self):
@@ -156,6 +159,7 @@ class Runner:
                     validated_output,
                     output_schema,
                     include_instructions=include_instructions,
+                    prompt_params=prompt_params,
                 )
 
             return self.guard_history
@@ -416,12 +420,14 @@ class Runner:
         validated_output: Optional[Dict],
         output_schema: Schema,
         include_instructions: bool = False,
+        prompt_params: Dict = None,
     ) -> Tuple[Prompt, Instructions, Schema, Optional[List[Dict]]]:
         """Prepare to loop again."""
         output_schema, prompt, instructions = output_schema.get_reask_setup(
             reasks=reasks,
             original_response=validated_output,
             use_full_schema=self.full_schema_reask,
+            prompt_params=prompt_params,
         )
         if not include_instructions:
             instructions = None
@@ -484,6 +490,7 @@ class AsyncRunner(Runner):
                     reasks,
                     validated_output,
                     output_schema,
+                    prompt_params=prompt_params,
                 )
 
             return self.guard_history

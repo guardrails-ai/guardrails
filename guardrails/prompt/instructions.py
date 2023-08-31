@@ -1,5 +1,5 @@
 """Instructions to the LLM, to be passed in the prompt."""
-from string import Formatter
+from string import Formatter, Template
 
 from .base_prompt import BasePrompt
 
@@ -29,4 +29,7 @@ class Instructions(BasePrompt):
         filtered_kwargs = {k: v for k, v in kwargs.items() if k in vars}
 
         # Return another instance of the class with the formatted prompt.
-        return Instructions(self.source.format(**filtered_kwargs))
+        formatted_instructions = Template(self.source).safe_substitute(
+            **filtered_kwargs
+        )
+        return Instructions(formatted_instructions)

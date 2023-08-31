@@ -400,6 +400,7 @@ class Schema:
         reasks: List[FieldReAsk],
         original_response: Any,
         use_full_schema: bool,
+        prompt_params: Optional[Dict[str, Any]] = None,
     ) -> Tuple["Schema", Prompt, Instructions]:
         """Construct a schema for reasking, and a prompt for reasking.
 
@@ -449,6 +450,7 @@ class JsonSchema(Schema):
         reasks: List[FieldReAsk],
         original_response: Any,
         use_full_schema: bool,
+        prompt_params: Optional[Dict[str, Any]] = None,
     ) -> Tuple["Schema", Prompt, Instructions]:
         parsed_rail = deepcopy(self.root)
 
@@ -515,16 +517,15 @@ class JsonSchema(Schema):
             return decoded
 
         prompt = reask_prompt_template.format(
-            previous_response=json.dumps(reask_value, indent=2, default=reask_decoder)
-            .replace("{", "{{")
-            .replace("}", "}}"),
+            previous_response=json.dumps(reask_value, indent=2, default=reask_decoder),
             output_schema=pruned_tree_string,
+            **(prompt_params or {}),
         )
 
         instructions = self.reask_instructions_template
         if instructions is None:
             instructions = Instructions(constants["high_level_json_instructions"])
-        instructions = instructions.format()
+        instructions = instructions.format(**(prompt_params or {}))
 
         return pruned_tree_schema, prompt, instructions
 
@@ -803,6 +804,7 @@ class StringSchema(Schema):
         reasks: List[FieldReAsk],
         original_response: FieldReAsk,
         use_full_schema: bool,
+        prompt_params: Optional[Dict[str, Any]] = None,
     ) -> Tuple[Schema, Prompt, Instructions]:
         pruned_tree_string = self.transpile()
 
@@ -825,12 +827,13 @@ class StringSchema(Schema):
             previous_response=original_response.incorrect_value,
             error_messages=error_messages,
             output_schema=pruned_tree_string,
+            **(prompt_params or {}),
         )
 
         instructions = self.reask_instructions_template
         if instructions is None:
             instructions = Instructions("You are a helpful assistant.")
-        instructions = instructions.format()
+        instructions = instructions.format(**(prompt_params or {}))
 
         return self, prompt, instructions
 

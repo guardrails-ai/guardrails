@@ -140,6 +140,9 @@ def type_annotation_to_string(type_annotation: Any) -> str:
     # Get the type annotation from the type_annotation
     type_annotation = prepare_type_annotation(type_annotation)
 
+    # Use inline import to avoid circular dependency
+    from guardrails.datatypes import PythonCode
+
     # Map the type annotation to the corresponding field type
     if is_list(type_annotation):
         return "list"
@@ -161,6 +164,8 @@ def type_annotation_to_string(type_annotation: Any) -> str:
         return "url"
     elif typing.get_origin(type_annotation) == Union:
         return "choice"
+    elif type_annotation == PythonCode:
+        return "pythoncode"
     else:
         raise ValueError(f"Unsupported type: {type_annotation}")
 
@@ -180,7 +185,7 @@ def add_validators_to_xml_element(field_info: ModelField, element: Element) -> E
         return element
     if "validators" in field_info.field_info.extra:
         validators = field_info.field_info.extra["validators"]
-        if isinstance(validators, str) or isinstance(validators, Validator):
+        if not isinstance(validators, list):
             validators = [validators]
 
         attach_validators_to_element(element, validators)
@@ -201,13 +206,43 @@ def attach_validators_to_element(
     format_prompt = []
     on_fails = {}
     for val in validators:
-        validator_prompt = val
-        if not isinstance(val, str):
+        # must be either a tuple with two elements or a gd.Validator
+        if isinstance(val, Validator):
             # `validator` is of type gd.Validator, use the to_xml_attrib method
             validator_prompt = val.to_xml_attrib()
             # Set the on-fail attribute based on the on_fail value
             on_fail = val.on_fail_descriptor
             on_fails[val.rail_alias] = on_fail
+        elif isinstance(val, tuple) and len(val) == 2:
+            validator, on_fail = val
+            if isinstance(validator, Validator):
+                # `validator` is of type gd.Validator, use the to_xml_attrib method
+                validator_prompt = validator.to_xml_attrib()
+                # Set the on-fail attribute based on the on_fail value
+                on_fails[validator.rail_alias] = on_fail
+            elif isinstance(validator, str):
+                # `validator` is a string, use it as the validator prompt
+                validator_prompt = validator
+                on_fails[validator] = on_fail
+            elif isinstance(validator, Callable):
+                # `validator` is a callable, use it as the validator prompt
+                if not hasattr(validator, "rail_alias"):
+                    raise ValueError(
+                        f"Validator {validator.__name__} must be registered with "
+                        f"the gd.register_validator decorator"
+                    )
+                validator_prompt = validator.rail_alias
+                on_fails[validator.rail_alias] = on_fail
+            else:
+                raise ValueError(
+                    f"Validator tuple {val} must be a (validator, on_fail) tuple, "
+                    f"where the validator is a string or a callable"
+                )
+        else:
+            raise ValueError(
+                f"Validator {val} must be a (validator, on_fail) tuple or "
+                f"Validator class instance"
+            )
         format_prompt.append(validator_prompt)
 
     if len(format_prompt) > 0:
@@ -448,7 +483,7 @@ def add_pydantic_validators_as_guardrails_validators(
             )
             if "validators" not in fld.field_info.extra:
                 fld.field_info.extra["validators"] = []
-            fld.field_info.extra["validators"].append(gd_validator)
+            fld.field_info.extra["validators"].append((gd_validator, "reask"))
 
     model_fields = {}
     for field_name, field in model.__fields__.items():

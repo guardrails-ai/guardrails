@@ -33,41 +33,13 @@
 
 Given the following document, answer the following questions. If the answer doesn't exist in the document, enter 'None'.
 
-{document}
+${document}
 
-@xml_prefix_prompt
+${gr.xml_prefix_prompt}
 
-{{output_schema}}
+${output_schema}
 
-@json_suffix_prompt</prompt>
-
-
-<script language='python'>
-    from guardrails.validators import Validator, EventDetail, register_validator
-    import random
-
-
-    @register_validator(name="custom", data_type="any")
-    class CustomValidator(Validator):
-        def __init__(self, *args, **kwargs):
-            super(CustomValidator, self).__init__(*args, **kwargs)
-
-        def validate(self, key: str, value: Any, schema: Union[Dict, List]):
-            """Validate that a value is within a range."""
-
-            logger.debug(f"Validating {value} is in choices {self._choices}...")
-
-            if random.random() > 0.5:
-                raise EventDetail(
-                    key,
-                    value,
-                    schema,
-                    f"Value {value} is not in choices {self._choices}.",
-                    None,
-                )
-
-            return schema
-</script>
+${gr.json_suffix_prompt}</prompt>
 
 </rail>
 ```
@@ -80,8 +52,7 @@ Given the following document, answer the following questions. If the answer does
 2. **Simple and familiar:** `RAIL` should be familiar to anyone familiar with HTML, and should be easy to learn.
 3. **Validation and correction**: `RAIL` can be used to define quality criteria for the expected output, and corrective actions to take in case the quality criteria is not met.
 4. **Can define complex structures:** `RAIL` can be used to define arbitrarily complex structures, such as nested lists, nested objects, etc.
-5. **Supports writing custom code:** If needed, `RAIL` supports writing code for using validators, custom corrective actions, etc. To see examples of this, check out the [RAIL Script](script.md) page.
-6. **Code assistance**: In the future, we plan to support code completion and IntelliSense for `RAIL` specifications, which will make it very easy to write `RAIL` specifications.
+5. **Code assistance**: In the future, we plan to support code completion and IntelliSense for `RAIL` specifications, which will make it very easy to write `RAIL` specifications.
 
 **Design inspiration**
 
@@ -90,13 +61,12 @@ Given the following document, answer the following questions. If the answer does
 
 ## 📚 Components of an `RAIL` Specification
 
-The `RAIL` specification contains 3 main components:
+The `RAIL` specification contains 2 main components:
 
 1. `Output`: Contains information about the expected output of the LLM. It contains the spec for the overall structure of the LLM output, type info for each field, and the quality criteria for each field and the corrective action to be taken in case quality criteria is not met.
    This is the main component of the `RAIL` specification, which enforces the guarantees that the LLM should provide.
    Check out the [RAIL Output](output.md) page for more details, including the full specifcation of how to create complex output schemas.
 2. `Prompt`: Prompt template, and contains the high level instructions that are sent to the LLM. Check out the [RAIL Prompt](prompt.md) page for more details.
-3. (Experimental) (Optional) `Script`: Contains any custom code for implementing the schema. This is useful for implementing custom validators, custom corrective actions, etc. Check out the [RAIL Script](script.md) page for more details.
 
 Let's see an example of an `RAIL` specification in action:
 
@@ -112,17 +82,11 @@ Let's see an example of an `RAIL` specification in action:
 ...
 </prompt>
 
-
-<script language=python> <!-- (3)! -->
-...
-</script>
-
 </rail>
 ```
 
 1. The `output` element contains the structure of the expected output of the LLM. It contains the spec for the overall structure of the LLM output, type info for each field, and the quality criteria for each field and the corrective action to be taken in case quality criteria is not met.
 2. The `prompt` element contains the high level instructions that are sent to the LLM. Check out the [RAIL Prompt](prompt.md) page for more details.
-3. The `script` element is optional, and contains any custom code for implementing the schema.
 
 ## 📖 How to use `RAIL` in Guardrails?
 

@@ -1,5 +1,7 @@
 """Unit tests for prompt and instructions parsing."""
 
+from string import Template
+
 import pytest
 
 import guardrails as gd
@@ -36,35 +38,35 @@ RAIL_WITH_PARAMS = """
 </output>
 <instructions>
 
-{{user_instructions}}
+${user_instructions}
 
 </instructions>
 
 <prompt>
 
-{{user_prompt}}
+${user_prompt}
 
 </prompt>
 </rail>
 """
 
 
-RAIL_WITH_FORMAT_INSTRUCTIONS = f"""
+RAIL_WITH_FORMAT_INSTRUCTIONS = """
 <rail version="0.1">
 <output>
     <string name="test_string" description="A string for testing." />
 </output>
 <instructions>
 
-{INSTRUCTIONS}
+You are a helpful bot, who answers only with valid JSON
 
 </instructions>
 
 <prompt>
 
-{PROMPT}
+Extract a string from the text
 
-@complete_json_suffix_v2
+${gr.complete_json_suffix_v2}
 </prompt>
 </rail>
 """
@@ -115,8 +117,8 @@ def test_format_instructions():
     guard = gd.Guard.from_rail_string(RAIL_WITH_FORMAT_INSTRUCTIONS)
     output_schema = guard.rail.output_schema.transpile()
     expected_instructions = (
-        constants["complete_json_suffix_v2"]
-        .format(output_schema=output_schema)
+        Template(constants["complete_json_suffix_v2"])
+        .safe_substitute(output_schema=output_schema)
         .rstrip()
     )
 
@@ -127,7 +129,7 @@ def test_format_instructions():
     "prompt_str,final_prompt",
     [
         (
-            "Dummy prompt. @complete_json_suffix_v2",
+            "Dummy prompt. ${gr.complete_json_suffix_v2}",
             f"Dummy prompt. {constants['complete_json_suffix_v2']}",
         ),
         ("Dummy prompt. some@email.com", "Dummy prompt. some@email.com"),

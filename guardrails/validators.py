@@ -165,22 +165,41 @@ def register_validator(name: str, data_type: Union[str, List[str]]):
     """Register a validator for a data type."""
     from guardrails.datatypes import registry as types_registry
 
-    def decorator(cls: type):
+    if isinstance(data_type, str):
+        data_type = list(types_registry.keys()) if data_type == "all" else [data_type]
+    # Make sure that the data type string exists in the data types registry.
+    for dt in data_type:
+        if dt not in types_registry:
+            raise ValueError(f"Data type {dt} is not registered.")
+
+        types_to_validators[dt].append(name)
+
+    def decorator(cls_or_func: Union[type, Callable]):
         """Register a validator for a data type."""
-        nonlocal data_type
-        if isinstance(data_type, str):
-            data_type = (
-                list(types_registry.keys()) if data_type == "all" else [data_type]
+        if isinstance(cls_or_func, type(Validator)) or issubclass(
+            type(cls_or_func), Validator
+        ):
+            cls = cls_or_func
+            cls.rail_alias = name
+        elif callable(cls_or_func):
+            func = cls_or_func
+            func.rail_alias = name
+            # ensure function takes two args
+            if not func.__code__.co_argcount == 2:
+                raise ValueError(
+                    f"Validator function {func.__name__} must take two arguments."
+                )
+            # dynamically create Validator subclass with `validate` method as `func`
+            cls = type(
+                name,
+                (Validator,),
+                {"validate": staticmethod(func), "rail_alias": name},
             )
-        # Make sure that the data type string exists in the data types registry.
-        for dt in data_type:
-            if dt not in types_registry:
-                raise ValueError(f"Data type {dt} is not registered.")
-
-            types_to_validators[dt].append(name)
-
+        else:
+            raise ValueError(
+                "Only classes and functions can be registered as validators."
+            )
         validators_registry[name] = cls
-        cls.rail_alias = name
         return cls
 
     return decorator
@@ -703,7 +722,7 @@ class BugFreePython(Validator):
         return PassResult()
 
 
-@register_validator(name="bug-free-sql", data_type="sql")
+@register_validator(name="bug-free-sql", data_type=["sql", "string"])
 class BugFreeSQL(Validator):
     """Validates that there are no SQL syntactic bugs in the generated code.
 
@@ -716,7 +735,7 @@ class BugFreeSQL(Validator):
     | Property                      | Description                       |
     | ----------------------------- | --------------------------------- |
     | Name for `format` attribute   | `bug-free-sql`                    |
-    | Supported data types          | `sql`                             |
+    | Supported data types          | `sql`, `string`                   |
     | Programmatic fix              | None                              |
     """
 
@@ -848,7 +867,9 @@ class SimilarToDocument(Validator):
         model: str = "text-embedding-ada-002",
         on_fail: Optional[Callable] = None,
     ):
-        super().__init__(on_fail=on_fail)
+        super().__init__(
+            on_fail=on_fail, document=document, threshold=threshold, model=model
+        )
         if not _HAS_NUMPY:
             raise ImportError(
                 f"The {self.__class__.__name__} validator requires the numpy package.\n"
@@ -1672,7 +1693,9 @@ class ProvenanceV0(Validator):
         on_fail: Optional[Callable] = None,
         **kwargs,
     ):
-        super().__init__(on_fail, **kwargs)
+        super().__init__(
+            on_fail, threshold=threshold, validation_method=validation_method, **kwargs
+        )
         self._threshold = float(threshold)
         if validation_method not in ["sentence", "full"]:
             raise ValueError("validation_method must be 'sentence' or 'full'.")
