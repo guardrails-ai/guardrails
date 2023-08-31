@@ -92,11 +92,9 @@ class FormatAttr:
         """
         if self.format is None:
             return []
-        pattern = re.compile(r";(?![^{}]*})|;(?<!')\s(?=[^']*'$)")
-        print("tokens pattern: ", pattern)
+        pattern = re.compile(r";(?![^{}]*})")
         tokens = re.split(pattern, self.format)
         tokens = list(filter(None, tokens))
-        print("format tokens: ", tokens)
         return tokens
 
     @classmethod
@@ -116,18 +114,11 @@ class FormatAttr:
             return validator_with_args[0].strip(), []
 
         validator, args_token = validator_with_args
-        print("\n")
-        print("args_token: ", args_token)
-        print("\n")
 
         # Split using whitespace as a delimiter, but not if it is inside curly braces or
         # single quotes.
         pattern = re.compile(r"\s(?![^{}]*})|(?<!')\s(?=[^']*'$)")
-        print("parse_token pattern: ", pattern)
         tokens = re.split(pattern, args_token)
-        print("\n")
-        print("tokens: ", tokens)
-        print("\n")
 
         # Filter out empty strings if any.
         tokens = list(filter(None, tokens))
@@ -147,7 +138,6 @@ class FormatAttr:
                         f"and raised an error: {e}."
                     )
             args.append(t)
-        print("args: ", args)
         return validator.strip(), args
 
     def parse(self) -> Dict:
@@ -243,8 +233,6 @@ class FormatAttr:
                 # beginning of a rail file.
 
             # Create the validator.
-            print("validator_name", validator_name)
-            print("args", args)
             _validators.append(validator(*args, on_fail=on_fail))
 
         self._validators = _validators
