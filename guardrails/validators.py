@@ -300,7 +300,6 @@ class Validator:
 
         params = " ".join(validator_args)
         xml = f"{self.rail_alias}: {params}"
-        print("xml: ", xml)
         return xml
 
     def __call__(self, value):
