@@ -9,6 +9,11 @@ from typing import Tuple, Type, Union
 
 from lxml import etree as ET
 from pydantic import BaseModel
+from guardrails.utils.casting_utils import (
+    to_float,
+    to_int,
+    to_string
+)
 
 from guardrails.validators import Validator
 
@@ -174,7 +179,7 @@ class String(ScalarType):
 
     def from_str(self, s: str) -> "String":
         """Create a String from a string."""
-        return s
+        return to_string(s)
 
 
 @register_type("integer")
@@ -183,10 +188,7 @@ class Integer(ScalarType):
 
     def from_str(self, s: str) -> "Integer":
         """Create an Integer from a string."""
-        if s is None:
-            return None
-
-        return int(s)
+        return to_int(s)
 
 
 @register_type("float")
@@ -195,10 +197,7 @@ class Float(ScalarType):
 
     def from_str(self, s: str) -> "Float":
         """Create a Float from a string."""
-        if s is None:
-            return None
-
-        return float(s)
+        return to_float(s)
 
 
 @register_type("bool")

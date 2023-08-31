@@ -18,6 +18,7 @@ from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Union
 import openai
 import pydantic
 from pydantic import Field
+from guardrails.utils.casting_utils import to_int
 
 from guardrails.utils.docs_utils import get_chunks_from_text, sentence_split
 from guardrails.utils.sql_utils import SQLDriver, create_sql_driver
@@ -289,15 +290,10 @@ class Validator:
 
         validator_args = []
         init_args = inspect.getfullargspec(self.__init__)
-        print("inspect.getfullargspec(self.__init__): ", init_args)
-        # print("self.__init__.__code__.co_varnames[1:]", self.__init__.__code__.co_varnames[1:])
-        # for arg in self.__init__.__code__.co_varnames[1:]:
         for arg in init_args.args[1:]:
             if arg not in ("on_fail", "args", "kwargs"):
-                str_arg = str(self._kwargs[arg])
-                print("arg: ", arg)
-                print("str_arg: ", str_arg)
-                print("type(str_arg): ", type(str_arg))
+                arg_value = self._kwargs.get(arg)
+                str_arg = str(arg_value)
                 if str_arg is not None:
                     str_arg = "{" + str_arg + "}" if " " in str_arg else str_arg
                     validator_args.append(str_arg)
@@ -537,8 +533,8 @@ class ValidLength(Validator):
         self, min: int = None, max: int = None, on_fail: Optional[Callable] = None
     ):
         super().__init__(on_fail=on_fail, min=min, max=max)
-        self._min = int(min) if min is not None else None
-        self._max = int(max) if max is not None else None
+        self._min = to_int(min)
+        self._max = to_int(max)
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         """Validates that the length of value is within the expected range."""
