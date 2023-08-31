@@ -152,3 +152,8 @@ s_guard_two = Guard.from_string(
 def test_configure(guard: Guard, expected_num_reasks: int, config_num_reasks: int):
     guard.configure(config_num_reasks)
     assert guard.num_reasks == expected_num_reasks
+
+def guard_init_from_rail(): 
+    guard = Guard.from_rail("tests/unit_tests/test_assets/simple.rail")
+    assert guard.instructions.format().source.strip() == 'You are a helpful bot, who answers only with valid JSON'
+    assert guard.prompt.format().source.strip() == 'Extract a string from the text'
