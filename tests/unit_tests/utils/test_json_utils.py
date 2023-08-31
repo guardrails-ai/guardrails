@@ -1,5 +1,3 @@
-from json.decoder import JSONDecodeError
-
 import pytest
 
 from guardrails.utils.json_utils import extract_json_from_ouput
@@ -55,7 +53,7 @@ not_even_json = "This isn't even json..."
         (
             invalid_json_code_block,
             None,
-            "Expecting property name enclosed in double quotes: line 2 column 5 (char 6)",
+            "Expecting property name enclosed in double quotes: line 2 column 5 (char 6)",  # noqa
         ),
         (not_even_json, None, "Expecting value: line 1 column 1 (char 0)"),
     ],
