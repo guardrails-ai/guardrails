@@ -10,7 +10,6 @@ from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 from lxml import etree as ET
-import regex
 
 from guardrails import validator_service
 from guardrails.datatypes import DataType, String
