@@ -39,7 +39,7 @@ Help me correct the incorrect values based on the given error messages.
 <high_level_json_parsing_reask_prompt>
 I was given the following response, which was not parseable as JSON.
 
-{previous_response}
+${previous_response}
 
 Help me correct this by making it valid JSON.
 </high_level_json_parsing_reask_prompt>

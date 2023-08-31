@@ -3,11 +3,11 @@ from pydantic import BaseModel, Field
 prompt = """\n\nHuman:
 Given the following resume, answer the following questions. If the answer doesn't exist in the resume, enter `null`.
 
-{{document}}
+${document}
 
 Extract information from this resume and return a JSON that follows the correct schema.
 
-@complete_json_suffix
+${gr.complete_json_suffix}
 
 \n\nAssistant:
 """  # noqa
