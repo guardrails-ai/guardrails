@@ -9,12 +9,8 @@ from typing import Tuple, Type, Union
 
 from lxml import etree as ET
 from pydantic import BaseModel
-from guardrails.utils.casting_utils import (
-    to_float,
-    to_int,
-    to_string
-)
 
+from guardrails.utils.casting_utils import to_float, to_int, to_string
 from guardrails.validators import Validator
 
 if TYPE_CHECKING:

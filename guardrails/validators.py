@@ -18,8 +18,8 @@ from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Union
 import openai
 import pydantic
 from pydantic import Field
-from guardrails.utils.casting_utils import to_int
 
+from guardrails.utils.casting_utils import to_int
 from guardrails.utils.docs_utils import get_chunks_from_text, sentence_split
 from guardrails.utils.sql_utils import SQLDriver, create_sql_driver
 
