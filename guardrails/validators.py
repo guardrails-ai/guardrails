@@ -299,8 +299,7 @@ class Validator:
                     validator_args.append(str_arg)
 
         params = " ".join(validator_args)
-        xml = f"{self.rail_alias}: {params}"
-        return xml
+        return f"{self.rail_alias}: {params}"
 
     def __call__(self, value):
         result = self.validate(value, {})
