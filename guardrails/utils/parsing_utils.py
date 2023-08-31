@@ -47,7 +47,7 @@ def get_code_block(
     Returns:
         str: The contents of the code block.
     """  # noqa
-    trimmed_input = string_value.strip()
+    trimmed_input = string_value
 
     block_border = "```"
     block_start_border = f"{block_border}{code_type}"
