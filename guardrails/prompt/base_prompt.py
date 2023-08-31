@@ -1,8 +1,11 @@
 """Class for representing a prompt entry."""
 import re
-from string import Formatter
+from string import Formatter, Template
 from typing import Optional
 
+import regex
+
+from guardrails.namespace_template import NamespaceTemplate
 from guardrails.utils.constants import constants
 
 
@@ -17,7 +20,7 @@ class BasePrompt:
 
         # If an output schema is provided, substitute it in the prompt.
         if output_schema:
-            self.source = source.format(output_schema=output_schema)
+            self.source = Template(source).safe_substitute(output_schema=output_schema)
         else:
             self.source = source
 
@@ -33,7 +36,7 @@ class BasePrompt:
 
     @property
     def variable_names(self):
-        return [x[1] for x in Formatter().parse(self.source) if x[1] is not None]
+        return [x[1] for x in Formatter().parse(self.escape()) if x[1] is not None]
 
     @property
     def format_instructions(self):
@@ -42,13 +45,16 @@ class BasePrompt:
     def substitute_constants(self, text):
         """Substitute constants in the prompt."""
         # Substitute constants by reading the constants file.
-        # Regex to extract all occurrences of @<constant_name>
-        matches = re.findall(r"@(\w+)", text)
+        # Regex to extract all occurrences of ${gr.<constant_name>}
 
-        # Substitute all occurrences of @<constant_name> with the value of the constant.
+        matches = re.findall(r"\${gr.(\w+)}", text)
+
+        # Substitute all occurrences of ${gr.<constant_name>}
+        #   with the value of the constant.
         for match in matches:
-            if match in constants:
-                text = text.replace(f"@{match}", constants[match])
+            template = NamespaceTemplate(text)
+            mapping = {f"gr.{match}": constants[match]}
+            text = template.safe_substitute(**mapping)
 
         return text
 
@@ -74,9 +80,9 @@ class BasePrompt:
         """
         # TODO(shreya): Optionally add support for special character demarcation.
 
-        # Regex to extract first occurrence of @<constant_name>
+        # Regex to extract first occurrence of ${gr.<constant_name>}
 
-        matches = re.finditer(r"@(\w+)", text)
+        matches = re.finditer(r"\${gr.(\w+)}", text)
 
         earliest_match_idx = None
         earliest_match = None
@@ -92,3 +98,8 @@ class BasePrompt:
             return 0
 
         return earliest_match.start()
+
+    def escape(self) -> str:
+        start_replaced = regex.sub(r"(?<!\$){", "{{", self.source)
+        # This variable length negative lookbehind is why we need `regex` over `re`
+        return regex.sub(r"(?<!\${.*)}", "}}", start_replaced)

@@ -6,12 +6,12 @@ from guardrails.validators import LowerCase, OneLine, TwoWords
 
 
 class FeeDetailsFilter(BaseModel):
-    index: int = Field(validators="1-indexed")
+    index: int = Field(validators=("1-indexed", "noop"))
     name: str = Field(
         validators=[LowerCase(on_fail="filter"), TwoWords(on_fail="filter")]
     )
     explanation: str = Field(validators=OneLine(on_fail="filter"))
-    value: float = Field(validators="percentage")
+    value: float = Field(validators=("percentage", "noop"))
 
 
 class ContractDetailsFilter(BaseModel):
@@ -25,10 +25,10 @@ class ContractDetailsFilter(BaseModel):
 
 
 class FeeDetailsFix(BaseModel):
-    index: int = Field(validators="1-indexed")
+    index: int = Field(validators=("1-indexed", "noop"))
     name: str = Field(validators=[LowerCase(on_fail="fix"), TwoWords(on_fail="fix")])
     explanation: str = Field(validators=OneLine(on_fail="fix"))
-    value: float = Field(validators="percentage")
+    value: float = Field(validators=("percentage", "noop"))
 
 
 class ContractDetailsFix(BaseModel):
@@ -42,10 +42,10 @@ class ContractDetailsFix(BaseModel):
 
 
 class FeeDetailsNoop(BaseModel):
-    index: int = Field(validators="1-indexed")
+    index: int = Field(validators=("1-indexed", "noop"))
     name: str = Field(validators=[LowerCase(on_fail="noop"), TwoWords(on_fail="noop")])
     explanation: str = Field(validators=OneLine(on_fail="noop"))
-    value: float = Field(validators="percentage")
+    value: float = Field(validators=("percentage", "noop"))
 
 
 class ContractDetailsNoop(BaseModel):
@@ -59,10 +59,10 @@ class ContractDetailsNoop(BaseModel):
 
 
 class FeeDetailsReask(BaseModel):
-    index: int = Field(validators="1-indexed")
+    index: int = Field(validators=("1-indexed", "noop"))
     name: str = Field(validators=[LowerCase(on_fail="noop"), TwoWords(on_fail="reask")])
     explanation: str = Field(validators=OneLine(on_fail="noop"))
-    value: float = Field(validators="percentage")
+    value: float = Field(validators=("percentage", "noop"))
 
 
 class ContractDetailsReask(BaseModel):
@@ -76,12 +76,12 @@ class ContractDetailsReask(BaseModel):
 
 
 class FeeDetailsRefrain(BaseModel):
-    index: int = Field(validators="1-indexed")
+    index: int = Field(validators=("1-indexed", "noop"))
     name: str = Field(
         validators=[LowerCase(on_fail="refrain"), TwoWords(on_fail="refrain")]
     )
     explanation: str = Field(validators=OneLine(on_fail="refrain"))
-    value: float = Field(validators="percentage")
+    value: float = Field(validators=("percentage", "noop"))
 
 
 class ContractDetailsRefrain(BaseModel):
@@ -97,30 +97,30 @@ class ContractDetailsRefrain(BaseModel):
 PROMPT = """
 Given the following document, answer the following questions. If the answer doesn't exist in the document, enter 'None'.
 
-{{document}}
+${document}
 
-@xml_prefix_prompt
+${gr.xml_prefix_prompt}
 
-{output_schema}
+${output_schema}
 
-@json_suffix_prompt_v2_wo_none"""  # noqa: E501
+${gr.json_suffix_prompt_v2_wo_none}"""  # noqa: E501
 
 
 INSTRUCTIONS_CHAT_MODEL = """
 You are a helpful assistant only capable of communicating with valid JSON, and no other text.
 
-@json_suffix_prompt_examples
+${gr.json_suffix_prompt_examples}
 """  # noqa: E501
 
 
 PROMPT_CHAT_MODEL = """
 Given the following document, answer the following questions. If the answer doesn't exist in the document, enter `null`.
 
-{{document}}
+${document}
 
 Extract information from this document and return a JSON that follows the correct schema.
 
-@xml_prefix_prompt
+${gr.xml_prefix_prompt}
 
-{output_schema}
+${output_schema}
 """  # noqa: E501

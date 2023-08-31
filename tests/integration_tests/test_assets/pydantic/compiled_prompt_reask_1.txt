@@ -4,11 +4,11 @@ I was given the following JSON response, which had problems due to incorrect val
 {
   "people": [
     {
-      "name": "John Doe",
-      "age": 28,
       "zip_code": {
         "incorrect_value": "90210",
-        "error_message": "Zip code must not be Beverly Hills."
+        "error_messages": [
+          "Zip code must not be Beverly Hills."
+        ]
       }
     }
   ]
@@ -19,11 +19,9 @@ Help me correct the incorrect values based on the given error messages.
 Given below is XML that describes the information to extract from this document and the tags to extract it into.
 
 <output>
-    <list name="people" description="A list of 3 people.">
-        <object description="Information about a person." pydantic="Person">
-            <string name="name" description="The name of the person."/>
-            <integer name="age" description="The age of the person." format="age-must-be-between-0-and-150"/>
-            <string name="zip_code" description="The zip code of the person." format="zip-code-must-be-numeric; zip-code-in-california"/>
+    <list name="people">
+        <object>
+            <string name="zip_code" format="zip_code_must_be_numeric; zip_code_in_california"/>
         </object>
     </list>
 </output>

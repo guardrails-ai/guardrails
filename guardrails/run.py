@@ -1,3 +1,4 @@
+import copy
 import logging
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
@@ -5,6 +6,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 from eliot import add_destinations, start_action
 from pydantic import BaseModel
 
+from guardrails.datatypes import verify_metadata_requirements
 from guardrails.llm_providers import AsyncPromptCallable, PromptCallable
 from guardrails.prompt import Instructions, Prompt
 from guardrails.schema import Schema
@@ -12,7 +14,6 @@ from guardrails.utils.logs_utils import GuardHistory, GuardLogs, GuardState
 from guardrails.utils.reask_utils import (
     FieldReAsk,
     ReAsk,
-    prune_obj_for_reasking,
     reasks_to_dict,
     sub_reasks_with_fixed_values,
 )
@@ -44,19 +45,25 @@ class Runner:
 
     instructions: Optional[Instructions]
     prompt: Prompt
+    msg_history: Optional[List[Dict]]
     api: PromptCallable
     input_schema: Schema
     output_schema: Schema
     guard_state: GuardState
     num_reasks: int = 0
+    metadata: Dict[str, Any] = field(default_factory=dict)
     output: str = None
     reask_prompt: Optional[Prompt] = None
-    guard_history: GuardHistory = field(default_factory=lambda: GuardHistory([]))
+    reask_instructions: Optional[Instructions] = None
+    guard_history: GuardHistory = field(
+        default_factory=lambda: GuardHistory(history=[])
+    )
     base_model: Optional[BaseModel] = None
+    full_schema_reask: bool = False
 
     def _reset_guard_history(self):
         """Reset the guard history."""
-        self.guard_history = GuardHistory([])
+        self.guard_history = GuardHistory(history=[])
         self.guard_state.push(self.guard_history)
 
     def __post_init__(self):
@@ -74,6 +81,16 @@ class Runner:
                 self.instructions, output_schema=self.output_schema.transpile()
             )
 
+        if self.msg_history is not None and len(self.msg_history):
+            self.msg_history = copy.deepcopy(self.msg_history)
+            msg_history = []
+            for msg in self.msg_history:
+                msg["content"] = Prompt(
+                    msg["content"], output_schema=self.output_schema.transpile()
+                )
+                msg_history.append(msg)
+            self.msg_history = msg_history
+
     def __call__(self, prompt_params: Dict = None) -> GuardHistory:
         """Execute the runner by repeatedly calling step until the reask budget
         is exhausted.
@@ -85,7 +102,21 @@ class Runner:
         Returns:
             The guard history.
         """
+        # check if validator requirements are fulfilled
+        missing_keys = verify_metadata_requirements(
+            self.metadata, self.output_schema.to_dict().values()
+        )
+        if missing_keys:
+            raise ValueError(
+                f"Missing required metadata keys: {', '.join(missing_keys)}"
+            )
+
         self._reset_guard_history()
+
+        # Figure out if we need to include instructions in the prompt.
+        include_instructions = not (
+            self.instructions is None and self.msg_history is None
+        )
 
         with start_action(
             action_type="run",
@@ -95,10 +126,12 @@ class Runner:
             input_schema=self.input_schema,
             output_schema=self.output_schema,
             num_reasks=self.num_reasks,
+            metadata=self.metadata,
         ):
-            instructions, prompt, input_schema, output_schema = (
+            instructions, prompt, msg_history, input_schema, output_schema = (
                 self.instructions,
                 self.prompt,
+                self.msg_history,
                 self.input_schema,
                 self.output_schema,
             )
@@ -109,6 +142,7 @@ class Runner:
                     api=self.api,
                     instructions=instructions,
                     prompt=prompt,
+                    msg_history=msg_history,
                     prompt_params=prompt_params,
                     input_schema=input_schema,
                     output_schema=output_schema,
@@ -119,10 +153,12 @@ class Runner:
                 if not self.do_loop(index, reasks):
                     break
                 # Get new prompt and output schema.
-                prompt, instructions, output_schema = self.prepare_to_loop(
+                prompt, instructions, output_schema, msg_history = self.prepare_to_loop(
                     reasks,
                     validated_output,
                     output_schema,
+                    include_instructions=include_instructions,
+                    prompt_params=prompt_params,
                 )
 
             return self.guard_history
@@ -132,7 +168,8 @@ class Runner:
         index: int,
         api: PromptCallable,
         instructions: Optional[Instructions],
-        prompt: Prompt,
+        prompt: Optional[Prompt],
+        msg_history: Optional[List[Dict]],
         prompt_params: Dict,
         input_schema: Schema,
         output_schema: Schema,
@@ -140,7 +177,6 @@ class Runner:
     ):
         guard_logs = GuardLogs()
         self.guard_history.push(guard_logs)
-
         """Run a full step."""
         with start_action(
             action_type="step",
@@ -152,25 +188,28 @@ class Runner:
             output_schema=output_schema,
         ):
             # Prepare: run pre-processing, and input validation.
-            if not output:
-                instructions, prompt = self.prepare(
+            if output:
+                instructions = None
+                prompt = None
+                msg_history = None
+            else:
+                instructions, prompt, msg_history = self.prepare(
                     index,
                     instructions,
                     prompt,
+                    msg_history,
                     prompt_params,
                     api,
                     input_schema,
                     output_schema,
                 )
-            else:
-                instructions = None
-                prompt = None
 
             guard_logs.prompt = prompt
             guard_logs.instructions = instructions
+            guard_logs.msg_history = msg_history
 
             # Call: run the API.
-            output = self.call(index, instructions, prompt, api, output)
+            output = self.call(index, instructions, prompt, msg_history, api, output)
 
             guard_logs.output = output
 
@@ -184,7 +223,7 @@ class Runner:
                 guard_logs, index, parsed_output, output_schema
             )
 
-            guard_logs.set_validated_output(validated_output)
+            guard_logs.set_validated_output(validated_output, self.full_schema_reask)
 
             # Introspect: inspect validated output for reasks.
             reasks = self.introspect(index, validated_output, output_schema)
@@ -195,7 +234,7 @@ class Runner:
             if not self.do_loop(index, reasks):
                 validated_output = sub_reasks_with_fixed_values(validated_output)
 
-            guard_logs.set_validated_output(validated_output)
+            guard_logs.set_validated_output(validated_output, self.full_schema_reask)
 
             return validated_output, reasks
 
@@ -204,29 +243,38 @@ class Runner:
         index: int,
         instructions: Optional[Instructions],
         prompt: Prompt,
+        msg_history: Optional[List[Dict]],
         prompt_params: Dict,
         api: Union[PromptCallable, AsyncPromptCallable],
         input_schema: Schema,
         output_schema: Schema,
-    ) -> Tuple[Instructions, Prompt]:
-        """Prepare by running pre-processing and input validation."""
+    ) -> Tuple[Instructions, Prompt, List[Dict]]:
+        """Prepare by running pre-processing and input validation.
+
+        Returns:
+            The instructions, prompt, and message history.
+        """
         with start_action(action_type="prepare", index=index) as action:
             if prompt_params is None:
                 prompt_params = {}
 
-            # if input_schema:
-            #     validated_prompt_params = input_schema.validate(prompt_params)
-            # else:
-            validated_prompt_params = prompt_params
+            if msg_history:
+                msg_history = copy.deepcopy(msg_history)
+                # Format any variables in the message history with the prompt params.
+                for msg in msg_history:
+                    msg["content"] = msg["content"].format(**prompt_params)
 
-            if isinstance(prompt, str):
-                prompt = Prompt(prompt)
+                prompt, instructions = None, None
+            else:
+                if isinstance(prompt, str):
+                    prompt = Prompt(prompt)
 
-            prompt = prompt.format(**validated_prompt_params)
+                prompt = prompt.format(**prompt_params)
 
-            # TODO(shreya): should there be any difference to parsing params for prompt?
-            if instructions is not None and isinstance(instructions, Instructions):
-                instructions = instructions.format(**validated_prompt_params)
+                # TODO(shreya): should there be any difference
+                #  to parsing params for prompt?
+                if instructions is not None and isinstance(instructions, Instructions):
+                    instructions = instructions.format(**prompt_params)
 
             instructions, prompt = output_schema.preprocess_prompt(
                 api, instructions, prompt
@@ -237,16 +285,17 @@ class Runner:
                 instructions=instructions,
                 prompt=prompt,
                 prompt_params=prompt_params,
-                validated_prompt_params=validated_prompt_params,
+                validated_prompt_params=prompt_params,
             )
 
-        return instructions, prompt
+        return instructions, prompt, msg_history
 
     def call(
         self,
         index: int,
         instructions: Optional[Instructions],
         prompt: Prompt,
+        msg_history: Optional[List[Dict[str, str]]],
         api: Callable,
         output: str = None,
     ) -> str:
@@ -256,22 +305,38 @@ class Runner:
         2. Convert the response string to a dict,
         3. Log the output
         """
+
+        def msg_history_source(msg_history) -> List[Dict[str, str]]:
+            msg_history_copy = copy.deepcopy(msg_history)
+            for msg in msg_history_copy:
+                msg["content"] = msg["content"].source
+            return msg_history_copy
+
         with start_action(action_type="call", index=index, prompt=prompt) as action:
             try:
-                if prompt and instructions:
+                if msg_history:
                     output = api(
-                        prompt.source,
-                        instructions=instructions.source,
+                        msg_history=msg_history_source(msg_history),
                         base_model=self.base_model,
                     )
-                elif prompt:
-                    output = api(prompt.source, base_model=self.base_model)
+                else:
+                    if prompt and instructions:
+                        output = api(
+                            prompt.source,
+                            instructions=instructions.source,
+                            base_model=self.base_model,
+                        )
+                    elif prompt:
+                        output = api(prompt.source, base_model=self.base_model)
             except Exception:
                 # If the API call fails, try calling again without the base model.
-                if prompt and instructions:
-                    output = api(prompt.source, instructions=instructions.source)
-                elif prompt:
-                    output = api(prompt.source)
+                if msg_history:
+                    output = api(msg_history=msg_history_source(msg_history))
+                else:
+                    if prompt and instructions:
+                        output = api(prompt.source, instructions=instructions.source)
+                    elif prompt:
+                        output = api(prompt.source)
 
             action.log(
                 message_type="info",
@@ -306,7 +371,9 @@ class Runner:
     ):
         """Validate the output."""
         with start_action(action_type="validate", index=index) as action:
-            validated_output = output_schema.validate(guard_logs, parsed_output)
+            validated_output = output_schema.validate(
+                guard_logs, parsed_output, self.metadata
+            )
 
             action.log(
                 message_type="info",
@@ -345,14 +412,20 @@ class Runner:
         reasks: list,
         validated_output: Optional[Dict],
         output_schema: Schema,
-    ) -> Tuple[Prompt, Instructions, Schema]:
+        include_instructions: bool = False,
+        prompt_params: Dict = None,
+    ) -> Tuple[Prompt, Instructions, Schema, Optional[List[Dict]]]:
         """Prepare to loop again."""
         output_schema, prompt, instructions = output_schema.get_reask_setup(
             reasks=reasks,
-            reask_value=prune_obj_for_reasking(validated_output),
-            reask_prompt_template=self.reask_prompt,
+            original_response=validated_output,
+            use_full_schema=self.full_schema_reask,
+            prompt_params=prompt_params,
         )
-        return prompt, instructions, output_schema
+        if not include_instructions:
+            instructions = None
+        msg_history = None  # clear msg history for reasking
+        return prompt, instructions, output_schema, msg_history
 
 
 class AsyncRunner(Runner):
@@ -379,10 +452,12 @@ class AsyncRunner(Runner):
             input_schema=self.input_schema,
             output_schema=self.output_schema,
             num_reasks=self.num_reasks,
+            metadata=self.metadata,
         ):
-            instructions, prompt, input_schema, output_schema = (
+            instructions, prompt, msg_history, input_schema, output_schema = (
                 self.instructions,
                 self.prompt,
+                self.msg_history,
                 self.input_schema,
                 self.output_schema,
             )
@@ -393,6 +468,7 @@ class AsyncRunner(Runner):
                     api=self.api,
                     instructions=instructions,
                     prompt=prompt,
+                    msg_history=msg_history,
                     prompt_params=prompt_params,
                     input_schema=input_schema,
                     output_schema=output_schema,
@@ -403,10 +479,11 @@ class AsyncRunner(Runner):
                 if not self.do_loop(index, reasks):
                     break
                 # Get new prompt and output schema.
-                prompt, instructions, output_schema = self.prepare_to_loop(
+                prompt, instructions, output_schema, msg_history = self.prepare_to_loop(
                     reasks,
                     validated_output,
                     output_schema,
+                    prompt_params=prompt_params,
                 )
 
             return self.guard_history
@@ -417,6 +494,7 @@ class AsyncRunner(Runner):
         api: AsyncPromptCallable,
         instructions: Optional[Instructions],
         prompt: Prompt,
+        msg_history: Optional[List[Dict]],
         prompt_params: Dict,
         input_schema: Schema,
         output_schema: Schema,
@@ -424,7 +502,6 @@ class AsyncRunner(Runner):
     ):
         guard_logs = GuardLogs()
         self.guard_history.push(guard_logs)
-
         """Run a full step."""
         with start_action(
             action_type="step",
@@ -437,10 +514,11 @@ class AsyncRunner(Runner):
         ):
             # Prepare: run pre-processing, and input validation.
             if not output:
-                instructions, prompt = self.prepare(
+                instructions, prompt, msg_history = self.prepare(
                     index,
                     instructions,
                     prompt,
+                    msg_history,
                     prompt_params,
                     api,
                     input_schema,
@@ -452,9 +530,12 @@ class AsyncRunner(Runner):
 
             guard_logs.prompt = prompt
             guard_logs.instructions = instructions
+            guard_logs.msg_history = msg_history
 
             # Call: run the API.
-            output = await self.async_call(index, instructions, prompt, api, output)
+            output = await self.async_call(
+                index, instructions, prompt, msg_history, api, output
+            )
 
             guard_logs.output = output
 
@@ -464,11 +545,11 @@ class AsyncRunner(Runner):
             guard_logs.parsed_output = parsed_output
 
             # Validate: run output validation.
-            validated_output = self.validate(
+            validated_output = await self.async_validate(
                 guard_logs, index, parsed_output, output_schema
             )
 
-            guard_logs.set_validated_output(validated_output)
+            guard_logs.set_validated_output(validated_output, self.full_schema_reask)
 
             # Introspect: inspect validated output for reasks.
             reasks = self.introspect(index, validated_output, output_schema)
@@ -479,7 +560,7 @@ class AsyncRunner(Runner):
             if not self.do_loop(index, reasks):
                 validated_output = sub_reasks_with_fixed_values(validated_output)
 
-            guard_logs.set_validated_output(validated_output)
+            guard_logs.set_validated_output(validated_output, self.full_schema_reask)
 
             return validated_output, reasks
 
@@ -488,6 +569,7 @@ class AsyncRunner(Runner):
         index: int,
         instructions: Optional[Instructions],
         prompt: Prompt,
+        msg_history: Optional[List[Dict]],
         api: AsyncPromptCallable,
         output: str = None,
     ) -> str:
@@ -497,11 +579,39 @@ class AsyncRunner(Runner):
         2. Convert the response string to a dict,
         3. Log the output
         """
+        """Run a step.
+
+        1. Query the LLM API,
+        2. Convert the response string to a dict,
+        3. Log the output
+        """
         with start_action(action_type="call", index=index, prompt=prompt) as action:
-            if prompt and instructions:
-                output = await api(prompt.source, instructions=instructions.source)
-            elif prompt:
-                output = await api(prompt.source)
+            try:
+                if msg_history:
+                    output = await api(
+                        msg_history=msg_history,
+                        base_model=self.base_model,
+                    )
+                else:
+                    if prompt and instructions:
+                        output = await api(
+                            prompt.source,
+                            instructions=instructions.source,
+                            base_model=self.base_model,
+                        )
+                    elif prompt:
+                        output = await api(prompt.source, base_model=self.base_model)
+            except Exception:
+                # If the API call fails, try calling again without the base model.
+                if msg_history:
+                    output = await api(msg_history=msg_history)
+                else:
+                    if prompt and instructions:
+                        output = await api(
+                            prompt.source, instructions=instructions.source
+                        )
+                    elif prompt:
+                        output = await api(prompt.source)
 
             action.log(
                 message_type="info",
@@ -509,3 +619,23 @@ class AsyncRunner(Runner):
             )
 
             return output
+
+    async def async_validate(
+        self,
+        guard_logs: GuardLogs,
+        index: int,
+        parsed_output: Any,
+        output_schema: Schema,
+    ):
+        """Validate the output."""
+        with start_action(action_type="validate", index=index) as action:
+            validated_output = await output_schema.async_validate(
+                guard_logs, parsed_output, self.metadata
+            )
+
+            action.log(
+                message_type="info",
+                validated_output=reasks_to_dict(validated_output),
+            )
+
+            return validated_output

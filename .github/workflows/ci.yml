@@ -19,7 +19,7 @@ jobs:
         runs-on: ubuntu-latest
         strategy:
             matrix:
-                python-version: ['3.8', '3.9']
+                python-version: ['3.8', '3.9', '3.10', '3.11']
         
         steps:
             -   uses: actions/checkout@v2
@@ -46,7 +46,8 @@ jobs:
         runs-on: ubuntu-latest
         strategy:
             matrix:
-                python-version: ['3.8', '3.9']
+                python-version: ['3.8', '3.9', '3.10', '3.11']
+                dependencies: ['dev', 'full']
 
         steps:
             -   uses: actions/checkout@v2
@@ -63,15 +64,16 @@ jobs:
             -   name: Install Dependencies
                 run: |
                     python -m pip install --upgrade pip
-                    make dev
+                    make ${{ matrix.dependencies }}
 
             -   name: Run Pytests
                 run: |
                     make test-cov
 
             -   name: Upload to codecov.io
-                uses: codecov/codecov-action@v1
+                uses: codecov/codecov-action@v3
                 with:
+                    token: ${{ secrets.CODECOV_TOKEN }}
                     file: ./coverage.xml
                     flags: unittests
                     name: codecov-umbrella

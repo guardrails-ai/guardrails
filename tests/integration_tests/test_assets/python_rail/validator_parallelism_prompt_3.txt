@@ -1,0 +1,20 @@
+This was a previous response you generated:
+
+======
+hi theremynameispete
+======
+
+Generate a new response that corrects your old response such that the following issues are fixed
+- Value has length greater than 10. Please return a shorter output, that is shorter than 10 characters.
+
+
+
+Your generated response should satisfy the following properties:
+- two-words
+- lower-case
+- one-line
+- valid-url
+- valid-choices: choices=a
+- length: min=1 max=10
+
+Don't talk; just go.

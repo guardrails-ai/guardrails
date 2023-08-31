@@ -1,6 +1,6 @@
 import json
 from datetime import date, time
-from typing import List, Optional
+from typing import List, Literal, Union
 
 import openai
 import pytest
@@ -9,20 +9,22 @@ from pydantic import BaseModel, Field, root_validator, validator
 import guardrails as gd
 from guardrails.utils.pydantic_utils import add_validator
 from guardrails.validators import (
-    EventDetail,
+    FailResult,
+    PassResult,
+    TwoWords,
+    ValidationResult,
     Validator,
-    ValidChoices,
     ValidLength,
     register_validator,
 )
 
-from .mock_llm_outputs import openai_chat_completion_create
-from .test_assets import python_rail
+from .mock_llm_outputs import openai_chat_completion_create, openai_completion_create
+from .test_assets import python_rail, string
 
 
 @register_validator(name="is-valid-director", data_type="string")
 class IsValidDirector(Validator):
-    def validate(self, key, value, schema) -> dict:
+    def validate(self, value, metadata) -> ValidationResult:
         valid_names = [
             "Christopher Nolan",
             "Steven Spielberg",
@@ -31,15 +33,11 @@ class IsValidDirector(Validator):
             "James Cameron",
         ]
         if value not in valid_names:
-            raise EventDetail(
-                key,
-                value,
-                schema,
-                f"Value {value} is not a valid director name. "
+            return FailResult(
+                error_message=f"Value {value} is not a valid director name. "
                 f"Valid choices are {valid_names}.",
-                None,
             )
-        return schema
+        return PassResult()
 
 
 def test_python_rail(mocker):
@@ -49,6 +47,7 @@ def test_python_rail(mocker):
     )
 
     class BoxOfficeRevenue(BaseModel):
+        revenue_type: Literal["box_office"]
         gross: float
         opening_weekend: float
 
@@ -60,6 +59,7 @@ def test_python_rail(mocker):
             return gross
 
     class StreamingRevenue(BaseModel):
+        revenue_type: Literal["streaming"]
         subscriptions: int
         subscription_fee: float
 
@@ -70,20 +70,17 @@ def test_python_rail(mocker):
         is_sequel: bool = Field(default=False)
         website: str = Field(validators=[ValidLength(min=9, max=100, on_fail="reask")])
         contact_email: str
-        revenue_type: str = Field(
-            validators=[ValidChoices(choices=["box_office", "streaming"])]
+        revenue: Union[BoxOfficeRevenue, StreamingRevenue] = Field(
+            ..., discriminator="revenue_type"
         )
-        box_office: Optional[BoxOfficeRevenue] = Field(when="revenue_type")
-        streaming: Optional[StreamingRevenue] = Field(when="revenue_type")
 
         # Root-level validation using Pydantic (Not in Guardrails)
         @root_validator
         def validate_budget_and_gross(cls, values):
             budget = values.get("budget")
-            revenue_type = values.get("revenue_type")
-            box_office_revenue = values.get("box_office")
-            if revenue_type == "box_office" and box_office_revenue:
-                gross = box_office_revenue.gross
+            revenue = values.get("revenue")
+            if isinstance(revenue, BoxOfficeRevenue):
+                gross = revenue.gross
                 if budget >= gross:
                     raise ValueError("Budget must be less than gross revenue")
             return values
@@ -101,11 +98,12 @@ def test_python_rail(mocker):
         output_class=Director,
         prompt=(
             "Provide detailed information about the top 5 grossing movies from"
-            " {{director}} including release date, duration, budget, whether "
-            "it's a sequel, website, and contact email.\n@json_suffix_without_examples"
+            " ${director} including release date, duration, budget, whether "
+            "it's a sequel, website, and contact email.\n"
+            "${gr.json_suffix_without_examples}"
         ),
         instructions="\nYou are a helpful assistant only capable of communicating"
-        " with valid JSON, and no other text.\n@json_suffix_prompt_examples",
+        " with valid JSON, and no other text.\n${gr.json_suffix_prompt_examples}",
     )
 
     # Guardrails runs validation and fixes the first failing output through reasking
@@ -113,6 +111,7 @@ def test_python_rail(mocker):
         openai.ChatCompletion.create,
         prompt_params={"director": "Christopher Nolan"},
         num_reasks=2,
+        full_schema_reask=False,
     )
 
     # Assertions are made on the guard state object.
@@ -161,6 +160,7 @@ def test_python_rail_add_validator(mocker):
     )
 
     class BoxOfficeRevenue(BaseModel):
+        revenue_type: Literal["box_office"]
         gross: float
         opening_weekend: float
 
@@ -172,6 +172,7 @@ def test_python_rail_add_validator(mocker):
             return gross
 
     class StreamingRevenue(BaseModel):
+        revenue_type: Literal["streaming"]
         subscriptions: int
         subscription_fee: float
 
@@ -182,14 +183,11 @@ def test_python_rail_add_validator(mocker):
         is_sequel: bool = Field(default=False)
         website: str
         contact_email: str
-        revenue_type: str
-        box_office: Optional[BoxOfficeRevenue] = Field(when="revenue_type")
-        streaming: Optional[StreamingRevenue] = Field(when="revenue_type")
+        revenue: Union[BoxOfficeRevenue, StreamingRevenue] = Field(
+            ..., discriminator="revenue_type"
+        )
 
         # Register guardrails validators
-        _revenue_type_validator = add_validator(
-            "revenue_type", fn=ValidChoices(choices=["box_office", "streaming"])
-        )
         _website_validator = add_validator(
             "website", fn=ValidLength(min=9, max=100, on_fail="reask")
         )
@@ -198,10 +196,9 @@ def test_python_rail_add_validator(mocker):
         @root_validator
         def validate_budget_and_gross(cls, values):
             budget = values.get("budget")
-            revenue_type = values.get("revenue_type")
-            box_office_revenue = values.get("box_office")
-            if revenue_type == "box_office" and box_office_revenue:
-                gross = box_office_revenue.gross
+            revenue = values.get("revenue")
+            if isinstance(revenue, BoxOfficeRevenue):
+                gross = revenue.gross
                 if budget >= gross:
                     raise ValueError("Budget must be less than gross revenue")
             return values
@@ -222,11 +219,12 @@ def test_python_rail_add_validator(mocker):
         output_class=Director,
         prompt=(
             "Provide detailed information about the top 5 grossing movies from"
-            " {{director}} including release date, duration, budget, whether "
-            "it's a sequel, website, and contact email.\n@json_suffix_without_examples"
+            " ${director} including release date, duration, budget, whether "
+            "it's a sequel, website, and contact email.\n"
+            "${gr.json_suffix_without_examples}"
         ),
         instructions="\nYou are a helpful assistant only capable of communicating"
-        " with valid JSON, and no other text.\n@json_suffix_prompt_examples",
+        " with valid JSON, and no other text.\n${gr.json_suffix_prompt_examples}",
     )
 
     # Guardrails runs validation and fixes the first failing output through reasking
@@ -234,6 +232,7 @@ def test_python_rail_add_validator(mocker):
         openai.ChatCompletion.create,
         prompt_params={"director": "Christopher Nolan"},
         num_reasks=2,
+        full_schema_reask=False,
     )
 
     # Assertions are made on the guard state object.
@@ -273,3 +272,54 @@ def test_python_rail_add_validator(mocker):
 
     # The fixed output should pass validation using Pydantic
     Director.parse_raw(python_rail.LLM_OUTPUT_3_SUCCEED_GUARDRAILS_AND_PYDANTIC)
+
+
+def test_python_string(mocker):
+    """Test single string (non-JSON) generation via pydantic with re-asking."""
+    mocker.patch(
+        "guardrails.llm_providers.openai_wrapper", new=openai_completion_create
+    )
+
+    validators = [TwoWords(on_fail="reask")]
+    description = "Name for the pizza"
+    instructions = """
+You are a helpful assistant, and you are helping me come up with a name for a pizza.
+
+${gr.complete_string_suffix}
+"""
+
+    prompt = """
+Given the following ingredients, what would you call this pizza?
+
+${ingredients}
+"""
+
+    guard = gd.Guard.from_string(
+        validators, description, prompt=prompt, instructions=instructions
+    )
+    _, final_output = guard(
+        llm_api=openai.Completion.create,
+        prompt_params={"ingredients": "tomato, cheese, sour cream"},
+        num_reasks=1,
+        max_tokens=100,
+    )
+
+    assert final_output == string.LLM_OUTPUT_REASK
+
+    guard_history = guard.guard_state.most_recent_call.history
+
+    # Check that the guard state object has the correct number of re-asks.
+    assert len(guard_history) == 2
+
+    # For orginal prompt and output
+    assert guard_history[0].instructions == gd.Instructions(
+        string.COMPILED_INSTRUCTIONS
+    )
+    assert guard_history[0].prompt == gd.Prompt(string.COMPILED_PROMPT)
+    assert guard_history[0].output == string.LLM_OUTPUT
+    assert guard_history[0].validated_output == string.VALIDATED_OUTPUT_REASK
+
+    # For re-asked prompt and output
+    assert guard_history[1].prompt == gd.Prompt(string.COMPILED_PROMPT_REASK)
+    assert guard_history[1].output == string.LLM_OUTPUT_REASK
+    assert guard_history[1].validated_output == string.LLM_OUTPUT_REASK

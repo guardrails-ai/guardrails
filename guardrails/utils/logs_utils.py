@@ -1,50 +1,63 @@
 from copy import deepcopy
-from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Union
 
+from pydantic import BaseModel, Field, PrivateAttr
 from rich.console import Group
 from rich.panel import Panel
 from rich.pretty import pretty_repr
+from rich.table import Table
 from rich.tree import Tree
 
-from guardrails.prompt import Prompt
-from guardrails.utils.reask_utils import ReAsk, gather_reasks, prune_obj_for_reasking
+from guardrails.prompt import Instructions, Prompt
+from guardrails.utils.reask_utils import (
+    ReAsk,
+    SkeletonReAsk,
+    gather_reasks,
+    prune_obj_for_reasking,
+)
+from guardrails.validators import ValidationResult
 
 
-@dataclass
-class ValidatorLogs:
+class ArbitraryModel(BaseModel):
+    class Config:
+        arbitrary_types_allowed = True
+
+
+class ValidatorLogs(ArbitraryModel):
     """Logs for a single validator."""
 
     validator_name: str
     value_before_validation: Any
+    validation_result: Optional[ValidationResult] = None
     value_after_validation: Optional[Any] = None
 
 
-@dataclass
-class FieldValidationLogs:
+class FieldValidationLogs(ArbitraryModel):
     """Logs for a single field."""
 
-    validator_logs: List[ValidatorLogs] = field(default_factory=list)
-    children: Dict[Union[int, str], "FieldValidationLogs"] = field(default_factory=dict)
+    validator_logs: List[ValidatorLogs] = Field(default_factory=list)
+    children: Dict[Union[int, str], "FieldValidationLogs"] = Field(default_factory=dict)
 
 
-@dataclass
-class GuardLogs:
+class GuardLogs(ArbitraryModel):
     prompt: Optional[Prompt] = None
-    instructions: Optional[str] = None
+    instructions: Optional[Instructions] = None
+    msg_history: Optional[List[Dict[str, Prompt]]] = None
     output: Optional[str] = None
     parsed_output: Optional[dict] = None
     validated_output: Optional[dict] = None
     reasks: Optional[List[ReAsk]] = None
 
-    field_validation_logs: Dict[Union[int, str], FieldValidationLogs] = field(
-        default_factory=dict
-    )
+    field_validation_logs: Optional[FieldValidationLogs] = None
 
-    _previous_logs: Optional["GuardLogs"] = None
+    _previous_logs: Optional["GuardLogs"] = PrivateAttr(None)
 
-    def set_validated_output(self, validated_output):
-        if self._previous_logs is not None:
+    def set_validated_output(self, validated_output, is_full_schema_reask: bool):
+        if (
+            self._previous_logs is not None
+            and not is_full_schema_reask
+            and not isinstance(validated_output, SkeletonReAsk)
+        ):
             validated_output = merge_reask_output(
                 self._previous_logs.validated_output, validated_output
             )
@@ -57,6 +70,22 @@ class GuardLogs:
 
     @property
     def rich_group(self) -> Group:
+        def create_msg_history_table(
+            msg_history: Optional[List[Dict[str, Prompt]]]
+        ) -> Table:
+            if msg_history is None:
+                return "No message history."
+            table = Table(show_lines=True)
+            table.add_column("Role", justify="right", no_wrap=True)
+            table.add_column("Content")
+
+            for msg in msg_history:
+                table.add_row(msg["role"], msg["content"].source)
+
+            return table
+
+        table = create_msg_history_table(self.msg_history)
+
         if self.instructions is not None:
             return Group(
                 Panel(
@@ -67,6 +96,7 @@ class GuardLogs:
                 Panel(
                     self.instructions.source, title="Instructions", style="on #FFF0F2"
                 ),
+                Panel(table, title="Message History", style="on #E7DFEB"),
                 Panel(self.output, title="Raw LLM Output", style="on #F5F5DC"),
                 Panel(
                     pretty_repr(self.validated_output),
@@ -81,6 +111,7 @@ class GuardLogs:
                     title="Prompt",
                     style="on #F0F8FF",
                 ),
+                Panel(table, title="Message History", style="on #E7DFEB"),
                 Panel(self.output, title="Raw LLM Output", style="on #F5F5DC"),
                 Panel(
                     pretty_repr(self.validated_output),
@@ -90,8 +121,7 @@ class GuardLogs:
             )
 
 
-@dataclass
-class GuardHistory:
+class GuardHistory(ArbitraryModel):
     history: List[GuardLogs]
 
     def push(self, guard_log: GuardLogs) -> None:
@@ -130,8 +160,7 @@ class GuardHistory:
         return [log.failed_validations for log in self.history]
 
 
-@dataclass
-class GuardState:
+class GuardState(ArbitraryModel):
     all_histories: List[GuardHistory]
 
     def push(self, guard_history: GuardHistory) -> None:
@@ -193,7 +222,7 @@ def merge_reask_output(previous_response, reask_response) -> Dict:
         elif isinstance(pruned_reask_json, dict):
             for key, value in pruned_reask_json.items():
                 if isinstance(value, ReAsk):
-                    corrected_value = reask_response_dict[key]
+                    corrected_value = reask_response_dict.get(key)
                     update_response_by_path(merged_json, value.path, corrected_value)
                 else:
                     update_reasked_elements(

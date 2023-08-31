@@ -19,7 +19,10 @@ test-basic:
 	python -c "import guardrails.version as mversion"
 
 test-cov:
-	pytest tests/ --cov=./ --cov-report=xml
+	pytest tests/ --cov=./guardrails/ --cov-report=xml
+
+view-test-cov:
+	pytest tests/ --cov=./guardrails/ --cov-report html && open htmlcov/index.html
 
 docs-serve:
 	mkdocs serve -a $(MKDOCS_SERVE_ADDR)
@@ -29,5 +32,8 @@ docs-deploy:
 
 dev:
 	pip install -e ".[dev]"
+
+full:
+	pip install -e ".[all]"
 
 all: autoformat lint docs test

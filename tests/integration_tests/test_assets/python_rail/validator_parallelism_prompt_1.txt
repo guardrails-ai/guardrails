@@ -1,0 +1,16 @@
+
+Say hullo to my little friend
+
+
+
+
+Your generated response should satisfy the following properties:
+- two-words
+- lower-case
+- one-line
+- valid-url
+- valid-choices: choices=a
+- length: min=1 max=10
+
+Don't talk; just go.
+

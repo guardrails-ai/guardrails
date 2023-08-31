@@ -2,6 +2,22 @@ import typing as t
 
 from guardrails.prompt import Prompt
 
+try:
+    import tiktoken
+except ImportError:
+    tiktoken = None
+
+try:
+    import nltk
+except ImportError:
+    nltk = None
+
+try:
+    if nltk is not None:
+        nltk.data.find("tokenizers/punkt")
+except LookupError:
+    nltk.download("punkt")
+
 
 class TextSplitter:
     """Split the docs into chunks with token boundaries."""
@@ -62,6 +78,14 @@ def sentence_split(text: str) -> t.List[str]:
             "`pip install nltk`"
         )
 
+    # Download the nltk punkt tokenizer if it's not already downloaded.
+    import nltk
+
+    try:
+        nltk.data.find("tokenizers/punkt")
+    except LookupError:
+        nltk.download("punkt")
+
     return sent_tokenize(text)
 
 
@@ -79,3 +103,49 @@ def read_pdf(path) -> str:
         [g.close() for g in (textpage, page)]
     pdf.close()
     return content.replace("\r", "")
+
+
+def get_chunks_from_text(
+    text: str, chunk_strategy: str, chunk_size: int, chunk_overlap: int
+) -> t.List[str]:
+    """Get chunks of text from a string.
+
+    Args:
+        text: The text to chunk.
+        chunk_strategy: The strategy to use for chunking.
+        chunk_size: The size of each chunk. If the chunk_strategy is "sentences",
+            this is the number of sentences per chunk. If the chunk_strategy is
+            "characters", this is the number of characters per chunk, and so on.
+        chunk_overlap: The number of characters to overlap between chunks. If the
+            chunk_strategy is "sentences", this is the number of sentences to overlap
+            between chunks.
+    """
+    if chunk_strategy in ["sentence", "word"] and nltk is None:
+        raise ImportError(
+            "nltk is required for sentence splitting. Please install it using "
+            "`pip install nltk`"
+        )
+    if chunk_strategy == "token" and tiktoken is None:
+        raise ImportError(
+            "tiktoken is required for token splitting. Please install it using "
+            "`pip install tiktoken`"
+        )
+
+    if chunk_strategy == "sentence":
+        atomic_chunks = nltk.sent_tokenize(text)
+    elif chunk_strategy == "word":
+        atomic_chunks = nltk.word_tokenize(text)
+    elif chunk_strategy == "char":
+        atomic_chunks = list(text)
+    elif chunk_strategy == "token":
+        atomic_chunks = tiktoken(text)
+    else:
+        raise ValueError(
+            "chunk_strategy must be 'sentence', 'word', 'char', or 'token'."
+        )
+
+    chunks = []
+    for i in range(0, len(atomic_chunks), chunk_size - chunk_overlap):
+        chunk = " ".join(atomic_chunks[i : i + chunk_size])
+        chunks.append(chunk)
+    return chunks

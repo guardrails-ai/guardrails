@@ -2,11 +2,13 @@ openai_api_key.txt
 *__pycache__*
 data/*
 .vscode/*
+.venv/*
 .DS_Store
 *.ipynb_checkpoints/*
 *.pyc
 *.env
 *.log
+*.venv
 settings.json
 site/*
 guardrails.log
@@ -17,3 +19,7 @@ dist/*
 .idea/*
 .cache
 scratch/
+.coverage*
+test.db
+test.index
+htmlcov

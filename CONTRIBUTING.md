@@ -35,3 +35,16 @@ For convenience, consider [installing the pre-commit hooks](https://pre-commit.c
 5. Celebrate when your pull request is merged! Your changes will be available in the next Guardrails release.
 
 Thank you for your contribution and happy coding!
+
+## Documentation
+
+Docs are served via mkdocs using the mkdocstring plugin. To serve docs locally, run the following
+
+```bash
+# install dependencies
+pip install -e ".[dev]";
+
+# serve docs
+mkdocs serve;
+```
+then navigate to `localhost:8000` in your browser.

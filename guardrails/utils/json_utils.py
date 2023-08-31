@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Type, Union
 
 import lxml.etree as ET
 
@@ -35,6 +35,7 @@ class ValuePlaceholder(Placeholder):
         "pydantic",
         "email",  # email and url should become string validators
         "url",
+        "pythoncode",
     ]
 
     type_string: str
@@ -45,8 +46,7 @@ class ValuePlaceholder(Placeholder):
             return Any
         return self.type_map[self.type_string]
 
-    @staticmethod
-    def verification_failed():
+    class VerificationFailed:
         # Sentinel value
         pass
 
@@ -55,7 +55,7 @@ class ValuePlaceholder(Placeholder):
         json_value,
         prune_extra_keys: bool,
         coerce_types: bool,
-    ):
+    ) -> Union[Type[VerificationFailed], Any]:
         super_result = super().verify(
             json_value,
             prune_extra_keys=prune_extra_keys,
@@ -68,11 +68,11 @@ class ValuePlaceholder(Placeholder):
             return json_value
         if not isinstance(json_value, expected_type):
             if not coerce_types:
-                return self.verification_failed
+                return self.VerificationFailed
             try:
                 return expected_type(json_value)
             except (ValueError, TypeError):
-                return self.verification_failed
+                return self.VerificationFailed
         return json_value
 
 
@@ -86,6 +86,7 @@ class DictPlaceholder(Placeholder):
         prune_extra_keys: bool,
         coerce_types: bool,
     ) -> bool:
+        # If json value is None, and the placeholder is optional, return True
         super_result = super().verify(
             json_value,
             prune_extra_keys=prune_extra_keys,
@@ -94,47 +95,45 @@ class DictPlaceholder(Placeholder):
         if super_result is not None:
             return super_result
 
+        # If the json value is not a dict, return False
         if not isinstance(json_value, dict):
             return False
+
+        # If expected dictionary does not specify any keys, then varification passes.
         if not self.children.keys():
             return True
+
+        # Compare the keys in the json value to the keys in the schema.
         json_keys = set(json_value.keys())
-
         schema_keys = set(self.children.keys())
-        choice_keys = set()
-        for key in schema_keys:
-            if isinstance(self.children[key], ChoicePlaceholder):
-                choice_keys.update(self.children[key].cases.keys())
 
-        extra_keys = json_keys - schema_keys - choice_keys
+        # Prune extra keys if necessary.
+        extra_keys = json_keys - schema_keys
         if prune_extra_keys and extra_keys:
             for key in extra_keys:
                 del json_value[key]
+
+        # If the json value does not contain all the required keys, return False.
         if any(
             key not in json_keys and not self.children[key].optional
             for key in schema_keys
         ):
             return False
 
+        # Verify each key in the json value.
         for key, placeholder in self.children.items():
             if placeholder.optional and key not in json_value:
                 continue
+
             if isinstance(placeholder, ValuePlaceholder):
                 value = placeholder.verify(
                     json_value[key],
                     prune_extra_keys=prune_extra_keys,
                     coerce_types=coerce_types,
                 )
-                if value is ValuePlaceholder.verification_failed:
+                if value is ValuePlaceholder.VerificationFailed:
                     return False
                 json_value[key] = value
-            elif isinstance(placeholder, ChoicePlaceholder):
-                if not placeholder.verify(
-                    json_value,
-                    prune_extra_keys=prune_extra_keys,
-                    coerce_types=coerce_types,
-                ):
-                    return False
             else:
                 if not placeholder.verify(
                     json_value[key],
@@ -177,7 +176,7 @@ class ListPlaceholder(Placeholder):
                     prune_extra_keys=prune_extra_keys,
                     coerce_types=coerce_types,
                 )
-                if value is ValuePlaceholder.verification_failed:
+                if value is ValuePlaceholder.VerificationFailed:
                     return False
                 json_value[i] = value
             return True
@@ -195,7 +194,7 @@ class ListPlaceholder(Placeholder):
 
 @dataclass
 class ChoicePlaceholder(Placeholder):
-    name: str
+    discriminator: str
     cases: Dict[str, Any]
 
     def verify(
@@ -214,44 +213,28 @@ class ChoicePlaceholder(Placeholder):
 
         if not isinstance(json_value, dict):
             return False
-        if self.name not in json_value:
+        if self.discriminator not in json_value:
             return False
 
-        value_name = json_value[self.name]
-        if value_name not in self.cases:
-            return False
-        if value_name not in json_value:
-            return False
-        if any(
-            key in json_value and json_value[key] is not None
-            for key in self.cases.keys()
-            if key != value_name
-        ):
+        discriminator_value = json_value[self.discriminator]
+        if discriminator_value not in self.cases:
             return False
 
-        value_schema = self.cases[value_name]
-        value = json_value[value_name]
-        if isinstance(value_schema, ValuePlaceholder):
-            value = value_schema.verify(
-                value,
-                prune_extra_keys=prune_extra_keys,
-                coerce_types=coerce_types,
-            )
-            if value is ValuePlaceholder.verification_failed:
-                return False
-            json_value[value_name] = value
-        else:
-            if not value_schema.verify(
-                value,
-                prune_extra_keys=prune_extra_keys,
-                coerce_types=coerce_types,
-            ):
-                return False
+        discriminator_schema = self.cases[discriminator_value]
+        value = {k: v for k, v in json_value.items() if k != self.discriminator}
 
-        return True
+        if not isinstance(discriminator_schema, DictPlaceholder):
+            raise ValueError("Choice cases must be objects")
+        if self.discriminator in discriminator_schema.children:
+            raise ValueError("Found name collision between discriminator and object")
+        return discriminator_schema.verify(
+            value,
+            prune_extra_keys=prune_extra_keys,
+            coerce_types=coerce_types,
+        )
 
 
-def generate_type_skeleton_from_schema(schema: ET._Element) -> DictPlaceholder:
+def generate_type_skeleton_from_schema(schema: ET._Element) -> Placeholder:
     """Generate a JSON skeleton from an XML schema."""
 
     def _recurse_schema(schema):
@@ -276,13 +259,19 @@ def generate_type_skeleton_from_schema(schema: ET._Element) -> DictPlaceholder:
             )
         elif schema.tag == "choice":
             return ChoicePlaceholder(
-                name=schema.attrib["name"],
                 cases={
-                    child.attrib["name"]: _recurse_schema(child[0])
-                    for child in schema
-                    if child.tag == "case"
+                    case.attrib["name"]: DictPlaceholder(
+                        children={
+                            child.attrib["name"]: _recurse_schema(child)
+                            for child in case
+                        },
+                        optional=is_optional,
+                    )
+                    for case in schema
+                    if case.tag == "case"
                 },
                 optional=is_optional,
+                discriminator=schema.attrib["discriminator"],
             )
         else:
             return ValuePlaceholder(

@@ -1,0 +1,5 @@
+{
+    "name": "Inception",
+    "director": "Christopher Nolan",
+    "release_year": 2010
+}

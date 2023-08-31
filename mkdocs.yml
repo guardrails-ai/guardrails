@@ -12,42 +12,51 @@ copyright: |
 
 
 nav:
-    - 'Home': index.md
-    - 'Getting Started': getting_started.ipynb
-    - 'FAQ': faq.md
-    - 'RAIL Specification':
-      - 'Overview': rail/index.md
-      - 'Output Element': rail/output.md
-      - 'Prompt Element': rail/prompt.md
-      - 'Instruction Element': rail/instructions.md
-      - '(Experimental) Script Element': rail/script.md
-    - 'Guardrails Reference':
-      - 'Guard': guard.md
-      - 'Data Types': data_types.md
-      - 'Validators': validation.md
-      - 'LLM API Wrappers': llm_api_wrappers.md
-      - 'Inspecting logs': logs.md
-      - 'Guardrails CLI': cli.md
-    - 'Applications':
-      - 'Text to SQL': use_cases/text2sql/text2sql.ipynb
-    - 'Examples':
-      - 'Use Guardrails with Chat Models': examples/guardrails_with_chat_models.ipynb
-      - 'If condition: generate different JSON objects based on condition': examples/select_choice_based_on_action.ipynb
-      - 'Extracting entities from ToS': examples/extracting_entities.ipynb
-      - 'Generating bug-free Python code': examples/bug_free_python_code.ipynb
-      - 'No secrets in generated text': examples/no_secrets_in_generated_text.ipynb
-      - 'Natural language to bug-free SQL': examples/syntax_error_free_sql.ipynb
-      - 'Vegan Mac & Cheese Recipe Generator': examples/recipe_generation.ipynb
-      - 'Using GPT to play valid chess moves': examples/valid_chess_moves.ipynb
-      - 'Translate text with profanity filtering': examples/translation_to_specific_language.ipynb
-      - 'Generate structured synthetic data': examples/generate_structured_data.ipynb
-      - 'Ensure translated text is high quality': examples/translation_with_quality_check.ipynb
-      - 'Check key info present in generated summary': examples/text_summarization_quality.ipynb
-    - 'Integrations':
-      - 'OpenAI Functions': integrations/openai_functions.ipynb
-      - 'LangChain': integrations/langchain.ipynb
-      - 'Pydantic': integrations/pydantic_validation.ipynb
-    -  'Join the Guardrails AI team': https://equatorial-bergamot-e37.notion.site/Join-the-Guardrails-AI-team-fd2fbf54f7834ba1b4c4d985162d34e1?pvs=4
+  - 'Introduction': guardrails_ai/introduction.md
+  - 'Getting Started': guardrails_ai/getting_started.ipynb
+  - 'Installation': guardrails_ai/installation.md
+  - 'Migrating to 0.2.x': 0-2-migration.ipynb
+  - 'FAQ': faq.md
+  - 'Concepts':
+    # - 'RailSpec': concepts/railspec.md
+    - 'RailSpec': concepts/rail.md
+    - 'Output Element': concepts/output.md
+    - 'Prompt Element': concepts/prompt.md
+    - 'Instruction Element': concepts/instructions.md
+    - 'Guard': concepts/guard.md
+    - 'Validators': concepts/validators.md
+    - 'Logs': concepts/logs.md
+    - 'Pydantic, XML, and Strings': concepts/pydantic_xml_and_strings.md
+  - 'API Reference':
+    - 'Guard': api_reference/guard.md
+    - 'Rail': api_reference/rail.md
+    - 'Validators': api_reference/validators.md
+    - 'Response Structures': api_reference/response_structures.md
+    - 'Schema': api_reference/schema.md
+    - 'Document Store': api_reference/document_store.md
+    - 'Data Types': api_reference/data_types.md
+  - 'CLI Reference': cli.md
+  # - 'Recipes':
+  #   - 'Generating structured data': recipes/generate_structured_data.ipynb
+  #   - 'Validating structured data': recipes/validate_structured_data.ipynb
+  - 'Examples':
+    - 'Text to SQL': use_cases/text2sql/text2sql.ipynb
+    - 'Use Guardrails with Chat Models': examples/guardrails_with_chat_models.ipynb
+    - 'If condition: generate different JSON objects based on condition': examples/select_choice_based_on_action.ipynb
+    - 'Extracting entities from ToS': examples/extracting_entities.ipynb
+    - 'Generating bug-free Python code': examples/bug_free_python_code.ipynb
+    - 'No secrets in generated text': examples/no_secrets_in_generated_text.ipynb
+    - 'Natural language to bug-free SQL': examples/syntax_error_free_sql.ipynb
+    - 'Vegan Mac & Cheese Recipe Generator': examples/recipe_generation.ipynb
+    - 'Using GPT to play valid chess moves': examples/valid_chess_moves.ipynb
+    - 'Translate text with profanity filtering': examples/translation_to_specific_language.ipynb
+    - 'Generate structured synthetic data': examples/generate_structured_data.ipynb
+    - 'Ensure translated text is high quality': examples/translation_with_quality_check.ipynb
+    - 'Check key info present in generated summary': examples/text_summarization_quality.ipynb
+  - 'Integrations':
+    - 'OpenAI Functions': integrations/openai_functions.ipynb
+    - 'LangChain': integrations/langchain.ipynb
+  -  'Join the Guardrails AI team': https://equatorial-bergamot-e37.notion.site/Join-the-Guardrails-AI-team-fd2fbf54f7834ba1b4c4d985162d34e1?pvs=4
 
 
 theme:
@@ -74,7 +83,7 @@ theme:
     - navigation.instant
     - navigation.tracking
     - navigation.expand
-    - navigation.sections
+    # - navigation.sections
     - content.code.annotate
     - toc.follow
   palette:
@@ -123,14 +132,23 @@ plugins:
       handlers:
         python:
           options:
+            docstring_style: google
             show_source: false
             show_bases: false
             show_if_no_docstring: true
             merge_init_into_class: true
             show_root_toc_entry: false
-            show_inheritance: true
-            show_private: false
-            show_special_members: false
+            show_inheritance: true # This is no longer a valid option
+            inherited_members: true # This might be the replacement?
+            # The below are now filters in the MD file
+            # https://mkdocstrings.github.io/python/usage/configuration/members/#filters
+            show_private: false # This is no longer a valid option
+            show_special_members: false # This is no longer a valid option
+            # Newly added options
+            annotations_path: brief
+            show_signature_annotations: true
+            separate_signature: true
+            signature_crossrefs: true
   - mknotebooks:
       execute: false
       timeout: 100
