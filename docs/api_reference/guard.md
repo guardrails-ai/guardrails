@@ -8,5 +8,7 @@
             - "from_rail_string"
             - "from_pydantic"
             - "from_string"
+            - "configure"
             - "__call__"
             - "parse"
+            - "state"

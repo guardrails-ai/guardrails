@@ -25,8 +25,14 @@ class Guard:
     """The Guard class.
 
     This class is the main entry point for using Guardrails. It is
-    initialized from either `from_rail` or `from_rail_string` methods,
-    which take in a `.rail` file or string, respectively. The `__call__`
+    initialized from one of the following class methods:
+
+    - `from_rail`
+    - `from_rail_string`
+    - `from_pydantic`
+    - `from_string`
+
+    The `__call__`
     method functions as a wrapper around LLM APIs. It takes in an LLM
     API, and optional prompt parameters, and returns the raw output from
     the LLM and the validated output.
@@ -35,7 +41,7 @@ class Guard:
     def __init__(
         self,
         rail: Rail,
-        num_reasks: int = 1,
+        num_reasks: int = None,
         base_model: Optional[BaseModel] = None,
     ):
         """Initialize the Guard."""
@@ -43,6 +49,7 @@ class Guard:
         self.num_reasks = num_reasks
         self.guard_state = GuardState(all_histories=[])
         self._reask_prompt = None
+        self._reask_instructions = None
         self.base_model = base_model
 
     @property
@@ -103,15 +110,35 @@ class Guard:
         assert variable_set.__contains__("output_schema")
         self._reask_prompt = reask_prompt
 
+    @property
+    def reask_instructions(self) -> Prompt:
+        """Return the reask prompt."""
+        return self._reask_instructions
+
+    @reask_instructions.setter
+    def reask_instructions(self, reask_instructions: Union[str, Instructions]):
+        """Set the reask prompt."""
+
+        if isinstance(reask_instructions, str):
+            reask_instructions = Instructions(reask_instructions)
+
+        self._reask_instructions = reask_instructions
+
     def configure(
         self,
-        num_reasks: int = 1,
+        num_reasks: int = None,
     ):
         """Configure the Guard."""
-        self.num_reasks = num_reasks
+        self.num_reasks = (
+            num_reasks
+            if num_reasks is not None
+            else self.num_reasks
+            if self.num_reasks is not None
+            else 1
+        )
 
     @classmethod
-    def from_rail(cls, rail_file: str, num_reasks: int = 1) -> "Guard":
+    def from_rail(cls, rail_file: str, num_reasks: int = None) -> "Guard":
         """Create a Schema from a `.rail` file.
 
         Args:
@@ -124,7 +151,7 @@ class Guard:
         return cls(Rail.from_file(rail_file), num_reasks=num_reasks)
 
     @classmethod
-    def from_rail_string(cls, rail_string: str, num_reasks: int = 1) -> "Guard":
+    def from_rail_string(cls, rail_string: str, num_reasks: int = None) -> "Guard":
         """Create a Schema from a `.rail` string.
 
         Args:
@@ -142,7 +169,7 @@ class Guard:
         output_class: BaseModel,
         prompt: Optional[str] = None,
         instructions: Optional[str] = None,
-        num_reasks: int = 1,
+        num_reasks: int = None,
     ) -> "Guard":
         """Create a Guard instance from a Pydantic model and prompt."""
         rail = Rail.from_pydantic(
@@ -159,7 +186,7 @@ class Guard:
         instructions: Optional[str] = None,
         reask_prompt: Optional[str] = None,
         reask_instructions: Optional[str] = None,
-        num_reasks: int = 1,
+        num_reasks: int = None,
     ) -> "Guard":
         """Create a Guard instance for a string response with prompt,
         instructions, and validations.
@@ -171,7 +198,7 @@ class Guard:
             instructions (str, optional): Instructions for chat models. Defaults to None.
             reask_prompt (str, optional): An alternative prompt to use during reasks. Defaults to None.
             reask_instructions (str, optional): Alternative instructions to use during reasks. Defaults to None.
-            num_reasks (int, optional): The max times to re-ask the LLM for invalid output. Defaults to 1.
+            num_reasks (int, optional): The max times to re-ask the LLM for invalid output.
         """  # noqa
         rail = Rail.from_string_validators(
             validators=validators,
@@ -216,8 +243,7 @@ class Guard:
         Returns:
             The raw text output from the LLM and the validated output.
         """
-        if num_reasks is None:
-            num_reasks = self.num_reasks
+        self.configure(num_reasks)
         if metadata is None:
             metadata = {}
         if full_schema_reask is None:
@@ -231,7 +257,7 @@ class Guard:
             return self._call_async(
                 llm_api,
                 prompt_params=prompt_params,
-                num_reasks=num_reasks,
+                num_reasks=self.num_reasks,
                 prompt=prompt,
                 instructions=instructions,
                 msg_history=msg_history,
@@ -244,7 +270,7 @@ class Guard:
         return self._call_sync(
             llm_api,
             prompt_params=prompt_params,
-            num_reasks=num_reasks,
+            num_reasks=self.num_reasks,
             prompt=prompt,
             instructions=instructions,
             msg_history=msg_history,
@@ -288,6 +314,7 @@ class Guard:
                 num_reasks=num_reasks,
                 metadata=metadata,
                 reask_prompt=self.reask_prompt,
+                reask_instructions=self.reask_instructions,
                 base_model=self.base_model,
                 guard_state=self.guard_state,
                 full_schema_reask=full_schema_reask,
@@ -346,6 +373,7 @@ class Guard:
                 num_reasks=num_reasks,
                 metadata=metadata,
                 reask_prompt=self.reask_prompt,
+                reask_instructions=self.reask_instructions,
                 base_model=self.base_model,
                 guard_state=self.guard_state,
                 full_schema_reask=full_schema_reask,
@@ -364,7 +392,7 @@ class Guard:
         llm_output: str,
         metadata: Optional[Dict] = None,
         llm_api: Union[Callable, Callable[[Any], Awaitable[Any]]] = None,
-        num_reasks: int = 1,
+        num_reasks: int = None,
         prompt_params: Dict = None,
         full_schema_reask: bool = None,
         *args,
@@ -380,6 +408,10 @@ class Guard:
         Returns:
             The validated response.
         """
+        num_reasks = (
+            num_reasks if num_reasks is not None else 0 if llm_api is None else None
+        )
+        self.configure(num_reasks)
         if full_schema_reask is None:
             full_schema_reask = self.base_model is not None
         metadata = metadata or {}
@@ -393,7 +425,7 @@ class Guard:
                 llm_output,
                 metadata,
                 llm_api=llm_api,
-                num_reasks=num_reasks,
+                num_reasks=self.num_reasks,
                 prompt_params=prompt_params,
                 full_schema_reask=full_schema_reask,
                 *args,
@@ -404,7 +436,7 @@ class Guard:
             llm_output,
             metadata,
             llm_api=llm_api,
-            num_reasks=num_reasks,
+            num_reasks=self.num_reasks,
             prompt_params=prompt_params,
             full_schema_reask=full_schema_reask,
             *args,
@@ -434,9 +466,9 @@ class Guard:
         """
         with start_action(action_type="guard_parse"):
             runner = Runner(
-                instructions=None,
-                prompt=None,
-                msg_history=None,
+                instructions=kwargs.get("instructions", None),
+                prompt=kwargs.get("prompt", None),
+                msg_history=kwargs.get("msg_history", None),
                 api=get_llm_ask(llm_api, *args, **kwargs) if llm_api else None,
                 input_schema=None,
                 output_schema=self.output_schema,
@@ -444,6 +476,7 @@ class Guard:
                 metadata=metadata,
                 output=llm_output,
                 reask_prompt=self.reask_prompt,
+                reask_instructions=self.reask_instructions,
                 base_model=self.base_model,
                 guard_state=self.guard_state,
                 full_schema_reask=full_schema_reask,
@@ -484,6 +517,7 @@ class Guard:
                 metadata=metadata,
                 output=llm_output,
                 reask_prompt=self.reask_prompt,
+                reask_instructions=self.reask_instructions,
                 base_model=self.base_model,
                 guard_state=self.guard_state,
                 full_schema_reask=full_schema_reask,
