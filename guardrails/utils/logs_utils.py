@@ -42,7 +42,7 @@ class FieldValidationLogs(ArbitraryModel):
 class LLMResponse(ArbitraryModel):
     prompt_token_count: Optional[int] = None
     response_token_count: Optional[int] = None
-    output: Optional[str] = None
+    output: str
 
 
 class GuardLogs(ArbitraryModel):

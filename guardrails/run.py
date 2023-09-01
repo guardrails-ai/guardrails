@@ -1,6 +1,6 @@
 import copy
 import logging
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
 
 from eliot import add_destinations, start_action
 from pydantic import BaseModel, Field
@@ -42,22 +42,25 @@ class Runner(BaseModel):
         guard_history: The guard history to use, defaults to an empty history.
     """
 
-    instructions: Optional[Instructions]
-    prompt: Prompt
+    class Config:
+        arbitrary_types_allowed = True
+
+    instructions: Optional[Union[str, Instructions]]
+    prompt: Optional[Union[str, Prompt]]
     msg_history: Optional[List[Dict]]
-    api: PromptCallableBase
-    input_schema: Schema
+    api: Optional[PromptCallableBase]
+    input_schema: Optional[Schema]
     output_schema: Schema
     guard_state: GuardState
-    num_reasks: int = 0
-    metadata: Dict[str, Any] = field(default_factory=dict)
-    output: str = None
+    num_reasks: int
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+    output: Optional[str] = None
     reask_prompt: Optional[Prompt] = None
     reask_instructions: Optional[Instructions] = None
-    guard_history: GuardHistory = field(
+    guard_history: GuardHistory = Field(
         default_factory=lambda: GuardHistory(history=[])
     )
-    base_model: Optional[BaseModel] = None
+    base_model: Optional[Type[BaseModel]] = None
     full_schema_reask: bool = False
 
     def _reset_guard_history(self):
@@ -65,7 +68,9 @@ class Runner(BaseModel):
         self.guard_history = GuardHistory(history=[])
         self.guard_state.push(self.guard_history)
 
-    def __post_init__(self):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
         if self.prompt:
             assert self.api, "Must provide an API if a prompt is provided."
             assert not self.output, "Cannot provide both a prompt and output."
@@ -90,7 +95,7 @@ class Runner(BaseModel):
                 msg_history.append(msg)
             self.msg_history = msg_history
 
-    def __call__(self, prompt_params: Dict = None) -> GuardHistory:
+    def __call__(self, prompt_params: Optional[Dict] = None) -> GuardHistory:
         """Execute the runner by repeatedly calling step until the reask budget
         is exhausted.
 
@@ -101,6 +106,8 @@ class Runner(BaseModel):
         Returns:
             The guard history.
         """
+        if prompt_params is None:
+            prompt_params = {}
         # check if validator requirements are fulfilled
         missing_keys = verify_metadata_requirements(
             self.metadata, self.output_schema.to_dict().values()
@@ -156,8 +163,8 @@ class Runner(BaseModel):
                     reasks,
                     validated_output,
                     output_schema,
-                    include_instructions=include_instructions,
                     prompt_params=prompt_params,
+                    include_instructions=include_instructions,
                 )
 
             return self.guard_history
@@ -165,14 +172,14 @@ class Runner(BaseModel):
     def step(
         self,
         index: int,
-        api: PromptCallableBase,
+        api: Optional[PromptCallableBase],
         instructions: Optional[Instructions],
         prompt: Optional[Prompt],
         msg_history: Optional[List[Dict]],
         prompt_params: Dict,
-        input_schema: Schema,
+        input_schema: Optional[Schema],
         output_schema: Schema,
-        output: str = None,
+        output: Optional[str] = None,
     ):
         guard_logs = GuardLogs()
         self.guard_history.push(guard_logs)
@@ -213,10 +220,11 @@ class Runner(BaseModel):
             )
 
             guard_logs.llm_response = llm_response
-            output = llm_response.output
+            raw_output = llm_response.output
 
             # Parse: parse the output.
             parsed_output, parsing_error = self.parse(index, output, output_schema)
+            parsed_output = self.parse(index, raw_output, output_schema)
 
             guard_logs.parsed_output = parsed_output
 
@@ -251,11 +259,11 @@ class Runner(BaseModel):
         self,
         index: int,
         instructions: Optional[Instructions],
-        prompt: Prompt,
+        prompt: Optional[Prompt],
         msg_history: Optional[List[Dict]],
         prompt_params: Dict,
-        api: Union[PromptCallableBase, AsyncPromptCallableBase],
-        input_schema: Schema,
+        api: Optional[Union[PromptCallableBase, AsyncPromptCallableBase]],
+        input_schema: Optional[Schema],
         output_schema: Schema,
     ) -> Tuple[Instructions, Prompt, List[Dict]]:
         """Prepare by running pre-processing and input validation.
@@ -303,9 +311,9 @@ class Runner(BaseModel):
         self,
         index: int,
         instructions: Optional[Instructions],
-        prompt: Prompt,
+        prompt: Optional[Prompt],
         msg_history: Optional[List[Dict[str, str]]],
-        api: Callable,
+        api: Optional[Callable],
         output: Optional[str] = None,
     ) -> LLMResponse:
         """Run a step.
@@ -418,7 +426,7 @@ class Runner(BaseModel):
 
             return reasks
 
-    def do_loop(self, index: int, reasks: List[ReAsk]) -> bool:
+    def do_loop(self, index: int, reasks: Sequence[ReAsk]) -> bool:
         """Determine if we should loop again."""
         if reasks and index < self.num_reasks:
             return True
@@ -429,8 +437,8 @@ class Runner(BaseModel):
         reasks: list,
         validated_output: Optional[Dict],
         output_schema: Schema,
+        prompt_params: Dict,
         include_instructions: bool = False,
-        prompt_params: Dict = None,
     ) -> Tuple[Prompt, Instructions, Schema, Optional[List[Dict]]]:
         """Prepare to loop again."""
         output_schema, prompt, instructions = output_schema.get_reask_setup(
@@ -446,7 +454,7 @@ class Runner(BaseModel):
 
 
 class AsyncRunner(Runner):
-    api: AsyncPromptCallableBase
+    api: Optional[AsyncPromptCallableBase]
 
     async def async_run(self, prompt_params: Dict = None) -> GuardHistory:
         """Execute the runner by repeatedly calling step until the reask budget

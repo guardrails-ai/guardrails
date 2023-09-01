@@ -508,7 +508,9 @@ class AsyncArbitraryCallable(AsyncPromptCallableBase):
         )
 
 
-def get_async_llm_ask(llm_api: Callable[[Any], Awaitable[Any]], *args, **kwargs):
+def get_async_llm_ask(
+    llm_api: Callable[[Any], Awaitable[Any]], *args, **kwargs
+) -> AsyncPromptCallableBase:
     if llm_api == openai.Completion.acreate:
         return AsyncOpenAICallable(*args, **kwargs)
     elif llm_api == openai.ChatCompletion.acreate:

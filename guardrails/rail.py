@@ -33,16 +33,16 @@ class Rail:
         4. `<instructions>`, which contains the instructions to be passed to the LLM
     """
 
-    input_schema: Optional[Schema] = (None,)
-    output_schema: Optional[Schema] = (None,)
-    instructions: Optional[Instructions] = (None,)
-    prompt: Optional[Prompt] = (None,)
-    version: Optional[str] = ("0.1",)
+    input_schema: Schema
+    output_schema: Schema
+    instructions: Instructions
+    prompt: Prompt
+    version: str = "0.1"
 
     @classmethod
     def from_pydantic(
         cls,
-        output_class: BaseModel,
+        output_class: Type[BaseModel],
         prompt: Optional[str] = None,
         instructions: Optional[str] = None,
         reask_prompt: Optional[str] = None,
