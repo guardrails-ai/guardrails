@@ -1,10 +1,9 @@
 import copy
 import logging
-from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from eliot import add_destinations, start_action
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from guardrails.datatypes import verify_metadata_requirements
 from guardrails.llm_providers import AsyncPromptCallableBase, PromptCallableBase
@@ -24,8 +23,7 @@ actions_logger = logging.getLogger(f"{__name__}.actions")
 add_destinations(actions_logger.debug)
 
 
-@dataclass
-class Runner:
+class Runner(BaseModel):
     """Runner class that calls an LLM API with a prompt, and performs input and
     output validation.
 
