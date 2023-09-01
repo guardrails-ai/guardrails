@@ -1,4 +1,4 @@
-# noqa: E501
+# flake8: noqa
 """This module contains the constants and utils used by the validator.py."""
 
 

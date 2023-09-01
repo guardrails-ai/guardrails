@@ -1883,7 +1883,8 @@ class ProvenanceV0(Validator):
 
 @register_validator(name="provenance-v1", data_type="string")
 class ProvenanceV1(Validator):
-    """Validates that the LLM-generated text is supported by the provided contexts.
+    """Validates that the LLM-generated text is supported by the provided
+    contexts.
 
     This validator uses an LLM callable to evaluate the generated text against the
     provided contexts (LLM-ception).
@@ -2067,8 +2068,8 @@ class ProvenanceV1(Validator):
         return self.llm_callable(prompt)
 
     def evaluate_with_llm(self, text: str, query_function: Callable) -> bool:
-        """
-        Validate that the LLM-generated text is supported by the provided contexts.
+        """Validate that the LLM-generated text is supported by the provided
+        contexts.
 
         Args:
             value (Any): The LLM-generated text.
