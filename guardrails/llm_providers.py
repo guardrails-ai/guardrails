@@ -59,9 +59,7 @@ class PromptCallableBase:
         retry=retry_if_exception_type(RETRYABLE_ERRORS),
     )
     def call_llm(self, *args, **kwargs) -> LLMResponse:
-        return self.invoke_llm(
-                *self.init_args, *args, **self.init_kwargs, **kwargs
-            )
+        return self.invoke_llm(*self.init_args, *args, **self.init_kwargs, **kwargs)
 
     def __call__(self, *args, **kwargs) -> LLMResponse:
         try:
@@ -331,8 +329,8 @@ class AsyncPromptCallableBase:
     )
     async def call_llm(self, *args, **kwargs) -> LLMResponse:
         return await self.invoke_llm(
-                *self.init_args, *args, **self.init_kwargs, **kwargs
-            )
+            *self.init_args, *args, **self.init_kwargs, **kwargs
+        )
 
     async def __call__(self, *args, **kwargs) -> LLMResponse:
         try:
