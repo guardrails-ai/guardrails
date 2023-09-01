@@ -2,7 +2,18 @@ import asyncio
 import contextvars
 import logging
 from string import Formatter
-from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Union
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+    overload,
+)
 
 from eliot import add_destinations, start_action
 from pydantic import BaseModel
@@ -210,6 +221,38 @@ class Guard:
         )
         return cls(rail, num_reasks=num_reasks)
 
+    @overload
+    def __call__(
+        self,
+        llm_api: Callable[[Any], Awaitable[Any]],
+        prompt_params: Optional[Dict] = None,
+        num_reasks: Optional[int] = None,
+        prompt: Optional[str] = None,
+        instructions: Optional[str] = None,
+        msg_history: Optional[List[Dict]] = None,
+        metadata: Optional[Dict] = None,
+        full_schema_reask: Optional[bool] = None,
+        *args,
+        **kwargs,
+    ) -> Awaitable[Tuple[str, Dict]]:
+        ...
+
+    @overload
+    def __call__(
+        self,
+        llm_api: Callable,
+        prompt_params: Optional[Dict] = None,
+        num_reasks: Optional[int] = None,
+        prompt: Optional[str] = None,
+        instructions: Optional[str] = None,
+        msg_history: Optional[List[Dict]] = None,
+        metadata: Optional[Dict] = None,
+        full_schema_reask: Optional[bool] = None,
+        *args,
+        **kwargs,
+    ) -> Tuple[str, Dict]:
+        ...
+
     def __call__(
         self,
         llm_api: Union[Callable, Callable[[Any], Awaitable[Any]]],
@@ -387,23 +430,56 @@ class Guard:
     def __rich_repr__(self):
         yield "RAIL", self.rail
 
+    @overload
     def parse(
         self,
         llm_output: str,
         metadata: Optional[Dict] = None,
-        llm_api: Union[Callable, Callable[[Any], Awaitable[Any]]] = None,
-        num_reasks: int = None,
-        prompt_params: Dict = None,
-        full_schema_reask: bool = None,
+        llm_api: Callable[[Any], Awaitable[Any]] = ...,
+        num_reasks: int = 1,
+        prompt_params: Optional[Dict] = None,
+        full_schema_reask: Optional[bool] = None,
         *args,
         **kwargs,
-    ) -> Union[Tuple[str, Dict], Awaitable[Tuple[str, Dict]]]:
+    ) -> Awaitable[Dict]:
+        ...
+
+    @overload
+    def parse(
+        self,
+        llm_output: str,
+        metadata: Optional[Dict] = None,
+        llm_api: Optional[Callable] = None,
+        num_reasks: int = 1,
+        prompt_params: Optional[Dict] = None,
+        full_schema_reask: Optional[bool] = None,
+        *args,
+        **kwargs,
+    ) -> Dict:
+        ...
+
+    def parse(
+        self,
+        llm_output: str,
+        metadata: Optional[Dict] = None,
+        llm_api: Optional[Union[Callable, Callable[[Any], Awaitable[Any]]]] = None,
+        num_reasks: int = 1,
+        prompt_params: Optional[Dict] = None,
+        full_schema_reask: Optional[bool] = None,
+        *args,
+        **kwargs,
+    ) -> Union[Dict, Awaitable[Dict]]:
         """Alternate flow to using Guard where the llm_output is known.
 
         Args:
+            llm_output: The output being parsed and validated.
+            metadata: Metadata to pass to the validators.
             llm_api: The LLM API to call
                      (e.g. openai.Completion.create or openai.Completion.acreate)
             num_reasks: The max times to re-ask the LLM for invalid output.
+            prompt_params: The parameters to pass to the prompt.format() method.
+            full_schema_reask: When reasking, whether to regenerate the full schema
+                               or just the incorrect values.
 
         Returns:
             The validated response.
