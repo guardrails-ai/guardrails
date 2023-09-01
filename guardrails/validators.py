@@ -21,7 +21,7 @@ from tenacity import retry, stop_after_attempt, wait_fixed
 
 from guardrails.utils.docs_utils import get_chunks_from_text, sentence_split
 from guardrails.utils.sql_utils import SQLDriver, create_sql_driver
-from guardrails.utils.validators_utils import PROVENANCE_V1_PROMPT
+from guardrails.utils.validator_utils import PROVENANCE_V1_PROMPT
 
 try:
     import numpy as np
