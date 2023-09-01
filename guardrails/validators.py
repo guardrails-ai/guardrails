@@ -1956,8 +1956,8 @@ class ProvenanceV1(Validator):
         args:
             validation_method (str): Whether to validate at the sentence level or over
                 the full text.  One of `sentence` or `full`. Defaults to `sentence`
-            openai_model_name (str): The name of the OpenAI model to use. One of
-                `gpt-3.5-turbo` or `gpt-4`. Defaults to `gpt-3.5-turbo`.
+            llm_callable (Union[str, Callable]): Either the name of the OpenAI model,
+                or a callable that takes a prompt and returns a response.
             top_k (int): The number of chunks to return from the query function.
                 Defaults to 3.
             max_tokens (int): The maximum number of tokens to send to the LLM.
