@@ -17,7 +17,7 @@ from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Union
 import openai
 import pydantic
 from pydantic import Field
-from tenacity import retry, stop_after_attempt, wait_fixed
+from tenacity import retry, stop_after_attempt, wait_random_exponential
 
 from guardrails.utils.docs_utils import get_chunks_from_text, sentence_split
 from guardrails.utils.sql_utils import SQLDriver, create_sql_driver
@@ -1895,17 +1895,30 @@ class ProvenanceV1(Validator):
     chunks. The list should be sorted in ascending order by the distance between the
         chunk and the LLM-generated text.
 
-    # TODO(karan): Add example that shows using both types of llm_callables
-    Example:
+    Example using str callable:
         >>> def query_function(text: str, k: int) -> List[str]:
         ...     return ["This is a chunk", "This is another chunk"]
 
-        >>> guard = Guard.from_rail(...)
-        >>> guard(
-        ...     openai.ChatCompletion.create(...),
-        ...     prompt_params={...},
-        ...     temperature=0.0,
-        ...     metadata={"query_function": query_function},
+        >>> guard = Guard.from_string(validators=[
+                    ProvenanceV1(llm_callable="gpt-3.5-turbo", ...)
+                ]
+            )
+        >>> guard.parse(
+        ...   llm_output=...,
+        ...   metadata={"query_function": query_function}
+        ... )
+
+    Example using a custom llm callable:
+        >>> def query_function(text: str, k: int) -> List[str]:
+        ...     return ["This is a chunk", "This is another chunk"]
+
+        >>> guard = Guard.from_string(validators=[
+                    ProvenanceV1(llm_callable=your_custom_callable, ...)
+                ]
+            )
+        >>> guard.parse(
+        ...   llm_output=...,
+        ...   metadata={"query_function": query_function}
         ... )
 
     OR
@@ -1958,11 +1971,18 @@ class ProvenanceV1(Validator):
             embed_function (Callable, optional): A callable that creates embeddings for
                 the sources. Must accept a list of strings and returns float np.array.
         """
-        super().__init__(on_fail, **kwargs)
+        super().__init__(
+            on_fail,
+            validation_method=validation_method,
+            llm_callable=llm_callable,
+            top_k=top_k,
+            max_tokens=max_tokens,
+            **kwargs,
+        )
         if validation_method not in ["sentence", "full"]:
             raise ValueError("validation_method must be 'sentence' or 'full'.")
         self._validation_method = validation_method
-        self.llm_callable = self.set_callable(llm_callable)
+        self.set_callable(llm_callable)
         self._top_k = top_k
         self._max_tokens = max_tokens
 
@@ -1991,9 +2011,9 @@ class ProvenanceV1(Validator):
                 )
                 return response["choices"][0]["message"]["content"]
 
-            self.llm_callable = openai_callable
+            self._llm_callable = openai_callable
         elif isinstance(llm_callable, Callable):
-            self.llm_callable = llm_callable
+            self._llm_callable = llm_callable
         else:
             raise ValueError(
                 "llm_callable must be either a string or a callable that takes a string"
@@ -2053,7 +2073,7 @@ class ProvenanceV1(Validator):
 
         return query_fn
 
-    @retry(wait=wait_fixed(75), stop=stop_after_attempt(3))
+    @retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(6))
     def call_llm(self, prompt: str) -> str:
         """Call the LLM with the given prompt.
 
@@ -2065,7 +2085,7 @@ class ProvenanceV1(Validator):
         Returns:
             response (str): String representing the LLM response.
         """
-        return self.llm_callable(prompt)
+        return self._llm_callable(prompt)
 
     def evaluate_with_llm(self, text: str, query_function: Callable) -> bool:
         """Validate that the LLM-generated text is supported by the provided
