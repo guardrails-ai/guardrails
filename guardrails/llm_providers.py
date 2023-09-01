@@ -58,11 +58,14 @@ class PromptCallableBase:
         wait=wait_exponential_jitter(max=60),
         retry=retry_if_exception_type(RETRYABLE_ERRORS),
     )
-    def __call__(self, *args, **kwargs) -> LLMResponse:
-        try:
-            result = self.invoke_llm(
+    def call_llm(self, *args, **kwargs) -> LLMResponse:
+        return self.invoke_llm(
                 *self.init_args, *args, **self.init_kwargs, **kwargs
             )
+
+    def __call__(self, *args, **kwargs) -> LLMResponse:
+        try:
+            result = self.call_llm(*args, **kwargs)
         except Exception as e:
             raise PromptCallableException(
                 "The callable `fn` passed to `Guard(fn, ...)` failed"
@@ -326,11 +329,14 @@ class AsyncPromptCallableBase:
         wait=wait_exponential_jitter(max=60),
         retry=retry_if_exception_type(RETRYABLE_ERRORS),
     )
-    def __call__(self, *args, **kwargs) -> LLMResponse:
-        try:
-            result = self.invoke_llm(
+    async def call_llm(self, *args, **kwargs) -> LLMResponse:
+        return await self.invoke_llm(
                 *self.init_args, *args, **self.init_kwargs, **kwargs
             )
+
+    async def __call__(self, *args, **kwargs) -> LLMResponse:
+        try:
+            result = await self.call_llm(*args, **kwargs)
         except Exception as e:
             raise PromptCallableException(
                 "The callable `fn` passed to `Guard(fn, ...)` failed"
@@ -498,8 +504,9 @@ class AsyncArbitraryCallable(AsyncPromptCallableBase):
         )
         ```
         """
+        output = await self.llm_api(*args, **kwargs)
         return LLMResponse(
-            output=self.llm_api(*args, **kwargs),
+            output=output,
         )
 
 

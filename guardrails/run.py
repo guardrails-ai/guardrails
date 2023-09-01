@@ -595,32 +595,32 @@ class AsyncRunner(Runner):
             llm_response = None
             try:
                 if msg_history:
-                    llm_response = await api.invoke_llm(
+                    llm_response = await api(
                         msg_history=msg_history,
                         base_model=self.base_model,
                     )
                 else:
                     if prompt and instructions:
-                        llm_response = await api.invoke_llm(
+                        llm_response = await api(
                             prompt.source,
                             instructions=instructions.source,
                             base_model=self.base_model,
                         )
                     elif prompt:
-                        llm_response = await api.invoke_llm(
+                        llm_response = await api(
                             prompt.source, base_model=self.base_model
                         )
             except Exception:
                 # If the API call fails, try calling again without the base model.
                 if msg_history:
-                    llm_response = await api.invoke_llm(msg_history=msg_history)
+                    llm_response = await api(msg_history=msg_history)
                 else:
                     if prompt and instructions:
-                        llm_response = await api.invoke_llm(
+                        llm_response = await api(
                             prompt.source, instructions=instructions.source
                         )
                     elif prompt:
-                        llm_response = await api.invoke_llm(prompt.source)
+                        llm_response = await api(prompt.source)
 
             if llm_response is None:
                 llm_response = LLMResponse(
