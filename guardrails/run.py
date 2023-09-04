@@ -444,6 +444,15 @@ class AsyncRunner(Runner):
         """
         self._reset_guard_history()
 
+        # check if validator requirements are fulfilled
+        missing_keys = verify_metadata_requirements(
+            self.metadata, self.output_schema.to_dict().values()
+        )
+        if missing_keys:
+            raise ValueError(
+                f"Missing required metadata keys: {', '.join(missing_keys)}"
+            )
+
         with start_action(
             action_type="run",
             instructions=self.instructions,
