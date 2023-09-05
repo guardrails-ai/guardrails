@@ -1982,8 +1982,8 @@ class ProvenanceV1(Validator):
             raise ValueError("validation_method must be 'sentence' or 'full'.")
         self._validation_method = validation_method
         self.set_callable(llm_callable)
-        self._top_k = top_k
-        self._max_tokens = max_tokens
+        self._top_k = int(top_k)
+        self._max_tokens = int(max_tokens)
 
     def set_callable(self, llm_callable: Union[str, Callable]) -> None:
         """Set the LLM callable.
