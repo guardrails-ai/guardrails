@@ -4,11 +4,12 @@ _Note: Guardrails is an alpha release, so expect sharp edges and bugs._
 
 ## 🛤️ What is Guardrails?
 
-Guardrails is a Python package that lets a user add structure, type and quality guarantees to the outputs of large language models (LLMs). Guardrails:
+Guardrails is a Python package that lets a user add more reliability to their LLM applications. Guardrails:
 
-- does pydantic-style validation of LLM outputs. This includes semantic validation such as checking for bias in generated text, checking for bugs in generated code, etc.
-- takes corrective actions (e.g. reasking LLM) when validation fails,
-- enforces structure and type guarantees (e.g. JSON).
+- is a framework to perform efficient validation on the inputs and outputs of LLMs. This includes semantic validation (e.g. checking for bias in generated text, checking for bugs in generated code, etc.) and syntactic validation (e.g. checking for valid JSON, valid Python code, etc.),
+- takes corrective actions (e.g. reasking LLM, filtering incorrect outputs, etc.) when validation fails,
+- contains a library of validators and corrective actions for common use cases,
+- provides a framework to easily create custom validators and orchestrate them via Guardrails.
 
 ## 🚒 Under the hood
 
