@@ -311,11 +311,7 @@ def get_llm_ask(llm_api: Callable, *args, **kwargs) -> PromptCallableBase:
 ###
 
 
-class AsyncPromptCallableBase:
-    def __init__(self, *args, **kwargs):
-        self.init_args = args
-        self.init_kwargs = kwargs
-
+class AsyncPromptCallableBase(PromptCallableBase):
     async def invoke_llm(
         self,
         *args,

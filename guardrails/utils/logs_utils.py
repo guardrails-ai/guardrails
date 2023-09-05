@@ -1,5 +1,5 @@
 from copy import deepcopy
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Sequence, Union
 
 from pydantic import BaseModel, Field, PrivateAttr
 from rich.console import Group
@@ -52,7 +52,7 @@ class GuardLogs(ArbitraryModel):
     msg_history: Optional[List[Dict[str, Prompt]]] = None
     parsed_output: Optional[dict] = None
     validated_output: Optional[dict] = None
-    reasks: Optional[List[ReAsk]] = None
+    reasks: Optional[Sequence[ReAsk]] = None
 
     field_validation_logs: Optional[FieldValidationLogs] = None
 
@@ -173,7 +173,7 @@ class GuardHistory(ArbitraryModel):
 
 
 class GuardState(ArbitraryModel):
-    all_histories: List[GuardHistory]
+    all_histories: List[GuardHistory] = Field(default_factory=list)
 
     def push(self, guard_history: GuardHistory) -> None:
         self.all_histories += [guard_history]
