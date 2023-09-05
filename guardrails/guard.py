@@ -441,6 +441,20 @@ class Guard:
         self,
         llm_output: str,
         metadata: Optional[Dict] = None,
+        llm_api: None = None,
+        num_reasks: int = 1,
+        prompt_params: Optional[Dict] = None,
+        full_schema_reask: Optional[bool] = None,
+        *args,
+        **kwargs,
+    ) -> Dict:
+        ...
+
+    @overload
+    def parse(
+        self,
+        llm_output: str,
+        metadata: Optional[Dict] = None,
         llm_api: Callable[[Any], Awaitable[Any]] = ...,
         num_reasks: int = 1,
         prompt_params: Optional[Dict] = None,
@@ -468,7 +482,7 @@ class Guard:
         self,
         llm_output: str,
         metadata: Optional[Dict] = None,
-        llm_api: Optional[Union[Callable, Callable[[Any], Awaitable[Any]]]] = None,
+        llm_api: Optional[Callable] = None,
         num_reasks: int = 1,
         prompt_params: Optional[Dict] = None,
         full_schema_reask: Optional[bool] = None,
