@@ -13,7 +13,13 @@ from lxml import etree as ET
 
 from guardrails import validator_service
 from guardrails.datatypes import DataType, String
-from guardrails.llm_providers import PromptCallable, openai_chat_wrapper, openai_wrapper
+from guardrails.llm_providers import (
+    AsyncOpenAICallable,
+    AsyncOpenAIChatCallable,
+    OpenAICallable,
+    OpenAIChatCallable,
+    PromptCallableBase,
+)
 from guardrails.prompt import Instructions, Prompt
 from guardrails.utils.constants import constants
 from guardrails.utils.json_utils import verify_schema_against_json
@@ -415,7 +421,7 @@ class Schema:
 
     def preprocess_prompt(
         self,
-        prompt_callable: PromptCallable,
+        prompt_callable: PromptCallableBase,
         instructions: Optional[Instructions],
         prompt: Prompt,
     ):
@@ -723,17 +729,18 @@ class JsonSchema(Schema):
 
     def preprocess_prompt(
         self,
-        prompt_callable: PromptCallable,
+        prompt_callable: PromptCallableBase,
         instructions: Optional[Instructions],
         prompt: Prompt,
     ):
-        if not hasattr(prompt_callable.fn, "func"):
-            # Only apply preprocessing to guardrails wrappers.
-            return instructions, prompt
-
-        if prompt_callable.fn.func is openai_wrapper:
+        if isinstance(prompt_callable, OpenAICallable) or isinstance(
+            prompt_callable, AsyncOpenAICallable
+        ):
             prompt.source += "\n\nJson Output:\n\n"
-        if prompt_callable.fn.func is openai_chat_wrapper and not instructions:
+        if (
+            isinstance(prompt_callable, OpenAIChatCallable)
+            or isinstance(prompt_callable, AsyncOpenAIChatCallable)
+        ) and not instructions:
             instructions = Instructions(
                 "You are a helpful assistant, "
                 "able to express yourself purely through JSON, "
@@ -934,22 +941,18 @@ class StringSchema(Schema):
 
     def preprocess_prompt(
         self,
-        prompt_callable: PromptCallable,
+        prompt_callable: PromptCallableBase,
         instructions: Optional[Instructions],
         prompt: Prompt,
     ):
-        if prompt_callable is None:
-            raise RuntimeError(
-                "In order to support reasking, a `prompt_callable` is required."
-            )
-
-        if not hasattr(prompt_callable.fn, "func"):
-            # Only apply preprocessing to guardrails wrappers.
-            return instructions, prompt
-
-        if prompt_callable.fn.func is openai_wrapper:
+        if isinstance(prompt_callable, OpenAICallable) or isinstance(
+            prompt_callable, AsyncOpenAICallable
+        ):
             prompt.source += "\n\nString Output:\n\n"
-        if prompt_callable.fn.func is openai_chat_wrapper and not instructions:
+        if (
+            isinstance(prompt_callable, OpenAIChatCallable)
+            or isinstance(prompt_callable, AsyncOpenAIChatCallable)
+        ) and not instructions:
             instructions = Instructions(
                 "You are a helpful assistant, expressing yourself through a string."
             )
