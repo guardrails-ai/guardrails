@@ -51,19 +51,19 @@ class PromptCallableBase:
         self.init_args = args
         self.init_kwargs = kwargs
 
-    def invoke_llm(self, *args, **kwargs) -> LLMResponse:
+    def _invoke_llm(self, *args, **kwargs) -> LLMResponse:
         raise NotImplementedError
 
     @retry(
         wait=wait_exponential_jitter(max=60),
         retry=retry_if_exception_type(RETRYABLE_ERRORS),
     )
-    def call_llm(self, *args, **kwargs) -> LLMResponse:
-        return self.invoke_llm(*self.init_args, *args, **self.init_kwargs, **kwargs)
+    def _call_llm(self, *args, **kwargs) -> LLMResponse:
+        return self._invoke_llm(*self.init_args, *args, **self.init_kwargs, **kwargs)
 
     def __call__(self, *args, **kwargs) -> LLMResponse:
         try:
-            result = self.call_llm(*args, **kwargs)
+            result = self._call_llm(*args, **kwargs)
         except Exception as e:
             raise PromptCallableException(
                 "The callable `fn` passed to `Guard(fn, ...)` failed"
@@ -109,7 +109,7 @@ def chat_prompt(
 
 
 class OpenAICallable(PromptCallableBase):
-    def invoke_llm(
+    def _invoke_llm(
         self,
         text: str,
         engine: str = "text-davinci-003",
@@ -133,7 +133,7 @@ class OpenAICallable(PromptCallableBase):
 
 
 class OpenAIChatCallable(PromptCallableBase):
-    def invoke_llm(
+    def _invoke_llm(
         self,
         text: Optional[str] = None,
         model: str = "gpt-3.5-turbo",
@@ -206,7 +206,7 @@ class OpenAIChatCallable(PromptCallableBase):
 
 
 class ManifestCallable(PromptCallableBase):
-    def invoke_llm(
+    def _invoke_llm(
         self,
         text: str,
         client: Any,
@@ -240,7 +240,7 @@ class ManifestCallable(PromptCallableBase):
 
 
 class CohereCallable(PromptCallableBase):
-    def invoke_llm(
+    def _invoke_llm(
         self, prompt: str, client_callable: Any, model: str, *args, **kwargs
     ) -> LLMResponse:
         """
@@ -271,7 +271,7 @@ class ArbitraryCallable(PromptCallableBase):
         self.llm_api = llm_api
         super().__init__(*args, **kwargs)
 
-    def invoke_llm(self, *args, **kwargs) -> LLMResponse:
+    def _invoke_llm(self, *args, **kwargs) -> LLMResponse:
         """Wrapper for arbitrary callable.
 
         To use an arbitrary callable for guardrails, do

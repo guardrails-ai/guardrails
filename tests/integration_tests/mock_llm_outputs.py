@@ -12,7 +12,7 @@ class MockOpenAICallable(OpenAICallable):
     # NOTE: this class normally overrides `llm_providers.OpenAICallable`,
     # which compiles instructions and prompt into a single prompt;
     # here the instructions are passed into kwargs and ignored
-    def invoke_llm(self, prompt, *args, **kwargs):
+    def _invoke_llm(self, prompt, *args, **kwargs):
         """Mock the OpenAI API call to Completion.create."""
 
         mock_llm_responses = {
@@ -45,11 +45,11 @@ class MockOpenAICallable(OpenAICallable):
 class MockAsyncOpenAICallable(AsyncOpenAICallable):
     async def invoke_llm(self, prompt, *args, **kwargs):
         sync_mock = MockOpenAICallable()
-        return sync_mock.invoke_llm(prompt, *args, **kwargs)
+        return sync_mock._invoke_llm(prompt, *args, **kwargs)
 
 
 class MockOpenAIChatCallable(OpenAIChatCallable):
-    def invoke_llm(
+    def _invoke_llm(
         self,
         prompt=None,
         instructions=None,
