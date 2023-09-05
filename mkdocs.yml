@@ -15,7 +15,7 @@ nav:
   - 'Introduction': guardrails_ai/introduction.md
   - 'Getting Started': guardrails_ai/getting_started.ipynb
   - 'Installation': guardrails_ai/installation.md
-  - 'Migrating to 0.2.x': 0-2-migration.ipynb
+  - 'Migrating to 0.2.x': 0-2-migration.md
   - 'FAQ': faq.md
   - 'Concepts':
     # - 'RailSpec': concepts/railspec.md
