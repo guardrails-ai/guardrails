@@ -519,9 +519,7 @@ def test_skeleton_reask(mocker):
             entity_extraction.OPTIONAL_MSG_HISTORY,
             openai.ChatCompletion.create,
             None,
-            "You are a helpful assistant, "
-            "able to express yourself purely through JSON, "
-            "strictly and precisely adhering to the provided XML schemas.",
+            None,
             entity_extraction.COMPILED_PROMPT_REASK_WITHOUT_INSTRUCTIONS,
             entity_extraction.COMPILED_INSTRUCTIONS_REASK,
         ),
@@ -640,10 +638,7 @@ def test_string_with_message_history_reask(mocker):
     # Check that the guard state object has the correct number of re-asks.
     assert len(guard_history) == 2
 
-    assert (
-        guard_history[0].instructions.source == "You are a helpful assistant, "
-        "expressing yourself through a string."
-    )
+    assert guard_history[0].instructions is None
     assert guard_history[0].prompt is None
     assert guard_history[0].output == string.MSG_LLM_OUTPUT_INCORRECT
     assert guard_history[0].validated_output == string.MSG_VALIDATED_OUTPUT_REASK
@@ -680,11 +675,7 @@ def test_pydantic_with_message_history_reask(mocker):
     # Check that the guard state object has the correct number of re-asks.
     assert len(guard_history) == 2
 
-    assert (
-        guard_history[0].instructions.source == "You are a helpful assistant, "
-        "able to express yourself purely through JSON, "
-        "strictly and precisely adhering to the provided XML schemas."
-    )
+    assert guard_history[0].instructions is None
     assert guard_history[0].prompt is None
     assert guard_history[0].output == pydantic.MSG_HISTORY_LLM_OUTPUT_INCORRECT
     assert guard_history[0].validated_output == pydantic.MSG_VALIDATED_OUTPUT_REASK

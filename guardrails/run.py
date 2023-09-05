@@ -279,9 +279,9 @@ class Runner:
                 if instructions is not None and isinstance(instructions, Instructions):
                     instructions = instructions.format(**prompt_params)
 
-            instructions, prompt = output_schema.preprocess_prompt(
-                api, instructions, prompt
-            )
+                instructions, prompt = output_schema.preprocess_prompt(
+                    api, instructions, prompt
+                )
 
             action.log(
                 message_type="info",
