@@ -17,16 +17,17 @@ nav:
   - 'Installation': guardrails_ai/installation.md
   - 'Migrating to 0.2.x': 0-2-migration.md
   - 'FAQ': faq.md
-  - 'Concepts':
-    # - 'RailSpec': concepts/railspec.md
+  - 'Defining Guardrails':
+    - 'Pydantic': concepts/pydantic.ipynb
+    - 'Strings': concepts/strings.ipynb
     - 'RailSpec': concepts/rail.md
+  - 'Concepts':
+    - 'Guard': concepts/guard.md
+    - 'Validators': concepts/validators.md
     - 'Output Element': concepts/output.md
     - 'Prompt Element': concepts/prompt.md
     - 'Instruction Element': concepts/instructions.md
-    - 'Guard': concepts/guard.md
-    - 'Validators': concepts/validators.md
     - 'Logs': concepts/logs.md
-    - 'Pydantic, XML, and Strings': concepts/pydantic_xml_and_strings.md
   - 'API Reference':
     - 'Guard': api_reference/guard.md
     - 'Rail': api_reference/rail.md
