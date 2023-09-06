@@ -50,8 +50,9 @@ async def test_entity_extraction_with_reask(mocker, multiprocessing_validators: 
         guard_history[1].validated_output == entity_extraction.VALIDATED_OUTPUT_REASK_2
     )
 
+
 @pytest.mark.asyncio
-async def test_entity_extraction_with_noop(mocker): 
+async def test_entity_extraction_with_noop(mocker):
     mocker.patch(
         "guardrails.llm_providers.async_openai_wrapper",
         new=async_openai_completion_create,
@@ -77,14 +78,17 @@ async def test_entity_extraction_with_noop(mocker):
     assert guard_history[0].output == entity_extraction.LLM_OUTPUT
     assert guard_history[0].validated_output == entity_extraction.VALIDATED_OUTPUT_NOOP
 
+
 @pytest.mark.asyncio
-async def test_entity_extraction_with_noop_pydantic(mocker): 
+async def test_entity_extraction_with_noop_pydantic(mocker):
     mocker.patch(
         "guardrails.llm_providers.async_openai_wrapper",
         new=async_openai_completion_create,
     )
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
-    guard = gd.Guard.from_pydantic(entity_extraction.PYDANTIC_RAIL_WITH_NOOP, entity_extraction.PYDANTIC_PROMPT)
+    guard = gd.Guard.from_pydantic(
+        entity_extraction.PYDANTIC_RAIL_WITH_NOOP, entity_extraction.PYDANTIC_PROMPT
+    )
     _, final_output = await guard(
         llm_api=openai.Completion.acreate,
         prompt_params={"document": content[:6000]},
@@ -103,6 +107,7 @@ async def test_entity_extraction_with_noop_pydantic(mocker):
     assert guard_history[0].prompt == gd.Prompt(entity_extraction.COMPILED_PROMPT)
     assert guard_history[0].output == entity_extraction.LLM_OUTPUT
     assert guard_history[0].validated_output == entity_extraction.VALIDATED_OUTPUT_NOOP
+
 
 @pytest.mark.asyncio
 async def test_entity_extraction_with_filter(mocker):
@@ -135,6 +140,7 @@ async def test_entity_extraction_with_filter(mocker):
         guard_history[0].validated_output == entity_extraction.VALIDATED_OUTPUT_FILTER
     )
 
+
 @pytest.mark.asyncio
 async def test_entity_extraction_with_fix(mocker):
     """Test that the entity extraction works with re-asking."""
@@ -163,6 +169,7 @@ async def test_entity_extraction_with_fix(mocker):
     assert guard_history[0].prompt == gd.Prompt(entity_extraction.COMPILED_PROMPT)
     assert guard_history[0].output == entity_extraction.LLM_OUTPUT
     assert guard_history[0].validated_output == entity_extraction.VALIDATED_OUTPUT_FIX
+
 
 @pytest.mark.asyncio
 async def test_entity_extraction_with_refrain(mocker):
@@ -193,6 +200,7 @@ async def test_entity_extraction_with_refrain(mocker):
     assert (
         guard_history[0].validated_output == entity_extraction.VALIDATED_OUTPUT_REFRAIN
     )
+
 
 @pytest.mark.asyncio
 async def test_rail_spec_output_parse(rail_spec, llm_output, validated_output):

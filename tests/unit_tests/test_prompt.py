@@ -11,11 +11,11 @@ INSTRUCTIONS = "You are a helpful bot, who answers only with valid JSON"
 
 PROMPT = "Extract a string from the text"
 
-REASK_PROMPT = '''
+REASK_PROMPT = """
 Please try that again, extract a string from the text
 ${output_schema}
 ${previous_response}
-'''
+"""
 
 SIMPLE_RAIL_SPEC = f"""
 <rail version="0.1">
@@ -130,6 +130,7 @@ You are a helpful bot, who answers only with valid JSON
 </rail>
 """
 
+
 def test_parse_prompt():
     """Test parsing a prompt."""
     guard = gd.Guard.from_rail_string(SIMPLE_RAIL_SPEC)
@@ -182,13 +183,16 @@ def test_format_instructions():
 
     assert guard.prompt.format_instructions.rstrip() == expected_instructions
 
-def test_reask_prompt(): 
+
+def test_reask_prompt():
     guard = gd.Guard.from_rail_string(RAIL_WITH_REASK_PROMPT)
     assert guard.output_schema.reask_prompt_template == REASK_PROMPT
 
-def test_reask_instructions(): 
+
+def test_reask_instructions():
     guard = gd.Guard.from_rail_string(RAIL_WITH_REASK_INSTRUCTIONS)
     assert guard.output_schema.reask_instructions_template.strip() == INSTRUCTIONS
+
 
 @pytest.mark.parametrize(
     "prompt_str,final_prompt",
