@@ -1947,7 +1947,6 @@ class ProvenanceV1(Validator):
         self,
         validation_method: str = "sentence",
         llm_callable: Union[str, Callable] = "gpt-3.5-turbo",
-        openai_api_key: Optional[str] = None,
         top_k: int = 3,
         max_tokens: int = 2,
         on_fail: Optional[Callable] = None,
@@ -1975,25 +1974,12 @@ class ProvenanceV1(Validator):
             on_fail,
             validation_method=validation_method,
             llm_callable=llm_callable,
-            openai_api_key=openai_api_key,
             top_k=top_k,
             max_tokens=max_tokens,
             **kwargs,
         )
         if validation_method not in ["sentence", "full"]:
             raise ValueError("validation_method must be 'sentence' or 'full'.")
-
-        # The OpenAI API key can either be set from the calling function
-        # or by passing as an arg
-        if not openai.api_key:
-            # Check if passed as arg
-            if not openai_api_key:
-                raise ValueError(
-                    "You must set the OpenAI API key to use the ProvenanceV1 validator."
-                    " Set it globally or pass it as an argument to the validator."
-                )
-            else:
-                openai.api_key = openai_api_key
         self._validation_method = validation_method
         self.set_callable(llm_callable)
         self._top_k = int(top_k)
@@ -2167,6 +2153,26 @@ class ProvenanceV1(Validator):
         return PassResult(metadata=metadata)
 
     def validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
+        kwargs = {}
+        context_copy = contextvars.copy_context()
+        for key, context_var in context_copy.items():
+            if key.name == "kwargs" and isinstance(kwargs, dict):
+                kwargs = context_var
+                break
+
+        api_key = kwargs.get("api_key")
+        api_base = kwargs.get("api_base")
+
+        # Set the OpenAI API key
+        if os.getenv("OPENAI_API_KEY"):  # Check if set in environment
+            openai.api_key = os.getenv("OPENAI_API_KEY")
+        elif api_key:  # Check if set when calling guard() or parse()
+            openai.api_key = api_key
+
+        # Set the OpenAI API base if specified
+        if api_base:
+            openai.api_base = api_base
+
         query_function = self.get_query_function(metadata)
         if self._validation_method == "sentence":
             return self.validate_each_sentence(value, query_function, metadata)
