@@ -22,10 +22,14 @@ from guardrails.llm_providers import (
 )
 from guardrails.prompt import Instructions, Prompt
 from guardrails.utils.constants import constants
-from guardrails.utils.json_utils import verify_schema_against_json
+from guardrails.utils.json_utils import (
+    extract_json_from_ouput,
+    verify_schema_against_json,
+)
 from guardrails.utils.logs_utils import FieldValidationLogs, GuardLogs
 from guardrails.utils.reask_utils import (
     FieldReAsk,
+    NonParseableReAsk,
     SkeletonReAsk,
     gather_reasks,
     get_pruned_tree,
@@ -456,8 +460,22 @@ class JsonSchema(Schema):
         parsed_rail = deepcopy(self.root)
 
         is_skeleton_reask = not any(isinstance(reask, FieldReAsk) for reask in reasks)
+        is_nonparseable_reask = any(
+            isinstance(reask, NonParseableReAsk) for reask in reasks
+        )
 
-        if is_skeleton_reask:
+        if is_nonparseable_reask:
+            pruned_tree_schema = self
+
+            reask_prompt_template = self.reask_prompt_template
+            if reask_prompt_template is None:
+                reask_prompt_template = Prompt(
+                    constants["high_level_json_parsing_reask_prompt"]
+                    + constants["json_suffix_without_examples"]
+                )
+
+            reask_value = original_response
+        elif is_skeleton_reask:
             pruned_tree_schema = self
 
             reask_prompt_template = self.reask_prompt_template
@@ -531,23 +549,22 @@ class JsonSchema(Schema):
             self[child_name] = child_data
 
     def parse(self, output: str) -> Tuple[Dict, Optional[Exception]]:
-        # Remove the triple backticks from the output
-        output = output.strip()
-        if output.startswith("```"):
-            output = output[3:]
-            if output.startswith("json"):
-                output = output[4:]
-        if output.endswith("```"):
-            output = output[:-3]
+        # Try to get json code block from output.
+        # Return error and reask if it is not parseable.
+        parsed_output, error = extract_json_from_ouput(output)
 
-        # Treat the output as a JSON string, and load it into a dict.
-        error = None
-        try:
-            output_as_dict = json.loads(output, strict=False)
-        except json.decoder.JSONDecodeError as e:
-            output_as_dict = None
-            error = e
-        return output_as_dict, error
+        if error:
+            reask = NonParseableReAsk(
+                incorrect_value=output,
+                fail_results=[
+                    FailResult(
+                        fix_value=None,
+                        error_message="Output is not parseable as JSON",
+                    )
+                ],
+            )
+            return reask, error
+        return parsed_output, None
 
     def validate(
         self,
@@ -723,6 +740,8 @@ class JsonSchema(Schema):
 
     def introspect(self, data: Any) -> list:
         if isinstance(data, SkeletonReAsk):
+            return [data]
+        elif isinstance(data, NonParseableReAsk):
             return [data]
         return gather_reasks(data)
 

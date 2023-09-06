@@ -13,6 +13,7 @@ from guardrails.schema import Schema
 from guardrails.utils.logs_utils import GuardHistory, GuardLogs, GuardState, LLMResponse
 from guardrails.utils.reask_utils import (
     FieldReAsk,
+    NonParseableReAsk,
     ReAsk,
     reasks_to_dict,
     sub_reasks_with_fixed_values,
@@ -217,19 +218,25 @@ class Runner:
             output = llm_response.output
 
             # Parse: parse the output.
-            parsed_output = self.parse(index, output, output_schema)
+            parsed_output, parsing_error = self.parse(index, output, output_schema)
 
             guard_logs.parsed_output = parsed_output
 
-            # Validate: run output validation.
-            validated_output = self.validate(
-                guard_logs, index, parsed_output, output_schema
-            )
+            validated_output = None
+            if parsing_error and isinstance(parsed_output, NonParseableReAsk):
+                reasks = self.introspect(index, parsed_output, output_schema)
+            else:
+                # Validate: run output validation.
+                validated_output = self.validate(
+                    guard_logs, index, parsed_output, output_schema
+                )
 
-            guard_logs.set_validated_output(validated_output, self.full_schema_reask)
+                guard_logs.set_validated_output(
+                    validated_output, self.full_schema_reask
+                )
 
-            # Introspect: inspect validated output for reasks.
-            reasks = self.introspect(index, validated_output, output_schema)
+                # Introspect: inspect validated output for reasks.
+                reasks = self.introspect(index, validated_output, output_schema)
 
             guard_logs.reasks = reasks
 
@@ -239,7 +246,7 @@ class Runner:
 
             guard_logs.set_validated_output(validated_output, self.full_schema_reask)
 
-            return validated_output, reasks
+            return validated_output or parsed_output, reasks
 
     def prepare(
         self,
@@ -371,7 +378,7 @@ class Runner:
                 error=error,
             )
 
-            return parsed_output
+            return parsed_output, error
 
     def validate(
         self,
@@ -561,19 +568,25 @@ class AsyncRunner(Runner):
             output = llm_response.output
 
             # Parse: parse the output.
-            parsed_output = self.parse(index, output, output_schema)
+            parsed_output, parsing_error = self.parse(index, output, output_schema)
 
             guard_logs.parsed_output = parsed_output
 
-            # Validate: run output validation.
-            validated_output = await self.async_validate(
-                guard_logs, index, parsed_output, output_schema
-            )
+            validated_output = None
+            if parsing_error and isinstance(parsed_output, NonParseableReAsk):
+                reasks = self.introspect(index, parsed_output, output_schema)
+            else:
+                # Validate: run output validation.
+                validated_output = await self.async_validate(
+                    guard_logs, index, parsed_output, output_schema
+                )
 
-            guard_logs.set_validated_output(validated_output, self.full_schema_reask)
+                guard_logs.set_validated_output(
+                    validated_output, self.full_schema_reask
+                )
 
-            # Introspect: inspect validated output for reasks.
-            reasks = self.introspect(index, validated_output, output_schema)
+                # Introspect: inspect validated output for reasks.
+                reasks = self.introspect(index, validated_output, output_schema)
 
             guard_logs.reasks = reasks
 
@@ -583,7 +596,7 @@ class AsyncRunner(Runner):
 
             guard_logs.set_validated_output(validated_output, self.full_schema_reask)
 
-            return validated_output, reasks
+            return validated_output or parsed_output, reasks
 
     async def async_call(
         self,

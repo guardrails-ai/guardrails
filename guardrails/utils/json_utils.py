@@ -1,7 +1,10 @@
+import json
 from dataclasses import dataclass
-from typing import Any, Dict, Optional, Type, Union
+from typing import Any, Dict, Optional, Tuple, Type, Union
 
 import lxml.etree as ET
+
+from .parsing_utils import get_code_block, has_code_block
 
 
 @dataclass
@@ -299,3 +302,24 @@ def verify_schema_against_json(
         prune_extra_keys=prune_extra_keys,
         coerce_types=coerce_types,
     )
+
+
+def extract_json_from_ouput(output: str) -> Tuple[Dict, Optional[Exception]]:
+    # Find and extract json from code blocks
+    extracted_code_block = output
+    has_json_block, json_start, json_end = has_code_block(output, "json")
+    if has_json_block:
+        extracted_code_block = get_code_block(output, json_start, json_end, "json")
+    else:
+        has_block, block_start, block_end = has_code_block(output)
+        if has_block:
+            extracted_code_block = get_code_block(output, block_start, block_end)
+
+    # Treat the output as a JSON string, and load it into a dict.
+    error = None
+    try:
+        output_as_dict = json.loads(extracted_code_block, strict=False)
+    except json.decoder.JSONDecodeError as e:
+        output_as_dict = None
+        error = e
+    return output_as_dict, error
