@@ -6,7 +6,7 @@ The guard object is the main interface for GuardRails. It is seeded with a RailS
 
 ## How it works
 
-```mermaid
+``` mermaid
 graph
     A[Create `RAIL` spec] --> B[Initialize `guard` from spec];
     C[Collect LLM callable information] --> D[Invoke `guard`];
