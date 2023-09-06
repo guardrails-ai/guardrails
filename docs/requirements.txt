@@ -6,3 +6,4 @@ mknotebooks
 griffe
 pillow
 cairosvg
+mkdocs-glightbox

@@ -15,7 +15,7 @@ from .mock_llm_outputs import (
     openai_chat_completion_create,
     openai_completion_create,
 )
-from .test_assets import pydantic, python_rail, string
+from .test_assets import pydantic, string
 
 
 @pytest.fixture(scope="module")
