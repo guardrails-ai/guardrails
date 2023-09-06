@@ -30,7 +30,8 @@ class Instructions(BasePrompt):
         filtered_kwargs = {k: v for k, v in kwargs.items() if k in vars}
         if len(filtered_kwargs) == 0:
             warnings.warn(
-                "Instructions do not have any variables, if you are migrating follow the new variable convention documented here: https://docs.getguardrails.ai/0-2-migration/"
+                'Instructions do not have any variables, '
+                'if you are migrating follow the new variable convention documented here: https://docs.getguardrails.ai/0-2-migration/'
             )
 
         # Return another instance of the class with the formatted prompt.
