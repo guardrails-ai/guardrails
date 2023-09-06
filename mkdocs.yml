@@ -18,9 +18,9 @@ nav:
   - 'Migrating to 0.2.x': 0-2-migration.md
   - 'FAQ': faq.md
   - 'Defining Guardrails':
-    - 'Pydantic': concepts/pydantic.ipynb
-    - 'Strings': concepts/strings.ipynb
-    - 'RailSpec': concepts/rail.md
+    - 'Pydantic': defining_guards/pydantic.ipynb
+    - 'Strings': defining_guards/strings.ipynb
+    - 'RailSpec': defining_guards/rail.md
   - 'Concepts':
     - 'Guard': concepts/guard.md
     - 'Validators': concepts/validators.md
