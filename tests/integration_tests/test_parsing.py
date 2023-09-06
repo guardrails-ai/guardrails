@@ -3,21 +3,25 @@ import pytest
 
 import guardrails as gd
 
-from .mock_llm_outputs import async_openai_completion_create, openai_completion_create
+from .mock_llm_outputs import MockAsyncArbitraryCallable, MockArbitraryCallable
 from .test_assets import pydantic
 
 
 def test_parsing_reask(mocker):
     """Test re-asking when response is not parseable."""
     mocker.patch(
-        "guardrails.llm_providers.openai_wrapper", new=openai_completion_create
+        "guardrails.llm_providers.ArbitraryCallable", new=MockArbitraryCallable
     )
 
     guard = gd.Guard.from_pydantic(
         output_class=pydantic.PersonalDetails, prompt=pydantic.PARSING_INITIAL_PROMPT
     )
+
+    def mock_callable(prompt: str):
+        return
+
     _, final_output = guard(
-        llm_api=openai.Completion.create,
+        llm_api=mock_callable,
         prompt_params={"document": pydantic.PARSING_DOCUMENT},
         num_reasks=1,
     )
@@ -44,15 +48,19 @@ def test_parsing_reask(mocker):
 async def test_async_parsing_reask(mocker):
     """Test re-asking when response is not parseable during async flow."""
     mocker.patch(
-        "guardrails.llm_providers.async_openai_wrapper",
-        new=async_openai_completion_create,
+        "guardrails.llm_providers.AsyncArbitraryCallable",
+        new=MockAsyncArbitraryCallable,
     )
 
     guard = gd.Guard.from_pydantic(
         output_class=pydantic.PersonalDetails, prompt=pydantic.PARSING_INITIAL_PROMPT
     )
+
+    async def mock_async_callable(prompt: str):
+        return
+
     _, final_output = await guard(
-        llm_api=openai.Completion.acreate,
+        llm_api=mock_async_callable,
         prompt_params={"document": pydantic.PARSING_DOCUMENT},
         num_reasks=1,
     )
