@@ -236,7 +236,7 @@ def cohere_wrapper(
 
 def get_llm_ask(llm_api: Callable, *args, **kwargs) -> PromptCallable:
     if "temperature" not in kwargs:
-        kwargs.update({'temperature': 0})
+        kwargs.update({"temperature": 0})
     if llm_api == openai.Completion.create:
         fn = partial(openai_wrapper, *args, **kwargs)
     elif llm_api == openai.ChatCompletion.create:
