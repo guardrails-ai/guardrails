@@ -47,8 +47,10 @@ class BasePrompt:
         """Substitute constants in the prompt."""
         # Substitute constants by reading the constants file.
         # Regex to extract all occurrences of ${gr.<constant_name>}
-        if(self.uses_old_constant_schema(text)):
-            warnings.warn('It appears that you are using an old schema for gaurdrails variables, follow the new namespaced convention documented here: https://docs.getguardrails.ai/0-2-migration/') 
+        if self.uses_old_constant_schema(text):
+            warnings.warn(
+                "It appears that you are using an old schema for gaurdrails variables, follow the new namespaced convention documented here: https://docs.getguardrails.ai/0-2-migration/"
+            )
 
         matches = re.findall(r"\${gr.(\w+)}", text)
 
@@ -60,12 +62,12 @@ class BasePrompt:
             text = template.safe_substitute(**mapping)
 
         return text
-    
-    def uses_old_constant_schema(self, text) -> bool: 
+
+    def uses_old_constant_schema(self, text) -> bool:
         matches = re.findall(r"@(\w+)", text)
-        if(len(matches) == 0): 
-            return False 
-        else: 
+        if len(matches) == 0:
+            return False
+        else:
             return True
 
     def get_prompt_variables(self):

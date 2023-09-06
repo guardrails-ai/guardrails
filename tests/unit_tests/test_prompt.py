@@ -92,7 +92,6 @@ Extract a string from the text
 """
 
 
-
 def test_parse_prompt():
     """Test parsing a prompt."""
     guard = gd.Guard.from_rail_string(SIMPLE_RAIL_SPEC)
@@ -161,10 +160,17 @@ def test_substitute_constants(prompt_str, final_prompt):
     prompt = gd.Prompt(prompt_str)
     assert prompt.source == final_prompt
 
-@pytest.mark.parametrize("text, expected_result", [
-    (RAIL_WITH_OLD_CONSTANT_SCHEMA, True),  # Test with a single match
-    (RAIL_WITH_FORMAT_INSTRUCTIONS, False),     # Test with no matches/correct namespacing
-])
+
+@pytest.mark.parametrize(
+    "text, expected_result",
+    [
+        (RAIL_WITH_OLD_CONSTANT_SCHEMA, True),  # Test with a single match
+        (
+            RAIL_WITH_FORMAT_INSTRUCTIONS,
+            False,
+        ),  # Test with no matches/correct namespacing
+    ],
+)
 def test_uses_old_constant_schema(text, expected_result):
     guard = gd.Guard.from_rail_string(text)
     assert guard.prompt.uses_old_constant_schema(text) == expected_result
