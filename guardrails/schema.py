@@ -144,7 +144,6 @@ class FormatAttr:
                         f"and raised an error: {e}."
                     )
             args.append(t)
-
         return validator.strip(), args
 
     def parse(self) -> Dict:
