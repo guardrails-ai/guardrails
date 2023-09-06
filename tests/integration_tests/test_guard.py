@@ -15,7 +15,7 @@ from .mock_llm_outputs import (
     MockOpenAIChatCallable,
     entity_extraction,
 )
-from .test_assets import pydantic, string, python_rail
+from .test_assets import pydantic, python_rail, string
 
 
 @pytest.fixture(scope="module")
@@ -484,6 +484,7 @@ def test_skeleton_reask(mocker):
         == entity_extraction.VALIDATED_OUTPUT_SKELETON_REASK_2
     )
 
+
 '''def test_json_output(mocker):
     """Test single string (non-JSON) generation."""
     mocker.patch(
@@ -507,6 +508,7 @@ def test_skeleton_reask(mocker):
     assert guard_history[0].output == string.LLM_OUTPUT
 
 '''
+
 
 @pytest.mark.parametrize(
     "rail,prompt,instructions,history,llm_api,expected_prompt,"

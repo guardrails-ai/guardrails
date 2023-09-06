@@ -11,7 +11,7 @@ reader = (
 
 COMPILED_INSTRUCTIONS = reader("compiled_instructions.txt")
 COMPILED_PROMPT = reader("compiled_prompt.txt")
-COMPILED_LIST_PROMPT=reader("compiled_list_prompt.txt")
+COMPILED_LIST_PROMPT = reader("compiled_list_prompt.txt")
 LLM_OUTPUT = reader("llm_output.txt")
 LIST_LLM_OUTPUT = reader("llm_list_output.txt")
 RAIL_SPEC_FOR_STRING = reader("string.rail")
