@@ -71,6 +71,27 @@ ${gr.complete_json_suffix_v2}
 </rail>
 """
 
+RAIL_WITH_OLD_CONSTANT_SCHEMA = """
+<rail version="0.1">
+<output>
+    <string name="test_string" description="A string for testing." />
+</output>
+<instructions>
+
+You are a helpful bot, who answers only with valid JSON
+
+</instructions>
+
+<prompt>
+
+Extract a string from the text
+
+@gr.complete_json_suffix_v2
+</prompt>
+</rail>
+"""
+
+
 
 def test_parse_prompt():
     """Test parsing a prompt."""
@@ -139,3 +160,11 @@ def test_substitute_constants(prompt_str, final_prompt):
     """Test substituting constants in a prompt."""
     prompt = gd.Prompt(prompt_str)
     assert prompt.source == final_prompt
+
+@pytest.mark.parametrize("text, expected_result", [
+    (RAIL_WITH_OLD_CONSTANT_SCHEMA, True),  # Test with a single match
+    (RAIL_WITH_FORMAT_INSTRUCTIONS, False),     # Test with no matches/correct namespacing
+])
+def test_uses_old_constant_schema(text, expected_result):
+    guard = gd.Guard.from_rail_string(text)
+    assert guard.prompt.uses_old_constant_schema(text) == expected_result
