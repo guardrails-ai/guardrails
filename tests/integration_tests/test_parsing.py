@@ -1,9 +1,8 @@
-import openai
 import pytest
 
 import guardrails as gd
 
-from .mock_llm_outputs import MockAsyncArbitraryCallable, MockArbitraryCallable
+from .mock_llm_outputs import MockArbitraryCallable, MockAsyncArbitraryCallable
 from .test_assets import pydantic
 
 

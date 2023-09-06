@@ -1,9 +1,9 @@
 from guardrails.llm_providers import (
+    ArbitraryCallable,
+    AsyncArbitraryCallable,
     AsyncOpenAICallable,
     OpenAICallable,
     OpenAIChatCallable,
-    ArbitraryCallable,
-    AsyncArbitraryCallable,
 )
 from guardrails.utils.logs_utils import LLMResponse
 
@@ -118,6 +118,7 @@ class MockOpenAIChatCallable(OpenAIChatCallable):
         except KeyError:
             raise ValueError("Compiled prompt not found")
 
+
 class MockArbitraryCallable(ArbitraryCallable):
     # NOTE: this class normally overrides `llm_providers.ArbitraryCallable`,
     # which compiles instructions and prompt into a single prompt;
@@ -139,8 +140,9 @@ class MockArbitraryCallable(ArbitraryCallable):
         except KeyError:
             print(prompt)
             raise ValueError("Compiled prompt not found")
-        
+
+
 class MockAsyncArbitraryCallable(AsyncArbitraryCallable):
     async def invoke_llm(self, prompt, *args, **kwargs):
-        sync_mock = MockArbitraryCallable(kwargs.get('llm_api'))
+        sync_mock = MockArbitraryCallable(kwargs.get("llm_api"))
         return sync_mock._invoke_llm(prompt, *args, **kwargs)

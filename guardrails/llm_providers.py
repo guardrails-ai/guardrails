@@ -255,7 +255,7 @@ class CohereCallable(PromptCallableBase):
             ...
         )
         ```
-        """
+        """  # noqa
 
         if "instructions" in kwargs:
             prompt = kwargs.pop("instructions") + "\n\n" + prompt
