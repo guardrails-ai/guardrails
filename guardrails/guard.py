@@ -288,7 +288,6 @@ class Guard:
         Returns:
             The raw text output from the LLM and the validated output.
         """
-        self.configure(num_reasks)
         if metadata is None:
             metadata = {}
         if full_schema_reask is None:
@@ -299,14 +298,19 @@ class Guard:
         context = contextvars.ContextVar("kwargs")
         context.set(kwargs)
 
-        num_reasks = num_reasks or self.num_reasks or 0
+        self.configure(num_reasks)
+        if self.num_reasks is None:
+            raise RuntimeError(
+                "`num_reasks` is `None` after calling `configure()`. "
+                "This should never happen."
+            )
 
         # If the LLM API is async, return a coroutine
         if asyncio.iscoroutinefunction(llm_api):
             return self._call_async(
                 llm_api,
                 prompt_params=prompt_params,
-                num_reasks=num_reasks,
+                num_reasks=self.num_reasks,
                 prompt=prompt,
                 instructions=instructions,
                 msg_history=msg_history,
@@ -319,7 +323,7 @@ class Guard:
         return self._call_sync(
             llm_api,
             prompt_params=prompt_params,
-            num_reasks=num_reasks,
+            num_reasks=self.num_reasks,
             prompt=prompt,
             instructions=instructions,
             msg_history=msg_history,
@@ -508,7 +512,11 @@ class Guard:
             num_reasks if num_reasks is not None else 0 if llm_api is None else None
         )
         self.configure(final_num_reasks)
-        assert self.num_reasks is not None
+        if self.num_reasks is None:
+            raise RuntimeError(
+                "`num_reasks` is `None` after calling `configure()`. "
+                "This should never happen."
+            )
         if full_schema_reask is None:
             full_schema_reask = self.base_model is not None
         metadata = metadata or {}
