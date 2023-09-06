@@ -50,7 +50,8 @@ class BasePrompt:
         if self.uses_old_constant_schema(text):
             warnings.warn(
                 "It appears that you are using an old schema for gaurdrails variables, "
-                "follow the new namespaced convention documented here: https://docs.getguardrails.ai/0-2-migration/"
+                "follow the new namespaced convention "
+                "documented here: https://docs.getguardrails.ai/0-2-migration/"
             )
 
         matches = re.findall(r"\${gr.(\w+)}", text)
