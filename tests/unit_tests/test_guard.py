@@ -1,3 +1,4 @@
+import openai
 import pytest
 from pydantic import BaseModel
 
@@ -74,21 +75,31 @@ class RequiringValidator2(Validator):
         ),
     ],
 )
-def test_required_metadata(spec, metadata):
+@pytest.mark.asyncio
+async def test_required_metadata(spec, metadata):
     guard = guardrails.Guard.from_rail_string(spec)
 
-    with pytest.raises(ValueError):
-        guard.parse("{}")
     missing_keys = verify_metadata_requirements(
         {}, guard.output_schema.to_dict().values()
     )
     assert set(missing_keys) == set(metadata)
 
-    guard.parse("{}", metadata=metadata, num_reasks=0)
     not_missing_keys = verify_metadata_requirements(
         metadata, guard.output_schema.to_dict().values()
     )
     assert not_missing_keys == []
+
+    # test sync guard
+    with pytest.raises(ValueError):
+        guard.parse("{}")
+    guard.parse("{}", metadata=metadata, num_reasks=0)
+
+    # test async guard
+    with pytest.raises(ValueError):
+        await guard.parse("{}", llm_api=openai.ChatCompletion.acreate, num_reasks=0)
+    await guard.parse(
+        "{}", metadata=metadata, llm_api=openai.ChatCompletion.acreate, num_reasks=0
+    )
 
 
 rail = Rail.from_string_validators([], "empty railspec")
