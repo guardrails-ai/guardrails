@@ -24,7 +24,7 @@ class NonParseableReAsk(ReAsk):
     pass
 
 
-def gather_reasks(validated_output: Optional[Union[Dict, ReAsk]]) -> List[ReAsk]:
+def gather_reasks(validated_output: Any) -> List[FieldReAsk]:
     """Traverse output and gather all ReAsk objects.
 
     Args:
@@ -73,7 +73,10 @@ def gather_reasks(validated_output: Optional[Union[Dict, ReAsk]]) -> List[ReAsk]
                 _gather_reasks_in_list(item, path + [idx])
         return
 
-    _gather_reasks_in_dict(validated_output)
+    if isinstance(validated_output, Dict):
+        _gather_reasks_in_dict(validated_output)
+    elif isinstance(validated_output, ReAsk):
+        reasks = [validated_output]
     return reasks
 
 
