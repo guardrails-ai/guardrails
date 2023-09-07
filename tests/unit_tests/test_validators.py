@@ -23,6 +23,7 @@ from guardrails.validators import (
     SqlColumnPresence,
     TwoWords,
     ValidationResult,
+    ValidLength,
     check_refrain_in_dict,
     filter_in_dict,
     register_validator,
@@ -351,7 +352,6 @@ def test_bad_validator():
         def validate(value: Any) -> ValidationResult:
             pass
 
-
 def test_provenance_v1(mocker):
     """Test initialisation of ProvenanceV1."""
 
@@ -409,3 +409,19 @@ def test_provenance_v1(mocker):
         api_base="https://api.openai.com",
     )
     assert output == LLM_RESPONSE
+
+    
+@pytest.mark.parametrize(
+    "min,max,expected_xml",
+    [
+        (0, 12, "length: 0 12"),
+        ("0", "12", "length: 0 12"),
+        (None, 12, "length: None 12"),
+        (1, None, "length: 1 None"),
+    ],
+)
+def test_to_xml_attrib(min, max, expected_xml):
+    validator = ValidLength(min=min, max=max)
+    xml_validator = validator.to_xml_attrib()
+
+    assert xml_validator == expected_xml

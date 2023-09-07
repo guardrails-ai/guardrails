@@ -15,18 +15,19 @@ nav:
   - 'Introduction': guardrails_ai/introduction.md
   - 'Getting Started': guardrails_ai/getting_started.ipynb
   - 'Installation': guardrails_ai/installation.md
-  - 'Migrating to 0.2.x': 0-2-migration.ipynb
+  - 'Migrating to 0.2.x': 0-2-migration.md
   - 'FAQ': faq.md
+  - 'Defining Guardrails':
+    - 'Pydantic': defining_guards/pydantic.ipynb
+    - 'Strings': defining_guards/strings.ipynb
+    - 'RailSpec': defining_guards/rail.md
   - 'Concepts':
-    # - 'RailSpec': concepts/railspec.md
-    - 'RailSpec': concepts/rail.md
+    - 'Guard': concepts/guard.md
+    - 'Validators': concepts/validators.md
     - 'Output Element': concepts/output.md
     - 'Prompt Element': concepts/prompt.md
     - 'Instruction Element': concepts/instructions.md
-    - 'Guard': concepts/guard.md
-    - 'Validators': concepts/validators.md
     - 'Logs': concepts/logs.md
-    - 'Pydantic, XML, and Strings': concepts/pydantic_xml_and_strings.md
   - 'API Reference':
     - 'Guard': api_reference/guard.md
     - 'Rail': api_reference/rail.md
@@ -62,7 +63,7 @@ nav:
 theme:
   name: material
   favicon: img/favicon.ico
-  logo: img/tracks_white.png
+  logo: img/guardrails_logo.png
   custom_dir: docs/overrides
   icon:
     repo: fontawesome/brands/github
@@ -127,6 +128,7 @@ markdown_extensions:
 plugins:
   - social
   - search
+  - glightbox
   - mkdocstrings:
       default_handler: python
       handlers:
@@ -171,6 +173,8 @@ plugins:
 
 
 extra:
+  version:
+    provider: mike
   social:
     - icon: fontawesome/brands/twitter
       link: https://twitter.com/guardrails_ai

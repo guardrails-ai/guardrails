@@ -1,12 +1,11 @@
 import os
-from dataclasses import dataclass
-from functools import partial
 from typing import Any, Awaitable, Callable, Dict, List, Optional, cast
 
 import openai
 from pydantic import BaseModel
 from tenacity import retry, retry_if_exception_type, wait_exponential_jitter
 
+from guardrails.utils.logs_utils import LLMResponse
 from guardrails.utils.pydantic_utils import convert_pydantic_model_to_openai_fn
 
 try:
@@ -41,23 +40,30 @@ class PromptCallableException(Exception):
 ###
 
 
-@dataclass
-class PromptCallable:
+class PromptCallableBase:
     """A wrapper around a callable that takes in a prompt.
 
     Catches exceptions to let the user know clearly if the callable
     failed, and how to fix it.
     """
 
-    fn: Callable
+    def __init__(self, *args, **kwargs):
+        self.init_args = args
+        self.init_kwargs = kwargs
+
+    def _invoke_llm(self, *args, **kwargs) -> LLMResponse:
+        raise NotImplementedError
 
     @retry(
         wait=wait_exponential_jitter(max=60),
         retry=retry_if_exception_type(RETRYABLE_ERRORS),
     )
-    def __call__(self, *args, **kwargs):
+    def _call_llm(self, *args, **kwargs) -> LLMResponse:
+        return self._invoke_llm(*self.init_args, *args, **self.init_kwargs, **kwargs)
+
+    def __call__(self, *args, **kwargs) -> LLMResponse:
         try:
-            result = self.fn(*args, **kwargs)
+            result = self._call_llm(*args, **kwargs)
         except Exception as e:
             raise PromptCallableException(
                 "The callable `fn` passed to `Guard(fn, ...)` failed"
@@ -66,7 +72,7 @@ class PromptCallable:
                 " takes in a single prompt string "
                 "and returns a string."
             )
-        if not isinstance(result, str):
+        if not isinstance(result, LLMResponse):
             raise PromptCallableException(
                 "The callable `fn` passed to `Guard(fn, ...)` returned"
                 f" a non-string value: {result}. "
@@ -102,156 +108,202 @@ def chat_prompt(
     ]
 
 
-def openai_wrapper(
-    text: str,
-    engine: str = "text-davinci-003",
-    instructions: Optional[str] = None,
-    *args,
-    **kwargs,
-) -> str:
-    api_key = kwargs.pop("api_key", os.environ.get("OPENAI_API_KEY"))
-    openai_response = openai.Completion.create(
-        api_key=api_key,
-        engine=engine,
-        prompt=nonchat_prompt(prompt=text, instructions=instructions),
+class OpenAICallable(PromptCallableBase):
+    def _invoke_llm(
+        self,
+        text: str,
+        engine: str = "text-davinci-003",
+        instructions: Optional[str] = None,
         *args,
         **kwargs,
-    )
-    return openai_response["choices"][0]["text"]
-
-
-def openai_chat_wrapper(
-    text: Optional[str] = None,
-    model: str = "gpt-3.5-turbo",
-    instructions: Optional[str] = None,
-    msg_history: Optional[List[Dict]] = None,
-    base_model: Optional[BaseModel] = None,
-    function_call: Optional[str] = None,
-    *args,
-    **kwargs,
-) -> str:
-    """Wrapper for OpenAI chat engines.
-
-    Use Guardrails with OpenAI chat engines by doing
-    ```
-    raw_llm_response, validated_response = guard(
-        openai.ChatCompletion.create,
-        prompt_params={...},
-        text=...,
-        instructions=...,
-        msg_history=...,
-        temperature=...,
-        ...
-    )
-    ```
-
-    If `base_model` is passed, the chat engine will be used as a function
-    on the base model.
-    """
-
-    if msg_history is None and text is None:
-        raise PromptCallableException(
-            "You must pass in either `text` or `msg_history` to `guard.__call__`."
+    ) -> LLMResponse:
+        api_key = kwargs.pop("api_key", os.environ.get("OPENAI_API_KEY"))
+        openai_response = openai.Completion.create(
+            api_key=api_key,
+            engine=engine,
+            prompt=nonchat_prompt(prompt=text, instructions=instructions),
+            *args,
+            **kwargs,
+        )
+        return LLMResponse(
+            output=openai_response["choices"][0]["text"],
+            prompt_token_count=openai_response["usage"]["prompt_tokens"],
+            response_token_count=openai_response["usage"]["completion_tokens"],
         )
 
-    # Configure function calling if applicable
-    if base_model:
-        function_params = [convert_pydantic_model_to_openai_fn(base_model)]
-        if function_call is None:
-            function_call = {"name": function_params[0]["name"]}
-        fn_kwargs = {"functions": function_params, "function_call": function_call}
-    else:
-        fn_kwargs = {}
 
-    # Call OpenAI
-    api_key = kwargs.pop("api_key", os.environ.get("OPENAI_API_KEY"))
-    openai_response = openai.ChatCompletion.create(
-        api_key=api_key,
-        model=model,
-        messages=chat_prompt(
-            prompt=text, instructions=instructions, msg_history=msg_history
-        ),
+class OpenAIChatCallable(PromptCallableBase):
+    def _invoke_llm(
+        self,
+        text: Optional[str] = None,
+        model: str = "gpt-3.5-turbo",
+        instructions: Optional[str] = None,
+        msg_history: Optional[List[Dict]] = None,
+        base_model: Optional[BaseModel] = None,
+        function_call: Optional[str] = None,
         *args,
-        **fn_kwargs,
         **kwargs,
-    )
+    ) -> LLMResponse:
+        """Wrapper for OpenAI chat engines.
 
-    # Extract string from response
-    if "function_call" in openai_response["choices"][0]["message"]:
-        return openai_response["choices"][0]["message"]["function_call"]["arguments"]
-    else:
-        return openai_response["choices"][0]["message"]["content"]
-
-
-def manifest_wrapper(
-    text: str, client: Any, instructions: Optional[str] = None, *args, **kwargs
-) -> str:
-    """Wrapper for manifest client.
-
-    To use manifest for guardrailse, do
-    ```
-    client = Manifest(client_name=..., client_connection=...)
-    raw_llm_response, validated_response = guard(
-        client,
-        prompt_params={...},
-        ...
-    ```
-    """
-    if not MANIFEST:
-        raise PromptCallableException(
-            "The `manifest` package is not installed. "
-            "Install with `pip install manifest-ml`"
+        Use Guardrails with OpenAI chat engines by doing
+        ```
+        raw_llm_response, validated_response = guard(
+            openai.ChatCompletion.create,
+            prompt_params={...},
+            text=...,
+            instructions=...,
+            msg_history=...,
+            temperature=...,
+            ...
         )
-    client = cast(manifest.Manifest, client)
-    manifest_response = client.run(
-        nonchat_prompt(prompt=text, instructions=instructions), *args, **kwargs
-    )
-    return manifest_response
+        ```
+
+        If `base_model` is passed, the chat engine will be used as a function
+        on the base model.
+        """
+
+        if msg_history is None and text is None:
+            raise PromptCallableException(
+                "You must pass in either `text` or `msg_history` to `guard.__call__`."
+            )
+
+        # Configure function calling if applicable
+        if base_model:
+            function_params = [convert_pydantic_model_to_openai_fn(base_model)]
+            if function_call is None:
+                function_call = {"name": function_params[0]["name"]}
+            fn_kwargs = {"functions": function_params, "function_call": function_call}
+        else:
+            fn_kwargs = {}
+
+        # Call OpenAI
+        api_key = kwargs.pop("api_key", os.environ.get("OPENAI_API_KEY"))
+        openai_response = openai.ChatCompletion.create(
+            api_key=api_key,
+            model=model,
+            messages=chat_prompt(
+                prompt=text, instructions=instructions, msg_history=msg_history
+            ),
+            *args,
+            **fn_kwargs,
+            **kwargs,
+        )
+
+        # Extract string from response
+        if "function_call" in openai_response["choices"][0]["message"]:
+            output = openai_response["choices"][0]["message"]["function_call"][
+                "arguments"
+            ]
+        else:
+            output = openai_response["choices"][0]["message"]["content"]
+
+        return LLMResponse(
+            output=output,
+            prompt_token_count=openai_response["choices"][0]["tokens"],
+            response_token_count=openai_response["choices"][0]["tokens"],
+        )
 
 
-def cohere_wrapper(
-    prompt: str, client_callable: Any, model: str, *args, **kwargs
-) -> str:
-    """Wrapper for cohere client.
+class ManifestCallable(PromptCallableBase):
+    def _invoke_llm(
+        self,
+        text: str,
+        client: Any,
+        instructions: Optional[str] = None,
+        *args,
+        **kwargs,
+    ) -> LLMResponse:
+        """Wrapper for manifest client.
 
-    To use cohere for guardrails, do
-    ```
-    client = cohere.Client(api_key=...)
+        To use manifest for guardrailse, do
+        ```
+        client = Manifest(client_name=..., client_connection=...)
+        raw_llm_response, validated_response = guard(
+            client,
+            prompt_params={...},
+            ...
+        ```
+        """
+        if not MANIFEST:
+            raise PromptCallableException(
+                "The `manifest` package is not installed. "
+                "Install with `pip install manifest-ml`"
+            )
+        client = cast(manifest.Manifest, client)
+        manifest_response = client.run(
+            nonchat_prompt(prompt=text, instructions=instructions), *args, **kwargs
+        )
+        return LLMResponse(
+            output=manifest_response,
+        )
 
-    raw_llm_response, validated_response = guard(
-        client.generate,
-        prompt_params={...},
-        model="command-nightly",
-        ...
-    )
-    ```
-    """
 
-    if "instructions" in kwargs:
-        prompt = kwargs.pop("instructions") + "\n\n" + prompt
+class CohereCallable(PromptCallableBase):
+    def _invoke_llm(
+        self, prompt: str, client_callable: Any, model: str, *args, **kwargs
+    ) -> LLMResponse:
+        """
+        To use cohere for guardrails, do
+        ```
+        client = cohere.Client(api_key=...)
 
-    cohere_response = client_callable(prompt=prompt, model=model, *args, **kwargs)
-    return cohere_response[0].text
+        raw_llm_response, validated_response = guard(
+            client.generate,
+            prompt_params={...},
+            model="command-nightly",
+            ...
+        )
+        ```
+        """  # noqa
+
+        if "instructions" in kwargs:
+            prompt = kwargs.pop("instructions") + "\n\n" + prompt
+
+        cohere_response = client_callable(prompt=prompt, model=model, *args, **kwargs)
+        return LLMResponse(
+            output=cohere_response[0].text,
+        )
 
 
-def get_llm_ask(llm_api: Callable, *args, **kwargs) -> PromptCallable:
+class ArbitraryCallable(PromptCallableBase):
+    def __init__(self, llm_api: Callable, *args, **kwargs):
+        self.llm_api = llm_api
+        super().__init__(*args, **kwargs)
+
+    def _invoke_llm(self, *args, **kwargs) -> LLMResponse:
+        """Wrapper for arbitrary callable.
+
+        To use an arbitrary callable for guardrails, do
+        ```
+        raw_llm_response, validated_response = guard(
+            my_callable,
+            prompt_params={...},
+            ...
+        )
+        ```
+        """
+        return LLMResponse(
+            output=self.llm_api(*args, **kwargs),
+        )
+
+
+def get_llm_ask(llm_api: Callable, *args, **kwargs) -> PromptCallableBase:
     if llm_api == openai.Completion.create:
-        fn = partial(openai_wrapper, *args, **kwargs)
+        return OpenAICallable(*args, **kwargs)
     elif llm_api == openai.ChatCompletion.create:
-        fn = partial(openai_chat_wrapper, *args, **kwargs)
+        return OpenAIChatCallable(*args, **kwargs)
     elif MANIFEST and isinstance(llm_api, manifest.Manifest):
-        fn = partial(manifest_wrapper, client=llm_api, *args, **kwargs)
+        return ManifestCallable(*args, client=llm_api, **kwargs)
     elif (
         cohere
         and isinstance(getattr(llm_api, "__self__", None), cohere.Client)
         and getattr(llm_api, "__name__", None) == "generate"
     ):
-        fn = partial(cohere_wrapper, client_callable=llm_api, *args, **kwargs)
-    else:
-        # Let the user pass in an arbitrary callable.
-        fn = partial(llm_api, *args, **kwargs)
+        return CohereCallable(*args, client_callable=llm_api, **kwargs)
 
-    return PromptCallable(fn=fn)
+    # Let the user pass in an arbitrary callable.
+    return ArbitraryCallable(*args, llm_api=llm_api, **kwargs)
 
 
 ###
@@ -259,23 +311,30 @@ def get_llm_ask(llm_api: Callable, *args, **kwargs) -> PromptCallable:
 ###
 
 
-@dataclass
-class AsyncPromptCallable:
-    """A wrapper around a callable that takes in a prompt.
+class AsyncPromptCallableBase:
+    def __init__(self, *args, **kwargs):
+        self.init_args = args
+        self.init_kwargs = kwargs
 
-    Catches exceptions to let the user know clearly if the callable
-    failed, and how to fix it.
-    """
-
-    fn: Callable[[Any], Awaitable[Any]]
+    async def invoke_llm(
+        self,
+        *args,
+        **kwargs,
+    ) -> LLMResponse:
+        raise NotImplementedError
 
     @retry(
         wait=wait_exponential_jitter(max=60),
         retry=retry_if_exception_type(RETRYABLE_ERRORS),
     )
-    async def __call__(self, *args, **kwargs):
+    async def call_llm(self, *args, **kwargs) -> LLMResponse:
+        return await self.invoke_llm(
+            *self.init_args, *args, **self.init_kwargs, **kwargs
+        )
+
+    async def __call__(self, *args, **kwargs) -> LLMResponse:
         try:
-            result = await self.fn(*args, **kwargs)
+            result = await self.call_llm(*args, **kwargs)
         except Exception as e:
             raise PromptCallableException(
                 "The callable `fn` passed to `Guard(fn, ...)` failed"
@@ -284,7 +343,7 @@ class AsyncPromptCallable:
                 " takes in a single prompt string "
                 "and returns a string."
             )
-        if not isinstance(result, str):
+        if not isinstance(result, LLMResponse):
             raise PromptCallableException(
                 "The callable `fn` passed to `Guard(fn, ...)` returned"
                 f" a non-string value: {result}. "
@@ -295,77 +354,166 @@ class AsyncPromptCallable:
         return result
 
 
-async def async_openai_wrapper(
-    text: str,
-    engine: str = "text-davinci-003",
-    instructions: Optional[str] = None,
-    *args,
-    **kwargs,
-):
-    api_key = kwargs.pop("api_key", os.environ.get("OPENAI_API_KEY"))
-    openai_response = await openai.Completion.acreate(
-        api_key=api_key,
-        engine=engine,
-        prompt=nonchat_prompt(prompt=text, instructions=instructions),
+class AsyncOpenAICallable(AsyncPromptCallableBase):
+    async def invoke_llm(
+        self,
+        text: str,
+        engine: str = "text-davinci-003",
+        instructions: Optional[str] = None,
         *args,
         **kwargs,
-    )
-    return openai_response["choices"][0]["text"]
-
-
-async def async_openai_chat_wrapper(
-    text: str,
-    model="gpt-3.5-turbo",
-    instructions: Optional[str] = None,
-    *args,
-    **kwargs,
-):
-    api_key = kwargs.pop("api_key", os.environ.get("OPENAI_API_KEY"))
-    openai_response = await openai.ChatCompletion.acreate(
-        api_key=api_key,
-        model=model,
-        messages=chat_prompt(prompt=text, instructions=instructions),
-        *args,
-        **kwargs,
-    )
-    return openai_response["choices"][0]["message"]["content"]
-
-
-async def async_manifest_wrapper(
-    text: str, client: Any, instructions: Optional[str] = None, *args, **kwargs
-):
-    """Async wrapper for manifest client.
-
-    To use manifest for guardrails, do
-    ```
-    client = Manifest(client_name=..., client_connection=...)
-    raw_llm_response, validated_response = guard(
-        client,
-        prompt_params={...},
-        ...
-    ```
-    """
-    if not MANIFEST:
-        raise PromptCallableException(
-            "The `manifest` package is not installed. "
-            "Install with `pip install manifest-ml`"
+    ):
+        api_key = kwargs.pop("api_key", os.environ.get("OPENAI_API_KEY"))
+        openai_response = await openai.Completion.acreate(
+            api_key=api_key,
+            engine=engine,
+            prompt=nonchat_prompt(prompt=text, instructions=instructions),
+            *args,
+            **kwargs,
         )
-    client = cast(manifest.Manifest, client)
-    manifest_response = await client.run(
-        nonchat_prompt(prompt=text, instructions=instructions), *args, **kwargs
-    )
-    return manifest_response
+        return LLMResponse(
+            output=openai_response["choices"][0]["text"],
+            prompt_token_count=openai_response["usage"]["prompt_tokens"],
+            response_token_count=openai_response["usage"]["completion_tokens"],
+        )
+
+
+class AsyncOpenAIChatCallable(AsyncPromptCallableBase):
+    async def invoke_llm(
+        self,
+        text: Optional[str] = None,
+        model: str = "gpt-3.5-turbo",
+        instructions: Optional[str] = None,
+        msg_history: Optional[List[Dict]] = None,
+        base_model: Optional[BaseModel] = None,
+        function_call: Optional[str] = None,
+        *args,
+        **kwargs,
+    ) -> LLMResponse:
+        """Wrapper for OpenAI chat engines.
+
+        Use Guardrails with OpenAI chat engines by doing
+        ```
+        raw_llm_response, validated_response = guard(
+            openai.ChatCompletion.create,
+            prompt_params={...},
+            text=...,
+            instructions=...,
+            msg_history=...,
+            temperature=...,
+            ...
+        )
+        ```
+
+        If `base_model` is passed, the chat engine will be used as a function
+        on the base model.
+        """
+
+        if msg_history is None and text is None:
+            raise PromptCallableException(
+                "You must pass in either `text` or `msg_history` to `guard.__call__`."
+            )
+
+        # Configure function calling if applicable
+        if base_model:
+            function_params = [convert_pydantic_model_to_openai_fn(base_model)]
+            if function_call is None:
+                function_call = {"name": function_params[0]["name"]}
+            fn_kwargs = {"functions": function_params, "function_call": function_call}
+        else:
+            fn_kwargs = {}
+
+        # Call OpenAI
+        api_key = kwargs.pop("api_key", os.environ.get("OPENAI_API_KEY"))
+        openai_response = await openai.ChatCompletion.acreate(
+            api_key=api_key,
+            model=model,
+            messages=chat_prompt(
+                prompt=text, instructions=instructions, msg_history=msg_history
+            ),
+            *args,
+            **fn_kwargs,
+            **kwargs,
+        )
+
+        # Extract string from response
+        if "function_call" in openai_response["choices"][0]["message"]:
+            output = openai_response["choices"][0]["message"]["function_call"][
+                "arguments"
+            ]
+        else:
+            output = openai_response["choices"][0]["message"]["content"]
+
+        return LLMResponse(
+            output=output,
+            prompt_token_count=openai_response["choices"][0]["tokens"],
+            response_token_count=openai_response["choices"][0]["tokens"],
+        )
+
+
+class AsyncManifestCallable(AsyncPromptCallableBase):
+    async def invoke_llm(
+        self,
+        text: str,
+        client: Any,
+        instructions: Optional[str] = None,
+        *args,
+        **kwargs,
+    ):
+        """Async wrapper for manifest client.
+
+        To use manifest for guardrails, do
+        ```
+        client = Manifest(client_name=..., client_connection=...)
+        raw_llm_response, validated_response = guard(
+            client,
+            prompt_params={...},
+            ...
+        ```
+        """
+        if not MANIFEST:
+            raise PromptCallableException(
+                "The `manifest` package is not installed. "
+                "Install with `pip install manifest-ml`"
+            )
+        client = cast(manifest.Manifest, client)
+        manifest_response = await client.run(
+            nonchat_prompt(prompt=text, instructions=instructions), *args, **kwargs
+        )
+        return LLMResponse(
+            output=manifest_response,
+        )
+
+
+class AsyncArbitraryCallable(AsyncPromptCallableBase):
+    def __init__(self, llm_api: Callable, *args, **kwargs):
+        self.llm_api = llm_api
+        super().__init__(*args, **kwargs)
+
+    async def invoke_llm(self, *args, **kwargs) -> LLMResponse:
+        """Wrapper for arbitrary callable.
+
+        To use an arbitrary callable for guardrails, do
+        ```
+        raw_llm_response, validated_response = guard(
+            my_callable,
+            prompt_params={...},
+            ...
+        )
+        ```
+        """
+        output = await self.llm_api(*args, **kwargs)
+        return LLMResponse(
+            output=output,
+        )
 
 
 def get_async_llm_ask(llm_api: Callable[[Any], Awaitable[Any]], *args, **kwargs):
     if llm_api == openai.Completion.acreate:
-        fn = partial(async_openai_wrapper, *args, **kwargs)
+        return AsyncOpenAICallable(*args, **kwargs)
     elif llm_api == openai.ChatCompletion.acreate:
-        fn = partial(async_openai_chat_wrapper, *args, **kwargs)
+        return AsyncOpenAIChatCallable(*args, **kwargs)
     elif MANIFEST and isinstance(llm_api, manifest.Manifest):
-        fn = partial(async_manifest_wrapper, client=llm_api, *args, **kwargs)
-    else:
-        # Let the user pass in an arbitrary callable.
-        fn = partial(llm_api, *args, **kwargs)
+        return AsyncManifestCallable(*args, client=llm_api, **kwargs)
 
-    return AsyncPromptCallable(fn=fn)
+    return AsyncArbitraryCallable(*args, llm_api=llm_api, **kwargs)
