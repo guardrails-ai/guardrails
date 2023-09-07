@@ -37,6 +37,6 @@ OPTIONAL_MSG_HISTORY = [
     },
     {
         "role": "user",
-        "content": "\nGiven the following document, answer the following questions. If the answer doesn't exist in the document, enter 'None'.\n\n${document}\n\n${gr.xml_prefix_prompt}\n\n${output_schema}\n\n${gr.json_suffix_prompt_v2_wo_none}",
+        "content": "\nGiven the following document, answer the following questions. If the answer doesn't exist in the document, enter `null`.\n\n${document}\n\nExtract information from this document and return a JSON that follows the correct schema.\n\n${gr.xml_prefix_prompt}\n\n${output_schema}\n",
     },
 ]

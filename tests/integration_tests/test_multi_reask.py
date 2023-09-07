@@ -2,15 +2,13 @@ import openai
 
 import guardrails as gd
 
-from .mock_llm_outputs import openai_completion_create
+from .mock_llm_outputs import MockOpenAICallable
 from .test_assets import python_rail
 
 
 def test_multi_reask(mocker):
     """Test that parallel reasking works."""
-    mocker.patch(
-        "guardrails.llm_providers.openai_wrapper", new=openai_completion_create
-    )
+    mocker.patch("guardrails.llm_providers.OpenAICallable", new=MockOpenAICallable)
 
     guard = gd.Guard.from_rail_string(python_rail.RAIL_SPEC_WITH_VALIDATOR_PARALLELISM)
 

@@ -39,11 +39,17 @@ class FieldValidationLogs(ArbitraryModel):
     children: Dict[Union[int, str], "FieldValidationLogs"] = Field(default_factory=dict)
 
 
+class LLMResponse(ArbitraryModel):
+    prompt_token_count: Optional[int] = None
+    response_token_count: Optional[int] = None
+    output: Optional[str] = None
+
+
 class GuardLogs(ArbitraryModel):
     prompt: Optional[Prompt] = None
     instructions: Optional[Instructions] = None
+    llm_response: Optional[LLMResponse] = None
     msg_history: Optional[List[Dict[str, Prompt]]] = None
-    output: Optional[str] = None
     parsed_output: Optional[dict] = None
     validated_output: Optional[dict] = None
     reasks: Optional[List[ReAsk]] = None
@@ -67,6 +73,12 @@ class GuardLogs(ArbitraryModel):
     def failed_validations(self) -> List[ReAsk]:
         """Returns the failed validations."""
         return gather_reasks(self.validated_output)
+
+    @property
+    def output(self) -> Optional[str]:
+        if self.llm_response is None:
+            return None
+        return self.llm_response.output
 
     @property
     def rich_group(self) -> Group:
