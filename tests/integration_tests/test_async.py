@@ -66,8 +66,8 @@ async def test_entity_extraction_with_reask(mocker, multiprocessing_validators: 
 @pytest.mark.asyncio
 async def test_entity_extraction_with_noop(mocker):
     mocker.patch(
-        "guardrails.llm_providers.async_openai_wrapper",
-        new=async_openai_completion_create,
+        "guardrails.llm_providers.AsyncOpenAICallable",
+        new=MockAsyncOpenAICallable,
     )
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
     guard = gd.Guard.from_rail_string(entity_extraction.RAIL_SPEC_WITH_NOOP)
@@ -94,8 +94,8 @@ async def test_entity_extraction_with_noop(mocker):
 @pytest.mark.asyncio
 async def test_entity_extraction_with_noop_pydantic(mocker):
     mocker.patch(
-        "guardrails.llm_providers.async_openai_wrapper",
-        new=async_openai_completion_create,
+        "guardrails.llm_providers.AsyncOpenAICallable",
+        new=MockAsyncOpenAICallable,
     )
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
     guard = gd.Guard.from_pydantic(
@@ -125,8 +125,8 @@ async def test_entity_extraction_with_noop_pydantic(mocker):
 async def test_entity_extraction_with_filter(mocker):
     """Test that the entity extraction works with re-asking."""
     mocker.patch(
-        "guardrails.llm_providers.async_openai_wrapper",
-        new=async_openai_completion_create,
+        "guardrails.llm_providers.AsyncOpenAICallable",
+        new=MockAsyncOpenAICallable,
     )
 
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
@@ -157,8 +157,8 @@ async def test_entity_extraction_with_filter(mocker):
 async def test_entity_extraction_with_fix(mocker):
     """Test that the entity extraction works with re-asking."""
     mocker.patch(
-        "guardrails.llm_providers.async_openai_wrapper",
-        new=async_openai_completion_create,
+        "guardrails.llm_providers.AsyncOpenAICallable",
+        new=MockAsyncOpenAICallable,
     )
 
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
@@ -187,8 +187,8 @@ async def test_entity_extraction_with_fix(mocker):
 async def test_entity_extraction_with_refrain(mocker):
     """Test that the entity extraction works with re-asking."""
     mocker.patch(
-        "guardrails.llm_providers.async_openai_wrapper",
-        new=async_openai_completion_create,
+        "guardrails.llm_providers.AsyncOpenAICallable",
+        new=MockAsyncOpenAICallable,
     )
 
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")

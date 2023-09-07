@@ -31,7 +31,7 @@ class MockOpenAICallable(OpenAICallable):
             string.COMPILED_LIST_PROMPT: string.LIST_LLM_OUTPUT,
             python_rail.VALIDATOR_PARALLELISM_PROMPT_1: python_rail.VALIDATOR_PARALLELISM_RESPONSE_1,  # noqa: E501
             python_rail.VALIDATOR_PARALLELISM_PROMPT_2: python_rail.VALIDATOR_PARALLELISM_RESPONSE_2,  # noqa: E501
-            python_rail.VALIDATOR_PARALLELISM_PROMPT_3: python_rail.VALIDATOR_PARALLELISM_RESPONSE_3  # noqa: E501
+            python_rail.VALIDATOR_PARALLELISM_PROMPT_3: python_rail.VALIDATOR_PARALLELISM_RESPONSE_3,  # noqa: E501
         }
 
         try:
