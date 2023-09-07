@@ -1,14 +1,16 @@
 import pytest
+
 from guardrails.validators import ValidLength
+
 
 @pytest.mark.parametrize(
     "min,max,expected_min,expected_max",
     [
-        (0,12,0,12),
-        ("0","12",0,12),
-        (None,12,None,12),
-        (1,None,1,None),
-    ]
+        (0, 12, 0, 12),
+        ("0", "12", 0, 12),
+        (None, 12, None, 12),
+        (1, None, 1, None),
+    ],
 )
 def test_init(min, max, expected_min, expected_max):
     validator = ValidLength(min=min, max=max)
