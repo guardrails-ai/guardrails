@@ -1,6 +1,8 @@
 # noqa:W291
+import os
 from typing import Any, Dict
 
+import openai
 import pytest
 from pydantic import BaseModel, Field
 
@@ -27,6 +29,7 @@ from guardrails.validators import (
 )
 
 from .mock_embeddings import mock_create_embedding
+from .mock_provenance_v1 import mock_chat_completion, mock_chromadb_query_function
 
 
 @pytest.mark.parametrize(
@@ -349,14 +352,19 @@ def test_bad_validator():
             pass
 
 
-def test_provenanceV1_init():
+def test_provenance_v1(mocker):
+    """Test initialisation of ProvenanceV1."""
+
+    mocker.patch("openai.ChatCompletion.create", new=mock_chat_completion)
+    API_KEY = "<YOUR_KEY>"
+    LLM_RESPONSE = "This is a sentence."
+
     # Initialise Guard from string
     string_guard = Guard.from_string(
         validators=[
             ProvenanceV1(
-                validation_method="sentence",
+                validation_method="full",
                 llm_callable="gpt-3.5-turbo",
-                openai_api_key="YOUR_OPENAI_API_KEY",
                 top_k=3,
                 max_tokens=100,
                 on_fail="fix",
@@ -370,6 +378,34 @@ def test_provenanceV1_init():
     validators = data_type.format_attr.validators
     prov_validator: ProvenanceV1 = validators[0]
 
+    # Check types remain intact
     assert isinstance(prov_validator._validation_method, str)
     assert isinstance(prov_validator._top_k, int)
     assert isinstance(prov_validator._max_tokens, int)
+
+    # Test guard.parse() with 3 different ways of setting the OpenAI API key API key
+    # 1. Setting the API key directly
+    openai.api_key = API_KEY
+
+    output = string_guard.parse(
+        llm_output=LLM_RESPONSE,
+        metadata={"query_function": mock_chromadb_query_function},
+    )
+    assert output == LLM_RESPONSE
+
+    # 2. Setting the environment variable
+    os.environ["OPENAI_API_KEY"] = API_KEY
+    output = string_guard.parse(
+        llm_output=LLM_RESPONSE,
+        metadata={"query_function": mock_chromadb_query_function},
+    )
+    assert output == LLM_RESPONSE
+
+    # 3. Passing the API key as an argument
+    output = string_guard.parse(
+        llm_output=LLM_RESPONSE,
+        metadata={"query_function": mock_chromadb_query_function},
+        api_key=API_KEY,
+        api_base="https://api.openai.com",
+    )
+    assert output == LLM_RESPONSE
