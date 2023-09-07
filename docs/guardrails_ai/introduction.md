@@ -7,8 +7,11 @@ _Note: Guardrails is an alpha release, so expect sharp edges and bugs._
 Guardrails AI is a fully open source library that assures interactions with Large Language Models (LLMs). It offers
 
 ✅ Framework for creating custom validators
+
 ✅ Orchestration of prompting → verification → re-prompting
+
 ✅ Library of commonly used validators for multiple use cases
+
 ✅ Specification language for communicating requirements to LLM
 
 ## 🚒 Under the hood

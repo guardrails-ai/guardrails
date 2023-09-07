@@ -29,7 +29,7 @@ from rich import print
 print(guard.state.most_recent_call.tree)
 ```
 
-![guard_state](img/guard_history.png)
+![guard_state](../img/guard_history.png)
 
 To access fine-grained logs on field validation, see the FieldValidationLogs object:
 
