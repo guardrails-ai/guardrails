@@ -5,6 +5,7 @@ in the `RAIL` spec to specify formatters.
 """
 import ast
 import contextvars
+import inspect
 import itertools
 import logging
 import os
@@ -19,6 +20,7 @@ import pydantic
 from pydantic import Field
 from tenacity import retry, stop_after_attempt, wait_random_exponential
 
+from guardrails.utils.casting_utils import to_int
 from guardrails.utils.docs_utils import get_chunks_from_text, sentence_split
 from guardrails.utils.sql_utils import SQLDriver, create_sql_driver
 from guardrails.utils.validator_utils import PROVENANCE_V1_PROMPT
@@ -289,11 +291,14 @@ class Validator:
             return self.rail_alias
 
         validator_args = []
-        for arg in self.__init__.__code__.co_varnames[1:]:
+        init_args = inspect.getfullargspec(self.__init__)
+        for arg in init_args.args[1:]:
             if arg not in ("on_fail", "args", "kwargs"):
-                str_arg = str(self._kwargs[arg])
-                str_arg = "{" + str_arg + "}" if " " in str_arg else str_arg
-                validator_args.append(str_arg)
+                arg_value = self._kwargs.get(arg)
+                str_arg = str(arg_value)
+                if str_arg is not None:
+                    str_arg = "{" + str_arg + "}" if " " in str_arg else str_arg
+                    validator_args.append(str_arg)
 
         params = " ".join(validator_args)
         return f"{self.rail_alias}: {params}"
@@ -528,8 +533,8 @@ class ValidLength(Validator):
         self, min: int = None, max: int = None, on_fail: Optional[Callable] = None
     ):
         super().__init__(on_fail=on_fail, min=min, max=max)
-        self._min = int(min) if min is not None else None
-        self._max = int(max) if max is not None else None
+        self._min = to_int(min)
+        self._max = to_int(max)
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         """Validates that the length of value is within the expected range."""
