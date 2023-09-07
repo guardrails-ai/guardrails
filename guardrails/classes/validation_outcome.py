@@ -10,10 +10,13 @@ class ValidationOutcome(ArbitraryModel):
         description="The raw, unchanged output from the LLM call."
     )
     validated_output: Union[str, Dict, None] = Field(
-        description="The validated, and potentially fixed, output from the LLM call after passing through validation."
+        description="The validated, and potentially fixed,"
+        " output from the LLM call after passing through validation."
     )
     validation_passed: bool = Field(
-        description="A boolean to indicate whether or not the LLM output passed validation.  If this is False, the validated_output may be invalid."
+        description="A boolean to indicate whether or not"
+        " the LLM output passed validation."
+        "  If this is False, the validated_output may be invalid."
     )
 
     @classmethod
@@ -37,11 +40,13 @@ class ValidationOutcome(ArbitraryModel):
 
 class TextOutcome(ValidationOutcome):
     validated_output: Union[str, None] = Field(
-        description="The validated, and potentially fixed, output from the LLM call after passing through validation."
+        description="The validated, and potentially fixed,"
+        " output from the LLM call after passing through validation."
     )
 
 
 class StructuredOutcome(ValidationOutcome):
     validated_output: Union[Dict, None] = Field(
-        description="The validated, and potentially fixed, output from the LLM call after passing through validation."
+        description="The validated, and potentially fixed,"
+        " output from the LLM call after passing through validation."
     )
