@@ -243,10 +243,8 @@ class CohereCallable(PromptCallableBase):
     def _invoke_llm(
         self, prompt: str, client_callable: Any, model: str, *args, **kwargs
     ) -> LLMResponse:
-        """
-        To use cohere for guardrails, do
-        ```
-        client = cohere.Client(api_key=...)
+        """To use cohere for guardrails, do ``` client =
+        cohere.Client(api_key=...)
 
         raw_llm_response, validated_response = guard(
             client.generate,
