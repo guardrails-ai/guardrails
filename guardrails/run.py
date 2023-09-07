@@ -444,7 +444,7 @@ class Runner:
     def prepare_to_loop(
         self,
         reasks: list,
-        validated_output: Optional[Dict],
+        validated_output: Optional[Union[Dict, ReAsk]],
         output_schema: Schema,
         prompt_params: Dict,
         include_instructions: bool = False,
