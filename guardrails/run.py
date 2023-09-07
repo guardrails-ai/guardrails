@@ -7,12 +7,13 @@ from eliot import add_destinations, start_action
 from pydantic import BaseModel
 
 from guardrails.datatypes import verify_metadata_requirements
-from guardrails.llm_providers import AsyncPromptCallable, PromptCallable
+from guardrails.llm_providers import AsyncPromptCallableBase, PromptCallableBase
 from guardrails.prompt import Instructions, Prompt
 from guardrails.schema import Schema
-from guardrails.utils.logs_utils import GuardHistory, GuardLogs, GuardState
+from guardrails.utils.logs_utils import GuardHistory, GuardLogs, GuardState, LLMResponse
 from guardrails.utils.reask_utils import (
     FieldReAsk,
+    NonParseableReAsk,
     ReAsk,
     reasks_to_dict,
     sub_reasks_with_fixed_values,
@@ -46,7 +47,7 @@ class Runner:
     instructions: Optional[Instructions]
     prompt: Prompt
     msg_history: Optional[List[Dict]]
-    api: PromptCallable
+    api: PromptCallableBase
     input_schema: Schema
     output_schema: Schema
     guard_state: GuardState
@@ -166,7 +167,7 @@ class Runner:
     def step(
         self,
         index: int,
-        api: PromptCallable,
+        api: PromptCallableBase,
         instructions: Optional[Instructions],
         prompt: Optional[Prompt],
         msg_history: Optional[List[Dict]],
@@ -209,24 +210,34 @@ class Runner:
             guard_logs.msg_history = msg_history
 
             # Call: run the API.
-            output = self.call(index, instructions, prompt, msg_history, api, output)
+            llm_response = self.call(
+                index, instructions, prompt, msg_history, api, output
+            )
 
-            guard_logs.output = output
+            guard_logs.llm_response = llm_response
+            output = llm_response.output
 
             # Parse: parse the output.
-            parsed_output = self.parse(index, output, output_schema)
+            parsed_output, parsing_error = self.parse(index, output, output_schema)
 
             guard_logs.parsed_output = parsed_output
 
             # Validate: run output validation.
-            validated_output = self.validate(
-                guard_logs, index, parsed_output, output_schema
-            )
+            validated_output = None
+            if parsing_error and isinstance(parsed_output, NonParseableReAsk):
+                reasks = self.introspect(index, parsed_output, output_schema)
+            else:
+                # Validate: run output validation.
+                validated_output = self.validate(
+                    guard_logs, index, parsed_output, output_schema
+                )
 
-            guard_logs.set_validated_output(validated_output, self.full_schema_reask)
+                guard_logs.set_validated_output(
+                    validated_output, self.full_schema_reask
+                )
 
-            # Introspect: inspect validated output for reasks.
-            reasks = self.introspect(index, validated_output, output_schema)
+                # Introspect: inspect validated output for reasks.
+                reasks = self.introspect(index, validated_output, output_schema)
 
             guard_logs.reasks = reasks
 
@@ -236,7 +247,7 @@ class Runner:
 
             guard_logs.set_validated_output(validated_output, self.full_schema_reask)
 
-            return validated_output, reasks
+            return validated_output or parsed_output, reasks
 
     def prepare(
         self,
@@ -245,7 +256,7 @@ class Runner:
         prompt: Prompt,
         msg_history: Optional[List[Dict]],
         prompt_params: Dict,
-        api: Union[PromptCallable, AsyncPromptCallable],
+        api: Union[PromptCallableBase, AsyncPromptCallableBase],
         input_schema: Schema,
         output_schema: Schema,
     ) -> Tuple[Instructions, Prompt, List[Dict]]:
@@ -276,9 +287,9 @@ class Runner:
                 if instructions is not None and isinstance(instructions, Instructions):
                     instructions = instructions.format(**prompt_params)
 
-            instructions, prompt = output_schema.preprocess_prompt(
-                api, instructions, prompt
-            )
+                instructions, prompt = output_schema.preprocess_prompt(
+                    api, instructions, prompt
+                )
 
             action.log(
                 message_type="info",
@@ -297,8 +308,8 @@ class Runner:
         prompt: Prompt,
         msg_history: Optional[List[Dict[str, str]]],
         api: Callable,
-        output: str = None,
-    ) -> str:
+        output: Optional[str] = None,
+    ) -> LLMResponse:
         """Run a step.
 
         1. Query the LLM API,
@@ -313,37 +324,45 @@ class Runner:
             return msg_history_copy
 
         with start_action(action_type="call", index=index, prompt=prompt) as action:
+            llm_response = None
             try:
                 if msg_history:
-                    output = api(
+                    llm_response = api(
                         msg_history=msg_history_source(msg_history),
                         base_model=self.base_model,
                     )
                 else:
                     if prompt and instructions:
-                        output = api(
+                        llm_response = api(
                             prompt.source,
                             instructions=instructions.source,
                             base_model=self.base_model,
                         )
                     elif prompt:
-                        output = api(prompt.source, base_model=self.base_model)
+                        llm_response = api(prompt.source, base_model=self.base_model)
             except Exception:
                 # If the API call fails, try calling again without the base model.
                 if msg_history:
-                    output = api(msg_history=msg_history_source(msg_history))
+                    llm_response = api(msg_history=msg_history_source(msg_history))
                 else:
                     if prompt and instructions:
-                        output = api(prompt.source, instructions=instructions.source)
+                        llm_response = api(
+                            prompt.source, instructions=instructions.source
+                        )
                     elif prompt:
-                        output = api(prompt.source)
+                        llm_response = api(prompt.source)
+
+            if llm_response is None:
+                llm_response = LLMResponse(
+                    output=output,
+                )
 
             action.log(
                 message_type="info",
-                output=output,
+                output=llm_response,
             )
 
-            return output
+            return llm_response
 
     def parse(
         self,
@@ -360,7 +379,7 @@ class Runner:
                 error=error,
             )
 
-            return parsed_output
+            return parsed_output, error
 
     def validate(
         self,
@@ -429,7 +448,7 @@ class Runner:
 
 
 class AsyncRunner(Runner):
-    api: AsyncPromptCallable
+    api: AsyncPromptCallableBase
 
     async def async_run(self, prompt_params: Dict = None) -> GuardHistory:
         """Execute the runner by repeatedly calling step until the reask budget
@@ -443,6 +462,15 @@ class AsyncRunner(Runner):
             The guard history.
         """
         self._reset_guard_history()
+
+        # check if validator requirements are fulfilled
+        missing_keys = verify_metadata_requirements(
+            self.metadata, self.output_schema.to_dict().values()
+        )
+        if missing_keys:
+            raise ValueError(
+                f"Missing required metadata keys: {', '.join(missing_keys)}"
+            )
 
         with start_action(
             action_type="run",
@@ -491,7 +519,7 @@ class AsyncRunner(Runner):
     async def async_step(
         self,
         index: int,
-        api: AsyncPromptCallable,
+        api: AsyncPromptCallableBase,
         instructions: Optional[Instructions],
         prompt: Prompt,
         msg_history: Optional[List[Dict]],
@@ -533,26 +561,33 @@ class AsyncRunner(Runner):
             guard_logs.msg_history = msg_history
 
             # Call: run the API.
-            output = await self.async_call(
+            llm_response = await self.async_call(
                 index, instructions, prompt, msg_history, api, output
             )
 
-            guard_logs.output = output
+            guard_logs.llm_response = llm_response
+            output = llm_response.output
 
             # Parse: parse the output.
-            parsed_output = self.parse(index, output, output_schema)
+            parsed_output, parsing_error = self.parse(index, output, output_schema)
 
             guard_logs.parsed_output = parsed_output
 
-            # Validate: run output validation.
-            validated_output = await self.async_validate(
-                guard_logs, index, parsed_output, output_schema
-            )
+            validated_output = None
+            if parsing_error and isinstance(parsed_output, NonParseableReAsk):
+                reasks = self.introspect(index, parsed_output, output_schema)
+            else:
+                # Validate: run output validation.
+                validated_output = await self.async_validate(
+                    guard_logs, index, parsed_output, output_schema
+                )
 
-            guard_logs.set_validated_output(validated_output, self.full_schema_reask)
+                guard_logs.set_validated_output(
+                    validated_output, self.full_schema_reask
+                )
 
-            # Introspect: inspect validated output for reasks.
-            reasks = self.introspect(index, validated_output, output_schema)
+                # Introspect: inspect validated output for reasks.
+                reasks = self.introspect(index, validated_output, output_schema)
 
             guard_logs.reasks = reasks
 
@@ -562,7 +597,7 @@ class AsyncRunner(Runner):
 
             guard_logs.set_validated_output(validated_output, self.full_schema_reask)
 
-            return validated_output, reasks
+            return validated_output or parsed_output, reasks
 
     async def async_call(
         self,
@@ -570,15 +605,9 @@ class AsyncRunner(Runner):
         instructions: Optional[Instructions],
         prompt: Prompt,
         msg_history: Optional[List[Dict]],
-        api: AsyncPromptCallable,
-        output: str = None,
-    ) -> str:
-        """Run a step.
-
-        1. Query the LLM API,
-        2. Convert the response string to a dict,
-        3. Log the output
-        """
+        api: AsyncPromptCallableBase,
+        output: Optional[str] = None,
+    ) -> LLMResponse:
         """Run a step.
 
         1. Query the LLM API,
@@ -586,39 +615,47 @@ class AsyncRunner(Runner):
         3. Log the output
         """
         with start_action(action_type="call", index=index, prompt=prompt) as action:
+            llm_response = None
             try:
                 if msg_history:
-                    output = await api(
+                    llm_response = await api(
                         msg_history=msg_history,
                         base_model=self.base_model,
                     )
                 else:
                     if prompt and instructions:
-                        output = await api(
+                        llm_response = await api(
                             prompt.source,
                             instructions=instructions.source,
                             base_model=self.base_model,
                         )
                     elif prompt:
-                        output = await api(prompt.source, base_model=self.base_model)
+                        llm_response = await api(
+                            prompt.source, base_model=self.base_model
+                        )
             except Exception:
                 # If the API call fails, try calling again without the base model.
                 if msg_history:
-                    output = await api(msg_history=msg_history)
+                    llm_response = await api(msg_history=msg_history)
                 else:
                     if prompt and instructions:
-                        output = await api(
+                        llm_response = await api(
                             prompt.source, instructions=instructions.source
                         )
                     elif prompt:
-                        output = await api(prompt.source)
+                        llm_response = await api(prompt.source)
+
+            if llm_response is None:
+                llm_response = LLMResponse(
+                    output=output,
+                )
 
             action.log(
                 message_type="info",
-                output=output,
+                output=llm_response,
             )
 
-            return output
+            return llm_response
 
     async def async_validate(
         self,

@@ -18,7 +18,7 @@ from guardrails.validators import (
     register_validator,
 )
 
-from .mock_llm_outputs import openai_chat_completion_create, openai_completion_create
+from .mock_llm_outputs import MockOpenAICallable, MockOpenAIChatCallable
 from .test_assets import python_rail, string
 
 
@@ -42,8 +42,8 @@ class IsValidDirector(Validator):
 
 def test_python_rail(mocker):
     mocker.patch(
-        "guardrails.llm_providers.openai_chat_wrapper",
-        new=openai_chat_completion_create,
+        "guardrails.llm_providers.OpenAIChatCallable",
+        new=MockOpenAIChatCallable,
     )
 
     class BoxOfficeRevenue(BaseModel):
@@ -155,8 +155,8 @@ def test_python_rail(mocker):
 
 def test_python_rail_add_validator(mocker):
     mocker.patch(
-        "guardrails.llm_providers.openai_chat_wrapper",
-        new=openai_chat_completion_create,
+        "guardrails.llm_providers.OpenAIChatCallable",
+        new=MockOpenAIChatCallable,
     )
 
     class BoxOfficeRevenue(BaseModel):
@@ -276,9 +276,7 @@ def test_python_rail_add_validator(mocker):
 
 def test_python_string(mocker):
     """Test single string (non-JSON) generation via pydantic with re-asking."""
-    mocker.patch(
-        "guardrails.llm_providers.openai_wrapper", new=openai_completion_create
-    )
+    mocker.patch("guardrails.llm_providers.OpenAICallable", new=MockOpenAICallable)
 
     validators = [TwoWords(on_fail="reask")]
     description = "Name for the pizza"

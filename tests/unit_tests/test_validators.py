@@ -18,6 +18,7 @@ from guardrails.validators import (
     SqlColumnPresence,
     TwoWords,
     ValidationResult,
+    ValidLength,
     check_refrain_in_dict,
     filter_in_dict,
     register_validator,
@@ -344,3 +345,19 @@ def test_bad_validator():
         @register_validator("mycustombadvalidator", data_type="string")
         def validate(value: Any) -> ValidationResult:
             pass
+
+
+@pytest.mark.parametrize(
+    "min,max,expected_xml",
+    [
+        (0, 12, "length: 0 12"),
+        ("0", "12", "length: 0 12"),
+        (None, 12, "length: None 12"),
+        (1, None, "length: 1 None"),
+    ],
+)
+def test_to_xml_attrib(min, max, expected_xml):
+    validator = ValidLength(min=min, max=max)
+    xml_validator = validator.to_xml_attrib()
+
+    assert xml_validator == expected_xml
