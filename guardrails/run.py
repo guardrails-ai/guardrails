@@ -235,8 +235,7 @@ class Runner:
             raw_output = llm_response.output
 
             # Parse: parse the output.
-            parsed_output, parsing_error = self.parse(index, output, output_schema)
-            parsed_output = self.parse(index, raw_output, output_schema)
+            parsed_output, parsing_error = self.parse(index, raw_output, output_schema)
 
             guard_logs.parsed_output = parsed_output
 
