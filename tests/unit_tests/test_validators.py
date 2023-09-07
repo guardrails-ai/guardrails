@@ -352,6 +352,7 @@ def test_bad_validator():
         def validate(value: Any) -> ValidationResult:
             pass
 
+
 def test_provenance_v1(mocker):
     """Test initialisation of ProvenanceV1."""
 
@@ -410,7 +411,7 @@ def test_provenance_v1(mocker):
     )
     assert output == LLM_RESPONSE
 
-    
+
 @pytest.mark.parametrize(
     "min,max,expected_xml",
     [
