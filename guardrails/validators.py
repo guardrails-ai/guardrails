@@ -1888,7 +1888,8 @@ class ProvenanceV0(Validator):
 
 @register_validator(name="provenance-v1", data_type="string")
 class ProvenanceV1(Validator):
-    """Validates that the LLM-generated text is supported by the provided contexts.
+    """Validates that the LLM-generated text is supported by the provided
+    contexts.
 
     This validator uses an LLM callable to evaluate the generated text against the
     provided contexts (LLM-ception).
