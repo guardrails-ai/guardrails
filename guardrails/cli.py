@@ -16,7 +16,7 @@ def validate_llm_output(rail: str, llm_output: str) -> dict:
     """Validate guardrails.yml file."""
     guard = Guard.from_rail(rail)
     result = guard.parse(llm_output)
-    return result
+    return result.validated_output
 
 
 @cli.command()

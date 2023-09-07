@@ -3,13 +3,14 @@ from typing import Dict, Union
 from pydantic import Field
 
 from guardrails.utils.logs_utils import ArbitraryModel, GuardHistory
+from guardrails.utils.reask_utils import ReAsk
 
 
 class ValidationOutcome(ArbitraryModel):
     raw_llm_output: str = Field(
         description="The raw, unchanged output from the LLM call."
     )
-    validated_output: Union[str, Dict, None] = Field(
+    validated_output: Union[str, Dict, ReAsk, None] = Field(
         description="The validated, and potentially fixed,"
         " output from the LLM call after passing through validation."
     )
@@ -22,7 +23,10 @@ class ValidationOutcome(ArbitraryModel):
     @classmethod
     def from_guard_history(cls, guard_history: GuardHistory):
         raw_output = guard_history.output
+        print("from_guard_history - type(guard_history.validated_output): ", type(guard_history.validated_output))
+        # validated_output: Union[str, Dict, ReAsk, None] = guard_history.validated_output
         validated_output = guard_history.validated_output
+        print("from_guard_history - type(validated_output): ", type(validated_output))
         any_validations_failed = len(guard_history.failed_validations) > 0
         if isinstance(validated_output, str):
             return TextOutcome(
@@ -31,6 +35,7 @@ class ValidationOutcome(ArbitraryModel):
                 validation_passed=any_validations_failed,
             )
         else:
+            # TODO: Why does instantiation collapse validated_output to a dict?
             return StructuredOutcome(
                 raw_llm_output=raw_output,
                 validated_output=validated_output,
@@ -39,14 +44,14 @@ class ValidationOutcome(ArbitraryModel):
 
 
 class TextOutcome(ValidationOutcome):
-    validated_output: Union[str, None] = Field(
+    validated_output: Union[str, ReAsk, None] = Field(
         description="The validated, and potentially fixed,"
         " output from the LLM call after passing through validation."
     )
 
 
 class StructuredOutcome(ValidationOutcome):
-    validated_output: Union[Dict, None] = Field(
+    validated_output: Union[Dict, ReAsk, None] = Field(
         description="The validated, and potentially fixed,"
         " output from the LLM call after passing through validation."
     )

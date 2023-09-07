@@ -29,7 +29,7 @@ async def test_entity_extraction_with_reask(mocker, multiprocessing_validators: 
     with patch.object(
         JsonSchema, "preprocess_prompt", wraps=guard.output_schema.preprocess_prompt
     ) as mock_preprocess_prompt:
-        _, final_output = await guard(
+        final_output = await guard(
             llm_api=openai.Completion.acreate,
             prompt_params={"document": content[:6000]},
             num_reasks=1,
@@ -39,7 +39,7 @@ async def test_entity_extraction_with_reask(mocker, multiprocessing_validators: 
         mock_preprocess_prompt.assert_called()
 
     # Assertions are made on the guard state object.
-    assert final_output == entity_extraction.VALIDATED_OUTPUT_REASK_2
+    assert final_output.validated_output == entity_extraction.VALIDATED_OUTPUT_REASK_2
 
     guard_history = guard.guard_state.most_recent_call.history
 
@@ -222,7 +222,7 @@ async def test_rail_spec_output_parse(rail_spec, llm_output, validated_output):
         llm_output,
         llm_api=openai.Completion.acreate,
     )
-    assert output == validated_output
+    assert output.validated_output == validated_output
 
 
 @pytest.fixture
@@ -262,4 +262,4 @@ async def test_string_rail_spec_output_parse(
         llm_api=openai.Completion.acreate,
         num_reasks=0,
     )
-    assert output == validated_string_output
+    assert output.validated_output == validated_string_output

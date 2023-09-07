@@ -591,7 +591,10 @@ class Guard:
             guard_history.history[-1].validated_output = sub_reasks_with_fixed_values(
                 guard_history.validated_output
             )
-            return ValidationOutcome.from_guard_history(guard_history)
+            print("before ValidationOutcome.from_guard_history - type(validated_output): ", type(guard_history.validated_output))
+            validation_outcome = ValidationOutcome.from_guard_history(guard_history)
+            print("after ValidationOutcome.from_guard_history - type(validated_output): ", type(validation_outcome.validated_output))
+            return validation_outcome
 
     async def _async_parse(
         self,

@@ -52,7 +52,7 @@ class GuardLogs(ArbitraryModel):
     llm_response: Optional[LLMResponse] = None
     msg_history: Optional[List[Dict[str, Prompt]]] = None
     parsed_output: Optional[Dict] = None
-    validated_output: Optional[Union[Dict, ReAsk]] = None
+    validated_output: Optional[Union[str, Dict, ReAsk, None]] = None
     reasks: Optional[Sequence[ReAsk]] = None
 
     field_validation_logs: Optional[FieldValidationLogs] = None
@@ -154,7 +154,7 @@ class GuardHistory(ArbitraryModel):
         return tree
 
     @property
-    def validated_output(self) -> Optional[Union[Dict, ReAsk]]:
+    def validated_output(self) -> Union[str, Dict, ReAsk, None]:
         """Returns the latest validated output."""
         return self.history[-1].validated_output
 
