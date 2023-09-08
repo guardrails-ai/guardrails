@@ -130,6 +130,7 @@ You are a helpful bot, who answers only with valid JSON
 </rail>
 """
 
+
 def test_parse_prompt():
     """Test parsing a prompt."""
     guard = gd.Guard.from_rail_string(SIMPLE_RAIL_SPEC)
