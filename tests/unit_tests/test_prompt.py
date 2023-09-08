@@ -124,12 +124,11 @@ Please try that again, extract a string from the text
 ${output_schema}
 ${previous_response}
 </reask_prompt>
-<reask_instructions> 
+<reask_instructions>
 You are a helpful bot, who answers only with valid JSON
 </reask_instructions>
 </rail>
 """
-
 
 def test_parse_prompt():
     """Test parsing a prompt."""
