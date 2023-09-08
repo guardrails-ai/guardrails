@@ -297,7 +297,7 @@ Each quality criteria is then checked against the generated output. If the quali
 ### Supported criteria
 
 - Each quality critera is relevant to a specific data type. For example, the `two-words` quality criteria is only relevant to strings, and the `positive` quality criteria is only relevant to integers and floats.
-- To see the full list of supported quality criteria, check out the [Validation](../validation.md) page.
+- To see the full list of supported quality criteria, check out the [Validation](../api_reference/validators.md) page.
 
 
 ## 🛠️ Specifying corrective actions

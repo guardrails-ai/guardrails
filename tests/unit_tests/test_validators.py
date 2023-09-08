@@ -1,10 +1,14 @@
 # noqa:W291
+import os
 from typing import Any, Dict
 
+import openai
 import pytest
 from pydantic import BaseModel, Field
 
 from guardrails import Guard
+from guardrails.datatypes import DataType
+from guardrails.schema import StringSchema
 from guardrails.utils.reask_utils import FieldReAsk
 from guardrails.validators import (
     BugFreeSQL,
@@ -13,6 +17,7 @@ from guardrails.validators import (
     FailResult,
     Filter,
     PassResult,
+    ProvenanceV1,
     Refrain,
     SimilarToDocument,
     SqlColumnPresence,
@@ -25,6 +30,7 @@ from guardrails.validators import (
 )
 
 from .mock_embeddings import mock_create_embedding
+from .mock_provenance_v1 import mock_chat_completion, mock_chromadb_query_function
 
 
 @pytest.mark.parametrize(
@@ -345,6 +351,65 @@ def test_bad_validator():
         @register_validator("mycustombadvalidator", data_type="string")
         def validate(value: Any) -> ValidationResult:
             pass
+
+
+def test_provenance_v1(mocker):
+    """Test initialisation of ProvenanceV1."""
+
+    mocker.patch("openai.ChatCompletion.create", new=mock_chat_completion)
+    API_KEY = "<YOUR_KEY>"
+    LLM_RESPONSE = "This is a sentence."
+
+    # Initialise Guard from string
+    string_guard = Guard.from_string(
+        validators=[
+            ProvenanceV1(
+                validation_method="full",
+                llm_callable="gpt-3.5-turbo",
+                top_k=3,
+                max_tokens=100,
+                on_fail="fix",
+            )
+        ],
+        description="testmeout",
+    )
+
+    output_schema: StringSchema = string_guard.rail.output_schema
+    data_type: DataType = getattr(output_schema._schema, "string")
+    validators = data_type.format_attr.validators
+    prov_validator: ProvenanceV1 = validators[0]
+
+    # Check types remain intact
+    assert isinstance(prov_validator._validation_method, str)
+    assert isinstance(prov_validator._top_k, int)
+    assert isinstance(prov_validator._max_tokens, int)
+
+    # Test guard.parse() with 3 different ways of setting the OpenAI API key API key
+    # 1. Setting the API key directly
+    openai.api_key = API_KEY
+
+    output = string_guard.parse(
+        llm_output=LLM_RESPONSE,
+        metadata={"query_function": mock_chromadb_query_function},
+    )
+    assert output == LLM_RESPONSE
+
+    # 2. Setting the environment variable
+    os.environ["OPENAI_API_KEY"] = API_KEY
+    output = string_guard.parse(
+        llm_output=LLM_RESPONSE,
+        metadata={"query_function": mock_chromadb_query_function},
+    )
+    assert output == LLM_RESPONSE
+
+    # 3. Passing the API key as an argument
+    output = string_guard.parse(
+        llm_output=LLM_RESPONSE,
+        metadata={"query_function": mock_chromadb_query_function},
+        api_key=API_KEY,
+        api_base="https://api.openai.com",
+    )
+    assert output == LLM_RESPONSE
 
 
 @pytest.mark.parametrize(
