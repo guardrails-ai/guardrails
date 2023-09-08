@@ -7,3 +7,4 @@ griffe
 pillow
 cairosvg
 mkdocs-glightbox
+sphinx

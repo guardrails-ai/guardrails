@@ -37,3 +37,7 @@ full:
 	pip install -e ".[all]"
 
 all: autoformat lint docs test
+
+pydocs:
+	venv/bin/sphinx-apidoc -o docs/pydocs/config guardrails;
+	venv/bin/sphinx-build -b html docs/pydocs/config docs/pydocs;
