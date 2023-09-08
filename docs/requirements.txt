@@ -8,3 +8,4 @@ pillow
 cairosvg
 mkdocs-glightbox
 sphinx
+jupyter

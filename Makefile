@@ -39,5 +39,8 @@ full:
 all: autoformat lint docs test
 
 pydocs:
-	venv/bin/sphinx-apidoc -o docs/pydocs/config guardrails;
-	venv/bin/sphinx-build -b html docs/pydocs/config docs/pydocs;
+	sphinx-apidoc -o docs/pydocs/config guardrails;
+	sphinx-build -b html docs/pydocs/config docs/pydocs;
+
+jupyter-html:
+	jupyter nbconvert --to html docs/**/*.ipynb
