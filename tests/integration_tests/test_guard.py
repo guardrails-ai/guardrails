@@ -399,7 +399,6 @@ def test_string_output(mocker):
         prompt_params={"ingredients": "tomato, cheese, sour cream"},
         num_reasks=1,
     )
-
     assert final_output == string.LLM_OUTPUT
 
     guard_history = guard.guard_state.most_recent_call.history
@@ -484,6 +483,31 @@ def test_skeleton_reask(mocker):
         guard_history[1].validated_output
         == entity_extraction.VALIDATED_OUTPUT_SKELETON_REASK_2
     )
+
+
+'''def test_json_output(mocker):
+    """Test single string (non-JSON) generation."""
+    mocker.patch(
+        "guardrails.llm_providers.openai_wrapper", new=openai_completion_create
+    )
+
+    guard = gd.Guard.from_rail_string(string.RAIL_SPEC_FOR_LIST)
+    _, final_output = guard(
+        llm_api=openai.Completion.create,
+        num_reasks=1,
+    )
+    assert final_output == string.LIST_LLM_OUTPUT
+
+    guard_history = guard.guard_state.most_recent_call.history
+
+    # Check that the guard state object has the correct number of re-asks.
+    assert len(guard_history) == 1
+
+    # For original prompt and output
+    #assert guard_history[0].prompt == gd.Prompt(string.COMPILED_PROMPT)
+    assert guard_history[0].output == string.LLM_OUTPUT
+
+'''
 
 
 @pytest.mark.parametrize(
