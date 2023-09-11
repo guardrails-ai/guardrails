@@ -200,8 +200,8 @@ class OpenAIChatCallable(PromptCallableBase):
 
         return LLMResponse(
             output=output,
-            prompt_token_count=openai_response["choices"][0]["tokens"],
-            response_token_count=openai_response["choices"][0]["tokens"],
+            prompt_token_count=openai_response["usage"]["prompt_tokens"],
+            response_token_count=openai_response["usage"]["completion_tokens"],
         )
 
 
@@ -446,8 +446,8 @@ class AsyncOpenAIChatCallable(AsyncPromptCallableBase):
 
         return LLMResponse(
             output=output,
-            prompt_token_count=openai_response["choices"][0]["tokens"],
-            response_token_count=openai_response["choices"][0]["tokens"],
+            prompt_token_count=openai_response["usage"]["prompt_tokens"],
+            response_token_count=openai_response["usage"]["completion_tokens"],
         )
 
 
