@@ -8,7 +8,6 @@ import openai
 from guardrails.document_store import DocumentStoreBase, EphemeralDocumentStore
 from guardrails.embedding import EmbeddingBase, OpenAIEmbedding
 from guardrails.guard import Guard
-from guardrails.llm_providers import PromptCallable
 from guardrails.utils.sql_utils import create_sql_driver
 from guardrails.vectordb import Faiss, VectorDBBase
 
@@ -71,7 +70,7 @@ class Text2Sql:
         rail_params: Optional[Dict] = None,
         example_formatter: Optional[Callable] = example_formatter,
         reask_prompt: Optional[str] = REASK_PROMPT,
-        llm_api: Optional[PromptCallable] = openai.Completion.create,
+        llm_api: Optional[Callable] = openai.Completion.create,
         llm_api_kwargs: Optional[Dict] = None,
         num_relevant_examples: int = 2,
     ):

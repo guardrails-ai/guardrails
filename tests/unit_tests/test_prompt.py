@@ -12,6 +12,12 @@ INSTRUCTIONS = "You are a helpful bot, who answers only with valid JSON"
 
 PROMPT = "Extract a string from the text"
 
+REASK_PROMPT = """
+Please try that again, extract a string from the text
+${output_schema}
+${previous_response}
+"""
+
 SIMPLE_RAIL_SPEC = f"""
 <rail version="0.1">
 <output>
@@ -86,9 +92,46 @@ You are a helpful bot, who answers only with valid JSON
 <prompt>
 
 Extract a string from the text
-
 @gr.complete_json_suffix_v2
 </prompt>
+"""
+
+RAIL_WITH_REASK_PROMPT = """
+${gr.complete_json_suffix_v2}
+</prompt>
+<reask_prompt>
+Please try that again, extract a string from the text
+${output_schema}
+${previous_response}
+</reask_prompt>
+</rail>
+"""
+
+RAIL_WITH_REASK_INSTRUCTIONS = """
+<rail version="0.1">
+<output>
+    <string name="test_string" description="A string for testing." />
+</output>
+<instructions>
+
+You are a helpful bot, who answers only with valid JSON
+
+</instructions>
+
+<prompt>
+
+Extract a string from the text
+
+${gr.complete_json_suffix_v2}
+</prompt>
+<reask_prompt>
+Please try that again, extract a string from the text
+${output_schema}
+${previous_response}
+</reask_prompt>
+<reask_instructions>
+You are a helpful bot, who answers only with valid JSON
+</reask_instructions>
 </rail>
 """
 
@@ -144,6 +187,16 @@ def test_format_instructions():
     )
 
     assert guard.prompt.format_instructions.rstrip() == expected_instructions
+
+
+def test_reask_prompt():
+    guard = gd.Guard.from_rail_string(RAIL_WITH_REASK_PROMPT)
+    assert guard.output_schema.reask_prompt_template == REASK_PROMPT
+
+
+def test_reask_instructions():
+    guard = gd.Guard.from_rail_string(RAIL_WITH_REASK_INSTRUCTIONS)
+    assert guard.output_schema.reask_instructions_template.strip() == INSTRUCTIONS
 
 
 @pytest.mark.parametrize(

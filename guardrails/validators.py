@@ -5,6 +5,7 @@ in the `RAIL` spec to specify formatters.
 """
 import ast
 import contextvars
+import inspect
 import itertools
 import logging
 import os
@@ -19,6 +20,7 @@ import pydantic
 from pydantic import Field
 from tenacity import retry, stop_after_attempt, wait_random_exponential
 
+from guardrails.utils.casting_utils import to_int
 from guardrails.utils.docs_utils import get_chunks_from_text, sentence_split
 from guardrails.utils.sql_utils import SQLDriver, create_sql_driver
 from guardrails.utils.validator_utils import PROVENANCE_V1_PROMPT
@@ -289,11 +291,14 @@ class Validator:
             return self.rail_alias
 
         validator_args = []
-        for arg in self.__init__.__code__.co_varnames[1:]:
+        init_args = inspect.getfullargspec(self.__init__)
+        for arg in init_args.args[1:]:
             if arg not in ("on_fail", "args", "kwargs"):
-                str_arg = str(self._kwargs[arg])
-                str_arg = "{" + str_arg + "}" if " " in str_arg else str_arg
-                validator_args.append(str_arg)
+                arg_value = self._kwargs.get(arg)
+                str_arg = str(arg_value)
+                if str_arg is not None:
+                    str_arg = "{" + str_arg + "}" if " " in str_arg else str_arg
+                    validator_args.append(str_arg)
 
         params = " ".join(validator_args)
         return f"{self.rail_alias}: {params}"
@@ -528,8 +533,8 @@ class ValidLength(Validator):
         self, min: int = None, max: int = None, on_fail: Optional[Callable] = None
     ):
         super().__init__(on_fail=on_fail, min=min, max=max)
-        self._min = int(min) if min is not None else None
-        self._max = int(max) if max is not None else None
+        self._min = to_int(min)
+        self._max = to_int(max)
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         """Validates that the length of value is within the expected range."""
@@ -1983,8 +1988,8 @@ class ProvenanceV1(Validator):
             raise ValueError("validation_method must be 'sentence' or 'full'.")
         self._validation_method = validation_method
         self.set_callable(llm_callable)
-        self._top_k = top_k
-        self._max_tokens = max_tokens
+        self._top_k = int(top_k)
+        self._max_tokens = int(max_tokens)
 
     def set_callable(self, llm_callable: Union[str, Callable]) -> None:
         """Set the LLM callable.
@@ -2154,6 +2159,26 @@ class ProvenanceV1(Validator):
         return PassResult(metadata=metadata)
 
     def validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
+        kwargs = {}
+        context_copy = contextvars.copy_context()
+        for key, context_var in context_copy.items():
+            if key.name == "kwargs" and isinstance(kwargs, dict):
+                kwargs = context_var
+                break
+
+        api_key = kwargs.get("api_key")
+        api_base = kwargs.get("api_base")
+
+        # Set the OpenAI API key
+        if os.getenv("OPENAI_API_KEY"):  # Check if set in environment
+            openai.api_key = os.getenv("OPENAI_API_KEY")
+        elif api_key:  # Check if set when calling guard() or parse()
+            openai.api_key = api_key
+
+        # Set the OpenAI API base if specified
+        if api_base:
+            openai.api_base = api_base
+
         query_function = self.get_query_function(metadata)
         if self._validation_method == "sentence":
             return self.validate_each_sentence(value, query_function, metadata)

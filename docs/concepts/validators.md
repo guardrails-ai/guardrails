@@ -3,7 +3,7 @@
 Validators are how we apply quality controls to the schemas specified in our `RAIL` specs.  They specify the criteria to measure whether an output is valid, as well as what actions to take when an output does not meet those criteria.
 
 ## How do Validators work?
-When a validator is applied to a property on a schema, and output is provided for that schema, either by wrapping the LLM call or passing in the LLM output, the validators are executed against the values for the properties they were applied to.  If the value for the property passes the criteria defined, a `PassResult` is returned from the validator.  This `PassResult` tells Guardrails to treat the value as if it is valid.  In most cases this means returning that value for that property at the end; other advanced cases, like using a value override, will be covered in other sections.  If, however, the value for the property does not pass the criteria, a `FailResult` is returned.  This in turn tells Guardrails to take any corrective actions defined for the property and validation.  Corrective actions are defined by the `on-fail-...` attributes in a `RAIL` spec.  You can read more about what corrective actions are available [here](/rail/output/#specifying-corrective-actions).
+When a validator is applied to a property on a schema, and output is provided for that schema, either by wrapping the LLM call or passing in the LLM output, the validators are executed against the values for the properties they were applied to.  If the value for the property passes the criteria defined, a `PassResult` is returned from the validator.  This `PassResult` tells Guardrails to treat the value as if it is valid.  In most cases this means returning that value for that property at the end; other advanced cases, like using a value override, will be covered in other sections.  If, however, the value for the property does not pass the criteria, a `FailResult` is returned.  This in turn tells Guardrails to take any corrective actions defined for the property and validation.  Corrective actions are defined by the `on-fail-...` attributes in a `RAIL` spec.  You can read more about what corrective actions are available [here](/concepts/output/#specifying-corrective-actions).
 
 ## Validator Structure
 ### Arguments
@@ -49,14 +49,14 @@ raw_output, guarded_output = guard(
 ```
 
 #### How do I know what metadata is required?
-First step is to check the docs.  Each validator has an API reference that documents both its initialization arguments and any required metadata that must be supplied at runtime.  Continuing with the example used above, `ExtractedSummarySentencesMatch` accepts an optional threshold argument which defaults to `0.7`; it also requires an entry in the metadata called `filepaths` which is an array of strings specifying which documents to use for the similarity comparison.  You can see an example of a Validator's metadata documentation [here](/validation/#guardrails.validators.ExtractedSummarySentencesMatch).
+First step is to check the docs.  Each validator has an API reference that documents both its initialization arguments and any required metadata that must be supplied at runtime.  Continuing with the example used above, `ExtractedSummarySentencesMatch` accepts an optional threshold argument which defaults to `0.7`; it also requires an entry in the metadata called `filepaths` which is an array of strings specifying which documents to use for the similarity comparison.  You can see an example of a Validator's metadata documentation [here](../api_reference/validators.md/#guardrails.validators.ExtractedSummarySentencesMatch).
 
 Secondly, if a piece of metadata is required and not present, a `RuntimeError` will be raised.  For example, if the metadata requirements are not met for the above validator, an `RuntimeError` will be raised with the following message:
 
 > extracted-sentences-summary-match validator expects `filepaths` key in metadata
 
 ## Custom Validators
-If you need to perform a validation that is not currently supported by the [validators](/validation) included in guardrails, you can create your own custom validators to be used in your local python environment.
+If you need to perform a validation that is not currently supported by the [validators](../api_reference/validators.md) included in guardrails, you can create your own custom validators to be used in your local python environment.
 
 A custom validator can be as simple as a single function if you do not require addtional arguments:
 ```py

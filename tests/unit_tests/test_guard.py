@@ -1,3 +1,4 @@
+import openai
 import pytest
 from pydantic import BaseModel
 
@@ -74,21 +75,31 @@ class RequiringValidator2(Validator):
         ),
     ],
 )
-def test_required_metadata(spec, metadata):
+@pytest.mark.asyncio
+async def test_required_metadata(spec, metadata):
     guard = guardrails.Guard.from_rail_string(spec)
 
-    with pytest.raises(ValueError):
-        guard.parse("{}")
     missing_keys = verify_metadata_requirements(
         {}, guard.output_schema.to_dict().values()
     )
     assert set(missing_keys) == set(metadata)
 
-    guard.parse("{}", metadata=metadata, num_reasks=0)
     not_missing_keys = verify_metadata_requirements(
         metadata, guard.output_schema.to_dict().values()
     )
     assert not_missing_keys == []
+
+    # test sync guard
+    with pytest.raises(ValueError):
+        guard.parse("{}")
+    guard.parse("{}", metadata=metadata, num_reasks=0)
+
+    # test async guard
+    with pytest.raises(ValueError):
+        await guard.parse("{}", llm_api=openai.ChatCompletion.acreate, num_reasks=0)
+    await guard.parse(
+        "{}", metadata=metadata, llm_api=openai.ChatCompletion.acreate, num_reasks=0
+    )
 
 
 rail = Rail.from_string_validators([], "empty railspec")
@@ -141,3 +152,12 @@ s_guard_two = Guard.from_string(
 def test_configure(guard: Guard, expected_num_reasks: int, config_num_reasks: int):
     guard.configure(config_num_reasks)
     assert guard.num_reasks == expected_num_reasks
+
+
+def guard_init_from_rail():
+    guard = Guard.from_rail("tests/unit_tests/test_assets/simple.rail")
+    assert (
+        guard.instructions.format().source.strip()
+        == "You are a helpful bot, who answers only with valid JSON"
+    )
+    assert guard.prompt.format().source.strip() == "Extract a string from the text"
