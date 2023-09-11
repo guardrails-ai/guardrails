@@ -1,3 +1,5 @@
+from typing import Any, Callable
+
 import pytest
 
 from guardrails.llm_providers import (
@@ -5,6 +7,7 @@ from guardrails.llm_providers import (
     AsyncArbitraryCallable,
     LLMResponse,
     PromptCallableException,
+    get_llm_ask,
 )
 
 from .mocks import MockAsyncCustomLlm, MockCustomLlm
@@ -188,3 +191,20 @@ async def test_async_openai_chat_callable(mocker, openai_chat_mock):
     assert response.output == "Mocked LLM output"
     assert response.prompt_token_count == 10
     assert response.response_token_count == 20
+
+
+class ReturnTempCallable(Callable):
+    def __call__(*args, **kwargs) -> Any:
+        return kwargs.get("temperature")
+
+
+@pytest.mark.parametrize(
+    "llm_api, args, kwargs, expected_temperature",
+    [
+        (ReturnTempCallable(), [], {"temperature": 0.5}, 0.5),
+        (ReturnTempCallable(), [], {}, 0),
+    ],
+)
+def test_get_llm_ask_temperature(llm_api, args, kwargs, expected_temperature):
+    result = get_llm_ask(llm_api, *args, **kwargs)
+    assert result().output == str(expected_temperature)

@@ -287,6 +287,8 @@ class ArbitraryCallable(PromptCallableBase):
 
 
 def get_llm_ask(llm_api: Callable, *args, **kwargs) -> PromptCallableBase:
+    if "temperature" not in kwargs:
+        kwargs.update({"temperature": 0})
     if llm_api == openai.Completion.create:
         return OpenAICallable(*args, **kwargs)
     elif llm_api == openai.ChatCompletion.create:
