@@ -194,10 +194,7 @@ async def test_async_openai_chat_callable(mocker, openai_chat_mock):
     assert response.response_token_count == 20
 
 
-class ReturnTempCallable:
-    def __init__(self, *args, **kwargs):
-        print(kwargs.get("temperature"))
-
+class ReturnTempCallable(Callable):
     def __call__(*args, **kwargs) -> Any:
         return kwargs.get("temperature")
 
