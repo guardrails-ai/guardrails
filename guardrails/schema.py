@@ -7,7 +7,7 @@ from copy import deepcopy
 from dataclasses import dataclass
 from string import Formatter
 from types import SimpleNamespace
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
 from lxml import etree as ET
 
@@ -208,6 +208,8 @@ class FormatAttr:
         Returns:
             A list of validators.
         """
+        if self.element is None:
+            return []
         from guardrails.validators import types_to_validators, validators_registry
 
         _validators = []
@@ -277,7 +279,7 @@ class Schema:
 
     def __init__(
         self,
-        root: Optional[ET._Element] = None,
+        root: ET._Element,
         schema: Optional[Dict[str, DataType]] = None,
         reask_prompt_template: Optional[str] = None,
         reask_instructions_template: Optional[str] = None,
@@ -289,17 +291,18 @@ class Schema:
 
         # Setup root
         self.root = root
-        if root is not None:
-            self.setup_schema(root)
+        self.setup_schema(root)
 
         # Setup reask templates
         self.check_valid_reask_prompt(reask_prompt_template)
-        self._reask_prompt_template = reask_prompt_template
         if reask_prompt_template is not None:
-            reask_prompt_template = Prompt(reask_prompt_template)
-        self.reask_instructions_template = reask_instructions_template
+            self._reask_prompt_template = Prompt(reask_prompt_template)
+        else:
+            self._reask_prompt_template = None
         if reask_instructions_template is not None:
-            reask_instructions_template = Prompt(reask_instructions_template)
+            self._reask_instructions_template = Instructions(reask_instructions_template)
+        else:
+            self._reask_instructions_template = None
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({pprint.pformat(vars(self._schema))})"
@@ -324,7 +327,7 @@ class Schema:
         self.root = state["root"]
 
     def items(self) -> Dict[str, DataType]:
-        return vars(self._schema).items()
+        return dict(vars(self._schema).items())
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert the schema to a dictionary."""
@@ -527,7 +530,7 @@ class JsonSchema(Schema):
             **(prompt_params or {}),
         )
 
-        instructions = self.reask_instructions_template
+        instructions = self._reask_instructions_template
         if instructions is None:
             instructions = Instructions(constants["high_level_json_instructions"])
         instructions = instructions.format(**(prompt_params or {}))
@@ -546,9 +549,11 @@ class JsonSchema(Schema):
                 continue
             child_name = child.attrib["name"]
             child_data = types_registry[child.tag].from_xml(child, strict=strict)
+            if isinstance(child_name, bytes):
+                child_name = child_name.decode("utf-8")
             self[child_name] = child_data
 
-    def parse(self, output: str) -> Tuple[Dict, Optional[Exception]]:
+    def parse(self, output: str) -> Tuple[Union[Dict, NonParseableReAsk], Optional[Exception]]:
         # Try to get json code block from output.
         # Return error and reask if it is not parseable.
         parsed_output, error = extract_json_from_ouput(output)
@@ -785,24 +790,35 @@ class StringSchema(Schema):
         super().__init__(root)
 
         # Setup reask templates
-        self._reask_prompt_template = reask_prompt_template
-        if self._reask_prompt_template is not None:
+        if reask_prompt_template is not None:
             self._reask_prompt_template = Prompt(reask_prompt_template)
-        self.reask_instructions_template = reask_instructions_template
-        if self.reask_instructions_template is not None:
-            self.reask_instructions_template = Prompt(self.reask_instructions_template)
+        else:
+            self._reask_prompt_template = None
+        if reask_instructions_template is not None:
+            self._reask_instructions_template = Instructions(reask_instructions_template)
+        else:
+            self._reask_instructions_template = None
 
     def setup_schema(self, root: ET._Element) -> None:
         if len(root) != 0:
             raise ValueError("String output schemas must not have children.")
+        
+        attrib = {}
+        for key, value in root.attrib.items():
+            if isinstance(value, bytes):
+                value = value.decode("utf-8")
+            if isinstance(key, bytes):
+                key = key.decode("utf-8")
+            attrib[key] = value
 
-        if "name" in root.attrib:
-            self.string_key = root.attrib["name"]
+        if "name" in attrib:
+            self.string_key = attrib["name"]
         else:
-            self.string_key = root.attrib["name"] = "string"
+            self.string_key = attrib["name"] = "string"
 
         # make root tag into a string tag
-        root_string = ET.Element("string", root.attrib)
+
+        root_string = ET.Element("string", attrib)
         self[self.string_key] = String.from_xml(root_string)
 
     def get_reask_setup(
@@ -836,7 +852,7 @@ class StringSchema(Schema):
             **(prompt_params or {}),
         )
 
-        instructions = self.reask_instructions_template
+        instructions = self._reask_instructions_template
         if instructions is None:
             instructions = Instructions("You are a helpful assistant.")
         instructions = instructions.format(**(prompt_params or {}))
@@ -1008,6 +1024,8 @@ class Schema2Prompt:
     def remove_on_fail_attributes(element: ET._Element) -> None:
         """Recursively remove all attributes that start with 'on-fail-'."""
         for attr in list(element.attrib):
+            if isinstance(attr, bytes):
+                attr = attr.decode("utf-8")
             if attr.startswith("on-fail-"):
                 del element.attrib[attr]
 
@@ -1024,7 +1042,7 @@ class Schema2Prompt:
                 Schema2Prompt.remove_comments(child)
 
     @staticmethod
-    def validator_to_prompt(root: ET.Element, schema_dict: Dict[str, DataType]) -> None:
+    def validator_to_prompt(root: ET._Element, schema_dict: Dict[str, DataType]) -> None:
         """Recursively remove all validator arguments in the `format`
         attribute."""
 

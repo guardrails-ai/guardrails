@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 
 import pydantic
 from lxml import etree as ET
@@ -13,7 +13,7 @@ class ReAsk(pydantic.BaseModel):
 
 
 class FieldReAsk(ReAsk):
-    path: List[Any] = None
+    path: Optional[List[Any]] = None
 
 
 class SkeletonReAsk(ReAsk):
@@ -38,7 +38,9 @@ def gather_reasks(validated_output: Dict) -> List[FieldReAsk]:
 
     reasks = []
 
-    def _gather_reasks_in_dict(output: Dict, path: List[str] = []) -> None:
+    def _gather_reasks_in_dict(output: Dict, path: Optional[List[Union[str, int]]] = None) -> None:
+        if path is None:
+            path = []
         is_pydantic = isinstance(output, PydanticReAsk)
         for field, value in output.items():
             if isinstance(value, FieldReAsk):
@@ -55,7 +57,9 @@ def gather_reasks(validated_output: Dict) -> List[FieldReAsk]:
                 _gather_reasks_in_list(value, path + [field])
         return
 
-    def _gather_reasks_in_list(output: List, path: List[str] = []) -> None:
+    def _gather_reasks_in_list(output: List, path: Optional[List[Union[str, int]]] = None) -> None:
+        if path is None:
+            path = []
         for idx, item in enumerate(output):
             if isinstance(item, FieldReAsk):
                 item.path = path + [idx]
