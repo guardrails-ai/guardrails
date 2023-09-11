@@ -1,6 +1,5 @@
 from typing import Any, Callable
 
-import openai
 import pytest
 
 from guardrails.llm_providers import (
