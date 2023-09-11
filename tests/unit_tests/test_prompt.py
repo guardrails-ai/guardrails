@@ -94,9 +94,21 @@ You are a helpful bot, who answers only with valid JSON
 Extract a string from the text
 @gr.complete_json_suffix_v2
 </prompt>
+</rail>
 """
 
 RAIL_WITH_REASK_PROMPT = """
+<rail version="0.1">
+<output>
+    <string name="test_string" description="A string for testing." />
+</output>
+<instructions>
+
+You are a helpful bot, who answers only with valid JSON
+
+</instructions>
+
+<prompt>
 ${gr.complete_json_suffix_v2}
 </prompt>
 <reask_prompt>
