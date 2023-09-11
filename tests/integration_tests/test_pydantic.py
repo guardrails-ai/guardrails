@@ -2,15 +2,13 @@ import openai
 
 import guardrails as gd
 
-from .mock_llm_outputs import openai_completion_create, pydantic
+from .mock_llm_outputs import MockOpenAICallable, pydantic
 from .test_assets.pydantic import VALIDATED_RESPONSE_REASK_PROMPT, ListOfPeople
 
 
 def test_pydantic_with_reask(mocker):
     """Test that the entity extraction works with re-asking."""
-    mocker.patch(
-        "guardrails.llm_providers.openai_wrapper", new=openai_completion_create
-    )
+    mocker.patch("guardrails.llm_providers.OpenAICallable", new=MockOpenAICallable)
 
     guard = gd.Guard.from_pydantic(ListOfPeople, prompt=VALIDATED_RESPONSE_REASK_PROMPT)
     _, final_output = guard(
