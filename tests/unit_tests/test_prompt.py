@@ -1,6 +1,7 @@
 """Unit tests for prompt and instructions parsing."""
 
 from string import Template
+from unittest import mock
 
 import pytest
 
@@ -161,8 +162,9 @@ def test_substitute_constants(prompt_str, final_prompt):
     assert prompt.source == final_prompt
 
 
+# TODO: Deprecate when we can confirm migration off the old, non-namespaced standard
 @pytest.mark.parametrize(
-    "text, expected_result",
+    "text, is_old_schema",
     [
         (RAIL_WITH_OLD_CONSTANT_SCHEMA, True),  # Test with a single match
         (
@@ -171,6 +173,15 @@ def test_substitute_constants(prompt_str, final_prompt):
         ),  # Test with no matches/correct namespacing
     ],
 )
-def test_uses_old_constant_schema(text, expected_result):
-    guard = gd.Guard.from_rail_string(text)
-    assert guard.prompt.uses_old_constant_schema(text) == expected_result
+def test_uses_old_constant_schema(text, is_old_schema):
+    with mock.patch("warnings.warn") as warn_mock:
+        guard = gd.Guard.from_rail_string(text)
+        assert guard.prompt.uses_old_constant_schema(text) == is_old_schema
+        if is_old_schema:
+            # we only check for the warning when we have an older schema
+            warn_mock.assert_called_once_with(
+                """It appears that you are using an old schema for gaurdrails\
+ variables, follow the new namespaced convention documented here:\
+ https://docs.getguardrails.ai/0-2-migration/\
+"""
+            )

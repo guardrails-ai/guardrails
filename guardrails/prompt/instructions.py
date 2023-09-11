@@ -1,6 +1,6 @@
 """Instructions to the LLM, to be passed in the prompt."""
-import warnings
 from string import Formatter, Template
+from warnings import warn
 
 from .base_prompt import BasePrompt
 
@@ -29,7 +29,7 @@ class Instructions(BasePrompt):
         vars = [x[1] for x in Formatter().parse(self.source) if x[1] is not None]
         filtered_kwargs = {k: v for k, v in kwargs.items() if k in vars}
         if len(filtered_kwargs) == 0:
-            warnings.warn(
+            warn(
                 "Instructions do not have any variables, "
                 "if you are migrating follow the new variable convention "
                 "documented here: https://docs.getguardrails.ai/0-2-migration/"
