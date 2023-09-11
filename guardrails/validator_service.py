@@ -35,9 +35,7 @@ class ValidatorServiceBase:
             return results[0].fix_value
         elif on_fail_descriptor == "fix_reask":
             fixed_value = results[0].fix_value
-            result = validator.validate(fixed_value, results[0].metadata)
-            if result.metadata is None:
-                result.metadata = result.metadata
+            result = validator.validate(fixed_value, results[0].metadata or {})
 
             if isinstance(result, FailResult):
                 return FieldReAsk(
@@ -120,8 +118,8 @@ class SequentialValidatorService(ValidatorServiceBase):
                 raise RuntimeError(f"Unexpected result type {type(result)}")
 
             validator_logs.value_after_validation = value
-            if validator_logs.validation_result is not None:
-                metadata = validator_logs.validation_result.metadata
+            if result.metadata is not None:
+                metadata = result.metadata
 
             if isinstance(value, (Refrain, Filter, ReAsk, PydanticReAsk)):
                 return value, metadata

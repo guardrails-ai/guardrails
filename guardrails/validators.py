@@ -206,7 +206,7 @@ def register_validator(name: str, data_type: Union[str, List[str]]):
 
 class ValidationResult(pydantic.BaseModel):
     outcome: str
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    metadata: Optional[Dict[str, Any]] = None
 
 
 class PassResult(ValidationResult):
