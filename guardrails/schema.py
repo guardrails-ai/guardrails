@@ -1040,24 +1040,10 @@ class Schema2Prompt:
                 _inner(dt_child, el_child)
 
         for el_child in root:
-            dt_child = schema_dict[el_child.attrib["name"]]
-            _inner(dt_child, el_child)
-
-    @staticmethod
-    def pydantic_to_object(root: ET.Element, schema_dict: Dict[str, DataType]) -> None:
-        """Recursively replace all pydantic elements with object elements."""
-        from guardrails.datatypes import Pydantic
-
-        def _inner(dt: DataType, el: ET._Element):
-            if isinstance(dt, Pydantic):
-                new_el = dt.to_object_element()
-                el.getparent().replace(el, new_el)
-
-            for _, dt_child, el_child in dt.iter(el):
-                _inner(dt_child, el_child)
-
-        for el_child in root:
-            dt_child = schema_dict[el_child.attrib["name"]]
+            name = el_child.attrib["name"]
+            if isinstance(name, bytes):
+                name = name.decode("utf-8")
+            dt_child = schema_dict[name]
             _inner(dt_child, el_child)
 
     @classmethod
@@ -1084,8 +1070,6 @@ class Schema2Prompt:
         cls.remove_on_fail_attributes(root)
         # Remove validators with arguments.
         cls.validator_to_prompt(root, schema_dict)
-        # Replace pydantic elements with object elements.
-        cls.pydantic_to_object(root, schema_dict)
 
         # Return the XML as a string that is
         ET.indent(root, space="    ")
