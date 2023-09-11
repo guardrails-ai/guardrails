@@ -44,3 +44,8 @@ pydocs:
 
 jupyter-html:
 	jupyter nbconvert --to html docs/**/*.ipynb
+
+docs-gen:
+	sphinx-apidoc -o docs/pydocs/config guardrails;
+	sphinx-build -b html docs/pydocs/config docs/pydocs;
+	jupyter nbconvert --to html docs/**/*.ipynb
