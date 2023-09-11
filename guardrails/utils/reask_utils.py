@@ -38,7 +38,9 @@ def gather_reasks(validated_output: Dict) -> List[FieldReAsk]:
 
     reasks = []
 
-    def _gather_reasks_in_dict(output: Dict, path: Optional[List[Union[str, int]]] = None) -> None:
+    def _gather_reasks_in_dict(
+        output: Dict, path: Optional[List[Union[str, int]]] = None
+    ) -> None:
         if path is None:
             path = []
         is_pydantic = isinstance(output, PydanticReAsk)
@@ -57,7 +59,9 @@ def gather_reasks(validated_output: Dict) -> List[FieldReAsk]:
                 _gather_reasks_in_list(value, path + [field])
         return
 
-    def _gather_reasks_in_list(output: List, path: Optional[List[Union[str, int]]] = None) -> None:
+    def _gather_reasks_in_list(
+        output: List, path: Optional[List[Union[str, int]]] = None
+    ) -> None:
         if path is None:
             path = []
         for idx, item in enumerate(output):

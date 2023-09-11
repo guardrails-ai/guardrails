@@ -2,12 +2,11 @@ import datetime
 import logging
 from dataclasses import dataclass
 from types import SimpleNamespace
-from typing import TYPE_CHECKING, Any, Dict, Generator, Iterable, Optional, Self, TypeVar, reveal_type
+from typing import TYPE_CHECKING, Any, Dict, Generator, Iterable
 from typing import List as TypedList
-from typing import Tuple, Type, Union
+from typing import Optional, Self, Tuple, Type, TypeVar, Union
 
 from lxml import etree as ET
-from pydantic import BaseModel
 
 from guardrails.utils.casting_utils import to_float, to_int, to_string
 from guardrails.validators import Validator
@@ -62,7 +61,9 @@ class DataType:
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self._children})"
 
-    def __iter__(self) -> Generator[Tuple[Optional[str], "DataType", ET._Element], None, None]:
+    def __iter__(
+        self,
+    ) -> Generator[Tuple[Optional[str], "DataType", ET._Element], None, None]:
         """Return a tuple of (name, child_data_type, child_element) for each
         child."""
         for el_child in self.element:

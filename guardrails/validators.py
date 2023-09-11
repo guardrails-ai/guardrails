@@ -12,7 +12,7 @@ import re
 import warnings
 from collections import defaultdict
 from functools import partial
-from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Union, Type
+from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Type, Union
 
 import openai
 import pydantic
@@ -195,7 +195,8 @@ def register_validator(name: str, data_type: Union[str, List[str]]):
             )
         else:
             raise ValueError(
-                "Only functions and Validator subclasses can be registered as validators."
+                "Only functions and Validator subclasses "
+                "can be registered as validators."
             )
         validators_registry[name] = cls
         return cls
@@ -398,7 +399,7 @@ class ValidRange(Validator):
         self,
         min: Optional[int] = None,
         max: Optional[int] = None,
-        on_fail: Optional[Callable] = None
+        on_fail: Optional[Callable] = None,
     ):
         super().__init__(on_fail=on_fail, min=min, max=max)
 
@@ -529,7 +530,7 @@ class ValidLength(Validator):
         self,
         min: Optional[int] = None,
         max: Optional[int] = None,
-        on_fail: Optional[Callable] = None
+        on_fail: Optional[Callable] = None,
     ):
         super().__init__(on_fail=on_fail, min=min, max=max)
         self._min = int(min) if min is not None else None
@@ -886,9 +887,8 @@ class SimilarToDocument(Validator):
             )
 
         self._document = document
-        embedding = openai.Embedding.create(input=[document], model=model)["data"][0][  # type: ignore
-            "embedding"
-        ]
+        embedding_response = openai.Embedding.create(input=[document], model=model)
+        embedding = embedding_response["data"][0]["embedding"]  # type: ignore
         self._document_embedding = np.array(embedding)
         self._model = model
         self._threshold = float(threshold)
@@ -909,10 +909,10 @@ class SimilarToDocument(Validator):
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         logger.debug(f"Validating {value} is similar to document...")
 
+        embedding_response = openai.Embedding.create(input=[value], model=self._model)
+
         value_embedding = np.array(
-            openai.Embedding.create(input=[value], model=self._model)["data"][0][  # type: ignore
-                "embedding"
-            ]
+            embedding_response["data"][0]["embedding"]  # type: ignore
         )
 
         similarity = self.cosine_similarity(

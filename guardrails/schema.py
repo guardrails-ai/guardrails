@@ -300,7 +300,9 @@ class Schema:
         else:
             self._reask_prompt_template = None
         if reask_instructions_template is not None:
-            self._reask_instructions_template = Instructions(reask_instructions_template)
+            self._reask_instructions_template = Instructions(
+                reask_instructions_template
+            )
         else:
             self._reask_instructions_template = None
 
@@ -553,7 +555,9 @@ class JsonSchema(Schema):
                 child_name = child_name.decode("utf-8")
             self[child_name] = child_data
 
-    def parse(self, output: str) -> Tuple[Union[Dict, NonParseableReAsk], Optional[Exception]]:
+    def parse(
+        self, output: str
+    ) -> Tuple[Union[Dict, NonParseableReAsk], Optional[Exception]]:
         # Try to get json code block from output.
         # Return error and reask if it is not parseable.
         parsed_output, error = extract_json_from_ouput(output)
@@ -795,14 +799,16 @@ class StringSchema(Schema):
         else:
             self._reask_prompt_template = None
         if reask_instructions_template is not None:
-            self._reask_instructions_template = Instructions(reask_instructions_template)
+            self._reask_instructions_template = Instructions(
+                reask_instructions_template
+            )
         else:
             self._reask_instructions_template = None
 
     def setup_schema(self, root: ET._Element) -> None:
         if len(root) != 0:
             raise ValueError("String output schemas must not have children.")
-        
+
         attrib = {}
         for key, value in root.attrib.items():
             if isinstance(value, bytes):
@@ -1042,7 +1048,9 @@ class Schema2Prompt:
                 Schema2Prompt.remove_comments(child)
 
     @staticmethod
-    def validator_to_prompt(root: ET._Element, schema_dict: Dict[str, DataType]) -> None:
+    def validator_to_prompt(
+        root: ET._Element, schema_dict: Dict[str, DataType]
+    ) -> None:
         """Recursively remove all validator arguments in the `format`
         attribute."""
 
