@@ -7,7 +7,8 @@ from guardrails.utils.logs_utils import FieldValidationLogs, ValidatorLogs
 from guardrails.validator_service import AsyncValidatorService
 from guardrails.validators import PassResult
 
-from .mocks import MockLoop, MockValidator
+from .mocks import MockLoop
+from .mocks.mock_validator import create_mock_validator
 
 empty_field_validation = FieldValidation(
     key="mock-key", value="mock-value", validators=[], children=[]
@@ -168,9 +169,12 @@ async def test_validate_dependents(mocker):
 @pytest.mark.asyncio
 async def test_run_validators(mocker):
     group_validators_mock = mocker.patch.object(avs, "group_validators")
-    fix_validator = MockValidator("fix_validator", "fix")
-    noop_validator_1 = MockValidator("noop_validator_1")
-    noop_validator_2 = MockValidator("noop_validator_2")
+    fix_validator_type = create_mock_validator("fix_validator", "fix")
+    fix_validator = fix_validator_type()
+    noop_validator_type = create_mock_validator("noop_validator")
+    noop_validator_1 = noop_validator_type()
+    noop_validator_type = create_mock_validator("noop_validator")
+    noop_validator_2 = noop_validator_type()
     noop_validator_2.run_in_separate_process = True
     group_validators_mock.return_value = [
         ("fix", [fix_validator]),
@@ -232,7 +236,8 @@ async def test_run_validators(mocker):
 @pytest.mark.asyncio
 async def test_run_validators_with_override(mocker):
     group_validators_mock = mocker.patch.object(avs, "group_validators")
-    override_validator = MockValidator("override")
+    override_validator_type = create_mock_validator("override")
+    override_validator = override_validator_type()
     override_validator.override_value_on_pass = True
 
     group_validators_mock.return_value = [("exception", [override_validator])]
