@@ -5,6 +5,7 @@ in the `RAIL` spec to specify formatters.
 """
 import ast
 import contextvars
+import inspect
 import itertools
 import logging
 import os
@@ -1465,6 +1466,11 @@ class SaliencyCheck(Validator):
 
         super().__init__(on_fail, **kwargs)
 
+        if llm_callable is not None and inspect.iscoroutinefunction(llm_callable):
+            raise ValueError(
+                "SaliencyCheck validator does not support async LLM callables."
+            )
+
         self.llm_callable = (
             llm_callable if llm_callable else openai.ChatCompletion.create
         )
@@ -1571,6 +1577,12 @@ class QARelevanceLLMEval(Validator):
         **kwargs,
     ):
         super().__init__(on_fail, **kwargs)
+
+        if llm_callable is not None and inspect.iscoroutinefunction(llm_callable):
+            raise ValueError(
+                "QARelevanceLLMEval validator does not support async LLM callables."
+            )
+
         self.llm_callable = (
             llm_callable if llm_callable else openai.ChatCompletion.create
         )
