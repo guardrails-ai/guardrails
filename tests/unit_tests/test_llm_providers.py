@@ -107,16 +107,13 @@ def openai_chat_mock():
     return {
         "choices": [
             {
-                "message": {
-                    "content": "Mocked LLM output"
-                },
+                "message": {"content": "Mocked LLM output"},
             }
         ],
-        "usage":
-            {
-                "prompt_tokens": 10,
-                "completion_tokens": 20,
-            }
+        "usage": {
+            "prompt_tokens": 10,
+            "completion_tokens": 20,
+        },
     }
 
 
@@ -128,21 +125,18 @@ def openai_mock():
                 "text": "Mocked LLM output",
             }
         ],
-        "usage":
-            {
-                "prompt_tokens": 10,
-                "completion_tokens": 20,
-            }
+        "usage": {
+            "prompt_tokens": 10,
+            "completion_tokens": 20,
+        },
     }
 
 
 def test_openai_callable(mocker, openai_mock):
-    mocker.patch(
-        "openai.Completion.create",
-        return_value=openai_mock
-    )
+    mocker.patch("openai.Completion.create", return_value=openai_mock)
 
     from guardrails.llm_providers import OpenAICallable
+
     openai_callable = OpenAICallable()
     response = openai_callable(text="Hello")
 
@@ -154,12 +148,10 @@ def test_openai_callable(mocker, openai_mock):
 
 @pytest.mark.asyncio
 async def test_async_openai_callable(mocker, openai_mock):
-    mocker.patch(
-        "openai.Completion.acreate",
-        return_value=openai_mock
-    )
+    mocker.patch("openai.Completion.acreate", return_value=openai_mock)
 
     from guardrails.llm_providers import AsyncOpenAICallable
+
     openai_callable = AsyncOpenAICallable()
     response = await openai_callable(text="Hello")
 
@@ -170,12 +162,10 @@ async def test_async_openai_callable(mocker, openai_mock):
 
 
 def test_openai_chat_callable(mocker, openai_chat_mock):
-    mocker.patch(
-        "openai.ChatCompletion.create",
-        return_value=openai_chat_mock
-    )
+    mocker.patch("openai.ChatCompletion.create", return_value=openai_chat_mock)
 
     from guardrails.llm_providers import OpenAIChatCallable
+
     openai_chat_callable = OpenAIChatCallable()
     response = openai_chat_callable(text="Hello")
 
@@ -187,12 +177,10 @@ def test_openai_chat_callable(mocker, openai_chat_mock):
 
 @pytest.mark.asyncio
 async def test_async_openai_chat_callable(mocker, openai_chat_mock):
-    mocker.patch(
-        "openai.ChatCompletion.acreate",
-        return_value=openai_chat_mock
-    )
+    mocker.patch("openai.ChatCompletion.acreate", return_value=openai_chat_mock)
 
     from guardrails.llm_providers import AsyncOpenAIChatCallable
+
     openai_chat_callable = AsyncOpenAIChatCallable()
     response = await openai_chat_callable(text="Hello")
 
