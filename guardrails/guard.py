@@ -64,7 +64,7 @@ class Guard:
         self.base_model = base_model
 
     @property
-    def input_schema(self) -> Schema:
+    def input_schema(self) -> Optional[Schema]:
         """Return the input schema."""
         return self.rail.input_schema
 
@@ -74,17 +74,17 @@ class Guard:
         return self.rail.output_schema
 
     @property
-    def instructions(self) -> Instructions:
+    def instructions(self) -> Optional[Instructions]:
         """Return the instruction-prompt."""
         return self.rail.instructions
 
     @property
-    def prompt(self) -> Prompt:
+    def prompt(self) -> Optional[Prompt]:
         """Return the prompt."""
         return self.rail.prompt
 
     @property
-    def raw_prompt(self) -> Prompt:
+    def raw_prompt(self) -> Optional[Prompt]:
         """Return the prompt, alias for `prompt`."""
         return self.prompt
 
