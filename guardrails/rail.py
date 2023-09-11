@@ -79,7 +79,7 @@ class Rail:
         raw_input_schema = xml.find("input")
         if raw_input_schema is None:
             # No input schema, so do no input checking.
-            input_schema = Schema()
+            input_schema = None
         else:
             input_schema = cls.load_input_schema(raw_input_schema)
 
