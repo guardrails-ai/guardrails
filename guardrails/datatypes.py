@@ -4,9 +4,10 @@ from dataclasses import dataclass
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, Dict, Generator, Iterable
 from typing import List as TypedList
-from typing import Optional, Self, Tuple, Type, TypeVar, Union
+from typing import Optional, Tuple, Type, TypeVar, Union
 
 from lxml import etree as ET
+from typing_extensions import Self
 
 from guardrails.utils.casting_utils import to_float, to_int, to_string
 from guardrails.validators import Validator
