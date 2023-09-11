@@ -6,7 +6,7 @@ from guardrails.llm_providers import (
     AsyncArbitraryCallable,
     LLMResponse,
     PromptCallableException,
-    get_llm_ask
+    get_llm_ask,
 )
 
 from .mocks import MockAsyncCustomLlm, MockCustomLlm
@@ -190,7 +190,8 @@ async def test_async_openai_chat_callable(mocker, openai_chat_mock):
     assert response.output == "Mocked LLM output"
     assert response.prompt_token_count == 10
     assert response.response_token_count == 20
-    
+
+
 @pytest.mark.parametrize(
     "llm_api, args, kwargs, expected_temperature",
     [
@@ -198,7 +199,6 @@ async def test_async_openai_chat_callable(mocker, openai_chat_mock):
         (openai.Completion.create, [], {}, 0),
     ],
 )
-
 def test_get_llm_ask_temperature(llm_api, args, kwargs, expected_temperature):
     result = get_llm_ask(llm_api, *args, **kwargs)
     assert result.fn.keywords.get("temperature") == expected_temperature
