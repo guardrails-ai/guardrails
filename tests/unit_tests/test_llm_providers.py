@@ -1,3 +1,5 @@
+from typing import Any, Callable
+
 import openai
 import pytest
 
@@ -192,13 +194,21 @@ async def test_async_openai_chat_callable(mocker, openai_chat_mock):
     assert response.response_token_count == 20
 
 
+class ReturnTempCallable:
+    def __init__(self, *args, **kwargs):
+        print(kwargs.get("temperature"))
+
+    def __call__(*args, **kwargs) -> Any:
+        return kwargs.get("temperature")
+
+
 @pytest.mark.parametrize(
     "llm_api, args, kwargs, expected_temperature",
     [
-        (openai.Completion.create, [], {"temperature": 0.5}, 0.5),
-        (openai.Completion.create, [], {}, 0),
+        (ReturnTempCallable(), [], {"temperature": 0.5}, 0.5),
+        (ReturnTempCallable(), [], {}, 0),
     ],
 )
 def test_get_llm_ask_temperature(llm_api, args, kwargs, expected_temperature):
     result = get_llm_ask(llm_api, *args, **kwargs)
-    assert result.fn.keywords.get("temperature") == expected_temperature
+    assert result().output == str(expected_temperature)
