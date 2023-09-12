@@ -12,7 +12,6 @@ from guardrails.validators import (
     FailResult,
     Filter,
     PassResult,
-    PydanticReAsk,
     Refrain,
     Validator,
     ValidatorError,
@@ -121,7 +120,7 @@ class SequentialValidatorService(ValidatorServiceBase):
             if result.metadata is not None:
                 metadata = result.metadata
 
-            if isinstance(value, (Refrain, Filter, ReAsk, PydanticReAsk)):
+            if isinstance(value, (Refrain, Filter, ReAsk)):
                 return value, metadata
         return value, metadata
 
@@ -239,7 +238,7 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
                 logs.value_after_validation = value
 
             # return early if we have a filter, refrain, or reask
-            if isinstance(value, (Filter, Refrain, FieldReAsk, PydanticReAsk)):
+            if isinstance(value, (Filter, Refrain, FieldReAsk)):
                 return value, metadata
 
         return value, metadata

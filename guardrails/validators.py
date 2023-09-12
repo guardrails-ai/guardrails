@@ -118,8 +118,6 @@ def filter_in_list(schema: List) -> List:
     for item in schema:
         if isinstance(item, Filter):
             pass
-        elif isinstance(item, PydanticReAsk):
-            filtered_list.append(item)
         elif isinstance(item, list):
             filtered_item = filter_in_list(item)
             if len(filtered_item):
@@ -148,8 +146,6 @@ def filter_in_dict(schema: Dict) -> Dict:
     for key, value in schema.items():
         if isinstance(value, Filter):
             pass
-        elif isinstance(value, PydanticReAsk):
-            filtered_dict[key] = value
         elif isinstance(value, list):
             filtered_item = filter_in_list(value)
             if len(filtered_item):
@@ -328,10 +324,6 @@ class Validator:
 #         """Validates that a value is not None."""
 
 #         return value is not None
-
-
-class PydanticReAsk(dict):
-    pass
 
 
 @register_validator(name="pydantic_field_validator", data_type="all")

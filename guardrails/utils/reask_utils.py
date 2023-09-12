@@ -34,7 +34,6 @@ def gather_reasks(validated_output: Dict) -> List[FieldReAsk]:
     Returns:
         A list of ReAsk objects found in the output.
     """
-    from guardrails.validators import PydanticReAsk
 
     reasks = []
 
@@ -43,13 +42,9 @@ def gather_reasks(validated_output: Dict) -> List[FieldReAsk]:
     ) -> None:
         if path is None:
             path = []
-        is_pydantic = isinstance(output, PydanticReAsk)
         for field, value in output.items():
             if isinstance(value, FieldReAsk):
-                if is_pydantic:
-                    value.path = path
-                else:
-                    value.path = path + [field]
+                value.path = path + [field]
                 reasks.append(value)
 
             if isinstance(value, dict):
@@ -167,9 +162,8 @@ def prune_obj_for_reasking(obj: Any) -> Union[None, Dict, List]:
     Returns:
         The pruned validated object.
     """
-    from guardrails.validators import PydanticReAsk
 
-    if isinstance(obj, ReAsk) or isinstance(obj, PydanticReAsk):
+    if isinstance(obj, ReAsk):
         return obj
     elif isinstance(obj, list):
         pruned_list = []
@@ -183,7 +177,7 @@ def prune_obj_for_reasking(obj: Any) -> Union[None, Dict, List]:
     elif isinstance(obj, dict):
         pruned_json = {}
         for key, value in obj.items():
-            if isinstance(value, FieldReAsk) or isinstance(value, PydanticReAsk):
+            if isinstance(value, FieldReAsk):
                 pruned_json[key] = value
             elif isinstance(value, dict):
                 pruned_output = prune_obj_for_reasking(value)

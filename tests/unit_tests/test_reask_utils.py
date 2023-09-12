@@ -3,32 +3,15 @@ from lxml.etree import Element, SubElement, tostring
 
 from guardrails.utils.reask_utils import (
     FieldReAsk,
-    gather_reasks,
     get_pruned_tree,
     prune_obj_for_reasking,
 )
-from guardrails.validators import FailResult, PydanticReAsk
+from guardrails.validators import FailResult
 
 # FIXME: These tests are not exhaustive.
 # They only add missing coverage from the 0.2 release
 # We really should strive for close to 100% unit test coverage
 #   and use Integration tests for mimicking user flows
-
-
-def test_gather_reasks():
-    reask = PydanticReAsk()
-    reask["failed_prop"] = FieldReAsk(
-        path=["$.failed_prop.child"],
-        fail_results=[
-            FailResult(error_message="child should not be None", outcome="fail")
-        ],
-        incorrect_value=None,
-    )
-
-    gathered_reasks = gather_reasks(reask)
-
-    assert len(gathered_reasks) == 1
-    assert gathered_reasks[0] == reask["failed_prop"]
 
 
 empty_root = Element("root")
