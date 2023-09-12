@@ -207,7 +207,7 @@ Guardrails supports two types of data types: scalar and non-scalar.
 | Scalar                                                                  | Non Scalar                                                                           |
 |-------------------------------------------------------------------------|--------------------------------------------------------------------------------------|
 | Scalar types are void elements, and can't have any child elements.      | Non-scalar types can be non-void, and can have closing tags and child elements.                       |
-| Syntax:   ``` <string ... /> ```                                        | Syntax: <list ...>     <string /> </list>|
+| Syntax:   ``` <string ... /> ```                                        | Syntax: ```<list ...>     <string /> </list>```|
 | Examples: `string`, `integer`, `float`, `bool`, `url`, `email`, etc. | Examples: `list` and `object` are the only non-scalar types supported by Guardrails. |
 
 
