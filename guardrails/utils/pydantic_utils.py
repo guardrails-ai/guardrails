@@ -16,11 +16,10 @@ from typing import (
     get_origin,
 )
 
+import lxml.etree as ET
 from griffe.dataclasses import Docstring
 from griffe.docstrings.parsers import Parser, parse
 from lxml.builder import E
-from lxml.etree import Element
-import lxml.etree as ET
 from pydantic import BaseModel, HttpUrl, validator
 from pydantic.fields import ModelField
 
@@ -171,7 +170,9 @@ def type_annotation_to_string(type_annotation: Any) -> str:
         raise ValueError(f"Unsupported type: {type_annotation}")
 
 
-def add_validators_to_xml_element(field_info: ModelField, element: ET._Element) -> ET._Element:
+def add_validators_to_xml_element(
+    field_info: ModelField, element: ET._Element
+) -> ET._Element:
     """Extract validators from a pydantic ModelField and add to XML element.
 
     Args:
