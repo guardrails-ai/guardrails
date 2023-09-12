@@ -311,11 +311,7 @@ def get_llm_ask(llm_api: Callable, *args, **kwargs) -> PromptCallableBase:
 ###
 
 
-class AsyncPromptCallableBase:
-    def __init__(self, *args, **kwargs):
-        self.init_args = args
-        self.init_kwargs = kwargs
-
+class AsyncPromptCallableBase(PromptCallableBase):
     async def invoke_llm(
         self,
         *args,
@@ -508,7 +504,9 @@ class AsyncArbitraryCallable(AsyncPromptCallableBase):
         )
 
 
-def get_async_llm_ask(llm_api: Callable[[Any], Awaitable[Any]], *args, **kwargs):
+def get_async_llm_ask(
+    llm_api: Callable[[Any], Awaitable[Any]], *args, **kwargs
+) -> AsyncPromptCallableBase:
     if llm_api == openai.Completion.acreate:
         return AsyncOpenAICallable(*args, **kwargs)
     elif llm_api == openai.ChatCompletion.acreate:

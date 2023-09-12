@@ -1,7 +1,6 @@
 import copy
 import logging
-from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union
 
 from eliot import add_destinations, start_action
 from pydantic import BaseModel
@@ -24,7 +23,6 @@ actions_logger = logging.getLogger(f"{__name__}.actions")
 add_destinations(actions_logger.debug)
 
 
-@dataclass
 class Runner:
     """Runner class that calls an LLM API with a prompt, and performs input and
     output validation.
@@ -44,55 +42,71 @@ class Runner:
         guard_history: The guard history to use, defaults to an empty history.
     """
 
-    instructions: Optional[Instructions]
-    prompt: Prompt
-    msg_history: Optional[List[Dict]]
-    api: PromptCallableBase
-    input_schema: Schema
-    output_schema: Schema
-    guard_state: GuardState
-    num_reasks: int = 0
-    metadata: Dict[str, Any] = field(default_factory=dict)
-    output: str = None
-    reask_prompt: Optional[Prompt] = None
-    reask_instructions: Optional[Instructions] = None
-    guard_history: GuardHistory = field(
-        default_factory=lambda: GuardHistory(history=[])
-    )
-    base_model: Optional[BaseModel] = None
-    full_schema_reask: bool = False
+    def __init__(
+        self,
+        output_schema: Schema,
+        guard_state: GuardState,
+        num_reasks: int,
+        prompt: Optional[Union[str, Prompt]] = None,
+        instructions: Optional[Union[str, Instructions]] = None,
+        msg_history: Optional[List[Dict]] = None,
+        api: Optional[PromptCallableBase] = None,
+        input_schema: Optional[Schema] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        output: Optional[str] = None,
+        reask_prompt: Optional[Prompt] = None,
+        reask_instructions: Optional[Instructions] = None,
+        guard_history: Optional[GuardHistory] = None,
+        base_model: Optional[Type[BaseModel]] = None,
+        full_schema_reask: bool = False,
+    ):
+        if prompt:
+            assert api, "Must provide an API if a prompt is provided."
+            assert not output, "Cannot provide both a prompt and output."
+
+        if isinstance(prompt, str):
+            self.prompt = Prompt(prompt, output_schema=output_schema.transpile())
+        else:
+            self.prompt = prompt
+
+        if isinstance(instructions, str):
+            self.instructions = Instructions(
+                instructions, output_schema=output_schema.transpile()
+            )
+        else:
+            self.instructions = instructions
+
+        if msg_history:
+            msg_history = copy.deepcopy(msg_history)
+            msg_history_copy = []
+            for msg in msg_history:
+                msg["content"] = Prompt(
+                    msg["content"], output_schema=output_schema.transpile()
+                )
+                msg_history_copy.append(msg)
+            self.msg_history = msg_history_copy
+        else:
+            self.msg_history = None
+
+        self.api = api
+        self.input_schema = input_schema
+        self.output_schema = output_schema
+        self.guard_state = guard_state
+        self.num_reasks = num_reasks
+        self.metadata = metadata or {}
+        self.output = output
+        self.reask_prompt = reask_prompt
+        self.reask_instructions = reask_instructions
+        self.guard_history = guard_history or GuardHistory(history=[])
+        self.base_model = base_model
+        self.full_schema_reask = full_schema_reask
 
     def _reset_guard_history(self):
         """Reset the guard history."""
         self.guard_history = GuardHistory(history=[])
         self.guard_state.push(self.guard_history)
 
-    def __post_init__(self):
-        if self.prompt:
-            assert self.api, "Must provide an API if a prompt is provided."
-            assert not self.output, "Cannot provide both a prompt and output."
-
-        if isinstance(self.prompt, str):
-            self.prompt = Prompt(
-                self.prompt, output_schema=self.output_schema.transpile()
-            )
-
-        if isinstance(self.instructions, str):
-            self.instructions = Instructions(
-                self.instructions, output_schema=self.output_schema.transpile()
-            )
-
-        if self.msg_history is not None and len(self.msg_history):
-            self.msg_history = copy.deepcopy(self.msg_history)
-            msg_history = []
-            for msg in self.msg_history:
-                msg["content"] = Prompt(
-                    msg["content"], output_schema=self.output_schema.transpile()
-                )
-                msg_history.append(msg)
-            self.msg_history = msg_history
-
-    def __call__(self, prompt_params: Dict = None) -> GuardHistory:
+    def __call__(self, prompt_params: Optional[Dict] = None) -> GuardHistory:
         """Execute the runner by repeatedly calling step until the reask budget
         is exhausted.
 
@@ -103,6 +117,9 @@ class Runner:
         Returns:
             The guard history.
         """
+        if prompt_params is None:
+            prompt_params = {}
+
         # check if validator requirements are fulfilled
         missing_keys = verify_metadata_requirements(
             self.metadata, self.output_schema.to_dict().values()
@@ -158,8 +175,8 @@ class Runner:
                     reasks,
                     validated_output,
                     output_schema,
-                    include_instructions=include_instructions,
                     prompt_params=prompt_params,
+                    include_instructions=include_instructions,
                 )
 
             return self.guard_history
@@ -167,14 +184,14 @@ class Runner:
     def step(
         self,
         index: int,
-        api: PromptCallableBase,
+        api: Optional[PromptCallableBase],
         instructions: Optional[Instructions],
         prompt: Optional[Prompt],
         msg_history: Optional[List[Dict]],
         prompt_params: Dict,
-        input_schema: Schema,
+        input_schema: Optional[Schema],
         output_schema: Schema,
-        output: str = None,
+        output: Optional[str] = None,
     ):
         guard_logs = GuardLogs()
         self.guard_history.push(guard_logs)
@@ -215,10 +232,10 @@ class Runner:
             )
 
             guard_logs.llm_response = llm_response
-            output = llm_response.output
+            raw_output = llm_response.output
 
             # Parse: parse the output.
-            parsed_output, parsing_error = self.parse(index, output, output_schema)
+            parsed_output, parsing_error = self.parse(index, raw_output, output_schema)
 
             guard_logs.parsed_output = parsed_output
 
@@ -253,19 +270,22 @@ class Runner:
         self,
         index: int,
         instructions: Optional[Instructions],
-        prompt: Prompt,
+        prompt: Optional[Prompt],
         msg_history: Optional[List[Dict]],
         prompt_params: Dict,
-        api: Union[PromptCallableBase, AsyncPromptCallableBase],
-        input_schema: Schema,
+        api: Optional[Union[PromptCallableBase, AsyncPromptCallableBase]],
+        input_schema: Optional[Schema],
         output_schema: Schema,
-    ) -> Tuple[Instructions, Prompt, List[Dict]]:
+    ) -> Tuple[Optional[Instructions], Optional[Prompt], Optional[List[Dict]]]:
         """Prepare by running pre-processing and input validation.
 
         Returns:
             The instructions, prompt, and message history.
         """
         with start_action(action_type="prepare", index=index) as action:
+            if api is None:
+                raise ValueError("API must be provided.")
+
             if prompt_params is None:
                 prompt_params = {}
 
@@ -276,7 +296,7 @@ class Runner:
                     msg["content"] = msg["content"].format(**prompt_params)
 
                 prompt, instructions = None, None
-            else:
+            elif prompt is not None:
                 if isinstance(prompt, str):
                     prompt = Prompt(prompt)
 
@@ -290,6 +310,8 @@ class Runner:
                 instructions, prompt = output_schema.preprocess_prompt(
                     api, instructions, prompt
                 )
+            else:
+                raise ValueError("Prompt or message history must be provided.")
 
             action.log(
                 message_type="info",
@@ -305,9 +327,9 @@ class Runner:
         self,
         index: int,
         instructions: Optional[Instructions],
-        prompt: Prompt,
+        prompt: Optional[Prompt],
         msg_history: Optional[List[Dict[str, str]]],
-        api: Callable,
+        api: Optional[PromptCallableBase],
         output: Optional[str] = None,
     ) -> LLMResponse:
         """Run a step.
@@ -317,45 +339,38 @@ class Runner:
         3. Log the output
         """
 
-        def msg_history_source(msg_history) -> List[Dict[str, str]]:
-            msg_history_copy = copy.deepcopy(msg_history)
-            for msg in msg_history_copy:
-                msg["content"] = msg["content"].source
-            return msg_history_copy
-
         with start_action(action_type="call", index=index, prompt=prompt) as action:
-            llm_response = None
-            try:
-                if msg_history:
+            if api is None:
+                if output is None:
+                    raise ValueError("API or output must be provided.")
+                llm_response = LLMResponse(
+                    output=output,
+                )
+            elif msg_history:
+                try:
                     llm_response = api(
                         msg_history=msg_history_source(msg_history),
                         base_model=self.base_model,
                     )
-                else:
-                    if prompt and instructions:
-                        llm_response = api(
-                            prompt.source,
-                            instructions=instructions.source,
-                            base_model=self.base_model,
-                        )
-                    elif prompt:
-                        llm_response = api(prompt.source, base_model=self.base_model)
-            except Exception:
-                # If the API call fails, try calling again without the base model.
-                if msg_history:
+                except Exception:
+                    # If the API call fails, try calling again without the base model.
                     llm_response = api(msg_history=msg_history_source(msg_history))
-                else:
-                    if prompt and instructions:
-                        llm_response = api(
-                            prompt.source, instructions=instructions.source
-                        )
-                    elif prompt:
-                        llm_response = api(prompt.source)
-
-            if llm_response is None:
-                llm_response = LLMResponse(
-                    output=output,
-                )
+            elif prompt and instructions:
+                try:
+                    llm_response = api(
+                        prompt.source,
+                        instructions=instructions.source,
+                        base_model=self.base_model,
+                    )
+                except Exception:
+                    llm_response = api(prompt.source, instructions=instructions.source)
+            elif prompt:
+                try:
+                    llm_response = api(prompt.source, base_model=self.base_model)
+                except Exception:
+                    llm_response = api(prompt.source)
+            else:
+                raise ValueError("Prompt or message history must be provided.")
 
             action.log(
                 message_type="info",
@@ -420,7 +435,7 @@ class Runner:
 
             return reasks
 
-    def do_loop(self, index: int, reasks: List[ReAsk]) -> bool:
+    def do_loop(self, index: int, reasks: Sequence[ReAsk]) -> bool:
         """Determine if we should loop again."""
         if reasks and index < self.num_reasks:
             return True
@@ -429,11 +444,11 @@ class Runner:
     def prepare_to_loop(
         self,
         reasks: list,
-        validated_output: Optional[Dict],
+        validated_output: Optional[Union[Dict, ReAsk]],
         output_schema: Schema,
+        prompt_params: Dict,
         include_instructions: bool = False,
-        prompt_params: Dict = None,
-    ) -> Tuple[Prompt, Instructions, Schema, Optional[List[Dict]]]:
+    ) -> Tuple[Prompt, Optional[Instructions], Schema, Optional[List[Dict]]]:
         """Prepare to loop again."""
         output_schema, prompt, instructions = output_schema.get_reask_setup(
             reasks=reasks,
@@ -448,9 +463,44 @@ class Runner:
 
 
 class AsyncRunner(Runner):
-    api: AsyncPromptCallableBase
+    def __init__(
+        self,
+        output_schema: Schema,
+        guard_state: GuardState,
+        num_reasks: int,
+        prompt: Optional[Union[str, Prompt]] = None,
+        instructions: Optional[Union[str, Instructions]] = None,
+        msg_history: Optional[List[Dict]] = None,
+        api: Optional[AsyncPromptCallableBase] = None,
+        input_schema: Optional[Schema] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        output: Optional[str] = None,
+        reask_prompt: Optional[Prompt] = None,
+        reask_instructions: Optional[Instructions] = None,
+        guard_history: Optional[GuardHistory] = None,
+        base_model: Optional[Type[BaseModel]] = None,
+        full_schema_reask: bool = False,
+    ):
+        super().__init__(
+            output_schema=output_schema,
+            guard_state=guard_state,
+            num_reasks=num_reasks,
+            prompt=prompt,
+            instructions=instructions,
+            msg_history=msg_history,
+            api=api,
+            input_schema=input_schema,
+            metadata=metadata,
+            output=output,
+            reask_prompt=reask_prompt,
+            reask_instructions=reask_instructions,
+            guard_history=guard_history,
+            base_model=base_model,
+            full_schema_reask=full_schema_reask,
+        )
+        self.api: Optional[AsyncPromptCallableBase] = api
 
-    async def async_run(self, prompt_params: Dict = None) -> GuardHistory:
+    async def async_run(self, prompt_params: Optional[Dict] = None) -> GuardHistory:
         """Execute the runner by repeatedly calling step until the reask budget
         is exhausted.
 
@@ -461,6 +511,8 @@ class AsyncRunner(Runner):
         Returns:
             The guard history.
         """
+        if prompt_params is None:
+            prompt_params = {}
         self._reset_guard_history()
 
         # check if validator requirements are fulfilled
@@ -519,14 +571,14 @@ class AsyncRunner(Runner):
     async def async_step(
         self,
         index: int,
-        api: AsyncPromptCallableBase,
+        api: Optional[AsyncPromptCallableBase],
         instructions: Optional[Instructions],
-        prompt: Prompt,
+        prompt: Optional[Prompt],
         msg_history: Optional[List[Dict]],
         prompt_params: Dict,
-        input_schema: Schema,
+        input_schema: Optional[Schema],
         output_schema: Schema,
-        output: str = None,
+        output: Optional[str] = None,
     ):
         guard_logs = GuardLogs()
         self.guard_history.push(guard_logs)
@@ -541,7 +593,11 @@ class AsyncRunner(Runner):
             output_schema=output_schema,
         ):
             # Prepare: run pre-processing, and input validation.
-            if not output:
+            if output:
+                instructions = None
+                prompt = None
+                msg_history = None
+            else:
                 instructions, prompt, msg_history = self.prepare(
                     index,
                     instructions,
@@ -552,9 +608,6 @@ class AsyncRunner(Runner):
                     input_schema,
                     output_schema,
                 )
-            else:
-                instructions = None
-                prompt = None
 
             guard_logs.prompt = prompt
             guard_logs.instructions = instructions
@@ -603,9 +656,9 @@ class AsyncRunner(Runner):
         self,
         index: int,
         instructions: Optional[Instructions],
-        prompt: Prompt,
+        prompt: Optional[Prompt],
         msg_history: Optional[List[Dict]],
-        api: AsyncPromptCallableBase,
+        api: Optional[AsyncPromptCallableBase],
         output: Optional[str] = None,
     ) -> LLMResponse:
         """Run a step.
@@ -615,40 +668,41 @@ class AsyncRunner(Runner):
         3. Log the output
         """
         with start_action(action_type="call", index=index, prompt=prompt) as action:
-            llm_response = None
-            try:
-                if msg_history:
-                    llm_response = await api(
-                        msg_history=msg_history,
-                        base_model=self.base_model,
-                    )
-                else:
-                    if prompt and instructions:
-                        llm_response = await api(
-                            prompt.source,
-                            instructions=instructions.source,
-                            base_model=self.base_model,
-                        )
-                    elif prompt:
-                        llm_response = await api(
-                            prompt.source, base_model=self.base_model
-                        )
-            except Exception:
-                # If the API call fails, try calling again without the base model.
-                if msg_history:
-                    llm_response = await api(msg_history=msg_history)
-                else:
-                    if prompt and instructions:
-                        llm_response = await api(
-                            prompt.source, instructions=instructions.source
-                        )
-                    elif prompt:
-                        llm_response = await api(prompt.source)
-
-            if llm_response is None:
+            if output is not None:
                 llm_response = LLMResponse(
                     output=output,
                 )
+            elif api is None:
+                raise ValueError("Either API or output must be provided.")
+            elif msg_history:
+                try:
+                    llm_response = await api(
+                        msg_history=msg_history_source(msg_history),
+                        base_model=self.base_model,
+                    )
+                except Exception:
+                    # If the API call fails, try calling again without the base model.
+                    llm_response = await api(
+                        msg_history=msg_history_source(msg_history)
+                    )
+            elif prompt and instructions:
+                try:
+                    llm_response = await api(
+                        prompt.source,
+                        instructions=instructions.source,
+                        base_model=self.base_model,
+                    )
+                except Exception:
+                    llm_response = await api(
+                        prompt.source, instructions=instructions.source
+                    )
+            elif prompt:
+                try:
+                    llm_response = await api(prompt.source, base_model=self.base_model)
+                except Exception:
+                    llm_response = await api(prompt.source)
+            else:
+                raise ValueError("Output, prompt or message history must be provided.")
 
             action.log(
                 message_type="info",
@@ -676,3 +730,10 @@ class AsyncRunner(Runner):
             )
 
             return validated_output
+
+
+def msg_history_source(msg_history) -> List[Dict[str, str]]:
+    msg_history_copy = copy.deepcopy(msg_history)
+    for msg in msg_history_copy:
+        msg["content"] = msg["content"].source
+    return msg_history_copy

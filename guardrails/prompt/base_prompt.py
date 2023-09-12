@@ -97,6 +97,8 @@ class BasePrompt:
         if earliest_match_idx is None:
             return 0
 
+        if earliest_match is None:
+            return None
         return earliest_match.start()
 
     def escape(self) -> str:
