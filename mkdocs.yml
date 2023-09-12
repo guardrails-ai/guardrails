@@ -54,6 +54,7 @@ nav:
     - 'Generate structured synthetic data': examples/generate_structured_data.ipynb
     - 'Ensure translated text is high quality': examples/translation_with_quality_check.ipynb
     - 'Check key info present in generated summary': examples/text_summarization_quality.ipynb
+    - 'Detect and limit hallucinations in generated text': examples/provenance.ipynb
   - 'Integrations':
     - 'OpenAI Functions': integrations/openai_functions.ipynb
     - 'LangChain': integrations/langchain.ipynb
