@@ -21,13 +21,13 @@ Guardrails provides an object definition called a `Rail` for enforcing a specifi
 1. `rail` (**R**eliable **AI** markup **L**anguage) files for specifying structure and type information, validators and corrective actions over LLM outputs. The concept of a Rail has evolved from markup - Rails can be defined in either <a href='/defining_guards/pydantic'>Pydantic</a> or <a href='/defining_guards/rail'>rail</a> for structured outputs, or directly in <a href='/defining_guards/strings'>Python</a> for string outputs.
 2. `Guard` wraps around LLM API calls to structure, validate and correct the outputs.
 
-``` mermaid
+```mermaid
 graph LR
     A[Create `RAIL` spec] --> B["Initialize `guard` from spec"];
     B --> C["Wrap LLM API call with `guard`"];
 ```
 
-Check out the [Getting Started](getting_started.ipynb) guide to learn how to use Guardrails.
+Check out the [Getting Started](getting_started) guide to learn how to use Guardrails.
 
 ## 📍 Roadmap
 
