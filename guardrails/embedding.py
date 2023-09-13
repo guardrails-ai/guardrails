@@ -93,7 +93,7 @@ class EmbeddingBase(ABC):
         if n < 1:
             raise ValueError("n must be at least one")
         it = iter(iterable)
-        while batch := tuple(islice(it, n)):
+        while batch := list(islice(it, n)):
             yield batch
 
 
@@ -114,9 +114,7 @@ class OpenAIEmbedding(EmbeddingBase):
     def embed(self, texts: List[str]) -> List[List[float]]:
         embeddings = []
         for text in texts:
-            embeddings.append(
-                super()._len_safe_get_embedding(text, self._get_embedding)
-            )
+            embeddings.append(super()._len_safe_get_embedding(text, self.embed_query))
 
         return embeddings
 
@@ -124,7 +122,7 @@ class OpenAIEmbedding(EmbeddingBase):
         resp = self._get_embedding([query])
         return resp[0]
 
-    def _get_embedding(self, texts: List[str]) -> List[float]:
+    def _get_embedding(self, texts: List[str]) -> List[List[float]]:
         api_key = (
             self.api_key
             if self.api_key is not None
@@ -188,9 +186,7 @@ class ManifestEmbedding(EmbeddingBase):
     def embed(self, texts: List[str]) -> List[List[float]]:
         embeddings = []
         for text in texts:
-            embeddings.append(
-                super()._len_safe_get_embedding(text, self._get_embedding)
-            )
+            embeddings.append(super()._len_safe_get_embedding(text, self.embed_query))
 
         return embeddings
 
@@ -198,7 +194,7 @@ class ManifestEmbedding(EmbeddingBase):
         resp = self._get_embedding([query])
         return resp[0]
 
-    def _get_embedding(self, texts: List[str]) -> List[float]:
+    def _get_embedding(self, texts: List[str]) -> List[List[float]]:
         embeddings = self._manifest.run(texts)
         return embeddings
 
