@@ -96,7 +96,7 @@ class BasePrompt:
 
         # Regex to extract first occurrence of ${gr.<constant_name>}
 
-        matches = re.finditer(r"\${gr.(\w+)}", text)
+        matches = re.finditer(r"\${gr\.(\w+)}", text)
 
         earliest_match_idx = None
         earliest_match = None
