@@ -3,7 +3,7 @@ import itertools
 import logging
 import os
 from concurrent.futures import ProcessPoolExecutor
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from guardrails.datatypes import FieldValidation
 from guardrails.utils.logs_utils import FieldValidationLogs, ValidatorLogs
@@ -12,7 +12,6 @@ from guardrails.validators import (
     FailResult,
     Filter,
     PassResult,
-    PydanticReAsk,
     Refrain,
     Validator,
     ValidatorError,
@@ -35,9 +34,7 @@ class ValidatorServiceBase:
             return results[0].fix_value
         elif on_fail_descriptor == "fix_reask":
             fixed_value = results[0].fix_value
-            result = validator.validate(fixed_value, results[0].metadata)
-            if result.metadata is None:
-                result.metadata = result.metadata
+            result = validator.validate(fixed_value, results[0].metadata or {})
 
             if isinstance(result, FailResult):
                 return FieldReAsk(
@@ -47,6 +44,8 @@ class ValidatorServiceBase:
 
             return fixed_value
         if on_fail_descriptor == "custom":
+            if validator.on_fail_method is None:
+                raise ValueError("on_fail is 'custom' but on_fail_method is None")
             return validator.on_fail_method(value, results[0])
         if on_fail_descriptor == "reask":
             return FieldReAsk(
@@ -95,7 +94,7 @@ class SequentialValidatorService(ValidatorServiceBase):
         validator_setup: FieldValidation,
         value: Any,
         metadata: Dict[str, Any],
-    ):
+    ) -> Tuple[Any, Dict[str, Any]]:
         # Validate the field
         for validator in validator_setup.validators:
             validator_logs = self.run_validator(
@@ -118,9 +117,10 @@ class SequentialValidatorService(ValidatorServiceBase):
                 raise RuntimeError(f"Unexpected result type {type(result)}")
 
             validator_logs.value_after_validation = value
-            metadata = validator_logs.validation_result.metadata
+            if result.metadata is not None:
+                metadata = result.metadata
 
-            if isinstance(value, (Refrain, Filter, ReAsk, PydanticReAsk)):
+            if isinstance(value, (Refrain, Filter, ReAsk)):
                 return value, metadata
         return value, metadata
 
@@ -157,7 +157,7 @@ class SequentialValidatorService(ValidatorServiceBase):
 
 
 class MultiprocMixin:
-    multiprocessing_executor: ProcessPoolExecutor = None
+    multiprocessing_executor: Optional[ProcessPoolExecutor] = None
     process_count = int(os.environ.get("GUARDRAILS_PROCESS_COUNT", 10))
 
     def __init__(self):
@@ -238,7 +238,7 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
                 logs.value_after_validation = value
 
             # return early if we have a filter, refrain, or reask
-            if isinstance(value, (Filter, Refrain, FieldReAsk, PydanticReAsk)):
+            if isinstance(value, (Filter, Refrain, FieldReAsk)):
                 return value, metadata
 
         return value, metadata

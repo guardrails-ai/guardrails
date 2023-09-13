@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 
 import pydantic
 from lxml import etree as ET
@@ -13,7 +13,7 @@ class ReAsk(pydantic.BaseModel):
 
 
 class FieldReAsk(ReAsk):
-    path: List[Any] = None
+    path: Optional[List[Any]] = None
 
 
 class SkeletonReAsk(ReAsk):
@@ -34,18 +34,17 @@ def gather_reasks(validated_output: Dict) -> List[FieldReAsk]:
     Returns:
         A list of ReAsk objects found in the output.
     """
-    from guardrails.validators import PydanticReAsk
 
     reasks = []
 
-    def _gather_reasks_in_dict(output: Dict, path: List[str] = []) -> None:
-        is_pydantic = isinstance(output, PydanticReAsk)
+    def _gather_reasks_in_dict(
+        output: Dict, path: Optional[List[Union[str, int]]] = None
+    ) -> None:
+        if path is None:
+            path = []
         for field, value in output.items():
             if isinstance(value, FieldReAsk):
-                if is_pydantic:
-                    value.path = path
-                else:
-                    value.path = path + [field]
+                value.path = path + [field]
                 reasks.append(value)
 
             if isinstance(value, dict):
@@ -55,7 +54,11 @@ def gather_reasks(validated_output: Dict) -> List[FieldReAsk]:
                 _gather_reasks_in_list(value, path + [field])
         return
 
-    def _gather_reasks_in_list(output: List, path: List[str] = []) -> None:
+    def _gather_reasks_in_list(
+        output: List, path: Optional[List[Union[str, int]]] = None
+    ) -> None:
+        if path is None:
+            path = []
         for idx, item in enumerate(output):
             if isinstance(item, FieldReAsk):
                 item.path = path + [idx]
@@ -159,9 +162,8 @@ def prune_obj_for_reasking(obj: Any) -> Union[None, Dict, List]:
     Returns:
         The pruned validated object.
     """
-    from guardrails.validators import PydanticReAsk
 
-    if isinstance(obj, ReAsk) or isinstance(obj, PydanticReAsk):
+    if isinstance(obj, ReAsk):
         return obj
     elif isinstance(obj, list):
         pruned_list = []
@@ -175,7 +177,7 @@ def prune_obj_for_reasking(obj: Any) -> Union[None, Dict, List]:
     elif isinstance(obj, dict):
         pruned_json = {}
         for key, value in obj.items():
-            if isinstance(value, FieldReAsk) or isinstance(value, PydanticReAsk):
+            if isinstance(value, FieldReAsk):
                 pruned_json[key] = value
             elif isinstance(value, dict):
                 pruned_output = prune_obj_for_reasking(value)
