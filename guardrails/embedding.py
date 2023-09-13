@@ -6,11 +6,6 @@ from typing import Callable, List, Optional
 
 import openai
 
-try:
-    import numpy as np
-except ImportError:
-    np = None
-
 
 class EmbeddingBase(ABC):
     """Base class for embedding models."""
@@ -21,7 +16,9 @@ class EmbeddingBase(ABC):
         encoding_name: Optional[str],
         max_tokens: Optional[int],
     ):
-        if np is None:
+        try:
+            import numpy  # noqa: F401
+        except ImportError:
             raise ImportError(
                 f"`numpy` is required for `{self.__class__.__name__}` class."
                 "Please install it with `pip install numpy`."
@@ -54,20 +51,32 @@ class EmbeddingBase(ABC):
         Returns:
             List[float] Embedding of the text.
         """
-        chunk_embeddings = []
+        try:
+            import numpy as np
+        except ImportError:
+            raise ImportError(
+                f"`numpy` is required for `{self.__class__.__name__}` class."
+                "Please install it with `pip install numpy`."
+            )
+
+        chunk_embeddings_list = []
         chunk_lens = []
 
         for chunk in EmbeddingBase._chunked_tokens(
             text=text, encoding_name=self._encoding_name, chunk_length=self._max_tokens
         ):
-            chunk_embeddings.append(embedder(chunk))
+            chunk_embeddings_list.append(embedder(chunk))
             chunk_lens.append(len(chunk))
 
         if average:
-            chunk_embeddings = np.average(chunk_embeddings, axis=0, weights=chunk_lens)
+            chunk_embeddings = np.average(
+                chunk_embeddings_list, axis=0, weights=chunk_lens
+            )
             chunk_embeddings = chunk_embeddings / np.linalg.norm(
                 chunk_embeddings
             )  # normalizes length to 1
+        else:
+            chunk_embeddings = np.array(chunk_embeddings_list)
         return chunk_embeddings.flatten().tolist()
 
     @staticmethod
@@ -131,10 +140,12 @@ class OpenAIEmbedding(EmbeddingBase):
         resp = openai.Embedding.create(
             api_key=api_key, model=self._model, input=texts, api_base=self.api_base
         )
-        return [r["embedding"] for r in resp["data"]]
+        return [r["embedding"] for r in resp["data"]]  # type: ignore
 
     @property
     def output_dim(self) -> int:
+        if self._model is None:
+            raise ValueError("Model not set")
         if self._model == "text-embedding-ada-002":
             return 1536
         elif "ada" in self._model:
@@ -161,7 +172,7 @@ class ManifestEmbedding(EmbeddingBase):
         max_tokens: Optional[int] = 8191,
     ):
         try:
-            from manifest import Manifest
+            from manifest import Manifest  # type: ignore
         except ImportError:
             raise ImportError(
                 "The `manifest` package is not installed. "
