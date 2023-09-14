@@ -182,3 +182,7 @@ extra:
       link: https://github.com/ShreyaR/guardrails
     - icon: fontawesome/brands/discord
       link: https://discord.gg/Jsey3mX98B
+
+extra_javascript:
+  - docs/pipedrive.js
+  - docs/posthog.js
