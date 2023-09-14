@@ -54,7 +54,7 @@ class BasePrompt:
                 "documented here: https://docs.getguardrails.ai/0-2-migration/"
             )
 
-        matches = re.findall(r"\${gr.(\w+)}", text)
+        matches = re.findall(r"\${gr\.(\w+)}", text)
 
         # Substitute all occurrences of ${gr.<constant_name>}
         #   with the value of the constant.
@@ -96,7 +96,7 @@ class BasePrompt:
 
         # Regex to extract first occurrence of ${gr.<constant_name>}
 
-        matches = re.finditer(r"\${gr.(\w+)}", text)
+        matches = re.finditer(r"\${gr\.(\w+)}", text)
 
         earliest_match_idx = None
         earliest_match = None

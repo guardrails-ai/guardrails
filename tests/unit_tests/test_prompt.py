@@ -4,6 +4,7 @@ from string import Template
 from unittest import mock
 
 import pytest
+from pydantic import BaseModel, Field
 
 import guardrails as gd
 from guardrails.utils.constants import constants
@@ -250,3 +251,22 @@ def test_uses_old_constant_schema(text, is_old_schema):
  https://docs.getguardrails.ai/0-2-migration/\
 """
             )
+
+
+class TestResponse(BaseModel):
+    grade: int = Field(description="The grade of the response")
+
+
+def test_gr_prefixed_prompt_item_passes():
+    # From pydantic:
+    prompt = """Give me a response to ${grade}"""
+
+    guard = gd.Guard.from_pydantic(output_class=TestResponse, prompt=prompt)
+    assert len(guard.prompt.variable_names) == 1
+
+
+def test_gr_dot_prefixed_prompt_item_fails():
+    with pytest.raises(Exception):
+        # From pydantic:
+        prompt = """Give me a response to ${gr.ade}"""
+        gd.Guard.from_pydantic(output_class=TestResponse, prompt=prompt)
