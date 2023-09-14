@@ -72,3 +72,26 @@ def test_validate_without_running_loop(mocker):
 
     assert validated_value == "MockAsyncValidatorService.validate"
     assert validated_metadata == {"sync": True}
+
+
+def test_validate_loop_runtime_error(mocker):
+    mocker.patch(
+        "guardrails.validator_service.AsyncValidatorService",
+        new=MockAsyncValidatorService,
+    )
+    mocker.patch(
+        "guardrails.validator_service.SequentialValidatorService",
+        new=MockSequentialValidatorService,
+    )
+    # raise RuntimeError in `get_event_loop`
+    mocker.patch("asyncio.get_event_loop", side_effect=RuntimeError)
+
+    validated_value, validated_metadata = vs.validate(
+        value=True,
+        metadata={},
+        validator_setup=empty_field_validation,
+        validation_logs=empty_field_validation_logs,
+    )
+
+    assert validated_value == "MockSequentialValidatorService.validate"
+    assert validated_metadata == {"sync": True}
