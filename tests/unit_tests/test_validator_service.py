@@ -41,8 +41,6 @@ def test_validate_with_running_loop(mocker):
     )
     mocker.patch("asyncio.get_event_loop", return_value=mockLoop)
 
-    warn_spy = mocker.spy(vs.logger, "warning")
-
     validated_value, validated_metadata = vs.validate(
         value=True,
         metadata={},
@@ -50,10 +48,6 @@ def test_validate_with_running_loop(mocker):
         validation_logs=empty_field_validation_logs,
     )
 
-    assert warn_spy.call_count == 1
-    warn_spy.assert_called_with(
-        "Async event loop found, but guard was invoked synchronously.For validator parallelization, please call `validate_async` instead."  # noqa
-    )
     assert validated_value == "MockSequentialValidatorService.validate"
     assert validated_metadata == {"sync": True}
 

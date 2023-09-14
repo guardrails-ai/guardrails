@@ -337,10 +337,6 @@ def validate(
     elif loop is not None and not loop.is_running():
         validator_service = AsyncValidatorService()
     else:
-        logger.warning(
-            "Async event loop found, but guard was invoked synchronously."
-            "For validator parallelization, please call `validate_async` instead."
-        )
         validator_service = SequentialValidatorService()
     return validator_service.validate(
         value,
