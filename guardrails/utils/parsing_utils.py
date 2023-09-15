@@ -1,9 +1,9 @@
-from typing import Optional
+from typing import Optional, Tuple
 
 
 def has_code_block(
     string_value: str, code_type: str = ""
-) -> (bool, Optional[int], Optional[int]):
+) -> Tuple[bool, Optional[int], Optional[int]]:
     """Checks if a string contains a code block denoted by leading and trailing
     tripple ticks (```) with an optional code type for the opening tag.
 
@@ -27,7 +27,7 @@ def has_code_block(
         return (
             (True, block_start_index, block_end_index)
             if block_end_index != -1
-            else (False)
+            else (False, None, None)
         )
     return (False, None, None)
 
