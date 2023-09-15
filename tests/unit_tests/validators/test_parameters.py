@@ -37,7 +37,8 @@ validator_test_pass_fail = {
         "instance_variables": { 
             'min': 4, 
             'max': 17
-        }
+        }, 
+        "fix_value": 'hello there, this'
     }, 
     "LowerCase": { 
         "input_data": 'this is all lowercase', 
@@ -47,12 +48,14 @@ validator_test_pass_fail = {
     "LowerCase": { 
         "input_data": 'OOPS, there is defintely an issue here', 
         "metadata": {},
-        "expected_result": FailResult, 
+        "expected_result": FailResult,
+        "fix_value": 'oops, there is defintely an issue here' 
     }, 
     "UpperCase": { 
         "input_data": 'this is all lowercase', 
         "metadata": {},
-        "expected_result": FailResult, 
+        "expected_result": FailResult,
+        "fix_value": 'THIS IS ALL LOWERCASE' 
     }, 
     "UpperCase": { 
         "input_data": 'NO ISSUE HERE', 
@@ -67,7 +70,8 @@ validator_test_pass_fail = {
     "TwoWords": { 
         "input_data": 'one two three four', 
         "metadata": {},
-        "expected_result": FailResult, 
+        "expected_result": FailResult,
+        "fix_value": 'one two' 
     }, 
     "OneLine": { 
         "input_data": 'this is a simple one liner', 
@@ -77,8 +81,26 @@ validator_test_pass_fail = {
     "OneLine": { 
         "input_data": 'This should defintely fail \n since this is a new line', 
         "metadata": {},
-        "expected_result": FailResult, 
+        "expected_result": FailResult,
+        "fix_value": 'This should defintely fail ' 
     }, 
+    "EndsWith": { 
+        "input_data": ['start', 'middle', 'end'], 
+        "metadata": {},
+        "expected_result": PassResult,
+        "instance_variables": { 
+            'end': 'end', 
+        } 
+    },
+    "EndsWith": { 
+        "input_data": ['start', 'middle', 'end'], 
+        "metadata": {},
+        "expected_result": FailResult,
+        "fix_value": ['start', 'middle', 'end', 'trunk'],
+        "instance_variables": { 
+            'end': 'trunk', 
+        } 
+    },
     "ValidURL": { 
         "input_data": 'http://google', 
         "metadata": {},
@@ -104,8 +126,46 @@ len(substring) > len(longest_palindrome):\n                longest_palindrome = 
 longest_palindrome''', 
         "metadata": {},
         "expected_result": FailResult, 
+    }, 
+    "ReadingTime": { 
+        "input_data": "This string is fairly short and should be able to be read in the given timeframe", 
+        "metadata": {},
+        "expected_result": PassResult,
+        "instance_variables": { 
+            'reading_time': 5, 
+        } 
+    }, 
+    "ReadingTime": { 
+        "input_data": '''This string is fairly short and should be able to be read in the given timeframe but I wonder if we copy this multiple times and shorted the time frame to a fraction of the time
+            This string is fairly short and should be able to be read in the given timeframe but I wonder if we copy this multiple times and shorted the time frame to a fraction of the time
+            This string is fairly short and should be able to be read in the given timeframe but I wonder if we copy this multiple times and shorted the time frame to a fraction of the time
+            This string is fairly short and should be able to be read in the given timeframe but I wonder if we copy this multiple times and shorted the time frame to a fraction of the time''', 
+        "metadata": {},
+        "expected_result": FailResult,
+        "fix_value": '''This string is fairly short and should be able to be read in the given timeframe but I wonder if we copy this multiple times and shorted the time frame to a fraction of the time
+            This string is fairly short and should be able to be read in the given timeframe but I wonder if we copy this multiple times and shorted the time frame to a fraction of the time
+            This string is fairly short and should be able to be read in the given timeframe but I wonder if we copy this multiple times and shorted the time frame to a fraction of the time
+            This string is fairly short and should be able to be read in the given timeframe but I wonder if we copy this multiple times and shorted the time frame to a fraction of the time''',
+        "instance_variables": { 
+            'reading_time': 1, 
+        } 
+    }, 
+    "ValidChoices": { 
+        "input_data": "four", 
+        "metadata": {},
+        "expected_result": PassResult,
+        "instance_variables": { 
+            'choices': ['one', 'two', 'three', 'four'], 
+        } 
+    }, 
+    "ValidChoices": { 
+        "input_data": "five", 
+        "metadata": {},
+        "expected_result": FailResult,
+        "instance_variables": { 
+            'choices': ['one', 'two', 'three', 'four'], 
+        } 
     }
-
 }
 
 validator_test_python_str = { 
@@ -157,5 +217,23 @@ validator_test_xml = {
     }, 
     "BugFreePython": { 
         'expected_xml': 'bug-free-python',
+    }, 
+    "EndsWith": { 
+        'expected_xml': 'ends-with: bye',
+        "instance_variables": { 
+            'end': 'bye',
+        }
+    }, 
+    "ReadingTime": { 
+        'expected_xml': 'reading-time: 30',
+        "instance_variables": { 
+            'reading_time': 30,
+        }
+    }, 
+    "ValidChoices": { 
+        'expected_xml': "valid-choices: {['one', 'two', 'three', 'four']}",
+        "instance_variables": { 
+            'choices': ['one', 'two', 'three', 'four'], 
+        } 
     }
 }
