@@ -1,0 +1,18 @@
+<rail version="0.1">
+<output>
+    <list name="user_orders" description="Generate a list of user, and how many orders they have placed in the past." format="length: 10 10" on-fail-length="noop">
+        <object>
+            <string name="user_id" description="The user's id." format="1-indexed" />
+            <string name="user_name" description="The user's first name and last name" format="two-words" />
+            <integer name="num_orders" description="The number of orders the user has placed" format="valid-range: 0 50" />
+            <date name="last_order_date" description="Date of last order" />
+        </object>
+    </list>
+</output>
+
+<prompt>
+Generate a dataset of fake user orders. Each row of the dataset should be valid.
+
+${gr.complete_json_suffix}
+</prompt>
+</rail>

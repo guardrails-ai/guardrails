@@ -319,7 +319,12 @@ def validate(
     validation_logs: FieldValidationLogs,
 ):
     process_count = int(os.environ.get("GUARDRAILS_PROCESS_COUNT", 10))
-    loop = asyncio.get_event_loop()
+
+    try:
+        loop = asyncio.get_event_loop()
+    except RuntimeError:
+        loop = None
+
     if process_count == 1:
         logger.warning(
             "Process count was set to 1 via the GUARDRAILS_PROCESS_COUNT"
@@ -329,14 +334,10 @@ def validate(
             "greater than 1 or unset this environment variable."
         )
         validator_service = SequentialValidatorService()
-    elif loop.is_running():
-        logger.warning(
-            "Async event loop found, but guard was invoked synchronously."
-            "For validator parallelization, please call `validate_async` instead."
-        )
-        validator_service = SequentialValidatorService()
-    else:
+    elif loop is not None and not loop.is_running():
         validator_service = AsyncValidatorService()
+    else:
+        validator_service = SequentialValidatorService()
     return validator_service.validate(
         value,
         metadata,
