@@ -558,7 +558,7 @@ class JsonSchema(Schema):
 
     def parse(
         self, output: str
-    ) -> Tuple[Union[Dict, NonParseableReAsk], Optional[Exception]]:
+    ) -> Tuple[Union[Optional[Dict], NonParseableReAsk], Optional[Exception]]:
         # Try to get json code block from output.
         # Return error and reask if it is not parseable.
         parsed_output, error = extract_json_from_ouput(output)
