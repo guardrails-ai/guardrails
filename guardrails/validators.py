@@ -32,7 +32,7 @@ else:
     _HAS_NUMPY = True
 
 try:
-    import nltk
+    import nltk  # type: ignore
 except ImportError:
     nltk = None
 
@@ -1284,7 +1284,7 @@ class ExtractiveSummary(Validator):
             store[filepath] = sentence_split(doc)
 
         try:
-            from thefuzz import fuzz
+            from thefuzz import fuzz  # type: ignore
         except ImportError:
             raise ImportError(
                 "`thefuzz` library is required for `extractive-summary` validator. "
@@ -1379,7 +1379,7 @@ class RemoveRedundantSentences(Validator):
         """Remove redundant sentences from a string."""
 
         try:
-            from thefuzz import fuzz
+            from thefuzz import fuzz  # type: ignore
         except ImportError:
             raise ImportError(
                 "`thefuzz` library is required for `remove-redundant-sentences` "
