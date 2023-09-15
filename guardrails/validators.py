@@ -18,9 +18,11 @@ from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Type, Un
 import openai
 import pydantic
 from pydantic import Field
+from tenacity import retry, stop_after_attempt, wait_random_exponential
 
 from guardrails.utils.docs_utils import get_chunks_from_text, sentence_split
 from guardrails.utils.sql_utils import SQLDriver, create_sql_driver
+from guardrails.utils.validator_utils import PROVENANCE_V1_PROMPT
 
 try:
     import numpy as np
