@@ -19,7 +19,7 @@ from typing import (
 import lxml.etree as ET
 from griffe.dataclasses import Docstring
 from griffe.docstrings.parsers import Parser, parse
-from lxml.builder import E
+from lxml.etree import Element as E
 from pydantic import BaseModel, HttpUrl, validator
 from pydantic.fields import ModelField
 
@@ -352,7 +352,7 @@ def create_xml_element_for_field(
 
 
 def create_xml_element_for_base_model(
-    model: BaseModel,
+    model: Type[BaseModel],
     element: Optional[ET._Element] = None,
     exclude_subfields: Optional[typing.List[str]] = None,
 ) -> ET._Element:
@@ -413,8 +413,8 @@ def add_validator(
 
 
 def convert_pydantic_validator_to_guardrails_validator(
-    model: BaseModel, fn: Callable
-) -> Validator:
+    model: Type[BaseModel], fn: Callable
+) -> Union[str, Validator]:
     """Convert a Pydantic validator to a Guardrails validator.
 
     Pydantic validators can be defined in three ways:
@@ -462,7 +462,7 @@ def convert_pydantic_validator_to_guardrails_validator(
 
 
 def add_pydantic_validators_as_guardrails_validators(
-    model: BaseModel,
+    model: Type[BaseModel],
 ) -> Dict[str, ModelField]:
     """Extract all validators for a pydantic BaseModel.
 
