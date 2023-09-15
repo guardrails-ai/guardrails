@@ -65,6 +65,7 @@ DEV_REQUIREMENTS = [
     "pytest",
     "pytest-asyncio",
     "pyright",
+    "lxml-stubs",
     *SQL_REQUIREMENTS,
     *VECTORDB_REQUIREMENTS,
 ] + DOCS_REQUIREMENTS
