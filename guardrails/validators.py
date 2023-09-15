@@ -1721,51 +1721,52 @@ class ProvenanceV0(Validator):
         sources = metadata.get("sources", None)
 
         # Check that query_fn or sources are provided
-        if query_fn is not None and sources is not None:
-            warnings.warn(
-                "Both `query_function` and `sources` are provided in metadata. "
-                "`query_function` will be used."
-            )
-        elif query_fn is None and sources is None:
+        if query_fn is not None:
+            if sources is not None:
+                warnings.warn(
+                    "Both `query_function` and `sources` are provided in metadata. "
+                    "`query_function` will be used."
+                )
+            return query_fn
+
+        if sources is None:
             raise ValueError(
                 "You must provide either `query_function` or `sources` in metadata."
             )
-        elif query_fn is None and sources is not None:
-            # Check chunking strategy
-            chunk_strategy = metadata.get("chunk_strategy", "sentence")
-            if chunk_strategy not in ["sentence", "word", "char", "token"]:
-                raise ValueError(
-                    "`chunk_strategy` must be one of 'sentence', 'word', 'char', "
-                    "or 'token'."
-                )
-            chunk_size = metadata.get("chunk_size", 5)
-            chunk_overlap = metadata.get("chunk_overlap", 2)
 
-            # Check distance metric
-            distance_metric = metadata.get("distance_metric", "cosine")
-            if distance_metric not in ["cosine", "euclidean"]:
-                raise ValueError(
-                    "`distance_metric` must be one of 'cosine' or 'euclidean'."
-                )
+        # Check chunking strategy
+        chunk_strategy = metadata.get("chunk_strategy", "sentence")
+        if chunk_strategy not in ["sentence", "word", "char", "token"]:
+            raise ValueError(
+                "`chunk_strategy` must be one of 'sentence', 'word', 'char', "
+                "or 'token'."
+            )
+        chunk_size = metadata.get("chunk_size", 5)
+        chunk_overlap = metadata.get("chunk_overlap", 2)
 
-            # Check embed model
-            embed_function = metadata.get("embed_function", None)
-            if embed_function is None:
-                raise ValueError(
-                    "You must provide `embed_function` in metadata in order to "
-                    "use the default query function."
-                )
-            query_fn = partial(
-                self.query_vector_collection,
-                sources=metadata["sources"],
-                chunk_strategy=chunk_strategy,
-                chunk_size=chunk_size,
-                chunk_overlap=chunk_overlap,
-                distance_metric=distance_metric,
-                embed_function=embed_function,
+        # Check distance metric
+        distance_metric = metadata.get("distance_metric", "cosine")
+        if distance_metric not in ["cosine", "euclidean"]:
+            raise ValueError(
+                "`distance_metric` must be one of 'cosine' or 'euclidean'."
             )
 
-        return query_fn
+        # Check embed model
+        embed_function = metadata.get("embed_function", None)
+        if embed_function is None:
+            raise ValueError(
+                "You must provide `embed_function` in metadata in order to "
+                "use the default query function."
+            )
+        return partial(
+            self.query_vector_collection,
+            sources=metadata["sources"],
+            chunk_strategy=chunk_strategy,
+            chunk_size=chunk_size,
+            chunk_overlap=chunk_overlap,
+            distance_metric=distance_metric,
+            embed_function=embed_function,
+        )
 
     def validate_each_sentence(
         self, value: Any, query_function: Callable, metadata: Dict[str, Any]
