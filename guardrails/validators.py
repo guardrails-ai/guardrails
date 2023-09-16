@@ -14,7 +14,7 @@ import warnings
 from collections import defaultdict
 from functools import partial
 from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Union
-
+import rstr
 import openai
 import pydantic
 from pydantic import Field
@@ -568,6 +568,27 @@ class ValidLength(Validator):
                 fix_value=value[: self._max],
             )
 
+        return PassResult()
+
+@register_validator(name="regex_match", data_type="string")
+class RegexMatch(Validator):
+    """
+    """  # noqa
+
+    def __init__(
+        self, regex: str, on_fail: Optional[Callable] = None
+    ):
+        super().__init__(on_fail=on_fail, regex=regex)
+        self._regex = regex
+        self._p = re.compile(regex)
+
+    def validate(self, value: Any, metadata: Dict) -> ValidationResult:
+        """Validates that the length of value is within the expected range."""
+        if not self._p.match(value):
+            return FailResult(
+                error_message=f"Result must match {self._regex}",
+                fix_value=rstr.xeger(self._regex)
+            )
         return PassResult()
 
 
