@@ -583,7 +583,7 @@ class RegexMatch(Validator):
         self._p = re.compile(regex)
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
-        """Validates that the length of value is within the expected range."""
+        """Validates that value matches the provided regular expression."""
         if not self._p.match(value):
             return FailResult(
                 error_message=f"Result must match {self._regex}",
