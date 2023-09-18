@@ -1,11 +1,9 @@
 import importlib
-import os
 from typing import Dict
 
 import openai
 import pytest
 from integration_tests.mock_llm_outputs import MockOpenAICallable
-from pydantic import BaseModel, Field
 
 from guardrails.guard import Guard
 from guardrails.validators import FailResult
@@ -23,25 +21,19 @@ def test_validator_validate(validator_test_data: Dict[str, Dict[str, str]]):
         print("testing validator: ", validator_name)
         module = importlib.import_module("guardrails.validators")
         validator_class = getattr(module, validator_name)
-        if "instance_variables" in validator_test_data[validator_name]:
-            instance = validator_class(
-                **validator_test_data[validator_name]["instance_variables"]
+        for test_scenario in validator_test_data[validator_name]:
+            if "instance_variables" in test_scenario:
+                instance = validator_class(**test_scenario["instance_variables"])
+            else:
+                instance = validator_class()
+            result = instance.validate(
+                test_scenario["input_data"],
+                test_scenario["metadata"],
             )
-        else:
-            instance = validator_class()
-        result = instance.validate(
-            validator_test_data[validator_name]["input_data"],
-            validator_test_data[validator_name]["metadata"],
-        )
-        assert isinstance(
-            result, validator_test_data[validator_name]["expected_result"]
-        )
+            assert isinstance(result, test_scenario["expected_result"])
 
-        if (
-            isinstance(result, FailResult)
-            and "fix_value" in validator_test_data[validator_name]
-        ):
-            assert result.fix_value == validator_test_data[validator_name]["fix_value"]
+            if isinstance(result, FailResult) and "fix_value" in test_scenario:
+                assert result.fix_value == test_scenario["fix_value"]
 
 
 @pytest.mark.parametrize("validator_test_data", [(validator_test_python_str)])
