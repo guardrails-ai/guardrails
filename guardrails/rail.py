@@ -1,7 +1,7 @@
 """Rail class."""
 import warnings
 from dataclasses import dataclass
-from typing import List, Optional, Type
+from typing import Dict, List, Optional, Type
 
 from lxml import etree as ET
 from lxml.etree import Element, SubElement
@@ -39,6 +39,13 @@ class Rail:
     instructions: Optional[Instructions]
     prompt: Optional[Prompt]
     version: str = "0.1"
+
+    @property
+    def output_type(self):
+        if isinstance(self.output_schema, StringSchema):
+            return str
+        else:
+            return Dict
 
     @classmethod
     def from_pydantic(

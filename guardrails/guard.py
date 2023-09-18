@@ -2,7 +2,19 @@ import asyncio
 import contextvars
 import logging
 from string import Formatter
-from typing import Any, Awaitable, Callable, Dict, List, Optional, Type, Union, overload
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Dict,
+    Generic,
+    List,
+    Optional,
+    Type,
+    TypeVar,
+    Union,
+    overload,
+)
 
 from eliot import add_destinations, start_action
 from pydantic import BaseModel
@@ -22,8 +34,10 @@ logger = logging.getLogger(__name__)
 actions_logger = logging.getLogger(f"{__name__}.actions")
 add_destinations(actions_logger.debug)
 
+T = TypeVar("T", str, Dict, None)
 
-class Guard:
+
+class Guard(Generic[T]):
     """The Guard class.
 
     This class is the main entry point for using Guardrails. It is
@@ -138,7 +152,9 @@ class Guard:
         )
 
     @classmethod
-    def from_rail(cls, rail_file: str, num_reasks: Optional[int] = None) -> "Guard":
+    def from_rail(
+        cls, rail_file: str, num_reasks: Optional[int] = None
+    ) -> "Guard[Union[str, Dict]]":
         """Create a Schema from a `.rail` file.
 
         Args:
@@ -148,12 +164,13 @@ class Guard:
         Returns:
             An instance of the `Guard` class.
         """
-        return cls(Rail.from_file(rail_file), num_reasks=num_reasks)
+        rail = Rail.from_file(rail_file)
+        return cls[rail.output_type](rail=rail, num_reasks=num_reasks)
 
     @classmethod
     def from_rail_string(
         cls, rail_string: str, num_reasks: Optional[int] = None
-    ) -> "Guard":
+    ) -> "Guard[Union[str, Dict]]":
         """Create a Schema from a `.rail` string.
 
         Args:
@@ -163,7 +180,8 @@ class Guard:
         Returns:
             An instance of the `Guard` class.
         """
-        return cls(Rail.from_string(rail_string), num_reasks=num_reasks)
+        rail = Rail.from_string(rail_string)
+        return cls[rail.output_type](rail=rail, num_reasks=num_reasks)
 
     @classmethod
     def from_pydantic(
@@ -172,12 +190,12 @@ class Guard:
         prompt: Optional[str] = None,
         instructions: Optional[str] = None,
         num_reasks: Optional[int] = None,
-    ) -> "Guard":
+    ) -> "Guard[Dict]":
         """Create a Guard instance from a Pydantic model and prompt."""
         rail = Rail.from_pydantic(
             output_class=output_class, prompt=prompt, instructions=instructions
         )
-        return cls(rail, num_reasks=num_reasks, base_model=output_class)
+        return cls[Dict](rail, num_reasks=num_reasks, base_model=output_class)
 
     @classmethod
     def from_string(
@@ -189,7 +207,7 @@ class Guard:
         reask_prompt: Optional[str] = None,
         reask_instructions: Optional[str] = None,
         num_reasks: Optional[int] = None,
-    ) -> "Guard":
+    ) -> "Guard[str]":
         """Create a Guard instance for a string response with prompt,
         instructions, and validations.
 
@@ -210,7 +228,7 @@ class Guard:
             reask_prompt=reask_prompt,
             reask_instructions=reask_instructions,
         )
-        return cls(rail, num_reasks=num_reasks)
+        return cls[str](rail, num_reasks=num_reasks)
 
     @overload
     def __call__(
@@ -225,7 +243,7 @@ class Guard:
         full_schema_reask: Optional[bool] = None,
         *args,
         **kwargs,
-    ) -> Awaitable[ValidationOutcome]:
+    ) -> Awaitable[ValidationOutcome[T]]:
         ...
 
     @overload
@@ -241,7 +259,7 @@ class Guard:
         full_schema_reask: Optional[bool] = None,
         *args,
         **kwargs,
-    ) -> ValidationOutcome:
+    ) -> ValidationOutcome[T]:
         ...
 
     def __call__(
@@ -256,7 +274,7 @@ class Guard:
         full_schema_reask: Optional[bool] = None,
         *args,
         **kwargs,
-    ) -> Union[ValidationOutcome, Awaitable[ValidationOutcome]]:
+    ) -> Union[ValidationOutcome[T], Awaitable[ValidationOutcome[T]]]:
         """Call the LLM and validate the output. Pass an async LLM API to
         return a coroutine.
 
@@ -334,7 +352,7 @@ class Guard:
         full_schema_reask: bool,
         *args,
         **kwargs,
-    ) -> ValidationOutcome:
+    ) -> ValidationOutcome[T]:
         instructions_obj = instructions or self.instructions
         prompt_obj = prompt or self.prompt
         msg_history_obj = msg_history or []
@@ -362,7 +380,7 @@ class Guard:
                 full_schema_reask=full_schema_reask,
             )
             guard_history = runner(prompt_params=prompt_params)
-            return ValidationOutcome.from_guard_history(guard_history)
+            return ValidationOutcome[T].from_guard_history(guard_history)
 
     async def _call_async(
         self,
@@ -376,7 +394,7 @@ class Guard:
         full_schema_reask: bool,
         *args,
         **kwargs,
-    ) -> ValidationOutcome:
+    ) -> ValidationOutcome[T]:
         """Call the LLM asynchronously and validate the output.
 
         Args:
@@ -421,7 +439,7 @@ class Guard:
                 full_schema_reask=full_schema_reask,
             )
             guard_history = await runner.async_run(prompt_params=prompt_params)
-            return ValidationOutcome.from_guard_history(guard_history)
+            return ValidationOutcome[T].from_guard_history(guard_history)
 
     def __repr__(self):
         return f"Guard(RAIL={self.rail})"
@@ -440,7 +458,7 @@ class Guard:
         full_schema_reask: Optional[bool] = None,
         *args,
         **kwargs,
-    ) -> ValidationOutcome:
+    ) -> ValidationOutcome[T]:
         ...
 
     @overload
@@ -454,7 +472,7 @@ class Guard:
         full_schema_reask: Optional[bool] = None,
         *args,
         **kwargs,
-    ) -> Awaitable[ValidationOutcome]:
+    ) -> Awaitable[ValidationOutcome[T]]:
         ...
 
     @overload
@@ -468,7 +486,7 @@ class Guard:
         full_schema_reask: Optional[bool] = None,
         *args,
         **kwargs,
-    ) -> ValidationOutcome:
+    ) -> ValidationOutcome[T]:
         ...
 
     def parse(
@@ -481,7 +499,7 @@ class Guard:
         full_schema_reask: Optional[bool] = None,
         *args,
         **kwargs,
-    ) -> Union[ValidationOutcome, Awaitable[ValidationOutcome]]:
+    ) -> Union[ValidationOutcome[T], Awaitable[ValidationOutcome[T]]]:
         """Alternate flow to using Guard where the llm_output is known.
 
         Args:
@@ -549,7 +567,7 @@ class Guard:
         full_schema_reask: bool,
         *args,
         **kwargs,
-    ) -> ValidationOutcome:
+    ) -> ValidationOutcome[T]:
         """Alternate flow to using Guard where the llm_output is known.
 
         Args:
@@ -581,7 +599,7 @@ class Guard:
             guard_history.history[-1].validated_output = sub_reasks_with_fixed_values(
                 guard_history.validated_output
             )
-            validation_outcome = ValidationOutcome.from_guard_history(guard_history)
+            validation_outcome = ValidationOutcome[T].from_guard_history(guard_history)
             return validation_outcome
 
     async def _async_parse(
@@ -594,7 +612,7 @@ class Guard:
         full_schema_reask: bool,
         *args,
         **kwargs,
-    ) -> Any:
+    ) -> ValidationOutcome[T]:
         """Alternate flow to using Guard where the llm_output is known.
 
         Args:
@@ -626,4 +644,4 @@ class Guard:
             guard_history.history[-1].validated_output = sub_reasks_with_fixed_values(
                 guard_history.validated_output
             )
-            return ValidationOutcome.from_guard_history(guard_history)
+            return ValidationOutcome[T].from_guard_history(guard_history)
