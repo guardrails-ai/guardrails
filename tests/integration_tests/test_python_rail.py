@@ -107,7 +107,7 @@ def test_python_rail(mocker):
     )
 
     # Guardrails runs validation and fixes the first failing output through reasking
-    _, final_output = guard(
+    final_output = guard(
         openai.ChatCompletion.create,
         prompt_params={"director": "Christopher Nolan"},
         num_reasks=2,
@@ -118,7 +118,7 @@ def test_python_rail(mocker):
     expected_gd_output = json.loads(
         python_rail.LLM_OUTPUT_2_SUCCEED_GUARDRAILS_BUT_FAIL_PYDANTIC_VALIDATION
     )
-    assert final_output == expected_gd_output
+    assert final_output.validated_output == expected_gd_output
 
     guard_history = guard.guard_state.most_recent_call.history
 
@@ -228,7 +228,7 @@ def test_python_rail_add_validator(mocker):
     )
 
     # Guardrails runs validation and fixes the first failing output through reasking
-    _, final_output = guard(
+    final_output = guard(
         openai.ChatCompletion.create,
         prompt_params={"director": "Christopher Nolan"},
         num_reasks=2,
@@ -239,7 +239,7 @@ def test_python_rail_add_validator(mocker):
     expected_gd_output = json.loads(
         python_rail.LLM_OUTPUT_2_SUCCEED_GUARDRAILS_BUT_FAIL_PYDANTIC_VALIDATION
     )
-    assert final_output == expected_gd_output
+    assert final_output.validated_output == expected_gd_output
 
     guard_history = guard.guard_state.most_recent_call.history
 
@@ -295,14 +295,14 @@ ${ingredients}
     guard = gd.Guard.from_string(
         validators, description, prompt=prompt, instructions=instructions
     )
-    _, final_output = guard(
+    final_output = guard(
         llm_api=openai.Completion.create,
         prompt_params={"ingredients": "tomato, cheese, sour cream"},
         num_reasks=1,
         max_tokens=100,
     )
 
-    assert final_output == string.LLM_OUTPUT_REASK
+    assert final_output.validated_output == string.LLM_OUTPUT_REASK
 
     guard_history = guard.guard_state.most_recent_call.history
 

@@ -11,7 +11,7 @@ def test_pydantic_with_reask(mocker):
     mocker.patch("guardrails.llm_providers.OpenAICallable", new=MockOpenAICallable)
 
     guard = gd.Guard.from_pydantic(ListOfPeople, prompt=VALIDATED_RESPONSE_REASK_PROMPT)
-    _, final_output = guard(
+    final_output = guard(
         openai.Completion.create,
         engine="text-davinci-003",
         max_tokens=512,
@@ -21,7 +21,7 @@ def test_pydantic_with_reask(mocker):
     )
 
     # Assertions are made on the guard state object.
-    assert final_output == pydantic.VALIDATED_OUTPUT_REASK_3
+    assert final_output.validated_output == pydantic.VALIDATED_OUTPUT_REASK_3
 
     guard_history = guard.guard_state.most_recent_call.history
 
