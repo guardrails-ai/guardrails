@@ -698,6 +698,43 @@ class EndpointIsReachable(Validator):
         return PassResult()
 
 
+@register_validator(name="regex", data_type="string")
+class RegexMatch(Validator):
+    """Validates that a given string matches a regular expression.
+
+    This validator checks that the given string matches a regular expression.
+    The regular expression is specified as a string, and is compiled using
+    the Python `re` module.
+
+    **Key Properties**
+
+    | Property                      | Description                       |
+    | ----------------------------- | --------------------------------- |
+    | Name for `format` attribute   | `regex`                           |
+    | Supported data types          | `string`                          |
+    | Programmatic fix              | None                              |
+    """
+
+    def __init__(self, regex: Optional[str] = None, on_fail: Optional[Callable] = None):
+        super().__init__(on_fail=on_fail, regex=regex)
+        self._regex = re.compile(regex)
+
+    def validate(self, value: Any, metadata: Dict) -> ValidationResult:
+        logger.debug(f"Validating {value} matches regex pattern {self._regex}...")
+
+        regex = self._regex or metadata.get("regex")
+
+        if not regex:
+            raise ValueError("No regex pattern specified")
+
+        if not re.match(regex, value):
+            return FailResult(
+                error_message=f"Value {value} does not match regex pattern {regex}.",
+            )
+
+        return PassResult()
+
+
 @register_validator(name="bug-free-python", data_type="pythoncode")
 class BugFreePython(Validator):
     """Validates that there are no Python syntactic bugs in the generated code.
