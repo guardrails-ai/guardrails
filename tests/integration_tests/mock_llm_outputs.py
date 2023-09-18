@@ -88,6 +88,10 @@ class MockOpenAIChatCallable(OpenAIChatCallable):
                 pydantic.MSG_COMPILED_PROMPT_REASK,
                 pydantic.MSG_COMPILED_INSTRUCTIONS_REASK,
             ): pydantic.MSG_HISTORY_LLM_OUTPUT_CORRECT,
+            (
+                string.PARSE_COMPILED_PROMPT_REASK,
+                string.MSG_COMPILED_INSTRUCTIONS_REASK,
+            ): string.MSG_LLM_OUTPUT_CORRECT,
         }
 
         try:
