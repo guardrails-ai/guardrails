@@ -44,3 +44,15 @@ class ValidationOutcome(Generic[T], ArbitraryModel):
                 validated_output=validated_output,
                 validation_passed=any_validations_failed,
             )
+
+    def __iter__(self):
+        as_tuple = (
+            self.raw_llm_output,
+            self.validated_output,
+            self.reask,
+            self.validation_passed,
+        )
+        return iter(as_tuple)
+
+    def __getitem__(self, keys):
+        return iter(getattr(self, k) for k in keys)
