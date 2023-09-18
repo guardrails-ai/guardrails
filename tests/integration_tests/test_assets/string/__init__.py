@@ -30,6 +30,7 @@ MOVIE_MSG_HISTORY = [
 ]
 MSG_COMPILED_PROMPT_REASK = reader("msg_compiled_prompt_reask.txt")
 MSG_COMPILED_INSTRUCTIONS_REASK = reader("msg_compiled_instructions_reask.txt")
+PARSE_COMPILED_PROMPT_REASK = reader("parse_compiled_prompt_reask.txt")
 
 __all__ = [
     "COMPILED_PROMPT",
