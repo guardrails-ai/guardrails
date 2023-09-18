@@ -1,18 +1,8 @@
 import asyncio
 import contextvars
 import logging
-from typing import (
-    Any,
-    Awaitable,
-    Callable,
-    Dict,
-    List,
-    Optional,
-    Tuple,
-    Type,
-    Union,
-    overload,
-)
+from string import Formatter
+from typing import Any, Awaitable, Callable, Dict, List, Optional, Type, Union, overload
 
 from eliot import add_destinations, start_action
 from pydantic import BaseModel
