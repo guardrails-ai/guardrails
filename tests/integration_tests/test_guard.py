@@ -459,7 +459,10 @@ def test_skeleton_reask(mocker):
     )
 
     # Assertions are made on the guard state object.
-    assert final_output.validated_output == entity_extraction.VALIDATED_OUTPUT_SKELETON_REASK_2
+    assert (
+        final_output.validated_output
+        == entity_extraction.VALIDATED_OUTPUT_SKELETON_REASK_2
+    )
 
     guard_history = guard.guard_state.most_recent_call.history
 
@@ -694,7 +697,9 @@ def test_pydantic_with_message_history_reask(mocker):
     )
 
     assert final_output.raw_llm_output == pydantic.MSG_HISTORY_LLM_OUTPUT_CORRECT
-    assert final_output.validated_output == json.loads(pydantic.MSG_HISTORY_LLM_OUTPUT_CORRECT)
+    assert final_output.validated_output == json.loads(
+        pydantic.MSG_HISTORY_LLM_OUTPUT_CORRECT
+    )
 
     guard_history = guard.guard_state.most_recent_call.history
 

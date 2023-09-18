@@ -21,23 +21,40 @@ class ValidationOutcome(ArbitraryModel):
     )
 
     @overload
-    def __init__ (self, raw_llm_output: str, validated_output: str, validation_passed: bool):
-        ...
-    
-    @overload
-    def __init__ (self, raw_llm_output: str, validated_output: Dict, validation_passed: bool):
-        ...
-    
-    @overload
-    def __init__ (self, raw_llm_output: str, validated_output: ReAsk, validation_passed: bool):
+    def __init__(
+        self, raw_llm_output: str, validated_output: str, validation_passed: bool
+    ):
         ...
 
     @overload
-    def __init__ (self, raw_llm_output: str, validated_output: None, validation_passed: bool):
+    def __init__(
+        self, raw_llm_output: str, validated_output: Dict, validation_passed: bool
+    ):
         ...
-    
-    def __init__ (self, raw_llm_output: str, validated_output: Union[str, Dict, ReAsk, None], validation_passed: bool):
-        super().__init__(raw_llm_output=raw_llm_output, validated_output=validated_output, validation_passed=validation_passed)
+
+    @overload
+    def __init__(
+        self, raw_llm_output: str, validated_output: ReAsk, validation_passed: bool
+    ):
+        ...
+
+    @overload
+    def __init__(
+        self, raw_llm_output: str, validated_output: None, validation_passed: bool
+    ):
+        ...
+
+    def __init__(
+        self,
+        raw_llm_output: str,
+        validated_output: Union[str, Dict, ReAsk, None],
+        validation_passed: bool,
+    ):
+        super().__init__(
+            raw_llm_output=raw_llm_output,
+            validated_output=validated_output,
+            validation_passed=validation_passed,
+        )
         self.raw_llm_output = raw_llm_output
         self.validated_output = validated_output
         self.validation_passed = validation_passed
@@ -68,7 +85,12 @@ class TextOutcome(ValidationOutcome):
         " output from the LLM call after passing through validation."
     )
 
-    def __init__ (self, raw_llm_output: str, validated_output: Union[str, ReAsk, None], validation_passed: bool):
+    def __init__(
+        self,
+        raw_llm_output: str,
+        validated_output: Union[str, ReAsk, None],
+        validation_passed: bool,
+    ):
         super().__init__(raw_llm_output, validated_output, validation_passed)
 
 
@@ -78,5 +100,10 @@ class StructuredOutcome(ValidationOutcome):
         " output from the LLM call after passing through validation."
     )
 
-    def __init__ (self, raw_llm_output: str, validated_output: Union[Dict, ReAsk, None], validation_passed: bool):
+    def __init__(
+        self,
+        raw_llm_output: str,
+        validated_output: Union[Dict, ReAsk, None],
+        validation_passed: bool,
+    ):
         super().__init__(raw_llm_output, validated_output, validation_passed)
