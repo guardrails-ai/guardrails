@@ -185,5 +185,5 @@ extra:
       link: https://discord.gg/Jsey3mX98B
 
 extra_javascript:
-  - docs/pipedrive.js
-  - docs/posthog.js
+  - javascripts/pipedrive.js
+  - javascripts/posthog.js
