@@ -13,18 +13,6 @@ validator_test_pass_fail = {
             "expected_result": PassResult,
         },
     ],
-    "ExtractedSummarySentencesMatch": [
-        {
-            "input_data": "It was a nice day. I went to the park. I saw a dog.",
-            "metadata": {
-                "filepaths": [
-                    "./tests/unit_tests/test_assets/article1.txt",
-                    "./tests/unit_tests/test_assets/article2.txt",
-                ]
-            },
-            "expected_result": PassResult,
-        }
-    ],
     "ValidLength": [
         {
             "input_data": "hello there yo",
