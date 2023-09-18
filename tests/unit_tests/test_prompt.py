@@ -7,9 +7,11 @@ import pytest
 from pydantic import BaseModel, Field
 
 import guardrails as gd
+from guardrails.prompt.instructions import Instructions
+from guardrails.prompt.prompt import Prompt
 from guardrails.utils.constants import constants
 
-INSTRUCTIONS = "You are a helpful bot, who answers only with valid JSON"
+INSTRUCTIONS = "\nYou are a helpful bot, who answers only with valid JSON\n"
 
 PROMPT = "Extract a string from the text"
 
@@ -204,12 +206,14 @@ def test_format_instructions():
 
 def test_reask_prompt():
     guard = gd.Guard.from_rail_string(RAIL_WITH_REASK_PROMPT)
-    assert guard.output_schema.reask_prompt_template == REASK_PROMPT
+    assert guard.output_schema.reask_prompt_template == Prompt(REASK_PROMPT)
 
 
 def test_reask_instructions():
     guard = gd.Guard.from_rail_string(RAIL_WITH_REASK_INSTRUCTIONS)
-    assert guard.output_schema.reask_instructions_template.strip() == INSTRUCTIONS
+    assert guard.output_schema._reask_instructions_template == Instructions(
+        INSTRUCTIONS
+    )
 
 
 @pytest.mark.parametrize(
