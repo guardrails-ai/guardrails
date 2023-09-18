@@ -9,19 +9,19 @@ from guardrails.utils.reask_utils import ReAsk
 from guardrails.validators import ValidChoices
 
 test_cases = [
-    # ('{"choice": {"action": "fight", "fight_move": "kick"}}', False),
-    # (
-    #     '{"choice": {"action": "flight", "flight_direction": "north", "flight_speed": 1}}',
-    #     False,
-    # ),
+    ('{"choice": {"action": "fight", "fight_move": "kick"}}', False),
+    (
+        '{"choice": {"action": "flight", "flight_direction": "north", "flight_speed": 1}}',
+        False,
+    ),
     ('{"choice": {"action": "flight", "fight_move": "punch"}}', True),
-    # (
-    #     '{"choice": {"action": "fight", "flight_direction": "north", "flight_speed": 1}}',
-    #     True,
-    # ),
-    # ('{"choice": {"action": "random_action"}}', True),
-    # ('{"choice": {"action": "fight", "fight": "random_move"}}', True),
-    # ('{"choice": {"action": "flight", "random_key": "random_value"}', True),
+    (
+        '{"choice": {"action": "fight", "flight_direction": "north", "flight_speed": 1}}',
+        True,
+    ),
+    ('{"choice": {"action": "random_action"}}', True),
+    ('{"choice": {"action": "fight", "fight": "random_move"}}', True),
+    ('{"choice": {"action": "flight", "random_key": "random_value"}', True),
 ]
 
 
@@ -95,19 +95,9 @@ def test_choice_validation_pydantic(llm_output, raises):
         with pytest.raises(ValueError):
             result = guard.parse(llm_output, num_reasks=0)
             validated_output = result.validated_output
-            print("llm_output: ", llm_output)
-            print("raises: ", raises)
-            print("validated_output: ", validated_output)
-            print("type(validated_output): ", type(validated_output))
-            print("validated_output is None: ", validated_output is None)
-            print("isinstance(validated_output, ReAsk): ", isinstance(validated_output, ReAsk))
             if validated_output is None or isinstance(validated_output, ReAsk):
                 raise ValueError("Expected a result, but got None or ReAsk.")
     else:
         result = guard.parse(llm_output, num_reasks=0)
         validated_output = result.validated_output
-        print("llm_output: ", llm_output)
-        print("raises: ", raises)
-        print("validated_output: ", validated_output)
-        print("type(validated_output): ", type(validated_output))
         assert not isinstance(validated_output, ReAsk)
