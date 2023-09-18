@@ -2,8 +2,6 @@
 
 from string import Template
 from unittest import mock
-from guardrails.prompt.instructions import Instructions
-from guardrails.prompt.prompt import Prompt
 
 import pytest
 from pydantic import BaseModel, Field
@@ -213,7 +211,9 @@ def test_reask_prompt():
 
 def test_reask_instructions():
     guard = gd.Guard.from_rail_string(RAIL_WITH_REASK_INSTRUCTIONS)
-    assert guard.output_schema._reask_instructions_template == Instructions(INSTRUCTIONS)
+    assert guard.output_schema._reask_instructions_template == Instructions(
+        INSTRUCTIONS
+    )
 
 
 @pytest.mark.parametrize(
