@@ -17,8 +17,11 @@ from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Union
 
 import openai
 import pydantic
+import torch
 from pydantic import Field
+from ray.train.huggingface import TransformersCheckpoint
 from tenacity import retry, stop_after_attempt, wait_random_exponential
+from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
 from guardrails.utils.casting_utils import to_int
 from guardrails.utils.docs_utils import get_chunks_from_text, sentence_split
@@ -2179,6 +2182,247 @@ class ProvenanceV1(Validator):
         if api_base:
             openai.api_base = api_base
 
+        query_function = self.get_query_function(metadata)
+        if self._validation_method == "sentence":
+            return self.validate_each_sentence(value, query_function, metadata)
+        elif self._validation_method == "full":
+            return self.validate_full_text(value, query_function, metadata)
+        else:
+            raise ValueError("validation_method must be 'sentence' or 'full'.")
+
+    @staticmethod
+    def query_vector_collection(
+        text: str,
+        k: int,
+        sources: List[str],
+        chunk_strategy: str = "sentence",
+        chunk_size: int = 5,
+        chunk_overlap: int = 2,
+        distance_metric: str = "cosine",
+        embed_function: Optional[Callable] = None,
+    ) -> List[Tuple[str, float]]:
+        chunks = [
+            get_chunks_from_text(source, chunk_strategy, chunk_size, chunk_overlap)
+            for source in sources
+        ]
+        chunks = list(itertools.chain.from_iterable(chunks))
+
+        # Create embeddings
+        source_embeddings = np.array(embed_function(chunks)).squeeze()
+        query_embedding = embed_function(text).squeeze()
+
+        # Compute distances
+        if distance_metric == "cosine":
+            if not _HAS_NUMPY:
+                raise ValueError(
+                    "You must install numpy in order to use the cosine distance "
+                    "metric."
+                )
+
+            cos_sim = 1 - (
+                np.dot(source_embeddings, query_embedding)
+                / (
+                    np.linalg.norm(source_embeddings, axis=1)
+                    * np.linalg.norm(query_embedding)
+                )
+            )
+            top_indices = np.argsort(cos_sim)[:k]
+            top_chunks = [chunks[j] for j in top_indices]
+        else:
+            raise ValueError("distance_metric must be 'cosine'.")
+
+        return top_chunks
+
+
+@register_validator(name="nli-provenance", data_type="string")
+class NLIProvenance(Validator):
+    """Validates LLM-generated text using an NLI model to detect and remove
+    hallucinated parts.
+
+    This validator uses either a pre-trained NLI model
+    (from HuggingFace: "MoritzLaurer/DeBERTa-v3-base-mnli-fever-docnli-ling-2c")
+    or a fine-tuned version of the same model
+    (provided by the user with 'checkpoint').
+    """
+
+    def __init__(
+        self,
+        validation_method: str = "sentence",
+        top_k: int = 3,
+        checkpoint: Optional[TransformersCheckpoint] = None,
+        on_fail: Optional[Callable] = None,
+        **kwargs,
+    ):
+        """
+        args:
+            validation_method (str): Whether to validate at the sentence level or over
+                the full text.  One of `sentence` or `full`. Defaults to `sentence`
+            checkpoint (TransformersCheckpoint): A fine-tuned model checkpoint.
+        """
+        super().__init__(
+            on_fail,
+            validation_method=validation_method,
+            top_k=top_k,
+            checkpoint=checkpoint,
+            **kwargs,
+        )
+        if validation_method not in ["sentence", "full"]:
+            raise ValueError("validation_method must be 'sentence' or 'full'.")
+        self._validation_method = validation_method
+        self._top_k = int(top_k)
+        self._checkpoint = checkpoint  # TODO: Add checkpoint type-casting
+        self._model_name = "MoritzLaurer/DeBERTa-v3-base-mnli-fever-docnli-ling-2c"
+        self._device = "cuda" if torch.cuda.is_available() else "cpu"
+
+    def get_query_function(self, metadata: Dict[str, Any]) -> None:
+        # Exact same as ProvenanceV0 and ProvenanceV1
+        query_fn = metadata.get("query_function", None)
+        sources = metadata.get("sources", None)
+
+        # Check that query_fn or sources are provided
+        if query_fn is not None and sources is not None:
+            warnings.warn(
+                "Both `query_function` and `sources` are provided in metadata. "
+                "`query_function` will be used."
+            )
+        elif query_fn is None and sources is None:
+            raise ValueError(
+                "You must provide either `query_function` or `sources` in metadata."
+            )
+        elif query_fn is None and sources is not None:
+            # Check chunking strategy
+            chunk_strategy = metadata.get("chunk_strategy", "sentence")
+            if chunk_strategy not in ["sentence", "word", "char", "token"]:
+                raise ValueError(
+                    "`chunk_strategy` must be one of 'sentence', 'word', 'char', "
+                    "or 'token'."
+                )
+            chunk_size = metadata.get("chunk_size", 5)
+            chunk_overlap = metadata.get("chunk_overlap", 2)
+
+            # Check distance metric
+            distance_metric = metadata.get("distance_metric", "cosine")
+            if distance_metric not in ["cosine", "euclidean"]:
+                raise ValueError(
+                    "`distance_metric` must be one of 'cosine' or 'euclidean'."
+                )
+
+            # Check embed model
+            embed_function = metadata.get("embed_function", None)
+            if embed_function is None:
+                raise ValueError(
+                    "You must provide `embed_function` in metadata in order to "
+                    "use the default query function."
+                )
+            query_fn = partial(
+                NLIProvenance.query_vector_collection,
+                sources=metadata["sources"],
+                chunk_strategy=chunk_strategy,
+                chunk_size=chunk_size,
+                chunk_overlap=chunk_overlap,
+                distance_metric=distance_metric,
+                embed_function=embed_function,
+            )
+        return query_fn
+
+    def get_model_prediction(self, premise: str, hypothesis: str) -> str:
+        """Returns the model prediction for the given premise and
+        hypothesis."""
+        if self._checkpoint:
+            # Use the checkpoint to load the model
+            checkpoint = TransformersCheckpoint.from_checkpoint(self._checkpoint)
+            model = checkpoint.get_model(model=AutoModelForSequenceClassification)
+        else:
+            # Use pre-trained model
+            model = AutoModelForSequenceClassification.from_pretrained(self._model_name)
+
+        tokenizer = AutoTokenizer.from_pretrained(self._model_name)
+        label_names = ["entailment", "not_entailment"]
+
+        input = tokenizer(
+            premise,
+            hypothesis,
+            padding="max_length",
+            truncation=True,
+            return_token_type_ids=True,
+            return_tensors="pt",
+        )
+        output = model(input["input_ids"].to(self._device))
+        prediction = torch.softmax(output["logits"][0], -1).tolist()
+        prediction = {name: pred for name, pred in zip(label_names, prediction)}
+        max_label = max(prediction, key=prediction.get)
+        confidence = round(prediction[max_label], 3)
+        return max_label, confidence
+
+    def get_nli_evaluation(self, text: str, query_function: Callable) -> bool:
+        """Create hypothesis and premise and then return NLI model
+        prediction."""
+
+        # Get the relevant chunks using the query function
+        relevant_chunks = query_function(text=text, k=self._top_k)
+        hypothesis = text
+
+        max_confidence = 0
+        best_prediction = None
+        for chunk in relevant_chunks:
+            # Create the premise and hypothesis
+            premise = chunk
+
+            # Get NLI model prediction and confidence value
+            nli_prediction, confidence = self.get_model_prediction(premise, hypothesis)
+
+            # Update max confidence
+            if confidence > max_confidence:
+                max_confidence = confidence
+                best_prediction = nli_prediction
+
+        return best_prediction == "entailment"
+
+    def validate_each_sentence(
+        self, value: Any, query_function: Callable, metadata: Dict[str, Any]
+    ) -> ValidationResult:
+        # Split the value into sentences using nltk sentence tokenizer.
+        sentences = nltk.sent_tokenize(value)
+
+        unsupported_sentences = []
+        supported_sentences = []
+        for sentence in sentences:
+            eval = self.get_nli_evaluation(sentence, query_function)
+            if not eval:
+                unsupported_sentences.append(sentence)
+            else:
+                supported_sentences.append(sentence)
+
+        if unsupported_sentences:
+            unsupported_sentences = "- " + "\n- ".join(unsupported_sentences)
+            return FailResult(
+                metadata=metadata,
+                error_message=(
+                    f"The following sentences in your response are not supported "
+                    "by the provided context:"
+                    f"\n{unsupported_sentences}"
+                ),
+                fix_value="\n".join(supported_sentences),
+            )
+        return PassResult(metadata=metadata)
+
+    def validate_full_text(
+        self, value: Any, query_function: Callable, metadata: Dict[str, Any]
+    ) -> ValidationResult:
+        # Evaluate the entire LLM-generated text
+        eval = self.get_nli_evaluation(value, query_function)
+        if not eval:
+            # if False
+            return FailResult(
+                metadata=metadata,
+                error_message=(
+                    "The following text in your response is not supported by the "
+                    "provided context:\n" + value
+                ),
+            )
+        return PassResult(metadata=metadata)
+
+    def validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
         query_function = self.get_query_function(metadata)
         if self._validation_method == "sentence":
             return self.validate_each_sentence(value, query_function, metadata)
