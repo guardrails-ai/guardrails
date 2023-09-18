@@ -16,10 +16,10 @@ from typing import (
     get_origin,
 )
 
+import lxml.etree as ET
 from griffe.dataclasses import Docstring
 from griffe.docstrings.parsers import Parser, parse
-from lxml.builder import E
-from lxml.etree import Element
+from lxml.etree import Element as E
 from pydantic import BaseModel, HttpUrl, validator
 from pydantic.fields import ModelField
 
@@ -35,7 +35,7 @@ def get_field_descriptions(model: "BaseModel") -> Dict[str, str]:
     griffe_docstrings_google_logger.disabled = True
     griffe_agents_nodes_logger.disabled = True
     try:
-        docstring = Docstring(model.__doc__, lineno=1)
+        docstring = Docstring(model.__doc__, lineno=1)  # type: ignore
     except AttributeError:
         return {}
     parsed = parse(docstring, Parser.google)
@@ -68,7 +68,7 @@ def is_pydantic_base_model(type_annotation: Any) -> bool:
         if issubclass(type_annotation, BaseModel):
             return True
     except TypeError:
-        False
+        pass
     return False
 
 
@@ -170,7 +170,9 @@ def type_annotation_to_string(type_annotation: Any) -> str:
         raise ValueError(f"Unsupported type: {type_annotation}")
 
 
-def add_validators_to_xml_element(field_info: ModelField, element: Element) -> Element:
+def add_validators_to_xml_element(
+    field_info: ModelField, element: ET._Element
+) -> ET._Element:
     """Extract validators from a pydantic ModelField and add to XML element.
 
     Args:
@@ -200,7 +202,7 @@ def add_validators_to_xml_element(field_info: ModelField, element: Element) -> E
 
 
 def attach_validators_to_element(
-    element: Element,
+    element: ET._Element,
     validators: Union[List[Validator], List[str]],
 ):
     format_prompt = []
@@ -255,10 +257,10 @@ def attach_validators_to_element(
 
 
 def create_xml_element_for_field(
-    field: Union[ModelField, Type, type],
+    field: Union[ModelField, Type],
     field_name: Optional[str] = None,
     exclude_subfields: Optional[typing.List[str]] = None,
-) -> Element:
+) -> ET._Element:
     """Create an XML element corresponding to a field.
 
     Args:
@@ -350,10 +352,10 @@ def create_xml_element_for_field(
 
 
 def create_xml_element_for_base_model(
-    model: BaseModel,
-    element: Optional[Element] = None,
+    model: Type[BaseModel],
+    element: Optional[ET._Element] = None,
     exclude_subfields: Optional[typing.List[str]] = None,
-) -> Element:
+) -> ET._Element:
     """Create an XML element for a Pydantic BaseModel.
 
     This function does the following:
@@ -372,7 +374,9 @@ def create_xml_element_for_base_model(
         exclude_subfields = []
 
     if element is None:
-        element = E("object")
+        element_ = E("object")
+    else:
+        element_ = element
 
     # Extract pydantic validators from the model and add them as guardrails validators
     model_fields = add_pydantic_validators_as_guardrails_validators(model)
@@ -382,9 +386,9 @@ def create_xml_element_for_base_model(
         if field_name in exclude_subfields:
             continue
         field_element = create_xml_element_for_field(field, field_name)
-        element.append(field_element)
+        element_.append(field_element)
 
-    return element
+    return element_
 
 
 def add_validator(
@@ -395,8 +399,8 @@ def add_validator(
     check_fields: bool = True,
     whole: Optional[bool] = None,
     allow_reuse: bool = True,
-    fn: Optional[Callable] = None,
-) -> Callable:
+    fn: Callable,
+) -> classmethod:
     return validator(
         *fields,
         pre=pre,
@@ -409,8 +413,8 @@ def add_validator(
 
 
 def convert_pydantic_validator_to_guardrails_validator(
-    model: BaseModel, fn: Callable
-) -> Validator:
+    model: Type[BaseModel], fn: Callable
+) -> Union[str, Validator]:
     """Convert a Pydantic validator to a Guardrails validator.
 
     Pydantic validators can be defined in three ways:
@@ -458,7 +462,7 @@ def convert_pydantic_validator_to_guardrails_validator(
 
 
 def add_pydantic_validators_as_guardrails_validators(
-    model: BaseModel,
+    model: Type[BaseModel],
 ) -> Dict[str, ModelField]:
     """Extract all validators for a pydantic BaseModel.
 

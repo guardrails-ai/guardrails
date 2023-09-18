@@ -282,8 +282,15 @@ def generate_type_skeleton_from_schema(schema: ET._Element) -> Placeholder:
                 optional=is_optional,
             )
 
+    children = {}
+    for child in schema:
+        name = child.attrib["name"]
+        if isinstance(name, bytes):
+            name = name.decode("utf-8")
+        children[name] = _recurse_schema(child)
+
     return DictPlaceholder(
-        children={child.attrib["name"]: _recurse_schema(child) for child in schema},
+        children=children,
         optional=False,
     )
 
@@ -304,15 +311,15 @@ def verify_schema_against_json(
     )
 
 
-def extract_json_from_ouput(output: str) -> Tuple[Dict, Optional[Exception]]:
+def extract_json_from_ouput(output: str) -> Tuple[Optional[Dict], Optional[Exception]]:
     # Find and extract json from code blocks
     extracted_code_block = output
     has_json_block, json_start, json_end = has_code_block(output, "json")
-    if has_json_block:
+    if has_json_block and json_start is not None and json_end is not None:
         extracted_code_block = get_code_block(output, json_start, json_end, "json")
     else:
         has_block, block_start, block_end = has_code_block(output)
-        if has_block:
+        if has_block and block_start is not None and block_end is not None:
             extracted_code_block = get_code_block(output, block_start, block_end)
 
     # Treat the output as a JSON string, and load it into a dict.
