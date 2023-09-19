@@ -17,11 +17,8 @@ from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Union
 
 import openai
 import pydantic
-import torch
 from pydantic import Field
-from ray.train.huggingface import TransformersCheckpoint
 from tenacity import retry, stop_after_attempt, wait_random_exponential
-from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
 from guardrails.utils.casting_utils import to_int
 from guardrails.utils.docs_utils import get_chunks_from_text, sentence_split
@@ -45,6 +42,27 @@ try:
         nltk.data.find("tokenizers/punkt")
 except LookupError:
     nltk.download("punkt")
+
+try:
+    import torch
+except ImportError:
+    _HAS_TORCH = False
+else:
+    _HAS_TORCH = True
+
+try:
+    from transformers import AutoModelForSequenceClassification, AutoTokenizer
+except ImportError:
+    _HAS_TRANSFORMERS = False
+else:
+    _HAS_TRANSFORMERS = True
+
+try:
+    from ray.train.huggingface import TransformersCheckpoint
+except ImportError:
+    _HAS_RAY = False
+else:
+    _HAS_RAY = True
 
 
 validators_registry = {}
@@ -2264,6 +2282,12 @@ class NLIProvenance(Validator):
             top_k=top_k,
             **kwargs,
         )
+
+        if any([not _HAS_TORCH, not _HAS_TRANSFORMERS]):
+            raise ImportError(
+                "torch and transformers are required for NLIProvenance validator. "
+                "Please install them using `pip install torch transformers`."
+            )
         if validation_method not in ["sentence", "full"]:
             raise ValueError("validation_method must be 'sentence' or 'full'.")
         self._validation_method = validation_method
@@ -2323,19 +2347,24 @@ class NLIProvenance(Validator):
         return query_fn
 
     def get_model_prediction(
-        self, premise: str, hypothesis: str, checkpoint: TransformersCheckpoint = None
+        self, premise: str, hypothesis: str, checkpoint: "TransformersCheckpoint" = None
     ) -> str:
         """Returns the model prediction for the given premise and
         hypothesis."""
         if checkpoint:
             # Use the checkpoint to load the model
+            if not _HAS_RAY:
+                raise ImportError(
+                    "You must install ray in order to use a checkpoint. "
+                    'Please install it using `pip install "ray[default]"`.'
+                )
             checkpoint = TransformersCheckpoint.from_checkpoint(checkpoint)
             model = checkpoint.get_model(model=AutoModelForSequenceClassification)
         else:
             # Use pre-trained model
             model = AutoModelForSequenceClassification.from_pretrained(self._model_name)
 
-        tokenizer = AutoTokenizer.from_pretrained(self._model_name)
+        tokenizer = AutoTokenizer.from_pretrained(self._model_name, use_fast=True)
         label_names = ["entailment", "not_entailment"]
 
         input = tokenizer(
@@ -2395,6 +2424,11 @@ class NLIProvenance(Validator):
         self, value: Any, query_function: Callable, metadata: Dict[str, Any]
     ) -> ValidationResult:
         # Split the value into sentences using nltk sentence tokenizer.
+        if not nltk:
+            raise ImportError(
+                "You must install nltk in order to use the NLIProvenance validator. "
+                "Please install it using `pip install nltk`."
+            )
         sentences = nltk.sent_tokenize(value)
 
         unsupported_sentences = []
