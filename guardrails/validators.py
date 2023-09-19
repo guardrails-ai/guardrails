@@ -15,6 +15,7 @@ from collections import defaultdict
 from functools import partial
 from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Union
 import rstr
+import string
 import openai
 import pydantic
 from pydantic import Field
@@ -572,22 +573,38 @@ class ValidLength(Validator):
 
 @register_validator(name="regex_match", data_type="string")
 class RegexMatch(Validator):
-    """
-    """  # noqa
+    """Validates that a value matches a regualr expression
 
+    **Key Properties**
+
+    | Property                      | Description                       |
+    | ----------------------------- | --------------------------------- |
+    | Name for `format` attribute   | `regex_match`                       |
+    | Supported data types          | `string`                          |
+    | Programmatic fix              | Generate a string that matches the regular expression        |
+    """
     def __init__(
-        self, regex: str, on_fail: Optional[Callable] = None
+        self,
+        regex: str,
+        match_type: str,
+        on_fail: Optional[Callable] = None
     ):
-        super().__init__(on_fail=on_fail, regex=regex)
+        super().__init__(on_fail=on_fail, match_type=match_type, regex=regex)
+        match_types = ["fullmatch", "search"]
+        assert match_type in match_types, f"match_type must be in {match_types}"
         self._regex = regex
         self._p = re.compile(regex)
+        self._match_f = getattr(self._p, match_type)
+        #Pad matchign string on either side for fix example if we are performing a regex search
+        str_padding = "" if match_type == "fullmatch" else rstr.rstr(string.ascii_lowercase)
+        self._fix_str = str_padding + rstr.xeger(regex) + str_padding
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         """Validates that value matches the provided regular expression."""
-        if not self._p.match(value):
+        if not self._match_f(value):
             return FailResult(
-                error_message=f"Result must match {self._regex}",
-                fix_value=rstr.xeger(self._regex)
+                error_message=f"Result must exactly match {self._regex}",
+                fix_value=self._fix_str
             )
         return PassResult()
 
