@@ -1,7 +1,7 @@
 import asyncio
 import contextvars
 import logging
-from string import Formatter
+from string import Template
 from typing import (
     Any,
     Awaitable,
@@ -113,9 +113,7 @@ class Guard:
             reask_prompt = Prompt(reask_prompt)
 
         # Check that the reask prompt has the correct variables
-        variables = [
-            t[1] for t in Formatter().parse(reask_prompt.source) if t[1] is not None
-        ]
+        variables = Template(reask_prompt.source).get_identifiers()
         variable_set = set(variables)
         assert variable_set.__contains__("previous_response")
         assert variable_set.__contains__("output_schema")

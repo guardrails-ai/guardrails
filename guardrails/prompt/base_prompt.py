@@ -1,7 +1,7 @@
 """Class for representing a prompt entry."""
 import re
 import warnings
-from string import Formatter, Template
+from string import Template
 from typing import Optional
 
 import regex
@@ -37,7 +37,7 @@ class BasePrompt:
 
     @property
     def variable_names(self):
-        return [x[1] for x in Formatter().parse(self.escape()) if x[1] is not None]
+        return Template(self.source).get_identifiers()
 
     @property
     def format_instructions(self):
