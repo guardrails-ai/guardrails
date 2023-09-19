@@ -8,6 +8,7 @@ import regex
 
 from guardrails.namespace_template import NamespaceTemplate
 from guardrails.utils.constants import constants
+from guardrails.utils.parsing_utils import get_template_variables
 
 
 class BasePrompt:
@@ -37,7 +38,7 @@ class BasePrompt:
 
     @property
     def variable_names(self):
-        return Template(self.source).get_identifiers()
+        return get_template_variables(self.source)
 
     @property
     def format_instructions(self):

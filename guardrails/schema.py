@@ -5,7 +5,6 @@ import re
 import warnings
 from copy import deepcopy
 from dataclasses import dataclass
-from string import Template
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
@@ -27,6 +26,7 @@ from guardrails.utils.json_utils import (
     verify_schema_against_json,
 )
 from guardrails.utils.logs_utils import FieldValidationLogs, GuardLogs
+from guardrails.utils.parsing_utils import get_template_variables
 from guardrails.utils.reask_utils import (
     FieldReAsk,
     NonParseableReAsk,
@@ -449,7 +449,7 @@ class Schema:
             return
 
         # Check that the reask prompt has the correct variables
-        variables = Template(reask_prompt).get_identifiers()
+        variables = get_template_variables(reask_prompt)
         assert set(variables) == self.reask_prompt_vars
 
 
