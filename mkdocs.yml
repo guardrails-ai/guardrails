@@ -176,7 +176,7 @@ plugins:
 extra:
   analytics:
     provider: google
-    property: !ENV GA_TOKEN
+    property: G-CXQ3SCNV24
   version:
     provider: mike
   social:
