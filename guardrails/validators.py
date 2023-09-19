@@ -2236,8 +2236,8 @@ class ProvenanceV1(Validator):
 
 @register_validator(name="nli-provenance", data_type="string")
 class NLIProvenance(Validator):
-    """Validates LLM-generated text using an NLI model to detect and remove
-    hallucinated parts.
+    """Detects and removes hallucinations from LLM-generated text using an NLI
+    model.
 
     This validator uses either a pre-trained NLI model
     (from HuggingFace: "MoritzLaurer/DeBERTa-v3-base-mnli-fever-docnli-ling-2c")
@@ -2249,7 +2249,6 @@ class NLIProvenance(Validator):
         self,
         validation_method: str = "sentence",
         top_k: int = 3,
-        checkpoint: Optional[TransformersCheckpoint] = None,
         on_fail: Optional[Callable] = None,
         **kwargs,
     ):
@@ -2257,20 +2256,18 @@ class NLIProvenance(Validator):
         args:
             validation_method (str): Whether to validate at the sentence level or over
                 the full text.  One of `sentence` or `full`. Defaults to `sentence`
-            checkpoint (TransformersCheckpoint): A fine-tuned model checkpoint.
+            top_k (int): The number of chunks to return from the query function.
         """
         super().__init__(
             on_fail,
             validation_method=validation_method,
             top_k=top_k,
-            checkpoint=checkpoint,
             **kwargs,
         )
         if validation_method not in ["sentence", "full"]:
             raise ValueError("validation_method must be 'sentence' or 'full'.")
         self._validation_method = validation_method
         self._top_k = int(top_k)
-        self._checkpoint = checkpoint  # TODO: Add checkpoint type-casting
         self._model_name = "MoritzLaurer/DeBERTa-v3-base-mnli-fever-docnli-ling-2c"
         self._device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -2325,12 +2322,14 @@ class NLIProvenance(Validator):
             )
         return query_fn
 
-    def get_model_prediction(self, premise: str, hypothesis: str) -> str:
+    def get_model_prediction(
+        self, premise: str, hypothesis: str, checkpoint: TransformersCheckpoint = None
+    ) -> str:
         """Returns the model prediction for the given premise and
         hypothesis."""
-        if self._checkpoint:
+        if checkpoint:
             # Use the checkpoint to load the model
-            checkpoint = TransformersCheckpoint.from_checkpoint(self._checkpoint)
+            checkpoint = TransformersCheckpoint.from_checkpoint(checkpoint)
             model = checkpoint.get_model(model=AutoModelForSequenceClassification)
         else:
             # Use pre-trained model
@@ -2354,12 +2353,24 @@ class NLIProvenance(Validator):
         confidence = round(prediction[max_label], 3)
         return max_label, confidence
 
-    def get_nli_evaluation(self, text: str, query_function: Callable) -> bool:
+    def get_nli_evaluation(
+        self, text: str, query_function: Callable, metadata: Dict[str, Any]
+    ) -> bool:
         """Create hypothesis and premise and then return NLI model
         prediction."""
 
+        checkpoint = metadata.get("checkpoint", None)
         # Get the relevant chunks using the query function
         relevant_chunks = query_function(text=text, k=self._top_k)
+
+        if not relevant_chunks:
+            # Raise warning and return True
+            warnings.warn(
+                "No relevant chunks were found. Vector collection probably empty. "
+                "No NLI evaluation will be performed."
+            )
+            return True
+
         hypothesis = text
 
         max_confidence = 0
@@ -2369,7 +2380,9 @@ class NLIProvenance(Validator):
             premise = chunk
 
             # Get NLI model prediction and confidence value
-            nli_prediction, confidence = self.get_model_prediction(premise, hypothesis)
+            nli_prediction, confidence = self.get_model_prediction(
+                premise, hypothesis, checkpoint
+            )
 
             # Update max confidence
             if confidence > max_confidence:
@@ -2387,7 +2400,7 @@ class NLIProvenance(Validator):
         unsupported_sentences = []
         supported_sentences = []
         for sentence in sentences:
-            eval = self.get_nli_evaluation(sentence, query_function)
+            eval = self.get_nli_evaluation(sentence, query_function, metadata)
             if not eval:
                 unsupported_sentences.append(sentence)
             else:
@@ -2410,7 +2423,7 @@ class NLIProvenance(Validator):
         self, value: Any, query_function: Callable, metadata: Dict[str, Any]
     ) -> ValidationResult:
         # Evaluate the entire LLM-generated text
-        eval = self.get_nli_evaluation(value, query_function)
+        eval = self.get_nli_evaluation(value, query_function, metadata)
         if not eval:
             # if False
             return FailResult(
