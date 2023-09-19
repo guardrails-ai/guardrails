@@ -95,10 +95,10 @@ def test_get_template_variables(mocker, has_get_identifiers):
         return orig_hasattr(obj, key, *args, **kwargs)
 
     mocker.patch("builtins.hasattr", new=mock_get_identifiers)
-    get_identifiers_spy = mocker.spy(Template, "get_identifiers")
+    substitute_spy = mocker.spy(Template, "substitute")
 
     string_template = "${my_var} $my_second_var {not_a_var}"
     vars = get_template_variables(string_template)
 
-    assert get_identifiers_spy.called == has_get_identifiers
+    assert substitute_spy.called is not has_get_identifiers
     assert vars == ["my_var", "my_second_var"]
