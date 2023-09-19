@@ -1,7 +1,12 @@
+from string import Template
+
 import pytest
 
-from string import Template
-from guardrails.utils.parsing_utils import get_code_block, get_template_variables, has_code_block
+from guardrails.utils.parsing_utils import (
+    get_code_block,
+    get_template_variables,
+    has_code_block,
+)
 
 json_code_block = """
 ```json
@@ -76,22 +81,21 @@ def test_get_code_block(llm_ouput, expected_output, code_type):
 
     assert actual_output == expected_output
 
+
 @pytest.mark.parametrize(
     "has_get_identifiers",
-    [
-        True,
-        False
-    ],
+    [True, False],
 )
 def test_get_template_variables(mocker, has_get_identifiers):
     orig_hasattr = hasattr
+
     def mock_get_identifiers(obj, key, *args, **kwargs):
         if obj == Template and key == "get_identifiers":
             return has_get_identifiers
         return orig_hasattr(obj, key, *args, **kwargs)
-    
-    mocker.patch('builtins.hasattr', new=mock_get_identifiers)
-    get_identifiers_spy = mocker.spy(Template, 'get_identifiers')
+
+    mocker.patch("builtins.hasattr", new=mock_get_identifiers)
+    get_identifiers_spy = mocker.spy(Template, "get_identifiers")
 
     string_template = "${my_var} $my_second_var {not_a_var}"
     vars = get_template_variables(string_template)
