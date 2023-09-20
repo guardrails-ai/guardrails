@@ -68,5 +68,5 @@ def get_template_variables(template: str) -> List[str]:
         return Template(template).get_identifiers()
     else:
         d = collections.defaultdict(str)
-        Template(template).substitute(d)
+        Template(template).safe_substitute(d)
         return list(d.keys())
