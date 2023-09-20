@@ -5,7 +5,7 @@ from pydantic import Field
 from guardrails.utils.logs_utils import ArbitraryModel, GuardHistory
 from guardrails.utils.reask_utils import ReAsk
 
-T = TypeVar("T", str, Dict, None)
+T = TypeVar("T", str, Dict)
 
 
 class ValidationOutcome(Generic[T], ArbitraryModel):
