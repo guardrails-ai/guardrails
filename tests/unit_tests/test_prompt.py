@@ -275,11 +275,17 @@ def test_gr_dot_prefixed_prompt_item_fails():
         prompt = """Give me a response to ${gr.ade}"""
         gd.Guard.from_pydantic(output_class=TestResponse, prompt=prompt)
 
+
 def test_escape():
-    prompt_string = "My prompt with a some sample json { \"a\" : 1 } and a {f_var} and a ${safe_var}"
+    prompt_string = (
+        'My prompt with a some sample json { "a" : 1 } and a {f_var} and a ${safe_var}'
+    )
     prompt = Prompt(prompt_string)
 
     escaped_prompt = prompt.escape()
 
     assert prompt.source == prompt_string
-    assert escaped_prompt == "My prompt with a some sample json {{ \"a\" : 1 }} and a {{f_var}} and a ${safe_var}"
+    assert (
+        escaped_prompt
+        == 'My prompt with a some sample json {{ "a" : 1 }} and a {{f_var}} and a ${safe_var}'
+    )
