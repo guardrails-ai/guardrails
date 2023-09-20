@@ -1,5 +1,3 @@
-from string import Template
-
 import pytest
 
 from guardrails.utils.parsing_utils import (
