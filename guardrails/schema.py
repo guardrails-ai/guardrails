@@ -5,7 +5,6 @@ import re
 import warnings
 from copy import deepcopy
 from dataclasses import dataclass
-from string import Formatter
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
@@ -27,6 +26,7 @@ from guardrails.utils.json_utils import (
     verify_schema_against_json,
 )
 from guardrails.utils.logs_utils import FieldValidationLogs, GuardLogs
+from guardrails.utils.parsing_utils import get_template_variables
 from guardrails.utils.reask_utils import (
     FieldReAsk,
     NonParseableReAsk,
@@ -449,7 +449,7 @@ class Schema:
             return
 
         # Check that the reask prompt has the correct variables
-        variables = [t[1] for t in Formatter().parse(reask_prompt) if t[1] is not None]
+        variables = get_template_variables(reask_prompt)
         assert set(variables) == self.reask_prompt_vars
 
 
@@ -479,7 +479,8 @@ class JsonSchema(Schema):
                     constants["high_level_json_parsing_reask_prompt"]
                     + constants["json_suffix_without_examples"]
                 )
-            reask_value = original_response
+            np_reask: NonParseableReAsk = original_response
+            reask_value = np_reask.incorrect_value
         elif is_skeleton_reask:
             pruned_tree_schema = self
 

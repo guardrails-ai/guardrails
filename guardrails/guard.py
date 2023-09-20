@@ -1,7 +1,6 @@
 import asyncio
 import contextvars
 import logging
-from string import Formatter
 from typing import (
     Any,
     Awaitable,
@@ -24,6 +23,7 @@ from guardrails.rail import Rail
 from guardrails.run import AsyncRunner, Runner
 from guardrails.schema import Schema
 from guardrails.utils.logs_utils import GuardState
+from guardrails.utils.parsing_utils import get_template_variables
 from guardrails.utils.reask_utils import sub_reasks_with_fixed_values
 from guardrails.validators import Validator
 
@@ -113,9 +113,7 @@ class Guard:
             reask_prompt = Prompt(reask_prompt)
 
         # Check that the reask prompt has the correct variables
-        variables = [
-            t[1] for t in Formatter().parse(reask_prompt.source) if t[1] is not None
-        ]
+        variables = get_template_variables(reask_prompt.source)
         variable_set = set(variables)
         assert variable_set.__contains__("previous_response")
         assert variable_set.__contains__("output_schema")
