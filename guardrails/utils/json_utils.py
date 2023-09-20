@@ -39,7 +39,7 @@ class ValuePlaceholder(Placeholder):
         "email",  # email and url should become string validators
         "url",
         "pythoncode",
-        "sql"
+        "sql",
     ]
 
     type_string: str
