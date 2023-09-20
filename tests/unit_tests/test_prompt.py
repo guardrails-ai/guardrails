@@ -287,5 +287,5 @@ def test_escape():
     assert prompt.source == prompt_string
     assert (
         escaped_prompt
-        == 'My prompt with a some sample json {{ "a" : 1 }} and a {{f_var}} and a ${safe_var}'
+        == 'My prompt with a some sample json {{ "a" : 1 }} and a {{f_var}} and a ${safe_var}'  # noqa
     )
