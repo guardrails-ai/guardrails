@@ -106,7 +106,20 @@ class Runner:
         self.guard_history = GuardHistory(history=[])
         self.guard_state.push(self.guard_history)
 
-    def __call__(self, prompt_params: Optional[Dict] = None) -> GuardHistory:
+    def handle_error(func): 
+        def wrapper(self, *args, **kwargs):
+            error_message = None
+            try:
+                guard_history = func(self, *args, **kwargs)
+            except Exception as e:
+                error_message = str(e)
+                guard_history = self.guard_history
+            return guard_history, error_message
+
+        return wrapper
+    
+    @handle_error
+    def __call__(self, prompt_params: Optional[Dict] = None) -> Tuple[GuardHistory, str]:
         """Execute the runner by repeatedly calling step until the reask budget
         is exhausted.
 
@@ -500,7 +513,20 @@ class AsyncRunner(Runner):
         )
         self.api: Optional[AsyncPromptCallableBase] = api
 
-    async def async_run(self, prompt_params: Optional[Dict] = None) -> GuardHistory:
+    def handle_error(func): 
+        async def wrapper(self, *args, **kwargs):
+            error_message = None
+            try:
+                guard_history = await func(self, *args, **kwargs)
+            except Exception as e:
+                error_message = str(e)
+                guard_history = self.guard_history
+            return guard_history, error_message
+
+        return wrapper
+
+    @handle_error
+    async def async_run(self, prompt_params: Optional[Dict] = None) -> Tuple[GuardHistory, str]:
         """Execute the runner by repeatedly calling step until the reask budget
         is exhausted.
 

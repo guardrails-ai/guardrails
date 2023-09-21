@@ -229,19 +229,8 @@ class Guard(Generic[T]):
             reask_instructions=reask_instructions,
         )
         return cls[str](rail, num_reasks=num_reasks)
-
-    def handle_error(func): 
-        def wrapper(self, *args, **kwargs):
-            try:
-                return func(self, *args, **kwargs)
-            except Exception as e:
-                error_message = str(e)
-                return ValidationOutcome[T].from_exception(error_message)
-
-        return wrapper
     
     @overload
-    @handle_error
     def __call__(
         self,
         llm_api: Callable[[Any], Awaitable[Any]],
@@ -258,7 +247,6 @@ class Guard(Generic[T]):
         ...
 
     @overload
-    @handle_error
     def __call__(
         self,
         llm_api: Callable,
@@ -274,7 +262,6 @@ class Guard(Generic[T]):
     ) -> ValidationOutcome[T]:
         ...
 
-    @handle_error
     def __call__(
         self,
         llm_api: Union[Callable, Callable[[Any], Awaitable[Any]]],
@@ -392,8 +379,8 @@ class Guard(Generic[T]):
                 guard_state=self.guard_state,
                 full_schema_reask=full_schema_reask,
             )
-            guard_history = runner(prompt_params=prompt_params)
-            return ValidationOutcome[T].from_guard_history(guard_history)
+            guard_history, error_message = runner(prompt_params=prompt_params)
+            return ValidationOutcome[T].from_guard_history(guard_history, error_message)
 
     async def _call_async(
         self,
@@ -451,8 +438,8 @@ class Guard(Generic[T]):
                 guard_state=self.guard_state,
                 full_schema_reask=full_schema_reask,
             )
-            guard_history = await runner.async_run(prompt_params=prompt_params)
-            return ValidationOutcome[T].from_guard_history(guard_history)
+            guard_history, error_message = await runner.async_run(prompt_params=prompt_params)
+            return ValidationOutcome[T].from_guard_history(guard_history, error_message)
 
     def __repr__(self):
         return f"Guard(RAIL={self.rail})"
@@ -461,7 +448,6 @@ class Guard(Generic[T]):
         yield "RAIL", self.rail
     
     @overload
-    @handle_error
     def parse(
         self,
         llm_output: str,
@@ -476,7 +462,6 @@ class Guard(Generic[T]):
         ...
 
     @overload
-    @handle_error
     def parse(
         self,
         llm_output: str,
@@ -491,7 +476,6 @@ class Guard(Generic[T]):
         ...
 
     @overload
-    @handle_error
     def parse(
         self,
         llm_output: str,
@@ -504,8 +488,6 @@ class Guard(Generic[T]):
         **kwargs,
     ) -> ValidationOutcome[T]:
         ...
-
-    @handle_error
     def parse(
         self,
         llm_output: str,
@@ -612,11 +594,11 @@ class Guard(Generic[T]):
                 guard_state=self.guard_state,
                 full_schema_reask=full_schema_reask,
             )
-            guard_history = runner(prompt_params=prompt_params)
+            guard_history, error_message = runner(prompt_params=prompt_params)
             guard_history.history[-1].validated_output = sub_reasks_with_fixed_values(
                 guard_history.validated_output
             )
-            validation_outcome = ValidationOutcome[T].from_guard_history(guard_history)
+            validation_outcome = ValidationOutcome[T].from_guard_history(guard_history, error_message)
             return validation_outcome
 
     async def _async_parse(
@@ -657,9 +639,9 @@ class Guard(Generic[T]):
                 guard_state=self.guard_state,
                 full_schema_reask=full_schema_reask,
             )
-            guard_history = await runner.async_run(prompt_params=prompt_params)
+            guard_history, error_message = await runner.async_run(prompt_params=prompt_params)
             guard_history.history[-1].validated_output = sub_reasks_with_fixed_values(
                 guard_history.validated_output
             )
-            return ValidationOutcome[T].from_guard_history(guard_history)
+            return ValidationOutcome[T].from_guard_history(guard_history, error_message)
     
