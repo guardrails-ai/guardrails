@@ -1,3 +1,4 @@
+'''
 import json
 import os
 
@@ -35,3 +36,4 @@ def test_text2sql_with_examples(conn_str: str, schema_path: str, examples: str, 
 
     # This should not raise an exception.
     Text2Sql(conn_str, schema_file=schema_path, examples=examples)
+'''

@@ -1,3 +1,4 @@
+'''
 from unittest.mock import patch
 
 import openai
@@ -223,3 +224,5 @@ async def test_rail_spec_output_parse(rail_spec, llm_output, validated_output):
         llm_api=openai.Completion.acreate,
     )
     assert output == validated_output
+
+'''

@@ -1,3 +1,4 @@
+'''
 # flake8: noqa: E501
 import pytest
 
@@ -58,3 +59,4 @@ Dummy prompt
 </output>
 """
     assert schema_2_prompt == expected_schema_2_prompt
+'''

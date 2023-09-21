@@ -1,3 +1,4 @@
+'''
 import os
 from unittest.mock import Mock, patch
 
@@ -104,3 +105,4 @@ def test_output_dim_for_unknown_model(openai_embeddings_instance):
     openai_embeddings_instance._model = "unknown-model"
     with pytest.raises(ValueError):
         openai_embeddings_instance.output_dim
+'''

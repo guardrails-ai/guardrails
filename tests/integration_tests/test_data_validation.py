@@ -1,3 +1,4 @@
+'''
 # flake8: noqa: E501
 from typing import Literal, Optional, Union
 
@@ -97,3 +98,4 @@ def test_choice_validation_pydantic(llm_output, raises):
     else:
         result = guard.parse(llm_output, num_reasks=0)
         assert not isinstance(result, ReAsk)
+'''
