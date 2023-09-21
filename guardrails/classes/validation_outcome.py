@@ -29,11 +29,13 @@ class ValidationOutcome(Generic[T], ArbitraryModel):
     error: Optional[str] = Field()
 
     @classmethod
-    def from_guard_history(cls, guard_history: GuardHistory, error_message: Optional[str]):
+    def from_guard_history(
+        cls, guard_history: GuardHistory, error_message: Optional[str]
+    ):
         raw_output = guard_history.output
         validated_output = guard_history.validated_output
         any_validations_failed = len(guard_history.failed_validations) > 0
-        if(error_message): 
+        if error_message:
             return cls[T](
                 raw_llm_output=raw_output or "",
                 validation_passed=False,
@@ -46,14 +48,11 @@ class ValidationOutcome(Generic[T], ArbitraryModel):
                 validation_passed=any_validations_failed,
             )
         else:
-            print("else")
-            result = cls[T](
+            return cls[T](
                 raw_llm_output=raw_output,
                 validated_output=validated_output,
                 validation_passed=any_validations_failed,
             )
-            print(result)
-            return result
 
     def __iter__(self):
         as_tuple = (
