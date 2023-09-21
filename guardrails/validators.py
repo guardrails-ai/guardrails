@@ -590,10 +590,17 @@ class RegexMatch(Validator):
         match_type: Str in {"search", "fullmatch"} for a regex search or full-match option
     """  # noqa
 
-    def __init__(self, regex: str, match_type: str, on_fail: Optional[Callable] = None):
-        super().__init__(on_fail=on_fail, match_type=match_type, regex=regex)
+    def __init__(
+        self,
+        regex: str,
+        match_type: Optional[str] = None,
+        on_fail: Optional[Callable] = None,
+    ):
         match_types = ["fullmatch", "search"]
+        if match_type is None:
+            match_type = "fullmatch"
         assert match_type in match_types, f"match_type must be in {match_types}"
+        super().__init__(on_fail=on_fail, match_type=match_type, regex=regex)
         self._regex = regex
         self._p = re.compile(regex)
         self._match_f = getattr(self._p, match_type)
@@ -612,6 +619,9 @@ class RegexMatch(Validator):
                 fix_value=self._fix_str,
             )
         return PassResult()
+
+    def to_prompt(self, with_keywords: bool = True) -> str:
+        return "results should match " + self._regex
 
 
 @register_validator(name="two-words", data_type="string")
