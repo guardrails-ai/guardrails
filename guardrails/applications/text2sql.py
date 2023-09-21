@@ -187,7 +187,7 @@ class Text2Sql:
             )
 
         try:
-            return self.guard(
+            output = self.guard(
                 self.llm_api,
                 prompt_params={
                     "nl_instruction": text,
