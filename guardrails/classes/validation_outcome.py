@@ -26,6 +26,7 @@ class ValidationOutcome(Generic[T], ArbitraryModel):
         " the LLM output passed validation."
         "  If this is False, the validated_output may be invalid."
     )
+    exception: Optional[str] = Field()
 
     @classmethod
     def from_guard_history(cls, guard_history: GuardHistory):
@@ -44,6 +45,14 @@ class ValidationOutcome(Generic[T], ArbitraryModel):
                 validated_output=validated_output,
                 validation_passed=any_validations_failed,
             )
+    
+    @classmethod
+    def from_exception(cls, error_message: str): 
+        return cls[T](
+                raw_llm_output='',
+                validation_passed=False,
+                exception=error_message
+        )
 
     def __iter__(self):
         as_tuple = (
@@ -51,6 +60,7 @@ class ValidationOutcome(Generic[T], ArbitraryModel):
             self.validated_output,
             self.reask,
             self.validation_passed,
+            self.exception,
         )
         return iter(as_tuple)
 

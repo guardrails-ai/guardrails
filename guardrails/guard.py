@@ -230,7 +230,18 @@ class Guard(Generic[T]):
         )
         return cls[str](rail, num_reasks=num_reasks)
 
+    def handle_error(func): 
+        def wrapper(self, *args, **kwargs):
+            try:
+                return func(self, *args, **kwargs)
+            except Exception as e:
+                error_message = str(e)
+                return ValidationOutcome[T].from_exception(error_message)
+
+        return wrapper
+    
     @overload
+    @handle_error
     def __call__(
         self,
         llm_api: Callable[[Any], Awaitable[Any]],
@@ -247,6 +258,7 @@ class Guard(Generic[T]):
         ...
 
     @overload
+    @handle_error
     def __call__(
         self,
         llm_api: Callable,
@@ -262,6 +274,7 @@ class Guard(Generic[T]):
     ) -> ValidationOutcome[T]:
         ...
 
+    @handle_error
     def __call__(
         self,
         llm_api: Union[Callable, Callable[[Any], Awaitable[Any]]],
@@ -446,8 +459,9 @@ class Guard(Generic[T]):
 
     def __rich_repr__(self):
         yield "RAIL", self.rail
-
+    
     @overload
+    @handle_error
     def parse(
         self,
         llm_output: str,
@@ -462,6 +476,7 @@ class Guard(Generic[T]):
         ...
 
     @overload
+    @handle_error
     def parse(
         self,
         llm_output: str,
@@ -476,6 +491,7 @@ class Guard(Generic[T]):
         ...
 
     @overload
+    @handle_error
     def parse(
         self,
         llm_output: str,
@@ -489,6 +505,7 @@ class Guard(Generic[T]):
     ) -> ValidationOutcome[T]:
         ...
 
+    @handle_error
     def parse(
         self,
         llm_output: str,
@@ -645,3 +662,4 @@ class Guard(Generic[T]):
                 guard_history.validated_output
             )
             return ValidationOutcome[T].from_guard_history(guard_history)
+    
