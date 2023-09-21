@@ -58,6 +58,7 @@ DEV_REQUIREMENTS = [
     "docformatter>=1.4",
     "pytest-cov>=2.10.1",
     "pre-commit>=2.9.3",
+    "rstr",
     "twine",
     "pytest-mock",
     "pypdfium2",
