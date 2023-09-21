@@ -140,8 +140,7 @@ class DataType:
         # TODO: don't want to pass strict through to DataType,
         # but need to pass it to FormatAttr.from_element
         # how to handle this?
-        format_attr = FormatAttr.from_element(element)
-        format_attr.get_validators(strict)
+        format_attr = FormatAttr.from_element(element, strict)
 
         data_type = cls({}, format_attr, element)
         data_type.set_children(element)

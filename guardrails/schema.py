@@ -4,11 +4,11 @@ import pprint
 import re
 import warnings
 from copy import deepcopy
-from dataclasses import dataclass
 from string import Formatter
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
+import pydantic
 from lxml import etree as ET
 
 from guardrails import validator_service
@@ -50,8 +50,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-@dataclass
-class FormatAttr:
+class FormatAttr(pydantic.BaseModel):
     """Class for parsing and manipulating the `format` attribute of an element.
 
     The format attribute is a string that contains semi-colon separated
@@ -67,11 +66,23 @@ class FormatAttr:
     - "is-in: {1 + 2} {2 + 3} {3 + 4}"
     """
 
-    # The format attribute string.
-    format: Optional[str] = None
+    class Config:
+        arbitrary_types_allowed = True
 
-    # The XML element that this format attribute is associated with.
-    element: Optional[ET._Element] = None
+    # The format attribute string.
+    format: Optional[str]
+
+    # The on-fail handlers.
+    on_fail_handlers: Dict[str, str]
+
+    # The validator arguments.
+    validator_args: Dict[str, List[Any]]
+
+    # The validators.
+    validators: List[Validator]
+
+    # The unregistered validators.
+    unregistered_validators: List[str]
 
     @property
     def empty(self) -> bool:
@@ -79,7 +90,7 @@ class FormatAttr:
         return self.format is None
 
     @classmethod
-    def from_element(cls, element: ET._Element) -> "FormatAttr":
+    def from_element(cls, element: ET._Element, strict: bool = False) -> "FormatAttr":
         """Create a FormatAttr object from an XML element.
 
         Args:
@@ -88,27 +99,42 @@ class FormatAttr:
         Returns:
             A FormatAttr object.
         """
-        return cls(element.get("format"), element)
+        format_str = element.get("format")
+        if format_str is None:
+            return cls(
+                format=None,
+                on_fail_handlers={},
+                validator_args={},
+                validators=[],
+                unregistered_validators=[],
+            )
 
-    @property
-    def tokens(self) -> List[str]:
-        """Split the format attribute into tokens.
+        validator_args = cls.parse(format_str)
 
-        For example, the format attribute "valid-url; is-reachable" will
-        be split into ["valid-url", "is-reachable"]. The semicolon is
-        used as a delimiter, but not if it is inside curly braces,
-        because the format string can contain Python expressions that
-        contain semicolons.
-        """
-        if self.format is None:
-            return []
-        pattern = re.compile(r";(?![^{}]*})")
-        tokens = re.split(pattern, self.format)
-        tokens = list(filter(None, tokens))
-        return tokens
+        on_fail_handlers = {}
+        for key, value in element.attrib.items():
+            if key.startswith("on-fail-"):
+                on_fail_handler_name = key.removeprefix("on-fail-")
+                on_fail_handler = value
+                on_fail_handlers[on_fail_handler_name] = on_fail_handler
 
-    @classmethod
-    def parse_token(cls, token: str) -> Tuple[str, List[Any]]:
+        validators, unregistered_validators = cls.get_validators(
+            validator_args=validator_args,
+            tag=element.tag,
+            on_fail_handlers=on_fail_handlers,
+            strict=strict,
+        )
+
+        return cls(
+            format=format_str,
+            on_fail_handlers=on_fail_handlers,
+            validator_args=validator_args,
+            validators=validators,
+            unregistered_validators=unregistered_validators,
+        )
+
+    @staticmethod
+    def parse_token(token: str) -> Tuple[str, List[Any]]:
         """Parse a single token in the format attribute, and return the
         validator name and the list of arguments.
 
@@ -151,48 +177,35 @@ class FormatAttr:
 
         return validator.strip(), args
 
-    def parse(self) -> Dict:
+    @staticmethod
+    def parse(format_string: str) -> Dict[str, List[Any]]:
         """Parse the format attribute into a dictionary of validators.
 
         Returns:
             A dictionary of validators, where the key is the validator name, and
             the value is a list of arguments.
         """
-        if self.format is None:
-            return {}
-
         # Split the format attribute into tokens: each is a validator.
         # Then, parse each token into a validator name and a list of parameters.
+        pattern = re.compile(r";(?![^{}]*})")
+        tokens = re.split(pattern, format_string)
+        tokens = list(filter(None, tokens))
+
         validators = {}
-        for token in self.tokens:
+        for token in tokens:
             # Parse the token into a validator name and a list of parameters.
-            validator_name, args = self.parse_token(token)
+            validator_name, args = FormatAttr.parse_token(token)
             validators[validator_name] = args
 
         return validators
 
-    @property
-    def validators(self) -> List[Validator]:
-        """Get the list of validators from the format attribute.
-
-        Only the validators that are registered for this element will be
-        returned.
-        """
-        try:
-            return getattr(self, "_validators")
-        except AttributeError:
-            raise AttributeError("Must call `get_validators` first.")
-
-    @property
-    def unregistered_validators(self) -> List[str]:
-        """Get the list of validators from the format attribute that are not
-        registered for this element."""
-        try:
-            return getattr(self, "_unregistered_validators")
-        except AttributeError:
-            raise AttributeError("Must call `get_validators` first.")
-
-    def get_validators(self, strict: bool = False) -> List[Validator]:
+    @staticmethod
+    def get_validators(
+        validator_args: Dict[str, List[Any]],
+        tag: str,
+        on_fail_handlers: Dict[str, str],
+        strict: bool = False,
+    ) -> Tuple[List[Validator], List[str]]:
         """Get the list of validators from the format attribute. Only the
         validators that are registered for this element will be returned.
 
@@ -208,28 +221,25 @@ class FormatAttr:
         Returns:
             A list of validators.
         """
-        if self.element is None:
-            return []
         from guardrails.validators import types_to_validators, validators_registry
 
         _validators = []
         _unregistered_validators = []
-        parsed = self.parse().items()
-        for validator_name, args in parsed:
+        for validator_name, args in validator_args.items():
             # Check if the validator is registered for this element.
             # The validators in `format` that are not registered for this element
             # will be ignored (with an error or warning, depending on the value of
             # `strict`), and the registered validators will be returned.
-            if validator_name not in types_to_validators[self.element.tag]:
+            if validator_name not in types_to_validators[tag]:
                 if strict:
                     raise ValueError(
                         f"Validator {validator_name} is not valid for"
-                        f" element {self.element.tag}."
+                        f" element {tag}."
                     )
                 else:
                     warnings.warn(
                         f"Validator {validator_name} is not valid for"
-                        f" element {self.element.tag}."
+                        f" element {tag}."
                     )
                     _unregistered_validators.append(validator_name)
                 continue
@@ -237,20 +247,15 @@ class FormatAttr:
             validator = validators_registry[validator_name]
 
             # See if the formatter has an associated on_fail method.
-            on_fail = None
-            on_fail_attr_name = f"on-fail-{validator_name}"
-            if on_fail_attr_name in self.element.attrib:
-                on_fail = self.element.attrib[on_fail_attr_name]
-                # TODO(shreya): Load the on_fail method.
-                # This method should be loaded from an optional script given at the
-                # beginning of a rail file.
+            on_fail = on_fail_handlers.get(validator_name, None)
+            # TODO(shreya): Load the on_fail method.
+            # This method should be loaded from an optional script given at the
+            # beginning of a rail file.
 
             # Create the validator.
             _validators.append(validator(*args, on_fail=on_fail))
 
-        self._validators = _validators
-        self._unregistered_validators = _unregistered_validators
-        return _validators
+        return _validators, _unregistered_validators
 
     def to_prompt(self, with_keywords: bool = True) -> str:
         """Convert the format string to another string representation for use
