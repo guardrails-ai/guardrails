@@ -581,14 +581,14 @@ class RegexMatch(Validator):
 
     | Property                      | Description                       |
     | ----------------------------- | --------------------------------- |
-    | Name for `format` attribute   | `regex_match`                       |
+    | Name for `format` attribute   | `regex_match`                     |
     | Supported data types          | `string`                          |
-    | Programmatic fix              | Generate a string that matches the regular expression        |
+    | Programmatic fix              | Generate a string that matches the regular expression |
 
     Parameters: Arguments
         regex: Str regex pattern
         match_type: Str in {"search", "fullmatch"} for a regex search or full-match option
-    """
+    """  # noqa
 
     def __init__(self, regex: str, match_type: str, on_fail: Optional[Callable] = None):
         super().__init__(on_fail=on_fail, match_type=match_type, regex=regex)
@@ -597,7 +597,8 @@ class RegexMatch(Validator):
         self._regex = regex
         self._p = re.compile(regex)
         self._match_f = getattr(self._p, match_type)
-        # Pad matchign string on either side for fix example if we are performing a regex search
+        # Pad matching string on either side for fix
+        # example if we are performing a regex search
         str_padding = (
             "" if match_type == "fullmatch" else rstr.rstr(string.ascii_lowercase)
         )

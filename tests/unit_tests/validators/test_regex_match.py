@@ -1,9 +1,10 @@
-import pytest
 import re
-from guardrails.validators import RegexMatch, FailResult, PassResult
+
+from guardrails.validators import FailResult, PassResult, RegexMatch
+
 
 class TestRegexMatchLValidator:
-    regex = """\w+\d\w+"""
+    regex = "\\w+\\d\\w+"
     p = re.compile(regex)
     fullmatch_val = RegexMatch(regex=regex, match_type="fullmatch", on_fail="reask")
     search_val = RegexMatch(regex=regex, match_type="search", on_fail="reask")

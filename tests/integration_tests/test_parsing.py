@@ -94,8 +94,8 @@ async def test_async_parsing_reask(mocker):
 def test_reask_prompt_instructions(mocker):
     """Test that the re-ask prompt and instructions are correct.
 
-    This is done implicitly, since if the incorrect prompt or instructions
-    are used, the mock LLM will raise a KeyError.
+    This is done implicitly, since if the incorrect prompt or
+    instructions are used, the mock LLM will raise a KeyError.
     """
 
     mocker.patch(
