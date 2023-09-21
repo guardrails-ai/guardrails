@@ -9,6 +9,7 @@ from guardrails.document_store import DocumentStoreBase, EphemeralDocumentStore
 from guardrails.embedding import EmbeddingBase, OpenAIEmbedding
 from guardrails.guard import Guard
 from guardrails.utils.sql_utils import create_sql_driver
+from guardrails.validators import BugFreeSQL, ExcludeSqlPredicates
 from guardrails.vectordb import Faiss, VectorDBBase
 
 REASK_PROMPT = """
@@ -123,20 +124,44 @@ class Text2Sql:
     ):
         # Initialize the Guard class
         if rail_spec is None:
-            rail_spec = os.path.join(os.path.dirname(__file__), "text2sql.rail")
-            rail_params = {"conn_str": conn_str, "schema_file": schema_file}
-            if schema_file is None:
-                rail_params["schema_file"] = ""
+            guard = Guard.from_string(
+                validators=[
+                    BugFreeSQL(
+                        conn=conn_str,
+                        schema_file=schema_file,
+                        on_fail='reask'
+                    )
+                ],
+                description="sql",
+                prompt="""\
+Here's schema about the database that you can use to generate the SQL query.
+Try to avoid using joins if the data can be retrieved from the same table.
 
-        # Load the rail specification.
-        with open(rail_spec, "r") as f:
-            rail_spec_str = f.read()
+${db_info}
 
-        # Substitute the parameters in the rail specification.
-        if rail_params is not None:
-            rail_spec_str = Template(rail_spec_str).safe_substitute(**rail_params)
+I will give you a list of examples. Write a SQL query similar to the examples below:
 
-        guard = Guard.from_rail_string(rail_spec_str)
+${examples}
+
+INSTRUCTIONS:
+---------
+${nl_instruction}
+
+QUERY:
+---------
+"""
+            )
+        else:
+            # Load the rail specification.
+            with open(rail_spec, "r") as f:
+                rail_spec_str = f.read()
+
+            # Substitute the parameters in the rail specification.
+            if rail_params is not None:
+                rail_spec_str = Template(rail_spec_str).safe_substitute(**rail_params)
+
+            guard = Guard.from_rail_string(rail_spec_str)
+
         guard.reask_prompt = reask_prompt
 
         return guard
