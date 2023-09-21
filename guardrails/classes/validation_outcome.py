@@ -54,14 +54,6 @@ class ValidationOutcome(Generic[T], ArbitraryModel):
             )
             print(result)
             return result
-    
-    @classmethod
-    def from_exception(cls, error_message: str): 
-        return cls[T](
-                raw_llm_output='',
-                validation_passed=False,
-                exception=error_message
-        )
 
     def __iter__(self):
         as_tuple = (
