@@ -1,4 +1,4 @@
-def main_function(model_name, num_rows=10, num_epochs=3):
+def main_function(model_name, num_epochs = 3, chk_strategy = "sentence", chk_size = 3):
     import sys
     import os
     import subprocess
@@ -38,6 +38,8 @@ def main_function(model_name, num_rows=10, num_epochs=3):
         AutoModelForSequenceClassification,
         TrainingArguments,
         Trainer,
+	EarlyStoppingCallback,
+	IntervalStrategy
     )
     import numpy as np
     import evaluate
@@ -177,8 +179,6 @@ def main_function(model_name, num_rows=10, num_epochs=3):
     ):
         # Get the dataset
         df = get_dataset(path)
-        df = df.iloc[:num_rows]
-
         # Create a new ChromaDB client
         chroma_client = chromadb.Client()
 
@@ -237,7 +237,7 @@ def main_function(model_name, num_rows=10, num_epochs=3):
             shutil.copyfileobj(f_in, f_out)
     print("Dataset downloaded and unzipped successfully!")
 
-    dataset = create_final_dataset(dataset_name)
+    dataset = create_final_dataset(dataset_name, chunk_strategy=chk_strategy, chunk_size=chk_size)
     dataset_train, dataset_dev = dataset["train"], dataset["test"]
     print("Dataset created successfully!")
 
@@ -267,11 +267,13 @@ def main_function(model_name, num_rows=10, num_epochs=3):
     training_args = TrainingArguments(
         output_dir=f"{model_name}-output",
         overwrite_output_dir=True,
-        evaluation_strategy="epoch",
-        save_strategy="epoch",
-        logging_strategy="epoch",
+        evaluation_strategy='epoch',
+	save_strategy='epoch',
+	logging_strategy='epoch',
         num_train_epochs=num_epochs,
         save_total_limit=1,
+	metric_for_best_model='val_loss',
+	greater_is_better=False,
         load_best_model_at_end=True,
     )
 
@@ -286,19 +288,20 @@ def main_function(model_name, num_rows=10, num_epochs=3):
         model=model,
         args=training_args,
         train_dataset=dataset_train_tok,
-        eval_dataset=dataset_dev_tok,
+        eval_dataset={"train": dataset_train_tok, "val": dataset_dev_tok},
         compute_metrics=compute_metrics,
+	callbacks=[EarlyStoppingCallback(early_stopping_patience=2)]
     )
 
     trainer.train()
     print("Training completed successfully!")
 
     # Save the model
-    path = f"{model_name}-trained"
+    path = f"{model_name}-trained-{chk_strategy}-{chk_size}"
     trainer.save_model(path)
-    print("Model saved successfully!")
+    print(f"Model saved successfully at path: {path}.")
 
     # Delete the output directory
     shutil.rmtree(f"{model_name}-output")
-    print("Output directory deleted successfully!")
+    print("Output directory deleted successfully.")
     return path

@@ -1,0 +1,12 @@
+MoritzLaurer/DeBERTa-v3-base-mnli-fever-docnli-ling-2c,sentence,0,cosine,1,all-MiniLM-L6-v2,1,1.0,1.0,0.0,0.0,0.82,1.0,0.9,0.82,100.0,0.747,0.922
+MoritzLaurer/DeBERTa-v3-base-mnli-fever-docnli-ling-2c,sentence,0,cosine,1,all-MiniLM-L6-v2,3,1.0,1.0,0.0,0.0,0.82,1.0,0.9,0.82,33.997,0.881,0.931
+MoritzLaurer/DeBERTa-v3-base-mnli-fever-docnli-ling-2c,sentence,0,cosine,1,all-MiniLM-L6-v2,5,1.0,1.0,0.0,0.0,0.82,1.0,0.9,0.82,23.051,0.884,0.933
+MoritzLaurer/DeBERTa-v3-base-mnli-fever-docnli-ling-2c,sentence,0,cosine,3,all-MiniLM-L6-v2,1,1.0,0.96,0.04,0.0,0.82,1.0,0.9,0.82,100.0,0.551,0.938
+MoritzLaurer/DeBERTa-v3-base-mnli-fever-docnli-ling-2c,sentence,0,cosine,3,all-MiniLM-L6-v2,3,1.0,0.96,0.04,0.0,0.82,1.0,0.9,0.82,59.37,0.692,0.948
+MoritzLaurer/DeBERTa-v3-base-mnli-fever-docnli-ling-2c,sentence,0,cosine,3,all-MiniLM-L6-v2,5,1.0,0.96,0.04,0.0,0.82,1.0,0.9,0.82,49.751,0.692,0.95
+MoritzLaurer/DeBERTa-v3-base-mnli-fever-docnli-ling-2c,paragraph,0,cosine,1,all-MiniLM-L6-v2,1,0.98,0.97,0.03,0.02,0.82,0.98,0.89,0.81,100.0,0.616,0.992
+MoritzLaurer/DeBERTa-v3-base-mnli-fever-docnli-ling-2c,paragraph,0,cosine,1,all-MiniLM-L6-v2,3,0.99,0.99,0.01,0.01,0.82,0.99,0.9,0.81,52.57,0.924,0.998
+MoritzLaurer/DeBERTa-v3-base-mnli-fever-docnli-ling-2c,paragraph,0,cosine,1,all-MiniLM-L6-v2,5,1.0,0.99,0.01,0.0,0.82,1.0,0.9,0.81,41.791,0.956,0.999
+MoritzLaurer/DeBERTa-v3-base-mnli-fever-docnli-ling-2c,paragraph,0,cosine,3,all-MiniLM-L6-v2,1,1.0,1.0,0.0,0.0,0.82,1.0,0.9,0.82,100.0,0.607,0.881
+MoritzLaurer/DeBERTa-v3-base-mnli-fever-docnli-ling-2c,paragraph,0,cosine,3,all-MiniLM-L6-v2,3,1.0,1.0,0.0,0.0,0.82,1.0,0.9,0.82,56.551,0.839,0.889
+MoritzLaurer/DeBERTa-v3-base-mnli-fever-docnli-ling-2c,paragraph,0,cosine,3,all-MiniLM-L6-v2,5,1.0,1.0,0.0,0.0,0.82,1.0,0.9,0.82,47.761,0.839,0.891

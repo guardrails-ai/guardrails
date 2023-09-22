@@ -13,3 +13,4 @@ wget
 ray
 sentencepiece
 scikit-learn
+sentence_transformers
