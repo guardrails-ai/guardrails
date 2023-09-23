@@ -9,6 +9,7 @@ import inspect
 import itertools
 import logging
 import os
+import random
 import re
 import string
 import warnings
@@ -544,6 +545,19 @@ class ValidLength(Validator):
             f"Validating {value} is in length range {self._min} - {self._max}..."
         )
 
+        # create a random string if the result is totally malformed
+        if not value or not (isinstance(value, str) or (isinstance(value, list))):
+            logger.debug(f"Value {value} is not a string or list")
+            corrected_value = "".join(
+                random.choice(string.ascii_letters) for _ in range(self._min)
+            )
+            return FailResult(
+                error_message=f"Value is not a string or list."
+                f"Return a string or list output between "
+                f"{self._min} and {self._max} characters",
+                fix_value=corrected_value,
+            )
+
         if self._min is not None and len(value) < self._min:
             logger.debug(f"Value {value} is less than {self._min}.")
 
@@ -552,8 +566,8 @@ class ValidLength(Validator):
                 last_val = value[-1]
             else:
                 last_val = [value[-1]]
-
             corrected_value = value + last_val * (self._min - len(value))
+
             return FailResult(
                 error_message=f"Value has length less than {self._min}. "
                 f"Please return a longer output, "
@@ -692,6 +706,11 @@ class ValidURL(Validator):
 
         from urllib.parse import urlparse
 
+        if not isinstance(value, str):
+            return FailResult(
+                error_message=f"The provided value is not a string."
+                f"Respond with only a URL."
+            )
         # Check that the URL is valid
         try:
             result = urlparse(value)
