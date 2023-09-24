@@ -179,12 +179,12 @@ class Rail:
         """
         # If root contains a `type="string"` attribute, then it's a StringSchema
         if "type" in root.attrib and root.attrib["type"] == "string":
-            return StringSchema(
+            return StringSchema.from_element(
                 root,
                 reask_prompt_template=reask_prompt,
                 reask_instructions_template=reask_instructions,
             )
-        return JsonSchema(
+        return JsonSchema.from_element(
             root,
             reask_prompt_template=reask_prompt,
             reask_instructions_template=reask_instructions,

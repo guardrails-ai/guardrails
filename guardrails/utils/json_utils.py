@@ -2,8 +2,19 @@ import json
 from dataclasses import dataclass
 from typing import Any, Dict, Optional, Tuple, Type, Union
 
-import lxml.etree as ET
-
+from guardrails.datatypes import (
+    URL,
+    Boolean,
+    Case,
+    Choice,
+    DataType,
+    Date,
+    Email,
+    Float,
+    Integer,
+)
+from guardrails.datatypes import List as ListDataType
+from guardrails.datatypes import Object, PythonCode, String, Time
 from guardrails.utils.parsing_utils import get_code_block, has_code_block
 
 
@@ -22,32 +33,33 @@ class Placeholder:
         return None
 
 
+type_map: Dict[Type[DataType], Type] = {
+    String: str,
+    Integer: int,
+    Float: float,
+    Boolean: bool,
+    Object: dict,
+    ListDataType: list,
+    Date: str,
+    Time: str,
+}
+
+ignore_types = [
+    Email,  # email and url should become string validators
+    URL,
+    PythonCode,
+]
+
+
 @dataclass
 class ValuePlaceholder(Placeholder):
-    type_map = {
-        "string": str,
-        "integer": int,
-        "float": float,
-        "bool": bool,
-        "object": dict,
-        "list": list,
-        "date": str,
-        "time": str,
-    }
-    ignore_types = [
-        "pydantic",
-        "email",  # email and url should become string validators
-        "url",
-        "pythoncode",
-    ]
-
-    type_string: str
+    datatype_type: Type[DataType]
 
     @property
     def type_object(self):
-        if self.type_string in self.ignore_types:
+        if self.datatype_type in ignore_types:
             return Any
-        return self.type_map[self.type_string]
+        return type_map[self.datatype_type]
 
     class VerificationFailed:
         # Sentinel value
@@ -237,73 +249,63 @@ class ChoicePlaceholder(Placeholder):
         )
 
 
-def generate_type_skeleton_from_schema(schema: ET._Element) -> Placeholder:
+def generate_type_skeleton_from_schema(schema: Object) -> Placeholder:
     """Generate a JSON skeleton from an XML schema."""
 
-    def _recurse_schema(schema):
-        is_optional = schema.attrib.get("required", "true") == "false"
-        if schema.tag == "object":
+    def _recurse_schema(schema: DataType):
+        if isinstance(schema, Object):
             return DictPlaceholder(
                 children={
-                    child.attrib["name"]: _recurse_schema(child) for child in schema
+                    name_: _recurse_schema(child_)
+                    for name_, child_ in vars(schema.children).items()
                 },
-                optional=is_optional,
+                optional=schema.optional,
             )
-        elif schema.tag == "list":
-            if len(schema) == 0:
-                child = None
-            elif len(schema) == 1:
-                child = _recurse_schema(schema[0])
+        if isinstance(schema, ListDataType):
+            child_len = len(vars(schema.children).values())
+            if not child_len:
+                child_ = None
+            elif child_len == 1:
+                child_ = _recurse_schema(list(vars(schema.children).values())[0])
             else:
                 raise ValueError("List must have exactly zero or one child")
             return ListPlaceholder(
-                child=child,
-                optional=is_optional,
+                child=child_,
+                optional=schema.optional,
             )
-        elif schema.tag == "choice":
+        if isinstance(schema, Choice):
             return ChoicePlaceholder(
                 cases={
-                    case.attrib["name"]: DictPlaceholder(
+                    name_: DictPlaceholder(
                         children={
-                            child.attrib["name"]: _recurse_schema(child)
-                            for child in case
+                            name__: _recurse_schema(child__)
+                            for name__, child__ in vars(case.children).items()
                         },
-                        optional=is_optional,
+                        optional=schema.optional,
                     )
-                    for case in schema
-                    if case.tag == "case"
+                    for name_, case in vars(schema.children).items()
+                    if isinstance(case, Case)
                 },
-                optional=is_optional,
-                discriminator=schema.attrib["discriminator"],
+                optional=schema.optional,
+                discriminator=schema.discriminator_key,
             )
-        else:
-            return ValuePlaceholder(
-                type_string=schema.tag,
-                optional=is_optional,
-            )
+        return ValuePlaceholder(
+            datatype_type=type(schema),
+            optional=schema.optional,
+        )
 
-    children = {}
-    for child in schema:
-        name = child.attrib["name"]
-        if isinstance(name, bytes):
-            name = name.decode("utf-8")
-        children[name] = _recurse_schema(child)
-
-    return DictPlaceholder(
-        children=children,
-        optional=False,
-    )
+    return _recurse_schema(schema)
 
 
 def verify_schema_against_json(
-    xml_schema: ET._Element,
+    schema: Object,
     generated_json: Dict[str, Any],
     prune_extra_keys: bool = False,
     coerce_types: bool = False,
 ):
     """Verify that a JSON schema is valid for a given XML."""
 
-    type_skeleton = generate_type_skeleton_from_schema(xml_schema)
+    type_skeleton = generate_type_skeleton_from_schema(schema)
     return type_skeleton.verify(
         generated_json,
         prune_extra_keys=prune_extra_keys,

@@ -10,9 +10,10 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
 import pydantic
 from lxml import etree as ET
+from typing_extensions import Self
 
 from guardrails import validator_service
-from guardrails.datatypes import DataType, String
+from guardrails.datatypes import DataType, Object, String
 from guardrails.llm_providers import (
     AsyncOpenAICallable,
     AsyncOpenAIChatCallable,
@@ -282,21 +283,15 @@ class FormatAttr(pydantic.BaseModel):
 class Schema:
     """Schema class that holds a _schema attribute."""
 
+    reask_prompt_vars: list[str]
+
     def __init__(
         self,
-        root: ET._Element,
-        schema: Optional[Dict[str, DataType]] = None,
+        schema: DataType,
         reask_prompt_template: Optional[str] = None,
         reask_instructions_template: Optional[str] = None,
     ) -> None:
-        # Setup schema
-        if schema is None:
-            schema = {}
-        self._schema = SimpleNamespace(**schema)
-
-        # Setup root
-        self.root = root
-        self.setup_schema(root)
+        self.root_datatype = schema
 
         # Setup reask templates
         self.check_valid_reask_prompt(reask_prompt_template)
@@ -311,50 +306,23 @@ class Schema:
         else:
             self._reask_instructions_template = None
 
+    @classmethod
+    def from_element(
+        cls,
+        root: ET._Element,
+        reask_prompt_template: Optional[str] = None,
+        reask_instructions_template: Optional[str] = None,
+    ) -> Self:
+        """Create a schema from an XML element."""
+        raise NotImplementedError
+
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({pprint.pformat(vars(self._schema))})"
-
-    def __getitem__(self, key: str) -> DataType:
-        return getattr(self._schema, key)
-
-    def __setitem__(self, key: str, value: DataType) -> None:
-        setattr(self._schema, key, value)
-
-    def __getattr__(self, key: str) -> DataType:
-        return getattr(self._schema, key)
-
-    def __contains__(self, key: str) -> bool:
-        return hasattr(self._schema, key)
-
-    def __getstate__(self) -> Dict[str, Any]:
-        return {"_schema": self._schema, "root": self.root}
-
-    def __setstate__(self, state: Dict[str, Any]) -> None:
-        self._schema = state["_schema"]
-        self.root = state["root"]
-
-    def items(self) -> Dict[str, DataType]:
-        return dict(vars(self._schema).items())
-
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert the schema to a dictionary."""
-        return vars(self._schema)
-
-    @property
-    def parsed_rail(self) -> Optional[ET._Element]:
-        return self.root
+        # FIXME make sure this is pretty
+        return f"{self.__class__.__name__}({pprint.pformat(self.root_datatype)})"
 
     @property
     def reask_prompt_template(self) -> Optional[Prompt]:
         return self._reask_prompt_template
-
-    def setup_schema(self, root: ET._Element) -> None:
-        """Parse the schema specification.
-
-        Args:
-            root: The root element of the schema specification.
-        """
-        raise NotImplementedError
 
     def validate(self, guard_logs: GuardLogs, data: Any, metadata: Dict) -> Any:
         """Validate a dictionary of data against the schema.
@@ -461,6 +429,19 @@ class Schema:
 class JsonSchema(Schema):
     reask_prompt_vars = {"previous_response", "output_schema"}
 
+    def __init__(
+        self,
+        schema: Object,
+        reask_prompt_template: Optional[str] = None,
+        reask_instructions_template: Optional[str] = None,
+    ) -> None:
+        super().__init__(
+            schema,
+            reask_prompt_template=reask_prompt_template,
+            reask_instructions_template=reask_instructions_template,
+        )
+        self.root_datatype = schema
+
     def get_reask_setup(
         self,
         reasks: List[FieldReAsk],
@@ -468,6 +449,7 @@ class JsonSchema(Schema):
         use_full_schema: bool,
         prompt_params: Optional[Dict[str, Any]] = None,
     ) -> Tuple["Schema", Prompt, Instructions]:
+        # TODO transpile rail
         parsed_rail = deepcopy(self.root)
 
         is_skeleton_reask = not any(isinstance(reask, FieldReAsk) for reask in reasks)
@@ -544,13 +526,20 @@ class JsonSchema(Schema):
 
         return pruned_tree_schema, prompt, instructions
 
-    def setup_schema(self, root: ET._Element) -> None:
+    @classmethod
+    def from_element(
+        cls,
+        root: ET._Element,
+        reask_prompt_template: Optional[str] = None,
+        reask_instructions_template: Optional[str] = None,
+    ) -> Self:
         from guardrails.datatypes import registry as types_registry
 
         strict = False
         if "strict" in root.attrib and root.attrib["strict"] == "true":
             strict = True
 
+        children = {}
         for child in root:
             if isinstance(child, ET._Comment):
                 continue
@@ -558,7 +547,22 @@ class JsonSchema(Schema):
             child_data = types_registry[child.tag].from_xml(child, strict=strict)
             if isinstance(child_name, bytes):
                 child_name = child_name.decode("utf-8")
-            self[child_name] = child_data
+            children[child_name] = child_data
+
+        # TODO after removing XML from datatypes, get rid of this dummy element
+        dummy_element = ET.Element("object", {})
+        schema = Object(
+            children=children,
+            format_attr=FormatAttr.from_element(dummy_element),
+            element=dummy_element,
+            optional=False,
+        )
+
+        return cls(
+            schema,
+            reask_prompt_template=reask_prompt_template,
+            reask_instructions_template=reask_instructions_template,
+        )
 
     def parse(
         self, output: str
@@ -603,7 +607,7 @@ class JsonSchema(Schema):
         validated_response = deepcopy(data)
 
         if not verify_schema_against_json(
-            self.root,
+            self.root_datatype,
             validated_response,
             prune_extra_keys=True,
             coerce_types=True,
@@ -618,32 +622,11 @@ class JsonSchema(Schema):
                 ],
             )
 
-        validation = FieldValidation(
+        validation = self.root_datatype.collect_validation(
             key="",
             value=validated_response,
-            validators=[],
-            children=[],
+            schema=validated_response,
         )
-
-        for field, value in validated_response.items():
-            if field not in self:
-                # This is an extra field that is not in the schema.
-                # We remove it from the validated response.
-                logger.debug(f"Field {field} not in schema.")
-                continue
-
-            logger.debug(f"Validating field {field} with value {value}.")
-
-            field_validation = self[field].collect_validation(
-                key=field,
-                value=value,
-                schema=validated_response,
-            )
-            validation.children.append(field_validation)
-
-            logger.debug(
-                f"Validated field {field} with value {validated_response[field]}."
-            )
 
         validation_logs = FieldValidationLogs()
         guard_logs.field_validation_logs = validation_logs
@@ -689,7 +672,7 @@ class JsonSchema(Schema):
         validated_response = deepcopy(data)
 
         if not verify_schema_against_json(
-            self.root,
+            self.root_datatype,
             validated_response,
             prune_extra_keys=True,
             coerce_types=True,
@@ -704,32 +687,12 @@ class JsonSchema(Schema):
                 ],
             )
 
-        validation = FieldValidation(
+        # FIXME make the top-level validation key-invariant
+        validation = self.root_datatype.collect_validation(
             key="",
             value=validated_response,
-            validators=[],
-            children=[],
+            schema=validated_response,
         )
-
-        for field, value in validated_response.items():
-            if field not in self:
-                # This is an extra field that is not in the schema.
-                # We remove it from the validated response.
-                logger.debug(f"Field {field} not in schema.")
-                continue
-
-            logger.debug(f"Validating field {field} with value {value}.")
-
-            field_validation = self[field].collect_validation(
-                key=field,
-                value=value,
-                schema=validated_response,
-            )
-            validation.children.append(field_validation)
-
-            logger.debug(
-                f"Validated field {field} with value {validated_response[field]}."
-            )
 
         validation_logs = FieldValidationLogs()
         guard_logs.field_validation_logs = validation_logs
@@ -791,26 +754,24 @@ class StringSchema(Schema):
 
     def __init__(
         self,
-        root: ET._Element,
+        schema: String,
         reask_prompt_template: Optional[str] = None,
         reask_instructions_template: Optional[str] = None,
     ) -> None:
-        self.string_key = "string"
-        super().__init__(root)
+        super().__init__(
+            schema,
+            reask_prompt_template=reask_prompt_template,
+            reask_instructions_template=reask_instructions_template,
+        )
+        self.root_datatype = schema
 
-        # Setup reask templates
-        if reask_prompt_template is not None:
-            self._reask_prompt_template = Prompt(reask_prompt_template)
-        else:
-            self._reask_prompt_template = None
-        if reask_instructions_template is not None:
-            self._reask_instructions_template = Instructions(
-                reask_instructions_template
-            )
-        else:
-            self._reask_instructions_template = None
-
-    def setup_schema(self, root: ET._Element) -> None:
+    @classmethod
+    def from_element(
+        cls,
+        root: ET._Element,
+        reask_prompt_template: Optional[str] = None,
+        reask_instructions_template: Optional[str] = None,
+    ) -> Self:
         if len(root) != 0:
             raise ValueError("String output schemas must not have children.")
 
@@ -822,15 +783,15 @@ class StringSchema(Schema):
                 key = key.decode("utf-8")
             attrib[key] = value
 
-        if "name" in attrib:
-            self.string_key = attrib["name"]
-        else:
-            self.string_key = attrib["name"] = "string"
-
-        # make root tag into a string tag
-
+        # TODO get rid of dummy element after removing XML from datatypes
         root_string = ET.Element("string", attrib)
-        self[self.string_key] = String.from_xml(root_string)
+        schema = String.from_xml(root_string)
+
+        return cls(
+            schema=schema,
+            reask_prompt_template=reask_prompt_template,
+            reask_instructions_template=reask_instructions_template,
+        )
 
     def get_reask_setup(
         self,
@@ -896,11 +857,14 @@ class StringSchema(Schema):
         validation_logs = FieldValidationLogs()
         guard_logs.field_validation_logs = validation_logs
 
-        validation = self[self.string_key].collect_validation(
-            key=self.string_key,
+        # FIXME instead of writing the validation infrastructure for dicts (JSON),
+        #  make it more structure-invariant
+        dummy_key = "string"
+        validation = self.root_datatype.collect_validation(
+            key=dummy_key,
             value=data,
             schema={
-                self.string_key: data,
+                dummy_key: data,
             },
         )
 
@@ -911,7 +875,7 @@ class StringSchema(Schema):
             validation_logs=validation_logs,
         )
 
-        validated_response = {self.string_key: validated_response}
+        validated_response = {dummy_key: validated_response}
 
         if check_refrain_in_dict(validated_response):
             # If the data contains a `Refain` value, we return an empty
@@ -922,8 +886,8 @@ class StringSchema(Schema):
         # Remove all keys that have `Filter` values.
         validated_response = filter_in_dict(validated_response)
 
-        if self.string_key in validated_response:
-            return validated_response[self.string_key]
+        if dummy_key in validated_response:
+            return validated_response[dummy_key]
         return None
 
     async def async_validate(
@@ -949,11 +913,12 @@ class StringSchema(Schema):
         validation_logs = FieldValidationLogs()
         guard_logs.field_validation_logs = validation_logs
 
-        validation = self[self.string_key].collect_validation(
-            key=self.string_key,
+        dummy_key = "string"
+        validation = self.root_datatype.collect_validation(
+            key=dummy_key,
             value=data,
             schema={
-                self.string_key: data,
+                dummy_key: data,
             },
         )
 
@@ -964,7 +929,7 @@ class StringSchema(Schema):
             validation_logs=validation_logs,
         )
 
-        validated_response = {self.string_key: validated_response}
+        validated_response = {dummy_key: validated_response}
 
         if check_refrain_in_dict(validated_response):
             # If the data contains a `Refain` value, we return an empty
@@ -975,8 +940,8 @@ class StringSchema(Schema):
         # Remove all keys that have `Filter` values.
         validated_response = filter_in_dict(validated_response)
 
-        if self.string_key in validated_response:
-            return validated_response[self.string_key]
+        if dummy_key in validated_response:
+            return validated_response[dummy_key]
         return None
 
     def introspect(self, data: Any) -> List[FieldReAsk]:
@@ -1005,7 +970,7 @@ class StringSchema(Schema):
         return instructions, prompt
 
     def transpile(self, method: str = "default") -> str:
-        obj = self[self.string_key]
+        obj = self.root_datatype
         schema = ""
         if "description" in obj.element.attrib:
             schema += (
@@ -1030,27 +995,6 @@ class Schema2Prompt:
     This is important for communicating the schema to a large language
     model, and this class will provide multiple alternatives to do so.
     """
-
-    @staticmethod
-    def remove_on_fail_attributes(element: ET._Element) -> None:
-        """Recursively remove all attributes that start with 'on-fail-'."""
-        for attr in list(element.attrib):
-            if isinstance(attr, bytes):
-                attr = attr.decode("utf-8")
-            if attr.startswith("on-fail-"):
-                del element.attrib[attr]
-
-        for child in element:
-            Schema2Prompt.remove_on_fail_attributes(child)
-
-    @staticmethod
-    def remove_comments(element: ET._Element) -> None:
-        """Recursively remove all comments."""
-        for child in element:
-            if isinstance(child, ET._Comment):
-                element.remove(child)
-            else:
-                Schema2Prompt.remove_comments(child)
 
     @staticmethod
     def validator_to_prompt(
@@ -1092,13 +1036,8 @@ class Schema2Prompt:
             The prompt.
         """
         # Construct another XML tree from the schema.
-        root = deepcopy(schema.root)
         schema_dict = schema.to_dict()
 
-        # Remove comments.
-        cls.remove_comments(root)
-        # Remove action attributes.
-        cls.remove_on_fail_attributes(root)
         # Remove validators with arguments.
         cls.validator_to_prompt(root, schema_dict)
 
