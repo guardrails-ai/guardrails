@@ -197,12 +197,19 @@ validator_test_pass_fail = {
     ],
     "ValidRange": [ 
         {
-            "input_data": "180",
+            "input_data": 180,
             "metadata": {},
             "expected_result": FailResult,
             "instance_variables": {"min": 4, "max": 170},
-            "fix_value": 4,
+            "fix_value": 170,
         },
+        {
+            "input_data": 4.5,
+            "metadata": {},
+            "expected_result": PassResult,
+            "instance_variables": {"min": 4, "max": 170},
+            "fix_value": 4,
+        }
     ],
     "EndpointIsReachable": [ 
         {
