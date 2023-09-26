@@ -203,7 +203,7 @@ validator_test_pass_fail = {
             "instance_variables": {"min": 4, "max": 170},
             "fix_value": 4,
         },
-    ], #mmmm something is off with this validator, need to run the passresult one again using float
+    ],
     "EndpointIsReachable": [ 
         {
             "input_data": "https://www.google.com/",
