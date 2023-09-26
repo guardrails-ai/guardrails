@@ -1,10 +1,13 @@
 import json
+import logging
 from dataclasses import dataclass
 from typing import Any, Dict, Optional, Tuple, Type, Union
 
 import lxml.etree as ET
 
 from guardrails.utils.parsing_utils import get_code_block, has_code_block
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -22,6 +25,10 @@ class Placeholder:
         return None
 
 
+# TODO - deprecate these altogether
+deprecated_string_types = {"sql", "email", "url", "pythoncode"}
+
+
 @dataclass
 class ValuePlaceholder(Placeholder):
     type_map = {
@@ -33,13 +40,13 @@ class ValuePlaceholder(Placeholder):
         "list": list,
         "date": str,
         "time": str,
+        "email": str,  # email and url should become string validators
+        "url": str,
+        "pythoncode": str,
+        "sql": str,
     }
     ignore_types = [
         "pydantic",
-        "email",  # email and url should become string validators
-        "url",
-        "pythoncode",
-        "sql",
     ]
 
     type_string: str
@@ -278,8 +285,17 @@ def generate_type_skeleton_from_schema(schema: ET._Element) -> Placeholder:
                 discriminator=schema.attrib["discriminator"],
             )
         else:
+            type_string = schema.tag
+            if schema.tag in deprecated_string_types:
+                logger.warn(
+                    f"""The '{schema.tag}' type is deprecated. Use the \
+string type instead. Support for this type will \
+be dropped in version 0.3.0 and beyond."""
+                )
+                type_string = "string"
+
             return ValuePlaceholder(
-                type_string=schema.tag,
+                type_string=type_string,
                 optional=is_optional,
             )
 
