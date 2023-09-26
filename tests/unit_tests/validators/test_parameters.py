@@ -245,12 +245,12 @@ validator_test_pass_fail = {
             "expected_result": PassResult,
         },
         {
-            "input_data": "There are redundant sentences here so this test should not pass. \
-                Because there are redundant sentences here, this test should not pass. \
+            "input_data": "There are redundant sentences here so this shouldn't pass. \
+                Because there are redundant sentences here, this should not pass. \
                 Okay this is the last sentence.",
             "metadata": {},
             "expected_result": FailResult,
-            "fix_value": "There are redundant sentences here so this test should not pass.",
+            "fix_value": "There are redundant sentences here so this shouldn't pass.",
         },
     ],
     "IsProfanityFree": [
