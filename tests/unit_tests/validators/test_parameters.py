@@ -378,16 +378,3 @@ validator_test_prompt = {
         "expected_prompt": "remove-redundant-sentences"
     }
 }
-
-
-
-#Q: why do we override ExtractedSummarySentencesMatch and SimilarToDocument to_prompt function?
-
-'''
-    "ReadingTime": {
-        "expected_xml": "reading-time: 30",
-        "instance_variables": {
-            "reading_time": 30,
-        },
-    },
-'''
