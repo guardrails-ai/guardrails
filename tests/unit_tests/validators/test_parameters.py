@@ -229,7 +229,33 @@ validator_test_pass_fail = {
             "expected_result": FailResult,
             "instance_variables": {"regex": "\\w+\\d\\w+", "match_type": "fullmatch" },
         }
-    ]
+    ], 
+    "RemoveRedundantSentences": [ 
+        {
+            "input_data": "There shouldn't be any redundant sentences here so this test should pass no problem.",
+            "metadata": {},
+            "expected_result": PassResult,
+        },
+        {
+            "input_data": "There are redundant sentences here so this test should not pass. Because there are redundant sentences here, this test should not pass. Okay this is the last sentence.",
+            "metadata": {},
+            "expected_result": FailResult,
+            "fix_value": "There are redundant sentences here so this test should not pass."
+        }
+    ],
+    "IsProfanityFree": [ 
+        {
+            "input_data": "Keeping it clean here so this should pass without any problems.",
+            "metadata": {},
+            "expected_result": PassResult,
+        },
+        {
+            "input_data": "crap, is this a bad word",
+            "metadata": {},
+            "expected_result": FailResult,
+        }
+    ],
+
 }
 
 validator_test_python_str = {
