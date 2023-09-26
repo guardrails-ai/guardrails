@@ -10,9 +10,9 @@ from guardrails.validators import FailResult
 
 from .validators.test_parameters import (
     validator_test_pass_fail,
+    validator_test_prompt,
     validator_test_python_str,
     validator_test_xml,
-    validator_test_prompt
 )
 
 
@@ -79,8 +79,9 @@ def test_validator_to_xml(validator_test_data: Dict[str, Dict[str, str]]):
         xml = instance.to_xml_attrib()
         assert xml == validator_test_data[validator_name]["expected_xml"]
 
+
 @pytest.mark.parametrize("validator_test_data", [(validator_test_prompt)])
-def test_validator_to_prompt(validator_test_data: Dict[str, Dict[str, str]]): 
+def test_validator_to_prompt(validator_test_data: Dict[str, Dict[str, str]]):
     for validator_name in validator_test_data:
         module = importlib.import_module("guardrails.validators")
         print("testing validator: ", validator_name)
