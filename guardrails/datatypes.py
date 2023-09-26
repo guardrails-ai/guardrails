@@ -277,22 +277,27 @@ class Time(ScalarType):
 
         return datatype
 
-
+@DeprecationWarning("""Type 'email' is deprecated and will be removed in 
+versions 0.3.0 and beyond. Use the pydantic 'str' primitive instead.""")
 @register_type("email")
 class Email(ScalarType):
     """Element tag: `<email>`"""
 
-
+@DeprecationWarning("""Type 'url' is deprecated and will be removed in 
+versions 0.3.0 and beyond. Use the pydantic 'str' primitive instead.""")
 @register_type("url")
 class URL(ScalarType):
     """Element tag: `<url>`"""
 
 
+@DeprecationWarning("""Type 'pythoncode' is deprecated and will be removed in 
+versions 0.3.0 and beyond. Use the pydantic 'str' primitive instead.""")
 @register_type("pythoncode")
 class PythonCode(ScalarType):
     """Element tag: `<pythoncode>`"""
 
-
+@DeprecationWarning("""Type 'sql' is deprecated and will be removed in 
+versions 0.3.0 and beyond. Use the pydantic 'str' primitive instead.""")
 @register_type("sql")
 class SQLCode(ScalarType):
     """Element tag: `<sql>`"""
