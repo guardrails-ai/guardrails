@@ -204,14 +204,31 @@ validator_test_pass_fail = {
             "fix_value": 4,
         },
     ], #mmmm something is off with this validator, need to run the passresult one again using float
-    "ValidRange": [ 
+    "EndpointIsReachable": [ 
         {
-            "input_data": "180",
+            "input_data": "https://www.google.com/",
+            "metadata": {},
+            "expected_result": PassResult,
+        },
+        {
+            "input_data": "https://wwww.google/",
             "metadata": {},
             "expected_result": FailResult,
-            "instance_variables": {"min": 4, "max": 170},
-            "fix_value": 4,
+        }
+    ], 
+    "RegexMatch": [ 
+        {
+            "input_data": "ab12cd",
+            "metadata": {},
+            "expected_result": PassResult,
+            "instance_variables": {"regex": "\\w+\\d\\w+", "match_type": "fullmatch" }
         },
+        {
+            "input_data": "abcdef",
+            "metadata": {},
+            "expected_result": FailResult,
+            "instance_variables": {"regex": "\\w+\\d\\w+", "match_type": "fullmatch" },
+        }
     ]
 }
 
@@ -308,6 +325,10 @@ validator_test_xml = {
     }, 
     "RemoveRedundantSentences": { 
         "expected_xml": "remove-redundant-sentences"
+    }, 
+    "RegexMatch": { 
+        "expected_xml": "regex_match: \\w+\\d\\w+ fullmatch",
+        "instance_variables": {"regex": "\\w+\\d\\w+", "match_type": "fullmatch" }
     }
 }
 
@@ -376,5 +397,9 @@ validator_test_prompt = {
     }, 
     "RemoveRedundantSentences": { 
         "expected_prompt": "remove-redundant-sentences"
+    }, 
+    "RegexMatch": { 
+        "expected_prompt": "results should match \\w+\\d\\w+", 
+        "instance_variables": {"regex": "\\w+\\d\\w+", "match_type": "fullmatch" }
     }
 }
