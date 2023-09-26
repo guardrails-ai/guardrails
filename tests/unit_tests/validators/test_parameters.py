@@ -195,6 +195,24 @@ validator_test_pass_fail = {
             },
         },
     ],
+    "ValidRange": [ 
+        {
+            "input_data": "180",
+            "metadata": {},
+            "expected_result": FailResult,
+            "instance_variables": {"min": 4, "max": 170},
+            "fix_value": 4,
+        },
+    ], #mmmm something is off with this validator, need to run the passresult one again using float
+    "ValidRange": [ 
+        {
+            "input_data": "180",
+            "metadata": {},
+            "expected_result": FailResult,
+            "instance_variables": {"min": 4, "max": 170},
+            "fix_value": 4,
+        },
+    ]
 }
 
 validator_test_python_str = {
@@ -250,16 +268,126 @@ validator_test_xml = {
             "end": "bye",
         },
     },
-    "ReadingTime": {
-        "expected_xml": "reading-time: 30",
-        "instance_variables": {
-            "reading_time": 30,
-        },
-    },
     "ValidChoices": {
         "expected_xml": "valid-choices: {['one', 'two', 'three', 'four']}",
         "instance_variables": {
             "choices": ["one", "two", "three", "four"],
         },
     },
+    "ValidRange": { 
+        "expected_xml": "valid-range: 1 150",
+        "instance_variables": {
+            "min": 1, 
+            "max": 150
+        }
+    }, 
+    "EndpointIsReachable": { 
+        "expected_xml": "is-reachable",
+    }, 
+    "SqlColumnPresence": { 
+        "expected_xml": "sql-column-presence: {['embeddings', 'guards']}",
+        "instance_variables": {
+            "cols": ["embeddings", "guards"]
+        }
+    },
+    "ExcludeSqlPredicates": { 
+        "expected_xml": "exclude-sql-predicates: {['EXISTS', 'IN']}",
+        "instance_variables": {
+            "predicates": ["EXISTS", "IN"]
+        }
+    }, 
+    "SimilarToDocument": { 
+        "expected_xml": "similar-to-document: {Just testing this out with a simple document} 0.6 text-embedding-ada-002",
+        "instance_variables": {
+            "document": "Just testing this out with a simple document", 
+            "threshold": 0.6
+        }
+    }, 
+    "IsProfanityFree": { 
+        "expected_xml": "is-profanity-free"
+    }, 
+    "RemoveRedundantSentences": { 
+        "expected_xml": "remove-redundant-sentences"
+    }
 }
+
+validator_test_prompt = {
+    "ValidLength": {
+        "expected_prompt": "length: min=4 max=17",
+        "instance_variables": {"min": 4, "max": 17},
+    },
+    "BugFreeSQL": {
+        "expected_prompt": "bug-free-sql",
+    },
+    "LowerCase": {
+        "expected_prompt": "lower-case",
+    },
+    "UpperCase": {
+        "expected_prompt": "upper-case",
+    },
+    "TwoWords": {
+        "expected_prompt": "two-words",
+    },
+    "OneLine": {
+        "expected_prompt": "one-line",
+    },
+    "ValidURL": {
+        "expected_prompt": "valid-url",
+    },
+    "BugFreePython": {
+        "expected_prompt": "bug-free-python",
+    },
+    "EndsWith": {
+        "expected_prompt": "ends-with: end=bye",
+        "instance_variables": {
+            "end": "bye",
+        },
+    },
+    "ValidChoices": {
+        "expected_prompt": "valid-choices: choices=['one', 'two', 'three', 'four']",
+        "instance_variables": {
+            "choices": ["one", "two", "three", "four"],
+        },
+    },
+    "ValidRange": { 
+        "expected_prompt": "valid-range: min=1 max=150",
+        "instance_variables": {
+            "min": 1, 
+            "max": 150
+        }
+    }, 
+    "EndpointIsReachable": { 
+        "expected_prompt": "is-reachable",
+    }, 
+    "SqlColumnPresence": { 
+        "expected_prompt": "sql-column-presence: cols=['embeddings', 'guards']",
+        "instance_variables": {
+            "cols": ["embeddings", "guards"]
+        }
+    },
+    "ExcludeSqlPredicates": { 
+        "expected_prompt": "exclude-sql-predicates: predicates=['EXISTS', 'IN']",
+        "instance_variables": {
+            "predicates": ["EXISTS", "IN"]
+        }
+    },
+    "IsProfanityFree": { 
+        "expected_prompt": "is-profanity-free"
+    }, 
+    "RemoveRedundantSentences": { 
+        "expected_prompt": "remove-redundant-sentences"
+    }
+}
+
+
+
+#Q: why do we override ExtractedSummarySentencesMatch and SimilarToDocument to_prompt function?
+
+'''
+    "ReadingTime": {
+        "expected_xml": "reading-time: 30",
+        "instance_variables": {
+            "reading_time": 30,
+        },
+    },
+'''

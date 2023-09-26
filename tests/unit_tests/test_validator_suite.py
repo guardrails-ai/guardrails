@@ -12,6 +12,7 @@ from .validators.test_parameters import (
     validator_test_pass_fail,
     validator_test_python_str,
     validator_test_xml,
+    validator_test_prompt
 )
 
 
@@ -77,3 +78,18 @@ def test_validator_to_xml(validator_test_data: Dict[str, Dict[str, str]]):
             instance = validator_class()
         xml = instance.to_xml_attrib()
         assert xml == validator_test_data[validator_name]["expected_xml"]
+
+@pytest.mark.parametrize("validator_test_data", [(validator_test_prompt)])
+def test_validator_to_prompt(validator_test_data: Dict[str, Dict[str, str]]): 
+    for validator_name in validator_test_data:
+        module = importlib.import_module("guardrails.validators")
+        print("testing validator: ", validator_name)
+        validator_class = getattr(module, validator_name)
+        if "instance_variables" in validator_test_data[validator_name]:
+            instance = validator_class(
+                **validator_test_data[validator_name]["instance_variables"]
+            )
+        else:
+            instance = validator_class()
+        prompt = instance.to_prompt()
+        assert prompt == validator_test_data[validator_name]["expected_prompt"]
