@@ -40,6 +40,13 @@ except ImportError:
     nltk = None
 
 try:
+    from presidio_analyzer import AnalyzerEngine
+    from presidio_anonymizer import AnonymizerEngine
+except ImportError:
+    AnalyzerEngine = None
+    AnonymizerEngine = None
+
+try:
     if nltk is not None:
         nltk.data.find("tokenizers/punkt")
 except LookupError:
@@ -2282,3 +2289,143 @@ class ProvenanceV1(Validator):
             raise ValueError("distance_metric must be 'cosine'.")
 
         return top_chunks
+
+
+@register_validator(name="pii", data_type="string")
+class PIIFilter(Validator):
+    """Validates that any text does not contain any PII.
+
+    This validator uses Microsoft's Presidio (https://github.com/microsoft/presidio)
+    to detect PII in the text. If PII is detected, the validator will fail with a
+    programmatic fix that anonymizes the text. Otherwise, the validator will pass.
+
+    **Key Properties**
+
+    | Property                      | Description                         |
+    | ----------------------------- | ----------------------------------- |
+    | Name for `format` attribute   | `pii`                               |
+    | Supported data types          | `string`                            |
+    | Programmatic fix              | Anonymized text with PII filtered   |
+
+    Parameters: Arguments
+        threshold: The minimum cosine similarity between the generated text and
+            the source text. Defaults to 0.8.
+        validation_method: Whether to validate at the sentence level or over the full text.
+            Must be one of `sentence` or `full`. Defaults to `sentence`
+
+    Other parameters: Metadata
+        query_function (Callable, optional): A callable that takes a string and returns
+            a list of (chunk, score) tuples.
+        sources (List[str], optional): The source text.
+        embed_function (Callable, optional): A callable that creates embeddings for the
+            sources. Must accept a list of strings and return an np.array of floats.
+
+    In order to use this validator, you must provide either a `query_function` or
+    `sources` with an `embed_function` in the metadata.
+
+    If providing query_function, it should take a string as input and return a list of
+    (chunk, score) tuples. The chunk is a string and the score is a float representing
+    the cosine similarity between the chunk and the input string. The list should be
+    sorted in ascending order by score.
+
+    Example:
+        ```py
+        def query_function(text: str, k: int) -> List[Tuple[str, float]]:
+            return [("This is a chunk", 0.9), ("This is another chunk", 0.8)]
+
+        guard = Guard.from_rail(...)
+        guard(
+            openai.ChatCompletion.create(...),
+            prompt_params={...},
+            temperature=0.0,
+            metadata={"query_function": query_function},
+        )
+        ```
+
+    If providing sources, it should be a list of strings. The embed_function should
+    take a string or a list of strings as input and return a np array of floats.
+    The vector should be normalized to unit length.
+
+    Example:
+        ```py
+        def embed_function(text: Union[str, List[str]]) -> np.ndarray:
+            return np.array([[0.1, 0.2, 0.3]])
+
+        guard = Guard.from_rail(...)
+        guard(
+            openai.ChatCompletion.create(...),
+            prompt_params={...},
+            temperature=0.0,
+            metadata={
+                "sources": ["This is a source text"],
+                "embed_function": embed_function
+            },
+        )
+        ```
+    """
+
+    PII_ENTITIES_MAP = {
+        "pii": [
+            "EMAIL_ADDRESS",
+            "PHONE_NUMBER",
+            "DOMAIN_NAME",
+            "CREDIT_CARD",
+            "IP_ADDRESS",
+        ],
+        "spi": ["CREDIT_CARD", "IP_ADDRESS"],
+    }
+
+    def __init__(
+        self,
+        pii_entities: str | List[str] | None = None,
+        on_fail: Callable[..., Any] | None = None,
+        **kwargs,
+    ):
+        if AnalyzerEngine is None or AnonymizerEngine is None:
+            raise ImportError(
+                "You must install the `presidio-analyzer` and `presidio-anonymizer` "
+                "in order to use the PII validator."
+            )
+
+        super().__init__(on_fail, **kwargs)
+        self.pii_entities = pii_entities
+        self.pii_analyzer = AnalyzerEngine()
+        self.pii_anonymizer = AnonymizerEngine()
+
+    def validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
+        pii_entities = metadata.get("pii_entities", self.pii_entities)
+        if pii_entities is None:
+            raise ValueError(
+                "`pii_entities` must be set in order to use `PIIFilter."
+                "Add this to your metadata: `pii_entities=['PERSON', 'LOCATION']`"
+                "Or set in init"
+            )
+
+        # Check that pii_entities is a list of strings
+        if isinstance(pii_entities, str):
+            entities_to_filter = self.PII_ENTITIES_MAP.get(pii_entities, None)
+            if entities_to_filter is None:
+                raise ValueError(
+                    f"`pii_entities` must be one of {list(self.PII_ENTITIES_MAP.keys())}"
+                )
+        elif isinstance(pii_entities, list):
+            entities_to_filter = pii_entities
+
+        # Analyze the text, and anonymize it if there is PII
+        results = self.pii_analyzer.analyze(
+            text=value, entities=pii_entities, language="en"
+        )
+        anonymized_value = self.pii_anonymizer.anonymize(
+            text=value, analyzer_results=results
+        )
+
+        # If anonymized value is different from original value, then there is PII
+        if anonymized_value != value:
+            return FailResult(
+                error_message=(
+                    f"The following text in your response contains PII:\n{value}"
+                ),
+                fix_value=anonymized_value,
+            )
+
+        return PassResult()
