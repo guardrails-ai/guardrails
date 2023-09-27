@@ -24,6 +24,7 @@ from tenacity import retry, stop_after_attempt, wait_random_exponential
 
 from guardrails.utils.casting_utils import to_int
 from guardrails.utils.docs_utils import get_chunks_from_text, sentence_split
+from guardrails.utils.json_utils import deprecated_string_types
 from guardrails.utils.sql_utils import SQLDriver, create_sql_driver
 from guardrails.utils.validator_utils import PROVENANCE_V1_PROMPT
 
@@ -177,7 +178,9 @@ def register_validator(name: str, data_type: Union[str, List[str]]):
     for dt in data_type:
         if dt not in types_registry:
             raise ValueError(f"Data type {dt} is not registered.")
-
+        if dt == "string":
+            for str_type in deprecated_string_types:
+                types_to_validators[str_type].append(name)
         types_to_validators[dt].append(name)
 
     def decorator(cls_or_func: Union[type, Callable]):
@@ -549,11 +552,17 @@ class ValidLength(Validator):
 
             # Repeat the last character to make the value the correct length.
             if isinstance(value, str):
-                last_val = value[-1]
+                if not value:
+                    last_val = rstr.rstr(string.ascii_lowercase, 1)
+                else:
+                    last_val = value[-1]
             else:
-                last_val = [value[-1]]
-
+                if not value:
+                    last_val = [rstr.rstr(string.ascii_lowercase, 1)]
+                else:
+                    last_val = [value[-1]]
             corrected_value = value + last_val * (self._min - len(value))
+
             return FailResult(
                 error_message=f"Value has length less than {self._min}. "
                 f"Please return a longer output, "
@@ -674,7 +683,7 @@ class OneLine(Validator):
         return PassResult()
 
 
-@register_validator(name="valid-url", data_type=["string", "url"])
+@register_validator(name="valid-url", data_type=["string"])
 class ValidURL(Validator):
     """Validates that a value is a valid URL.
 
@@ -683,7 +692,7 @@ class ValidURL(Validator):
     | Property                      | Description                       |
     | ----------------------------- | --------------------------------- |
     | Name for `format` attribute   | `valid-url`                       |
-    | Supported data types          | `string`, `url`                   |
+    | Supported data types          | `string`                          |
     | Programmatic fix              | None                              |
     """
 
@@ -708,7 +717,7 @@ class ValidURL(Validator):
         return PassResult()
 
 
-@register_validator(name="is-reachable", data_type=["string", "url"])
+@register_validator(name="is-reachable", data_type=["string"])
 class EndpointIsReachable(Validator):
     """Validates that a value is a reachable URL.
 
@@ -717,7 +726,7 @@ class EndpointIsReachable(Validator):
     | Property                      | Description                       |
     | ----------------------------- | --------------------------------- |
     | Name for `format` attribute   | `is-reachable`                    |
-    | Supported data types          | `string`, `url`                   |
+    | Supported data types          | `string`,                         |
     | Programmatic fix              | None                              |
     """
 
@@ -751,7 +760,7 @@ class EndpointIsReachable(Validator):
         return PassResult()
 
 
-@register_validator(name="bug-free-python", data_type="pythoncode")
+@register_validator(name="bug-free-python", data_type="string")
 class BugFreePython(Validator):
     """Validates that there are no Python syntactic bugs in the generated code.
 
@@ -764,7 +773,7 @@ class BugFreePython(Validator):
     | Property                      | Description                       |
     | ----------------------------- | --------------------------------- |
     | Name for `format` attribute   | `bug-free-python`                 |
-    | Supported data types          | `pythoncode`                      |
+    | Supported data types          | `string`                          |
     | Programmatic fix              | None                              |
     """
 
@@ -782,7 +791,7 @@ class BugFreePython(Validator):
         return PassResult()
 
 
-@register_validator(name="bug-free-sql", data_type=["sql", "string"])
+@register_validator(name="bug-free-sql", data_type=["string"])
 class BugFreeSQL(Validator):
     """Validates that there are no SQL syntactic bugs in the generated code.
 
@@ -795,7 +804,7 @@ class BugFreeSQL(Validator):
     | Property                      | Description                       |
     | ----------------------------- | --------------------------------- |
     | Name for `format` attribute   | `bug-free-sql`                    |
-    | Supported data types          | `sql`, `string`                   |
+    | Supported data types          | `string`                          |
     | Programmatic fix              | None                              |
     """
 
@@ -818,7 +827,7 @@ class BugFreeSQL(Validator):
         return PassResult()
 
 
-@register_validator(name="sql-column-presence", data_type="sql")
+@register_validator(name="sql-column-presence", data_type="string")
 class SqlColumnPresence(Validator):
     """Validates that all columns in the SQL query are present in the schema.
 
@@ -827,7 +836,7 @@ class SqlColumnPresence(Validator):
     | Property                      | Description                       |
     | ----------------------------- | --------------------------------- |
     | Name for `format` attribute   | `sql-column-presence`             |
-    | Supported data types          | `sql`                             |
+    | Supported data types          | `string`                          |
     | Programmatic fix              | None                              |
 
     Parameters: Arguments
@@ -857,7 +866,7 @@ class SqlColumnPresence(Validator):
         return PassResult()
 
 
-@register_validator(name="exclude-sql-predicates", data_type="sql")
+@register_validator(name="exclude-sql-predicates", data_type="string")
 class ExcludeSqlPredicates(Validator):
     """Validates that the SQL query does not contain certain predicates.
 
@@ -866,7 +875,7 @@ class ExcludeSqlPredicates(Validator):
     | Property                      | Description                       |
     | ----------------------------- | --------------------------------- |
     | Name for `format` attribute   | `exclude-sql-predicates`          |
-    | Supported data types          | `sql`                             |
+    | Supported data types          | `string`                          |
     | Programmatic fix              | None                              |
 
     Parameters: Arguments

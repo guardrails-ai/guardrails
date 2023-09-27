@@ -56,6 +56,7 @@ nav:
     - 'Check key info present in generated summary': examples/text_summarization_quality.ipynb
     - 'Detect and limit hallucinations in generated text': examples/provenance.ipynb
   - 'Integrations':
+    - 'Azure OpenAI': integrations/azure_openai.ipynb
     - 'OpenAI Functions': integrations/openai_functions.ipynb
     - 'LangChain': integrations/langchain.ipynb
   -  'Join the Guardrails AI team': https://equatorial-bergamot-e37.notion.site/Join-the-Guardrails-AI-team-fd2fbf54f7834ba1b4c4d985162d34e1?pvs=4

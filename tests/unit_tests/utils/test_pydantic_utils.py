@@ -96,7 +96,7 @@ def test_add_pydantic_validators_as_guardrails_validators():
         (time, "time"),
         (HttpUrl, "url"),
         (Union[str, list], "choice"),
-        (PythonCode, "pythoncode"),
+        (PythonCode, "string"),
     ],
 )
 def test_type_annotation_to_string(type_annotation, expected_type_string):

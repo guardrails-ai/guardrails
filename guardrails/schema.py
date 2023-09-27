@@ -635,7 +635,7 @@ class JsonSchema(Schema):
         guard_logs.field_validation_logs = validation_logs
 
         validated_response, metadata = validator_service.validate(
-            value=data,
+            value=validated_response,
             metadata=metadata,
             validator_setup=validation,
             validation_logs=validation_logs,
@@ -721,7 +721,7 @@ class JsonSchema(Schema):
         guard_logs.field_validation_logs = validation_logs
 
         validated_response, metadata = await validator_service.async_validate(
-            value=data,
+            value=validated_response,
             metadata=metadata,
             validator_setup=validation,
             validation_logs=validation_logs,

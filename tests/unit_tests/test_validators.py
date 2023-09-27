@@ -253,10 +253,7 @@ def test_validator_as_tuple():
     )
 
     assert output == {"a_field": "hullo"}
-    assert (
-        guard.guard_state.all_histories[0].history[0].parsed_output["a_field"]
-        == hullo_reask
-    )
+    assert guard.guard_state.all_histories[0].history[0].reasks[0] == hullo_reask
 
     hello_reask = FieldReAsk(
         incorrect_value="hello there yo",
@@ -282,10 +279,7 @@ def test_validator_as_tuple():
     )
 
     assert output == {"a_field": "hello there"}
-    assert (
-        guard.guard_state.all_histories[0].history[0].parsed_output["a_field"]
-        == hello_reask
-    )
+    assert guard.guard_state.all_histories[0].history[0].reasks[0] == hello_reask
 
     # (Validator, on_fail) tuple reask
 
@@ -300,10 +294,7 @@ def test_validator_as_tuple():
     )
 
     assert output == {"a_field": "hello there"}
-    assert (
-        guard.guard_state.all_histories[0].history[0].parsed_output["a_field"]
-        == hello_reask
-    )
+    assert guard.guard_state.all_histories[0].history[0].reasks[0] == hello_reask
 
     # Fail on string
 
