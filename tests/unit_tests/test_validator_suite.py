@@ -16,6 +16,7 @@ from .validators.test_parameters import (
 )
 
 
+# TODO: Spread this object, so essentially each validator will be its own test case
 @pytest.mark.parametrize("validator_test_data", [(validator_test_pass_fail)])
 def test_validator_validate(validator_test_data: Dict[str, Dict[str, str]]):
     for validator_name in validator_test_data:
@@ -64,6 +65,7 @@ def test_validator_python_string(
         assert final_output == validator_test_data[validator_name]["output"]
 
 
+# TODO: Spread this object, so essentially each validator will be its own test case
 @pytest.mark.parametrize("validator_test_data", [(validator_test_xml)])
 def test_validator_to_xml(validator_test_data: Dict[str, Dict[str, str]]):
     for validator_name in validator_test_data:
@@ -80,6 +82,7 @@ def test_validator_to_xml(validator_test_data: Dict[str, Dict[str, str]]):
         assert xml == validator_test_data[validator_name]["expected_xml"]
 
 
+# TODO: Spread this object, so essentially each validator will be its own test case
 @pytest.mark.parametrize("validator_test_data", [(validator_test_prompt)])
 def test_validator_to_prompt(validator_test_data: Dict[str, Dict[str, str]]):
     for validator_name in validator_test_data:
