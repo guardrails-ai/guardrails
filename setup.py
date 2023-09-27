@@ -65,8 +65,8 @@ DEV_REQUIREMENTS = [
     "pytest",
     "pytest-asyncio",
     "thefuzz",
-    "profanity-check",
     "nltk",
+    "alt-profanity-check"
     *SQL_REQUIREMENTS,
     *VECTORDB_REQUIREMENTS,
 ] + DOCS_REQUIREMENTS
