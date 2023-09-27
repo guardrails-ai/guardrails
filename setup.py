@@ -51,6 +51,8 @@ SUMMARY_REQUIREMENTS = ["thefuzz", "nltk"]
 
 VECTORDB_REQUIREMENTS = ["faiss-cpu", "numpy", "tiktoken"]
 
+PROFANITY_REQUIREMENTS = ["alt-profanity-check"]
+
 DEV_REQUIREMENTS = [
     "black==22.12.0",
     "isort>=5.12.0",
@@ -64,13 +66,13 @@ DEV_REQUIREMENTS = [
     "pypdfium2",
     "pytest",
     "pytest-asyncio",
+    *SUMMARY_REQUIREMENTS,
+    *PROFANITY_REQUIREMENTS,
     *SQL_REQUIREMENTS,
     *VECTORDB_REQUIREMENTS,
 ] + DOCS_REQUIREMENTS
 
 MANIFEST_REQUIREMENTS = ["manifest-ml"]
-
-PROFANITY_REQUIREMENTS = ["alt-profanity-check"]
 
 CRITIQUE_REQUIREMENTS = ["inspiredco"]
 

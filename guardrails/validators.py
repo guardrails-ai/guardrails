@@ -575,7 +575,7 @@ class ValidLength(Validator):
 
 @register_validator(name="regex_match", data_type="string")
 class RegexMatch(Validator):
-    """Validates that a value matches a regualr expression.
+    """Validates that a value matches a regular expression.
 
     **Key Properties**
 
