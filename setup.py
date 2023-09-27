@@ -39,6 +39,7 @@ REQUIRED = [
     "tenacity>=8.1.0",
     "pytest",
     "regex",
+    "rstr",
 ]
 
 # Read in docs/requirements.txt
