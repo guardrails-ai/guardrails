@@ -343,9 +343,9 @@ validator_test_xml = {
         "instance_variables": {"predicates": ["EXISTS", "IN"]},
     },
     "SimilarToDocument": {
-        "expected_xml": "similar-to-document: {Just testing this out with a simple document} 0.6 text-embedding-ada-002",
+        "expected_xml": "similar-to-document: {simple doc} 0.6 text-embedding-ada-002",
         "instance_variables": {
-            "document": "Just testing this out with a simple document",
+            "document": "simple doc",
             "threshold": 0.6,
         },
     },
