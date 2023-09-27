@@ -24,6 +24,7 @@ from tenacity import retry, stop_after_attempt, wait_random_exponential
 
 from guardrails.utils.casting_utils import to_int
 from guardrails.utils.docs_utils import get_chunks_from_text, sentence_split
+from guardrails.utils.json_utils import deprecated_string_types
 from guardrails.utils.sql_utils import SQLDriver, create_sql_driver
 from guardrails.utils.validator_utils import PROVENANCE_V1_PROMPT
 
@@ -177,7 +178,9 @@ def register_validator(name: str, data_type: Union[str, List[str]]):
     for dt in data_type:
         if dt not in types_registry:
             raise ValueError(f"Data type {dt} is not registered.")
-
+        if dt == "string":
+            for str_type in deprecated_string_types:
+                types_to_validators[str_type].append(name)
         types_to_validators[dt].append(name)
 
     def decorator(cls_or_func: Union[type, Callable]):

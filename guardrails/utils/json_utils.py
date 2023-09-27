@@ -1,5 +1,6 @@
 import json
 import logging
+import warnings
 from dataclasses import dataclass
 from typing import Any, Dict, Optional, Tuple, Type, Union
 
@@ -287,10 +288,11 @@ def generate_type_skeleton_from_schema(schema: ET._Element) -> Placeholder:
         else:
             type_string = schema.tag
             if schema.tag in deprecated_string_types:
-                logger.warn(
+                warnings.warn(
                     f"""The '{schema.tag}' type is deprecated. Use the \
 string type instead. Support for this type will \
-be dropped in version 0.3.0 and beyond."""
+be dropped in version 0.3.0 and beyond.""",
+                    DeprecationWarning,
                 )
                 type_string = "string"
 
