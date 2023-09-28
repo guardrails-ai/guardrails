@@ -26,7 +26,7 @@ def test_text2sql_with_examples(conn_str: str, schema_path: str, examples: str, 
     # Mock the call to the OpenAI API.
     mocker.patch(
         "guardrails.embedding.OpenAIEmbedding._get_embedding",
-        new=lambda *args, **kwargs: [0.1] * 1536,
+        new=lambda *args, **kwargs: [[0.1] * 1536],
     )
 
     if examples is not None:
