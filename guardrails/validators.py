@@ -2232,12 +2232,11 @@ class ProvenanceV1(Validator):
 
 
 @register_validator(name="distribution-check", data_type="string")
-class DistributionCheck(Validator):
-    """Validates that the generated value lies within a similar distribution of
-    some previous known values.
+class SimilarToList(Validator):
+    """Validates that a value is similar to a list of previously known values.
 
     For integer values, this validator checks whether the value lies
-    within 3 standard deviations of the mean of the previous values.
+    within 'k' standard deviations of the mean of the previous values.
     (Assumes that the previous values are normally distributed.)
 
     For string values, this validator checks whether the average
@@ -2248,10 +2247,17 @@ class DistributionCheck(Validator):
     def __init__(
         self,
         k: int = 3,
-        threshold: float = 0.25,
+        threshold: float = 0.1,
         on_fail: Optional[Callable] = None,
         **kwargs,
     ):
+        """
+        Args:
+            k (int): The number of standard deviations from the mean to check.
+                Defaults to 3.
+            threshold (float): The threshold for the average semantic similarity.
+                Defaults to 0.1.
+        """
         super().__init__(on_fail, k=k, threshold=threshold, **kwargs)
         self._k = int(k)
         self._threshold = float(threshold)
@@ -2291,7 +2297,13 @@ class DistributionCheck(Validator):
                 "use the distribution check validator."
             )
 
-        if isinstance(value, int):
+        try:
+            value = int(value)
+            is_int = True
+        except ValueError:
+            is_int = False
+
+        if is_int:
             # Check whether prev_values are also all integers
             if not all(isinstance(prev_value, int) for prev_value in prev_values):
                 raise ValueError(
@@ -2316,16 +2328,13 @@ class DistributionCheck(Validator):
                     ),
                 )
             return PassResult()
-        elif isinstance(value, str):
+        else:
             # Check whether prev_values are also all strings
             if not all(isinstance(prev_value, str) for prev_value in prev_values):
                 raise ValueError(
                     "Both given value and all the previous values must be "
                     "strings in order to use the distribution check validator."
                 )
-
-            # Check whether the value is semantically similar to the prev_values
-            # Get average semantic similarity
 
             # Check embed model
             embed_function = metadata.get("embed_function", None)
@@ -2335,6 +2344,9 @@ class DistributionCheck(Validator):
                     "check the semantic similarity of the generated string."
                 )
 
+            # Check whether the value is semantically similar to the prev_values
+            # Get average semantic similarity
+            # Lesser the average semantic similarity, more similar the strings are
             avg_semantic_similarity = np.mean(
                 [
                     self._get_semantic_similarity(value, prev_value, embed_function)
@@ -2342,7 +2354,8 @@ class DistributionCheck(Validator):
                 ]
             )
 
-            # Check whether the average semantic similarity is above the threshold
+            # If average semantic similarity is above the threshold,
+            # then the value is not semantically similar to the prev_values
             if avg_semantic_similarity > self._threshold:
                 return FailResult(
                     error_message=(
