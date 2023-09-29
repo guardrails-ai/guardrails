@@ -118,8 +118,10 @@ class Rail:
 
         # Get version
         version = xml.attrib["version"]
-        if isinstance(version, bytes):
-            version = version.decode("utf-8")
+        if isinstance(version, memoryview):
+            version = version.tobytes().decode()
+        elif isinstance(version, (bytes, bytearray)):
+            version = version.decode()
 
         return cls(
             input_schema=input_schema,

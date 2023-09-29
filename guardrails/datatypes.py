@@ -69,9 +69,13 @@ class DataType:
         child."""
         for el_child in self.element:
             if "name" in el_child.attrib:
+
                 name = el_child.attrib["name"]
-                if isinstance(name, bytes):
+                if isinstance(name, memoryview):
+                    name = name.tobytes().decode()
+                elif isinstance(name, (bytes, bytearray)):
                     name = name.decode()
+
                 child_data_type: DataType = self._children[name]
                 yield name, child_data_type, el_child
             else:
@@ -92,7 +96,9 @@ class DataType:
                 yield None, list(self._children.values())[0], el_child
             else:
                 name = el_child.attrib["name"]
-                if isinstance(name, bytes):
+                if isinstance(name, memoryview):
+                    name = name.tobytes().decode()
+                elif isinstance(name, (bytes, bytearray)):
                     name = name.decode()
                 child_data_type: DataType = self._children[name]
                 yield name, child_data_type, el_child
@@ -392,9 +398,13 @@ class Object(NonScalarType):
     def set_children(self, element: ET._Element):
         for child in element:
             child_data_type = registry[child.tag]
+
             name = child.attrib["name"]
-            if isinstance(name, bytes):
+            if isinstance(name, memoryview):
+                name = name.tobytes().decode()
+            elif isinstance(name, (bytes, bytearray)):
                 name = name.decode()
+
             self._children[name] = child_data_type.from_xml(child)
 
 
@@ -430,9 +440,13 @@ class Choice(NonScalarType):
         for child in element:
             child_data_type = registry[child.tag]
             assert child_data_type == Case
+
             name = child.attrib["name"]
-            if isinstance(name, bytes):
+            if isinstance(name, memoryview):
+                name = name.tobytes().decode()
+            elif isinstance(name, (bytes, bytearray)):
                 name = name.decode()
+
             self._children[name] = child_data_type.from_xml(child)
 
     @property
@@ -476,9 +490,13 @@ class Case(NonScalarType):
     def set_children(self, element: ET._Element):
         for child in element:
             child_data_type = registry[child.tag]
+
             name = child.attrib["name"]
-            if isinstance(name, bytes):
+            if isinstance(name, memoryview):
+                name = name.tobytes().decode()
+            elif isinstance(name, (bytes, bytearray)):
                 name = name.decode()
+
             self._children[name] = child_data_type.from_xml(child)
 
 

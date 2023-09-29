@@ -550,10 +550,14 @@ class JsonSchema(Schema):
         for child in root:
             if isinstance(child, ET._Comment):
                 continue
-            child_name = child.attrib["name"]
             child_data = types_registry[child.tag].from_xml(child, strict=strict)
-            if isinstance(child_name, bytes):
-                child_name = child_name.decode("utf-8")
+
+            child_name = child.attrib["name"]
+            if isinstance(child_name, memoryview):
+                child_name = child_name.tobytes().decode()
+            elif isinstance(child_name, (bytes, bytearray)):
+                child_name = child_name.decode()
+
             self[child_name] = child_data
 
     def parse(
@@ -1031,8 +1035,11 @@ class Schema2Prompt:
     def remove_on_fail_attributes(element: ET._Element) -> None:
         """Recursively remove all attributes that start with 'on-fail-'."""
         for attr in list(element.attrib):
-            if isinstance(attr, bytes):
-                attr = attr.decode("utf-8")
+            if isinstance(attr, memoryview):
+                attr = attr.tobytes().decode()
+            elif isinstance(attr, (bytes, bytearray)):
+                attr = attr.decode()
+
             if attr.startswith("on-fail-"):
                 del element.attrib[attr]
 
@@ -1068,8 +1075,11 @@ class Schema2Prompt:
 
         for el_child in root:
             name = el_child.attrib["name"]
-            if isinstance(name, bytes):
-                name = name.decode("utf-8")
+            if isinstance(name, memoryview):
+                name = name.tobytes().decode()
+            elif isinstance(name, (bytes, bytearray)):
+                name = name.decode()
+
             dt_child = schema_dict[name]
             _inner(dt_child, el_child)
 
