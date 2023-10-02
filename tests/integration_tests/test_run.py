@@ -1,3 +1,4 @@
+import os
 import pytest
 from lxml import etree as ET
 
@@ -50,7 +51,9 @@ def runner_instance(is_sync: bool):
         )
 
 
-# Create a parameterized test function
+@pytest.mark.skipif(
+    os.environ.get("OPENAI_API_KEY") is None, reason="openai api key not set"
+)
 @pytest.mark.asyncio
 async def test_sync_async_call_equivalence(mocker):
 
@@ -80,7 +83,6 @@ async def test_sync_async_call_equivalence(mocker):
         "Tomato Cheese Pizza",
     )
 
-    # Perform assertions to check if the results are equivalent
     assert result_sync.output == result_async.output
 
 
@@ -105,8 +107,6 @@ async def test_sync_async_validate_equivalence(mocker):
     result_async = await runner_instance(False).async_validate(
         guard_logs, 1, parsed_output, OUTPUT_SCHEMA
     )
-
-    # Perform assertions to check if the results are equivalent
     assert result_sync == result_async
 
 
@@ -145,6 +145,5 @@ async def test_sync_async_step_equivalence(mocker):
         OUTPUT,
     )
 
-    # Perform assertions to check if the results are equivalent
     assert result_sync == result_async
     assert reask_sync == reask_async
