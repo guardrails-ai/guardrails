@@ -27,9 +27,11 @@ class FieldValidation:
 
 
 def verify_metadata_requirements(
-    metadata: dict, datatypes: Iterable["DataType"]
+    metadata: dict, datatypes: Union["DataType", Iterable["DataType"]]
 ) -> TypedList[str]:
     missing_keys = set()
+    if isinstance(datatypes, DataType):
+        datatypes = [datatypes]
     for datatype in datatypes:
         for validator in datatype.validators:
             for requirement in validator.required_metadata_keys:
