@@ -1,4 +1,4 @@
-# 🛤️ Guardrails
+# 🛤️ Guardrails AI
 
 <div align="center">
 
