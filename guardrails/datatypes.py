@@ -51,10 +51,14 @@ class DataType:
         format_attr: "FormatAttr",
         element: ET._Element,
         optional: bool,
+        name: Optional[str],
+        description: Optional[str],
     ) -> None:
         self._children = children
         self.format_attr = format_attr
         self.element = element
+        self.name = name
+        self.description = description
         self.optional = optional
 
     @property
@@ -146,7 +150,15 @@ class DataType:
 
         is_optional = element.attrib.get("required", "true") == "false"
 
-        data_type = cls({}, format_attr, element, is_optional)
+        name = element.attrib.get("name")
+        if isinstance(name, bytes):
+            name = name.decode()
+
+        description = element.attrib.get("description")
+        if isinstance(description, bytes):
+            description = description.decode()
+
+        data_type = cls({}, format_attr, element, is_optional, name, description)
         data_type.set_children(element)
         return data_type
 
@@ -238,10 +250,16 @@ class Date(ScalarType):
     """
 
     def __init__(
-        self, children: Dict[str, Any], format_attr: "FormatAttr", element: ET._Element, optional: bool
+        self,
+        children: Dict[str, Any],
+        format_attr: "FormatAttr",
+        element: ET._Element,
+        optional: bool,
+        name: Optional[str],
+        description: Optional[str],
     ) -> None:
         self.date_format = "%Y-%m-%d"
-        super().__init__(children, format_attr, element, optional)
+        super().__init__(children, format_attr, element, optional, name, description)
 
     def from_str(self, s: str) -> Optional[datetime.date]:
         """Create a Date from a string."""
@@ -269,10 +287,16 @@ class Time(ScalarType):
     """
 
     def __init__(
-        self, children: Dict[str, Any], format_attr: "FormatAttr", element: ET._Element, optional: bool
+        self,
+        children: Dict[str, Any],
+        format_attr: "FormatAttr",
+        element: ET._Element,
+        optional: bool,
+        name: Optional[str],
+        description: Optional[str],
     ) -> None:
         self.time_format = "%H:%M:%S"
-        super().__init__(children, format_attr, element, optional)
+        super().__init__(children, format_attr, element, optional, name, description)
 
     def from_str(self, s: str) -> Optional[datetime.time]:
         """Create a Time from a string."""
@@ -406,9 +430,15 @@ class Choice(NonScalarType):
     """Element tag: `<object>`"""
 
     def __init__(
-        self, children: Dict[str, Any], format_attr: "FormatAttr", element: ET._Element, optional: bool,
+        self,
+        children: Dict[str, Any],
+        format_attr: "FormatAttr",
+        element: ET._Element,
+        optional: bool,
+        name: Optional[str],
+        description: Optional[str],
     ) -> None:
-        super().__init__(children, format_attr, element, optional)
+        super().__init__(children, format_attr, element, optional, name, description)
         # grab `discriminator` attribute
         self.discriminator_key = element.attrib.get("discriminator", "discriminator")
 
@@ -448,9 +478,15 @@ class Case(NonScalarType):
     """Element tag: `<case>`"""
 
     def __init__(
-        self, children: Dict[str, Any], format_attr: "FormatAttr", element: ET._Element, optional: bool,
+        self,
+        children: Dict[str, Any],
+        format_attr: "FormatAttr",
+        element: ET._Element,
+        optional: bool,
+        name: Optional[str],
+        description: Optional[str],
     ) -> None:
-        super().__init__(children, format_attr, element, optional)
+        super().__init__(children, format_attr, element, optional, name, description)
 
     def collect_validation(
         self,
