@@ -77,44 +77,10 @@ def gather_reasks(validated_output: Optional[Union[Dict, ReAsk]]) -> List[ReAsk]
     return reasks
 
 
-def get_reasks_by_element(
-    reasks: List[FieldReAsk],
-    parsed_rail: ET._Element,
-) -> Dict[ET._Element, List[tuple]]:
-    """Cluster reasks by the XML element they are associated with."""
-    # This should be guaranteed to work, since the path corresponding
-    # to a ReAsk should always be valid in the element tree.
-
-    # This is because ReAsk objects are only created for elements
-    # with corresponding validators i.e. the element must have been
-    # in the tree in the first place for the ReAsk to be created.
-
-    reasks_by_element = defaultdict(list)
-
-    for reask in reasks:
-        path = reask.path
-        # TODO: does this work for all cases?
-        query = "."
-        if path is None:
-            raise RuntimeError("FieldReAsk path is None")
-        for part in path:
-            if isinstance(part, int):
-                query += "/*"
-            else:
-                query += f"/*[@name='{part}']"
-
-        # Find the element
-        element = parsed_rail.find(query)
-
-        reasks_by_element[element].append(reask)
-
-    return reasks_by_element
-
-
 def get_pruned_tree(
-    root: ET._Element,
-    reask_elements: Optional[List[ET._Element]] = None,
-) -> ET._Element:
+    root: ObjectType,
+    reasks: Optional[List[FieldReAsk]] = None,
+) -> ObjectType:
     """Prune tree of any elements that are not in `reasks`.
 
     Return the tree with only the elements that are keys of `reasks` and
@@ -128,30 +94,39 @@ def get_pruned_tree(
     Returns:
         The prompt.
     """
-    if reask_elements is None:
+    if reasks is None:
         return root
 
-    # Get all elements in `root`
-    elements = root.findall(".//*")
-    for element in elements:
-        if (element not in reask_elements) and len(element) == 0:
-            parent = element.getparent()
-            if parent is not None:
-                parent.remove(element)
+    # Find all elements that are to be retained
+    retain = [root]
+    for reask in reasks:
+        path = reask.path
+        if path is None:
+            raise RuntimeError("FieldReAsk path is None")
+        current_root = root
+        for part in path:
+            # TODO does this work for all cases?
+            if isinstance(part, int):
+                current_root = current_root.children.item
+            else:
+                current_root = vars(current_root.children)[part]
+            retain.append(current_root)
 
-            # Remove all ancestors that have no children
-            while parent is not None and len(parent) == 0:
-                grandparent = parent.getparent()
-                if grandparent is not None:
-                    grandparent.remove(parent)
-                parent = grandparent
+    # Remove all elements that are not to be retained
+    def _remove_children(element: Union[ObjectType, ListType]) -> None:
+        if isinstance(element, ListType):
+            if element.children.item not in retain:
+                del element._children["item"]
+            else:
+                _remove_children(element.children.item)
+        else:  # if isinstance(element, ObjectType):
+            for child_name, child in vars(element.children).items():
+                if child not in retain:
+                    del element._children[child_name]
+                else:
+                    _remove_children(child)
 
-    pruned_elements = root.findall(".//*")
-    for element in pruned_elements:
-        if element not in reask_elements:
-            # Remove the format attribute
-            if "format" in element.attrib:
-                del element.attrib["format"]
+    _remove_children(root)
 
     return root
 

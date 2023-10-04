@@ -5,7 +5,6 @@ import re
 import warnings
 from copy import deepcopy
 from string import Formatter
-from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
 import pydantic
@@ -13,7 +12,7 @@ from lxml import etree as ET
 from typing_extensions import Self
 
 from guardrails import validator_service
-from guardrails.datatypes import DataType, Object, String
+from guardrails.datatypes import Choice, DataType, Object, String
 from guardrails.llm_providers import (
     AsyncOpenAICallable,
     AsyncOpenAIChatCallable,
@@ -34,7 +33,6 @@ from guardrails.utils.reask_utils import (
     SkeletonReAsk,
     gather_reasks,
     get_pruned_tree,
-    get_reasks_by_element,
     prune_obj_for_reasking,
 )
 from guardrails.validator_base import (
@@ -448,8 +446,7 @@ class JsonSchema(Schema):
         use_full_schema: bool,
         prompt_params: Optional[Dict[str, Any]] = None,
     ) -> Tuple["Schema", Prompt, Instructions]:
-        # TODO transpile rail
-        parsed_rail = deepcopy(self.root)
+        root = deepcopy(self.root_datatype)
 
         is_skeleton_reask = not any(isinstance(reask, FieldReAsk) for reask in reasks)
         is_nonparseable_reask = any(
@@ -485,11 +482,9 @@ class JsonSchema(Schema):
                 pruned_tree_schema = self
             else:
                 reask_value = prune_obj_for_reasking(original_response)
-                # Get the elements that are to be reasked
-                reask_elements = get_reasks_by_element(reasks, parsed_rail)
 
                 # Get the pruned tree so that it only contains ReAsk objects
-                pruned_tree = get_pruned_tree(parsed_rail, list(reask_elements.keys()))
+                pruned_tree = get_pruned_tree(root, reasks)
                 pruned_tree_schema = type(self)(pruned_tree)
 
             reask_prompt_template = self.reask_prompt_template
@@ -549,12 +544,13 @@ class JsonSchema(Schema):
             children[child_name] = child_data
 
         # TODO after removing XML from datatypes, get rid of this dummy element
-        dummy_element = ET.Element("object", {})
         schema = Object(
             children=children,
-            format_attr=FormatAttr.from_element(dummy_element),
-            element=dummy_element,
+            format_attr=FormatAttr.from_element(root),
+            element=root,
             optional=False,
+            name=None,
+            description=None,
         )
 
         return cls(
@@ -1020,8 +1016,43 @@ class Schema2Prompt:
             dt_child = schema_dict[name]
             _inner(dt_child, el_child)
 
+    @staticmethod
+    def datatypes_to_xml(
+        dt: DataType,
+        root: Optional[ET._Element] = None,
+        override_tag_name: Optional[str] = None,
+    ) -> ET._Element:
+        """Recursively convert the datatypes to XML elements."""
+        if root is None:
+            tagname = override_tag_name or dt.element.tag
+            el = ET.Element(tagname)
+        else:
+            el = ET.SubElement(root, dt.element.tag)
+
+        if dt.name:
+            el.attrib["name"] = dt.name
+
+        if dt.description:
+            el.attrib["description"] = dt.description
+
+        if dt.format_attr:
+            format_prompt = dt.format_attr.to_prompt()
+            if format_prompt:
+                el.attrib["format"] = format_prompt
+
+        if dt.optional:
+            el.attrib["required"] = "false"
+
+        if isinstance(dt, Choice):
+            el.attrib["discriminator"] = dt.discriminator_key
+
+        for child in dt._children.values():
+            Schema2Prompt.datatypes_to_xml(child, el)
+
+        return el
+
     @classmethod
-    def default(cls, schema: Schema) -> str:
+    def default(cls, schema: JsonSchema) -> str:
         """Default transpiler.
 
         Converts the XML schema to a string directly after removing:
@@ -1035,10 +1066,10 @@ class Schema2Prompt:
             The prompt.
         """
         # Construct another XML tree from the schema.
-        schema_dict = schema.to_dict()
+        schema_object = schema.root_datatype
 
         # Remove validators with arguments.
-        cls.validator_to_prompt(root, schema_dict)
+        root = cls.datatypes_to_xml(schema_object, override_tag_name="output")
 
         # Return the XML as a string that is
         ET.indent(root, space="    ")
