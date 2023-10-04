@@ -1,5 +1,6 @@
 import pytest
 
+from guardrails.datatypes import Integer
 from guardrails.utils.json_utils import (
     ChoicePlaceholder,
     DictPlaceholder,
@@ -9,16 +10,16 @@ from guardrails.utils.json_utils import (
 
 
 @pytest.mark.parametrize(
-    "optional,type_string,value,coerce_types,expected_value",
+    "optional,datatype,value,coerce_types,expected_value",
     [
-        (False, "integer", None, True, ValuePlaceholder.VerificationFailed),
-        (False, "integer", None, False, ValuePlaceholder.VerificationFailed),
+        (False, Integer, None, True, ValuePlaceholder.VerificationFailed),
+        (False, Integer, None, False, ValuePlaceholder.VerificationFailed),
     ],
 )
 def test_value_placeholder_verify(
-    optional, type_string, value, coerce_types, expected_value
+    optional, datatype, value, coerce_types, expected_value
 ):
-    ph = ValuePlaceholder(optional, type_string)
+    ph = ValuePlaceholder(optional, datatype)
 
     verified_type = ph.verify(value, False, coerce_types)
 
@@ -32,7 +33,7 @@ def test_value_placeholder_verify(
         (False, {}, None, False, False),
         (
             False,
-            {"child": ValuePlaceholder(False, "integer")},
+            {"child": ValuePlaceholder(False, Integer)},
             {"child": None},
             False,
             False,
@@ -54,7 +55,7 @@ def test_dict_placeholder_verify(
     [
         (True, None, None, True, True),
         (False, None, None, False, False),
-        (False, ValuePlaceholder(False, "integer"), [None], False, False),
+        (False, ValuePlaceholder(False, Integer), [None], False, False),
     ],
 )
 def test_list_placeholder_verify(

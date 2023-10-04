@@ -1,6 +1,7 @@
 import lxml.etree as ET
 import pytest
 
+from guardrails.datatypes import Object
 from guardrails.utils.json_utils import verify_schema_against_json
 
 
@@ -243,4 +244,5 @@ from guardrails.utils.json_utils import verify_schema_against_json
 )
 def test_skeleton(xml, generated_json, result):
     xml_schema = ET.fromstring(xml)
-    assert verify_schema_against_json(xml_schema, generated_json) is result
+    datatype = Object.from_xml(xml_schema)
+    assert verify_schema_against_json(datatype, generated_json) is result

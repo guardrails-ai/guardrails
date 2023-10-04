@@ -377,7 +377,7 @@ def test_provenance_v1(mocker):
     )
 
     output_schema: StringSchema = string_guard.rail.output_schema
-    data_type: DataType = getattr(output_schema._schema, "string")
+    data_type: DataType = output_schema.root_datatype
     validators = data_type.format_attr.validators
     prov_validator: ProvenanceV1 = validators[0]
 
