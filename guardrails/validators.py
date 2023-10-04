@@ -1718,8 +1718,12 @@ class ProvenanceV0(Validator):
 
     If providing query_function, it should take a string as input and return a list of
     (chunk, score) tuples. The chunk is a string and the score is a float representing
-    the cosine similarity between the chunk and the input string. The list should be
+    the cosine distance between the chunk and the input string. The list should be
     sorted in ascending order by score.
+
+    Note: The score should represent distance in embedding space, not similarity. I.e.,
+    lower is better and the score should be 0 if the chunk is identical to the input
+    string.
 
     Example:
         ```py
