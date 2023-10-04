@@ -85,7 +85,6 @@ theme:
   features:
     - navigation.instant
     - navigation.tracking
-    - navigation.expand
     # - navigation.sections
     - content.code.annotate
     - toc.follow
