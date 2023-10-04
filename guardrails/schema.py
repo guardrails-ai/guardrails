@@ -4,8 +4,8 @@ import pprint
 import re
 import warnings
 from copy import deepcopy
-from string import Formatter
 from dataclasses import dataclass
+from string import Formatter
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 

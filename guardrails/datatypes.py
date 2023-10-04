@@ -169,6 +169,15 @@ class DataType:
         """Return a SimpleNamespace of the children of this DataType."""
         return SimpleNamespace(**self._children)
 
+    def __eq__(self, other):
+        # return self.__dict__ == other.__dict__
+        # same but excluding "element"
+        if not isinstance(other, type(self)):
+            return False
+        return {k: v for k, v in self.__dict__.items() if k != "element"} == {
+            k: v for k, v in other.__dict__.items() if k != "element"
+        }
+
 
 registry: Dict[str, Type[DataType]] = {}
 

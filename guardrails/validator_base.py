@@ -264,3 +264,8 @@ class Validator:
                 [result], value, self, self.on_fail_descriptor
             )
         return value
+
+    def __eq__(self, other):
+        if not isinstance(other, Validator):
+            return False
+        return self.to_prompt() == other.to_prompt()
