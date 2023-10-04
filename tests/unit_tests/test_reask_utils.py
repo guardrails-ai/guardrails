@@ -1,5 +1,5 @@
 import pytest
-from lxml.etree import Element, SubElement, tostring
+from lxml.etree import Element, SubElement
 
 from guardrails.datatypes import Object
 

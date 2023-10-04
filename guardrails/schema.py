@@ -4,9 +4,6 @@ import pprint
 import re
 import warnings
 from copy import deepcopy
-from dataclasses import dataclass
-from string import Formatter
-from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
 import pydantic
@@ -283,7 +280,7 @@ class FormatAttr(pydantic.BaseModel):
 class Schema:
     """Schema class that holds a _schema attribute."""
 
-    reask_prompt_vars: list[str]
+    reask_prompt_vars: List[str]
 
     def __init__(
         self,
