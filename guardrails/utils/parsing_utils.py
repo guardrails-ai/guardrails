@@ -1,4 +1,6 @@
-from typing import Optional, Tuple
+import collections
+from string import Template
+from typing import List, Optional, Tuple
 
 
 def has_code_block(
@@ -59,3 +61,12 @@ def get_code_block(
     trimmed_output = contents.strip()
 
     return trimmed_output
+
+
+def get_template_variables(template: str) -> List[str]:
+    if hasattr(Template, "get_identifiers"):
+        return Template(template).get_identifiers()
+    else:
+        d = collections.defaultdict(str)
+        Template(template).safe_substitute(d)
+        return list(d.keys())
