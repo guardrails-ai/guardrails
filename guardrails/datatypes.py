@@ -10,7 +10,7 @@ from lxml import etree as ET
 from typing_extensions import Self
 
 from guardrails.utils.casting_utils import to_float, to_int, to_string
-from guardrails.validators import Validator
+from guardrails.validator_base import Validator
 
 if TYPE_CHECKING:
     from guardrails.schema import FormatAttr

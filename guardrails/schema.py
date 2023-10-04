@@ -37,8 +37,7 @@ from guardrails.utils.reask_utils import (
     get_reasks_by_element,
     prune_obj_for_reasking,
 )
-from guardrails.validator_service import FieldValidation
-from guardrails.validators import (
+from guardrails.validator_base import (
     FailResult,
     Validator,
     check_refrain_in_dict,
@@ -222,7 +221,7 @@ class FormatAttr(pydantic.BaseModel):
         Returns:
             A list of validators.
         """
-        from guardrails.validators import types_to_validators, validators_registry
+        from guardrails.validator_base import types_to_validators, validators_registry
 
         _validators = []
         _unregistered_validators = []

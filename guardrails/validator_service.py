@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from guardrails.datatypes import FieldValidation
 from guardrails.utils.logs_utils import FieldValidationLogs, ValidatorLogs
 from guardrails.utils.reask_utils import FieldReAsk, ReAsk
-from guardrails.validators import (
+from guardrails.validator_base import (
     FailResult,
     Filter,
     PassResult,

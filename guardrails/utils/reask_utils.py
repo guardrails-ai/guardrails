@@ -1,10 +1,10 @@
-from collections import defaultdict
 from typing import Any, Dict, List, Optional, Union
 
 import pydantic
-from lxml import etree as ET
 
-from guardrails.validators import FailResult
+from guardrails.datatypes import List as ListType
+from guardrails.datatypes import Object as ObjectType
+from guardrails.validator_base import FailResult
 
 
 class ReAsk(pydantic.BaseModel):
