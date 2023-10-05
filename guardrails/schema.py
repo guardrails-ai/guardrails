@@ -112,7 +112,7 @@ class FormatAttr(pydantic.BaseModel):
         on_fail_handlers = {}
         for key, value in element.attrib.items():
             if key.startswith("on-fail-"):
-                on_fail_handler_name = key.removeprefix("on-fail-")
+                on_fail_handler_name = key[len("on-fail-") :]
                 on_fail_handler = value
                 on_fail_handlers[on_fail_handler_name] = on_fail_handler
 
