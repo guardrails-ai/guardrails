@@ -7,6 +7,7 @@ from guardrails.llm_providers import (
     AsyncArbitraryCallable,
     LLMResponse,
     PromptCallableException,
+    chat_prompt,
     get_llm_ask,
 )
 
@@ -208,3 +209,9 @@ class ReturnTempCallable(Callable):
 def test_get_llm_ask_temperature(llm_api, args, kwargs, expected_temperature):
     result = get_llm_ask(llm_api, *args, **kwargs)
     assert result().output == str(expected_temperature)
+
+
+def test_chat_prompt():
+    # raises when neither msg_history or prompt are provided
+    with pytest.raises(PromptCallableException):
+        chat_prompt(None)
