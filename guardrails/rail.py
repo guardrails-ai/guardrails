@@ -13,6 +13,7 @@ from guardrails.utils.pydantic_utils import (
     attach_validators_to_element,
     create_xml_element_for_base_model,
 )
+from guardrails.utils.xml_utils import cast_xml_to_string
 from guardrails.validators import Validator
 
 # TODO: Logging
@@ -118,10 +119,7 @@ class Rail:
 
         # Get version
         version = xml.attrib["version"]
-        if isinstance(version, memoryview):
-            version = version.tobytes().decode()
-        elif isinstance(version, (bytes, bytearray)):
-            version = version.decode()
+        version = cast_xml_to_string(version)
 
         return cls(
             input_schema=input_schema,

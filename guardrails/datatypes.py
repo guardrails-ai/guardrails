@@ -10,6 +10,7 @@ from lxml import etree as ET
 from typing_extensions import Self
 
 from guardrails.utils.casting_utils import to_float, to_int, to_string
+from guardrails.utils.xml_utils import cast_xml_to_string
 from guardrails.validators import Validator
 
 if TYPE_CHECKING:
@@ -69,12 +70,8 @@ class DataType:
         child."""
         for el_child in self.element:
             if "name" in el_child.attrib:
-
                 name = el_child.attrib["name"]
-                if isinstance(name, memoryview):
-                    name = name.tobytes().decode()
-                elif isinstance(name, (bytes, bytearray)):
-                    name = name.decode()
+                name = cast_xml_to_string(name)
 
                 child_data_type: DataType = self._children[name]
                 yield name, child_data_type, el_child
@@ -96,10 +93,7 @@ class DataType:
                 yield None, list(self._children.values())[0], el_child
             else:
                 name = el_child.attrib["name"]
-                if isinstance(name, memoryview):
-                    name = name.tobytes().decode()
-                elif isinstance(name, (bytes, bytearray)):
-                    name = name.decode()
+                name = cast_xml_to_string(name)
                 child_data_type: DataType = self._children[name]
                 yield name, child_data_type, el_child
 
@@ -400,10 +394,7 @@ class Object(NonScalarType):
             child_data_type = registry[child.tag]
 
             name = child.attrib["name"]
-            if isinstance(name, memoryview):
-                name = name.tobytes().decode()
-            elif isinstance(name, (bytes, bytearray)):
-                name = name.decode()
+            name = cast_xml_to_string(name)
 
             self._children[name] = child_data_type.from_xml(child)
 
@@ -442,10 +433,7 @@ class Choice(NonScalarType):
             assert child_data_type == Case
 
             name = child.attrib["name"]
-            if isinstance(name, memoryview):
-                name = name.tobytes().decode()
-            elif isinstance(name, (bytes, bytearray)):
-                name = name.decode()
+            name = cast_xml_to_string(name)
 
             self._children[name] = child_data_type.from_xml(child)
 
@@ -492,10 +480,7 @@ class Case(NonScalarType):
             child_data_type = registry[child.tag]
 
             name = child.attrib["name"]
-            if isinstance(name, memoryview):
-                name = name.tobytes().decode()
-            elif isinstance(name, (bytes, bytearray)):
-                name = name.decode()
+            name = cast_xml_to_string(name)
 
             self._children[name] = child_data_type.from_xml(child)
 

@@ -5,6 +5,7 @@ from typing import Any, Dict, Optional, Tuple, Type, Union
 import lxml.etree as ET
 
 from guardrails.utils.parsing_utils import get_code_block, has_code_block
+from guardrails.utils.xml_utils import cast_xml_to_string
 
 
 @dataclass
@@ -285,8 +286,7 @@ def generate_type_skeleton_from_schema(schema: ET._Element) -> Placeholder:
     children = {}
     for child in schema:
         name = child.attrib["name"]
-        if isinstance(name, bytes):
-            name = name.decode("utf-8")
+        name = cast_xml_to_string(name)
         children[name] = _recurse_schema(child)
 
     return DictPlaceholder(

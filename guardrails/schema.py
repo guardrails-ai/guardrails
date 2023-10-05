@@ -36,6 +36,7 @@ from guardrails.utils.reask_utils import (
     get_reasks_by_element,
     prune_obj_for_reasking,
 )
+from guardrails.utils.xml_utils import cast_xml_to_string
 from guardrails.validator_service import FieldValidation
 from guardrails.validators import (
     FailResult,
@@ -553,10 +554,7 @@ class JsonSchema(Schema):
             child_data = types_registry[child.tag].from_xml(child, strict=strict)
 
             child_name = child.attrib["name"]
-            if isinstance(child_name, memoryview):
-                child_name = child_name.tobytes().decode()
-            elif isinstance(child_name, (bytes, bytearray)):
-                child_name = child_name.decode()
+            child_name = cast_xml_to_string(child_name)
 
             self[child_name] = child_data
 
@@ -816,10 +814,8 @@ class StringSchema(Schema):
 
         attrib = {}
         for key, value in root.attrib.items():
-            if isinstance(value, bytes):
-                value = value.decode("utf-8")
-            if isinstance(key, bytes):
-                key = key.decode("utf-8")
+            value = cast_xml_to_string(value)
+            key = cast_xml_to_string(key)
             attrib[key] = value
 
         if "name" in attrib:
@@ -1035,10 +1031,7 @@ class Schema2Prompt:
     def remove_on_fail_attributes(element: ET._Element) -> None:
         """Recursively remove all attributes that start with 'on-fail-'."""
         for attr in list(element.attrib):
-            if isinstance(attr, memoryview):
-                attr = attr.tobytes().decode()
-            elif isinstance(attr, (bytes, bytearray)):
-                attr = attr.decode()
+            attr = cast_xml_to_string(attr)
 
             if attr.startswith("on-fail-"):
                 del element.attrib[attr]
@@ -1075,10 +1068,7 @@ class Schema2Prompt:
 
         for el_child in root:
             name = el_child.attrib["name"]
-            if isinstance(name, memoryview):
-                name = name.tobytes().decode()
-            elif isinstance(name, (bytes, bytearray)):
-                name = name.decode()
+            name = cast_xml_to_string(name)
 
             dt_child = schema_dict[name]
             _inner(dt_child, el_child)
