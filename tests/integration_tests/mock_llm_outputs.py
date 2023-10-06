@@ -25,7 +25,9 @@ class MockOpenAICallable(OpenAICallable):
             entity_extraction.COMPILED_PROMPT_SKELETON_REASK_2: entity_extraction.LLM_OUTPUT_SKELETON_REASK_2,  # noqa: E501
             pydantic.COMPILED_PROMPT: pydantic.LLM_OUTPUT,
             pydantic.COMPILED_PROMPT_REASK_1: pydantic.LLM_OUTPUT_REASK_1,
+            pydantic.COMPILED_PROMPT_FULL_REASK_1: pydantic.LLM_OUTPUT_FULL_REASK_1,
             pydantic.COMPILED_PROMPT_REASK_2: pydantic.LLM_OUTPUT_REASK_2,
+            pydantic.COMPILED_PROMPT_FULL_REASK_2: pydantic.LLM_OUTPUT_FULL_REASK_2,
             string.COMPILED_PROMPT: string.LLM_OUTPUT,
             string.COMPILED_PROMPT_REASK: string.LLM_OUTPUT_REASK,
             string.COMPILED_LIST_PROMPT: string.LIST_LLM_OUTPUT,
@@ -88,6 +90,18 @@ class MockOpenAIChatCallable(OpenAIChatCallable):
                 pydantic.MSG_COMPILED_PROMPT_REASK,
                 pydantic.MSG_COMPILED_INSTRUCTIONS_REASK,
             ): pydantic.MSG_HISTORY_LLM_OUTPUT_CORRECT,
+            (
+                pydantic.COMPILED_PROMPT_CHAT,
+                pydantic.COMPILED_INSTRUCTIONS_CHAT,
+            ): pydantic.LLM_OUTPUT,
+            (
+                pydantic.COMPILED_PROMPT_FULL_REASK_1,
+                pydantic.COMPILED_INSTRUCTIONS_CHAT,
+            ): pydantic.LLM_OUTPUT_FULL_REASK_1,
+            (
+                pydantic.COMPILED_PROMPT_FULL_REASK_2,
+                pydantic.COMPILED_INSTRUCTIONS_CHAT,
+            ): pydantic.LLM_OUTPUT_FULL_REASK_2,
         }
 
         try:
