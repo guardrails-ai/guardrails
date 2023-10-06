@@ -497,11 +497,13 @@ class AsyncManifestCallable(AsyncPromptCallableBase):
                 "Install with `pip install manifest-ml`"
             )
         client = cast(manifest.Manifest, client)
-        manifest_response = await client.run(
-            nonchat_prompt(prompt=text, instructions=instructions), *args, **kwargs
+        manifest_response = await client.arun_batch(
+            prompts=[nonchat_prompt(prompt=text, instructions=instructions)],
+            *args,
+            **kwargs,
         )
         return LLMResponse(
-            output=manifest_response,
+            output=manifest_response[0],
         )
 
 

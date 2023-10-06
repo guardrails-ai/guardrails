@@ -1,4 +1,6 @@
+import importlib.util
 from typing import Any, Callable
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -192,6 +194,49 @@ async def test_async_openai_chat_callable(mocker, openai_chat_mock):
     assert response.output == "Mocked LLM output"
     assert response.prompt_token_count == 10
     assert response.response_token_count == 20
+
+
+@pytest.mark.skipif(
+    not importlib.util.find_spec("manifest"),
+    reason="manifest-ml is not installed",
+)
+def test_manifest_callable():
+    client = MagicMock()
+    client.run.return_value = "Hello world!"
+
+    from guardrails.llm_providers import ManifestCallable
+
+    manifest_callable = ManifestCallable()
+    response = manifest_callable(text="Hello", client=client)
+
+    assert isinstance(response, LLMResponse) is True
+    assert response.output == "Hello world!"
+    assert response.prompt_token_count is None
+    assert response.response_token_count is None
+
+
+@pytest.mark.skipif(
+    not importlib.util.find_spec("manifest"),
+    reason="manifest-ml is not installed",
+)
+@pytest.mark.asyncio
+async def test_async_manifest_callable():
+    client = MagicMock()
+
+    async def return_async():
+        return ["Hello world!"]
+
+    client.arun_batch.return_value = return_async()
+
+    from guardrails.llm_providers import AsyncManifestCallable
+
+    manifest_callable = AsyncManifestCallable()
+    response = await manifest_callable(text="Hello", client=client)
+
+    assert isinstance(response, LLMResponse) is True
+    assert response.output == "Hello world!"
+    assert response.prompt_token_count is None
+    assert response.response_token_count is None
 
 
 class ReturnTempCallable(Callable):
