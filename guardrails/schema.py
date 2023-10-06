@@ -993,31 +993,6 @@ class Schema2Prompt:
     """
 
     @staticmethod
-    def validator_to_prompt(
-        root: ET._Element, schema_dict: Dict[str, DataType]
-    ) -> None:
-        """Recursively remove all validator arguments in the `format`
-        attribute."""
-
-        def _inner(dt: DataType, el: ET._Element):
-            if "format" in el.attrib:
-                format = dt.format_attr.to_prompt()
-                if len(format):
-                    el.attrib["format"] = format
-                else:
-                    del el.attrib["format"]
-
-            for _, dt_child, el_child in dt.iter(el):
-                _inner(dt_child, el_child)
-
-        for el_child in root:
-            name = el_child.attrib["name"]
-            if isinstance(name, bytes):
-                name = name.decode("utf-8")
-            dt_child = schema_dict[name]
-            _inner(dt_child, el_child)
-
-    @staticmethod
     def datatypes_to_xml(
         dt: DataType,
         root: Optional[ET._Element] = None,
