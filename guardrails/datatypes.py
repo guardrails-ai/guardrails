@@ -2,9 +2,9 @@ import datetime
 import logging
 from dataclasses import dataclass
 from types import SimpleNamespace
-from typing import TYPE_CHECKING, Any, Dict, Generator, Iterable
+from typing import TYPE_CHECKING, Any, Dict, Iterable
 from typing import List as TypedList
-from typing import Optional, Tuple, Type, TypeVar, Union
+from typing import Optional, Type, TypeVar, Union
 
 from lxml import etree as ET
 from typing_extensions import Self
@@ -70,40 +70,6 @@ class DataType:
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self._children})"
-
-    def __iter__(
-        self,
-    ) -> Generator[Tuple[Optional[str], "DataType", ET._Element], None, None]:
-        """Return a tuple of (name, child_data_type, child_element) for each
-        child."""
-        for el_child in self.element:
-            if "name" in el_child.attrib:
-                name = el_child.attrib["name"]
-                name = cast_xml_to_string(name)
-
-                child_data_type: DataType = self._children[name]
-                yield name, child_data_type, el_child
-            else:
-                assert len(self._children) == 1, "Must have exactly one child."
-                yield None, list(self._children.values())[0], el_child
-
-    def iter(
-        self, element: ET._Element
-    ) -> Generator[Tuple[Optional[str], "DataType", ET._Element], None, None]:
-        """Iterate over the children of an element.
-
-        Yields tuples of (name, child_data_type, child_element) for each
-        child.
-        """
-        for el_child in element:
-            if element.tag == "list":
-                assert len(self._children) == 1, "Must have exactly one child."
-                yield None, list(self._children.values())[0], el_child
-            else:
-                name = el_child.attrib["name"]
-                name = cast_xml_to_string(name)
-                child_data_type: DataType = self._children[name]
-                yield name, child_data_type, el_child
 
     def from_str(self, s: str) -> str:
         """Create a DataType from a string.
