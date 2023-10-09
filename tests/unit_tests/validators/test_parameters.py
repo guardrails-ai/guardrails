@@ -266,6 +266,18 @@ validator_test_pass_fail = {
             "expected_result": FailResult,
         },
     ],
+    "SimilarToList": [
+        {
+            "input_data": "3",
+            "metadata": {"prev_values": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]},
+            "expected_result": PassResult,
+        },
+        {
+            "input_data": "300",
+            "metadata": {"prev_values": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]},
+            "expected_result": FailResult,
+        },
+    ],
 }
 
 validator_test_python_str = {
@@ -347,6 +359,10 @@ validator_test_xml = {
     "RegexMatch": {
         "expected_xml": "regex_match: \\w+\\d\\w+ fullmatch",
         "instance_variables": {"regex": "\\w+\\d\\w+", "match_type": "fullmatch"},
+    },
+    "SimilarToList": {
+        "expected_xml": "similar-to-list: 2 0.5",
+        "instance_variables": {"standard_deviations": 2, "threshold": 0.5},
     },
 }
 
