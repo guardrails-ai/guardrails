@@ -2273,7 +2273,7 @@ class SimilarToList(Validator):
         self._standard_deviations = int(standard_deviations)
         self._threshold = float(threshold)
 
-    def _get_semantic_similarity(
+    def get_semantic_similarity(
         self, text1: str, text2: str, embed_function: Callable
     ) -> float:
         """Get the semantic similarity between two strings.
@@ -2309,6 +2309,7 @@ class SimilarToList(Validator):
             is_int = True
         except ValueError:
             is_int = False
+
         if is_int:
             # Check whether prev_values are also all integers
             if not all(isinstance(prev_value, int) for prev_value in prev_values):
@@ -2323,7 +2324,7 @@ class SimilarToList(Validator):
             prev_mean = np.mean(prev_values)
             prev_std = np.std(prev_values)
 
-            # Check whether the value lies outside 3 stds of the mean
+            # Check whether the value lies outside specified stds of the mean
             if value < prev_mean - (
                 self._standard_deviations * prev_std
             ) or value > prev_mean + (self._standard_deviations * prev_std):
@@ -2355,7 +2356,7 @@ class SimilarToList(Validator):
             # Lesser the average semantic similarity, more similar the strings are
             avg_semantic_similarity = np.mean(
                 [
-                    self._get_semantic_similarity(value, prev_value, embed_function)
+                    self.get_semantic_similarity(value, prev_value, embed_function)
                     for prev_value in prev_values
                 ]
             )
