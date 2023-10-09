@@ -4,7 +4,7 @@ import pprint
 import re
 import warnings
 from copy import deepcopy
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple, Union
 
 import pydantic
 from lxml import etree as ET
@@ -42,7 +42,6 @@ from guardrails.validator_base import (
     check_refrain_in_dict,
     filter_in_dict,
 )
-from guardrails.validator_service import FieldValidation
 
 if TYPE_CHECKING:
     pass
@@ -113,6 +112,7 @@ class FormatAttr(pydantic.BaseModel):
 
         on_fail_handlers = {}
         for key, value in element.attrib.items():
+            key = cast_xml_to_string(key)
             if key.startswith("on-fail-"):
                 on_fail_handler_name = key[len("on-fail-") :]
                 on_fail_handler = value
@@ -282,7 +282,7 @@ class FormatAttr(pydantic.BaseModel):
 class Schema:
     """Schema class that holds a _schema attribute."""
 
-    reask_prompt_vars: List[str]
+    reask_prompt_vars: Set[str]
 
     def __init__(
         self,

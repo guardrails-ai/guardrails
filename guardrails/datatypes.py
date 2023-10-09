@@ -452,7 +452,12 @@ class Choice(NonScalarType):
     ) -> None:
         super().__init__(children, format_attr, element, optional, name, description)
         # grab `discriminator` attribute
-        self.discriminator_key = element.attrib.get("discriminator", "discriminator")
+        disc = element.attrib.get("discriminator")
+        if disc is not None:
+            disc = cast_xml_to_string(disc)
+        else:
+            disc = "discriminator"
+        self.discriminator_key = disc
 
     def collect_validation(
         self,

@@ -153,13 +153,13 @@ class Rail:
     def load_schema(root: ET._Element) -> Schema:
         """Given the RAIL <input> or <output> element, create a Schema
         object."""
-        return Schema(root)
+        return Schema.from_element(root)
 
     @staticmethod
     def load_input_schema(root: ET._Element) -> Schema:
         """Given the RAIL <input> element, create a Schema object."""
         # Recast the schema as an InputSchema.
-        return Schema(root)
+        return Schema.from_element(root)
 
     @staticmethod
     def load_output_schema(
