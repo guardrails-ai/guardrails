@@ -20,6 +20,7 @@ from guardrails.validators import (
     ProvenanceV1,
     Refrain,
     SimilarToDocument,
+    SimilarToList,
     SqlColumnPresence,
     TwoWords,
     ValidationResult,
@@ -426,3 +427,61 @@ def test_to_xml_attrib(min, max, expected_xml):
     xml_validator = validator.to_xml_attrib()
 
     assert xml_validator == expected_xml
+
+
+def test_similar_to_list():
+    """Test initialisation of SimilarToList."""
+
+    int_prev_values = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    str_prev_values = ["broadcom", "paypal"]
+
+    mock_embeddings = {
+        "broadcom": [0.91, 0.81, 0.21],
+        "paypal": [0.89, 0.79, 0.22],
+        "cisco": [0.9, 0.8, 0.2],  # similar example
+        "taj mahal": [0.03, 0.1, 0.11],  # dissimilar example
+    }
+
+    def embed_function(text: str):
+        """Mock embedding function."""
+        return mock_embeddings[text]
+
+    # Initialise Guard from string
+    guard = Guard.from_string(
+        validators=[SimilarToList(standard_deviations=2, threshold=0.2, on_fail="fix")],
+        description="testmeout",
+    )
+
+    # Test for integer values
+    # 1. Test for values within the standard deviation
+    val = 3
+    output = guard.parse(
+        llm_output=val,
+        metadata={"prev_values": int_prev_values},
+    )
+    assert int(output) == val
+
+    # 2. Test for values outside the standard deviation
+    val = 300
+    output = guard.parse(
+        llm_output=val,
+        metadata={"prev_values": int_prev_values},
+    )
+    assert output is None
+
+    # Test for string values
+    # 1. Test for values within the standard deviation
+    val = "cisco"
+    output = guard.parse(
+        llm_output=val,
+        metadata={"prev_values": str_prev_values, "embed_function": embed_function},
+    )
+    assert output == val
+
+    # 2. Test for values outside the standard deviation
+    val = "taj mahal"
+    output = guard.parse(
+        llm_output=val,
+        metadata={"prev_values": str_prev_values, "embed_function": embed_function},
+    )
+    assert output is None

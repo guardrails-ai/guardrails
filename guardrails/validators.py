@@ -2231,7 +2231,7 @@ class ProvenanceV1(Validator):
         return top_chunks
 
 
-@register_validator(name="distribution-check", data_type="string")
+@register_validator(name="similar-to-list", data_type="string")
 class SimilarToList(Validator):
     """Validates that a value is similar to a list of previously known values.
 
@@ -2246,20 +2246,25 @@ class SimilarToList(Validator):
 
     def __init__(
         self,
-        k: int = 3,
+        standard_deviations: int = 3,
         threshold: float = 0.1,
         on_fail: Optional[Callable] = None,
         **kwargs,
     ):
         """
         Args:
-            k (int): The number of standard deviations from the mean to check.
-                Defaults to 3.
+            standard_deviations (int): The number of standard deviations
+                from the mean to check. Defaults to 3.
             threshold (float): The threshold for the average semantic similarity.
                 Defaults to 0.1.
         """
-        super().__init__(on_fail, k=k, threshold=threshold, **kwargs)
-        self._k = int(k)
+        super().__init__(
+            on_fail,
+            standard_deviations=standard_deviations,
+            threshold=threshold,
+            **kwargs,
+        )
+        self._standard_deviations = int(standard_deviations)
         self._threshold = float(threshold)
 
     def _get_semantic_similarity(
@@ -2318,13 +2323,13 @@ class SimilarToList(Validator):
             prev_std = np.std(prev_values)
 
             # Check whether the value lies outside 3 stds of the mean
-            if value < prev_mean - (self._k * prev_std) or value > prev_mean + (
-                self._k * prev_std
-            ):
+            if value < prev_mean - (
+                self._standard_deviations * prev_std
+            ) or value > prev_mean + (self._standard_deviations * prev_std):
                 return FailResult(
                     error_message=(
                         f"The value {value} lies outside of the expected distribution "
-                        f"of {prev_mean} +/- {self._k * prev_std}."
+                        f"of {prev_mean} +/- {self._standard_deviations * prev_std}."
                     ),
                 )
             return PassResult()
