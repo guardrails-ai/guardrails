@@ -2237,11 +2237,10 @@ class SimilarToList(Validator):
 
     For integer values, this validator checks whether the value lies
     within 'k' standard deviations of the mean of the previous values.
-    (Assumes that the previous values are normally distributed.)
-
-    For string values, this validator checks whether the average
-    semantic similarity between the generated value and the previous
-    values is less than a threshold.
+    (Assumes that the previous values are normally distributed.) For
+    string values, this validator checks whether the average semantic
+    similarity between the generated value and the previous values is
+    less than a threshold.
     """
 
     def __init__(
@@ -2251,12 +2250,11 @@ class SimilarToList(Validator):
         on_fail: Optional[Callable] = None,
         **kwargs,
     ):
-        """
-        Args:
-            standard_deviations (int): The number of standard deviations
-                from the mean to check. Defaults to 3.
-            threshold (float): The threshold for the average semantic similarity.
-                Defaults to 0.1.
+        """Args:
+        standard_deviations (int): The number of standard deviations
+            from the mean to check. Defaults to 3.
+        threshold (float): The threshold for the average semantic similarity.
+            Defaults to 0.1.
         """
         super().__init__(
             on_fail,
@@ -2276,13 +2274,11 @@ class SimilarToList(Validator):
             text1 (str): The first string.
             text2 (str): The second string.
             embed_function (Callable): The embedding function.
-
         Returns:
             similarity (float): The semantic similarity between the two strings.
         """
         text1_embedding = embed_function(text1)
         text2_embedding = embed_function(text2)
-
         similarity = 1 - (
             np.dot(text1_embedding, text2_embedding)
             / (np.linalg.norm(text1_embedding) * np.linalg.norm(text2_embedding))
@@ -2291,7 +2287,6 @@ class SimilarToList(Validator):
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         prev_values = metadata.get("prev_values", [])
-
         if not prev_values:
             raise ValueError("You must provide a list of previous values in metadata.")
 
@@ -2301,13 +2296,11 @@ class SimilarToList(Validator):
                 "You must install numpy in order to "
                 "use the distribution check validator."
             )
-
         try:
             value = int(value)
             is_int = True
         except ValueError:
             is_int = False
-
         if is_int:
             # Check whether prev_values are also all integers
             if not all(isinstance(prev_value, int) for prev_value in prev_values):
