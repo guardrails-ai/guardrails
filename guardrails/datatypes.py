@@ -138,7 +138,7 @@ class DataType:
         value = self.from_str(value)
         return self._constructor_validation(key, value)
 
-    def set_children(self, element: ET._Element):
+    def set_children_from_xml(self, element: ET._Element):
         raise NotImplementedError("Abstract method.")
 
     @classmethod
@@ -161,7 +161,7 @@ class DataType:
             description = cast_xml_to_string(description)
 
         data_type = cls({}, format_attr, element, is_optional, name, description)
-        data_type.set_children(element)
+        data_type.set_children_from_xml(element)
         return data_type
 
     @property
@@ -196,7 +196,7 @@ def register_type(name: str):
 
 
 class ScalarType(DataType):
-    def set_children(self, element: ET._Element):
+    def set_children_from_xml(self, element: ET._Element):
         for _ in element:
             raise ValueError("ScalarType data type must not have any children.")
 
@@ -377,7 +377,7 @@ class List(NonScalarType):
 
         return validation
 
-    def set_children(self, element: ET._Element):
+    def set_children_from_xml(self, element: ET._Element):
         for idx, child in enumerate(element, start=1):
             if idx > 1:
                 # Only one child is allowed in a list data type.
@@ -427,7 +427,7 @@ class Object(NonScalarType):
 
         return validation
 
-    def set_children(self, element: ET._Element):
+    def set_children_from_xml(self, element: ET._Element):
         for child in element:
             child_data_type = registry[child.tag]
 
@@ -476,7 +476,7 @@ class Choice(NonScalarType):
 
         return validation
 
-    def set_children(self, element: ET._Element):
+    def set_children_from_xml(self, element: ET._Element):
         for child in element:
             child_data_type = registry[child.tag]
             assert child_data_type == Case
@@ -530,7 +530,7 @@ class Case(NonScalarType):
 
         return validation
 
-    def set_children(self, element: ET._Element):
+    def set_children_from_xml(self, element: ET._Element):
         for child in element:
             child_data_type = registry[child.tag]
 
