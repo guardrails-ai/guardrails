@@ -2235,6 +2235,14 @@ class ProvenanceV1(Validator):
 class SimilarToList(Validator):
     """Validates that a value is similar to a list of previously known values.
 
+    **Key Properties**
+
+    | Property                      | Description                       |
+    | ----------------------------- | --------------------------------- |
+    | Name for `format` attribute   | `similar-to-list`                 |
+    | Supported data types          | `string`                          |
+    | Programmatic fix              | None                              |
+
     For integer values, this validator checks whether the value lies
     within 'k' standard deviations of the mean of the previous values.
     (Assumes that the previous values are normally distributed.) For
