@@ -321,7 +321,7 @@ def create_xml_element_for_field(
             inner_type = get_args(type_annotation)
             if len(inner_type) == 0:
                 # If the list is empty, we cannot infer the type of the elements
-                pass
+                return element
 
             inner_type = inner_type[0]
             if is_pydantic_base_model(inner_type):

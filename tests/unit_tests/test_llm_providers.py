@@ -1,4 +1,6 @@
+import importlib.util
 from typing import Any, Callable
+from unittest.mock import MagicMock
 
 import pytest
 from pydantic import BaseModel
@@ -8,6 +10,7 @@ from guardrails.llm_providers import (
     AsyncArbitraryCallable,
     LLMResponse,
     PromptCallableException,
+    chat_prompt,
     get_llm_ask,
 )
 
@@ -235,6 +238,49 @@ async def test_async_openai_chat_model_callable(mocker, openai_chat_mock):
     assert response.response_token_count == 20
 
 
+@pytest.mark.skipif(
+    not importlib.util.find_spec("manifest"),
+    reason="manifest-ml is not installed",
+)
+def test_manifest_callable():
+    client = MagicMock()
+    client.run.return_value = "Hello world!"
+
+    from guardrails.llm_providers import ManifestCallable
+
+    manifest_callable = ManifestCallable()
+    response = manifest_callable(text="Hello", client=client)
+
+    assert isinstance(response, LLMResponse) is True
+    assert response.output == "Hello world!"
+    assert response.prompt_token_count is None
+    assert response.response_token_count is None
+
+
+@pytest.mark.skipif(
+    not importlib.util.find_spec("manifest"),
+    reason="manifest-ml is not installed",
+)
+@pytest.mark.asyncio
+async def test_async_manifest_callable():
+    client = MagicMock()
+
+    async def return_async():
+        return ["Hello world!"]
+
+    client.arun_batch.return_value = return_async()
+
+    from guardrails.llm_providers import AsyncManifestCallable
+
+    manifest_callable = AsyncManifestCallable()
+    response = await manifest_callable(text="Hello", client=client)
+
+    assert isinstance(response, LLMResponse) is True
+    assert response.output == "Hello world!"
+    assert response.prompt_token_count is None
+    assert response.response_token_count is None
+
+
 class ReturnTempCallable(Callable):
     def __call__(*args, **kwargs) -> Any:
         return kwargs.get("temperature")
@@ -250,3 +296,9 @@ class ReturnTempCallable(Callable):
 def test_get_llm_ask_temperature(llm_api, args, kwargs, expected_temperature):
     result = get_llm_ask(llm_api, *args, **kwargs)
     assert result().output == str(expected_temperature)
+
+
+def test_chat_prompt():
+    # raises when neither msg_history or prompt are provided
+    with pytest.raises(PromptCallableException):
+        chat_prompt(None)

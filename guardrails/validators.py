@@ -36,7 +36,7 @@ else:
     _HAS_NUMPY = True
 
 try:
-    import nltk
+    import nltk  # type: ignore
 except ImportError:
     nltk = None
 
@@ -1026,7 +1026,7 @@ class ExtractiveSummary(Validator):
             store[filepath] = sentence_split(doc)
 
         try:
-            from thefuzz import fuzz
+            from thefuzz import fuzz  # type: ignore
         except ImportError:
             raise ImportError(
                 "`thefuzz` library is required for `extractive-summary` validator. "
@@ -1121,7 +1121,7 @@ class RemoveRedundantSentences(Validator):
         """Remove redundant sentences from a string."""
 
         try:
-            from thefuzz import fuzz
+            from thefuzz import fuzz  # type: ignore
         except ImportError:
             raise ImportError(
                 "`thefuzz` library is required for `remove-redundant-sentences` "
@@ -1463,51 +1463,52 @@ class ProvenanceV0(Validator):
         sources = metadata.get("sources", None)
 
         # Check that query_fn or sources are provided
-        if query_fn is not None and sources is not None:
-            warnings.warn(
-                "Both `query_function` and `sources` are provided in metadata. "
-                "`query_function` will be used."
-            )
-        elif query_fn is None and sources is None:
+        if query_fn is not None:
+            if sources is not None:
+                warnings.warn(
+                    "Both `query_function` and `sources` are provided in metadata. "
+                    "`query_function` will be used."
+                )
+            return query_fn
+
+        if sources is None:
             raise ValueError(
                 "You must provide either `query_function` or `sources` in metadata."
             )
-        elif query_fn is None and sources is not None:
-            # Check chunking strategy
-            chunk_strategy = metadata.get("chunk_strategy", "sentence")
-            if chunk_strategy not in ["sentence", "word", "char", "token"]:
-                raise ValueError(
-                    "`chunk_strategy` must be one of 'sentence', 'word', 'char', "
-                    "or 'token'."
-                )
-            chunk_size = metadata.get("chunk_size", 5)
-            chunk_overlap = metadata.get("chunk_overlap", 2)
 
-            # Check distance metric
-            distance_metric = metadata.get("distance_metric", "cosine")
-            if distance_metric not in ["cosine", "euclidean"]:
-                raise ValueError(
-                    "`distance_metric` must be one of 'cosine' or 'euclidean'."
-                )
+        # Check chunking strategy
+        chunk_strategy = metadata.get("chunk_strategy", "sentence")
+        if chunk_strategy not in ["sentence", "word", "char", "token"]:
+            raise ValueError(
+                "`chunk_strategy` must be one of 'sentence', 'word', 'char', "
+                "or 'token'."
+            )
+        chunk_size = metadata.get("chunk_size", 5)
+        chunk_overlap = metadata.get("chunk_overlap", 2)
 
-            # Check embed model
-            embed_function = metadata.get("embed_function", None)
-            if embed_function is None:
-                raise ValueError(
-                    "You must provide `embed_function` in metadata in order to "
-                    "use the default query function."
-                )
-            query_fn = partial(
-                self.query_vector_collection,
-                sources=metadata["sources"],
-                chunk_strategy=chunk_strategy,
-                chunk_size=chunk_size,
-                chunk_overlap=chunk_overlap,
-                distance_metric=distance_metric,
-                embed_function=embed_function,
+        # Check distance metric
+        distance_metric = metadata.get("distance_metric", "cosine")
+        if distance_metric not in ["cosine", "euclidean"]:
+            raise ValueError(
+                "`distance_metric` must be one of 'cosine' or 'euclidean'."
             )
 
-        return query_fn
+        # Check embed model
+        embed_function = metadata.get("embed_function", None)
+        if embed_function is None:
+            raise ValueError(
+                "You must provide `embed_function` in metadata in order to "
+                "use the default query function."
+            )
+        return partial(
+            self.query_vector_collection,
+            sources=metadata["sources"],
+            chunk_strategy=chunk_strategy,
+            chunk_size=chunk_size,
+            chunk_overlap=chunk_overlap,
+            distance_metric=distance_metric,
+            embed_function=embed_function,
+        )
 
     def validate_each_sentence(
         self, value: Any, query_function: Callable, metadata: Dict[str, Any]
@@ -1766,7 +1767,7 @@ class ProvenanceV1(Validator):
                     ],
                     max_tokens=self._max_tokens,
                 )
-                return response["choices"][0]["message"]["content"]
+                return response["choices"][0]["message"]["content"]  # type: ignore
 
             self._llm_callable = openai_callable
         elif isinstance(llm_callable, Callable):
@@ -1777,58 +1778,59 @@ class ProvenanceV1(Validator):
                 " and returns a string."
             )
 
-    def get_query_function(self, metadata: Dict[str, Any]) -> None:
+    def get_query_function(self, metadata: Dict[str, Any]) -> Callable:
         # Exact same as ProvenanceV0
 
         query_fn = metadata.get("query_function", None)
         sources = metadata.get("sources", None)
 
         # Check that query_fn or sources are provided
-        if query_fn is not None and sources is not None:
-            warnings.warn(
-                "Both `query_function` and `sources` are provided in metadata. "
-                "`query_function` will be used."
-            )
-        elif query_fn is None and sources is None:
+        if query_fn is not None:
+            if sources is not None:
+                warnings.warn(
+                    "Both `query_function` and `sources` are provided in metadata. "
+                    "`query_function` will be used."
+                )
+            return query_fn
+
+        if sources is None:
             raise ValueError(
                 "You must provide either `query_function` or `sources` in metadata."
             )
-        elif query_fn is None and sources is not None:
-            # Check chunking strategy
-            chunk_strategy = metadata.get("chunk_strategy", "sentence")
-            if chunk_strategy not in ["sentence", "word", "char", "token"]:
-                raise ValueError(
-                    "`chunk_strategy` must be one of 'sentence', 'word', 'char', "
-                    "or 'token'."
-                )
-            chunk_size = metadata.get("chunk_size", 5)
-            chunk_overlap = metadata.get("chunk_overlap", 2)
 
-            # Check distance metric
-            distance_metric = metadata.get("distance_metric", "cosine")
-            if distance_metric not in ["cosine", "euclidean"]:
-                raise ValueError(
-                    "`distance_metric` must be one of 'cosine' or 'euclidean'."
-                )
+        # Check chunking strategy
+        chunk_strategy = metadata.get("chunk_strategy", "sentence")
+        if chunk_strategy not in ["sentence", "word", "char", "token"]:
+            raise ValueError(
+                "`chunk_strategy` must be one of 'sentence', 'word', 'char', "
+                "or 'token'."
+            )
+        chunk_size = metadata.get("chunk_size", 5)
+        chunk_overlap = metadata.get("chunk_overlap", 2)
 
-            # Check embed model
-            embed_function = metadata.get("embed_function", None)
-            if embed_function is None:
-                raise ValueError(
-                    "You must provide `embed_function` in metadata in order to "
-                    "use the default query function."
-                )
-            query_fn = partial(
-                ProvenanceV1.query_vector_collection,
-                sources=metadata["sources"],
-                chunk_strategy=chunk_strategy,
-                chunk_size=chunk_size,
-                chunk_overlap=chunk_overlap,
-                distance_metric=distance_metric,
-                embed_function=embed_function,
+        # Check distance metric
+        distance_metric = metadata.get("distance_metric", "cosine")
+        if distance_metric not in ["cosine", "euclidean"]:
+            raise ValueError(
+                "`distance_metric` must be one of 'cosine' or 'euclidean'."
             )
 
-        return query_fn
+        # Check embed model
+        embed_function = metadata.get("embed_function", None)
+        if embed_function is None:
+            raise ValueError(
+                "You must provide `embed_function` in metadata in order to "
+                "use the default query function."
+            )
+        return partial(
+            self.query_vector_collection,
+            sources=metadata["sources"],
+            chunk_strategy=chunk_strategy,
+            chunk_size=chunk_size,
+            chunk_overlap=chunk_overlap,
+            distance_metric=distance_metric,
+            embed_function=embed_function,
+        )
 
     @retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(6))
     def call_llm(self, prompt: str) -> str:
@@ -1869,6 +1871,11 @@ class ProvenanceV1(Validator):
     def validate_each_sentence(
         self, value: Any, query_function: Callable, metadata: Dict[str, Any]
     ) -> ValidationResult:
+        if nltk is None:
+            raise ImportError(
+                "`nltk` library is required for `provenance-v0` validator. "
+                "Please install it with `pip install nltk`."
+            )
         # Split the value into sentences using nltk sentence tokenizer.
         sentences = nltk.sent_tokenize(value)
 
@@ -1944,11 +1951,11 @@ class ProvenanceV1(Validator):
         text: str,
         k: int,
         sources: List[str],
+        embed_function: Callable,
         chunk_strategy: str = "sentence",
         chunk_size: int = 5,
         chunk_overlap: int = 2,
         distance_metric: str = "cosine",
-        embed_function: Optional[Callable] = None,
     ) -> List[Tuple[str, float]]:
         chunks = [
             get_chunks_from_text(source, chunk_strategy, chunk_size, chunk_overlap)

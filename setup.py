@@ -64,6 +64,8 @@ DEV_REQUIREMENTS = [
     "pypdfium2",
     "pytest",
     "pytest-asyncio",
+    "pyright",
+    "lxml-stubs",
     *SQL_REQUIREMENTS,
     *VECTORDB_REQUIREMENTS,
 ] + DOCS_REQUIREMENTS
