@@ -30,7 +30,7 @@ from guardrails.validators import (
     register_validator,
 )
 
-from .mock_embeddings import mock_create_embedding, MOCK_EMBEDDINGS
+from .mock_embeddings import MOCK_EMBEDDINGS, mock_create_embedding
 from .mock_provenance_v1 import mock_chat_completion, mock_chromadb_query_function
 
 
