@@ -42,6 +42,33 @@ jobs:
                 run: |
                     make lint
 
+    Typing:
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                python-version: ['3.8', '3.9', '3.10', '3.11']
+
+        steps:
+            -   uses: actions/checkout@v2
+            -   name: Set up Python ${{ matrix.python-version }}
+                uses: actions/setup-python@v2
+                with:
+                    python-version: ${{ matrix.python-version }}
+
+            -   uses: actions/cache@v2
+                with:
+                    path: ~/.cache/pip
+                    key: ${{ runner.os }}-pip
+
+            -   name: Install Dependencies
+                run: |
+                    python -m pip install --upgrade pip
+                    make dev
+
+            -   name: Static analysis with pyright
+                run: |
+                    make type
+
     Pytests:
         runs-on: ubuntu-latest
         strategy:

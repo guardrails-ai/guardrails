@@ -234,7 +234,7 @@ class Guard:
         full_schema_reask: Optional[bool] = None,
         *args,
         **kwargs,
-    ) -> Awaitable[Tuple[str, Dict]]:
+    ) -> Awaitable[Tuple[str, Any]]:
         ...
 
     @overload
@@ -250,7 +250,7 @@ class Guard:
         full_schema_reask: Optional[bool] = None,
         *args,
         **kwargs,
-    ) -> Tuple[str, Dict]:
+    ) -> Tuple[str, Any]:
         ...
 
     def __call__(
@@ -265,7 +265,7 @@ class Guard:
         full_schema_reask: Optional[bool] = None,
         *args,
         **kwargs,
-    ) -> Union[Tuple[str, Dict], Awaitable[Tuple[str, Dict]]]:
+    ) -> Union[Tuple[Optional[str], Any], Awaitable[Tuple[Optional[str], Any]]]:
         """Call the LLM and validate the output. Pass an async LLM API to
         return a coroutine.
 
@@ -343,7 +343,7 @@ class Guard:
         full_schema_reask: bool,
         *args,
         **kwargs,
-    ) -> Tuple[str, Dict]:
+    ) -> Tuple[Optional[str], Any]:
         instructions_obj = instructions or self.instructions
         prompt_obj = prompt or self.prompt
         msg_history_obj = msg_history or []
@@ -385,7 +385,7 @@ class Guard:
         full_schema_reask: bool,
         *args,
         **kwargs,
-    ) -> Tuple[str, Dict]:
+    ) -> Tuple[Optional[str], Any]:
         """Call the LLM asynchronously and validate the output.
 
         Args:
@@ -449,7 +449,7 @@ class Guard:
         full_schema_reask: Optional[bool] = None,
         *args,
         **kwargs,
-    ) -> Dict:
+    ) -> Any:
         ...
 
     @overload
@@ -463,7 +463,7 @@ class Guard:
         full_schema_reask: Optional[bool] = None,
         *args,
         **kwargs,
-    ) -> Awaitable[Dict]:
+    ) -> Awaitable[Any]:
         ...
 
     @overload
@@ -477,7 +477,7 @@ class Guard:
         full_schema_reask: Optional[bool] = None,
         *args,
         **kwargs,
-    ) -> Dict:
+    ) -> Any:
         ...
 
     def parse(
@@ -490,7 +490,7 @@ class Guard:
         full_schema_reask: Optional[bool] = None,
         *args,
         **kwargs,
-    ) -> Union[Dict, Awaitable[Dict]]:
+    ) -> Union[Any, Awaitable[Any]]:
         """Alternate flow to using Guard where the llm_output is known.
 
         Args:
@@ -557,7 +557,7 @@ class Guard:
         full_schema_reask: bool,
         *args,
         **kwargs,
-    ) -> Dict:
+    ) -> Any:
         """Alternate flow to using Guard where the llm_output is known.
 
         Args:
@@ -599,7 +599,7 @@ class Guard:
         full_schema_reask: bool,
         *args,
         **kwargs,
-    ) -> Dict:
+    ) -> Any:
         """Alternate flow to using Guard where the llm_output is known.
 
         Args:

@@ -36,6 +36,7 @@ from guardrails.utils.reask_utils import (
     get_reasks_by_element,
     prune_obj_for_reasking,
 )
+from guardrails.utils.xml_utils import cast_xml_to_string
 from guardrails.validator_service import FieldValidation
 from guardrails.validators import (
     FailResult,
@@ -550,15 +551,16 @@ class JsonSchema(Schema):
         for child in root:
             if isinstance(child, ET._Comment):
                 continue
-            child_name = child.attrib["name"]
             child_data = types_registry[child.tag].from_xml(child, strict=strict)
-            if isinstance(child_name, bytes):
-                child_name = child_name.decode("utf-8")
+
+            child_name = child.attrib["name"]
+            child_name = cast_xml_to_string(child_name)
+
             self[child_name] = child_data
 
     def parse(
         self, output: str
-    ) -> Tuple[Union[Dict, NonParseableReAsk], Optional[Exception]]:
+    ) -> Tuple[Union[Optional[Dict], NonParseableReAsk], Optional[Exception]]:
         # Try to get json code block from output.
         # Return error and reask if it is not parseable.
         parsed_output, error = extract_json_from_ouput(output)
@@ -812,10 +814,8 @@ class StringSchema(Schema):
 
         attrib = {}
         for key, value in root.attrib.items():
-            if isinstance(value, bytes):
-                value = value.decode("utf-8")
-            if isinstance(key, bytes):
-                key = key.decode("utf-8")
+            value = cast_xml_to_string(value)
+            key = cast_xml_to_string(key)
             attrib[key] = value
 
         if "name" in attrib:
@@ -1031,8 +1031,8 @@ class Schema2Prompt:
     def remove_on_fail_attributes(element: ET._Element) -> None:
         """Recursively remove all attributes that start with 'on-fail-'."""
         for attr in list(element.attrib):
-            if isinstance(attr, bytes):
-                attr = attr.decode("utf-8")
+            attr = cast_xml_to_string(attr)
+
             if attr.startswith("on-fail-"):
                 del element.attrib[attr]
 
@@ -1068,8 +1068,8 @@ class Schema2Prompt:
 
         for el_child in root:
             name = el_child.attrib["name"]
-            if isinstance(name, bytes):
-                name = name.decode("utf-8")
+            name = cast_xml_to_string(name)
+
             dt_child = schema_dict[name]
             _inner(dt_child, el_child)
 

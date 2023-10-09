@@ -10,6 +10,7 @@ from lxml import etree as ET
 from typing_extensions import Self
 
 from guardrails.utils.casting_utils import to_float, to_int, to_string
+from guardrails.utils.xml_utils import cast_xml_to_string
 from guardrails.validators import Validator
 
 if TYPE_CHECKING:
@@ -70,8 +71,8 @@ class DataType:
         for el_child in self.element:
             if "name" in el_child.attrib:
                 name = el_child.attrib["name"]
-                if isinstance(name, bytes):
-                    name = name.decode()
+                name = cast_xml_to_string(name)
+
                 child_data_type: DataType = self._children[name]
                 yield name, child_data_type, el_child
             else:
@@ -92,8 +93,7 @@ class DataType:
                 yield None, list(self._children.values())[0], el_child
             else:
                 name = el_child.attrib["name"]
-                if isinstance(name, bytes):
-                    name = name.decode()
+                name = cast_xml_to_string(name)
                 child_data_type: DataType = self._children[name]
                 yield name, child_data_type, el_child
 
@@ -392,9 +392,10 @@ class Object(NonScalarType):
     def set_children(self, element: ET._Element):
         for child in element:
             child_data_type = registry[child.tag]
+
             name = child.attrib["name"]
-            if isinstance(name, bytes):
-                name = name.decode()
+            name = cast_xml_to_string(name)
+
             self._children[name] = child_data_type.from_xml(child)
 
 
@@ -430,9 +431,10 @@ class Choice(NonScalarType):
         for child in element:
             child_data_type = registry[child.tag]
             assert child_data_type == Case
+
             name = child.attrib["name"]
-            if isinstance(name, bytes):
-                name = name.decode()
+            name = cast_xml_to_string(name)
+
             self._children[name] = child_data_type.from_xml(child)
 
     @property
@@ -476,9 +478,10 @@ class Case(NonScalarType):
     def set_children(self, element: ET._Element):
         for child in element:
             child_data_type = registry[child.tag]
+
             name = child.attrib["name"]
-            if isinstance(name, bytes):
-                name = name.decode()
+            name = cast_xml_to_string(name)
+
             self._children[name] = child_data_type.from_xml(child)
 
 

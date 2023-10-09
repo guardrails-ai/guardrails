@@ -8,7 +8,7 @@ except ImportError:
     tiktoken = None
 
 try:
-    import nltk
+    import nltk  # type: ignore
 except ImportError:
     nltk = None
 
@@ -71,7 +71,7 @@ class TextSplitter:
 def sentence_split(text: str) -> t.List[str]:
     """Split the text into sentences."""
     try:
-        from nltk import sent_tokenize
+        from nltk import sent_tokenize  # type: ignore
     except ImportError:
         raise ImportError(
             "nltk is required for sentence splitting. Please install it using "
@@ -79,7 +79,7 @@ def sentence_split(text: str) -> t.List[str]:
         )
 
     # Download the nltk punkt tokenizer if it's not already downloaded.
-    import nltk
+    import nltk  # type: ignore
 
     try:
         nltk.data.find("tokenizers/punkt")
