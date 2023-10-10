@@ -153,13 +153,13 @@ class Rail:
     def load_schema(root: ET._Element) -> Schema:
         """Given the RAIL <input> or <output> element, create a Schema
         object."""
-        return Schema.from_element(root)
+        return Schema.from_xml(root)
 
     @staticmethod
     def load_input_schema(root: ET._Element) -> Schema:
         """Given the RAIL <input> element, create a Schema object."""
         # Recast the schema as an InputSchema.
-        return Schema.from_element(root)
+        return Schema.from_xml(root)
 
     @staticmethod
     def load_output_schema(
@@ -179,12 +179,12 @@ class Rail:
         """
         # If root contains a `type="string"` attribute, then it's a StringSchema
         if "type" in root.attrib and root.attrib["type"] == "string":
-            return StringSchema.from_element(
+            return StringSchema.from_xml(
                 root,
                 reask_prompt_template=reask_prompt,
                 reask_instructions_template=reask_instructions,
             )
-        return JsonSchema.from_element(
+        return JsonSchema.from_xml(
             root,
             reask_prompt_template=reask_prompt,
             reask_instructions_template=reask_instructions,

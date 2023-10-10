@@ -123,9 +123,9 @@ class DataType:
         from guardrails.schema import FormatAttr
 
         # TODO: don't want to pass strict through to DataType,
-        # but need to pass it to FormatAttr.from_element
+        # but need to pass it to FormatAttr.from_xml
         # how to handle this?
-        format_attr = FormatAttr.from_element(element, cls.tag, strict)
+        format_attr = FormatAttr.from_xml(element, cls.tag, strict)
 
         is_optional = element.attrib.get("required", "true") == "false"
 

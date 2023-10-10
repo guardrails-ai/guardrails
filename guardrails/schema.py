@@ -89,7 +89,7 @@ class FormatAttr(pydantic.BaseModel):
         return self.format is None
 
     @classmethod
-    def from_element(
+    def from_xml(
         cls, element: ET._Element, tag: str, strict: bool = False
     ) -> "FormatAttr":
         """Create a FormatAttr object from an XML element.
@@ -308,7 +308,7 @@ class Schema:
             self._reask_instructions_template = None
 
     @classmethod
-    def from_element(
+    def from_xml(
         cls,
         root: ET._Element,
         reask_prompt_template: Optional[str] = None,
@@ -528,7 +528,7 @@ class JsonSchema(Schema):
         return pruned_tree_schema, prompt, instructions
 
     @classmethod
-    def from_element(
+    def from_xml(
         cls,
         root: ET._Element,
         reask_prompt_template: Optional[str] = None,
@@ -748,7 +748,7 @@ class StringSchema(Schema):
         self.root_datatype = schema
 
     @classmethod
-    def from_element(
+    def from_xml(
         cls,
         root: ET._Element,
         reask_prompt_template: Optional[str] = None,
