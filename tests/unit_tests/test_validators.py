@@ -426,16 +426,8 @@ def test_similar_to_list():
         """Mock embedding function."""
         return MOCK_EMBEDDINGS[text]
 
-    # Initialise guard from string
-    guard = Guard.from_string(
-        validators=[SimilarToList()],
-        description="testmeout",
-    )
-
-    output_schema: StringSchema = guard.rail.output_schema
-    data_type: DataType = getattr(output_schema._schema, "string")
-    validators = data_type.format_attr.validators
-    validator: SimilarToList = validators[0]
+    # Initialise validator
+    validator = SimilarToList()
 
     # Test get_semantic_similarity method
     similarity = validator.get_semantic_similarity(
