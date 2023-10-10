@@ -6,7 +6,7 @@
 
 Guardrails is an open-source Python package for specifying structure and type, validating and correcting the outputs of large language models (LLMs).
 
-[**Docs**](http://shreyar.github.io/guardrails/)
+[**Docs**](http://guardrails-ai.github.io/guardrails/)
 </div>
 
 _Note: Guardrails is an alpha release, so expect sharp edges and bugs._
