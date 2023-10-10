@@ -532,32 +532,11 @@ class JsonSchema(Schema):
         reask_prompt_template: Optional[str] = None,
         reask_instructions_template: Optional[str] = None,
     ) -> Self:
-        from guardrails.datatypes import registry as types_registry
-
         strict = False
         if "strict" in root.attrib and root.attrib["strict"] == "true":
             strict = True
 
-        children = {}
-        for child in root:
-            if isinstance(child, ET._Comment):
-                continue
-            child_data = types_registry[child.tag].from_xml(child, strict=strict)
-
-            child_name = child.attrib["name"]
-            child_name = cast_xml_to_string(child_name)
-
-            children[child_name] = child_data
-
-        # TODO after removing XML from datatypes, get rid of this dummy element
-        schema = Object(
-            children=children,
-            format_attr=FormatAttr.from_element(root),
-            element=root,
-            optional=False,
-            name=None,
-            description=None,
-        )
+        schema = Object.from_xml(root, strict=strict)
 
         return cls(
             schema,
@@ -776,15 +755,11 @@ class StringSchema(Schema):
         if len(root) != 0:
             raise ValueError("String output schemas must not have children.")
 
-        attrib = {}
-        for key, value in root.attrib.items():
-            value = cast_xml_to_string(value)
-            key = cast_xml_to_string(key)
-            attrib[key] = value
+        strict = False
+        if "strict" in root.attrib and root.attrib["strict"] == "true":
+            strict = True
 
-        # TODO get rid of dummy element after removing XML from datatypes
-        root_string = ET.Element("string", attrib)
-        schema = String.from_xml(root_string)
+        schema = String.from_xml(root, strict=strict)
 
         return cls(
             schema=schema,
