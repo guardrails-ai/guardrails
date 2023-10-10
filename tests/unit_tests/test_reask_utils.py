@@ -20,12 +20,12 @@ from guardrails.validators import FailResult
 empty_root = Element("root")
 non_empty_root = Element("root")
 property = SubElement(non_empty_root, "list", name="dummy")
-property.attrib["format"] = "two-words"
+property.attrib["format"] = "length: 2"
 child = SubElement(property, "string")
 child.attrib["format"] = "two-words"
 non_empty_output = Element("root")
 output_property = SubElement(non_empty_output, "list", name="dummy")
-output_property.attrib["format"] = "two-words"
+output_property.attrib["format"] = "length: 2"
 output_child = SubElement(output_property, "string")
 output_child.attrib["format"] = "two-words"
 
