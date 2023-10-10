@@ -82,7 +82,7 @@ class Rail:
             # No input schema, so do no input checking.
             input_schema = None
         else:
-            input_schema = cls.load_input_schema(raw_input_schema)
+            input_schema = cls.load_input_schema_from_xml(raw_input_schema)
 
         # Load <output /> schema
         raw_output_schema = xml.find("output")
@@ -97,7 +97,7 @@ class Rail:
         reask_instructions = xml.find("reask_instructions")
         if reask_instructions is not None:
             reask_instructions = reask_instructions.text
-        output_schema = cls.load_output_schema(
+        output_schema = cls.load_output_schema_from_xml(
             raw_output_schema,
             reask_prompt=reask_prompt,
             reask_instructions=reask_instructions,
@@ -150,19 +150,13 @@ class Rail:
         return cls.from_xml(xml)
 
     @staticmethod
-    def load_schema(root: ET._Element) -> Schema:
-        """Given the RAIL <input> or <output> element, create a Schema
-        object."""
-        return Schema.from_xml(root)
-
-    @staticmethod
-    def load_input_schema(root: ET._Element) -> Schema:
+    def load_input_schema_from_xml(root: ET._Element) -> Schema:
         """Given the RAIL <input> element, create a Schema object."""
         # Recast the schema as an InputSchema.
         return Schema.from_xml(root)
 
     @staticmethod
-    def load_output_schema(
+    def load_output_schema_from_xml(
         root: ET._Element,
         reask_prompt: Optional[str] = None,
         reask_instructions: Optional[str] = None,
