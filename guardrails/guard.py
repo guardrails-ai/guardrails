@@ -406,8 +406,8 @@ class Guard:
             num_reasks: The max times to re-ask the LLM for invalid output.
 
         Returns:
-            The validated response. This is either a string or a dictionary, determined \
-by the object schema defined in the RAILspec.
+            The validated response. This is either a string or a dictionary, \
+determined by the object schema defined in the RAILspec.
         """
         num_reasks = (
             num_reasks if num_reasks is not None else 0 if llm_api is None else None
