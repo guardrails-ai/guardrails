@@ -47,19 +47,18 @@ def verify_metadata_requirements(
 
 class DataType:
     rail_alias: str
+    tag: str
 
     def __init__(
         self,
         children: Dict[str, Any],
         format_attr: "FormatAttr",
-        element: ET._Element,
         optional: bool,
         name: Optional[str],
         description: Optional[str],
     ) -> None:
         self._children = children
         self.format_attr = format_attr
-        self.element = element
         self.name = name
         self.description = description
         self.optional = optional
@@ -108,13 +107,13 @@ class DataType:
         raise NotImplementedError("Abstract method.")
 
     @classmethod
-    def from_xml(cls, element: ET._Element, strict: bool = False) -> Self:
+    def from_xml(cls, element: ET._Element, strict: bool = False, **kwargs) -> Self:
         from guardrails.schema import FormatAttr
 
         # TODO: don't want to pass strict through to DataType,
         # but need to pass it to FormatAttr.from_element
         # how to handle this?
-        format_attr = FormatAttr.from_element(element, strict)
+        format_attr = FormatAttr.from_element(element, cls.tag, strict)
 
         is_optional = element.attrib.get("required", "true") == "false"
 
@@ -126,7 +125,7 @@ class DataType:
         if description is not None:
             description = cast_xml_to_string(description)
 
-        data_type = cls({}, format_attr, element, is_optional, name, description)
+        data_type = cls({}, format_attr, is_optional, name, description, **kwargs)
         data_type.set_children_from_xml(element)
         return data_type
 
@@ -136,13 +135,9 @@ class DataType:
         return SimpleNamespace(**self._children)
 
     def __eq__(self, other):
-        # return self.__dict__ == other.__dict__
-        # same but excluding "element"
         if not isinstance(other, type(self)):
             return False
-        return {k: v for k, v in self.__dict__.items() if k != "element"} == {
-            k: v for k, v in other.__dict__.items() if k != "element"
-        }
+        return self.__dict__ == other.__dict__
 
 
 registry: Dict[str, Type[DataType]] = {}
@@ -175,6 +170,8 @@ class NonScalarType(DataType):
 class String(ScalarType):
     """Element tag: `<string>`"""
 
+    tag = "string"
+
     def from_str(self, s: str) -> Optional[str]:
         """Create a String from a string."""
         return to_string(s)
@@ -183,6 +180,8 @@ class String(ScalarType):
 @register_type("integer")
 class Integer(ScalarType):
     """Element tag: `<integer>`"""
+
+    tag = "integer"
 
     def from_str(self, s: str) -> Optional[int]:
         """Create an Integer from a string."""
@@ -193,6 +192,8 @@ class Integer(ScalarType):
 class Float(ScalarType):
     """Element tag: `<float>`"""
 
+    tag = "float"
+
     def from_str(self, s: str) -> Optional[float]:
         """Create a Float from a string."""
         return to_float(s)
@@ -201,6 +202,8 @@ class Float(ScalarType):
 @register_type("bool")
 class Boolean(ScalarType):
     """Element tag: `<bool>`"""
+
+    tag = "bool"
 
     def from_str(self, s: Union[str, bool]) -> Optional[bool]:
         """Create a Boolean from a string."""
@@ -226,17 +229,18 @@ class Date(ScalarType):
     element. E.g. `<date name="..." ... date-format="%Y-%m-%d" />`
     """
 
+    tag = "date"
+
     def __init__(
         self,
         children: Dict[str, Any],
         format_attr: "FormatAttr",
-        element: ET._Element,
         optional: bool,
         name: Optional[str],
         description: Optional[str],
     ) -> None:
         self.date_format = "%Y-%m-%d"
-        super().__init__(children, format_attr, element, optional, name, description)
+        super().__init__(children, format_attr, optional, name, description)
 
     def from_str(self, s: str) -> Optional[datetime.date]:
         """Create a Date from a string."""
@@ -263,17 +267,18 @@ class Time(ScalarType):
     element. E.g. `<time name="..." ... time-format="%H:%M:%S" />`
     """
 
+    tag = "time"
+
     def __init__(
         self,
         children: Dict[str, Any],
         format_attr: "FormatAttr",
-        element: ET._Element,
         optional: bool,
         name: Optional[str],
         description: Optional[str],
     ) -> None:
         self.time_format = "%H:%M:%S"
-        super().__init__(children, format_attr, element, optional, name, description)
+        super().__init__(children, format_attr, optional, name, description)
 
     def from_str(self, s: str) -> Optional[datetime.time]:
         """Create a Time from a string."""
@@ -296,30 +301,42 @@ class Time(ScalarType):
 class Email(ScalarType):
     """Element tag: `<email>`"""
 
+    tag = "email"
+
 
 @register_type("url")
 class URL(ScalarType):
     """Element tag: `<url>`"""
+
+    tag = "url"
 
 
 @register_type("pythoncode")
 class PythonCode(ScalarType):
     """Element tag: `<pythoncode>`"""
 
+    tag = "pythoncode"
+
 
 @register_type("sql")
 class SQLCode(ScalarType):
     """Element tag: `<sql>`"""
+
+    tag = "sql"
 
 
 @register_type("percentage")
 class Percentage(ScalarType):
     """Element tag: `<percentage>`"""
 
+    tag = "percentage"
+
 
 @register_type("list")
 class List(NonScalarType):
     """Element tag: `<list>`"""
+
+    tag = "list"
 
     def collect_validation(
         self,
@@ -357,6 +374,8 @@ class List(NonScalarType):
 @register_type("object")
 class Object(NonScalarType):
     """Element tag: `<object>`"""
+
+    tag = "object"
 
     def collect_validation(
         self,
@@ -407,23 +426,31 @@ class Object(NonScalarType):
 class Choice(NonScalarType):
     """Element tag: `<object>`"""
 
+    tag = "choice"
+
     def __init__(
         self,
         children: Dict[str, Any],
         format_attr: "FormatAttr",
-        element: ET._Element,
         optional: bool,
         name: Optional[str],
         description: Optional[str],
+        discriminator_key: str,
     ) -> None:
-        super().__init__(children, format_attr, element, optional, name, description)
+        super().__init__(children, format_attr, optional, name, description)
+        self.discriminator_key = discriminator_key
+
+    @classmethod
+    def from_xml(cls, element: ET._Element, strict: bool = False, **kwargs) -> Self:
         # grab `discriminator` attribute
         disc = element.attrib.get("discriminator")
         if disc is not None:
             disc = cast_xml_to_string(disc)
         else:
             disc = "discriminator"
-        self.discriminator_key = disc
+
+        datatype = super().from_xml(element, strict, discriminator_key=disc, **kwargs)
+        return datatype
 
     def collect_validation(
         self,
@@ -461,16 +488,17 @@ class Choice(NonScalarType):
 class Case(NonScalarType):
     """Element tag: `<case>`"""
 
+    tag = "case"
+
     def __init__(
         self,
         children: Dict[str, Any],
         format_attr: "FormatAttr",
-        element: ET._Element,
         optional: bool,
         name: Optional[str],
         description: Optional[str],
     ) -> None:
-        super().__init__(children, format_attr, element, optional, name, description)
+        super().__init__(children, format_attr, optional, name, description)
 
     def collect_validation(
         self,

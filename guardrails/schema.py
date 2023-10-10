@@ -89,7 +89,9 @@ class FormatAttr(pydantic.BaseModel):
         return self.format is None
 
     @classmethod
-    def from_element(cls, element: ET._Element, strict: bool = False) -> "FormatAttr":
+    def from_element(
+        cls, element: ET._Element, tag: str, strict: bool = False
+    ) -> "FormatAttr":
         """Create a FormatAttr object from an XML element.
 
         Args:
@@ -120,7 +122,7 @@ class FormatAttr(pydantic.BaseModel):
 
         validators, unregistered_validators = cls.get_validators(
             validator_args=validator_args,
-            tag=element.tag,
+            tag=tag,
             on_fail_handlers=on_fail_handlers,
             strict=strict,
         )
@@ -969,10 +971,10 @@ class StringSchema(Schema):
     def transpile(self, method: str = "default") -> str:
         obj = self.root_datatype
         schema = ""
-        if "description" in obj.element.attrib:
+        if obj.description is not None:
             schema += (
                 "Here's a description of what I want you to generate: "
-                f"{obj.element.attrib['description']}"
+                f"{obj.description}"
             )
         if not obj.format_attr.empty:
             schema += (
@@ -1001,10 +1003,10 @@ class Schema2Prompt:
     ) -> ET._Element:
         """Recursively convert the datatypes to XML elements."""
         if root is None:
-            tagname = override_tag_name or dt.element.tag
+            tagname = override_tag_name or dt.tag
             el = ET.Element(tagname)
         else:
-            el = ET.SubElement(root, dt.element.tag)
+            el = ET.SubElement(root, dt.tag)
 
         if dt.name:
             el.attrib["name"] = dt.name
