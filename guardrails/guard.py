@@ -397,7 +397,7 @@ class Guard:
         full_schema_reask: bool = None,
         *args,
         **kwargs,
-    ) -> Union[Tuple[str, Dict], Awaitable[Tuple[str, Dict]]]:
+    ) -> Union[str, Awaitable[str]]:
         """Alternate flow to using Guard where the llm_output is known.
 
         Args:
