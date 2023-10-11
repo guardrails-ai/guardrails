@@ -39,13 +39,13 @@ full:
 all: autoformat lint docs test
 
 pydocs:
-	sphinx-apidoc -o docs/pydocs/config guardrails;
-	sphinx-build -b html docs/pydocs/config docs/pydocs;
+	# sphinx-apidoc -o docs/pydocs/config guardrails;
+	sphinx-build -b html docs/pydocs/ docs/pydocs/build;
 
 jupyter-html:
 	jupyter nbconvert --to html docs/**/*.ipynb
 
 docs-gen:
-	sphinx-apidoc -o docs/pydocs/config guardrails;
-	sphinx-build -b html docs/pydocs/config docs/pydocs;
+	# sphinx-apidoc -o docs/pydocs/config guardrails;
+	sphinx-build -b html docs/pydocs/ docs/pydocs/build;
 	nbdoc_build

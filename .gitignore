@@ -23,4 +23,4 @@ scratch/
 test.db
 test.index
 htmlcov
-docs/pydocs
+docs/pydocs/build
