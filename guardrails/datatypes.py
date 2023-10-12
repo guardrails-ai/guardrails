@@ -2,13 +2,13 @@ import datetime
 import logging
 import warnings
 from dataclasses import dataclass
-from dateutil.parser import *
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, Dict, Generator, Iterable
 from typing import List
 from typing import List as TypedList
 from typing import Tuple, Type, Union
 
+from dateutil.parser import parse
 from lxml import etree as ET
 from pydantic import BaseModel
 

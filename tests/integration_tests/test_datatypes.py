@@ -21,6 +21,7 @@ Dummy prompt.
     guard = Guard.from_rail_string(rail_spec)
     guard.parse(llm_output='{"name": "John Doe", "dob": "2021-01-01"}', num_reasks=0)
 
+
 def test_defaulted_date_parser():
     rail_spec = """
 <rail version="0.1">
@@ -41,6 +42,7 @@ Dummy prompt.
     guard = Guard.from_rail_string(rail_spec)
     guard.parse(llm_output='{"name": "John Doe", "dob": "2021-01-01"}', num_reasks=0)
 
+
 def test_defaulted_date_parser_cohere_style_datestring():
     rail_spec = """
 <rail version="0.1">
@@ -59,4 +61,7 @@ Dummy prompt.
 """
 
     guard = Guard.from_rail_string(rail_spec)
-    guard.parse(llm_output='{"name": "John Doe", "dob": "2021-01-01T11:10:00+01:00"}', num_reasks=0)
+    guard.parse(
+        llm_output='{"name": "John Doe", "dob": "2021-01-01T11:10:00+01:00"}',
+        num_reasks=0,
+    )
