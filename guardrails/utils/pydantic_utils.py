@@ -8,8 +8,8 @@ from typing import (
     Any,
     Callable,
     Dict,
-    List,
     Optional,
+    Sequence,
     Type,
     Union,
     get_args,
@@ -23,6 +23,7 @@ from lxml.etree import Element as E
 from pydantic import BaseModel, HttpUrl, validator
 from pydantic.fields import ModelField
 
+from guardrails.validator_base import ValidatorSpec
 from guardrails.validators import Validator
 
 griffe_docstrings_google_logger = logging.getLogger("griffe.docstrings.google")
@@ -203,7 +204,7 @@ def add_validators_to_xml_element(
 
 def attach_validators_to_element(
     element: ET._Element,
-    validators: List[Union[Validator, Tuple[Union[Validator, str, Callable], str]]],
+    validators: Sequence[ValidatorSpec],
 ):
     format_prompt = []
     on_fails = {}

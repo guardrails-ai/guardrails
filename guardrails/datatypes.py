@@ -3,20 +3,18 @@ import logging
 import warnings
 from dataclasses import dataclass
 from types import SimpleNamespace
-from typing import TYPE_CHECKING, Any, Dict, Iterable
+from typing import Any, Dict, Iterable
 from typing import List as TypedList
-from typing import Optional, Type, TypeVar, Union
+from typing import Optional, Sequence, Type, TypeVar, Union
 
 from dateutil.parser import parse
 from lxml import etree as ET
 from typing_extensions import Self
 
+from guardrails.formatattr import FormatAttr
 from guardrails.utils.casting_utils import to_float, to_int, to_string
 from guardrails.utils.xml_utils import cast_xml_to_string
-from guardrails.validator_base import Validator
-
-if TYPE_CHECKING:
-    from guardrails.schema import FormatAttr
+from guardrails.validator_base import Validator, ValidatorSpec
 
 logger = logging.getLogger(__name__)
 
@@ -64,7 +62,7 @@ class DataType:
     def __init__(
         self,
         children: Dict[str, Any],
-        format_attr: "FormatAttr",
+        format_attr: FormatAttr,
         optional: bool,
         name: Optional[str],
         description: Optional[str],
@@ -120,8 +118,6 @@ class DataType:
 
     @classmethod
     def from_xml(cls, element: ET._Element, strict: bool = False, **kwargs) -> Self:
-        from guardrails.schema import FormatAttr
-
         # TODO: don't want to pass strict through to DataType,
         # but need to pass it to FormatAttr.from_xml
         # how to handle this?
@@ -196,6 +192,21 @@ class String(ScalarType):
     def from_str(self, s: str) -> Optional[str]:
         """Create a String from a string."""
         return to_string(s)
+
+    @classmethod
+    def from_string_rail(
+        cls,
+        validators: Sequence[ValidatorSpec],
+        description: Optional[str] = None,
+        strict: bool = False,
+    ) -> Self:
+        return cls(
+            children={},
+            format_attr=FormatAttr.from_validators(validators, cls.tag, strict),
+            optional=False,
+            name=None,
+            description=description,
+        )
 
 
 @register_type("integer")

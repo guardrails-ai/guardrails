@@ -1,7 +1,7 @@
 """Rail class."""
 import warnings
 from dataclasses import dataclass
-from typing import List, Optional, Type
+from typing import List, Optional, Sequence, Type
 
 from lxml import etree as ET
 from lxml.etree import Element, SubElement
@@ -14,6 +14,7 @@ from guardrails.utils.pydantic_utils import (
     create_xml_element_for_base_model,
 )
 from guardrails.utils.xml_utils import cast_xml_to_string
+from guardrails.validator_base import ValidatorSpec
 from guardrails.validators import Validator
 
 # TODO: Logging
@@ -108,14 +109,14 @@ class Rail:
         # prepended to the prompt.
         instructions = xml.find("instructions")
         if instructions is not None:
-            instructions = cls.load_instructions(instructions, output_schema)
+            instructions = cls.load_instructions(instructions.text, output_schema)
 
         # Load <prompt />
         prompt = xml.find("prompt")
         if prompt is None:
             warnings.warn("Prompt must be provided during __call__.")
         else:
-            prompt = cls.load_prompt(prompt, output_schema)
+            prompt = cls.load_prompt(prompt.text, output_schema)
 
         # Get version
         version = xml.attrib["version"]
@@ -132,22 +133,28 @@ class Rail:
     @classmethod
     def from_string_validators(
         cls,
-        validators: List[Validator],
+        validators: Sequence[ValidatorSpec],
         description: Optional[str] = None,
         prompt: Optional[str] = None,
         instructions: Optional[str] = None,
         reask_prompt: Optional[str] = None,
         reask_instructions: Optional[str] = None,
     ):
-        xml = generate_xml_code(
-            prompt=prompt,
-            instructions=instructions,
-            reask_prompt=reask_prompt,
-            reask_instructions=reask_instructions,
-            validators=validators,
+        input_schema = None
+
+        output_schema = cls.load_string_schema_from_string(
+            validators,
             description=description,
+            reask_prompt_template=reask_prompt,
+            reask_instructions_template=reask_instructions,
         )
-        return cls.from_xml(xml)
+
+        return cls(
+            input_schema=input_schema,
+            output_schema=output_schema,
+            instructions=cls.load_instructions(instructions, output_schema),
+            prompt=cls.load_prompt(prompt, output_schema),
+        )
 
     @staticmethod
     def load_input_schema_from_xml(root: ET._Element) -> Schema:
@@ -185,18 +192,32 @@ class Rail:
         )
 
     @staticmethod
-    def load_instructions(root: ET._Element, output_schema: Schema) -> Instructions:
+    def load_string_schema_from_string(
+        validators: Sequence[ValidatorSpec],
+        description: Optional[str] = None,
+        reask_prompt_template: Optional[str] = None,
+        reask_instructions_template: Optional[str] = None,
+    ):
+        return StringSchema.from_string(
+            validators,
+            description=description,
+            reask_prompt_template=reask_prompt_template,
+            reask_instructions_template=reask_instructions_template,
+        )
+
+    @staticmethod
+    def load_instructions(text: Optional[str], output_schema: Schema) -> Instructions:
         """Given the RAIL <instructions> element, create Instructions."""
         return Instructions(
-            source=root.text or "",
+            source=text or "",
             output_schema=output_schema.transpile(),
         )
 
     @staticmethod
-    def load_prompt(root: ET._Element, output_schema: Schema) -> Prompt:
+    def load_prompt(text: Optional[str], output_schema: Schema) -> Prompt:
         """Given the RAIL <prompt> element, create a Prompt object."""
         return Prompt(
-            source=root.text or "",
+            source=text or "",
             output_schema=output_schema.transpile(),
         )
 
