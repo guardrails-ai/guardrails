@@ -1,14 +1,14 @@
 site_name:  Guardrails AI
 site_url: https://docs.guardrailsai.com
 site_author: Shreya Rajpal
-repo_url: https://github.com/ShreyaR/guardrails
-repo_name: ShreyaR/guardrails
+repo_url: https://github.com/guardrails-ai/guardrails
+repo_name: guardrails-ai/guardrails
 
 remote_branch: gh-pages
 remote_name: origin
 
 copyright: |
-  Maintained by <a href="https://github.com/shreyar">Shreya Rajpal</a>.
+  Maintained by <a href="https://github.com/guardrails-ai">Guardrails AI</a>.
 
 
 nav:
@@ -180,6 +180,6 @@ extra:
     - icon: fontawesome/brands/twitter
       link: https://twitter.com/guardrails_ai
     - icon: fontawesome/brands/github
-      link: https://github.com/ShreyaR/guardrails
+      link: https://github.com/guardrails-ai/guardrails
     - icon: fontawesome/brands/discord
       link: https://discord.gg/Jsey3mX98B
