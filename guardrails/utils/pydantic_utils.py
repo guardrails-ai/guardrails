@@ -203,7 +203,7 @@ def add_validators_to_xml_element(
 
 def attach_validators_to_element(
     element: ET._Element,
-    validators: Union[List[Validator], List[str]],
+    validators: List[Union[Validator, Tuple[Union[Validator, str, Callable], str]]],
 ):
     format_prompt = []
     on_fails = {}
