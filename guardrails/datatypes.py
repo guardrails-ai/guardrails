@@ -2,6 +2,7 @@ import datetime
 import logging
 import warnings
 from dataclasses import dataclass
+from dateutil.parser import *
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, Dict, Generator, Iterable
 from typing import List
@@ -244,14 +245,15 @@ class Date(ScalarType):
     def __init__(
         self, children: Dict[str, Any], format_attr: "FormatAttr", element: ET._Element
     ) -> None:
-        self.date_format = "%Y-%m-%d"
+        self.date_format = None
         super().__init__(children, format_attr, element)
 
     def from_str(self, s: str) -> "Date":
         """Create a Date from a string."""
         if s is None:
             return None
-
+        if self.date_format is None:
+            return parse(s).date()
         return datetime.datetime.strptime(s, self.date_format).date()
 
     @classmethod
