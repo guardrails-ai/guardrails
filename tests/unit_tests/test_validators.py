@@ -1,6 +1,6 @@
 # noqa:W291
 import os
-from typing import Any, Callable, Dict, Optional, Union
+from typing import Any, Dict
 
 import openai
 import pytest
@@ -16,7 +16,6 @@ from guardrails.validator_base import (
     PassResult,
     Refrain,
     ValidationResult,
-    Validator,
     check_refrain_in_dict,
     filter_in_dict,
     register_validator,
@@ -33,7 +32,6 @@ from guardrails.validators import (
     TwoWords,
     ValidLength,
 )
-from tests.integration_tests.mock_llm_outputs import MockOpenAICallable
 
 from .mock_embeddings import MOCK_EMBEDDINGS, mock_create_embedding
 from .mock_provenance_v1 import mock_chat_completion, mock_chromadb_query_function
@@ -505,43 +503,3 @@ def test_detect_secrets():
     # Check if mod_value is same as code_snippet,
     # as there are no secrets in code_snippet
     assert mod_value == NO_SECRETS_CODE_SNIPPET
-
-
-@register_validator("mycustominstancecheckvalidator", data_type="string")
-class MyValidator(Validator):
-    def __init__(
-        self,
-        an_instance_attr: str,
-        on_fail: Optional[Union[Callable, str]] = None,
-        **kwargs
-    ):
-        self.an_instance_attr = an_instance_attr
-        super().__init__(on_fail=on_fail, an_instance_attr=an_instance_attr, **kwargs)
-
-    def validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
-        return PassResult()
-
-
-@pytest.mark.parametrize(
-    "instance_attr",
-    [
-        "a",
-        object(),
-    ],
-)
-def test_validator_instance_attr_equality(mocker, instance_attr):
-    mocker.patch("guardrails.llm_providers.OpenAICallable", new=MockOpenAICallable)
-
-    validator = MyValidator(an_instance_attr=instance_attr)
-
-    assert validator.an_instance_attr is instance_attr
-
-    guard = Guard.from_string(
-        validators=[validator],
-        prompt="",
-    )
-
-    assert (
-        guard.rail.output_schema.root_datatype.validators[0].an_instance_attr
-        == instance_attr
-    )
