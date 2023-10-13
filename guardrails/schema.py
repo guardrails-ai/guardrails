@@ -54,18 +54,18 @@ logger = logging.getLogger(__name__)
 class FormatAttr:
     """Class for parsing and manipulating the `format` attribute of an element.
 
-    The format attribute is a string that contains semi-colon separated
-    validators e.g. "valid-url; is-reachable". Each validator is itself either:
-    - the name of an parameter-less validator, e.g. "valid-url"
-    - the name of a validator with parameters, separated by a colon with a
-        space-separated list of parameters, e.g. "is-in: 1 2 3"
+The format attribute is a string that contains semi-colon separated
+validators e.g. "valid-url; is-reachable". Each validator is itself either:
+- the name of an parameter-less validator, e.g. "valid-url"
+- the name of a validator with parameters, separated by a colon with a
+space-separated list of parameters, e.g. "is-in: 1 2 3"
 
-    Parameters can either be written in plain text, or in python expressions
-    enclosed in curly braces. For example, the following are all valid:
-    - "is-in: 1 2 3"
-    - "is-in: {1} {2} {3}"
-    - "is-in: {1 + 2} {2 + 3} {3 + 4}"
-    """
+Parameters can either be written in plain text, or in python expressions
+enclosed in curly braces. For example, the following are all valid:
+- "is-in: 1 2 3"
+- "is-in: {1} {2} {3}"
+- "is-in: {1 + 2} {2 + 3} {3 + 4}"
+"""
 
     # The format attribute string.
     format: Optional[str] = None

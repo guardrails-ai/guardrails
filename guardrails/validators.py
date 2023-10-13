@@ -345,13 +345,14 @@ class PydanticFieldValidator(Validator):
     validator method.
 
     **Key Properties**
-
-    | Property                      | Description                       |
-    | ----------------------------- | --------------------------------- |
-    | Name for `format` attribute   | `pydantic_field_validator`        |
-    | Supported data types          | `Any`                             |
-    | Programmatic fix              | Override with return value from `field_validator`.   |
-
+    +-----------------------------------------------------------------+
+    | Property                      | Description                     |
+    +===============================+=================================+
+    | Name for `format` attribute   | `pydantic_field_validator`      |
+    | Supported data types          | `Any`                           |
+    | Programmatic fix              | Override with return value from |
+    |                               |`field_validator`.               |
+    +-------------------------------+---------------------------------+
     Parameters: Arguments
 
         field_validator (Callable): A validator for a specific field in a Pydantic model.
@@ -390,11 +391,15 @@ class ValidRange(Validator):
 
     **Key Properties**
 
+    +-------------------------------+-----------------------------------+
     | Property                      | Description                       |
-    | ----------------------------- | --------------------------------- |
+    +===============================+===================================+
     | Name for `format` attribute   | `valid-range`                     |
+    +-------------------------------+-----------------------------------+
     | Supported data types          | `integer`, `float`, `percentage`  |
+    +-------------------------------+-----------------------------------+
     | Programmatic fix              | Closest value within the range.   |
+    +-------------------------------+-----------------------------------+
 
     Parameters: Arguments
         min: The inclusive minimum value of the range.
@@ -436,11 +441,15 @@ class ValidChoices(Validator):
 
     **Key Properties**
 
+    +-------------------------------+-----------------------------------+
     | Property                      | Description                       |
-    | ----------------------------- | --------------------------------- |
+    +===============================+===================================+
     | Name for `format` attribute   | `valid-choices`                   |
+    +-------------------------------+-----------------------------------+
     | Supported data types          | `all`                             |
+    +-------------------------------+-----------------------------------+
     | Programmatic fix              | None                              |
+    +-------------------------------+-----------------------------------+
 
     Parameters: Arguments
         choices: The list of valid choices.
@@ -468,11 +477,16 @@ class LowerCase(Validator):
 
     **Key Properties**
 
+    +-------------------------------+-----------------------------------+
     | Property                      | Description                       |
-    | ----------------------------- | --------------------------------- |
+    +===============================+===================================+
     | Name for `format` attribute   | `lower-case`                      |
+    +-------------------------------+-----------------------------------+
     | Supported data types          | `string`                          |
+    +-------------------------------+-----------------------------------+
     | Programmatic fix              | Convert to lower case.            |
+    +-------------------------------+-----------------------------------+
+
     """
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
@@ -492,12 +506,16 @@ class UpperCase(Validator):
     """Validates that a value is upper case.
 
     **Key Properties**
-
-    | Property                      | Description                       |
-    | ----------------------------- | --------------------------------- |
-    | Name for `format` attribute   | `upper-case`                      |
-    | Supported data types          | `string`                          |
-    | Programmatic fix              | Convert to upper case.            |
+    
+    +-------------------------------+---------------------------------+
+    | Property                      | Description                     |
+    +===============================+=================================+
+    | Name for `format` attribute   | `upper-case`                    |
+    +-------------------------------+---------------------------------+
+    | Supported data types          | `string`                        |
+    +-------------------------------+---------------------------------+
+    | Programmatic fix              | Convert to upper case.          |
+    +-------------------------------+---------------------------------+
     """
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
@@ -517,12 +535,18 @@ class ValidLength(Validator):
     """Validates that the length of value is within the expected range.
 
     **Key Properties**
-
-    | Property                      | Description                       |
-    | ----------------------------- | --------------------------------- |
-    | Name for `format` attribute   | `length`                          |
-    | Supported data types          | `string`, `list`, `object`        |
-    | Programmatic fix              | If shorter than the minimum, pad with empty last elements. If longer than the maximum, truncate. |
+    
+    +-------------------------------+--------------------------------------+
+    | Property                      | Description                          |
+    +===============================+======================================+
+    | Name for `format` attribute   | `length`                             |
+    +-------------------------------+--------------------------------------+
+    | Supported data types          | `string`, `list`, `object`           |
+    +-------------------------------+--------------------------------------+
+    | Programmatic fix              | If shorter than the minimum,         |
+    |                               |  pad with empty last elements.       |
+    |                               | If longer than the maximum, truncate.|
+    +-------------------------------+--------------------------------------+
 
     Parameters: Arguments
         min: The inclusive minimum length.
@@ -577,11 +601,15 @@ class TwoWords(Validator):
 
     **Key Properties**
 
+    +-------------------------------+-----------------------------------+
     | Property                      | Description                       |
-    | ----------------------------- | --------------------------------- |
+    +===============================+===================================+
     | Name for `format` attribute   | `two-words`                       |
+    +-------------------------------+-----------------------------------+
     | Supported data types          | `string`                          |
+    +-------------------------------+-----------------------------------+
     | Programmatic fix              | Pick the first two words.         |
+    +-------------------------------+-----------------------------------+
     """
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
@@ -602,11 +630,16 @@ class OneLine(Validator):
 
     **Key Properties**
 
+    +-------------------------------+-----------------------------------+
     | Property                      | Description                       |
-    | ----------------------------- | --------------------------------- |
+    +===============================+===================================+
     | Name for `format` attribute   | `one-line`                        |
+    +-------------------------------+-----------------------------------+
     | Supported data types          | `string`                          |
+    +-------------------------------+-----------------------------------+
     | Programmatic fix              | Pick the first line.              |
+    +-------------------------------+-----------------------------------+
+    
     """
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
@@ -627,11 +660,16 @@ class ValidURL(Validator):
 
     **Key Properties**
 
+    +-------------------------------+-----------------------------------+
     | Property                      | Description                       |
-    | ----------------------------- | --------------------------------- |
+    +===============================+===================================+
     | Name for `format` attribute   | `valid-url`                       |
+    +-------------------------------+-----------------------------------+
     | Supported data types          | `string`, `url`                   |
+    +-------------------------------+-----------------------------------+
     | Programmatic fix              | None                              |
+    +-------------------------------+-----------------------------------+
+
     """
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
@@ -661,11 +699,16 @@ class EndpointIsReachable(Validator):
 
     **Key Properties**
 
+    +-------------------------------+-----------------------------------+
     | Property                      | Description                       |
-    | ----------------------------- | --------------------------------- |
+    +===============================+===================================+
     | Name for `format` attribute   | `is-reachable`                    |
+    +-------------------------------+-----------------------------------+
     | Supported data types          | `string`, `url`                   |
+    +-------------------------------+-----------------------------------+
     | Programmatic fix              | None                              |
+    +-------------------------------+-----------------------------------+
+    
     """
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
@@ -708,11 +751,16 @@ class BugFreePython(Validator):
 
     **Key Properties**
 
+    +-------------------------------+-----------------------------------+
     | Property                      | Description                       |
-    | ----------------------------- | --------------------------------- |
+    +===============================+===================================+
     | Name for `format` attribute   | `bug-free-python`                 |
+    +-------------------------------+-----------------------------------+
     | Supported data types          | `pythoncode`                      |
+    +-------------------------------+-----------------------------------+
     | Programmatic fix              | None                              |
+    +-------------------------------+-----------------------------------+
+
     """
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
@@ -739,11 +787,16 @@ class BugFreeSQL(Validator):
 
     **Key Properties**
 
+    +-------------------------------+-----------------------------------+
     | Property                      | Description                       |
-    | ----------------------------- | --------------------------------- |
+    +===============================+===================================+
     | Name for `format` attribute   | `bug-free-sql`                    |
+    +-------------------------------+-----------------------------------+
     | Supported data types          | `sql`, `string`                   |
+    +-------------------------------+-----------------------------------+
     | Programmatic fix              | None                              |
+    +-------------------------------+-----------------------------------+
+
     """
 
     def __init__(
@@ -771,11 +824,15 @@ class SqlColumnPresence(Validator):
 
     **Key Properties**
 
+    +-------------------------------+-----------------------------------+
     | Property                      | Description                       |
-    | ----------------------------- | --------------------------------- |
+    +===============================+===================================+
     | Name for `format` attribute   | `sql-column-presence`             |
+    +-------------------------------+-----------------------------------+
     | Supported data types          | `sql`                             |
+    +-------------------------------+-----------------------------------+
     | Programmatic fix              | None                              |
+    +-------------------------------+-----------------------------------+
 
     Parameters: Arguments
         cols: The list of valid columns.
@@ -810,11 +867,15 @@ class ExcludeSqlPredicates(Validator):
 
     **Key Properties**
 
+    +-------------------------------+-----------------------------------+
     | Property                      | Description                       |
-    | ----------------------------- | --------------------------------- |
+    +===============================+===================================+
     | Name for `format` attribute   | `exclude-sql-predicates`          |
+    +-------------------------------+-----------------------------------+
     | Supported data types          | `sql`                             |
+    +-------------------------------+-----------------------------------+
     | Programmatic fix              | None                              |
+    +-------------------------------+-----------------------------------+
 
     Parameters: Arguments
         predicates: The list of predicates to avoid.
@@ -855,11 +916,15 @@ class SimilarToDocument(Validator):
 
     **Key Properties**
 
+    +-------------------------------+-----------------------------------+
     | Property                      | Description                       |
-    | ----------------------------- | --------------------------------- |
+    +===============================+===================================+
     | Name for `format` attribute   | `similar-to-document`             |
-    | Supported data types          | `string`                             |
+    +-------------------------------+-----------------------------------+
+    | Supported data types          | `string`                          |
+    +-------------------------------+-----------------------------------+
     | Programmatic fix              | None                              |
+    +-------------------------------+-----------------------------------+
 
     Parameters: Arguments
         document: The document to use for the similarity check.
@@ -938,11 +1003,16 @@ class IsProfanityFree(Validator):
 
     **Key Properties**
 
+    +-------------------------------+-----------------------------------+
     | Property                      | Description                       |
-    | ----------------------------- | --------------------------------- |
+    +===============================+===================================+
     | Name for `format` attribute   | `is-profanity-free`               |
+    +-------------------------------+-----------------------------------+
     | Supported data types          | `string`                          |
+    +-------------------------------+-----------------------------------+
     | Programmatic fix              | None                              |
+    +-------------------------------+-----------------------------------+
+
     """
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
@@ -970,11 +1040,15 @@ class IsHighQualityTranslation(Validator):
 
     **Key Properties**
 
+    +-------------------------------+-----------------------------------+
     | Property                      | Description                       |
-    | ----------------------------- | --------------------------------- |
+    +===============================+===================================+
     | Name for `format` attribute   | `is-high-quality-translation`     |
+    +-------------------------------+-----------------------------------+
     | Supported data types          | `string`                          |
+    +-------------------------------+-----------------------------------+
     | Programmatic fix              | None                              |
+    +-------------------------------+-----------------------------------+
 
     Other parameters: Metadata
         translation_source (str): The source of the translation.
@@ -1023,11 +1097,16 @@ class EndsWith(Validator):
 
     **Key Properties**
 
+    +-------------------------------+-----------------------------------+
     | Property                      | Description                       |
-    | ----------------------------- | --------------------------------- |
+    +===============================+===================================+
     | Name for `format` attribute   | `ends-with`                       |
+    +-------------------------------+-----------------------------------+
     | Supported data types          | `list`                            |
-    | Programmatic fix              | Append the given value to the list. |
+    +-------------------------------+-----------------------------------+
+    | Programmatic fix              | Append the given value to the     |
+    |                               | list.                             |
+    +-------------------------------+-----------------------------------+
 
     Parameters: Arguments
         end: The required last element.
@@ -1056,11 +1135,16 @@ class ExtractedSummarySentencesMatch(Validator):
 
     **Key Properties**
 
+    +-------------------------------+-------------------------------------+
     | Property                      | Description                         |
-    | ----------------------------- | ----------------------------------- |
+    +===============================+=====================================+
     | Name for `format` attribute   | `extracted-summary-sentences-match` |
+    +-------------------------------+-------------------------------------+
     | Supported data types          | `string`                            |
-    | Programmatic fix              | Remove any sentences that can not be verified. |
+    +-------------------------------+-------------------------------------+
+    | Programmatic fix              | Remove any sentences that can not be|
+    |                               | verified.                           |
+    +-------------------------------+-------------------------------------+
 
     Parameters: Arguments
 
@@ -1193,11 +1277,15 @@ class ReadingTime(Validator):
 
     **Key Properties**
 
-    | Property                      | Description                         |
-    | ----------------------------- | ----------------------------------- |
-    | Name for `format` attribute   | `reading-time`                      |
-    | Supported data types          | `string`                            |
-    | Programmatic fix              | None                                |
+    +-------------------------------+-----------------------------------+
+    | Property                      | Description                       |
+    +===============================+===================================+
+    | Name for `format` attribute   | `reading-time`                    |
+    +-------------------------------+-----------------------------------+
+    | Supported data types          | `string`                          |
+    +-------------------------------+-----------------------------------+
+    | Programmatic fix              | None                              |
+    +-------------------------------+-----------------------------------+
 
     Parameters: Arguments
 
@@ -1242,11 +1330,17 @@ class ExtractiveSummary(Validator):
 
     **Key Properties**
 
-    | Property                      | Description                         |
-    | ----------------------------- | ----------------------------------- |
-    | Name for `format` attribute   | `extractive-summary`                |
-    | Supported data types          | `string`                            |
-    | Programmatic fix              | Remove any sentences that can not be verified. |
+    +-------------------------------+-----------------------------------+
+    | Property                      | Description                       |
+    +===============================+===================================+
+    | Name for `format` attribute   | `extractive-summary`              |
+    +-------------------------------+-----------------------------------+
+    | Supported data types          | `string`                          |
+    +-------------------------------+-----------------------------------+
+    | Programmatic fix              | Remove any sentences that can not |
+    |                               | be verified.                      |
+    +-------------------------------+-----------------------------------+
+
 
     Parameters: Arguments
 
@@ -1361,11 +1455,15 @@ class RemoveRedundantSentences(Validator):
 
     **Key Properties**
 
-    | Property                      | Description                         |
-    | ----------------------------- | ----------------------------------- |
-    | Name for `format` attribute   | `remove-redundant-sentences`        |
-    | Supported data types          | `string`                            |
-    | Programmatic fix              | Remove any redundant sentences.     |
+    +-------------------------------+-----------------------------------+
+    | Property                      | Description                       |
+    +===============================+===================================+
+    | Name for `format` attribute   | `remove-redundant-sentences`      |
+    +-------------------------------+-----------------------------------+
+    | Supported data types          | `string`                          |
+    +-------------------------------+-----------------------------------+
+    | Programmatic fix              | Remove any redundant sentences.   |
+    +-------------------------------+-----------------------------------+
 
     Parameters: Arguments
 
@@ -1433,11 +1531,15 @@ class SaliencyCheck(Validator):
 
     **Key Properties**
 
-    | Property                      | Description                         |
-    | ----------------------------- | ----------------------------------- |
-    | Name for `format` attribute   | `saliency-check`                    |
-    | Supported data types          | `string`                            |
-    | Programmatic fix              | None                                |
+    +-------------------------------+-----------------------------------+
+    | Property                      | Description                       |
+    +===============================+===================================+
+    | Name for `format` attribute   | `saliency-check`                  |
+    +-------------------------------+-----------------------------------+
+    | Supported data types          | `string`                          |
+    +-------------------------------+-----------------------------------+
+    | Programmatic fix              | None                              |
+    +-------------------------------+-----------------------------------+
 
     Parameters: Arguments
 
@@ -1550,11 +1652,15 @@ class QARelevanceLLMEval(Validator):
 
     **Key Properties**
 
-    | Property                      | Description                         |
-    | ----------------------------- | ----------------------------------- |
-    | Name for `format` attribute   | `qa-relevance-llm-eval`             |
-    | Supported data types          | `string`                            |
-    | Programmatic fix              | None                                |
+    +-------------------------------+-----------------------------------+
+    | Property                      | Description                       |
+    +===============================+===================================+
+    | Name for `format` attribute   | `qa-relevance-llm-eval`           |
+    +-------------------------------+-----------------------------------+
+    | Supported data types          | `string`                          |
+    +-------------------------------+-----------------------------------+
+    | Programmatic fix              | None                              |
+    +-------------------------------+-----------------------------------+
 
     Other parameters: Metadata
         question (str): The original question the llm was given to answer.
@@ -1632,11 +1738,15 @@ class ProvenanceV0(Validator):
 
     **Key Properties**
 
-    | Property                      | Description                         |
-    | ----------------------------- | ----------------------------------- |
-    | Name for `format` attribute   | `provenance-v0`                     |
-    | Supported data types          | `string`                            |
-    | Programmatic fix              | None                                |
+    +-------------------------------+-----------------------------------+
+    | Property                      | Description                       |
+    +===============================+===================================+
+    | Name for `format` attribute   | `provenance-v0`                   |
+    +-------------------------------+-----------------------------------+
+    | Supported data types          | `string`                          |
+    +-------------------------------+-----------------------------------+
+    | Programmatic fix              | None                              |
+    +-------------------------------+-----------------------------------+
 
     Parameters: Arguments
         threshold: The minimum cosine similarity between the generated text and
@@ -1659,8 +1769,8 @@ class ProvenanceV0(Validator):
     the cosine similarity between the chunk and the input string. The list should be
     sorted in ascending order by score.
 
-    Example:
-        ```py
+    Example::
+        
         def query_function(text: str, k: int) -> List[Tuple[str, float]]:
             return [("This is a chunk", 0.9), ("This is another chunk", 0.8)]
 
@@ -1671,15 +1781,15 @@ class ProvenanceV0(Validator):
             temperature=0.0,
             metadata={"query_function": query_function},
         )
-        ```
+
 
 
     If providing sources, it should be a list of strings. The embed_function should
     take a string or a list of strings as input and return a np array of floats.
     The vector should be normalized to unit length.
 
-    Example:
-        ```py
+    Example::
+
         def embed_function(text: Union[str, List[str]]) -> np.ndarray:
             return np.array([[0.1, 0.2, 0.3]])
 
@@ -1693,7 +1803,7 @@ class ProvenanceV0(Validator):
                 "embed_function": embed_function
             },
         )
-        ```
+
     """  # noqa
 
     def __init__(
@@ -1932,8 +2042,8 @@ class ProvenanceV1(Validator):
         take a string or a list of strings as input and return a np array of floats.
     The vector should be normalized to unit length.
 
-    Example:
-        ```py
+    Example::
+
         def embed_function(text: Union[str, List[str]]) -> np.ndarray:
             return np.array([[0.1, 0.2, 0.3]])
 
@@ -1947,6 +2057,7 @@ class ProvenanceV1(Validator):
                 "embed_function": embed_function
             },
         )
+
     """
 
     def __init__(
