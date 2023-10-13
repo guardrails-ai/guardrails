@@ -1,21 +1,15 @@
 """Rail class."""
 import warnings
 from dataclasses import dataclass
-from typing import List, Optional, Sequence, Type
+from typing import Optional, Sequence, Type
 
 from lxml import etree as ET
-from lxml.etree import Element, SubElement
 from pydantic import BaseModel
 
 from guardrails.prompt import Instructions, Prompt
 from guardrails.schema import JsonSchema, Schema, StringSchema
-from guardrails.utils.pydantic_utils import (
-    attach_validators_to_element,
-    create_xml_element_for_base_model,
-)
 from guardrails.utils.xml_utils import cast_xml_to_string
 from guardrails.validator_base import ValidatorSpec
-from guardrails.validators import Validator
 
 # TODO: Logging
 XMLPARSER = ET.XMLParser(encoding="utf-8")
@@ -244,74 +238,3 @@ class Rail:
             source=text or "",
             output_schema=output_schema.transpile(),
         )
-
-
-def generate_xml_code(
-    prompt: Optional[str] = None,
-    output_class: Optional[Type[BaseModel]] = None,
-    instructions: Optional[str] = None,
-    reask_prompt: Optional[str] = None,
-    reask_instructions: Optional[str] = None,
-    validators: Optional[List[Validator]] = None,
-    description: Optional[str] = None,
-) -> ET._Element:
-    """Generate XML RAIL Spec from a pydantic model and a prompt.
-
-    Parameters: Arguments:
-        prompt (str, optional): The prompt for this RAIL spec.
-        output_class (BaseModel, optional): The Pydantic model that represents the desired output schema.  Do not specify if using a string schema. Defaults to None.
-        instructions (str, optional): Instructions for chat models. Defaults to None.
-        reask_prompt (str, optional): An alternative prompt to use during reasks. Defaults to None.
-        reask_instructions (str, optional): Alternative instructions to use during reasks. Defaults to None.
-        validators (List[Validator], optional): The list of validators to apply to the string schema. Do not specify if using a Pydantic model. Defaults to None.
-        description (str, optional): The description for a string schema. Do not specify if using a Pydantic model. Defaults to None.
-    """  # noqa
-
-    # Create the root element
-    root = Element("rail")
-    root.set("version", "0.1")
-
-    # Create the output element
-    output_element = SubElement(root, "output")
-
-    if output_class and validators:
-        warnings.warn(
-            "Do not specify root level validators on a Pydantic model."
-            "  These validators will be ignored."
-        )
-
-    if output_class is not None:
-        # Create XML elements for the output_class
-        create_xml_element_for_base_model(output_class, output_element)
-    else:
-        if validators is not None:
-            attach_validators_to_element(output_element, validators)
-        if description is not None:
-            output_element.set("description", description)
-        output_element.set("type", "string")
-
-    if prompt is not None:
-        # Create the prompt element
-        prompt_element = SubElement(root, "prompt")
-        prompt_text = f"{prompt}"
-        prompt_element.text = prompt_text
-
-    if instructions is not None:
-        # Create the instructions element
-        instructions_element = SubElement(root, "instructions")
-        instructions_text = f"{instructions}"
-        instructions_element.text = instructions_text
-
-    if reask_prompt is not None:
-        # Create the reask_prompt element
-        reask_prompt_element = SubElement(root, "reask_prompt")
-        reask_prompt_text = f"{reask_prompt}"
-        reask_prompt_element.text = reask_prompt_text
-
-    if reask_instructions is not None:
-        # Create the reask_instructions element
-        reask_instructions_element = SubElement(root, "reask_instructions")
-        reask_instructions_text = f"{reask_instructions}"
-        reask_instructions_element.text = reask_instructions_text
-
-    return root
