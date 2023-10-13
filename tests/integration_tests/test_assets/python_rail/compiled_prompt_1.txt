@@ -12,7 +12,7 @@ Given below is XML that describes the information to extract from this document 
                 <date name="release_date"/>
                 <time name="duration"/>
                 <float name="budget"/>
-                <bool name="is_sequel"/>
+                <bool name="is_sequel" required="false"/>
                 <string name="website" format="length: min=9 max=100"/>
                 <string name="contact_email"/>
                 <choice name="revenue" discriminator="revenue_type">

@@ -665,9 +665,9 @@ def convert_pydantic_model_to_datatype(
                 strict=strict,
                 discriminator_key=discriminator,
             )
-        elif issubclass(field.type_, BaseModel):
+        elif isinstance(field.type_, type) and issubclass(field.type_, BaseModel):
             children[field_name] = convert_pydantic_model_to_datatype(
-                field, strict=strict
+                field, datatype=target_datatype, strict=strict
             )
         else:
             children[field_name] = target_datatype.from_pydantic_field(
