@@ -2,9 +2,21 @@ import json
 import logging
 import pprint
 from copy import deepcopy
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Set, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Type,
+    Union,
+)
 
 from lxml import etree as ET
+from pydantic import BaseModel
 from typing_extensions import Self
 
 from guardrails import validator_service
@@ -24,6 +36,7 @@ from guardrails.utils.json_utils import (
 )
 from guardrails.utils.logs_utils import FieldValidationLogs, GuardLogs
 from guardrails.utils.parsing_utils import get_template_variables
+from guardrails.utils.pydantic_utils import convert_pydantic_model_to_datatype
 from guardrails.utils.reask_utils import (
     FieldReAsk,
     NonParseableReAsk,
@@ -303,6 +316,23 @@ class JsonSchema(Schema):
             strict = True
 
         schema = Object.from_xml(root, strict=strict)
+
+        return cls(
+            schema,
+            reask_prompt_template=reask_prompt_template,
+            reask_instructions_template=reask_instructions_template,
+        )
+
+    @classmethod
+    def from_pydantic(
+        cls,
+        model: Type[BaseModel],
+        reask_prompt_template: Optional[str] = None,
+        reask_instructions_template: Optional[str] = None,
+    ) -> Self:
+        strict = False
+
+        schema = convert_pydantic_model_to_datatype(model, strict=strict)
 
         return cls(
             schema,

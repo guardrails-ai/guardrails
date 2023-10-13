@@ -50,14 +50,20 @@ class Rail:
         reask_prompt: Optional[str] = None,
         reask_instructions: Optional[str] = None,
     ):
-        xml = generate_xml_code(
-            output_class=output_class,
-            prompt=prompt,
-            instructions=instructions,
-            reask_prompt=reask_prompt,
-            reask_instructions=reask_instructions,
+        input_schema = None
+
+        output_schema = cls.load_string_schema_from_pydantic(
+            output_class,
+            reask_prompt_template=reask_prompt,
+            reask_instructions_template=reask_instructions,
         )
-        return cls.from_xml(xml)
+
+        return cls(
+            input_schema=input_schema,
+            output_schema=output_schema,
+            instructions=cls.load_instructions(instructions, output_schema),
+            prompt=cls.load_prompt(prompt, output_schema),
+        )
 
     @classmethod
     def from_file(cls, file_path: str) -> "Rail":
@@ -206,16 +212,34 @@ class Rail:
         )
 
     @staticmethod
-    def load_instructions(text: Optional[str], output_schema: Schema) -> Instructions:
+    def load_string_schema_from_pydantic(
+        output_class: Type[BaseModel],
+        reask_prompt_template: Optional[str] = None,
+        reask_instructions_template: Optional[str] = None,
+    ):
+        return JsonSchema.from_pydantic(
+            output_class,
+            reask_prompt_template=reask_prompt_template,
+            reask_instructions_template=reask_instructions_template,
+        )
+
+    @staticmethod
+    def load_instructions(
+        text: Optional[str], output_schema: Schema
+    ) -> Optional[Instructions]:
         """Given the RAIL <instructions> element, create Instructions."""
+        if text is None:
+            return None
         return Instructions(
             source=text or "",
             output_schema=output_schema.transpile(),
         )
 
     @staticmethod
-    def load_prompt(text: Optional[str], output_schema: Schema) -> Prompt:
+    def load_prompt(text: Optional[str], output_schema: Schema) -> Optional[Prompt]:
         """Given the RAIL <prompt> element, create a Prompt object."""
+        if text is None:
+            return None
         return Prompt(
             source=text or "",
             output_schema=output_schema.transpile(),

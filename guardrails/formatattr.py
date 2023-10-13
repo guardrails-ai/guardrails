@@ -307,7 +307,7 @@ class FormatAttr(pydantic.BaseModel):
         {1 + 2}" will be converted to "valid-url other-validator:
         arg1=1.0 arg2=3".
         """
-        if self.format is None:
+        if self.empty:
             return ""
         # Use the validators' to_prompt method to convert the format string to
         # another string representation.
