@@ -2309,13 +2309,17 @@ class SimilarToList(Validator):
     | Supported data types          | `string`                          |
     | Programmatic fix              | None                              |
 
+    Parameters: Arguments
+        standard_deviations (int): The number of standard deviations from the mean to check.
+        threshold (float): The threshold for the average semantic similarity for strings.
+
     For integer values, this validator checks whether the value lies
     within 'k' standard deviations of the mean of the previous values.
     (Assumes that the previous values are normally distributed.) For
     string values, this validator checks whether the average semantic
     similarity between the generated value and the previous values is
     less than a threshold.
-    """
+    """  # noqa
 
     def __init__(
         self,
