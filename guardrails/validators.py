@@ -2328,12 +2328,6 @@ class SimilarToList(Validator):
         on_fail: Optional[Callable] = None,
         **kwargs,
     ):
-        """Args:
-        standard_deviations (int): The number of standard deviations
-            from the mean to check. Defaults to 3.
-        threshold (float): The threshold for the average semantic similarity.
-            Defaults to 0.1.
-        """
         super().__init__(
             on_fail,
             standard_deviations=standard_deviations,
