@@ -2387,7 +2387,7 @@ class PIIFilter(Validator):
                 "in order to use the PII validator."
             )
 
-        super().__init__(on_fail, **kwargs)
+        super().__init__(on_fail, pii_entities=pii_entities, **kwargs)
         self.pii_entities = pii_entities
         self.pii_analyzer = AnalyzerEngine()
         self.pii_anonymizer = AnonymizerEngine()
@@ -2401,7 +2401,7 @@ class PIIFilter(Validator):
                 "Or set in init"
             )
 
-        # Check that pii_entities is a list of strings
+        # Check that pii_entities is a string OR list of strings
         if isinstance(pii_entities, str):
             entities_to_filter = self.PII_ENTITIES_MAP.get(pii_entities, None)
             if entities_to_filter is None:
@@ -2413,7 +2413,7 @@ class PIIFilter(Validator):
 
         # Analyze the text, and anonymize it if there is PII
         results = self.pii_analyzer.analyze(
-            text=value, entities=pii_entities, language="en"
+            text=value, entities=entities_to_filter, language="en"
         )
         anonymized_value = self.pii_anonymizer.anonymize(
             text=value, analyzer_results=results
@@ -2427,5 +2427,4 @@ class PIIFilter(Validator):
                 ),
                 fix_value=anonymized_value,
             )
-
         return PassResult()
