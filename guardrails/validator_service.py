@@ -101,7 +101,6 @@ class SequentialValidatorService(ValidatorServiceBase):
             validator_logs = self.run_validator(
                 validation_logs, validator, value, metadata
             )
-            validation_logs.validator_logs.append(validator_logs)
 
             result = validator_logs.validation_result
             if isinstance(result, FailResult):
