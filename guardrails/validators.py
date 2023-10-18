@@ -2352,7 +2352,7 @@ class PIIFilter(Validator):
 
     def __init__(
         self,
-        pii_entities: str | List[str] | None = None,
+        pii_entities: Union[str, List[str], None] = None,
         on_fail: Callable[..., Any] | None = None,
         **kwargs,
     ):
