@@ -2353,7 +2353,7 @@ class PIIFilter(Validator):
     def __init__(
         self,
         pii_entities: Union[str, List[str], None] = None,
-        on_fail: Callable[..., Any] | None = None,
+        on_fail: Union[Callable[..., Any], None] = None,
         **kwargs,
     ):
         if AnalyzerEngine is None or AnonymizerEngine is None:
