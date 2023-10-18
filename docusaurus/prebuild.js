@@ -93,9 +93,9 @@ function escapeHtml (fp) {
         }
 
         // remove all > characters and the whitespace between them and the next character at the beginning of each line
-        // regex for whitespace between characters
+        // regex for only spaces between characters, not newlines
 
-        data = data.replace(/^>\s*/gm, '');
+        data = data.replace(/^>* */gm, '');
         data = data.replace(/^>/gm, '');
         data = data.replace(/</g, "&lt;");
 

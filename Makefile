@@ -39,5 +39,7 @@ full:
 all: autoformat lint docs test
 
 docs-gen:
-	nbdoc_build --force_all True --srcdir ./docs
-	sphinx-build -M markdown docs/pydocs/ docs/api_reference_markdown;
+	cp -r docs docs-build
+	mkdir docs-build/api_reference_markdown
+	nbdoc_build --force_all True --srcdir ./docs-build
+	sphinx-build -M markdown docs/pydocs/ docs-build/api_reference_markdown 

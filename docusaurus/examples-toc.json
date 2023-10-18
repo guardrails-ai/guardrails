@@ -48,62 +48,6 @@
     "collapsible": true
   },
   {
-    "type": "category",
-    "label": "Api Reference Markdown",
-    "items": [
-      {
-        "type": "category",
-        "label": "Markdown",
-        "items": [
-          {
-            "type": "doc",
-            "id": "api_reference_markdown/markdown/datatypes",
-            "label": "Datatypes"
-          },
-          {
-            "type": "doc",
-            "id": "api_reference_markdown/markdown/document-store",
-            "label": "Document-store"
-          },
-          {
-            "type": "doc",
-            "id": "api_reference_markdown/markdown/guard",
-            "label": "Guard"
-          },
-          {
-            "type": "doc",
-            "id": "api_reference_markdown/markdown/index",
-            "label": "Index"
-          },
-          {
-            "type": "doc",
-            "id": "api_reference_markdown/markdown/rail",
-            "label": "Rail"
-          },
-          {
-            "type": "doc",
-            "id": "api_reference_markdown/markdown/response-structures",
-            "label": "Response-structures"
-          },
-          {
-            "type": "doc",
-            "id": "api_reference_markdown/markdown/schema",
-            "label": "Schema"
-          },
-          {
-            "type": "doc",
-            "id": "api_reference_markdown/markdown/validators",
-            "label": "Validators"
-          }
-        ],
-        "collapsed": true,
-        "collapsible": true
-      }
-    ],
-    "collapsed": true,
-    "collapsible": true
-  },
-  {
     "type": "doc",
     "id": "cli",
     "label": "Cli"
@@ -157,18 +101,8 @@
     "items": [
       {
         "type": "doc",
-        "id": "defining_guards/pydantic",
-        "label": "Pydantic"
-      },
-      {
-        "type": "doc",
         "id": "defining_guards/rail",
         "label": "Rail"
-      },
-      {
-        "type": "doc",
-        "id": "defining_guards/strings",
-        "label": "Strings"
       }
     ],
     "collapsed": true,
@@ -482,27 +416,6 @@
         "type": "doc",
         "id": "recipe/validating_string_data",
         "label": "Validating String Data"
-      }
-    ],
-    "collapsed": true,
-    "collapsible": true
-  },
-  {
-    "type": "category",
-    "label": "Use Cases",
-    "items": [
-      {
-        "type": "category",
-        "label": "Text2sql",
-        "items": [
-          {
-            "type": "doc",
-            "id": "use_cases/text2sql/text2sql",
-            "label": "Text2sql"
-          }
-        ],
-        "collapsed": true,
-        "collapsible": true
       }
     ],
     "collapsed": true,
