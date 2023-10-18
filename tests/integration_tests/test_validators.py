@@ -4,7 +4,7 @@ import pytest
 from guardrails import Guard
 from guardrails.datatypes import DataType
 from guardrails.schema import StringSchema
-from guardrails.validators import SimilarToList, PIIFilter
+from guardrails.validators import PIIFilter, SimilarToList
 
 from .mock_embeddings import MOCK_EMBEDDINGS
 from .mock_presidio import mock_anonymize
@@ -256,9 +256,12 @@ def test_pii_filter(mocker):
     assert all(entity in output for entity in ["<EMAIL_ADDRESS>", "<PHONE_NUMBER>"])
 
     # ------------------
-    # 6. Initialise Guard from string setting pii_entities as a string "pii" -> all entities
-    # But also pass in metadata with all pii_entities as a list only containing EMAIL_ADDRESS
-    # metadata should override the pii_entities passed in the constructor, and only mask in EMAIL_ADDRESS
+    # 6. Initialise Guard from string setting
+    # pii_entities as a string "pii" -> all entities
+    # But also pass in metadata with all pii_entities as a list
+    # only containing EMAIL_ADDRESS
+    # metadata should override the pii_entities passed in the constructor,
+    # and only mask in EMAIL_ADDRESS
 
     guard = Guard.from_string(
         validators=[PIIFilter(pii_entities="pii", on_fail="fix")],

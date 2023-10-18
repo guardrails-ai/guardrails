@@ -33,7 +33,7 @@ def mock_anonymize(self, text: str, entities: List[str]) -> str:
             "EMAIL_ADDRESS",
             "PHONE_NUMBER",
         ] or entities == PII_ENTITIES_MAP.get("pii"):
-            output = "My email address is <EMAIL_ADDRESS>, and my phone number is <PHONE_NUMBER>"
+            output = "My email address is <EMAIL_ADDRESS>, and my phone number is <PHONE_NUMBER>"  # noqa
         elif entities == ["EMAIL_ADDRESS"]:
             output = (
                 "My email address is <EMAIL_ADDRESS>, and my phone number is 1234567890"

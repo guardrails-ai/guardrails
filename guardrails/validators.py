@@ -2401,7 +2401,7 @@ class PIIFilter(Validator):
             entities_to_filter = self.PII_ENTITIES_MAP.get(pii_entities, None)
             if entities_to_filter is None:
                 raise ValueError(
-                    f"`pii_entities` must be one of {list(self.PII_ENTITIES_MAP.keys())}"
+                    f"`pii_entities` must be one of {self.PII_ENTITIES_MAP.keys()}"
                 )
         elif isinstance(pii_entities, list):
             entities_to_filter = pii_entities
