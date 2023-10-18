@@ -26,6 +26,20 @@ PII_ENTITIES_MAP = {
 }
 
 
+class MockAnalyzerEngine:
+    """Mocks the AnalyzerEngine class from presidio-analyzer"""
+
+    def __init__(self) -> None:
+        pass
+
+
+class MockAnonymizerEngine:
+    """Mocks the AnonymizerEngine class from presidio-anonymizer"""
+
+    def __init__(self) -> None:
+        pass
+
+
 def mock_anonymize(self, text: str, entities: List[str]) -> str:
     output = None
     if text == "My email address is demo@lol.com, and my phone number is 1234567890":

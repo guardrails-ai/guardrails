@@ -7,7 +7,7 @@ from guardrails.schema import StringSchema
 from guardrails.validators import PIIFilter, SimilarToList
 
 from .mock_embeddings import MOCK_EMBEDDINGS
-from .mock_presidio import mock_anonymize
+from .mock_presidio import MockAnalyzerEngine, MockAnonymizerEngine, mock_anonymize
 
 
 def test_similar_to_list():
@@ -121,6 +121,10 @@ def test_similar_to_list():
 
 def test_pii_filter(mocker):
     """Integration test for PIIFilter."""
+
+    # Mock the the intialisations of AnalyzerEngine and AnonymizerEngine
+    mocker.patch("guardrails.validators.AnalyzerEngine", new=MockAnalyzerEngine)
+    mocker.patch("guardrails.validators.AnonymizerEngine", new=MockAnonymizerEngine)
 
     # Mock the analyze and anomymize functions
     mocker.patch(
