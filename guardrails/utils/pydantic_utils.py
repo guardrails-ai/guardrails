@@ -165,7 +165,7 @@ def type_annotation_to_string(type_annotation: Any) -> str:
     elif typing.get_origin(type_annotation) == Union:
         return "choice"
     elif type_annotation == PythonCode:
-        return "pythoncode"
+        return "string"
     else:
         raise ValueError(f"Unsupported type: {type_annotation}")
 

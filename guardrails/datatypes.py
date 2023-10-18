@@ -1,5 +1,6 @@
 import datetime
 import logging
+import warnings
 from dataclasses import dataclass
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, Dict, Generator, Iterable
@@ -11,12 +12,19 @@ from lxml import etree as ET
 from pydantic import BaseModel
 
 from guardrails.utils.casting_utils import to_float, to_int, to_string
+from guardrails.utils.json_utils import deprecated_string_types
 from guardrails.validators import Validator
 
 if TYPE_CHECKING:
     from guardrails.schema import FormatAttr
 
 logger = logging.getLogger(__name__)
+
+
+def update_deprecated_type_to_string(type):
+    if type in deprecated_string_types:
+        return "string"
+    return type
 
 
 @dataclass
@@ -159,6 +167,15 @@ def register_type(name: str):
     return decorator
 
 
+# Decorator for deprecation
+def deprecate_type(cls: type):
+    warnings.warn(
+        f"""The '{cls.__name__}' type  is deprecated and will be removed in \
+versions 0.3.0 and beyond. Use the pydantic 'str' primitive instead.""",
+        DeprecationWarning,
+    )
+
+
 class ScalarType(DataType):
     def set_children(self, element: ET._Element):
         for _ in element:
@@ -278,21 +295,25 @@ class Time(ScalarType):
         return datatype
 
 
+@deprecate_type
 @register_type("email")
 class Email(ScalarType):
     """Element tag: `<email>`"""
 
 
+@deprecate_type
 @register_type("url")
 class URL(ScalarType):
     """Element tag: `<url>`"""
 
 
+@deprecate_type
 @register_type("pythoncode")
 class PythonCode(ScalarType):
     """Element tag: `<pythoncode>`"""
 
 
+@deprecate_type
 @register_type("sql")
 class SQLCode(ScalarType):
     """Element tag: `<sql>`"""
@@ -336,7 +357,7 @@ class List(NonScalarType):
                 # The child must be the datatype that all items in the list
                 # must conform to.
                 raise ValueError("List data type must have exactly one child.")
-            child_data_type = registry[child.tag]
+            child_data_type = update_deprecated_type_to_string(registry[child.tag])
             self._children["item"] = child_data_type.from_xml(child)
 
 
@@ -381,7 +402,7 @@ class Object(NonScalarType):
 
     def set_children(self, element: ET._Element):
         for child in element:
-            child_data_type = registry[child.tag]
+            child_data_type = update_deprecated_type_to_string(registry[child.tag])
             self._children[child.attrib["name"]] = child_data_type.from_xml(child)
 
 
@@ -415,7 +436,7 @@ class Choice(NonScalarType):
 
     def set_children(self, element: ET._Element):
         for child in element:
-            child_data_type = registry[child.tag]
+            child_data_type = update_deprecated_type_to_string(registry[child.tag])
             assert child_data_type == Case
             self._children[child.attrib["name"]] = child_data_type.from_xml(child)
 
@@ -459,7 +480,7 @@ class Case(NonScalarType):
 
     def set_children(self, element: ET._Element):
         for child in element:
-            child_data_type = registry[child.tag]
+            child_data_type = update_deprecated_type_to_string(registry[child.tag])
             self._children[child.attrib["name"]] = child_data_type.from_xml(child)
 
 
@@ -498,7 +519,7 @@ class Pydantic(NonScalarType):
 
     def set_children(self, element: ET._Element):
         for child in element:
-            child_data_type = registry[child.tag]
+            child_data_type = update_deprecated_type_to_string(registry[child.tag])
             self._children[child.attrib["name"]] = child_data_type.from_xml(child)
 
     @classmethod

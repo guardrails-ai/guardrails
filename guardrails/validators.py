@@ -24,6 +24,7 @@ from tenacity import retry, stop_after_attempt, wait_random_exponential
 
 from guardrails.utils.casting_utils import to_int
 from guardrails.utils.docs_utils import get_chunks_from_text, sentence_split
+from guardrails.utils.json_utils import deprecated_string_types
 from guardrails.utils.sql_utils import SQLDriver, create_sql_driver
 from guardrails.utils.validator_utils import PROVENANCE_V1_PROMPT
 
@@ -184,7 +185,9 @@ def register_validator(name: str, data_type: Union[str, List[str]]):
     for dt in data_type:
         if dt not in types_registry:
             raise ValueError(f"Data type {dt} is not registered.")
-
+        if dt == "string":
+            for str_type in deprecated_string_types:
+                types_to_validators[str_type].append(name)
         types_to_validators[dt].append(name)
 
     def decorator(cls_or_func: Union[type, Callable]):
@@ -556,11 +559,17 @@ class ValidLength(Validator):
 
             # Repeat the last character to make the value the correct length.
             if isinstance(value, str):
-                last_val = value[-1]
+                if not value:
+                    last_val = rstr.rstr(string.ascii_lowercase, 1)
+                else:
+                    last_val = value[-1]
             else:
-                last_val = [value[-1]]
-
+                if not value:
+                    last_val = [rstr.rstr(string.ascii_lowercase, 1)]
+                else:
+                    last_val = [value[-1]]
             corrected_value = value + last_val * (self._min - len(value))
+
             return FailResult(
                 error_message=f"Value has length less than {self._min}. "
                 f"Please return a longer output, "
@@ -582,7 +591,7 @@ class ValidLength(Validator):
 
 @register_validator(name="regex_match", data_type="string")
 class RegexMatch(Validator):
-    """Validates that a value matches a regualr expression.
+    """Validates that a value matches a regular expression.
 
     **Key Properties**
 
@@ -681,7 +690,7 @@ class OneLine(Validator):
         return PassResult()
 
 
-@register_validator(name="valid-url", data_type=["string", "url"])
+@register_validator(name="valid-url", data_type=["string"])
 class ValidURL(Validator):
     """Validates that a value is a valid URL.
 
@@ -690,7 +699,7 @@ class ValidURL(Validator):
     | Property                      | Description                       |
     | ----------------------------- | --------------------------------- |
     | Name for `format` attribute   | `valid-url`                       |
-    | Supported data types          | `string`, `url`                   |
+    | Supported data types          | `string`                          |
     | Programmatic fix              | None                              |
     """
 
@@ -715,7 +724,7 @@ class ValidURL(Validator):
         return PassResult()
 
 
-@register_validator(name="is-reachable", data_type=["string", "url"])
+@register_validator(name="is-reachable", data_type=["string"])
 class EndpointIsReachable(Validator):
     """Validates that a value is a reachable URL.
 
@@ -724,7 +733,7 @@ class EndpointIsReachable(Validator):
     | Property                      | Description                       |
     | ----------------------------- | --------------------------------- |
     | Name for `format` attribute   | `is-reachable`                    |
-    | Supported data types          | `string`, `url`                   |
+    | Supported data types          | `string`,                         |
     | Programmatic fix              | None                              |
     """
 
@@ -758,7 +767,7 @@ class EndpointIsReachable(Validator):
         return PassResult()
 
 
-@register_validator(name="bug-free-python", data_type="pythoncode")
+@register_validator(name="bug-free-python", data_type="string")
 class BugFreePython(Validator):
     """Validates that there are no Python syntactic bugs in the generated code.
 
@@ -771,7 +780,7 @@ class BugFreePython(Validator):
     | Property                      | Description                       |
     | ----------------------------- | --------------------------------- |
     | Name for `format` attribute   | `bug-free-python`                 |
-    | Supported data types          | `pythoncode`                      |
+    | Supported data types          | `string`                          |
     | Programmatic fix              | None                              |
     """
 
@@ -789,7 +798,7 @@ class BugFreePython(Validator):
         return PassResult()
 
 
-@register_validator(name="bug-free-sql", data_type=["sql", "string"])
+@register_validator(name="bug-free-sql", data_type=["string"])
 class BugFreeSQL(Validator):
     """Validates that there are no SQL syntactic bugs in the generated code.
 
@@ -802,7 +811,7 @@ class BugFreeSQL(Validator):
     | Property                      | Description                       |
     | ----------------------------- | --------------------------------- |
     | Name for `format` attribute   | `bug-free-sql`                    |
-    | Supported data types          | `sql`, `string`                   |
+    | Supported data types          | `string`                          |
     | Programmatic fix              | None                              |
     """
 
@@ -825,7 +834,7 @@ class BugFreeSQL(Validator):
         return PassResult()
 
 
-@register_validator(name="sql-column-presence", data_type="sql")
+@register_validator(name="sql-column-presence", data_type="string")
 class SqlColumnPresence(Validator):
     """Validates that all columns in the SQL query are present in the schema.
 
@@ -834,7 +843,7 @@ class SqlColumnPresence(Validator):
     | Property                      | Description                       |
     | ----------------------------- | --------------------------------- |
     | Name for `format` attribute   | `sql-column-presence`             |
-    | Supported data types          | `sql`                             |
+    | Supported data types          | `string`                          |
     | Programmatic fix              | None                              |
 
     Parameters: Arguments
@@ -864,7 +873,7 @@ class SqlColumnPresence(Validator):
         return PassResult()
 
 
-@register_validator(name="exclude-sql-predicates", data_type="sql")
+@register_validator(name="exclude-sql-predicates", data_type="string")
 class ExcludeSqlPredicates(Validator):
     """Validates that the SQL query does not contain certain predicates.
 
@@ -873,7 +882,7 @@ class ExcludeSqlPredicates(Validator):
     | Property                      | Description                       |
     | ----------------------------- | --------------------------------- |
     | Name for `format` attribute   | `exclude-sql-predicates`          |
-    | Supported data types          | `sql`                             |
+    | Supported data types          | `string`                          |
     | Programmatic fix              | None                              |
 
     Parameters: Arguments
@@ -1716,8 +1725,12 @@ class ProvenanceV0(Validator):
 
     If providing query_function, it should take a string as input and return a list of
     (chunk, score) tuples. The chunk is a string and the score is a float representing
-    the cosine similarity between the chunk and the input string. The list should be
+    the cosine distance between the chunk and the input string. The list should be
     sorted in ascending order by score.
+
+    Note: The score should represent distance in embedding space, not similarity. I.e.,
+    lower is better and the score should be 0 if the chunk is identical to the input
+    string.
 
     Example:
         ```py
@@ -2394,3 +2407,145 @@ class PIIFilter(Validator):
                 fix_value=anonymized_value.text,
             )
         return PassResult()
+
+
+@register_validator(name="similar-to-list", data_type="string")
+class SimilarToList(Validator):
+    """Validates that a value is similar to a list of previously known values.
+
+    **Key Properties**
+
+    | Property                      | Description                       |
+    | ----------------------------- | --------------------------------- |
+    | Name for `format` attribute   | `similar-to-list`                 |
+    | Supported data types          | `string`                          |
+    | Programmatic fix              | None                              |
+
+    Parameters: Arguments
+        standard_deviations (int): The number of standard deviations from the mean to check.
+        threshold (float): The threshold for the average semantic similarity for strings.
+
+    For integer values, this validator checks whether the value lies
+    within 'k' standard deviations of the mean of the previous values.
+    (Assumes that the previous values are normally distributed.) For
+    string values, this validator checks whether the average semantic
+    similarity between the generated value and the previous values is
+    less than a threshold.
+    """  # noqa
+
+    def __init__(
+        self,
+        standard_deviations: int = 3,
+        threshold: float = 0.1,
+        on_fail: Optional[Callable] = None,
+        **kwargs,
+    ):
+        super().__init__(
+            on_fail,
+            standard_deviations=standard_deviations,
+            threshold=threshold,
+            **kwargs,
+        )
+        self._standard_deviations = int(standard_deviations)
+        self._threshold = float(threshold)
+
+    def get_semantic_similarity(
+        self, text1: str, text2: str, embed_function: Callable
+    ) -> float:
+        """Get the semantic similarity between two strings.
+
+        Args:
+            text1 (str): The first string.
+            text2 (str): The second string.
+            embed_function (Callable): The embedding function.
+        Returns:
+            similarity (float): The semantic similarity between the two strings.
+        """
+        text1_embedding = embed_function(text1)
+        text2_embedding = embed_function(text2)
+        similarity = 1 - (
+            np.dot(text1_embedding, text2_embedding)
+            / (np.linalg.norm(text1_embedding) * np.linalg.norm(text2_embedding))
+        )
+        return similarity
+
+    def validate(self, value: Any, metadata: Dict) -> ValidationResult:
+        prev_values = metadata.get("prev_values", [])
+        if not prev_values:
+            raise ValueError("You must provide a list of previous values in metadata.")
+
+        # Check if np is installed
+        if not _HAS_NUMPY:
+            raise ValueError(
+                "You must install numpy in order to "
+                "use the distribution check validator."
+            )
+        try:
+            value = int(value)
+            is_int = True
+        except ValueError:
+            is_int = False
+
+        if is_int:
+            # Check whether prev_values are also all integers
+            if not all(isinstance(prev_value, int) for prev_value in prev_values):
+                raise ValueError(
+                    "Both given value and all the previous values must be "
+                    "integers in order to use the distribution check validator."
+                )
+
+            # Check whether the value lies in a similar distribution as the prev_values
+            # Get mean and std of prev_values
+            prev_values = np.array(prev_values)
+            prev_mean = np.mean(prev_values)
+            prev_std = np.std(prev_values)
+
+            # Check whether the value lies outside specified stds of the mean
+            if value < prev_mean - (
+                self._standard_deviations * prev_std
+            ) or value > prev_mean + (self._standard_deviations * prev_std):
+                return FailResult(
+                    error_message=(
+                        f"The value {value} lies outside of the expected distribution "
+                        f"of {prev_mean} +/- {self._standard_deviations * prev_std}."
+                    ),
+                )
+            return PassResult()
+        else:
+            # Check whether prev_values are also all strings
+            if not all(isinstance(prev_value, str) for prev_value in prev_values):
+                raise ValueError(
+                    "Both given value and all the previous values must be "
+                    "strings in order to use the distribution check validator."
+                )
+
+            # Check embed model
+            embed_function = metadata.get("embed_function", None)
+            if embed_function is None:
+                raise ValueError(
+                    "You must provide `embed_function` in metadata in order to "
+                    "check the semantic similarity of the generated string."
+                )
+
+            # Check whether the value is semantically similar to the prev_values
+            # Get average semantic similarity
+            # Lesser the average semantic similarity, more similar the strings are
+            avg_semantic_similarity = np.mean(
+                [
+                    self.get_semantic_similarity(value, prev_value, embed_function)
+                    for prev_value in prev_values
+                ]
+            )
+
+            # If average semantic similarity is above the threshold,
+            # then the value is not semantically similar to the prev_values
+            if avg_semantic_similarity > self._threshold:
+                return FailResult(
+                    error_message=(
+                        f"The value {value} is not semantically similar to the "
+                        f"previous values. The average semantic similarity is "
+                        f"{avg_semantic_similarity} which is below the threshold of "
+                        f"{self._threshold}."
+                    ),
+                )
+            return PassResult()

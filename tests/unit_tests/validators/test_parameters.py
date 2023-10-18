@@ -195,6 +195,89 @@ validator_test_pass_fail = {
             },
         },
     ],
+    "ValidRange": [
+        {
+            "input_data": 180,
+            "metadata": {},
+            "expected_result": FailResult,
+            "instance_variables": {"min": 4, "max": 170},
+            "fix_value": 170,
+        },
+        {
+            "input_data": 4.5,
+            "metadata": {},
+            "expected_result": PassResult,
+            "instance_variables": {"min": 4, "max": 170},
+            "fix_value": 4,
+        },
+    ],
+    "EndpointIsReachable": [
+        {
+            "input_data": "https://www.google.com/",
+            "metadata": {},
+            "expected_result": PassResult,
+        },
+        {
+            "input_data": "https://wwww.google/",
+            "metadata": {},
+            "expected_result": FailResult,
+        },
+    ],
+    "RegexMatch": [
+        {
+            "input_data": "ab12cd",
+            "metadata": {},
+            "expected_result": PassResult,
+            "instance_variables": {"regex": "\\w+\\d\\w+", "match_type": "fullmatch"},
+        },
+        {
+            "input_data": "abcdef",
+            "metadata": {},
+            "expected_result": FailResult,
+            "instance_variables": {"regex": "\\w+\\d\\w+", "match_type": "fullmatch"},
+        },
+    ],
+    "RemoveRedundantSentences": [
+        {
+            "input_data": "There shouldn't be any redundant sentences here \
+                so this test should pass no problem.",
+            "metadata": {},
+            "expected_result": PassResult,
+        },
+        {
+            "input_data": "There are redundant sentences here so this shouldn't pass. \
+                Because there are redundant sentences here, this should not pass. \
+                Okay this is the last sentence.",
+            "metadata": {},
+            "expected_result": FailResult,
+            "fix_value": "There are redundant sentences here so this shouldn't pass.",
+        },
+    ],
+    "IsProfanityFree": [
+        {
+            "input_data": "Keeping it clean here so this should pass \
+            without any problems.",
+            "metadata": {},
+            "expected_result": PassResult,
+        },
+        {
+            "input_data": "crap, is this a bad word",
+            "metadata": {},
+            "expected_result": FailResult,
+        },
+    ],
+    "SimilarToList": [
+        {
+            "input_data": "3",
+            "metadata": {"prev_values": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]},
+            "expected_result": PassResult,
+        },
+        {
+            "input_data": "300",
+            "metadata": {"prev_values": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]},
+            "expected_result": FailResult,
+        },
+    ],
 }
 
 validator_test_python_str = {
@@ -250,16 +333,96 @@ validator_test_xml = {
             "end": "bye",
         },
     },
-    "ReadingTime": {
-        "expected_xml": "reading-time: 30",
-        "instance_variables": {
-            "reading_time": 30,
-        },
-    },
     "ValidChoices": {
         "expected_xml": "valid-choices: {['one', 'two', 'three', 'four']}",
         "instance_variables": {
             "choices": ["one", "two", "three", "four"],
         },
+    },
+    "ValidRange": {
+        "expected_xml": "valid-range: 1 150",
+        "instance_variables": {"min": 1, "max": 150},
+    },
+    "EndpointIsReachable": {
+        "expected_xml": "is-reachable",
+    },
+    "SqlColumnPresence": {
+        "expected_xml": "sql-column-presence: {['embeddings', 'guards']}",
+        "instance_variables": {"cols": ["embeddings", "guards"]},
+    },
+    "ExcludeSqlPredicates": {
+        "expected_xml": "exclude-sql-predicates: {['EXISTS', 'IN']}",
+        "instance_variables": {"predicates": ["EXISTS", "IN"]},
+    },
+    "IsProfanityFree": {"expected_xml": "is-profanity-free"},
+    "RemoveRedundantSentences": {"expected_xml": "remove-redundant-sentences"},
+    "RegexMatch": {
+        "expected_xml": "regex_match: \\w+\\d\\w+ fullmatch",
+        "instance_variables": {"regex": "\\w+\\d\\w+", "match_type": "fullmatch"},
+    },
+    "SimilarToList": {
+        "expected_xml": "similar-to-list: 2 0.5",
+        "instance_variables": {"standard_deviations": 2, "threshold": 0.5},
+    },
+}
+
+validator_test_prompt = {
+    "ValidLength": {
+        "expected_prompt": "length: min=4 max=17",
+        "instance_variables": {"min": 4, "max": 17},
+    },
+    "BugFreeSQL": {
+        "expected_prompt": "bug-free-sql",
+    },
+    "LowerCase": {
+        "expected_prompt": "lower-case",
+    },
+    "UpperCase": {
+        "expected_prompt": "upper-case",
+    },
+    "TwoWords": {
+        "expected_prompt": "two-words",
+    },
+    "OneLine": {
+        "expected_prompt": "one-line",
+    },
+    "ValidURL": {
+        "expected_prompt": "valid-url",
+    },
+    "BugFreePython": {
+        "expected_prompt": "bug-free-python",
+    },
+    "EndsWith": {
+        "expected_prompt": "ends-with: end=bye",
+        "instance_variables": {
+            "end": "bye",
+        },
+    },
+    "ValidChoices": {
+        "expected_prompt": "valid-choices: choices=['one', 'two', 'three', 'four']",
+        "instance_variables": {
+            "choices": ["one", "two", "three", "four"],
+        },
+    },
+    "ValidRange": {
+        "expected_prompt": "valid-range: min=1 max=150",
+        "instance_variables": {"min": 1, "max": 150},
+    },
+    "EndpointIsReachable": {
+        "expected_prompt": "is-reachable",
+    },
+    "SqlColumnPresence": {
+        "expected_prompt": "sql-column-presence: cols=['embeddings', 'guards']",
+        "instance_variables": {"cols": ["embeddings", "guards"]},
+    },
+    "ExcludeSqlPredicates": {
+        "expected_prompt": "exclude-sql-predicates: predicates=['EXISTS', 'IN']",
+        "instance_variables": {"predicates": ["EXISTS", "IN"]},
+    },
+    "IsProfanityFree": {"expected_prompt": "is-profanity-free"},
+    "RemoveRedundantSentences": {"expected_prompt": "remove-redundant-sentences"},
+    "RegexMatch": {
+        "expected_prompt": "results should match \\w+\\d\\w+",
+        "instance_variables": {"regex": "\\w+\\d\\w+", "match_type": "fullmatch"},
     },
 }

@@ -20,7 +20,7 @@ with open(ver_path) as ver_file:
 # Package meta-data.
 NAME = "guardrails-ai"
 DESCRIPTION = "Adding guardrails to large language models."
-URL = "https://github.com/shreyar/guardrails"
+URL = "https://github.com/guardrails-ai/guardrails"
 EMAIL = "shreya.rajpal@gmail.com"
 AUTHOR = "Shreya Rajpal"
 REQUIRES_PYTHON = ">=3.7.0"
@@ -39,6 +39,7 @@ REQUIRED = [
     "tenacity>=8.1.0",
     "pytest",
     "regex",
+    "rstr",
 ]
 
 # Read in docs/requirements.txt
@@ -50,6 +51,8 @@ SQL_REQUIREMENTS = ["sqlvalidator", "sqlalchemy>=2.0.9", "sqlglot"]
 SUMMARY_REQUIREMENTS = ["thefuzz", "nltk"]
 
 VECTORDB_REQUIREMENTS = ["faiss-cpu", "numpy", "tiktoken"]
+
+PROFANITY_REQUIREMENTS = ["alt-profanity-check"]
 
 DEV_REQUIREMENTS = [
     "black==22.12.0",
@@ -64,13 +67,13 @@ DEV_REQUIREMENTS = [
     "pypdfium2",
     "pytest",
     "pytest-asyncio",
+    *SUMMARY_REQUIREMENTS,
+    *PROFANITY_REQUIREMENTS,
     *SQL_REQUIREMENTS,
     *VECTORDB_REQUIREMENTS,
 ] + DOCS_REQUIREMENTS
 
 MANIFEST_REQUIREMENTS = ["manifest-ml"]
-
-PROFANITY_REQUIREMENTS = ["alt-profanity-check"]
 
 CRITIQUE_REQUIREMENTS = ["inspiredco"]
 

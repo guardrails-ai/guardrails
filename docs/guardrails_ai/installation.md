@@ -36,10 +36,10 @@ pip install guardrails-ai==0.2.0a6
 Installing directly from GitHub is useful when a release has not yet been cut with the changes pushed to a branch that you need. Non-released versions may include breaking changes, and may not yet have full test coverage. We recommend using a released version whenever possible.
 
 ```bash
-# pip install git+https://github.com/ShreyaR/guardrails.git@[branch/commit/tag]
+# pip install git+https://github.com/guardrails-ai/guardrails.git@[branch/commit/tag]
 # Examples:
-pip install git+https://github.com/ShreyaR/guardrails.git@main
-pip install git+https://github.com/ShreyaR/guardrails.git@dev
+pip install git+https://github.com/guardrails-ai/guardrails.git@main
+pip install git+https://github.com/guardrails-ai/guardrails.git@dev
 ```
 
 ## Recommended Python Dependency Versions

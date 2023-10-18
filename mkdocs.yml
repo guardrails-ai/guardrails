@@ -1,14 +1,14 @@
 site_name:  Guardrails AI
 site_url: https://docs.guardrailsai.com
 site_author: Shreya Rajpal
-repo_url: https://github.com/ShreyaR/guardrails
-repo_name: ShreyaR/guardrails
+repo_url: https://github.com/guardrails-ai/guardrails
+repo_name: guardrails-ai/guardrails
 
 remote_branch: gh-pages
 remote_name: origin
 
 copyright: |
-  Maintained by <a href="https://github.com/shreyar">Shreya Rajpal</a>.
+  Maintained by <a href="https://github.com/guardrails-ai">Guardrails AI</a>.
 
 
 nav:
@@ -56,6 +56,7 @@ nav:
     - 'Check key info present in generated summary': examples/text_summarization_quality.ipynb
     - 'Detect and limit hallucinations in generated text': examples/provenance.ipynb
   - 'Integrations':
+    - 'Azure OpenAI': integrations/azure_openai.ipynb
     - 'OpenAI Functions': integrations/openai_functions.ipynb
     - 'LangChain': integrations/langchain.ipynb
   -  'Join the Guardrails AI team': https://equatorial-bergamot-e37.notion.site/Join-the-Guardrails-AI-team-fd2fbf54f7834ba1b4c4d985162d34e1?pvs=4
@@ -84,7 +85,6 @@ theme:
   features:
     - navigation.instant
     - navigation.tracking
-    - navigation.expand
     # - navigation.sections
     - content.code.annotate
     - toc.follow
@@ -180,6 +180,6 @@ extra:
     - icon: fontawesome/brands/twitter
       link: https://twitter.com/guardrails_ai
     - icon: fontawesome/brands/github
-      link: https://github.com/ShreyaR/guardrails
+      link: https://github.com/guardrails-ai/guardrails
     - icon: fontawesome/brands/discord
       link: https://discord.gg/Jsey3mX98B
