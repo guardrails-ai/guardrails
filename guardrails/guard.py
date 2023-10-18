@@ -210,6 +210,7 @@ class Guard:
         )
         return cls(rail, num_reasks=num_reasks)
 
+    @classmethod
     def __call__(
         self,
         llm_api: Union[Callable, Callable[[Any], Awaitable[Any]]],

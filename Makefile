@@ -38,14 +38,6 @@ full:
 
 all: autoformat lint docs test
 
-pydocs:
-	# sphinx-apidoc -o docs/pydocs/config guardrails;
-	sphinx-build -b html docs/pydocs/ docs/pydocs/build;
-
-jupyter-html:
-	jupyter nbconvert --to html docs/**/*.ipynb
-
 docs-gen:
-	# sphinx-apidoc -o docs/pydocs/config guardrails;
-	sphinx-build -b html docs/pydocs/ docs/pydocs/build;
-	nbdoc_build
+	nbdoc_build --force_all True --srcdir ./docs
+	sphinx-build -M markdown docs/pydocs/ docs/api_reference_markdown;

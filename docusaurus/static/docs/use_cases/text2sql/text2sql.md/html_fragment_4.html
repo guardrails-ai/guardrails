@@ -1,0 +1,116 @@
+<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">Logs
+├── ╭────────────────────────────────────────────────── Step 0 ───────────────────────────────────────────────────╮
+│   │ <span style="background-color: #f0f8ff">╭──────────────────────────────────────────────── Prompt ─────────────────────────────────────────────────╮</span> │
+│   │ <span style="background-color: #f0f8ff">│ No prompt                                                                                               │</span> │
+│   │ <span style="background-color: #f0f8ff">╰─────────────────────────────────────────────────────────────────────────────────────────────────────────╯</span> │
+│   │ <span style="background-color: #f5f5dc">╭──────────────────────────────────────────── Raw LLM Output ─────────────────────────────────────────────╮</span> │
+│   │ <span style="background-color: #f5f5dc">│ {"generated_sql": "SELECT name FROM departments ORDER BY num_employees DESC LIMIT 1"}                   │</span> │
+│   │ <span style="background-color: #f5f5dc">╰─────────────────────────────────────────────────────────────────────────────────────────────────────────╯</span> │
+│   │ <span style="background-color: #f0fff0">╭─────────────────────────────────────────── Validated Output ────────────────────────────────────────────╮</span> │
+│   │ <span style="background-color: #f0fff0">│ {                                                                                                       │</span> │
+│   │ <span style="background-color: #f0fff0">│     'generated_sql': ReAsk(                                                                             │</span> │
+│   │ <span style="background-color: #f0fff0">│         incorrect_value='SELECT name FROM departments ORDER BY num_employees DESC LIMIT 1',             │</span> │
+│   │ <span style="background-color: #f0fff0">│         error_message='(sqlite3.OperationalError) no such table: departments\n[SQL: SELECT name FROM    │</span> │
+│   │ <span style="background-color: #f0fff0">│ departments ORDER BY num_employees DESC LIMIT 1]\n(Background on this error at:                         │</span> │
+│   │ <span style="background-color: #f0fff0">│ https://sqlalche.me/e/20/e3q8)',                                                                        │</span> │
+│   │ <span style="background-color: #f0fff0">│         fix_value=None,                                                                                 │</span> │
+│   │ <span style="background-color: #f0fff0">│         path=['generated_sql']                                                                          │</span> │
+│   │ <span style="background-color: #f0fff0">│     )                                                                                                   │</span> │
+│   │ <span style="background-color: #f0fff0">│ }                                                                                                       │</span> │
+│   │ <span style="background-color: #f0fff0">╰─────────────────────────────────────────────────────────────────────────────────────────────────────────╯</span> │
+│   ╰─────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+└── ╭────────────────────────────────────────────────── Step 1 ───────────────────────────────────────────────────╮
+    │ <span style="background-color: #f0f8ff">╭──────────────────────────────────────────────── Prompt ─────────────────────────────────────────────────╮</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ You are a data scientist whose job is to write SQL queries.                                             │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ Given below is XML that describes the information to extract from this document and the tags to extract │</span> │
+    │ <span style="background-color: #f0f8ff">│ it into.                                                                                                │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ &lt;output&gt;                                                                                                │</span> │
+    │ <span style="background-color: #f0f8ff">│     &lt;sql name="generated_sql" description="Generate SQL for the given natural language instruction."    │</span> │
+    │ <span style="background-color: #f0f8ff">│ format="bug-free-sql"/&gt;                                                                                 │</span> │
+    │ <span style="background-color: #f0f8ff">│ &lt;/output&gt;                                                                                               │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ ONLY return a valid JSON object (no other text is necessary), where the key of the field in JSON is the │</span> │
+    │ <span style="background-color: #f0f8ff">│ `name` attribute of the corresponding XML, and the value is of the type specified by the corresponding  │</span> │
+    │ <span style="background-color: #f0f8ff">│ XML's tag. The JSON MUST conform to the XML format, including any types and format requests e.g.        │</span> │
+    │ <span style="background-color: #f0f8ff">│ requests for lists, objects and specific types. Be correct and concise.                                 │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ Here are examples of simple (XML, JSON) pairs that show the expected behavior:                          │</span> │
+    │ <span style="background-color: #f0f8ff">│ - `&lt;string name='foo' format='two-words lower-case' /&gt;` =&gt; `{'foo': 'example one'}`                     │</span> │
+    │ <span style="background-color: #f0f8ff">│ - `&lt;list name='bar'&gt;&lt;string format='upper-case' /&gt;&lt;/list&gt;` =&gt; `{"bar": ['STRING ONE', 'STRING TWO',     │</span> │
+    │ <span style="background-color: #f0f8ff">│ etc.]}`                                                                                                 │</span> │
+    │ <span style="background-color: #f0f8ff">│ - `&lt;object name='baz'&gt;&lt;string name="foo" format="capitalize two-words" /&gt;&lt;integer name="index"          │</span> │
+    │ <span style="background-color: #f0f8ff">│ format="1-indexed" /&gt;&lt;/object&gt;` =&gt; `{'baz': {'foo': 'Some String', 'index': 1}}`                        │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ Here's schema about the database that you can use to generate the SQL query.                            │</span> │
+    │ <span style="background-color: #f0f8ff">│ Try to avoid using joins if the data can be retrieved from the same table.                              │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ Table: department                                                                                       │</span> │
+    │ <span style="background-color: #f0f8ff">│     Column: Department_ID                                                                               │</span> │
+    │ <span style="background-color: #f0f8ff">│         type: INTEGER                                                                                   │</span> │
+    │ <span style="background-color: #f0f8ff">│     Column: Name                                                                                        │</span> │
+    │ <span style="background-color: #f0f8ff">│         type: TEXT                                                                                      │</span> │
+    │ <span style="background-color: #f0f8ff">│     Column: Creation                                                                                    │</span> │
+    │ <span style="background-color: #f0f8ff">│         type: TEXT                                                                                      │</span> │
+    │ <span style="background-color: #f0f8ff">│     Column: Ranking                                                                                     │</span> │
+    │ <span style="background-color: #f0f8ff">│         type: INTEGER                                                                                   │</span> │
+    │ <span style="background-color: #f0f8ff">│     Column: Budget_in_Billions                                                                          │</span> │
+    │ <span style="background-color: #f0f8ff">│         type: REAL                                                                                      │</span> │
+    │ <span style="background-color: #f0f8ff">│     Column: Num_Employees                                                                               │</span> │
+    │ <span style="background-color: #f0f8ff">│         type: REAL                                                                                      │</span> │
+    │ <span style="background-color: #f0f8ff">│ Table: head                                                                                             │</span> │
+    │ <span style="background-color: #f0f8ff">│     Column: head_ID                                                                                     │</span> │
+    │ <span style="background-color: #f0f8ff">│         type: INTEGER                                                                                   │</span> │
+    │ <span style="background-color: #f0f8ff">│     Column: name                                                                                        │</span> │
+    │ <span style="background-color: #f0f8ff">│         type: TEXT                                                                                      │</span> │
+    │ <span style="background-color: #f0f8ff">│     Column: born_state                                                                                  │</span> │
+    │ <span style="background-color: #f0f8ff">│         type: TEXT                                                                                      │</span> │
+    │ <span style="background-color: #f0f8ff">│     Column: age                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│         type: REAL                                                                                      │</span> │
+    │ <span style="background-color: #f0f8ff">│ Table: management                                                                                       │</span> │
+    │ <span style="background-color: #f0f8ff">│     Column: department_ID                                                                               │</span> │
+    │ <span style="background-color: #f0f8ff">│         type: INTEGER                                                                                   │</span> │
+    │ <span style="background-color: #f0f8ff">│         foreign_key: {'table': 'department', 'column': 'Department_ID'}                                 │</span> │
+    │ <span style="background-color: #f0f8ff">│     Column: head_ID                                                                                     │</span> │
+    │ <span style="background-color: #f0f8ff">│         type: INTEGER                                                                                   │</span> │
+    │ <span style="background-color: #f0f8ff">│         foreign_key: {'table': 'head', 'column': 'head_ID'}                                             │</span> │
+    │ <span style="background-color: #f0f8ff">│     Column: temporary_acting                                                                            │</span> │
+    │ <span style="background-color: #f0f8ff">│         type: TEXT                                                                                      │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ I will give you a list of examples.                                                                     │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ I want to create a query for the following instruction:                                                 │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ What is the name of the department with the highest number of employees?                                │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ For this instruction, I was given the following JSON, which has some incorrect values.                  │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ {                                                                                                       │</span> │
+    │ <span style="background-color: #f0f8ff">│   "generated_sql": {                                                                                    │</span> │
+    │ <span style="background-color: #f0f8ff">│     "incorrect_value": "SELECT name FROM departments ORDER BY num_employees DESC LIMIT 1",              │</span> │
+    │ <span style="background-color: #f0f8ff">│     "error_message": "(sqlite3.OperationalError) no such table: departments\n[SQL: SELECT name FROM     │</span> │
+    │ <span style="background-color: #f0f8ff">│ departments ORDER BY num_employees DESC LIMIT 1]\n(Background on this error at:                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ https://sqlalche.me/e/20/e3q8)"                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│   }                                                                                                     │</span> │
+    │ <span style="background-color: #f0f8ff">│ }                                                                                                       │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">│ Help me correct the incorrect values based on the given error messages.                                 │</span> │
+    │ <span style="background-color: #f0f8ff">│                                                                                                         │</span> │
+    │ <span style="background-color: #f0f8ff">╰─────────────────────────────────────────────────────────────────────────────────────────────────────────╯</span> │
+    │ <span style="background-color: #f5f5dc">╭──────────────────────────────────────────── Raw LLM Output ─────────────────────────────────────────────╮</span> │
+    │ <span style="background-color: #f5f5dc">│ {"generated_sql": "SELECT Name FROM department ORDER BY Num_Employees DESC LIMIT 1"}                    │</span> │
+    │ <span style="background-color: #f5f5dc">╰─────────────────────────────────────────────────────────────────────────────────────────────────────────╯</span> │
+    │ <span style="background-color: #f0fff0">╭─────────────────────────────────────────── Validated Output ────────────────────────────────────────────╮</span> │
+    │ <span style="background-color: #f0fff0">│ {                                                                                                       │</span> │
+    │ <span style="background-color: #f0fff0">│     'generated_sql': 'SELECT Name FROM department ORDER BY Num_Employees DESC LIMIT 1'                  │</span> │
+    │ <span style="background-color: #f0fff0">│ }                                                                                                       │</span> │
+    │ <span style="background-color: #f0fff0">╰─────────────────────────────────────────────────────────────────────────────────────────────────────────╯</span> │
+    ╰─────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+</pre>

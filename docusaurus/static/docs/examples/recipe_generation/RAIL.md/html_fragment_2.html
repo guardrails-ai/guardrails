@@ -1,0 +1,287 @@
+<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">Logs
+└── ╭────────────────────────────────────────────────── Step 0 ───────────────────────────────────────────────────╮
+    │ ╭──────────────────────────────────────────────── Prompt ─────────────────────────────────────────────────╮ │
+    │ │                                                                                                         │ │
+    │ │ Generate a recipe for vegan mac and cheese.                                                             │ │
+    │ │                                                                                                         │ │
+    │ │ Given below is XML that describes the information to extract from this document and the tags to extract │ │
+    │ │ it into.                                                                                                │ │
+    │ │                                                                                                         │ │
+    │ │ &lt;output&gt;                                                                                                │ │
+    │ │     &lt;list name="ingredients" description="What are the ingredients for the recipe?"&gt;                    │ │
+    │ │         &lt;object&gt;                                                                                        │ │
+    │ │             &lt;integer name="index" format="1-indexed"/&gt;                                                  │ │
+    │ │             &lt;string name="name" format="is-vegan"/&gt;                                                     │ │
+    │ │             &lt;string name="brand" description="Suggested brand for the ingredient (if any)"/&gt;            │ │
+    │ │             &lt;bool name="optional" description="Is the ingredient necessary?"/&gt;                          │ │
+    │ │             &lt;float name="quantity" format="units-imperial"/&gt;                                            │ │
+    │ │             &lt;string name="units" format="units-imperial"/&gt;                                              │ │
+    │ │         &lt;/object&gt;                                                                                       │ │
+    │ │     &lt;/list&gt;                                                                                             │ │
+    │ │     &lt;list name="instructions" description="What are the instructions for the recipe?"&gt;                  │ │
+    │ │         &lt;object&gt;                                                                                        │ │
+    │ │             &lt;integer name="index" format="1-indexed"/&gt;                                                  │ │
+    │ │             &lt;string name="step"/&gt;                                                                       │ │
+    │ │         &lt;/object&gt;                                                                                       │ │
+    │ │     &lt;/list&gt;                                                                                             │ │
+    │ │ &lt;/output&gt;                                                                                               │ │
+    │ │                                                                                                         │ │
+    │ │                                                                                                         │ │
+    │ │ ONLY return a valid JSON object (no other text is necessary), where the key of the field in JSON is the │ │
+    │ │ `name` attribute of the corresponding XML, and the value is of the type specified by the corresponding  │ │
+    │ │ XML's tag. The JSON MUST conform to the XML format, including any types and format requests e.g.        │ │
+    │ │ requests for lists, objects and specific types. Be correct and concise. If you are unsure anywhere,     │ │
+    │ │ enter `null`.                                                                                           │ │
+    │ │                                                                                                         │ │
+    │ │ Here are examples of simple (XML, JSON) pairs that show the expected behavior:                          │ │
+    │ │ - `&lt;string name='foo' format='two-words lower-case' /&gt;` =&gt; `{'foo': 'example one'}`                     │ │
+    │ │ - `&lt;list name='bar'&gt;&lt;string format='upper-case' /&gt;&lt;/list&gt;` =&gt; `{"bar": ['STRING ONE', 'STRING TWO',     │ │
+    │ │ etc.]}`                                                                                                 │ │
+    │ │ - `&lt;object name='baz'&gt;&lt;string name="foo" format="capitalize two-words" /&gt;&lt;integer name="index"          │ │
+    │ │ format="1-indexed" /&gt;&lt;/object&gt;` =&gt; `{'baz': {'foo': 'Some String', 'index': 1}}`                        │ │
+    │ │                                                                                                         │ │
+    │ │                                                                                                         │ │
+    │ │                                                                                                         │ │
+    │ │ Json Output:                                                                                            │ │
+    │ │                                                                                                         │ │
+    │ │                                                                                                         │ │
+    │ ╰─────────────────────────────────────────────────────────────────────────────────────────────────────────╯ │
+    │ ╭──────────────────────────────────────────── Message History ────────────────────────────────────────────╮ │
+    │ │ ┏━━━━━━┳━━━━━━━━━┓                                                                                      │ │
+    │ │ ┃<span style="font-weight: bold"> Role </span>┃<span style="font-weight: bold"> Content </span>┃                                                                                      │ │
+    │ │ ┡━━━━━━╇━━━━━━━━━┩                                                                                      │ │
+    │ │ └──────┴─────────┘                                                                                      │ │
+    │ ╰─────────────────────────────────────────────────────────────────────────────────────────────────────────╯ │
+    │ ╭──────────────────────────────────────────── Raw LLM Output ─────────────────────────────────────────────╮ │
+    │ │ {                                                                                                       │ │
+    │ │     "ingredients": [                                                                                    │ │
+    │ │         {                                                                                               │ │
+    │ │             "index": 1,                                                                                 │ │
+    │ │             "name": "macaroni",                                                                         │ │
+    │ │             "brand": null,                                                                              │ │
+    │ │             "optional": false,                                                                          │ │
+    │ │             "quantity": 8.0,                                                                            │ │
+    │ │             "units": "oz"                                                                               │ │
+    │ │         },                                                                                              │ │
+    │ │         {                                                                                               │ │
+    │ │             "index": 2,                                                                                 │ │
+    │ │             "name": "vegan butter",                                                                     │ │
+    │ │             "brand": "Earth Balance",                                                                   │ │
+    │ │             "optional": false,                                                                          │ │
+    │ │             "quantity": 2.0,                                                                            │ │
+    │ │             "units": "tbsp"                                                                             │ │
+    │ │         },                                                                                              │ │
+    │ │         {                                                                                               │ │
+    │ │             "index": 3,                                                                                 │ │
+    │ │             "name": "all-purpose flour",                                                                │ │
+    │ │             "brand": null,                                                                              │ │
+    │ │             "optional": false,                                                                          │ │
+    │ │             "quantity": 2.0,                                                                            │ │
+    │ │             "units": "tbsp"                                                                             │ │
+    │ │         },                                                                                              │ │
+    │ │         {                                                                                               │ │
+    │ │             "index": 4,                                                                                 │ │
+    │ │             "name": "vegan milk",                                                                       │ │
+    │ │             "brand": "Oatly",                                                                           │ │
+    │ │             "optional": false,                                                                          │ │
+    │ │             "quantity": 2.0,                                                                            │ │
+    │ │             "units": "cups"                                                                             │ │
+    │ │         },                                                                                              │ │
+    │ │         {                                                                                               │ │
+    │ │             "index": 5,                                                                                 │ │
+    │ │             "name": "vegan cheese",                                                                     │ │
+    │ │             "brand": "Daiya",                                                                           │ │
+    │ │             "optional": false,                                                                          │ │
+    │ │             "quantity": 1.0,                                                                            │ │
+    │ │             "units": "cup"                                                                              │ │
+    │ │         },                                                                                              │ │
+    │ │         {                                                                                               │ │
+    │ │             "index": 6,                                                                                 │ │
+    │ │             "name": "nutritional yeast",                                                                │ │
+    │ │             "brand": null,                                                                              │ │
+    │ │             "optional": false,                                                                          │ │
+    │ │             "quantity": 2.0,                                                                            │ │
+    │ │             "units": "tbsp"                                                                             │ │
+    │ │         },                                                                                              │ │
+    │ │         {                                                                                               │ │
+    │ │             "index": 7,                                                                                 │ │
+    │ │             "name": "garlic powder",                                                                    │ │
+    │ │             "brand": null,                                                                              │ │
+    │ │             "optional": false,                                                                          │ │
+    │ │             "quantity": 1.0,                                                                            │ │
+    │ │             "units": "tsp"                                                                              │ │
+    │ │         },                                                                                              │ │
+    │ │         {                                                                                               │ │
+    │ │             "index": 8,                                                                                 │ │
+    │ │             "name": "onion powder",                                                                     │ │
+    │ │             "brand": null,                                                                              │ │
+    │ │             "optional": false,                                                                          │ │
+    │ │             "quantity": 1.0,                                                                            │ │
+    │ │             "units": "tsp"                                                                              │ │
+    │ │         },                                                                                              │ │
+    │ │         {                                                                                               │ │
+    │ │             "index": 9,                                                                                 │ │
+    │ │             "name": "salt",                                                                             │ │
+    │ │             "brand": null,                                                                              │ │
+    │ │             "optional": false,                                                                          │ │
+    │ │             "quantity": 0.5,                                                                            │ │
+    │ │             "units": "tsp"                                                                              │ │
+    │ │         },                                                                                              │ │
+    │ │         {                                                                                               │ │
+    │ │             "index": 10,                                                                                │ │
+    │ │             "name": "black pepper",                                                                     │ │
+    │ │             "brand": null,                                                                              │ │
+    │ │             "optional": false,                                                                          │ │
+    │ │             "quantity": 0.5,                                                                            │ │
+    │ │             "units": "tsp"                                                                              │ │
+    │ │         }                                                                                               │ │
+    │ │     ],                                                                                                  │ │
+    │ │     "instructions": [                                                                                   │ │
+    │ │         {                                                                                               │ │
+    │ │             "index": 1,                                                                                 │ │
+    │ │             "step": "Bring a large pot of salted water to a boil. Add the macaroni and cook according   │ │
+    │ │ to package instructions."                                                                               │ │
+    │ │         },                                                                                              │ │
+    │ │         {                                                                                               │ │
+    │ │             "index": 2,                                                                                 │ │
+    │ │             "step": "Meanwhile, melt the vegan butter in a medium saucepan over medium heat. Add the    │ │
+    │ │ flour and whisk until combined. Cook for 1 minute, stirring constantly."                                │ │
+    │ │         },                                                                                              │ │
+    │ │         {                                                                                               │ │
+    │ │             "index": 3,                                                                                 │ │
+    │ │             "step": "Slowly add the vegan milk, whisking constantly until the mixture is smooth. Cook   │ │
+    │ │ for 3-4 minutes, stirring constantly, until the mixture is thickened."                                  │ │
+    │ │         },                                                                                              │ │
+    │ │         {                                                                                               │ │
+    │ │             "index": 4,                                                                                 │ │
+    │ │             "step": "Add the vegan cheese, nutritional yeast, garlic powder, onion powder, salt, and    │ │
+    │ │ pepper. Stir until the cheese is melted and the sauce is smooth."                                       │ │
+    │ │         },                                                                                              │ │
+    │ │         {                                                                                               │ │
+    │ │             "index": 5,                                                                                 │ │
+    │ │             "step": "Drain the macaroni and add it to the cheese sauce. Stir until the macaroni is      │ │
+    │ │ evenly coated."                                                                                         │ │
+    │ │         },                                                                                              │ │
+    │ │         {                                                                                               │ │
+    │ │             "index": 6,                                                                                 │ │
+    │ │             "step": "Serve the vegan mac and cheese warm."                                              │ │
+    │ │         }                                                                                               │ │
+    │ │     ]                                                                                                   │ │
+    │ │ }                                                                                                       │ │
+    │ ╰─────────────────────────────────────────────────────────────────────────────────────────────────────────╯ │
+    │ ╭─────────────────────────────────────────── Validated Output ────────────────────────────────────────────╮ │
+    │ │ {                                                                                                       │ │
+    │ │     'ingredients': [                                                                                    │ │
+    │ │         {                                                                                               │ │
+    │ │             'index': 1,                                                                                 │ │
+    │ │             'name': 'macaroni',                                                                         │ │
+    │ │             'brand': None,                                                                              │ │
+    │ │             'optional': False,                                                                          │ │
+    │ │             'quantity': 8.0,                                                                            │ │
+    │ │             'units': 'oz'                                                                               │ │
+    │ │         },                                                                                              │ │
+    │ │         {                                                                                               │ │
+    │ │             'index': 2,                                                                                 │ │
+    │ │             'name': 'vegan butter',                                                                     │ │
+    │ │             'brand': 'Earth Balance',                                                                   │ │
+    │ │             'optional': False,                                                                          │ │
+    │ │             'quantity': 2.0,                                                                            │ │
+    │ │             'units': 'tbsp'                                                                             │ │
+    │ │         },                                                                                              │ │
+    │ │         {                                                                                               │ │
+    │ │             'index': 3,                                                                                 │ │
+    │ │             'name': 'all-purpose flour',                                                                │ │
+    │ │             'brand': None,                                                                              │ │
+    │ │             'optional': False,                                                                          │ │
+    │ │             'quantity': 2.0,                                                                            │ │
+    │ │             'units': 'tbsp'                                                                             │ │
+    │ │         },                                                                                              │ │
+    │ │         {                                                                                               │ │
+    │ │             'index': 4,                                                                                 │ │
+    │ │             'name': 'vegan milk',                                                                       │ │
+    │ │             'brand': 'Oatly',                                                                           │ │
+    │ │             'optional': False,                                                                          │ │
+    │ │             'quantity': 2.0,                                                                            │ │
+    │ │             'units': 'cups'                                                                             │ │
+    │ │         },                                                                                              │ │
+    │ │         {                                                                                               │ │
+    │ │             'index': 5,                                                                                 │ │
+    │ │             'name': 'vegan cheese',                                                                     │ │
+    │ │             'brand': 'Daiya',                                                                           │ │
+    │ │             'optional': False,                                                                          │ │
+    │ │             'quantity': 1.0,                                                                            │ │
+    │ │             'units': 'cup'                                                                              │ │
+    │ │         },                                                                                              │ │
+    │ │         {                                                                                               │ │
+    │ │             'index': 6,                                                                                 │ │
+    │ │             'name': 'nutritional yeast',                                                                │ │
+    │ │             'brand': None,                                                                              │ │
+    │ │             'optional': False,                                                                          │ │
+    │ │             'quantity': 2.0,                                                                            │ │
+    │ │             'units': 'tbsp'                                                                             │ │
+    │ │         },                                                                                              │ │
+    │ │         {                                                                                               │ │
+    │ │             'index': 7,                                                                                 │ │
+    │ │             'name': 'garlic powder',                                                                    │ │
+    │ │             'brand': None,                                                                              │ │
+    │ │             'optional': False,                                                                          │ │
+    │ │             'quantity': 1.0,                                                                            │ │
+    │ │             'units': 'tsp'                                                                              │ │
+    │ │         },                                                                                              │ │
+    │ │         {                                                                                               │ │
+    │ │             'index': 8,                                                                                 │ │
+    │ │             'name': 'onion powder',                                                                     │ │
+    │ │             'brand': None,                                                                              │ │
+    │ │             'optional': False,                                                                          │ │
+    │ │             'quantity': 1.0,                                                                            │ │
+    │ │             'units': 'tsp'                                                                              │ │
+    │ │         },                                                                                              │ │
+    │ │         {                                                                                               │ │
+    │ │             'index': 9,                                                                                 │ │
+    │ │             'name': 'salt',                                                                             │ │
+    │ │             'brand': None,                                                                              │ │
+    │ │             'optional': False,                                                                          │ │
+    │ │             'quantity': 0.5,                                                                            │ │
+    │ │             'units': 'tsp'                                                                              │ │
+    │ │         },                                                                                              │ │
+    │ │         {                                                                                               │ │
+    │ │             'index': 10,                                                                                │ │
+    │ │             'name': 'black pepper',                                                                     │ │
+    │ │             'brand': None,                                                                              │ │
+    │ │             'optional': False,                                                                          │ │
+    │ │             'quantity': 0.5,                                                                            │ │
+    │ │             'units': 'tsp'                                                                              │ │
+    │ │         }                                                                                               │ │
+    │ │     ],                                                                                                  │ │
+    │ │     'instructions': [                                                                                   │ │
+    │ │         {                                                                                               │ │
+    │ │             'index': 1,                                                                                 │ │
+    │ │             'step': 'Bring a large pot of salted water to a boil. Add the macaroni and cook according   │ │
+    │ │ to package instructions.'                                                                               │ │
+    │ │         },                                                                                              │ │
+    │ │         {                                                                                               │ │
+    │ │             'index': 2,                                                                                 │ │
+    │ │             'step': 'Meanwhile, melt the vegan butter in a medium saucepan over medium heat. Add the    │ │
+    │ │ flour and whisk until combined. Cook for 1 minute, stirring constantly.'                                │ │
+    │ │         },                                                                                              │ │
+    │ │         {                                                                                               │ │
+    │ │             'index': 3,                                                                                 │ │
+    │ │             'step': 'Slowly add the vegan milk, whisking constantly until the mixture is smooth. Cook   │ │
+    │ │ for 3-4 minutes, stirring constantly, until the mixture is thickened.'                                  │ │
+    │ │         },                                                                                              │ │
+    │ │         {                                                                                               │ │
+    │ │             'index': 4,                                                                                 │ │
+    │ │             'step': 'Add the vegan cheese, nutritional yeast, garlic powder, onion powder, salt, and    │ │
+    │ │ pepper. Stir until the cheese is melted and the sauce is smooth.'                                       │ │
+    │ │         },                                                                                              │ │
+    │ │         {                                                                                               │ │
+    │ │             'index': 5,                                                                                 │ │
+    │ │             'step': 'Drain the macaroni and add it to the cheese sauce. Stir until the macaroni is      │ │
+    │ │ evenly coated.'                                                                                         │ │
+    │ │         },                                                                                              │ │
+    │ │         {'index': 6, 'step': 'Serve the vegan mac and cheese warm.'}                                    │ │
+    │ │     ]                                                                                                   │ │
+    │ │ }                                                                                                       │ │
+    │ ╰─────────────────────────────────────────────────────────────────────────────────────────────────────────╯ │
+    ╰─────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+</pre>

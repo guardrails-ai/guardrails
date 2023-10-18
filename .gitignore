@@ -23,4 +23,5 @@ scratch/
 test.db
 test.index
 htmlcov
-docs/pydocs/build
+node_modules
+.docusaurus
