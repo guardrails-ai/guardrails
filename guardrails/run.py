@@ -122,7 +122,7 @@ class Runner:
 
         # check if validator requirements are fulfilled
         missing_keys = verify_metadata_requirements(
-            self.metadata, self.output_schema.to_dict().values()
+            self.metadata, self.output_schema.root_datatype
         )
         if missing_keys:
             raise ValueError(
@@ -517,7 +517,7 @@ class AsyncRunner(Runner):
 
         # check if validator requirements are fulfilled
         missing_keys = verify_metadata_requirements(
-            self.metadata, self.output_schema.to_dict().values()
+            self.metadata, self.output_schema.root_datatype
         )
         if missing_keys:
             raise ValueError(

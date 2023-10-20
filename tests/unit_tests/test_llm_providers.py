@@ -3,6 +3,7 @@ from typing import Any, Callable
 from unittest.mock import MagicMock
 
 import pytest
+from pydantic import BaseModel
 
 from guardrails.llm_providers import (
     ArbitraryCallable,
@@ -189,6 +190,47 @@ async def test_async_openai_chat_callable(mocker, openai_chat_mock):
 
     openai_chat_callable = AsyncOpenAIChatCallable()
     response = await openai_chat_callable(text="Hello")
+
+    assert isinstance(response, LLMResponse) is True
+    assert response.output == "Mocked LLM output"
+    assert response.prompt_token_count == 10
+    assert response.response_token_count == 20
+
+
+def test_openai_chat_model_callable(mocker, openai_chat_mock):
+    mocker.patch("openai.ChatCompletion.create", return_value=openai_chat_mock)
+
+    from guardrails.llm_providers import OpenAIChatCallable
+
+    class MyModel(BaseModel):
+        a: str
+
+    openai_chat_model_callable = OpenAIChatCallable()
+    response = openai_chat_model_callable(
+        text="Hello",
+        base_model=MyModel,
+    )
+
+    assert isinstance(response, LLMResponse) is True
+    assert response.output == "Mocked LLM output"
+    assert response.prompt_token_count == 10
+    assert response.response_token_count == 20
+
+
+@pytest.mark.asyncio
+async def test_async_openai_chat_model_callable(mocker, openai_chat_mock):
+    mocker.patch("openai.ChatCompletion.acreate", return_value=openai_chat_mock)
+
+    from guardrails.llm_providers import AsyncOpenAIChatCallable
+
+    class MyModel(BaseModel):
+        a: str
+
+    openai_chat_model_callable = AsyncOpenAIChatCallable()
+    response = await openai_chat_model_callable(
+        text="Hello",
+        base_model=MyModel,
+    )
 
     assert isinstance(response, LLMResponse) is True
     assert response.output == "Mocked LLM output"

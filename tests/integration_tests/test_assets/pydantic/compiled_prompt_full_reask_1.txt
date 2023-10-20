@@ -1,0 +1,44 @@
+
+I was given the following JSON response, which had problems due to incorrect values.
+
+{
+  "people": [
+    {
+      "name": "John Doe",
+      "age": 28,
+      "zip_code": {
+        "incorrect_value": "90210",
+        "error_messages": [
+          "Zip code must not be Beverly Hills."
+        ]
+      }
+    },
+    {
+      "name": "Jane Doe",
+      "age": 32,
+      "zip_code": "94103"
+    },
+    {
+      "name": "James Smith",
+      "age": 40,
+      "zip_code": "92101"
+    }
+  ]
+}
+
+Help me correct the incorrect values based on the given error messages.
+
+Given below is XML that describes the information to extract from this document and the tags to extract it into.
+
+<output>
+    <list name="people">
+        <object>
+            <string name="name"/>
+            <integer name="age" format="age_must_be_between_0_and_150"/>
+            <string name="zip_code" format="zip_code_must_be_numeric; zip_code_in_california"/>
+        </object>
+    </list>
+</output>
+
+
+ONLY return a valid JSON object (no other text is necessary), where the key of the field in JSON is the `name` attribute of the corresponding XML, and the value is of the type specified by the corresponding XML's tag. The JSON MUST conform to the XML format, including any types and format requests e.g. requests for lists, objects and specific types. Be correct and concise. If you are unsure anywhere, enter `null`.
