@@ -53,7 +53,7 @@ class DocumentStoreBase(ABC):
     """
 
     @abstractmethod
-    def add_document(self, document: Document):
+    def add_document(self, document: Document) -> None:
         """Adds a document to the store.
 
         Args:
