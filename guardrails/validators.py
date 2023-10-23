@@ -2446,8 +2446,33 @@ class SimilarToList(Validator):
 
 @register_validator(name="detect-secrets", data_type="string")
 class DetectSecrets(Validator):
-    """Validates that the generated code snippet does not contain any
-    secrets."""
+    """Validates whether the generated code snippet contains any secrets.
+
+    **Key Properties**
+    | Property                      | Description                       |
+    | ----------------------------- | --------------------------------- |
+    | Name for `format` attribute   | `detect-secrets`                  |
+    | Supported data types          | `string`                          |
+    | Programmatic fix              | None                              |
+
+    Parameters: Arguments
+        None
+
+    This validator uses the detect-secrets library to check whether the generated code
+    snippet contains any secrets. If any secrets are detected, the validator fails and
+    returns the generated code snippet with the secrets replaced with asterisks.
+    Else the validator returns the generated code snippet.
+
+    Example:
+        ```py
+
+        guard = Guard.from_string(validators=[
+            DetectSecrets(on_fail="fix")
+        ])
+        guard.parse(
+            llm_output=code_snippet,
+        )
+    """
 
     def __init__(self, on_fail: Union[Callable[..., Any], None] = None, **kwargs):
         super().__init__(on_fail, **kwargs)
@@ -2461,7 +2486,7 @@ class DetectSecrets(Validator):
         self.temp_file_name = "temp.txt"
         self.mask = "********"
 
-    def get_unique_secrets(self, value: str) -> Dict[str, Any]:
+    def get_unique_secrets(self, value: str) -> Tuple[Dict[str, Any], List[str]]:
         """Get unique secrets from the value.
 
         Args:
@@ -2470,6 +2495,7 @@ class DetectSecrets(Validator):
         Returns:
             unique_secrets (Dict[str, Any]): A dictionary of unique secrets and their
                 line numbers.
+            lines (List[str]): The lines of the generated code snippet.
         """
         # Write each line of value to a new file
         with open(self.temp_file_name, "w") as f:
@@ -2530,6 +2556,10 @@ class DetectSecrets(Validator):
         return modified_value
 
     def validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
+        # Check if value is a multiline string
+        if "\n" not in value:
+            raise ValueError("You must provide a multiline code snippet.")
+
         # Get unique secrets from the value
         unique_secrets, lines = self.get_unique_secrets(value)
 
