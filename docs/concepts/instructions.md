@@ -2,9 +2,9 @@
 
 The `<instructions></instructions>` element contains the high level instructions sent to the LLM (e.g. the system message for chat models).
 
-## 📚 Components of a Prompt
+## 📚 Components of an Instructions Element
 
-In addition to the high level task description, the prompt also contains the following:
+In addition to the high level task description, the instructions element also contains the following:
 
 | Component         | Syntax                   | Description                                                                                                                                                                                                                                                                                                                             |
 |-------------------|--------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -14,17 +14,17 @@ In addition to the high level task description, the prompt also contains the fol
 
 ```xml
 <rail version="0.1">
-<prompt>
+<instructions>
 <!-- (1)! -->
 You are a helpful assistant only capable of communicating with valid JSON, and no other text.
 
 ${gr.json_suffix_prompt_examples}  <!-- (2)! -->
-</prompt>
+</instructions>
 </rail>
 ```
 
 
-1. The prompt contains high level task information.
+1. The instructions element contains high level task information.
 2. `${gr.json_suffix_prompt_examples}` is a prompt primitive provided by guardrails. It is equivalent to typing the following lines in the prompt: `Given below is XML that describes the information to extract from this document and the tags to extract it into.`
 
 ```
