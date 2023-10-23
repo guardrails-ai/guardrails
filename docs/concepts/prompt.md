@@ -1,8 +1,8 @@
 # `Prompt` Element
 
-The `<prompt></prompt>` element contains the high level instructions sent to the LLM, that describe the high level task.
+The `<prompt></prompt>` element contains the query that describes the high level task.
 
-## 📚 Components of a Prompt
+## 📚 Components of a Prompt Element
 
 In addition to the high level task description, the prompt also contains the following:
 
