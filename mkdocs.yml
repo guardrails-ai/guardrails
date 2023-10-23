@@ -28,6 +28,7 @@ nav:
     - 'Prompt Element': concepts/prompt.md
     - 'Instruction Element': concepts/instructions.md
     - 'Logs': concepts/logs.md
+    - 'Environment Variables': concepts/envars.md
   - 'API Reference':
     - 'Guard': api_reference/guard.md
     - 'Rail': api_reference/rail.md
