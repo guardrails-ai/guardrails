@@ -36,6 +36,11 @@ else:
     _HAS_NUMPY = True
 
 try:
+    import detect_secrets
+except ImportError:
+    detect_secrets = None
+
+try:
     import nltk
 except ImportError:
     nltk = None
@@ -2437,3 +2442,106 @@ class SimilarToList(Validator):
                     ),
                 )
             return PassResult()
+
+
+@register_validator(name="detect-secrets", data_type="string")
+class DetectSecrets(Validator):
+    """Validates that the generated code snippet does not contain any
+    secrets."""
+
+    def __init__(self, on_fail: Union[Callable[..., Any], None] = None, **kwargs):
+        super().__init__(on_fail, **kwargs)
+
+        # Check if detect-secrets is installed
+        if detect_secrets is None:
+            raise ValueError(
+                "You must install detect-secrets in order to "
+                "use the DetectSecrets validator."
+            )
+        self.temp_file_name = "temp.txt"
+        self.mask = "********"
+
+    def get_unique_secrets(self, value: str) -> Dict[str, Any]:
+        """Get unique secrets from the value.
+
+        Args:
+            value (str): The generated code snippet.
+
+        Returns:
+            unique_secrets (Dict[str, Any]): A dictionary of unique secrets and their
+                line numbers.
+        """
+        # Write each line of value to a new file
+        with open(self.temp_file_name, "w") as f:
+            f.writelines(value)
+
+        # Create a new secrets collection
+        secrets = detect_secrets.SecretsCollection()
+
+        # Scan the file for secrets
+        with detect_secrets.settings.default_settings():
+            secrets.scan_file(self.temp_file_name)
+
+        # Get unique secrets from these secrets
+        unique_secrets = {}
+        for secret in secrets:
+            _, potential_secret = secret
+            actual_secret = potential_secret.secret_value
+            line_number = potential_secret.line_number
+            if actual_secret not in unique_secrets:
+                unique_secrets[actual_secret] = [line_number]
+            else:
+                # if secret already exists, avoid duplicate line numbers
+                if line_number not in unique_secrets[actual_secret]:
+                    unique_secrets[actual_secret].append(line_number)
+
+        # File no longer needed, read the lines from the file
+        with open(self.temp_file_name, "r") as f:
+            lines = f.readlines()
+
+        # Delete the file
+        os.remove(self.temp_file_name)
+
+        return unique_secrets, lines
+
+    def get_modified_value(
+        self, unique_secrets: Dict[str, Any], lines: List[str]
+    ) -> str:
+        """Replace the secrets on the lines with asterisks.
+
+        Args:
+            unique_secrets (Dict[str, Any]): A dictionary of unique secrets and their
+                line numbers.
+            lines (List[str]): The lines of the generated code snippet.
+
+        Returns:
+            modified_value (str): The generated code snippet with secrets replaced with
+                asterisks.
+        """
+        # Replace the secrets on the lines with asterisks
+        for secret, line_numbers in unique_secrets.items():
+            for line_number in line_numbers:
+                lines[line_number - 1] = lines[line_number - 1].replace(
+                    secret, self.mask
+                )
+
+        # Convert lines to a multiline string
+        modified_value = "".join(lines)
+        return modified_value
+
+    def validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
+        # Get unique secrets from the value
+        unique_secrets, lines = self.get_unique_secrets(value)
+
+        if unique_secrets:
+            # Replace the secrets on the lines with asterisks
+            modified_value = self.get_modified_value(unique_secrets, lines)
+
+            return FailResult(
+                error_message=(
+                    "The following secrets were detected in your response:\n"
+                    + "\n".join(unique_secrets.keys())
+                ),
+                fix_value=modified_value,
+            )
+        return PassResult()
