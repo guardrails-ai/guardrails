@@ -54,6 +54,8 @@ VECTORDB_REQUIREMENTS = ["faiss-cpu", "numpy", "tiktoken"]
 
 PROFANITY_REQUIREMENTS = ["alt-profanity-check"]
 
+DETECT_SECRETS_REQUIREMENTS = ["detect-secrets"]
+
 DEV_REQUIREMENTS = [
     "black==22.12.0",
     "isort>=5.12.0",
@@ -71,6 +73,7 @@ DEV_REQUIREMENTS = [
     *PROFANITY_REQUIREMENTS,
     *SQL_REQUIREMENTS,
     *VECTORDB_REQUIREMENTS,
+    *DETECT_SECRETS_REQUIREMENTS,
 ] + DOCS_REQUIREMENTS
 
 MANIFEST_REQUIREMENTS = ["manifest-ml"]
