@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Tuple
 from guardrails.datatypes import FieldValidation
 from guardrails.utils.logs_utils import FieldValidationLogs, ValidatorLogs
 from guardrails.utils.reask_utils import FieldReAsk, ReAsk
+from guardrails.utils.safe_get import safe_get
 from guardrails.validators import (
     FailResult,
     Filter,
@@ -125,7 +126,7 @@ class SequentialValidatorService(ValidatorServiceBase):
 
     def validate_dependents(self, value, metadata, validator_setup, validation_logs):
         for child_setup in validator_setup.children:
-            child_schema = value[child_setup.key]
+            child_schema = safe_get(value, child_setup.key)
             child_validation_logs = FieldValidationLogs()
             validation_logs.children[child_setup.key] = child_validation_logs
             child_schema, metadata = self.validate(
