@@ -24,6 +24,11 @@ from guardrails.formatattr import FormatAttr
 from guardrails.validator_base import Validator
 
 
+class ArbitraryModel(BaseModel):
+    class Config:
+        arbitrary_types_allowed = True
+
+
 def is_pydantic_base_model(type_annotation: Any) -> bool:
     """Check if a type_annotation is a Pydantic BaseModel."""
     try:
