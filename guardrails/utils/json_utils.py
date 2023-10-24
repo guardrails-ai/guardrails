@@ -1,4 +1,6 @@
 import json
+import logging
+import warnings
 from dataclasses import dataclass
 from typing import Any, Dict, Optional, Tuple, Type, Union
 
@@ -16,6 +18,8 @@ from guardrails.datatypes import (
 from guardrails.datatypes import List as ListDataType
 from guardrails.datatypes import Object, PythonCode, String, Time
 from guardrails.utils.parsing_utils import get_code_block, has_code_block
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -49,6 +53,8 @@ ignore_types = [
     URL,
     PythonCode,
 ]
+# TODO - deprecate these altogether
+deprecated_string_types = {"sql", "email", "url", "pythoncode"}
 
 
 @dataclass
@@ -84,6 +90,11 @@ class ValuePlaceholder(Placeholder):
         if not isinstance(json_value, expected_type):
             if not coerce_types:
                 return self.VerificationFailed
+
+            # don't coerce lists or objects to strings
+            if isinstance(json_value, (list, dict)) and expected_type == str:
+                return self.VerificationFailed
+
             try:
                 return expected_type(json_value)
             except (ValueError, TypeError):
@@ -289,10 +300,21 @@ def generate_type_skeleton_from_schema(schema: Object) -> Placeholder:
                 optional=schema.optional,
                 discriminator=schema.discriminator_key,
             )
-        return ValuePlaceholder(
-            datatype_type=type(schema),
-            optional=schema.optional,
-        )
+        else:
+            type_string = schema.tag
+            if schema.tag in deprecated_string_types:
+                warnings.warn(
+                    f"""The '{schema.tag}' type is deprecated. Use the \
+string type instead. Support for this type will \
+be dropped in version 0.3.0 and beyond.""",
+                    DeprecationWarning,
+                )
+                type_string = "string"
+
+            return ValuePlaceholder(
+                type_string=type_string,
+                optional=schema.optional,
+            )
 
     return _recurse_schema(schema)
 

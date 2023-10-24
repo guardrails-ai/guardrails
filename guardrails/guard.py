@@ -503,8 +503,9 @@ class Guard:
             full_schema_reask: When reasking, whether to regenerate the full schema
                                or just the incorrect values.
 
-        Returns:
-            The validated response.
+                Returns:
+                    The validated response. This is either a string or a dictionary, \
+        determined by the object schema defined in the RAILspec.
         """
         final_num_reasks = (
             num_reasks if num_reasks is not None else 0 if llm_api is None else None

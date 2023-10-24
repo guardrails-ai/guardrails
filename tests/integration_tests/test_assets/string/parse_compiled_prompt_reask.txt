@@ -1,0 +1,15 @@
+This was a previous response you generated:
+
+======
+Tomato Cheese Pizza
+======
+
+Generate a new response that corrects your old response such that the following issues are fixed
+- Value Tomato Cheese Pizza should fail.
+
+Here's a description of what I want you to generate: Some description
+
+Your generated response should satisfy the following properties:
+- always_fail
+
+Don't talk; just go.
