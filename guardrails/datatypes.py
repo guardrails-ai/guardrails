@@ -9,7 +9,6 @@ from typing import Optional, Sequence, Type, TypeVar, Union
 
 from dateutil.parser import parse
 from lxml import etree as ET
-from pydantic.fields import ModelField
 from typing_extensions import Self
 
 from guardrails.formatattr import FormatAttr
@@ -136,28 +135,6 @@ class DataType:
 
         data_type = cls({}, format_attr, is_optional, name, description, **kwargs)
         data_type.set_children_from_xml(element)
-        return data_type
-
-    @classmethod
-    def from_pydantic_field(
-        cls,
-        field: ModelField,
-        children: Optional[Dict[str, "DataType"]] = None,
-        strict: bool = False,
-        **kwargs,
-    ) -> Self:
-        if children is None:
-            children = {}
-
-        validators = field.field_info.extra.get("validators", [])
-        format_attr = FormatAttr.from_validators(validators, cls.tag, strict)
-
-        is_optional = field.required is False
-
-        name = field.name
-        description = field.field_info.description
-
-        data_type = cls(children, format_attr, is_optional, name, description, **kwargs)
         return data_type
 
     @property
