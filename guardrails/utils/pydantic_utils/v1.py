@@ -1,13 +1,10 @@
 """Utilities for working with Pydantic models."""
-import logging
 import typing
 import warnings
 from copy import deepcopy
 from datetime import date, time
 from typing import Any, Callable, Dict, Optional, Type, Union, get_args, get_origin
 
-from griffe.dataclasses import Docstring
-from griffe.docstrings.parsers import Parser, parse
 from pydantic import BaseModel, validator
 from pydantic.fields import ModelField
 
@@ -25,42 +22,6 @@ from guardrails.datatypes import String as StringDataType
 from guardrails.datatypes import Time as TimeDataType
 from guardrails.formatattr import FormatAttr
 from guardrails.validator_base import Validator
-
-griffe_docstrings_google_logger = logging.getLogger("griffe.docstrings.google")
-griffe_agents_nodes_logger = logging.getLogger("griffe.agents.nodes")
-
-
-def get_field_descriptions(model: "BaseModel") -> Dict[str, str]:
-    """Get the descriptions of the fields in a Pydantic model using the
-    docstring."""
-    griffe_docstrings_google_logger.disabled = True
-    griffe_agents_nodes_logger.disabled = True
-    try:
-        docstring = Docstring(model.__doc__, lineno=1)  # type: ignore
-    except AttributeError:
-        return {}
-    parsed = parse(docstring, Parser.google)
-    griffe_docstrings_google_logger.disabled = False
-    griffe_agents_nodes_logger.disabled = False
-
-    # TODO: change parsed[1] to an isinstance check for the args section
-    return {
-        field.name: field.description.replace("\n", " ")
-        for field in parsed[1].as_dict()["value"]
-    }
-
-
-PYDANTIC_SCHEMA_TYPE_MAP = {
-    "string": "string",
-    "number": "float",
-    "integer": "integer",
-    "boolean": "bool",
-    "object": "object",
-    "array": "list",
-}
-
-pydantic_validators = {}
-pydantic_models = {}
 
 
 def is_pydantic_base_model(type_annotation: Any) -> bool:
