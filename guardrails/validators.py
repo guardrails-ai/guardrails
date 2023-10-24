@@ -2555,7 +2555,7 @@ class DetectSecrets(Validator):
         modified_value = "".join(lines)
         return modified_value
 
-    def validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
+    def validate(self, value: str, metadata: Dict[str, Any]) -> ValidationResult:
         # Check if value is a multiline string
         if "\n" not in value:
             raise ValueError("You must provide a multiline code snippet.")
