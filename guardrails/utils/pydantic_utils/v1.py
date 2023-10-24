@@ -311,19 +311,26 @@ def convert_pydantic_model_to_datatype(
             inner_type = get_args(type_annotation)
             if len(inner_type) == 0:
                 # If the list is empty, we cannot infer the type of the elements
-                children[field_name] = ListDataType.from_pydantic_field(
-                    field, strict=strict
+                children[field_name] = datatype_to_pydantic_field(
+                    ListDataType,
+                    field,
+                    strict=strict,
                 )
             inner_type = inner_type[0]
             if is_pydantic_base_model(inner_type):
                 child = convert_pydantic_model_to_datatype(inner_type)
             else:
                 inner_target_datatype = field_to_datatype(inner_type)
-                child = inner_target_datatype.from_pydantic_field(
-                    inner_type, strict=strict
+                child = datatype_to_pydantic_field(
+                    inner_target_datatype,
+                    inner_type,
+                    strict=strict,
                 )
-            children[field_name] = ListDataType.from_pydantic_field(
-                field, children={"item": child}, strict=strict
+            children[field_name] = datatype_to_pydantic_field(
+                ListDataType,
+                field,
+                children={"item": child},
+                strict=strict,
             )
         elif target_datatype == ChoiceDataType:
             discriminator = field.discriminator_key or "discriminator"
@@ -342,7 +349,8 @@ def convert_pydantic_model_to_datatype(
                     strict=strict,
                     excluded_fields=[discriminator],
                 )
-            children[field_name] = Choice.from_pydantic_field(
+            children[field_name] = datatype_to_pydantic_field(
+                Choice,
                 field,
                 children=choice_children,
                 strict=strict,
@@ -353,12 +361,15 @@ def convert_pydantic_model_to_datatype(
                 field, datatype=target_datatype, strict=strict
             )
         else:
-            children[field_name] = target_datatype.from_pydantic_field(
-                field, strict=strict
+            children[field_name] = datatype_to_pydantic_field(
+                target_datatype,
+                field,
+                strict=strict,
             )
 
     if isinstance(model_field, ModelField):
-        return datatype.from_pydantic_field(
+        return datatype_to_pydantic_field(
+            datatype,
             model_field,
             children=children,
             strict=strict,
@@ -372,3 +383,27 @@ def convert_pydantic_model_to_datatype(
             name=name,
             description=None,
         )
+
+
+def datatype_to_pydantic_field(
+    datatype: Type[T],
+    field: ModelField,
+    children: Optional[Dict[str, "DataType"]] = None,
+    strict: bool = False,
+    **kwargs,
+) -> T:
+    if children is None:
+        children = {}
+
+    validators = field.field_info.extra.get("validators", [])
+    format_attr = FormatAttr.from_validators(validators, datatype.tag, strict)
+
+    is_optional = field.required is False
+
+    name = field.name
+    description = field.field_info.description
+
+    data_type = datatype(
+        children, format_attr, is_optional, name, description, **kwargs
+    )
+    return data_type
