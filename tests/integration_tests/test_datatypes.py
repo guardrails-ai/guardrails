@@ -3,13 +3,20 @@ import pytest
 from guardrails.guard import Guard
 
 
-def test_passed_date_format():
-    rail_spec = """
+@pytest.mark.parametrize(
+    "date_format,date_string",
+    [
+        ("%Y-%m-%d", "2021-01-01"),  # standard date
+        ("%Y-%m-%dT%H:%M:%S%z", "2021-01-01T11:10:00+01:00")  # Cohere-style
+    ],
+)
+def test_passed_date_format(date_format, date_string):
+    rail_spec = f"""
 <rail version="0.1">
 
 <output>
     <string name="name"/>
-    <date name="dob" date-format="%Y-%m-%d"/>
+    <date name="dob" date-format="{date_format}"/>
 </output>
 
 
@@ -19,9 +26,11 @@ Dummy prompt.
 
 </rail>
 """
-
     guard = Guard.from_rail_string(rail_spec)
-    guard.parse(llm_output='{"name": "John Doe", "dob": "2021-01-01"}', num_reasks=0)
+    guard.parse(
+        llm_output='{"name": "John Doe", "dob": "' + date_string + '"}',
+        num_reasks=0
+    )
 
 
 @pytest.mark.parametrize(
