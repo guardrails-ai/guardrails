@@ -46,7 +46,7 @@ class Rail:
     ):
         input_schema = None
 
-        output_schema = cls.load_string_schema_from_pydantic(
+        output_schema = cls.load_json_schema_from_pydantic(
             output_class,
             reask_prompt_template=reask_prompt,
             reask_instructions_template=reask_instructions,
@@ -206,7 +206,7 @@ class Rail:
         )
 
     @staticmethod
-    def load_string_schema_from_pydantic(
+    def load_json_schema_from_pydantic(
         output_class: Type[BaseModel],
         reask_prompt_template: Optional[str] = None,
         reask_instructions_template: Optional[str] = None,
