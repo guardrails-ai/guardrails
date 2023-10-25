@@ -12,7 +12,6 @@ from lxml import etree as ET
 from typing_extensions import Self
 
 from guardrails.utils.casting_utils import to_float, to_int, to_string
-from guardrails.utils.json_utils import deprecated_string_types
 from guardrails.utils.xml_utils import cast_xml_to_string
 from guardrails.validator_base import Validator
 
@@ -20,6 +19,10 @@ if TYPE_CHECKING:
     from guardrails.schema import FormatAttr
 
 logger = logging.getLogger(__name__)
+
+
+# TODO - deprecate these altogether
+deprecated_string_types = {"sql", "email", "url", "pythoncode"}
 
 
 def update_deprecated_type_to_string(type):

@@ -16,7 +16,13 @@ from guardrails.datatypes import (
     Integer,
 )
 from guardrails.datatypes import List as ListDataType
-from guardrails.datatypes import Object, PythonCode, String, Time
+from guardrails.datatypes import (
+    Object,
+    PythonCode,
+    String,
+    Time,
+    deprecated_string_types,
+)
 from guardrails.utils.parsing_utils import get_code_block, has_code_block
 
 logger = logging.getLogger(__name__)
@@ -53,8 +59,6 @@ ignore_types = [
     URL,
     PythonCode,
 ]
-# TODO - deprecate these altogether
-deprecated_string_types = {"sql", "email", "url", "pythoncode"}
 
 
 @dataclass
@@ -301,18 +305,18 @@ def generate_type_skeleton_from_schema(schema: Object) -> Placeholder:
                 discriminator=schema.discriminator_key,
             )
         else:
-            type_string = schema.tag
+            datatype_type = type(schema)
             if schema.tag in deprecated_string_types:
+                datatype_type = str
                 warnings.warn(
                     f"""The '{schema.tag}' type is deprecated. Use the \
 string type instead. Support for this type will \
 be dropped in version 0.3.0 and beyond.""",
                     DeprecationWarning,
                 )
-                type_string = "string"
 
             return ValuePlaceholder(
-                type_string=type_string,
+                datatype_type=datatype_type,
                 optional=schema.optional,
             )
 
