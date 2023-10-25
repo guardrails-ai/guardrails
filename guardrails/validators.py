@@ -2591,9 +2591,9 @@ class DetectSecrets(Validator):
         if "\n" not in value:
             # Raise warning if value is not a multiline string
             warnings.warn(
-                "You must provide a multiline code snippet in order to "
-                "use the DetectSecrets validator. "
-                "Refer documentation for more details."
+                "The DetectSecrets validator works best with "
+                "multiline code snippets. "
+                "Refer validator docs for more details."
             )
 
             # Add a newline to value
