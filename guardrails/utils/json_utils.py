@@ -307,7 +307,7 @@ def generate_type_skeleton_from_schema(schema: Object) -> Placeholder:
         else:
             datatype_type = type(schema)
             if schema.tag in deprecated_string_types:
-                datatype_type = str
+                datatype_type = String
                 warnings.warn(
                     f"""The '{schema.tag}' type is deprecated. Use the \
 string type instead. Support for this type will \
