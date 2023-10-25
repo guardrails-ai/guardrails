@@ -340,21 +340,6 @@ class JsonSchema(Schema):
             reask_instructions_template=reask_instructions_template,
         )
 
-    # @classmethod
-    # def from_pydantic(
-    #     cls,
-    #     pydantic_model: Type[BaseModel],
-    #     reask_prompt_template: Optional[str] = None,
-    #     reask_instructions_template: Optional[str] = None,
-    # ) -> Self:
-    #     schema = Object.from_pydantic(pydantic_model)
-    #
-    #     return cls(
-    #         schema,
-    #         reask_prompt_template=reask_prompt_template,
-    #         reask_instructions_template=reask_instructions_template,
-    #     )
-
     def parse(
         self, output: str
     ) -> Tuple[Union[Optional[Dict], NonParseableReAsk], Optional[Exception]]:
