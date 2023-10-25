@@ -11,6 +11,7 @@ from guardrails.datatypes import (
     Choice,
     DataType,
     Date,
+    DateTime,
     Email,
     Float,
     Integer,
@@ -52,6 +53,7 @@ type_map: Dict[Type[DataType], Type] = {
     ListDataType: list,
     Date: str,
     Time: str,
+    DateTime: str,
 }
 
 ignore_types = [

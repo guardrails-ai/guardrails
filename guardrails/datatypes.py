@@ -1,5 +1,6 @@
 import datetime
 import logging
+import re
 import warnings
 from dataclasses import dataclass
 from types import SimpleNamespace
@@ -267,6 +268,9 @@ class Date(ScalarType):
         """Create a Date from a string."""
         if s is None:
             return None
+        # Handle basic ISO 8601 week dates
+        if re.match(r"\d{4}-W\d{2}-\d", s):
+            return datetime.datetime.strptime(s, "%G-W%V-%u")
         if not self.date_format:
             return parse(s).date()
         return datetime.datetime.strptime(s, self.date_format).date()
@@ -285,7 +289,7 @@ class Date(ScalarType):
 class Time(ScalarType):
     """Element tag: `<time>`
 
-    To configure the date format, create a date-format attribute on the
+    To configure the time format, create a time-format attribute on the
     element. E.g. `<time name="..." ... time-format="%H:%M:%S" />`
     """
 
@@ -315,6 +319,57 @@ class Time(ScalarType):
 
         if "time-format" in element.attrib or "time_format" in element.attrib:
             datatype.time_format = element.attrib["time-format"]
+
+        return datatype
+
+
+@register_type("datetime")
+class DateTime(ScalarType):
+    """Element tag: `<datetime>`
+
+    To configure the datetime format, create a datetime-format attribute on the
+    element. E.g. `<datetime name="..." ... datetime-format="%Y-%m-%d %H:%M:%S.%f" />`
+    """
+
+    tag = "datetime"
+
+    def __init__(
+        self,
+        children: Dict[str, Any],
+        format_attr: "FormatAttr",
+        optional: bool,
+        name: Optional[str],
+        description: Optional[str],
+    ) -> None:
+        super().__init__(children, format_attr, optional, name, description)
+        self.datetime_format = None
+
+    def from_str(self, s: str) -> Optional[datetime.datetime]:
+        """Create a DateTime from a string."""
+        if s is None:
+            return None
+        # Handle Epoch/Unix string with seconds
+        try:
+            epoch_s = float(s)
+            return datetime.datetime.utcfromtimestamp(epoch_s)
+        except ValueError:
+            pass
+        # Handle Epoch/Unix string with milliseconds
+        try:
+            epoch_ms = float(s) / 1000.0
+            return datetime.datetime.utcfromtimestamp(epoch_ms)
+        except ValueError:
+            pass
+        if not self.datetime_format:
+            return parse(s)
+        return datetime.datetime.strptime(s, self.datetime_format)
+
+    @classmethod
+    def from_xml(cls, element: ET._Element, strict: bool = False) -> "DataType":
+        datatype = super().from_xml(element, strict)
+
+        if "datetime-format" in element.attrib or "datetime_format" in element.attrib:
+            datatype.datetime_format = element.attrib["datetime-format"]
 
         return datatype
 
