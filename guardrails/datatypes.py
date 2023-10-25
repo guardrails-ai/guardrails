@@ -260,14 +260,14 @@ class Date(ScalarType):
         name: Optional[str],
         description: Optional[str],
     ) -> None:
-        self.date_format = "%Y-%m-%d"
         super().__init__(children, format_attr, optional, name, description)
+        self.date_format = None
 
     def from_str(self, s: str) -> Optional[datetime.date]:
         """Create a Date from a string."""
         if s is None:
             return None
-        if self.date_format is None:
+        if not self.date_format:
             return parse(s).date()
         return datetime.datetime.strptime(s, self.date_format).date()
 
