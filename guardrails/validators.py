@@ -2463,6 +2463,14 @@ class DetectSecrets(Validator):
     returns the generated code snippet with the secrets replaced with asterisks.
     Else the validator returns the generated code snippet.
 
+    Following are some caveats:
+        - Multiple secrets on the same line may not be caught. e.g.
+            - Minified code
+            - One-line lists/dictionaries
+            - Multi-variable assignments
+        - Multi-line secrets may not be caught. e.g.
+            - RSA/SSH keys
+
     Example:
         ```py
 
@@ -2497,16 +2505,28 @@ class DetectSecrets(Validator):
                 line numbers.
             lines (List[str]): The lines of the generated code snippet.
         """
-        # Write each line of value to a new file
-        with open(self.temp_file_name, "w") as f:
-            f.writelines(value)
+        try:
+            # Write each line of value to a new file
+            with open(self.temp_file_name, "w") as f:
+                f.writelines(value)
+        except Exception as e:
+            raise OSError(
+                "Problems creating or deleting the temporary file. "
+                "Please check the permissions of the current directory."
+            ) from e
 
-        # Create a new secrets collection
-        secrets = detect_secrets.SecretsCollection()
+        try:
+            # Create a new secrets collection
+            secrets = detect_secrets.SecretsCollection()
 
-        # Scan the file for secrets
-        with detect_secrets.settings.default_settings():
-            secrets.scan_file(self.temp_file_name)
+            # Scan the file for secrets
+            with detect_secrets.settings.default_settings():
+                secrets.scan_file(self.temp_file_name)
+        except Exception as e:
+            raise RuntimeError(
+                "Problems with creating a SecretsCollection or "
+                "scanning the file for secrets."
+            ) from e
 
         # Get unique secrets from these secrets
         unique_secrets = {}
@@ -2521,13 +2541,24 @@ class DetectSecrets(Validator):
                 if line_number not in unique_secrets[actual_secret]:
                     unique_secrets[actual_secret].append(line_number)
 
-        # File no longer needed, read the lines from the file
-        with open(self.temp_file_name, "r") as f:
-            lines = f.readlines()
+        try:
+            # File no longer needed, read the lines from the file
+            with open(self.temp_file_name, "r") as f:
+                lines = f.readlines()
+        except Exception as e:
+            raise OSError(
+                "Problems reading the temporary file. "
+                "Please check the permissions of the current directory."
+            ) from e
 
-        # Delete the file
-        os.remove(self.temp_file_name)
-
+        try:
+            # Delete the file
+            os.remove(self.temp_file_name)
+        except Exception as e:
+            raise OSError(
+                "Problems deleting the temporary file. "
+                "Please check the permissions of the current directory."
+            ) from e
         return unique_secrets, lines
 
     def get_modified_value(
@@ -2558,7 +2589,15 @@ class DetectSecrets(Validator):
     def validate(self, value: str, metadata: Dict[str, Any]) -> ValidationResult:
         # Check if value is a multiline string
         if "\n" not in value:
-            raise ValueError("You must provide a multiline code snippet.")
+            # Raise warning if value is not a multiline string
+            warnings.warn(
+                "You must provide a multiline code snippet in order to "
+                "use the DetectSecrets validator. "
+                "Refer documentation for more details."
+            )
+
+            # Add a newline to value
+            value += "\n"
 
         # Get unique secrets from the value
         unique_secrets, lines = self.get_unique_secrets(value)
