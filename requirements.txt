@@ -60,7 +60,7 @@ jupyter_core==5.3.1
 jupyterlab-pygments==0.2.2
 jupytext==1.15.0
 keyring==24.2.0
-langchain==0.0.262
+langchain==0.0.317
 langsmith==0.0.21
 lxml==4.9.3
 Markdown==3.4.4
