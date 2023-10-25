@@ -39,7 +39,7 @@ def mock_get_unique_secrets(self, value: str) -> Tuple[Dict[str, Any], List[str]
             "DUMMY_SECRET_TOKEN_abcdefgh": [5],
             "dummy_admin_password": [7],
         }
-    elif value == NO_SECRETS_CODE_SNIPPET:
+    else:
         unique_secrets = {}
     return unique_secrets, lines
 

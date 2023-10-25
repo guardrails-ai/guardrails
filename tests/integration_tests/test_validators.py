@@ -170,8 +170,14 @@ def test_detect_secrets(mocker):
 
     # ----------------------------
     # 3. Test with a non-multi-line string
-    # Should raise ValueError
-    with pytest.raises(ValueError):
+    # Should raise UserWarning
+    with pytest.warns(UserWarning):
         output = guard.parse(
             llm_output="import os",
         )
+
+    # Check if the output is same as the input
+    assert output == "import os"
+
+    # Check if temp.txt does not exist in current directory
+    assert not os.path.exists("temp.txt")
