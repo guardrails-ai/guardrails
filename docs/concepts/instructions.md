@@ -2,7 +2,7 @@
 
 The `<instructions></instructions>` element is passed to the LLM as secondary input. Different model may use these differently. For example, chat models may receive instructions in the system-prompt.
 
-## 📚 Components of a Instructions
+## 📚 Components of an Instructions Element
 
 In addition to any static text describing the context of the task, instructions can also contain any of the following:
 
@@ -25,8 +25,8 @@ ${gr.json_suffix_prompt_examples}  <!-- (2)! -->
 </rail>
 ```
 
-1. The instructions contains high level background information for the LLM containing textual context and constraints.
-2. `${gr.json_suffix_prompt_examples}` is a prompt primitive provided by guardrails. It is equivalent to typing the following lines in the prompt:
+1. The instructions element contains high level background information for the LLM containing textual context and constraints.
+2. `${gr.json_suffix_prompt_examples}` is a prompt primitive provided by guardrails. It is equivalent to typing the following lines in the instructions:
 ````
 ONLY return a valid JSON object (no other text is necessary), where the key of the field in JSON is the `name` attribute of the corresponding XML, and the value is of the type specified by the corresponding XML's tag. The JSON MUST conform to the XML format, including any types and format requests e.g. requests for lists, objects and specific types. Be correct and concise. If you are unsure anywhere, enter `null`.
 
@@ -45,8 +45,8 @@ instructions = """You are a helpful assistant only capable of communicating with
 ```
 
 
-1. The instructions contains high level background information for the LLM containing textual context and constraints.
-2. `${gr.json_suffix_prompt_examples}` is a prompt primitive provided by guardrails. It is equivalent to typing the following lines in the prompt:
+1. The instructions element contains high level background information for the LLM containing textual context and constraints.
+2. `${gr.json_suffix_prompt_examples}` is a prompt primitive provided by guardrails. It is equivalent to typing the following lines in the instructions:
 ````
 ONLY return a valid JSON object (no other text is necessary), where the key of the field in JSON is the `name` attribute of the corresponding XML, and the value is of the type specified by the corresponding XML's tag. The JSON MUST conform to the XML format, including any types and format requests e.g. requests for lists, objects and specific types. Be correct and concise. If you are unsure anywhere, enter `null`.
 
