@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Tuple
 from guardrails.datatypes import FieldValidation
 from guardrails.utils.logs_utils import FieldValidationLogs, ValidatorLogs
 from guardrails.utils.reask_utils import FieldReAsk, ReAsk
+from guardrails.utils.safe_get import safe_get
 from guardrails.validators import (
     FailResult,
     Filter,
@@ -101,7 +102,6 @@ class SequentialValidatorService(ValidatorServiceBase):
             validator_logs = self.run_validator(
                 validation_logs, validator, value, metadata
             )
-            validation_logs.validator_logs.append(validator_logs)
 
             result = validator_logs.validation_result
             if isinstance(result, FailResult):
@@ -126,7 +126,7 @@ class SequentialValidatorService(ValidatorServiceBase):
 
     def validate_dependents(self, value, metadata, validator_setup, validation_logs):
         for child_setup in validator_setup.children:
-            child_schema = value[child_setup.key]
+            child_schema = safe_get(value, child_setup.key)
             child_validation_logs = FieldValidationLogs()
             validation_logs.children[child_setup.key] = child_validation_logs
             child_schema, metadata = self.validate(
@@ -319,7 +319,12 @@ def validate(
     validation_logs: FieldValidationLogs,
 ):
     process_count = int(os.environ.get("GUARDRAILS_PROCESS_COUNT", 10))
-    loop = asyncio.get_event_loop()
+
+    try:
+        loop = asyncio.get_event_loop()
+    except RuntimeError:
+        loop = None
+
     if process_count == 1:
         logger.warning(
             "Process count was set to 1 via the GUARDRAILS_PROCESS_COUNT"
@@ -329,14 +334,10 @@ def validate(
             "greater than 1 or unset this environment variable."
         )
         validator_service = SequentialValidatorService()
-    elif loop.is_running():
-        logger.warning(
-            "Async event loop found, but guard was invoked synchronously."
-            "For validator parallelization, please call `validate_async` instead."
-        )
-        validator_service = SequentialValidatorService()
-    else:
+    elif loop is not None and not loop.is_running():
         validator_service = AsyncValidatorService()
+    else:
+        validator_service = SequentialValidatorService()
     return validator_service.validate(
         value,
         metadata,

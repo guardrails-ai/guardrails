@@ -7,7 +7,7 @@ I was given the following JSON response, which had problems due to incorrect val
       "index": 1,
       "name": "annual membership",
       "explanation": "Annual Membership Fee",
-      "value": 0
+      "value": 0.0
     },
     {
       "index": 2,
@@ -24,25 +24,25 @@ I was given the following JSON response, which had problems due to incorrect val
       "index": 3,
       "name": "balance transfers",
       "explanation": "Balance Transfers Intro fee of either $5 or 3% of the amount of each transfer, whichever is greater, on transfers made within 60 days of account opening. After that: Either $5 or 5% of the amount of each transfer.",
-      "value": 5
+      "value": 5.0
     },
     {
       "index": 4,
       "name": "cash advances",
       "explanation": "Cash Advances Either $10 or 5% of the amount of each transaction, whichever is greater.",
-      "value": 5
+      "value": 5.0
     },
     {
       "index": 5,
       "name": "foreign transactions",
       "explanation": "Foreign Transactions 3% of the amount of each transaction in U.S. dollars.",
-      "value": 3
+      "value": 3.0
     },
     {
       "index": 6,
       "name": "late payment",
       "explanation": "Late Payment Up to $40.",
-      "value": 0
+      "value": 0.0
     },
     {
       "index": 7,
@@ -53,19 +53,19 @@ I was given the following JSON response, which had problems due to incorrect val
         ]
       },
       "explanation": "Over-the-Credit-Limit None",
-      "value": 0
+      "value": 0.0
     },
     {
       "index": 8,
       "name": "return payment",
       "explanation": "Return Payment Up to $40.",
-      "value": 0
+      "value": 0.0
     },
     {
       "index": 9,
       "name": "return check",
       "explanation": "Return Check None",
-      "value": 0
+      "value": 0.0
     }
   ],
   "interest_rates": {

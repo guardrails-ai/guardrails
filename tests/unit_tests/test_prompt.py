@@ -1,8 +1,10 @@
 """Unit tests for prompt and instructions parsing."""
 
 from string import Template
+from unittest import mock
 
 import pytest
+from pydantic import BaseModel, Field
 
 import guardrails as gd
 from guardrails.utils.constants import constants
@@ -77,7 +79,7 @@ ${gr.complete_json_suffix_v2}
 </rail>
 """
 
-RAIL_WITH_REASK_PROMPT = """
+RAIL_WITH_OLD_CONSTANT_SCHEMA = """
 <rail version="0.1">
 <output>
     <string name="test_string" description="A string for testing." />
@@ -91,7 +93,23 @@ You are a helpful bot, who answers only with valid JSON
 <prompt>
 
 Extract a string from the text
+@gr.complete_json_suffix_v2
+</prompt>
+</rail>
+"""
 
+RAIL_WITH_REASK_PROMPT = """
+<rail version="0.1">
+<output>
+    <string name="test_string" description="A string for testing." />
+</output>
+<instructions>
+
+You are a helpful bot, who answers only with valid JSON
+
+</instructions>
+
+<prompt>
 ${gr.complete_json_suffix_v2}
 </prompt>
 <reask_prompt>
@@ -208,3 +226,47 @@ def test_substitute_constants(prompt_str, final_prompt):
     """Test substituting constants in a prompt."""
     prompt = gd.Prompt(prompt_str)
     assert prompt.source == final_prompt
+
+
+# TODO: Deprecate when we can confirm migration off the old, non-namespaced standard
+@pytest.mark.parametrize(
+    "text, is_old_schema",
+    [
+        (RAIL_WITH_OLD_CONSTANT_SCHEMA, True),  # Test with a single match
+        (
+            RAIL_WITH_FORMAT_INSTRUCTIONS,
+            False,
+        ),  # Test with no matches/correct namespacing
+    ],
+)
+def test_uses_old_constant_schema(text, is_old_schema):
+    with mock.patch("warnings.warn") as warn_mock:
+        guard = gd.Guard.from_rail_string(text)
+        assert guard.prompt.uses_old_constant_schema(text) == is_old_schema
+        if is_old_schema:
+            # we only check for the warning when we have an older schema
+            warn_mock.assert_called_once_with(
+                """It appears that you are using an old schema for gaurdrails\
+ variables, follow the new namespaced convention documented here:\
+ https://docs.getguardrails.ai/0-2-migration/\
+"""
+            )
+
+
+class TestResponse(BaseModel):
+    grade: int = Field(description="The grade of the response")
+
+
+def test_gr_prefixed_prompt_item_passes():
+    # From pydantic:
+    prompt = """Give me a response to ${grade}"""
+
+    guard = gd.Guard.from_pydantic(output_class=TestResponse, prompt=prompt)
+    assert len(guard.prompt.variable_names) == 1
+
+
+def test_gr_dot_prefixed_prompt_item_fails():
+    with pytest.raises(Exception):
+        # From pydantic:
+        prompt = """Give me a response to ${gr.ade}"""
+        gd.Guard.from_pydantic(output_class=TestResponse, prompt=prompt)

@@ -18,4 +18,4 @@ You need to escape the `&` character like this:
 </prompt>
 ```
 
-If you're still encountering issues, please [open an issue](https://github.com/ShreyaR/guardrails/issues/new) and we'll help you out!
+If you're still encountering issues, please [open an issue](https://github.com/guardrails-ai/guardrails/issues/new) and we'll help you out!

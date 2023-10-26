@@ -398,16 +398,18 @@ class Guard:
         full_schema_reask: bool = None,
         *args,
         **kwargs,
-    ) -> Union[Tuple[str, Dict], Awaitable[Tuple[str, Dict]]]:
+    ) -> Union[str, Dict, Awaitable[str], Awaitable[Dict]]:
         """Alternate flow to using Guard where the llm_output is known.
 
-        Args:
-            llm_api: The LLM API to call
-                     (e.g. openai.Completion.create or openai.Completion.acreate)
-            num_reasks: The max times to re-ask the LLM for invalid output.
+                Args:
+                    llm_api: The LLM API to call
+                             (e.g. openai.Completion.create or
+                             openai.Completion.acreate)
+                    num_reasks: The max times to re-ask the LLM for invalid output.
 
-        Returns:
-            The validated response.
+                Returns:
+                    The validated response. This is either a string or a dictionary, \
+        determined by the object schema defined in the RAILspec.
         """
         num_reasks = (
             num_reasks if num_reasks is not None else 0 if llm_api is None else None
@@ -467,9 +469,9 @@ class Guard:
         """
         with start_action(action_type="guard_parse"):
             runner = Runner(
-                instructions=kwargs.get("instructions", None),
-                prompt=kwargs.get("prompt", None),
-                msg_history=kwargs.get("msg_history", None),
+                instructions=kwargs.pop("instructions", None),
+                prompt=kwargs.pop("prompt", None),
+                msg_history=kwargs.pop("msg_history", None),
                 api=get_llm_ask(llm_api, *args, **kwargs) if llm_api else None,
                 input_schema=None,
                 output_schema=self.output_schema,
@@ -508,9 +510,9 @@ class Guard:
         """
         with start_action(action_type="guard_parse"):
             runner = AsyncRunner(
-                instructions=None,
-                prompt=None,
-                msg_history=None,
+                instructions=kwargs.pop("instructions", None),
+                prompt=kwargs.pop("prompt", None),
+                msg_history=kwargs.pop("msg_history", None),
                 api=get_async_llm_ask(llm_api, *args, **kwargs) if llm_api else None,
                 input_schema=None,
                 output_schema=self.output_schema,

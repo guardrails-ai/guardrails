@@ -237,6 +237,11 @@
         "items": [
           {
             "type": "doc",
+            "id": "docs/concepts/envars",
+            "label": "Envars"
+          },
+          {
+            "type": "doc",
             "id": "docs/concepts/guard",
             "label": "Guard"
           },
@@ -288,230 +293,6 @@
         "collapsible": true
       },
       {
-        "type": "category",
-        "label": "Examples",
-        "items": [
-          {
-            "type": "category",
-            "label": "Bug Free Python Code",
-            "items": [
-              {
-                "type": "doc",
-                "id": "docs/examples/bug_free_python_code/RAIL",
-                "label": "RAIL"
-              },
-              {
-                "type": "doc",
-                "id": "docs/examples/bug_free_python_code/pydantic",
-                "label": "Pydantic"
-              }
-            ],
-            "collapsed": true,
-            "collapsible": true
-          },
-          {
-            "type": "category",
-            "label": "Extracting Entities",
-            "items": [
-              {
-                "type": "doc",
-                "id": "docs/examples/extracting_entities/RAIL",
-                "label": "RAIL"
-              },
-              {
-                "type": "doc",
-                "id": "docs/examples/extracting_entities/pydantic",
-                "label": "Pydantic"
-              }
-            ],
-            "collapsed": true,
-            "collapsible": true
-          },
-          {
-            "type": "category",
-            "label": "Generate Structured Data",
-            "items": [
-              {
-                "type": "doc",
-                "id": "docs/examples/generate_structured_data/RAIL",
-                "label": "RAIL"
-              },
-              {
-                "type": "doc",
-                "id": "docs/examples/generate_structured_data/pydantic",
-                "label": "Pydantic"
-              }
-            ],
-            "collapsed": true,
-            "collapsible": true
-          },
-          {
-            "type": "category",
-            "label": "Guardrails With Chat Models",
-            "items": [
-              {
-                "type": "doc",
-                "id": "docs/examples/guardrails_with_chat_models/RAIL",
-                "label": "RAIL"
-              },
-              {
-                "type": "doc",
-                "id": "docs/examples/guardrails_with_chat_models/pydantic",
-                "label": "Pydantic"
-              }
-            ],
-            "collapsed": true,
-            "collapsible": true
-          },
-          {
-            "type": "category",
-            "label": "No Secrets In Generated Text",
-            "items": [
-              {
-                "type": "doc",
-                "id": "docs/examples/no_secrets_in_generated_text/RAIL",
-                "label": "RAIL"
-              },
-              {
-                "type": "doc",
-                "id": "docs/examples/no_secrets_in_generated_text/pydantic",
-                "label": "Pydantic"
-              }
-            ],
-            "collapsed": true,
-            "collapsible": true
-          },
-          {
-            "type": "category",
-            "label": "Recipe Generation",
-            "items": [
-              {
-                "type": "doc",
-                "id": "docs/examples/recipe_generation/RAIL",
-                "label": "RAIL"
-              },
-              {
-                "type": "doc",
-                "id": "docs/examples/recipe_generation/pydantic",
-                "label": "Pydantic"
-              }
-            ],
-            "collapsed": true,
-            "collapsible": true
-          },
-          {
-            "type": "category",
-            "label": "Select Choice Based On Action",
-            "items": [
-              {
-                "type": "doc",
-                "id": "docs/examples/select_choice_based_on_action/RAIL",
-                "label": "RAIL"
-              },
-              {
-                "type": "doc",
-                "id": "docs/examples/select_choice_based_on_action/pydantic",
-                "label": "Pydantic"
-              }
-            ],
-            "collapsed": true,
-            "collapsible": true
-          },
-          {
-            "type": "category",
-            "label": "Syntax Error Free Sql",
-            "items": [
-              {
-                "type": "doc",
-                "id": "docs/examples/syntax_error_free_sql/RAIL",
-                "label": "RAIL"
-              },
-              {
-                "type": "doc",
-                "id": "docs/examples/syntax_error_free_sql/pydantic",
-                "label": "Pydantic"
-              }
-            ],
-            "collapsed": true,
-            "collapsible": true
-          },
-          {
-            "type": "category",
-            "label": "Text Summarization Quality",
-            "items": [
-              {
-                "type": "doc",
-                "id": "docs/examples/text_summarization_quality/RAIL",
-                "label": "RAIL"
-              },
-              {
-                "type": "doc",
-                "id": "docs/examples/text_summarization_quality/pydantic",
-                "label": "Pydantic"
-              }
-            ],
-            "collapsed": true,
-            "collapsible": true
-          },
-          {
-            "type": "category",
-            "label": "Translation To Specific Language",
-            "items": [
-              {
-                "type": "doc",
-                "id": "docs/examples/translation_to_specific_language/RAIL",
-                "label": "RAIL"
-              },
-              {
-                "type": "doc",
-                "id": "docs/examples/translation_to_specific_language/pydantic",
-                "label": "Pydantic"
-              }
-            ],
-            "collapsed": true,
-            "collapsible": true
-          },
-          {
-            "type": "category",
-            "label": "Translation With Quality Check",
-            "items": [
-              {
-                "type": "doc",
-                "id": "docs/examples/translation_with_quality_check/RAIL",
-                "label": "RAIL"
-              },
-              {
-                "type": "doc",
-                "id": "docs/examples/translation_with_quality_check/pydantic",
-                "label": "Pydantic"
-              }
-            ],
-            "collapsed": true,
-            "collapsible": true
-          },
-          {
-            "type": "category",
-            "label": "Valid Chess Moves",
-            "items": [
-              {
-                "type": "doc",
-                "id": "docs/examples/valid_chess_moves/RAIL",
-                "label": "RAIL"
-              },
-              {
-                "type": "doc",
-                "id": "docs/examples/valid_chess_moves/pydantic",
-                "label": "Pydantic"
-              }
-            ],
-            "collapsed": true,
-            "collapsible": true
-          }
-        ],
-        "collapsed": true,
-        "collapsible": true
-      },
-      {
         "type": "doc",
         "id": "docs/faq",
         "label": "Faq"
@@ -529,11 +310,6 @@
             "type": "doc",
             "id": "docs/guardrails_ai/faq",
             "label": "Faq"
-          },
-          {
-            "type": "doc",
-            "id": "docs/guardrails_ai/getting_started",
-            "label": "Getting Started"
           },
           {
             "type": "doc",
@@ -560,18 +336,8 @@
         "items": [
           {
             "type": "doc",
-            "id": "docs/integrations/langchain",
-            "label": "Langchain"
-          },
-          {
-            "type": "doc",
             "id": "docs/integrations/llm_api_wrappers",
             "label": "Llm Api Wrappers"
-          },
-          {
-            "type": "doc",
-            "id": "docs/integrations/openai_functions",
-            "label": "Openai Functions"
           }
         ],
         "collapsed": true,
@@ -581,24 +347,6 @@
         "type": "doc",
         "id": "docs/llm_api_wrappers",
         "label": "Llm Api Wrappers"
-      },
-      {
-        "type": "category",
-        "label": "Recipe",
-        "items": [
-          {
-            "type": "doc",
-            "id": "docs/recipe/generating_structured_data",
-            "label": "Generating Structured Data"
-          },
-          {
-            "type": "doc",
-            "id": "docs/recipe/validating_string_data",
-            "label": "Validating String Data"
-          }
-        ],
-        "collapsed": true,
-        "collapsible": true
       }
     ],
     "collapsed": true,
