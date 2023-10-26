@@ -38,7 +38,6 @@ ${gr.json_suffix_prompt}  <!-- (5)! -->
 3. `${gr.xml_prefix_prompt}` is a prompt primitive provided by guardrails. It is equivalent to typing the following lines in the prompt: `Given below is XML that describes the information to extract from this document and the tags to extract it into.`
 4. `${output_schema}` is the output schema and contains information about , which is compiled based on the `output` element.
 5. `${gr.json_suffix_prompt}` is a prompt primitive provided by guardrails. It is equivalent to typing the following lines in the prompt:
-
 ```
 ONLY return a valid JSON object (no other text is necessary). The JSON MUST conform to the XML format, including any types and format requests e.g. requests for lists, objects and specific types. Be correct and concise. If you are unsure anywhere, enter `null`.
 ```
