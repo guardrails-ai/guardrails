@@ -339,24 +339,27 @@ class RegexMatch(Validator):
         match_type: Optional[str] = None,
         on_fail: Optional[Callable] = None,
     ):
-        match_types = ["fullmatch", "search"]
-        if match_type is None:
-            match_type = "fullmatch"
-        assert match_type in match_types, f"match_type must be in {match_types}"
         super().__init__(on_fail=on_fail, match_type=match_type, regex=regex)
         self._regex = regex
-        self._p = re.compile(regex)
-        self._match_f = getattr(self._p, match_type)
+        self._match_type = match_type
+
+    def validate(self, value: Any, metadata: Dict) -> ValidationResult:
+        p = re.compile(self._regex)
+        match_types = ["fullmatch", "search"]
+
+        if self._match_type is None:
+            self._match_type = "fullmatch"
+        assert self._match_type in match_types, f"match_type must be in {match_types}"
+
+        """Validates that value matches the provided regular expression."""
         # Pad matching string on either side for fix
         # example if we are performing a regex search
         str_padding = (
-            "" if match_type == "fullmatch" else rstr.rstr(string.ascii_lowercase)
+            "" if self._match_type == "fullmatch" else rstr.rstr(string.ascii_lowercase)
         )
-        self._fix_str = str_padding + rstr.xeger(regex) + str_padding
+        self._fix_str = str_padding + rstr.xeger(self._regex) + str_padding
 
-    def validate(self, value: Any, metadata: Dict) -> ValidationResult:
-        """Validates that value matches the provided regular expression."""
-        if not self._match_f(value):
+        if not getattr(p, self._match_type)(value):
             return FailResult(
                 error_message=f"Result must match {self._regex}",
                 fix_value=self._fix_str,
