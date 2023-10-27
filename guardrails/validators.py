@@ -290,12 +290,14 @@ class ValidLength(Validator):
                     last_val = rstr.rstr(string.ascii_lowercase, 1)
                 else:
                     last_val = value[-1]
+                corrected_value = value + last_val * (self._min - len(value))
             else:
                 if not value:
                     last_val = [rstr.rstr(string.ascii_lowercase, 1)]
                 else:
                     last_val = [value[-1]]
-            corrected_value = value + last_val * (self._min - len(value))
+                # extend value by padding it out with last_val
+                corrected_value = value.extend([last_val] * (self._min - len(value)))
 
             return FailResult(
                 error_message=f"Value has length less than {self._min}. "
@@ -2176,7 +2178,7 @@ class SimilarToList(Validator):
             # Get average semantic similarity
             # Lesser the average semantic similarity, more similar the strings are
             avg_semantic_similarity = np.mean(
-                [
+                a=[
                     self.get_semantic_similarity(value, prev_value, embed_function)
                     for prev_value in prev_values
                 ]

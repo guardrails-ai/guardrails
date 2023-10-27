@@ -497,7 +497,7 @@ class Choice(NonScalarType):
 
     def set_children_from_xml(self, element: ET._Element):
         for child in element:
-            child_data_type = update_deprecated_type_to_string(registry[child.tag])
+            child_data_type = registry[child.tag]
             assert child_data_type == Case
 
             name = child.attrib["name"]

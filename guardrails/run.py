@@ -340,12 +340,12 @@ class Runner:
         """
 
         with start_action(action_type="call", index=index, prompt=prompt) as action:
-            if api is None and output is None:
-                raise ValueError("API or output must be provided.")
             if output is not None:
                 llm_response = LLMResponse(
                     output=output,
                 )
+            elif api is None:
+                raise ValueError("API or output must be provided.")
             elif msg_history:
                 try:
                     llm_response = api(
