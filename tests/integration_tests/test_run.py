@@ -57,7 +57,6 @@ def runner_instance(is_sync: bool):
 )
 @pytest.mark.asyncio
 async def test_sync_async_call_equivalence(mocker):
-
     mocker.patch(
         "guardrails.llm_providers.AsyncOpenAICallable",
         new=MockAsyncOpenAICallable,
@@ -88,7 +87,6 @@ async def test_sync_async_call_equivalence(mocker):
 
 @pytest.mark.asyncio
 async def test_sync_async_validate_equivalence(mocker):
-
     mocker.patch(
         "guardrails.llm_providers.AsyncOpenAICallable",
         new=MockAsyncOpenAICallable,
@@ -112,7 +110,6 @@ async def test_sync_async_validate_equivalence(mocker):
 
 @pytest.mark.asyncio
 async def test_sync_async_step_equivalence(mocker):
-
     mocker.patch(
         "guardrails.llm_providers.AsyncOpenAICallable",
         new=MockAsyncOpenAICallable,
