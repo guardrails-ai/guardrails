@@ -350,7 +350,6 @@ class RegexMatch(Validator):
         if self._match_type is None:
             self._match_type = "fullmatch"
         assert self._match_type in match_types, f"match_type must be in {match_types}"
-
         """Validates that value matches the provided regular expression."""
         # Pad matching string on either side for fix
         # example if we are performing a regex search
