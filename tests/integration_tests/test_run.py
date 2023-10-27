@@ -1,7 +1,6 @@
 import os
 
 import pytest
-from lxml import etree as ET
 
 import guardrails as gd
 from guardrails.llm_providers import AsyncOpenAICallable, OpenAICallable
