@@ -1,6 +1,7 @@
 import os
 
 import pytest
+from lxml import etree as ET
 
 import guardrails as gd
 from guardrails.llm_providers import AsyncOpenAICallable, OpenAICallable
@@ -16,13 +17,18 @@ INSTRUCTIONS = gd.Instructions(
     """ You are a helpful assistant, and you are helping me
      come up with a name for a pizza. ${gr.complete_string_suffix}"""
 )
-OUTPUT_SCHEMA = StringSchema(
-    schema="""<output
+
+
+OUTPUT_SCHEMA = StringSchema.from_element(
+    ET.fromstring(
+        """<output
     type="string"
     description="Name for the pizza"
     format="two-words"
     on-fail-two-words="reask" />"""
+    )
 )
+
 OUTPUT = "Tomato Cheese Pizza"
 
 

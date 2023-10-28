@@ -393,7 +393,8 @@ class List(NonScalarType):
                 # The child must be the datatype that all items in the list
                 # must conform to.
                 raise ValueError("List data type must have exactly one child.")
-            child_data_type = update_deprecated_type_to_string(registry[child.tag])
+            child_data_type_tag = update_deprecated_type_to_string(child.tag)
+            child_data_type = registry[child_data_type_tag]
             self._children["item"] = child_data_type.from_xml(child)
 
 
