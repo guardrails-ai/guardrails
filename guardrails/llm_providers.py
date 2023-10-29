@@ -280,7 +280,6 @@ class AnthropicCallable(PromptCallableBase):
         """
         TODO: Write class description
         """
-
         if "instructions" in kwargs:
             prompt = kwargs.pop("instructions") + "\n\n" + prompt
 
@@ -330,7 +329,7 @@ def get_llm_ask(llm_api: Callable, *args, **kwargs) -> PromptCallableBase:
         return CohereCallable(*args, client_callable=llm_api, **kwargs)
     elif (
         anthropic
-        # and isinstance(getattr(llm_api, "__self__", None), anthropic.Anthropic)
+        and isinstance(getattr(llm_api, "__self__", None), anthropic.resources.completions.Completions)
     ):
         return AnthropicCallable(*args, client_callable=llm_api, **kwargs)
 
