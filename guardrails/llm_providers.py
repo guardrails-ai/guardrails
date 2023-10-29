@@ -277,13 +277,16 @@ class AnthropicCallable(PromptCallableBase):
         *args, 
         **kwargs
     ) -> LLMResponse:
+        """
+        TODO: Write class description
+        """
 
-        print('we in here')
-        print(prompt)
+        if "instructions" in kwargs:
+            prompt = kwargs.pop("instructions") + "\n\n" + prompt
 
-        # TODO: Modify Prompt
+        claude_prompt = f"{anthropic.HUMAN_PROMPT} {prompt} {anthropic.AI_PROMPT}"
 
-        claude_response = client_callable(model=model, prompt=prompt)
+        claude_response = client_callable(model=model, prompt=claude_prompt,  *args, **kwargs)
         return LLMResponse(
             output=claude_response.completion
         )
@@ -326,9 +329,10 @@ def get_llm_ask(llm_api: Callable, *args, **kwargs) -> PromptCallableBase:
     ):
         return CohereCallable(*args, client_callable=llm_api, **kwargs)
     elif (
-        anthropic #TODO: Probably add more args/kwargs
+        anthropic
+        # and isinstance(getattr(llm_api, "__self__", None), anthropic.Anthropic)
     ):
-        return AnthropicCallable(*args, llm_api=llm_api, **kwargs)
+        return AnthropicCallable(*args, client_callable=llm_api, **kwargs)
 
     # Let the user pass in an arbitrary callable.
     return ArbitraryCallable(*args, llm_api=llm_api, **kwargs)
