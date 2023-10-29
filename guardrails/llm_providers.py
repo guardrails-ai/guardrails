@@ -19,6 +19,11 @@ try:
 except ImportError:
     cohere = None
 
+try:
+    import anthropic
+except ImportError:
+    anthropic = None
+
 
 OPENAI_RETRYABLE_ERRORS = [
     openai.error.APIConnectionError,
@@ -29,7 +34,6 @@ OPENAI_RETRYABLE_ERRORS = [
     openai.error.ServiceUnavailableError,
 ]
 RETRYABLE_ERRORS = tuple(OPENAI_RETRYABLE_ERRORS)
-
 
 class PromptCallableException(Exception):
     pass
@@ -264,6 +268,26 @@ class CohereCallable(PromptCallableBase):
         )
 
 
+class AnthropicCallable(PromptCallableBase):
+    def _invoke_llm(
+        self, 
+        prompt: str, 
+        client_callable: Any, 
+        model: str = "claude-instant-1", 
+        *args, 
+        **kwargs
+    ) -> LLMResponse:
+
+        print('we in here')
+        print(prompt)
+
+        # TODO: Modify Prompt
+
+        claude_response = client_callable(model=model, prompt=prompt)
+        return LLMResponse(
+            output=claude_response.completion
+        )
+
 class ArbitraryCallable(PromptCallableBase):
     def __init__(self, llm_api: Callable, *args, **kwargs):
         self.llm_api = llm_api
@@ -301,6 +325,10 @@ def get_llm_ask(llm_api: Callable, *args, **kwargs) -> PromptCallableBase:
         and getattr(llm_api, "__name__", None) == "generate"
     ):
         return CohereCallable(*args, client_callable=llm_api, **kwargs)
+    elif (
+        anthropic #TODO: Probably add more args/kwargs
+    ):
+        return AnthropicCallable(*args, llm_api=llm_api, **kwargs)
 
     # Let the user pass in an arbitrary callable.
     return ArbitraryCallable(*args, llm_api=llm_api, **kwargs)
