@@ -273,21 +273,33 @@ class AnthropicCallable(PromptCallableBase):
         self, 
         prompt: str, 
         client_callable: Any, 
-        model: str = "claude-instant-1", 
+        model: str = "claude-instant-1",
+        max_tokens_to_sample: int = 100, 
         *args, 
         **kwargs
     ) -> LLMResponse:
-        """
-        TODO: Write class description
+        """ Wrapper for Anthropic Completions.
+        
+        To use Anthropic for guardrails, do
+        ```
+        client = anthropic.Anthropic(api_key=...)
+
+        raw_llm_response, validated_response = guard(
+            client,
+            model="claude-2",
+            max_tokens_to_sample=200,
+            prompt_params={...},
+            ...
+        ```
         """
         if "instructions" in kwargs:
             prompt = kwargs.pop("instructions") + "\n\n" + prompt
 
-        claude_prompt = f"{anthropic.HUMAN_PROMPT} {prompt} {anthropic.AI_PROMPT}"
+        anthropic_prompt = f"{anthropic.HUMAN_PROMPT} {prompt} {anthropic.AI_PROMPT}"
 
-        claude_response = client_callable(model=model, prompt=claude_prompt,  *args, **kwargs)
+        anthropic_response = client_callable(model=model, prompt=anthropic_prompt, max_tokens_to_sample=max_tokens_to_sample, *args, **kwargs)
         return LLMResponse(
-            output=claude_response.completion
+            output=anthropic_response.completion
         )
 
 class ArbitraryCallable(PromptCallableBase):
