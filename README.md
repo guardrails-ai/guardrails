@@ -1,4 +1,4 @@
-# 🛤️ Guardrails
+# 🛤️ Guardrails AI
 
 <div align="center">
 
@@ -6,7 +6,7 @@
 
 Guardrails is an open-source Python package for specifying structure and type, validating and correcting the outputs of large language models (LLMs).
 
-[**Docs**](http://shreyar.github.io/guardrails/)
+[**Docs**](https://docs.guardrailsai.com)
 </div>
 
 _Note: Guardrails is an alpha release, so expect sharp edges and bugs._
@@ -33,7 +33,7 @@ graph LR
     B --> C["Wrap LLM API call with `guard`"];
 ```
 
-Check out the [Getting Started](https://shreyar.github.io/guardrails/getting_started) guide to learn how to use Guardrails.
+Check out the [Getting Started](https://docs.guardrailsai.com/guardrails_ai/getting_started/) guide to learn how to use Guardrails.
 
 ### 📜 `RAIL` spec
 
@@ -46,7 +46,7 @@ At the heart of Guardrails is the `rail` spec. `rail` is intended to be a langua
 3. and corrective actions to be taken if the output is invalid (e.g. reask the LLM, filter out the invalid output, etc.)
 
 
-To learn more about the `RAIL` spec and the design decisions behind it, check out the [docs](https://shreyar.github.io/guardrails/rail). To learn how to write your own `RAIL` spec, check out [this link](https://shreyar.github.io/guardrails/rail/output).
+To learn more about the `RAIL` spec and the design decisions behind it, check out the [docs](https://docs.guardrailsai.com/defining_guards/rail/). To learn how to write your own `RAIL` spec, check out [this link](https://docs.guardrailsai.com/api_reference/rail/).
 
 
 

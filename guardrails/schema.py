@@ -522,7 +522,9 @@ class JsonSchema(Schema):
             return decoded
 
         prompt = reask_prompt_template.format(
-            previous_response=json.dumps(reask_value, indent=2, default=reask_decoder),
+            previous_response=json.dumps(
+                reask_value, indent=2, default=reask_decoder, ensure_ascii=False
+            ),
             output_schema=pruned_tree_string,
             **(prompt_params or {}),
         )

@@ -81,6 +81,11 @@ class ValuePlaceholder(Placeholder):
         if not isinstance(json_value, expected_type):
             if not coerce_types:
                 return self.VerificationFailed
+
+            # don't coerce lists or objects to strings
+            if isinstance(json_value, (list, dict)) and expected_type == str:
+                return self.VerificationFailed
+
             try:
                 return expected_type(json_value)
             except (ValueError, TypeError):

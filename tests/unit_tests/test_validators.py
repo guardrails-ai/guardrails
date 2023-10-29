@@ -20,6 +20,7 @@ from guardrails.validators import (
     ProvenanceV1,
     Refrain,
     SimilarToDocument,
+    SimilarToList,
     SqlColumnPresence,
     TwoWords,
     ValidationResult,
@@ -29,7 +30,7 @@ from guardrails.validators import (
     register_validator,
 )
 
-from .mock_embeddings import mock_create_embedding
+from .mock_embeddings import MOCK_EMBEDDINGS, mock_create_embedding
 from .mock_provenance_v1 import mock_chat_completion, mock_chromadb_query_function
 
 
@@ -417,3 +418,20 @@ def test_to_xml_attrib(min, max, expected_xml):
     xml_validator = validator.to_xml_attrib()
 
     assert xml_validator == expected_xml
+
+
+def test_similar_to_list():
+    # Mock embedding function
+    def embed_function(text: str):
+        """Mock embedding function."""
+        return MOCK_EMBEDDINGS[text]
+
+    # Initialise validator
+    validator = SimilarToList()
+
+    # Test get_semantic_similarity method
+    similarity = validator.get_semantic_similarity(
+        "broadcom", "broadcom", embed_function
+    )
+    # Assert that similarity is very close to 0
+    assert similarity == pytest.approx(0.0, abs=1e-2)

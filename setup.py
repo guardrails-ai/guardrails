@@ -20,7 +20,7 @@ with open(ver_path) as ver_file:
 # Package meta-data.
 NAME = "guardrails-ai"
 DESCRIPTION = "Adding guardrails to large language models."
-URL = "https://github.com/shreyar/guardrails"
+URL = "https://github.com/guardrails-ai/guardrails"
 EMAIL = "shreya.rajpal@gmail.com"
 AUTHOR = "Shreya Rajpal"
 REQUIRES_PYTHON = ">=3.7.0"
