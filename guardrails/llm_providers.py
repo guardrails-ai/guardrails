@@ -14,6 +14,7 @@ from guardrails.utils.openai_utils import (
 from guardrails.utils.pydantic_utils import convert_pydantic_model_to_openai_fn
 
 
+
 class PromptCallableException(Exception):
     pass
 
