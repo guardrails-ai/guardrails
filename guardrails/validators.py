@@ -341,17 +341,22 @@ class RegexMatch(Validator):
         match_type: Optional[str] = None,
         on_fail: Optional[Callable] = None,
     ):
+        # todo -> something forces this to be passed as kwargs and therefore xml-ized.
+        # match_types = ["fullmatch", "search"]
+
+        if match_type is None:
+            match_type = "fullmatch"
+        assert match_type in [
+            "fullmatch",
+            "search",
+        ], 'match_type must be in ["fullmatch", "search"]'
+
         super().__init__(on_fail=on_fail, match_type=match_type, regex=regex)
         self._regex = regex
         self._match_type = match_type
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         p = re.compile(self._regex)
-        match_types = ["fullmatch", "search"]
-
-        if self._match_type is None:
-            self._match_type = "fullmatch"
-        assert self._match_type in match_types, f"match_type must be in {match_types}"
         """Validates that value matches the provided regular expression."""
         # Pad matching string on either side for fix
         # example if we are performing a regex search
