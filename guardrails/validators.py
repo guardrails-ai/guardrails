@@ -2144,7 +2144,7 @@ class SimilarToList(Validator):
             # Check whether the value lies in a similar distribution as the prev_values
             # Get mean and std of prev_values
             prev_values = np.array(prev_values)
-            prev_mean = np.mean(prev_values) # type: ignore
+            prev_mean = np.mean(prev_values)  # type: ignore
             prev_std = np.std(prev_values)
 
             # Check whether the value lies outside specified stds of the mean
