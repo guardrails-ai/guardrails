@@ -2178,10 +2178,12 @@ class SimilarToList(Validator):
             # Get average semantic similarity
             # Lesser the average semantic similarity, more similar the strings are
             avg_semantic_similarity = np.mean(
-                a=[
-                    self.get_semantic_similarity(value, prev_value, embed_function)
-                    for prev_value in prev_values
-                ]
+                np.array(
+                    [
+                        self.get_semantic_similarity(value, prev_value, embed_function)
+                        for prev_value in prev_values
+                    ]
+                )
             )
 
             # If average semantic similarity is above the threshold,
