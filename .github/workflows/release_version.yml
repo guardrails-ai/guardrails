@@ -17,16 +17,10 @@ jobs:
           python-version: 3.x
 
       - name: Install twine and wheel
-        run: |
-          pip install twine wheel
-        shell: bash
+        run: pip install twine wheel
 
       - name: Make Full
-        run: |
-          make full
-        shell: bash
+        run: make full
 
       - name: Upload to PyPI
-        run: |
-          python3 setup.py upload
-        shell: bash
+        run: python3 setup.py upload
