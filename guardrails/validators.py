@@ -2283,11 +2283,19 @@ class DetectSecrets(Validator):
 
         try:
             # Create a new secrets collection
-            secrets = detect_secrets.SecretsCollection()
+            from detect_secrets import settings
+            from detect_secrets.core.secrets_collection import SecretsCollection
+
+            secrets = SecretsCollection()
 
             # Scan the file for secrets
-            with detect_secrets.settings.default_settings():
+            with settings.default_settings():
                 secrets.scan_file(self.temp_file_name)
+        except ImportError:
+            raise ValueError(
+                "You must install detect-secrets in order to "
+                "use the DetectSecrets validator."
+            )
         except Exception as e:
             raise RuntimeError(
                 "Problems with creating a SecretsCollection or "
