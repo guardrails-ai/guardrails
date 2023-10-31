@@ -175,6 +175,9 @@ plugins:
 
 
 extra:
+  analytics:
+    provider: google
+    property: G-CXQ3SCNV24
   version:
     provider: mike
   social:
@@ -184,3 +187,7 @@ extra:
       link: https://github.com/guardrails-ai/guardrails
     - icon: fontawesome/brands/discord
       link: https://discord.gg/Jsey3mX98B
+
+extra_javascript:
+  - javascripts/pipedrive.js
+  - javascripts/posthog.js

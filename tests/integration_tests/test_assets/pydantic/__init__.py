@@ -23,12 +23,20 @@ reader = (
 )
 
 COMPILED_PROMPT = reader("compiled_prompt.txt")
+COMPILED_PROMPT_CHAT = reader("compiled_prompt_chat.txt")
+COMPILED_INSTRUCTIONS_CHAT = reader("compiled_instructions_chat.txt")
 COMPILED_PROMPT_REASK_1 = reader("compiled_prompt_reask_1.txt")
+COMPILED_PROMPT_FULL_REASK_1 = reader("compiled_prompt_full_reask_1.txt")
+COMPILED_INSTRUCTIONS_REASK_1 = reader("compiled_instructions_reask_1.txt")
 COMPILED_PROMPT_REASK_2 = reader("compiled_prompt_reask_2.txt")
+COMPILED_PROMPT_FULL_REASK_2 = reader("compiled_prompt_full_reask_2.txt")
+COMPILED_INSTRUCTIONS_REASK_2 = reader("compiled_instructions_reask_2.txt")
 
 LLM_OUTPUT = reader("llm_output.txt")
 LLM_OUTPUT_REASK_1 = reader("llm_output_reask_1.txt")
+LLM_OUTPUT_FULL_REASK_1 = reader("llm_output_full_reask_1.txt")
 LLM_OUTPUT_REASK_2 = reader("llm_output_reask_2.txt")
+LLM_OUTPUT_FULL_REASK_2 = reader("llm_output_full_reask_2.txt")
 
 RAIL_SPEC_WITH_REASK = reader("reask.rail")
 

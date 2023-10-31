@@ -6,22 +6,19 @@ from typing import Callable, List, Optional
 
 import openai
 
-try:
-    import numpy as np
-except ImportError:
-    np = None
-
 
 class EmbeddingBase(ABC):
     """Base class for embedding models."""
 
     def __init__(
         self,
-        model: Optional[str],
-        encoding_name: Optional[str],
-        max_tokens: Optional[int],
+        model: Optional[str] = None,
+        encoding_name: Optional[str] = None,
+        max_tokens: Optional[int] = None,
     ):
-        if np is None:
+        try:
+            import numpy  # noqa: F401
+        except ImportError:
             raise ImportError(
                 f"`numpy` is required for `{self.__class__.__name__}` class."
                 "Please install it with `pip install numpy`."
@@ -54,20 +51,32 @@ class EmbeddingBase(ABC):
         Returns:
             List[float] Embedding of the text.
         """
-        chunk_embeddings = []
+        try:
+            import numpy as np
+        except ImportError:
+            raise ImportError(
+                f"`numpy` is required for `{self.__class__.__name__}` class."
+                "Please install it with `pip install numpy`."
+            )
+
+        chunk_embeddings_list = []
         chunk_lens = []
 
         for chunk in EmbeddingBase._chunked_tokens(
             text=text, encoding_name=self._encoding_name, chunk_length=self._max_tokens
         ):
-            chunk_embeddings.append(embedder(chunk))
+            chunk_embeddings_list.append(embedder(chunk))
             chunk_lens.append(len(chunk))
 
         if average:
-            chunk_embeddings = np.average(chunk_embeddings, axis=0, weights=chunk_lens)
+            chunk_embeddings = np.average(
+                chunk_embeddings_list, axis=0, weights=chunk_lens
+            )
             chunk_embeddings = chunk_embeddings / np.linalg.norm(
                 chunk_embeddings
             )  # normalizes length to 1
+        else:
+            chunk_embeddings = np.array(chunk_embeddings_list)
         return chunk_embeddings.flatten().tolist()
 
     @staticmethod
@@ -93,8 +102,13 @@ class EmbeddingBase(ABC):
         if n < 1:
             raise ValueError("n must be at least one")
         it = iter(iterable)
-        while batch := tuple(islice(it, n)):
+        while batch := list(islice(it, n)):
             yield batch
+
+    @property
+    def output_dim(self) -> int:
+        """Returns the dimension of the output of the model."""
+        raise NotImplementedError
 
 
 class OpenAIEmbedding(EmbeddingBase):
@@ -114,9 +128,7 @@ class OpenAIEmbedding(EmbeddingBase):
     def embed(self, texts: List[str]) -> List[List[float]]:
         embeddings = []
         for text in texts:
-            embeddings.append(
-                super()._len_safe_get_embedding(text, self._get_embedding)
-            )
+            embeddings.append(super()._len_safe_get_embedding(text, self.embed_query))
 
         return embeddings
 
@@ -124,7 +136,7 @@ class OpenAIEmbedding(EmbeddingBase):
         resp = self._get_embedding([query])
         return resp[0]
 
-    def _get_embedding(self, texts: List[str]) -> List[float]:
+    def _get_embedding(self, texts: List[str]) -> List[List[float]]:
         api_key = (
             self.api_key
             if self.api_key is not None
@@ -133,10 +145,12 @@ class OpenAIEmbedding(EmbeddingBase):
         resp = openai.Embedding.create(
             api_key=api_key, model=self._model, input=texts, api_base=self.api_base
         )
-        return [r["embedding"] for r in resp["data"]]
+        return [r["embedding"] for r in resp["data"]]  # type: ignore
 
     @property
     def output_dim(self) -> int:
+        if self._model is None:
+            raise ValueError("Model not set")
         if self._model == "text-embedding-ada-002":
             return 1536
         elif "ada" in self._model:
@@ -163,7 +177,7 @@ class ManifestEmbedding(EmbeddingBase):
         max_tokens: Optional[int] = 8191,
     ):
         try:
-            from manifest import Manifest
+            from manifest import Manifest  # type: ignore
         except ImportError:
             raise ImportError(
                 "The `manifest` package is not installed. "
@@ -188,9 +202,7 @@ class ManifestEmbedding(EmbeddingBase):
     def embed(self, texts: List[str]) -> List[List[float]]:
         embeddings = []
         for text in texts:
-            embeddings.append(
-                super()._len_safe_get_embedding(text, self._get_embedding)
-            )
+            embeddings.append(super()._len_safe_get_embedding(text, self.embed_query))
 
         return embeddings
 
@@ -198,9 +210,9 @@ class ManifestEmbedding(EmbeddingBase):
         resp = self._get_embedding([query])
         return resp[0]
 
-    def _get_embedding(self, texts: List[str]) -> List[float]:
+    def _get_embedding(self, texts: List[str]) -> List[List[float]]:
         embeddings = self._manifest.run(texts)
-        return embeddings
+        return embeddings  # type: ignore
 
     @cached_property
     def output_dim(self) -> int:

@@ -79,13 +79,11 @@ class RequiringValidator2(Validator):
 async def test_required_metadata(spec, metadata):
     guard = guardrails.Guard.from_rail_string(spec)
 
-    missing_keys = verify_metadata_requirements(
-        {}, guard.output_schema.to_dict().values()
-    )
+    missing_keys = verify_metadata_requirements({}, guard.output_schema.root_datatype)
     assert set(missing_keys) == set(metadata)
 
     not_missing_keys = verify_metadata_requirements(
-        metadata, guard.output_schema.to_dict().values()
+        metadata, guard.output_schema.root_datatype
     )
     assert not_missing_keys == []
 

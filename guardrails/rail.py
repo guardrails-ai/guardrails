@@ -13,6 +13,7 @@ from guardrails.utils.pydantic_utils import (
     attach_validators_to_element,
     create_xml_element_for_base_model,
 )
+from guardrails.utils.xml_utils import cast_xml_to_string
 from guardrails.validators import Validator
 
 # TODO: Logging
@@ -33,16 +34,16 @@ class Rail:
         4. `<instructions>`, which contains the instructions to be passed to the LLM
     """
 
-    input_schema: Optional[Schema] = (None,)
-    output_schema: Optional[Schema] = (None,)
-    instructions: Optional[Instructions] = (None,)
-    prompt: Optional[Prompt] = (None,)
-    version: Optional[str] = ("0.1",)
+    input_schema: Optional[Schema]
+    output_schema: Schema
+    instructions: Optional[Instructions]
+    prompt: Optional[Prompt]
+    version: str = "0.1"
 
     @classmethod
     def from_pydantic(
         cls,
-        output_class: BaseModel,
+        output_class: Type[BaseModel],
         prompt: Optional[str] = None,
         instructions: Optional[str] = None,
         reask_prompt: Optional[str] = None,
@@ -79,7 +80,7 @@ class Rail:
         raw_input_schema = xml.find("input")
         if raw_input_schema is None:
             # No input schema, so do no input checking.
-            input_schema = Schema()
+            input_schema = None
         else:
             input_schema = cls.load_input_schema(raw_input_schema)
 
@@ -116,12 +117,16 @@ class Rail:
         else:
             prompt = cls.load_prompt(prompt, output_schema)
 
+        # Get version
+        version = xml.attrib["version"]
+        version = cast_xml_to_string(version)
+
         return cls(
             input_schema=input_schema,
             output_schema=output_schema,
             instructions=instructions,
             prompt=prompt,
-            version=xml.attrib["version"],
+            version=version,
         )
 
     @classmethod
@@ -148,13 +153,13 @@ class Rail:
     def load_schema(root: ET._Element) -> Schema:
         """Given the RAIL <input> or <output> element, create a Schema
         object."""
-        return Schema(root)
+        return Schema.from_element(root)
 
     @staticmethod
     def load_input_schema(root: ET._Element) -> Schema:
         """Given the RAIL <input> element, create a Schema object."""
         # Recast the schema as an InputSchema.
-        return Schema(root)
+        return Schema.from_element(root)
 
     @staticmethod
     def load_output_schema(
@@ -174,12 +179,12 @@ class Rail:
         """
         # If root contains a `type="string"` attribute, then it's a StringSchema
         if "type" in root.attrib and root.attrib["type"] == "string":
-            return StringSchema(
+            return StringSchema.from_element(
                 root,
                 reask_prompt_template=reask_prompt,
                 reask_instructions_template=reask_instructions,
             )
-        return JsonSchema(
+        return JsonSchema.from_element(
             root,
             reask_prompt_template=reask_prompt,
             reask_instructions_template=reask_instructions,
@@ -189,7 +194,7 @@ class Rail:
     def load_instructions(root: ET._Element, output_schema: Schema) -> Instructions:
         """Given the RAIL <instructions> element, create Instructions."""
         return Instructions(
-            source=root.text,
+            source=root.text or "",
             output_schema=output_schema.transpile(),
         )
 
@@ -197,13 +202,13 @@ class Rail:
     def load_prompt(root: ET._Element, output_schema: Schema) -> Prompt:
         """Given the RAIL <prompt> element, create a Prompt object."""
         return Prompt(
-            source=root.text,
+            source=root.text or "",
             output_schema=output_schema.transpile(),
         )
 
 
 def generate_xml_code(
-    prompt: str,
+    prompt: Optional[str] = None,
     output_class: Optional[Type[BaseModel]] = None,
     instructions: Optional[str] = None,
     reask_prompt: Optional[str] = None,
@@ -214,7 +219,7 @@ def generate_xml_code(
     """Generate XML RAIL Spec from a pydantic model and a prompt.
 
     Parameters: Arguments:
-        prompt (str): The prompt for this RAIL spec.
+        prompt (str, optional): The prompt for this RAIL spec.
         output_class (BaseModel, optional): The Pydantic model that represents the desired output schema.  Do not specify if using a string schema. Defaults to None.
         instructions (str, optional): Instructions for chat models. Defaults to None.
         reask_prompt (str, optional): An alternative prompt to use during reasks. Defaults to None.
@@ -240,8 +245,10 @@ def generate_xml_code(
         # Create XML elements for the output_class
         create_xml_element_for_base_model(output_class, output_element)
     else:
-        attach_validators_to_element(output_element, validators)
-        output_element.set("description", description)
+        if validators is not None:
+            attach_validators_to_element(output_element, validators)
+        if description is not None:
+            output_element.set("description", description)
         output_element.set("type", "string")
 
     if prompt is not None:

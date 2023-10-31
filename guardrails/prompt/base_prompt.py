@@ -1,13 +1,14 @@
 """Class for representing a prompt entry."""
 import re
 import warnings
-from string import Formatter, Template
+from string import Template
 from typing import Optional
 
 import regex
 
 from guardrails.namespace_template import NamespaceTemplate
 from guardrails.utils.constants import constants
+from guardrails.utils.parsing_utils import get_template_variables
 
 
 class BasePrompt:
@@ -37,7 +38,7 @@ class BasePrompt:
 
     @property
     def variable_names(self):
-        return [x[1] for x in Formatter().parse(self.escape()) if x[1] is not None]
+        return get_template_variables(self.source)
 
     @property
     def format_instructions(self):
@@ -111,6 +112,8 @@ class BasePrompt:
         if earliest_match_idx is None:
             return 0
 
+        if earliest_match is None:
+            return None
         return earliest_match.start()
 
     def escape(self) -> str:
