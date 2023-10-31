@@ -40,12 +40,12 @@ else:
 try:
     import detect_secrets  # type: ignore
 except ImportError:
-    detect_secrets = None
+    detect_secrets = None  # type: ignore
 
 try:
     import nltk  # type: ignore
 except ImportError:
-    nltk = None
+    nltk = None  # type: ignore
 
 if nltk is not None:
     try:
