@@ -1,0 +1,26 @@
+name: Manual Release
+
+on:
+  workflow_dispatch: # This event allows manual triggering
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.x
+
+      - name: Install twine and wheel
+        run: pip install twine wheel
+
+      - name: Make Full
+        run: make full
+
+      - name: Upload to PyPI
+        run: python3 setup.py upload

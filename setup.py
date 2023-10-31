@@ -23,7 +23,7 @@ DESCRIPTION = "Adding guardrails to large language models."
 URL = "https://github.com/guardrails-ai/guardrails"
 EMAIL = "shreya.rajpal@gmail.com"
 AUTHOR = "Shreya Rajpal"
-REQUIRES_PYTHON = ">=3.7.0"
+REQUIRES_PYTHON = ">=3.8.0"
 VERSION = main_ns["__version__"]
 
 # What packages are required for this module to be executed?
@@ -39,6 +39,7 @@ REQUIRED = [
     "tenacity>=8.1.0",
     "pytest",
     "regex",
+    "typing-extensions",
     "rstr",
 ]
 
@@ -69,6 +70,8 @@ DEV_REQUIREMENTS = [
     "pypdfium2",
     "pytest",
     "pytest-asyncio",
+    "pyright",
+    "lxml-stubs",
     *SUMMARY_REQUIREMENTS,
     *PROFANITY_REQUIREMENTS,
     *SQL_REQUIREMENTS,
@@ -182,7 +185,7 @@ setup(
         # Full list: https://pypi.python.org/pypi?%3Aaction=list_classifiers
         "Programming Language :: Python",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.8",
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
     ],
     # $ setup.py publish support.

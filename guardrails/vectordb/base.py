@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, List
+from typing import Any, List, Optional
 
 from guardrails.embedding import EmbeddingBase
 
@@ -8,7 +8,7 @@ from guardrails.embedding import EmbeddingBase
 class VectorDBBase(ABC):
     """Base class for vector databases."""
 
-    def __init__(self, embedder: EmbeddingBase, path: str = None) -> None:
+    def __init__(self, embedder: EmbeddingBase, path: Optional[str] = None) -> None:
         """Creates a new VectorDBBase.
 
         Args:
@@ -69,7 +69,7 @@ class VectorDBBase(ABC):
         vector = self._embedder.embed_query(text)
         return self.similarity_search_vector_with_threshold(vector, k, threshold)
 
-    def add_texts(self, texts: List[str], ids: List[Any] = None) -> None:
+    def add_texts(self, texts: List[str], ids: Optional[List[Any]] = None) -> None:
         """Adds a list of texts to the store.
 
         Args:
@@ -80,7 +80,7 @@ class VectorDBBase(ABC):
         self.add_vectors(vectors)
 
     @abstractmethod
-    def save(self, path: str = None):
+    def save(self, path: Optional[str] = None):
         """Saves the vector database to the given path."""
         ...
 

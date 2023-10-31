@@ -5,6 +5,9 @@ autoformat:
 	isort --atomic guardrails/ tests/
 	docformatter --in-place --recursive guardrails tests
 
+type:
+	pyright guardrails/
+
 lint:
 	isort -c guardrails/ tests/
 	black guardrails/ tests/ --check
@@ -36,4 +39,9 @@ dev:
 full:
 	pip install -e ".[all]"
 
-all: autoformat lint docs test
+all: autoformat type lint docs test
+
+precommit:
+	# pytest -x -q --no-summary
+	pyright guardrails/
+	make lint

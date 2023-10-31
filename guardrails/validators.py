@@ -12,21 +12,23 @@ import os
 import re
 import string
 import warnings
-from collections import defaultdict
 from functools import partial
-from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import openai
-import pydantic
 import rstr
-from pydantic import Field
 from tenacity import retry, stop_after_attempt, wait_random_exponential
 
-from guardrails.utils.casting_utils import to_int
 from guardrails.utils.docs_utils import get_chunks_from_text, sentence_split
-from guardrails.utils.json_utils import deprecated_string_types
 from guardrails.utils.sql_utils import SQLDriver, create_sql_driver
 from guardrails.utils.validator_utils import PROVENANCE_V1_PROMPT, SENSITIVE_WORDS_MAP
+from guardrails.validator_base import (
+    FailResult,
+    PassResult,
+    ValidationResult,
+    Validator,
+    register_validator,
+)
 
 try:
     import numpy as np
@@ -36,293 +38,23 @@ else:
     _HAS_NUMPY = True
 
 try:
-    import detect_secrets
+    import detect_secrets  # type: ignore
 except ImportError:
-    detect_secrets = None
+    detect_secrets = None  # type: ignore
 
 try:
-    import nltk
+    import nltk  # type: ignore
 except ImportError:
-    nltk = None
+    nltk = None  # type: ignore
 
-try:
-    if nltk is not None:
+if nltk is not None:
+    try:
         nltk.data.find("tokenizers/punkt")
-except LookupError:
-    nltk.download("punkt")
-
-
-validators_registry = {}
-types_to_validators = defaultdict(list)
+    except LookupError:
+        nltk.download("punkt")
 
 
 logger = logging.getLogger(__name__)
-
-
-class ValidatorError(Exception):
-    """Base class for all validator errors."""
-
-
-class Filter:
-    pass
-
-
-class Refrain:
-    pass
-
-
-def check_refrain_in_list(schema: List) -> bool:
-    """Checks if a Refrain object exists in a list.
-
-    Args:
-        schema: A list that can contain lists, dicts or scalars.
-
-    Returns:
-        bool: True if a Refrain object exists in the list.
-    """
-    for item in schema:
-        if isinstance(item, Refrain):
-            return True
-        elif isinstance(item, list):
-            if check_refrain_in_list(item):
-                return True
-        elif isinstance(item, dict):
-            if check_refrain_in_dict(item):
-                return True
-
-    return False
-
-
-def check_refrain_in_dict(schema: Dict) -> bool:
-    """Checks if a Refrain object exists in a dict.
-
-    Args:
-        schema: A dict that can contain lists, dicts or scalars.
-
-    Returns:
-        True if a Refrain object exists in the dict.
-    """
-    for key, value in schema.items():
-        if isinstance(value, Refrain):
-            return True
-        elif isinstance(value, list):
-            if check_refrain_in_list(value):
-                return True
-        elif isinstance(value, dict):
-            if check_refrain_in_dict(value):
-                return True
-
-    return False
-
-
-def filter_in_list(schema: List) -> List:
-    """Remove out all Filter objects from a list.
-
-    Args:
-        schema: A list that can contain lists, dicts or scalars.
-
-    Returns:
-        A list with all Filter objects removed.
-    """
-    filtered_list = []
-
-    for item in schema:
-        if isinstance(item, Filter):
-            pass
-        elif isinstance(item, PydanticReAsk):
-            filtered_list.append(item)
-        elif isinstance(item, list):
-            filtered_item = filter_in_list(item)
-            if len(filtered_item):
-                filtered_list.append(filtered_item)
-        elif isinstance(item, dict):
-            filtered_dict = filter_in_dict(item)
-            if len(filtered_dict):
-                filtered_list.append(filtered_dict)
-        else:
-            filtered_list.append(item)
-
-    return filtered_list
-
-
-def filter_in_dict(schema: Dict) -> Dict:
-    """Remove out all Filter objects from a dictionary.
-
-    Args:
-        schema: A dictionary that can contain lists, dicts or scalars.
-
-    Returns:
-        A dictionary with all Filter objects removed.
-    """
-    filtered_dict = {}
-
-    for key, value in schema.items():
-        if isinstance(value, Filter):
-            pass
-        elif isinstance(value, PydanticReAsk):
-            filtered_dict[key] = value
-        elif isinstance(value, list):
-            filtered_item = filter_in_list(value)
-            if len(filtered_item):
-                filtered_dict[key] = filtered_item
-        elif isinstance(value, dict):
-            filtered_dict[key] = filter_in_dict(value)
-        else:
-            filtered_dict[key] = value
-
-    return filtered_dict
-
-
-def register_validator(name: str, data_type: Union[str, List[str]]):
-    """Register a validator for a data type."""
-    from guardrails.datatypes import registry as types_registry
-
-    if isinstance(data_type, str):
-        data_type = list(types_registry.keys()) if data_type == "all" else [data_type]
-    # Make sure that the data type string exists in the data types registry.
-    for dt in data_type:
-        if dt not in types_registry:
-            raise ValueError(f"Data type {dt} is not registered.")
-        if dt == "string":
-            for str_type in deprecated_string_types:
-                types_to_validators[str_type].append(name)
-        types_to_validators[dt].append(name)
-
-    def decorator(cls_or_func: Union[type, Callable]):
-        """Register a validator for a data type."""
-        if isinstance(cls_or_func, type(Validator)) or issubclass(
-            type(cls_or_func), Validator
-        ):
-            cls = cls_or_func
-            cls.rail_alias = name
-        elif callable(cls_or_func):
-            func = cls_or_func
-            func.rail_alias = name
-            # ensure function takes two args
-            if not func.__code__.co_argcount == 2:
-                raise ValueError(
-                    f"Validator function {func.__name__} must take two arguments."
-                )
-            # dynamically create Validator subclass with `validate` method as `func`
-            cls = type(
-                name,
-                (Validator,),
-                {"validate": staticmethod(func), "rail_alias": name},
-            )
-        else:
-            raise ValueError(
-                "Only classes and functions can be registered as validators."
-            )
-        validators_registry[name] = cls
-        return cls
-
-    return decorator
-
-
-class ValidationResult(pydantic.BaseModel):
-    outcome: str
-    metadata: Optional[Dict[str, Any]] = None
-
-
-class PassResult(ValidationResult):
-    outcome: Literal["pass"] = "pass"
-
-    class ValueOverrideSentinel:
-        pass
-
-    # should only be used if Validator.override_value_on_pass is True
-    value_override: Optional[Any] = Field(default=ValueOverrideSentinel)
-
-
-class FailResult(ValidationResult):
-    outcome: Literal["fail"] = "fail"
-
-    error_message: str
-    fix_value: Optional[Any] = None
-
-
-class Validator:
-    """Base class for validators."""
-
-    run_in_separate_process = False
-    override_value_on_pass = False
-    required_metadata_keys = []
-
-    def __init__(self, on_fail: Optional[Callable] = None, **kwargs):
-        if on_fail is None:
-            on_fail = "noop"
-        if isinstance(on_fail, str):
-            self.on_fail_descriptor = on_fail
-            self.on_fail_method = None
-        else:
-            self.on_fail_descriptor = "custom"
-            self.on_fail_method = on_fail
-
-        # Store the kwargs for the validator.
-        self._kwargs = kwargs
-
-        assert (
-            self.rail_alias in validators_registry
-        ), f"Validator {self.__class__.__name__} is not registered. "
-
-    def validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
-        """Validates a value and return a validation result."""
-        raise NotImplementedError
-
-    def to_prompt(self, with_keywords: bool = True) -> str:
-        """Convert the validator to a prompt.
-
-        E.g. ValidLength(5, 10) -> "length: 5 10" when with_keywords is False.
-        ValidLength(5, 10) -> "length: min=5 max=10" when with_keywords is True.
-
-        Args:
-            with_keywords: Whether to include the keyword arguments in the prompt.
-
-        Returns:
-            A string representation of the validator.
-        """
-        if not len(self._kwargs):
-            return self.rail_alias
-
-        kwargs = self._kwargs.copy()
-        for k, v in kwargs.items():
-            if not isinstance(v, str):
-                kwargs[k] = str(v)
-
-        params = " ".join(list(kwargs.values()))
-        if with_keywords:
-            params = " ".join([f"{k}={v}" for k, v in kwargs.items()])
-        return f"{self.rail_alias}: {params}"
-
-    def to_xml_attrib(self):
-        """Convert the validator to an XML attribute."""
-
-        if not len(self._kwargs):
-            return self.rail_alias
-
-        validator_args = []
-        init_args = inspect.getfullargspec(self.__init__)
-        for arg in init_args.args[1:]:
-            if arg not in ("on_fail", "args", "kwargs"):
-                arg_value = self._kwargs.get(arg)
-                str_arg = str(arg_value)
-                if str_arg is not None:
-                    str_arg = "{" + str_arg + "}" if " " in str_arg else str_arg
-                    validator_args.append(str_arg)
-
-        params = " ".join(validator_args)
-        return f"{self.rail_alias}: {params}"
-
-    def __call__(self, value):
-        result = self.validate(value, {})
-        if isinstance(result, FailResult):
-            from guardrails.validator_service import ValidatorServiceBase
-
-            validator_service = ValidatorServiceBase()
-            return validator_service.perform_correction(
-                [result], value, self, self.on_fail_descriptor
-            )
-        return value
 
 
 # @register_validator('required', 'all')
@@ -343,10 +75,6 @@ class Validator:
 #         """Validates that a value is not None."""
 
 #         return value is not None
-
-
-class PydanticReAsk(dict):
-    pass
 
 
 @register_validator(name="pydantic_field_validator", data_type="all")
@@ -412,7 +140,10 @@ class ValidRange(Validator):
     """
 
     def __init__(
-        self, min: int = None, max: int = None, on_fail: Optional[Callable] = None
+        self,
+        min: Optional[int] = None,
+        max: Optional[int] = None,
+        on_fail: Optional[Callable] = None,
     ):
         super().__init__(on_fail=on_fail, min=min, max=max)
 
@@ -540,13 +271,16 @@ class ValidLength(Validator):
     """  # noqa
 
     def __init__(
-        self, min: int = None, max: int = None, on_fail: Optional[Callable] = None
+        self,
+        min: Optional[int] = None,
+        max: Optional[int] = None,
+        on_fail: Optional[Callable] = None,
     ):
         super().__init__(on_fail=on_fail, min=min, max=max)
-        self._min = to_int(min)
-        self._max = to_int(max)
+        self._min = int(min) if min is not None else None
+        self._max = int(max) if max is not None else None
 
-    def validate(self, value: Any, metadata: Dict) -> ValidationResult:
+    def validate(self, value: Union[str, List], metadata: Dict) -> ValidationResult:
         """Validates that the length of value is within the expected range."""
         logger.debug(
             f"Validating {value} is in length range {self._min} - {self._max}..."
@@ -561,12 +295,14 @@ class ValidLength(Validator):
                     last_val = rstr.rstr(string.ascii_lowercase, 1)
                 else:
                     last_val = value[-1]
+                corrected_value = value + last_val * (self._min - len(value))
             else:
                 if not value:
                     last_val = [rstr.rstr(string.ascii_lowercase, 1)]
                 else:
                     last_val = [value[-1]]
-            corrected_value = value + last_val * (self._min - len(value))
+                # extend value by padding it out with last_val
+                corrected_value = value.extend([last_val] * (self._min - len(value)))
 
             return FailResult(
                 error_message=f"Value has length less than {self._min}. "
@@ -610,24 +346,31 @@ class RegexMatch(Validator):
         match_type: Optional[str] = None,
         on_fail: Optional[Callable] = None,
     ):
-        match_types = ["fullmatch", "search"]
+        # todo -> something forces this to be passed as kwargs and therefore xml-ized.
+        # match_types = ["fullmatch", "search"]
+
         if match_type is None:
             match_type = "fullmatch"
-        assert match_type in match_types, f"match_type must be in {match_types}"
+        assert match_type in [
+            "fullmatch",
+            "search",
+        ], 'match_type must be in ["fullmatch", "search"]'
+
         super().__init__(on_fail=on_fail, match_type=match_type, regex=regex)
         self._regex = regex
-        self._p = re.compile(regex)
-        self._match_f = getattr(self._p, match_type)
+        self._match_type = match_type
+
+    def validate(self, value: Any, metadata: Dict) -> ValidationResult:
+        p = re.compile(self._regex)
+        """Validates that value matches the provided regular expression."""
         # Pad matching string on either side for fix
         # example if we are performing a regex search
         str_padding = (
-            "" if match_type == "fullmatch" else rstr.rstr(string.ascii_lowercase)
+            "" if self._match_type == "fullmatch" else rstr.rstr(string.ascii_lowercase)
         )
-        self._fix_str = str_padding + rstr.xeger(regex) + str_padding
+        self._fix_str = str_padding + rstr.xeger(self._regex) + str_padding
 
-    def validate(self, value: Any, metadata: Dict) -> ValidationResult:
-        """Validates that value matches the provided regular expression."""
-        if not self._match_f(value):
+        if not getattr(p, self._match_type)(value):
             return FailResult(
                 error_message=f"Result must match {self._regex}",
                 fix_value=self._fix_str,
@@ -858,6 +601,8 @@ class SqlColumnPresence(Validator):
         expressions = parse(value)
         cols = set()
         for expression in expressions:
+            if expression is None:
+                continue
             for col in expression.find_all(exp.Column):
                 cols.add(col.alias_or_name)
 
@@ -951,9 +696,8 @@ class SimilarToDocument(Validator):
             )
 
         self._document = document
-        embedding = openai.Embedding.create(input=[document], model=model)["data"][0][
-            "embedding"
-        ]
+        embedding_response = openai.Embedding.create(input=[document], model=model)
+        embedding = embedding_response["data"][0]["embedding"]  # type: ignore
         self._document_embedding = np.array(embedding)
         self._model = model
         self._threshold = float(threshold)
@@ -974,13 +718,13 @@ class SimilarToDocument(Validator):
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         logger.debug(f"Validating {value} is similar to document...")
 
+        embedding_response = openai.Embedding.create(input=[value], model=self._model)
+
         value_embedding = np.array(
-            openai.Embedding.create(input=[value], model=self._model)["data"][0][
-                "embedding"
-            ]
+            embedding_response["data"][0]["embedding"]  # type: ignore
         )
 
-        similarity = SimilarToDocument.cosine_similarity(
+        similarity = self.cosine_similarity(
             self._document_embedding,
             value_embedding,
         )
@@ -1014,7 +758,7 @@ class IsProfanityFree(Validator):
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         try:
-            from profanity_check import predict
+            from profanity_check import predict  # type: ignore
         except ImportError:
             raise ImportError(
                 "`is-profanity-free` validator requires the `alt-profanity-check`"
@@ -1052,7 +796,7 @@ class IsHighQualityTranslation(Validator):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         try:
-            from inspiredco.critique import Critique
+            from inspiredco.critique import Critique  # type: ignore
 
             self._critique = Critique(api_key=os.environ["INSPIREDCO_API_KEY"])
 
@@ -1354,7 +1098,7 @@ class ExtractiveSummary(Validator):
             store[filepath] = sentence_split(doc)
 
         try:
-            from thefuzz import fuzz
+            from thefuzz import fuzz  # type: ignore
         except ImportError:
             raise ImportError(
                 "`thefuzz` library is required for `extractive-summary` validator. "
@@ -1449,7 +1193,7 @@ class RemoveRedundantSentences(Validator):
         """Remove redundant sentences from a string."""
 
         try:
-            from thefuzz import fuzz
+            from thefuzz import fuzz  # type: ignore
         except ImportError:
             raise ImportError(
                 "`thefuzz` library is required for `remove-redundant-sentences` "
@@ -1515,7 +1259,7 @@ class SaliencyCheck(Validator):
     def __init__(
         self,
         docs_dir: str,
-        llm_callable: Callable = None,
+        llm_callable: Optional[Callable] = None,
         on_fail: Optional[Callable] = None,
         threshold: float = 0.25,
         **kwargs,
@@ -1529,6 +1273,11 @@ class SaliencyCheck(Validator):
         """
 
         super().__init__(on_fail, **kwargs)
+
+        if llm_callable is not None and inspect.iscoroutinefunction(llm_callable):
+            raise ValueError(
+                "SaliencyCheck validator does not support async LLM callables."
+            )
 
         self.llm_callable = (
             llm_callable if llm_callable else openai.ChatCompletion.create
@@ -1631,11 +1380,17 @@ class QARelevanceLLMEval(Validator):
 
     def __init__(
         self,
-        llm_callable: Callable = None,
+        llm_callable: Optional[Callable] = None,
         on_fail: Optional[Callable] = None,
         **kwargs,
     ):
         super().__init__(on_fail, **kwargs)
+
+        if llm_callable is not None and inspect.iscoroutinefunction(llm_callable):
+            raise ValueError(
+                "QARelevanceLLMEval validator does not support async LLM callables."
+            )
+
         self.llm_callable = (
             llm_callable if llm_callable else openai.ChatCompletion.create
         )
@@ -1708,15 +1463,12 @@ class ProvenanceV0(Validator):
     Parameters: Arguments
         threshold: The minimum cosine similarity between the generated text and
             the source text. Defaults to 0.8.
-        validation_method: Whether to validate at the sentence level or over the full text.
-            Must be one of `sentence` or `full`. Defaults to `sentence`
+        validation_method: Whether to validate at the sentence level or over the full text.  Must be one of `sentence` or `full`. Defaults to `sentence`
 
     Other parameters: Metadata
-        query_function (Callable, optional): A callable that takes a string and returns
-            a list of (chunk, score) tuples.
+        query_function (Callable, optional): A callable that takes a string and returns a list of (chunk, score) tuples.
         sources (List[str], optional): The source text.
-        embed_function (Callable, optional): A callable that creates embeddings for the
-            sources. Must accept a list of strings and return an np.array of floats.
+        embed_function (Callable, optional): A callable that creates embeddings for the sources. Must accept a list of strings and return an np.array of floats.
 
     In order to use this validator, you must provide either a `query_function` or
     `sources` with an `embed_function` in the metadata.
@@ -1782,60 +1534,66 @@ class ProvenanceV0(Validator):
             raise ValueError("validation_method must be 'sentence' or 'full'.")
         self._validation_method = validation_method
 
-    def get_query_function(self, metadata: Dict[str, Any]) -> None:
+    def get_query_function(self, metadata: Dict[str, Any]) -> Callable:
         query_fn = metadata.get("query_function", None)
         sources = metadata.get("sources", None)
 
         # Check that query_fn or sources are provided
-        if query_fn is not None and sources is not None:
-            warnings.warn(
-                "Both `query_function` and `sources` are provided in metadata. "
-                "`query_function` will be used."
-            )
-        elif query_fn is None and sources is None:
+        if query_fn is not None:
+            if sources is not None:
+                warnings.warn(
+                    "Both `query_function` and `sources` are provided in metadata. "
+                    "`query_function` will be used."
+                )
+            return query_fn
+
+        if sources is None:
             raise ValueError(
                 "You must provide either `query_function` or `sources` in metadata."
             )
-        elif query_fn is None and sources is not None:
-            # Check chunking strategy
-            chunk_strategy = metadata.get("chunk_strategy", "sentence")
-            if chunk_strategy not in ["sentence", "word", "char", "token"]:
-                raise ValueError(
-                    "`chunk_strategy` must be one of 'sentence', 'word', 'char', "
-                    "or 'token'."
-                )
-            chunk_size = metadata.get("chunk_size", 5)
-            chunk_overlap = metadata.get("chunk_overlap", 2)
 
-            # Check distance metric
-            distance_metric = metadata.get("distance_metric", "cosine")
-            if distance_metric not in ["cosine", "euclidean"]:
-                raise ValueError(
-                    "`distance_metric` must be one of 'cosine' or 'euclidean'."
-                )
+        # Check chunking strategy
+        chunk_strategy = metadata.get("chunk_strategy", "sentence")
+        if chunk_strategy not in ["sentence", "word", "char", "token"]:
+            raise ValueError(
+                "`chunk_strategy` must be one of 'sentence', 'word', 'char', "
+                "or 'token'."
+            )
+        chunk_size = metadata.get("chunk_size", 5)
+        chunk_overlap = metadata.get("chunk_overlap", 2)
 
-            # Check embed model
-            embed_function = metadata.get("embed_function", None)
-            if embed_function is None:
-                raise ValueError(
-                    "You must provide `embed_function` in metadata in order to "
-                    "use the default query function."
-                )
-            query_fn = partial(
-                ProvenanceV0.query_vector_collection,
-                sources=metadata["sources"],
-                chunk_strategy=chunk_strategy,
-                chunk_size=chunk_size,
-                chunk_overlap=chunk_overlap,
-                distance_metric=distance_metric,
-                embed_function=embed_function,
+        # Check distance metric
+        distance_metric = metadata.get("distance_metric", "cosine")
+        if distance_metric not in ["cosine", "euclidean"]:
+            raise ValueError(
+                "`distance_metric` must be one of 'cosine' or 'euclidean'."
             )
 
-        return query_fn
+        # Check embed model
+        embed_function = metadata.get("embed_function", None)
+        if embed_function is None:
+            raise ValueError(
+                "You must provide `embed_function` in metadata in order to "
+                "use the default query function."
+            )
+        return partial(
+            self.query_vector_collection,
+            sources=metadata["sources"],
+            chunk_strategy=chunk_strategy,
+            chunk_size=chunk_size,
+            chunk_overlap=chunk_overlap,
+            distance_metric=distance_metric,
+            embed_function=embed_function,
+        )
 
     def validate_each_sentence(
         self, value: Any, query_function: Callable, metadata: Dict[str, Any]
     ) -> ValidationResult:
+        if nltk is None:
+            raise ImportError(
+                "`nltk` library is required for `provenance-v0` validator. "
+                "Please install it with `pip install nltk`."
+            )
         # Split the value into sentences using nltk sentence tokenizer.
         sentences = nltk.sent_tokenize(value)
 
@@ -1914,11 +1672,11 @@ class ProvenanceV0(Validator):
         text: str,
         k: int,
         sources: List[str],
+        embed_function: Callable,
         chunk_strategy: str = "sentence",
         chunk_size: int = 5,
         chunk_overlap: int = 2,
         distance_metric: str = "cosine",
-        embed_function: Optional[Callable] = None,
     ) -> List[Tuple[str, float]]:
         chunks = [
             get_chunks_from_text(source, chunk_strategy, chunk_size, chunk_overlap)
@@ -2085,7 +1843,7 @@ class ProvenanceV1(Validator):
                     ],
                     max_tokens=self._max_tokens,
                 )
-                return response["choices"][0]["message"]["content"]
+                return response["choices"][0]["message"]["content"]  # type: ignore
 
             self._llm_callable = openai_callable
         elif isinstance(llm_callable, Callable):
@@ -2096,58 +1854,59 @@ class ProvenanceV1(Validator):
                 " and returns a string."
             )
 
-    def get_query_function(self, metadata: Dict[str, Any]) -> None:
+    def get_query_function(self, metadata: Dict[str, Any]) -> Callable:
         # Exact same as ProvenanceV0
 
         query_fn = metadata.get("query_function", None)
         sources = metadata.get("sources", None)
 
         # Check that query_fn or sources are provided
-        if query_fn is not None and sources is not None:
-            warnings.warn(
-                "Both `query_function` and `sources` are provided in metadata. "
-                "`query_function` will be used."
-            )
-        elif query_fn is None and sources is None:
+        if query_fn is not None:
+            if sources is not None:
+                warnings.warn(
+                    "Both `query_function` and `sources` are provided in metadata. "
+                    "`query_function` will be used."
+                )
+            return query_fn
+
+        if sources is None:
             raise ValueError(
                 "You must provide either `query_function` or `sources` in metadata."
             )
-        elif query_fn is None and sources is not None:
-            # Check chunking strategy
-            chunk_strategy = metadata.get("chunk_strategy", "sentence")
-            if chunk_strategy not in ["sentence", "word", "char", "token"]:
-                raise ValueError(
-                    "`chunk_strategy` must be one of 'sentence', 'word', 'char', "
-                    "or 'token'."
-                )
-            chunk_size = metadata.get("chunk_size", 5)
-            chunk_overlap = metadata.get("chunk_overlap", 2)
 
-            # Check distance metric
-            distance_metric = metadata.get("distance_metric", "cosine")
-            if distance_metric not in ["cosine", "euclidean"]:
-                raise ValueError(
-                    "`distance_metric` must be one of 'cosine' or 'euclidean'."
-                )
+        # Check chunking strategy
+        chunk_strategy = metadata.get("chunk_strategy", "sentence")
+        if chunk_strategy not in ["sentence", "word", "char", "token"]:
+            raise ValueError(
+                "`chunk_strategy` must be one of 'sentence', 'word', 'char', "
+                "or 'token'."
+            )
+        chunk_size = metadata.get("chunk_size", 5)
+        chunk_overlap = metadata.get("chunk_overlap", 2)
 
-            # Check embed model
-            embed_function = metadata.get("embed_function", None)
-            if embed_function is None:
-                raise ValueError(
-                    "You must provide `embed_function` in metadata in order to "
-                    "use the default query function."
-                )
-            query_fn = partial(
-                ProvenanceV1.query_vector_collection,
-                sources=metadata["sources"],
-                chunk_strategy=chunk_strategy,
-                chunk_size=chunk_size,
-                chunk_overlap=chunk_overlap,
-                distance_metric=distance_metric,
-                embed_function=embed_function,
+        # Check distance metric
+        distance_metric = metadata.get("distance_metric", "cosine")
+        if distance_metric not in ["cosine", "euclidean"]:
+            raise ValueError(
+                "`distance_metric` must be one of 'cosine' or 'euclidean'."
             )
 
-        return query_fn
+        # Check embed model
+        embed_function = metadata.get("embed_function", None)
+        if embed_function is None:
+            raise ValueError(
+                "You must provide `embed_function` in metadata in order to "
+                "use the default query function."
+            )
+        return partial(
+            self.query_vector_collection,
+            sources=metadata["sources"],
+            chunk_strategy=chunk_strategy,
+            chunk_size=chunk_size,
+            chunk_overlap=chunk_overlap,
+            distance_metric=distance_metric,
+            embed_function=embed_function,
+        )
 
     @retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(6))
     def call_llm(self, prompt: str) -> str:
@@ -2188,6 +1947,11 @@ class ProvenanceV1(Validator):
     def validate_each_sentence(
         self, value: Any, query_function: Callable, metadata: Dict[str, Any]
     ) -> ValidationResult:
+        if nltk is None:
+            raise ImportError(
+                "`nltk` library is required for `provenance-v0` validator. "
+                "Please install it with `pip install nltk`."
+            )
         # Split the value into sentences using nltk sentence tokenizer.
         sentences = nltk.sent_tokenize(value)
 
@@ -2263,11 +2027,11 @@ class ProvenanceV1(Validator):
         text: str,
         k: int,
         sources: List[str],
+        embed_function: Callable,
         chunk_strategy: str = "sentence",
         chunk_size: int = 5,
         chunk_overlap: int = 2,
         distance_metric: str = "cosine",
-        embed_function: Optional[Callable] = None,
     ) -> List[Tuple[str, float]]:
         chunks = [
             get_chunks_from_text(source, chunk_strategy, chunk_size, chunk_overlap)
@@ -2390,7 +2154,7 @@ class SimilarToList(Validator):
             # Check whether the value lies in a similar distribution as the prev_values
             # Get mean and std of prev_values
             prev_values = np.array(prev_values)
-            prev_mean = np.mean(prev_values)
+            prev_mean = np.mean(prev_values)  # type: ignore
             prev_std = np.std(prev_values)
 
             # Check whether the value lies outside specified stds of the mean
@@ -2424,10 +2188,12 @@ class SimilarToList(Validator):
             # Get average semantic similarity
             # Lesser the average semantic similarity, more similar the strings are
             avg_semantic_similarity = np.mean(
-                [
-                    self.get_semantic_similarity(value, prev_value, embed_function)
-                    for prev_value in prev_values
-                ]
+                np.array(
+                    [
+                        self.get_semantic_similarity(value, prev_value, embed_function)
+                        for prev_value in prev_values
+                    ]
+                )
             )
 
             # If average semantic similarity is above the threshold,
@@ -2517,11 +2283,19 @@ class DetectSecrets(Validator):
 
         try:
             # Create a new secrets collection
-            secrets = detect_secrets.SecretsCollection()
+            from detect_secrets import settings
+            from detect_secrets.core.secrets_collection import SecretsCollection
+
+            secrets = SecretsCollection()
 
             # Scan the file for secrets
-            with detect_secrets.settings.default_settings():
+            with settings.default_settings():
                 secrets.scan_file(self.temp_file_name)
+        except ImportError:
+            raise ValueError(
+                "You must install detect-secrets in order to "
+                "use the DetectSecrets validator."
+            )
         except Exception as e:
             raise RuntimeError(
                 "Problems with creating a SecretsCollection or "
