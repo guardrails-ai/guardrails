@@ -26,7 +26,7 @@ from guardrails.utils.casting_utils import to_int
 from guardrails.utils.docs_utils import get_chunks_from_text, sentence_split
 from guardrails.utils.json_utils import deprecated_string_types
 from guardrails.utils.sql_utils import SQLDriver, create_sql_driver
-from guardrails.utils.validator_utils import PROVENANCE_V1_PROMPT
+from guardrails.utils.validator_utils import PROVENANCE_V1_PROMPT, SENSITIVE_WORDS_MAP
 
 try:
     import numpy as np
@@ -2612,5 +2612,53 @@ class DetectSecrets(Validator):
                     + "\n".join(unique_secrets.keys())
                 ),
                 fix_value=modified_value,
+            )
+        return PassResult()
+
+
+@register_validator(name="sensitive-words", data_type="string")
+class SensitiveWords(Validator):
+    """Validates whether the generated text contains any sensitive words.
+
+    **Key Properties**
+    | Property                      | Description                       |
+    | ----------------------------- | --------------------------------- |
+    | Name for `format` attribute   | `sensitive-words`                 |
+    | Supported data types          | `string`                          |
+    | Programmatic fix              | None                              |
+
+    Parameters: Arguments
+        None
+
+    If sensitive words are detected, the validator replaces the sensitive
+    words with their corresponding replacements and returns the generated
+    text. The replacements have been pre-defined and can be found in the
+    `SENSITIVE_WORDS_MAP` dictionary.
+
+    The dictionary has been created using the following sources:
+        - https://writer.com/guides/inclusive-language/
+        - https://www.apa.org/about/apa/equity-diversity-inclusion/language-guidelines
+        - https://unlcms.unl.edu/ucomm/styleguide/sensitive-terms
+    """
+
+    def __init__(self, on_fail: Callable[..., Any] | None = None, **kwargs):
+        super().__init__(on_fail, **kwargs)
+
+    def validate(self, value: str, metadata: Dict[str, Any]) -> ValidationResult:
+        # For each sensitive word, check if it is present in the value
+        # If present, replace all instances of the word with the replacement
+        found_sensitive_words = []
+        for word, replacement in SENSITIVE_WORDS_MAP.items():
+            if word in value:
+                found_sensitive_words.append(word)
+                value = value.replace(word, replacement)
+
+        if found_sensitive_words:
+            return FailResult(
+                error_message=(
+                    "The following sensitive words were detected in the response:\n"
+                    + "\n".join(found_sensitive_words)
+                ),
+                fix_value=value,
             )
         return PassResult()
