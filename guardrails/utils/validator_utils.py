@@ -26,7 +26,6 @@ SENSITIVE_WORDS_MAP = {
     "normal body": "non-disabled body",
     "geezer": "older person",
     "geriatric": "elderly",
-    "the handicapped": "people with a disability",
     "retarded": "person with a learning disability",
     "addicts": "people with an addiction",
     "disabled community": "disability community",
