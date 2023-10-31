@@ -52,7 +52,7 @@ class BasePrompt:
             warnings.warn(
                 "It appears that you are using an old schema for gaurdrails variables, "
                 "follow the new namespaced convention "
-                "documented here: https://docs.getguardrails.ai/0-2-migration/"
+                "documented here: https://docs.guardrailsai.com/0-2-migration/"
             )
 
         matches = re.findall(r"\${gr\.(\w+)}", text)
