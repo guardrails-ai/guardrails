@@ -40,3 +40,8 @@ full:
 	pip install -e ".[all]"
 
 all: autoformat type lint docs test
+
+precommit:
+	# pytest -x -q --no-summary
+	pyright guardrails/
+	make lint

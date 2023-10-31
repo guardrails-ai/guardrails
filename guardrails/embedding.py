@@ -212,7 +212,7 @@ class ManifestEmbedding(EmbeddingBase):
 
     def _get_embedding(self, texts: List[str]) -> List[List[float]]:
         embeddings = self._manifest.run(texts)
-        return embeddings
+        return embeddings  # type: ignore
 
     @cached_property
     def output_dim(self) -> int:

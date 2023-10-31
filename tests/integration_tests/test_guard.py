@@ -1,4 +1,5 @@
 import json
+import os
 from typing import Optional, Union
 
 import openai
@@ -8,7 +9,7 @@ from pydantic import BaseModel
 import guardrails as gd
 from guardrails.guard import Guard
 from guardrails.utils.reask_utils import FieldReAsk
-from guardrails.validators import FailResult
+from guardrails.validators import FailResult, OneLine
 
 from .mock_llm_outputs import (
     MockOpenAICallable,
@@ -713,3 +714,68 @@ def test_pydantic_with_message_history_reask(mocker):
     assert guard_history[1].validated_output == json.loads(
         pydantic.MSG_HISTORY_LLM_OUTPUT_CORRECT
     )
+
+
+def test_sequential_validator_log_is_not_duplicated(mocker):
+    mocker.patch("guardrails.llm_providers.OpenAICallable", new=MockOpenAICallable)
+
+    proc_count_bak = os.environ.get("GUARDRAILS_PROCESS_COUNT")
+    os.environ["GUARDRAILS_PROCESS_COUNT"] = "1"
+    try:
+        content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
+        guard = guard_initializer(
+            entity_extraction.PYDANTIC_RAIL_WITH_NOOP, entity_extraction.PYDANTIC_PROMPT
+        )
+
+        _, final_output = guard(
+            llm_api=openai.Completion.create,
+            prompt_params={"document": content[:6000]},
+            num_reasks=1,
+        )
+
+        logs = (
+            guard.guard_state.most_recent_call.history[0]
+            .field_validation_logs.children["fees"]
+            .children[0]
+            .children["explanation"]
+            .validator_logs
+        )
+        assert len(logs) == 1
+        assert logs[0].validator_name == "OneLine"
+
+    finally:
+        if proc_count_bak is None:
+            del os.environ["GUARDRAILS_PROCESS_COUNT"]
+        else:
+            os.environ["GUARDRAILS_PROCESS_COUNT"] = proc_count_bak
+
+
+def test_in_memory_validator_log_is_not_duplicated(mocker):
+    mocker.patch("guardrails.llm_providers.OpenAICallable", new=MockOpenAICallable)
+
+    separate_proc_bak = OneLine.run_in_separate_process
+    OneLine.run_in_separate_process = False
+    try:
+        content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
+        guard = guard_initializer(
+            entity_extraction.PYDANTIC_RAIL_WITH_NOOP, entity_extraction.PYDANTIC_PROMPT
+        )
+
+        _, final_output = guard(
+            llm_api=openai.Completion.create,
+            prompt_params={"document": content[:6000]},
+            num_reasks=1,
+        )
+
+        logs = (
+            guard.guard_state.most_recent_call.history[0]
+            .field_validation_logs.children["fees"]
+            .children[0]
+            .children["explanation"]
+            .validator_logs
+        )
+        assert len(logs) == 1
+        assert logs[0].validator_name == "OneLine"
+
+    finally:
+        OneLine.run_in_separate_process = separate_proc_bak

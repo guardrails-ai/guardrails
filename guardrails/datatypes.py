@@ -1,11 +1,13 @@
 import datetime
 import logging
+import warnings
 from dataclasses import dataclass
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, Dict, Iterable
 from typing import List as TypedList
 from typing import Optional, Type, TypeVar, Union
 
+from dateutil.parser import parse
 from lxml import etree as ET
 from typing_extensions import Self
 
@@ -17,6 +19,16 @@ if TYPE_CHECKING:
     from guardrails.schema import FormatAttr
 
 logger = logging.getLogger(__name__)
+
+
+# TODO - deprecate these altogether
+deprecated_string_types = {"sql", "email", "url", "pythoncode"}
+
+
+def update_deprecated_type_to_string(type):
+    if type in deprecated_string_types:
+        return "string"
+    return type
 
 
 @dataclass
@@ -156,6 +168,15 @@ def register_type(name: str):
     return decorator
 
 
+# Decorator for deprecation
+def deprecate_type(cls: type):
+    warnings.warn(
+        f"""The '{cls.__name__}' type  is deprecated and will be removed in \
+versions 0.3.0 and beyond. Use the pydantic 'str' primitive instead.""",
+        DeprecationWarning,
+    )
+
+
 class ScalarType(DataType):
     def set_children_from_xml(self, element: ET._Element):
         for _ in element:
@@ -239,14 +260,15 @@ class Date(ScalarType):
         name: Optional[str],
         description: Optional[str],
     ) -> None:
-        self.date_format = "%Y-%m-%d"
         super().__init__(children, format_attr, optional, name, description)
+        self.date_format = None
 
     def from_str(self, s: str) -> Optional[datetime.date]:
         """Create a Date from a string."""
         if s is None:
             return None
-
+        if not self.date_format:
+            return parse(s).date()
         return datetime.datetime.strptime(s, self.date_format).date()
 
     @classmethod
@@ -297,6 +319,7 @@ class Time(ScalarType):
         return datatype
 
 
+@deprecate_type
 @register_type("email")
 class Email(ScalarType):
     """Element tag: `<email>`"""
@@ -304,6 +327,7 @@ class Email(ScalarType):
     tag = "email"
 
 
+@deprecate_type
 @register_type("url")
 class URL(ScalarType):
     """Element tag: `<url>`"""
@@ -311,6 +335,7 @@ class URL(ScalarType):
     tag = "url"
 
 
+@deprecate_type
 @register_type("pythoncode")
 class PythonCode(ScalarType):
     """Element tag: `<pythoncode>`"""
@@ -318,6 +343,7 @@ class PythonCode(ScalarType):
     tag = "pythoncode"
 
 
+@deprecate_type
 @register_type("sql")
 class SQLCode(ScalarType):
     """Element tag: `<sql>`"""
@@ -367,7 +393,8 @@ class List(NonScalarType):
                 # The child must be the datatype that all items in the list
                 # must conform to.
                 raise ValueError("List data type must have exactly one child.")
-            child_data_type = registry[child.tag]
+            child_data_type_tag = update_deprecated_type_to_string(child.tag)
+            child_data_type = registry[child_data_type_tag]
             self._children["item"] = child_data_type.from_xml(child)
 
 

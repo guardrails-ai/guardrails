@@ -62,6 +62,7 @@ class GuardLogs(ArbitraryModel):
     def set_validated_output(self, validated_output, is_full_schema_reask: bool):
         if (
             self._previous_logs is not None
+            and self._previous_logs.validated_output is not None
             and not is_full_schema_reask
             and not isinstance(validated_output, SkeletonReAsk)
         ):

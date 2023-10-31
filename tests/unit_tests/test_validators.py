@@ -26,12 +26,13 @@ from guardrails.validators import (
     ExtractiveSummary,
     ProvenanceV1,
     SimilarToDocument,
+    SimilarToList,
     SqlColumnPresence,
     TwoWords,
     ValidLength,
 )
 
-from .mock_embeddings import mock_create_embedding
+from .mock_embeddings import MOCK_EMBEDDINGS, mock_create_embedding
 from .mock_provenance_v1 import mock_chat_completion, mock_chromadb_query_function
 
 
@@ -255,10 +256,7 @@ def test_validator_as_tuple():
     )
 
     assert output == {"a_field": "hullo"}
-    assert (
-        guard.guard_state.all_histories[0].history[0].parsed_output["a_field"]
-        == hullo_reask
-    )
+    assert guard.guard_state.all_histories[0].history[0].reasks[0] == hullo_reask
 
     hello_reask = FieldReAsk(
         incorrect_value="hello there yo",
@@ -284,10 +282,7 @@ def test_validator_as_tuple():
     )
 
     assert output == {"a_field": "hello there"}
-    assert (
-        guard.guard_state.all_histories[0].history[0].parsed_output["a_field"]
-        == hello_reask
-    )
+    assert guard.guard_state.all_histories[0].history[0].reasks[0] == hello_reask
 
     # (Validator, on_fail) tuple reask
 
@@ -302,10 +297,7 @@ def test_validator_as_tuple():
     )
 
     assert output == {"a_field": "hello there"}
-    assert (
-        guard.guard_state.all_histories[0].history[0].parsed_output["a_field"]
-        == hello_reask
-    )
+    assert guard.guard_state.all_histories[0].history[0].reasks[0] == hello_reask
 
     # Fail on string
 
@@ -428,3 +420,20 @@ def test_to_xml_attrib(min, max, expected_xml):
     xml_validator = validator.to_xml_attrib()
 
     assert xml_validator == expected_xml
+
+
+def test_similar_to_list():
+    # Mock embedding function
+    def embed_function(text: str):
+        """Mock embedding function."""
+        return MOCK_EMBEDDINGS[text]
+
+    # Initialise validator
+    validator = SimilarToList()
+
+    # Test get_semantic_similarity method
+    similarity = validator.get_semantic_similarity(
+        "broadcom", "broadcom", embed_function
+    )
+    # Assert that similarity is very close to 0
+    assert similarity == pytest.approx(0.0, abs=1e-2)

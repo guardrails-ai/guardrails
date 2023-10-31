@@ -503,8 +503,9 @@ class Guard:
             full_schema_reask: When reasking, whether to regenerate the full schema
                                or just the incorrect values.
 
-        Returns:
-            The validated response.
+                Returns:
+                    The validated response. This is either a string or a dictionary, \
+        determined by the object schema defined in the RAILspec.
         """
         final_num_reasks = (
             num_reasks if num_reasks is not None else 0 if llm_api is None else None
@@ -568,13 +569,12 @@ class Guard:
         Returns:
             The validated response.
         """
-        api = get_llm_ask(llm_api, *args, **kwargs) if llm_api else None
         with start_action(action_type="guard_parse"):
             runner = Runner(
-                instructions=kwargs.get("instructions", None),
-                prompt=kwargs.get("prompt", None),
-                msg_history=kwargs.get("msg_history", None),
-                api=api,
+                instructions=kwargs.pop("instructions", None),
+                prompt=kwargs.pop("prompt", None),
+                msg_history=kwargs.pop("msg_history", None),
+                api=get_llm_ask(llm_api, *args, **kwargs) if llm_api else None,
                 input_schema=None,
                 output_schema=self.output_schema,
                 num_reasks=num_reasks,
@@ -610,13 +610,12 @@ class Guard:
         Returns:
             The validated response.
         """
-        api = get_async_llm_ask(llm_api, *args, **kwargs) if llm_api else None
         with start_action(action_type="guard_parse"):
             runner = AsyncRunner(
-                instructions=None,
-                prompt=None,
-                msg_history=None,
-                api=api,
+                instructions=kwargs.pop("instructions", None),
+                prompt=kwargs.pop("prompt", None),
+                msg_history=kwargs.pop("msg_history", None),
+                api=get_async_llm_ask(llm_api, *args, **kwargs) if llm_api else None,
                 input_schema=None,
                 output_schema=self.output_schema,
                 num_reasks=num_reasks,
