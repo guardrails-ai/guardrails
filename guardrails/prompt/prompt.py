@@ -25,7 +25,7 @@ class Prompt(BasePrompt):
             warnings.warn(
                 "Prompt does not have any variables, "
                 "if you are migrating follow the new variable convention "
-                "documented here: https://docs.getguardrails.ai/0-2-migration/"
+                "documented here: https://docs.guardrailsai.com/0-2-migration/"
             )
 
         # Return another instance of the class with the formatted prompt.
