@@ -2423,7 +2423,7 @@ class SensitiveWords(Validator):
         # If present, replace all instances of the word with the replacement
         found_sensitive_words = []
         for word, replacement in SENSITIVE_WORDS_MAP.items():
-            if word in value:
+            if word in value.lower():
                 found_sensitive_words.append(word)
                 value = value.replace(word, replacement)
 
