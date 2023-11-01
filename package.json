@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "docusaurus": "docusaurus",
-    "prebuild": "make docs-gen; node docusaurus/prebuild.js",
+    "prebuild": "pip install -p docs/requirements.txt; make docs-gen; node docusaurus/prebuild.js",
     "start": "npm run prebuild; docusaurus start --config docusaurus/docusaurus.config.js",
     "build": "docusaurus build",
     "swizzle": "docusaurus swizzle",
