@@ -4,10 +4,10 @@ from typing import List, Literal, Union
 
 import openai
 import pytest
-from pydantic import BaseModel, Field, root_validator, validator
+from pydantic import BaseModel, Field
 
 import guardrails as gd
-from guardrails.utils.pydantic_utils import add_validator
+from guardrails.utils.pydantic_utils import PYDANTIC_VERSION, add_validator
 from guardrails.validators import (
     FailResult,
     PassResult,
@@ -52,7 +52,16 @@ def test_python_rail(mocker):
         opening_weekend: float
 
         # Field-level validation using Pydantic (not Guardrails)
-        @validator("gross")
+        if PYDANTIC_VERSION.startswith("1"):
+            from pydantic import validator
+
+            decorator = validator("gross")
+        else:
+            from pydantic import field_validator
+
+            decorator = field_validator("gross")
+
+        @decorator
         def validate_gross(cls, gross):
             if gross <= 0:
                 raise ValueError("Gross revenue must be a positive value")
@@ -68,22 +77,46 @@ def test_python_rail(mocker):
         duration: time
         budget: float
         is_sequel: bool = Field(default=False)
-        website: str = Field(validators=[ValidLength(min=9, max=100, on_fail="reask")])
+
+        # Root-level validation using Pydantic (Not in Guardrails)
+        if PYDANTIC_VERSION.startswith("1"):
+            website: str = Field(
+                validators=[ValidLength(min=9, max=100, on_fail="reask")]
+            )
+            from pydantic import root_validator
+
+            @root_validator
+            def validate_budget_and_gross(cls, values):
+                budget = values.get("budget")
+                revenue = values.get("revenue")
+                if isinstance(revenue, BoxOfficeRevenue):
+                    gross = revenue.gross
+                    if budget >= gross:
+                        raise ValueError("Budget must be less than gross revenue")
+                return values
+
+        else:
+            website: str = Field(
+                json_schema_extra={
+                    "validators": [ValidLength(min=9, max=100, on_fail="reask")]
+                }
+            )
+            from pydantic import model_validator
+
+            @model_validator(mode="before")
+            def validate_budget_and_gross(cls, values):
+                budget = values.get("budget")
+                revenue = values.get("revenue")
+                if revenue["revenue_type"] == "box_office":
+                    gross = revenue["gross"]
+                    if budget >= gross:
+                        raise ValueError("Budget must be less than gross revenue")
+                return values
+
         contact_email: str
         revenue: Union[BoxOfficeRevenue, StreamingRevenue] = Field(
             ..., discriminator="revenue_type"
         )
-
-        # Root-level validation using Pydantic (Not in Guardrails)
-        @root_validator
-        def validate_budget_and_gross(cls, values):
-            budget = values.get("budget")
-            revenue = values.get("revenue")
-            if isinstance(revenue, BoxOfficeRevenue):
-                gross = revenue.gross
-                if budget >= gross:
-                    raise ValueError("Budget must be less than gross revenue")
-            return values
 
     class Movie(BaseModel):
         rank: int
@@ -125,9 +158,15 @@ def test_python_rail(mocker):
     # Check that the guard state object has the correct number of re-asks.
     assert len(guard_history) == 2
 
-    assert guard_history[0].prompt == gd.Prompt(
-        python_rail.COMPILED_PROMPT_1_WITHOUT_INSTRUCTIONS
-    )
+    if PYDANTIC_VERSION.startswith("1"):
+        assert guard_history[0].prompt == gd.Prompt(
+            python_rail.COMPILED_PROMPT_1_WITHOUT_INSTRUCTIONS
+        )
+    else:
+        assert guard_history[0].prompt == gd.Prompt(
+            python_rail.COMPILED_PROMPT_1_PYDANTIC_2_WITHOUT_INSTRUCTIONS
+        )
+
     assert (
         guard_history[0].output == python_rail.LLM_OUTPUT_1_FAIL_GUARDRAILS_VALIDATION
     )
@@ -140,20 +179,32 @@ def test_python_rail(mocker):
         == python_rail.LLM_OUTPUT_2_SUCCEED_GUARDRAILS_BUT_FAIL_PYDANTIC_VALIDATION
     )
 
-    with pytest.raises(ValueError):
-        Director.parse_raw(
-            python_rail.LLM_OUTPUT_2_SUCCEED_GUARDRAILS_BUT_FAIL_PYDANTIC_VALIDATION
+    if PYDANTIC_VERSION.startswith("1"):
+        with pytest.raises(ValueError):
+            Director.parse_raw(
+                python_rail.LLM_OUTPUT_2_SUCCEED_GUARDRAILS_BUT_FAIL_PYDANTIC_VALIDATION
+            )
+
+        # The user can take corrective action based on the failed validation.
+        # Either manipulating the output themselves, taking corrective action
+        # in their application, or upstreaming their validations into Guardrails.
+
+        # The fixed output should pass validation using Pydantic
+        Director.parse_raw(python_rail.LLM_OUTPUT_3_SUCCEED_GUARDRAILS_AND_PYDANTIC)
+    else:
+        with pytest.raises(ValueError):
+            Director.model_validate_json(
+                python_rail.LLM_OUTPUT_2_SUCCEED_GUARDRAILS_BUT_FAIL_PYDANTIC_VALIDATION
+            )
+        Director.model_validate_json(
+            python_rail.LLM_OUTPUT_3_SUCCEED_GUARDRAILS_AND_PYDANTIC
         )
 
-    # The user can take corrective action based on the failed validation.
-    # Either manipulating the output themselves, taking corrective action
-    # in their application, or upstreaming their validations into Guardrails.
 
-    # The fixed output should pass validation using Pydantic
-    Director.parse_raw(python_rail.LLM_OUTPUT_3_SUCCEED_GUARDRAILS_AND_PYDANTIC)
-
-
+@pytest.mark.skipif(not PYDANTIC_VERSION.startswith("1"), reason="Pydantic 1.x only")
 def test_python_rail_add_validator(mocker):
+    from pydantic import root_validator, validator
+
     mocker.patch(
         "guardrails.llm_providers.OpenAIChatCallable",
         new=MockOpenAIChatCallable,
