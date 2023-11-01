@@ -283,7 +283,7 @@ async def test_async_manifest_callable():
 
 class ReturnTempCallable(Callable):
     def __call__(*args, **kwargs) -> Any:
-        return kwargs.get("temperature")
+        return ""
 
 
 @pytest.mark.parametrize(
@@ -295,7 +295,8 @@ class ReturnTempCallable(Callable):
 )
 def test_get_llm_ask_temperature(llm_api, args, kwargs, expected_temperature):
     result = get_llm_ask(llm_api, *args, **kwargs)
-    assert result().output == str(expected_temperature)
+    assert "temperature" in result.init_kwargs
+    assert result.init_kwargs["temperature"] == expected_temperature
 
 
 def test_chat_prompt():
