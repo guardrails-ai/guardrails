@@ -6,7 +6,7 @@ import pytest
 from guardrails import Guard
 from guardrails.datatypes import DataType
 from guardrails.schema import StringSchema
-from guardrails.validators import DetectSecrets, SimilarToList
+from guardrails.validators import DetectSecrets, SensitiveWords, SimilarToList
 
 from .mock_embeddings import MOCK_EMBEDDINGS
 from .mock_secrets import (
@@ -181,3 +181,51 @@ def test_detect_secrets(mocker):
 
     # Check if temp.txt does not exist in current directory
     assert not os.path.exists("temp.txt")
+
+
+def test_sensitive_words():
+    """Test the SensitiveWords validator."""
+
+    # Initialise Guard from string
+    guard = Guard.from_string(
+        validators=[SensitiveWords(on_fail="fix")],
+        description="testmeout",
+    )
+
+    # ----------------------------
+    # 1. Test with a text containing sensitive words
+    raw_output = "His sister is adopted from Brazil."
+    expected_output = "His sister was adopted from Brazil."
+    output = guard.parse(
+        llm_output=raw_output,
+    )
+
+    # Check if the output is different from the input
+    assert output != raw_output
+
+    # Check if output matches the expected output
+    assert output == expected_output
+
+    # ----------------------------
+    # 2. Test with another text containing sensitive words
+    raw_output = "The building has a handicapped parking space. The company's chairman will retire soon."
+    expected_output = "The building has a accessible parking space. The company's head will retire soon."
+    output = guard.parse(
+        llm_output=raw_output,
+    )
+
+    # Check if the output is different from the input
+    assert output != raw_output
+
+    # Check if output matches the expected output
+    assert output == expected_output
+
+    # ----------------------------
+    # 3. Test with a text not containing sensitive words
+    raw_output = "What is the weather like today? It's cloudy with a chance of rain."
+    output = guard.parse(
+        llm_output=raw_output,
+    )
+
+    # Check if the output is same as the input
+    assert output == raw_output

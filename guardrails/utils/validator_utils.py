@@ -67,7 +67,6 @@ SENSITIVE_WORDS_MAP = {
     "forefather": "ancestor",
     "foreman": "supervisor",
     "gentleman": "person",
-    "man": "individual",
     "man hours": "engineer hours",
     "mankind": "humanity",
     "the common man": "folks",
