@@ -2,7 +2,7 @@ import asyncio
 import json
 import os
 from string import Template
-from typing import Any, Callable, Dict, Optional, Type, cast
+from typing import Callable, Dict, Optional, Type, cast
 
 import openai
 

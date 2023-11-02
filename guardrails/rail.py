@@ -1,7 +1,7 @@
 """Rail class."""
 import warnings
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Type
+from typing import List, Optional, Type
 
 from lxml import etree as ET
 from lxml.etree import Element, SubElement

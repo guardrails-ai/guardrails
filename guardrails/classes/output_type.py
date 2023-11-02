@@ -1,3 +1,3 @@
-from typing import Dict, TypeVar, Union
+from typing import Dict, TypeVar
 
 OT = TypeVar("OT", str, Dict)
