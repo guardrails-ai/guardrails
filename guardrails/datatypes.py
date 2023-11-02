@@ -194,6 +194,7 @@ def deprecate_type(cls: type):
 versions 0.3.0 and beyond. Use the pydantic 'str' primitive instead.""",
         DeprecationWarning,
     )
+    return cls
 
 
 class ScalarType(DataType):
