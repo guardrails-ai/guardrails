@@ -56,6 +56,8 @@ PROFANITY_REQUIREMENTS = ["alt-profanity-check"]
 
 DETECT_SECRETS_REQUIREMENTS = ["detect-secrets"]
 
+TOXIC_LANGUAGE_REQUIREMENTS = ["transformers", "torch"]
+
 DEV_REQUIREMENTS = [
     "black==22.12.0",
     "isort>=5.12.0",
