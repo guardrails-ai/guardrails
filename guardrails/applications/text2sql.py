@@ -2,7 +2,7 @@ import asyncio
 import json
 import os
 from string import Template
-from typing import Callable, Dict, Optional, Type
+from typing import Any, Callable, Dict, Optional, Type, cast
 
 import openai
 
@@ -90,7 +90,7 @@ class Text2Sql:
         """
 
         self.example_formatter = example_formatter
-        self.llm_api = llm_api
+        self.llm_api: Callable = llm_api
         self.llm_api_kwargs = llm_api_kwargs or {"max_tokens": 512}
 
         # Initialize the SQL driver.
@@ -185,18 +185,20 @@ class Text2Sql:
                 "Async API is not supported in Text2SQL application. "
                 "Please use a synchronous API."
             )
+        else:
+            try:
+                response = self.guard(
+                    self.llm_api,
+                    prompt_params={
+                        "nl_instruction": text,
+                        "examples": similar_examples_prompt,
+                        "db_info": str(self.sql_schema),
+                    },
+                    **self.llm_api_kwargs,
+                )
+                validated_output: Dict = cast(Dict, response.validated_output)
+                output = validated_output["generated_sql"]
+            except TypeError:
+                output = None
 
-        try:
-            output = self.guard(
-                self.llm_api,
-                prompt_params={
-                    "nl_instruction": text,
-                    "examples": similar_examples_prompt,
-                    "db_info": str(self.sql_schema),
-                },
-                **self.llm_api_kwargs,
-            ).validated_output["generated_sql"]
-        except TypeError:
-            output = None
-
-        return output
+            return output

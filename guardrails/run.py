@@ -22,7 +22,6 @@ logger = logging.getLogger(__name__)
 actions_logger = logging.getLogger(f"{__name__}.actions")
 add_destinations(actions_logger.debug)
 
-
 class Runner:
     """Runner class that calls an LLM API with a prompt, and performs input and
     output validation.
@@ -106,22 +105,9 @@ class Runner:
         self.guard_history = GuardHistory(history=[])
         self.guard_state.push(self.guard_history)
 
-    def handle_error(func):
-        def wrapper(self, *args, **kwargs):
-            error_message = None
-            try:
-                guard_history = func(self, *args, **kwargs)
-            except Exception as e:
-                error_message = str(e)
-                guard_history = self.guard_history
-            return guard_history, error_message
-
-        return wrapper
-
-    @handle_error
     def __call__(
         self, prompt_params: Optional[Dict] = None
-    ) -> Tuple[GuardHistory, str]:
+    ) -> Tuple[GuardHistory, Optional[str]]:
         """Execute the runner by repeatedly calling step until the reask budget
         is exhausted.
 
@@ -132,69 +118,72 @@ class Runner:
         Returns:
             The guard history.
         """
-        if prompt_params is None:
-            prompt_params = {}
+        error_message = None
+        try:
+            if prompt_params is None:
+                prompt_params = {}
 
-        # check if validator requirements are fulfilled
-        missing_keys = verify_metadata_requirements(
-            self.metadata, self.output_schema.root_datatype
-        )
-        if missing_keys:
-            raise ValueError(
-                f"Missing required metadata keys: {', '.join(missing_keys)}"
+            # check if validator requirements are fulfilled
+            missing_keys = verify_metadata_requirements(
+                self.metadata, self.output_schema.root_datatype
             )
-
-        self._reset_guard_history()
-
-        # Figure out if we need to include instructions in the prompt.
-        include_instructions = not (
-            self.instructions is None and self.msg_history is None
-        )
-
-        with start_action(
-            action_type="run",
-            instructions=self.instructions,
-            prompt=self.prompt,
-            api=self.api,
-            input_schema=self.input_schema,
-            output_schema=self.output_schema,
-            num_reasks=self.num_reasks,
-            metadata=self.metadata,
-        ):
-            instructions, prompt, msg_history, input_schema, output_schema = (
-                self.instructions,
-                self.prompt,
-                self.msg_history,
-                self.input_schema,
-                self.output_schema,
-            )
-            for index in range(self.num_reasks + 1):
-                # Run a single step.
-                validated_output, reasks = self.step(
-                    index=index,
-                    api=self.api,
-                    instructions=instructions,
-                    prompt=prompt,
-                    msg_history=msg_history,
-                    prompt_params=prompt_params,
-                    input_schema=input_schema,
-                    output_schema=output_schema,
-                    output=self.output if index == 0 else None,
+            if missing_keys:
+                raise ValueError(
+                    f"Missing required metadata keys: {', '.join(missing_keys)}"
                 )
 
-                # Loop again?
-                if not self.do_loop(index, reasks):
-                    break
-                # Get new prompt and output schema.
-                prompt, instructions, output_schema, msg_history = self.prepare_to_loop(
-                    reasks,
-                    validated_output,
-                    output_schema,
-                    prompt_params=prompt_params,
-                    include_instructions=include_instructions,
-                )
+            self._reset_guard_history()
 
-            return self.guard_history
+            # Figure out if we need to include instructions in the prompt.
+            include_instructions = not (
+                self.instructions is None and self.msg_history is None
+            )
+
+            with start_action(
+                action_type="run",
+                instructions=self.instructions,
+                prompt=self.prompt,
+                api=self.api,
+                input_schema=self.input_schema,
+                output_schema=self.output_schema,
+                num_reasks=self.num_reasks,
+                metadata=self.metadata,
+            ):
+                instructions, prompt, msg_history, input_schema, output_schema = (
+                    self.instructions,
+                    self.prompt,
+                    self.msg_history,
+                    self.input_schema,
+                    self.output_schema,
+                )
+                for index in range(self.num_reasks + 1):
+                    # Run a single step.
+                    validated_output, reasks = self.step(
+                        index=index,
+                        api=self.api,
+                        instructions=instructions,
+                        prompt=prompt,
+                        msg_history=msg_history,
+                        prompt_params=prompt_params,
+                        input_schema=input_schema,
+                        output_schema=output_schema,
+                        output=self.output if index == 0 else None,
+                    )
+
+                    # Loop again?
+                    if not self.do_loop(index, reasks):
+                        break
+                    # Get new prompt and output schema.
+                    prompt, instructions, output_schema, msg_history = self.prepare_to_loop(
+                        reasks,
+                        validated_output,
+                        output_schema,
+                        prompt_params=prompt_params,
+                        include_instructions=include_instructions,
+                    )
+        except Exception as e:
+            error_message = str(e)
+        return self.guard_history, error_message
 
     def step(
         self,
@@ -476,7 +465,6 @@ class Runner:
         msg_history = None  # clear msg history for reasking
         return prompt, instructions, output_schema, msg_history
 
-
 class AsyncRunner(Runner):
     def __init__(
         self,
@@ -515,22 +503,9 @@ class AsyncRunner(Runner):
         )
         self.api: Optional[AsyncPromptCallableBase] = api
 
-    def handle_error(func):
-        async def wrapper(self, *args, **kwargs):
-            error_message = None
-            try:
-                guard_history = await func(self, *args, **kwargs)
-            except Exception as e:
-                error_message = str(e)
-                guard_history = self.guard_history
-            return guard_history, error_message
-
-        return wrapper
-
-    @handle_error
     async def async_run(
         self, prompt_params: Optional[Dict] = None
-    ) -> Tuple[GuardHistory, str]:
+    ) -> Tuple[GuardHistory, Optional[str]]:
         """Execute the runner by repeatedly calling step until the reask budget
         is exhausted.
 
@@ -541,62 +516,67 @@ class AsyncRunner(Runner):
         Returns:
             The guard history.
         """
-        if prompt_params is None:
-            prompt_params = {}
-        self._reset_guard_history()
+        error_message = None
+        try:
+            if prompt_params is None:
+                prompt_params = {}
+            self._reset_guard_history()
 
-        # check if validator requirements are fulfilled
-        missing_keys = verify_metadata_requirements(
-            self.metadata, self.output_schema.root_datatype
-        )
-        if missing_keys:
-            raise ValueError(
-                f"Missing required metadata keys: {', '.join(missing_keys)}"
+            # check if validator requirements are fulfilled
+            missing_keys = verify_metadata_requirements(
+                self.metadata, self.output_schema.root_datatype
             )
-
-        with start_action(
-            action_type="run",
-            instructions=self.instructions,
-            prompt=self.prompt,
-            api=self.api,
-            input_schema=self.input_schema,
-            output_schema=self.output_schema,
-            num_reasks=self.num_reasks,
-            metadata=self.metadata,
-        ):
-            instructions, prompt, msg_history, input_schema, output_schema = (
-                self.instructions,
-                self.prompt,
-                self.msg_history,
-                self.input_schema,
-                self.output_schema,
-            )
-            for index in range(self.num_reasks + 1):
-                # Run a single step.
-                validated_output, reasks = await self.async_step(
-                    index=index,
-                    api=self.api,
-                    instructions=instructions,
-                    prompt=prompt,
-                    msg_history=msg_history,
-                    prompt_params=prompt_params,
-                    input_schema=input_schema,
-                    output_schema=output_schema,
-                    output=self.output if index == 0 else None,
+            if missing_keys:
+                raise ValueError(
+                    f"Missing required metadata keys: {', '.join(missing_keys)}"
                 )
 
-                # Loop again?
-                if not self.do_loop(index, reasks):
-                    break
-                # Get new prompt and output schema.
-                prompt, instructions, output_schema, msg_history = self.prepare_to_loop(
-                    reasks,
-                    validated_output,
-                    output_schema,
-                    prompt_params=prompt_params,
+            with start_action(
+                action_type="run",
+                instructions=self.instructions,
+                prompt=self.prompt,
+                api=self.api,
+                input_schema=self.input_schema,
+                output_schema=self.output_schema,
+                num_reasks=self.num_reasks,
+                metadata=self.metadata,
+            ):
+                instructions, prompt, msg_history, input_schema, output_schema = (
+                    self.instructions,
+                    self.prompt,
+                    self.msg_history,
+                    self.input_schema,
+                    self.output_schema,
                 )
+                for index in range(self.num_reasks + 1):
+                    # Run a single step.
+                    validated_output, reasks = await self.async_step(
+                        index=index,
+                        api=self.api,
+                        instructions=instructions,
+                        prompt=prompt,
+                        msg_history=msg_history,
+                        prompt_params=prompt_params,
+                        input_schema=input_schema,
+                        output_schema=output_schema,
+                        output=self.output if index == 0 else None,
+                    )
 
-            return self.guard_history
+                    # Loop again?
+                    if not self.do_loop(index, reasks):
+                        break
+                    # Get new prompt and output schema.
+                    prompt, instructions, output_schema, msg_history = self.prepare_to_loop(
+                        reasks,
+                        validated_output,
+                        output_schema,
+                        prompt_params=prompt_params,
+                    )
+
+        except Exception as e:
+            error_message = str(e)
+        
+        return self.guard_history, error_message
 
     async def async_step(
         self,
