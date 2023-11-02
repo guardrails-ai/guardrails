@@ -23,6 +23,7 @@ from guardrails.validators import (
     SimilarToDocument,
     SimilarToList,
     SqlColumnPresence,
+    ToxicLanguage,
     TwoWords,
     ValidationResult,
     ValidLength,
@@ -501,3 +502,32 @@ def test_detect_secrets():
     # Check if mod_value is same as code_snippet,
     # as there are no secrets in code_snippet
     assert mod_value == NO_SECRETS_CODE_SNIPPET
+
+
+def test_toxic_language():
+    """Test ToxicLanguage validator's get_toxicity() method.
+
+    1. Test with dummy text with toxicity
+    2. Test with dummy text without toxicity
+    """
+
+    # Initialise validator
+    validator = ToxicLanguage()
+
+    # ----------------------------
+    # 1. Test get_toxicity with dummy text with toxicity
+    toxic_text = """
+    He is an arrogant, self serving, immature idiot.
+    Get it right through your thick skull.
+    """
+    pred_labels = validator.get_toxicity(toxic_text)
+    assert len(pred_labels) > 0
+
+    # ----------------------------
+    # 2. Test get_toxicity with dummy text without toxicity
+    non_toxic_text = """
+    I love you.
+    You are the best.
+    """
+    pred_labels = validator.get_toxicity(non_toxic_text)
+    assert len(pred_labels) == 0
