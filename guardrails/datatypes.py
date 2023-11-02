@@ -361,6 +361,10 @@ class Email(ScalarType):
 
     tag = "email"
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        deprecate_type(type(self))
+
 
 @deprecate_type
 @register_type("url")
@@ -368,6 +372,10 @@ class URL(ScalarType):
     """Element tag: `<url>`"""
 
     tag = "url"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        deprecate_type(type(self))
 
 
 @deprecate_type
@@ -377,6 +385,10 @@ class PythonCode(ScalarType):
 
     tag = "pythoncode"
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        deprecate_type(type(self))
+
 
 @deprecate_type
 @register_type("sql")
@@ -384,6 +396,10 @@ class SQLCode(ScalarType):
     """Element tag: `<sql>`"""
 
     tag = "sql"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        deprecate_type(type(self))
 
 
 @register_type("percentage")
