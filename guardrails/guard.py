@@ -19,7 +19,7 @@ from typing import (
 from eliot import add_destinations, start_action
 from pydantic import BaseModel
 
-from guardrails.classes import ValidationOutcome, OT
+from guardrails.classes import OT, ValidationOutcome
 from guardrails.llm_providers import get_async_llm_ask, get_llm_ask
 from guardrails.prompt import Instructions, Prompt
 from guardrails.rail import Rail
@@ -150,11 +150,7 @@ class Guard(Generic[OT]):
         )
 
     @classmethod
-    def from_rail(
-        cls,
-        rail_file: str,
-        num_reasks: Optional[int] = None
-    ):
+    def from_rail(cls, rail_file: str, num_reasks: Optional[int] = None):
         """Create a Schema from a `.rail` file.
 
         Args:
@@ -165,16 +161,12 @@ class Guard(Generic[OT]):
             An instance of the `Guard` class.
         """
         rail = Rail.from_file(rail_file)
-        if rail.output_type == 'str':
+        if rail.output_type == "str":
             return cast(Guard[str], cls(rail=rail, num_reasks=num_reasks))
         return cast(Guard[Dict], cls(rail=rail, num_reasks=num_reasks))
 
     @classmethod
-    def from_rail_string(
-        cls,
-        rail_string: str,
-        num_reasks: Optional[int] = None
-    ):
+    def from_rail_string(cls, rail_string: str, num_reasks: Optional[int] = None):
         """Create a Schema from a `.rail` string.
 
         Args:
@@ -185,7 +177,7 @@ class Guard(Generic[OT]):
             An instance of the `Guard` class.
         """
         rail = Rail.from_string(rail_string)
-        if rail.output_type == 'str':
+        if rail.output_type == "str":
             return cast(Guard[str], cls(rail=rail, num_reasks=num_reasks))
         return cast(Guard[Dict], cls(rail=rail, num_reasks=num_reasks))
 
@@ -201,7 +193,9 @@ class Guard(Generic[OT]):
         rail = Rail.from_pydantic(
             output_class=output_class, prompt=prompt, instructions=instructions
         )
-        return cast(Guard[Dict], cls(rail, num_reasks=num_reasks, base_model=output_class))
+        return cast(
+            Guard[Dict], cls(rail, num_reasks=num_reasks, base_model=output_class)
+        )
 
     @classmethod
     def from_string(
@@ -386,7 +380,9 @@ class Guard(Generic[OT]):
                 full_schema_reask=full_schema_reask,
             )
             guard_history, error_message = runner(prompt_params=prompt_params)
-            return ValidationOutcome[OT].from_guard_history(guard_history, error_message)
+            return ValidationOutcome[OT].from_guard_history(
+                guard_history, error_message
+            )
 
     async def _call_async(
         self,
@@ -447,7 +443,9 @@ class Guard(Generic[OT]):
             guard_history, error_message = await runner.async_run(
                 prompt_params=prompt_params
             )
-            return ValidationOutcome[OT].from_guard_history(guard_history, error_message)
+            return ValidationOutcome[OT].from_guard_history(
+                guard_history, error_message
+            )
 
     def __repr__(self):
         return f"Guard(RAIL={self.rail})"
@@ -656,4 +654,6 @@ class Guard(Generic[OT]):
             guard_history.history[-1].validated_output = sub_reasks_with_fixed_values(
                 guard_history.validated_output
             )
-            return ValidationOutcome[OT].from_guard_history(guard_history, error_message)
+            return ValidationOutcome[OT].from_guard_history(
+                guard_history, error_message
+            )

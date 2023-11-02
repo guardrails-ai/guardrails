@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 actions_logger = logging.getLogger(f"{__name__}.actions")
 add_destinations(actions_logger.debug)
 
+
 class Runner:
     """Runner class that calls an LLM API with a prompt, and performs input and
     output validation.
@@ -174,7 +175,12 @@ class Runner:
                     if not self.do_loop(index, reasks):
                         break
                     # Get new prompt and output schema.
-                    prompt, instructions, output_schema, msg_history = self.prepare_to_loop(
+                    (
+                        prompt,
+                        instructions,
+                        output_schema,
+                        msg_history,
+                    ) = self.prepare_to_loop(
                         reasks,
                         validated_output,
                         output_schema,
@@ -465,6 +471,7 @@ class Runner:
         msg_history = None  # clear msg history for reasking
         return prompt, instructions, output_schema, msg_history
 
+
 class AsyncRunner(Runner):
     def __init__(
         self,
@@ -566,7 +573,12 @@ class AsyncRunner(Runner):
                     if not self.do_loop(index, reasks):
                         break
                     # Get new prompt and output schema.
-                    prompt, instructions, output_schema, msg_history = self.prepare_to_loop(
+                    (
+                        prompt,
+                        instructions,
+                        output_schema,
+                        msg_history,
+                    ) = self.prepare_to_loop(
                         reasks,
                         validated_output,
                         output_schema,
@@ -575,7 +587,7 @@ class AsyncRunner(Runner):
 
         except Exception as e:
             error_message = str(e)
-        
+
         return self.guard_history, error_message
 
     async def async_step(

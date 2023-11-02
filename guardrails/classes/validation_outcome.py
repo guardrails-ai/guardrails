@@ -2,26 +2,25 @@ from typing import Dict, Generic, Iterator, Optional, Tuple, Union, cast
 
 from pydantic import Field
 
+from guardrails.classes.output_type import OT
 from guardrails.utils.logs_utils import ArbitraryModel, GuardHistory
 from guardrails.utils.reask_utils import ReAsk
-from guardrails.classes.output_type import OT
 
 
 class ValidationOutcome(Generic[OT], ArbitraryModel):
     raw_llm_output: Optional[str] = Field(
-        description="The raw, unchanged output from the LLM call.",
-        default=None
+        description="The raw, unchanged output from the LLM call.", default=None
     )
     validated_output: Optional[OT] = Field(
         description="The validated, and potentially fixed,"
         " output from the LLM call after passing through validation.",
-        default=None
+        default=None,
     )
     reask: Optional[ReAsk] = Field(
         description="If validation continuously fails and all allocated"
         " reasks are used, this field will contain the final reask that"
         " would have been sent to the LLM if additional reasks were available.",
-        default=None
+        default=None,
     )
     validation_passed: bool = Field(
         description="A boolean to indicate whether or not"
@@ -58,8 +57,14 @@ class ValidationOutcome(Generic[OT], ArbitraryModel):
                 validation_passed=any_validations_failed,
             )
 
-    def __iter__(self) -> Iterator[Union[Optional[str], Optional[OT], Optional[ReAsk], bool, Optional[str]]]:
-        as_tuple: Tuple[Optional[str], Optional[OT], Optional[ReAsk], bool, Optional[str]] = (
+    def __iter__(
+        self,
+    ) -> Iterator[
+        Union[Optional[str], Optional[OT], Optional[ReAsk], bool, Optional[str]]
+    ]:
+        as_tuple: Tuple[
+            Optional[str], Optional[OT], Optional[ReAsk], bool, Optional[str]
+        ] = (
             self.raw_llm_output,
             self.validated_output,
             self.reask,
