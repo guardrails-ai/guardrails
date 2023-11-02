@@ -43,9 +43,9 @@ class Rail:
     @property
     def output_type(self):
         if isinstance(self.output_schema, StringSchema):
-            return str
+            return 'str'
         else:
-            return Dict
+            return 'dict'
 
     @classmethod
     def from_pydantic(

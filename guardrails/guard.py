@@ -11,15 +11,15 @@ from typing import (
     List,
     Optional,
     Type,
-    TypeVar,
     Union,
+    cast,
     overload,
 )
 
 from eliot import add_destinations, start_action
 from pydantic import BaseModel
 
-from guardrails.classes import ValidationOutcome
+from guardrails.classes import ValidationOutcome, OT
 from guardrails.llm_providers import get_async_llm_ask, get_llm_ask
 from guardrails.prompt import Instructions, Prompt
 from guardrails.rail import Rail
@@ -34,10 +34,8 @@ logger = logging.getLogger(__name__)
 actions_logger = logging.getLogger(f"{__name__}.actions")
 add_destinations(actions_logger.debug)
 
-T = TypeVar("T", str, Dict, None)
 
-
-class Guard(Generic[T]):
+class Guard(Generic[OT]):
     """The Guard class.
 
     This class is the main entry point for using Guardrails. It is
@@ -153,8 +151,10 @@ class Guard(Generic[T]):
 
     @classmethod
     def from_rail(
-        cls, rail_file: str, num_reasks: Optional[int] = None
-    ) -> "Guard[Union[str, Dict]]":
+        cls,
+        rail_file: str,
+        num_reasks: Optional[int] = None
+    ):
         """Create a Schema from a `.rail` file.
 
         Args:
@@ -165,12 +165,16 @@ class Guard(Generic[T]):
             An instance of the `Guard` class.
         """
         rail = Rail.from_file(rail_file)
-        return cls[rail.output_type](rail=rail, num_reasks=num_reasks)
+        if rail.output_type == 'str':
+            return cast(Guard[str], cls(rail=rail, num_reasks=num_reasks))
+        return cast(Guard[Dict], cls(rail=rail, num_reasks=num_reasks))
 
     @classmethod
     def from_rail_string(
-        cls, rail_string: str, num_reasks: Optional[int] = None
-    ) -> "Guard[Union[str, Dict]]":
+        cls,
+        rail_string: str,
+        num_reasks: Optional[int] = None
+    ):
         """Create a Schema from a `.rail` string.
 
         Args:
@@ -181,7 +185,9 @@ class Guard(Generic[T]):
             An instance of the `Guard` class.
         """
         rail = Rail.from_string(rail_string)
-        return cls[rail.output_type](rail=rail, num_reasks=num_reasks)
+        if rail.output_type == 'str':
+            return cast(Guard[str], cls(rail=rail, num_reasks=num_reasks))
+        return cast(Guard[Dict], cls(rail=rail, num_reasks=num_reasks))
 
     @classmethod
     def from_pydantic(
@@ -190,12 +196,12 @@ class Guard(Generic[T]):
         prompt: Optional[str] = None,
         instructions: Optional[str] = None,
         num_reasks: Optional[int] = None,
-    ) -> "Guard[Dict]":
+    ):
         """Create a Guard instance from a Pydantic model and prompt."""
         rail = Rail.from_pydantic(
             output_class=output_class, prompt=prompt, instructions=instructions
         )
-        return cls[Dict](rail, num_reasks=num_reasks, base_model=output_class)
+        return cast(Guard[Dict], cls(rail, num_reasks=num_reasks, base_model=output_class))
 
     @classmethod
     def from_string(
@@ -207,7 +213,7 @@ class Guard(Generic[T]):
         reask_prompt: Optional[str] = None,
         reask_instructions: Optional[str] = None,
         num_reasks: Optional[int] = None,
-    ) -> "Guard[str]":
+    ):
         """Create a Guard instance for a string response with prompt,
         instructions, and validations.
 
@@ -228,7 +234,7 @@ class Guard(Generic[T]):
             reask_prompt=reask_prompt,
             reask_instructions=reask_instructions,
         )
-        return cls[str](rail, num_reasks=num_reasks)
+        return cast(Guard[str], cls(rail, num_reasks=num_reasks))
 
     @overload
     def __call__(
@@ -243,7 +249,7 @@ class Guard(Generic[T]):
         full_schema_reask: Optional[bool] = None,
         *args,
         **kwargs,
-    ) -> Awaitable[ValidationOutcome[T]]:
+    ) -> Awaitable[ValidationOutcome[OT]]:
         ...
 
     @overload
@@ -259,7 +265,7 @@ class Guard(Generic[T]):
         full_schema_reask: Optional[bool] = None,
         *args,
         **kwargs,
-    ) -> ValidationOutcome[T]:
+    ) -> ValidationOutcome[OT]:
         ...
 
     def __call__(
@@ -274,7 +280,7 @@ class Guard(Generic[T]):
         full_schema_reask: Optional[bool] = None,
         *args,
         **kwargs,
-    ) -> Union[ValidationOutcome[T], Awaitable[ValidationOutcome[T]]]:
+    ) -> Union[ValidationOutcome[OT], Awaitable[ValidationOutcome[OT]]]:
         """Call the LLM and validate the output. Pass an async LLM API to
         return a coroutine.
 
@@ -352,7 +358,7 @@ class Guard(Generic[T]):
         full_schema_reask: bool,
         *args,
         **kwargs,
-    ) -> ValidationOutcome[T]:
+    ) -> ValidationOutcome[OT]:
         instructions_obj = instructions or self.instructions
         prompt_obj = prompt or self.prompt
         msg_history_obj = msg_history or []
@@ -380,7 +386,7 @@ class Guard(Generic[T]):
                 full_schema_reask=full_schema_reask,
             )
             guard_history, error_message = runner(prompt_params=prompt_params)
-            return ValidationOutcome[T].from_guard_history(guard_history, error_message)
+            return ValidationOutcome[OT].from_guard_history(guard_history, error_message)
 
     async def _call_async(
         self,
@@ -394,7 +400,7 @@ class Guard(Generic[T]):
         full_schema_reask: bool,
         *args,
         **kwargs,
-    ) -> ValidationOutcome[T]:
+    ) -> ValidationOutcome[OT]:
         """Call the LLM asynchronously and validate the output.
 
         Args:
@@ -441,7 +447,7 @@ class Guard(Generic[T]):
             guard_history, error_message = await runner.async_run(
                 prompt_params=prompt_params
             )
-            return ValidationOutcome[T].from_guard_history(guard_history, error_message)
+            return ValidationOutcome[OT].from_guard_history(guard_history, error_message)
 
     def __repr__(self):
         return f"Guard(RAIL={self.rail})"
@@ -460,7 +466,7 @@ class Guard(Generic[T]):
         full_schema_reask: Optional[bool] = None,
         *args,
         **kwargs,
-    ) -> ValidationOutcome[T]:
+    ) -> ValidationOutcome[OT]:
         ...
 
     @overload
@@ -474,7 +480,7 @@ class Guard(Generic[T]):
         full_schema_reask: Optional[bool] = None,
         *args,
         **kwargs,
-    ) -> Awaitable[ValidationOutcome[T]]:
+    ) -> Awaitable[ValidationOutcome[OT]]:
         ...
 
     @overload
@@ -488,7 +494,7 @@ class Guard(Generic[T]):
         full_schema_reask: Optional[bool] = None,
         *args,
         **kwargs,
-    ) -> ValidationOutcome[T]:
+    ) -> ValidationOutcome[OT]:
         ...
 
     def parse(
@@ -501,7 +507,7 @@ class Guard(Generic[T]):
         full_schema_reask: Optional[bool] = None,
         *args,
         **kwargs,
-    ) -> Union[ValidationOutcome[T], Awaitable[ValidationOutcome[T]]]:
+    ) -> Union[ValidationOutcome[OT], Awaitable[ValidationOutcome[OT]]]:
         """Alternate flow to using Guard where the llm_output is known.
 
         Args:
@@ -569,7 +575,7 @@ class Guard(Generic[T]):
         full_schema_reask: bool,
         *args,
         **kwargs,
-    ) -> ValidationOutcome[T]:
+    ) -> ValidationOutcome[OT]:
         """Alternate flow to using Guard where the llm_output is known.
 
         Args:
@@ -601,7 +607,7 @@ class Guard(Generic[T]):
             guard_history.history[-1].validated_output = sub_reasks_with_fixed_values(
                 guard_history.validated_output
             )
-            validation_outcome = ValidationOutcome[T].from_guard_history(
+            validation_outcome = ValidationOutcome[OT].from_guard_history(
                 guard_history, error_message
             )
             return validation_outcome
@@ -616,7 +622,7 @@ class Guard(Generic[T]):
         full_schema_reask: bool,
         *args,
         **kwargs,
-    ) -> ValidationOutcome[T]:
+    ) -> ValidationOutcome[OT]:
         """Alternate flow to using Guard where the llm_output is known.
 
         Args:
@@ -650,4 +656,4 @@ class Guard(Generic[T]):
             guard_history.history[-1].validated_output = sub_reasks_with_fixed_values(
                 guard_history.validated_output
             )
-            return ValidationOutcome[T].from_guard_history(guard_history, error_message)
+            return ValidationOutcome[OT].from_guard_history(guard_history, error_message)
