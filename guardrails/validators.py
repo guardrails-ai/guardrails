@@ -2680,12 +2680,14 @@ class ToxicLanguage(Validator):
             )
 
         # Define the model, pipeline and labels
-        _model_name = "unitary/toxic-bert"
+        _model_name = "unitary/unbiased-toxic-roberta"
         self._detoxify_pipeline = pipeline(
             "text-classification",
             model=_model_name,
             function_to_apply="sigmoid",
             top_k=None,
+            padding="max_length",
+            truncation=True,
         )
         self._labels = [
             "toxicity",
@@ -2710,13 +2712,10 @@ class ToxicLanguage(Validator):
             pred_labels (bool): Labels predicted by the model
             with confidence higher than the threshold.
         """
-        pred_labels = []
-
-        # Truncate the value to the max token length = 512
-        value = value[:512]
 
         # Get the model predictions and the list of labels
         # with confidence higher than the threshold
+        pred_labels = []
         results = self._detoxify_pipeline(value)[0]
         for label_info in results:
             label, score = label_info["label"], label_info["score"]
