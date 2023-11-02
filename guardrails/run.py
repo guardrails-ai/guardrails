@@ -4,8 +4,8 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union
 
 from eliot import add_destinations, start_action
 from pydantic import BaseModel
-from guardrails.classes import ListPlusPlus
 
+from guardrails.classes import ListPlusPlus
 from guardrails.datatypes import verify_metadata_requirements
 from guardrails.llm_providers import AsyncPromptCallableBase, PromptCallableBase
 from guardrails.prompt import Instructions, Prompt

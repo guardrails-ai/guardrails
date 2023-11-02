@@ -3,11 +3,10 @@ from typing import Dict
 
 import openai
 import pytest
-from tests.integration_tests.mock_llm_outputs import MockOpenAICallable
 
 from guardrails.guard import Guard
 from guardrails.validators import FailResult
-
+from tests.integration_tests.mock_llm_outputs import MockOpenAICallable
 from tests.unit_tests.validators.test_parameters import (
     validator_test_pass_fail,
     validator_test_prompt,

@@ -7,8 +7,8 @@ from rich.panel import Panel
 from rich.pretty import pretty_repr
 from rich.table import Table
 from rich.tree import Tree
-from guardrails.classes.list_plus_plus import ListPlusPlus
 
+from guardrails.classes.list_plus_plus import ListPlusPlus
 from guardrails.prompt import Instructions, Prompt
 from guardrails.utils.reask_utils import (
     FieldReAsk,
@@ -165,29 +165,17 @@ class GuardHistory(ArbitraryModel):
     @property
     def validated_output(self) -> Union[str, Dict, ReAsk, None]:
         """Returns the latest validated output."""
-        return (
-            self.last_entry.validated_output
-            if self.last_entry is not None
-            else None
-        )
+        return self.last_entry.validated_output if self.last_entry is not None else None
 
     @property
     def output(self) -> Optional[str]:
         """Returns the latest output."""
-        return (
-            self.last_entry.output
-            if self.last_entry is not None
-            else None
-        )
+        return self.last_entry.output if self.last_entry is not None else None
 
     @property
     def output_as_dict(self) -> Optional[Dict]:
         """Returns the latest output as a dict."""
-        return (
-            self.last_entry.parsed_output
-            if self.last_entry is not None
-            else None
-        )
+        return self.last_entry.parsed_output if self.last_entry is not None else None
 
     @property
     def failed_validations(self) -> List[List[ReAsk]]:
