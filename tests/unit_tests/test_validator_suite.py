@@ -3,12 +3,12 @@ from typing import Dict
 
 import openai
 import pytest
-from integration_tests.mock_llm_outputs import MockOpenAICallable
+from tests.integration_tests.mock_llm_outputs import MockOpenAICallable
 
 from guardrails.guard import Guard
 from guardrails.validators import FailResult
 
-from .validators.test_parameters import (
+from tests.unit_tests.validators.test_parameters import (
     validator_test_pass_fail,
     validator_test_prompt,
     validator_test_python_str,
@@ -55,7 +55,7 @@ def test_validator_python_string(
             prompt=validator_test_data[validator_name]["prompt"],
             instructions=validator_test_data[validator_name]["instructions"],
         )
-        _, final_output = guard(
+        _, final_output, *rest = guard(
             llm_api=openai.Completion.create,
             prompt_params=validator_test_data[validator_name]["prompt_params"],
             num_reasks=1,

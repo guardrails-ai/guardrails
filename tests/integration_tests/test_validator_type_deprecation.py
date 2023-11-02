@@ -54,8 +54,8 @@ noop
 """
     )
     with pytest.warns(DeprecationWarning):
-        validated_output = guard.parse(llm_output=json.dumps(llm_output))
-        assert validated_output == llm_output
+        response = guard.parse(llm_output=json.dumps(llm_output))
+        assert response.validated_output == llm_output
 
 
 def test_deprecated_pydantic_types_backwards_compatability(capsys):
@@ -71,5 +71,5 @@ def test_deprecated_pydantic_types_backwards_compatability(capsys):
         )
 
     guard = Guard.from_pydantic(output_class=DeprecatedPydantic)
-    validated_output = guard.parse(llm_output=json.dumps(llm_output))
-    assert validated_output == llm_output
+    response = guard.parse(llm_output=json.dumps(llm_output))
+    assert response.validated_output == llm_output

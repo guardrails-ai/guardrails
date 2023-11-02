@@ -20,6 +20,7 @@ from eliot import add_destinations, start_action
 from pydantic import BaseModel
 
 from guardrails.classes import OT, ValidationOutcome
+from guardrails.classes.list_plus_plus import ListPlusPlus
 from guardrails.llm_providers import get_async_llm_ask, get_llm_ask
 from guardrails.prompt import Instructions, Prompt
 from guardrails.rail import Rail
@@ -61,7 +62,7 @@ class Guard(Generic[OT]):
         """Initialize the Guard."""
         self.rail = rail
         self.num_reasks = num_reasks
-        self.guard_state = GuardState(all_histories=[])
+        self.guard_state = GuardState(all_histories=ListPlusPlus())
         self._reask_prompt = None
         self._reask_instructions = None
         self.base_model = base_model
@@ -602,9 +603,10 @@ class Guard(Generic[OT]):
                 full_schema_reask=full_schema_reask,
             )
             guard_history, error_message = runner(prompt_params=prompt_params)
-            guard_history.history[-1].validated_output = sub_reasks_with_fixed_values(
-                guard_history.validated_output
-            )
+            if (len(guard_history.history) > 0):
+                guard_history.history.at(-1).validated_output = sub_reasks_with_fixed_values(
+                    guard_history.validated_output
+                )
             validation_outcome = ValidationOutcome[OT].from_guard_history(
                 guard_history, error_message
             )
@@ -651,9 +653,10 @@ class Guard(Generic[OT]):
             guard_history, error_message = await runner.async_run(
                 prompt_params=prompt_params
             )
-            guard_history.history[-1].validated_output = sub_reasks_with_fixed_values(
-                guard_history.validated_output
-            )
+            if (len(guard_history.history) > 0):
+                guard_history.history.at(-1).validated_output = sub_reasks_with_fixed_values(
+                    guard_history.validated_output
+                )
             return ValidationOutcome[OT].from_guard_history(
                 guard_history, error_message
             )

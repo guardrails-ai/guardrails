@@ -5,9 +5,13 @@ import pytest
 
 import guardrails as gd
 from guardrails.schema import JsonSchema
+from tests.integration_tests.test_assets.fixtures import (  # noqa
+    fixture_llm_output,
+    fixture_rail_spec,
+    fixture_validated_output,
+)
 
 from .mock_llm_outputs import MockAsyncOpenAICallable, entity_extraction
-from .test_guard import *  # noqa: F403, F401
 
 
 @pytest.mark.asyncio

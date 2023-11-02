@@ -51,7 +51,7 @@ def test_pydantic_with_full_schema_reask(mocker):
     )
 
     guard = gd.Guard.from_pydantic(ListOfPeople, prompt=VALIDATED_RESPONSE_REASK_PROMPT)
-    _, final_output = guard(
+    _, final_output, *rest = guard(
         openai.ChatCompletion.create,
         model="gpt-3.5-turbo",
         max_tokens=512,

@@ -497,7 +497,7 @@ def test_skeleton_reask(mocker):
     )
 
     guard = gd.Guard.from_rail_string(string.RAIL_SPEC_FOR_LIST)
-    _, final_output = guard(
+    _, final_output, *rest = guard(
         llm_api=openai.Completion.create,
         num_reasks=1,
     )
@@ -733,7 +733,7 @@ def test_sequential_validator_log_is_not_duplicated(mocker):
             entity_extraction.PYDANTIC_RAIL_WITH_NOOP, entity_extraction.PYDANTIC_PROMPT
         )
 
-        _, final_output = guard(
+        _, final_output, *rest = guard(
             llm_api=openai.Completion.create,
             prompt_params={"document": content[:6000]},
             num_reasks=1,
@@ -767,7 +767,7 @@ def test_in_memory_validator_log_is_not_duplicated(mocker):
             entity_extraction.PYDANTIC_RAIL_WITH_NOOP, entity_extraction.PYDANTIC_PROMPT
         )
 
-        _, final_output = guard(
+        _, final_output, *rest = guard(
             llm_api=openai.Completion.create,
             prompt_params={"document": content[:6000]},
             num_reasks=1,

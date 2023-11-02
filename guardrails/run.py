@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union
 
 from eliot import add_destinations, start_action
 from pydantic import BaseModel
+from guardrails.classes import ListPlusPlus
 
 from guardrails.datatypes import verify_metadata_requirements
 from guardrails.llm_providers import AsyncPromptCallableBase, PromptCallableBase
@@ -97,13 +98,13 @@ class Runner:
         self.output = output
         self.reask_prompt = reask_prompt
         self.reask_instructions = reask_instructions
-        self.guard_history = guard_history or GuardHistory(history=[])
+        self.guard_history = guard_history or GuardHistory(history=ListPlusPlus())
         self.base_model = base_model
         self.full_schema_reask = full_schema_reask
 
     def _reset_guard_history(self):
         """Reset the guard history."""
-        self.guard_history = GuardHistory(history=[])
+        self.guard_history = GuardHistory(history=ListPlusPlus())
         self.guard_state.push(self.guard_history)
 
     def __call__(

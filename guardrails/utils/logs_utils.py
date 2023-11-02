@@ -7,6 +7,7 @@ from rich.panel import Panel
 from rich.pretty import pretty_repr
 from rich.table import Table
 from rich.tree import Tree
+from guardrails.classes.list_plus_plus import ListPlusPlus
 
 from guardrails.prompt import Instructions, Prompt
 from guardrails.utils.reask_utils import (
@@ -136,14 +137,18 @@ class GuardLogs(ArbitraryModel):
 
 
 class GuardHistory(ArbitraryModel):
-    history: List[GuardLogs]
+    history: ListPlusPlus[GuardLogs] = Field(default_factory=ListPlusPlus)
+
+    def __init__(self, history: ListPlusPlus[GuardLogs]):
+        super().__init__()
+        self.history = ListPlusPlus(*history)
 
     def push(self, guard_log: GuardLogs) -> None:
         if len(self.history) > 0:
-            last_log = self.history[-1]
+            last_log = self.history.at(-1)
             guard_log._previous_logs = last_log
 
-        self.history += [guard_log]
+        self.history.append(guard_log)
 
     @property
     def tree(self) -> Tree:
@@ -154,19 +159,35 @@ class GuardHistory(ArbitraryModel):
         return tree
 
     @property
+    def last_entry(self) -> Union[GuardLogs, None]:
+        return self.history.at(-1)
+
+    @property
     def validated_output(self) -> Union[str, Dict, ReAsk, None]:
         """Returns the latest validated output."""
-        return self.history[-1].validated_output
+        return (
+            self.last_entry.validated_output
+            if self.last_entry is not None
+            else None
+        )
 
     @property
     def output(self) -> Optional[str]:
         """Returns the latest output."""
-        return self.history[-1].output
+        return (
+            self.last_entry.output
+            if self.last_entry is not None
+            else None
+        )
 
     @property
     def output_as_dict(self) -> Optional[Dict]:
         """Returns the latest output as a dict."""
-        return self.history[-1].parsed_output
+        return (
+            self.last_entry.parsed_output
+            if self.last_entry is not None
+            else None
+        )
 
     @property
     def failed_validations(self) -> List[List[ReAsk]]:
@@ -175,17 +196,21 @@ class GuardHistory(ArbitraryModel):
 
 
 class GuardState(ArbitraryModel):
-    all_histories: List[GuardHistory] = Field(default_factory=list)
+    all_histories: ListPlusPlus[GuardHistory] = Field(default_factory=ListPlusPlus)
+
+    def __init__(self, all_histories: ListPlusPlus[GuardHistory]):
+        super().__init__()
+        self.all_histories = ListPlusPlus(*all_histories)
 
     def push(self, guard_history: GuardHistory) -> None:
-        self.all_histories += [guard_history]
+        self.all_histories.append(guard_history)
 
     @property
     def most_recent_call(self) -> Optional[GuardHistory]:
         """Returns the most recent call."""
         if not len(self.all_histories):
             return None
-        return self.all_histories[-1]
+        return self.all_histories.at(-1)
 
 
 def update_response_by_path(output: dict, path: List[Any], value: Any) -> None:

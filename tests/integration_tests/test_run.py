@@ -83,6 +83,7 @@ async def test_sync_async_call_equivalence(mocker):
         index=1,
         instructions=INSTRUCTIONS,
         prompt=PROMPT,
+        msg_history=None,
         api=AsyncOpenAICallable(**{"temperature": 0}),
         output="Tomato Cheese Pizza",
     )
