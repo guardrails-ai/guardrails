@@ -332,11 +332,12 @@ def convert_pydantic_model_to_datatype(
             inner_type = get_args(type_annotation)
             if len(inner_type) == 0:
                 # If the list is empty, we cannot infer the type of the elements
-                children[field_name] = datatype_to_pydantic_field(
+                children[field_name] = pydantic_field_to_datatype(
                     ListDataType,
                     field,
                     strict=strict,
                 )
+                continue
             inner_type = inner_type[0]
             if is_pydantic_base_model(inner_type):
                 child = convert_pydantic_model_to_datatype(
@@ -344,13 +345,12 @@ def convert_pydantic_model_to_datatype(
                 )
             else:
                 inner_target_datatype = field_to_datatype(inner_type)
-                child = datatype_to_pydantic_field(
+                child = construct_datatype(
                     inner_target_datatype,
-                    inner_type,
                     strict=strict,
                     name=field_name,
                 )
-            children[field_name] = datatype_to_pydantic_field(
+            children[field_name] = pydantic_field_to_datatype(
                 ListDataType,
                 field,
                 children={"item": child},
@@ -374,7 +374,7 @@ def convert_pydantic_model_to_datatype(
                     strict=strict,
                     excluded_fields=[discriminator],
                 )
-            children[field_name] = datatype_to_pydantic_field(
+            children[field_name] = pydantic_field_to_datatype(
                 Choice,
                 field,
                 children=choice_children,
@@ -390,7 +390,7 @@ def convert_pydantic_model_to_datatype(
                 name=field_name,
             )
         else:
-            children[field_name] = datatype_to_pydantic_field(
+            children[field_name] = pydantic_field_to_datatype(
                 target_datatype,
                 field,
                 strict=strict,
@@ -398,7 +398,7 @@ def convert_pydantic_model_to_datatype(
             )
 
     if isinstance(model_field, FieldInfo):
-        return datatype_to_pydantic_field(
+        return pydantic_field_to_datatype(
             datatype,
             model_field,
             children=children,
@@ -406,17 +406,14 @@ def convert_pydantic_model_to_datatype(
             name=name,
         )
     else:
-        format_attr = FormatAttr.from_validators([], ObjectDataType.tag, strict)
-        return datatype(
+        return construct_datatype(
+            datatype,
             children=children,
-            format_attr=format_attr,
-            optional=False,
             name=name,
-            description=None,
         )
 
 
-def datatype_to_pydantic_field(
+def pydantic_field_to_datatype(
     datatype: Type[DataTypeT],
     field: FieldInfo,
     children: Optional[Dict[str, "DataType"]] = None,
@@ -431,7 +428,6 @@ def datatype_to_pydantic_field(
         validators = []
     else:
         validators = field.json_schema_extra.get("validators", [])
-    format_attr = FormatAttr.from_validators(validators, datatype.tag, strict)
 
     is_optional = not field.is_required()
 
@@ -439,7 +435,32 @@ def datatype_to_pydantic_field(
         name = field.title
     description = field.description
 
-    data_type = datatype(
-        children, format_attr, is_optional, name, description, **kwargs
+    return construct_datatype(
+        datatype,
+        children,
+        validators,
+        is_optional,
+        name,
+        description,
+        strict=strict,
+        **kwargs,
     )
-    return data_type
+
+
+def construct_datatype(
+    datatype: Type[DataTypeT],
+    children: Optional[Dict[str, Any]] = None,
+    validators: Optional[list[Validator]] = None,
+    optional: bool = False,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    strict: bool = False,
+    **kwargs,
+) -> DataTypeT:
+    if children is None:
+        children = {}
+    if validators is None:
+        validators = []
+
+    format_attr = FormatAttr.from_validators(validators, datatype.tag, strict)
+    return datatype(children, format_attr, optional, name, description, **kwargs)
