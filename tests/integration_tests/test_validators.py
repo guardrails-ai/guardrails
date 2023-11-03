@@ -53,17 +53,17 @@ def test_similar_to_list():
 
     # 1. Test for integer values
     # 1.1 Test for values within the standard deviation
-    val = 3
+    val = "3"
     output = guard.parse(
         llm_output=val,
         metadata={"prev_values": int_prev_values},
     )
-    assert int(output) == val
+    assert output == val
 
     # 1.2 Test not passing prev_values
     # Should raise ValueError
     with pytest.raises(ValueError):
-        val = 3
+        val = "3"
         output = guard.parse(
             llm_output=val,
         )
@@ -71,14 +71,14 @@ def test_similar_to_list():
     # 1.3 Test passing str prev values for int val
     # Should raise ValueError
     with pytest.raises(ValueError):
-        val = 3
+        val = "3"
         output = guard.parse(
             llm_output=val,
             metadata={"prev_values": [str(i) for i in int_prev_values]},
         )
 
     # 1.4 Test for values outside the standard deviation
-    val = 300
+    val = "300"
     output = guard.parse(
         llm_output=val,
         metadata={"prev_values": int_prev_values},
