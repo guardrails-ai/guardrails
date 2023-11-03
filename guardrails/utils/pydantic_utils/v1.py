@@ -414,7 +414,7 @@ def pydantic_field_to_datatype(
 def construct_datatype(
     datatype: Type[T],
     children: Optional[Dict[str, Any]] = None,
-    validators: Optional[list[Validator]] = None,
+    validators: Optional[typing.List[Validator]] = None,
     optional: bool = False,
     name: Optional[str] = None,
     description: Optional[str] = None,
