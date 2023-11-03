@@ -1,5 +1,5 @@
-from collections import defaultdict
 import inspect
+from collections import defaultdict
 from typing import Any, Callable, Dict, List, Literal, Optional, Type, Union
 
 from pydantic import BaseModel, Field
