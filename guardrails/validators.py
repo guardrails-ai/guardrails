@@ -2494,7 +2494,7 @@ class ToxicLanguage(Validator):
         pred_labels = []
         if value:
             results = self._detoxify_pipeline(value)
-            if results and results[0]:
+            if results:
                 for label_info in results[0]:
                     label, score = label_info["label"], label_info["score"]
                     if label in self._labels and score > self._threshold:
