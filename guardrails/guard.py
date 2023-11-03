@@ -604,9 +604,9 @@ class Guard(Generic[OT]):
             )
             guard_history, error_message = runner(prompt_params=prompt_params)
             if len(guard_history.history) > 0:
-                guard_history.history.at(
+                guard_history.history[
                     -1
-                ).validated_output = sub_reasks_with_fixed_values(
+                ].validated_output = sub_reasks_with_fixed_values(
                     guard_history.validated_output
                 )
             validation_outcome = ValidationOutcome[OT].from_guard_history(
@@ -656,9 +656,9 @@ class Guard(Generic[OT]):
                 prompt_params=prompt_params
             )
             if len(guard_history.history) > 0:
-                guard_history.history.at(
+                guard_history.history[
                     -1
-                ).validated_output = sub_reasks_with_fixed_values(
+                ].validated_output = sub_reasks_with_fixed_values(
                     guard_history.validated_output
                 )
             return ValidationOutcome[OT].from_guard_history(
