@@ -2634,7 +2634,7 @@ class ToxicLanguage(Validator):
 
     Parameters: Arguments
         threshold: The confidence threshold (model inference) for toxicity.
-            Defaults to 0.25.
+            Defaults to 0.5.
         validation_method: Whether to validate at the sentence level or
             over the full text. Must be one of `sentence` or `full`.
             Defaults to `sentence`
@@ -2652,13 +2652,13 @@ class ToxicLanguage(Validator):
     validation_method is `full`, the validator will remove the entire text if
     the prediction is deemed toxic and return an empty string.
 
-    In our experiments, the default threshold of 0.25 worked best. However, you
+    In our experiments, the default threshold of 0.5 worked best. However, you
     can try different values of threshold to see what works best for your use case.
     """
 
     def __init__(
         self,
-        threshold: float = 0.25,
+        threshold: float = 0.5,
         validation_method: str = "sentence",
         on_fail: Callable[..., Any] | None = None,
         **kwargs,

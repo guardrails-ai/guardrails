@@ -195,7 +195,7 @@ def test_toxic_language(mocker):
     """Test the integration of the ToxicLanguage validator.
 
     1. Test default initialisation (should be validation_method="sentence"
-     and threshold=0.25)
+     and threshold=0.5)
     2. Test with a toxic paragraph (with validation_method="full")
     3. Test with a paragraph containing toxic sentences
      (with validation_method="sentence")
@@ -225,7 +225,7 @@ def test_toxic_language(mocker):
     validators = data_type.format_attr.validators
     validator: ToxicLanguage = validators[0]
 
-    assert validator._threshold == 0.25
+    assert validator._threshold == 0.5
     assert validator._validation_method == "sentence"
 
     # ----------------------------
