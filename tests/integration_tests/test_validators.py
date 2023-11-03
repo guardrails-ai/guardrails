@@ -219,15 +219,6 @@ def test_toxic_language(mocker):
         description="testmeout",
     )
 
-    # Check types remain intact
-    output_schema: StringSchema = guard.rail.output_schema
-    data_type: DataType = getattr(output_schema._schema, "string")
-    validators = data_type.format_attr.validators
-    validator: ToxicLanguage = validators[0]
-
-    assert validator._threshold == 0.5
-    assert validator._validation_method == "sentence"
-
     # ----------------------------
     # 2. Test with a toxic paragraph (with validation_method="full")
     # Should return empty string

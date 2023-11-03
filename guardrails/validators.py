@@ -2436,7 +2436,7 @@ class ToxicLanguage(Validator):
         self,
         threshold: float = 0.5,
         validation_method: str = "sentence",
-        on_fail: Callable[..., Any] | None = None,
+        on_fail: Union[Callable[..., Any], None] = None,
         **kwargs,
     ):
         super().__init__(
@@ -2456,10 +2456,10 @@ class ToxicLanguage(Validator):
             )
 
         # Define the model, pipeline and labels
-        _model_name = "unitary/unbiased-toxic-roberta"
+        self._model_name = "unitary/unbiased-toxic-roberta"
         self._detoxify_pipeline = pipeline(
             "text-classification",
-            model=_model_name,
+            model=self._model_name,
             function_to_apply="sigmoid",
             top_k=None,
             padding="max_length",
@@ -2509,11 +2509,12 @@ class ToxicLanguage(Validator):
 
         unsupported_sentences, supported_sentences = [], []
         for sentence in sentences:
-            pred_labels = self.get_toxicity(sentence)
-            if pred_labels:
-                unsupported_sentences.append(sentence)
-            else:
-                supported_sentences.append(sentence)
+            if sentence:
+                pred_labels = self.get_toxicity(sentence)
+                if pred_labels:
+                    unsupported_sentences.append(sentence)
+                else:
+                    supported_sentences.append(sentence)
 
         if unsupported_sentences:
             unsupported_sentences = "- " + "\n- ".join(unsupported_sentences)
