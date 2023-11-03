@@ -90,7 +90,7 @@ def is_dict(type_annotation: Any) -> bool:
 
 def _create_bare_model(model: Type[BaseModel]) -> Type[BaseModel]:
     class BareModel(BaseModel):
-        __annotations__ = model.__annotations__
+        __annotations__ = getattr(model, "__annotations__", {})
 
     return BareModel
 
