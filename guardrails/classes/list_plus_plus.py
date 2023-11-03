@@ -1,9 +1,9 @@
-from typing import Optional, TypeVar
+from typing import List, Optional, TypeVar
 
 T = TypeVar("T")
 
 
-class ListPlusPlus(list[T]):
+class ListPlusPlus(List[T]):
     def __init__(self, *args):
         list.__init__(self, args)
 
