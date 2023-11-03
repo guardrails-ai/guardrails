@@ -9,6 +9,11 @@ jobs:
   execute_notebooks:
     runs-on: ubuntu-latest
     
+    env:
+      COHERE_API_KEY: ${{ secrets.COHERE_API_KEY }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
@@ -16,11 +21,11 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: 3.x
+        python-version: 3.11.x
 
     - name: Install dependencies
       run: |
-        pip install jupyter nbconvert
+        make full; pip install jupyter nbconvert; pip install .
 
     - name: Execute notebooks and check for errors
       run: |
