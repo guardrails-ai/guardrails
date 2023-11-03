@@ -2652,8 +2652,10 @@ class ToxicLanguage(Validator):
     validation_method is `full`, the validator will remove the entire text if
     the prediction is deemed toxic and return an empty string.
 
-    In our experiments, the default threshold of 0.5 worked best. However, you
-    can try different values of threshold to see what works best for your use case.
+    In our experiments, a threshold of 0.5 worked best, hence set as default here.
+    However, you can try different values of threshold to see what works best for
+    your use case.
+    Link for experiments: https://wandb.ai/ml-guardrails/toxic-language-experiments
     """
 
     def __init__(
