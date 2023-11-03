@@ -24,12 +24,12 @@ class NonParseableReAsk(ReAsk):
     pass
 
 
-def gather_reasks(validated_output: Any) -> List[FieldReAsk]:
+def gather_reasks(validated_output: Optional[Union[str, Dict, ReAsk]]) -> List[ReAsk]:
     """Traverse output and gather all ReAsk objects.
 
     Args:
-        validated_output (Dict): The output of a model. Each value can be a ReAsk,
-            a list, a dictionary, or a single value.
+        validated_output (Union[str, Dict, ReAsk], optional): The output of a model.
+            Each value can be a ReAsk, a list, a dictionary, or a single value.
 
     Returns:
         A list of ReAsk objects found in the output.
@@ -75,8 +75,6 @@ def gather_reasks(validated_output: Any) -> List[FieldReAsk]:
 
     if isinstance(validated_output, Dict):
         _gather_reasks_in_dict(validated_output)
-    elif isinstance(validated_output, ReAsk):
-        reasks = [validated_output]
     return reasks
 
 
