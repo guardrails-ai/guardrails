@@ -18,6 +18,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 import openai
 import rstr
 from tenacity import retry, stop_after_attempt, wait_random_exponential
+from guardrails.utils.casting_utils import to_int
 
 from guardrails.utils.docs_utils import get_chunks_from_text, sentence_split
 from guardrails.utils.sql_utils import SQLDriver, create_sql_driver
@@ -277,8 +278,8 @@ class ValidLength(Validator):
         on_fail: Optional[Callable] = None,
     ):
         super().__init__(on_fail=on_fail, min=min, max=max)
-        self._min = int(min) if min is not None else None
-        self._max = int(max) if max is not None else None
+        self._min = to_int(min)
+        self._max = to_int(max)
 
     def validate(self, value: Union[str, List], metadata: Dict) -> ValidationResult:
         """Validates that the length of value is within the expected range."""
