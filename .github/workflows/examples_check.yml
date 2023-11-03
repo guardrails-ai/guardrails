@@ -20,7 +20,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        pip install jupyter nbconvert
+        make full; pip install jupyter nbconvert; pip install .
 
     - name: Execute notebooks and check for errors
       run: |
