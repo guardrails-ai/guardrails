@@ -36,42 +36,42 @@ class RequiringValidator2(Validator):
         """,
             {"required_key": "a"},
         ),
-        #         (
-        #             """
-        # <rail version="0.1">
-        # <output>
-        #     <object name="temp_name">
-        #         <string name="string_name" format="myrequiringvalidator" />
-        #     </object>
-        #     <list name="list_name">
-        #         <string name="string_name" format="myrequiringvalidator2" />
-        #     </list>
-        # </output>
-        # </rail>
-        #         """,
-        #             {"required_key": "a", "required_key2": "b"},
-        #         ),
-        #         (
-        #             """
-        # <rail version="0.1">
-        # <output>
-        #     <object name="temp_name">
-        #     <list name="list_name">
-        #     <choice name="choice_name" discriminator="hi">
-        #     <case name="hello">
-        #         <string name="string_name" />
-        #     </case>
-        #     <case name="hiya">
-        #         <string name="string_name" format="myrequiringvalidator" />
-        #     </case>
-        #     </choice>
-        #     </list>
-        #     </object>
-        # </output>
-        # </rail>
-        # """,
-        #             {"required_key": "a"},
-        #         ),
+        (
+            """
+<rail version="0.1">
+<output>
+    <object name="temp_name">
+        <string name="string_name" format="myrequiringvalidator" />
+    </object>
+    <list name="list_name">
+        <string name="string_name" format="myrequiringvalidator2" />
+    </list>
+</output>
+</rail>
+        """,
+            {"required_key": "a", "required_key2": "b"},
+        ),
+        (
+            """
+<rail version="0.1">
+<output>
+    <object name="temp_name">
+    <list name="list_name">
+    <choice name="choice_name" discriminator="hi">
+    <case name="hello">
+        <string name="string_name" />
+    </case>
+    <case name="hiya">
+        <string name="string_name" format="myrequiringvalidator" />
+    </case>
+    </choice>
+    </list>
+    </object>
+</output>
+</rail>
+""",
+            {"required_key": "a"},
+        ),
     ],
 )
 @pytest.mark.asyncio
