@@ -1,7 +1,6 @@
 import asyncio
 import contextvars
 import logging
-from string import Formatter
 from typing import (
     Any,
     Awaitable,
