@@ -2,7 +2,7 @@ import os
 import random
 from typing import List
 
-from lxml.builder import E
+from lxml.etree import Element as E
 from rich.pretty import pretty_repr
 
 from guardrails import datatypes as dt
@@ -53,14 +53,14 @@ def generate_test_artifacts(
         with open(
             os.path.join(artifact_dir, f"compiled_prompt_{on_fail_type}{ext}.txt"), "w"
         ) as f:
-            f.write(compiled_prompt)
+            f.write(str(compiled_prompt or ""))
 
         # Save the llm output.
         llm_output = logs.output
         with open(
             os.path.join(artifact_dir, f"llm_output_{on_fail_type}{ext}.txt"), "w"
         ) as f:
-            f.write(llm_output)
+            f.write(llm_output or "")
 
         # Save the validated response.
         validated_output = logs.validated_output
@@ -97,7 +97,7 @@ def generate_random_schemas(n: int, depth: int = 4, width: int = 10) -> List[str
                 dt.Time,
             ]
         )
-        return selected_datatype(None, None, None).rail_alias
+        return selected_datatype(None, None, None).rail_alias  # type: ignore
 
     def generate_schema(curr_depth):
         if curr_depth < depth:

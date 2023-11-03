@@ -10,26 +10,28 @@ from guardrails import Guard
 from guardrails.datatypes import DataType
 from guardrails.schema import StringSchema
 from guardrails.utils.reask_utils import FieldReAsk
+from guardrails.validator_base import (
+    FailResult,
+    Filter,
+    PassResult,
+    Refrain,
+    ValidationResult,
+    check_refrain_in_dict,
+    filter_in_dict,
+    register_validator,
+)
 from guardrails.validators import (
     BugFreeSQL,
     DetectSecrets,
     ExtractedSummarySentencesMatch,
     ExtractiveSummary,
-    FailResult,
-    Filter,
-    PassResult,
     ProvenanceV1,
-    Refrain,
     SimilarToDocument,
     SimilarToList,
     SqlColumnPresence,
     ToxicLanguage,
     TwoWords,
-    ValidationResult,
     ValidLength,
-    check_refrain_in_dict,
-    filter_in_dict,
-    register_validator,
 )
 
 from .mock_embeddings import MOCK_EMBEDDINGS, mock_create_embedding
@@ -374,7 +376,7 @@ def test_provenance_v1(mocker):
     )
 
     output_schema: StringSchema = string_guard.rail.output_schema
-    data_type: DataType = getattr(output_schema._schema, "string")
+    data_type: DataType = output_schema.root_datatype
     validators = data_type.format_attr.validators
     prov_validator: ProvenanceV1 = validators[0]
 

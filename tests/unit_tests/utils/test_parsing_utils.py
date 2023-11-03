@@ -1,6 +1,10 @@
 import pytest
 
-from guardrails.utils.parsing_utils import get_code_block, has_code_block
+from guardrails.utils.parsing_utils import (
+    get_code_block,
+    get_template_variables,
+    has_code_block,
+)
 
 json_code_block = """
 ```json
@@ -74,3 +78,10 @@ def test_get_code_block(llm_ouput, expected_output, code_type):
     actual_output = get_code_block(llm_ouput, start, end, code_type)
 
     assert actual_output == expected_output
+
+
+def test_get_template_variables():
+    string_template = "${my_var} $my_second_var {not_a_var}"
+    vars = get_template_variables(string_template)
+
+    assert vars == ["my_var", "my_second_var"]

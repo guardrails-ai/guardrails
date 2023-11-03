@@ -49,7 +49,7 @@ def test_similar_to_list():
 
     # Check types remain intact
     output_schema: StringSchema = guard.rail.output_schema
-    data_type: DataType = getattr(output_schema._schema, "string")
+    data_type: DataType = output_schema.root_datatype
     validators = data_type.format_attr.validators
     validator: SimilarToList = validators[0]
 
