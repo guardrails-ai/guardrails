@@ -2493,8 +2493,8 @@ class ToxicLanguage(Validator):
         # with confidence higher than the threshold
         pred_labels = []
         if value:
-            results = list(self._detoxify_pipeline(value))
-            if results:
+            results = self._detoxify_pipeline(value)
+            if results and results[0]:
                 for label_info in results[0]:
                     label, score = label_info["label"], label_info["score"]
                     if label in self._labels and score > self._threshold:
