@@ -2504,6 +2504,11 @@ class ToxicLanguage(Validator):
     ) -> ValidationResult:
         """Validate that each sentence in the generated text is toxic."""
 
+        if nltk is None:
+            raise ImportError(
+                "`nltk` is required for `ToxicLanguage` validator. "
+                "Please install it with `pip install nltk`."
+            )
         # Split the value into sentences using nltk sentence tokenizer.
         sentences = nltk.sent_tokenize(value)
 
@@ -2553,3 +2558,5 @@ class ToxicLanguage(Validator):
             return self.validate_each_sentence(value, metadata)
         elif self._validation_method == "full":
             return self.validate_full_text(value, metadata)
+        else:
+            raise ValueError("validation_method must be 'sentence' or 'full'.")
