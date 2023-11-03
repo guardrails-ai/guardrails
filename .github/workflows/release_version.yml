@@ -7,6 +7,9 @@ jobs:
   release:
     runs-on: ubuntu-latest
 
+    env:
+      PYPI_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v2
@@ -14,15 +17,13 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v2
         with:
-          python-version: 3.x
+          python-version: 3.11.x
 
       - name: Install twine and wheel
         run: pip install twine wheel
 
-      - name: Install other dependencies
-        run: |
-            python -m pip install --upgrade pip
-            make full
+      - name: Make Full
+        run: make full
 
       - name: Upload to PyPI
         run: python3 setup.py upload
