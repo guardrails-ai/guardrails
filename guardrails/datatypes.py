@@ -329,6 +329,17 @@ class DateTime(ScalarType):
 
     To configure the datetime format, create a datetime-format attribute on the
     element. E.g. `<datetime name="..." ... datetime-format="%Y-%m-%d %H:%M:%S.%f" />`
+
+    DateTime represents a specific moment in time, combining a date (year,
+    month, day) and precise time (hours, minutes, seconds, microseconds) into a
+    single timestamp. It is generally preferred over using a separate Date or
+    Time datatype due to its comprehensiveness.
+
+    This datatype supports a wide variety of datetime formats, including ISO 8601,
+    RFC 2822, American and European styles, verbose formats, and also Unix Epoch
+    timestamps with seconds and milliseconds. However, some ambiguous formats may
+    not be parsed correctly (see dateutil and datetime documentation for supported
+    formats).
     """
 
     tag = "datetime"
