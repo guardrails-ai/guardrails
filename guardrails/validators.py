@@ -2545,7 +2545,10 @@ class ToxicLanguage(Validator):
             )
         return PassResult()
 
-    def validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
+    def validate(self, value: str, metadata: Dict[str, Any]) -> ValidationResult:
+        if not value:
+            raise ValueError("Value cannot be empty.")
+
         if self._validation_method == "sentence":
             return self.validate_each_sentence(value, metadata)
         elif self._validation_method == "full":
