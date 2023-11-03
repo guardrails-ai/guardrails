@@ -10,28 +10,36 @@ from guardrails import Guard
 from guardrails.datatypes import DataType
 from guardrails.schema import StringSchema
 from guardrails.utils.reask_utils import FieldReAsk
-from guardrails.validators import (
-    BugFreeSQL,
-    ExtractedSummarySentencesMatch,
-    ExtractiveSummary,
+from guardrails.validator_base import (
     FailResult,
     Filter,
     PassResult,
-    ProvenanceV1,
     Refrain,
-    SimilarToDocument,
-    SimilarToList,
-    SqlColumnPresence,
-    TwoWords,
     ValidationResult,
-    ValidLength,
     check_refrain_in_dict,
     filter_in_dict,
     register_validator,
 )
+from guardrails.validators import (
+    BugFreeSQL,
+    DetectSecrets,
+    ExtractedSummarySentencesMatch,
+    ExtractiveSummary,
+    ProvenanceV1,
+    SimilarToDocument,
+    SimilarToList,
+    SqlColumnPresence,
+    TwoWords,
+    ValidLength,
+)
 
 from .mock_embeddings import MOCK_EMBEDDINGS, mock_create_embedding
 from .mock_provenance_v1 import mock_chat_completion, mock_chromadb_query_function
+from .mock_secrets import (
+    EXPECTED_SECRETS_CODE_SNIPPET,
+    NO_SECRETS_CODE_SNIPPET,
+    SECRETS_CODE_SNIPPET,
+)
 
 
 @pytest.mark.parametrize(
@@ -367,7 +375,7 @@ def test_provenance_v1(mocker):
     )
 
     output_schema: StringSchema = string_guard.rail.output_schema
-    data_type: DataType = getattr(output_schema._schema, "string")
+    data_type: DataType = output_schema.root_datatype
     validators = data_type.format_attr.validators
     prov_validator: ProvenanceV1 = validators[0]
 
@@ -435,3 +443,63 @@ def test_similar_to_list():
     )
     # Assert that similarity is very close to 0
     assert similarity == pytest.approx(0.0, abs=1e-2)
+
+
+def test_detect_secrets():
+    """Test the DetectSecrets validator.
+
+    1. Test with dummy code snippet with secrets
+    2. Test with dummy code snippet without secrets
+
+    No mock functions are used in this test, as we are testing the actual
+    functionality of the detect_secrets package, which is used by the
+    DetectSecrets validator.
+    """
+    # Initialise validator
+    validator = DetectSecrets()
+
+    # ----------------------------
+    # 1. Test get_unique_secrets and get_modified_value
+    # with dummy code snippet with secrets
+    unique_secrets, lines = validator.get_unique_secrets(SECRETS_CODE_SNIPPET)
+
+    # Check types of unique_secrets and lines
+    assert isinstance(unique_secrets, dict)
+    assert isinstance(lines, list)
+
+    # Check if unique_secrets contains exactly 2 secrets
+    assert len(unique_secrets.keys()) == 2
+
+    # Check if lines contains exactly 7 lines
+    assert len(lines) == 7
+
+    # Check if temp.txt does not exist in current directory
+    assert not os.path.exists(validator.temp_file_name)
+
+    mod_value = validator.get_modified_value(unique_secrets, lines)
+    assert mod_value != SECRETS_CODE_SNIPPET
+    assert mod_value == EXPECTED_SECRETS_CODE_SNIPPET
+
+    # ----------------------------
+    # 2. Test get_unique_secrets and get_modified_value
+    # with dummy code snippet without secrets
+    unique_secrets, lines = validator.get_unique_secrets(NO_SECRETS_CODE_SNIPPET)
+
+    # Check types of unique_secrets and lines
+    assert isinstance(unique_secrets, dict)
+    assert isinstance(lines, list)
+
+    # Check if unique_secrets is empty
+    assert len(unique_secrets.keys()) == 0
+
+    # Check if lines contains exactly 10 lines
+    assert len(lines) == 10
+
+    # Check if temp.txt does not exist in current directory
+    assert not os.path.exists(validator.temp_file_name)
+
+    mod_value = validator.get_modified_value(unique_secrets, lines)
+
+    # Check if mod_value is same as code_snippet,
+    # as there are no secrets in code_snippet
+    assert mod_value == NO_SECRETS_CODE_SNIPPET

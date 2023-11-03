@@ -1,12 +1,21 @@
 # noqa:W291
+import os
+
 import pytest
 
 from guardrails import Guard
 from guardrails.datatypes import DataType
 from guardrails.schema import StringSchema
-from guardrails.validators import PIIFilter, SimilarToList
+from guardrails.validators import DetectSecrets, PIIFilter, SimilarToList
 
 from .mock_embeddings import MOCK_EMBEDDINGS
+from .mock_secrets import (
+    EXPECTED_SECRETS_CODE_SNIPPET,
+    NO_SECRETS_CODE_SNIPPET,
+    SECRETS_CODE_SNIPPET,
+    MockDetectSecrets,
+    mock_get_unique_secrets,
+)
 from .mock_presidio import MockAnalyzerEngine, MockAnonymizerEngine, mock_anonymize
 
 
@@ -33,7 +42,7 @@ def test_similar_to_list():
 
     # Check types remain intact
     output_schema: StringSchema = guard.rail.output_schema
-    data_type: DataType = getattr(output_schema._schema, "string")
+    data_type: DataType = output_schema.root_datatype
     validators = data_type.format_attr.validators
     validator: SimilarToList = validators[0]
 
@@ -117,6 +126,62 @@ def test_similar_to_list():
         metadata={"prev_values": str_prev_values, "embed_function": embed_function},
     )
     assert output is None
+
+
+def test_detect_secrets(mocker):
+    """Test the DetectSecrets validator."""
+
+    # Set the mockers
+    mocker.patch("guardrails.validators.detect_secrets", new=MockDetectSecrets)
+    mocker.patch(
+        "guardrails.validators.DetectSecrets.get_unique_secrets",
+        new=mock_get_unique_secrets,
+    )
+
+    # Initialise Guard from string
+    guard = Guard.from_string(
+        validators=[DetectSecrets(on_fail="fix")],
+        description="testmeout",
+    )
+
+    # ----------------------------
+    # 1. Test with SECRETS_CODE_SNIPPET
+    output = guard.parse(
+        llm_output=SECRETS_CODE_SNIPPET,
+    )
+    # Check if the output is different from the input
+    assert output != SECRETS_CODE_SNIPPET
+
+    # Check if output matches the expected output
+    assert output == EXPECTED_SECRETS_CODE_SNIPPET
+
+    # Check if temp.txt does not exist in current directory
+    assert not os.path.exists("temp.txt")
+
+    # ----------------------------
+    # 2. Test with NO_SECRETS_CODE_SNIPPET
+    output = guard.parse(
+        llm_output=NO_SECRETS_CODE_SNIPPET,
+    )
+    # Check if the output is same as the input
+    assert output == NO_SECRETS_CODE_SNIPPET
+
+    # Check if temp.txt does not exist in current directory
+    assert not os.path.exists("temp.txt")
+
+    # ----------------------------
+    # 3. Test with a non-multi-line string
+    # Should raise UserWarning
+    with pytest.warns(UserWarning):
+        output = guard.parse(
+            llm_output="import os",
+        )
+
+    # Check if the output is same as the input
+    assert output == "import os"
+
+    # Check if temp.txt does not exist in current directory
+    assert not os.path.exists("temp.txt")
 
 
 def test_pii_filter(mocker):
