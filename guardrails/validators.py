@@ -2492,11 +2492,12 @@ class ToxicLanguage(Validator):
         # Get the model predictions and the list of labels
         # with confidence higher than the threshold
         pred_labels = []
-        results = self._detoxify_pipeline(value)[0]
-        for label_info in results:
-            label, score = label_info["label"], label_info["score"]
-            if label in self._labels and score > self._threshold:
-                pred_labels.append(label)
+        if value:
+            results = self._detoxify_pipeline(value)[0]
+            for label_info in results:
+                label, score = label_info["label"], label_info["score"]
+                if label in self._labels and score > self._threshold:
+                    pred_labels.append(label)
         return pred_labels
 
     def validate_each_sentence(
