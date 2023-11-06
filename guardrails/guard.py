@@ -180,10 +180,16 @@ class Guard:
         prompt: Optional[str] = None,
         instructions: Optional[str] = None,
         num_reasks: Optional[int] = None,
+        reask_prompt: Optional[str] = None,
+        reask_instructions: Optional[str] = None,
     ) -> "Guard":
         """Create a Guard instance from a Pydantic model and prompt."""
         rail = Rail.from_pydantic(
-            output_class=output_class, prompt=prompt, instructions=instructions
+            output_class=output_class,
+            prompt=prompt,
+            instructions=instructions,
+            reask_prompt=reask_prompt,
+            reask_instructions=reask_instructions,
         )
         return cls(rail, num_reasks=num_reasks, base_model=output_class)
 
