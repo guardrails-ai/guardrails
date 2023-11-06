@@ -60,8 +60,6 @@ class Guard:
         self.rail = rail
         self.num_reasks = num_reasks
         self.guard_state = GuardState(all_histories=[])
-        self._reask_prompt = None
-        self._reask_instructions = None
         self.base_model = base_model
 
     @property
@@ -365,8 +363,6 @@ class Guard:
                 output_schema=self.output_schema,
                 num_reasks=num_reasks,
                 metadata=metadata,
-                reask_prompt=self.reask_prompt,
-                reask_instructions=self.reask_instructions,
                 base_model=self.base_model,
                 guard_state=self.guard_state,
                 full_schema_reask=full_schema_reask,
@@ -424,8 +420,6 @@ class Guard:
                 output_schema=self.output_schema,
                 num_reasks=num_reasks,
                 metadata=metadata,
-                reask_prompt=self.reask_prompt,
-                reask_instructions=self.reask_instructions,
                 base_model=self.base_model,
                 guard_state=self.guard_state,
                 full_schema_reask=full_schema_reask,
@@ -581,8 +575,6 @@ class Guard:
                 num_reasks=num_reasks,
                 metadata=metadata,
                 output=llm_output,
-                reask_prompt=self.reask_prompt,
-                reask_instructions=self.reask_instructions,
                 base_model=self.base_model,
                 guard_state=self.guard_state,
                 full_schema_reask=full_schema_reask,
@@ -622,8 +614,6 @@ class Guard:
                 num_reasks=num_reasks,
                 metadata=metadata,
                 output=llm_output,
-                reask_prompt=self.reask_prompt,
-                reask_instructions=self.reask_instructions,
                 base_model=self.base_model,
                 guard_state=self.guard_state,
                 full_schema_reask=full_schema_reask,
