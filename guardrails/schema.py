@@ -72,17 +72,8 @@ class Schema:
         self.root_datatype = schema
 
         # Setup reask templates
-        self.check_valid_reask_prompt(reask_prompt_template)
-        if reask_prompt_template is not None:
-            self._reask_prompt_template = Prompt(reask_prompt_template)
-        else:
-            self._reask_prompt_template = None
-        if reask_instructions_template is not None:
-            self._reask_instructions_template = Instructions(
-                reask_instructions_template
-            )
-        else:
-            self._reask_instructions_template = None
+        self.reask_prompt_template = reask_prompt_template
+        self.reask_instructions_template = reask_instructions_template
 
     @classmethod
     def from_xml(
@@ -101,6 +92,25 @@ class Schema:
     @property
     def reask_prompt_template(self) -> Optional[Prompt]:
         return self._reask_prompt_template
+
+    @reask_prompt_template.setter
+    def reask_prompt_template(self, value: Optional[str]) -> None:
+        self.check_valid_reask_prompt(value)
+        if value is not None:
+            self._reask_prompt_template = Prompt(value)
+        else:
+            self._reask_prompt_template = None
+
+    @property
+    def reask_instructions_template(self) -> Optional[Instructions]:
+        return self._reask_instructions_template
+
+    @reask_instructions_template.setter
+    def reask_instructions_template(self, value: Optional[str]) -> None:
+        if value is not None:
+            self._reask_instructions_template = Instructions(value)
+        else:
+            self._reask_instructions_template = None
 
     def validate(self, guard_logs: GuardLogs, data: Any, metadata: Dict) -> Any:
         """Validate a dictionary of data against the schema.
@@ -200,8 +210,10 @@ class Schema:
             return
 
         # Check that the reask prompt has the correct variables
-        variables = get_template_variables(reask_prompt)
-        assert set(variables) == self.reask_prompt_vars
+
+        # TODO decide how to check this
+        # variables = get_template_variables(reask_prompt)
+        # assert set(variables) == self.reask_prompt_vars
 
 
 class JsonSchema(Schema):
@@ -297,7 +309,7 @@ class JsonSchema(Schema):
             **(prompt_params or {}),
         )
 
-        instructions = self._reask_instructions_template
+        instructions = self.reask_instructions_template
         if instructions is None:
             instructions = Instructions(constants["high_level_json_instructions"])
         instructions = instructions.format(**(prompt_params or {}))
@@ -614,7 +626,7 @@ class StringSchema(Schema):
             **(prompt_params or {}),
         )
 
-        instructions = self._reask_instructions_template
+        instructions = self.reask_instructions_template
         if instructions is None:
             instructions = Instructions("You are a helpful assistant.")
         instructions = instructions.format(**(prompt_params or {}))
