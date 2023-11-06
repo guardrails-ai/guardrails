@@ -24,7 +24,6 @@ from guardrails.rail import Rail
 from guardrails.run import AsyncRunner, Runner
 from guardrails.schema import Schema
 from guardrails.utils.logs_utils import GuardState
-from guardrails.utils.parsing_utils import get_template_variables
 from guardrails.utils.reask_utils import sub_reasks_with_fixed_values
 from guardrails.validators import Validator
 
@@ -102,35 +101,22 @@ class Guard:
     @property
     def reask_prompt(self) -> Optional[Prompt]:
         """Return the reask prompt."""
-        return self._reask_prompt
+        return self.output_schema.reask_prompt_template
 
     @reask_prompt.setter
-    def reask_prompt(self, reask_prompt: Union[str, Prompt]):
+    def reask_prompt(self, reask_prompt: Optional[str]):
         """Set the reask prompt."""
-
-        if isinstance(reask_prompt, str):
-            reask_prompt = Prompt(reask_prompt)
-
-        # Check that the reask prompt has the correct variables
-        variables = get_template_variables(reask_prompt.source)
-        variable_set = set(variables)
-        assert variable_set.__contains__("previous_response")
-        assert variable_set.__contains__("output_schema")
-        self._reask_prompt = reask_prompt
+        self.output_schema.reask_prompt_template = reask_prompt
 
     @property
     def reask_instructions(self) -> Optional[Instructions]:
         """Return the reask prompt."""
-        return self._reask_instructions
+        return self.output_schema.reask_instructions_template
 
     @reask_instructions.setter
-    def reask_instructions(self, reask_instructions: Union[str, Instructions]):
+    def reask_instructions(self, reask_instructions: Optional[str]):
         """Set the reask prompt."""
-
-        if isinstance(reask_instructions, str):
-            reask_instructions = Instructions(reask_instructions)
-
-        self._reask_instructions = reask_instructions
+        self.output_schema.reask_instructions_template = reask_instructions
 
     def configure(
         self,
