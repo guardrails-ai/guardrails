@@ -35,7 +35,6 @@ from guardrails.utils.json_utils import (
     verify_schema_against_json,
 )
 from guardrails.utils.logs_utils import FieldValidationLogs, GuardLogs
-from guardrails.utils.parsing_utils import get_template_variables
 from guardrails.utils.pydantic_utils import convert_pydantic_model_to_datatype
 from guardrails.utils.reask_utils import (
     FieldReAsk,
