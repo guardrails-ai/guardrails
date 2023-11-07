@@ -3172,7 +3172,7 @@ dev = ["pre-commit", "pytest-asyncio", "tox"]
 name = "python-dateutil"
 version = "2.8.2"
 description = "Extensions to the standard Python datetime module"
-category = "dev"
+category = "main"
 optional = false
 python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,>=2.7"
 files = [
@@ -4828,4 +4828,4 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "bcb29ffab27a6f7c547c789bfeee895491e5f7aa31bb163769ae038172312bdd"
+content-hash = "18411c2e7af240840f029105c02cb07cadb721259eeaebcaa3d57f90941f8187"
