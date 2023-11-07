@@ -29,7 +29,7 @@ VERSION = main_ns["__version__"]
 # What packages are required for this module to be executed?
 REQUIRED = [
     "lxml",
-    "openai",
+    "openai<=0.28.1",
     "rich",
     "eliot",
     "eliot-tree",
