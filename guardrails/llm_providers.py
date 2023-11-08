@@ -3,6 +3,7 @@ from typing import Any, Awaitable, Callable, Dict, List, Optional, cast
 
 import openai
 import openai.error
+import tiktoken
 from pydantic import BaseModel
 from tenacity import retry, retry_if_exception_type, wait_exponential_jitter
 
@@ -22,6 +23,26 @@ RETRYABLE_ERRORS = tuple(OPENAI_RETRYABLE_ERRORS)
 
 class PromptCallableException(Exception):
     pass
+
+
+def get_openai_token_count(text: str, model_name: str) -> int:
+    """Returns the number of tokens in a text string.
+
+    Supported for OpenAI models only. This is a helper function
+    that is required when OpenAI's `stream` parameter is set to `True`,
+    because OpenAI does not return the number of tokens in that case.
+    Requires the `tiktoken` package to be installed.
+
+    Args:
+        text (str): The text string to count the number of tokens in.
+        model_name (str): The name of the OpenAI model to use.
+
+    Returns:
+        num_tokens (int): The number of tokens in the text string.
+    """
+    encoding = tiktoken.encoding_for_model(model_name)
+    num_tokens = len(encoding.encode(text))
+    return num_tokens
 
 
 ###
@@ -118,15 +139,42 @@ class OpenAICallable(PromptCallableBase):
             *args,
             **kwargs,
         )
-        return LLMResponse(
-            output=openai_response["choices"][0]["text"],  # type: ignore
-            prompt_token_count=openai_response["usage"][  # type: ignore
-                "prompt_tokens"
-            ],
-            response_token_count=openai_response["usage"][  # type: ignore
-                "completion_tokens"
-            ],
-        )
+
+        # Check if kwargs stream is passed in
+        if kwargs.get("stream", None) is None:
+            # If stream is not defined, return default behavior
+            return LLMResponse(
+                output=openai_response["choices"][0]["text"],  # type: ignore
+                prompt_token_count=openai_response["usage"][  # type: ignore
+                    "prompt_tokens"
+                ],
+                response_token_count=openai_response["usage"][  # type: ignore
+                    "completion_tokens"
+                ],
+            )
+        else:
+            # If stream is defined, openai returns a generator
+            # that we need to iterate through
+            complete_output = ""
+            for response in openai_response:
+                complete_output += response["choices"][0]["text"]
+
+            # Also, it no longer returns usage information
+            # So manually count the tokens using tiktoken
+            prompt_token_count = get_openai_token_count(
+                text=nonchat_prompt(prompt=text, instructions=instructions),
+                model_name=engine,
+            )
+            response_token_count = get_openai_token_count(
+                text=complete_output, model_name=engine
+            )
+
+            # Return the LLMResponse
+            return LLMResponse(
+                output=complete_output,
+                prompt_token_count=prompt_token_count,
+                response_token_count=response_token_count,
+            )
 
 
 class OpenAIChatCallable(PromptCallableBase):
