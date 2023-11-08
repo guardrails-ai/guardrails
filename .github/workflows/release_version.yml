@@ -7,9 +7,6 @@ jobs:
   release:
     runs-on: ubuntu-latest
 
-    env:
-      PYPI_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
-
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v2
@@ -30,6 +27,11 @@ jobs:
 
       - name: Install dependencies
         run: make full
+
+      - name: Set PyPI credentials
+        env:
+          PYPI_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+        run: poetry config pypi-token.pypi "$PYPI_PASSWORD"
 
       - name: Upload to PyPI
         run: poetry publish
