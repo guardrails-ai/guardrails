@@ -19,11 +19,17 @@ jobs:
         with:
           python-version: 3.11.x
 
-      - name: Install twine and wheel
-        run: pip install twine wheel
+      - name: Poetry cache
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pypoetry
+          key: poetry-cache-${{ runner.os }}-${{ steps.setup_python.outputs.python-version }}-${{ env.POETRY_VERSION }}
 
-      - name: Make Full
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+
+      - name: Install dependencies
         run: make full
 
       - name: Upload to PyPI
-        run: python3 setup.py upload
+        run: poetry publish

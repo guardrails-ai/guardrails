@@ -28,10 +28,14 @@ jobs:
                 with:
                     python-version: ${{ matrix.python-version }}
                     
-            -   uses: actions/cache@v2
+            -   name: Poetry cache
+                uses: actions/cache@v3
                 with:
-                    path: ~/.cache/pip
-                    key: ${{ runner.os }}-pip
+                    path: ~/.cache/pypoetry
+                    key: poetry-cache-${{ runner.os }}-${{ steps.setup_python.outputs.python-version }}-${{ env.POETRY_VERSION }}
+
+            -   name: Install Poetry
+                uses: snok/install-poetry@v1
 
             -   name: Install Dependencies
                 run: |
@@ -55,10 +59,14 @@ jobs:
                 with:
                     python-version: ${{ matrix.python-version }}
 
-            -   uses: actions/cache@v2
+            -   name: Poetry cache
+                uses: actions/cache@v3
                 with:
-                    path: ~/.cache/pip
-                    key: ${{ runner.os }}-pip
+                    path: ~/.cache/pypoetry
+                    key: poetry-cache-${{ runner.os }}-${{ steps.setup_python.outputs.python-version }}-${{ env.POETRY_VERSION }}
+
+            -   name: Install Poetry
+                uses: snok/install-poetry@v1
 
             -   name: Install Dependencies
                 run: |
@@ -83,10 +91,14 @@ jobs:
                 with:
                     python-version: ${{ matrix.python-version }}
                     
-            -   uses: actions/cache@v2
+            -   name: Poetry cache
+                uses: actions/cache@v3
                 with:
-                    path: ~/.cache/pip
-                    key: ${{ runner.os }}-pip
+                    path: ~/.cache/pypoetry
+                    key: poetry-cache-${{ runner.os }}-${{ steps.setup_python.outputs.python-version }}-${{ env.POETRY_VERSION }}
+
+            -   name: Install Poetry
+                uses: snok/install-poetry@v1
 
             -   name: Install Dependencies
                 run: |

@@ -34,10 +34,10 @@ docs-deploy:
 	mkdocs gh-deploy
 
 dev:
-	pip install -e ".[dev]"
+	poetry install
 
 full:
-	pip install -e ".[all]"
+	poetry install --all-extras
 
 all: autoformat type lint docs test
 
