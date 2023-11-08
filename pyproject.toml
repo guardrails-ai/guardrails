@@ -6,6 +6,9 @@ authors = ["Guardrails AI <contact@guardrailsai.com>"]
 license = "Apache License 2.0"
 readme = "README.md"
 
+[tool.poetry.scripts]
+guardrails = "guardrails.cli:cli"
+
 [tool.poetry.dependencies]
 python = "^3.8"
 lxml = "^4.9.3"
