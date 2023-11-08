@@ -32,7 +32,7 @@ class RequiringValidator2(Validator):
             """
 <rail version="0.1">
 <output>
-    <string name="string_name" format="myrequiringvalidator" />
+    <string name="string_name" validators="myrequiringvalidator" />
 </output>
 </rail>
         """,
@@ -43,10 +43,10 @@ class RequiringValidator2(Validator):
 <rail version="0.1">
 <output>
     <object name="temp_name">
-        <string name="string_name" format="myrequiringvalidator" />
+        <string name="string_name" validators="myrequiringvalidator" />
     </object>
     <list name="list_name">
-        <string name="string_name" format="myrequiringvalidator2" />
+        <string name="string_name" validators="myrequiringvalidator2" />
     </list>
 </output>
 </rail>
@@ -64,7 +64,7 @@ class RequiringValidator2(Validator):
         <string name="string_name" />
     </case>
     <case name="hiya">
-        <string name="string_name" format="myrequiringvalidator" />
+        <string name="string_name" validators="myrequiringvalidator" />
     </case>
     </choice>
     </list>

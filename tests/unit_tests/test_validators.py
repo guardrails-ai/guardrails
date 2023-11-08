@@ -328,7 +328,7 @@ def test_custom_func_validator():
     <rail version="0.1">
     <output>
         <string name="greeting"
-                format="mycustomhellovalidator"
+                validators="mycustomhellovalidator"
                 on-fail-mycustomhellovalidator="fix"/>
     </output>
     </rail>
@@ -391,7 +391,7 @@ def test_provenance_v1(mocker):
 
     output_schema: StringSchema = string_guard.rail.output_schema
     data_type: DataType = output_schema.root_datatype
-    validators = data_type.format_attr.validators
+    validators = data_type.validators_attr.validators
     prov_validator: ProvenanceV1 = validators[0]
 
     # Check types remain intact
