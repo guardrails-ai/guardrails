@@ -197,8 +197,9 @@ class OpenAICallable(PromptCallableBase):
         )
 
         # Check if kwargs stream is passed in
-        if kwargs.get("stream", None) is None:
-            # If stream is not defined, return default behavior
+        if kwargs.get("stream", None) in [None, False]:
+            # If stream is not defined or is set to False, 
+            # return default behavior
             return LLMResponse(
                 output=openai_response["choices"][0]["text"],  # type: ignore
                 prompt_token_count=openai_response["usage"][  # type: ignore
@@ -209,8 +210,8 @@ class OpenAICallable(PromptCallableBase):
                 ],
             )
         else:
-            # If stream is defined, openai returns a generator
-            # that we need to iterate through
+            # If stream is defined and set to True, 
+            # openai returns a generator object
             complete_output = ""
             for response in openai_response:
                 complete_output += response["choices"][0]["text"]
@@ -292,8 +293,9 @@ class OpenAIChatCallable(PromptCallableBase):
         )
 
         # Check if kwargs stream is passed in
-        if kwargs.get("stream", None) is None:
-            # If stream is not defined, return default behavior
+        if kwargs.get("stream", None) in [None, False]:
+            # If stream is not defined or is set to False, 
+            # return default behavior
             # Extract string from response
             if (
                 "function_call" in openai_response["choices"][0]["message"]
@@ -316,8 +318,8 @@ class OpenAIChatCallable(PromptCallableBase):
                 ],
             )
         else:
-            # If stream is defined, openai returns a generator
-            # that we need to iterate through
+            # If stream is defined and set to True, 
+            # openai returns a generator object
             collected_messages = []
             # iterate through the stream of events
             for chunk in openai_response:
@@ -523,15 +525,43 @@ class AsyncOpenAICallable(AsyncPromptCallableBase):
             *args,
             **kwargs,
         )
-        return LLMResponse(
-            output=openai_response["choices"][0]["text"],  # type: ignore
-            prompt_token_count=openai_response["usage"][  # type: ignore
-                "prompt_tokens"
-            ],
-            response_token_count=openai_response["usage"][  # type: ignore
-                "completion_tokens"
-            ],
-        )
+
+        # Check if kwargs stream is passed in
+        if kwargs.get("stream", None) in [None, False]:
+            # If stream is not defined or is set to False, 
+            # return default behavior
+            return LLMResponse(
+                output=openai_response["choices"][0]["text"],  # type: ignore
+                prompt_token_count=openai_response["usage"][  # type: ignore
+                    "prompt_tokens"
+                ],
+                response_token_count=openai_response["usage"][  # type: ignore
+                    "completion_tokens"
+                ],
+            )
+        else:
+            # If stream is defined and set to True, 
+            # openai returns a generator object
+            complete_output = ""
+            for response in openai_response:
+                complete_output += response["choices"][0]["text"]
+
+            # Also, it no longer returns usage information
+            # So manually count the tokens using tiktoken
+            prompt_token_count = num_tokens_from_string(
+                text=nonchat_prompt(prompt=text, instructions=instructions),
+                model_name=engine,
+            )
+            response_token_count = num_tokens_from_string(
+                text=complete_output, model_name=engine
+            )
+
+            # Return the LLMResponse
+            return LLMResponse(
+                output=complete_output,
+                prompt_token_count=prompt_token_count,
+                response_token_count=response_token_count,
+            )
 
 
 class AsyncOpenAIChatCallable(AsyncPromptCallableBase):
@@ -592,23 +622,58 @@ class AsyncOpenAIChatCallable(AsyncPromptCallableBase):
             **kwargs,
         )
 
-        # Extract string from response
-        if "function_call" in openai_response["choices"][0]["message"]:  # type: ignore
-            output = openai_response["choices"][0]["message"][  # type: ignore
-                "function_call"
-            ]["arguments"]
-        else:
-            output = openai_response["choices"][0]["message"]["content"]  # type: ignore
+        # Check if kwargs stream is passed in
+        if kwargs.get("stream", None) in [None, False]:
+            # If stream is not defined or is set to False, 
+            # return default behavior
+            # Extract string from response
+            if "function_call" in openai_response["choices"][0]["message"]:  # type: ignore
+                output = openai_response["choices"][0]["message"][  # type: ignore
+                    "function_call"
+                ]["arguments"]
+            else:
+                output = openai_response["choices"][0]["message"]["content"]  # type: ignore
 
-        return LLMResponse(
-            output=output,
-            prompt_token_count=openai_response["usage"][  # type: ignore
-                "prompt_tokens"
-            ],
-            response_token_count=openai_response["usage"][  # type: ignore
-                "completion_tokens"
-            ],
-        )
+            return LLMResponse(
+                output=output,
+                prompt_token_count=openai_response["usage"][  # type: ignore
+                    "prompt_tokens"
+                ],
+                response_token_count=openai_response["usage"][  # type: ignore
+                    "completion_tokens"
+                ],
+            )
+        else:
+            # If stream is defined and set to True, 
+            # openai returns a generator object
+            collected_messages = []
+            # iterate through the stream of events
+            for chunk in openai_response:
+                chunk_message = chunk["choices"][0]["delta"]
+                collected_messages.append(chunk_message)  # save the message
+
+            complete_output = "".join(
+                [msg.get("content", "") for msg in collected_messages]
+            )
+
+            # Also, it no longer returns usage information
+            # So manually count the tokens using tiktoken
+            prompt_token_count = num_tokens_from_messages(
+                messages=chat_prompt(
+                    prompt=text, instructions=instructions, msg_history=msg_history
+                ),
+                model=model,
+            )
+            response_token_count = num_tokens_from_string(
+                text=complete_output, model_name=model
+            )
+
+            # Return the LLMResponse
+            return LLMResponse(
+                output=complete_output,
+                prompt_token_count=prompt_token_count,
+                response_token_count=response_token_count,
+            )
 
 
 class AsyncManifestCallable(AsyncPromptCallableBase):
