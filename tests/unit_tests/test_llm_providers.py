@@ -110,6 +110,16 @@ async def test_async_arbitrary_callable_does_not_retry_on_success(mocker):
 
 
 @pytest.fixture(scope="module")
+def non_chat_token_count_mock():
+    return 10
+
+
+@pytest.fixture(scope="module")
+def chat_token_count_mock() -> int:
+    return 10
+
+
+@pytest.fixture(scope="module")
 def openai_chat_mock():
     return {
         "choices": [
@@ -122,6 +132,40 @@ def openai_chat_mock():
             "completion_tokens": 20,
         },
     }
+
+
+@pytest.fixture(scope="module")
+def openai_chat_stream_mock():
+    def gen():
+        # Returns a generator object
+        for i in range(4, 8):
+            yield {
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {"content": f"{i},"},
+                    }
+                ]
+            }
+
+    return gen()
+
+
+@pytest.fixture(scope="module")
+def openai_async_chat_stream_mock():
+    async def gen():
+        # Returns a generator object
+        for i in range(4, 8):
+            yield {
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {"content": f"{i},"},
+                    }
+                ]
+            }
+
+    return gen()
 
 
 @pytest.fixture(scope="module")
@@ -139,6 +183,40 @@ def openai_mock():
     }
 
 
+@pytest.fixture(scope="module")
+def openai_stream_mock():
+    def gen():
+        # Returns a generator object
+        for i in range(4, 8):
+            yield {
+                "choices": [
+                    {
+                        "text": f"{i},",
+                    }
+                ],
+                "model": "openai-model-name",
+            }
+
+    return gen()
+
+
+@pytest.fixture(scope="module")
+def openai_async_stream_mock():
+    async def gen():
+        # Returns a generator object
+        for i in range(4, 8):
+            yield {
+                "choices": [
+                    {
+                        "text": f"{i},",
+                    }
+                ],
+                "model": "openai-model-name",
+            }
+
+    return gen()
+
+
 def test_openai_callable(mocker, openai_mock):
     mocker.patch("openai.Completion.create", return_value=openai_mock)
 
@@ -151,6 +229,25 @@ def test_openai_callable(mocker, openai_mock):
     assert response.output == "Mocked LLM output"
     assert response.prompt_token_count == 10
     assert response.response_token_count == 20
+
+
+def test_openai_stream_callable(mocker, openai_stream_mock, non_chat_token_count_mock):
+    mocker.patch("openai.Completion.create", return_value=openai_stream_mock)
+    mocker.patch(
+        "guardrails.llm_providers.num_tokens_from_string",
+        return_value=non_chat_token_count_mock,
+    )
+
+    from guardrails.llm_providers import OpenAICallable
+
+    openai_callable = OpenAICallable()
+    response = openai_callable(text="1,2,3,", stream=True)
+    print(f"RESPONSE: {response}")
+
+    assert isinstance(response, LLMResponse) is True
+    assert response.output == "4,5,6,7,"
+    assert response.prompt_token_count == 10
+    assert response.response_token_count == 10
 
 
 @pytest.mark.asyncio
@@ -168,6 +265,27 @@ async def test_async_openai_callable(mocker, openai_mock):
     assert response.response_token_count == 20
 
 
+@pytest.mark.asyncio
+async def test_async_openai_stream_callable(
+    mocker, openai_async_stream_mock, non_chat_token_count_mock
+):
+    mocker.patch("openai.Completion.acreate", return_value=openai_async_stream_mock)
+    mocker.patch(
+        "guardrails.llm_providers.num_tokens_from_string",
+        return_value=non_chat_token_count_mock,
+    )
+
+    from guardrails.llm_providers import AsyncOpenAICallable
+
+    openai_callable = AsyncOpenAICallable()
+    response = await openai_callable(text="1,2,3,", stream=True)
+
+    assert isinstance(response, LLMResponse) is True
+    assert response.output == "4,5,6,7,"
+    assert response.prompt_token_count == 10
+    assert response.response_token_count == 10
+
+
 def test_openai_chat_callable(mocker, openai_chat_mock):
     mocker.patch("openai.ChatCompletion.create", return_value=openai_chat_mock)
 
@@ -180,6 +298,30 @@ def test_openai_chat_callable(mocker, openai_chat_mock):
     assert response.output == "Mocked LLM output"
     assert response.prompt_token_count == 10
     assert response.response_token_count == 20
+
+
+def test_openai_chat_stream_callable(
+    mocker, openai_chat_stream_mock, chat_token_count_mock, non_chat_token_count_mock
+):
+    mocker.patch("openai.ChatCompletion.create", return_value=openai_chat_stream_mock)
+    mocker.patch(
+        "guardrails.llm_providers.num_tokens_from_messages",
+        return_value=chat_token_count_mock,
+    )
+    mocker.patch(
+        "guardrails.llm_providers.num_tokens_from_string",
+        return_value=non_chat_token_count_mock,
+    )
+
+    from guardrails.llm_providers import OpenAIChatCallable
+
+    openai_chat_callable = OpenAIChatCallable()
+    response = openai_chat_callable(text="1,2,3,", stream=True)
+
+    assert isinstance(response, LLMResponse) is True
+    assert response.output == "4,5,6,7,"
+    assert response.prompt_token_count == 10
+    assert response.response_token_count == 10
 
 
 @pytest.mark.asyncio
@@ -195,6 +337,36 @@ async def test_async_openai_chat_callable(mocker, openai_chat_mock):
     assert response.output == "Mocked LLM output"
     assert response.prompt_token_count == 10
     assert response.response_token_count == 20
+
+
+@pytest.mark.asyncio
+async def test_async_openai_chat_stream_callable(
+    mocker,
+    openai_async_chat_stream_mock,
+    chat_token_count_mock,
+    non_chat_token_count_mock,
+):
+    mocker.patch(
+        "openai.ChatCompletion.acreate", return_value=openai_async_chat_stream_mock
+    )
+    mocker.patch(
+        "guardrails.llm_providers.num_tokens_from_messages",
+        return_value=chat_token_count_mock,
+    )
+    mocker.patch(
+        "guardrails.llm_providers.num_tokens_from_string",
+        return_value=non_chat_token_count_mock,
+    )
+
+    from guardrails.llm_providers import AsyncOpenAIChatCallable
+
+    openai_chat_callable = AsyncOpenAIChatCallable()
+    response = await openai_chat_callable(text="1,2,3,", stream=True)
+
+    assert isinstance(response, LLMResponse) is True
+    assert response.output == "4,5,6,7,"
+    assert response.prompt_token_count == 10
+    assert response.response_token_count == 10
 
 
 def test_openai_chat_model_callable(mocker, openai_chat_mock):
