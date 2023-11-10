@@ -198,7 +198,7 @@ class OpenAICallable(PromptCallableBase):
 
         # Check if kwargs stream is passed in
         if kwargs.get("stream", None) in [None, False]:
-            # If stream is not defined or is set to False, 
+            # If stream is not defined or is set to False,
             # return default behavior
             return LLMResponse(
                 output=openai_response["choices"][0]["text"],  # type: ignore
@@ -210,7 +210,7 @@ class OpenAICallable(PromptCallableBase):
                 ],
             )
         else:
-            # If stream is defined and set to True, 
+            # If stream is defined and set to True,
             # openai returns a generator object
             complete_output = ""
             for response in openai_response:
@@ -294,7 +294,7 @@ class OpenAIChatCallable(PromptCallableBase):
 
         # Check if kwargs stream is passed in
         if kwargs.get("stream", None) in [None, False]:
-            # If stream is not defined or is set to False, 
+            # If stream is not defined or is set to False,
             # return default behavior
             # Extract string from response
             if (
@@ -318,7 +318,7 @@ class OpenAIChatCallable(PromptCallableBase):
                 ],
             )
         else:
-            # If stream is defined and set to True, 
+            # If stream is defined and set to True,
             # openai returns a generator object
             collected_messages = []
             # iterate through the stream of events
@@ -528,7 +528,7 @@ class AsyncOpenAICallable(AsyncPromptCallableBase):
 
         # Check if kwargs stream is passed in
         if kwargs.get("stream", None) in [None, False]:
-            # If stream is not defined or is set to False, 
+            # If stream is not defined or is set to False,
             # return default behavior
             return LLMResponse(
                 output=openai_response["choices"][0]["text"],  # type: ignore
@@ -540,10 +540,10 @@ class AsyncOpenAICallable(AsyncPromptCallableBase):
                 ],
             )
         else:
-            # If stream is defined and set to True, 
+            # If stream is defined and set to True,
             # openai returns a generator object
             complete_output = ""
-            for response in openai_response:
+            async for response in openai_response:
                 complete_output += response["choices"][0]["text"]
 
             # Also, it no longer returns usage information
@@ -624,15 +624,19 @@ class AsyncOpenAIChatCallable(AsyncPromptCallableBase):
 
         # Check if kwargs stream is passed in
         if kwargs.get("stream", None) in [None, False]:
-            # If stream is not defined or is set to False, 
+            # If stream is not defined or is set to False,
             # return default behavior
             # Extract string from response
-            if "function_call" in openai_response["choices"][0]["message"]:  # type: ignore
+            if (
+                "function_call" in openai_response["choices"][0]["message"]
+            ):  # type: ignore
                 output = openai_response["choices"][0]["message"][  # type: ignore
                     "function_call"
                 ]["arguments"]
             else:
-                output = openai_response["choices"][0]["message"]["content"]  # type: ignore
+                output = openai_response["choices"][0]["message"][
+                    "content"
+                ]  # type: ignore
 
             return LLMResponse(
                 output=output,
@@ -644,11 +648,11 @@ class AsyncOpenAIChatCallable(AsyncPromptCallableBase):
                 ],
             )
         else:
-            # If stream is defined and set to True, 
+            # If stream is defined and set to True,
             # openai returns a generator object
             collected_messages = []
             # iterate through the stream of events
-            for chunk in openai_response:
+            async for chunk in openai_response:
                 chunk_message = chunk["choices"][0]["delta"]
                 collected_messages.append(chunk_message)  # save the message
 
