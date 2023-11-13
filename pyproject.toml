@@ -46,6 +46,7 @@ profanity = ["alt-profanity-check"]
 detect-secrets = ["detect-secrets"]
 manifest = ["manifest-ml"]
 critique = ["inspiredco"]
+toxic_language = ["transformers", "torch"]
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.3"
