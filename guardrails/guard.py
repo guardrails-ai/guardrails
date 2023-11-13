@@ -8,6 +8,7 @@ from typing import (
     Dict,
     List,
     Optional,
+    Sequence,
     Tuple,
     Type,
     Union,
@@ -191,7 +192,7 @@ class Guard:
     @classmethod
     def from_string(
         cls,
-        validators: List[Validator],
+        validators: Sequence[Validator],
         description: Optional[str] = None,
         prompt: Optional[str] = None,
         instructions: Optional[str] = None,
