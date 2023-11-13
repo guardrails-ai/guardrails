@@ -38,6 +38,7 @@ detect-secrets = {version = "^1.4.0", optional = true}
 manifest-ml = {version = "^0.1.8", optional = true}
 inspiredco = {version = "^0.0.2", optional = true}
 transformers = {version = "^4.11.3", optional = true}
+torch = {version = "^2.1.0", optional = true, source = "torch"}
 
 [tool.poetry.extras]
 sql = ["sqlvalidator", "sqlalchemy", "sqlglot"]
@@ -47,7 +48,7 @@ profanity = ["alt-profanity-check"]
 detect-secrets = ["detect-secrets"]
 manifest = ["manifest-ml"]
 critique = ["inspiredco"]
-toxic_language = ["transformers"]
+toxic_language = ["transformers", "torch"]
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.3"
@@ -78,6 +79,15 @@ griffe = "^0.36.9"
 pillow = "^10.1.0"
 cairosvg = "^2.7.1"
 mkdocs-glightbox = "^0.3.4"
+
+[[tool.poetry.source]]
+name = "torch"
+url = "https://download.pytorch.org/whl/cpu"
+priority = "explicit"
+
+[[tool.poetry.source]]
+name = "PyPI"
+priority = "primary"
 
 [build-system]
 requires = ["poetry-core"]
