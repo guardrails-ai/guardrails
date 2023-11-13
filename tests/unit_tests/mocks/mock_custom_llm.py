@@ -9,7 +9,7 @@ class MockCustomLlm:
     def fail_retryable(self, prompt: str, *args, **kwargs) -> str:
         if self.times_called == 0:
             self.times_called = self.times_called + 1
-            raise openai.error.ServiceUnavailableError("ServiceUnavailableError")
+            raise openai.ServiceUnavailableError("ServiceUnavailableError")
         return self.response
 
     def fail_non_retryable(self, prompt: str, *args, **kwargs) -> str:
@@ -27,7 +27,7 @@ class MockAsyncCustomLlm:
     async def fail_retryable(self, prompt: str, *args, **kwargs) -> str:
         if self.times_called == 0:
             self.times_called = self.times_called + 1
-            raise openai.error.ServiceUnavailableError("ServiceUnavailableError")
+            raise openai.ServiceUnavailableError("ServiceUnavailableError")
         return self.response
 
     async def fail_non_retryable(self, prompt: str, *args, **kwargs) -> str:

@@ -4,6 +4,7 @@ The name with which a validator is registered is the name that is used
 in the `RAIL` spec to specify formatters.
 """
 import ast
+import asyncio
 import contextvars
 import inspect
 import itertools
@@ -15,12 +16,12 @@ import warnings
 from functools import partial
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
-import openai
 import rstr
 from tenacity import retry, stop_after_attempt, wait_random_exponential
 
 from guardrails.utils.casting_utils import to_int
 from guardrails.utils.docs_utils import get_chunks_from_text, sentence_split
+from guardrails.utils.openai_utils import OpenAIClient, static_openai_chat_create_func
 from guardrails.utils.sql_utils import SQLDriver, create_sql_driver
 from guardrails.utils.validator_utils import PROVENANCE_V1_PROMPT
 from guardrails.validator_base import (
@@ -696,8 +697,10 @@ class SimilarToDocument(Validator):
                 "`pip install numpy` to install it."
             )
 
+        self.client = OpenAIClient()
+
         self._document = document
-        embedding_response = openai.Embedding.create(input=[document], model=model)
+        embedding_response = self.client.create_embedding(input=[document], model=model)
         embedding = embedding_response["data"][0]["embedding"]  # type: ignore
         self._document_embedding = np.array(embedding)
         self._model = model
@@ -719,7 +722,9 @@ class SimilarToDocument(Validator):
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         logger.debug(f"Validating {value} is similar to document...")
 
-        embedding_response = openai.Embedding.create(input=[value], model=self._model)
+        embedding_response = self.client.create_embedding(
+            input=[value], model=self._model
+        )
 
         value_embedding = np.array(
             embedding_response["data"][0]["embedding"]  # type: ignore
@@ -1281,7 +1286,7 @@ class SaliencyCheck(Validator):
             )
 
         self.llm_callable = (
-            llm_callable if llm_callable else openai.ChatCompletion.create
+            llm_callable if llm_callable else static_openai_chat_create_func
         )
 
         self._threshold = threshold
@@ -1338,7 +1343,7 @@ Make sure that topics are relevant to text, and topics are not too specific or g
     """
 
         guard = Guard.from_rail_string(spec)
-        _, validated_output = guard(llm_api=self.llm_callable)
+        _, validated_output = guard(llm_api=self.llm_callable)  # type: ignore
         return validated_output["topics"]
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
@@ -1393,7 +1398,7 @@ class QARelevanceLLMEval(Validator):
             )
 
         self.llm_callable = (
-            llm_callable if llm_callable else openai.ChatCompletion.create
+            llm_callable if llm_callable else static_openai_chat_create_func
         )
 
     def _selfeval(self, question: str, answer: str):
@@ -1419,11 +1424,12 @@ Relevant (as a JSON with a single boolean key, "relevant"):\
         )
         guard = Guard.from_rail_string(spec)
 
-        return guard(
-            self.llm_callable,
+        _, validated_output = guard(
+            self.llm_callable,  # type: ignore
             max_tokens=10,
             temperature=0.1,
-        )[1]
+        )
+        return validated_output
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         if "question" not in metadata:
@@ -1821,6 +1827,8 @@ class ProvenanceV1(Validator):
         self._top_k = int(top_k)
         self._max_tokens = int(max_tokens)
 
+        self.client = OpenAIClient()
+
     def set_callable(self, llm_callable: Union[str, Callable]) -> None:
         """Set the LLM callable.
 
@@ -1837,14 +1845,14 @@ class ProvenanceV1(Validator):
                 )
 
             def openai_callable(prompt: str) -> str:
-                response = openai.ChatCompletion.create(
+                response = self.client.create_chat_completion(
                     model=llm_callable,
                     messages=[
                         {"role": "user", "content": prompt},
                     ],
                     max_tokens=self._max_tokens,
                 )
-                return response["choices"][0]["message"]["content"]  # type: ignore
+                return response.output
 
             self._llm_callable = openai_callable
         elif isinstance(llm_callable, Callable):
@@ -2007,13 +2015,13 @@ class ProvenanceV1(Validator):
 
         # Set the OpenAI API key
         if os.getenv("OPENAI_API_KEY"):  # Check if set in environment
-            openai.api_key = os.getenv("OPENAI_API_KEY")
+            self.client.api_key = os.getenv("OPENAI_API_KEY")
         elif api_key:  # Check if set when calling guard() or parse()
-            openai.api_key = api_key
+            self.client.api_key = api_key
 
         # Set the OpenAI API base if specified
         if api_base:
-            openai.api_base = api_base
+            self.client.api_base = api_base
 
         query_function = self.get_query_function(metadata)
         if self._validation_method == "sentence":

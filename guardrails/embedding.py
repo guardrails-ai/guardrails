@@ -1,10 +1,9 @@
-import os
 from abc import ABC, abstractmethod
 from functools import cached_property
 from itertools import islice
 from typing import Callable, List, Optional
 
-import openai
+from guardrails.utils.openai_utils import OpenAIClient
 
 
 class EmbeddingBase(ABC):
@@ -114,9 +113,9 @@ class EmbeddingBase(ABC):
 class OpenAIEmbedding(EmbeddingBase):
     def __init__(
         self,
-        model: Optional[str] = "text-embedding-ada-002",
-        encoding_name: Optional[str] = "cl100k_base",
-        max_tokens: Optional[int] = 8191,
+        model: str = "text-embedding-ada-002",
+        encoding_name: str = "cl100k_base",
+        max_tokens: int = 8191,
         api_key: Optional[str] = None,
         api_base: Optional[str] = None,
     ):
@@ -137,15 +136,14 @@ class OpenAIEmbedding(EmbeddingBase):
         return resp[0]
 
     def _get_embedding(self, texts: List[str]) -> List[List[float]]:
-        api_key = (
-            self.api_key
-            if self.api_key is not None
-            else os.environ.get("OPENAI_API_KEY")
+        client = OpenAIClient(
+            api_key=self.api_key,
+            api_base=self.api_base,
         )
-        resp = openai.Embedding.create(
-            api_key=api_key, model=self._model, input=texts, api_base=self.api_base
+        return client.create_embedding(
+            model=self._model,
+            input=texts,
         )
-        return [r["embedding"] for r in resp["data"]]  # type: ignore
 
     @property
     def output_dim(self) -> int:

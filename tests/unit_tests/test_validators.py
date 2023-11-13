@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 from guardrails import Guard
 from guardrails.datatypes import DataType
 from guardrails.schema import StringSchema
+from guardrails.utils.openai_utils import OPENAI_VERSION
 from guardrails.utils.reask_utils import FieldReAsk
 from guardrails.validator_base import (
     FailResult,
@@ -385,14 +386,16 @@ def test_provenance_v1(mocker):
     assert isinstance(prov_validator._max_tokens, int)
 
     # Test guard.parse() with 3 different ways of setting the OpenAI API key API key
-    # 1. Setting the API key directly
-    openai.api_key = API_KEY
 
-    output = string_guard.parse(
-        llm_output=LLM_RESPONSE,
-        metadata={"query_function": mock_chromadb_query_function},
-    )
-    assert output == LLM_RESPONSE
+    # 1. Setting the API key directly
+    if OPENAI_VERSION.startswith("0"):  # not supported in v1 anymore
+        openai.api_key = API_KEY
+
+        output = string_guard.parse(
+            llm_output=LLM_RESPONSE,
+            metadata={"query_function": mock_chromadb_query_function},
+        )
+        assert output == LLM_RESPONSE
 
     # 2. Setting the environment variable
     os.environ["OPENAI_API_KEY"] = API_KEY
