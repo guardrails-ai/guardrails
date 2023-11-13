@@ -28,10 +28,7 @@ jobs:
       - name: Install dependencies
         run: make full
 
-      - name: Set PyPI credentials
+      - name: Upload to PyPI
         env:
           PYPI_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
-        run: poetry config pypi-token.pypi "$PYPI_PASSWORD"
-
-      - name: Upload to PyPI
-        run: poetry publish
+        run: poetry publish --build -u __token__ -p $PYPI_PASSWORD

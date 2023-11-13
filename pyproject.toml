@@ -1,10 +1,13 @@
 [tool.poetry]
-name = "guardrails"
+name = "guardrails-ai"
 version = "0.2.8"
 description = "Adding guardrails to large language models."
 authors = ["Guardrails AI <contact@guardrailsai.com>"]
 license = "Apache License 2.0"
 readme = "README.md"
+packages = [
+    { include = "guardrails", from = "." }
+]
 
 [tool.poetry.scripts]
 guardrails = "guardrails.cli:cli"
