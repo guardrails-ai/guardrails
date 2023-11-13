@@ -7,8 +7,8 @@ import pytest
 from guardrails import Guard, Validator, register_validator
 from guardrails.datatypes import DataType
 from guardrails.schema import StringSchema
-from guardrails.validators import DetectSecrets, SimilarToList, ToxicLanguage
 from guardrails.validator_base import PassResult, ValidationResult
+from guardrails.validators import DetectSecrets, SimilarToList, ToxicLanguage
 
 from .mock_embeddings import MOCK_EMBEDDINGS
 from .mock_llm_outputs import MockOpenAICallable
