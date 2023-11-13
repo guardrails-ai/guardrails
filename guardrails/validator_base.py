@@ -1,6 +1,6 @@
 import inspect
 from collections import defaultdict
-from typing import Any, Callable, Dict, List, Literal, Optional, Type, Union
+from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Type, Union
 
 from pydantic import BaseModel, Field
 
@@ -258,6 +258,10 @@ class Validator:
         params = " ".join(validator_args)
         return f"{self.rail_alias}: {params}"
 
+    def get_args(self):
+        """Get the arguments for the validator."""
+        return self._kwargs
+
     def __call__(self, value):
         result = self.validate(value, {})
         if isinstance(result, FailResult):
@@ -273,3 +277,6 @@ class Validator:
         if not isinstance(other, Validator):
             return False
         return self.to_prompt() == other.to_prompt()
+
+
+ValidatorSpec = Union[Validator, Tuple[Union[Validator, str, Callable], str]]

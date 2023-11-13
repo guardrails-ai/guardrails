@@ -4,26 +4,27 @@ import typing
 import warnings
 from copy import deepcopy
 from datetime import date, time
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    List,
-    Optional,
-    Type,
-    Union,
-    get_args,
-    get_origin,
-)
+from typing import Any, Callable, Dict, Optional, Type, Union, get_args, get_origin
 
-import lxml.etree as ET
 from griffe.dataclasses import Docstring
 from griffe.docstrings.parsers import Parser, parse
-from lxml.etree import Element as E
-from pydantic import BaseModel, HttpUrl, validator
+from pydantic import BaseModel, validator
 from pydantic.fields import ModelField
 
-from guardrails.validators import Validator
+from guardrails.datatypes import Boolean as BooleanDataType
+from guardrails.datatypes import Case as CaseDataType
+from guardrails.datatypes import Choice
+from guardrails.datatypes import Choice as ChoiceDataType
+from guardrails.datatypes import DataType
+from guardrails.datatypes import Date as DateDataType
+from guardrails.datatypes import Float as FloatDataType
+from guardrails.datatypes import Integer as IntegerDataType
+from guardrails.datatypes import List as ListDataType
+from guardrails.datatypes import Object as ObjectDataType
+from guardrails.datatypes import String as StringDataType
+from guardrails.datatypes import Time as TimeDataType
+from guardrails.formatattr import FormatAttr
+from guardrails.validator_base import Validator
 
 griffe_docstrings_google_logger = logging.getLogger("griffe.docstrings.google")
 griffe_agents_nodes_logger = logging.getLogger("griffe.agents.nodes")
@@ -100,7 +101,7 @@ def is_dict(type_annotation: Any) -> bool:
     return False
 
 
-def prepare_type_annotation(type_annotation: Any) -> Type:
+def prepare_type_annotation(type_annotation: Union[ModelField, Type]) -> Type:
     """Get the raw type annotation that can be used for downstream processing.
 
     This function does the following:
@@ -127,268 +128,6 @@ def prepare_type_annotation(type_annotation: Any) -> Type:
         return type_annotation
 
     return type_annotation
-
-
-def type_annotation_to_string(type_annotation: Any) -> str:
-    """Map a type_annotation to the name of the corresponding field type.
-
-    This function checks if the type_annotation is a list, dict, or a
-    primitive type, and returns the corresponding type name, e.g.
-    "list", "object", "bool", "date", etc.
-    """
-
-    # Get the type annotation from the type_annotation
-    type_annotation = prepare_type_annotation(type_annotation)
-
-    # Use inline import to avoid circular dependency
-    from guardrails.datatypes import PythonCode
-
-    # Map the type annotation to the corresponding field type
-    if is_list(type_annotation):
-        return "list"
-    elif is_dict(type_annotation):
-        return "object"
-    elif type_annotation == bool:
-        return "bool"
-    elif type_annotation == date:
-        return "date"
-    elif type_annotation == float:
-        return "float"
-    elif type_annotation == int:
-        return "integer"
-    elif type_annotation == str or typing.get_origin(type_annotation) == typing.Literal:
-        return "string"
-    elif type_annotation == time:
-        return "time"
-    elif type_annotation == HttpUrl:
-        return "url"
-    elif typing.get_origin(type_annotation) == Union:
-        return "choice"
-    elif type_annotation == PythonCode:
-        return "string"
-    else:
-        raise ValueError(f"Unsupported type: {type_annotation}")
-
-
-def add_validators_to_xml_element(
-    field_info: ModelField, element: ET._Element
-) -> ET._Element:
-    """Extract validators from a pydantic ModelField and add to XML element.
-
-    Args:
-        field_info: The field info to extract validators from
-        element: The XML element to add the validators to
-
-    Returns:
-        The XML element with the validators added
-    """
-
-    if not isinstance(field_info, ModelField):
-        return element
-    if "validators" in field_info.field_info.extra:
-        validators = field_info.field_info.extra["validators"]
-        if not isinstance(validators, list):
-            validators = [validators]
-
-        attach_validators_to_element(element, validators)
-
-    # construct a valid-choices validator for Literal types
-    if typing.get_origin(field_info.annotation) is typing.Literal:
-        valid_choices = typing.get_args(field_info.annotation)
-        element.set("format", "valid-choices")
-        element.set("valid-choices", ",".join(valid_choices))
-
-    return element
-
-
-def attach_validators_to_element(
-    element: ET._Element,
-    validators: Union[List[Validator], List[str]],
-):
-    format_prompt = []
-    on_fails = {}
-    for val in validators:
-        # must be either a tuple with two elements or a gd.Validator
-        if isinstance(val, Validator):
-            # `validator` is of type gd.Validator, use the to_xml_attrib method
-            validator_prompt = val.to_xml_attrib()
-            # Set the on-fail attribute based on the on_fail value
-            on_fail = val.on_fail_descriptor
-            on_fails[val.rail_alias] = on_fail
-        elif isinstance(val, tuple) and len(val) == 2:
-            validator, on_fail = val
-            if isinstance(validator, Validator):
-                # `validator` is of type gd.Validator, use the to_xml_attrib method
-                validator_prompt = validator.to_xml_attrib()
-                # Set the on-fail attribute based on the on_fail value
-                on_fails[validator.rail_alias] = on_fail
-            elif isinstance(validator, str):
-                # `validator` is a string, use it as the validator prompt
-                validator_prompt = validator
-                on_fails[validator] = on_fail
-            elif isinstance(validator, Callable):
-                # `validator` is a callable, use it as the validator prompt
-                if not hasattr(validator, "rail_alias"):
-                    raise ValueError(
-                        f"Validator {validator.__name__} must be registered with "
-                        f"the gd.register_validator decorator"
-                    )
-                validator_prompt = validator.rail_alias
-                on_fails[validator.rail_alias] = on_fail
-            else:
-                raise ValueError(
-                    f"Validator tuple {val} must be a (validator, on_fail) tuple, "
-                    f"where the validator is a string or a callable"
-                )
-        else:
-            raise ValueError(
-                f"Validator {val} must be a (validator, on_fail) tuple or "
-                f"Validator class instance"
-            )
-        format_prompt.append(validator_prompt)
-
-    if len(format_prompt) > 0:
-        format_prompt = "; ".join(format_prompt)
-        element.set("format", format_prompt)
-        for rail_alias, on_fail in on_fails.items():
-            element.set("on-fail-" + rail_alias, on_fail)
-
-    return element
-
-
-def create_xml_element_for_field(
-    field: Union[ModelField, Type],
-    field_name: Optional[str] = None,
-    exclude_subfields: Optional[typing.List[str]] = None,
-) -> ET._Element:
-    """Create an XML element corresponding to a field.
-
-    Args:
-        field_info: Field's type. This could be a Pydantic ModelField or a type.
-        field_name: Field's name. For some fields (e.g. list), this is not required.
-        exclude_fields: List of fields to exclude from the XML element.
-
-    Returns:
-        The XML element corresponding to the field.
-    """
-    if exclude_subfields is None:
-        exclude_subfields = []
-
-    # Create the element based on the field type
-    field_type = type_annotation_to_string(field)
-    element = E(field_type)
-
-    # Add name attribute
-    if field_name:
-        element.set("name", field_name)
-
-    # Add validators
-    element = add_validators_to_xml_element(field, element)
-
-    # Add description attribute
-    if isinstance(field, ModelField):
-        if field.field_info.description is not None:
-            element.set("description", field.field_info.description)
-
-        if field.field_info.discriminator is not None:
-            assert field_type == "choice"
-            assert typing.get_origin(field.annotation) is Union
-            discriminator = field.field_info.discriminator
-            element.set("discriminator", discriminator)
-            for case in typing.get_args(field.annotation):
-                case_discriminator_type = case.__fields__[discriminator].type_
-                assert typing.get_origin(case_discriminator_type) is typing.Literal
-                assert len(typing.get_args(case_discriminator_type)) == 1
-                discriminator_value = typing.get_args(case_discriminator_type)[0]
-                case_element = E("case", name=discriminator_value)
-                nested_element = create_xml_element_for_field(
-                    case, exclude_subfields=[discriminator]
-                )
-                for child in nested_element:
-                    case_element.append(child)
-                element.append(case_element)
-
-        # Add other attributes from the field_info
-        for key, value in field.field_info.extra.items():
-            if key not in ["validators", "description"]:
-                element.set(key, value)
-
-    # Create XML elements for the field's children
-    if field_type in ["list", "object"]:
-        type_annotation = prepare_type_annotation(field)
-
-        if is_list(type_annotation):
-            inner_type = get_args(type_annotation)
-            if len(inner_type) == 0:
-                # If the list is empty, we cannot infer the type of the elements
-                return element
-
-            inner_type = inner_type[0]
-            if is_pydantic_base_model(inner_type):
-                object_element = create_xml_element_for_base_model(inner_type)
-                element.append(object_element)
-            else:
-                inner_element = create_xml_element_for_field(inner_type)
-                element.append(inner_element)
-
-        elif is_dict(type_annotation):
-            if is_pydantic_base_model(type_annotation):
-                element = create_xml_element_for_base_model(
-                    type_annotation,
-                    element,
-                    exclude_subfields=exclude_subfields,
-                )
-            else:
-                dict_args = get_args(type_annotation)
-                if len(dict_args) == 2:
-                    key_type, val_type = dict_args
-                    assert key_type == str, "Only string keys are supported for dicts"
-                    inner_element = create_xml_element_for_field(val_type)
-                    element.append(inner_element)
-        else:
-            raise ValueError(f"Unsupported type: {type_annotation}")
-
-    return element
-
-
-def create_xml_element_for_base_model(
-    model: Type[BaseModel],
-    element: Optional[ET._Element] = None,
-    exclude_subfields: Optional[typing.List[str]] = None,
-) -> ET._Element:
-    """Create an XML element for a Pydantic BaseModel.
-
-    This function does the following:
-        1. Iterates through fields of the model and creates XML elements for each field
-        2. If a field is a Pydantic BaseModel, it creates a nested XML element
-
-    Args:
-        model: The Pydantic BaseModel to create an XML element for
-        element: The XML element to add the fields to. If None, a new XML element
-        exclude_subfields: List of fields to exclude from the XML element.
-
-    Returns:
-        The XML element with the fields added
-    """
-    if exclude_subfields is None:
-        exclude_subfields = []
-
-    if element is None:
-        element_ = E("object")
-    else:
-        element_ = element
-
-    # Extract pydantic validators from the model and add them as guardrails validators
-    model_fields = add_pydantic_validators_as_guardrails_validators(model)
-
-    # Add fields to the XML element, except for fields with `when` attribute
-    for field_name, field in model_fields.items():
-        if field_name in exclude_subfields:
-            continue
-        field_element = create_xml_element_for_field(field, field_name)
-        element_.append(field_element)
-
-    return element_
 
 
 def add_validator(
@@ -492,6 +231,14 @@ def add_pydantic_validators_as_guardrails_validators(
     model_fields = {}
     for field_name, field in model.__fields__.items():
         field_copy = deepcopy(field)
+
+        if "validators" in field.field_info.extra and not isinstance(
+            field.field_info.extra["validators"], list
+        ):
+            field_copy.field_info.extra["validators"] = [
+                field_copy.field_info.extra["validators"]
+            ]
+
         process_validators(field.pre_validators, field_copy)
         process_validators(field.post_validators, field_copy)
         model_fields[field_name] = field_copy
@@ -526,3 +273,136 @@ def convert_pydantic_model_to_openai_fn(model: BaseModel) -> Dict:
         fn_params["description"] = json_schema["description"]
 
     return fn_params
+
+
+def field_to_datatype(field: Union[ModelField, Type]) -> Type[DataType]:
+    """Map a type_annotation to the name of the corresponding field type.
+
+    This function checks if the type_annotation is a list, dict, or a
+    primitive type, and returns the corresponding type name, e.g.
+    "list", "object", "bool", "date", etc.
+    """
+
+    # FIXME: inaccessible datatypes:
+    #   - Email
+    #   - SQLCode
+    #   - Percentage
+
+    # Get the type annotation from the type_annotation
+    type_annotation = prepare_type_annotation(field)
+
+    # Map the type annotation to the corresponding field type
+    if is_list(type_annotation):
+        return ListDataType
+    elif is_dict(type_annotation):
+        return ObjectDataType
+    elif type_annotation == bool:
+        return BooleanDataType
+    elif type_annotation == date:
+        return DateDataType
+    elif type_annotation == float:
+        return FloatDataType
+    elif type_annotation == int:
+        return IntegerDataType
+    elif type_annotation == str or typing.get_origin(type_annotation) == typing.Literal:
+        return StringDataType
+    elif type_annotation == time:
+        return TimeDataType
+    elif typing.get_origin(type_annotation) == Union:
+        return ChoiceDataType
+    else:
+        raise ValueError(f"Unsupported type: {type_annotation}")
+
+
+T = typing.TypeVar("T", bound=DataType)
+
+
+def convert_pydantic_model_to_datatype(
+    model_field: Union[ModelField, Type[BaseModel]],
+    datatype: Type[T] = ObjectDataType,
+    excluded_fields: Optional[typing.List[str]] = None,
+    name: Optional[str] = None,
+    strict: bool = False,
+) -> T:
+    """Create an Object from a Pydantic model."""
+    if excluded_fields is None:
+        excluded_fields = []
+
+    if isinstance(model_field, ModelField):
+        model = model_field.type_
+    else:
+        model = model_field
+
+    model_fields = add_pydantic_validators_as_guardrails_validators(model)
+
+    children = {}
+    for field_name, field in model_fields.items():
+        if field_name in excluded_fields:
+            continue
+        type_annotation = prepare_type_annotation(field)
+        target_datatype = field_to_datatype(field)
+        if target_datatype == ListDataType:
+            inner_type = get_args(type_annotation)
+            if len(inner_type) == 0:
+                # If the list is empty, we cannot infer the type of the elements
+                children[field_name] = ListDataType.from_pydantic_field(
+                    field, strict=strict
+                )
+            inner_type = inner_type[0]
+            if is_pydantic_base_model(inner_type):
+                child = convert_pydantic_model_to_datatype(inner_type)
+            else:
+                inner_target_datatype = field_to_datatype(inner_type)
+                child = inner_target_datatype.from_pydantic_field(
+                    inner_type, strict=strict
+                )
+            children[field_name] = ListDataType.from_pydantic_field(
+                field, children={"item": child}, strict=strict
+            )
+        elif target_datatype == ChoiceDataType:
+            discriminator = field.discriminator_key or "discriminator"
+            choice_children = {}
+            for case in typing.get_args(field.type_):
+                case_discriminator_type = case.__fields__[discriminator].type_
+                assert typing.get_origin(case_discriminator_type) is typing.Literal
+                assert len(typing.get_args(case_discriminator_type)) == 1
+                discriminator_value = typing.get_args(case_discriminator_type)[0]
+                choice_children[
+                    discriminator_value
+                ] = convert_pydantic_model_to_datatype(
+                    case,
+                    datatype=CaseDataType,
+                    name=discriminator_value,
+                    strict=strict,
+                    excluded_fields=[discriminator],
+                )
+            children[field_name] = Choice.from_pydantic_field(
+                field,
+                children=choice_children,
+                strict=strict,
+                discriminator_key=discriminator,
+            )
+        elif isinstance(field.type_, type) and issubclass(field.type_, BaseModel):
+            children[field_name] = convert_pydantic_model_to_datatype(
+                field, datatype=target_datatype, strict=strict
+            )
+        else:
+            children[field_name] = target_datatype.from_pydantic_field(
+                field, strict=strict
+            )
+
+    if isinstance(model_field, ModelField):
+        return datatype.from_pydantic_field(
+            model_field,
+            children=children,
+            strict=strict,
+        )
+    else:
+        format_attr = FormatAttr.from_validators([], ObjectDataType.tag, strict)
+        return datatype(
+            children=children,
+            format_attr=format_attr,
+            optional=False,
+            name=name,
+            description=None,
+        )
