@@ -1,3 +1,4 @@
+import inspect
 from collections import defaultdict
 from typing import Any, Callable, Dict, List, Literal, Optional, Type, Union
 
@@ -245,11 +246,14 @@ class Validator:
             return self.rail_alias
 
         validator_args = []
-        for arg in self.__init__.__code__.co_varnames[1:]:
+        init_args = inspect.getfullargspec(self.__init__)
+        for arg in init_args.args[1:]:
             if arg not in ("on_fail", "args", "kwargs"):
-                str_arg = str(self._kwargs[arg])
-                str_arg = "{" + str_arg + "}" if " " in str_arg else str_arg
-                validator_args.append(str_arg)
+                arg_value = self._kwargs.get(arg)
+                str_arg = str(arg_value)
+                if str_arg is not None:
+                    str_arg = "{" + str_arg + "}" if " " in str_arg else str_arg
+                    validator_args.append(str_arg)
 
         params = " ".join(validator_args)
         return f"{self.rail_alias}: {params}"

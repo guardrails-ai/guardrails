@@ -1,9 +1,0 @@
-mkdocs
-mkdocstrings[python]
-mkdocs-jupyter
-mkdocs-material
-mknotebooks
-griffe
-pillow
-cairosvg
-mkdocs-glightbox
