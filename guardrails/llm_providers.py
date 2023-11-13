@@ -1,5 +1,15 @@
 import os
-from typing import Any, Awaitable, Callable, Dict, List, Optional, cast
+from typing import (
+    Any,
+    AsyncIterable,
+    Awaitable,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    cast,
+)
 
 import openai
 import openai.error
@@ -200,6 +210,7 @@ class OpenAICallable(PromptCallableBase):
         if kwargs.get("stream", None) in [None, False]:
             # If stream is not defined or is set to False,
             # return default behavior
+            openai_response = cast(Dict[str, Any], openai_response)
             return LLMResponse(
                 output=openai_response["choices"][0]["text"],  # type: ignore
                 prompt_token_count=openai_response["usage"][  # type: ignore
@@ -213,6 +224,7 @@ class OpenAICallable(PromptCallableBase):
             # If stream is defined and set to True,
             # openai returns a generator object
             complete_output = ""
+            openai_response = cast(Iterable[Dict[str, Any]], openai_response)
             for response in openai_response:
                 complete_output += response["choices"][0]["text"]
 
@@ -297,6 +309,7 @@ class OpenAIChatCallable(PromptCallableBase):
             # If stream is not defined or is set to False,
             # return default behavior
             # Extract string from response
+            openai_response = cast(Dict[str, Any], openai_response)
             if (
                 "function_call" in openai_response["choices"][0]["message"]
             ):  # type: ignore
@@ -322,6 +335,7 @@ class OpenAIChatCallable(PromptCallableBase):
             # openai returns a generator object
             collected_messages = []
             # iterate through the stream of events
+            openai_response = cast(Iterable[Dict[str, Any]], openai_response)
             for chunk in openai_response:
                 chunk_message = chunk["choices"][0]["delta"]  # extract the message
                 collected_messages.append(chunk_message)  # save the message
@@ -530,6 +544,7 @@ class AsyncOpenAICallable(AsyncPromptCallableBase):
         if kwargs.get("stream", None) in [None, False]:
             # If stream is not defined or is set to False,
             # return default behavior
+            openai_response = cast(Dict[str, Any], openai_response)
             return LLMResponse(
                 output=openai_response["choices"][0]["text"],  # type: ignore
                 prompt_token_count=openai_response["usage"][  # type: ignore
@@ -543,6 +558,7 @@ class AsyncOpenAICallable(AsyncPromptCallableBase):
             # If stream is defined and set to True,
             # openai returns a generator object
             complete_output = ""
+            openai_response = cast(AsyncIterable[Dict[str, Any]], openai_response)
             async for response in openai_response:
                 complete_output += response["choices"][0]["text"]
 
@@ -627,6 +643,7 @@ class AsyncOpenAIChatCallable(AsyncPromptCallableBase):
             # If stream is not defined or is set to False,
             # return default behavior
             # Extract string from response
+            openai_response = cast(Dict[str, Any], openai_response)
             if (
                 "function_call" in openai_response["choices"][0]["message"]
             ):  # type: ignore
@@ -652,6 +669,7 @@ class AsyncOpenAIChatCallable(AsyncPromptCallableBase):
             # openai returns a generator object
             collected_messages = []
             # iterate through the stream of events
+            openai_response = cast(AsyncIterable[Dict[str, Any]], openai_response)
             async for chunk in openai_response:
                 chunk_message = chunk["choices"][0]["delta"]
                 collected_messages.append(chunk_message)  # save the message
