@@ -2193,23 +2193,6 @@ files = [
 ]
 
 [[package]]
-name = "mpmath"
-version = "1.3.0"
-description = "Python library for arbitrary-precision floating-point arithmetic"
-optional = true
-python-versions = "*"
-files = [
-    {file = "mpmath-1.3.0-py3-none-any.whl", hash = "sha256:a0b2b9fe80bbcd81a6647ff13108738cfb482d481d826cc0e02f5b35e5c88d2c"},
-    {file = "mpmath-1.3.0.tar.gz", hash = "sha256:7a28eb2a9774d00c7bc92411c19a89209d5da7c4c9a9e227be8330a23a25b91f"},
-]
-
-[package.extras]
-develop = ["codecov", "pycodestyle", "pytest (>=4.6)", "pytest-cov", "wheel"]
-docs = ["sphinx"]
-gmpy = ["gmpy2 (>=2.1.0a4)"]
-tests = ["pytest (>=4.6)"]
-
-[[package]]
 name = "multidict"
 version = "6.0.4"
 description = "multidict implementation"
@@ -2394,24 +2377,6 @@ files = [
     {file = "nest_asyncio-1.5.8-py3-none-any.whl", hash = "sha256:accda7a339a70599cb08f9dd09a67e0c2ef8d8d6f4c07f96ab203f2ae254e48d"},
     {file = "nest_asyncio-1.5.8.tar.gz", hash = "sha256:25aa2ca0d2a5b5531956b9e273b45cf664cae2b145101d73b86b199978d48fdb"},
 ]
-
-[[package]]
-name = "networkx"
-version = "3.1"
-description = "Python package for creating and manipulating graphs and networks"
-optional = true
-python-versions = ">=3.8"
-files = [
-    {file = "networkx-3.1-py3-none-any.whl", hash = "sha256:4f33f68cb2afcf86f28a45f43efc27a9386b535d567d2127f8f61d51dec58d36"},
-    {file = "networkx-3.1.tar.gz", hash = "sha256:de346335408f84de0eada6ff9fafafff9bcda11f0a0dfaa931133debb146ab61"},
-]
-
-[package.extras]
-default = ["matplotlib (>=3.4)", "numpy (>=1.20)", "pandas (>=1.3)", "scipy (>=1.8)"]
-developer = ["mypy (>=1.1)", "pre-commit (>=3.2)"]
-doc = ["nb2plots (>=0.6)", "numpydoc (>=1.5)", "pillow (>=9.4)", "pydata-sphinx-theme (>=0.13)", "sphinx (>=6.1)", "sphinx-gallery (>=0.12)", "texext (>=0.6.7)"]
-extra = ["lxml (>=4.6)", "pydot (>=1.4.2)", "pygraphviz (>=1.10)", "sympy (>=1.10)"]
-test = ["codecov (>=2.1)", "pytest (>=7.2)", "pytest-cov (>=4.0)"]
 
 [[package]]
 name = "nh3"
@@ -4246,20 +4211,6 @@ pure-eval = "*"
 tests = ["cython", "littleutils", "pygments", "pytest", "typeguard"]
 
 [[package]]
-name = "sympy"
-version = "1.12"
-description = "Computer algebra system (CAS) in Python"
-optional = true
-python-versions = ">=3.8"
-files = [
-    {file = "sympy-1.12-py3-none-any.whl", hash = "sha256:c3588cd4295d0c0f603d0f2ae780587e64e2efeedb3521e46b9bb1d08d184fa5"},
-    {file = "sympy-1.12.tar.gz", hash = "sha256:ebf595c8dac3e0fdc4152c51878b498396ec7f30e7a914d6071e674d49420fb8"},
-]
-
-[package.dependencies]
-mpmath = ">=0.19"
-
-[[package]]
 name = "tenacity"
 version = "8.2.3"
 description = "Retry code until it succeeds"
@@ -4508,46 +4459,6 @@ files = [
     {file = "toolz-0.12.0-py3-none-any.whl", hash = "sha256:2059bd4148deb1884bb0eb770a3cde70e7f954cfbbdc2285f1f2de01fd21eb6f"},
     {file = "toolz-0.12.0.tar.gz", hash = "sha256:88c570861c440ee3f2f6037c4654613228ff40c93a6c25e0eba70d17282c6194"},
 ]
-
-[[package]]
-name = "torch"
-version = "2.1.0"
-description = "Tensors and Dynamic neural networks in Python with strong GPU acceleration"
-optional = true
-python-versions = ">=3.8.0"
-files = [
-    {file = "torch-2.1.0-cp310-cp310-manylinux1_x86_64.whl", hash = "sha256:bf57f8184b2c317ef81fb33dc233ce4d850cd98ef3f4a38be59c7c1572d175db"},
-    {file = "torch-2.1.0-cp310-cp310-manylinux2014_aarch64.whl", hash = "sha256:a04a0296d47f28960f51c18c5489a8c3472f624ec3b5bcc8e2096314df8c3342"},
-    {file = "torch-2.1.0-cp310-cp310-win_amd64.whl", hash = "sha256:0bd691efea319b14ef239ede16d8a45c246916456fa3ed4f217d8af679433cc6"},
-    {file = "torch-2.1.0-cp310-none-macosx_10_9_x86_64.whl", hash = "sha256:101c139152959cb20ab370fc192672c50093747906ee4ceace44d8dd703f29af"},
-    {file = "torch-2.1.0-cp310-none-macosx_11_0_arm64.whl", hash = "sha256:a6b7438a90a870e4cdeb15301519ae6c043c883fcd224d303c5b118082814767"},
-    {file = "torch-2.1.0-cp311-cp311-manylinux1_x86_64.whl", hash = "sha256:2224622407ca52611cbc5b628106fde22ed8e679031f5a99ce286629fc696128"},
-    {file = "torch-2.1.0-cp311-cp311-manylinux2014_aarch64.whl", hash = "sha256:8132efb782cd181cc2dcca5e58effbe4217cdb2581206ac71466d535bf778867"},
-    {file = "torch-2.1.0-cp311-cp311-win_amd64.whl", hash = "sha256:5c3bfa91ce25ba10116c224c59d5b64cdcce07161321d978bd5a1f15e1ebce72"},
-    {file = "torch-2.1.0-cp311-none-macosx_10_9_x86_64.whl", hash = "sha256:601b0a2a9d9233fb4b81f7d47dca9680d4f3a78ca3f781078b6ad1ced8a90523"},
-    {file = "torch-2.1.0-cp311-none-macosx_11_0_arm64.whl", hash = "sha256:3cd1dedff13884d890f18eea620184fb4cd8fd3c68ce3300498f427ae93aa962"},
-    {file = "torch-2.1.0-cp38-cp38-manylinux1_x86_64.whl", hash = "sha256:fb7bf0cc1a3db484eb5d713942a93172f3bac026fcb377a0cd107093d2eba777"},
-    {file = "torch-2.1.0-cp38-cp38-manylinux2014_aarch64.whl", hash = "sha256:761822761fffaa1c18a62c5deb13abaa780862577d3eadc428f1daa632536905"},
-    {file = "torch-2.1.0-cp38-cp38-win_amd64.whl", hash = "sha256:458a6d6d8f7d2ccc348ac4d62ea661b39a3592ad15be385bebd0a31ced7e00f4"},
-    {file = "torch-2.1.0-cp38-none-macosx_10_9_x86_64.whl", hash = "sha256:c8bf7eaf9514465e5d9101e05195183470a6215bb50295c61b52302a04edb690"},
-    {file = "torch-2.1.0-cp38-none-macosx_11_0_arm64.whl", hash = "sha256:05661c32ec14bc3a157193d0f19a7b19d8e61eb787b33353cad30202c295e83b"},
-    {file = "torch-2.1.0-cp39-cp39-manylinux1_x86_64.whl", hash = "sha256:556d8dd3e0c290ed9d4d7de598a213fb9f7c59135b4fee144364a8a887016a55"},
-    {file = "torch-2.1.0-cp39-cp39-manylinux2014_aarch64.whl", hash = "sha256:de7d63c6ecece118684415a3dbd4805af4a4c1ee1490cccf7405d8c240a481b4"},
-    {file = "torch-2.1.0-cp39-cp39-win_amd64.whl", hash = "sha256:2419cf49aaf3b2336c7aa7a54a1b949fa295b1ae36f77e2aecb3a74e3a947255"},
-    {file = "torch-2.1.0-cp39-none-macosx_10_9_x86_64.whl", hash = "sha256:6ad491e70dbe4288d17fdbfc7fbfa766d66cbe219bc4871c7a8096f4a37c98df"},
-    {file = "torch-2.1.0-cp39-none-macosx_11_0_arm64.whl", hash = "sha256:421739685eba5e0beba42cb649740b15d44b0d565c04e6ed667b41148734a75b"},
-]
-
-[package.dependencies]
-filelock = "*"
-fsspec = "*"
-jinja2 = "*"
-networkx = "*"
-sympy = "*"
-typing-extensions = "*"
-
-[package.extras]
-opt-einsum = ["opt-einsum (>=3.3)"]
 
 [[package]]
 name = "tornado"
@@ -5123,10 +5034,10 @@ manifest = ["manifest-ml"]
 profanity = ["alt-profanity-check"]
 sql = ["sqlalchemy", "sqlglot", "sqlvalidator"]
 summary = ["nltk", "thefuzz"]
-toxic-language = ["torch", "transformers"]
+toxic-language = ["transformers"]
 vectordb = ["faiss-cpu", "numpy", "tiktoken"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "229644dc7761b2e1b30cd4f45cca623891ee05e5dca4bf3484591ebfd4bfde1c"
+content-hash = "0307ec3d5e3eed951fc7cfddce55a4db9af1e76383d63f322f9145169351869b"
