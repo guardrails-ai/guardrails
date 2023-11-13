@@ -10,12 +10,12 @@ type:
 
 type-pydantic-v1:
 	echo '{"exclude": ["guardrails/utils/pydantic_utils/v2.py"]}' > pyrightconfig.json
-	pyright guardrails/
+	poetry run pyright guardrails/
 	rm pyrightconfig.json
 
 type-pydantic-v2:
 	echo '{"exclude": ["guardrails/utils/pydantic_utils/v1.py"]}' > pyrightconfig.json
-	pyright guardrails/
+	poetry run pyright guardrails/
 	rm pyrightconfig.json
 
 lint:
