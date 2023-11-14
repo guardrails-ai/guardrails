@@ -20,7 +20,7 @@ from pydantic import BaseModel
 from guardrails.llm_providers import get_async_llm_ask, get_llm_ask
 from guardrails.prompt import Instructions, Prompt
 from guardrails.rail import Rail
-from guardrails.run import AsyncRunner, Runner
+from guardrails.run import AsyncRunner, Runner, StreamRunner
 from guardrails.schema import Schema
 from guardrails.utils.logs_utils import GuardState
 from guardrails.utils.parsing_utils import get_template_variables
@@ -354,24 +354,46 @@ class Guard:
                     "Alternatively, you can provide a prompt in the Schema constructor."
                 )
 
-        with start_action(action_type="guard_call", prompt_params=prompt_params):
-            runner = Runner(
-                instructions=instructions_obj,
-                prompt=prompt_obj,
-                msg_history=msg_history_obj,
-                api=get_llm_ask(llm_api, *args, **kwargs),
-                input_schema=self.input_schema,
-                output_schema=self.output_schema,
-                num_reasks=num_reasks,
-                metadata=metadata,
-                reask_prompt=self.reask_prompt,
-                reask_instructions=self.reask_instructions,
-                base_model=self.base_model,
-                guard_state=self.guard_state,
-                full_schema_reask=full_schema_reask,
-            )
-            guard_history = runner(prompt_params=prompt_params)
-            return guard_history.output, guard_history.validated_output
+        # Check whether stream is set or is False
+        if kwargs.get("stream", None) in [None, False]:
+            with start_action(action_type="guard_call", prompt_params=prompt_params):
+                runner = Runner(
+                    instructions=instructions_obj,
+                    prompt=prompt_obj,
+                    msg_history=msg_history_obj,
+                    api=get_llm_ask(llm_api, *args, **kwargs),
+                    input_schema=self.input_schema,
+                    output_schema=self.output_schema,
+                    num_reasks=num_reasks,
+                    metadata=metadata,
+                    reask_prompt=self.reask_prompt,
+                    reask_instructions=self.reask_instructions,
+                    base_model=self.base_model,
+                    guard_state=self.guard_state,
+                    full_schema_reask=full_schema_reask,
+                )
+                guard_history = runner(prompt_params=prompt_params)
+                return guard_history.output, guard_history.validated_output
+        else:
+            # If stream is True, use StreamRunner
+            with start_action(action_type="guard_call", prompt_params=prompt_params):
+                runner = StreamRunner(
+                    instructions=instructions_obj,
+                    prompt=prompt_obj,
+                    msg_history=msg_history_obj,
+                    api=get_llm_ask(llm_api, *args, **kwargs),
+                    input_schema=self.input_schema,
+                    output_schema=self.output_schema,
+                    num_reasks=num_reasks,
+                    metadata=metadata,
+                    reask_prompt=self.reask_prompt,
+                    reask_instructions=self.reask_instructions,
+                    base_model=self.base_model,
+                    guard_state=self.guard_state,
+                    full_schema_reask=full_schema_reask,
+                )
+                guard_history = runner(prompt_params=prompt_params)
+                return guard_history.output, guard_history.validated_output
 
     async def _call_async(
         self,

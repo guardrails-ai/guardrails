@@ -732,6 +732,55 @@ class AsyncRunner(Runner):
             return validated_output
 
 
+class StreamRunner:
+    """Runner class that calls an LLM API with a prompt, and performs input and
+    output validation when the output is a stream of chunks.
+
+    # TODO: Inherit from Runner class, as overall structure would be similar.
+    Major difference between Runner and StreamRunner:
+    - Runner expects entire LLM response being returned by the API. All the
+      validations happen on the entire response.
+    - StreamRunner expects the LLM response to be returned in chunks. It will expect a generator object. All main logic from Runner - instead
+    of being called once on the entire response - will be called for each chunk.
+
+
+    valid_fragment_1: chunk0+ chunk 1+ chunk2
+    valid_fragment_2: chunk3 onwards
+
+    schema validation on all fragments until time t
+    field validations (for now) on each fragment at a time
+
+
+    Overall planned structure:
+    - complete_response = ""
+    - in __call__ method, call generator object that yeilds chunks from LLM response
+        - for chunk in chunks:
+            - for step in len(num_reasks + 1):
+                - check if chunk is a somewhat valid JSON subschema on which
+                    validations can be performed
+                - if valid:
+                    - call all methods in similar order as in Runner
+                    - if validations pass:
+                        - complete_response += chunk (***)
+                        - break and move on to next chunk
+                    - else if validations fail:
+                        - continue (and will go to next step with new reask)
+                - else if not valid:
+                    - continue to next chunk (move to and concatenate with next chunk)
+
+        ***
+        - return complete_response (Step 1)
+        For Step 2, we'll flush out chunk as soon as it is validated instead of
+        returning entire response at the end.
+    """
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        pass
+
+    def __call__(self, *args: Any, **kwargs: Any) -> Any:
+        pass
+
+
 def msg_history_source(msg_history) -> List[Dict[str, str]]:
     msg_history_copy = copy.deepcopy(msg_history)
     for msg in msg_history_copy:
