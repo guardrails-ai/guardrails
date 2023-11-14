@@ -1,14 +1,17 @@
 # noqa:W291
 import os
+from typing import Any, Callable, Dict, Optional, Union
 
 import pytest
 
-from guardrails import Guard
+from guardrails import Guard, Validator, register_validator
 from guardrails.datatypes import DataType
 from guardrails.schema import StringSchema
+from guardrails.validator_base import PassResult, ValidationResult
 from guardrails.validators import DetectSecrets, SimilarToList
 
 from .mock_embeddings import MOCK_EMBEDDINGS
+from .mock_llm_outputs import MockOpenAICallable
 from .mock_secrets import (
     EXPECTED_SECRETS_CODE_SNIPPET,
     NO_SECRETS_CODE_SNIPPET,
@@ -181,3 +184,43 @@ def test_detect_secrets(mocker):
 
     # Check if temp.txt does not exist in current directory
     assert not os.path.exists("temp.txt")
+
+
+@register_validator("mycustominstancecheckvalidator", data_type="string")
+class MyValidator(Validator):
+    def __init__(
+        self,
+        an_instance_attr: str,
+        on_fail: Optional[Union[Callable, str]] = None,
+        **kwargs
+    ):
+        self.an_instance_attr = an_instance_attr
+        super().__init__(on_fail=on_fail, an_instance_attr=an_instance_attr, **kwargs)
+
+    def validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
+        return PassResult()
+
+
+@pytest.mark.parametrize(
+    "instance_attr",
+    [
+        "a",
+        object(),
+    ],
+)
+def test_validator_instance_attr_equality(mocker, instance_attr):
+    mocker.patch("guardrails.llm_providers.OpenAICallable", new=MockOpenAICallable)
+
+    validator = MyValidator(an_instance_attr=instance_attr)
+
+    assert validator.an_instance_attr is instance_attr
+
+    guard = Guard.from_string(
+        validators=[validator],
+        prompt="",
+    )
+
+    assert (
+        guard.rail.output_schema.root_datatype.validators[0].an_instance_attr
+        == instance_attr
+    )
