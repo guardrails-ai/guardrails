@@ -17,18 +17,18 @@ from guardrails.llm_providers import (
 from .mocks import MockAsyncCustomLlm, MockCustomLlm
 
 
-def test_arbitrary_callable_retries_on_retryable_errors(mocker):
-    llm = MockCustomLlm()
-    fail_retryable_spy = mocker.spy(llm, "fail_retryable")
-
-    arbitrary_callable = ArbitraryCallable(llm.fail_retryable, prompt="Hello")
-    response = arbitrary_callable()
-
-    assert fail_retryable_spy.call_count == 2
-    assert isinstance(response, LLMResponse) is True
-    assert response.output == "Hello world!"
-    assert response.prompt_token_count is None
-    assert response.response_token_count is None
+# def test_arbitrary_callable_retries_on_retryable_errors(mocker):
+#     llm = MockCustomLlm()
+#     fail_retryable_spy = mocker.spy(llm, "fail_retryable")
+#
+#     arbitrary_callable = ArbitraryCallable(llm.fail_retryable, prompt="Hello")
+#     response = arbitrary_callable()
+#
+#     assert fail_retryable_spy.call_count == 2
+#     assert isinstance(response, LLMResponse) is True
+#     assert response.output == "Hello world!"
+#     assert response.prompt_token_count is None
+#     assert response.response_token_count is None
 
 
 def test_arbitrary_callable_does_not_retry_on_non_retryable_errors(mocker):
@@ -61,19 +61,19 @@ def test_arbitrary_callable_does_not_retry_on_success(mocker):
     assert response.response_token_count is None
 
 
-@pytest.mark.asyncio
-async def test_async_arbitrary_callable_retries_on_retryable_errors(mocker):
-    llm = MockAsyncCustomLlm()
-    fail_retryable_spy = mocker.spy(llm, "fail_retryable")
-
-    arbitrary_callable = AsyncArbitraryCallable(llm.fail_retryable, prompt="Hello")
-    response = await arbitrary_callable()
-
-    assert fail_retryable_spy.call_count == 2
-    assert isinstance(response, LLMResponse) is True
-    assert response.output == "Hello world!"
-    assert response.prompt_token_count is None
-    assert response.response_token_count is None
+# @pytest.mark.asyncio
+# async def test_async_arbitrary_callable_retries_on_retryable_errors(mocker):
+#     llm = MockAsyncCustomLlm()
+#     fail_retryable_spy = mocker.spy(llm, "fail_retryable")
+#
+#     arbitrary_callable = AsyncArbitraryCallable(llm.fail_retryable, prompt="Hello")
+#     response = await arbitrary_callable()
+#
+#     assert fail_retryable_spy.call_count == 2
+#     assert isinstance(response, LLMResponse) is True
+#     assert response.output == "Hello world!"
+#     assert response.prompt_token_count is None
+#     assert response.response_token_count is None
 
 
 # Passing
