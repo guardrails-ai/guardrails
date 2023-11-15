@@ -1,6 +1,14 @@
 def mock_chat_completion(**kwargs):
     """Mocks the OpenAI chat completion function for ProvenanceV1."""
-    return {"choices": [{"message": {"content": "Yes"}}]}
+    return {
+        "choices": [{
+            "message": {"content": "Yes"}
+        }],
+        "usage": {
+            "prompt_tokens": 10,
+            "completion_tokens": 20,
+        }
+    }
 
 
 def mock_chromadb_query_function(**kwargs):
