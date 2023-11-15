@@ -9,7 +9,8 @@ from guardrails.datatypes import verify_metadata_requirements
 from guardrails.llm_providers import AsyncPromptCallableBase, PromptCallableBase
 from guardrails.prompt import Instructions, Prompt
 from guardrails.schema import Schema
-from guardrails.utils.logs_utils import GuardHistory, GuardLogs, GuardState, LLMResponse
+from guardrails.utils.llm_response import LLMResponse
+from guardrails.utils.logs_utils import GuardHistory, GuardLogs, GuardState
 from guardrails.utils.reask_utils import (
     FieldReAsk,
     NonParseableReAsk,
