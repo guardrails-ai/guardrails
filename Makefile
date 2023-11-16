@@ -1,20 +1,20 @@
 MKDOCS_SERVE_ADDR ?= localhost:8000 # Default address for mkdocs serve, format: <host>:<port>, override with `make docs-serve MKDOCS_SERVE_ADDR=<host>:<port>`
 
 autoformat:
-	black guardrails/ tests/
-	isort --atomic guardrails/ tests/
-	docformatter --in-place --recursive guardrails tests
+	poetry run black guardrails/ tests/
+	poetry run isort --atomic guardrails/ tests/
+	poetry run docformatter --in-place --recursive guardrails tests
 
 type:
-	pyright guardrails/
+	poetry run pyright guardrails/
 
 lint:
-	isort -c guardrails/ tests/
-	black guardrails/ tests/ --check
-	flake8 guardrails/ tests/
+	poetry run isort -c guardrails/ tests/
+	poetry run black guardrails/ tests/ --check
+	poetry run flake8 guardrails/ tests/
 
 test:
-	pytest tests/
+	poetry run pytest tests/
 
 test-basic:
 	set -e
@@ -22,22 +22,22 @@ test-basic:
 	python -c "import guardrails.version as mversion"
 
 test-cov:
-	pytest tests/ --cov=./guardrails/ --cov-report=xml
+	poetry run pytest tests/ --cov=./guardrails/ --cov-report=xml
 
 view-test-cov:
-	pytest tests/ --cov=./guardrails/ --cov-report html && open htmlcov/index.html
+	poetry run pytest tests/ --cov=./guardrails/ --cov-report html && open htmlcov/index.html
 
 docs-serve:
-	mkdocs serve -a $(MKDOCS_SERVE_ADDR)
+	poetry run mkdocs serve -a $(MKDOCS_SERVE_ADDR)
 
 docs-deploy:
-	mkdocs gh-deploy
+	poetry run mkdocs gh-deploy
 
 dev:
-	pip install -e ".[dev]"
+	poetry install
 
 full:
-	pip install -e ".[all]"
+	poetry install --all-extras
 
 all: autoformat type lint docs test
 
