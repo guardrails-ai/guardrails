@@ -32,7 +32,7 @@ class FormatAttr(pydantic.BaseModel):
     format: Optional[str]
 
     # The on-fail handlers.
-    on_fail_handlers: Dict[str, str]
+    on_fail_handlers: Mapping[str, Union[str, Callable]]
 
     # The validator arguments.
     validator_args: Mapping[str, Union[Dict[str, Any], List[Any]]]
@@ -65,7 +65,10 @@ class FormatAttr(pydantic.BaseModel):
                 validator_args = val.get_args()
                 validators_with_args[validator_name] = validator_args
                 # Set the on-fail attribute based on the on_fail value
-                on_fail = val.on_fail_descriptor
+                if val.on_fail_descriptor == "custom":
+                    on_fail = val.on_fail_method
+                else:
+                    on_fail = val.on_fail_descriptor
                 on_fails[val.rail_alias] = on_fail
             elif isinstance(val, tuple) and len(val) == 2:
                 validator, on_fail = val

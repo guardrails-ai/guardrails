@@ -1,6 +1,6 @@
 # noqa:W291
 import os
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 import openai
 import pytest
@@ -16,6 +16,7 @@ from guardrails.validator_base import (
     PassResult,
     Refrain,
     ValidationResult,
+    ValidatorError,
     check_refrain_in_dict,
     filter_in_dict,
     register_validator,
@@ -503,3 +504,103 @@ def test_detect_secrets():
     # Check if mod_value is same as code_snippet,
     # as there are no secrets in code_snippet
     assert mod_value == NO_SECRETS_CODE_SNIPPET
+
+
+def custom_fix_on_fail_handler(value: Any, fail_results: List[FailResult]):
+    return value + " " + value
+
+
+def custom_reask_on_fail_handler(value: Any, fail_results: List[FailResult]):
+    return FieldReAsk(incorrect_value=value, fail_results=fail_results)
+
+
+def custom_exception_on_fail_handler(value: Any, fail_results: List[FailResult]):
+    raise ValidatorError("Something went wrong!")
+
+
+def custom_filter_on_fail_handler(value: Any, fail_results: List[FailResult]):
+    return Filter()
+
+
+def custom_refrain_on_fail_handler(value: Any, fail_results: List[FailResult]):
+    return Refrain()
+
+
+@pytest.mark.parametrize(
+    "validator_func, expected_result",
+    [
+        (
+            custom_fix_on_fail_handler,
+            {"pet_type": "dog dog", "name": "Fido"},
+        ),
+        (
+            custom_reask_on_fail_handler,
+            FieldReAsk(
+                incorrect_value="dog",
+                path=["pet_type"],
+                fail_results=[
+                    FailResult(
+                        error_message="must be exactly two words",
+                        fix_value="dog",
+                    )
+                ],
+            ),
+        ),
+        (
+            custom_exception_on_fail_handler,
+            ValidatorError,
+        ),
+        (
+            custom_filter_on_fail_handler,
+            {"name": "Fido"},
+        ),
+        (
+            custom_refrain_on_fail_handler,
+            {},
+        ),
+    ],
+)
+@pytest.mark.parametrize(
+    "validator_spec",
+    [
+        lambda val_func: TwoWords(on_fail=val_func),
+        lambda val_func: ("two-words", val_func),
+    ],
+)
+def test_custom_on_fail_handler(
+    validator_spec,
+    validator_func,
+    expected_result,
+):
+    prompt = """
+        What kind of pet should I get and what should I name it?
+
+        ${gr.complete_json_suffix_v2}
+    """
+
+    output = """
+    {
+       "pet_type": "dog",
+       "name": "Fido"
+    }
+    """
+
+    class Pet(BaseModel):
+        pet_type: str = Field(
+            description="Species of pet", validators=[validator_spec(validator_func)]
+        )
+        name: str = Field(description="a unique pet name")
+
+    guard = Guard.from_pydantic(output_class=Pet, prompt=prompt)
+    if isinstance(expected_result, type) and issubclass(expected_result, Exception):
+        with pytest.raises(expected_result):
+            guard.parse(output)
+    else:
+        validated_output = guard.parse(output, num_reasks=0)
+        if isinstance(expected_result, FieldReAsk):
+            assert (
+                guard.guard_state.all_histories[0].history[0].reasks[0]
+                == expected_result
+            )
+        else:
+            assert validated_output == expected_result
