@@ -8,6 +8,7 @@ from guardrails.llm_providers import AsyncOpenAICallable, OpenAICallable
 from guardrails.run import AsyncRunner, Runner
 from guardrails.schema import StringSchema
 from guardrails.utils.logs_utils import GuardLogs
+from guardrails.utils.openai_utils import OPENAI_VERSION
 
 from .mock_llm_outputs import MockAsyncOpenAICallable, MockOpenAICallable
 from .test_assets import string
@@ -61,6 +62,7 @@ def runner_instance(is_sync: bool):
     os.environ.get("OPENAI_API_KEY") is None, reason="openai api key not set"
 )
 @pytest.mark.asyncio
+@pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="Only for OpenAI v0")
 async def test_sync_async_call_equivalence(mocker):
     mocker.patch(
         "guardrails.llm_providers.AsyncOpenAICallable",

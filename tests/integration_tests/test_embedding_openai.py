@@ -36,7 +36,8 @@ def mock_openai_embedding(monkeypatch):
 
 
 @pytest.mark.skipif(
-    os.environ.get("OPENAI_API_KEY") is None, reason="openai api key not set"
+    os.environ.get("OPENAI_API_KEY") in [None, "mocked"],
+    reason="openai api key not set",
 )
 class TestOpenAIEmbedding:
     def test_embedding_texts(self):

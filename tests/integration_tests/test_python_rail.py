@@ -7,6 +7,10 @@ import pytest
 from pydantic import BaseModel, Field
 
 import guardrails as gd
+from guardrails.utils.openai_utils import (
+    static_openai_chat_create_func,
+    static_openai_create_func,
+)
 from guardrails.utils.pydantic_utils import PYDANTIC_VERSION, add_validator
 from guardrails.validators import (
     FailResult,
@@ -141,7 +145,7 @@ def test_python_rail(mocker):
 
     # Guardrails runs validation and fixes the first failing output through reasking
     _, final_output = guard(
-        openai.ChatCompletion.create,
+        static_openai_chat_create_func,
         prompt_params={"director": "Christopher Nolan"},
         num_reasks=2,
         full_schema_reask=False,
@@ -280,7 +284,7 @@ def test_python_rail_add_validator(mocker):
 
     # Guardrails runs validation and fixes the first failing output through reasking
     _, final_output = guard(
-        openai.ChatCompletion.create,
+        static_openai_chat_create_func,
         prompt_params={"director": "Christopher Nolan"},
         num_reasks=2,
         full_schema_reask=False,
@@ -347,7 +351,7 @@ ${ingredients}
         validators, description, prompt=prompt, instructions=instructions
     )
     _, final_output = guard(
-        llm_api=openai.Completion.create,
+        llm_api=static_openai_create_func,
         prompt_params={"ingredients": "tomato, cheese, sour cream"},
         num_reasks=1,
         max_tokens=100,

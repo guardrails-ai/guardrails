@@ -146,7 +146,14 @@ def test_summary_validators(mocker):
     pytest.importorskip("nltk", reason="nltk is not installed")
     pytest.importorskip("thefuzz", reason="thefuzz is not installed")
 
-    mocker.patch("openai.Embedding.create", new=mock_create_embedding)
+    if OPENAI_VERSION.startswith("0"):
+        mocker.patch("openai.Embedding.create", new=mock_create_embedding)
+    else:
+        mocker.patch(
+            "openai.resources.embeddings.Embeddings.create",
+            new=mock_create_embedding,
+        )
+
     mocker.patch("guardrails.embedding.OpenAIEmbedding.output_dim", new=2)
 
     summary = "It was a nice day. I went to the park. I saw a dog."
@@ -356,8 +363,14 @@ def test_bad_validator():
 
 def test_provenance_v1(mocker):
     """Test initialisation of ProvenanceV1."""
+    if OPENAI_VERSION.startswith("0"):
+        mocker.patch("openai.ChatCompletion.create", new=mock_chat_completion)
+    else:
+        mocker.patch(
+            "openai.resources.chat.completions.Completions.create",
+            new=mock_chat_completion,
+        )
 
-    mocker.patch("openai.ChatCompletion.create", new=mock_chat_completion)
     API_KEY = "<YOUR_KEY>"
     LLM_RESPONSE = "This is a sentence."
 

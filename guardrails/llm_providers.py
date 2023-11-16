@@ -100,8 +100,8 @@ class OpenAICallable(PromptCallableBase):
         *args,
         **kwargs,
     ) -> LLMResponse:
-        if 'api_key' in kwargs:
-            api_key = kwargs.pop('api_key')
+        if "api_key" in kwargs:
+            api_key = kwargs.pop("api_key")
         else:
             api_key = None
         client = OpenAIClient(api_key=api_key)
@@ -159,8 +159,8 @@ class OpenAIChatCallable(PromptCallableBase):
             fn_kwargs = {}
 
         # Call OpenAI
-        if 'api_key' in kwargs:
-            api_key = kwargs.pop('api_key')
+        if "api_key" in kwargs:
+            api_key = kwargs.pop("api_key")
         else:
             api_key = None
         client = OpenAIClient(api_key=api_key)
@@ -335,8 +335,8 @@ class AsyncOpenAICallable(AsyncPromptCallableBase):
         *args,
         **kwargs,
     ):
-        if 'api_key' in kwargs:
-            api_key = kwargs.pop('api_key')
+        if "api_key" in kwargs:
+            api_key = kwargs.pop("api_key")
         else:
             api_key = None
         aclient = AsyncOpenAIClient(api_key=api_key)
@@ -394,8 +394,8 @@ class AsyncOpenAIChatCallable(AsyncPromptCallableBase):
             fn_kwargs = {}
 
         # Call OpenAI
-        if 'api_key' in kwargs:
-            api_key = kwargs.pop('api_key')
+        if "api_key" in kwargs:
+            api_key = kwargs.pop("api_key")
         else:
             api_key = None
         aclient = AsyncOpenAIClient(api_key=api_key)

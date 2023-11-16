@@ -6,6 +6,7 @@ import pytest
 from integration_tests.mock_llm_outputs import MockOpenAICallable
 
 from guardrails.guard import Guard
+from guardrails.utils.openai_utils import static_openai_create_func
 from guardrails.validators import FailResult
 
 from .validators.test_parameters import (
@@ -56,7 +57,7 @@ def test_validator_python_string(
             instructions=validator_test_data[validator_name]["instructions"],
         )
         _, final_output = guard(
-            llm_api=openai.Completion.create,
+            llm_api=static_openai_create_func,
             prompt_params=validator_test_data[validator_name]["prompt_params"],
             num_reasks=1,
             max_tokens=100,
