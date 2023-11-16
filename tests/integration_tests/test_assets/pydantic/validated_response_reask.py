@@ -3,6 +3,7 @@ from typing import Any, Dict, List
 
 from pydantic import BaseModel, Field
 
+from guardrails.utils.pydantic_utils import PYDANTIC_VERSION
 from guardrails.utils.reask_utils import FieldReAsk
 from guardrails.validators import (
     FailResult,
@@ -59,14 +60,31 @@ class Person(BaseModel):
     """
 
     name: str
-    age: int = Field(..., validators=[AgeMustBeBetween0And150(on_fail="reask")])
-    zip_code: str = Field(
-        ...,
-        validators=[
-            ZipCodeMustBeNumeric(on_fail="reask"),
-            ZipCodeInCalifornia(on_fail="reask"),
-        ],
-    )
+    if PYDANTIC_VERSION.startswith("1"):
+        age: int = Field(..., validators=[AgeMustBeBetween0And150(on_fail="reask")])
+        zip_code: str = Field(
+            ...,
+            validators=[
+                ZipCodeMustBeNumeric(on_fail="reask"),
+                ZipCodeInCalifornia(on_fail="reask"),
+            ],
+        )
+    else:
+        age: int = Field(
+            ...,
+            json_schema_extra={
+                "validators": [AgeMustBeBetween0And150(on_fail="reask")]
+            },
+        )
+        zip_code: str = Field(
+            ...,
+            json_schema_extra={
+                "validators": [
+                    ZipCodeMustBeNumeric(on_fail="reask"),
+                    ZipCodeInCalifornia(on_fail="reask"),
+                ],
+            },
+        )
 
 
 class ListOfPeople(BaseModel):

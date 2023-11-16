@@ -1,13 +1,13 @@
-"""Utilities for working with Pydantic models."""
 import typing
 import warnings
 from copy import deepcopy
 from datetime import date, time
-from typing import Any, Callable, Dict, Optional, Type, Union, get_args, get_origin
+from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, Union, get_args
 
-from pydantic import BaseModel, validator
-from pydantic.fields import ModelField
+from pydantic import BaseModel, ConfigDict, HttpUrl, field_validator
+from pydantic.fields import FieldInfo
 
+from guardrails.datatypes import URL as URLDataType
 from guardrails.datatypes import Boolean as BooleanDataType
 from guardrails.datatypes import Case as CaseDataType
 from guardrails.datatypes import Choice
@@ -18,25 +18,46 @@ from guardrails.datatypes import Float as FloatDataType
 from guardrails.datatypes import Integer as IntegerDataType
 from guardrails.datatypes import List as ListDataType
 from guardrails.datatypes import Object as ObjectDataType
+from guardrails.datatypes import PythonCode as PythonCodeDataType
 from guardrails.datatypes import String as StringDataType
 from guardrails.datatypes import Time as TimeDataType
 from guardrails.formatattr import FormatAttr
 from guardrails.validator_base import Validator
 
+DataTypeT = TypeVar("DataTypeT", bound=DataType)
+
 
 class ArbitraryModel(BaseModel):
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
-def is_pydantic_base_model(type_annotation: Any) -> bool:
+def add_validator(
+    __field: str,
+    *fields: str,
+    fn: Callable,
+    **kwargs,
+) -> Callable:
+    if kwargs:
+        warnings.warn(
+            "The following kwargs are not supported by pydantic v2 "
+            "and will be ignored: "
+            f"{kwargs}"
+        )
+    return field_validator(
+        __field,
+        *fields,
+    )(fn)
+
+
+def is_pydantic_base_model(type_annotation: Any) -> Union[Type[BaseModel], None]:
     """Check if a type_annotation is a Pydantic BaseModel."""
-    try:
-        if issubclass(type_annotation, BaseModel):
-            return True
-    except TypeError:
-        pass
-    return False
+    if (
+        type_annotation is not None
+        and isinstance(type_annotation, type)
+        and issubclass(type_annotation, BaseModel)
+    ):
+        return type_annotation
+    return None
 
 
 def is_list(type_annotation: Any) -> bool:
@@ -46,7 +67,7 @@ def is_list(type_annotation: Any) -> bool:
 
     if is_pydantic_base_model(type_annotation):
         return False
-    if get_origin(type_annotation) == list:
+    if typing.get_origin(type_annotation) == list:
         return True
     elif type_annotation == list:
         return True
@@ -60,61 +81,44 @@ def is_dict(type_annotation: Any) -> bool:
 
     if is_pydantic_base_model(type_annotation):
         return True
-    if get_origin(type_annotation) == dict:
+    if typing.get_origin(type_annotation) == dict:
         return True
     elif type_annotation == dict:
         return True
     return False
 
 
-def prepare_type_annotation(type_annotation: Union[ModelField, Type]) -> Type:
-    """Get the raw type annotation that can be used for downstream processing.
+def _create_bare_model(model: Type[BaseModel]) -> Type[BaseModel]:
+    class BareModel(BaseModel):
+        __annotations__ = getattr(model, "__annotations__", {})
 
-    This function does the following:
-        1. If the type_annotation is a Pydantic field, get the annotation
-        2. If the type_annotation is a Union, get the first non-None type
+    return BareModel
+
+
+def convert_pydantic_model_to_openai_fn(model: BaseModel) -> Dict:
+    """Convert a Pydantic BaseModel to an OpenAI function.
 
     Args:
-        type_annotation (Any): The type annotation to prepare
+        model: The Pydantic BaseModel to convert.
 
     Returns:
-        Type: The prepared type annotation
+        OpenAI function paramters.
     """
 
-    if isinstance(type_annotation, ModelField):
-        type_annotation = type_annotation.annotation
+    bare_model = _create_bare_model(type(model))
 
-    # Strip a Union type annotation to the first non-None type
-    if get_origin(type_annotation) == Union:
-        non_none_type_annotation = [
-            t for t in get_args(type_annotation) if t != type(None)  # noqa E721
-        ]
-        if len(non_none_type_annotation) == 1:
-            return non_none_type_annotation[0]
-        return type_annotation
+    # Convert Pydantic model to JSON schema
+    json_schema = bare_model.model_json_schema()
 
-    return type_annotation
+    # Create OpenAI function parameters
+    fn_params = {
+        "name": json_schema["title"],
+        "parameters": json_schema,
+    }
+    if "description" in json_schema and json_schema["description"] is not None:
+        fn_params["description"] = json_schema["description"]
 
-
-def add_validator(
-    *fields: str,
-    pre: bool = False,
-    each_item: bool = False,
-    always: bool = False,
-    check_fields: bool = True,
-    whole: Optional[bool] = None,
-    allow_reuse: bool = True,
-    fn: Callable,
-) -> classmethod:
-    return validator(
-        *fields,
-        pre=pre,
-        each_item=each_item,
-        always=always,
-        check_fields=check_fields,
-        whole=whole,
-        allow_reuse=allow_reuse,
-    )(fn)
+    return fn_params
 
 
 def convert_pydantic_validator_to_guardrails_validator(
@@ -168,18 +172,18 @@ def convert_pydantic_validator_to_guardrails_validator(
 
 def add_pydantic_validators_as_guardrails_validators(
     model: Type[BaseModel],
-) -> Dict[str, ModelField]:
+) -> Dict[str, FieldInfo]:
     """Extract all validators for a pydantic BaseModel.
 
     This function converts each Pydantic validator to a GuardRails validator and adds
     it to the corresponding field in the model. The resulting dictionary maps field
-    names to ModelField objects.
+    names to FieldInfo objects.
 
     Args:
         model: A pydantic BaseModel.
 
     Returns:
-        A dictionary mapping field names to ModelField objects.
+        A dictionary mapping field names to FieldInfo objects.
     """
 
     def process_validators(vals, fld):
@@ -190,58 +194,66 @@ def add_pydantic_validators_as_guardrails_validators(
             gd_validator = convert_pydantic_validator_to_guardrails_validator(
                 model, val
             )
-            if "validators" not in fld.field_info.extra:
-                fld.field_info.extra["validators"] = []
-            fld.field_info.extra["validators"].append((gd_validator, "reask"))
+            if "validators" not in fld.field_info.json_schema_extra:
+                fld.json_schema_extra["validators"] = []
+            fld.json_schema_extra["validators"].append((gd_validator, "reask"))
 
     model_fields = {}
-    for field_name, field in model.__fields__.items():
+    for field_name, field in model.model_fields.items():
         field_copy = deepcopy(field)
+        if field.json_schema_extra is None:
+            field_copy.json_schema_extra = {}
 
-        if "validators" in field.field_info.extra and not isinstance(
-            field.field_info.extra["validators"], list
+        if (
+            field_copy.json_schema_extra is not None
+            and isinstance(field_copy.json_schema_extra, dict)
+            and "validators" in field_copy.json_schema_extra
+            and not isinstance(field_copy.json_schema_extra["validators"], list)
         ):
-            field_copy.field_info.extra["validators"] = [
-                field_copy.field_info.extra["validators"]
+            field_copy.json_schema_extra["validators"] = [
+                field_copy.json_schema_extra["validators"]
             ]
 
-        process_validators(field.pre_validators, field_copy)
-        process_validators(field.post_validators, field_copy)
+        # TODO figure out how to process pydantic2 validators;
+        #  they're abstracted into pydantic's rust core
+        # process_validators(field.pre_validators, field_copy)
+        # process_validators(field.post_validators, field_copy)
         model_fields[field_name] = field_copy
 
     # TODO(shreya): Before merging handle root validators
     return model_fields
 
 
-def convert_pydantic_model_to_openai_fn(model: BaseModel) -> Dict:
-    """Convert a Pydantic BaseModel to an OpenAI function.
+def prepare_type_annotation(type_annotation: Union[FieldInfo, Type]) -> Type:
+    """Get the raw type annotation that can be used for downstream processing.
+
+    This function does the following:
+        1. If the type_annotation is a Pydantic field, get the annotation
+        2. If the type_annotation is a Union, get the first non-None type
 
     Args:
-        model: The Pydantic BaseModel to convert.
+        type_annotation (Any): The type annotation to prepare
 
     Returns:
-        OpenAI function paramters.
+        Type: The prepared type annotation
     """
 
-    # Create a bare model with no extra fields
-    class BareModel(BaseModel):
-        __annotations__ = model.__annotations__
+    if isinstance(type_annotation, FieldInfo):
+        type_annotation = type_annotation.annotation
 
-    # Convert Pydantic model to JSON schema
-    json_schema = BareModel.schema()
+    # Strip a Union type annotation to the first non-None type
+    if typing.get_origin(type_annotation) == Union:
+        non_none_type_annotation = [
+            t for t in get_args(type_annotation) if t != type(None)  # noqa E721
+        ]
+        if len(non_none_type_annotation) == 1:
+            return non_none_type_annotation[0]
+        return type_annotation
 
-    # Create OpenAI function parameters
-    fn_params = {
-        "name": json_schema["title"],
-        "parameters": json_schema,
-    }
-    if "description" in json_schema and json_schema["description"] is not None:
-        fn_params["description"] = json_schema["description"]
-
-    return fn_params
+    return type_annotation
 
 
-def field_to_datatype(field: Union[ModelField, Type]) -> Type[DataType]:
+def field_to_datatype(field: Union[FieldInfo, Type]) -> Type[DataType]:
     """Map a type_annotation to the name of the corresponding field type.
 
     This function checks if the type_annotation is a list, dict, or a
@@ -256,6 +268,9 @@ def field_to_datatype(field: Union[ModelField, Type]) -> Type[DataType]:
 
     # Get the type annotation from the type_annotation
     type_annotation = prepare_type_annotation(field)
+
+    # Use inline import to avoid circular dependency
+    from guardrails.datatypes import PythonCode
 
     # Map the type annotation to the corresponding field type
     if is_list(type_annotation):
@@ -274,28 +289,34 @@ def field_to_datatype(field: Union[ModelField, Type]) -> Type[DataType]:
         return StringDataType
     elif type_annotation == time:
         return TimeDataType
+    elif type_annotation == HttpUrl:
+        return URLDataType
     elif typing.get_origin(type_annotation) == Union:
         return ChoiceDataType
+    elif type_annotation == PythonCode:
+        return PythonCodeDataType
     else:
         raise ValueError(f"Unsupported type: {type_annotation}")
 
 
-T = typing.TypeVar("T", bound=DataType)
-
-
 def convert_pydantic_model_to_datatype(
-    model_field: Union[ModelField, Type[BaseModel]],
-    datatype: Type[T] = ObjectDataType,
-    excluded_fields: Optional[typing.List[str]] = None,
+    model_field: typing.Union[FieldInfo, Type[BaseModel]],
+    datatype: Type[DataTypeT] = ObjectDataType,
+    excluded_fields: Optional[List[str]] = None,
     name: Optional[str] = None,
     strict: bool = False,
-) -> T:
+) -> DataTypeT:
     """Create an Object from a Pydantic model."""
     if excluded_fields is None:
         excluded_fields = []
 
-    if isinstance(model_field, ModelField):
-        model = model_field.type_
+    if isinstance(model_field, FieldInfo):
+        model = model_field.annotation
+        model = is_pydantic_base_model(model)
+        if not model:
+            raise ValueError(
+                f"Expected a Pydantic model, but got {model_field.annotation}"
+            )
     else:
         model = model_field
 
@@ -319,24 +340,28 @@ def convert_pydantic_model_to_datatype(
                 continue
             inner_type = inner_type[0]
             if is_pydantic_base_model(inner_type):
-                child = convert_pydantic_model_to_datatype(inner_type)
+                child = convert_pydantic_model_to_datatype(
+                    inner_type,
+                )
             else:
                 inner_target_datatype = field_to_datatype(inner_type)
                 child = construct_datatype(
                     inner_target_datatype,
                     strict=strict,
+                    name=field_name,
                 )
             children[field_name] = pydantic_field_to_datatype(
                 ListDataType,
                 field,
                 children={"item": child},
                 strict=strict,
+                name=field_name,
             )
         elif target_datatype == ChoiceDataType:
-            discriminator = field.discriminator_key or "discriminator"
+            discriminator = field.discriminator or "discriminator"
             choice_children = {}
-            for case in typing.get_args(field.type_):
-                case_discriminator_type = case.__fields__[discriminator].type_
+            for case in typing.get_args(field.annotation):
+                case_discriminator_type = case.model_fields[discriminator].annotation
                 assert typing.get_origin(case_discriminator_type) is typing.Literal
                 assert len(typing.get_args(case_discriminator_type)) == 1
                 discriminator_value = typing.get_args(case_discriminator_type)[0]
@@ -355,24 +380,30 @@ def convert_pydantic_model_to_datatype(
                 children=choice_children,
                 strict=strict,
                 discriminator_key=discriminator,
+                name=field_name,
             )
-        elif isinstance(field.type_, type) and issubclass(field.type_, BaseModel):
+        elif is_pydantic_base_model(field.annotation):
             children[field_name] = convert_pydantic_model_to_datatype(
-                field, datatype=target_datatype, strict=strict
+                field,
+                datatype=target_datatype,
+                strict=strict,
+                name=field_name,
             )
         else:
             children[field_name] = pydantic_field_to_datatype(
                 target_datatype,
                 field,
                 strict=strict,
+                name=field_name,
             )
 
-    if isinstance(model_field, ModelField):
+    if isinstance(model_field, FieldInfo):
         return pydantic_field_to_datatype(
             datatype,
             model_field,
             children=children,
             strict=strict,
+            name=name,
         )
     else:
         return construct_datatype(
@@ -383,21 +414,26 @@ def convert_pydantic_model_to_datatype(
 
 
 def pydantic_field_to_datatype(
-    datatype: Type[T],
-    field: ModelField,
+    datatype: Type[DataTypeT],
+    field: FieldInfo,
     children: Optional[Dict[str, "DataType"]] = None,
     strict: bool = False,
+    name: Optional[str] = None,
     **kwargs,
-) -> T:
+) -> DataTypeT:
     if children is None:
         children = {}
 
-    validators = field.field_info.extra.get("validators", [])
+    if not field.json_schema_extra or not isinstance(field.json_schema_extra, dict):
+        validators = []
+    else:
+        validators = field.json_schema_extra.get("validators", [])
 
-    is_optional = field.required is False
+    is_optional = not field.is_required()
 
-    name = field.name
-    description = field.field_info.description
+    if field.title is not None:
+        name = field.title
+    description = field.description
 
     return construct_datatype(
         datatype,
@@ -412,15 +448,15 @@ def pydantic_field_to_datatype(
 
 
 def construct_datatype(
-    datatype: Type[T],
+    datatype: Type[DataTypeT],
     children: Optional[Dict[str, Any]] = None,
-    validators: Optional[typing.List[Validator]] = None,
+    validators: Optional[List[Validator]] = None,
     optional: bool = False,
     name: Optional[str] = None,
     description: Optional[str] = None,
     strict: bool = False,
     **kwargs,
-) -> T:
+) -> DataTypeT:
     if children is None:
         children = {}
     if validators is None:
