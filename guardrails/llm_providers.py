@@ -3,7 +3,8 @@ from typing import Any, Awaitable, Callable, Dict, List, Optional, cast, Iterabl
 
 import openai
 import openai.error
-import tiktoken
+
+# import tiktoken
 from pydantic import BaseModel
 from tenacity import retry, retry_if_exception_type, wait_exponential_jitter
 
@@ -216,7 +217,7 @@ class OpenAICallable(PromptCallableBase):
             openai_response = cast(Iterable[Dict[str, Any]], openai_response)
 
             # Simply return the generator wrapped in an LLMResponse
-            return LLMResponse(output=openai_response)
+            return LLMResponse(output="", stream_output=openai_response)
 
 
 class OpenAIChatCallable(PromptCallableBase):
