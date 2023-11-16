@@ -1,4 +1,5 @@
 import copy
+import json
 import logging
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union
 
@@ -732,53 +733,186 @@ class AsyncRunner(Runner):
             return validated_output
 
 
-class StreamRunner:
-    """Runner class that calls an LLM API with a prompt, and performs input and
-    output validation when the output is a stream of chunks.
+class StreamRunner(Runner):
+    """Runner class that calls a streaming LLM API with a prompt.
 
-    # TODO: Inherit from Runner class, as overall structure would be similar.
-    Major difference between Runner and StreamRunner:
-    - Runner expects entire LLM response being returned by the API. All the
-      validations happen on the entire response.
-    - StreamRunner expects the LLM response to be returned in chunks. It will expect a generator object. All main logic from Runner - instead
-    of being called once on the entire response - will be called for each chunk.
-
-
-    valid_fragment_1: chunk0+ chunk 1+ chunk2
-    valid_fragment_2: chunk3 onwards
-
-    schema validation on all fragments until time t
-    field validations (for now) on each fragment at a time
-
-
-    Overall planned structure:
-    - complete_response = ""
-    - in __call__ method, call generator object that yeilds chunks from LLM response
-        - for chunk in chunks:
-            - for step in len(num_reasks + 1):
-                - check if chunk is a somewhat valid JSON subschema on which
-                    validations can be performed
-                - if valid:
-                    - call all methods in similar order as in Runner
-                    - if validations pass:
-                        - complete_response += chunk (***)
-                        - break and move on to next chunk
-                    - else if validations fail:
-                        - continue (and will go to next step with new reask)
-                - else if not valid:
-                    - continue to next chunk (move to and concatenate with next chunk)
-
-        ***
-        - return complete_response (Step 1)
-        For Step 2, we'll flush out chunk as soon as it is validated instead of
-        returning entire response at the end.
+    This class performs input and output validation when the output
+    is a stream of chunks. Inherits from Runner class,
+    as overall structure remains similar.
     """
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        pass
+    def __call__(self, prompt_params: Optional[Dict] = None) -> GuardHistory:
+        """Execute the StreamRunner.
 
-    def __call__(self, *args: Any, **kwargs: Any) -> Any:
-        pass
+        Args:
+            prompt_params: Parameters to pass to the prompt in order to
+                generate the prompt string.
+
+        Returns:
+            The guard history.
+        """
+        if prompt_params is None:
+            prompt_params = {}
+
+        # check if validator requirements are fulfilled
+        missing_keys = verify_metadata_requirements(
+            self.metadata, self.output_schema.root_datatype
+        )
+        if missing_keys:
+            raise ValueError(
+                f"Missing required metadata keys: {', '.join(missing_keys)}"
+            )
+
+        # Reset the guard history
+        self._reset_guard_history()
+
+        # Figure out if we need to include instructions in the prompt.
+        include_instructions = not (
+            self.instructions is None and self.msg_history is None
+        )
+
+        with start_action(
+            action_type="run",
+            instructions=self.instructions,
+            prompt=self.prompt,
+            api=self.api,
+            input_schema=self.input_schema,
+            output_schema=self.output_schema,
+            num_reasks=self.num_reasks,
+            metadata=self.metadata,
+        ):
+            instructions, prompt, msg_history, input_schema, output_schema = (
+                self.instructions,
+                self.prompt,
+                self.msg_history,
+                self.input_schema,
+                self.output_schema,
+            )
+
+            for index in range(self.num_reasks + 1):
+                # Run a single step.
+                # TODO: New step function for StreamRunner
+                validated_output, reasks = self.step(
+                    index=index,
+                    api=self.api,
+                    instructions=instructions,
+                    prompt=prompt,
+                    msg_history=msg_history,
+                    prompt_params=prompt_params,
+                    input_schema=input_schema,
+                    output_schema=output_schema,
+                    output=self.output if index == 0 else None,
+                )
+
+                # Loop again?
+                if not self.do_loop(index, reasks):
+                    break
+
+                # Get new prompt and output schema.
+                prompt, instructions, output_schema, msg_history = self.prepare_to_loop(
+                    reasks,
+                    validated_output,
+                    output_schema,
+                    prompt_params=prompt_params,
+                    include_instructions=include_instructions,
+                )
+
+            return self.guard_history
+
+    def step(
+        self,
+        index: int,
+        api: PromptCallableBase | None,
+        instructions: Instructions | None,
+        prompt: Prompt | None,
+        msg_history: List[Dict] | None,
+        prompt_params: Dict,
+        input_schema: Schema | None,
+        output_schema: Schema,
+        output: str | None = None,
+    ):
+        """Run a full step."""
+
+        guard_logs = GuardLogs()
+        self.guard_history.push(guard_logs)
+
+        with start_action(
+            action_type="step",
+            index=index,
+            instructions=instructions,
+            prompt=prompt,
+            prompt_params=prompt_params,
+            input_schema=input_schema,
+            output_schema=output_schema,
+        ):
+            # Prepare: run pre-processing, and input validation.
+            if output:
+                instructions = None
+                prompt = None
+                msg_history = None
+            else:
+                instructions, prompt, msg_history = self.prepare(
+                    index,
+                    instructions,
+                    prompt,
+                    msg_history,
+                    prompt_params,
+                    api,
+                    input_schema,
+                    output_schema,
+                )
+
+            guard_logs.prompt = prompt
+            guard_logs.instructions = instructions
+            guard_logs.msg_history = msg_history
+
+            # Call: run the API that returns a generator wrapped in LLMResponse
+            llm_response = self.call(
+                index, instructions, prompt, msg_history, api, output
+            )
+            stream = llm_response.stream_output
+
+            fragment = ""
+            verified = set()
+            for chunk in stream:
+                chunk_text = chunk["choices"][0]["text"]
+                fragment += chunk_text
+
+                # Strip fragment of whitespaces and newlines
+                # to avoid duplicate checks
+                temp = fragment.strip(" \n")
+
+                # 1. Check if stripped fragment is already verified
+                if temp in verified:
+                    continue
+
+                # 2. Check if temp is valid JSON
+                is_valid_fragment = self.is_valid_fragment(temp)
+                if not is_valid_fragment:
+                    continue
+                verified.add(temp)
+
+                print(f"Fragment: {fragment}")
+                print("---------")
+
+                # At this point, we have a valid JSON fragment
+                # 2. Validation
+                ## 2.1 Validate schema
+                # Check whether fragment is a valid subschema of the output schema
+
+                ## 2.2 Validate fields of this subschema against the output schema
+                # Return validated output, reasks
+
+    def is_valid_fragment(self, text: str) -> bool:
+        """Check if the fragment is a somewhat valid JSON."""
+        try:
+            json.loads(text)
+            return True
+        except ValueError as e:
+            error_msg = str(e)
+            if "Expecting ',' delimiter" in error_msg:
+                return True
+            return False
 
 
 def msg_history_source(msg_history) -> List[Dict[str, str]]:
