@@ -4,8 +4,6 @@ import os
 from string import Template
 from typing import Callable, Dict, Optional, Type
 
-import openai
-
 from guardrails.document_store import DocumentStoreBase, EphemeralDocumentStore
 from guardrails.embedding import EmbeddingBase, OpenAIEmbedding
 from guardrails.guard import Guard

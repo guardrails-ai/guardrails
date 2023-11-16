@@ -1,5 +1,3 @@
-import openai
-
 import guardrails as gd
 from guardrails.utils.openai_utils import static_openai_create_func
 

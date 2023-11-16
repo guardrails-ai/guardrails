@@ -4,7 +4,6 @@ The name with which a validator is registered is the name that is used
 in the `RAIL` spec to specify formatters.
 """
 import ast
-import asyncio
 import contextvars
 import inspect
 import itertools

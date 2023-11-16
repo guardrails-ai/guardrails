@@ -1,6 +1,5 @@
 from typing import Dict
 
-import openai
 import pytest
 
 import guardrails as gd

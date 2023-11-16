@@ -1,7 +1,6 @@
 import json
 from typing import Dict, List
 
-import openai
 import pytest
 from pydantic import BaseModel
 

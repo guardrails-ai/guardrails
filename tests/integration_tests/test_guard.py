@@ -2,7 +2,6 @@ import json
 import os
 from typing import Optional, Union
 
-import openai
 import pytest
 from pydantic import BaseModel
 

@@ -1,5 +1,5 @@
 import os
-from typing import Any, Optional, List
+from typing import Any, List, Optional
 
 from guardrails.utils.llm_response import LLMResponse
 

@@ -1,7 +1,6 @@
 from typing import Any, Awaitable, Callable, Dict, List, Optional, cast
 
 from pydantic import BaseModel
-from tenacity import retry, retry_if_exception_type, wait_exponential_jitter
 
 from guardrails.utils.llm_response import LLMResponse
 from guardrails.utils.openai_utils import (

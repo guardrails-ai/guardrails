@@ -1,7 +1,6 @@
 import importlib
 from typing import Dict
 
-import openai
 import pytest
 from integration_tests.mock_llm_outputs import MockOpenAICallable
 

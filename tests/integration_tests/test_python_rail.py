@@ -2,7 +2,6 @@ import json
 from datetime import date, time
 from typing import List, Literal, Union
 
-import openai
 import pytest
 from pydantic import BaseModel, Field
 
