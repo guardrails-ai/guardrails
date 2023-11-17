@@ -13,7 +13,7 @@ import re
 import string
 import warnings
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union, cast
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union, cast
 
 import openai
 import rstr
@@ -2149,7 +2149,7 @@ class PIIFilter(Validator):
             anonymized_text (str): The anonymized text.
         """
         results = self.pii_analyzer.analyze(text=text, entities=entities, language="en")
-        results = cast(Sequence[Any], results)
+        results = cast(List[Any], results)
         anonymized_text = self.pii_anonymizer.anonymize(
             text=text, analyzer_results=results
         ).text
