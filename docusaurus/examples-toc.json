@@ -57,11 +57,6 @@
         "items": [
           {
             "type": "doc",
-            "id": "api_reference_markdown/markdown/datatypes",
-            "label": "Datatypes"
-          },
-          {
-            "type": "doc",
             "id": "api_reference_markdown/markdown/document-store",
             "label": "Document-store"
           },
@@ -112,6 +107,11 @@
     "type": "category",
     "label": "Concepts",
     "items": [
+      {
+        "type": "doc",
+        "id": "concepts/envars",
+        "label": "Envars"
+      },
       {
         "type": "doc",
         "id": "concepts/guard",
@@ -411,6 +411,11 @@
         "collapsible": true
       },
       {
+        "type": "doc",
+        "id": "examples/generate_structured_data",
+        "label": "Generate Structured Data"
+      },
+      {
         "type": "category",
         "label": "Guardrails With Chat Models",
         "items": [
@@ -447,6 +452,11 @@
         "collapsible": true
       },
       {
+        "type": "doc",
+        "id": "examples/provenance",
+        "label": "Provenance"
+      },
+      {
         "type": "category",
         "label": "Recipe Generation",
         "items": [
@@ -463,6 +473,16 @@
         ],
         "collapsed": true,
         "collapsible": true
+      },
+      {
+        "type": "doc",
+        "id": "examples/recipe_generation",
+        "label": "Recipe Generation"
+      },
+      {
+        "type": "doc",
+        "id": "examples/regex_validation",
+        "label": "Regex Validation"
       },
       {
         "type": "category",
@@ -519,6 +539,11 @@
         "collapsible": true
       },
       {
+        "type": "doc",
+        "id": "examples/text_summarization_quality",
+        "label": "Text Summarization Quality"
+      },
+      {
         "type": "category",
         "label": "Translation To Specific Language",
         "items": [
@@ -571,6 +596,11 @@
         ],
         "collapsed": true,
         "collapsible": true
+      },
+      {
+        "type": "doc",
+        "id": "examples/value_within_distribution",
+        "label": "Value Within Distribution"
       }
     ],
     "collapsed": true,
@@ -623,6 +653,11 @@
     "type": "category",
     "label": "Integrations",
     "items": [
+      {
+        "type": "doc",
+        "id": "integrations/azure_openai",
+        "label": "Azure Openai"
+      },
       {
         "type": "doc",
         "id": "integrations/langchain",

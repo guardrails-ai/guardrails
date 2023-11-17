@@ -13,7 +13,7 @@ function processFile(relativeFilePath) {
     const pattern = /<HTMLOutputBlock center>(.*?)<\/HTMLOutputBlock>/gs;
 
     let index = 0;
-    // Replace matched tags with HTML fragments and save them to separate files
+    // Replace matched tags with HTML fragments and set them dangerously
     data = data.replace(pattern, (_, match) => {
       // Remove whitespace and additional prefix/suffix
       let cleanedHTML = match.trim().replace(/^```html\s*/, '').replace(/\s*```$/, '');

@@ -35,6 +35,11 @@ const sidebars = {
         //   ],
         // },
         {
+          type: "doc",
+          label: "Guardrails AI",
+          id: "index"
+        },
+        {
           type: "category",
           label: "Defining Guardrails",
           items: [

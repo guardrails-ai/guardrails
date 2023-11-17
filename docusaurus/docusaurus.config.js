@@ -30,9 +30,6 @@ const config = {
     mermaid: true
   },
   // themes: ['@docusaurus/theme-mermaid', '@docusaurus/theme-classic'],
-  
-
-
   // Even if you don't use internalization, you can use this field to set useful
   // metadata like html lang. For example, if your site is Chinese, you may want
   // to replace "en" with "zh-Hans".
@@ -40,23 +37,23 @@ const config = {
     defaultLocale: "en",
     locales: ["en"],
   },
-
-  presets: [
-    [
-      "classic",
-      /** @type {import('@docusaurus/preset-classic').Options} */
-      ({
-        "docs": {
-          sidebarPath: require.resolve("./sidebars.js"),
-          // Please change this to your repo.
-          // Remove this to remove the "edit this page" links.
-          path: 'docs-build',
-          editUrl:
-            "https://github.com/guardrails-ai/guardrails/tree/main/packages/create-docusaurus/templates/shared/",
-        },
-      }),
-    ],
-  ],
+  presets: [[
+    "@docusaurus/preset-classic",
+    /** @type {import('@docusaurus/preset-classic').Options} */
+    {
+      docs: {
+        sidebarPath: require.resolve("./sidebars.js"),
+        sidebarCollapsed: false,
+        showLastUpdateTime: true,
+        
+        // Please change this to your repo.
+        // Remove this to remove the "edit this page" links.
+        path: 'docs-build',
+        editUrl:
+          "https://github.com/guardrails-ai/guardrails/tree/main/packages/create-docusaurus/templates/shared/",
+      },
+    },
+  ]],
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
 
