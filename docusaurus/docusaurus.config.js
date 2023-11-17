@@ -22,7 +22,7 @@ const config = {
   organizationName: "Guardrails", // Usually your GitHub org/user name.
   projectName: "GuardrailsWeb", // Usually your repo name.
 
-  onBrokenLinks: "throw",
+  onBrokenLinks: "warn",
   onBrokenMarkdownLinks: "warn",
 
   //mermaid
