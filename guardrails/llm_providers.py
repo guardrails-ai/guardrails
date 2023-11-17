@@ -207,7 +207,7 @@ class OpenAICallable(PromptCallableBase):
         )
 
         # Check if kwargs stream is passed in
-        if kwargs.get("stream", None) in [None, False]:
+        if not kwargs.get("stream", False):
             # If stream is not defined or is set to False,
             # return default behavior
             openai_response = cast(Dict[str, Any], openai_response)
@@ -305,7 +305,7 @@ class OpenAIChatCallable(PromptCallableBase):
         )
 
         # Check if kwargs stream is passed in
-        if kwargs.get("stream", None) in [None, False]:
+        if not kwargs.get("stream", False):
             # If stream is not defined or is set to False,
             # return default behavior
             # Extract string from response
@@ -566,7 +566,7 @@ class AsyncOpenAICallable(AsyncPromptCallableBase):
         )
 
         # Check if kwargs stream is passed in
-        if kwargs.get("stream", None) in [None, False]:
+        if not kwargs.get("stream", False):
             # If stream is not defined or is set to False,
             # return default behavior
             openai_response = cast(Dict[str, Any], openai_response)
@@ -664,7 +664,7 @@ class AsyncOpenAIChatCallable(AsyncPromptCallableBase):
         )
 
         # Check if kwargs stream is passed in
-        if kwargs.get("stream", None) in [None, False]:
+        if not kwargs.get("stream", False):
             # If stream is not defined or is set to False,
             # return default behavior
             # Extract string from response
