@@ -26,3 +26,4 @@ htmlcov
 node_modules
 .docusaurus
 docs-build
+.vercel
