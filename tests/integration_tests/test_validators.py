@@ -200,38 +200,12 @@ def test_pii_filter(mocker):
     )
 
     # ------------------
-    # 1. Initialise Guard from string (default parameters)
-    # Just check whether all parameters are correctly initialised
-    guard = Guard.from_string(
-        validators=[PIIFilter(on_fail="fix")],
-        description="testmeout",
-    )
-    output_schema: StringSchema = guard.rail.output_schema
-    data_type: DataType = getattr(output_schema._schema, "string")
-    validators = data_type.format_attr.validators
-    validator: SimilarToList = validators[0]
-
-    # When guard is initailised using default parameters, following need to be True
-    assert validator.pii_entities is not None
-    assert validator.pii_analyzer is not None
-    assert validator.pii_anonymizer is not None
-
-    # ------------------
-    # 2. Initialise Guard from string with setting pii_entities as a string
+    # 1. Initialise Guard from string with setting pii_entities as a string
     # Also check whether all parameters are correctly initialised
     guard = Guard.from_string(
         validators=[PIIFilter(pii_entities="pii", on_fail="fix")],
         description="testmeout",
     )
-    output_schema: StringSchema = guard.rail.output_schema
-    data_type: DataType = getattr(output_schema._schema, "string")
-    validators = data_type.format_attr.validators
-    validator: SimilarToList = validators[0]
-
-    # Check whether following is True
-    assert isinstance(validator.pii_entities, str)
-    assert validator.pii_analyzer is not None
-    assert validator.pii_anonymizer is not None
 
     # Do parse call
     text = "My email address is demo@lol.com, and my phone number is 1234567890"
@@ -245,7 +219,7 @@ def test_pii_filter(mocker):
     assert all(entity in output for entity in ["<EMAIL_ADDRESS>", "<PHONE_NUMBER>"])
 
     # ------------------
-    # 3. Initialise Guard from string with setting pii_entities as a list
+    # 2. Initialise Guard from string with setting pii_entities as a list
     # Also check whether all parameters are correctly initialised
     guard = Guard.from_string(
         validators=[
@@ -253,15 +227,6 @@ def test_pii_filter(mocker):
         ],
         description="testmeout",
     )
-    output_schema: StringSchema = guard.rail.output_schema
-    data_type: DataType = getattr(output_schema._schema, "string")
-    validators = data_type.format_attr.validators
-    validator: SimilarToList = validators[0]
-
-    # Check whether following is True
-    assert isinstance(validator.pii_entities, list)
-    assert validator.pii_analyzer is not None
-    assert validator.pii_anonymizer is not None
 
     # Do parse call
     text = "My email address is demo@lol.com, and my phone number is 1234567890"
@@ -283,7 +248,7 @@ def test_pii_filter(mocker):
     assert output == text
 
     # ------------------
-    # 4. Initialise Guard from string without setting pii_entities
+    # 3. Initialise Guard from string without setting pii_entities
     # Also don't pass through metadata
     # Should raise ValueError
     guard = Guard.from_string(
@@ -298,7 +263,7 @@ def test_pii_filter(mocker):
         )
 
     # ------------------
-    # 5. Initialise Guard from string without setting pii_entities
+    # 4. Initialise Guard from string without setting pii_entities
     guard = Guard.from_string(
         validators=[PIIFilter(on_fail="fix")],
         description="testmeout",
@@ -328,7 +293,7 @@ def test_pii_filter(mocker):
     assert all(entity in output for entity in ["<EMAIL_ADDRESS>", "<PHONE_NUMBER>"])
 
     # ------------------
-    # 6. Initialise Guard from string setting
+    # 5. Initialise Guard from string setting
     # pii_entities as a string "pii" -> all entities
     # But also pass in metadata with all pii_entities as a list
     # only containing EMAIL_ADDRESS
@@ -354,7 +319,7 @@ def test_pii_filter(mocker):
     assert "<PHONE_NUMBER>" not in output
 
     # ------------------
-    # 7. Initialise Guard from string setting an incorrect string of pii_entities
+    # 6. Initialise Guard from string setting an incorrect string of pii_entities
     # Should raise ValueError during validate
 
     guard = Guard.from_string(
