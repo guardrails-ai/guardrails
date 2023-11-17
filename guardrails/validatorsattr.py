@@ -138,7 +138,8 @@ class ValidatorsAttr(pydantic.BaseModel):
         format_str = element.get("format")
         if format_str is not None:
             warnings.warn(
-                "Attribute `format` is deprecated. Use `validators` instead.",
+                "Attribute `format` is deprecated and will be removed in 0.4.x. "
+                "Use `validators` instead.",
                 DeprecationWarning,
             )
             validators_str = format_str
