@@ -458,12 +458,16 @@ class Object(NonScalarType):
             # child_key is an expected key that the schema defined
             # child_data_type is the data type of the expected key
             child_value = value.get(child_key, None)
-            child_validation = child_data_type.collect_validation(
-                child_key,
-                child_value,
-                value,
-            )
-            validation.children.append(child_validation)
+            # TODO: Temporary fix for when the child_value is None
+            # This is required for when JSON schema is a subschema
+            # of the expected schema and will not contain all the expected keys
+            if child_value:
+                child_validation = child_data_type.collect_validation(
+                    child_key,
+                    child_value,
+                    value,
+                )
+                validation.children.append(child_validation)
 
         return validation
 

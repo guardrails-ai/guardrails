@@ -143,16 +143,23 @@ class DictPlaceholder(Placeholder):
             for key in extra_keys:
                 del json_value[key]
 
+        # TODO: Check this again.
+        # Commenting out this code for now. This will allow some keys to not be
+        # in the expected schema, which is ideal for sub-schema validation.
+
         # If the json value does not contain all the required keys, return False.
-        if any(
-            key not in json_keys and not self.children[key].optional
-            for key in schema_keys
-        ):
-            return False
+        # if any(
+        #     key not in json_keys and not self.children[key].optional
+        #     for key in schema_keys
+        # ):
+        #     return False
 
         # Verify each key in the json value.
         for key, placeholder in self.children.items():
-            if placeholder.optional and key not in json_value:
+            # TODO: Check this again. Temporary fix.
+            # if placeholder.optional and key not in json_value:
+            #     continue
+            if key not in json_value:
                 continue
 
             if isinstance(placeholder, ValuePlaceholder):

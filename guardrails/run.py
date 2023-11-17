@@ -870,6 +870,8 @@ class StreamRunner(Runner):
             llm_response = self.call(
                 index, instructions, prompt, msg_history, api, output
             )
+
+            # Get the stream (generator) from the LLMResponse
             stream = llm_response.stream_output
 
             fragment = ""
@@ -878,41 +880,91 @@ class StreamRunner(Runner):
                 chunk_text = chunk["choices"][0]["text"]
                 fragment += chunk_text
 
-                # Strip fragment of whitespaces and newlines
-                # to avoid duplicate checks
-                temp = fragment.strip(" \n")
-
-                # 1. Check if stripped fragment is already verified
-                if temp in verified:
-                    continue
-
-                # 2. Check if temp is valid JSON
-                is_valid_fragment = self.is_valid_fragment(temp)
+                # 1. Check if the fragment is valid JSON
+                is_valid_fragment = self.is_valid_fragment(fragment, verified)
                 if not is_valid_fragment:
                     continue
-                verified.add(temp)
 
-                print(f"Fragment: {fragment}")
-                print("---------")
+                print(f"Fragment:\n{fragment}\n")
+
+                # 2. Parse the fragment
+                parsed_fragment, parsing_error = self.parse_fragment(fragment)
+                if parsing_error:
+                    continue
+
+                print(f"Parsed fragment:\n{parsed_fragment}\n")
 
                 # At this point, we have a valid JSON fragment
-                # 2. Validation
-                ## 2.1 Validate schema
-                # Check whether fragment is a valid subschema of the output schema
+                # 3. Run output validation
+                validated_fragment = self.validate(
+                    guard_logs, index, parsed_fragment, output_schema
+                )
 
-                ## 2.2 Validate fields of this subschema against the output schema
-                # Return validated output, reasks
+                print(f"Validated fragment:\n{validated_fragment}\n")
 
-    def is_valid_fragment(self, text: str) -> bool:
+                # 4. Introspect: inspect the validated fragment for reasks
+                reasks = self.introspect(index, validated_fragment, output_schema)
+                print(f"Reasks:\n{reasks}\n")
+                print("-----------------------------------")
+
+    def is_valid_fragment(self, fragment: str, verified: set) -> bool:
         """Check if the fragment is a somewhat valid JSON."""
+
+        # Strip fragment of whitespaces and newlines
+        # to avoid duplicate checks
+        text = fragment.strip(" \n")
+
+        # Check if text is already verified
+        if text in verified:
+            return False
+
+        # Check if text is valid JSON
         try:
             json.loads(text)
+            verified.add(text)
             return True
         except ValueError as e:
             error_msg = str(e)
+            # Check if error is due to missing comma
             if "Expecting ',' delimiter" in error_msg:
+                verified.add(text)
                 return True
             return False
+
+    def parse_fragment(self, fragment: str):
+        """Parse the fragment into a dict."""
+
+        # Complete the JSON fragment to handle missing brackets
+        # Stack to keep track of opening brackets
+        stack = []
+
+        # Process each character in the string
+        for char in fragment:
+            if char in "{[":
+                # Push opening brackets onto the stack
+                stack.append(char)
+            elif char in "}]":
+                # Pop from stack if matching opening bracket is found
+                if stack and (
+                    (char == "}" and stack[-1] == "{")
+                    or (char == "]" and stack[-1] == "[")
+                ):
+                    stack.pop()
+
+        # Add the necessary closing brackets in reverse order
+        while stack:
+            opening_bracket = stack.pop()
+            if opening_bracket == "{":
+                fragment += "}"
+            elif opening_bracket == "[":
+                fragment += "]"
+
+        # Parse the fragment
+        try:
+            parsed_fragment = json.loads(fragment)
+            return parsed_fragment, None
+        except ValueError as e:
+            return fragment, str(e)
 
 
 def msg_history_source(msg_history) -> List[Dict[str, str]]:
