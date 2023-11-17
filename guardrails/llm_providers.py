@@ -6,10 +6,10 @@ from guardrails.utils.llm_response import LLMResponse
 from guardrails.utils.openai_utils import (
     AsyncOpenAIClient,
     OpenAIClient,
-    static_openai_acreate_func,
-    static_openai_chat_acreate_func,
-    static_openai_chat_create_func,
-    static_openai_create_func,
+    get_static_openai_acreate_func,
+    get_static_openai_chat_acreate_func,
+    get_static_openai_chat_create_func,
+    get_static_openai_create_func,
 )
 from guardrails.utils.pydantic_utils import convert_pydantic_model_to_openai_fn
 
@@ -260,9 +260,9 @@ class ArbitraryCallable(PromptCallableBase):
 def get_llm_ask(llm_api: Callable, *args, **kwargs) -> PromptCallableBase:
     if "temperature" not in kwargs:
         kwargs.update({"temperature": 0})
-    if llm_api == static_openai_create_func:
+    if llm_api == get_static_openai_create_func():
         return OpenAICallable(*args, **kwargs)
-    if llm_api == static_openai_chat_create_func:
+    if llm_api == get_static_openai_chat_create_func():
         return OpenAIChatCallable(*args, **kwargs)
 
     try:
@@ -475,9 +475,9 @@ def get_async_llm_ask(
 ) -> AsyncPromptCallableBase:
 
     # these only work with openai v0 (None otherwise)
-    if llm_api == static_openai_acreate_func:
+    if llm_api == get_static_openai_acreate_func():
         return AsyncOpenAICallable(*args, **kwargs)
-    if llm_api == static_openai_chat_acreate_func:
+    if llm_api == get_static_openai_chat_acreate_func():
         return AsyncOpenAIChatCallable(*args, **kwargs)
 
     try:

@@ -10,10 +10,23 @@ from guardrails.utils.openai_utils.base import (
     BaseSyncOpenAIClient,
 )
 
-static_openai_create_func = openai.Completion.create
-static_openai_chat_create_func = openai.ChatCompletion.create
-static_openai_acreate_func = openai.Completion.acreate
-static_openai_chat_acreate_func = openai.ChatCompletion.acreate
+
+def get_static_openai_create_func():
+    return openai.Completion.create
+
+
+def get_static_openai_chat_create_func():
+    return openai.ChatCompletion.create
+
+
+def get_static_openai_acreate_func():
+    return openai.Completion.acreate
+
+
+def get_static_openai_chat_acreate_func():
+    return openai.ChatCompletion.acreate
+
+
 OpenAIServiceUnavailableError = openai.error.ServiceUnavailableError
 
 OPENAI_RETRYABLE_ERRORS = [

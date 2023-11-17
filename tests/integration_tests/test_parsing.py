@@ -4,7 +4,7 @@ import pytest
 
 import guardrails as gd
 from guardrails import register_validator
-from guardrails.utils.openai_utils import static_openai_chat_create_func
+from guardrails.utils.openai_utils import get_static_openai_chat_create_func
 from guardrails.validators import FailResult, ValidationResult
 
 from .mock_llm_outputs import (
@@ -114,7 +114,7 @@ def test_reask_prompt_instructions(mocker):
 
     guard.parse(
         llm_output="Tomato Cheese Pizza",
-        llm_api=static_openai_chat_create_func,
+        llm_api=get_static_openai_chat_create_func(),
         msg_history=[
             {"role": "system", "content": "Some content"},
             {"role": "user", "content": "Some prompt"},

@@ -1,5 +1,5 @@
 import guardrails as gd
-from guardrails.utils.openai_utils import static_openai_create_func
+from guardrails.utils.openai_utils import get_static_openai_create_func
 
 from .mock_llm_outputs import MockOpenAICallable
 from .test_assets import python_rail
@@ -12,7 +12,7 @@ def test_multi_reask(mocker):
     guard = gd.Guard.from_rail_string(python_rail.RAIL_SPEC_WITH_VALIDATOR_PARALLELISM)
 
     _, final_output = guard(
-        llm_api=static_openai_create_func,
+        llm_api=get_static_openai_create_func(),
         engine="text-davinci-003",
         num_reasks=5,
     )

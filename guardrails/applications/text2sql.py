@@ -7,7 +7,7 @@ from typing import Callable, Dict, Optional, Type
 from guardrails.document_store import DocumentStoreBase, EphemeralDocumentStore
 from guardrails.embedding import EmbeddingBase, OpenAIEmbedding
 from guardrails.guard import Guard
-from guardrails.utils.openai_utils import static_openai_create_func
+from guardrails.utils.openai_utils import get_static_openai_create_func
 from guardrails.utils.sql_utils import create_sql_driver
 from guardrails.vectordb import Faiss, VectorDBBase
 
@@ -70,7 +70,7 @@ class Text2Sql:
         rail_params: Optional[Dict] = None,
         example_formatter: Callable = example_formatter,
         reask_prompt: str = REASK_PROMPT,
-        llm_api: Callable = static_openai_create_func,
+        llm_api: Optional[Callable] = None,
         llm_api_kwargs: Optional[Dict] = None,
         num_relevant_examples: int = 2,
     ):
@@ -87,6 +87,8 @@ class Text2Sql:
             example_formatter: Fn to format examples. Defaults to example_formatter.
             reask_prompt: Prompt to use for reasking. Defaults to REASK_PROMPT.
         """
+        if llm_api is None:
+            llm_api = get_static_openai_create_func()
 
         self.example_formatter = example_formatter
         self.llm_api = llm_api
@@ -184,9 +186,10 @@ class Text2Sql:
                 "Async API is not supported in Text2SQL application. "
                 "Please use a synchronous API."
             )
-
+        if self.llm_api is None:
+            return None
         try:
-            output = self.guard(
+            return self.guard(
                 self.llm_api,
                 prompt_params={
                     "nl_instruction": text,
@@ -200,6 +203,4 @@ class Text2Sql:
                 "generated_sql"
             ]
         except TypeError:
-            output = None
-
-        return output
+            return None

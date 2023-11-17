@@ -20,7 +20,10 @@ from tenacity import retry, stop_after_attempt, wait_random_exponential
 
 from guardrails.utils.casting_utils import to_int
 from guardrails.utils.docs_utils import get_chunks_from_text, sentence_split
-from guardrails.utils.openai_utils import OpenAIClient, static_openai_chat_create_func
+from guardrails.utils.openai_utils import (
+    OpenAIClient,
+    get_static_openai_chat_create_func,
+)
 from guardrails.utils.sql_utils import SQLDriver, create_sql_driver
 from guardrails.utils.validator_utils import PROVENANCE_V1_PROMPT
 from guardrails.validator_base import (
@@ -1285,7 +1288,7 @@ class SaliencyCheck(Validator):
             )
 
         self.llm_callable = (
-            llm_callable if llm_callable else static_openai_chat_create_func
+            llm_callable if llm_callable else get_static_openai_chat_create_func()
         )
 
         self._threshold = threshold
@@ -1397,7 +1400,7 @@ class QARelevanceLLMEval(Validator):
             )
 
         self.llm_callable = (
-            llm_callable if llm_callable else static_openai_chat_create_func
+            llm_callable if llm_callable else get_static_openai_chat_create_func()
         )
 
     def _selfeval(self, question: str, answer: str):

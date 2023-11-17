@@ -1,3 +1,4 @@
+import os
 from typing import Any, List
 
 import openai
@@ -5,10 +6,27 @@ import openai
 from guardrails.utils.llm_response import LLMResponse
 from guardrails.utils.openai_utils.base import BaseOpenAIClient
 
-static_openai_create_func = openai.completions.create
-static_openai_chat_create_func = openai.chat.completions.create
-static_openai_acreate_func = None
-static_openai_chat_acreate_func = None
+
+def get_static_openai_create_func():
+    if "OPENAI_API_KEY" not in os.environ:
+        return None
+    return openai.completions.create
+
+
+def get_static_openai_chat_create_func():
+    if "OPENAI_API_KEY" not in os.environ:
+        return None
+    return openai.chat.completions.create
+
+
+def get_static_openai_acreate_func():
+    return None
+
+
+def get_static_openai_chat_acreate_func():
+    return None
+
+
 OpenAIServiceUnavailableError = openai.APIError
 
 
