@@ -2176,6 +2176,11 @@ class PIIFilter(Validator):
                 )
         elif isinstance(pii_entities, list):
             entities_to_filter = pii_entities
+        else:
+            raise ValueError(
+                f"`pii_entities` must be one of {self.PII_ENTITIES_MAP.keys()}"
+                " or a list of strings."
+            )
 
         # Analyze the text, and anonymize it if there is PII
         anonymized_text = self.get_anonymized_text(
