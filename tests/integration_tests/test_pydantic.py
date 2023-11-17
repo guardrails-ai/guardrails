@@ -140,4 +140,4 @@ def test_container_types(model, output):
 
     guard = gd.Guard.from_pydantic(model)
     out = guard.parse(output_str)
-    assert out == output
+    assert out.validated_output == output

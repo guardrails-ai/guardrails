@@ -58,7 +58,9 @@ def test_similar_to_list():
         llm_output=val,
         metadata={"prev_values": int_prev_values},
     )
-    assert output == val
+    # Guard.from_string will always return a string
+    # For other return types, we would need some return_type specifiers
+    assert output == str(val)
 
     # 1.2 Test not passing prev_values
     # Should raise ValueError

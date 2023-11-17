@@ -592,15 +592,14 @@ def test_custom_on_fail_handler(
         name: str = Field(description="a unique pet name")
 
     guard = Guard.from_pydantic(output_class=Pet, prompt=prompt)
+    response = guard.parse(output, num_reasks=0)
     if isinstance(expected_result, type) and issubclass(expected_result, Exception):
-        with pytest.raises(expected_result):
-            guard.parse(output)
+        assert response.error is not None
+        assert response.error == "Something went wrong!"
+    elif isinstance(expected_result, FieldReAsk):
+        assert (
+            guard.guard_state.all_histories[0].history[0].reasks[0]
+            == expected_result
+        )
     else:
-        validated_output = guard.parse(output, num_reasks=0)
-        if isinstance(expected_result, FieldReAsk):
-            assert (
-                guard.guard_state.all_histories[0].history[0].reasks[0]
-                == expected_result
-            )
-        else:
-            assert validated_output == expected_result
+        assert response.validated_output == expected_result
