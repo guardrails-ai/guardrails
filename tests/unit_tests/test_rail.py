@@ -169,4 +169,6 @@ def test_format_deprecated():
     </rail>
     """
     with pytest.warns(DeprecationWarning):
-        Rail.from_string(rail_spec)
+        rail = Rail.from_string(rail_spec)
+    validator = rail.output_schema.root_datatype.children.string_name.validators[0]
+    assert validator.rail_alias == "two-words"
