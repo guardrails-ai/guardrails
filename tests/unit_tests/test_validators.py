@@ -598,8 +598,7 @@ def test_custom_on_fail_handler(
         assert response.error == "Something went wrong!"
     elif isinstance(expected_result, FieldReAsk):
         assert (
-            guard.guard_state.all_histories[0].history[0].reasks[0]
-            == expected_result
+            guard.guard_state.all_histories[0].history[0].reasks[0] == expected_result
         )
     else:
         assert response.validated_output == expected_result
