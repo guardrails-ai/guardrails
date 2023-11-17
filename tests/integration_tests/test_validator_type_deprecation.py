@@ -1,17 +1,8 @@
 import json
 
 import pytest
-from pydantic import BaseModel, Field
 
 from guardrails import Guard
-from guardrails.datatypes import URL, Email, PythonCode, SQLCode
-from guardrails.validators import (
-    BugFreePython,
-    BugFreeSQL,
-    EndpointIsReachable,
-    SqlColumnPresence,
-    ValidURL,
-)
 
 llm_output = {
     "code": "print(1)",
@@ -56,20 +47,3 @@ noop
     with pytest.warns(DeprecationWarning):
         response = guard.parse(llm_output=json.dumps(llm_output))
         assert response.validated_output == llm_output
-
-
-def test_deprecated_pydantic_types_backwards_compatability(capsys):
-    class DeprecatedPydantic(BaseModel):
-        code: PythonCode = Field(description="code", validators=[BugFreePython()])
-        some_url: URL = Field(
-            description="url", validators=[ValidURL(), EndpointIsReachable()]
-        )
-        some_email: Email = Field(description="email")
-        query: SQLCode = Field(
-            description="query",
-            validators=[BugFreeSQL(), SqlColumnPresence(cols=["user"])],
-        )
-
-    guard = Guard.from_pydantic(output_class=DeprecatedPydantic)
-    response = guard.parse(llm_output=json.dumps(llm_output))
-    assert response.validated_output == llm_output

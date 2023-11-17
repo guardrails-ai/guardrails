@@ -1,7 +1,7 @@
 from copy import deepcopy
 from typing import Any, Dict, List, Optional, Sequence, Union
 
-from pydantic import BaseModel, Field, PrivateAttr
+from pydantic import Field, PrivateAttr
 from rich.console import Group
 from rich.panel import Panel
 from rich.pretty import pretty_repr
@@ -10,6 +10,7 @@ from rich.tree import Tree
 
 from guardrails.classes.list_plus_plus import ListPlusPlus
 from guardrails.prompt import Instructions, Prompt
+from guardrails.utils.pydantic_utils import ArbitraryModel
 from guardrails.utils.reask_utils import (
     FieldReAsk,
     ReAsk,
@@ -18,11 +19,6 @@ from guardrails.utils.reask_utils import (
     prune_obj_for_reasking,
 )
 from guardrails.validators import ValidationResult
-
-
-class ArbitraryModel(BaseModel):
-    class Config:
-        arbitrary_types_allowed = True
 
 
 class ValidatorLogs(ArbitraryModel):

@@ -19,7 +19,7 @@ INSTRUCTIONS = gd.Instructions(
 )
 
 
-OUTPUT_SCHEMA = StringSchema.from_element(
+OUTPUT_SCHEMA = StringSchema.from_xml(
     ET.fromstring(
         """<output
     type="string"

@@ -1,4 +1,9 @@
+import json
+from typing import Dict, List
+
 import openai
+import pytest
+from pydantic import BaseModel
 
 import guardrails as gd
 
@@ -91,3 +96,48 @@ def test_pydantic_with_full_schema_reask(mocker):
     )
     assert guard_history[2].output == pydantic.LLM_OUTPUT_FULL_REASK_2
     assert guard_history[2].validated_output == pydantic.VALIDATED_OUTPUT_REASK_3
+
+
+class ContainerModel(BaseModel):
+    annotated_dict: Dict[str, str] = {}
+    annotated_dict_in_list: List[Dict[str, str]] = []
+    annotated_list: List[str] = []
+    annotated_list_in_dict: Dict[str, List[str]] = {}
+
+
+class ContainerModel2(BaseModel):
+    dict_: Dict = {}
+    dict_in_list: List[Dict] = []
+    list_: List = []
+    list_in_dict: Dict[str, List] = {}
+
+
+@pytest.mark.parametrize(
+    "model, output",
+    [
+        (
+            ContainerModel,
+            {
+                "annotated_dict": {"a": "b"},
+                "annotated_dict_in_list": [{"a": "b"}],
+                "annotated_list": ["a"],
+                "annotated_list_in_dict": {"a": ["b"]},
+            },
+        ),
+        (
+            ContainerModel2,
+            {
+                "dict_": {"a": "b"},
+                "dict_in_list": [{"a": "b"}],
+                "list_": ["a"],
+                "list_in_dict": {"a": ["b"]},
+            },
+        ),
+    ],
+)
+def test_container_types(model, output):
+    output_str = json.dumps(output)
+
+    guard = gd.Guard.from_pydantic(model)
+    out = guard.parse(output_str)
+    assert out == output

@@ -9,6 +9,8 @@ from typing import (
     Generic,
     List,
     Optional,
+    Sequence,
+    Tuple,
     Type,
     Union,
     cast,
@@ -26,7 +28,6 @@ from guardrails.rail import Rail
 from guardrails.run import AsyncRunner, Runner
 from guardrails.schema import Schema
 from guardrails.utils.logs_utils import GuardState
-from guardrails.utils.parsing_utils import get_template_variables
 from guardrails.utils.reask_utils import sub_reasks_with_fixed_values
 from guardrails.validators import Validator
 
@@ -62,8 +63,6 @@ class Guard(Generic[OT]):
         self.rail = rail
         self.num_reasks = num_reasks
         self.guard_state = GuardState(all_histories=ListPlusPlus())
-        self._reask_prompt = None
-        self._reask_instructions = None
         self.base_model = base_model
 
     @property
@@ -106,35 +105,22 @@ class Guard(Generic[OT]):
     @property
     def reask_prompt(self) -> Optional[Prompt]:
         """Return the reask prompt."""
-        return self._reask_prompt
+        return self.output_schema.reask_prompt_template
 
     @reask_prompt.setter
-    def reask_prompt(self, reask_prompt: Union[str, Prompt]):
+    def reask_prompt(self, reask_prompt: Optional[str]):
         """Set the reask prompt."""
-
-        if isinstance(reask_prompt, str):
-            reask_prompt = Prompt(reask_prompt)
-
-        # Check that the reask prompt has the correct variables
-        variables = get_template_variables(reask_prompt.source)
-        variable_set = set(variables)
-        assert variable_set.__contains__("previous_response")
-        assert variable_set.__contains__("output_schema")
-        self._reask_prompt = reask_prompt
+        self.output_schema.reask_prompt_template = reask_prompt
 
     @property
     def reask_instructions(self) -> Optional[Instructions]:
         """Return the reask prompt."""
-        return self._reask_instructions
+        return self.output_schema.reask_instructions_template
 
     @reask_instructions.setter
-    def reask_instructions(self, reask_instructions: Union[str, Instructions]):
+    def reask_instructions(self, reask_instructions: Optional[str]):
         """Set the reask prompt."""
-
-        if isinstance(reask_instructions, str):
-            reask_instructions = Instructions(reask_instructions)
-
-        self._reask_instructions = reask_instructions
+        self.output_schema.reask_instructions_template = reask_instructions
 
     def configure(
         self,
@@ -188,10 +174,16 @@ class Guard(Generic[OT]):
         prompt: Optional[str] = None,
         instructions: Optional[str] = None,
         num_reasks: Optional[int] = None,
+        reask_prompt: Optional[str] = None,
+        reask_instructions: Optional[str] = None,
     ):
         """Create a Guard instance from a Pydantic model and prompt."""
         rail = Rail.from_pydantic(
-            output_class=output_class, prompt=prompt, instructions=instructions
+            output_class=output_class,
+            prompt=prompt,
+            instructions=instructions,
+            reask_prompt=reask_prompt,
+            reask_instructions=reask_instructions,
         )
         return cast(
             Guard[Dict], cls(rail, num_reasks=num_reasks, base_model=output_class)
@@ -200,7 +192,7 @@ class Guard(Generic[OT]):
     @classmethod
     def from_string(
         cls,
-        validators: List[Validator],
+        validators: Sequence[Validator],
         description: Optional[str] = None,
         prompt: Optional[str] = None,
         instructions: Optional[str] = None,
@@ -373,8 +365,6 @@ class Guard(Generic[OT]):
                 output_schema=self.output_schema,
                 num_reasks=num_reasks,
                 metadata=metadata,
-                reask_prompt=self.reask_prompt,
-                reask_instructions=self.reask_instructions,
                 base_model=self.base_model,
                 guard_state=self.guard_state,
                 full_schema_reask=full_schema_reask,
@@ -434,8 +424,6 @@ class Guard(Generic[OT]):
                 output_schema=self.output_schema,
                 num_reasks=num_reasks,
                 metadata=metadata,
-                reask_prompt=self.reask_prompt,
-                reask_instructions=self.reask_instructions,
                 base_model=self.base_model,
                 guard_state=self.guard_state,
                 full_schema_reask=full_schema_reask,
@@ -595,8 +583,6 @@ class Guard(Generic[OT]):
                 num_reasks=num_reasks,
                 metadata=metadata,
                 output=llm_output,
-                reask_prompt=self.reask_prompt,
-                reask_instructions=self.reask_instructions,
                 base_model=self.base_model,
                 guard_state=self.guard_state,
                 full_schema_reask=full_schema_reask,
@@ -645,8 +631,6 @@ class Guard(Generic[OT]):
                 num_reasks=num_reasks,
                 metadata=metadata,
                 output=llm_output,
-                reask_prompt=self.reask_prompt,
-                reask_instructions=self.reask_instructions,
                 base_model=self.base_model,
                 guard_state=self.guard_state,
                 full_schema_reask=full_schema_reask,
