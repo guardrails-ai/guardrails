@@ -2,7 +2,7 @@ import pytest
 from lxml.builder import E
 
 import guardrails.datatypes as datatypes
-from guardrails.schema import FormatAttr
+from guardrails.formatattr import FormatAttr
 
 
 @pytest.mark.parametrize(

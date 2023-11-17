@@ -17,7 +17,7 @@ Given below is XML that describes the information to extract from this document 
                 <string name="contact_email"/>
                 <choice name="revenue" discriminator="revenue_type">
                     <case name="box_office">
-                        <float name="gross" format="validate_gross"/>
+                        <float name="gross"/>
                         <float name="opening_weekend"/>
                     </case>
                     <case name="streaming">
