@@ -27,3 +27,4 @@ node_modules
 .docusaurus
 docs-build
 .vercel
+docusaurus/examples-toc.json
