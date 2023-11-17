@@ -27,14 +27,14 @@ PII_ENTITIES_MAP = {
 
 
 class MockAnalyzerEngine:
-    """Mocks the AnalyzerEngine class from presidio-analyzer"""
+    """Mocks the AnalyzerEngine class from presidio-analyzer."""
 
     def __init__(self) -> None:
         pass
 
 
 class MockAnonymizerEngine:
-    """Mocks the AnonymizerEngine class from presidio-anonymizer"""
+    """Mocks the AnonymizerEngine class from presidio-anonymizer."""
 
     def __init__(self) -> None:
         pass

@@ -12,6 +12,7 @@ from guardrails.validators import DetectSecrets, PIIFilter, SimilarToList
 
 from .mock_embeddings import MOCK_EMBEDDINGS
 from .mock_llm_outputs import MockOpenAICallable
+from .mock_presidio import MockAnalyzerEngine, MockAnonymizerEngine, mock_anonymize
 from .mock_secrets import (
     EXPECTED_SECRETS_CODE_SNIPPET,
     NO_SECRETS_CODE_SNIPPET,
@@ -19,7 +20,6 @@ from .mock_secrets import (
     MockDetectSecrets,
     mock_get_unique_secrets,
 )
-from .mock_presidio import MockAnalyzerEngine, MockAnonymizerEngine, mock_anonymize
 
 
 def test_similar_to_list():
@@ -367,6 +367,8 @@ def test_pii_filter(mocker):
         output = guard.parse(
             llm_output=text,
         )
+
+
 @register_validator("mycustominstancecheckvalidator", data_type="string")
 class MyValidator(Validator):
     def __init__(
