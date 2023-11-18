@@ -206,21 +206,28 @@ class OpenAICallable(PromptCallableBase):
             **kwargs,
         )
 
-        # Check if kwargs stream is passed in
-        if not kwargs.get("stream", False):
-            # If stream is not defined or is set to False,
-            # return default behavior
-            openai_response = cast(Dict[str, Any], openai_response)
-            return LLMResponse(
-                output=openai_response["choices"][0]["text"],  # type: ignore
-                prompt_token_count=openai_response["usage"][  # type: ignore
-                    "prompt_tokens"
-                ],
-                response_token_count=openai_response["usage"][  # type: ignore
-                    "completion_tokens"
-                ],
-            )
-        else:
+        return self.construct_llm_response(
+            stream=kwargs.get("stream", False),
+            openai_response=openai_response,
+            text=text,
+            engine=engine,
+            instructions=instructions,
+        )
+
+    def construct_llm_response(
+        self,
+        stream: bool,
+        openai_response: Any,
+        text: str,
+        engine: str,
+        instructions: Optional[str],
+    ) -> LLMResponse:
+        """Construct an LLMResponse from an OpenAI response.
+
+        Splits execution based on whether the `stream` parameter
+        is set in the kwargs.
+        """
+        if stream:
             # If stream is defined and set to True,
             # openai returns a generator object
             complete_output = ""
@@ -244,6 +251,19 @@ class OpenAICallable(PromptCallableBase):
                 prompt_token_count=prompt_token_count,
                 response_token_count=response_token_count,
             )
+
+        # If stream is not defined or is set to False,
+        # return default behavior
+        openai_response = cast(Dict[str, Any], openai_response)
+        return LLMResponse(
+            output=openai_response["choices"][0]["text"],  # type: ignore
+            prompt_token_count=openai_response["usage"][  # type: ignore
+                "prompt_tokens"
+            ],
+            response_token_count=openai_response["usage"][  # type: ignore
+                "completion_tokens"
+            ],
+        )
 
 
 class OpenAIChatCallable(PromptCallableBase):
@@ -304,33 +324,30 @@ class OpenAIChatCallable(PromptCallableBase):
             **kwargs,
         )
 
-        # Check if kwargs stream is passed in
-        if not kwargs.get("stream", False):
-            # If stream is not defined or is set to False,
-            # return default behavior
-            # Extract string from response
-            openai_response = cast(Dict[str, Any], openai_response)
-            if (
-                "function_call" in openai_response["choices"][0]["message"]
-            ):  # type: ignore
-                output = openai_response["choices"][0]["message"][  # type: ignore
-                    "function_call"
-                ]["arguments"]
-            else:
-                output = openai_response["choices"][0]["message"][
-                    "content"
-                ]  # type: ignore
+        return self.construct_llm_response(
+            stream=kwargs.get("stream", False),
+            openai_response=openai_response,
+            text=text,
+            model=model,
+            instructions=instructions,
+            msg_history=msg_history,
+        )
 
-            return LLMResponse(
-                output=output,
-                prompt_token_count=openai_response["usage"][  # type: ignore
-                    "prompt_tokens"
-                ],
-                response_token_count=openai_response["usage"][  # type: ignore
-                    "completion_tokens"
-                ],
-            )
-        else:
+    def construct_llm_response(
+        self,
+        stream: bool,
+        openai_response: Any,
+        text: str,
+        model: str,
+        instructions: Optional[str],
+        msg_history: Optional[List[Dict]],
+    ) -> LLMResponse:
+        """Construct an LLMResponse from an OpenAI response.
+
+        Splits execution based on whether the `stream` parameter
+        is set in the kwargs.
+        """
+        if stream:
             # If stream is defined and set to True,
             # openai returns a generator object
             collected_messages = []
@@ -362,6 +379,27 @@ class OpenAIChatCallable(PromptCallableBase):
                 prompt_token_count=prompt_token_count,
                 response_token_count=response_token_count,
             )
+
+        # If stream is not defined or is set to False,
+        # return default behavior
+        # Extract string from response
+        openai_response = cast(Dict[str, Any], openai_response)
+        if "function_call" in openai_response["choices"][0]["message"]:  # type: ignore
+            output = openai_response["choices"][0]["message"][  # type: ignore
+                "function_call"
+            ]["arguments"]
+        else:
+            output = openai_response["choices"][0]["message"]["content"]  # type: ignore
+
+        return LLMResponse(
+            output=output,
+            prompt_token_count=openai_response["usage"][  # type: ignore
+                "prompt_tokens"
+            ],
+            response_token_count=openai_response["usage"][  # type: ignore
+                "completion_tokens"
+            ],
+        )
 
 
 class ManifestCallable(PromptCallableBase):
@@ -565,21 +603,23 @@ class AsyncOpenAICallable(AsyncPromptCallableBase):
             **kwargs,
         )
 
-        # Check if kwargs stream is passed in
-        if not kwargs.get("stream", False):
-            # If stream is not defined or is set to False,
-            # return default behavior
-            openai_response = cast(Dict[str, Any], openai_response)
-            return LLMResponse(
-                output=openai_response["choices"][0]["text"],  # type: ignore
-                prompt_token_count=openai_response["usage"][  # type: ignore
-                    "prompt_tokens"
-                ],
-                response_token_count=openai_response["usage"][  # type: ignore
-                    "completion_tokens"
-                ],
-            )
-        else:
+        return await self.construct_llm_response(
+            stream=kwargs.get("stream", False),
+            openai_response=openai_response,
+            text=text,
+            engine=engine,
+            instructions=instructions,
+        )
+
+    async def construct_llm_response(
+        self,
+        stream: bool,
+        openai_response: Any,
+        text: str,
+        engine: str,
+        instructions: Optional[str],
+    ) -> LLMResponse:
+        if stream:
             # If stream is defined and set to True,
             # openai returns a generator object
             complete_output = ""
@@ -603,6 +643,19 @@ class AsyncOpenAICallable(AsyncPromptCallableBase):
                 prompt_token_count=prompt_token_count,
                 response_token_count=response_token_count,
             )
+
+        # If stream is not defined or is set to False,
+        # return default behavior
+        openai_response = cast(Dict[str, Any], openai_response)
+        return LLMResponse(
+            output=openai_response["choices"][0]["text"],  # type: ignore
+            prompt_token_count=openai_response["usage"][  # type: ignore
+                "prompt_tokens"
+            ],
+            response_token_count=openai_response["usage"][  # type: ignore
+                "completion_tokens"
+            ],
+        )
 
 
 class AsyncOpenAIChatCallable(AsyncPromptCallableBase):
@@ -663,33 +716,30 @@ class AsyncOpenAIChatCallable(AsyncPromptCallableBase):
             **kwargs,
         )
 
-        # Check if kwargs stream is passed in
-        if not kwargs.get("stream", False):
-            # If stream is not defined or is set to False,
-            # return default behavior
-            # Extract string from response
-            openai_response = cast(Dict[str, Any], openai_response)
-            if (
-                "function_call" in openai_response["choices"][0]["message"]
-            ):  # type: ignore
-                output = openai_response["choices"][0]["message"][  # type: ignore
-                    "function_call"
-                ]["arguments"]
-            else:
-                output = openai_response["choices"][0]["message"][
-                    "content"
-                ]  # type: ignore
+        return await self.construct_llm_response(
+            stream=kwargs.get("stream", False),
+            openai_response=openai_response,
+            text=text,
+            model=model,
+            instructions=instructions,
+            msg_history=msg_history,
+        )
 
-            return LLMResponse(
-                output=output,
-                prompt_token_count=openai_response["usage"][  # type: ignore
-                    "prompt_tokens"
-                ],
-                response_token_count=openai_response["usage"][  # type: ignore
-                    "completion_tokens"
-                ],
-            )
-        else:
+    async def construct_llm_response(
+        self,
+        stream: bool,
+        openai_response: Any,
+        text: str,
+        model: str,
+        instructions: Optional[str],
+        msg_history: Optional[List[Dict]],
+    ) -> LLMResponse:
+        """Construct an LLMResponse from an OpenAI response.
+
+        Splits execution based on whether the `stream` parameter
+        is set in the kwargs.
+        """
+        if stream:
             # If stream is defined and set to True,
             # openai returns a generator object
             collected_messages = []
@@ -721,6 +771,27 @@ class AsyncOpenAIChatCallable(AsyncPromptCallableBase):
                 prompt_token_count=prompt_token_count,
                 response_token_count=response_token_count,
             )
+
+        # If stream is not defined or is set to False,
+        # return default behavior
+        # Extract string from response
+        openai_response = cast(Dict[str, Any], openai_response)
+        if "function_call" in openai_response["choices"][0]["message"]:  # type: ignore
+            output = openai_response["choices"][0]["message"][  # type: ignore
+                "function_call"
+            ]["arguments"]
+        else:
+            output = openai_response["choices"][0]["message"]["content"]  # type: ignore
+
+        return LLMResponse(
+            output=output,
+            prompt_token_count=openai_response["usage"][  # type: ignore
+                "prompt_tokens"
+            ],
+            response_token_count=openai_response["usage"][  # type: ignore
+                "completion_tokens"
+            ],
+        )
 
 
 class AsyncManifestCallable(AsyncPromptCallableBase):
