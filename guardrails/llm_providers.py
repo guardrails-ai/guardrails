@@ -327,20 +327,20 @@ class OpenAIChatCallable(PromptCallableBase):
         return self.construct_llm_response(
             stream=kwargs.get("stream", False),
             openai_response=openai_response,
-            text=text,
             model=model,
             instructions=instructions,
             msg_history=msg_history,
+            text=text,
         )
 
     def construct_llm_response(
         self,
         stream: bool,
         openai_response: Any,
-        text: str,
         model: str,
         instructions: Optional[str],
         msg_history: Optional[List[Dict]],
+        text: Optional[str] = None,
     ) -> LLMResponse:
         """Construct an LLMResponse from an OpenAI response.
 
@@ -719,20 +719,20 @@ class AsyncOpenAIChatCallable(AsyncPromptCallableBase):
         return await self.construct_llm_response(
             stream=kwargs.get("stream", False),
             openai_response=openai_response,
-            text=text,
             model=model,
             instructions=instructions,
             msg_history=msg_history,
+            text=text,
         )
 
     async def construct_llm_response(
         self,
         stream: bool,
         openai_response: Any,
-        text: str,
         model: str,
         instructions: Optional[str],
         msg_history: Optional[List[Dict]],
+        text: Optional[str] = None,
     ) -> LLMResponse:
         """Construct an LLMResponse from an OpenAI response.
 
