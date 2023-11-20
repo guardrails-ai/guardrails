@@ -365,7 +365,7 @@ def get_llm_ask(llm_api: Callable, *args, **kwargs) -> PromptCallableBase:
         pass
 
     try:
-        import anthropic  # noqa: F401 # type: ignore
+        import anthropic.resources  # noqa: F401 # type: ignore
 
         if isinstance(
             getattr(llm_api, "__self__", None),
