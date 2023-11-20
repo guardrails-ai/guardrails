@@ -9,7 +9,6 @@ from tenacity import retry, retry_if_exception_type, wait_exponential_jitter
 from guardrails.utils.logs_utils import LLMResponse
 from guardrails.utils.pydantic_utils import convert_pydantic_model_to_openai_fn
 
-
 OPENAI_RETRYABLE_ERRORS = [
     openai.error.APIConnectionError,
     openai.error.APIError,
@@ -369,7 +368,7 @@ def get_llm_ask(llm_api: Callable, *args, **kwargs) -> PromptCallableBase:
 
         if isinstance(
             getattr(llm_api, "__self__", None),
-            anthropic.resources.completions.Completions
+            anthropic.resources.completions.Completions,
         ):
             return AnthropicCallable(*args, client_callable=llm_api, **kwargs)
     except ImportError:
