@@ -2,27 +2,12 @@ import os
 from typing import Any, Awaitable, Callable, Dict, List, Optional, cast
 
 import openai
+import openai.error
 from pydantic import BaseModel
 from tenacity import retry, retry_if_exception_type, wait_exponential_jitter
 
 from guardrails.utils.logs_utils import LLMResponse
 from guardrails.utils.pydantic_utils import convert_pydantic_model_to_openai_fn
-
-try:
-    MANIFEST = True
-    import manifest
-except ImportError:
-    MANIFEST = False
-
-try:
-    import cohere
-except ImportError:
-    cohere = None
-
-try:
-    import anthropic
-except ImportError:
-    anthropic = None
 
 
 OPENAI_RETRYABLE_ERRORS = [
@@ -96,13 +81,17 @@ def nonchat_prompt(prompt: str, instructions: Optional[str] = None) -> str:
 
 
 def chat_prompt(
-    prompt: str,
+    prompt: Optional[str],
     instructions: Optional[str] = None,
     msg_history: Optional[List[Dict]] = None,
 ) -> List[Dict[str, str]]:
     """Prepare final prompt for chat engine."""
     if msg_history:
         return msg_history
+    if prompt is None:
+        raise PromptCallableException(
+            "You must pass in either `text` or `msg_history` to `guard.__call__`."
+        )
 
     if not instructions:
         instructions = "You are a helpful assistant."
@@ -131,9 +120,13 @@ class OpenAICallable(PromptCallableBase):
             **kwargs,
         )
         return LLMResponse(
-            output=openai_response["choices"][0]["text"],
-            prompt_token_count=openai_response["usage"]["prompt_tokens"],
-            response_token_count=openai_response["usage"]["completion_tokens"],
+            output=openai_response["choices"][0]["text"],  # type: ignore
+            prompt_token_count=openai_response["usage"][  # type: ignore
+                "prompt_tokens"
+            ],
+            response_token_count=openai_response["usage"][  # type: ignore
+                "completion_tokens"
+            ],
         )
 
 
@@ -145,7 +138,7 @@ class OpenAIChatCallable(PromptCallableBase):
         instructions: Optional[str] = None,
         msg_history: Optional[List[Dict]] = None,
         base_model: Optional[BaseModel] = None,
-        function_call: Optional[str] = None,
+        function_call: Optional[Any] = None,
         *args,
         **kwargs,
     ) -> LLMResponse:
@@ -196,17 +189,21 @@ class OpenAIChatCallable(PromptCallableBase):
         )
 
         # Extract string from response
-        if "function_call" in openai_response["choices"][0]["message"]:
-            output = openai_response["choices"][0]["message"]["function_call"][
-                "arguments"
-            ]
+        if "function_call" in openai_response["choices"][0]["message"]:  # type: ignore
+            output = openai_response["choices"][0]["message"][  # type: ignore
+                "function_call"
+            ]["arguments"]
         else:
-            output = openai_response["choices"][0]["message"]["content"]
+            output = openai_response["choices"][0]["message"]["content"]  # type: ignore
 
         return LLMResponse(
             output=output,
-            prompt_token_count=openai_response["usage"]["prompt_tokens"],
-            response_token_count=openai_response["usage"]["completion_tokens"],
+            prompt_token_count=openai_response["usage"][  # type: ignore
+                "prompt_tokens"
+            ],
+            response_token_count=openai_response["usage"][  # type: ignore
+                "completion_tokens"
+            ],
         )
 
 
@@ -230,7 +227,9 @@ class ManifestCallable(PromptCallableBase):
             ...
         ```
         """
-        if not MANIFEST:
+        try:
+            import manifest  # noqa: F401 # type: ignore
+        except ImportError:
             raise PromptCallableException(
                 "The `manifest` package is not installed. "
                 "Install with `pip install manifest-ml`"
@@ -293,6 +292,14 @@ class AnthropicCallable(PromptCallableBase):
             ...
         ```
         """
+        try:
+            import anthropic
+        except ImportError:
+            raise PromptCallableException(
+                "The `anthropic` package is not installed. "
+                "Install with `pip install anthropic`"
+            )
+
         if "instructions" in kwargs:
             prompt = kwargs.pop("instructions") + "\n\n" + prompt
 
@@ -335,20 +342,38 @@ def get_llm_ask(llm_api: Callable, *args, **kwargs) -> PromptCallableBase:
         kwargs.update({"temperature": 0})
     if llm_api == openai.Completion.create:
         return OpenAICallable(*args, **kwargs)
-    elif llm_api == openai.ChatCompletion.create:
+    if llm_api == openai.ChatCompletion.create:
         return OpenAIChatCallable(*args, **kwargs)
-    elif MANIFEST and isinstance(llm_api, manifest.Manifest):
-        return ManifestCallable(*args, client=llm_api, **kwargs)
-    elif (
-        cohere
-        and isinstance(getattr(llm_api, "__self__", None), cohere.Client)
-        and getattr(llm_api, "__name__", None) == "generate"
-    ):
-        return CohereCallable(*args, client_callable=llm_api, **kwargs)
-    elif anthropic and isinstance(
-        getattr(llm_api, "__self__", None), anthropic.resources.completions.Completions
-    ):
-        return AnthropicCallable(*args, client_callable=llm_api, **kwargs)
+
+    try:
+        import manifest  # noqa: F401 # type: ignore
+
+        if isinstance(llm_api, manifest.Manifest):
+            return ManifestCallable(*args, client=llm_api, **kwargs)
+    except ImportError:
+        pass
+
+    try:
+        import cohere  # noqa: F401 # type: ignore
+
+        if (
+            isinstance(getattr(llm_api, "__self__", None), cohere.Client)
+            and getattr(llm_api, "__name__", None) == "generate"
+        ):
+            return CohereCallable(*args, client_callable=llm_api, **kwargs)
+    except ImportError:
+        pass
+
+    try:
+        import anthropic  # noqa: F401 # type: ignore
+
+        if isinstance(
+            getattr(llm_api, "__self__", None),
+            anthropic.resources.completions.Completions
+        ):
+            return AnthropicCallable(*args, client_callable=llm_api, **kwargs)
+    except ImportError:
+        pass
 
     # Let the user pass in an arbitrary callable.
     return ArbitraryCallable(*args, llm_api=llm_api, **kwargs)
@@ -359,11 +384,7 @@ def get_llm_ask(llm_api: Callable, *args, **kwargs) -> PromptCallableBase:
 ###
 
 
-class AsyncPromptCallableBase:
-    def __init__(self, *args, **kwargs):
-        self.init_args = args
-        self.init_kwargs = kwargs
-
+class AsyncPromptCallableBase(PromptCallableBase):
     async def invoke_llm(
         self,
         *args,
@@ -420,9 +441,13 @@ class AsyncOpenAICallable(AsyncPromptCallableBase):
             **kwargs,
         )
         return LLMResponse(
-            output=openai_response["choices"][0]["text"],
-            prompt_token_count=openai_response["usage"]["prompt_tokens"],
-            response_token_count=openai_response["usage"]["completion_tokens"],
+            output=openai_response["choices"][0]["text"],  # type: ignore
+            prompt_token_count=openai_response["usage"][  # type: ignore
+                "prompt_tokens"
+            ],
+            response_token_count=openai_response["usage"][  # type: ignore
+                "completion_tokens"
+            ],
         )
 
 
@@ -434,7 +459,7 @@ class AsyncOpenAIChatCallable(AsyncPromptCallableBase):
         instructions: Optional[str] = None,
         msg_history: Optional[List[Dict]] = None,
         base_model: Optional[BaseModel] = None,
-        function_call: Optional[str] = None,
+        function_call: Optional[Any] = None,
         *args,
         **kwargs,
     ) -> LLMResponse:
@@ -485,17 +510,21 @@ class AsyncOpenAIChatCallable(AsyncPromptCallableBase):
         )
 
         # Extract string from response
-        if "function_call" in openai_response["choices"][0]["message"]:
-            output = openai_response["choices"][0]["message"]["function_call"][
-                "arguments"
-            ]
+        if "function_call" in openai_response["choices"][0]["message"]:  # type: ignore
+            output = openai_response["choices"][0]["message"][  # type: ignore
+                "function_call"
+            ]["arguments"]
         else:
-            output = openai_response["choices"][0]["message"]["content"]
+            output = openai_response["choices"][0]["message"]["content"]  # type: ignore
 
         return LLMResponse(
             output=output,
-            prompt_token_count=openai_response["usage"]["prompt_tokens"],
-            response_token_count=openai_response["usage"]["completion_tokens"],
+            prompt_token_count=openai_response["usage"][  # type: ignore
+                "prompt_tokens"
+            ],
+            response_token_count=openai_response["usage"][  # type: ignore
+                "completion_tokens"
+            ],
         )
 
 
@@ -519,17 +548,21 @@ class AsyncManifestCallable(AsyncPromptCallableBase):
             ...
         ```
         """
-        if not MANIFEST:
+        try:
+            import manifest  # noqa: F401 # type: ignore
+        except ImportError:
             raise PromptCallableException(
                 "The `manifest` package is not installed. "
                 "Install with `pip install manifest-ml`"
             )
         client = cast(manifest.Manifest, client)
-        manifest_response = await client.run(
-            nonchat_prompt(prompt=text, instructions=instructions), *args, **kwargs
+        manifest_response = await client.arun_batch(
+            prompts=[nonchat_prompt(prompt=text, instructions=instructions)],
+            *args,
+            **kwargs,
         )
         return LLMResponse(
-            output=manifest_response,
+            output=manifest_response[0],
         )
 
 
@@ -556,12 +589,20 @@ class AsyncArbitraryCallable(AsyncPromptCallableBase):
         )
 
 
-def get_async_llm_ask(llm_api: Callable[[Any], Awaitable[Any]], *args, **kwargs):
+def get_async_llm_ask(
+    llm_api: Callable[[Any], Awaitable[Any]], *args, **kwargs
+) -> AsyncPromptCallableBase:
     if llm_api == openai.Completion.acreate:
         return AsyncOpenAICallable(*args, **kwargs)
-    elif llm_api == openai.ChatCompletion.acreate:
+    if llm_api == openai.ChatCompletion.acreate:
         return AsyncOpenAIChatCallable(*args, **kwargs)
-    elif MANIFEST and isinstance(llm_api, manifest.Manifest):
-        return AsyncManifestCallable(*args, client=llm_api, **kwargs)
+
+    try:
+        import manifest  # noqa: F401 # type: ignore
+
+        if isinstance(llm_api, manifest.Manifest):
+            return AsyncManifestCallable(*args, client=llm_api, **kwargs)
+    except ImportError:
+        pass
 
     return AsyncArbitraryCallable(*args, llm_api=llm_api, **kwargs)

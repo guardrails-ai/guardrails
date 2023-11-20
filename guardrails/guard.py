@@ -1,8 +1,19 @@
 import asyncio
 import contextvars
 import logging
-from string import Formatter
-from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Union
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    Union,
+    overload,
+)
 
 from eliot import add_destinations, start_action
 from pydantic import BaseModel
@@ -41,19 +52,17 @@ class Guard:
     def __init__(
         self,
         rail: Rail,
-        num_reasks: int = None,
-        base_model: Optional[BaseModel] = None,
+        num_reasks: Optional[int] = None,
+        base_model: Optional[Type[BaseModel]] = None,
     ):
         """Initialize the Guard."""
         self.rail = rail
         self.num_reasks = num_reasks
         self.guard_state = GuardState(all_histories=[])
-        self._reask_prompt = None
-        self._reask_instructions = None
         self.base_model = base_model
 
     @property
-    def input_schema(self) -> Schema:
+    def input_schema(self) -> Optional[Schema]:
         """Return the input schema."""
         return self.rail.input_schema
 
@@ -63,22 +72,22 @@ class Guard:
         return self.rail.output_schema
 
     @property
-    def instructions(self) -> Instructions:
+    def instructions(self) -> Optional[Instructions]:
         """Return the instruction-prompt."""
         return self.rail.instructions
 
     @property
-    def prompt(self) -> Prompt:
+    def prompt(self) -> Optional[Prompt]:
         """Return the prompt."""
         return self.rail.prompt
 
     @property
-    def raw_prompt(self) -> Prompt:
+    def raw_prompt(self) -> Optional[Prompt]:
         """Return the prompt, alias for `prompt`."""
         return self.prompt
 
     @property
-    def base_prompt(self) -> str:
+    def base_prompt(self) -> Optional[str]:
         """Return the base prompt i.e. prompt.source."""
         if self.prompt is None:
             return None
@@ -90,43 +99,28 @@ class Guard:
         return self.guard_state
 
     @property
-    def reask_prompt(self) -> Prompt:
+    def reask_prompt(self) -> Optional[Prompt]:
         """Return the reask prompt."""
-        return self._reask_prompt
+        return self.output_schema.reask_prompt_template
 
     @reask_prompt.setter
-    def reask_prompt(self, reask_prompt: Union[str, Prompt]):
+    def reask_prompt(self, reask_prompt: Optional[str]):
         """Set the reask prompt."""
-
-        if isinstance(reask_prompt, str):
-            reask_prompt = Prompt(reask_prompt)
-
-        # Check that the reask prompt has the correct variables
-        variables = [
-            t[1] for t in Formatter().parse(reask_prompt.source) if t[1] is not None
-        ]
-        variable_set = set(variables)
-        assert variable_set.__contains__("previous_response")
-        assert variable_set.__contains__("output_schema")
-        self._reask_prompt = reask_prompt
+        self.output_schema.reask_prompt_template = reask_prompt
 
     @property
-    def reask_instructions(self) -> Prompt:
+    def reask_instructions(self) -> Optional[Instructions]:
         """Return the reask prompt."""
-        return self._reask_instructions
+        return self.output_schema.reask_instructions_template
 
     @reask_instructions.setter
-    def reask_instructions(self, reask_instructions: Union[str, Instructions]):
+    def reask_instructions(self, reask_instructions: Optional[str]):
         """Set the reask prompt."""
-
-        if isinstance(reask_instructions, str):
-            reask_instructions = Instructions(reask_instructions)
-
-        self._reask_instructions = reask_instructions
+        self.output_schema.reask_instructions_template = reask_instructions
 
     def configure(
         self,
-        num_reasks: int = None,
+        num_reasks: Optional[int] = None,
     ):
         """Configure the Guard."""
         self.num_reasks = (
@@ -138,7 +132,7 @@ class Guard:
         )
 
     @classmethod
-    def from_rail(cls, rail_file: str, num_reasks: int = None) -> "Guard":
+    def from_rail(cls, rail_file: str, num_reasks: Optional[int] = None) -> "Guard":
         """Create a Schema from a `.rail` file.
 
         Args:
@@ -151,7 +145,9 @@ class Guard:
         return cls(Rail.from_file(rail_file), num_reasks=num_reasks)
 
     @classmethod
-    def from_rail_string(cls, rail_string: str, num_reasks: int = None) -> "Guard":
+    def from_rail_string(
+        cls, rail_string: str, num_reasks: Optional[int] = None
+    ) -> "Guard":
         """Create a Schema from a `.rail` string.
 
         Args:
@@ -166,27 +162,33 @@ class Guard:
     @classmethod
     def from_pydantic(
         cls,
-        output_class: BaseModel,
+        output_class: Type[BaseModel],
         prompt: Optional[str] = None,
         instructions: Optional[str] = None,
-        num_reasks: int = None,
+        num_reasks: Optional[int] = None,
+        reask_prompt: Optional[str] = None,
+        reask_instructions: Optional[str] = None,
     ) -> "Guard":
         """Create a Guard instance from a Pydantic model and prompt."""
         rail = Rail.from_pydantic(
-            output_class=output_class, prompt=prompt, instructions=instructions
+            output_class=output_class,
+            prompt=prompt,
+            instructions=instructions,
+            reask_prompt=reask_prompt,
+            reask_instructions=reask_instructions,
         )
         return cls(rail, num_reasks=num_reasks, base_model=output_class)
 
     @classmethod
     def from_string(
         cls,
-        validators: List[Validator],
+        validators: Sequence[Validator],
         description: Optional[str] = None,
         prompt: Optional[str] = None,
         instructions: Optional[str] = None,
         reask_prompt: Optional[str] = None,
         reask_instructions: Optional[str] = None,
-        num_reasks: int = None,
+        num_reasks: Optional[int] = None,
     ) -> "Guard":
         """Create a Guard instance for a string response with prompt,
         instructions, and validations.
@@ -210,10 +212,11 @@ class Guard:
         )
         return cls(rail, num_reasks=num_reasks)
 
+    @overload
     def __call__(
         self,
-        llm_api: Union[Callable, Callable[[Any], Awaitable[Any]]],
-        prompt_params: Dict = None,
+        llm_api: Callable[[Any], Awaitable[Any]],
+        prompt_params: Optional[Dict] = None,
         num_reasks: Optional[int] = None,
         prompt: Optional[str] = None,
         instructions: Optional[str] = None,
@@ -222,7 +225,38 @@ class Guard:
         full_schema_reask: Optional[bool] = None,
         *args,
         **kwargs,
-    ) -> Union[Tuple[str, Dict], Awaitable[Tuple[str, Dict]]]:
+    ) -> Awaitable[Tuple[str, Any]]:
+        ...
+
+    @overload
+    def __call__(
+        self,
+        llm_api: Callable,
+        prompt_params: Optional[Dict] = None,
+        num_reasks: Optional[int] = None,
+        prompt: Optional[str] = None,
+        instructions: Optional[str] = None,
+        msg_history: Optional[List[Dict]] = None,
+        metadata: Optional[Dict] = None,
+        full_schema_reask: Optional[bool] = None,
+        *args,
+        **kwargs,
+    ) -> Tuple[str, Any]:
+        ...
+
+    def __call__(
+        self,
+        llm_api: Union[Callable, Callable[[Any], Awaitable[Any]]],
+        prompt_params: Optional[Dict] = None,
+        num_reasks: Optional[int] = None,
+        prompt: Optional[str] = None,
+        instructions: Optional[str] = None,
+        msg_history: Optional[List[Dict]] = None,
+        metadata: Optional[Dict] = None,
+        full_schema_reask: Optional[bool] = None,
+        *args,
+        **kwargs,
+    ) -> Union[Tuple[Optional[str], Any], Awaitable[Tuple[Optional[str], Any]]]:
         """Call the LLM and validate the output. Pass an async LLM API to
         return a coroutine.
 
@@ -243,14 +277,22 @@ class Guard:
         Returns:
             The raw text output from the LLM and the validated output.
         """
-        self.configure(num_reasks)
         if metadata is None:
             metadata = {}
         if full_schema_reask is None:
             full_schema_reask = self.base_model is not None
+        if prompt_params is None:
+            prompt_params = {}
 
         context = contextvars.ContextVar("kwargs")
         context.set(kwargs)
+
+        self.configure(num_reasks)
+        if self.num_reasks is None:
+            raise RuntimeError(
+                "`num_reasks` is `None` after calling `configure()`. "
+                "This should never happen."
+            )
 
         # If the LLM API is async, return a coroutine
         if asyncio.iscoroutinefunction(llm_api):
@@ -292,12 +334,12 @@ class Guard:
         full_schema_reask: bool,
         *args,
         **kwargs,
-    ) -> Tuple[str, Dict]:
-        instructions = instructions or self.instructions
-        prompt = prompt or self.prompt
-        msg_history = msg_history or []
-        if prompt is None:
-            if not len(msg_history):
+    ) -> Tuple[Optional[str], Any]:
+        instructions_obj = instructions or self.instructions
+        prompt_obj = prompt or self.prompt
+        msg_history_obj = msg_history or []
+        if prompt_obj is None:
+            if msg_history is not None and not len(msg_history_obj):
                 raise RuntimeError(
                     "You must provide a prompt if msg_history is empty. "
                     "Alternatively, you can provide a prompt in the Schema constructor."
@@ -305,16 +347,14 @@ class Guard:
 
         with start_action(action_type="guard_call", prompt_params=prompt_params):
             runner = Runner(
-                instructions=instructions,
-                prompt=prompt,
-                msg_history=msg_history,
+                instructions=instructions_obj,
+                prompt=prompt_obj,
+                msg_history=msg_history_obj,
                 api=get_llm_ask(llm_api, *args, **kwargs),
                 input_schema=self.input_schema,
                 output_schema=self.output_schema,
                 num_reasks=num_reasks,
                 metadata=metadata,
-                reask_prompt=self.reask_prompt,
-                reask_instructions=self.reask_instructions,
                 base_model=self.base_model,
                 guard_state=self.guard_state,
                 full_schema_reask=full_schema_reask,
@@ -334,7 +374,7 @@ class Guard:
         full_schema_reask: bool,
         *args,
         **kwargs,
-    ) -> Tuple[str, Dict]:
+    ) -> Tuple[Optional[str], Any]:
         """Call the LLM asynchronously and validate the output.
 
         Args:
@@ -353,27 +393,25 @@ class Guard:
         Returns:
             The raw text output from the LLM and the validated output.
         """
-        instructions = instructions or self.instructions
-        prompt = prompt or self.prompt
-        msg_history = msg_history or []
-        if prompt is None:
-            if not len(msg_history):
+        instructions_obj = instructions or self.instructions
+        prompt_obj = prompt or self.prompt
+        msg_history_obj = msg_history or []
+        if prompt_obj is None:
+            if msg_history_obj is not None and not len(msg_history_obj):
                 raise RuntimeError(
                     "You must provide a prompt if msg_history is empty. "
                     "Alternatively, you can provide a prompt in the RAIL spec."
                 )
         with start_action(action_type="guard_call", prompt_params=prompt_params):
             runner = AsyncRunner(
-                instructions=instructions,
-                prompt=prompt,
-                msg_history=msg_history,
+                instructions=instructions_obj,
+                prompt=prompt_obj,
+                msg_history=msg_history_obj,
                 api=get_async_llm_ask(llm_api, *args, **kwargs),
                 input_schema=self.input_schema,
                 output_schema=self.output_schema,
                 num_reasks=num_reasks,
                 metadata=metadata,
-                reask_prompt=self.reask_prompt,
-                reask_instructions=self.reask_instructions,
                 base_model=self.base_model,
                 guard_state=self.guard_state,
                 full_schema_reask=full_schema_reask,
@@ -387,36 +425,88 @@ class Guard:
     def __rich_repr__(self):
         yield "RAIL", self.rail
 
+    @overload
     def parse(
         self,
         llm_output: str,
         metadata: Optional[Dict] = None,
-        llm_api: Union[Callable, Callable[[Any], Awaitable[Any]]] = None,
-        num_reasks: int = None,
-        prompt_params: Dict = None,
-        full_schema_reask: bool = None,
+        llm_api: None = None,
+        num_reasks: Optional[int] = None,
+        prompt_params: Optional[Dict] = None,
+        full_schema_reask: Optional[bool] = None,
         *args,
         **kwargs,
-    ) -> Union[str, Dict, Awaitable[str], Awaitable[Dict]]:
+    ) -> Any:
+        ...
+
+    @overload
+    def parse(
+        self,
+        llm_output: str,
+        metadata: Optional[Dict] = None,
+        llm_api: Callable[[Any], Awaitable[Any]] = ...,
+        num_reasks: Optional[int] = None,
+        prompt_params: Optional[Dict] = None,
+        full_schema_reask: Optional[bool] = None,
+        *args,
+        **kwargs,
+    ) -> Awaitable[Any]:
+        ...
+
+    @overload
+    def parse(
+        self,
+        llm_output: str,
+        metadata: Optional[Dict] = None,
+        llm_api: Optional[Callable] = None,
+        num_reasks: Optional[int] = None,
+        prompt_params: Optional[Dict] = None,
+        full_schema_reask: Optional[bool] = None,
+        *args,
+        **kwargs,
+    ) -> Any:
+        ...
+
+    def parse(
+        self,
+        llm_output: str,
+        metadata: Optional[Dict] = None,
+        llm_api: Optional[Callable] = None,
+        num_reasks: Optional[int] = None,
+        prompt_params: Optional[Dict] = None,
+        full_schema_reask: Optional[bool] = None,
+        *args,
+        **kwargs,
+    ) -> Union[Any, Awaitable[Any]]:
         """Alternate flow to using Guard where the llm_output is known.
 
-                Args:
-                    llm_api: The LLM API to call
-                             (e.g. openai.Completion.create or
-                             openai.Completion.acreate)
-                    num_reasks: The max times to re-ask the LLM for invalid output.
+        Args:
+            llm_output: The output being parsed and validated.
+            metadata: Metadata to pass to the validators.
+            llm_api: The LLM API to call
+                     (e.g. openai.Completion.create or openai.Completion.acreate)
+            num_reasks: The max times to re-ask the LLM for invalid output.
+            prompt_params: The parameters to pass to the prompt.format() method.
+            full_schema_reask: When reasking, whether to regenerate the full schema
+                               or just the incorrect values.
 
-                Returns:
-                    The validated response. This is either a string or a dictionary, \
-        determined by the object schema defined in the RAILspec.
+        Returns:
+            The validated response. This is either a string or a dictionary,
+                determined by the object schema defined in the RAILspec.
         """
-        num_reasks = (
+        final_num_reasks = (
             num_reasks if num_reasks is not None else 0 if llm_api is None else None
         )
-        self.configure(num_reasks)
+        self.configure(final_num_reasks)
+        if self.num_reasks is None:
+            raise RuntimeError(
+                "`num_reasks` is `None` after calling `configure()`. "
+                "This should never happen."
+            )
         if full_schema_reask is None:
             full_schema_reask = self.base_model is not None
         metadata = metadata or {}
+        prompt_params = prompt_params or {}
 
         context = contextvars.ContextVar("kwargs")
         context.set(kwargs)
@@ -449,13 +539,13 @@ class Guard:
         self,
         llm_output: str,
         metadata: Dict,
-        llm_api: Callable = None,
-        num_reasks: int = 1,
-        prompt_params: Dict = None,
-        full_schema_reask: bool = False,
+        llm_api: Optional[Callable],
+        num_reasks: int,
+        prompt_params: Dict,
+        full_schema_reask: bool,
         *args,
         **kwargs,
-    ) -> Dict:
+    ) -> Any:
         """Alternate flow to using Guard where the llm_output is known.
 
         Args:
@@ -477,8 +567,6 @@ class Guard:
                 num_reasks=num_reasks,
                 metadata=metadata,
                 output=llm_output,
-                reask_prompt=self.reask_prompt,
-                reask_instructions=self.reask_instructions,
                 base_model=self.base_model,
                 guard_state=self.guard_state,
                 full_schema_reask=full_schema_reask,
@@ -490,13 +578,13 @@ class Guard:
         self,
         llm_output: str,
         metadata: Dict,
-        llm_api: Callable[[Any], Awaitable[Any]] = None,
-        num_reasks: int = 1,
-        prompt_params: Dict = None,
-        full_schema_reask: bool = False,
+        llm_api: Optional[Callable[[Any], Awaitable[Any]]],
+        num_reasks: int,
+        prompt_params: Dict,
+        full_schema_reask: bool,
         *args,
         **kwargs,
-    ) -> Dict:
+    ) -> Any:
         """Alternate flow to using Guard where the llm_output is known.
 
         Args:
@@ -518,8 +606,6 @@ class Guard:
                 num_reasks=num_reasks,
                 metadata=metadata,
                 output=llm_output,
-                reask_prompt=self.reask_prompt,
-                reask_instructions=self.reask_instructions,
                 base_model=self.base_model,
                 guard_state=self.guard_state,
                 full_schema_reask=full_schema_reask,

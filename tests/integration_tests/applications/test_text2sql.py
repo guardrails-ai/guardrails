@@ -1,6 +1,7 @@
 import json
 import os
 
+import openai
 import pytest
 
 from guardrails.applications.text2sql import Text2Sql
@@ -26,7 +27,7 @@ def test_text2sql_with_examples(conn_str: str, schema_path: str, examples: str, 
     # Mock the call to the OpenAI API.
     mocker.patch(
         "guardrails.embedding.OpenAIEmbedding._get_embedding",
-        new=lambda *args, **kwargs: [0.1] * 1536,
+        new=lambda *args, **kwargs: [[0.1] * 1536],
     )
 
     if examples is not None:
@@ -35,3 +36,9 @@ def test_text2sql_with_examples(conn_str: str, schema_path: str, examples: str, 
 
     # This should not raise an exception.
     Text2Sql(conn_str, schema_file=schema_path, examples=examples)
+
+
+def test_text2sql_with_coro():
+    s = Text2Sql("sqlite://", llm_api=openai.Completion.acreate)
+    with pytest.raises(ValueError):
+        s("")

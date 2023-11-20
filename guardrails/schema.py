@@ -1,18 +1,26 @@
 import json
 import logging
 import pprint
-import re
-import warnings
 from copy import deepcopy
-from dataclasses import dataclass
-from string import Formatter
-from types import SimpleNamespace
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Type,
+    Union,
+)
 
 from lxml import etree as ET
+from pydantic import BaseModel
+from typing_extensions import Self
 
 from guardrails import validator_service
-from guardrails.datatypes import DataType, String
+from guardrails.datatypes import Choice, DataType, Object, String
 from guardrails.llm_providers import (
     AsyncOpenAICallable,
     AsyncOpenAIChatCallable,
@@ -27,19 +35,18 @@ from guardrails.utils.json_utils import (
     verify_schema_against_json,
 )
 from guardrails.utils.logs_utils import FieldValidationLogs, GuardLogs
+from guardrails.utils.pydantic_utils import convert_pydantic_model_to_datatype
 from guardrails.utils.reask_utils import (
     FieldReAsk,
     NonParseableReAsk,
     SkeletonReAsk,
     gather_reasks,
     get_pruned_tree,
-    get_reasks_by_element,
     prune_obj_for_reasking,
 )
-from guardrails.validator_service import FieldValidation
-from guardrails.validators import (
+from guardrails.validator_base import (
     FailResult,
-    Validator,
+    ValidatorSpec,
     check_refrain_in_dict,
     filter_in_dict,
 )
@@ -50,301 +57,59 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-@dataclass
-class FormatAttr:
-    """Class for parsing and manipulating the `format` attribute of an element.
-
-    The format attribute is a string that contains semi-colon separated
-    validators e.g. "valid-url; is-reachable". Each validator is itself either:
-    - the name of an parameter-less validator, e.g. "valid-url"
-    - the name of a validator with parameters, separated by a colon with a
-        space-separated list of parameters, e.g. "is-in: 1 2 3"
-
-    Parameters can either be written in plain text, or in python expressions
-    enclosed in curly braces. For example, the following are all valid:
-    - "is-in: 1 2 3"
-    - "is-in: {1} {2} {3}"
-    - "is-in: {1 + 2} {2 + 3} {3 + 4}"
-    """
-
-    # The format attribute string.
-    format: Optional[str] = None
-
-    # The XML element that this format attribute is associated with.
-    element: Optional[ET._Element] = None
-
-    @property
-    def empty(self) -> bool:
-        """Return True if the format attribute is empty, False otherwise."""
-        return self.format is None
-
-    @classmethod
-    def from_element(cls, element: ET._Element) -> "FormatAttr":
-        """Create a FormatAttr object from an XML element.
-
-        Args:
-            element (ET._Element): The XML element.
-
-        Returns:
-            A FormatAttr object.
-        """
-        return cls(element.get("format"), element)
-
-    @property
-    def tokens(self) -> List[str]:
-        """Split the format attribute into tokens.
-
-        For example, the format attribute "valid-url; is-reachable" will
-        be split into ["valid-url", "is-reachable"]. The semicolon is
-        used as a delimiter, but not if it is inside curly braces,
-        because the format string can contain Python expressions that
-        contain semicolons.
-        """
-        if self.format is None:
-            return []
-        pattern = re.compile(r";(?![^{}]*})")
-        tokens = re.split(pattern, self.format)
-        tokens = list(filter(None, tokens))
-        return tokens
-
-    @classmethod
-    def parse_token(cls, token: str) -> Tuple[str, List[Any]]:
-        """Parse a single token in the format attribute, and return the
-        validator name and the list of arguments.
-
-        Args:
-            token (str): The token to parse, one of the tokens returned by
-                `self.tokens`.
-
-        Returns:
-            A tuple of the validator name and the list of arguments.
-        """
-        validator_with_args = token.strip().split(":", 1)
-        if len(validator_with_args) == 1:
-            return validator_with_args[0].strip(), []
-
-        validator, args_token = validator_with_args
-
-        # Split using whitespace as a delimiter, but not if it is inside curly braces or
-        # single quotes.
-        pattern = re.compile(r"\s(?![^{}]*})|(?<!')\s(?=[^']*'$)")
-        tokens = re.split(pattern, args_token)
-
-        # Filter out empty strings if any.
-        tokens = list(filter(None, tokens))
-
-        args = []
-        for t in tokens:
-            # If the token is enclosed in curly braces, it is a Python expression.
-            t = t.strip()
-            if t[0] == "{" and t[-1] == "}":
-                t = t[1:-1]
-                try:
-                    # Evaluate the Python expression.
-                    t = eval(t)
-                except (ValueError, SyntaxError, NameError) as e:
-                    raise ValueError(
-                        f"Python expression `{t}` is not valid, "
-                        f"and raised an error: {e}."
-                    )
-            args.append(t)
-
-        return validator.strip(), args
-
-    def parse(self) -> Dict:
-        """Parse the format attribute into a dictionary of validators.
-
-        Returns:
-            A dictionary of validators, where the key is the validator name, and
-            the value is a list of arguments.
-        """
-        if self.format is None:
-            return {}
-
-        # Split the format attribute into tokens: each is a validator.
-        # Then, parse each token into a validator name and a list of parameters.
-        validators = {}
-        for token in self.tokens:
-            # Parse the token into a validator name and a list of parameters.
-            validator_name, args = self.parse_token(token)
-            validators[validator_name] = args
-
-        return validators
-
-    @property
-    def validators(self) -> List[Validator]:
-        """Get the list of validators from the format attribute.
-
-        Only the validators that are registered for this element will be
-        returned.
-        """
-        try:
-            return getattr(self, "_validators")
-        except AttributeError:
-            raise AttributeError("Must call `get_validators` first.")
-
-    @property
-    def unregistered_validators(self) -> List[str]:
-        """Get the list of validators from the format attribute that are not
-        registered for this element."""
-        try:
-            return getattr(self, "_unregistered_validators")
-        except AttributeError:
-            raise AttributeError("Must call `get_validators` first.")
-
-    def get_validators(self, strict: bool = False) -> List[Validator]:
-        """Get the list of validators from the format attribute. Only the
-        validators that are registered for this element will be returned.
-
-        For example, if the format attribute is "valid-url; is-reachable", and
-        "is-reachable" is not registered for this element, then only the ValidUrl
-        validator will be returned, after instantiating it with the arguments
-        specified in the format attribute (if any).
-
-        Args:
-            strict: If True, raise an error if a validator is not registered for
-                this element. If False, ignore the validator and print a warning.
-
-        Returns:
-            A list of validators.
-        """
-        from guardrails.validators import types_to_validators, validators_registry
-
-        _validators = []
-        _unregistered_validators = []
-        parsed = self.parse().items()
-        for validator_name, args in parsed:
-            # Check if the validator is registered for this element.
-            # The validators in `format` that are not registered for this element
-            # will be ignored (with an error or warning, depending on the value of
-            # `strict`), and the registered validators will be returned.
-            if validator_name not in types_to_validators[self.element.tag]:
-                if strict:
-                    raise ValueError(
-                        f"Validator {validator_name} is not valid for"
-                        f" element {self.element.tag}."
-                    )
-                else:
-                    warnings.warn(
-                        f"Validator {validator_name} is not valid for"
-                        f" element {self.element.tag}."
-                    )
-                    _unregistered_validators.append(validator_name)
-                continue
-
-            validator = validators_registry[validator_name]
-
-            # See if the formatter has an associated on_fail method.
-            on_fail = None
-            on_fail_attr_name = f"on-fail-{validator_name}"
-            if on_fail_attr_name in self.element.attrib:
-                on_fail = self.element.attrib[on_fail_attr_name]
-                # TODO(shreya): Load the on_fail method.
-                # This method should be loaded from an optional script given at the
-                # beginning of a rail file.
-
-            # Create the validator.
-            _validators.append(validator(*args, on_fail=on_fail))
-
-        self._validators = _validators
-        self._unregistered_validators = _unregistered_validators
-        return _validators
-
-    def to_prompt(self, with_keywords: bool = True) -> str:
-        """Convert the format string to another string representation for use
-        in prompting. Uses the validators' to_prompt method in order to
-        construct the string to use in prompting.
-
-        For example, the format string "valid-url; other-validator: 1.0
-        {1 + 2}" will be converted to "valid-url other-validator:
-        arg1=1.0 arg2=3".
-        """
-        if self.format is None:
-            return ""
-        # Use the validators' to_prompt method to convert the format string to
-        # another string representation.
-        prompt = "; ".join([v.to_prompt(with_keywords) for v in self.validators])
-        unreg_prompt = "; ".join(self.unregistered_validators)
-        if prompt and unreg_prompt:
-            prompt += f"; {unreg_prompt}"
-        elif unreg_prompt:
-            prompt += unreg_prompt
-        return prompt
-
-
 class Schema:
     """Schema class that holds a _schema attribute."""
 
+    reask_prompt_vars: Set[str]
+
     def __init__(
         self,
-        root: Optional[ET._Element] = None,
-        schema: Optional[Dict[str, DataType]] = None,
+        schema: DataType,
         reask_prompt_template: Optional[str] = None,
         reask_instructions_template: Optional[str] = None,
     ) -> None:
-        # Setup schema
-        if schema is None:
-            schema = {}
-        self._schema = SimpleNamespace(**schema)
-
-        # Setup root
-        self.root = root
-        if root is not None:
-            self.setup_schema(root)
+        self.root_datatype = schema
 
         # Setup reask templates
-        self.check_valid_reask_prompt(reask_prompt_template)
-        self._reask_prompt_template = reask_prompt_template
-        if reask_prompt_template is not None:
-            reask_prompt_template = Prompt(reask_prompt_template)
+        self.reask_prompt_template = reask_prompt_template
         self.reask_instructions_template = reask_instructions_template
-        if reask_instructions_template is not None:
-            reask_instructions_template = Prompt(reask_instructions_template)
+
+    @classmethod
+    def from_xml(
+        cls,
+        root: ET._Element,
+        reask_prompt_template: Optional[str] = None,
+        reask_instructions_template: Optional[str] = None,
+    ) -> Self:
+        """Create a schema from an XML element."""
+        raise NotImplementedError
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({pprint.pformat(vars(self._schema))})"
-
-    def __getitem__(self, key: str) -> DataType:
-        return getattr(self._schema, key)
-
-    def __setitem__(self, key: str, value: DataType) -> None:
-        setattr(self._schema, key, value)
-
-    def __getattr__(self, key: str) -> DataType:
-        return getattr(self._schema, key)
-
-    def __contains__(self, key: str) -> bool:
-        return hasattr(self._schema, key)
-
-    def __getstate__(self) -> Dict[str, Any]:
-        return {"_schema": self._schema, "root": self.root}
-
-    def __setstate__(self, state: Dict[str, Any]) -> None:
-        self._schema = state["_schema"]
-        self.root = state["root"]
-
-    def items(self) -> Dict[str, DataType]:
-        return vars(self._schema).items()
-
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert the schema to a dictionary."""
-        return vars(self._schema)
-
-    @property
-    def parsed_rail(self) -> Optional[ET._Element]:
-        return self.root
+        # FIXME make sure this is pretty
+        return f"{self.__class__.__name__}({pprint.pformat(self.root_datatype)})"
 
     @property
     def reask_prompt_template(self) -> Optional[Prompt]:
         return self._reask_prompt_template
 
-    def setup_schema(self, root: ET._Element) -> None:
-        """Parse the schema specification.
+    @reask_prompt_template.setter
+    def reask_prompt_template(self, value: Optional[str]) -> None:
+        self.check_valid_reask_prompt(value)
+        if value is not None:
+            self._reask_prompt_template = Prompt(value)
+        else:
+            self._reask_prompt_template = None
 
-        Args:
-            root: The root element of the schema specification.
-        """
-        raise NotImplementedError
+    @property
+    def reask_instructions_template(self) -> Optional[Instructions]:
+        return self._reask_instructions_template
+
+    @reask_instructions_template.setter
+    def reask_instructions_template(self, value: Optional[str]) -> None:
+        if value is not None:
+            self._reask_instructions_template = Instructions(value)
+        else:
+            self._reask_instructions_template = None
 
     def validate(self, guard_logs: GuardLogs, data: Any, metadata: Dict) -> Any:
         """Validate a dictionary of data against the schema.
@@ -444,12 +209,27 @@ class Schema:
             return
 
         # Check that the reask prompt has the correct variables
-        variables = [t[1] for t in Formatter().parse(reask_prompt) if t[1] is not None]
-        assert set(variables) == self.reask_prompt_vars
+
+        # TODO decide how to check this
+        # variables = get_template_variables(reask_prompt)
+        # assert set(variables) == self.reask_prompt_vars
 
 
 class JsonSchema(Schema):
     reask_prompt_vars = {"previous_response", "output_schema"}
+
+    def __init__(
+        self,
+        schema: Object,
+        reask_prompt_template: Optional[str] = None,
+        reask_instructions_template: Optional[str] = None,
+    ) -> None:
+        super().__init__(
+            schema,
+            reask_prompt_template=reask_prompt_template,
+            reask_instructions_template=reask_instructions_template,
+        )
+        self.root_datatype = schema
 
     def get_reask_setup(
         self,
@@ -458,7 +238,7 @@ class JsonSchema(Schema):
         use_full_schema: bool,
         prompt_params: Optional[Dict[str, Any]] = None,
     ) -> Tuple["Schema", Prompt, Instructions]:
-        parsed_rail = deepcopy(self.root)
+        root = deepcopy(self.root_datatype)
 
         is_skeleton_reask = not any(isinstance(reask, FieldReAsk) for reask in reasks)
         is_nonparseable_reask = any(
@@ -474,7 +254,8 @@ class JsonSchema(Schema):
                     constants["high_level_json_parsing_reask_prompt"]
                     + constants["json_suffix_without_examples"]
                 )
-            reask_value = original_response
+            np_reask: NonParseableReAsk = original_response
+            reask_value = np_reask.incorrect_value
         elif is_skeleton_reask:
             pruned_tree_schema = self
 
@@ -494,11 +275,9 @@ class JsonSchema(Schema):
                 pruned_tree_schema = self
             else:
                 reask_value = prune_obj_for_reasking(original_response)
-                # Get the elements that are to be reasked
-                reask_elements = get_reasks_by_element(reasks, parsed_rail)
 
                 # Get the pruned tree so that it only contains ReAsk objects
-                pruned_tree = get_pruned_tree(parsed_rail, list(reask_elements.keys()))
+                pruned_tree = get_pruned_tree(root, reasks)
                 pruned_tree_schema = type(self)(pruned_tree)
 
             reask_prompt_template = self.reask_prompt_template
@@ -536,21 +315,45 @@ class JsonSchema(Schema):
 
         return pruned_tree_schema, prompt, instructions
 
-    def setup_schema(self, root: ET._Element) -> None:
-        from guardrails.datatypes import registry as types_registry
-
+    @classmethod
+    def from_xml(
+        cls,
+        root: ET._Element,
+        reask_prompt_template: Optional[str] = None,
+        reask_instructions_template: Optional[str] = None,
+    ) -> Self:
         strict = False
         if "strict" in root.attrib and root.attrib["strict"] == "true":
             strict = True
 
-        for child in root:
-            if isinstance(child, ET._Comment):
-                continue
-            child_name = child.attrib["name"]
-            child_data = types_registry[child.tag].from_xml(child, strict=strict)
-            self[child_name] = child_data
+        schema = Object.from_xml(root, strict=strict)
 
-    def parse(self, output: str) -> Tuple[Dict, Optional[Exception]]:
+        return cls(
+            schema,
+            reask_prompt_template=reask_prompt_template,
+            reask_instructions_template=reask_instructions_template,
+        )
+
+    @classmethod
+    def from_pydantic(
+        cls,
+        model: Type[BaseModel],
+        reask_prompt_template: Optional[str] = None,
+        reask_instructions_template: Optional[str] = None,
+    ) -> Self:
+        strict = False
+
+        schema = convert_pydantic_model_to_datatype(model, strict=strict)
+
+        return cls(
+            schema,
+            reask_prompt_template=reask_prompt_template,
+            reask_instructions_template=reask_instructions_template,
+        )
+
+    def parse(
+        self, output: str
+    ) -> Tuple[Union[Optional[Dict], NonParseableReAsk], Optional[Exception]]:
         # Try to get json code block from output.
         # Return error and reask if it is not parseable.
         parsed_output, error = extract_json_from_ouput(output)
@@ -591,7 +394,7 @@ class JsonSchema(Schema):
         validated_response = deepcopy(data)
 
         if not verify_schema_against_json(
-            self.root,
+            self.root_datatype,
             validated_response,
             prune_extra_keys=True,
             coerce_types=True,
@@ -606,32 +409,11 @@ class JsonSchema(Schema):
                 ],
             )
 
-        validation = FieldValidation(
+        validation = self.root_datatype.collect_validation(
             key="",
             value=validated_response,
-            validators=[],
-            children=[],
+            schema=validated_response,
         )
-
-        for field, value in validated_response.items():
-            if field not in self:
-                # This is an extra field that is not in the schema.
-                # We remove it from the validated response.
-                logger.debug(f"Field {field} not in schema.")
-                continue
-
-            logger.debug(f"Validating field {field} with value {value}.")
-
-            field_validation = self[field].collect_validation(
-                key=field,
-                value=value,
-                schema=validated_response,
-            )
-            validation.children.append(field_validation)
-
-            logger.debug(
-                f"Validated field {field} with value {validated_response[field]}."
-            )
 
         validation_logs = FieldValidationLogs()
         guard_logs.field_validation_logs = validation_logs
@@ -677,7 +459,7 @@ class JsonSchema(Schema):
         validated_response = deepcopy(data)
 
         if not verify_schema_against_json(
-            self.root,
+            self.root_datatype,
             validated_response,
             prune_extra_keys=True,
             coerce_types=True,
@@ -692,32 +474,12 @@ class JsonSchema(Schema):
                 ],
             )
 
-        validation = FieldValidation(
+        # FIXME make the top-level validation key-invariant
+        validation = self.root_datatype.collect_validation(
             key="",
             value=validated_response,
-            validators=[],
-            children=[],
+            schema=validated_response,
         )
-
-        for field, value in validated_response.items():
-            if field not in self:
-                # This is an extra field that is not in the schema.
-                # We remove it from the validated response.
-                logger.debug(f"Field {field} not in schema.")
-                continue
-
-            logger.debug(f"Validating field {field} with value {value}.")
-
-            field_validation = self[field].collect_validation(
-                key=field,
-                value=value,
-                schema=validated_response,
-            )
-            validation.children.append(field_validation)
-
-            logger.debug(
-                f"Validated field {field} with value {validated_response[field]}."
-            )
 
         validation_logs = FieldValidationLogs()
         guard_logs.field_validation_logs = validation_logs
@@ -779,33 +541,58 @@ class StringSchema(Schema):
 
     def __init__(
         self,
-        root: ET._Element,
+        schema: String,
         reask_prompt_template: Optional[str] = None,
         reask_instructions_template: Optional[str] = None,
     ) -> None:
-        self.string_key = "string"
-        super().__init__(root)
+        super().__init__(
+            schema,
+            reask_prompt_template=reask_prompt_template,
+            reask_instructions_template=reask_instructions_template,
+        )
+        self.root_datatype = schema
 
-        # Setup reask templates
-        self._reask_prompt_template = reask_prompt_template
-        if self._reask_prompt_template is not None:
-            self._reask_prompt_template = Prompt(reask_prompt_template)
-        self.reask_instructions_template = reask_instructions_template
-        if self.reask_instructions_template is not None:
-            self.reask_instructions_template = Prompt(self.reask_instructions_template)
-
-    def setup_schema(self, root: ET._Element) -> None:
+    @classmethod
+    def from_xml(
+        cls,
+        root: ET._Element,
+        reask_prompt_template: Optional[str] = None,
+        reask_instructions_template: Optional[str] = None,
+    ) -> Self:
         if len(root) != 0:
             raise ValueError("String output schemas must not have children.")
 
-        if "name" in root.attrib:
-            self.string_key = root.attrib["name"]
-        else:
-            self.string_key = root.attrib["name"] = "string"
+        strict = False
+        if "strict" in root.attrib and root.attrib["strict"] == "true":
+            strict = True
 
-        # make root tag into a string tag
-        root_string = ET.Element("string", root.attrib)
-        self[self.string_key] = String.from_xml(root_string)
+        schema = String.from_xml(root, strict=strict)
+
+        return cls(
+            schema=schema,
+            reask_prompt_template=reask_prompt_template,
+            reask_instructions_template=reask_instructions_template,
+        )
+
+    @classmethod
+    def from_string(
+        cls,
+        validators: Sequence[ValidatorSpec],
+        description: Optional[str] = None,
+        reask_prompt_template: Optional[str] = None,
+        reask_instructions_template: Optional[str] = None,
+    ):
+        strict = False
+
+        schema = String.from_string_rail(
+            validators, description=description, strict=strict
+        )
+
+        return cls(
+            schema=schema,
+            reask_prompt_template=reask_prompt_template,
+            reask_instructions_template=reask_instructions_template,
+        )
 
     def get_reask_setup(
         self,
@@ -871,11 +658,14 @@ class StringSchema(Schema):
         validation_logs = FieldValidationLogs()
         guard_logs.field_validation_logs = validation_logs
 
-        validation = self[self.string_key].collect_validation(
-            key=self.string_key,
+        # FIXME instead of writing the validation infrastructure for dicts (JSON),
+        #  make it more structure-invariant
+        dummy_key = "string"
+        validation = self.root_datatype.collect_validation(
+            key=dummy_key,
             value=data,
             schema={
-                self.string_key: data,
+                dummy_key: data,
             },
         )
 
@@ -886,7 +676,7 @@ class StringSchema(Schema):
             validation_logs=validation_logs,
         )
 
-        validated_response = {self.string_key: validated_response}
+        validated_response = {dummy_key: validated_response}
 
         if check_refrain_in_dict(validated_response):
             # If the data contains a `Refain` value, we return an empty
@@ -897,8 +687,8 @@ class StringSchema(Schema):
         # Remove all keys that have `Filter` values.
         validated_response = filter_in_dict(validated_response)
 
-        if self.string_key in validated_response:
-            return validated_response[self.string_key]
+        if dummy_key in validated_response:
+            return validated_response[dummy_key]
         return None
 
     async def async_validate(
@@ -924,11 +714,12 @@ class StringSchema(Schema):
         validation_logs = FieldValidationLogs()
         guard_logs.field_validation_logs = validation_logs
 
-        validation = self[self.string_key].collect_validation(
-            key=self.string_key,
+        dummy_key = "string"
+        validation = self.root_datatype.collect_validation(
+            key=dummy_key,
             value=data,
             schema={
-                self.string_key: data,
+                dummy_key: data,
             },
         )
 
@@ -939,7 +730,7 @@ class StringSchema(Schema):
             validation_logs=validation_logs,
         )
 
-        validated_response = {self.string_key: validated_response}
+        validated_response = {dummy_key: validated_response}
 
         if check_refrain_in_dict(validated_response):
             # If the data contains a `Refain` value, we return an empty
@@ -950,8 +741,8 @@ class StringSchema(Schema):
         # Remove all keys that have `Filter` values.
         validated_response = filter_in_dict(validated_response)
 
-        if self.string_key in validated_response:
-            return validated_response[self.string_key]
+        if dummy_key in validated_response:
+            return validated_response[dummy_key]
         return None
 
     def introspect(self, data: Any) -> List[FieldReAsk]:
@@ -980,12 +771,12 @@ class StringSchema(Schema):
         return instructions, prompt
 
     def transpile(self, method: str = "default") -> str:
-        obj = self[self.string_key]
+        obj = self.root_datatype
         schema = ""
-        if "description" in obj.element.attrib:
+        if obj.description is not None:
             schema += (
                 "Here's a description of what I want you to generate: "
-                f"{obj.element.attrib['description']}"
+                f"{obj.description}"
             )
         if not obj.format_attr.empty:
             schema += (
@@ -1007,63 +798,42 @@ class Schema2Prompt:
     """
 
     @staticmethod
-    def remove_on_fail_attributes(element: ET._Element) -> None:
-        """Recursively remove all attributes that start with 'on-fail-'."""
-        for attr in list(element.attrib):
-            if attr.startswith("on-fail-"):
-                del element.attrib[attr]
+    def datatypes_to_xml(
+        dt: DataType,
+        root: Optional[ET._Element] = None,
+        override_tag_name: Optional[str] = None,
+    ) -> ET._Element:
+        """Recursively convert the datatypes to XML elements."""
+        if root is None:
+            tagname = override_tag_name or dt.tag
+            el = ET.Element(tagname)
+        else:
+            el = ET.SubElement(root, dt.tag)
 
-        for child in element:
-            Schema2Prompt.remove_on_fail_attributes(child)
+        if dt.name:
+            el.attrib["name"] = dt.name
 
-    @staticmethod
-    def remove_comments(element: ET._Element) -> None:
-        """Recursively remove all comments."""
-        for child in element:
-            if isinstance(child, ET._Comment):
-                element.remove(child)
-            else:
-                Schema2Prompt.remove_comments(child)
+        if dt.description:
+            el.attrib["description"] = dt.description
 
-    @staticmethod
-    def validator_to_prompt(root: ET.Element, schema_dict: Dict[str, DataType]) -> None:
-        """Recursively remove all validator arguments in the `format`
-        attribute."""
+        if dt.format_attr:
+            format_prompt = dt.format_attr.to_prompt()
+            if format_prompt:
+                el.attrib["format"] = format_prompt
 
-        def _inner(dt: DataType, el: ET._Element):
-            if "format" in el.attrib:
-                format = dt.format_attr.to_prompt()
-                if len(format):
-                    el.attrib["format"] = format
-                else:
-                    del el.attrib["format"]
+        if dt.optional:
+            el.attrib["required"] = "false"
 
-            for _, dt_child, el_child in dt.iter(el):
-                _inner(dt_child, el_child)
+        if isinstance(dt, Choice):
+            el.attrib["discriminator"] = dt.discriminator_key
 
-        for el_child in root:
-            dt_child = schema_dict[el_child.attrib["name"]]
-            _inner(dt_child, el_child)
+        for child in dt._children.values():
+            Schema2Prompt.datatypes_to_xml(child, el)
 
-    @staticmethod
-    def pydantic_to_object(root: ET.Element, schema_dict: Dict[str, DataType]) -> None:
-        """Recursively replace all pydantic elements with object elements."""
-        from guardrails.datatypes import Pydantic
-
-        def _inner(dt: DataType, el: ET._Element):
-            if isinstance(dt, Pydantic):
-                new_el = dt.to_object_element()
-                el.getparent().replace(el, new_el)
-
-            for _, dt_child, el_child in dt.iter(el):
-                _inner(dt_child, el_child)
-
-        for el_child in root:
-            dt_child = schema_dict[el_child.attrib["name"]]
-            _inner(dt_child, el_child)
+        return el
 
     @classmethod
-    def default(cls, schema: Schema) -> str:
+    def default(cls, schema: JsonSchema) -> str:
         """Default transpiler.
 
         Converts the XML schema to a string directly after removing:
@@ -1077,17 +847,10 @@ class Schema2Prompt:
             The prompt.
         """
         # Construct another XML tree from the schema.
-        root = deepcopy(schema.root)
-        schema_dict = schema.to_dict()
+        schema_object = schema.root_datatype
 
-        # Remove comments.
-        cls.remove_comments(root)
-        # Remove action attributes.
-        cls.remove_on_fail_attributes(root)
         # Remove validators with arguments.
-        cls.validator_to_prompt(root, schema_dict)
-        # Replace pydantic elements with object elements.
-        cls.pydantic_to_object(root, schema_dict)
+        root = cls.datatypes_to_xml(schema_object, override_tag_name="output")
 
         # Return the XML as a string that is
         ET.indent(root, space="    ")

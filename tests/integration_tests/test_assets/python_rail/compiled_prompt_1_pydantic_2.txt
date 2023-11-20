@@ -1,0 +1,34 @@
+Provide detailed information about the top 5 grossing movies from Christopher Nolan including release date, duration, budget, whether it's a sequel, website, and contact email.
+
+Given below is XML that describes the information to extract from this document and the tags to extract it into.
+
+<output>
+    <string name="name" format="is-valid-director"/>
+    <list name="movies">
+        <object>
+            <integer name="rank"/>
+            <string name="title"/>
+            <object name="details">
+                <date name="release_date"/>
+                <time name="duration"/>
+                <float name="budget"/>
+                <bool name="is_sequel" required="false"/>
+                <string name="website" format="length: min=9 max=100"/>
+                <string name="contact_email"/>
+                <choice name="revenue" discriminator="revenue_type">
+                    <case name="box_office">
+                        <float name="gross"/>
+                        <float name="opening_weekend"/>
+                    </case>
+                    <case name="streaming">
+                        <integer name="subscriptions"/>
+                        <float name="subscription_fee"/>
+                    </case>
+                </choice>
+            </object>
+        </object>
+    </list>
+</output>
+
+
+ONLY return a valid JSON object (no other text is necessary), where the key of the field in JSON is the `name` attribute of the corresponding XML, and the value is of the type specified by the corresponding XML's tag. The JSON MUST conform to the XML format, including any types and format requests e.g. requests for lists, objects and specific types. Be correct and concise. If you are unsure anywhere, enter `null`.

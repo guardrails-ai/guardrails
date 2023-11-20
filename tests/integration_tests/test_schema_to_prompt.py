@@ -44,7 +44,7 @@ Dummy prompt
     guard = Guard.from_rail_string(rail_spec)
     schema_2_prompt = guard.output_schema.transpile()
     expected_schema_2_prompt = """<output>
-    <choice name="action">
+    <choice name="action" discriminator="discriminator">
         <case name="fight">
             <string name="fight_move" format="valid-choices: choices=['punch', 'kick', 'headbutt']"/>
         </case>

@@ -223,3 +223,43 @@ async def test_rail_spec_output_parse(rail_spec, llm_output, validated_output):
         llm_api=openai.Completion.acreate,
     )
     assert output == validated_output
+
+
+@pytest.fixture
+def string_rail_spec():
+    return """
+<rail version="0.1">
+<output
+  type="string"
+  format="two-words"
+  on-fail-two-words="fix"
+/>
+<prompt>
+Hi please make me a string
+</prompt>
+</rail>
+"""
+
+
+@pytest.fixture
+def string_llm_output():
+    return "string output yes"
+
+
+@pytest.fixture
+def validated_string_output():
+    return "string output"
+
+
+@pytest.mark.asyncio
+async def test_string_rail_spec_output_parse(
+    string_rail_spec, string_llm_output, validated_string_output
+):
+    """Test that the string_rail_spec fixture is working."""
+    guard = gd.Guard.from_rail_string(string_rail_spec)
+    output = await guard.parse(
+        string_llm_output,
+        llm_api=openai.Completion.acreate,
+        num_reasks=0,
+    )
+    assert output == validated_string_output

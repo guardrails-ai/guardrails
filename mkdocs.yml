@@ -56,6 +56,7 @@ nav:
     - 'Ensure translated text is high quality': examples/translation_with_quality_check.ipynb
     - 'Check key info present in generated summary': examples/text_summarization_quality.ipynb
     - 'Detect and limit hallucinations in generated text': examples/provenance.ipynb
+    - 'Check whether a value is similar to a set of other values': examples/value_within_distribution.ipynb
   - 'Integrations':
     - 'Azure OpenAI': integrations/azure_openai.ipynb
     - 'OpenAI Functions': integrations/openai_functions.ipynb
@@ -175,6 +176,9 @@ plugins:
 
 
 extra:
+  analytics:
+    provider: google
+    property: G-CXQ3SCNV24
   version:
     provider: mike
   social:
@@ -184,3 +188,7 @@ extra:
       link: https://github.com/guardrails-ai/guardrails
     - icon: fontawesome/brands/discord
       link: https://discord.gg/Jsey3mX98B
+
+extra_javascript:
+  - javascripts/pipedrive.js
+  - javascripts/posthog.js

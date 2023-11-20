@@ -1,0 +1,19 @@
+{
+  "people": [
+    {
+      "name": "John Doe",
+      "age": 28,
+      "zip_code": "None"
+    },
+    {
+      "name": "Jane Doe",
+      "age": 32,
+      "zip_code": "94103"
+    },
+    {
+      "name": "James Smith",
+      "age": 40,
+      "zip_code": "92101"
+    }
+  ]
+}

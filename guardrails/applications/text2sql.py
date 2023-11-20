@@ -1,7 +1,8 @@
+import asyncio
 import json
 import os
 from string import Template
-from typing import Callable, Dict, Optional
+from typing import Callable, Dict, Optional, Type
 
 import openai
 
@@ -63,14 +64,14 @@ class Text2Sql:
         conn_str: str,
         schema_file: Optional[str] = None,
         examples: Optional[Dict] = None,
-        embedding: Optional[EmbeddingBase] = OpenAIEmbedding,
-        vector_db: Optional[VectorDBBase] = Faiss,
-        document_store: Optional[DocumentStoreBase] = EphemeralDocumentStore,
+        embedding: Type[EmbeddingBase] = OpenAIEmbedding,
+        vector_db: Type[VectorDBBase] = Faiss,
+        document_store: Type[DocumentStoreBase] = EphemeralDocumentStore,
         rail_spec: Optional[str] = None,
         rail_params: Optional[Dict] = None,
-        example_formatter: Optional[Callable] = example_formatter,
-        reask_prompt: Optional[str] = REASK_PROMPT,
-        llm_api: Optional[Callable] = openai.Completion.create,
+        example_formatter: Callable = example_formatter,
+        reask_prompt: str = REASK_PROMPT,
+        llm_api: Callable = openai.Completion.create,
         llm_api_kwargs: Optional[Dict] = None,
         num_relevant_examples: int = 2,
     ):
@@ -119,7 +120,7 @@ class Text2Sql:
         schema_file: Optional[str] = None,
         rail_spec: Optional[str] = None,
         rail_params: Optional[Dict] = None,
-        reask_prompt: Optional[str] = REASK_PROMPT,
+        reask_prompt: str = REASK_PROMPT,
     ):
         # Initialize the Guard class
         if rail_spec is None:
@@ -144,9 +145,9 @@ class Text2Sql:
     def _create_docstore_with_examples(
         self,
         examples: Optional[Dict],
-        embedding: EmbeddingBase,
-        vector_db: VectorDBBase,
-        document_store: DocumentStoreBase,
+        embedding: Type[EmbeddingBase],
+        vector_db: Type[VectorDBBase],
+        document_store: Type[DocumentStoreBase],
     ) -> Optional[DocumentStoreBase]:
         if examples is None:
             return None
@@ -167,7 +168,7 @@ class Text2Sql:
     def output_schema_formatter(output) -> str:
         return json.dumps({"generated_sql": output}, indent=4)
 
-    def __call__(self, text: str) -> str:
+    def __call__(self, text: str) -> Optional[str]:
         """Run text2sql on a text query and return the SQL query."""
 
         if self.store is not None:
@@ -179,6 +180,12 @@ class Text2Sql:
         else:
             similar_examples_prompt = ""
 
+        if asyncio.iscoroutinefunction(self.llm_api):
+            raise ValueError(
+                "Async API is not supported in Text2SQL application. "
+                "Please use a synchronous API."
+            )
+
         try:
             output = self.guard(
                 self.llm_api,
@@ -188,7 +195,11 @@ class Text2Sql:
                     "db_info": str(self.sql_schema),
                 },
                 **self.llm_api_kwargs,
-            )[1]["generated_sql"]
+            )[  # type: ignore
+                1
+            ][
+                "generated_sql"
+            ]
         except TypeError:
             output = None
 

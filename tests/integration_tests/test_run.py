@@ -12,13 +12,15 @@ from guardrails.utils.logs_utils import GuardLogs
 from .mock_llm_outputs import MockAsyncOpenAICallable, MockOpenAICallable
 from .test_assets import string
 
-PROMPT = gd.Prompt(string.COMPILED_PROMPT)
+PROMPT = gd.Prompt(source=string.COMPILED_PROMPT)
 INSTRUCTIONS = gd.Instructions(
     """ You are a helpful assistant, and you are helping me
      come up with a name for a pizza. ${gr.complete_string_suffix}"""
 )
-OUTPUT_SCHEMA = StringSchema(
-    root=ET.fromstring(
+
+
+OUTPUT_SCHEMA = StringSchema.from_xml(
+    ET.fromstring(
         """<output
     type="string"
     description="Name for the pizza"
@@ -26,6 +28,7 @@ OUTPUT_SCHEMA = StringSchema(
     on-fail-two-words="reask" />"""
     )
 )
+
 OUTPUT = "Tomato Cheese Pizza"
 
 
@@ -39,6 +42,7 @@ def runner_instance(is_sync: bool):
             input_schema=None,
             output_schema=OUTPUT_SCHEMA,
             guard_state={},
+            num_reasks=0,
         )
     else:
         return AsyncRunner(
@@ -49,6 +53,7 @@ def runner_instance(is_sync: bool):
             input_schema=None,
             output_schema=OUTPUT_SCHEMA,
             guard_state={},
+            num_reasks=0,
         )
 
 
@@ -57,7 +62,6 @@ def runner_instance(is_sync: bool):
 )
 @pytest.mark.asyncio
 async def test_sync_async_call_equivalence(mocker):
-
     mocker.patch(
         "guardrails.llm_providers.AsyncOpenAICallable",
         new=MockAsyncOpenAICallable,
@@ -76,12 +80,11 @@ async def test_sync_async_call_equivalence(mocker):
 
     # Call the 'async_call' method asynchronously
     result_async = await runner_instance(False).async_call(
-        1,
-        INSTRUCTIONS,
-        PROMPT,
-        None,
-        AsyncOpenAICallable(**{"temperature": 0}),
-        "Tomato Cheese Pizza",
+        index=1,
+        instructions=INSTRUCTIONS,
+        prompt=PROMPT,
+        api=AsyncOpenAICallable(**{"temperature": 0}),
+        output="Tomato Cheese Pizza",
     )
 
     assert result_sync.output == result_async.output
@@ -89,7 +92,6 @@ async def test_sync_async_call_equivalence(mocker):
 
 @pytest.mark.asyncio
 async def test_sync_async_validate_equivalence(mocker):
-
     mocker.patch(
         "guardrails.llm_providers.AsyncOpenAICallable",
         new=MockAsyncOpenAICallable,
@@ -113,7 +115,6 @@ async def test_sync_async_validate_equivalence(mocker):
 
 @pytest.mark.asyncio
 async def test_sync_async_step_equivalence(mocker):
-
     mocker.patch(
         "guardrails.llm_providers.AsyncOpenAICallable",
         new=MockAsyncOpenAICallable,
