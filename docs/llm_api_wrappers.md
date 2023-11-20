@@ -88,7 +88,11 @@ anthropic_client = Anthropic(api_key="my_api_key")
 # Wrap Anthropic API call
 raw_llm_output, guardrail_output = guard(
     anthropic_client.completions.create,
-    prompt_params={"prompt_param_1": "value_1", "prompt_param_2": "value_2", ..},
+    prompt_params={
+        "prompt_param_1": "value_1", 
+        "prompt_param_2": "value_2",
+        ...
+    },
     model="claude-2",
     max_tokens_to_sample=100,
     ...
