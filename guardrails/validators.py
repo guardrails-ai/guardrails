@@ -15,12 +15,15 @@ import warnings
 from functools import partial
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union, cast
 
-import openai
 import rstr
 from tenacity import retry, stop_after_attempt, wait_random_exponential
 
 from guardrails.utils.casting_utils import to_int
 from guardrails.utils.docs_utils import get_chunks_from_text, sentence_split
+from guardrails.utils.openai_utils import (
+    OpenAIClient,
+    get_static_openai_chat_create_func,
+)
 from guardrails.utils.sql_utils import SQLDriver, create_sql_driver
 from guardrails.utils.validator_utils import PROVENANCE_V1_PROMPT
 from guardrails.validator_base import (
@@ -41,7 +44,14 @@ else:
 try:
     import detect_secrets  # type: ignore
 except ImportError:
-    detect_secrets = None  # type: ignore
+    detect_secrets = None
+
+try:
+    from presidio_analyzer import AnalyzerEngine
+    from presidio_anonymizer import AnonymizerEngine
+except ImportError:
+    AnalyzerEngine = None
+    AnonymizerEngine = None
 
 try:
     import nltk  # type: ignore
@@ -696,8 +706,10 @@ class SimilarToDocument(Validator):
                 "`pip install numpy` to install it."
             )
 
+        self.client = OpenAIClient()
+
         self._document = document
-        embedding_response = openai.Embedding.create(input=[document], model=model)
+        embedding_response = self.client.create_embedding(input=[document], model=model)
         embedding = embedding_response["data"][0]["embedding"]  # type: ignore
         self._document_embedding = np.array(embedding)
         self._model = model
@@ -719,7 +731,9 @@ class SimilarToDocument(Validator):
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         logger.debug(f"Validating {value} is similar to document...")
 
-        embedding_response = openai.Embedding.create(input=[value], model=self._model)
+        embedding_response = self.client.create_embedding(
+            input=[value], model=self._model
+        )
 
         value_embedding = np.array(
             embedding_response["data"][0]["embedding"]  # type: ignore
@@ -1281,7 +1295,7 @@ class SaliencyCheck(Validator):
             )
 
         self.llm_callable = (
-            llm_callable if llm_callable else openai.ChatCompletion.create
+            llm_callable if llm_callable else get_static_openai_chat_create_func()
         )
 
         self._threshold = threshold
@@ -1338,7 +1352,7 @@ Make sure that topics are relevant to text, and topics are not too specific or g
     """
 
         guard = Guard.from_rail_string(spec)
-        _, validated_output = guard(llm_api=self.llm_callable)
+        _, validated_output, *rest = guard(llm_api=self.llm_callable)  # type: ignore
         validated_output = cast(Dict, validated_output)
         return validated_output["topics"]
 
@@ -1394,7 +1408,7 @@ class QARelevanceLLMEval(Validator):
             )
 
         self.llm_callable = (
-            llm_callable if llm_callable else openai.ChatCompletion.create
+            llm_callable if llm_callable else get_static_openai_chat_create_func()
         )
 
     def _selfeval(self, question: str, answer: str) -> Dict:
@@ -1421,7 +1435,7 @@ Relevant (as a JSON with a single boolean key, "relevant"):\
         guard = Guard[Dict].from_rail_string(spec)
 
         response = guard(
-            self.llm_callable,
+            self.llm_callable,  # type: ignore
             max_tokens=10,
             temperature=0.1,
         )
@@ -1825,6 +1839,8 @@ class ProvenanceV1(Validator):
         self._top_k = int(top_k)
         self._max_tokens = int(max_tokens)
 
+        self.client = OpenAIClient()
+
     def set_callable(self, llm_callable: Union[str, Callable]) -> None:
         """Set the LLM callable.
 
@@ -1841,14 +1857,14 @@ class ProvenanceV1(Validator):
                 )
 
             def openai_callable(prompt: str) -> str:
-                response = openai.ChatCompletion.create(
+                response = self.client.create_chat_completion(
                     model=llm_callable,
                     messages=[
                         {"role": "user", "content": prompt},
                     ],
                     max_tokens=self._max_tokens,
                 )
-                return response["choices"][0]["message"]["content"]  # type: ignore
+                return response.output
 
             self._llm_callable = openai_callable
         elif isinstance(llm_callable, Callable):
@@ -2011,13 +2027,13 @@ class ProvenanceV1(Validator):
 
         # Set the OpenAI API key
         if os.getenv("OPENAI_API_KEY"):  # Check if set in environment
-            openai.api_key = os.getenv("OPENAI_API_KEY")
+            self.client.api_key = os.getenv("OPENAI_API_KEY")
         elif api_key:  # Check if set when calling guard() or parse()
-            openai.api_key = api_key
+            self.client.api_key = api_key
 
         # Set the OpenAI API base if specified
         if api_base:
-            openai.api_base = api_base
+            self.client.api_base = api_base
 
         query_function = self.get_query_function(metadata)
         if self._validation_method == "sentence":
@@ -2069,6 +2085,130 @@ class ProvenanceV1(Validator):
             raise ValueError("distance_metric must be 'cosine'.")
 
         return top_chunks
+
+
+@register_validator(name="pii", data_type="string")
+class PIIFilter(Validator):
+    """Validates that any text does not contain any PII.
+
+    This validator uses Microsoft's Presidio (https://github.com/microsoft/presidio)
+    to detect PII in the text. If PII is detected, the validator will fail with a
+    programmatic fix that anonymizes the text. Otherwise, the validator will pass.
+
+    **Key Properties**
+
+    | Property                      | Description                         |
+    | ----------------------------- | ----------------------------------- |
+    | Name for `format` attribute   | `pii`                               |
+    | Supported data types          | `string`                            |
+    | Programmatic fix              | Anonymized text with PII filtered   |
+
+    Parameters: Arguments
+        pii_entities (str | List[str], optional): The PII entities to filter. Must be
+            one of `pii` or `spi`. Defaults to None. Can also be set in metadata.
+    """
+
+    PII_ENTITIES_MAP = {
+        "pii": [
+            "EMAIL_ADDRESS",
+            "PHONE_NUMBER",
+            "DOMAIN_NAME",
+            "IP_ADDRESS",
+            "DATE_TIME",
+            "LOCATION",
+            "PERSON",
+            "URL",
+        ],
+        "spi": [
+            "CREDIT_CARD",
+            "CRYPTO",
+            "IBAN_CODE",
+            "NRP",
+            "MEDICAL_LICENSE",
+            "US_BANK_NUMBER",
+            "US_DRIVER_LICENSE",
+            "US_ITIN",
+            "US_PASSPORT",
+            "US_SSN",
+        ],
+    }
+
+    def __init__(
+        self,
+        pii_entities: Union[str, List[str], None] = None,
+        on_fail: Union[Callable[..., Any], None] = None,
+        **kwargs,
+    ):
+        if AnalyzerEngine is None or AnonymizerEngine is None:
+            raise ImportError(
+                "You must install the `presidio-analyzer`, `presidio-anonymizer`"
+                "and a spaCy language model to use the PII validator."
+                "Refer to https://microsoft.github.io/presidio/installation/"
+            )
+
+        super().__init__(on_fail, pii_entities=pii_entities, **kwargs)
+        self.pii_entities = pii_entities
+        self.pii_analyzer = AnalyzerEngine()
+        self.pii_anonymizer = AnonymizerEngine()
+
+    def get_anonymized_text(self, text: str, entities: List[str]) -> str:
+        """Analyze and anonymize the text for PII.
+
+        Args:
+            text (str): The text to analyze.
+            pii_entities (List[str]): The PII entities to filter.
+
+        Returns:
+            anonymized_text (str): The anonymized text.
+        """
+        results = self.pii_analyzer.analyze(text=text, entities=entities, language="en")
+        results = cast(List[Any], results)
+        anonymized_text = self.pii_anonymizer.anonymize(
+            text=text, analyzer_results=results
+        ).text
+        return anonymized_text
+
+    def validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
+        # Entities to filter passed through metadata take precedence
+        pii_entities = metadata.get("pii_entities", self.pii_entities)
+        if pii_entities is None:
+            raise ValueError(
+                "`pii_entities` must be set in order to use the `PIIFilter` validator."
+                "Add this: `pii_entities=['PERSON', 'PHONE_NUMBER']`"
+                "OR pii_entities='pii' or 'spi'"
+                "in init or metadata."
+            )
+
+        # Check that pii_entities is a string OR list of strings
+        if isinstance(pii_entities, str):
+            # A key to the PII_ENTITIES_MAP
+            entities_to_filter = self.PII_ENTITIES_MAP.get(pii_entities, None)
+            if entities_to_filter is None:
+                raise ValueError(
+                    f"`pii_entities` must be one of {self.PII_ENTITIES_MAP.keys()}"
+                )
+        elif isinstance(pii_entities, list):
+            entities_to_filter = pii_entities
+        else:
+            raise ValueError(
+                f"`pii_entities` must be one of {self.PII_ENTITIES_MAP.keys()}"
+                " or a list of strings."
+            )
+
+        # Analyze the text, and anonymize it if there is PII
+        anonymized_text = self.get_anonymized_text(
+            text=value, entities=entities_to_filter
+        )
+
+        # If anonymized value text is different from original value, then there is PII
+        if anonymized_text != value:
+            return FailResult(
+                error_message=(
+                    f"The following text in your response contains PII:\n{value}"
+                ),
+                fix_value=anonymized_text,
+            )
+        return PassResult()
 
 
 @register_validator(name="similar-to-list", data_type="string")

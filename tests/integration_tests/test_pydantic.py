@@ -1,11 +1,14 @@
 import json
 from typing import Dict, List
 
-import openai
 import pytest
 from pydantic import BaseModel
 
 import guardrails as gd
+from guardrails.utils.openai_utils import (
+    get_static_openai_chat_create_func,
+    get_static_openai_create_func,
+)
 
 from .mock_llm_outputs import MockOpenAICallable, MockOpenAIChatCallable, pydantic
 from .test_assets.pydantic import VALIDATED_RESPONSE_REASK_PROMPT, ListOfPeople
@@ -17,7 +20,7 @@ def test_pydantic_with_reask(mocker):
 
     guard = gd.Guard.from_pydantic(ListOfPeople, prompt=VALIDATED_RESPONSE_REASK_PROMPT)
     final_output = guard(
-        openai.Completion.create,
+        get_static_openai_create_func(),
         engine="text-davinci-003",
         max_tokens=512,
         temperature=0.5,
@@ -57,7 +60,7 @@ def test_pydantic_with_full_schema_reask(mocker):
 
     guard = gd.Guard.from_pydantic(ListOfPeople, prompt=VALIDATED_RESPONSE_REASK_PROMPT)
     _, final_output, *rest = guard(
-        openai.ChatCompletion.create,
+        get_static_openai_chat_create_func(),
         model="gpt-3.5-turbo",
         max_tokens=512,
         temperature=0.5,

@@ -1,10 +1,10 @@
 import importlib
 from typing import Dict
 
-import openai
 import pytest
 
 from guardrails.guard import Guard
+from guardrails.utils.openai_utils import get_static_openai_create_func
 from guardrails.validators import FailResult
 from tests.integration_tests.mock_llm_outputs import MockOpenAICallable
 from tests.unit_tests.validators.test_parameters import (
@@ -55,7 +55,7 @@ def test_validator_python_string(
             instructions=validator_test_data[validator_name]["instructions"],
         )
         _, final_output, *rest = guard(
-            llm_api=openai.Completion.create,
+            llm_api=get_static_openai_create_func(),
             prompt_params=validator_test_data[validator_name]["prompt_params"],
             num_reasks=1,
             max_tokens=100,

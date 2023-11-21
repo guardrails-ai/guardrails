@@ -8,10 +8,11 @@ from guardrails import Guard, Validator, register_validator
 from guardrails.datatypes import DataType
 from guardrails.schema import StringSchema
 from guardrails.validator_base import PassResult, ValidationResult
-from guardrails.validators import DetectSecrets, SimilarToList
+from guardrails.validators import DetectSecrets, PIIFilter, SimilarToList
 
 from .mock_embeddings import MOCK_EMBEDDINGS
 from .mock_llm_outputs import MockOpenAICallable
+from .mock_presidio import MockAnalyzerEngine, MockAnonymizerEngine, mock_anonymize
 from .mock_secrets import (
     EXPECTED_SECRETS_CODE_SNIPPET,
     NO_SECRETS_CODE_SNIPPET,
@@ -186,6 +187,153 @@ def test_detect_secrets(mocker):
 
     # Check if temp.txt does not exist in current directory
     assert not os.path.exists("temp.txt")
+
+
+def test_pii_filter(mocker):
+    """Integration test for PIIFilter."""
+
+    # Mock the the intialisations of AnalyzerEngine and AnonymizerEngine
+    mocker.patch("guardrails.validators.AnalyzerEngine", new=MockAnalyzerEngine)
+    mocker.patch("guardrails.validators.AnonymizerEngine", new=MockAnonymizerEngine)
+
+    # Mock the analyze and anomymize functions
+    mocker.patch(
+        "guardrails.validators.PIIFilter.get_anonymized_text", new=mock_anonymize
+    )
+
+    # ------------------
+    # 1. Initialise Guard from string with setting pii_entities as a string
+    # Also check whether all parameters are correctly initialised
+    guard = Guard.from_string(
+        validators=[PIIFilter(pii_entities="pii", on_fail="fix")],
+        description="testmeout",
+    )
+
+    # Do parse call
+    text = "My email address is demo@lol.com, and my phone number is 1234567890"
+    output = guard.parse(
+        llm_output=text,
+    )
+    # Validated output should be different from input
+    assert output != text
+
+    # Validated output should contain masked pii entities
+    assert all(entity in output for entity in ["<EMAIL_ADDRESS>", "<PHONE_NUMBER>"])
+
+    # ------------------
+    # 2. Initialise Guard from string with setting pii_entities as a list
+    # Also check whether all parameters are correctly initialised
+    guard = Guard.from_string(
+        validators=[
+            PIIFilter(pii_entities=["EMAIL_ADDRESS", "PHONE_NUMBER"], on_fail="fix")
+        ],
+        description="testmeout",
+    )
+
+    # Do parse call
+    text = "My email address is demo@lol.com, and my phone number is 1234567890"
+    output = guard.parse(
+        llm_output=text,
+    )
+    # Validated output should be different from input
+    assert output != text
+
+    # Validated output should contain masked pii entities
+    assert all(entity in output for entity in ["<EMAIL_ADDRESS>", "<PHONE_NUMBER>"])
+
+    # Check with text without any pii entities
+    text = "My email address is xyz and my phone number is unavailable."
+    output = guard.parse(
+        llm_output=text,
+    )
+    # Validated output should be same as input
+    assert output == text
+
+    # ------------------
+    # 3. Initialise Guard from string without setting pii_entities
+    # Also don't pass through metadata
+    # Should raise ValueError
+    guard = Guard.from_string(
+        validators=[PIIFilter(on_fail="fix")],
+        description="testmeout",
+    )
+
+    text = "My email address is demo@lol.com, and my phone number is 1234567890"
+    with pytest.raises(ValueError):
+        output = guard.parse(
+            llm_output=text,
+        )
+
+    # ------------------
+    # 4. Initialise Guard from string without setting pii_entities
+    guard = Guard.from_string(
+        validators=[PIIFilter(on_fail="fix")],
+        description="testmeout",
+    )
+    text = "My email address is demo@lol.com, and my phone number is 1234567890"
+
+    # Now try with string of pii entities passed through metadata
+    output = guard.parse(
+        llm_output=text,
+        metadata={"pii_entities": "pii"},
+    )
+    # Validated output should be different from input
+    assert output != text
+
+    # Validated output should contain masked pii entities
+    assert all(entity in output for entity in ["<EMAIL_ADDRESS>", "<PHONE_NUMBER>"])
+
+    # Now try with list of pii entities passed through metadata
+    output = guard.parse(
+        llm_output=text,
+        metadata={"pii_entities": ["EMAIL_ADDRESS", "PHONE_NUMBER"]},
+    )
+    # Validated output should be different from input
+    assert output != text
+
+    # Validated output should contain masked pii entities
+    assert all(entity in output for entity in ["<EMAIL_ADDRESS>", "<PHONE_NUMBER>"])
+
+    # ------------------
+    # 5. Initialise Guard from string setting
+    # pii_entities as a string "pii" -> all entities
+    # But also pass in metadata with all pii_entities as a list
+    # only containing EMAIL_ADDRESS
+    # metadata should override the pii_entities passed in the constructor,
+    # and only mask in EMAIL_ADDRESS
+
+    guard = Guard.from_string(
+        validators=[PIIFilter(pii_entities="pii", on_fail="fix")],
+        description="testmeout",
+    )
+    text = "My email address is demo@lol.com, and my phone number is 1234567890"
+
+    output = guard.parse(
+        llm_output=text,
+        metadata={"pii_entities": ["EMAIL_ADDRESS"]},
+    )
+    # Validated output should be different from input
+    assert output != text
+
+    # Validated output should contain masked EMAIL_ADDRESS
+    # and not PHONE_NUMBER
+    assert "<EMAIL_ADDRESS>" in output
+    assert "<PHONE_NUMBER>" not in output
+
+    # ------------------
+    # 6. Initialise Guard from string setting an incorrect string of pii_entities
+    # Should raise ValueError during validate
+
+    guard = Guard.from_string(
+        validators=[PIIFilter(pii_entities="piii", on_fail="fix")],
+        description="testmeout",
+    )
+    text = "My email address is demo@lol.com, and my phone number is 1234567890"
+
+    with pytest.raises(ValueError):
+        output = guard.parse(
+            llm_output=text,
+        )
 
 
 @register_validator("mycustominstancecheckvalidator", data_type="string")

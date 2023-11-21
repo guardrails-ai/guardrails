@@ -2,12 +2,15 @@ import json
 import os
 from typing import Optional, Union
 
-import openai
 import pytest
 from pydantic import BaseModel
 
 import guardrails as gd
 from guardrails.guard import Guard
+from guardrails.utils.openai_utils import (
+    get_static_openai_chat_create_func,
+    get_static_openai_create_func,
+)
 from guardrails.utils.reask_utils import FieldReAsk
 from guardrails.validators import FailResult, OneLine
 
@@ -137,7 +140,7 @@ def test_entity_extraction_with_reask(
     guard = guard_initializer(rail, prompt)
 
     final_output = guard(
-        llm_api=openai.Completion.create,
+        llm_api=get_static_openai_create_func(),
         prompt_params={"document": content[:6000]},
         num_reasks=1,
         max_tokens=2000,
@@ -216,7 +219,7 @@ def test_entity_extraction_with_noop(mocker, rail, prompt):
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
     guard = guard_initializer(rail, prompt)
     final_output = guard(
-        llm_api=openai.Completion.create,
+        llm_api=get_static_openai_create_func(),
         prompt_params={"document": content[:6000]},
         num_reasks=1,
     )
@@ -252,7 +255,7 @@ def test_entity_extraction_with_filter(mocker, rail, prompt):
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
     guard = guard_initializer(rail, prompt)
     final_output = guard(
-        llm_api=openai.Completion.create,
+        llm_api=get_static_openai_create_func(),
         prompt_params={"document": content[:6000]},
         num_reasks=1,
     )
@@ -287,7 +290,7 @@ def test_entity_extraction_with_fix(mocker, rail, prompt):
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
     guard = guard_initializer(rail, prompt)
     final_output = guard(
-        llm_api=openai.Completion.create,
+        llm_api=get_static_openai_create_func(),
         prompt_params={"document": content[:6000]},
         num_reasks=1,
     )
@@ -323,7 +326,7 @@ def test_entity_extraction_with_refrain(mocker, rail, prompt):
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
     guard = guard_initializer(rail, prompt)
     final_output = guard(
-        llm_api=openai.Completion.create,
+        llm_api=get_static_openai_create_func(),
         prompt_params={"document": content[:6000]},
         num_reasks=1,
     )
@@ -366,7 +369,7 @@ def test_entity_extraction_with_fix_chat_models(mocker, rail, prompt, instructio
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
     guard = guard_initializer(rail, prompt, instructions)
     final_output = guard(
-        llm_api=openai.ChatCompletion.create,
+        llm_api=get_static_openai_chat_create_func(),
         prompt_params={"document": content[:6000]},
         num_reasks=1,
     )
@@ -396,7 +399,7 @@ def test_string_output(mocker):
 
     guard = gd.Guard.from_rail_string(string.RAIL_SPEC_FOR_STRING)
     final_output = guard(
-        llm_api=openai.Completion.create,
+        llm_api=get_static_openai_create_func(),
         prompt_params={"ingredients": "tomato, cheese, sour cream"},
         num_reasks=1,
     )
@@ -419,7 +422,7 @@ def test_string_reask(mocker):
 
     guard = gd.Guard.from_rail_string(string.RAIL_SPEC_FOR_STRING_REASK)
     final_output = guard(
-        llm_api=openai.Completion.create,
+        llm_api=get_static_openai_create_func(),
         prompt_params={"ingredients": "tomato, cheese, sour cream"},
         num_reasks=1,
         max_tokens=100,
@@ -452,7 +455,7 @@ def test_skeleton_reask(mocker):
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
     guard = gd.Guard.from_rail_string(entity_extraction.RAIL_SPEC_WITH_SKELETON_REASK)
     final_output = guard(
-        llm_api=openai.Completion.create,
+        llm_api=get_static_openai_create_func(),
         prompt_params={"document": content[:6000]},
         max_tokens=1000,
         num_reasks=1,
@@ -498,7 +501,7 @@ def test_skeleton_reask(mocker):
 
     guard = gd.Guard.from_rail_string(string.RAIL_SPEC_FOR_LIST)
     _, final_output, *rest = guard(
-        llm_api=openai.Completion.create,
+        llm_api=get_static_openai_create_func(),
         num_reasks=1,
     )
     assert final_output == string.LIST_LLM_OUTPUT
@@ -524,7 +527,7 @@ def test_skeleton_reask(mocker):
             entity_extraction.OPTIONAL_PROMPT_COMPLETION_MODEL,
             None,
             None,
-            openai.Completion.create,
+            get_static_openai_create_func(),
             entity_extraction.COMPILED_PROMPT,
             None,
             entity_extraction.COMPILED_PROMPT_REASK,
@@ -535,7 +538,7 @@ def test_skeleton_reask(mocker):
             entity_extraction.OPTIONAL_PROMPT_CHAT_MODEL,
             entity_extraction.OPTIONAL_INSTRUCTIONS_CHAT_MODEL,
             None,
-            openai.ChatCompletion.create,
+            get_static_openai_chat_create_func(),
             entity_extraction.COMPILED_PROMPT_WITHOUT_INSTRUCTIONS,
             entity_extraction.COMPILED_INSTRUCTIONS,
             entity_extraction.COMPILED_PROMPT_REASK_WITHOUT_INSTRUCTIONS,
@@ -546,7 +549,7 @@ def test_skeleton_reask(mocker):
             None,
             None,
             entity_extraction.OPTIONAL_MSG_HISTORY,
-            openai.ChatCompletion.create,
+            get_static_openai_chat_create_func(),
             None,
             None,
             entity_extraction.COMPILED_PROMPT_REASK_WITHOUT_INSTRUCTIONS,
@@ -567,7 +570,7 @@ def test_entity_extraction_with_reask_with_optional_prompts(
     expected_reask_instructions,
 ):
     """Test that the entity extraction works with re-asking."""
-    if llm_api == openai.Completion.create:
+    if llm_api == get_static_openai_create_func():
         mocker.patch("guardrails.llm_providers.OpenAICallable", new=MockOpenAICallable)
     else:
         mocker.patch(
@@ -654,7 +657,7 @@ def test_string_with_message_history_reask(mocker):
 
     guard = gd.Guard.from_rail_string(string.RAIL_SPEC_FOR_MSG_HISTORY)
     final_output = guard(
-        llm_api=openai.ChatCompletion.create,
+        llm_api=get_static_openai_chat_create_func(),
         msg_history=string.MOVIE_MSG_HISTORY,
         temperature=0.0,
         model="gpt-3.5-turbo",
@@ -690,7 +693,7 @@ def test_pydantic_with_message_history_reask(mocker):
 
     guard = gd.Guard.from_pydantic(output_class=pydantic.WITH_MSG_HISTORY)
     final_output = guard(
-        llm_api=openai.ChatCompletion.create,
+        llm_api=get_static_openai_chat_create_func(),
         msg_history=string.MOVIE_MSG_HISTORY,
         temperature=0.0,
         model="gpt-3.5-turbo",
@@ -734,7 +737,7 @@ def test_sequential_validator_log_is_not_duplicated(mocker):
         )
 
         _, final_output, *rest = guard(
-            llm_api=openai.Completion.create,
+            llm_api=get_static_openai_create_func(),
             prompt_params={"document": content[:6000]},
             num_reasks=1,
         )
@@ -768,7 +771,7 @@ def test_in_memory_validator_log_is_not_duplicated(mocker):
         )
 
         _, final_output, *rest = guard(
-            llm_api=openai.Completion.create,
+            llm_api=get_static_openai_create_func(),
             prompt_params={"document": content[:6000]},
             num_reasks=1,
         )

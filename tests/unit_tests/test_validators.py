@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 from guardrails import Guard
 from guardrails.datatypes import DataType
 from guardrails.schema import StringSchema
+from guardrails.utils.openai_utils import OPENAI_VERSION
 from guardrails.utils.reask_utils import FieldReAsk
 from guardrails.validator_base import (
     FailResult,
@@ -146,7 +147,14 @@ def test_summary_validators(mocker):
     pytest.importorskip("nltk", reason="nltk is not installed")
     pytest.importorskip("thefuzz", reason="thefuzz is not installed")
 
-    mocker.patch("openai.Embedding.create", new=mock_create_embedding)
+    if OPENAI_VERSION.startswith("0"):
+        mocker.patch("openai.Embedding.create", new=mock_create_embedding)
+    else:
+        mocker.patch(
+            "openai.resources.embeddings.Embeddings.create",
+            new=mock_create_embedding,
+        )
+
     mocker.patch("guardrails.embedding.OpenAIEmbedding.output_dim", new=2)
 
     summary = "It was a nice day. I went to the park. I saw a dog."
@@ -356,8 +364,14 @@ def test_bad_validator():
 
 def test_provenance_v1(mocker):
     """Test initialisation of ProvenanceV1."""
+    if OPENAI_VERSION.startswith("0"):
+        mocker.patch("openai.ChatCompletion.create", new=mock_chat_completion)
+    else:
+        mocker.patch(
+            "openai.resources.chat.completions.Completions.create",
+            new=mock_chat_completion,
+        )
 
-    mocker.patch("openai.ChatCompletion.create", new=mock_chat_completion)
     API_KEY = "<YOUR_KEY>"
     LLM_RESPONSE = "This is a sentence."
 
@@ -386,8 +400,10 @@ def test_provenance_v1(mocker):
     assert isinstance(prov_validator._max_tokens, int)
 
     # Test guard.parse() with 3 different ways of setting the OpenAI API key API key
+
     # 1. Setting the API key directly
-    openai.api_key = API_KEY
+    if OPENAI_VERSION.startswith("0"):  # not supported in v1 anymore
+        openai.api_key = API_KEY
 
     output = string_guard.parse(
         llm_output=LLM_RESPONSE,

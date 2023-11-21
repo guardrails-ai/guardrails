@@ -4,6 +4,7 @@ from pydantic import BaseModel
 
 from guardrails import Guard, Rail, Validator
 from guardrails.datatypes import verify_metadata_requirements
+from guardrails.utils.openai_utils import OPENAI_VERSION
 from guardrails.validators import PassResult, register_validator
 
 
@@ -75,6 +76,7 @@ class RequiringValidator2(Validator):
     ],
 )
 @pytest.mark.asyncio
+@pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="Only for OpenAI v0")
 async def test_required_metadata(spec, metadata):
     guard = Guard.from_rail_string(spec)
 
