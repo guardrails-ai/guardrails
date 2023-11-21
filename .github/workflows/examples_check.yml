@@ -39,7 +39,7 @@ jobs:
     - name: Install dependencies
       run: |
         make full;
-        poetry add openai==0.28.1 jupyter nbconvert;
+        poetry add openai==0.28.1 jupyter nbconvert cohere;
         # pip install openai==0.28.1 jupyter nbconvert;
         # pip install .;
 
