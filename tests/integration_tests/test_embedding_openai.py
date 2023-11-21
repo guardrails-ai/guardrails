@@ -1,8 +1,8 @@
 import os
-from unittest.mock import Mock, patch
-from openai.version import VERSION
+from unittest.mock import Mock
 
 import pytest
+from openai.version import VERSION
 
 from guardrails.embedding import OpenAIEmbedding
 
@@ -30,8 +30,6 @@ class MockResponse:
 
     def json(self):
         return {"data": self.data}
-
-
 
 
 @pytest.mark.skipif(
