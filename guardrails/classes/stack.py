@@ -49,7 +49,7 @@ class Stack(List[T]):
         except ValueError:
             pass
 
-    def at(self, index: int) -> T:
+    def at(self, index: int) -> Optional[T]:
         """Returns the item located at the index.
 
         If the index does not exist in the stack (Overflow or
@@ -62,7 +62,7 @@ class Stack(List[T]):
             pass
 
     @property
-    def first(self) -> T:
+    def first(self) -> Optional[T]:
         """Returns the first item of the stack without removing it.
 
         Same as Stack.bottom.
@@ -70,7 +70,7 @@ class Stack(List[T]):
         return self.at(0)
 
     @property
-    def last(self) -> T:
+    def last(self) -> Optional[T]:
         """Returns the last item of the stack without removing it.
 
         Same as Stack.top.
@@ -78,7 +78,7 @@ class Stack(List[T]):
         return self.at(-1)
 
     @property
-    def bottom(self) -> T:
+    def bottom(self) -> Optional[T]:
         """Returns the item on the bottom of the stack without removing it.
 
         Same as Stack.first.
@@ -86,7 +86,7 @@ class Stack(List[T]):
         return self.at(0)
 
     @property
-    def top(self) -> T:
+    def top(self) -> Optional[T]:
         """Returns the item on the top of the stack without removing it.
 
         Same as Stack.last.
@@ -94,6 +94,6 @@ class Stack(List[T]):
         return self.at(-1)
 
     @property
-    def length(self) -> T:
+    def length(self) -> int:
         """Returns the number of items in the Stack."""
         return len(self)
