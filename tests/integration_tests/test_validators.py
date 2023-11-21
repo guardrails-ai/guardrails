@@ -215,10 +215,13 @@ def test_pii_filter(mocker):
         llm_output=text,
     )
     # Validated output should be different from input
-    assert output != text
+    assert output.validated_output != text
 
     # Validated output should contain masked pii entities
-    assert all(entity in output for entity in ["<EMAIL_ADDRESS>", "<PHONE_NUMBER>"])
+    assert all(
+        entity in output.validated_output
+        for entity in ["<EMAIL_ADDRESS>", "<PHONE_NUMBER>"]
+    )
 
     # ------------------
     # 2. Initialise Guard from string with setting pii_entities as a list
@@ -236,10 +239,13 @@ def test_pii_filter(mocker):
         llm_output=text,
     )
     # Validated output should be different from input
-    assert output != text
+    assert output.validated_output != text
 
     # Validated output should contain masked pii entities
-    assert all(entity in output for entity in ["<EMAIL_ADDRESS>", "<PHONE_NUMBER>"])
+    assert all(
+        entity in output.validated_output
+        for entity in ["<EMAIL_ADDRESS>", "<PHONE_NUMBER>"]
+    )
 
     # Check with text without any pii entities
     text = "My email address is xyz and my phone number is unavailable."
@@ -247,7 +253,7 @@ def test_pii_filter(mocker):
         llm_output=text,
     )
     # Validated output should be same as input
-    assert output == text
+    assert output.validated_output == text
 
     # ------------------
     # 3. Initialise Guard from string without setting pii_entities
@@ -259,10 +265,10 @@ def test_pii_filter(mocker):
     )
 
     text = "My email address is demo@lol.com, and my phone number is 1234567890"
-    with pytest.raises(ValueError):
-        output = guard.parse(
-            llm_output=text,
-        )
+    output = guard.parse(
+        llm_output=text,
+    )
+    assert output.error is not None
 
     # ------------------
     # 4. Initialise Guard from string without setting pii_entities
@@ -278,10 +284,13 @@ def test_pii_filter(mocker):
         metadata={"pii_entities": "pii"},
     )
     # Validated output should be different from input
-    assert output != text
+    assert output.validated_output != text
 
     # Validated output should contain masked pii entities
-    assert all(entity in output for entity in ["<EMAIL_ADDRESS>", "<PHONE_NUMBER>"])
+    assert all(
+        entity in output.validated_output
+        for entity in ["<EMAIL_ADDRESS>", "<PHONE_NUMBER>"]
+    )
 
     # Now try with list of pii entities passed through metadata
     output = guard.parse(
@@ -289,10 +298,13 @@ def test_pii_filter(mocker):
         metadata={"pii_entities": ["EMAIL_ADDRESS", "PHONE_NUMBER"]},
     )
     # Validated output should be different from input
-    assert output != text
+    assert output.validated_output != text
 
     # Validated output should contain masked pii entities
-    assert all(entity in output for entity in ["<EMAIL_ADDRESS>", "<PHONE_NUMBER>"])
+    assert all(
+        entity in output.validated_output
+        for entity in ["<EMAIL_ADDRESS>", "<PHONE_NUMBER>"]
+    )
 
     # ------------------
     # 5. Initialise Guard from string setting
@@ -313,12 +325,12 @@ def test_pii_filter(mocker):
         metadata={"pii_entities": ["EMAIL_ADDRESS"]},
     )
     # Validated output should be different from input
-    assert output != text
+    assert output.validated_output != text
 
     # Validated output should contain masked EMAIL_ADDRESS
     # and not PHONE_NUMBER
-    assert "<EMAIL_ADDRESS>" in output
-    assert "<PHONE_NUMBER>" not in output
+    assert "<EMAIL_ADDRESS>" in output.validated_output
+    assert "<PHONE_NUMBER>" not in output.validated_output
 
     # ------------------
     # 6. Initialise Guard from string setting an incorrect string of pii_entities
@@ -330,10 +342,10 @@ def test_pii_filter(mocker):
     )
     text = "My email address is demo@lol.com, and my phone number is 1234567890"
 
-    with pytest.raises(ValueError):
-        output = guard.parse(
-            llm_output=text,
-        )
+    output = guard.parse(
+        llm_output=text,
+    )
+    assert output.error is not None
 
 
 @register_validator("mycustominstancecheckvalidator", data_type="string")
