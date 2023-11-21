@@ -1,5 +1,6 @@
-import tiktoken
 from typing import Dict, List
+
+import tiktoken
 
 
 def num_tokens_from_string(text: str, model_name: str) -> int:

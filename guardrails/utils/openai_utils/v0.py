@@ -1,4 +1,4 @@
-from typing import Any, List, Dict, Iterable, cast, Optional, AsyncIterable
+from typing import Any, AsyncIterable, Dict, Iterable, List, cast
 
 import openai
 import openai.error
@@ -10,8 +10,8 @@ from guardrails.utils.openai_utils.base import (
     BaseSyncOpenAIClient,
 )
 from guardrails.utils.openai_utils.streaming_utils import (
-    num_tokens_from_string,
     num_tokens_from_messages,
+    num_tokens_from_string,
 )
 
 
