@@ -8,7 +8,8 @@ from guardrails.vectordb import Faiss
 
 
 @pytest.mark.skipif(
-    os.environ.get("OPENAI_API_KEY") is None, reason="openai api key not set"
+    os.environ.get("OPENAI_API_KEY") in [None, "mocked"],
+    reason="openai api key not set",
 )
 class TestEphemeralDocumentStore:
     def test_similarity_search(self):
