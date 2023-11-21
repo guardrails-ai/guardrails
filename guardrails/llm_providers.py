@@ -1,23 +1,17 @@
-import os
 from typing import Any, Awaitable, Callable, Dict, List, Optional, cast
 
-import openai
-import openai.error
 from pydantic import BaseModel
-from tenacity import retry, retry_if_exception_type, wait_exponential_jitter
 
-from guardrails.utils.logs_utils import LLMResponse
+from guardrails.utils.llm_response import LLMResponse
+from guardrails.utils.openai_utils import (
+    AsyncOpenAIClient,
+    OpenAIClient,
+    get_static_openai_acreate_func,
+    get_static_openai_chat_acreate_func,
+    get_static_openai_chat_create_func,
+    get_static_openai_create_func,
+)
 from guardrails.utils.pydantic_utils import convert_pydantic_model_to_openai_fn
-
-OPENAI_RETRYABLE_ERRORS = [
-    openai.error.APIConnectionError,
-    openai.error.APIError,
-    openai.error.TryAgain,
-    openai.error.Timeout,
-    openai.error.RateLimitError,
-    openai.error.ServiceUnavailableError,
-]
-RETRYABLE_ERRORS = tuple(OPENAI_RETRYABLE_ERRORS)
 
 
 class PromptCallableException(Exception):
@@ -43,16 +37,11 @@ class PromptCallableBase:
     def _invoke_llm(self, *args, **kwargs) -> LLMResponse:
         raise NotImplementedError
 
-    @retry(
-        wait=wait_exponential_jitter(max=60),
-        retry=retry_if_exception_type(RETRYABLE_ERRORS),
-    )
-    def _call_llm(self, *args, **kwargs) -> LLMResponse:
-        return self._invoke_llm(*self.init_args, *args, **self.init_kwargs, **kwargs)
-
     def __call__(self, *args, **kwargs) -> LLMResponse:
         try:
-            result = self._call_llm(*args, **kwargs)
+            result = self._invoke_llm(
+                *self.init_args, *args, **self.init_kwargs, **kwargs
+            )
         except Exception as e:
             raise PromptCallableException(
                 "The callable `fn` passed to `Guard(fn, ...)` failed"
@@ -110,22 +99,16 @@ class OpenAICallable(PromptCallableBase):
         *args,
         **kwargs,
     ) -> LLMResponse:
-        api_key = kwargs.pop("api_key", os.environ.get("OPENAI_API_KEY"))
-        openai_response = openai.Completion.create(
-            api_key=api_key,
+        if "api_key" in kwargs:
+            api_key = kwargs.pop("api_key")
+        else:
+            api_key = None
+        client = OpenAIClient(api_key=api_key)
+        return client.create_completion(
             engine=engine,
             prompt=nonchat_prompt(prompt=text, instructions=instructions),
             *args,
             **kwargs,
-        )
-        return LLMResponse(
-            output=openai_response["choices"][0]["text"],  # type: ignore
-            prompt_token_count=openai_response["usage"][  # type: ignore
-                "prompt_tokens"
-            ],
-            response_token_count=openai_response["usage"][  # type: ignore
-                "completion_tokens"
-            ],
         )
 
 
@@ -175,9 +158,12 @@ class OpenAIChatCallable(PromptCallableBase):
             fn_kwargs = {}
 
         # Call OpenAI
-        api_key = kwargs.pop("api_key", os.environ.get("OPENAI_API_KEY"))
-        openai_response = openai.ChatCompletion.create(
-            api_key=api_key,
+        if "api_key" in kwargs:
+            api_key = kwargs.pop("api_key")
+        else:
+            api_key = None
+        client = OpenAIClient(api_key=api_key)
+        return client.create_chat_completion(
             model=model,
             messages=chat_prompt(
                 prompt=text, instructions=instructions, msg_history=msg_history
@@ -185,24 +171,6 @@ class OpenAIChatCallable(PromptCallableBase):
             *args,
             **fn_kwargs,
             **kwargs,
-        )
-
-        # Extract string from response
-        if "function_call" in openai_response["choices"][0]["message"]:  # type: ignore
-            output = openai_response["choices"][0]["message"][  # type: ignore
-                "function_call"
-            ]["arguments"]
-        else:
-            output = openai_response["choices"][0]["message"]["content"]  # type: ignore
-
-        return LLMResponse(
-            output=output,
-            prompt_token_count=openai_response["usage"][  # type: ignore
-                "prompt_tokens"
-            ],
-            response_token_count=openai_response["usage"][  # type: ignore
-                "completion_tokens"
-            ],
         )
 
 
@@ -292,9 +260,9 @@ class ArbitraryCallable(PromptCallableBase):
 def get_llm_ask(llm_api: Callable, *args, **kwargs) -> PromptCallableBase:
     if "temperature" not in kwargs:
         kwargs.update({"temperature": 0})
-    if llm_api == openai.Completion.create:
+    if llm_api == get_static_openai_create_func():
         return OpenAICallable(*args, **kwargs)
-    if llm_api == openai.ChatCompletion.create:
+    if llm_api == get_static_openai_chat_create_func():
         return OpenAIChatCallable(*args, **kwargs)
 
     try:
@@ -333,18 +301,11 @@ class AsyncPromptCallableBase(PromptCallableBase):
     ) -> LLMResponse:
         raise NotImplementedError
 
-    @retry(
-        wait=wait_exponential_jitter(max=60),
-        retry=retry_if_exception_type(RETRYABLE_ERRORS),
-    )
-    async def call_llm(self, *args, **kwargs) -> LLMResponse:
-        return await self.invoke_llm(
-            *self.init_args, *args, **self.init_kwargs, **kwargs
-        )
-
     async def __call__(self, *args, **kwargs) -> LLMResponse:
         try:
-            result = await self.call_llm(*args, **kwargs)
+            result = await self.invoke_llm(
+                *self.init_args, *args, **self.init_kwargs, **kwargs
+            )
         except Exception as e:
             raise PromptCallableException(
                 "The callable `fn` passed to `Guard(fn, ...)` failed"
@@ -373,22 +334,16 @@ class AsyncOpenAICallable(AsyncPromptCallableBase):
         *args,
         **kwargs,
     ):
-        api_key = kwargs.pop("api_key", os.environ.get("OPENAI_API_KEY"))
-        openai_response = await openai.Completion.acreate(
-            api_key=api_key,
+        if "api_key" in kwargs:
+            api_key = kwargs.pop("api_key")
+        else:
+            api_key = None
+        aclient = AsyncOpenAIClient(api_key=api_key)
+        return await aclient.create_completion(
             engine=engine,
             prompt=nonchat_prompt(prompt=text, instructions=instructions),
             *args,
             **kwargs,
-        )
-        return LLMResponse(
-            output=openai_response["choices"][0]["text"],  # type: ignore
-            prompt_token_count=openai_response["usage"][  # type: ignore
-                "prompt_tokens"
-            ],
-            response_token_count=openai_response["usage"][  # type: ignore
-                "completion_tokens"
-            ],
         )
 
 
@@ -438,9 +393,12 @@ class AsyncOpenAIChatCallable(AsyncPromptCallableBase):
             fn_kwargs = {}
 
         # Call OpenAI
-        api_key = kwargs.pop("api_key", os.environ.get("OPENAI_API_KEY"))
-        openai_response = await openai.ChatCompletion.acreate(
-            api_key=api_key,
+        if "api_key" in kwargs:
+            api_key = kwargs.pop("api_key")
+        else:
+            api_key = None
+        aclient = AsyncOpenAIClient(api_key=api_key)
+        return await aclient.create_chat_completion(
             model=model,
             messages=chat_prompt(
                 prompt=text, instructions=instructions, msg_history=msg_history
@@ -448,24 +406,6 @@ class AsyncOpenAIChatCallable(AsyncPromptCallableBase):
             *args,
             **fn_kwargs,
             **kwargs,
-        )
-
-        # Extract string from response
-        if "function_call" in openai_response["choices"][0]["message"]:  # type: ignore
-            output = openai_response["choices"][0]["message"][  # type: ignore
-                "function_call"
-            ]["arguments"]
-        else:
-            output = openai_response["choices"][0]["message"]["content"]  # type: ignore
-
-        return LLMResponse(
-            output=output,
-            prompt_token_count=openai_response["usage"][  # type: ignore
-                "prompt_tokens"
-            ],
-            response_token_count=openai_response["usage"][  # type: ignore
-                "completion_tokens"
-            ],
         )
 
 
@@ -533,9 +473,11 @@ class AsyncArbitraryCallable(AsyncPromptCallableBase):
 def get_async_llm_ask(
     llm_api: Callable[[Any], Awaitable[Any]], *args, **kwargs
 ) -> AsyncPromptCallableBase:
-    if llm_api == openai.Completion.acreate:
+
+    # these only work with openai v0 (None otherwise)
+    if llm_api == get_static_openai_acreate_func():
         return AsyncOpenAICallable(*args, **kwargs)
-    if llm_api == openai.ChatCompletion.acreate:
+    if llm_api == get_static_openai_chat_acreate_func():
         return AsyncOpenAIChatCallable(*args, **kwargs)
 
     try:

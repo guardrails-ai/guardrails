@@ -51,6 +51,7 @@ jobs:
             matrix:
                 python-version: ['3.8', '3.9', '3.10', '3.11']
                 pydantic-version: ['1.10.9', '2.4.2']
+                openai-version: ['0.28.1', '1.2.4']
         steps:
             -   uses: actions/checkout@v2
             -   name: Set up Python ${{ matrix.python-version }}
@@ -72,16 +73,27 @@ jobs:
                 run: |
                     make full
                     poetry run pip install pydantic==${{ matrix.pydantic-version }}
+                    poetry run pip install openai==${{ matrix.openai-version }}
 
-            -   if: matrix.pydantic-version == '2.4.2'
-                name: Static analysis with pyright (ignoring pydantic v1)
+            -   if: matrix.pydantic-version == '2.4.2' && matrix.openai-version == '0.28.1'
+                name: Static analysis with pyright (ignoring pydantic v1 and openai v1)
                 run: |
-                    make type-pydantic-v2
+                    make type-pydantic-v2-openai-v0
 
-            -   if: matrix.pydantic-version == '1.10.9'
-                name: Static analysis with mypy (ignoring pydantic v2)
+            -   if: matrix.pydantic-version == '1.10.9' && matrix.openai-version == '0.28.1'
+                name: Static analysis with mypy (ignoring pydantic v2 and openai v1)
                 run: |
-                    make type-pydantic-v1
+                    make type-pydantic-v1-openai-v0
+
+            -   if: matrix.pydantic-version == '2.4.2' && matrix.openai-version == '1.2.4'
+                name: Static analysis with pyright (ignoring pydantic v1 and openai v0)
+                run: |
+                    make type-pydantic-v2-openai-v1
+
+            -   if: matrix.pydantic-version == '1.10.9' && matrix.openai-version == '1.2.4'
+                name: Static analysis with mypy (ignoring pydantic v2 and openai v0)
+                run: |
+                    make type-pydantic-v1-openai-v1
 
     Pytests:
         runs-on: ubuntu-latest
@@ -92,6 +104,7 @@ jobs:
                 # dependencies: ['dev', 'full']
                 dependencies: ['full']
                 pydantic-version: ['1.10.9', '2.4.2']
+                openai-version: ['0.28.1', '1.2.4']
         steps:
             -   uses: actions/checkout@v2
             -   name: Set up Python ${{ matrix.python-version }}
@@ -103,7 +116,7 @@ jobs:
                 uses: actions/cache@v3
                 with:
                     path: ~/.cache/pypoetry
-                    key: poetry-cache-${{ runner.os }}-${{ steps.setup_python.outputs.python-version }}-${{ env.POETRY_VERSION }}-${{ matrix.pydantic-version }}
+                    key: poetry-cache-${{ runner.os }}-${{ steps.setup_python.outputs.python-version }}-${{ env.POETRY_VERSION }}-${{ matrix.pydantic-version }}-${{ matrix.openai-version }}
 
             -   name: Install Poetry
                 uses: snok/install-poetry@v1
@@ -111,7 +124,8 @@ jobs:
             -   name: Install Dependencies
                 run: |
                     make ${{ matrix.dependencies }}
-                    python -m pip install pydantic==${{ matrix.pydantic-version }}
+                    poetry run pip install pydantic==${{ matrix.pydantic-version }}
+                    poetry run pip install openai==${{ matrix.openai-version }}
 
             -   name: Run Pytests
                 run: |
