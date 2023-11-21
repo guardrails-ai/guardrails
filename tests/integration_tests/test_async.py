@@ -5,12 +5,12 @@ import pytest
 
 import guardrails as gd
 from guardrails.schema import JsonSchema
+from guardrails.utils.openai_utils import OPENAI_VERSION
 from tests.integration_tests.test_assets.fixtures import (  # noqa
     fixture_llm_output,
     fixture_rail_spec,
     fixture_validated_output,
 )
-from guardrails.utils.openai_utils import OPENAI_VERSION
 
 from .mock_llm_outputs import MockAsyncOpenAICallable, entity_extraction
 

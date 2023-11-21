@@ -91,7 +91,7 @@ class Text2Sql:
             llm_api = get_static_openai_create_func()
 
         self.example_formatter = example_formatter
-        self.llm_api: Callable = llm_api
+        self.llm_api = llm_api
         self.llm_api_kwargs = llm_api_kwargs or {"max_tokens": 512}
 
         # Initialize the SQL driver.
