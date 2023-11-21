@@ -46,7 +46,7 @@ def test_similar_to_list():
     # Check types remain intact
     output_schema: StringSchema = guard.rail.output_schema
     data_type: DataType = output_schema.root_datatype
-    validators = data_type.format_attr.validators
+    validators = data_type.validators_attr.validators
     validator: SimilarToList = validators[0]
 
     assert isinstance(validator._standard_deviations, int)

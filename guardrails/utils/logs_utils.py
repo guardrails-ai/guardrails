@@ -9,6 +9,7 @@ from rich.table import Table
 from rich.tree import Tree
 
 from guardrails.prompt import Instructions, Prompt
+from guardrails.utils.llm_response import LLMResponse
 from guardrails.utils.pydantic_utils import ArbitraryModel
 from guardrails.utils.reask_utils import (
     FieldReAsk,
@@ -34,12 +35,6 @@ class FieldValidationLogs(ArbitraryModel):
 
     validator_logs: List[ValidatorLogs] = Field(default_factory=list)
     children: Dict[Union[int, str], "FieldValidationLogs"] = Field(default_factory=dict)
-
-
-class LLMResponse(ArbitraryModel):
-    prompt_token_count: Optional[int] = None
-    response_token_count: Optional[int] = None
-    output: str
 
 
 class GuardLogs(ArbitraryModel):

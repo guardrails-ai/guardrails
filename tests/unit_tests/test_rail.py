@@ -1,3 +1,5 @@
+import pytest
+
 from guardrails.rail import Rail
 
 
@@ -147,3 +149,26 @@ Hello world
 </rail>
 """
     Rail.from_string(rail_spec)
+
+
+def test_format_deprecated():
+    rail_spec = """
+    <rail version="0.1">
+    <output>
+      <string name="string_name" format="two-words"/>
+    </output>
+
+    <instructions>
+    Hello world
+    </instructions>
+
+    <prompt>
+    Hello world
+    </prompt>
+
+    </rail>
+    """
+    with pytest.warns(DeprecationWarning):
+        rail = Rail.from_string(rail_spec)
+    validator = rail.output_schema.root_datatype.children.string_name.validators[0]
+    assert validator.rail_alias == "two-words"
