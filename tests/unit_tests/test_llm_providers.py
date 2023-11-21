@@ -290,7 +290,7 @@ def test_openai_callable(mocker, openai_mock):
 def test_openai_stream_callable(mocker, openai_stream_mock, non_chat_token_count_mock):
     mocker.patch("openai.Completion.create", return_value=openai_stream_mock)
     mocker.patch(
-        "guardrails.llm_providers.num_tokens_from_string",
+        "guardrails.utils.openai_utils.v0.num_tokens_from_string",
         return_value=non_chat_token_count_mock,
     )
 
@@ -328,7 +328,7 @@ async def test_async_openai_stream_callable(
 ):
     mocker.patch("openai.Completion.acreate", return_value=openai_async_stream_mock)
     mocker.patch(
-        "guardrails.llm_providers.num_tokens_from_string",
+        "guardrails.utils.openai_utils.v0.num_tokens_from_string",
         return_value=non_chat_token_count_mock,
     )
 
@@ -368,11 +368,11 @@ def test_openai_chat_stream_callable(
 ):
     mocker.patch("openai.ChatCompletion.create", return_value=openai_chat_stream_mock)
     mocker.patch(
-        "guardrails.llm_providers.num_tokens_from_messages",
+        "guardrails.utils.openai_utils.v0.num_tokens_from_messages",
         return_value=chat_token_count_mock,
     )
     mocker.patch(
-        "guardrails.llm_providers.num_tokens_from_string",
+        "guardrails.utils.openai_utils.v0.num_tokens_from_string",
         return_value=non_chat_token_count_mock,
     )
 
@@ -414,11 +414,11 @@ async def test_async_openai_chat_stream_callable(
         "openai.ChatCompletion.acreate", return_value=openai_async_chat_stream_mock
     )
     mocker.patch(
-        "guardrails.llm_providers.num_tokens_from_messages",
+        "guardrails.utils.openai_utils.v0.num_tokens_from_messages",
         return_value=chat_token_count_mock,
     )
     mocker.patch(
-        "guardrails.llm_providers.num_tokens_from_string",
+        "guardrails.utils.openai_utils.v0.num_tokens_from_string",
         return_value=non_chat_token_count_mock,
     )
 

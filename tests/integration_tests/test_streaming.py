@@ -91,7 +91,7 @@ def test_streaming_with_openai_callable(
 
     mocker.patch("openai.Completion.create", return_value=mock_openai_completion_create)
     mocker.patch(
-        "guardrails.llm_providers.num_tokens_from_string",
+        "guardrails.utils.openai_utils.v0.num_tokens_from_string",
         return_value=non_chat_token_count_mock,
     )
 
@@ -128,11 +128,11 @@ def test_streaming_with_openai_chat_callable(
         "openai.ChatCompletion.create", return_value=mock_openai_chat_completion_create
     )
     mocker.patch(
-        "guardrails.llm_providers.num_tokens_from_messages",
+        "guardrails.utils.openai_utils.v0.num_tokens_from_messages",
         return_value=chat_token_count_mock,
     )
     mocker.patch(
-        "guardrails.llm_providers.num_tokens_from_string",
+        "guardrails.utils.openai_utils.v0.num_tokens_from_string",
         return_value=non_chat_token_count_mock,
     )
 
