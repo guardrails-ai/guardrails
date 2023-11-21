@@ -78,7 +78,7 @@ class OpenAIClientV0(BaseSyncOpenAIClient):
         self, model: str, messages: List[Any], *args, **kwargs
     ) -> LLMResponse:
         response = openai.ChatCompletion.create(
-            api_key=self.api_key, model=model, prompt=messages, *args, **kwargs
+            api_key=self.api_key, model=model, messages=messages, *args, **kwargs
         )
 
         # Extract string from response
