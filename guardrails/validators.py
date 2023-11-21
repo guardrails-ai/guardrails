@@ -735,9 +735,7 @@ class SimilarToDocument(Validator):
             input=[value], model=self._model
         )
 
-        value_embedding = np.array(
-            embedding_response[0]  # type: ignore
-        )
+        value_embedding = np.array(embedding_response[0])  # type: ignore
 
         similarity = self.cosine_similarity(
             self._document_embedding,
