@@ -15,7 +15,7 @@ guardrails = "guardrails.cli:cli"
 [tool.poetry.dependencies]
 python = "^3.8"
 lxml = "^4.9.3"
-openai = "<=0.28.1"
+openai = "<2"
 rich = "^13.6.0"
 eliot = "^1.15.0"
 eliot-tree = "^21.0.0"
