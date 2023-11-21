@@ -393,8 +393,9 @@ class Guard:
                     guard_state=self.guard_state,
                     full_schema_reask=full_schema_reask,
                 )
-                guard_history = runner(prompt_params=prompt_params)
-                return guard_history.output, guard_history.validated_output
+                # guard_history = runner(prompt_params=prompt_params)
+                # return guard_history.output, guard_history.validated_output
+                return runner(prompt_params=prompt_params)
 
     async def _call_async(
         self,
