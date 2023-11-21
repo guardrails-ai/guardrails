@@ -1,6 +1,5 @@
 """Class for representing a prompt entry."""
 import re
-import warnings
 from string import Template
 from typing import Optional
 
@@ -48,13 +47,6 @@ class BasePrompt:
         """Substitute constants in the prompt."""
         # Substitute constants by reading the constants file.
         # Regex to extract all occurrences of ${gr.<constant_name>}
-        if self.uses_old_constant_schema(text):
-            warnings.warn(
-                "It appears that you are using an old schema for gaurdrails variables, "
-                "follow the new namespaced convention "
-                "documented here: https://docs.guardrailsai.com/0-2-migration/"
-            )
-
         matches = re.findall(r"\${gr\.(\w+)}", text)
 
         # Substitute all occurrences of ${gr.<constant_name>}
@@ -65,13 +57,6 @@ class BasePrompt:
             text = template.safe_substitute(**mapping)
 
         return text
-
-    def uses_old_constant_schema(self, text) -> bool:
-        matches = re.findall(r"@(\w+)", text)
-        if len(matches) == 0:
-            return False
-        else:
-            return True
 
     def get_prompt_variables(self):
         return self.variable_names

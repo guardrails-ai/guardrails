@@ -1,7 +1,6 @@
 """Unit tests for prompt and instructions parsing."""
 
 from string import Template
-from unittest import mock
 
 import pytest
 from pydantic import BaseModel, Field
@@ -230,31 +229,6 @@ def test_substitute_constants(prompt_str, final_prompt):
     """Test substituting constants in a prompt."""
     prompt = gd.Prompt(prompt_str)
     assert prompt.source == final_prompt
-
-
-# TODO: Deprecate when we can confirm migration off the old, non-namespaced standard
-@pytest.mark.parametrize(
-    "text, is_old_schema",
-    [
-        (RAIL_WITH_OLD_CONSTANT_SCHEMA, True),  # Test with a single match
-        (
-            RAIL_WITH_FORMAT_INSTRUCTIONS,
-            False,
-        ),  # Test with no matches/correct namespacing
-    ],
-)
-def test_uses_old_constant_schema(text, is_old_schema):
-    with mock.patch("warnings.warn") as warn_mock:
-        guard = gd.Guard.from_rail_string(text)
-        assert guard.prompt.uses_old_constant_schema(text) == is_old_schema
-        if is_old_schema:
-            # we only check for the warning when we have an older schema
-            warn_mock.assert_called_once_with(
-                """It appears that you are using an old schema for gaurdrails\
- variables, follow the new namespaced convention documented here:\
- https://docs.guardrailsai.com/0-2-migration/\
-"""
-            )
 
 
 class TestResponse(BaseModel):
