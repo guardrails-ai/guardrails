@@ -54,7 +54,8 @@ def test_similar_to_list():
 
     # 1. Test for integer values
     # 1.1 Test for values within the standard deviation
-    val = 3
+    # llm_output must be a string
+    val = '3'
     _, output, *rest = guard.parse(
         llm_output=val,
         metadata={"prev_values": int_prev_values},
