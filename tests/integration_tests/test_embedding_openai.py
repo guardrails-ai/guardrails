@@ -49,7 +49,6 @@ class TestOpenAIEmbedding:
         assert len(result) == 1536
 
     def test_embed_query(self, mocker):
-        print("OPENAI_VERSION: ", OPENAI_VERSION)
         mock_create = None
         if OPENAI_VERSION.startswith("0"):
             mock_create = mocker.patch("openai.Embedding.create")
@@ -67,7 +66,6 @@ class TestOpenAIEmbedding:
         mock_environ = mocker.patch("os.environ.get")
         mock_environ.return_value = "test_api_key"
 
-        print("OPENAI_VERSION: ", OPENAI_VERSION)
         mock_create = None
         if OPENAI_VERSION.startswith("0"):
             mock_create = mocker.patch("openai.Embedding.create")
