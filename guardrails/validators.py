@@ -710,7 +710,7 @@ class SimilarToDocument(Validator):
 
         self._document = document
         embedding_response = self.client.create_embedding(input=[document], model=model)
-        embedding = embedding_response["data"][0]["embedding"]  # type: ignore
+        embedding = embedding_response[0]  # type: ignore
         self._document_embedding = np.array(embedding)
         self._model = model
         self._threshold = float(threshold)
@@ -736,7 +736,7 @@ class SimilarToDocument(Validator):
         )
 
         value_embedding = np.array(
-            embedding_response["data"][0]["embedding"]  # type: ignore
+            embedding_response[0]  # type: ignore
         )
 
         similarity = self.cosine_similarity(
