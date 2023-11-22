@@ -1,5 +1,4 @@
 import importlib.util
-import os
 from typing import Any, Callable
 from unittest.mock import MagicMock
 
@@ -457,7 +456,7 @@ def test_openai_chat_stream_callable(
 async def test_async_openai_chat_callable(mocker, openai_chat_mock):
     mock_environ = mocker.patch("os.environ.get")
     mock_environ.return_value = "sk-xxxxxxxxxxxxxx"
-    
+
     mocker.patch("openai.ChatCompletion.acreate", return_value=openai_chat_mock)
 
     from guardrails.llm_providers import AsyncOpenAIChatCallable
@@ -481,7 +480,7 @@ async def test_async_openai_chat_stream_callable(
 ):
     mock_environ = mocker.patch("os.environ.get")
     mock_environ.return_value = "sk-xxxxxxxxxxxxxx"
-    
+
     mocker.patch(
         "openai.ChatCompletion.acreate", return_value=openai_async_chat_stream_mock
     )
@@ -519,7 +518,7 @@ async def test_async_openai_chat_stream_callable(
 def test_openai_chat_model_callable(mocker, openai_chat_mock):
     mock_environ = mocker.patch("os.environ.get")
     mock_environ.return_value = "sk-xxxxxxxxxxxxxx"
-    
+
     if OPENAI_VERSION.startswith("0"):
         mocker.patch("openai.ChatCompletion.create", return_value=openai_chat_mock)
     else:

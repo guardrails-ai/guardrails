@@ -4,7 +4,6 @@
 # Using the LowerCase Validator
 
 import os
-from guardrails.utils.safe_get import safe_get_with_brackets
 
 import openai
 import pytest
@@ -12,6 +11,7 @@ from pydantic import BaseModel, Field
 
 import guardrails as gd
 from guardrails.utils.openai_utils import OPENAI_VERSION
+from guardrails.utils.safe_get import safe_get_with_brackets
 from guardrails.validators import LowerCase
 
 # Set mock OpenAI API key
@@ -95,6 +95,7 @@ def test_streaming_with_openai_callable(
 
     Mocks openai.Completion.create.
     """
+
     def mock_os_environ_get(key, *args):
         if key == "OPENAI_API_KEY":
             return "sk-xxxxxxxxxxxxxx"
@@ -137,10 +138,7 @@ def test_streaming_with_openai_callable(
     )
 
     assert raw_output == '{"statement": "I am DOING well, and I HOPE you aRe too."}'
-    assert (
-        validated_output
-        == {'statement': 'i am doing well, and i hope you are too.'}
-    )
+    assert validated_output == {"statement": "i am doing well, and i hope you are too."}
 
 
 def test_streaming_with_openai_chat_callable(
@@ -153,6 +151,7 @@ def test_streaming_with_openai_chat_callable(
 
     Mocks openai.ChatCompletion.create.
     """
+
     def mock_os_environ_get(key, *args):
         if key == "OPENAI_API_KEY":
             return "sk-xxxxxxxxxxxxxx"
