@@ -1,5 +1,7 @@
 #!/bin/bash
 
+python ./.github/workflows/scripts/download_nltk.py
+
 cd docs/examples
 
 # Function to process a notebook
