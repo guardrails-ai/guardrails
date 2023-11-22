@@ -6,7 +6,8 @@ from guardrails.classes.inputs import Inputs
 
 class CallInputs(Inputs):
     llm_api: Optional[Callable[[Any], Awaitable[Any]]] = Field(
-        description="The LLM function provided by the user during Guard.__call__ or Guard.parse."
+        description="The LLM function provided by the user during Guard.__call__ or Guard.parse.",
+        default=None
     )
     prompt: Optional[str] = Field(
         description="The prompt string as provided by the user.",
