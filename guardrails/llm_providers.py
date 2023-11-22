@@ -103,6 +103,10 @@ class OpenAICallable(PromptCallableBase):
             api_key = kwargs.pop("api_key")
         else:
             api_key = None
+
+        if "model" in kwargs:
+            engine = kwargs.pop("model")
+
         client = OpenAIClient(api_key=api_key)
         return client.create_completion(
             engine=engine,
@@ -338,6 +342,10 @@ class AsyncOpenAICallable(AsyncPromptCallableBase):
             api_key = kwargs.pop("api_key")
         else:
             api_key = None
+
+        if "model" in kwargs:
+            engine = kwargs.pop("model")
+
         aclient = AsyncOpenAIClient(api_key=api_key)
         return await aclient.create_completion(
             engine=engine,
