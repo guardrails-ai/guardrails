@@ -243,7 +243,7 @@ def string_rail_spec():
 <rail version="0.1">
 <output
   type="string"
-  format="two-words"
+  validators="two-words"
   on-fail-two-words="fix"
 />
 <prompt>

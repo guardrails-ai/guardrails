@@ -33,11 +33,11 @@ def test_choice_validation(llm_output, raises):
 <output>
     <choice name="choice" on-fail-choice="exception" discriminator="action">
         <case name="fight">
-            <string name="fight_move" format="valid-choices: {['punch','kick','headbutt']}" on-fail-valid-choices="exception" />
+            <string name="fight_move" validators="valid-choices: {['punch','kick','headbutt']}" on-fail-valid-choices="exception" />
         </case>
         <case name="flight">
-            <string name="flight_direction" format="valid-choices: {['north','south','east','west']}" on-fail-valid-choices="exception" />
-            <integer name="flight_speed" format="valid-choices: {[1,2,3,4]}" on-fail-valid-choices="exception" />
+            <string name="flight_direction" validators="valid-choices: {['north','south','east','west']}" on-fail-valid-choices="exception" />
+            <integer name="flight_speed" validators="valid-choices: {[1,2,3,4]}" on-fail-valid-choices="exception" />
         </case>
     </choice>
 </output>
