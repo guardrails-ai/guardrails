@@ -3,6 +3,8 @@
 # 2. Test streaming with OpenAIChatCallable (mock openai.ChatCompletion.create)
 # Using the LowerCase Validator
 
+import os
+
 import openai
 import pytest
 from pydantic import BaseModel, Field
@@ -10,6 +12,9 @@ from pydantic import BaseModel, Field
 import guardrails as gd
 from guardrails.utils.openai_utils import OPENAI_VERSION
 from guardrails.validators import LowerCase
+
+# Set mock OpenAI API key
+os.environ["OPENAI_API_KEY"] = "sk-xxxxxxxxxxxxxx"
 
 
 @pytest.fixture(scope="module")
@@ -90,14 +95,19 @@ def test_streaming_with_openai_callable(
     Mocks openai.Completion.create.
     """
 
-    mocker.patch("openai.Completion.create", return_value=mock_openai_completion_create)
-
     if OPENAI_VERSION.startswith("0"):
+        mocker.patch(
+            "openai.Completion.create", return_value=mock_openai_completion_create
+        )
         mocker.patch(
             "guardrails.utils.openai_utils.v0.num_tokens_from_string",
             return_value=non_chat_token_count_mock,
         )
     else:
+        mocker.patch(
+            "openai.resources.Completions.create",
+            return_value=mock_openai_completion_create,
+        )
         mocker.patch(
             "guardrails.utils.openai_utils.v1.num_tokens_from_string",
             return_value=non_chat_token_count_mock,
@@ -106,8 +116,13 @@ def test_streaming_with_openai_callable(
     # Create a guard object
     guard = gd.Guard.from_pydantic(output_class=LowerCaseValue, prompt=PROMPT)
 
+    method = (
+        openai.Completion.create
+        if OPENAI_VERSION.startswith("0")
+        else openai.completions.create
+    )
     raw_output, validated_output = guard(
-        openai.Completion.create,
+        method,
         engine="text-davinci-003",
         max_tokens=10,
         temperature=0,
@@ -132,11 +147,11 @@ def test_streaming_with_openai_chat_callable(
     Mocks openai.ChatCompletion.create.
     """
 
-    mocker.patch(
-        "openai.ChatCompletion.create", return_value=mock_openai_chat_completion_create
-    )
-
     if OPENAI_VERSION.startswith("0"):
+        mocker.patch(
+            "openai.ChatCompletion.create",
+            return_value=mock_openai_chat_completion_create,
+        )
         mocker.patch(
             "guardrails.utils.openai_utils.v0.num_tokens_from_messages",
             return_value=chat_token_count_mock,
@@ -146,6 +161,10 @@ def test_streaming_with_openai_chat_callable(
             return_value=non_chat_token_count_mock,
         )
     else:
+        mocker.patch(
+            "openai.resources.chat.completions.Completions.create",
+            return_value=mock_openai_chat_completion_create,
+        )
         mocker.patch(
             "guardrails.utils.openai_utils.v1.num_tokens_from_messages",
             return_value=chat_token_count_mock,
@@ -158,8 +177,13 @@ def test_streaming_with_openai_chat_callable(
     # Create a guard object
     guard = gd.Guard.from_pydantic(output_class=LowerCaseValue, prompt=PROMPT)
 
+    method = (
+        openai.ChatCompletion.create
+        if OPENAI_VERSION.startswith("0")
+        else openai.chat.completions.create
+    )
     raw_output, validated_output = guard(
-        openai.ChatCompletion.create,
+        method,
         model="gpt-3.5-turbo",
         max_tokens=10,
         temperature=0,

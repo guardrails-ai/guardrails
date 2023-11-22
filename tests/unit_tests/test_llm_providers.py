@@ -1,4 +1,5 @@
 import importlib.util
+import os
 from typing import Any, Callable
 from unittest.mock import MagicMock
 
@@ -16,6 +17,9 @@ from guardrails.llm_providers import (
 from guardrails.utils.openai_utils import OPENAI_VERSION
 
 from .mocks import MockAsyncOpenAILlm, MockOpenAILlm
+
+# Set the mock OpenAI API key
+os.environ["OPENAI_API_KEY"] = "sk-xxxxxxxxxxxxxx"
 
 # def test_openai_callable_retries_on_retryable_errors(mocker):
 #     llm = MockCustomLlm()
@@ -288,13 +292,16 @@ def test_openai_callable(mocker, openai_mock):
 
 
 def test_openai_stream_callable(mocker, openai_stream_mock, non_chat_token_count_mock):
-    mocker.patch("openai.Completion.create", return_value=openai_stream_mock)
     if OPENAI_VERSION.startswith("0"):
+        mocker.patch("openai.Completion.create", return_value=openai_stream_mock)
         mocker.patch(
             "guardrails.utils.openai_utils.v0.num_tokens_from_string",
             return_value=non_chat_token_count_mock,
         )
     else:
+        mocker.patch(
+            "openai.resources.Completions.create", return_value=openai_stream_mock
+        )
         mocker.patch(
             "guardrails.utils.openai_utils.v1.num_tokens_from_string",
             return_value=non_chat_token_count_mock,
@@ -329,6 +336,7 @@ async def test_async_openai_callable(mocker, openai_mock):
 
 
 @pytest.mark.asyncio
+@pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="OpenAI v0 only")
 async def test_async_openai_stream_callable(
     mocker, openai_async_stream_mock, non_chat_token_count_mock
 ):
@@ -378,9 +386,10 @@ def test_openai_chat_callable(mocker, openai_chat_mock):
 def test_openai_chat_stream_callable(
     mocker, openai_chat_stream_mock, chat_token_count_mock, non_chat_token_count_mock
 ):
-    mocker.patch("openai.ChatCompletion.create", return_value=openai_chat_stream_mock)
-
     if OPENAI_VERSION.startswith("0"):
+        mocker.patch(
+            "openai.ChatCompletion.create", return_value=openai_chat_stream_mock
+        )
         mocker.patch(
             "guardrails.utils.openai_utils.v0.num_tokens_from_messages",
             return_value=chat_token_count_mock,
@@ -390,6 +399,10 @@ def test_openai_chat_stream_callable(
             return_value=non_chat_token_count_mock,
         )
     else:
+        mocker.patch(
+            "openai.resources.chat.completions.Completions.create",
+            return_value=openai_chat_stream_mock,
+        )
         mocker.patch(
             "guardrails.utils.openai_utils.v1.num_tokens_from_messages",
             return_value=chat_token_count_mock,
@@ -427,6 +440,7 @@ async def test_async_openai_chat_callable(mocker, openai_chat_mock):
 
 
 @pytest.mark.asyncio
+@pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="OpenAI v0 only")
 async def test_async_openai_chat_stream_callable(
     mocker,
     openai_async_chat_stream_mock,

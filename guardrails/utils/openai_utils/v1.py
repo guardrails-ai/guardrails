@@ -85,7 +85,7 @@ class OpenAIClientV1(BaseOpenAIClient):
             complete_output = ""
             openai_response = cast(Iterable[Dict[str, Any]], openai_response)
             for response in openai_response:
-                complete_output += response.choices[0].text
+                complete_output += response["choices"][0]["text"]
 
             # Also, it no longer returns usage information
             # So manually count the tokens using tiktoken
@@ -183,12 +183,12 @@ class OpenAIClientV1(BaseOpenAIClient):
         if openai_response.usage is None:
             raise ValueError("No token counts returned from OpenAI")
 
-        if "function_call" in openai_response["choices"][0]["message"]:  # type: ignore
-            output = openai_response["choices"][0]["message"][  # type: ignore
-                "function_call"
-            ]["arguments"]
+        if "function_call" in openai_response.choices[0].message:  # type: ignore
+            output = openai_response.choices[
+                0
+            ].message.function_call.arguments  # noqa: E501 # type: ignore
         else:
-            output = openai_response["choices"][0]["message"]["content"]  # type: ignore
+            output = openai_response.choices[0].message.content  # type: ignore
 
         return LLMResponse(
             output=output,
@@ -243,7 +243,7 @@ class AsyncOpenAIClientV1(BaseOpenAIClient):
             complete_output = ""
             openai_response = cast(AsyncIterable[Dict[str, Any]], openai_response)
             async for response in openai_response:
-                complete_output += response.choices[0].text
+                complete_output += response["choices"][0]["text"]
 
             # Also, it no longer returns usage information
             # So manually count the tokens using tiktoken
