@@ -4,6 +4,7 @@
 # Using the LowerCase Validator
 
 import os
+from guardrails.utils.safe_get import safe_get_with_brackets
 
 import openai
 import pytest
@@ -14,7 +15,7 @@ from guardrails.utils.openai_utils import OPENAI_VERSION
 from guardrails.validators import LowerCase
 
 # Set mock OpenAI API key
-os.environ["OPENAI_API_KEY"] = "sk-xxxxxxxxxxxxxx"
+# os.environ["OPENAI_API_KEY"] = "sk-xxxxxxxxxxxxxx"
 
 
 @pytest.fixture(scope="module")
@@ -94,6 +95,12 @@ def test_streaming_with_openai_callable(
 
     Mocks openai.Completion.create.
     """
+    def mock_os_environ_get(key, *args):
+        if key == "OPENAI_API_KEY":
+            return "sk-xxxxxxxxxxxxxx"
+        return safe_get_with_brackets(os.environ, key, *args)
+
+    mocker.patch("os.environ.get", side_effect=mock_os_environ_get)
 
     if OPENAI_VERSION.startswith("0"):
         mocker.patch(
@@ -121,7 +128,7 @@ def test_streaming_with_openai_callable(
         if OPENAI_VERSION.startswith("0")
         else openai.completions.create
     )
-    raw_output, validated_output = guard(
+    raw_output, validated_output, *rest = guard(
         method,
         engine="text-davinci-003",
         max_tokens=10,
@@ -131,8 +138,8 @@ def test_streaming_with_openai_callable(
 
     assert raw_output == '{"statement": "I am DOING well, and I HOPE you aRe too."}'
     assert (
-        str(validated_output)
-        == "{'statement': 'i am doing well, and i hope you are too.'}"
+        validated_output
+        == {'statement': 'i am doing well, and i hope you are too.'}
     )
 
 
@@ -146,6 +153,12 @@ def test_streaming_with_openai_chat_callable(
 
     Mocks openai.ChatCompletion.create.
     """
+    def mock_os_environ_get(key, *args):
+        if key == "OPENAI_API_KEY":
+            return "sk-xxxxxxxxxxxxxx"
+        return safe_get_with_brackets(os.environ, key, *args)
+
+    mocker.patch("os.environ.get", side_effect=mock_os_environ_get)
 
     if OPENAI_VERSION.startswith("0"):
         mocker.patch(
@@ -182,7 +195,7 @@ def test_streaming_with_openai_chat_callable(
         if OPENAI_VERSION.startswith("0")
         else openai.chat.completions.create
     )
-    raw_output, validated_output = guard(
+    raw_output, validated_output, *rest = guard(
         method,
         model="gpt-3.5-turbo",
         max_tokens=10,
