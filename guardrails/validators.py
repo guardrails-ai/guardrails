@@ -811,7 +811,14 @@ class IsHighQualityTranslation(Validator):
         try:
             from inspiredco.critique import Critique  # type: ignore
 
-            self._critique = Critique(api_key=os.environ.get("INSPIREDCO_API_KEY"))
+            inspiredco_api_key = os.environ.get("INSPIREDCO_API_KEY")
+            if not inspiredco_api_key:
+                raise ValueError(
+                    "The INSPIREDCO_API_KEY environment variable must be set"
+                    "in order to use the is-high-quality-translation validator!"
+                )
+
+            self._critique = Critique(api_key=inspiredco_api_key)
 
         except ImportError:
             raise ImportError(
