@@ -8,13 +8,23 @@ autoformat:
 type:
 	poetry run pyright guardrails/
 
-type-pydantic-v1:
-	echo '{"exclude": ["guardrails/utils/pydantic_utils/v2.py"]}' > pyrightconfig.json
+type-pydantic-v1-openai-v0:
+	echo '{"exclude": ["guardrails/utils/pydantic_utils/v2.py", "guardrails/utils/openai_utils/v1.py"]}' > pyrightconfig.json
 	poetry run pyright guardrails/
 	rm pyrightconfig.json
 
-type-pydantic-v2:
-	echo '{"exclude": ["guardrails/utils/pydantic_utils/v1.py"]}' > pyrightconfig.json
+type-pydantic-v1-openai-v1:
+	echo '{"exclude": ["guardrails/utils/pydantic_utils/v2.py", "guardrails/utils/openai_utils/v0.py"]}' > pyrightconfig.json
+	poetry run pyright guardrails/
+	rm pyrightconfig.json
+
+type-pydantic-v2-openai-v0:
+	echo '{"exclude": ["guardrails/utils/pydantic_utils/v1.py", "guardrails/utils/openai_utils/v1.py"]}' > pyrightconfig.json
+	poetry run pyright guardrails/
+	rm pyrightconfig.json
+
+type-pydantic-v2-openai-v1:
+	echo '{"exclude": ["guardrails/utils/pydantic_utils/v1.py", "guardrails/utils/openai_utils/v0.py"]}' > pyrightconfig.json
 	poetry run pyright guardrails/
 	rm pyrightconfig.json
 

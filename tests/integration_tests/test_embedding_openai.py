@@ -31,12 +31,13 @@ class MockResponse:
 
 @pytest.fixture
 def mock_openai_embedding(monkeypatch):
-    monkeypatch.setattr("openai.Embedding.create", MockOpenAIEmbedding())
+    monkeypatch.setattr("openai.resources.Embeddings.create", MockOpenAIEmbedding())
     return MockOpenAIEmbedding
 
 
 @pytest.mark.skipif(
-    os.environ.get("OPENAI_API_KEY") is None, reason="openai api key not set"
+    os.environ.get("OPENAI_API_KEY") in [None, "mocked"],
+    reason="openai api key not set",
 )
 class TestOpenAIEmbedding:
     def test_embedding_texts(self):
@@ -57,7 +58,10 @@ class TestOpenAIEmbedding:
         assert result == [1.0, 2.0, 3.0]
 
     @patch("os.environ.get", return_value="test_api_key")
-    @patch("openai.Embedding.create", return_value=MockResponse(data=[[1.0, 2.0, 3.0]]))
+    @patch(
+        "openai.resources.Embeddings.create",
+        return_value=MockResponse(data=[[1.0, 2.0, 3.0]]),
+    )
     def test__get_embedding(self, mock_create, mock_get_env):
         instance = OpenAIEmbedding(api_key="test_api_key")
         result = instance._get_embedding(["test text"])

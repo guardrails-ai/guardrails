@@ -778,11 +778,11 @@ class StringSchema(Schema):
                 "Here's a description of what I want you to generate: "
                 f"{obj.description}"
             )
-        if not obj.format_attr.empty:
+        if not obj.validators_attr.empty:
             schema += (
                 "\n\nYour generated response should satisfy the following properties:"
             )
-            for validator in obj.format_attr.validators:
+            for validator in obj.validators_attr.validators:
                 schema += f"\n- {validator.to_prompt()}"
 
         schema += "\n\nDon't talk; just go."
@@ -816,8 +816,8 @@ class Schema2Prompt:
         if dt.description:
             el.attrib["description"] = dt.description
 
-        if dt.format_attr:
-            format_prompt = dt.format_attr.to_prompt()
+        if dt.validators_attr:
+            format_prompt = dt.validators_attr.to_prompt()
             if format_prompt:
                 el.attrib["format"] = format_prompt
 
