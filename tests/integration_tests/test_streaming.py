@@ -8,6 +8,7 @@ import pytest
 from pydantic import BaseModel, Field
 
 import guardrails as gd
+from guardrails.utils.openai_utils import OPENAI_VERSION
 from guardrails.validators import LowerCase
 
 
@@ -90,10 +91,17 @@ def test_streaming_with_openai_callable(
     """
 
     mocker.patch("openai.Completion.create", return_value=mock_openai_completion_create)
-    mocker.patch(
-        "guardrails.utils.openai_utils.v0.num_tokens_from_string",
-        return_value=non_chat_token_count_mock,
-    )
+
+    if OPENAI_VERSION.startswith("0"):
+        mocker.patch(
+            "guardrails.utils.openai_utils.v0.num_tokens_from_string",
+            return_value=non_chat_token_count_mock,
+        )
+    else:
+        mocker.patch(
+            "guardrails.utils.openai_utils.v1.num_tokens_from_string",
+            return_value=non_chat_token_count_mock,
+        )
 
     # Create a guard object
     guard = gd.Guard.from_pydantic(output_class=LowerCaseValue, prompt=PROMPT)
@@ -127,14 +135,25 @@ def test_streaming_with_openai_chat_callable(
     mocker.patch(
         "openai.ChatCompletion.create", return_value=mock_openai_chat_completion_create
     )
-    mocker.patch(
-        "guardrails.utils.openai_utils.v0.num_tokens_from_messages",
-        return_value=chat_token_count_mock,
-    )
-    mocker.patch(
-        "guardrails.utils.openai_utils.v0.num_tokens_from_string",
-        return_value=non_chat_token_count_mock,
-    )
+
+    if OPENAI_VERSION.startswith("0"):
+        mocker.patch(
+            "guardrails.utils.openai_utils.v0.num_tokens_from_messages",
+            return_value=chat_token_count_mock,
+        )
+        mocker.patch(
+            "guardrails.utils.openai_utils.v0.num_tokens_from_string",
+            return_value=non_chat_token_count_mock,
+        )
+    else:
+        mocker.patch(
+            "guardrails.utils.openai_utils.v1.num_tokens_from_messages",
+            return_value=chat_token_count_mock,
+        )
+        mocker.patch(
+            "guardrails.utils.openai_utils.v1.num_tokens_from_string",
+            return_value=non_chat_token_count_mock,
+        )
 
     # Create a guard object
     guard = gd.Guard.from_pydantic(output_class=LowerCaseValue, prompt=PROMPT)
