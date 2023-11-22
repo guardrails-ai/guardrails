@@ -11,10 +11,10 @@ from dateutil.parser import parse
 from lxml import etree as ET
 from typing_extensions import Self
 
-from guardrails.formatattr import FormatAttr
 from guardrails.utils.casting_utils import to_float, to_int, to_string
 from guardrails.utils.xml_utils import cast_xml_to_string
 from guardrails.validator_base import Validator, ValidatorSpec
+from guardrails.validatorsattr import ValidatorsAttr
 
 logger = logging.getLogger(__name__)
 
@@ -62,20 +62,20 @@ class DataType:
     def __init__(
         self,
         children: Dict[str, Any],
-        format_attr: FormatAttr,
+        validators_attr: ValidatorsAttr,
         optional: bool,
         name: Optional[str],
         description: Optional[str],
     ) -> None:
         self._children = children
-        self.format_attr = format_attr
+        self.validators_attr = validators_attr
         self.name = name
         self.description = description
         self.optional = optional
 
     @property
     def validators(self) -> TypedList:
-        return self.format_attr.validators
+        return self.validators_attr.validators
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self._children})"
@@ -119,9 +119,9 @@ class DataType:
     @classmethod
     def from_xml(cls, element: ET._Element, strict: bool = False, **kwargs) -> Self:
         # TODO: don't want to pass strict through to DataType,
-        # but need to pass it to FormatAttr.from_xml
+        # but need to pass it to ValidatorsAttr.from_element
         # how to handle this?
-        format_attr = FormatAttr.from_xml(element, cls.tag, strict)
+        validators_attr = ValidatorsAttr.from_xml(element, cls.tag, strict)
 
         is_optional = element.attrib.get("required", "true") == "false"
 
@@ -133,7 +133,7 @@ class DataType:
         if description is not None:
             description = cast_xml_to_string(description)
 
-        data_type = cls({}, format_attr, is_optional, name, description, **kwargs)
+        data_type = cls({}, validators_attr, is_optional, name, description, **kwargs)
         data_type.set_children_from_xml(element)
         return data_type
 
@@ -203,7 +203,7 @@ class String(ScalarType):
     ) -> Self:
         return cls(
             children={},
-            format_attr=FormatAttr.from_validators(validators, cls.tag, strict),
+            validators_attr=ValidatorsAttr.from_validators(validators, cls.tag, strict),
             optional=False,
             name=None,
             description=description,
@@ -267,12 +267,12 @@ class Date(ScalarType):
     def __init__(
         self,
         children: Dict[str, Any],
-        format_attr: "FormatAttr",
+        validators_attr: "ValidatorsAttr",
         optional: bool,
         name: Optional[str],
         description: Optional[str],
     ) -> None:
-        super().__init__(children, format_attr, optional, name, description)
+        super().__init__(children, validators_attr, optional, name, description)
         self.date_format = None
 
     def from_str(self, s: str) -> Optional[datetime.date]:
@@ -306,13 +306,13 @@ class Time(ScalarType):
     def __init__(
         self,
         children: Dict[str, Any],
-        format_attr: "FormatAttr",
+        validators_attr: "ValidatorsAttr",
         optional: bool,
         name: Optional[str],
         description: Optional[str],
     ) -> None:
         self.time_format = "%H:%M:%S"
-        super().__init__(children, format_attr, optional, name, description)
+        super().__init__(children, validators_attr, optional, name, description)
 
     def from_str(self, s: str) -> Optional[datetime.time]:
         """Create a Time from a string."""
@@ -486,13 +486,13 @@ class Choice(NonScalarType):
     def __init__(
         self,
         children: Dict[str, Any],
-        format_attr: "FormatAttr",
+        validators_attr: "ValidatorsAttr",
         optional: bool,
         name: Optional[str],
         description: Optional[str],
         discriminator_key: str,
     ) -> None:
-        super().__init__(children, format_attr, optional, name, description)
+        super().__init__(children, validators_attr, optional, name, description)
         self.discriminator_key = discriminator_key
 
     @classmethod
@@ -548,12 +548,12 @@ class Case(NonScalarType):
     def __init__(
         self,
         children: Dict[str, Any],
-        format_attr: "FormatAttr",
+        validators_attr: "ValidatorsAttr",
         optional: bool,
         name: Optional[str],
         description: Optional[str],
     ) -> None:
-        super().__init__(children, format_attr, optional, name, description)
+        super().__init__(children, validators_attr, optional, name, description)
 
     def collect_validation(
         self,
