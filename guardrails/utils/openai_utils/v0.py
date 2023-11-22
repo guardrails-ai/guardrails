@@ -147,7 +147,7 @@ class OpenAIClientV0(BaseSyncOpenAIClient):
         self,
         stream: bool,
         openai_response: Any,
-        prompt: str,
+        prompt: List[Any],
         model: str,
     ) -> LLMResponse:
         """Construct an LLMResponse from an OpenAI response.
@@ -291,7 +291,7 @@ class AsyncOpenAIClientV0(BaseAsyncOpenAIClient):
         self,
         stream: bool,
         openai_response: Any,
-        prompt: str,
+        prompt: List[Any],
         model: str,
     ) -> LLMResponse:
         """Construct an LLMResponse from an OpenAI response.
