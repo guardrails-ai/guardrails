@@ -186,7 +186,7 @@ jobs:
           run: |
             cd docs/examples
             for notebook in $(ls *.ipynb); do
-              if [ "$notebook" != "valid_chess_moves.ipynb" ]; then
+              if [ "$notebook" != "valid_chess_moves.ipynb" ] && [ "$notebook" != "translation_with_quality_check.ipynb" ]; then
                 poetry run jupyter nbconvert --to notebook --execute "$notebook"
                 if [ $? -ne 0 ]; then
                     echo "Error found in $notebook"
