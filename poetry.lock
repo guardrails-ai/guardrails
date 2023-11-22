@@ -4857,7 +4857,7 @@ files = [
 name = "tiktoken"
 version = "0.5.1"
 description = "tiktoken is a fast BPE tokeniser for use with OpenAI's models"
-optional = true
+optional = false
 python-versions = ">=3.8"
 files = [
     {file = "tiktoken-0.5.1-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:2b0bae3fd56de1c0a5874fb6577667a3c75bf231a6cef599338820210c16e40a"},
