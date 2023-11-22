@@ -183,4 +183,4 @@ jobs:
           run: poetry run pip show pypdfium2
 
         - name: Execute notebooks and check for errors
-          run: ./scripts/run_notebooks.sh
+          run: ./.github/workflows/scripts/run_notebooks.sh
