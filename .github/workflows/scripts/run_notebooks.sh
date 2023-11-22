@@ -1,6 +1,8 @@
 #!/bin/bash
 
-python ./.github/workflows/scripts/download_nltk.py
+mkdir /tmp/nltk_data;
+poetry run python -m nltk.downloader -d /tmp/nltk_data punkt;
+export NLTK_DATA=/tmp/nltk_data;
 
 cd docs/examples
 
