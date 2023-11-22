@@ -1,4 +1,4 @@
-name: Manual Release
+name: Release PyPi Version
 
 on:
   workflow_dispatch: # This event allows manual triggering
@@ -31,4 +31,4 @@ jobs:
       - name: Upload to PyPI
         env:
           PYPI_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
-        run: poetry publish --build -u __token__ -p $PYPI_PASSWORD
+        run: poetry publish --build -u shreyar -p $PYPI_PASSWORD
