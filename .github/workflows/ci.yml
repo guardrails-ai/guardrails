@@ -139,3 +139,48 @@ jobs:
                     flags: unittests
                     name: codecov-umbrella
                     fail_ci_if_error: true
+    
+    Notebooks:
+        runs-on: ubuntu-latest
+        if: ${{ always() && contains(join(needs.*.result, ','), 'success') }}
+        needs: [Linting, Typing, Pytests]
+        
+        env:
+          COHERE_API_KEY: ${{ secrets.COHERE_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+
+        steps:
+        - name: Checkout repository
+          uses: actions/checkout@v2
+
+        - name: Set up Python
+          uses: actions/setup-python@v2
+          with:
+            python-version: 3.11.x
+
+        - name: Poetry cache
+          uses: actions/cache@v3
+          with:
+            path: ~/.cache/pypoetry
+            key: poetry-cache-${{ runner.os }}-${{ steps.setup_python.outputs.python-version }}-${{ env.POETRY_VERSION }}
+
+        - name: Install Poetry
+          uses: snok/install-poetry@v1
+          with:
+              virtualenvs-create: true
+              virtualenvs-in-project: true
+              installer-parallel: true
+
+        - name: Install dependencies
+          run: |
+            make full;
+            poetry add openai==0.28.1 jupyter nbconvert cohere;
+            # pip install openai==0.28.1 jupyter nbconvert;
+            # pip install .;
+
+        - name: Check for pypdfium2
+          run: poetry run pip show pypdfium2
+
+        - name: Execute notebooks and check for errors
+          run: ./.github/workflows/scripts/run_notebooks.sh

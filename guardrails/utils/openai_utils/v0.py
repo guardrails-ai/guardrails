@@ -133,7 +133,7 @@ class OpenAIClientV0(BaseSyncOpenAIClient):
         self, model: str, messages: List[Any], *args, **kwargs
     ) -> LLMResponse:
         response = openai.ChatCompletion.create(
-            api_key=self.api_key, model=model, prompt=messages, *args, **kwargs
+            api_key=self.api_key, model=model, messages=messages, *args, **kwargs
         )
 
         return self.construct_chat_response(
@@ -277,7 +277,7 @@ class AsyncOpenAIClientV0(BaseAsyncOpenAIClient):
         self, model: str, messages: List[Any], *args, **kwargs
     ) -> LLMResponse:
         response = await openai.ChatCompletion.acreate(
-            api_key=self.api_key, model=model, prompt=messages, *args, **kwargs
+            api_key=self.api_key, model=model, messages=messages, *args, **kwargs
         )
 
         return await self.construct_chat_response(
