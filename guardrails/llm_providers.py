@@ -1,4 +1,4 @@
-from typing import Any, Awaitable, Callable, Dict, List, Optional, cast
+from typing import Any, Awaitable, Callable, Dict, Iterable, List, Optional, cast
 
 from pydantic import BaseModel
 
@@ -166,6 +166,7 @@ class OpenAIChatCallable(PromptCallableBase):
             api_key = kwargs.pop("api_key")
         else:
             api_key = None
+
         client = OpenAIClient(api_key=api_key)
         return client.create_chat_completion(
             model=model,
@@ -256,9 +257,34 @@ class ArbitraryCallable(PromptCallableBase):
         )
         ```
         """
-        return LLMResponse(
-            output=self.llm_api(*args, **kwargs),
-        )
+        # Get the response from the callable
+        # The LLM response should either be a
+        # string or an generator object of strings
+        llm_response = self.llm_api(*args, **kwargs)
+
+        # Check if kwargs stream is passed in
+        if kwargs.get("stream", None) in [None, False]:
+            # If stream is not defined or is set to False,
+            # return default behavior
+            # Strongly type the response as a string
+            llm_response = cast(str, llm_response)
+            return LLMResponse(
+                output=llm_response,
+            )
+        else:
+            # If stream is defined and set to True,
+            # the callable returns a generator object
+            complete_output = ""
+
+            # Strongly type the response as an iterable of strings
+            llm_response = cast(Iterable[str], llm_response)
+            for response in llm_response:
+                complete_output += response
+
+            # Return the LLMResponse
+            return LLMResponse(
+                output=complete_output,
+            )
 
 
 def get_llm_ask(llm_api: Callable, *args, **kwargs) -> PromptCallableBase:
@@ -405,6 +431,7 @@ class AsyncOpenAIChatCallable(AsyncPromptCallableBase):
             api_key = kwargs.pop("api_key")
         else:
             api_key = None
+
         aclient = AsyncOpenAIClient(api_key=api_key)
         return await aclient.create_chat_completion(
             model=model,
@@ -481,7 +508,6 @@ class AsyncArbitraryCallable(AsyncPromptCallableBase):
 def get_async_llm_ask(
     llm_api: Callable[[Any], Awaitable[Any]], *args, **kwargs
 ) -> AsyncPromptCallableBase:
-
     # these only work with openai v0 (None otherwise)
     if llm_api == get_static_openai_acreate_func():
         return AsyncOpenAICallable(*args, **kwargs)
