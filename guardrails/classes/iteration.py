@@ -12,23 +12,20 @@ from guardrails.utils.reask_utils import ReAsk
 
 
 class Iteration(ArbitraryModel):
-    # I think these should be containered since their names slightly overlap with outputs but could be convinced otherwise
+    # I think these should be containered since their names slightly overlap with
+    #  outputs, but could be convinced otherwise
     inputs: Inputs = Field(
-        description="The inputs for the iteration/step.",
-        default_factory=Inputs
+        description="The inputs for the iteration/step.", default_factory=Inputs
     )
     # We might just spread these properties instead of containering them
     outputs: Outputs = Field(
-        description="The outputs from the iteration/step.",
-        default_factory=Outputs
+        description="The outputs from the iteration/step.", default_factory=Outputs
     )
 
     # TODO
     # @property
     # def logs() -> Stack[str]:
     #     """Returns the logs from this iteration as a stack"""
-
-    
 
     @property
     def tokens_consumed(self) -> Optional[int]:
@@ -104,6 +101,6 @@ class Iteration(ArbitraryModel):
     def status(self) -> str:
         """Representation of the end state of this iteration.
 
-        OneOf: pass, fail, error
+        OneOf: pass, fail, error, not run
         """
         return self.outputs.status

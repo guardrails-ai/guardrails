@@ -5,7 +5,7 @@ T = TypeVar("T")
 
 class Stack(List[T]):
     def __init__(self, *args):
-        list.__init__(self, args)
+        super().__init__(args)
 
     def empty(self) -> bool:
         """Tests if this stack is empty."""
@@ -36,9 +36,9 @@ class Stack(List[T]):
         """Returns the 0-based position of the last item whose value is equal
         to x on this stack.
 
-        We deviate from the typical 1-based position used by Stack classes (i.e. Java)
-        because most python users (and developers in general) are accustomed
-        to 0-based indexing.
+        We deviate from the typical 1-based position used by Stack
+        classes (i.e. Java) because most python users (and developers in
+        general) are accustomed to 0-based indexing.
         """
         copy = self.copy()
         copy.reverse()
