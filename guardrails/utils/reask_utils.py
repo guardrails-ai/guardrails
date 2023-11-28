@@ -1,3 +1,4 @@
+from copy import deepcopy
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import pydantic
@@ -44,41 +45,42 @@ def gather_reasks(
     reasks = []
 
     def _gather_reasks_in_dict(
-        output: Dict, path: Optional[List[Union[str, int]]] = None
+        original: Dict, output: Dict, path: Optional[List[Union[str, int]]] = None
     ) -> None:
         if path is None:
             path = []
-        for field, value in output.items():
+        for field, value in original.items():
             if isinstance(value, FieldReAsk):
                 value.path = path + [field]
                 reasks.append(value)
                 del output[field]
 
             if isinstance(value, dict):
-                _gather_reasks_in_dict(value, path + [field])
+                _gather_reasks_in_dict(value, output[field], path + [field])
 
             if isinstance(value, list):
-                _gather_reasks_in_list(value, path + [field])
+                _gather_reasks_in_list(value, output[field], path + [field])
         return
 
     def _gather_reasks_in_list(
-        output: List, path: Optional[List[Union[str, int]]] = None
+        original: List, output: List, path: Optional[List[Union[str, int]]] = None
     ) -> None:
         if path is None:
             path = []
-        for idx, item in enumerate(output):
+        for idx, item in enumerate(original):
             if isinstance(item, FieldReAsk):
                 item.path = path + [idx]
                 reasks.append(item)
                 del output[idx]
             elif isinstance(item, dict):
-                _gather_reasks_in_dict(item, path + [idx])
+                _gather_reasks_in_dict(item, output[idx], path + [idx])
             elif isinstance(item, list):
-                _gather_reasks_in_list(item, path + [idx])
+                _gather_reasks_in_list(item, output[idx], path + [idx])
         return
 
-    _gather_reasks_in_dict(validated_output)
-    return reasks, validated_output
+    output_copy = deepcopy(validated_output)
+    _gather_reasks_in_dict(validated_output, output_copy)
+    return reasks, output_copy
 
 
 def get_pruned_tree(
