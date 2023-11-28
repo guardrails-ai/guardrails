@@ -18,8 +18,8 @@ from typing import (
 from eliot import add_destinations, start_action
 from pydantic import BaseModel
 
-from guardrails.classes.history import Call
 from guardrails.classes.generic import Stack
+from guardrails.classes.history import Call
 from guardrails.llm_providers import get_async_llm_ask, get_llm_ask
 from guardrails.prompt import Instructions, Prompt
 from guardrails.rail import Rail

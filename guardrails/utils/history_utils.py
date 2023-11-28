@@ -1,5 +1,7 @@
 from typing import Dict, Union
+
 from guardrails.classes.history import Call
+
 
 def merge_valid_output(current_call: Call) -> Union[str, Dict]:
     print("current_call.validated_output: ", current_call.validated_output)
@@ -13,5 +15,5 @@ def merge_valid_output(current_call: Call) -> Union[str, Dict]:
     for iteration in current_call.iterations:
         print("iteration.validated_output: ", iteration.validated_output)
         valid_output.update(iteration.validated_output or {})
-    
+
     return None if not valid_output else valid_output

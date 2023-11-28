@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from guardrails.classes.history import Iteration
 from guardrails.datatypes import FieldValidation
-from guardrails.utils.logs_utils import FieldValidationLogs, ValidatorLogs
+from guardrails.utils.logs_utils import ValidatorLogs
 from guardrails.utils.reask_utils import FieldReAsk, ReAsk
 from guardrails.utils.safe_get import safe_get
 from guardrails.validator_base import (
@@ -72,11 +72,7 @@ class ValidatorServiceBase:
             )
 
     def run_validator(
-        self,
-        iteration: Iteration,
-        validator: Validator,
-        value: any,
-        metadata: Dict
+        self, iteration: Iteration, validator: Validator, value: any, metadata: Dict
     ) -> ValidatorLogs:
         validator_class_name = validator.__class__.__name__
         validator_logs = ValidatorLogs(
@@ -103,9 +99,7 @@ class SequentialValidatorService(ValidatorServiceBase):
     ) -> Tuple[Any, Dict[str, Any]]:
         # Validate the field
         for validator in validator_setup.validators:
-            validator_logs = self.run_validator(
-                iteration, validator, value, metadata
-            )
+            validator_logs = self.run_validator(iteration, validator, value, metadata)
 
             result = validator_logs.validation_result
             if isinstance(result, FailResult):
@@ -129,12 +123,13 @@ class SequentialValidatorService(ValidatorServiceBase):
                 return value, metadata
         return value, metadata
 
-    def validate_dependents(self,
-            value: Any,
-            metadata: Dict,
-            validator_setup: FieldValidation,
-            iteration: Iteration
-        ):
+    def validate_dependents(
+        self,
+        value: Any,
+        metadata: Dict,
+        validator_setup: FieldValidation,
+        iteration: Iteration,
+    ):
         for child_setup in validator_setup.children:
             child_schema = safe_get(value, child_setup.key)
             child_schema, metadata = self.validate(
@@ -187,11 +182,12 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
             else:
                 yield on_fail_descriptor, list(group)
 
-    async def run_validators(self,
+    async def run_validators(
+        self,
         iteration: Iteration,
         validator_setup: FieldValidation,
         value: Any,
-        metadata: Dict
+        metadata: Dict,
     ):
         loop = asyncio.get_running_loop()
         for on_fail, validator_group in self.group_validators(
@@ -214,9 +210,7 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
                     )
                 else:
                     # run the validators in the current process
-                    result = self.run_validator(
-                        iteration, validator, value, metadata
-                    )
+                    result = self.run_validator(iteration, validator, value, metadata)
                     validators_logs.append(result)
 
             # wait for the parallel tasks to finish
@@ -261,7 +255,7 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
         value: Any,
         metadata: Dict,
         validator_setup: FieldValidation,
-        iteration: Iteration
+        iteration: Iteration,
     ):
         async def process_child(child_setup):
             child_value = value[child_setup.key]
@@ -294,9 +288,7 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
     ) -> Tuple[Any, dict]:
         # Validate children first
         if validator_setup.children:
-            await self.validate_dependents(
-                value, metadata, validator_setup, iteration
-            )
+            await self.validate_dependents(value, metadata, validator_setup, iteration)
 
         # Validate the field
         value, metadata = await self.run_validators(
@@ -330,10 +322,7 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
 
 
 def validate(
-    value: Any,
-    metadata: dict,
-    validator_setup: FieldValidation,
-    iteration: Iteration
+    value: Any, metadata: dict, validator_setup: FieldValidation, iteration: Iteration
 ):
     process_count = int(os.environ.get("GUARDRAILS_PROCESS_COUNT", 10))
 

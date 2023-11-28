@@ -24,7 +24,9 @@ class NonParseableReAsk(ReAsk):
     pass
 
 
-def gather_reasks(validated_output: Optional[Union[Dict, ReAsk]]) -> Tuple[List[ReAsk], Dict]:
+def gather_reasks(
+    validated_output: Optional[Union[Dict, ReAsk]]
+) -> Tuple[List[ReAsk], Dict]:
     """Traverse output and gather all ReAsk objects.
 
     Args:

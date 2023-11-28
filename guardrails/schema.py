@@ -35,7 +35,6 @@ from guardrails.utils.json_utils import (
     extract_json_from_ouput,
     verify_schema_against_json,
 )
-from guardrails.utils.logs_utils import FieldValidationLogs, GuardLogs
 from guardrails.utils.pydantic_utils import convert_pydantic_model_to_datatype
 from guardrails.utils.reask_utils import (
     FieldReAsk,
@@ -430,7 +429,7 @@ class JsonSchema(Schema):
             value=validated_response,
             metadata=metadata,
             validator_setup=validation,
-            iteration=iteration
+            iteration=iteration,
         )
 
         if check_refrain_in_dict(validated_response):
@@ -735,7 +734,7 @@ class StringSchema(Schema):
             value=data,
             metadata=metadata,
             validator_setup=validation,
-            iteration=Iteration
+            iteration=Iteration,
         )
 
         validated_response = {dummy_key: validated_response}
@@ -753,7 +752,9 @@ class StringSchema(Schema):
             return validated_response[dummy_key]
         return None
 
-    def introspect(self, data: Union[ReAsk, Optional[str]]) -> Tuple[List[FieldReAsk], Optional[str]]:
+    def introspect(
+        self, data: Union[ReAsk, Optional[str]]
+    ) -> Tuple[List[FieldReAsk], Optional[str]]:
         if isinstance(data, FieldReAsk):
             return [data], None
         return [], data

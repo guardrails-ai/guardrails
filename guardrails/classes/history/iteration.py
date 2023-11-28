@@ -68,7 +68,9 @@ class Iteration(ArbitraryModel):
     @property
     def validation_output(self) -> Optional[Union[ReAsk, str, Dict]]:
         """The output from the validation process.
-        Could be a combination of valid output and ReAsks"""
+
+        Could be a combination of valid output and ReAsks
+        """
         return self.outputs.validation_output
 
     @property

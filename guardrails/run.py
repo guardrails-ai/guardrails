@@ -5,15 +5,15 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union
 from eliot import add_destinations, start_action
 from pydantic import BaseModel
 
-from guardrails.classes.history import Call, Inputs, Iteration, Outputs
 from guardrails.classes.generic import Stack
+from guardrails.classes.history import Call, Inputs, Iteration, Outputs
 from guardrails.datatypes import verify_metadata_requirements
 from guardrails.llm_providers import AsyncPromptCallableBase, PromptCallableBase
 from guardrails.prompt import Instructions, Prompt
 from guardrails.schema import Schema
 from guardrails.utils.history_utils import merge_valid_output
 from guardrails.utils.llm_response import LLMResponse
-from guardrails.utils.logs_utils import GuardHistory, GuardLogs, GuardState, merge_reask_output
+from guardrails.utils.logs_utils import merge_reask_output
 from guardrails.utils.reask_utils import (
     FieldReAsk,
     NonParseableReAsk,
@@ -171,7 +171,7 @@ class Runner:
                 # Loop again?
                 if not self.do_loop(index, iteration.reasks):
                     break
-                
+
                 # Get merged validation output for prompt
                 print("iteration.validation_output: ", iteration.validation_output)
                 validation_output = iteration.validation_output
@@ -183,9 +183,12 @@ class Runner:
                     print("Calling merge_reask_output...")
                     validation_output = merge_reask_output(
                         self.current_call.iterations.at(index - 1).validation_output,
-                        self.current_call.iterations.last.validation_output
+                        self.current_call.iterations.last.validation_output,
                     )
-                    print("validation_output AFTER merge_reask_output: ", validation_output)
+                    print(
+                        "validation_output AFTER merge_reask_output: ",
+                        validation_output,
+                    )
 
                 # Get new prompt and output schema.
                 prompt, instructions, output_schema, msg_history = self.prepare_to_loop(
@@ -219,13 +222,10 @@ class Runner:
             prompt_params=prompt_params,
             num_reasks=self.num_reasks,
             metadata=self.metadata,
-            full_schema_reask=self.full_schema_reask
+            full_schema_reask=self.full_schema_reask,
         )
         outputs = Outputs()
-        iteration = Iteration(
-            inputs=inputs,
-            outputs=outputs
-        )
+        iteration = Iteration(inputs=inputs, outputs=outputs)
         self.current_call.iterations.push(iteration)
 
         print("Running step number ", index)
@@ -291,9 +291,10 @@ class Runner:
                 print("Validation complete!")
                 iteration.outputs.validation_output = validated_output
 
-
                 # Introspect: inspect validated output for reasks.
-                reasks, valid_output = self.introspect(index, validated_output, output_schema)
+                reasks, valid_output = self.introspect(
+                    index, validated_output, output_schema
+                )
                 iteration.outputs.validated_output = valid_output
 
             iteration.outputs.reasks = reasks
@@ -305,9 +306,9 @@ class Runner:
                 final_output = sub_reasks_with_fixed_values(validated_output)
                 # TODO: Pass in a return type from Guard
                 if (
-                    not isinstance(final_valid_output, str) and
-                    not isinstance(final_output, str) and
-                    not isinstance(final_output, ReAsk)
+                    not isinstance(final_valid_output, str)
+                    and not isinstance(final_output, str)
+                    and not isinstance(final_output, ReAsk)
                 ):
                     final_valid_output = {**final_output, **final_valid_output}
                 print("Merge complete!")
@@ -623,7 +624,7 @@ class AsyncRunner(Runner):
                     print("Calling merge_reask_output...")
                     validation_output = merge_reask_output(
                         self.current_call.iterations.at(index - 1),
-                        self.current_call.iterations.last
+                        self.current_call.iterations.last,
                     )
 
                 # Get new prompt and output schema.
@@ -658,13 +659,10 @@ class AsyncRunner(Runner):
             prompt_params=prompt_params,
             num_reasks=self.num_reasks,
             metadata=self.metadata,
-            full_schema_reask=self.full_schema_reask
+            full_schema_reask=self.full_schema_reask,
         )
         outputs = Outputs()
-        iteration = Iteration(
-            inputs=inputs,
-            outputs=outputs
-        )
+        iteration = Iteration(inputs=inputs, outputs=outputs)
         """Run a full step."""
         with start_action(
             action_type="step",
@@ -726,7 +724,9 @@ class AsyncRunner(Runner):
                 iteration.outputs.validation_output = validated_output
 
                 # Introspect: inspect validated output for reasks.
-                reasks, valid_output = self.introspect(index, validated_output, output_schema)
+                reasks, valid_output = self.introspect(
+                    index, validated_output, output_schema
+                )
                 iteration.outputs.validated_output = valid_output
 
             iteration.outputs.reasks = reasks
@@ -738,9 +738,9 @@ class AsyncRunner(Runner):
                 final_output = sub_reasks_with_fixed_values(validated_output)
                 # TODO: Pass in a return type from Guard
                 if (
-                    not isinstance(final_valid_output, str) and
-                    not isinstance(final_output, str) and
-                    not isinstance(final_output, ReAsk)
+                    not isinstance(final_valid_output, str)
+                    and not isinstance(final_output, str)
+                    and not isinstance(final_output, ReAsk)
                 ):
                     final_valid_output = {**final_output, **final_valid_output}
                 print("Merge complete!")

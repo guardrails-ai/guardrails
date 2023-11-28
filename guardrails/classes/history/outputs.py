@@ -71,7 +71,10 @@ class Outputs(ArbitraryModel):
         print("self.validated_output: ", self.validated_output)
         print("not self.validated_output: ", not self.validated_output)
         print("self.validation_output: ", self.validation_output)
-        print("isinstance(self.validation_output, ReAsk): ", isinstance(self.validation_output, ReAsk))
+        print(
+            "isinstance(self.validation_output, ReAsk): ",
+            isinstance(self.validation_output, ReAsk),
+        )
         print(" !!!!!!!!!!!! END Outputs.status !!!!!!!!!!!! ")
         if self._all_empty() is True:
             return not_run_status
@@ -79,9 +82,8 @@ class Outputs(ArbitraryModel):
             return error_status
         elif len(self.failed_validations) > 0:
             return fail_status
-        elif (
-            self.validated_output is None and
-            isinstance(self.validation_output, ReAsk)
+        elif self.validated_output is None and isinstance(
+            self.validation_output, ReAsk
         ):
             return fail_status
         return pass_status
