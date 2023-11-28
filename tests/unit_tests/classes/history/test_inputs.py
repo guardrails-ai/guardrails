@@ -1,4 +1,4 @@
-from guardrails.classes.inputs import Inputs
+from guardrails.classes.history.inputs import Inputs
 from guardrails.llm_providers import OpenAICallable
 from guardrails.prompt.instructions import Instructions
 from guardrails.prompt.prompt import Prompt

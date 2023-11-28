@@ -1,6 +1,6 @@
 import pytest
 
-from guardrails.classes.outputs import Outputs
+from guardrails.classes.history.outputs import Outputs
 from guardrails.constants import error_status, fail_status, not_run_status, pass_status
 from guardrails.utils.llm_response import LLMResponse
 from guardrails.utils.logs_utils import ValidatorLogs

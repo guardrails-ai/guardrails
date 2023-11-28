@@ -1,6 +1,6 @@
-from guardrails.classes.inputs import Inputs
-from guardrails.classes.iteration import Iteration
-from guardrails.classes.outputs import Outputs
+from guardrails.classes.history.inputs import Inputs
+from guardrails.classes.history.iteration import Iteration
+from guardrails.classes.history.outputs import Outputs
 from guardrails.constants import error_status, not_run_status
 from guardrails.llm_providers import OpenAICallable
 from guardrails.prompt.instructions import Instructions

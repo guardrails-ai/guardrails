@@ -18,8 +18,11 @@ class Outputs(ArbitraryModel):
         "as it was passed into validation.",
         default=None,
     )
+    validation_output: Optional[Union[str, Dict, ReAsk]] = Field(
+        description="The output from the validation process.", default=None
+    )
     validated_output: Optional[Union[str, Dict]] = Field(
-        description="The output after validation.", default=None
+        description="The valid output after validation.", default=None
     )
     reasks: Sequence[ReAsk] = Field(
         description="Information from the validation process"
@@ -64,10 +67,21 @@ class Outputs(ArbitraryModel):
 
         OneOf: pass, fail, error
         """
+        print(" !!!!!!!!!!!! START Outputs.status !!!!!!!!!!!! ")
+        print("self.validated_output: ", self.validated_output)
+        print("not self.validated_output: ", not self.validated_output)
+        print("self.validation_output: ", self.validation_output)
+        print("isinstance(self.validation_output, ReAsk): ", isinstance(self.validation_output, ReAsk))
+        print(" !!!!!!!!!!!! END Outputs.status !!!!!!!!!!!! ")
         if self._all_empty() is True:
             return not_run_status
         elif self.error:
             return error_status
         elif len(self.failed_validations) > 0:
+            return fail_status
+        elif (
+            self.validated_output is None and
+            isinstance(self.validation_output, ReAsk)
+        ):
             return fail_status
         return pass_status

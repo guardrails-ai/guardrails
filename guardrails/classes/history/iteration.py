@@ -2,8 +2,8 @@ from typing import Dict, List, Optional, Sequence, Union
 
 from pydantic import Field
 
-from guardrails.classes.inputs import Inputs
-from guardrails.classes.outputs import Outputs
+from guardrails.classes.history.inputs import Inputs
+from guardrails.classes.history.outputs import Outputs
 from guardrails.utils.logs_utils import ValidatorLogs
 
 # from guardrails.classes.stack import Stack
@@ -66,8 +66,14 @@ class Iteration(ArbitraryModel):
         return self.outputs.parsed_output
 
     @property
+    def validation_output(self) -> Optional[Union[ReAsk, str, Dict]]:
+        """The output from the validation process.
+        Could be a combination of valid output and ReAsks"""
+        return self.outputs.validation_output
+
+    @property
     def validated_output(self) -> Optional[Union[str, Dict]]:
-        """The output from the LLM after undergoing validation."""
+        """The valid output from the LLM after undergoing validation."""
         return self.outputs.validated_output
 
     @property

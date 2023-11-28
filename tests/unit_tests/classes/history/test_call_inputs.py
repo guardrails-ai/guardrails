@@ -1,4 +1,4 @@
-from guardrails.classes.call_inputs import CallInputs
+from guardrails.classes.history.call_inputs import CallInputs
 
 
 def test_empty_initialization():

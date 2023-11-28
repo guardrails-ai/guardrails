@@ -18,12 +18,13 @@ from typing import (
 from eliot import add_destinations, start_action
 from pydantic import BaseModel
 
+from guardrails.classes.history import Call
+from guardrails.classes.generic import Stack
 from guardrails.llm_providers import get_async_llm_ask, get_llm_ask
 from guardrails.prompt import Instructions, Prompt
 from guardrails.rail import Rail
 from guardrails.run import AsyncRunner, Runner
 from guardrails.schema import Schema
-from guardrails.utils.logs_utils import GuardState
 from guardrails.utils.reask_utils import sub_reasks_with_fixed_values
 from guardrails.validators import Validator
 
@@ -58,7 +59,7 @@ class Guard:
         """Initialize the Guard."""
         self.rail = rail
         self.num_reasks = num_reasks
-        self.guard_state = GuardState(all_histories=[])
+        self.history: Stack[Call] = Stack()
         self.base_model = base_model
 
     @property
@@ -92,11 +93,6 @@ class Guard:
         if self.prompt is None:
             return None
         return self.prompt.source
-
-    @property
-    def state(self) -> GuardState:
-        """Return the state."""
-        return self.guard_state
 
     @property
     def reask_prompt(self) -> Optional[Prompt]:
@@ -356,11 +352,11 @@ class Guard:
                 num_reasks=num_reasks,
                 metadata=metadata,
                 base_model=self.base_model,
-                guard_state=self.guard_state,
+                history=self.history,
                 full_schema_reask=full_schema_reask,
             )
-            guard_history = runner(prompt_params=prompt_params)
-            return guard_history.output, guard_history.validated_output
+            call: Call = runner(prompt_params=prompt_params)
+            return call.raw_output, call.validated_output
 
     async def _call_async(
         self,
@@ -413,11 +409,11 @@ class Guard:
                 num_reasks=num_reasks,
                 metadata=metadata,
                 base_model=self.base_model,
-                guard_state=self.guard_state,
+                history=self.history,
                 full_schema_reask=full_schema_reask,
             )
-            guard_history = await runner.async_run(prompt_params=prompt_params)
-            return guard_history.output, guard_history.validated_output
+            call: Call = await runner.async_run(prompt_params=prompt_params)
+            return call.raw_output, call.validated_output
 
     def __repr__(self):
         return f"Guard(RAIL={self.rail})"
@@ -568,11 +564,11 @@ class Guard:
                 metadata=metadata,
                 output=llm_output,
                 base_model=self.base_model,
-                guard_state=self.guard_state,
+                history=self.history,
                 full_schema_reask=full_schema_reask,
             )
-            guard_history = runner(prompt_params=prompt_params)
-            return sub_reasks_with_fixed_values(guard_history.validated_output)
+            call: Call = runner(prompt_params=prompt_params)
+            return sub_reasks_with_fixed_values(call.iterations.last.validation_output)
 
     async def _async_parse(
         self,
@@ -607,8 +603,8 @@ class Guard:
                 metadata=metadata,
                 output=llm_output,
                 base_model=self.base_model,
-                guard_state=self.guard_state,
+                history=self.history,
                 full_schema_reask=full_schema_reask,
             )
-            guard_history = await runner.async_run(prompt_params=prompt_params)
-            return sub_reasks_with_fixed_values(guard_history.validated_output)
+            call: Call = await runner.async_run(prompt_params=prompt_params)
+            return sub_reasks_with_fixed_values(call.iterations.last.validation_output)

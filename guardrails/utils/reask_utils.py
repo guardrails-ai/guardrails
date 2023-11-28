@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import pydantic
 
@@ -24,7 +24,7 @@ class NonParseableReAsk(ReAsk):
     pass
 
 
-def gather_reasks(validated_output: Optional[Union[Dict, ReAsk]]) -> List[ReAsk]:
+def gather_reasks(validated_output: Optional[Union[Dict, ReAsk]]) -> Tuple[List[ReAsk], Dict]:
     """Traverse output and gather all ReAsk objects.
 
     Args:
@@ -35,9 +35,9 @@ def gather_reasks(validated_output: Optional[Union[Dict, ReAsk]]) -> List[ReAsk]
         A list of ReAsk objects found in the output.
     """
     if validated_output is None:
-        return []
+        return [], None
     if isinstance(validated_output, ReAsk):
-        return [validated_output]
+        return [validated_output], None
 
     reasks = []
 
@@ -50,6 +50,7 @@ def gather_reasks(validated_output: Optional[Union[Dict, ReAsk]]) -> List[ReAsk]
             if isinstance(value, FieldReAsk):
                 value.path = path + [field]
                 reasks.append(value)
+                del output[field]
 
             if isinstance(value, dict):
                 _gather_reasks_in_dict(value, path + [field])
@@ -67,6 +68,7 @@ def gather_reasks(validated_output: Optional[Union[Dict, ReAsk]]) -> List[ReAsk]
             if isinstance(item, FieldReAsk):
                 item.path = path + [idx]
                 reasks.append(item)
+                del output[idx]
             elif isinstance(item, dict):
                 _gather_reasks_in_dict(item, path + [idx])
             elif isinstance(item, list):
@@ -74,7 +76,7 @@ def gather_reasks(validated_output: Optional[Union[Dict, ReAsk]]) -> List[ReAsk]
         return
 
     _gather_reasks_in_dict(validated_output)
-    return reasks
+    return reasks, validated_output
 
 
 def get_pruned_tree(

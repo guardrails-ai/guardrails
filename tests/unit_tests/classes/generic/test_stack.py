@@ -2,7 +2,7 @@ from typing import Union
 
 import pytest
 
-from guardrails.classes.stack import Stack
+from guardrails.classes.generic.stack import Stack
 
 
 @pytest.mark.parametrize(

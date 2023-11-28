@@ -2,7 +2,7 @@ from typing import Any, Awaitable, Callable, Dict, List, Optional
 
 from pydantic import Field
 
-from guardrails.classes.inputs import Inputs
+from guardrails.classes.history.inputs import Inputs
 
 
 class CallInputs(Inputs):

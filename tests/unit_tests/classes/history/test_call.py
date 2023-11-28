@@ -1,9 +1,9 @@
-from guardrails.classes.call import Call
-from guardrails.classes.call_inputs import CallInputs
-from guardrails.classes.inputs import Inputs
-from guardrails.classes.iteration import Iteration
-from guardrails.classes.outputs import Outputs
-from guardrails.classes.stack import Stack
+from guardrails.classes.history.call import Call
+from guardrails.classes.history.call_inputs import CallInputs
+from guardrails.classes.history.inputs import Inputs
+from guardrails.classes.history.iteration import Iteration
+from guardrails.classes.history.outputs import Outputs
+from guardrails.classes.generic.stack import Stack
 from guardrails.constants import not_run_status, pass_status
 from guardrails.llm_providers import ArbitraryCallable
 from guardrails.prompt.instructions import Instructions
