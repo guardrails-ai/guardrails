@@ -6,9 +6,13 @@ import pytest
 import guardrails as gd
 from guardrails.schema import JsonSchema
 from guardrails.utils.openai_utils import OPENAI_VERSION
+from tests.integration_tests.test_assets.fixtures import (  # noqa
+    fixture_llm_output,
+    fixture_rail_spec,
+    fixture_validated_output,
+)
 
 from .mock_llm_outputs import MockAsyncOpenAICallable, entity_extraction
-from .test_guard import *  # noqa: F403, F401
 
 
 @pytest.mark.asyncio
@@ -31,7 +35,7 @@ async def test_entity_extraction_with_reask(mocker, multiprocessing_validators: 
     with patch.object(
         JsonSchema, "preprocess_prompt", wraps=guard.output_schema.preprocess_prompt
     ) as mock_preprocess_prompt:
-        _, final_output = await guard(
+        final_output = await guard(
             llm_api=openai.Completion.acreate,
             prompt_params={"document": content[:6000]},
             num_reasks=1,
@@ -41,7 +45,7 @@ async def test_entity_extraction_with_reask(mocker, multiprocessing_validators: 
         mock_preprocess_prompt.assert_called()
 
     # Assertions are made on the guard state object.
-    assert final_output == entity_extraction.VALIDATED_OUTPUT_REASK_2
+    assert final_output.validated_output == entity_extraction.VALIDATED_OUTPUT_REASK_2
 
     guard_history = guard.guard_state.most_recent_call.history
 
@@ -74,14 +78,14 @@ async def test_entity_extraction_with_noop(mocker):
     )
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
     guard = gd.Guard.from_rail_string(entity_extraction.RAIL_SPEC_WITH_NOOP)
-    _, final_output = await guard(
+    final_output = await guard(
         llm_api=openai.Completion.acreate,
         prompt_params={"document": content[:6000]},
         num_reasks=1,
     )
 
     # Assertions are made on the guard state object.
-    assert final_output == entity_extraction.VALIDATED_OUTPUT_NOOP
+    assert final_output.validated_output == entity_extraction.VALIDATED_OUTPUT_NOOP
 
     guard_history = guard.guard_state.most_recent_call.history
 
@@ -105,14 +109,14 @@ async def test_entity_extraction_with_noop_pydantic(mocker):
     guard = gd.Guard.from_pydantic(
         entity_extraction.PYDANTIC_RAIL_WITH_NOOP, entity_extraction.PYDANTIC_PROMPT
     )
-    _, final_output = await guard(
+    final_output = await guard(
         llm_api=openai.Completion.acreate,
         prompt_params={"document": content[:6000]},
         num_reasks=1,
     )
 
     # Assertions are made on the guard state object.
-    assert final_output == entity_extraction.VALIDATED_OUTPUT_NOOP
+    assert final_output.validated_output == entity_extraction.VALIDATED_OUTPUT_NOOP
 
     guard_history = guard.guard_state.most_recent_call.history
 
@@ -136,14 +140,14 @@ async def test_entity_extraction_with_filter(mocker):
 
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
     guard = gd.Guard.from_rail_string(entity_extraction.RAIL_SPEC_WITH_FILTER)
-    _, final_output = await guard(
+    final_output = await guard(
         llm_api=openai.Completion.acreate,
         prompt_params={"document": content[:6000]},
         num_reasks=1,
     )
 
     # Assertions are made on the guard state object.
-    assert final_output == entity_extraction.VALIDATED_OUTPUT_FILTER
+    assert final_output.validated_output == entity_extraction.VALIDATED_OUTPUT_FILTER
 
     guard_history = guard.guard_state.most_recent_call.history
 
@@ -169,14 +173,14 @@ async def test_entity_extraction_with_fix(mocker):
 
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
     guard = gd.Guard.from_rail_string(entity_extraction.RAIL_SPEC_WITH_FIX)
-    _, final_output = await guard(
+    final_output = await guard(
         llm_api=openai.Completion.acreate,
         prompt_params={"document": content[:6000]},
         num_reasks=1,
     )
 
     # Assertions are made on the guard state object.
-    assert final_output == entity_extraction.VALIDATED_OUTPUT_FIX
+    assert final_output.validated_output == entity_extraction.VALIDATED_OUTPUT_FIX
 
     guard_history = guard.guard_state.most_recent_call.history
 
@@ -200,13 +204,13 @@ async def test_entity_extraction_with_refrain(mocker):
 
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
     guard = gd.Guard.from_rail_string(entity_extraction.RAIL_SPEC_WITH_REFRAIN)
-    _, final_output = await guard(
+    final_output = await guard(
         llm_api=openai.Completion.acreate,
         prompt_params={"document": content[:6000]},
         num_reasks=1,
     )
     # Assertions are made on the guard state object.
-    assert final_output == entity_extraction.VALIDATED_OUTPUT_REFRAIN
+    assert final_output.validated_output == entity_extraction.VALIDATED_OUTPUT_REFRAIN
 
     guard_history = guard.guard_state.most_recent_call.history
 
@@ -230,7 +234,7 @@ async def test_rail_spec_output_parse(rail_spec, llm_output, validated_output):
         llm_output,
         llm_api=openai.Completion.acreate,
     )
-    assert output == validated_output
+    assert output.validated_output == validated_output
 
 
 @pytest.fixture
@@ -271,4 +275,4 @@ async def test_string_rail_spec_output_parse(
         llm_api=openai.Completion.acreate,
         num_reasks=0,
     )
-    assert output == validated_string_output
+    assert output.validated_output == validated_string_output

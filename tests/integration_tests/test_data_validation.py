@@ -55,11 +55,13 @@ Dummy prompt.
     if raises:
         with pytest.raises(ValueError):
             result = guard.parse(llm_output, num_reasks=0)
-            if result is None or isinstance(result, ReAsk):
+            validated_output = result.validated_output
+            if validated_output is None or isinstance(validated_output, ReAsk):
                 raise ValueError("Expected a result, but got None or ReAsk.")
     else:
         result = guard.parse(llm_output, num_reasks=0)
-        assert not isinstance(result, ReAsk)
+        validated_output = result.validated_output
+        assert not isinstance(validated_output, ReAsk)
 
 
 @pytest.mark.parametrize("llm_output, raises", test_cases)
@@ -92,8 +94,10 @@ def test_choice_validation_pydantic(llm_output, raises):
     if raises:
         with pytest.raises(ValueError):
             result = guard.parse(llm_output, num_reasks=0)
-            if result is None or isinstance(result, ReAsk):
+            validated_output = result.validated_output
+            if validated_output is None or isinstance(validated_output, ReAsk):
                 raise ValueError("Expected a result, but got None or ReAsk.")
     else:
         result = guard.parse(llm_output, num_reasks=0)
-        assert not isinstance(result, ReAsk)
+        validated_output = result.validated_output
+        assert not isinstance(validated_output, ReAsk)

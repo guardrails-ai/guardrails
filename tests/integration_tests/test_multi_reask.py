@@ -11,7 +11,7 @@ def test_multi_reask(mocker):
 
     guard = gd.Guard.from_rail_string(python_rail.RAIL_SPEC_WITH_VALIDATOR_PARALLELISM)
 
-    _, final_output = guard(
+    guard(
         llm_api=get_static_openai_create_func(),
         engine="text-davinci-003",
         num_reasks=5,
