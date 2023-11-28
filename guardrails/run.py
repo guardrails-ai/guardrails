@@ -44,7 +44,7 @@ class Runner:
             validation failure, defaults to 0.
         output: The output to use instead of calling the API, used in cases
             where the output is already known.
-        current_call: The guard history to use, defaults to an empty history.
+        current_call: The call history to use, defaults to an empty Call.
     """
 
     def __init__(
@@ -108,7 +108,7 @@ class Runner:
         self.history.push(self.current_call)
 
     def __call__(
-          self, prompt_params: Optional[Dict] = None
+        self, prompt_params: Optional[Dict] = None
     ) ->  Tuple[Call, Optional[str]]:
         """Execute the runner by repeatedly calling step until the reask budget
         is exhausted.
@@ -195,7 +195,12 @@ class Runner:
                         )
 
                     # Get new prompt and output schema.
-                    prompt, instructions, output_schema, msg_history = self.prepare_to_loop(
+                    (
+                        prompt,
+                        instructions,
+                        output_schema,
+                        msg_history
+                    ) = self.prepare_to_loop(
                         iteration.reasks,
                         validation_output,
                         output_schema,
@@ -228,10 +233,13 @@ class Runner:
             prompt_params=prompt_params,
             num_reasks=self.num_reasks,
             metadata=self.metadata,
-            full_schema_reask=self.full_schema_reask,
+            full_schema_reask=self.full_schema_reask
         )
         outputs = Outputs()
-        iteration = Iteration(inputs=inputs, outputs=outputs)
+        iteration = Iteration(
+            inputs=inputs,
+            outputs=outputs
+        )
         self.current_call.iterations.push(iteration)
 
         print("Running step number ", index)
@@ -649,7 +657,6 @@ class AsyncRunner(Runner):
                         output_schema,
                         prompt_params=prompt_params,
                     )
-
         except Exception as e:
             error_message = str(e)
 
@@ -677,10 +684,13 @@ class AsyncRunner(Runner):
             prompt_params=prompt_params,
             num_reasks=self.num_reasks,
             metadata=self.metadata,
-            full_schema_reask=self.full_schema_reask,
+            full_schema_reask=self.full_schema_reask
         )
         outputs = Outputs()
-        iteration = Iteration(inputs=inputs, outputs=outputs)
+        iteration = Iteration(
+            inputs=inputs,
+            outputs=outputs
+        )
         """Run a full step."""
         with start_action(
             action_type="step",

@@ -27,7 +27,6 @@ from guardrails.prompt import Instructions, Prompt
 from guardrails.rail import Rail
 from guardrails.run import AsyncRunner, Runner
 from guardrails.schema import Schema
-from guardrails.utils.reask_utils import sub_reasks_with_fixed_values
 from guardrails.validators import Validator
 
 logger = logging.getLogger(__name__)
@@ -582,12 +581,7 @@ class Guard(Generic[OT]):
                 full_schema_reask=full_schema_reask,
             )
             call, error_message = runner(prompt_params=prompt_params)
-            # if len(guard_history.history) > 0:
-            #     guard_history.history[
-            #         -1
-            #     ].validated_output = sub_reasks_with_fixed_values(
-            #         guard_history.validated_output
-            #     )
+           
             return ValidationOutcome[OT].from_guard_history(
                 call, error_message
             )

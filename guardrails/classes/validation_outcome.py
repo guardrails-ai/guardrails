@@ -2,6 +2,7 @@ from typing import Generic, Iterator, Optional, Tuple, Union, cast
 
 from pydantic import Field
 
+from guardrails.classes.history import Call
 from guardrails.classes.output_type import OT
 from guardrails.utils.logs_utils import ArbitraryModel, GuardHistory
 from guardrails.utils.reask_utils import ReAsk
@@ -31,19 +32,20 @@ class ValidationOutcome(Generic[OT], ArbitraryModel):
 
     @classmethod
     def from_guard_history(
-        cls, guard_history: GuardHistory, error_message: Optional[str]
+        cls, call: Call, error_message: Optional[str]
     ):
-        raw_output = guard_history.output
-        validated_output = guard_history.validated_output
-        any_validations_failed = len(guard_history.failed_validations) > 0
+        raw_output = call.raw_output
+        validated_output = call.validated_output
+        validation_output = call.iterations.last.validation_output
+        any_validations_failed = len(call.failed_validations) > 0
         if error_message:
             return cls(
                 raw_llm_output=raw_output or "",
                 validation_passed=False,
                 error=error_message,
             )
-        elif isinstance(validated_output, ReAsk):
-            reask: ReAsk = validated_output
+        elif isinstance(validation_output, ReAsk):
+            reask: ReAsk = validation_output
             return cls(
                 raw_llm_output=raw_output,
                 reask=reask,

@@ -2,10 +2,10 @@ from typing import Dict, List, Optional, Sequence, Union
 
 from pydantic import Field
 
-from guardrails.classes.generic.stack import Stack
 from guardrails.classes.history.call_inputs import CallInputs
 from guardrails.classes.history.iteration import Iteration
 from guardrails.classes.history.outputs import Outputs
+from guardrails.classes.generic.stack import Stack
 from guardrails.constants import not_run_status
 from guardrails.utils.logs_utils import ValidatorLogs
 from guardrails.utils.pydantic_utils import ArbitraryModel
@@ -25,7 +25,9 @@ class Call(ArbitraryModel):
 
     # Prevent Pydantic from changing our types
     # Without this, Pydantic casts iterations to a list
-    def __init__(self, iterations: Stack[Iteration] = None, inputs: CallInputs = None):
+    def __init__(
+        self, iterations: Stack[Iteration] = None, inputs: CallInputs = None
+    ):
         iterations = iterations or Stack()
         inputs = inputs or CallInputs()
         super().__init__(iterations=iterations, inputs=inputs)
