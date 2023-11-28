@@ -419,15 +419,15 @@ class TwoWords(Validator):
 
 @register_validator(name="one-line", data_type="string")
 class OneLine(Validator):
-    """Validates that a value is a single line or sentence.
+    """Validates that a value is a single line.
 
     **Key Properties**
 
-    | Property                      | Description                       |
-    | ----------------------------- | --------------------------------- |
-    | Name for `format` attribute   | `one-line`                        |
-    | Supported data types          | `string`                          |
-    | Programmatic fix              | Pick the first line.              |
+    | Property                      | Description                            |
+    | ----------------------------- | -------------------------------------- |
+    | Name for `format` attribute   | `one-line`                             |
+    | Supported data types          | `string`                               |
+    | Programmatic fix              | Keep the first line, delete other text |
     """
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
