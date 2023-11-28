@@ -82,9 +82,8 @@ class Outputs(ArbitraryModel):
             return error_status
         elif len(self.failed_validations) > 0:
             return fail_status
-        elif (
-            self.validated_output is None and
-            isinstance(self.validation_output, ReAsk)
+        elif self.validated_output is None and isinstance(
+            self.validation_output, ReAsk
         ):
             return fail_status
         return pass_status

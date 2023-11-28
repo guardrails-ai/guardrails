@@ -171,7 +171,6 @@ class Runner:
                         output_schema=output_schema,
                         output=self.output if index == 0 else None,
                     )
-
                     # Loop again?
                     if not self.do_loop(index, iteration.reasks):
                         break
@@ -233,13 +232,10 @@ class Runner:
             prompt_params=prompt_params,
             num_reasks=self.num_reasks,
             metadata=self.metadata,
-            full_schema_reask=self.full_schema_reask
+            full_schema_reask=self.full_schema_reask,
         )
         outputs = Outputs()
-        iteration = Iteration(
-            inputs=inputs,
-            outputs=outputs
-        )
+        iteration = Iteration(inputs=inputs, outputs=outputs)
         self.current_call.iterations.push(iteration)
 
         print("Running step number ", index)
@@ -684,13 +680,10 @@ class AsyncRunner(Runner):
             prompt_params=prompt_params,
             num_reasks=self.num_reasks,
             metadata=self.metadata,
-            full_schema_reask=self.full_schema_reask
+            full_schema_reask=self.full_schema_reask,
         )
         outputs = Outputs()
-        iteration = Iteration(
-            inputs=inputs,
-            outputs=outputs
-        )
+        iteration = Iteration(inputs=inputs, outputs=outputs)
         """Run a full step."""
         with start_action(
             action_type="step",

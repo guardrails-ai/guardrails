@@ -4,10 +4,4 @@ from guardrails.classes.history.inputs import Inputs
 from guardrails.classes.history.iteration import Iteration
 from guardrails.classes.history.outputs import Outputs
 
-__all__ = [
-    "CallInputs",
-    "Call",
-    "Inputs",
-    "Iteration",
-    "Outputs"
-]
+__all__ = ["CallInputs", "Call", "Inputs", "Iteration", "Outputs"]
