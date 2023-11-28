@@ -692,7 +692,6 @@ class AsyncRunner(Runner):
             missing_keys = verify_metadata_requirements(
                 self.metadata, self.output_schema.root_datatype
             )
-
             if missing_keys:
                 raise ValueError(
                     f"Missing required metadata keys: {', '.join(missing_keys)}"
