@@ -109,7 +109,7 @@ class Runner:
 
     def __call__(
         self, prompt_params: Optional[Dict] = None
-    ) ->  Tuple[Call, Optional[str]]:
+    ) -> Tuple[Call, Optional[str]]:
         """Execute the runner by repeatedly calling step until the reask budget
         is exhausted.
 
@@ -185,7 +185,9 @@ class Runner:
                     ):
                         print("Calling merge_reask_output...")
                         validation_output = merge_reask_output(
-                            self.current_call.iterations.at(index - 1).validation_output,
+                            self.current_call.iterations.at(
+                                index - 1
+                            ).validation_output,
                             self.current_call.iterations.last.validation_output,
                         )
                         print(
@@ -198,7 +200,7 @@ class Runner:
                         prompt,
                         instructions,
                         output_schema,
-                        msg_history
+                        msg_history,
                     ) = self.prepare_to_loop(
                         iteration.reasks,
                         validation_output,
@@ -646,7 +648,7 @@ class AsyncRunner(Runner):
                         prompt,
                         instructions,
                         output_schema,
-                        msg_history
+                        msg_history,
                     ) = self.prepare_to_loop(
                         iteration.reasks,
                         validation_output,

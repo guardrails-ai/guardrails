@@ -4,7 +4,7 @@ from pydantic import Field
 
 from guardrails.classes.history import Call
 from guardrails.classes.output_type import OT
-from guardrails.utils.logs_utils import ArbitraryModel, GuardHistory
+from guardrails.utils.logs_utils import ArbitraryModel
 from guardrails.utils.reask_utils import ReAsk
 
 
@@ -31,9 +31,7 @@ class ValidationOutcome(Generic[OT], ArbitraryModel):
     error: Optional[str] = Field(default=None)
 
     @classmethod
-    def from_guard_history(
-        cls, call: Call, error_message: Optional[str]
-    ):
+    def from_guard_history(cls, call: Call, error_message: Optional[str]):
         raw_output = call.raw_output
         validated_output = call.validated_output
         validation_output = call.iterations.last.validation_output

@@ -19,9 +19,9 @@ from typing import (
 from eliot import add_destinations, start_action
 from pydantic import BaseModel
 
+from guardrails.classes import OT, ValidationOutcome
 from guardrails.classes.generic import Stack
 from guardrails.classes.history import Call
-from guardrails.classes import OT, ValidationOutcome
 from guardrails.llm_providers import get_async_llm_ask, get_llm_ask
 from guardrails.prompt import Instructions, Prompt
 from guardrails.rail import Rail
@@ -363,9 +363,7 @@ class Guard(Generic[OT]):
                 full_schema_reask=full_schema_reask,
             )
             call, error_message = runner(prompt_params=prompt_params)
-            return ValidationOutcome[OT].from_guard_history(
-                call, error_message
-            )
+            return ValidationOutcome[OT].from_guard_history(call, error_message)
 
     async def _call_async(
         self,
@@ -421,12 +419,8 @@ class Guard(Generic[OT]):
                 history=self.history,
                 full_schema_reask=full_schema_reask,
             )
-            call, error_message = await runner.async_run(
-                prompt_params=prompt_params
-            )
-            return ValidationOutcome[OT].from_guard_history(
-                call, error_message
-            )
+            call, error_message = await runner.async_run(prompt_params=prompt_params)
+            return ValidationOutcome[OT].from_guard_history(call, error_message)
 
     def __repr__(self):
         return f"Guard(RAIL={self.rail})"
@@ -581,10 +575,8 @@ class Guard(Generic[OT]):
                 full_schema_reask=full_schema_reask,
             )
             call, error_message = runner(prompt_params=prompt_params)
-           
-            return ValidationOutcome[OT].from_guard_history(
-                call, error_message
-            )
+
+            return ValidationOutcome[OT].from_guard_history(call, error_message)
 
     async def _async_parse(
         self,
@@ -622,10 +614,6 @@ class Guard(Generic[OT]):
                 history=self.history,
                 full_schema_reask=full_schema_reask,
             )
-            call, error_message = await runner.async_run(
-                prompt_params=prompt_params
-            )
+            call, error_message = await runner.async_run(prompt_params=prompt_params)
 
-            return ValidationOutcome[OT].from_guard_history(
-                call, error_message
-            )
+            return ValidationOutcome[OT].from_guard_history(call, error_message)
