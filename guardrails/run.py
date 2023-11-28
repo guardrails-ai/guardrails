@@ -107,7 +107,9 @@ class Runner:
         self.current_call = Call()
         self.history.push(self.current_call)
 
-    def __call__(self, prompt_params: Optional[Dict] = None) -> Call:
+    def __call__(
+          self, prompt_params: Optional[Dict] = None
+    ) ->  Tuple[Call, Optional[str]]:
         """Execute the runner by repeatedly calling step until the reask budget
         is exhausted.
 
@@ -118,88 +120,92 @@ class Runner:
         Returns:
             The guard history.
         """
-        if prompt_params is None:
-            prompt_params = {}
+        error_message = None
+        try:
+            if prompt_params is None:
+                prompt_params = {}
 
-        # check if validator requirements are fulfilled
-        missing_keys = verify_metadata_requirements(
-            self.metadata, self.output_schema.root_datatype
-        )
-        if missing_keys:
-            raise ValueError(
-                f"Missing required metadata keys: {', '.join(missing_keys)}"
+            # check if validator requirements are fulfilled
+            missing_keys = verify_metadata_requirements(
+                self.metadata, self.output_schema.root_datatype
             )
-
-        self._add_call_to_history()
-
-        # Figure out if we need to include instructions in the prompt.
-        include_instructions = not (
-            self.instructions is None and self.msg_history is None
-        )
-
-        with start_action(
-            action_type="run",
-            instructions=self.instructions,
-            prompt=self.prompt,
-            api=self.api,
-            input_schema=self.input_schema,
-            output_schema=self.output_schema,
-            num_reasks=self.num_reasks,
-            metadata=self.metadata,
-        ):
-            instructions, prompt, msg_history, input_schema, output_schema = (
-                self.instructions,
-                self.prompt,
-                self.msg_history,
-                self.input_schema,
-                self.output_schema,
-            )
-            for index in range(self.num_reasks + 1):
-                # Run a single step.
-                iteration = self.step(
-                    index=index,
-                    api=self.api,
-                    instructions=instructions,
-                    prompt=prompt,
-                    msg_history=msg_history,
-                    prompt_params=prompt_params,
-                    input_schema=input_schema,
-                    output_schema=output_schema,
-                    output=self.output if index == 0 else None,
+            if missing_keys:
+                raise ValueError(
+                    f"Missing required metadata keys: {', '.join(missing_keys)}"
                 )
 
-                # Loop again?
-                if not self.do_loop(index, iteration.reasks):
-                    break
+            self._add_call_to_history()
 
-                # Get merged validation output for prompt
-                print("iteration.validation_output: ", iteration.validation_output)
-                validation_output = iteration.validation_output
-                if (
-                    self.current_call.iterations.length > 1
-                    and not self.full_schema_reask
-                    and not isinstance(validation_output, SkeletonReAsk)
-                ):
-                    print("Calling merge_reask_output...")
-                    validation_output = merge_reask_output(
-                        self.current_call.iterations.at(index - 1).validation_output,
-                        self.current_call.iterations.last.validation_output,
+            # Figure out if we need to include instructions in the prompt.
+            include_instructions = not (
+                self.instructions is None and self.msg_history is None
+            )
+
+            with start_action(
+                action_type="run",
+                instructions=self.instructions,
+                prompt=self.prompt,
+                api=self.api,
+                input_schema=self.input_schema,
+                output_schema=self.output_schema,
+                num_reasks=self.num_reasks,
+                metadata=self.metadata,
+            ):
+                instructions, prompt, msg_history, input_schema, output_schema = (
+                    self.instructions,
+                    self.prompt,
+                    self.msg_history,
+                    self.input_schema,
+                    self.output_schema,
+                )
+                for index in range(self.num_reasks + 1):
+                    # Run a single step.
+                    iteration = self.step(
+                        index=index,
+                        api=self.api,
+                        instructions=instructions,
+                        prompt=prompt,
+                        msg_history=msg_history,
+                        prompt_params=prompt_params,
+                        input_schema=input_schema,
+                        output_schema=output_schema,
+                        output=self.output if index == 0 else None,
                     )
-                    print(
-                        "validation_output AFTER merge_reask_output: ",
+
+                    # Loop again?
+                    if not self.do_loop(index, iteration.reasks):
+                        break
+
+                    # Get merged validation output for prompt
+                    print("iteration.validation_output: ", iteration.validation_output)
+                    validation_output = iteration.validation_output
+                    if (
+                        self.current_call.iterations.length > 1
+                        and not self.full_schema_reask
+                        and not isinstance(validation_output, SkeletonReAsk)
+                    ):
+                        print("Calling merge_reask_output...")
+                        validation_output = merge_reask_output(
+                            self.current_call.iterations.at(index - 1).validation_output,
+                            self.current_call.iterations.last.validation_output,
+                        )
+                        print(
+                            "validation_output AFTER merge_reask_output: ",
+                            validation_output,
+                        )
+
+                    # Get new prompt and output schema.
+                    prompt, instructions, output_schema, msg_history = self.prepare_to_loop(
+                        iteration.reasks,
                         validation_output,
+                        output_schema,
+                        prompt_params=prompt_params,
+                        include_instructions=include_instructions,
                     )
 
-                # Get new prompt and output schema.
-                prompt, instructions, output_schema, msg_history = self.prepare_to_loop(
-                    iteration.reasks,
-                    validation_output,
-                    output_schema,
-                    prompt_params=prompt_params,
-                    include_instructions=include_instructions,
-                )
-
-            return self.current_call
+        except Exception as e:
+            error_message = str(e)
+        return self.current_call, error_message
 
     def step(
         self,
@@ -553,7 +559,9 @@ class AsyncRunner(Runner):
         )
         self.api: Optional[AsyncPromptCallableBase] = api
 
-    async def async_run(self, prompt_params: Optional[Dict] = None) -> Call:
+    async def async_run(
+        self, prompt_params: Optional[Dict] = None
+    ) -> Tuple[Call, Optional[str]]:
         """Execute the runner by repeatedly calling step until the reask budget
         is exhausted.
 
@@ -564,78 +572,88 @@ class AsyncRunner(Runner):
         Returns:
             The guard history.
         """
-        if prompt_params is None:
-            prompt_params = {}
-        self._add_call_to_history()
+        error_message = None
+        try:
+            if prompt_params is None:
+                prompt_params = {}
+            self._add_call_to_history()
 
-        # check if validator requirements are fulfilled
-        missing_keys = verify_metadata_requirements(
-            self.metadata, self.output_schema.root_datatype
-        )
-        if missing_keys:
-            raise ValueError(
-                f"Missing required metadata keys: {', '.join(missing_keys)}"
+            # check if validator requirements are fulfilled
+            missing_keys = verify_metadata_requirements(
+                self.metadata, self.output_schema.root_datatype
             )
-
-        with start_action(
-            action_type="run",
-            instructions=self.instructions,
-            prompt=self.prompt,
-            api=self.api,
-            input_schema=self.input_schema,
-            output_schema=self.output_schema,
-            num_reasks=self.num_reasks,
-            metadata=self.metadata,
-        ):
-            instructions, prompt, msg_history, input_schema, output_schema = (
-                self.instructions,
-                self.prompt,
-                self.msg_history,
-                self.input_schema,
-                self.output_schema,
-            )
-            for index in range(self.num_reasks + 1):
-                # Run a single step.
-                iteration = await self.async_step(
-                    index=index,
-                    api=self.api,
-                    instructions=instructions,
-                    prompt=prompt,
-                    msg_history=msg_history,
-                    prompt_params=prompt_params,
-                    input_schema=input_schema,
-                    output_schema=output_schema,
-                    output=self.output if index == 0 else None,
+            if missing_keys:
+                raise ValueError(
+                    f"Missing required metadata keys: {', '.join(missing_keys)}"
                 )
-                self.current_call.iterations.push(iteration)
 
-                # Loop again?
-                if not self.do_loop(index, iteration.reasks):
-                    break
+            with start_action(
+                action_type="run",
+                instructions=self.instructions,
+                prompt=self.prompt,
+                api=self.api,
+                input_schema=self.input_schema,
+                output_schema=self.output_schema,
+                num_reasks=self.num_reasks,
+                metadata=self.metadata,
+            ):
+                instructions, prompt, msg_history, input_schema, output_schema = (
+                    self.instructions,
+                    self.prompt,
+                    self.msg_history,
+                    self.input_schema,
+                    self.output_schema,
+                )
+                for index in range(self.num_reasks + 1):
+                    # Run a single step.
+                    iteration = await self.async_step(
+                        index=index,
+                        api=self.api,
+                        instructions=instructions,
+                        prompt=prompt,
+                        msg_history=msg_history,
+                        prompt_params=prompt_params,
+                        input_schema=input_schema,
+                        output_schema=output_schema,
+                        output=self.output if index == 0 else None,
+                    )
+                    self.current_call.iterations.push(iteration)
 
-                # Get merged validation output for prompt
-                print("iteration.validation_output: ", iteration.validation_output)
-                validation_output = iteration.validation_output
-                if (
-                    self.current_call.iterations.length > 1
-                    and not self.full_schema_reask
-                    and not isinstance(validation_output, SkeletonReAsk)
-                ):
-                    print("Calling merge_reask_output...")
-                    validation_output = merge_reask_output(
-                        self.current_call.iterations.at(index - 1),
-                        self.current_call.iterations.last,
+                    # Loop again?
+                    if not self.do_loop(index, iteration.reasks):
+                        break
+
+                    # Get merged validation output for prompt
+                    print("iteration.validation_output: ", iteration.validation_output)
+                    validation_output = iteration.validation_output
+                    if (
+                        self.current_call.iterations.length > 1
+                        and not self.full_schema_reask
+                        and not isinstance(validation_output, SkeletonReAsk)
+                    ):
+                        print("Calling merge_reask_output...")
+                        validation_output = merge_reask_output(
+                            self.current_call.iterations.at(index - 1),
+                            self.current_call.iterations.last,
+                        )
+
+                    # Get new prompt and output schema.
+                    (
+                        prompt,
+                        instructions,
+                        output_schema,
+                        msg_history
+                    ) = self.prepare_to_loop(
+                        iteration.reasks,
+                        validation_output,
+                        output_schema,
+                        prompt_params=prompt_params,
                     )
 
-                # Get new prompt and output schema.
-                prompt, instructions, output_schema, msg_history = self.prepare_to_loop(
-                    iteration.reasks,
-                    validation_output,
-                    output_schema,
-                    prompt_params=prompt_params,
-                )
+        except Exception as e:
+            error_message = str(e)
 
-            return self.current_call
+        return self.current_call, error_message
 
     async def async_step(
         self,

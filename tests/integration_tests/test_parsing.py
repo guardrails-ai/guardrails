@@ -28,13 +28,13 @@ def test_parsing_reask(mocker):
     def mock_callable(prompt: str):
         return
 
-    _, final_output = guard(
+    final_output = guard(
         llm_api=mock_callable,
         prompt_params={"document": pydantic.PARSING_DOCUMENT},
         num_reasks=1,
     )
 
-    assert final_output == pydantic.PARSING_EXPECTED_OUTPUT
+    assert final_output.validated_output == pydantic.PARSING_EXPECTED_OUTPUT
 
     guard_history = guard.guard_state.most_recent_call.history
 
@@ -67,13 +67,13 @@ async def test_async_parsing_reask(mocker):
     async def mock_async_callable(prompt: str):
         return
 
-    _, final_output = await guard(
+    final_output = await guard(
         llm_api=mock_async_callable,
         prompt_params={"document": pydantic.PARSING_DOCUMENT},
         num_reasks=1,
     )
 
-    assert final_output == pydantic.PARSING_EXPECTED_OUTPUT
+    assert final_output.validated_output == pydantic.PARSING_EXPECTED_OUTPUT
 
     guard_history = guard.guard_state.most_recent_call.history
 

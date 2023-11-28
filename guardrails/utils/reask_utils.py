@@ -26,13 +26,13 @@ class NonParseableReAsk(ReAsk):
 
 
 def gather_reasks(
-    validated_output: Optional[Union[Dict, ReAsk]]
+    validated_output: Optional[Union[str, Dict, ReAsk]]
 ) -> Tuple[List[ReAsk], Dict]:
     """Traverse output and gather all ReAsk objects.
 
     Args:
-        validated_output (Dict): The output of a model. Each value can be a ReAsk,
-            a list, a dictionary, or a single value.
+        validated_output (Union[str, Dict, ReAsk], optional): The output of a model.
+            Each value can be a ReAsk, a list, a dictionary, or a single value.
 
     Returns:
         A list of ReAsk objects found in the output.
@@ -78,9 +78,11 @@ def gather_reasks(
                 _gather_reasks_in_list(item, output[idx], path + [idx])
         return
 
-    output_copy = deepcopy(validated_output)
-    _gather_reasks_in_dict(validated_output, output_copy)
-    return reasks, output_copy
+    if isinstance(validated_output, Dict):
+        output_copy = deepcopy(validated_output)
+        _gather_reasks_in_dict(validated_output, output_copy)
+        return reasks, output_copy
+    return reasks, None
 
 
 def get_pruned_tree(
