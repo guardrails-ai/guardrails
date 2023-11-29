@@ -77,7 +77,7 @@ class Iteration(ArbitraryModel):
     def validated_output(self) -> Optional[Union[str, Dict]]:
         """The valid output from the LLM after undergoing validation.
         Could be only a partial structure if field level reasks occur.
-        Could contain fixed values.,"""
+        Could contain fixed values."""
         return self.outputs.validated_output
 
     @property

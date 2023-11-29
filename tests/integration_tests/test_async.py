@@ -62,17 +62,13 @@ async def test_entity_extraction_with_reask(mocker, multiprocessing_validators: 
     assert first.prompt_tokens_consumed == 123
     assert first.completion_tokens_consumed == 1234
     assert first.raw_output == entity_extraction.LLM_OUTPUT
-    assert (
-        first.validation_output == entity_extraction.VALIDATED_OUTPUT_REASK_1
-    )
+    assert first.validation_output == entity_extraction.VALIDATED_OUTPUT_REASK_1
 
     # For re-asked prompt and output
     final = only_call.iterations.last
     assert final.inputs.prompt == gd.Prompt(entity_extraction.COMPILED_PROMPT_REASK)
     assert final.raw_output == entity_extraction.LLM_OUTPUT_REASK
-    assert (
-        final.validated_output == entity_extraction.VALIDATED_OUTPUT_REASK_2
-    )
+    assert final.validated_output == entity_extraction.VALIDATED_OUTPUT_REASK_2
 
 
 @pytest.mark.asyncio
@@ -93,15 +89,19 @@ async def test_entity_extraction_with_noop(mocker):
     # Assertions are made on the guard state object.
     assert final_output.validated_output == entity_extraction.VALIDATED_OUTPUT_NOOP
 
-    guard_history = guard.guard_state.most_recent_call.history
+    call = guard.history.first
 
-    # Check that the guard state object has the correct number of re-asks.
-    assert len(guard_history) == 1
+    # Check that the guard was called once
+    # and did not have to reask
+    assert guard.history.length == 1
+    assert call.iterations.length == 1
 
     # For orginal prompt and output
-    assert guard_history[0].prompt == gd.Prompt(entity_extraction.COMPILED_PROMPT)
-    assert guard_history[0].output == entity_extraction.LLM_OUTPUT
-    assert guard_history[0].validated_output == entity_extraction.VALIDATED_OUTPUT_NOOP
+    assert call.iterations.first.inputs.prompt == gd.Prompt(
+        entity_extraction.COMPILED_PROMPT
+    )
+    assert call.raw_output == entity_extraction.LLM_OUTPUT
+    assert call.validated_output == entity_extraction.VALIDATED_OUTPUT_NOOP
 
 
 @pytest.mark.asyncio
@@ -124,15 +124,19 @@ async def test_entity_extraction_with_noop_pydantic(mocker):
     # Assertions are made on the guard state object.
     assert final_output.validated_output == entity_extraction.VALIDATED_OUTPUT_NOOP
 
-    guard_history = guard.guard_state.most_recent_call.history
+    call = guard.history.first
 
-    # Check that the guard state object has the correct number of re-asks.
-    assert len(guard_history) == 1
+    # Check that the guard was called once
+    # and did not have toreask
+    assert guard.history.length == 1
+    assert call.iterations.length == 1
 
     # For orginal prompt and output
-    assert guard_history[0].prompt == gd.Prompt(entity_extraction.COMPILED_PROMPT)
-    assert guard_history[0].output == entity_extraction.LLM_OUTPUT
-    assert guard_history[0].validated_output == entity_extraction.VALIDATED_OUTPUT_NOOP
+    assert call.iterations.first.inputs.prompt == gd.Prompt(
+        entity_extraction.COMPILED_PROMPT
+    )
+    assert call.raw_output == entity_extraction.LLM_OUTPUT
+    assert call.validated_output == entity_extraction.VALIDATED_OUTPUT_NOOP
 
 
 @pytest.mark.asyncio
@@ -155,17 +159,18 @@ async def test_entity_extraction_with_filter(mocker):
     # Assertions are made on the guard state object.
     assert final_output.validated_output == entity_extraction.VALIDATED_OUTPUT_FILTER
 
-    guard_history = guard.guard_state.most_recent_call.history
+    call = guard.history.first
 
     # Check that the guard state object has the correct number of re-asks.
-    assert len(guard_history) == 1
+    assert guard.history.length == 1
+    assert call.iterations.length == 1
 
     # For orginal prompt and output
-    assert guard_history[0].prompt == gd.Prompt(entity_extraction.COMPILED_PROMPT)
-    assert guard_history[0].output == entity_extraction.LLM_OUTPUT
-    assert (
-        guard_history[0].validated_output == entity_extraction.VALIDATED_OUTPUT_FILTER
+    assert call.iterations.first.inputs.prompt == gd.Prompt(
+        entity_extraction.COMPILED_PROMPT
     )
+    assert call.raw_output == entity_extraction.LLM_OUTPUT
+    assert call.validated_output == entity_extraction.VALIDATED_OUTPUT_FILTER
 
 
 @pytest.mark.asyncio
@@ -188,15 +193,17 @@ async def test_entity_extraction_with_fix(mocker):
     # Assertions are made on the guard state object.
     assert final_output.validated_output == entity_extraction.VALIDATED_OUTPUT_FIX
 
-    guard_history = guard.guard_state.most_recent_call.history
+    call = guard.history.first
 
     # Check that the guard state object has the correct number of re-asks.
-    assert len(guard_history) == 1
+    assert guard.history.length == 1
 
     # For orginal prompt and output
-    assert guard_history[0].prompt == gd.Prompt(entity_extraction.COMPILED_PROMPT)
-    assert guard_history[0].output == entity_extraction.LLM_OUTPUT
-    assert guard_history[0].validated_output == entity_extraction.VALIDATED_OUTPUT_FIX
+    assert call.iterations.first.inputs.prompt == gd.Prompt(
+        entity_extraction.COMPILED_PROMPT
+    )
+    assert call.raw_output == entity_extraction.LLM_OUTPUT
+    assert call.validated_output == entity_extraction.VALIDATED_OUTPUT_FIX
 
 
 @pytest.mark.asyncio
@@ -218,17 +225,17 @@ async def test_entity_extraction_with_refrain(mocker):
     # Assertions are made on the guard state object.
     assert final_output.validated_output == entity_extraction.VALIDATED_OUTPUT_REFRAIN
 
-    guard_history = guard.guard_state.most_recent_call.history
+    call = guard.history.first
 
     # Check that the guard state object has the correct number of re-asks.
-    assert len(guard_history) == 1
+    assert guard.history.length == 1
 
     # For orginal prompt and output
-    assert guard_history[0].prompt == gd.Prompt(entity_extraction.COMPILED_PROMPT)
-    assert guard_history[0].output == entity_extraction.LLM_OUTPUT
-    assert (
-        guard_history[0].validated_output == entity_extraction.VALIDATED_OUTPUT_REFRAIN
+    assert call.iterations.first.inputs.prompt == gd.Prompt(
+        entity_extraction.COMPILED_PROMPT
     )
+    assert call.raw_output == entity_extraction.LLM_OUTPUT
+    assert call.validated_output == entity_extraction.VALIDATED_OUTPUT_REFRAIN
 
 
 @pytest.mark.asyncio

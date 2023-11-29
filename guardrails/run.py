@@ -176,8 +176,7 @@ class Runner:
 
                     # Get merged validation output for prompt
                     validation_output = merge_validation_output(
-                        self.current_call,
-                        self.full_schema_reask
+                        self.current_call, self.full_schema_reask
                     )
 
                     # Get new prompt and output schema.
@@ -195,6 +194,9 @@ class Runner:
                     )
 
         except Exception as e:
+            # print("An exception was raised in Runner.__call__")
+            # import traceback
+            # traceback.print_exception(e)
             error_message = str(e)
         return self.current_call, error_message
 
@@ -210,6 +212,8 @@ class Runner:
         output_schema: Schema,
         output: Optional[str] = None,
     ) -> Iteration:
+        """Run a full step."""
+        # print("running step ", index)
         inputs = Inputs(
             llm_api=api,
             llm_response=output,
@@ -225,80 +229,91 @@ class Runner:
         iteration = Iteration(inputs=inputs, outputs=outputs)
         self.current_call.iterations.push(iteration)
 
-        """Run a full step."""
-        with start_action(
-            action_type="step",
-            index=index,
-            instructions=instructions,
-            prompt=prompt,
-            prompt_params=prompt_params,
-            input_schema=input_schema,
-            output_schema=output_schema,
-        ):
-            # Prepare: run pre-processing, and input validation.
-            if output:
-                instructions = None
-                prompt = None
-                msg_history = None
-            else:
-                instructions, prompt, msg_history = self.prepare(
-                    index,
-                    instructions,
-                    prompt,
-                    msg_history,
-                    prompt_params,
-                    api,
-                    input_schema,
-                    output_schema,
+        try:
+            with start_action(
+                action_type="step",
+                index=index,
+                instructions=instructions,
+                prompt=prompt,
+                prompt_params=prompt_params,
+                input_schema=input_schema,
+                output_schema=output_schema,
+            ):
+                # Prepare: run pre-processing, and input validation.
+                if output:
+                    instructions = None
+                    prompt = None
+                    msg_history = None
+                else:
+                    instructions, prompt, msg_history = self.prepare(
+                        index,
+                        instructions,
+                        prompt,
+                        msg_history,
+                        prompt_params,
+                        api,
+                        input_schema,
+                        output_schema,
+                    )
+
+                iteration.inputs.prompt = prompt
+                iteration.inputs.instructions = instructions
+                iteration.inputs.msg_history = msg_history
+
+                # Call: run the API.
+                llm_response = self.call(
+                    index, instructions, prompt, msg_history, api, output
                 )
 
-            iteration.inputs.prompt = prompt
-            iteration.inputs.instructions = instructions
-            iteration.inputs.msg_history = msg_history
+                iteration.outputs.llm_response_info = llm_response
+                raw_output = llm_response.output
 
-            # Call: run the API.
-            llm_response = self.call(
-                index, instructions, prompt, msg_history, api, output
-            )
+                # Parse: parse the output.
+                parsed_output, parsing_error = self.parse(
+                    index, raw_output, output_schema
+                )
+                if parsing_error:
+                    # print("A parsing error occurred in Runner.step")
+                    # import traceback
+                    # traceback.print_exception(parsing_error)
+                    iteration.outputs.error = str(parsing_error)
+                
+                iteration.outputs.parsed_output = parsed_output
 
-            iteration.outputs.llm_response_info = llm_response
-            raw_output = llm_response.output
-
-            # Parse: parse the output.
-            parsed_output, parsing_error = self.parse(index, raw_output, output_schema)
-
-            iteration.outputs.parsed_output = parsed_output
-            iteration.outputs.error = parsing_error
-
-            # Validate: run output validation.
-            validated_output = None
-            if parsing_error and isinstance(parsed_output, NonParseableReAsk):
-                reasks = self.introspect(index, parsed_output, output_schema)
-            else:
                 # Validate: run output validation.
-                validated_output = self.validate(
-                    iteration, index, parsed_output, output_schema
-                )
-                iteration.outputs.validation_output = validated_output
+                validated_output = None
+                if parsing_error and isinstance(parsed_output, NonParseableReAsk):
+                    reasks, _ = self.introspect(index, parsed_output, output_schema)
+                else:
+                    # Validate: run output validation.
+                    validated_output = self.validate(
+                        iteration, index, parsed_output, output_schema
+                    )
+                    iteration.outputs.validation_output = validated_output
 
-                # Introspect: inspect validated output for reasks.
-                reasks, valid_output = self.introspect(
-                    index, validated_output, output_schema
-                )
-                iteration.outputs.validated_output = valid_output
+                    # Introspect: inspect validated output for reasks.
+                    reasks, valid_output = self.introspect(
+                        index, validated_output, output_schema
+                    )
+                    iteration.outputs.validated_output = valid_output
 
-            iteration.outputs.reasks = reasks
+                iteration.outputs.reasks = reasks
 
-            # Replace reask values with fixed values if terminal step.
-            if not self.do_loop(index, reasks):
-                validation_output = merge_validation_output(
-                    self.current_call,
-                    self.full_schema_reask
-                )
-                final_output = sub_reasks_with_fixed_values(validation_output)
-                iteration.outputs.validated_output = final_output
-
-            return iteration
+                # Replace reask values with fixed values if terminal step.
+                if not self.do_loop(index, reasks):
+                    validation_output = merge_validation_output(
+                        self.current_call, self.full_schema_reask
+                    )
+                    final_output = sub_reasks_with_fixed_values(validation_output)
+                    iteration.outputs.validated_output = final_output
+        except Exception as e:
+            # print("An exception was raised in Runner.step")
+            # import traceback
+            # traceback.print_exception(e)
+            error_message = str(e)
+            iteration.outputs.error = error_message
+            raise e
+        return iteration
 
     def prepare(
         self,
@@ -596,8 +611,7 @@ class AsyncRunner(Runner):
 
                     # Get merged validation output for prompt
                     validation_output = merge_validation_output(
-                        self.current_call,
-                        self.full_schema_reask
+                        self.current_call, self.full_schema_reask
                     )
 
                     # Get new prompt and output schema.
@@ -613,6 +627,9 @@ class AsyncRunner(Runner):
                         prompt_params=prompt_params,
                     )
         except Exception as e:
+            # print("An exception was raised in AsyncRunner.async_run")
+            # import traceback
+            # traceback.print_exception(e)
             error_message = str(e)
 
         return self.current_call, error_message
@@ -629,6 +646,7 @@ class AsyncRunner(Runner):
         output_schema: Schema,
         output: Optional[str] = None,
     ) -> Iteration:
+        """Run a full step."""
         inputs = Inputs(
             llm_api=api,
             llm_response=output,
@@ -643,78 +661,88 @@ class AsyncRunner(Runner):
         outputs = Outputs()
         iteration = Iteration(inputs=inputs, outputs=outputs)
         self.current_call.iterations.push(iteration)
-        """Run a full step."""
-        with start_action(
-            action_type="step",
-            index=index,
-            instructions=instructions,
-            prompt=prompt,
-            prompt_params=prompt_params,
-            input_schema=input_schema,
-            output_schema=output_schema,
-        ):
-            # Prepare: run pre-processing, and input validation.
-            if output:
-                instructions = None
-                prompt = None
-                msg_history = None
-            else:
-                instructions, prompt, msg_history = self.prepare(
-                    index,
-                    instructions,
-                    prompt,
-                    msg_history,
-                    prompt_params,
-                    api,
-                    input_schema,
-                    output_schema,
+        try:
+            with start_action(
+                action_type="step",
+                index=index,
+                instructions=instructions,
+                prompt=prompt,
+                prompt_params=prompt_params,
+                input_schema=input_schema,
+                output_schema=output_schema,
+            ):
+                # Prepare: run pre-processing, and input validation.
+                if output:
+                    instructions = None
+                    prompt = None
+                    msg_history = None
+                else:
+                    instructions, prompt, msg_history = self.prepare(
+                        index,
+                        instructions,
+                        prompt,
+                        msg_history,
+                        prompt_params,
+                        api,
+                        input_schema,
+                        output_schema,
+                    )
+
+                iteration.inputs.prompt = prompt
+                iteration.inputs.instructions = instructions
+                iteration.inputs.msg_history = msg_history
+
+                # Call: run the API.
+                llm_response = await self.async_call(
+                    index, instructions, prompt, msg_history, api, output
                 )
 
-            iteration.inputs.prompt = prompt
-            iteration.inputs.instructions = instructions
-            iteration.inputs.msg_history = msg_history
+                iteration.outputs.llm_response_info = llm_response
+                output = llm_response.output
 
-            # Call: run the API.
-            llm_response = await self.async_call(
-                index, instructions, prompt, msg_history, api, output
-            )
+                # Parse: parse the output.
+                parsed_output, parsing_error = self.parse(index, output, output_schema)
+                if parsing_error:
+                    # print("A parsing error occurred in AsyncRunner.async_step")
+                    # import traceback
+                    # traceback.print_exception(parsing_error)
+                    iteration.outputs.error = str(parsing_error)
 
-            iteration.outputs.llm_response_info = llm_response
-            output = llm_response.output
+                iteration.outputs.parsed_output = parsed_output
 
-            # Parse: parse the output.
-            parsed_output, parsing_error = self.parse(index, output, output_schema)
+                validated_output = None
+                if parsing_error and isinstance(parsed_output, NonParseableReAsk):
+                    reasks, _ = self.introspect(index, parsed_output, output_schema)
+                else:
+                    # Validate: run output validation.
+                    validated_output = await self.async_validate(
+                        iteration, index, parsed_output, output_schema
+                    )
+                    iteration.outputs.validation_output = validated_output
 
-            iteration.outputs.parsed_output = parsed_output
+                    # Introspect: inspect validated output for reasks.
+                    reasks, valid_output = self.introspect(
+                        index, validated_output, output_schema
+                    )
+                    iteration.outputs.validated_output = valid_output
 
-            validated_output = None
-            if parsing_error and isinstance(parsed_output, NonParseableReAsk):
-                reasks = self.introspect(index, parsed_output, output_schema)
-            else:
-                # Validate: run output validation.
-                validated_output = await self.async_validate(
-                    iteration, index, parsed_output, output_schema
-                )
-                iteration.outputs.validation_output = validated_output
+                iteration.outputs.reasks = reasks
 
-                # Introspect: inspect validated output for reasks.
-                reasks, valid_output = self.introspect(
-                    index, validated_output, output_schema
-                )
-                iteration.outputs.validated_output = valid_output
-
-            iteration.outputs.reasks = reasks
-
-            # Replace reask values with fixed values if terminal step.
-            if not self.do_loop(index, reasks):
-                validation_output = merge_validation_output(
-                    self.current_call,
-                    self.full_schema_reask
-                )
-                final_output = sub_reasks_with_fixed_values(validation_output)
-                iteration.outputs.validated_output = final_output
-
-            return iteration
+                # Replace reask values with fixed values if terminal step.
+                if not self.do_loop(index, reasks):
+                    validation_output = merge_validation_output(
+                        self.current_call, self.full_schema_reask
+                    )
+                    final_output = sub_reasks_with_fixed_values(validation_output)
+                    iteration.outputs.validated_output = final_output
+        except Exception as e:
+            # print("An exception was raised in AsyncRunner.async_step")
+            # import traceback
+            # traceback.print_exception(e)
+            error_message = str(e)
+            iteration.outputs.error = error_message
+            raise e
+        return iteration
 
     async def async_call(
         self,

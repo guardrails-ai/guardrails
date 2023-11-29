@@ -25,7 +25,7 @@ class Outputs(ArbitraryModel):
         description="The valid output after validation."
         "Could be only a partial structure if field level reasks occur."
         "Could contain fixed values.",
-        default=None
+        default=None,
     )
     reasks: Sequence[ReAsk] = Field(
         description="Information from the validation process"
@@ -71,6 +71,9 @@ class Outputs(ArbitraryModel):
         OneOf: pass, fail, error, not run
         """
         reasks, _ = gather_reasks(self.validated_output)
+        # print(" !!!!!!!!!!!! START Outputs.status !!!!!!!!!!!! ")
+        # print("len(reasks): ", len(reasks))
+        # print("self.error: ", self.error)
         if self._all_empty() is True:
             return not_run_status
         elif self.error:
@@ -79,6 +82,13 @@ class Outputs(ArbitraryModel):
             # Failed validations are ok
             # as long as they are auto-fixed
             len(self.failed_validations) > 0
+            and len(reasks) > 0
+        ):
+            return fail_status
+        elif (
+            # Reasks without failed validations
+            # means top level reask
+            len(self.failed_validations) == 0
             and len(reasks) > 0
         ):
             return fail_status

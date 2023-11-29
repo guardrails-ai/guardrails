@@ -100,7 +100,9 @@ class Call(ArbitraryModel):
     @property
     def validated_output(self) -> Optional[Union[str, Dict]]:
         """The output from the LLM after undergoing validation.
-        This will only have a value if the Guard is in a passing state."""
+
+        This will only have a value if the Guard is in a passing state.
+        """
         if self.status == pass_status:
             return self.outputs.validated_output
 

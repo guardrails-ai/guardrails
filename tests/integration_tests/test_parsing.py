@@ -36,20 +36,20 @@ def test_parsing_reask(mocker):
 
     assert final_output.validated_output == pydantic.PARSING_EXPECTED_OUTPUT
 
-    guard_history = guard.guard_state.most_recent_call.history
+    call = guard.history.first
 
     # Check that the guard state object has the correct number of re-asks.
-    assert len(guard_history) == 2
+    assert call.iterations.length == 2
 
     # For orginal prompt and output
-    assert guard_history[0].prompt == gd.Prompt(pydantic.PARSING_COMPILED_PROMPT)
-    assert guard_history[0].output == pydantic.PARSING_UNPARSEABLE_LLM_OUTPUT
-    assert guard_history[0].validated_output is None
+    assert call.iterations.first.inputs.prompt == gd.Prompt(pydantic.PARSING_COMPILED_PROMPT)
+    assert call.iterations.first.raw_output == pydantic.PARSING_UNPARSEABLE_LLM_OUTPUT
+    assert call.iterations.first.validated_output is None
 
     # For re-asked prompt and output
-    assert guard_history[1].prompt == gd.Prompt(pydantic.PARSING_COMPILED_REASK)
-    assert guard_history[1].output == pydantic.PARSING_EXPECTED_LLM_OUTPUT
-    assert guard_history[1].validated_output == pydantic.PARSING_EXPECTED_OUTPUT
+    assert call.iterations.last.inputs.prompt == gd.Prompt(pydantic.PARSING_COMPILED_REASK)
+    assert call.raw_output == pydantic.PARSING_EXPECTED_LLM_OUTPUT
+    assert call.validated_output == pydantic.PARSING_EXPECTED_OUTPUT
 
 
 @pytest.mark.asyncio
@@ -75,20 +75,20 @@ async def test_async_parsing_reask(mocker):
 
     assert final_output.validated_output == pydantic.PARSING_EXPECTED_OUTPUT
 
-    guard_history = guard.guard_state.most_recent_call.history
+    call = guard.history.first
 
     # Check that the guard state object has the correct number of re-asks.
-    assert len(guard_history) == 2
+    assert call.iterations.length == 2
 
     # For orginal prompt and output
-    assert guard_history[0].prompt == gd.Prompt(pydantic.PARSING_COMPILED_PROMPT)
-    assert guard_history[0].output == pydantic.PARSING_UNPARSEABLE_LLM_OUTPUT
-    assert guard_history[0].validated_output is None
+    assert call.iterations.first.inputs.prompt == gd.Prompt(pydantic.PARSING_COMPILED_PROMPT)
+    assert call.iterations.first.raw_output == pydantic.PARSING_UNPARSEABLE_LLM_OUTPUT
+    assert call.iterations.first.validated_output is None
 
     # For re-asked prompt and output
-    assert guard_history[1].prompt == gd.Prompt(pydantic.PARSING_COMPILED_REASK)
-    assert guard_history[1].output == pydantic.PARSING_EXPECTED_LLM_OUTPUT
-    assert guard_history[1].validated_output == pydantic.PARSING_EXPECTED_OUTPUT
+    assert call.iterations.last.inputs.prompt == gd.Prompt(pydantic.PARSING_COMPILED_REASK)
+    assert call.raw_output == pydantic.PARSING_EXPECTED_LLM_OUTPUT
+    assert call.validated_output == pydantic.PARSING_EXPECTED_OUTPUT
 
 
 def test_reask_prompt_instructions(mocker):

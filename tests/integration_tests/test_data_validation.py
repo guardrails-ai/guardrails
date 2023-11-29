@@ -9,24 +9,27 @@ from guardrails.utils.reask_utils import ReAsk
 from guardrails.validators import ValidChoices
 
 test_cases = [
-    ('{"choice": {"action": "fight", "fight_move": "kick"}}', False),
+    ('{"choice": {"action": "fight", "fight_move": "kick"}}', False, False),
     (
         '{"choice": {"action": "flight", "flight_direction": "north", "flight_speed": 1}}',
         False,
+        False,
     ),
-    ('{"choice": {"action": "flight", "fight_move": "punch"}}', True),
+    ('{"choice": {"action": "flight", "fight_move": "punch"}}', False, True),
     (
         '{"choice": {"action": "fight", "flight_direction": "north", "flight_speed": 1}}',
-        True,
+        False,
+        True
     ),
-    ('{"choice": {"action": "random_action"}}', True),
-    ('{"choice": {"action": "fight", "fight": "random_move"}}', True),
-    ('{"choice": {"action": "flight", "random_key": "random_value"}', True),
+    ('{"choice": {"action": "random_action"}}', False, True),
+    ('{"choice": {"action": "fight", "fight_move": "random_move"}}', True, True),
+    ('{"choice": {"action": "flight", "random_key": "random_value"}}', False, True),
+    ('{"choice": {"action": "flight", "random_key": "random_value"}', True, True),
 ]
 
 
-@pytest.mark.parametrize("llm_output, raises", test_cases)
-def test_choice_validation(llm_output, raises):
+@pytest.mark.parametrize("llm_output, raises, fails", test_cases)
+def test_choice_validation(llm_output, raises, fails):
     rail_spec = """
 <rail version="0.1">
 
@@ -52,20 +55,21 @@ Dummy prompt.
     guard = Guard.from_rail_string(rail_spec)
 
     # If raises is True, then the test should raise an exception.
+    result = guard.parse(llm_output, num_reasks=0)
     if raises:
-        with pytest.raises(ValueError):
-            result = guard.parse(llm_output, num_reasks=0)
-            validated_output = result.validated_output
-            if validated_output is None or isinstance(validated_output, ReAsk):
-                raise ValueError("Expected a result, but got None or ReAsk.")
+        assert result.validation_passed is False
+        assert result.error is not None
+    elif fails:
+        assert result.validation_passed is False
+        assert result.reask is not None
+        assert result.error is None
     else:
-        result = guard.parse(llm_output, num_reasks=0)
-        validated_output = result.validated_output
-        assert not isinstance(validated_output, ReAsk)
+        assert result.validation_passed is True
+        assert result.validated_output is not None
+        assert not isinstance(result.validated_output, ReAsk)
 
-
-@pytest.mark.parametrize("llm_output, raises", test_cases)
-def test_choice_validation_pydantic(llm_output, raises):
+@pytest.mark.parametrize("llm_output, raises, fails", test_cases)
+def test_choice_validation_pydantic(llm_output, raises, fails):
     class Fight(BaseModel):
         action: Literal["fight"]
         fight_move: str = Field(
@@ -91,13 +95,15 @@ def test_choice_validation_pydantic(llm_output, raises):
     guard = Guard.from_pydantic(output_class=Choice, prompt="Dummy prompt.")
 
     # If raises is True, then the test should raise an exception.
+    result = guard.parse(llm_output, num_reasks=0)
     if raises:
-        with pytest.raises(ValueError):
-            result = guard.parse(llm_output, num_reasks=0)
-            validated_output = result.validated_output
-            if validated_output is None or isinstance(validated_output, ReAsk):
-                raise ValueError("Expected a result, but got None or ReAsk.")
+        assert result.validation_passed is False
+        assert result.error is not None
+    elif fails:
+        assert result.validation_passed is False
+        assert result.reask is not None
+        assert result.error is None
     else:
-        result = guard.parse(llm_output, num_reasks=0)
-        validated_output = result.validated_output
-        assert not isinstance(validated_output, ReAsk)
+        assert result.validation_passed is True
+        assert result.validated_output is not None
+        assert not isinstance(result.validated_output, ReAsk)

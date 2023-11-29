@@ -234,7 +234,7 @@ class JsonSchema(Schema):
 
     def get_reask_setup(
         self,
-        reasks: List[FieldReAsk],
+        reasks: List[ReAsk],
         original_response: Any,
         use_full_schema: bool,
         prompt_params: Optional[Dict[str, Any]] = None,
@@ -255,7 +255,10 @@ class JsonSchema(Schema):
                     constants["high_level_json_parsing_reask_prompt"]
                     + constants["json_suffix_without_examples"]
                 )
-            np_reask: NonParseableReAsk = original_response
+            np_reask: NonParseableReAsk = next(
+                r for r in reasks
+                if isinstance(r, NonParseableReAsk)
+            )
             # This is correct
             reask_value = np_reask.incorrect_value
         elif is_skeleton_reask:
@@ -734,7 +737,7 @@ class StringSchema(Schema):
             value=data,
             metadata=metadata,
             validator_setup=validation,
-            iteration=Iteration,
+            iteration=iteration,
         )
 
         validated_response = {dummy_key: validated_response}

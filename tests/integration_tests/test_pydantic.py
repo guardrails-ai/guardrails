@@ -5,6 +5,9 @@ import pytest
 from pydantic import BaseModel
 
 import guardrails as gd
+from guardrails.classes.generic.stack import Stack
+from guardrails.classes.history.call import Call
+from guardrails.utils.history_utils import merge_validation_output
 from guardrails.utils.openai_utils import (
     get_static_openai_chat_create_func,
     get_static_openai_create_func,
@@ -31,25 +34,35 @@ def test_pydantic_with_reask(mocker):
     # Assertions are made on the guard state object.
     assert final_output.validated_output == pydantic.VALIDATED_OUTPUT_REASK_3
 
-    guard_history = guard.guard_state.most_recent_call.history
+    call = guard.history.first
 
     # Check that the guard state object has the correct number of re-asks.
-    assert len(guard_history) == 3
+    assert call.iterations.length == 3
 
     # For orginal prompt and output
-    assert guard_history[0].prompt == gd.Prompt(pydantic.COMPILED_PROMPT)
-    assert guard_history[0].output == pydantic.LLM_OUTPUT
-    assert guard_history[0].validated_output == pydantic.VALIDATED_OUTPUT_REASK_1
+    assert call.iterations.first.inputs.prompt == gd.Prompt(pydantic.COMPILED_PROMPT)
+    assert call.iterations.first.raw_output == pydantic.LLM_OUTPUT
+    assert call.iterations.first.validation_output == pydantic.VALIDATED_OUTPUT_REASK_1
 
     # For re-asked prompt and output
-    assert guard_history[1].prompt == gd.Prompt(pydantic.COMPILED_PROMPT_REASK_1)
-    assert guard_history[1].output == pydantic.LLM_OUTPUT_REASK_1
-    assert guard_history[1].validated_output == pydantic.VALIDATED_OUTPUT_REASK_2
+    assert call.iterations.at(1).inputs.prompt == gd.Prompt(pydantic.COMPILED_PROMPT_REASK_1)
+    assert call.iterations.at(1).raw_output == pydantic.LLM_OUTPUT_REASK_1
+    
+    # We don't track merged validation output anymore 
+    # Each validation_output is instead tracked as it came back from validation
+    # assert call.iterations.at(1).validation_output == pydantic.VALIDATED_OUTPUT_REASK_2
+    
+    # We can merge down though to achieve the same thing
+    merged_output = merge_validation_output(
+        Call(iterations=Stack(call.iterations.first, call.iterations.at(1))),
+        False
+    )
+    assert merged_output == pydantic.VALIDATED_OUTPUT_REASK_2
 
     # For re-asked prompt #2 and output #2
-    assert guard_history[2].prompt == gd.Prompt(pydantic.COMPILED_PROMPT_REASK_2)
-    assert guard_history[2].output == pydantic.LLM_OUTPUT_REASK_2
-    assert guard_history[2].validated_output == pydantic.VALIDATED_OUTPUT_REASK_3
+    assert call.iterations.last.inputs.prompt == gd.Prompt(pydantic.COMPILED_PROMPT_REASK_2)
+    assert call.raw_output == pydantic.LLM_OUTPUT_REASK_2
+    assert call.validated_output == pydantic.VALIDATED_OUTPUT_REASK_3
 
 
 def test_pydantic_with_full_schema_reask(mocker):
@@ -71,34 +84,34 @@ def test_pydantic_with_full_schema_reask(mocker):
     # Assertions are made on the guard state object.
     assert final_output == pydantic.VALIDATED_OUTPUT_REASK_3
 
-    guard_history = guard.guard_state.most_recent_call.history
+    call = guard.history.first
 
     # Check that the guard state object has the correct number of re-asks.
-    assert len(guard_history) == 3
+    assert call.iterations.length == 3
 
     # For orginal prompt and output
-    assert guard_history[0].prompt == gd.Prompt(pydantic.COMPILED_PROMPT_CHAT)
-    assert guard_history[0].instructions == gd.Instructions(
+    assert call.iterations.first.inputs.prompt == gd.Prompt(pydantic.COMPILED_PROMPT_CHAT)
+    assert call.iterations.first.inputs.instructions == gd.Instructions(
         pydantic.COMPILED_INSTRUCTIONS_CHAT
     )
-    assert guard_history[0].output == pydantic.LLM_OUTPUT
-    assert guard_history[0].validated_output == pydantic.VALIDATED_OUTPUT_REASK_1
+    assert call.iterations.first.raw_output == pydantic.LLM_OUTPUT
+    assert call.iterations.first.validation_output == pydantic.VALIDATED_OUTPUT_REASK_1
 
     # For re-asked prompt and output
-    assert guard_history[1].prompt == gd.Prompt(pydantic.COMPILED_PROMPT_FULL_REASK_1)
-    assert guard_history[1].instructions == gd.Instructions(
+    assert call.iterations.at(1).inputs.prompt == gd.Prompt(pydantic.COMPILED_PROMPT_FULL_REASK_1)
+    assert call.iterations.at(1).inputs.instructions == gd.Instructions(
         pydantic.COMPILED_INSTRUCTIONS_CHAT
     )
-    assert guard_history[1].output == pydantic.LLM_OUTPUT_FULL_REASK_1
-    assert guard_history[1].validated_output == pydantic.VALIDATED_OUTPUT_REASK_2
+    assert call.iterations.at(1).raw_output == pydantic.LLM_OUTPUT_FULL_REASK_1
+    assert call.iterations.at(1).validation_output == pydantic.VALIDATED_OUTPUT_REASK_2
 
     # For re-asked prompt #2 and output #2
-    assert guard_history[2].prompt == gd.Prompt(pydantic.COMPILED_PROMPT_FULL_REASK_2)
-    assert guard_history[2].instructions == gd.Instructions(
+    assert call.iterations.last.inputs.prompt == gd.Prompt(pydantic.COMPILED_PROMPT_FULL_REASK_2)
+    assert call.iterations.last.inputs.instructions == gd.Instructions(
         pydantic.COMPILED_INSTRUCTIONS_CHAT
     )
-    assert guard_history[2].output == pydantic.LLM_OUTPUT_FULL_REASK_2
-    assert guard_history[2].validated_output == pydantic.VALIDATED_OUTPUT_REASK_3
+    assert call.raw_output == pydantic.LLM_OUTPUT_FULL_REASK_2
+    assert call.validated_output == pydantic.VALIDATED_OUTPUT_REASK_3
 
 
 class ContainerModel(BaseModel):
