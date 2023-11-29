@@ -1,13 +1,8 @@
 from guardrails.classes.generic.stack import Stack
 from guardrails.classes.history import Call, Iteration, Outputs
-from guardrails.utils.history_utils import merge_valid_output
+from guardrails.utils.history_utils import merge_validation_output
 
+# TODO
+def test_merge_validation_output():
+    assert True == False
 
-def test_merge_valid_output():
-    first_iteration = Iteration(outputs=Outputs(validated_output={"a": 1, "b": "abc"}))
-    second_iteration = Iteration(outputs=Outputs(validated_output={"b": "def", "c": 3}))
-    current_call = Call(iterations=Stack(first_iteration, second_iteration))
-
-    merged_output = merge_valid_output(current_call)
-
-    assert merged_output == {"a": 1, "b": "def", "c": 3}
