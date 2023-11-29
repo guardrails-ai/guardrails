@@ -619,3 +619,41 @@ class Guard:
             )
             guard_history = await runner.async_run(prompt_params=prompt_params)
             return sub_reasks_with_fixed_values(guard_history.validated_output)
+
+    def with_prompt_validation(
+        self,
+        validators: Sequence[Validator],
+    ):
+        """Add prompt validation to the Guard.
+
+        Args:
+            validators: The validators to add to the prompt.
+        """
+        if self.rail.prompt_schema:
+            warnings.warn(
+                "Overriding existing prompt validators."
+            )
+        schema = StringSchema.from_string(
+            validators=validators,
+        )
+        self.rail.prompt_schema = schema
+        return self
+
+    def with_instructions_validation(
+        self,
+        validators: Sequence[Validator],
+    ):
+        """Add instructions validation to the Guard.
+
+        Args:
+            validators: The validators to add to the instructions.
+        """
+        if self.rail.instructions_schema:
+            warnings.warn(
+                "Overriding existing instructions validators."
+            )
+        schema = StringSchema.from_string(
+            validators=validators,
+        )
+        self.rail.instructions_schema = schema
+        return self
