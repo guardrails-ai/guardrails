@@ -39,7 +39,7 @@ jobs:
       - name: Install dependencies
         run: poetry install --with docs
       - name: Build
-        run: mkdocs build
+        run: poetry run mkdocs build
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v2
         with:
