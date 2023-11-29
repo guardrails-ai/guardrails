@@ -6,7 +6,7 @@ from guardrails.classes.generic.stack import Stack
 from guardrails.classes.history.call_inputs import CallInputs
 from guardrails.classes.history.iteration import Iteration
 from guardrails.classes.history.outputs import Outputs
-from guardrails.constants import not_run_status
+from guardrails.constants import not_run_status, pass_status
 from guardrails.utils.logs_utils import ValidatorLogs
 from guardrails.utils.pydantic_utils import ArbitraryModel
 from guardrails.utils.reask_utils import ReAsk
@@ -99,8 +99,10 @@ class Call(ArbitraryModel):
 
     @property
     def validated_output(self) -> Optional[Union[str, Dict]]:
-        """The output from the LLM after undergoing validation."""
-        return self.outputs.validated_output
+        """The output from the LLM after undergoing validation.
+        This will only have a value if the Guard is in a passing state."""
+        if self.status == pass_status:
+            return self.outputs.validated_output
 
     @property
     def reasks(self) -> Sequence[ReAsk]:

@@ -11,14 +11,12 @@ from guardrails.datatypes import verify_metadata_requirements
 from guardrails.llm_providers import AsyncPromptCallableBase, PromptCallableBase
 from guardrails.prompt import Instructions, Prompt
 from guardrails.schema import Schema
-from guardrails.utils.history_utils import merge_valid_output
+from guardrails.utils.history_utils import merge_validation_output
 from guardrails.utils.llm_response import LLMResponse
-from guardrails.utils.logs_utils import merge_reask_output
 from guardrails.utils.reask_utils import (
     FieldReAsk,
     NonParseableReAsk,
     ReAsk,
-    SkeletonReAsk,
     reasks_to_dict,
     sub_reasks_with_fixed_values,
 )
@@ -171,29 +169,16 @@ class Runner:
                         output_schema=output_schema,
                         output=self.output if index == 0 else None,
                     )
+
                     # Loop again?
                     if not self.do_loop(index, iteration.reasks):
                         break
 
                     # Get merged validation output for prompt
-                    print("iteration.validation_output: ", iteration.validation_output)
-                    validation_output = iteration.validation_output
-                    if (
-                        self.current_call.iterations.length > 1
-                        and not self.full_schema_reask
-                        and not isinstance(validation_output, SkeletonReAsk)
-                    ):
-                        print("Calling merge_reask_output...")
-                        validation_output = merge_reask_output(
-                            self.current_call.iterations.at(
-                                index - 1
-                            ).validation_output,
-                            self.current_call.iterations.last.validation_output,
-                        )
-                        print(
-                            "validation_output AFTER merge_reask_output: ",
-                            validation_output,
-                        )
+                    validation_output = merge_validation_output(
+                        self.current_call,
+                        self.full_schema_reask
+                    )
 
                     # Get new prompt and output schema.
                     (
@@ -240,7 +225,6 @@ class Runner:
         iteration = Iteration(inputs=inputs, outputs=outputs)
         self.current_call.iterations.push(iteration)
 
-        print("Running step number ", index)
         """Run a full step."""
         with start_action(
             action_type="step",
@@ -273,19 +257,15 @@ class Runner:
             iteration.inputs.msg_history = msg_history
 
             # Call: run the API.
-            print("Calling the llm...")
             llm_response = self.call(
                 index, instructions, prompt, msg_history, api, output
             )
-            print("Llm response received!")
 
             iteration.outputs.llm_response_info = llm_response
             raw_output = llm_response.output
 
             # Parse: parse the output.
-            print("Parsing...")
             parsed_output, parsing_error = self.parse(index, raw_output, output_schema)
-            print("Parsing complete!")
 
             iteration.outputs.parsed_output = parsed_output
             iteration.outputs.error = parsing_error
@@ -296,11 +276,9 @@ class Runner:
                 reasks = self.introspect(index, parsed_output, output_schema)
             else:
                 # Validate: run output validation.
-                print("Validating...")
                 validated_output = self.validate(
                     iteration, index, parsed_output, output_schema
                 )
-                print("Validation complete!")
                 iteration.outputs.validation_output = validated_output
 
                 # Introspect: inspect validated output for reasks.
@@ -313,20 +291,13 @@ class Runner:
 
             # Replace reask values with fixed values if terminal step.
             if not self.do_loop(index, reasks):
-                print("Merging final output...")
-                final_valid_output = merge_valid_output(self.current_call)
-                final_output = sub_reasks_with_fixed_values(validated_output)
-                # TODO: Pass in a return type from Guard
-                if (
-                    not isinstance(final_valid_output, str)
-                    and not isinstance(final_output, str)
-                    and not isinstance(final_output, ReAsk)
-                ):
-                    final_valid_output = {**final_output, **final_valid_output}
-                print("Merge complete!")
-                iteration.outputs.validated_output = final_valid_output
+                validation_output = merge_validation_output(
+                    self.current_call,
+                    self.full_schema_reask
+                )
+                final_output = sub_reasks_with_fixed_values(validation_output)
+                iteration.outputs.validated_output = final_output
 
-            print("Returning...")
             return iteration
 
     def prepare(
@@ -486,11 +457,10 @@ class Runner:
         output_schema: Schema,
     ) -> Tuple[List[FieldReAsk], Union[str, Dict]]:
         """Introspect the validated output."""
-        output = copy.deepcopy(validated_output)
         with start_action(action_type="introspect", index=index) as action:
-            if output is None:
+            if validated_output is None:
                 return []
-            reasks, valid_output = output_schema.introspect(output)
+            reasks, valid_output = output_schema.introspect(validated_output)
 
             action.log(
                 message_type="info",
@@ -514,11 +484,6 @@ class Runner:
         include_instructions: bool = False,
     ) -> Tuple[Prompt, Optional[Instructions], Schema, Optional[List[Dict]]]:
         """Prepare to loop again."""
-        print(" !!!!!!!!!!!! START Runner.prepare_to_loop !!!!!!!!!!!!")
-        print("validated_output: ", validated_output)
-        print("type(validated_output): ", type(validated_output))
-        print(" !!!!!!!!!!!! END Runner.prepare_to_loop !!!!!!!!!!!!")
-
         output_schema, prompt, instructions = output_schema.get_reask_setup(
             reasks=reasks,
             original_response=validated_output,
@@ -623,25 +588,17 @@ class AsyncRunner(Runner):
                         output_schema=output_schema,
                         output=self.output if index == 0 else None,
                     )
-                    self.current_call.iterations.push(iteration)
+                    # self.current_call.iterations.push(iteration)
 
                     # Loop again?
                     if not self.do_loop(index, iteration.reasks):
                         break
 
                     # Get merged validation output for prompt
-                    print("iteration.validation_output: ", iteration.validation_output)
-                    validation_output = iteration.validation_output
-                    if (
-                        self.current_call.iterations.length > 1
-                        and not self.full_schema_reask
-                        and not isinstance(validation_output, SkeletonReAsk)
-                    ):
-                        print("Calling merge_reask_output...")
-                        validation_output = merge_reask_output(
-                            self.current_call.iterations.at(index - 1),
-                            self.current_call.iterations.last,
-                        )
+                    validation_output = merge_validation_output(
+                        self.current_call,
+                        self.full_schema_reask
+                    )
 
                     # Get new prompt and output schema.
                     (
@@ -672,7 +629,6 @@ class AsyncRunner(Runner):
         output_schema: Schema,
         output: Optional[str] = None,
     ) -> Iteration:
-        print("Running step number ", index)
         inputs = Inputs(
             llm_api=api,
             llm_response=output,
@@ -686,6 +642,7 @@ class AsyncRunner(Runner):
         )
         outputs = Outputs()
         iteration = Iteration(inputs=inputs, outputs=outputs)
+        self.current_call.iterations.push(iteration)
         """Run a full step."""
         with start_action(
             action_type="step",
@@ -718,19 +675,15 @@ class AsyncRunner(Runner):
             iteration.inputs.msg_history = msg_history
 
             # Call: run the API.
-            print("Calling llm...")
             llm_response = await self.async_call(
                 index, instructions, prompt, msg_history, api, output
             )
-            print("Received response from llm!")
 
             iteration.outputs.llm_response_info = llm_response
             output = llm_response.output
 
             # Parse: parse the output.
-            print("Parsing...")
             parsed_output, parsing_error = self.parse(index, output, output_schema)
-            print("Parsing complete!")
 
             iteration.outputs.parsed_output = parsed_output
 
@@ -739,11 +692,9 @@ class AsyncRunner(Runner):
                 reasks = self.introspect(index, parsed_output, output_schema)
             else:
                 # Validate: run output validation.
-                print("Validating...")
                 validated_output = await self.async_validate(
                     iteration, index, parsed_output, output_schema
                 )
-                print("Validation complete!")
                 iteration.outputs.validation_output = validated_output
 
                 # Introspect: inspect validated output for reasks.
@@ -756,20 +707,13 @@ class AsyncRunner(Runner):
 
             # Replace reask values with fixed values if terminal step.
             if not self.do_loop(index, reasks):
-                print("Merging final output...")
-                final_valid_output = merge_valid_output(self.current_call)
-                final_output = sub_reasks_with_fixed_values(validated_output)
-                # TODO: Pass in a return type from Guard
-                if (
-                    not isinstance(final_valid_output, str)
-                    and not isinstance(final_output, str)
-                    and not isinstance(final_output, ReAsk)
-                ):
-                    final_valid_output = {**final_output, **final_valid_output}
-                print("Merge complete!")
-                iteration.outputs.validated_output = final_valid_output
+                validation_output = merge_validation_output(
+                    self.current_call,
+                    self.full_schema_reask
+                )
+                final_output = sub_reasks_with_fixed_values(validation_output)
+                iteration.outputs.validated_output = final_output
 
-            print("Returning...")
             return iteration
 
     async def async_call(

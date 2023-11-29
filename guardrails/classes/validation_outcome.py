@@ -4,6 +4,7 @@ from pydantic import Field
 
 from guardrails.classes.history import Call
 from guardrails.classes.output_type import OT
+from guardrails.constants import pass_status
 from guardrails.utils.logs_utils import ArbitraryModel
 from guardrails.utils.reask_utils import ReAsk
 
@@ -32,30 +33,17 @@ class ValidationOutcome(Generic[OT], ArbitraryModel):
 
     @classmethod
     def from_guard_history(cls, call: Call, error_message: Optional[str]):
-        raw_output = call.raw_output
-        validated_output = call.validated_output
-        validation_output = call.iterations.last.validation_output
-        any_validations_failed = len(call.failed_validations) > 0
-        if error_message:
-            return cls(
-                raw_llm_output=raw_output or "",
-                validation_passed=False,
-                error=error_message,
-            )
-        elif isinstance(validation_output, ReAsk):
-            reask: ReAsk = validation_output
-            return cls(
-                raw_llm_output=raw_output,
-                reask=reask,
-                validation_passed=any_validations_failed,
-            )
-        else:
-            output = cast(OT, validated_output)
-            return cls(
-                raw_llm_output=raw_output,
-                validated_output=output,
-                validation_passed=any_validations_failed,
-            )
+        last_output = call.iterations.last.validation_output
+        validation_passed = call.status == pass_status
+        reask = last_output if isinstance(last_output, ReAsk) else None
+        error = call.error or error_message
+        return cls(
+            raw_llm_output=call.raw_output,
+            validated_output=call.validated_output,
+            reask=reask,
+            validation_passed=validation_passed,
+            error=error
+        )
 
     def __iter__(
         self,

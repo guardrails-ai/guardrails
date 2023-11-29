@@ -47,25 +47,31 @@ async def test_entity_extraction_with_reask(mocker, multiprocessing_validators: 
     # Assertions are made on the guard state object.
     assert final_output.validated_output == entity_extraction.VALIDATED_OUTPUT_REASK_2
 
-    guard_history = guard.guard_state.most_recent_call.history
+    # FIXME
+    guard_history = guard.history
+    only_call = guard_history.first
 
-    # Check that the guard state object has the correct number of re-asks.
-    assert len(guard_history) == 2
+    # Check that the guard was only called once and
+    # has the correct number of re-asks.
+    assert guard_history.length == 1
+    assert only_call.iterations.length == 2
 
     # For orginal prompt and output
-    assert guard_history[0].prompt == gd.Prompt(entity_extraction.COMPILED_PROMPT)
-    assert guard_history[0].llm_response.prompt_token_count == 123
-    assert guard_history[0].llm_response.response_token_count == 1234
-    assert guard_history[0].llm_response.output == entity_extraction.LLM_OUTPUT
+    first = only_call.iterations.first
+    assert first.inputs.prompt == gd.Prompt(entity_extraction.COMPILED_PROMPT)
+    assert first.prompt_tokens_consumed == 123
+    assert first.completion_tokens_consumed == 1234
+    assert first.raw_output == entity_extraction.LLM_OUTPUT
     assert (
-        guard_history[0].validated_output == entity_extraction.VALIDATED_OUTPUT_REASK_1
+        first.validation_output == entity_extraction.VALIDATED_OUTPUT_REASK_1
     )
 
     # For re-asked prompt and output
-    assert guard_history[1].prompt == gd.Prompt(entity_extraction.COMPILED_PROMPT_REASK)
-    assert guard_history[1].output == entity_extraction.LLM_OUTPUT_REASK
+    final = only_call.iterations.last
+    assert final.inputs.prompt == gd.Prompt(entity_extraction.COMPILED_PROMPT_REASK)
+    assert final.raw_output == entity_extraction.LLM_OUTPUT_REASK
     assert (
-        guard_history[1].validated_output == entity_extraction.VALIDATED_OUTPUT_REASK_2
+        final.validated_output == entity_extraction.VALIDATED_OUTPUT_REASK_2
     )
 
 

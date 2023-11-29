@@ -70,7 +70,7 @@ def generate_test_artifacts(
         ) as f:
             f.write("# flake8: noqa: E501\n")
 
-            reasks = gather_reasks(validated_output)
+            reasks, _ = gather_reasks(validated_output)
             if len(reasks):
                 f.write("from guardrails.utils.reask_utils import ReAsk\n")
 

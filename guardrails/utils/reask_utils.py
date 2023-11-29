@@ -45,7 +45,7 @@ def gather_reasks(
     reasks = []
 
     def _gather_reasks_in_dict(
-        original: Dict, output: Dict, path: Optional[List[Union[str, int]]] = None
+        original: Dict, valid_output: Dict, path: Optional[List[Union[str, int]]] = None
     ) -> None:
         if path is None:
             path = []
@@ -53,17 +53,17 @@ def gather_reasks(
             if isinstance(value, FieldReAsk):
                 value.path = path + [field]
                 reasks.append(value)
-                del output[field]
+                del valid_output[field]
 
             if isinstance(value, dict):
-                _gather_reasks_in_dict(value, output[field], path + [field])
+                _gather_reasks_in_dict(value, valid_output[field], path + [field])
 
             if isinstance(value, list):
-                _gather_reasks_in_list(value, output[field], path + [field])
+                _gather_reasks_in_list(value, valid_output[field], path + [field])
         return
 
     def _gather_reasks_in_list(
-        original: List, output: List, path: Optional[List[Union[str, int]]] = None
+        original: List, valid_output: List, path: Optional[List[Union[str, int]]] = None
     ) -> None:
         if path is None:
             path = []
@@ -71,17 +71,17 @@ def gather_reasks(
             if isinstance(item, FieldReAsk):
                 item.path = path + [idx]
                 reasks.append(item)
-                del output[idx]
+                del valid_output[idx]
             elif isinstance(item, dict):
-                _gather_reasks_in_dict(item, output[idx], path + [idx])
+                _gather_reasks_in_dict(item, valid_output[idx], path + [idx])
             elif isinstance(item, list):
-                _gather_reasks_in_list(item, output[idx], path + [idx])
+                _gather_reasks_in_list(item, valid_output[idx], path + [idx])
         return
 
     if isinstance(validated_output, Dict):
-        output_copy = deepcopy(validated_output)
-        _gather_reasks_in_dict(validated_output, output_copy)
-        return reasks, output_copy
+        valid_output = deepcopy(validated_output)
+        _gather_reasks_in_dict(validated_output, valid_output)
+        return reasks, valid_output
     return reasks, None
 
 

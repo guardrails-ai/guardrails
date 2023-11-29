@@ -6,7 +6,7 @@ from guardrails.constants import error_status, fail_status, not_run_status, pass
 from guardrails.utils.llm_response import LLMResponse
 from guardrails.utils.logs_utils import ValidatorLogs
 from guardrails.utils.pydantic_utils import ArbitraryModel
-from guardrails.utils.reask_utils import ReAsk
+from guardrails.utils.reask_utils import ReAsk, gather_reasks
 
 
 class Outputs(ArbitraryModel):
@@ -22,7 +22,10 @@ class Outputs(ArbitraryModel):
         description="The output from the validation process.", default=None
     )
     validated_output: Optional[Union[str, Dict]] = Field(
-        description="The valid output after validation.", default=None
+        description="The valid output after validation."
+        "Could be only a partial structure if field level reasks occur."
+        "Could contain fixed values.",
+        default=None
     )
     reasks: Sequence[ReAsk] = Field(
         description="Information from the validation process"
@@ -65,22 +68,19 @@ class Outputs(ArbitraryModel):
     def status(self) -> str:
         """Representation of the end state of the validation run.
 
-        OneOf: pass, fail, error
+        OneOf: pass, fail, error, not run
         """
-        print(" !!!!!!!!!!!! START Outputs.status !!!!!!!!!!!! ")
-        print("self.validated_output: ", self.validated_output)
-        print("not self.validated_output: ", not self.validated_output)
-        print("self.validation_output: ", self.validation_output)
-        print(
-            "isinstance(self.validation_output, ReAsk): ",
-            isinstance(self.validation_output, ReAsk),
-        )
-        print(" !!!!!!!!!!!! END Outputs.status !!!!!!!!!!!! ")
+        reasks, _ = gather_reasks(self.validated_output)
         if self._all_empty() is True:
             return not_run_status
         elif self.error:
             return error_status
-        elif len(self.failed_validations) > 0:
+        elif (
+            # Failed validations are ok
+            # as long as they are auto-fixed
+            len(self.failed_validations) > 0
+            and len(reasks) > 0
+        ):
             return fail_status
         elif self.validated_output is None and isinstance(
             self.validation_output, ReAsk
