@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from guardrails.datatypes import verify_metadata_requirements
 from guardrails.llm_providers import AsyncPromptCallableBase, PromptCallableBase
 from guardrails.prompt import Instructions, Prompt
-from guardrails.schema import Schema
+from guardrails.schema import Schema, StringSchema
 from guardrails.utils.llm_response import LLMResponse
 from guardrails.utils.logs_utils import GuardHistory, GuardLogs, GuardState
 from guardrails.utils.reask_utils import (
@@ -18,6 +18,7 @@ from guardrails.utils.reask_utils import (
     reasks_to_dict,
     sub_reasks_with_fixed_values,
 )
+from guardrails.validator_base import ValidatorError
 
 logger = logging.getLogger(__name__)
 actions_logger = logging.getLogger(f"{__name__}.actions")
@@ -52,7 +53,8 @@ class Runner:
         instructions: Optional[Union[str, Instructions]] = None,
         msg_history: Optional[List[Dict]] = None,
         api: Optional[PromptCallableBase] = None,
-        input_schema: Optional[Schema] = None,
+        prompt_schema: Optional[StringSchema] = None,
+        instructions_schema: Optional[StringSchema] = None,
         metadata: Optional[Dict[str, Any]] = None,
         output: Optional[str] = None,
         guard_history: Optional[GuardHistory] = None,
@@ -88,7 +90,8 @@ class Runner:
             self.msg_history = None
 
         self.api = api
-        self.input_schema = input_schema
+        self.prompt_schema = prompt_schema
+        self.instructions_schema = instructions_schema
         self.output_schema = output_schema
         self.guard_state = guard_state
         self.num_reasks = num_reasks
@@ -138,16 +141,18 @@ class Runner:
             instructions=self.instructions,
             prompt=self.prompt,
             api=self.api,
-            input_schema=self.input_schema,
+            prompt_schema=self.prompt_schema,
+            instructions_schema=self.instructions_schema,
             output_schema=self.output_schema,
             num_reasks=self.num_reasks,
             metadata=self.metadata,
         ):
-            instructions, prompt, msg_history, input_schema, output_schema = (
+            instructions, prompt, msg_history, prompt_schema, instructions_schema, output_schema = (
                 self.instructions,
                 self.prompt,
                 self.msg_history,
-                self.input_schema,
+                self.prompt_schema,
+                self.instructions_schema,
                 self.output_schema,
             )
             for index in range(self.num_reasks + 1):
@@ -159,7 +164,8 @@ class Runner:
                     prompt=prompt,
                     msg_history=msg_history,
                     prompt_params=prompt_params,
-                    input_schema=input_schema,
+                    prompt_schema=prompt_schema,
+                    instructions_schema=instructions_schema,
                     output_schema=output_schema,
                     output=self.output if index == 0 else None,
                 )
@@ -186,7 +192,8 @@ class Runner:
         prompt: Optional[Prompt],
         msg_history: Optional[List[Dict]],
         prompt_params: Dict,
-        input_schema: Optional[Schema],
+        prompt_schema: Optional[StringSchema],
+        instructions_schema: Optional[StringSchema],
         output_schema: Schema,
         output: Optional[str] = None,
     ):
@@ -199,7 +206,8 @@ class Runner:
             instructions=instructions,
             prompt=prompt,
             prompt_params=prompt_params,
-            input_schema=input_schema,
+            prompt_schema=prompt_schema,
+            instructions_schema=instructions_schema,
             output_schema=output_schema,
         ):
             # Prepare: run pre-processing, and input validation.
@@ -209,13 +217,15 @@ class Runner:
                 msg_history = None
             else:
                 instructions, prompt, msg_history = self.prepare(
+                    guard_logs,  # TODO pass something else here
                     index,
                     instructions,
                     prompt,
                     msg_history,
                     prompt_params,
                     api,
-                    input_schema,
+                    prompt_schema,
+                    instructions_schema,
                     output_schema,
                 )
 
@@ -265,13 +275,15 @@ class Runner:
 
     def prepare(
         self,
+        guard_logs: GuardLogs,
         index: int,
         instructions: Optional[Instructions],
         prompt: Optional[Prompt],
         msg_history: Optional[List[Dict]],
         prompt_params: Dict,
         api: Optional[Union[PromptCallableBase, AsyncPromptCallableBase]],
-        input_schema: Optional[Schema],
+        prompt_schema: Optional[StringSchema],
+        instructions_schema: Optional[StringSchema],
         output_schema: Schema,
     ) -> Tuple[Optional[Instructions], Optional[Prompt], Optional[List[Dict]]]:
         """Prepare by running pre-processing and input validation.
@@ -293,6 +305,8 @@ class Runner:
                     msg["content"] = msg["content"].format(**prompt_params)
 
                 prompt, instructions = None, None
+
+                # TODO figure out what to do with msg_history in terms of input validation
             elif prompt is not None:
                 if isinstance(prompt, str):
                     prompt = Prompt(prompt)
@@ -307,6 +321,32 @@ class Runner:
                 instructions, prompt = output_schema.preprocess_prompt(
                     api, instructions, prompt
                 )
+
+                # validate prompt
+                if prompt_schema is not None:
+                    validated_prompt = prompt_schema.validate(
+                        guard_logs, prompt.source, self.metadata
+                    )
+                    if validated_prompt is None:
+                        raise ValidatorError("Prompt validation failed")
+                    if isinstance(validated_prompt, ReAsk):
+                        raise ValidatorError(
+                            f"Prompt validation failed: {validated_prompt}"
+                        )
+                    prompt = Prompt(validated_prompt)
+
+                # validate instructions
+                if instructions_schema is not None:
+                    validated_instructions = instructions_schema.validate(
+                        guard_logs, instructions.source, self.metadata
+                    )
+                    if validated_instructions is None:
+                        raise ValidatorError("Instructions validation failed")
+                    if isinstance(validated_instructions, ReAsk):
+                        raise ValidatorError(
+                            f"Instructions validation failed: {validated_instructions}"
+                        )
+                    instructions = Instructions(validated_instructions)
             else:
                 raise ValueError("Prompt or message history must be provided.")
 
@@ -591,14 +631,16 @@ class AsyncRunner(Runner):
                 prompt = None
                 msg_history = None
             else:
-                instructions, prompt, msg_history = self.prepare(
+                instructions, prompt, msg_history = await self.async_prepare(
+                    guard_logs,  # TODO pass something else here
                     index,
                     instructions,
                     prompt,
                     msg_history,
                     prompt_params,
                     api,
-                    input_schema,
+                    prompt_schema,
+                    instructions_schema,
                     output_schema,
                 )
 

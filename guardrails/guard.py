@@ -1,6 +1,7 @@
 import asyncio
 import contextvars
 import logging
+import warnings
 from typing import (
     Any,
     Awaitable,
@@ -22,7 +23,7 @@ from guardrails.llm_providers import get_async_llm_ask, get_llm_ask
 from guardrails.prompt import Instructions, Prompt
 from guardrails.rail import Rail
 from guardrails.run import AsyncRunner, Runner
-from guardrails.schema import Schema
+from guardrails.schema import Schema, StringSchema
 from guardrails.utils.logs_utils import GuardState
 from guardrails.utils.reask_utils import sub_reasks_with_fixed_values
 from guardrails.validators import Validator
@@ -62,9 +63,14 @@ class Guard:
         self.base_model = base_model
 
     @property
-    def input_schema(self) -> Optional[Schema]:
+    def prompt_schema(self) -> Optional[Schema]:
         """Return the input schema."""
-        return self.rail.input_schema
+        return self.rail.prompt_schema
+
+    @property
+    def instructions_schema(self) -> Optional[Schema]:
+        """Return the input schema."""
+        return self.rail.instructions_schema
 
     @property
     def output_schema(self) -> Schema:
@@ -351,7 +357,8 @@ class Guard:
                 prompt=prompt_obj,
                 msg_history=msg_history_obj,
                 api=get_llm_ask(llm_api, *args, **kwargs),
-                input_schema=self.input_schema,
+                prompt_schema=self.prompt_schema,
+                instructions_schema=self.instructions_schema,
                 output_schema=self.output_schema,
                 num_reasks=num_reasks,
                 metadata=metadata,

@@ -29,7 +29,8 @@ class Rail:
         4. `<instructions>`, which contains the instructions to be passed to the LLM
     """
 
-    input_schema: Optional[Schema]
+    prompt_schema: Optional[Schema]
+    instructions_schema: Optional[Schema]
     output_schema: Schema
     instructions: Optional[Instructions]
     prompt: Optional[Prompt]
@@ -44,8 +45,6 @@ class Rail:
         reask_prompt: Optional[str] = None,
         reask_instructions: Optional[str] = None,
     ):
-        input_schema = None
-
         output_schema = cls.load_json_schema_from_pydantic(
             output_class,
             reask_prompt_template=reask_prompt,
@@ -53,7 +52,8 @@ class Rail:
         )
 
         return cls(
-            input_schema=input_schema,
+            prompt_schema=None,
+            instructions_schema=None,
             output_schema=output_schema,
             instructions=cls.load_instructions(instructions, output_schema),
             prompt=cls.load_prompt(prompt, output_schema),
@@ -78,12 +78,15 @@ class Rail:
             )
 
         # Load <input /> schema
+        # TODO change this to `prompt_validators` and `instructions_validators`
         raw_input_schema = xml.find("input")
         if raw_input_schema is None:
             # No input schema, so do no input checking.
             input_schema = None
         else:
             input_schema = cls.load_input_schema_from_xml(raw_input_schema)
+        prompt_schema = None
+        instructions_schema = None
 
         # Load <output /> schema
         raw_output_schema = xml.find("output")
@@ -123,7 +126,8 @@ class Rail:
         version = cast_xml_to_string(version)
 
         return cls(
-            input_schema=input_schema,
+            prompt_schema=prompt_schema,
+            instructions_schema=instructions_schema,
             output_schema=output_schema,
             instructions=instructions,
             prompt=prompt,
@@ -140,8 +144,6 @@ class Rail:
         reask_prompt: Optional[str] = None,
         reask_instructions: Optional[str] = None,
     ):
-        input_schema = None
-
         output_schema = cls.load_string_schema_from_string(
             validators,
             description=description,
@@ -150,7 +152,8 @@ class Rail:
         )
 
         return cls(
-            input_schema=input_schema,
+            prompt_schema=None,
+            instructions_schema=None,
             output_schema=output_schema,
             instructions=cls.load_instructions(instructions, output_schema),
             prompt=cls.load_prompt(prompt, output_schema),
