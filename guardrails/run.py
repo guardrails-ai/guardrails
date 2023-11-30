@@ -5,13 +5,11 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union
 from eliot import add_destinations, start_action
 from pydantic import BaseModel
 
-from guardrails.classes.generic import Stack
 from guardrails.classes.history import Call, Inputs, Iteration, Outputs
 from guardrails.datatypes import verify_metadata_requirements
 from guardrails.llm_providers import AsyncPromptCallableBase, PromptCallableBase
 from guardrails.prompt import Instructions, Prompt
 from guardrails.schema import Schema
-from guardrails.utils.history_utils import merge_validation_output
 from guardrails.utils.llm_response import LLMResponse
 from guardrails.utils.reask_utils import (
     FieldReAsk,
@@ -42,13 +40,11 @@ class Runner:
             validation failure, defaults to 0.
         output: The output to use instead of calling the API, used in cases
             where the output is already known.
-        current_call: The call history to use, defaults to an empty Call.
     """
 
     def __init__(
         self,
         output_schema: Schema,
-        history: Stack[Call],
         num_reasks: int,
         prompt: Optional[Union[str, Prompt]] = None,
         instructions: Optional[Union[str, Instructions]] = None,
@@ -57,7 +53,6 @@ class Runner:
         input_schema: Optional[Schema] = None,
         metadata: Optional[Dict[str, Any]] = None,
         output: Optional[str] = None,
-        current_call: Optional[Call] = None,
         base_model: Optional[Type[BaseModel]] = None,
         full_schema_reask: bool = False,
     ):
@@ -92,21 +87,16 @@ class Runner:
         self.api = api
         self.input_schema = input_schema
         self.output_schema = output_schema
-        self.history = history
         self.num_reasks = num_reasks
         self.metadata = metadata or {}
         self.output = output
-        self.current_call = current_call or Call()
         self.base_model = base_model
         self.full_schema_reask = full_schema_reask
 
-    def _add_call_to_history(self):
-        """Reset the guard history."""
-        self.current_call = Call()
-        self.history.push(self.current_call)
-
     def __call__(
-        self, prompt_params: Optional[Dict] = None
+        self,
+        call_log: Call,
+        prompt_params: Optional[Dict] = None
     ) -> Tuple[Call, Optional[str]]:
         """Execute the runner by repeatedly calling step until the reask budget
         is exhausted.
@@ -116,7 +106,7 @@ class Runner:
                 generate the prompt string.
 
         Returns:
-            The guard history.
+            The Call log for this run.
         """
         error_message = None
         try:
@@ -131,8 +121,6 @@ class Runner:
                 raise ValueError(
                     f"Missing required metadata keys: {', '.join(missing_keys)}"
                 )
-
-            self._add_call_to_history()
 
             # Figure out if we need to include instructions in the prompt.
             include_instructions = not (
@@ -168,16 +156,12 @@ class Runner:
                         input_schema=input_schema,
                         output_schema=output_schema,
                         output=self.output if index == 0 else None,
+                        call_log=call_log
                     )
 
                     # Loop again?
                     if not self.do_loop(index, iteration.reasks):
                         break
-
-                    # Get merged validation output for prompt
-                    validation_output = merge_validation_output(
-                        self.current_call, self.full_schema_reask
-                    )
 
                     # Get new prompt and output schema.
                     (
@@ -187,7 +171,7 @@ class Runner:
                         msg_history,
                     ) = self.prepare_to_loop(
                         iteration.reasks,
-                        validation_output,
+                        call_log.validation_output,
                         output_schema,
                         prompt_params=prompt_params,
                         include_instructions=include_instructions,
@@ -198,7 +182,7 @@ class Runner:
             # import traceback
             # traceback.print_exception(e)
             error_message = str(e)
-        return self.current_call, error_message
+        return call_log, error_message
 
     def step(
         self,
@@ -210,6 +194,7 @@ class Runner:
         prompt_params: Dict,
         input_schema: Optional[Schema],
         output_schema: Schema,
+        call_log: Call,
         output: Optional[str] = None,
     ) -> Iteration:
         """Run a full step."""
@@ -227,7 +212,7 @@ class Runner:
         )
         outputs = Outputs()
         iteration = Iteration(inputs=inputs, outputs=outputs)
-        self.current_call.iterations.push(iteration)
+        call_log.iterations.push(iteration)
 
         try:
             with start_action(
@@ -299,13 +284,16 @@ class Runner:
 
                 iteration.outputs.reasks = reasks
 
-                # Replace reask values with fixed values if terminal step.
-                if not self.do_loop(index, reasks):
-                    validation_output = merge_validation_output(
-                        self.current_call, self.full_schema_reask
-                    )
-                    final_output = sub_reasks_with_fixed_values(validation_output)
-                    iteration.outputs.validated_output = final_output
+                # # Replace reask values with fixed values if terminal step.
+                # if not self.do_loop(index, reasks):
+                #     validation_output = merge_validation_output(
+                #         call_log, self.full_schema_reask
+                #     )
+                #     final_output = sub_reasks_with_fixed_values(validation_output)
+                #     # TODO: Move this to a new property on the call
+                #     #       that way we maintain the incremental validated output
+                #     #       on each iteration
+                #     iteration.outputs.validated_output = final_output
         except Exception as e:
             # print("An exception was raised in Runner.step")
             # import traceback
@@ -515,7 +503,6 @@ class AsyncRunner(Runner):
     def __init__(
         self,
         output_schema: Schema,
-        history: Stack[Call],
         num_reasks: int,
         prompt: Optional[Union[str, Prompt]] = None,
         instructions: Optional[Union[str, Instructions]] = None,
@@ -524,13 +511,11 @@ class AsyncRunner(Runner):
         input_schema: Optional[Schema] = None,
         metadata: Optional[Dict[str, Any]] = None,
         output: Optional[str] = None,
-        current_call: Optional[Call] = None,
         base_model: Optional[Type[BaseModel]] = None,
         full_schema_reask: bool = False,
     ):
         super().__init__(
             output_schema=output_schema,
-            history=history,
             num_reasks=num_reasks,
             prompt=prompt,
             instructions=instructions,
@@ -539,14 +524,15 @@ class AsyncRunner(Runner):
             input_schema=input_schema,
             metadata=metadata,
             output=output,
-            current_call=current_call,
             base_model=base_model,
             full_schema_reask=full_schema_reask,
         )
         self.api: Optional[AsyncPromptCallableBase] = api
 
     async def async_run(
-        self, prompt_params: Optional[Dict] = None
+        self,
+        call_log: Call,
+        prompt_params: Optional[Dict] = None
     ) -> Tuple[Call, Optional[str]]:
         """Execute the runner by repeatedly calling step until the reask budget
         is exhausted.
@@ -556,13 +542,12 @@ class AsyncRunner(Runner):
                 generate the prompt string.
 
         Returns:
-            The guard history.
+            The Call log for this run.
         """
         error_message = None
         try:
             if prompt_params is None:
                 prompt_params = {}
-            self._add_call_to_history()
 
             # check if validator requirements are fulfilled
             missing_keys = verify_metadata_requirements(
@@ -602,17 +587,12 @@ class AsyncRunner(Runner):
                         input_schema=input_schema,
                         output_schema=output_schema,
                         output=self.output if index == 0 else None,
+                        call_log=call_log
                     )
-                    # self.current_call.iterations.push(iteration)
 
                     # Loop again?
                     if not self.do_loop(index, iteration.reasks):
                         break
-
-                    # Get merged validation output for prompt
-                    validation_output = merge_validation_output(
-                        self.current_call, self.full_schema_reask
-                    )
 
                     # Get new prompt and output schema.
                     (
@@ -622,7 +602,7 @@ class AsyncRunner(Runner):
                         msg_history,
                     ) = self.prepare_to_loop(
                         iteration.reasks,
-                        validation_output,
+                        call_log.validation_output,
                         output_schema,
                         prompt_params=prompt_params,
                     )
@@ -632,7 +612,7 @@ class AsyncRunner(Runner):
             # traceback.print_exception(e)
             error_message = str(e)
 
-        return self.current_call, error_message
+        return call_log, error_message
 
     async def async_step(
         self,
@@ -644,6 +624,7 @@ class AsyncRunner(Runner):
         prompt_params: Dict,
         input_schema: Optional[Schema],
         output_schema: Schema,
+        call_log: Call,
         output: Optional[str] = None,
     ) -> Iteration:
         """Run a full step."""
@@ -660,7 +641,7 @@ class AsyncRunner(Runner):
         )
         outputs = Outputs()
         iteration = Iteration(inputs=inputs, outputs=outputs)
-        self.current_call.iterations.push(iteration)
+        call_log.iterations.push(iteration)
         try:
             with start_action(
                 action_type="step",
@@ -729,12 +710,15 @@ class AsyncRunner(Runner):
                 iteration.outputs.reasks = reasks
 
                 # Replace reask values with fixed values if terminal step.
-                if not self.do_loop(index, reasks):
-                    validation_output = merge_validation_output(
-                        self.current_call, self.full_schema_reask
-                    )
-                    final_output = sub_reasks_with_fixed_values(validation_output)
-                    iteration.outputs.validated_output = final_output
+                # if not self.do_loop(index, reasks):
+                #     validation_output = merge_validation_output(
+                #         call_log, self.full_schema_reask
+                #     )
+                #     final_output = sub_reasks_with_fixed_values(validation_output)
+                #     # TODO: Move this to a new property on the call
+                #     #       that way we maintain the incremental validated output
+                #     #       on each iteration
+                #     iteration.outputs.validated_output = final_output
         except Exception as e:
             # print("An exception was raised in AsyncRunner.async_step")
             # import traceback

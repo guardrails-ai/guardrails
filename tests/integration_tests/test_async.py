@@ -49,26 +49,26 @@ async def test_entity_extraction_with_reask(mocker, multiprocessing_validators: 
 
     # FIXME
     guard_history = guard.history
-    only_call = guard_history.first
+    call = guard_history.first
 
     # Check that the guard was only called once and
     # has the correct number of re-asks.
     assert guard_history.length == 1
-    assert only_call.iterations.length == 2
+    assert call.iterations.length == 2
 
     # For orginal prompt and output
-    first = only_call.iterations.first
-    assert first.inputs.prompt == gd.Prompt(entity_extraction.COMPILED_PROMPT)
+    first = call.iterations.first
+    assert first.inputs.prompt == entity_extraction.COMPILED_PROMPT
     assert first.prompt_tokens_consumed == 123
     assert first.completion_tokens_consumed == 1234
     assert first.raw_output == entity_extraction.LLM_OUTPUT
     assert first.validation_output == entity_extraction.VALIDATED_OUTPUT_REASK_1
 
     # For re-asked prompt and output
-    final = only_call.iterations.last
+    final = call.iterations.last
     assert final.inputs.prompt == gd.Prompt(entity_extraction.COMPILED_PROMPT_REASK)
     assert final.raw_output == entity_extraction.LLM_OUTPUT_REASK
-    assert final.validated_output == entity_extraction.VALIDATED_OUTPUT_REASK_2
+    assert call.validated_output == entity_extraction.VALIDATED_OUTPUT_REASK_2
 
 
 @pytest.mark.asyncio
@@ -97,10 +97,8 @@ async def test_entity_extraction_with_noop(mocker):
     assert call.iterations.length == 1
 
     # For orginal prompt and output
-    assert call.iterations.first.inputs.prompt == gd.Prompt(
-        entity_extraction.COMPILED_PROMPT
-    )
-    assert call.raw_output == entity_extraction.LLM_OUTPUT
+    assert call.compiled_prompt == entity_extraction.COMPILED_PROMPT
+    assert call.raw_outputs.last == entity_extraction.LLM_OUTPUT
     assert call.validated_output == entity_extraction.VALIDATED_OUTPUT_NOOP
 
 
@@ -132,10 +130,8 @@ async def test_entity_extraction_with_noop_pydantic(mocker):
     assert call.iterations.length == 1
 
     # For orginal prompt and output
-    assert call.iterations.first.inputs.prompt == gd.Prompt(
-        entity_extraction.COMPILED_PROMPT
-    )
-    assert call.raw_output == entity_extraction.LLM_OUTPUT
+    assert call.compiled_prompt == entity_extraction.COMPILED_PROMPT
+    assert call.raw_outputs.last == entity_extraction.LLM_OUTPUT
     assert call.validated_output == entity_extraction.VALIDATED_OUTPUT_NOOP
 
 
@@ -166,10 +162,8 @@ async def test_entity_extraction_with_filter(mocker):
     assert call.iterations.length == 1
 
     # For orginal prompt and output
-    assert call.iterations.first.inputs.prompt == gd.Prompt(
-        entity_extraction.COMPILED_PROMPT
-    )
-    assert call.raw_output == entity_extraction.LLM_OUTPUT
+    assert call.compiled_prompt == entity_extraction.COMPILED_PROMPT
+    assert call.raw_outputs.last == entity_extraction.LLM_OUTPUT
     assert call.validated_output == entity_extraction.VALIDATED_OUTPUT_FILTER
 
 
@@ -199,10 +193,8 @@ async def test_entity_extraction_with_fix(mocker):
     assert guard.history.length == 1
 
     # For orginal prompt and output
-    assert call.iterations.first.inputs.prompt == gd.Prompt(
-        entity_extraction.COMPILED_PROMPT
-    )
-    assert call.raw_output == entity_extraction.LLM_OUTPUT
+    assert call.compiled_prompt == entity_extraction.COMPILED_PROMPT
+    assert call.raw_outputs.last == entity_extraction.LLM_OUTPUT
     assert call.validated_output == entity_extraction.VALIDATED_OUTPUT_FIX
 
 
@@ -231,10 +223,8 @@ async def test_entity_extraction_with_refrain(mocker):
     assert guard.history.length == 1
 
     # For orginal prompt and output
-    assert call.iterations.first.inputs.prompt == gd.Prompt(
-        entity_extraction.COMPILED_PROMPT
-    )
-    assert call.raw_output == entity_extraction.LLM_OUTPUT
+    assert call.compiled_prompt == entity_extraction.COMPILED_PROMPT
+    assert call.raw_outputs.last == entity_extraction.LLM_OUTPUT
     assert call.validated_output == entity_extraction.VALIDATED_OUTPUT_REFRAIN
 
 

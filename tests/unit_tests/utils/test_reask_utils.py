@@ -240,7 +240,8 @@ def test_gather_reasks():
             path=["h", 2, 2],
         ),
     ]
-    assert gather_reasks(input_dict) == expected_reasks
+    actual_reasks, _ = gather_reasks(input_dict)
+    assert actual_reasks == expected_reasks
 
 
 @pytest.mark.parametrize(

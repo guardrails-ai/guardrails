@@ -33,7 +33,11 @@ class ValidationOutcome(Generic[OT], ArbitraryModel):
 
     @classmethod
     def from_guard_history(cls, call: Call, error_message: Optional[str]):
-        last_output = call.iterations.last.validation_output
+        last_output = (
+            call.iterations.last.validation_output
+            if not call.iterations.empty()
+            else None
+        )
         validation_passed = call.status == pass_status
         reask = last_output if isinstance(last_output, ReAsk) else None
         error = call.error or error_message
@@ -42,9 +46,9 @@ class ValidationOutcome(Generic[OT], ArbitraryModel):
         # print("validated_output: ", call.validated_output)
         # print("reask: ", reask)
         # print("validation_passed: ", validation_passed)
-        # print("error: ", error)
+        print("error: ", error)
         return cls(
-            raw_llm_output=call.raw_output,
+            raw_llm_output=call.raw_outputs.last,
             validated_output=call.validated_output,
             reask=reask,
             validation_passed=validation_passed,

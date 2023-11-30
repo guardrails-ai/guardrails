@@ -1,3 +1,5 @@
+import functools
+
 from typing import Dict, List, Optional, Sequence, Union
 
 from pydantic import Field
@@ -7,6 +9,7 @@ from guardrails.utils.llm_response import LLMResponse
 from guardrails.utils.logs_utils import ValidatorLogs
 from guardrails.utils.pydantic_utils import ArbitraryModel
 from guardrails.utils.reask_utils import ReAsk, gather_reasks
+from guardrails.validator_base import FailResult
 
 
 class Outputs(ArbitraryModel):
@@ -70,27 +73,18 @@ class Outputs(ArbitraryModel):
 
         OneOf: pass, fail, error, not run
         """
-        reasks, _ = gather_reasks(self.validated_output)
-        # print(" !!!!!!!!!!!! START Outputs.status !!!!!!!!!!!! ")
-        # print("len(reasks): ", len(reasks))
-        # print("self.error: ", self.error)
+        all_fail_results: List[FailResult] = []
+        for reask in self.reasks:
+            all_fail_results.extend(reask.fail_results)        
+
+        all_reasks_have_fixes = all(list(
+            fail.fix_value is not None for fail in all_fail_results
+        ))
         if self._all_empty() is True:
             return not_run_status
         elif self.error:
             return error_status
-        elif (
-            # Failed validations are ok
-            # as long as they are auto-fixed
-            len(self.failed_validations) > 0
-            and len(reasks) > 0
-        ):
-            return fail_status
-        elif (
-            # Reasks without failed validations
-            # means top level reask
-            len(self.failed_validations) == 0
-            and len(reasks) > 0
-        ):
+        elif not all_reasks_have_fixes:
             return fail_status
         elif self.validated_output is None and isinstance(
             self.validation_output, ReAsk

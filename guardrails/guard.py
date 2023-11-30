@@ -22,6 +22,7 @@ from pydantic import BaseModel
 from guardrails.classes import OT, ValidationOutcome
 from guardrails.classes.generic import Stack
 from guardrails.classes.history import Call
+from guardrails.classes.history.call_inputs import CallInputs
 from guardrails.llm_providers import get_async_llm_ask, get_llm_ask
 from guardrails.prompt import Instructions, Prompt
 from guardrails.rail import Rail
@@ -297,6 +298,31 @@ class Guard(Generic[OT]):
                 "This should never happen."
             )
 
+        input_prompt = prompt or (
+            self.prompt.source
+            if self.prompt
+            else None
+        )
+        input_instructions = instructions or (
+            self.instructions.source
+            if self.instructions
+            else None
+        )
+        call_inputs = CallInputs(
+            llm_api=llm_api,
+            prompt=input_prompt,
+            instructions=input_instructions,
+            msg_history=msg_history,
+            prompt_params=prompt_params,
+            num_reasks=num_reasks,
+            metadata=metadata,
+            full_schema_reask=full_schema_reask,
+            args=args,
+            kwargs=kwargs
+        )
+        call_log = Call(inputs=call_inputs)
+        self.history.push(call_log)
+
         # If the LLM API is async, return a coroutine
         if asyncio.iscoroutinefunction(llm_api):
             return self._call_async(
@@ -308,6 +334,7 @@ class Guard(Generic[OT]):
                 msg_history=msg_history,
                 metadata=metadata,
                 full_schema_reask=full_schema_reask,
+                call_log=call_log,
                 *args,
                 **kwargs,
             )
@@ -321,6 +348,7 @@ class Guard(Generic[OT]):
             msg_history=msg_history,
             metadata=metadata,
             full_schema_reask=full_schema_reask,
+            call_log=call_log,
             *args,
             **kwargs,
         )
@@ -335,6 +363,7 @@ class Guard(Generic[OT]):
         msg_history: Optional[List[Dict]],
         metadata: Dict,
         full_schema_reask: bool,
+        call_log: Call,
         *args,
         **kwargs,
     ) -> ValidationOutcome[OT]:
@@ -359,10 +388,12 @@ class Guard(Generic[OT]):
                 num_reasks=num_reasks,
                 metadata=metadata,
                 base_model=self.base_model,
-                history=self.history,
                 full_schema_reask=full_schema_reask,
             )
-            call, error_message = runner(prompt_params=prompt_params)
+            call, error_message = runner(
+                call_log=call_log,
+                prompt_params=prompt_params
+            )
             return ValidationOutcome[OT].from_guard_history(call, error_message)
 
     async def _call_async(
@@ -375,6 +406,7 @@ class Guard(Generic[OT]):
         msg_history: Optional[List[Dict]],
         metadata: Dict,
         full_schema_reask: bool,
+        call_log: Call,
         *args,
         **kwargs,
     ) -> ValidationOutcome[OT]:
@@ -416,10 +448,12 @@ class Guard(Generic[OT]):
                 num_reasks=num_reasks,
                 metadata=metadata,
                 base_model=self.base_model,
-                history=self.history,
                 full_schema_reask=full_schema_reask,
             )
-            call, error_message = await runner.async_run(prompt_params=prompt_params)
+            call, error_message = await runner.async_run(
+                call_log=call_log,
+                prompt_params=prompt_params
+            )
             return ValidationOutcome[OT].from_guard_history(call, error_message)
 
     def __repr__(self):
@@ -514,6 +548,31 @@ class Guard(Generic[OT]):
         context = contextvars.ContextVar("kwargs")
         context.set(kwargs)
 
+        input_prompt = (
+            self.prompt.source
+            if self.prompt
+            else None
+        )
+        input_instructions = (
+            self.instructions.source
+            if self.instructions
+            else None
+        )
+        call_inputs = CallInputs(
+            llm_api=llm_api,
+            llm_output=llm_output,
+            prompt=input_prompt,
+            instructions=input_instructions,
+            prompt_params=prompt_params,
+            num_reasks=num_reasks,
+            metadata=metadata,
+            full_schema_reask=full_schema_reask,
+            args=args,
+            kwargs=kwargs
+        )
+        call_log = Call(inputs=call_inputs)
+        self.history.push(call_log)
+
         # If the LLM API is async, return a coroutine
         if asyncio.iscoroutinefunction(llm_api):
             return self._async_parse(
@@ -523,6 +582,7 @@ class Guard(Generic[OT]):
                 num_reasks=self.num_reasks,
                 prompt_params=prompt_params,
                 full_schema_reask=full_schema_reask,
+                call_log=call_log,
                 *args,
                 **kwargs,
             )
@@ -534,6 +594,7 @@ class Guard(Generic[OT]):
             num_reasks=self.num_reasks,
             prompt_params=prompt_params,
             full_schema_reask=full_schema_reask,
+            call_log=call_log,
             *args,
             **kwargs,
         )
@@ -546,6 +607,7 @@ class Guard(Generic[OT]):
         num_reasks: int,
         prompt_params: Dict,
         full_schema_reask: bool,
+        call_log: Call,
         *args,
         **kwargs,
     ) -> ValidationOutcome[OT]:
@@ -571,10 +633,12 @@ class Guard(Generic[OT]):
                 metadata=metadata,
                 output=llm_output,
                 base_model=self.base_model,
-                history=self.history,
                 full_schema_reask=full_schema_reask,
             )
-            call, error_message = runner(prompt_params=prompt_params)
+            call, error_message = runner(
+                call_log=call_log,
+                prompt_params=prompt_params
+            )
 
             return ValidationOutcome[OT].from_guard_history(call, error_message)
 
@@ -586,6 +650,7 @@ class Guard(Generic[OT]):
         num_reasks: int,
         prompt_params: Dict,
         full_schema_reask: bool,
+        call_log: Call,
         *args,
         **kwargs,
     ) -> ValidationOutcome[OT]:
@@ -611,9 +676,11 @@ class Guard(Generic[OT]):
                 metadata=metadata,
                 output=llm_output,
                 base_model=self.base_model,
-                history=self.history,
                 full_schema_reask=full_schema_reask,
             )
-            call, error_message = await runner.async_run(prompt_params=prompt_params)
+            call, error_message = await runner.async_run(
+                call_log=call_log,
+                prompt_params=prompt_params
+            )
 
             return ValidationOutcome[OT].from_guard_history(call, error_message)

@@ -21,18 +21,13 @@ def test_empty_initialization():
     assert call.iterations == Stack()
     assert isinstance(call.iterations, Stack) is True
     assert call.inputs == CallInputs()
-    call_outputs = call.outputs
-    # print("call.outputs: ", call_outputs.json())
-    print("Outputs(): ", Outputs())
-    assert call_outputs == Outputs()
     assert call.tokens_consumed is None
     assert call.prompt_tokens_consumed is None
     assert call.completion_tokens_consumed is None
     assert call.status == not_run_status
 
-    # Inherited properties
-    assert call.raw_output is None
-    assert call.parsed_output is None
+    assert call.raw_outputs == Stack()
+    assert call.parsed_outputs == Stack()
     assert call.validated_output is None
     assert call.reasks == []
     assert call.validator_logs == []
@@ -144,7 +139,6 @@ def test_non_empty_initialization():
     assert call.iterations == iterations
     assert isinstance(call.iterations, Stack) is True
     assert call.inputs == call_inputs
-    assert call.outputs == second_iteration.outputs
     assert call.tokens_consumed == 26
     assert call.prompt_tokens_consumed == 20
     assert call.completion_tokens_consumed == 6

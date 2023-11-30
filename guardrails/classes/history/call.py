@@ -6,10 +6,10 @@ from guardrails.classes.generic.stack import Stack
 from guardrails.classes.history.call_inputs import CallInputs
 from guardrails.classes.history.iteration import Iteration
 from guardrails.classes.history.outputs import Outputs
-from guardrails.constants import not_run_status, pass_status
-from guardrails.utils.logs_utils import ValidatorLogs
+from guardrails.constants import fail_status, error_status, not_run_status, pass_status
+from guardrails.utils.logs_utils import ValidatorLogs, merge_reask_output
 from guardrails.utils.pydantic_utils import ArbitraryModel
-from guardrails.utils.reask_utils import ReAsk
+from guardrails.utils.reask_utils import ReAsk, gather_reasks, sub_reasks_with_fixed_values
 
 
 # We can't inherit from Iteration because python
@@ -32,15 +32,89 @@ class Call(ArbitraryModel):
         self.iterations = iterations
         self.inputs = inputs
 
-    # We might just spread these properties instead of containering them
     @property
-    def outputs(self) -> Outputs:
-        """The outputs from the last iteration."""
-        last_iteration = self.iterations.last
-        if last_iteration:
-            return last_iteration.outputs
-        # To allow chaining without getting AttributeErrors
-        return Outputs()
+    def prompt(self) -> Optional[str]:
+        """
+        The prompt as provided by the user when intializing or calling the Guard.
+        """
+        return self.inputs.prompt
+
+    @property
+    def compiled_prompt(self) -> Optional[str]:
+        """
+        The initial compiled prompt that was passed to the LLM on the first call.
+        """
+        if self.iterations.empty():
+            return None
+        initial_inputs = self.iterations.first.inputs
+        if initial_inputs.prompt is not None:
+            return initial_inputs.prompt.format(**initial_inputs.prompt_params).source
+        
+    @property
+    def reask_prompts(self) -> Stack[Optional[str]]:
+        """
+        The compiled prompts used during reasks.
+        Does not include the initial prompt.
+        """
+        if self.iterations.length > 0:
+            reasks = self.iterations.copy()
+            reasks.remove(reasks.first)
+            return Stack(
+                *[
+                    r.inputs.prompt.source
+                    if r.inputs.prompt is not None
+                    else None
+                    for r in reasks
+                ]
+            )
+
+        return Stack()
+    
+    @property
+    def instructions(self) -> Optional[str]:
+        """
+        The instructions as provided by the user when intializing or calling the Guard.
+        """
+        return self.inputs.instructions
+
+    @property
+    def compiled_instructions(self) -> Optional[str]:
+        """
+        The initial compiled instructions that were passed to the LLM on the first call.
+        """
+        if self.iterations.empty():
+            return None
+        initial_inputs = self.iterations.first.inputs
+        if initial_inputs.instructions is not None:
+            return initial_inputs.instructions.format(**initial_inputs.prompt_params).source
+        
+    @property
+    def reask_instructions(self) -> Stack[str]:
+        """
+        The compiled instructions used during reasks.
+        Does not include the initial instructions.
+        """
+        if self.iterations.length > 0:
+            reasks = self.iterations.copy()
+            reasks.remove(reasks.first)
+            return Stack(
+                *[
+                    r.inputs.instructions.source
+                    if r.inputs.instructions is not None
+                    else None
+                    for r in reasks
+                ]
+            )
+    
+    # # Since all properties now are cumulative in nature, this has no place here
+    # @property
+    # def outputs(self) -> Outputs:
+    #     """The outputs from the last iteration."""
+    #     last_iteration = self.iterations.last
+    #     if last_iteration:
+    #         return last_iteration.outputs
+    #     # To allow chaining without getting AttributeErrors
+    #     return Outputs()
 
     # TODO
     # @property
@@ -85,17 +159,73 @@ class Call(ArbitraryModel):
         return None
 
     @property
-    def raw_output(self) -> Optional[str]:
-        """The exact output from the LLM."""
-        response = self.outputs.llm_response_info
-        if response is not None:
-            return response.output
+    def raw_outputs(self) -> Stack[str]:
+        """The exact outputs from all LLM calls."""
+        return Stack(
+            *[
+                i.outputs.llm_response_info.output
+                if i.outputs.llm_response_info is not None
+                else None
+                for i in self.iterations
+            ]
+        )
+        
 
     @property
-    def parsed_output(self) -> Optional[Union[str, Dict]]:
-        """The output from the LLM after undergoing parsing but before
+    def parsed_outputs(self) -> Stack[Union[str, Dict]]:
+        """The outputs from the LLM after undergoing parsing but before
         validation."""
-        return self.outputs.parsed_output
+        return Stack(
+            *[
+                i.outputs.parsed_output
+                for i in self.iterations
+            ]
+        )
+    
+    @property
+    def validation_output(self) -> Optional[Union[str, Dict, ReAsk]]:
+        """
+        The cumulative validation output across all current iterations.
+        Could contain ReAsks.
+        """
+        number_of_iterations = self.iterations.length
+
+        if number_of_iterations == 0:
+            return None
+
+        # Don't try to merge if
+        #   1. We plan to perform full schema reasks
+        #   2. There's nothing to merge
+        #   3. The output is a top level ReAsk (i.e. SkeletonReAsk or NonParseableReask)
+        #   4. The output is a string
+        if (
+            self.inputs.full_schema_reask
+            or number_of_iterations < 2
+            or isinstance(self.iterations.last.validation_output, ReAsk)
+            or isinstance(self.iterations.last.validation_output, str)
+        ):
+            return self.iterations.last.validation_output
+
+        current_index = 1
+        merged_validation_output = self.iterations.first.validation_output
+        while current_index < number_of_iterations:
+            current_validation_output = self.iterations.at(
+                current_index
+            ).validation_output
+            merged_validation_output = merge_reask_output(
+                merged_validation_output, current_validation_output
+            )
+            current_index = current_index + 1
+
+        return merged_validation_output
+    
+    @property
+    def fixed_output(self) -> Optional[Union[str, Dict, ReAsk]]:
+        """
+        The cumulative validation output across all current iterations
+        with any automatic fixes applied.
+        """
+        return sub_reasks_with_fixed_values(self.validation_output)
 
     @property
     def validated_output(self) -> Optional[Union[str, Dict]]:
@@ -104,38 +234,57 @@ class Call(ArbitraryModel):
         This will only have a value if the Guard is in a passing state.
         """
         if self.status == pass_status:
-            return self.outputs.validated_output
+            return self.fixed_output
+            
 
     @property
-    def reasks(self) -> Sequence[ReAsk]:
-        """Reasks generated during validation.
+    def reasks(self) -> Stack[ReAsk]:
+        """Reasks generated during validation
+        that could not be automatically fixed.
 
-        These would be incorporated into the prompt or the next LLM
-        call.
+        These would be incorporated into the prompt for the next LLM
+        call if additional reasks were granted.
         """
-        return self.outputs.reasks
+        reasks, _ = gather_reasks(self.fixed_output)
+        return Stack(*reasks)
 
     @property
-    def validator_logs(self) -> List[ValidatorLogs]:
+    def validator_logs(self) -> Stack[ValidatorLogs]:
         """The results of each individual validation performed on the LLM
-        response during this iteration."""
-        return self.outputs.validator_logs
+        responses during all iterations."""
+        all_validator_logs = Stack()
+        for i in self.iterations:
+            all_validator_logs.extend(i.validator_logs)
+        return all_validator_logs
 
     @property
     def error(self) -> Optional[str]:
         """The error message from any exception that raised and interrupted
-        this iteration."""
-        return self.outputs.error
+        the run."""
+        if self.iterations.empty():
+            return None
+        return self.iterations.last.error
 
     @property
-    def failed_validations(self) -> List[ValidatorLogs]:
-        """The validator logs for any validations that failed during this
-        iteration."""
-        return self.outputs.failed_validations
+    def failed_validations(self) -> Stack[ValidatorLogs]:
+        """The validator logs for any validations that failed during the
+        entirety of the run."""
+        return Stack(
+            *[
+                log
+                for log in self.validator_logs
+                if log.validation_result.outcome == "fail"
+            ]
+        )
 
     @property
     def status(self) -> str:
-        """Returns the status of the last iteration."""
+        """Returns the cumulative status of the run
+        based on the validity of the final merged output."""
         if self.iterations.empty():
             return not_run_status
-        return self.iterations.last.status
+        elif self.error:
+            return error_status
+        elif len(self.reasks) > 0:
+            return fail_status
+        return pass_status

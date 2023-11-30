@@ -67,10 +67,14 @@ def test_non_empty_initialization():
     assert non_empty_outputs.status == error_status
 
 
-fail_result = FailResult(
+fixable_fail_result = FailResult(
     outcome="fail",
     error_message="Should not include punctuation",
     fix_value="Hello there",
+)
+non_fixable_fail_result = FailResult(
+    outcome="fail",
+    error_message="Should not include punctuation",
 )
 
 
@@ -85,7 +89,7 @@ fail_result = FailResult(
         (
             Outputs(
                 reasks=[
-                    ReAsk(incorrect_value="Hello there!", fail_results=[fail_result])
+                    ReAsk(incorrect_value="Hello there!", fail_results=[fixable_fail_result])
                 ]
             ),
             False,
@@ -96,7 +100,7 @@ fail_result = FailResult(
                     ValidatorLogs(
                         validator_name="no-punctuation",
                         value_before_validation="Hello there!",
-                        validation_result=fail_result,
+                        validation_result=fixable_fail_result,
                         value_after_validation="Hello there",
                     )
                 ]
@@ -117,7 +121,7 @@ def test_failed_validations():
         ValidatorLogs(
             validator_name="no-punctuation",
             value_before_validation="Hello there!",
-            validation_result=fail_result,
+            validation_result=fixable_fail_result,
             value_after_validation="Hello there",
         ),
         ValidatorLogs(
@@ -143,10 +147,16 @@ def test_failed_validations():
                     ValidatorLogs(
                         validator_name="no-punctuation",
                         value_before_validation="Hello there!",
-                        validation_result=fail_result,
+                        validation_result=non_fixable_fail_result,
                         value_after_validation="Hello there",
                     )
-                ]
+                ],
+                reasks=[ReAsk(
+                    incorrect_value="Hello there!",
+                    fail_results=[
+                       non_fixable_fail_result
+                    ]
+                )]
             ),
             fail_status,
         ),

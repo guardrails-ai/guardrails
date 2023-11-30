@@ -157,7 +157,7 @@ def test_entity_extraction_with_reask(
 
     # For orginal prompt and output
     first = call.iterations.first 
-    assert first.inputs.prompt == gd.Prompt(entity_extraction.COMPILED_PROMPT)
+    assert call.compiled_prompt == entity_extraction.COMPILED_PROMPT
     assert first.prompt_tokens_consumed == 123
     assert first.completion_tokens_consumed == 1234
     assert first.raw_output == entity_extraction.LLM_OUTPUT
@@ -186,23 +186,25 @@ def test_entity_extraction_with_reask(
     )
 
     # For re-asked prompt and output
-    second = call.iterations.at(1)
+    # second = call.iterations.at(1)
     if test_full_schema_reask:
         assert (
-            second.inputs.prompt.source
+            # second.inputs.prompt.source # Also valid
+            call.reask_prompts.at(1)
             == entity_extraction.COMPILED_PROMPT_FULL_REASK
         )
         assert (
-            second.raw_output
+            # second.raw_output # Also valid
+            call.raw_outputs.at(1)
             == entity_extraction.LLM_OUTPUT_FULL_REASK
         )
     else:
-        assert second.inputs.prompt.source == entity_extraction.COMPILED_PROMPT_REASK
+        assert call.reask_prompts.at(1) == entity_extraction.COMPILED_PROMPT_REASK
         assert (
-            second.raw_output == entity_extraction.LLM_OUTPUT_REASK
+            call.raw_outputs.at(1) == entity_extraction.LLM_OUTPUT_REASK
         )
     assert (
-        second.validated_output == entity_extraction.VALIDATED_OUTPUT_REASK_2
+        call.validated_output == entity_extraction.VALIDATED_OUTPUT_REASK_2
     )
 
 
@@ -234,8 +236,8 @@ def test_entity_extraction_with_noop(mocker, rail, prompt):
     assert call.iterations.length == 1
 
     # For orginal prompt and output
-    assert call.iterations.first.inputs.prompt == gd.Prompt(entity_extraction.COMPILED_PROMPT)
-    assert call.raw_output == entity_extraction.LLM_OUTPUT
+    assert call.compiled_prompt == entity_extraction.COMPILED_PROMPT
+    assert call.raw_outputs.last == entity_extraction.LLM_OUTPUT
     assert call.validated_output == entity_extraction.VALIDATED_OUTPUT_NOOP
 
 
@@ -270,8 +272,8 @@ def test_entity_extraction_with_filter(mocker, rail, prompt):
     assert call.iterations.length == 1
 
     # For orginal prompt and output
-    assert call.iterations.first.inputs.prompt == gd.Prompt(entity_extraction.COMPILED_PROMPT)
-    assert call.raw_output == entity_extraction.LLM_OUTPUT
+    assert call.compiled_prompt == entity_extraction.COMPILED_PROMPT
+    assert call.raw_outputs.last == entity_extraction.LLM_OUTPUT
     assert (
         call.validated_output == entity_extraction.VALIDATED_OUTPUT_FILTER
     )
@@ -305,8 +307,8 @@ def test_entity_extraction_with_fix(mocker, rail, prompt):
     assert call.iterations.length == 1
 
     # For orginal prompt and output
-    assert call.iterations.first.inputs.prompt == gd.Prompt(entity_extraction.COMPILED_PROMPT)
-    assert call.raw_output == entity_extraction.LLM_OUTPUT
+    assert call.compiled_prompt == entity_extraction.COMPILED_PROMPT
+    assert call.raw_outputs.last == entity_extraction.LLM_OUTPUT
     assert call.validated_output == entity_extraction.VALIDATED_OUTPUT_FIX
 
 
@@ -341,8 +343,8 @@ def test_entity_extraction_with_refrain(mocker, rail, prompt):
     assert call.iterations.length == 1
 
     # For orginal prompt and output
-    assert call.iterations.first.inputs.prompt == gd.Prompt(entity_extraction.COMPILED_PROMPT)
-    assert call.raw_output == entity_extraction.LLM_OUTPUT
+    assert call.compiled_prompt == entity_extraction.COMPILED_PROMPT
+    assert call.raw_outputs.last == entity_extraction.LLM_OUTPUT
     assert (
         call.validated_output == entity_extraction.VALIDATED_OUTPUT_REFRAIN
     )
@@ -384,13 +386,9 @@ def test_entity_extraction_with_fix_chat_models(mocker, rail, prompt, instructio
     assert call.iterations.length == 1
 
     # For orginal prompt and output
-    assert call.iterations.first.inputs.prompt == gd.Prompt(
-        entity_extraction.COMPILED_PROMPT_WITHOUT_INSTRUCTIONS
-    )
-    assert call.iterations.first.inputs.instructions == gd.Instructions(
-        entity_extraction.COMPILED_INSTRUCTIONS
-    )
-    assert call.raw_output == entity_extraction.LLM_OUTPUT
+    assert call.compiled_prompt == entity_extraction.COMPILED_PROMPT_WITHOUT_INSTRUCTIONS
+    assert call.compiled_instructions == entity_extraction.COMPILED_INSTRUCTIONS
+    assert call.raw_outputs.last == entity_extraction.LLM_OUTPUT
     assert call.validated_output == entity_extraction.VALIDATED_OUTPUT_FIX
 
 
@@ -413,8 +411,8 @@ def test_string_output(mocker):
     assert call.iterations.length == 1
 
     # For original prompt and output
-    assert call.iterations.first.inputs.prompt == gd.Prompt(string.COMPILED_PROMPT)
-    assert call.raw_output == string.LLM_OUTPUT
+    assert call.compiled_prompt == string.COMPILED_PROMPT
+    assert call.raw_outputs.last == string.LLM_OUTPUT
 
 
 def test_string_reask(mocker):
@@ -437,16 +435,17 @@ def test_string_reask(mocker):
     assert call.iterations.length == 2
 
     # For orginal prompt and output
-    assert call.iterations.first.inputs.instructions == gd.Instructions(
-        string.COMPILED_INSTRUCTIONS
-    )
-    assert call.iterations.first.inputs.prompt == gd.Prompt(string.COMPILED_PROMPT)
+    assert call.compiled_instructions == string.COMPILED_INSTRUCTIONS
+    assert call.compiled_prompt == string.COMPILED_PROMPT
     assert call.iterations.first.raw_output == string.LLM_OUTPUT
     assert call.iterations.first.validation_output == string.VALIDATED_OUTPUT_REASK
 
     # For re-asked prompt and output
     assert call.iterations.last.inputs.prompt == gd.Prompt(string.COMPILED_PROMPT_REASK)
-    assert call.raw_output == string.LLM_OUTPUT_REASK
+    # Same thing as above
+    assert call.reask_prompts.last == string.COMPILED_PROMPT_REASK
+
+    assert call.raw_outputs.last == string.LLM_OUTPUT_REASK
     assert call.validated_output == string.LLM_OUTPUT_REASK
 
 
@@ -474,9 +473,7 @@ def test_skeleton_reask(mocker):
     assert call.iterations.length == 2
 
     # For orginal prompt and output
-    assert call.iterations.first.inputs.prompt == gd.Prompt(
-        entity_extraction.COMPILED_PROMPT_SKELETON_REASK_1
-    )
+    assert call.compiled_prompt == entity_extraction.COMPILED_PROMPT_SKELETON_REASK_1
     assert call.iterations.first.raw_output == entity_extraction.LLM_OUTPUT_SKELETON_REASK_1
     assert (
         call.iterations.first.validation_output
@@ -484,10 +481,8 @@ def test_skeleton_reask(mocker):
     )
 
     # For re-asked prompt and output
-    assert call.iterations.last.inputs.prompt == gd.Prompt(
-        entity_extraction.COMPILED_PROMPT_SKELETON_REASK_2
-    )
-    assert call.raw_output == entity_extraction.LLM_OUTPUT_SKELETON_REASK_2
+    assert call.reask_prompts.last == entity_extraction.COMPILED_PROMPT_SKELETON_REASK_2
+    assert call.raw_outputs.last == entity_extraction.LLM_OUTPUT_SKELETON_REASK_2
     assert (
         call.validated_output
         == entity_extraction.VALIDATED_OUTPUT_SKELETON_REASK_2
@@ -513,8 +508,8 @@ def test_skeleton_reask(mocker):
     assert call.iterations.length == 1
 
     # For original prompt and output
-    #assert call.iterations.first.inputs.prompt == gd.Prompt(string.COMPILED_PROMPT)
-    assert call.raw_output == string.LLM_OUTPUT
+    #assert call.compiled_prompt == string.COMPILED_PROMPT
+    assert call.raw_outputs.last == string.LLM_OUTPUT
 
 '''
 
@@ -600,20 +595,12 @@ def test_entity_extraction_with_reask_with_optional_prompts(
     assert call.iterations.length == 2
 
     # For orginal prompt and output
-    expected_prompt = (
-        gd.Prompt(expected_prompt) if expected_prompt is not None else None
-    )
-    assert call.iterations.first.inputs.prompt == expected_prompt
+    assert call.compiled_prompt == expected_prompt
     assert call.iterations.first.raw_output == entity_extraction.LLM_OUTPUT
     assert (
         call.iterations.first.validation_output == entity_extraction.VALIDATED_OUTPUT_REASK_1
     )
-    expected_instructions = (
-        gd.Instructions(expected_instructions)
-        if expected_instructions is not None
-        else None
-    )
-    assert call.iterations.first.inputs.instructions == expected_instructions
+    assert call.compiled_instructions == expected_instructions
 
     # For reask validator logs
     # TODO: Update once we add json_path to the ValidatorLog class
@@ -636,16 +623,14 @@ def test_entity_extraction_with_reask_with_optional_prompts(
     )
 
     # For re-asked prompt and output
-    assert call.iterations.last.inputs.prompt == gd.Prompt(expected_reask_prompt)
-    assert call.raw_output == entity_extraction.LLM_OUTPUT_REASK
+    assert call.reask_prompts.last == expected_reask_prompt
+    assert call.raw_outputs.last == entity_extraction.LLM_OUTPUT_REASK
 
     assert (
         call.validated_output == entity_extraction.VALIDATED_OUTPUT_REASK_2
     )
     if expected_reask_instructions:
-        assert call.iterations.last.inputs.instructions == gd.Instructions(
-            expected_reask_instructions
-        )
+        assert call.reask_instructions.last == expected_reask_instructions
 
 
 def test_string_with_message_history_reask(mocker):
@@ -671,17 +656,15 @@ def test_string_with_message_history_reask(mocker):
     # Check that the guard state object has the correct number of re-asks.
     assert call.iterations.length == 2
 
-    assert call.iterations.first.inputs.instructions is None
-    assert call.iterations.first.inputs.prompt is None
+    assert call.compiled_instructions is None
+    assert call.compiled_prompt is None
     assert call.iterations.first.raw_output == string.MSG_LLM_OUTPUT_INCORRECT
     assert call.iterations.first.validation_output == string.MSG_VALIDATED_OUTPUT_REASK
 
     # For re-asked prompt and output
-    assert call.iterations.last.inputs.prompt == gd.Prompt(string.MSG_COMPILED_PROMPT_REASK)
-    assert call.iterations.last.inputs.instructions == gd.Instructions(
-        string.MSG_COMPILED_INSTRUCTIONS_REASK
-    )
-    assert call.raw_output == string.MSG_LLM_OUTPUT_CORRECT
+    assert call.reask_prompts.last == string.MSG_COMPILED_PROMPT_REASK
+    assert call.reask_instructions.last == string.MSG_COMPILED_INSTRUCTIONS_REASK
+    assert call.raw_outputs.last == string.MSG_LLM_OUTPUT_CORRECT
     assert call.validated_output == string.MSG_LLM_OUTPUT_CORRECT
 
 
@@ -710,17 +693,15 @@ def test_pydantic_with_message_history_reask(mocker):
     # Check that the guard state object has the correct number of re-asks.
     assert call.iterations.length == 2
 
-    assert call.iterations.first.inputs.instructions is None
-    assert call.iterations.first.inputs.prompt is None
+    assert call.compiled_instructions is None
+    assert call.compiled_prompt is None
     assert call.iterations.first.raw_output == pydantic.MSG_HISTORY_LLM_OUTPUT_INCORRECT
     assert call.iterations.first.validation_output == pydantic.MSG_VALIDATED_OUTPUT_REASK
 
     # For re-asked prompt and output
-    assert call.iterations.last.inputs.prompt == gd.Prompt(pydantic.MSG_COMPILED_PROMPT_REASK)
-    assert call.iterations.last.inputs.instructions == gd.Instructions(
-        pydantic.MSG_COMPILED_INSTRUCTIONS_REASK
-    )
-    assert call.raw_output == pydantic.MSG_HISTORY_LLM_OUTPUT_CORRECT
+    assert call.reask_prompts.last == pydantic.MSG_COMPILED_PROMPT_REASK
+    assert call.reask_instructions.last == pydantic.MSG_COMPILED_INSTRUCTIONS_REASK
+    assert call.raw_outputs.last == pydantic.MSG_HISTORY_LLM_OUTPUT_CORRECT
     assert call.validated_output == json.loads(
         pydantic.MSG_HISTORY_LLM_OUTPUT_CORRECT
     )
