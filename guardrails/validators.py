@@ -708,7 +708,7 @@ class SimilarToDocument(Validator):
         if not _HAS_NUMPY:
             raise ImportError(
                 f"The {self.__class__.__name__} validator requires the numpy package.\n"
-                "`pip install numpy` to install it."
+                "`poetry add numpy` to install it."
             )
 
         self.client = OpenAIClient()
@@ -780,7 +780,7 @@ class IsProfanityFree(Validator):
         except ImportError:
             raise ImportError(
                 "`is-profanity-free` validator requires the `alt-profanity-check`"
-                "package. Please install it with `pip install profanity-check`."
+                "package. Please install it with `poetry add profanity-check`."
             )
 
         prediction = predict([value])
@@ -828,7 +828,7 @@ class IsHighQualityTranslation(Validator):
         except ImportError:
             raise ImportError(
                 "`is-high-quality-translation` validator requires the `inspiredco`"
-                "package. Please install it with `pip install inspiredco`."
+                "package. Please install it with `poetry add inspiredco`."
             )
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
@@ -1127,7 +1127,7 @@ class ExtractiveSummary(Validator):
         except ImportError:
             raise ImportError(
                 "`thefuzz` library is required for `extractive-summary` validator. "
-                "Please install it with `pip install thefuzz`."
+                "Please install it with `poetry add thefuzz`."
             )
 
         # Split the value into sentences.
@@ -1222,7 +1222,7 @@ class RemoveRedundantSentences(Validator):
         except ImportError:
             raise ImportError(
                 "`thefuzz` library is required for `remove-redundant-sentences` "
-                "validator. Please install it with `pip install thefuzz`."
+                "validator. Please install it with `poetry add thefuzz`."
             )
 
         # Split the value into sentences.
@@ -1618,7 +1618,7 @@ class ProvenanceV0(Validator):
         if nltk is None:
             raise ImportError(
                 "`nltk` library is required for `provenance-v0` validator. "
-                "Please install it with `pip install nltk`."
+                "Please install it with `poetry add nltk`."
             )
         # Split the value into sentences using nltk sentence tokenizer.
         sentences = nltk.sent_tokenize(value)
@@ -1978,7 +1978,7 @@ class ProvenanceV1(Validator):
         if nltk is None:
             raise ImportError(
                 "`nltk` library is required for `provenance-v0` validator. "
-                "Please install it with `pip install nltk`."
+                "Please install it with `poetry add nltk`."
             )
         # Split the value into sentences using nltk sentence tokenizer.
         sentences = nltk.sent_tokenize(value)
@@ -2572,10 +2572,9 @@ class CompetitorCheck(Validator):
                 f"Spacy model {model} not installed. "
                 "Download should start now and take a few minutes."
             )
-            spacy.cli.download(model)
+            spacy.cli.download(model)  # type: ignore
 
         self.nlp = spacy.load(model)
-        # nltk.download('punkt')
 
     def exact_match(self, text: str, competitors: list[str]) -> list[str]:
         """Performs exact match to find competitors from a list in a given
@@ -2597,7 +2596,7 @@ class CompetitorCheck(Validator):
                 found_entities.append(entity)
         return found_entities
 
-    def perform_ner(self, text: str, nlp) -> tuple[list[str], list[str]]:
+    def perform_ner(self, text: str, nlp) -> list[str]:
         """Performs named entity recognition on text using a provided NLP
         model.
 
@@ -2650,6 +2649,11 @@ class CompetitorCheck(Validator):
             ValidationResult: The validation result.
         """
 
+        if nltk is None:
+            raise ImportError(
+                "`nltk` library is required for `competitors-check` validator. "
+                "Please install it with `poetry add nltk`."
+            )
         sentences = nltk.sent_tokenize(value)
         flagged_sentences = []
         filtered_sentences = []
