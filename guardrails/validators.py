@@ -2644,7 +2644,7 @@ class CompetitorCheck(Validator):
 
         Args:
             value (str): The value to be validated.
-            metadata (Dict, optional): Additional metadata. Defaults to an empty dictionary.
+            metadata (Dict, optional): Additional metadata. Defaults to empty dict.
 
         Returns:
             ValidationResult: The validation result.
