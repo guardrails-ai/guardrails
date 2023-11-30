@@ -39,7 +39,7 @@ class Call(ArbitraryModel):
     ):
         iterations = iterations or Stack()
         inputs = inputs or CallInputs()
-        super().__init__()
+        super().__init__(iterations=iterations, inputs=inputs)
         self.iterations = iterations
         self.inputs = inputs
 
@@ -93,7 +93,7 @@ class Call(ArbitraryModel):
         if self.iterations.empty():
             return None
         initial_inputs = self.iterations.first.inputs  # type: ignore
-        instructions: Instructions = initial_inputs.prompt  # type: ignore
+        instructions: Instructions = initial_inputs.instructions  # type: ignore
         prompt_params = initial_inputs.prompt_params or {}
         if instructions is not None:
             return instructions.format(**prompt_params).source
