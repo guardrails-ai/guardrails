@@ -2636,7 +2636,7 @@ class CompetitorCheck(Validator):
         return found_competitors
 
     def validate(self, value: str, metadata=Dict) -> ValidationResult:
-        """Checks a text to find competitors' names on it.
+        """Checks a text to find competitors' names in it.
 
         While running, store sentences naming competitors and generate a fixed output
         filtering out all flagged sentences.
