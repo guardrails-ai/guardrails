@@ -58,7 +58,8 @@ class Call(ArbitraryModel):
         """
         if self.iterations.length > 0:
             reasks = self.iterations.copy()
-            reasks.remove(reasks.first)
+            initial_prompt = reasks.first
+            reasks.remove(initial_prompt)
             return Stack(
                 *[
                     r.inputs.prompt.source

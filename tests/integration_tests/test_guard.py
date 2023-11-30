@@ -190,7 +190,7 @@ def test_entity_extraction_with_reask(
     if test_full_schema_reask:
         assert (
             # second.inputs.prompt.source # Also valid
-            call.reask_prompts.at(1)
+            call.reask_prompts.first
             == entity_extraction.COMPILED_PROMPT_FULL_REASK
         )
         assert (
@@ -199,7 +199,8 @@ def test_entity_extraction_with_reask(
             == entity_extraction.LLM_OUTPUT_FULL_REASK
         )
     else:
-        assert call.reask_prompts.at(1) == entity_extraction.COMPILED_PROMPT_REASK
+        # Second iteration is the first reask
+        assert call.reask_prompts.first == entity_extraction.COMPILED_PROMPT_REASK
         assert (
             call.raw_outputs.at(1) == entity_extraction.LLM_OUTPUT_REASK
         )

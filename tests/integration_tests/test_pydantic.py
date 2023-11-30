@@ -44,8 +44,12 @@ def test_pydantic_with_reask(mocker):
     assert call.iterations.first.validation_output == pydantic.VALIDATED_OUTPUT_REASK_1
 
     # For re-asked prompt and output
+    # Assert through iteration
     assert call.iterations.at(1).inputs.prompt == gd.Prompt(pydantic.COMPILED_PROMPT_REASK_1)
     assert call.iterations.at(1).raw_output == pydantic.LLM_OUTPUT_REASK_1
+    # Assert through call shortcut properties
+    assert call.reask_prompts.first == pydantic.COMPILED_PROMPT_REASK_1
+    assert call.raw_outputs.at(1) == pydantic.LLM_OUTPUT_REASK_1
     
     # We don't track merged validation output anymore 
     # Each validation_output is instead tracked as it came back from validation
@@ -60,6 +64,8 @@ def test_pydantic_with_reask(mocker):
 
     # For re-asked prompt #2 and output #2
     assert call.iterations.last.inputs.prompt == gd.Prompt(pydantic.COMPILED_PROMPT_REASK_2)
+    # Same as above
+    assert call.reask_prompts.last == pydantic.COMPILED_PROMPT_REASK_2
     assert call.raw_outputs.last == pydantic.LLM_OUTPUT_REASK_2
     assert call.validated_output == pydantic.VALIDATED_OUTPUT_REASK_3
 

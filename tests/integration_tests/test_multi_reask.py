@@ -25,18 +25,18 @@ def test_multi_reask(mocker):
     assert len(call.iterations) == 3
 
     assert call.compiled_prompt == python_rail.VALIDATOR_PARALLELISM_PROMPT_1
-    assert call.iterations.first.raw_output == python_rail.VALIDATOR_PARALLELISM_RESPONSE_1
+    assert call.raw_outputs.first == python_rail.VALIDATOR_PARALLELISM_RESPONSE_1
     assert (
         call.iterations.first.validation_output == python_rail.VALIDATOR_PARALLELISM_REASK_1
     )
 
-    assert call.iterations.at(1).inputs.prompt.source == python_rail.VALIDATOR_PARALLELISM_PROMPT_2
-    assert call.iterations.at(1).raw_output == python_rail.VALIDATOR_PARALLELISM_RESPONSE_2
+    assert call.reask_prompts.first == python_rail.VALIDATOR_PARALLELISM_PROMPT_2
+    assert call.raw_outputs.at(1) == python_rail.VALIDATOR_PARALLELISM_RESPONSE_2
     assert (
         call.iterations.at(1).validation_output == python_rail.VALIDATOR_PARALLELISM_REASK_2
     )
 
-    assert call.iterations.last.inputs.prompt.source == python_rail.VALIDATOR_PARALLELISM_PROMPT_3
+    assert call.reask_prompts.last == python_rail.VALIDATOR_PARALLELISM_PROMPT_3
     assert call.raw_outputs.last == python_rail.VALIDATOR_PARALLELISM_RESPONSE_3
     assert (
         call.validated_output

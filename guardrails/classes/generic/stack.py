@@ -65,7 +65,7 @@ class Stack(List[T]):
         """
         Returns a copy of the current Stack.
         """
-        copy = self.copy()
+        copy = super().copy()
         return Stack(*copy)
 
     @property

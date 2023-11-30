@@ -58,7 +58,9 @@ async def test_entity_extraction_with_reask(mocker, multiprocessing_validators: 
 
     # For orginal prompt and output
     first = call.iterations.first
-    assert first.inputs.prompt == entity_extraction.COMPILED_PROMPT
+    assert first.inputs.prompt == gd.Prompt(entity_extraction.COMPILED_PROMPT)
+    # Same as above
+    assert call.compiled_prompt == entity_extraction.COMPILED_PROMPT
     assert first.prompt_tokens_consumed == 123
     assert first.completion_tokens_consumed == 1234
     assert first.raw_output == entity_extraction.LLM_OUTPUT
@@ -67,6 +69,8 @@ async def test_entity_extraction_with_reask(mocker, multiprocessing_validators: 
     # For re-asked prompt and output
     final = call.iterations.last
     assert final.inputs.prompt == gd.Prompt(entity_extraction.COMPILED_PROMPT_REASK)
+    # Same as above
+    assert call.reask_prompts.last == entity_extraction.COMPILED_PROMPT_REASK
     assert final.raw_output == entity_extraction.LLM_OUTPUT_REASK
     assert call.validated_output == entity_extraction.VALIDATED_OUTPUT_REASK_2
 

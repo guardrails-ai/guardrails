@@ -46,7 +46,7 @@ class ValidationOutcome(Generic[OT], ArbitraryModel):
         # print("validated_output: ", call.validated_output)
         # print("reask: ", reask)
         # print("validation_passed: ", validation_passed)
-        print("error: ", error)
+        # print("error: ", error)
         return cls(
             raw_llm_output=call.raw_outputs.last,
             validated_output=call.validated_output,

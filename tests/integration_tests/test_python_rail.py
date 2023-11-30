@@ -173,6 +173,8 @@ def test_python_rail(mocker):
     assert call.iterations.last.inputs.prompt == gd.Prompt(
         python_rail.COMPILED_PROMPT_2_WITHOUT_INSTRUCTIONS
     )
+    # Same as above
+    assert call.reask_prompts.last == python_rail.COMPILED_PROMPT_2_WITHOUT_INSTRUCTIONS
     assert (
         call.raw_outputs.last
         == python_rail.LLM_OUTPUT_2_SUCCEED_GUARDRAILS_BUT_FAIL_PYDANTIC_VALIDATION
@@ -304,6 +306,8 @@ def test_python_rail_add_validator(mocker):
     assert call.iterations.last.inputs.prompt == gd.Prompt(
         python_rail.COMPILED_PROMPT_2_WITHOUT_INSTRUCTIONS
     )
+    # Same as above
+    assert call.reask_prompts.last == python_rail.COMPILED_PROMPT_2_WITHOUT_INSTRUCTIONS
     assert (
         call.raw_outputs.last
         == python_rail.LLM_OUTPUT_2_SUCCEED_GUARDRAILS_BUT_FAIL_PYDANTIC_VALIDATION
@@ -365,5 +369,7 @@ ${ingredients}
 
     # For re-asked prompt and output
     assert call.iterations.last.inputs.prompt == gd.Prompt(string.COMPILED_PROMPT_REASK)
+    # Same as above
+    assert call.reask_prompts.last == string.COMPILED_PROMPT_REASK
     assert call.raw_outputs.last == string.LLM_OUTPUT_REASK
     assert call.validated_output == string.LLM_OUTPUT_REASK
