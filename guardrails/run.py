@@ -746,7 +746,6 @@ class AsyncRunner(Runner):
                     # Loop again?
                     if not self.do_loop(index, iteration.reasks):
                         break
-
                     # Get new prompt and output schema.
                     (
                         prompt,
@@ -796,7 +795,6 @@ class AsyncRunner(Runner):
         outputs = Outputs()
         iteration = Iteration(inputs=inputs, outputs=outputs)
         call_log.iterations.push(iteration)
-
         try:
             with start_action(
                 action_type="step",

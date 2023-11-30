@@ -68,6 +68,7 @@ Dummy prompt.
         assert result.validated_output is not None
         assert not isinstance(result.validated_output, ReAsk)
 
+
 @pytest.mark.parametrize("llm_output, raises, fails", test_cases)
 def test_choice_validation_pydantic(llm_output, raises, fails):
     class Fight(BaseModel):
