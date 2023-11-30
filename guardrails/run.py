@@ -198,7 +198,7 @@ class Runner:
         # print("running step ", index)
         inputs = Inputs(
             llm_api=api,
-            llm_response=output,
+            llm_output=output,
             instructions=instructions,
             prompt=prompt,
             msg_history=msg_history,
@@ -455,11 +455,11 @@ class Runner:
         index: int,
         validated_output: Any,
         output_schema: Schema,
-    ) -> Tuple[List[FieldReAsk], Union[str, Dict]]:
+    ) -> Tuple[Sequence[ReAsk], Optional[Union[str, Dict]]]:
         """Introspect the validated output."""
         with start_action(action_type="introspect", index=index) as action:
             if validated_output is None:
-                return []
+                return [], None
             reasks, valid_output = output_schema.introspect(validated_output)
 
             action.log(
@@ -477,8 +477,8 @@ class Runner:
 
     def prepare_to_loop(
         self,
-        reasks: list,
-        validated_output: Optional[Union[Dict, ReAsk]],
+        reasks: Sequence[ReAsk],
+        validated_output: Optional[Union[str, Dict, ReAsk]],
         output_schema: Schema,
         prompt_params: Dict,
         include_instructions: bool = False,
@@ -625,7 +625,7 @@ class AsyncRunner(Runner):
         """Run a full step."""
         inputs = Inputs(
             llm_api=api,
-            llm_response=output,
+            llm_output=output,
             instructions=instructions,
             prompt=prompt,
             msg_history=msg_history,

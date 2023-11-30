@@ -61,7 +61,8 @@ class Outputs(ArbitraryModel):
             [
                 log
                 for log in self.validator_logs
-                if log.validation_result.outcome == "fail"
+                if log.validation_result is not None
+                and log.validation_result.outcome == "fail"
             ]
         )
 

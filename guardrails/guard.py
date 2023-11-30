@@ -308,10 +308,10 @@ class Guard(Generic[OT]):
             instructions=input_instructions,
             msg_history=msg_history,
             prompt_params=prompt_params,
-            num_reasks=num_reasks,
+            num_reasks=self.num_reasks,
             metadata=metadata,
             full_schema_reask=full_schema_reask,
-            args=args,
+            args=list(args),
             kwargs=kwargs,
         )
         call_log = Call(inputs=call_inputs)
@@ -546,10 +546,10 @@ class Guard(Generic[OT]):
             prompt=input_prompt,
             instructions=input_instructions,
             prompt_params=prompt_params,
-            num_reasks=num_reasks,
+            num_reasks=self.num_reasks,
             metadata=metadata,
             full_schema_reask=full_schema_reask,
-            args=args,
+            args=list(args),
             kwargs=kwargs,
         )
         call_log = Call(inputs=call_inputs)

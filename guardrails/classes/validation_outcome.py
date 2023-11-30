@@ -1,4 +1,4 @@
-from typing import Generic, Iterator, Optional, Tuple, Union
+from typing import Generic, Iterator, Optional, Tuple, Union, cast
 
 from pydantic import Field
 
@@ -36,20 +36,16 @@ class ValidationOutcome(Generic[OT], ArbitraryModel):
         last_output = (
             call.iterations.last.validation_output
             if not call.iterations.empty()
+            and call.iterations.last is not None
             else None
         )
         validation_passed = call.status == pass_status
         reask = last_output if isinstance(last_output, ReAsk) else None
         error = call.error or error_message
-        # print("call.status: ", call.status)
-        # print("raw_llm_output: ", call.raw_output)
-        # print("validated_output: ", call.validated_output)
-        # print("reask: ", reask)
-        # print("validation_passed: ", validation_passed)
-        # print("error: ", error)
+        output = cast(OT, call.validated_output)
         return cls(
             raw_llm_output=call.raw_outputs.last,
-            validated_output=call.validated_output,
+            validated_output=output,
             reask=reask,
             validation_passed=validation_passed,
             error=error,

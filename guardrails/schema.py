@@ -156,7 +156,7 @@ class Schema:
         """
         raise NotImplementedError
 
-    def introspect(self, data: Any) -> Tuple[List[ReAsk], Optional[Union[str, Dict]]]:
+    def introspect(self, data: Any) -> Tuple[Sequence[ReAsk], Optional[Union[str, Dict]]]:
         """Inspect the data for reasks.
 
         Args:
@@ -169,7 +169,7 @@ class Schema:
 
     def get_reask_setup(
         self,
-        reasks: List[FieldReAsk],
+        reasks: Sequence[ReAsk],
         original_response: Any,
         use_full_schema: bool,
         prompt_params: Optional[Dict[str, Any]] = None,
@@ -286,7 +286,8 @@ class JsonSchema(Schema):
                 reask_value = prune_obj_for_reasking(original_response)
 
                 # Get the pruned tree so that it only contains ReAsk objects
-                pruned_tree = get_pruned_tree(root, reasks)
+                field_reasks = [r for r in reasks if isinstance(r, FieldReAsk)]
+                pruned_tree = get_pruned_tree(root, field_reasks)
                 pruned_tree_schema = type(self)(pruned_tree)
 
             reask_prompt_template = self.reask_prompt_template
@@ -747,7 +748,7 @@ class StringSchema(Schema):
     ) -> Tuple[List[FieldReAsk], Optional[str]]:
         if isinstance(data, FieldReAsk):
             return [data], None
-        return [], data
+        return [], data  # type: ignore
 
     def preprocess_prompt(
         self,

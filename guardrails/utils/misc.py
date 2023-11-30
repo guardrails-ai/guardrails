@@ -49,14 +49,14 @@ def generate_test_artifacts(
             ext = f"_reask_{i}"
 
         # Save the compiled prompt.
-        compiled_prompt = logs.prompt
+        compiled_prompt = logs.inputs.prompt
         with open(
             os.path.join(artifact_dir, f"compiled_prompt_{on_fail_type}{ext}.txt"), "w"
         ) as f:
             f.write(str(compiled_prompt or ""))
 
         # Save the llm output.
-        llm_output = logs.output
+        llm_output = logs.raw_output
         with open(
             os.path.join(artifact_dir, f"llm_output_{on_fail_type}{ext}.txt"), "w"
         ) as f:

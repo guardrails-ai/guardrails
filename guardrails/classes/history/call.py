@@ -8,6 +8,8 @@ from guardrails.classes.generic.stack import Stack
 from guardrails.classes.history.call_inputs import CallInputs
 from guardrails.classes.history.iteration import Iteration
 from guardrails.constants import error_status, fail_status, not_run_status, pass_status
+from guardrails.prompt.prompt import Prompt
+from guardrails.prompt.instructions import Instructions
 from guardrails.utils.logs_utils import ValidatorLogs, merge_reask_output
 from guardrails.utils.pydantic_utils import ArbitraryModel
 from guardrails.utils.reask_utils import (
@@ -30,10 +32,14 @@ class Call(ArbitraryModel):
 
     # Prevent Pydantic from changing our types
     # Without this, Pydantic casts iterations to a list
-    def __init__(self, iterations: Stack[Iteration] = None, inputs: CallInputs = None):
+    def __init__(
+        self,
+        iterations: Optional[Stack[Iteration]] = None,
+        inputs: Optional[CallInputs] = None
+    ):
         iterations = iterations or Stack()
         inputs = inputs or CallInputs()
-        super().__init__(iterations=iterations, inputs=inputs)
+        super().__init__()
         self.iterations = iterations
         self.inputs = inputs
 
@@ -49,9 +55,11 @@ class Call(ArbitraryModel):
         call."""
         if self.iterations.empty():
             return None
-        initial_inputs = self.iterations.first.inputs
+        initial_inputs = self.iterations.first.inputs  # type: ignore
+        prompt: Prompt = initial_inputs.prompt  # type: ignore
+        prompt_params = initial_inputs.prompt_params or {}
         if initial_inputs.prompt is not None:
-            return initial_inputs.prompt.format(**initial_inputs.prompt_params).source
+            return prompt.format(**prompt_params).source
 
     @property
     def reask_prompts(self) -> Stack[Optional[str]]:
@@ -62,7 +70,7 @@ class Call(ArbitraryModel):
         if self.iterations.length > 0:
             reasks = self.iterations.copy()
             initial_prompt = reasks.first
-            reasks.remove(initial_prompt)
+            reasks.remove(initial_prompt)  # type: ignore
             return Stack(
                 *[
                     r.inputs.prompt.source if r.inputs.prompt is not None else None
@@ -84,10 +92,12 @@ class Call(ArbitraryModel):
         first call."""
         if self.iterations.empty():
             return None
-        initial_inputs = self.iterations.first.inputs
-        if initial_inputs.instructions is not None:
-            return initial_inputs.instructions.format(
-                **initial_inputs.prompt_params
+        initial_inputs = self.iterations.first.inputs  # type: ignore
+        instructions: Instructions = initial_inputs.prompt  # type: ignore
+        prompt_params = initial_inputs.prompt_params or {}
+        if instructions is not None:
+            return instructions.format(
+                **prompt_params
             ).source
 
     @property
@@ -98,7 +108,7 @@ class Call(ArbitraryModel):
         """
         if self.iterations.length > 0:
             reasks = self.iterations.copy()
-            reasks.remove(reasks.first)
+            reasks.remove(reasks.first)  # type: ignore
             return Stack(
                 *[
                     r.inputs.instructions.source
@@ -107,6 +117,8 @@ class Call(ArbitraryModel):
                     for r in reasks
                 ]
             )
+
+        return Stack()
 
     # # Since all properties now are cumulative in nature, this has no place here
     # @property
@@ -197,17 +209,21 @@ class Call(ArbitraryModel):
         if (
             self.inputs.full_schema_reask
             or number_of_iterations < 2
-            or isinstance(self.iterations.last.validation_output, ReAsk)
-            or isinstance(self.iterations.last.validation_output, str)
+            or isinstance(self.iterations.last.validation_output, ReAsk)  # type: ignore
+            or isinstance(self.iterations.last.validation_output, str)  # type: ignore
         ):
-            return self.iterations.last.validation_output
+            return self.iterations.last.validation_output  # type: ignore
 
         current_index = 1
-        merged_validation_output = self.iterations.first.validation_output
+        # We've already established that there are iterations,
+        #  hence the type ignores
+        merged_validation_output = (
+            self.iterations.first.validation_output  # type: ignore
+        )
         while current_index < number_of_iterations:
             current_validation_output = self.iterations.at(
                 current_index
-            ).validation_output
+            ).validation_output  # type: ignore
             merged_validation_output = merge_reask_output(
                 merged_validation_output, current_validation_output
             )
@@ -216,7 +232,7 @@ class Call(ArbitraryModel):
         return merged_validation_output
 
     @property
-    def fixed_output(self) -> Optional[Union[str, Dict, ReAsk]]:
+    def fixed_output(self) -> Optional[Union[str, Dict]]:
         """The cumulative validation output across all current iterations with
         any automatic fixes applied."""
         return sub_reasks_with_fixed_values(self.validation_output)
@@ -256,7 +272,7 @@ class Call(ArbitraryModel):
         run."""
         if self.iterations.empty():
             return None
-        return self.iterations.last.error
+        return self.iterations.last.error  # type: ignore
 
     @property
     def failed_validations(self) -> Stack[ValidatorLogs]:
@@ -266,7 +282,8 @@ class Call(ArbitraryModel):
             *[
                 log
                 for log in self.validator_logs
-                if log.validation_result.outcome == "fail"
+                if log.validation_result is not None
+                and log.validation_result.outcome == "fail"
             ]
         )
 

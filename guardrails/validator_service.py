@@ -72,7 +72,7 @@ class ValidatorServiceBase:
             )
 
     def run_validator(
-        self, iteration: Iteration, validator: Validator, value: any, metadata: Dict
+        self, iteration: Iteration, validator: Validator, value: Any, metadata: Dict
     ) -> ValidatorLogs:
         validator_class_name = validator.__class__.__name__
         validator_logs = ValidatorLogs(
