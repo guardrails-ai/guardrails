@@ -37,6 +37,8 @@ nav:
     - 'Schema': api_reference/schema.md
     - 'Document Store': api_reference/document_store.md
     - 'Data Types': api_reference/data_types.md
+    - 'History & Logs': api_reference/history_and_logs.md
+    - 'Helper Classes': api_reference/helper_classes.md
   - 'CLI Reference': cli.md
   # - 'Recipes':
   #   - 'Generating structured data': recipes/generate_structured_data.ipynb
