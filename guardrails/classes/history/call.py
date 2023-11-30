@@ -39,7 +39,7 @@ class Call(ArbitraryModel):
     ):
         iterations = iterations or Stack()
         inputs = inputs or CallInputs()
-        super().__init__(iterations=iterations, inputs=inputs)
+        super().__init__(iterations=iterations, inputs=inputs)  # type: ignore
         self.iterations = iterations
         self.inputs = inputs
 
