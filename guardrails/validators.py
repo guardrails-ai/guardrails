@@ -2544,8 +2544,8 @@ class DetectSecrets(Validator):
 
 @register_validator(name="competitor-check", data_type="string")
 class CompetitorCheck(Validator):
-    """
-    Validates that LLM-generated text is not naming any competitors from a given list.
+    """Validates that LLM-generated text is not naming any competitors from a
+    given list.
 
     In order to use this validator you need to provide an extensive list of the
     competitors you want to avoid naming including all common variations.
@@ -2566,18 +2566,20 @@ class CompetitorCheck(Validator):
             raise ImportError(
                 "You must install spacy in order to use the CompetitorCheck validator."
             )
-        
+
         if not spacy.util.is_package(model):
-            logger.info(f"Spacy model {model} not installed. "
-                        "Download should start now and take a few minutes.")
+            logger.info(
+                f"Spacy model {model} not installed. "
+                "Download should start now and take a few minutes."
+            )
             spacy.cli.download(model)
 
         self.nlp = spacy.load(model)
         # nltk.download('punkt')
 
     def exact_match(self, text: str, competitors: list[str]) -> list[str]:
-        """
-        Performs exact match to find competitors from a list in a given text.
+        """Performs exact match to find competitors from a list in a given
+        text.
 
         Args:
             text (str): The text to search for competitors.
@@ -2596,8 +2598,8 @@ class CompetitorCheck(Validator):
         return found_entities
 
     def perform_ner(self, text: str, nlp) -> tuple[list[str], list[str]]:
-        """
-        Performs named entity recognition on text using a provided NLP model.
+        """Performs named entity recognition on text using a provided NLP
+        model.
 
         Args:
             text (str): The text to perform named entity recognition on.
@@ -2613,11 +2615,9 @@ class CompetitorCheck(Validator):
             entities.append(ent.text)
         return entities
 
-    def is_entity_in_list(
-        self, entities: list[str], competitors: list[str]
-    ) -> List:
-        """
-        Checks if any entity from a list is present in a given list of competitors.
+    def is_entity_in_list(self, entities: list[str], competitors: list[str]) -> List:
+        """Checks if any entity from a list is present in a given list of
+        competitors.
 
         Args:
             entities (list): A list of entities to check
@@ -2637,9 +2637,8 @@ class CompetitorCheck(Validator):
         return found_competitors
 
     def validate(self, value: str, metadata=Dict) -> ValidationResult:
-        """
-        Checks a text to find competitors' names on it.
-        
+        """Checks a text to find competitors' names on it.
+
         While running, store sentences naming competitors and generate a fixed output
         filtering out all flagged sentences.
 
@@ -2660,9 +2659,7 @@ class CompetitorCheck(Validator):
             entities = self.exact_match(sentence, self._competitors)
             if entities:
                 ner_entities = self.perform_ner(sentence, self.nlp)
-                found_competitors = self.is_entity_in_list(
-                    ner_entities, entities
-                )
+                found_competitors = self.is_entity_in_list(ner_entities, entities)
 
                 if found_competitors:
                     flagged_sentences.append((found_competitors, sentence))
@@ -2682,7 +2679,7 @@ class CompetitorCheck(Validator):
                     f"Found the following competitors: {list_of_competitors_found}. "
                     "Please avoid naming those competitors next time"
                 ),
-                fix_value=filtered_output
+                fix_value=filtered_output,
             )
         else:
             return PassResult()
