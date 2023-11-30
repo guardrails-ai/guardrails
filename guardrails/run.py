@@ -55,6 +55,7 @@ class Runner:
         api: Optional[PromptCallableBase] = None,
         prompt_schema: Optional[StringSchema] = None,
         instructions_schema: Optional[StringSchema] = None,
+        msg_history_schema: Optional[StringSchema] = None,
         metadata: Optional[Dict[str, Any]] = None,
         output: Optional[str] = None,
         guard_history: Optional[GuardHistory] = None,
@@ -92,6 +93,7 @@ class Runner:
         self.api = api
         self.prompt_schema = prompt_schema
         self.instructions_schema = instructions_schema
+        self.msg_history_schema = msg_history_schema
         self.output_schema = output_schema
         self.guard_state = guard_state
         self.num_reasks = num_reasks
@@ -143,6 +145,7 @@ class Runner:
             api=self.api,
             prompt_schema=self.prompt_schema,
             instructions_schema=self.instructions_schema,
+            msg_history_schema=self.msg_history_schema,
             output_schema=self.output_schema,
             num_reasks=self.num_reasks,
             metadata=self.metadata,
@@ -166,6 +169,7 @@ class Runner:
                     prompt_params=prompt_params,
                     prompt_schema=prompt_schema,
                     instructions_schema=instructions_schema,
+                    msg_history_schema=self.msg_history_schema,
                     output_schema=output_schema,
                     output=self.output if index == 0 else None,
                 )
@@ -208,6 +212,7 @@ class Runner:
             prompt_params=prompt_params,
             prompt_schema=prompt_schema,
             instructions_schema=instructions_schema,
+            msg_history_schema=self.msg_history_schema,
             output_schema=output_schema,
         ):
             # Prepare: run pre-processing, and input validation.
@@ -284,6 +289,7 @@ class Runner:
         api: Optional[Union[PromptCallableBase, AsyncPromptCallableBase]],
         prompt_schema: Optional[StringSchema],
         instructions_schema: Optional[StringSchema],
+        msg_history_schema: Optional[StringSchema],
         output_schema: Schema,
     ) -> Tuple[Optional[Instructions], Optional[Prompt], Optional[List[Dict]]]:
         """Prepare by running pre-processing and input validation.
@@ -306,7 +312,18 @@ class Runner:
 
                 prompt, instructions = None, None
 
-                # TODO figure out what to do with msg_history in terms of input validation
+                # validate msg_history
+                if msg_history_schema is not None:
+                    validated_msg_history = msg_history_schema.validate(
+                        guard_logs, msg_history_string(msg_history), self.metadata
+                    )
+                    if validated_msg_history is None:
+                        raise ValidatorError("Message history validation failed")
+                    if isinstance(validated_msg_history, ReAsk):
+                        raise ValidatorError(
+                            f"Message history validation failed: {validated_msg_history}"
+                        )
+                    msg_history = validated_msg_history
             elif prompt is not None:
                 if isinstance(prompt, str):
                     prompt = Prompt(prompt)
@@ -509,7 +526,9 @@ class AsyncRunner(Runner):
         instructions: Optional[Union[str, Instructions]] = None,
         msg_history: Optional[List[Dict]] = None,
         api: Optional[AsyncPromptCallableBase] = None,
-        input_schema: Optional[Schema] = None,
+        prompt_schema: Optional[StringSchema] = None,
+        instructions_schema: Optional[StringSchema] = None,
+        msg_history_schema: Optional[StringSchema] = None,
         metadata: Optional[Dict[str, Any]] = None,
         output: Optional[str] = None,
         guard_history: Optional[GuardHistory] = None,
@@ -524,7 +543,9 @@ class AsyncRunner(Runner):
             instructions=instructions,
             msg_history=msg_history,
             api=api,
-            input_schema=input_schema,
+            prompt_schema=prompt_schema,
+            instructions_schema=instructions_schema,
+            msg_history_schema=msg_history_schema,
             metadata=metadata,
             output=output,
             guard_history=guard_history,
@@ -562,16 +583,20 @@ class AsyncRunner(Runner):
             instructions=self.instructions,
             prompt=self.prompt,
             api=self.api,
-            input_schema=self.input_schema,
+            prompt_schema=self.prompt_schema,
+            instructions_schema=self.instructions_schema,
+            msg_history_schema=self.msg_history_schema,
             output_schema=self.output_schema,
             num_reasks=self.num_reasks,
             metadata=self.metadata,
         ):
-            instructions, prompt, msg_history, input_schema, output_schema = (
+            instructions, prompt, msg_history, prompt_schema, instructions_schema, msg_history_schema, output_schema = (
                 self.instructions,
                 self.prompt,
                 self.msg_history,
-                self.input_schema,
+                self.prompt_schema,
+                self.instructions_schema,
+                self.msg_history_schema,
                 self.output_schema,
             )
             for index in range(self.num_reasks + 1):
@@ -583,7 +608,9 @@ class AsyncRunner(Runner):
                     prompt=prompt,
                     msg_history=msg_history,
                     prompt_params=prompt_params,
-                    input_schema=input_schema,
+                    prompt_schema=prompt_schema,
+                    instructions_schema=instructions_schema,
+                    msg_history_schema=msg_history_schema,
                     output_schema=output_schema,
                     output=self.output if index == 0 else None,
                 )
@@ -609,7 +636,9 @@ class AsyncRunner(Runner):
         prompt: Optional[Prompt],
         msg_history: Optional[List[Dict]],
         prompt_params: Dict,
-        input_schema: Optional[Schema],
+        prompt_schema: Optional[StringSchema],
+        instructions_schema: Optional[StringSchema],
+        msg_history_schema: Optional[StringSchema],
         output_schema: Schema,
         output: Optional[str] = None,
     ):
@@ -622,7 +651,9 @@ class AsyncRunner(Runner):
             instructions=instructions,
             prompt=prompt,
             prompt_params=prompt_params,
-            input_schema=input_schema,
+            prompt_schema=prompt_schema,
+            instructions_schema=instructions_schema,
+            msg_history_schema=self.msg_history_schema,
             output_schema=output_schema,
         ):
             # Prepare: run pre-processing, and input validation.
@@ -641,6 +672,7 @@ class AsyncRunner(Runner):
                     api,
                     prompt_schema,
                     instructions_schema,
+                    msg_history_schema,
                     output_schema,
                 )
 
@@ -766,9 +798,115 @@ class AsyncRunner(Runner):
 
             return validated_output
 
+    async def async_prepare(
+        self,
+        guard_logs: GuardLogs,
+        index: int,
+        instructions: Optional[Instructions],
+        prompt: Optional[Prompt],
+        msg_history: Optional[List[Dict]],
+        prompt_params: Dict,
+        api: Optional[Union[PromptCallableBase, AsyncPromptCallableBase]],
+        prompt_schema: Optional[StringSchema],
+        instructions_schema: Optional[StringSchema],
+        msg_history_schema: Optional[StringSchema],
+        output_schema: Schema,
+    ) -> Tuple[Optional[Instructions], Optional[Prompt], Optional[List[Dict]]]:
+        """Prepare by running pre-processing and input validation.
+
+        Returns:
+            The instructions, prompt, and message history.
+        """
+        with start_action(action_type="prepare", index=index) as action:
+            if api is None:
+                raise ValueError("API must be provided.")
+
+            if prompt_params is None:
+                prompt_params = {}
+
+            if msg_history:
+                msg_history = copy.deepcopy(msg_history)
+                # Format any variables in the message history with the prompt params.
+                for msg in msg_history:
+                    msg["content"] = msg["content"].format(**prompt_params)
+
+                prompt, instructions = None, None
+
+                # validate msg_history
+                if msg_history_schema is not None:
+                    validated_msg_history = await msg_history_schema.async_validate(
+                        guard_logs, msg_history_string(msg_history), self.metadata
+                    )
+                    if validated_msg_history is None:
+                        raise ValidatorError("Message history validation failed")
+                    if isinstance(validated_msg_history, ReAsk):
+                        raise ValidatorError(
+                            f"Message history validation failed: {validated_msg_history}"
+                        )
+                    msg_history = validated_msg_history
+            elif prompt is not None:
+                if isinstance(prompt, str):
+                    prompt = Prompt(prompt)
+
+                prompt = prompt.format(**prompt_params)
+
+                # TODO(shreya): should there be any difference
+                #  to parsing params for prompt?
+                if instructions is not None and isinstance(instructions, Instructions):
+                    instructions = instructions.format(**prompt_params)
+
+                instructions, prompt = output_schema.preprocess_prompt(
+                    api, instructions, prompt
+                )
+
+                # validate prompt
+                if prompt_schema is not None:
+                    validated_prompt = await prompt_schema.async_validate(
+                        guard_logs, prompt.source, self.metadata
+                    )
+                    if validated_prompt is None:
+                        raise ValidatorError("Prompt validation failed")
+                    if isinstance(validated_prompt, ReAsk):
+                        raise ValidatorError(
+                            f"Prompt validation failed: {validated_prompt}"
+                        )
+                    prompt = Prompt(validated_prompt)
+
+                # validate instructions
+                if instructions_schema is not None:
+                    validated_instructions = await instructions_schema.async_validate(
+                        guard_logs, instructions.source, self.metadata
+                    )
+                    if validated_instructions is None:
+                        raise ValidatorError("Instructions validation failed")
+                    if isinstance(validated_instructions, ReAsk):
+                        raise ValidatorError(
+                            f"Instructions validation failed: {validated_instructions}"
+                        )
+                    instructions = Instructions(validated_instructions)
+            else:
+                raise ValueError("Prompt or message history must be provided.")
+
+            action.log(
+                message_type="info",
+                instructions=instructions,
+                prompt=prompt,
+                prompt_params=prompt_params,
+                validated_prompt_params=prompt_params,
+            )
+
+        return instructions, prompt, msg_history
+
 
 def msg_history_source(msg_history) -> List[Dict[str, str]]:
     msg_history_copy = copy.deepcopy(msg_history)
     for msg in msg_history_copy:
         msg["content"] = msg["content"].source
+    return msg_history_copy
+
+
+def msg_history_string(msg_history) -> str:
+    msg_history_copy = ""
+    for msg in msg_history:
+        msg_history_copy += msg["content"].source
     return msg_history_copy

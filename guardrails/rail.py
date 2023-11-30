@@ -31,6 +31,7 @@ class Rail:
 
     prompt_schema: Optional[Schema]
     instructions_schema: Optional[Schema]
+    msg_history_schema: Optional[Schema]
     output_schema: Schema
     instructions: Optional[Instructions]
     prompt: Optional[Prompt]
@@ -54,6 +55,7 @@ class Rail:
         return cls(
             prompt_schema=None,
             instructions_schema=None,
+            msg_history_schema=None,
             output_schema=output_schema,
             instructions=cls.load_instructions(instructions, output_schema),
             prompt=cls.load_prompt(prompt, output_schema),
@@ -77,17 +79,6 @@ class Rail:
                 "Change the opening <rail> element to: <rail version='0.1'>."
             )
 
-        # Load <input /> schema
-        # TODO change this to `prompt_validators` and `instructions_validators`
-        raw_input_schema = xml.find("input")
-        if raw_input_schema is None:
-            # No input schema, so do no input checking.
-            input_schema = None
-        else:
-            input_schema = cls.load_input_schema_from_xml(raw_input_schema)
-        prompt_schema = None
-        instructions_schema = None
-
         # Load <output /> schema
         raw_output_schema = xml.find("output")
         if raw_output_schema is None:
@@ -110,16 +101,23 @@ class Rail:
         # Parse instructions for the LLM. These are optional but if given,
         # LLMs can use them to improve their output. Commonly these are
         # prepended to the prompt.
-        instructions = xml.find("instructions")
-        if instructions is not None:
-            instructions = cls.load_instructions(instructions.text, output_schema)
+        instructions_tag = xml.find("instructions")
+        if instructions_tag is None:
+            instructions = None
+            instructions_schema = None
+        else:
+            instructions = cls.load_instructions(instructions_tag.text, output_schema)
+            instructions_schema = cls.load_input_schema_from_xml(instructions_tag)
 
         # Load <prompt />
-        prompt = xml.find("prompt")
-        if prompt is None:
+        prompt_tag = xml.find("prompt")
+        if prompt_tag is None:
             warnings.warn("Prompt must be provided during __call__.")
+            prompt = None
+            prompt_schema = None
         else:
-            prompt = cls.load_prompt(prompt.text, output_schema)
+            prompt = cls.load_prompt(prompt_tag.text, output_schema)
+            prompt_schema = cls.load_input_schema_from_xml(prompt_tag)
 
         # Get version
         version = xml.attrib["version"]
@@ -128,6 +126,7 @@ class Rail:
         return cls(
             prompt_schema=prompt_schema,
             instructions_schema=instructions_schema,
+            msg_history_schema=None,
             output_schema=output_schema,
             instructions=instructions,
             prompt=prompt,
@@ -154,16 +153,20 @@ class Rail:
         return cls(
             prompt_schema=None,
             instructions_schema=None,
+            msg_history_schema=None,
             output_schema=output_schema,
             instructions=cls.load_instructions(instructions, output_schema),
             prompt=cls.load_prompt(prompt, output_schema),
         )
 
     @staticmethod
-    def load_input_schema_from_xml(root: ET._Element) -> Schema:
+    def load_input_schema_from_xml(
+        root: Optional[ET._Element]
+    ) -> Optional[StringSchema]:
         """Given the RAIL <input> element, create a Schema object."""
-        # Recast the schema as an InputSchema.
-        return Schema.from_xml(root)
+        if root is None:
+            return None
+        return StringSchema.from_xml(root)
 
     @staticmethod
     def load_output_schema_from_xml(

@@ -73,6 +73,11 @@ class Guard:
         return self.rail.instructions_schema
 
     @property
+    def msg_history_schema(self) -> Optional[Schema]:
+        """Return the input schema."""
+        return self.rail.msg_history_schema
+
+    @property
     def output_schema(self) -> Schema:
         """Return the output schema."""
         return self.rail.output_schema
@@ -359,6 +364,7 @@ class Guard:
                 api=get_llm_ask(llm_api, *args, **kwargs),
                 prompt_schema=self.prompt_schema,
                 instructions_schema=self.instructions_schema,
+                msg_history_schema=self.msg_history_schema,
                 output_schema=self.output_schema,
                 num_reasks=num_reasks,
                 metadata=metadata,
@@ -415,7 +421,9 @@ class Guard:
                 prompt=prompt_obj,
                 msg_history=msg_history_obj,
                 api=get_async_llm_ask(llm_api, *args, **kwargs),
-                input_schema=self.input_schema,
+                prompt_schema=self.prompt_schema,
+                instructions_schema=self.instructions_schema,
+                msg_history_schema=self.msg_history_schema,
                 output_schema=self.output_schema,
                 num_reasks=num_reasks,
                 metadata=metadata,
@@ -569,7 +577,9 @@ class Guard:
                 prompt=kwargs.pop("prompt", None),
                 msg_history=kwargs.pop("msg_history", None),
                 api=get_llm_ask(llm_api, *args, **kwargs) if llm_api else None,
-                input_schema=None,
+                prompt_schema=self.prompt_schema,
+                instructions_schema=self.instructions_schema,
+                msg_history_schema=self.msg_history_schema,
                 output_schema=self.output_schema,
                 num_reasks=num_reasks,
                 metadata=metadata,
@@ -608,7 +618,9 @@ class Guard:
                 prompt=kwargs.pop("prompt", None),
                 msg_history=kwargs.pop("msg_history", None),
                 api=get_async_llm_ask(llm_api, *args, **kwargs) if llm_api else None,
-                input_schema=None,
+                prompt_schema=self.prompt_schema,
+                instructions_schema=self.instructions_schema,
+                msg_history_schema=self.msg_history_schema,
                 output_schema=self.output_schema,
                 num_reasks=num_reasks,
                 metadata=metadata,
@@ -656,4 +668,23 @@ class Guard:
             validators=validators,
         )
         self.rail.instructions_schema = schema
+        return self
+
+    def with_msg_history_validation(
+        self,
+        validators: Sequence[Validator],
+    ):
+        """Add msg_history validation to the Guard.
+
+        Args:
+            validators: The validators to add to the msg_history.
+        """
+        if self.rail.msg_history_schema:
+            warnings.warn(
+                "Overriding existing msg_history validators."
+            )
+        schema = StringSchema.from_string(
+            validators=validators,
+        )
+        self.rail.msg_history_schema = schema
         return self

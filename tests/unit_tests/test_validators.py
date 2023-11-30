@@ -620,3 +620,17 @@ def test_custom_on_fail_handler(
             )
         else:
             assert validated_output == expected_result
+
+
+def test_xml_input_validation():
+    rail_str = """
+<rail version="0.1">
+<prompt validators="two-words">
+This is not two words
+</prompt>
+<output type="string">
+</output>
+</rail>"""
+    guard = Guard.from_rail_string(rail_str)
+    with pytest.raises(ValueError):
+        guard.parse("")
