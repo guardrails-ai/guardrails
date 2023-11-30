@@ -209,8 +209,8 @@ def merge_reask_output(previous_response, reask_response) -> Dict:
     """Merge the reask output into the original output.
 
     Args:
-        prev_logs: GuardLogs object from the previous iteration.
-        current_logs: GuardLogs object from the current iteration.
+        prev_logs: validation output object from the previous iteration.
+        current_logs: validation output object from the current iteration.
 
     Returns:
         The merged output.

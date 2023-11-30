@@ -3,7 +3,6 @@ from guardrails.classes.history.iteration import Iteration
 
 import guardrails.validator_service as vs
 from guardrails.datatypes import FieldValidation
-from guardrails.utils.logs_utils import FieldValidationLogs
 
 from .mocks import MockAsyncValidatorService, MockLoop, MockSequentialValidatorService
 

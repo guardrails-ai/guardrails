@@ -425,9 +425,6 @@ class JsonSchema(Schema):
             schema=validated_response,
         )
 
-        # validation_logs = FieldValidationLogs()
-        # guard_logs.field_validation_logs = validation_logs
-
         validated_response, metadata = validator_service.validate(
             value=validated_response,
             metadata=metadata,
@@ -490,9 +487,6 @@ class JsonSchema(Schema):
             value=validated_response,
             schema=validated_response,
         )
-
-        # validation_logs = FieldValidationLogs()
-        # guard_logs.field_validation_logs = validation_logs
 
         validated_response, metadata = await validator_service.async_validate(
             value=validated_response,
@@ -665,9 +659,6 @@ class StringSchema(Schema):
         if not isinstance(data, str):
             raise TypeError(f"Argument `data` must be a string, not {type(data)}.")
 
-        # validation_logs = FieldValidationLogs()
-        # guard_logs.field_validation_logs = validation_logs
-
         # FIXME instead of writing the validation infrastructure for dicts (JSON),
         #  make it more structure-invariant
         dummy_key = "string"
@@ -720,9 +711,6 @@ class StringSchema(Schema):
 
         if not isinstance(data, str):
             raise TypeError(f"Argument `data` must be a string, not {type(data)}.")
-
-        # validation_logs = FieldValidationLogs()
-        # guard_logs.field_validation_logs = validation_logs
 
         dummy_key = "string"
         validation = self.root_datatype.collect_validation(

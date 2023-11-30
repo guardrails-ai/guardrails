@@ -1,9 +1,14 @@
 from typing import Dict, List, Optional, Sequence, Union
+from rich.console import Group
+from rich.panel import Panel
+from rich.pretty import pretty_repr
+from rich.table import Table
 
 from pydantic import Field
 
 from guardrails.classes.history.inputs import Inputs
 from guardrails.classes.history.outputs import Outputs
+from guardrails.prompt.prompt import Prompt
 from guardrails.utils.logs_utils import ValidatorLogs
 
 # from guardrails.classes.stack import Stack
@@ -114,3 +119,56 @@ class Iteration(ArbitraryModel):
         OneOf: pass, fail, error, not run
         """
         return self.outputs.status
+
+
+    @property
+    def rich_group(self) -> Group:
+        def create_msg_history_table(
+            msg_history: Optional[List[Dict[str, Prompt]]]
+        ) -> Union[str, Table]:
+            if msg_history is None:
+                return "No message history."
+            table = Table(show_lines=True)
+            table.add_column("Role", justify="right", no_wrap=True)
+            table.add_column("Content")
+
+            for msg in msg_history:
+                table.add_row(str(msg["role"]), msg["content"].source)
+
+            return table
+
+        table = create_msg_history_table(self.inputs.msg_history)
+
+        if self.inputs.instructions is not None:
+            return Group(
+                Panel(
+                    self.inputs.prompt.source if self.inputs.prompt else "No prompt",
+                    title="Prompt",
+                    style="on #F0F8FF",
+                ),
+                Panel(
+                    self.inputs.instructions.source, title="Instructions", style="on #FFF0F2"
+                ),
+                Panel(table, title="Message History", style="on #E7DFEB"),
+                Panel(self.raw_output or "", title="Raw LLM Output", style="on #F5F5DC"),
+                Panel(
+                    pretty_repr(self.validation_output),
+                    title="Validated Output",
+                    style="on #F0FFF0",
+                ),
+            )
+        else:
+            return Group(
+                Panel(
+                    self.inputs.prompt.source if self.inputs.prompt else "No prompt",
+                    title="Prompt",
+                    style="on #F0F8FF",
+                ),
+                Panel(table, title="Message History", style="on #E7DFEB"),
+                Panel(self.raw_output or "", title="Raw LLM Output", style="on #F5F5DC"),
+                Panel(
+                    pretty_repr(self.validation_output),
+                    title="Validated Output",
+                    style="on #F0FFF0",
+                ),
+            )

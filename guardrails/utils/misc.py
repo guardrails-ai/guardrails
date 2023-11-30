@@ -6,12 +6,12 @@ from lxml.etree import Element as E
 from rich.pretty import pretty_repr
 
 from guardrails import datatypes as dt
-from guardrails.utils.logs_utils import GuardHistory
+from guardrails.classes.history.call import Call
 from guardrails.utils.reask_utils import gather_reasks
 
 
 def generate_test_artifacts(
-    rail_spec: str, guard_history: GuardHistory, on_fail_type: str, artifact_dir: str
+    rail_spec: str, call_log: Call, on_fail_type: str, artifact_dir: str
 ) -> None:
     """Generate artifacts for testing.
 
@@ -20,7 +20,7 @@ def generate_test_artifacts(
     tests/integration_tests/test_assets/entity_extraction/ for examples.
 
     This function is only intended to be used to create artifacts for integration tests
-    once the GuardHistory object has been manually checked to be correct.
+    once the call log (Call) object has been manually checked to be correct.
 
     Args:
         rail_spec: This should be a string representation of the rail.
@@ -37,11 +37,11 @@ def generate_test_artifacts(
     with open(os.path.join(artifact_dir, f"{on_fail_type}.rail"), "w") as f:
         f.write(rail_spec)
 
-    for i, logs in enumerate(guard_history.history):
+    for i, logs in enumerate(call_log.iterations):
         if i == 0:
             ext = ""
         elif i == 1:
-            if len(guard_history.history) == 2:
+            if call_log.iterations.length == 2:
                 ext = "_reask"
             else:
                 ext = "_reask_1"

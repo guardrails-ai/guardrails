@@ -10,7 +10,6 @@ from guardrails.classes.history.iteration import Iteration
 from guardrails.llm_providers import AsyncOpenAICallable, OpenAICallable
 from guardrails.run import AsyncRunner, Runner
 from guardrails.schema import StringSchema
-from guardrails.utils.logs_utils import GuardLogs
 from guardrails.utils.openai_utils import OPENAI_VERSION
 
 from .mock_llm_outputs import MockAsyncOpenAICallable, MockOpenAICallable

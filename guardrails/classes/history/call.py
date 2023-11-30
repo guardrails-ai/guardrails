@@ -1,11 +1,12 @@
-from typing import Dict, List, Optional, Sequence, Union
+from typing import Dict, Optional, Union
+from rich.tree import Tree
+from rich.panel import Panel
 
 from pydantic import Field
 
 from guardrails.classes.generic.stack import Stack
 from guardrails.classes.history.call_inputs import CallInputs
 from guardrails.classes.history.iteration import Iteration
-from guardrails.classes.history.outputs import Outputs
 from guardrails.constants import fail_status, error_status, not_run_status, pass_status
 from guardrails.utils.logs_utils import ValidatorLogs, merge_reask_output
 from guardrails.utils.pydantic_utils import ArbitraryModel
@@ -289,3 +290,11 @@ class Call(ArbitraryModel):
         elif len(self.reasks) > 0:
             return fail_status
         return pass_status
+
+    @property
+    def tree(self) -> Tree:
+        """Returns the tree."""
+        tree = Tree("Logs")
+        for i, iteration in enumerate(self.iterations):
+            tree.add(Panel(iteration.rich_group, title=f"Step {i}"))
+        return tree
