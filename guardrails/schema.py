@@ -156,7 +156,9 @@ class Schema:
         """
         raise NotImplementedError
 
-    def introspect(self, data: Any) -> Tuple[Sequence[ReAsk], Optional[Union[str, Dict]]]:
+    def introspect(
+        self, data: Any
+    ) -> Tuple[Sequence[ReAsk], Optional[Union[str, Dict]]]:
         """Inspect the data for reasks.
 
         Args:

@@ -8,8 +8,8 @@ from guardrails.classes.generic.stack import Stack
 from guardrails.classes.history.call_inputs import CallInputs
 from guardrails.classes.history.iteration import Iteration
 from guardrails.constants import error_status, fail_status, not_run_status, pass_status
-from guardrails.prompt.prompt import Prompt
 from guardrails.prompt.instructions import Instructions
+from guardrails.prompt.prompt import Prompt
 from guardrails.utils.logs_utils import ValidatorLogs, merge_reask_output
 from guardrails.utils.pydantic_utils import ArbitraryModel
 from guardrails.utils.reask_utils import (
@@ -35,7 +35,7 @@ class Call(ArbitraryModel):
     def __init__(
         self,
         iterations: Optional[Stack[Iteration]] = None,
-        inputs: Optional[CallInputs] = None
+        inputs: Optional[CallInputs] = None,
     ):
         iterations = iterations or Stack()
         inputs = inputs or CallInputs()
@@ -96,9 +96,7 @@ class Call(ArbitraryModel):
         instructions: Instructions = initial_inputs.prompt  # type: ignore
         prompt_params = initial_inputs.prompt_params or {}
         if instructions is not None:
-            return instructions.format(
-                **prompt_params
-            ).source
+            return instructions.format(**prompt_params).source
 
     @property
     def reask_instructions(self) -> Stack[str]:

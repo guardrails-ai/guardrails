@@ -11,12 +11,7 @@ from guardrails.llm_providers import AsyncPromptCallableBase, PromptCallableBase
 from guardrails.prompt import Instructions, Prompt
 from guardrails.schema import Schema
 from guardrails.utils.llm_response import LLMResponse
-from guardrails.utils.reask_utils import (
-    FieldReAsk,
-    NonParseableReAsk,
-    ReAsk,
-    reasks_to_dict,
-)
+from guardrails.utils.reask_utils import NonParseableReAsk, ReAsk, reasks_to_dict
 
 logger = logging.getLogger(__name__)
 actions_logger = logging.getLogger(f"{__name__}.actions")
@@ -195,7 +190,6 @@ class Runner:
         output: Optional[str] = None,
     ) -> Iteration:
         """Run a full step."""
-        # print("running step ", index)
         inputs = Inputs(
             llm_api=api,
             llm_output=output,
@@ -281,16 +275,6 @@ class Runner:
 
                 iteration.outputs.reasks = reasks
 
-                # # Replace reask values with fixed values if terminal step.
-                # if not self.do_loop(index, reasks):
-                #     validation_output = merge_validation_output(
-                #         call_log, self.full_schema_reask
-                #     )
-                #     final_output = sub_reasks_with_fixed_values(validation_output)
-                #     # TODO: Move this to a new property on the call
-                #     #       that way we maintain the incremental validated output
-                #     #       on each iteration
-                #     iteration.outputs.validated_output = final_output
         except Exception as e:
             # print("An exception was raised in Runner.step")
             # import traceback
@@ -704,16 +688,6 @@ class AsyncRunner(Runner):
 
                 iteration.outputs.reasks = reasks
 
-                # Replace reask values with fixed values if terminal step.
-                # if not self.do_loop(index, reasks):
-                #     validation_output = merge_validation_output(
-                #         call_log, self.full_schema_reask
-                #     )
-                #     final_output = sub_reasks_with_fixed_values(validation_output)
-                #     # TODO: Move this to a new property on the call
-                #     #       that way we maintain the incremental validated output
-                #     #       on each iteration
-                #     iteration.outputs.validated_output = final_output
         except Exception as e:
             # print("An exception was raised in AsyncRunner.async_step")
             # import traceback

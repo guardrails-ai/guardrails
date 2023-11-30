@@ -35,8 +35,7 @@ class ValidationOutcome(Generic[OT], ArbitraryModel):
     def from_guard_history(cls, call: Call, error_message: Optional[str]):
         last_output = (
             call.iterations.last.validation_output
-            if not call.iterations.empty()
-            and call.iterations.last is not None
+            if not call.iterations.empty() and call.iterations.last is not None
             else None
         )
         validation_passed = call.status == pass_status
