@@ -162,12 +162,18 @@ def test_python_rail(mocker):
     assert call.iterations.length == 2
 
     if PYDANTIC_VERSION.startswith("1"):
-        assert call.compiled_prompt == python_rail.COMPILED_PROMPT_1_WITHOUT_INSTRUCTIONS
+        assert (
+            call.compiled_prompt == python_rail.COMPILED_PROMPT_1_WITHOUT_INSTRUCTIONS
+        )
     else:
-        assert call.compiled_prompt == python_rail.COMPILED_PROMPT_1_PYDANTIC_2_WITHOUT_INSTRUCTIONS
+        assert (
+            call.compiled_prompt
+            == python_rail.COMPILED_PROMPT_1_PYDANTIC_2_WITHOUT_INSTRUCTIONS
+        )
 
     assert (
-        call.iterations.first.raw_output == python_rail.LLM_OUTPUT_1_FAIL_GUARDRAILS_VALIDATION
+        call.iterations.first.raw_output
+        == python_rail.LLM_OUTPUT_1_FAIL_GUARDRAILS_VALIDATION
     )
 
     assert call.iterations.last.inputs.prompt == gd.Prompt(
@@ -300,7 +306,8 @@ def test_python_rail_add_validator(mocker):
 
     assert call.compiled_prompt == python_rail.COMPILED_PROMPT_1_WITHOUT_INSTRUCTIONS
     assert (
-        call.iterations.first.raw_output == python_rail.LLM_OUTPUT_1_FAIL_GUARDRAILS_VALIDATION
+        call.iterations.first.raw_output
+        == python_rail.LLM_OUTPUT_1_FAIL_GUARDRAILS_VALIDATION
     )
 
     assert call.iterations.last.inputs.prompt == gd.Prompt(

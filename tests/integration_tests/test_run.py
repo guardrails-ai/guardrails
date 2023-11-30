@@ -4,7 +4,6 @@ import pytest
 from lxml import etree as ET
 
 import guardrails as gd
-from guardrails.classes.generic.stack import Stack
 from guardrails.classes.history.call import Call
 from guardrails.classes.history.iteration import Iteration
 from guardrails.llm_providers import AsyncOpenAICallable, OpenAICallable

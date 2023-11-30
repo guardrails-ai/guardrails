@@ -19,7 +19,7 @@ test_cases = [
     (
         '{"choice": {"action": "fight", "flight_direction": "north", "flight_speed": 1}}',
         False,
-        True
+        True,
     ),
     ('{"choice": {"action": "random_action"}}', False, True),
     ('{"choice": {"action": "fight", "fight_move": "random_move"}}', True, True),
@@ -67,6 +67,7 @@ Dummy prompt.
         assert result.validation_passed is True
         assert result.validated_output is not None
         assert not isinstance(result.validated_output, ReAsk)
+
 
 @pytest.mark.parametrize("llm_output, raises, fails", test_cases)
 def test_choice_validation_pydantic(llm_output, raises, fails):

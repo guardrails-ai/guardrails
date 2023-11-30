@@ -16,7 +16,6 @@ from guardrails.utils.reask_utils import (
     NonParseableReAsk,
     ReAsk,
     reasks_to_dict,
-    sub_reasks_with_fixed_values,
 )
 
 logger = logging.getLogger(__name__)
@@ -94,9 +93,7 @@ class Runner:
         self.full_schema_reask = full_schema_reask
 
     def __call__(
-        self,
-        call_log: Call,
-        prompt_params: Optional[Dict] = None
+        self, call_log: Call, prompt_params: Optional[Dict] = None
     ) -> Tuple[Call, Optional[str]]:
         """Execute the runner by repeatedly calling step until the reask budget
         is exhausted.
@@ -156,7 +153,7 @@ class Runner:
                         input_schema=input_schema,
                         output_schema=output_schema,
                         output=self.output if index == 0 else None,
-                        call_log=call_log
+                        call_log=call_log,
                     )
 
                     # Loop again?
@@ -262,7 +259,7 @@ class Runner:
                     # import traceback
                     # traceback.print_exception(parsing_error)
                     iteration.outputs.error = str(parsing_error)
-                
+
                 iteration.outputs.parsed_output = parsed_output
 
                 # Validate: run output validation.
@@ -530,9 +527,7 @@ class AsyncRunner(Runner):
         self.api: Optional[AsyncPromptCallableBase] = api
 
     async def async_run(
-        self,
-        call_log: Call,
-        prompt_params: Optional[Dict] = None
+        self, call_log: Call, prompt_params: Optional[Dict] = None
     ) -> Tuple[Call, Optional[str]]:
         """Execute the runner by repeatedly calling step until the reask budget
         is exhausted.
@@ -587,7 +582,7 @@ class AsyncRunner(Runner):
                         input_schema=input_schema,
                         output_schema=output_schema,
                         output=self.output if index == 0 else None,
-                        call_log=call_log
+                        call_log=call_log,
                     )
 
                     # Loop again?

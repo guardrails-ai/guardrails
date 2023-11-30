@@ -1,8 +1,8 @@
 import asyncio
 
 import pytest
-from guardrails.classes.history.iteration import Iteration
 
+from guardrails.classes.history.iteration import Iteration
 from guardrails.datatypes import FieldValidation
 from guardrails.utils.logs_utils import ValidatorLogs
 from guardrails.validator_service import AsyncValidatorService
@@ -26,7 +26,7 @@ def test_validate_with_running_loop(mocker):
             value=True,
             metadata={},
             validator_setup=empty_field_validation,
-            iteration=iteration
+            iteration=iteration,
         )
 
         assert (
@@ -43,7 +43,7 @@ def test_validate_without_running_loop(mocker):
     )
     mocker.patch.object(avs, "async_validate", async_validate_mock)
     loop_spy = mocker.spy(mock_loop, "run_until_complete")
-    
+
     iteration = Iteration()
 
     validated_value, validated_metadata = avs.validate(
@@ -89,9 +89,7 @@ async def test_async_validate_with_children(mocker):
     )
 
     assert run_validators_mock.call_count == 1
-    run_validators_mock.assert_called_once_with(
-        iteration, field_validation, True, {}
-    )
+    run_validators_mock.assert_called_once_with(iteration, field_validation, True, {})
 
     assert validated_value == "run_validators_mock"
     assert validated_metadata == {"async": True}
@@ -159,12 +157,8 @@ async def test_validate_dependents(mocker):
     assert gather_spy.call_count == 1
 
     assert async_validate_mock.call_count == 2
-    async_validate_mock.assert_any_call(
-        child_one.value, {}, child_one, iteration
-    )
-    async_validate_mock.assert_any_call(
-        child_two.value, {}, child_two, iteration
-    )
+    async_validate_mock.assert_any_call(child_one.value, {}, child_one, iteration)
+    async_validate_mock.assert_any_call(child_two.value, {}, child_two, iteration)
 
     assert validated_value == {
         "child-one-key": "new-child-one-value",
@@ -272,7 +266,7 @@ async def test_run_validators_with_override(mocker):
         value=empty_field_validation.value,
         metadata={},
         validator_setup=empty_field_validation,
-        iteration=iteration
+        iteration=iteration,
     )
 
     assert get_running_loop_mock.call_count == 1

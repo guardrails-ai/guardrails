@@ -45,25 +45,34 @@ def test_pydantic_with_reask(mocker):
 
     # For re-asked prompt and output
     # Assert through iteration
-    assert call.iterations.at(1).inputs.prompt == gd.Prompt(pydantic.COMPILED_PROMPT_REASK_1)
+    assert call.iterations.at(1).inputs.prompt == gd.Prompt(
+        pydantic.COMPILED_PROMPT_REASK_1
+    )
     assert call.iterations.at(1).raw_output == pydantic.LLM_OUTPUT_REASK_1
     # Assert through call shortcut properties
     assert call.reask_prompts.first == pydantic.COMPILED_PROMPT_REASK_1
     assert call.raw_outputs.at(1) == pydantic.LLM_OUTPUT_REASK_1
-    
-    # We don't track merged validation output anymore 
+
+    # We don't track merged validation output anymore
     # Each validation_output is instead tracked as it came back from validation
-    
     # So this isn't a thing
-    # assert call.iterations.at(1).validation_output == pydantic.VALIDATED_OUTPUT_REASK_2
-    
+    # assert call.iterations.at(1).validation_output == (
+    #   pydantic.VALIDATED_OUTPUT_REASK_2
+    # )
+
     # We can, however, merge down to achieve the same thing
-    intermediate_call_state = Call(iterations=Stack(call.iterations.first, call.iterations.at(1)))
+    intermediate_call_state = Call(
+        iterations=Stack(call.iterations.first, call.iterations.at(1))
+    )
     intermediate_call_state.inputs.full_schema_reask = False
-    assert intermediate_call_state.validation_output == pydantic.VALIDATED_OUTPUT_REASK_2
+    assert (
+        intermediate_call_state.validation_output == pydantic.VALIDATED_OUTPUT_REASK_2
+    )
 
     # For re-asked prompt #2 and output #2
-    assert call.iterations.last.inputs.prompt == gd.Prompt(pydantic.COMPILED_PROMPT_REASK_2)
+    assert call.iterations.last.inputs.prompt == gd.Prompt(
+        pydantic.COMPILED_PROMPT_REASK_2
+    )
     # Same as above
     assert call.reask_prompts.last == pydantic.COMPILED_PROMPT_REASK_2
     assert call.raw_outputs.last == pydantic.LLM_OUTPUT_REASK_2
@@ -101,7 +110,9 @@ def test_pydantic_with_full_schema_reask(mocker):
     assert call.iterations.first.validation_output == pydantic.VALIDATED_OUTPUT_REASK_1
 
     # For re-asked prompt and output
-    assert call.iterations.at(1).inputs.prompt == gd.Prompt(pydantic.COMPILED_PROMPT_FULL_REASK_1)
+    assert call.iterations.at(1).inputs.prompt == gd.Prompt(
+        pydantic.COMPILED_PROMPT_FULL_REASK_1
+    )
     assert call.iterations.at(1).inputs.instructions == gd.Instructions(
         pydantic.COMPILED_INSTRUCTIONS_CHAT
     )
@@ -109,7 +120,9 @@ def test_pydantic_with_full_schema_reask(mocker):
     assert call.iterations.at(1).validation_output == pydantic.VALIDATED_OUTPUT_REASK_2
 
     # For re-asked prompt #2 and output #2
-    assert call.iterations.last.inputs.prompt == gd.Prompt(pydantic.COMPILED_PROMPT_FULL_REASK_2)
+    assert call.iterations.last.inputs.prompt == gd.Prompt(
+        pydantic.COMPILED_PROMPT_FULL_REASK_2
+    )
     assert call.iterations.last.inputs.instructions == gd.Instructions(
         pydantic.COMPILED_INSTRUCTIONS_CHAT
     )

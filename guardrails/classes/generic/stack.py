@@ -60,11 +60,9 @@ class Stack(List[T]):
             return value
         except IndexError:
             pass
-    
+
     def copy(self) -> "Stack[T]":
-        """
-        Returns a copy of the current Stack.
-        """
+        """Returns a copy of the current Stack."""
         copy = super().copy()
         return Stack(*copy)
 

@@ -1,16 +1,20 @@
 from typing import Dict, Optional, Union
-from rich.tree import Tree
-from rich.panel import Panel
 
 from pydantic import Field
+from rich.panel import Panel
+from rich.tree import Tree
 
 from guardrails.classes.generic.stack import Stack
 from guardrails.classes.history.call_inputs import CallInputs
 from guardrails.classes.history.iteration import Iteration
-from guardrails.constants import fail_status, error_status, not_run_status, pass_status
+from guardrails.constants import error_status, fail_status, not_run_status, pass_status
 from guardrails.utils.logs_utils import ValidatorLogs, merge_reask_output
 from guardrails.utils.pydantic_utils import ArbitraryModel
-from guardrails.utils.reask_utils import ReAsk, gather_reasks, sub_reasks_with_fixed_values
+from guardrails.utils.reask_utils import (
+    ReAsk,
+    gather_reasks,
+    sub_reasks_with_fixed_values,
+)
 
 
 # We can't inherit from Iteration because python
@@ -35,26 +39,24 @@ class Call(ArbitraryModel):
 
     @property
     def prompt(self) -> Optional[str]:
-        """
-        The prompt as provided by the user when intializing or calling the Guard.
-        """
+        """The prompt as provided by the user when intializing or calling the
+        Guard."""
         return self.inputs.prompt
 
     @property
     def compiled_prompt(self) -> Optional[str]:
-        """
-        The initial compiled prompt that was passed to the LLM on the first call.
-        """
+        """The initial compiled prompt that was passed to the LLM on the first
+        call."""
         if self.iterations.empty():
             return None
         initial_inputs = self.iterations.first.inputs
         if initial_inputs.prompt is not None:
             return initial_inputs.prompt.format(**initial_inputs.prompt_params).source
-        
+
     @property
     def reask_prompts(self) -> Stack[Optional[str]]:
-        """
-        The compiled prompts used during reasks.
+        """The compiled prompts used during reasks.
+
         Does not include the initial prompt.
         """
         if self.iterations.length > 0:
@@ -63,37 +65,35 @@ class Call(ArbitraryModel):
             reasks.remove(initial_prompt)
             return Stack(
                 *[
-                    r.inputs.prompt.source
-                    if r.inputs.prompt is not None
-                    else None
+                    r.inputs.prompt.source if r.inputs.prompt is not None else None
                     for r in reasks
                 ]
             )
 
         return Stack()
-    
+
     @property
     def instructions(self) -> Optional[str]:
-        """
-        The instructions as provided by the user when intializing or calling the Guard.
-        """
+        """The instructions as provided by the user when intializing or calling
+        the Guard."""
         return self.inputs.instructions
 
     @property
     def compiled_instructions(self) -> Optional[str]:
-        """
-        The initial compiled instructions that were passed to the LLM on the first call.
-        """
+        """The initial compiled instructions that were passed to the LLM on the
+        first call."""
         if self.iterations.empty():
             return None
         initial_inputs = self.iterations.first.inputs
         if initial_inputs.instructions is not None:
-            return initial_inputs.instructions.format(**initial_inputs.prompt_params).source
-        
+            return initial_inputs.instructions.format(
+                **initial_inputs.prompt_params
+            ).source
+
     @property
     def reask_instructions(self) -> Stack[str]:
-        """
-        The compiled instructions used during reasks.
+        """The compiled instructions used during reasks.
+
         Does not include the initial instructions.
         """
         if self.iterations.length > 0:
@@ -107,7 +107,7 @@ class Call(ArbitraryModel):
                     for r in reasks
                 ]
             )
-    
+
     # # Since all properties now are cumulative in nature, this has no place here
     # @property
     # def outputs(self) -> Outputs:
@@ -171,23 +171,17 @@ class Call(ArbitraryModel):
                 for i in self.iterations
             ]
         )
-        
 
     @property
     def parsed_outputs(self) -> Stack[Union[str, Dict]]:
         """The outputs from the LLM after undergoing parsing but before
         validation."""
-        return Stack(
-            *[
-                i.outputs.parsed_output
-                for i in self.iterations
-            ]
-        )
-    
+        return Stack(*[i.outputs.parsed_output for i in self.iterations])
+
     @property
     def validation_output(self) -> Optional[Union[str, Dict, ReAsk]]:
-        """
-        The cumulative validation output across all current iterations.
+        """The cumulative validation output across all current iterations.
+
         Could contain ReAsks.
         """
         number_of_iterations = self.iterations.length
@@ -220,13 +214,11 @@ class Call(ArbitraryModel):
             current_index = current_index + 1
 
         return merged_validation_output
-    
+
     @property
     def fixed_output(self) -> Optional[Union[str, Dict, ReAsk]]:
-        """
-        The cumulative validation output across all current iterations
-        with any automatic fixes applied.
-        """
+        """The cumulative validation output across all current iterations with
+        any automatic fixes applied."""
         return sub_reasks_with_fixed_values(self.validation_output)
 
     @property
@@ -237,12 +229,11 @@ class Call(ArbitraryModel):
         """
         if self.status == pass_status:
             return self.fixed_output
-            
 
     @property
     def reasks(self) -> Stack[ReAsk]:
-        """Reasks generated during validation
-        that could not be automatically fixed.
+        """Reasks generated during validation that could not be automatically
+        fixed.
 
         These would be incorporated into the prompt for the next LLM
         call if additional reasks were granted.
@@ -261,8 +252,8 @@ class Call(ArbitraryModel):
 
     @property
     def error(self) -> Optional[str]:
-        """The error message from any exception that raised and interrupted
-        the run."""
+        """The error message from any exception that raised and interrupted the
+        run."""
         if self.iterations.empty():
             return None
         return self.iterations.last.error
@@ -281,8 +272,8 @@ class Call(ArbitraryModel):
 
     @property
     def status(self) -> str:
-        """Returns the cumulative status of the run
-        based on the validity of the final merged output."""
+        """Returns the cumulative status of the run based on the validity of
+        the final merged output."""
         if self.iterations.empty():
             return not_run_status
         elif self.error:

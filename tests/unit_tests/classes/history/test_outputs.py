@@ -89,7 +89,10 @@ non_fixable_fail_result = FailResult(
         (
             Outputs(
                 reasks=[
-                    ReAsk(incorrect_value="Hello there!", fail_results=[fixable_fail_result])
+                    ReAsk(
+                        incorrect_value="Hello there!",
+                        fail_results=[fixable_fail_result],
+                    )
                 ]
             ),
             False,
@@ -151,12 +154,12 @@ def test_failed_validations():
                         value_after_validation="Hello there",
                     )
                 ],
-                reasks=[ReAsk(
-                    incorrect_value="Hello there!",
-                    fail_results=[
-                       non_fixable_fail_result
-                    ]
-                )]
+                reasks=[
+                    ReAsk(
+                        incorrect_value="Hello there!",
+                        fail_results=[non_fixable_fail_result],
+                    )
+                ],
             ),
             fail_status,
         ),

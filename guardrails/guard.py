@@ -298,15 +298,9 @@ class Guard(Generic[OT]):
                 "This should never happen."
             )
 
-        input_prompt = prompt or (
-            self.prompt.source
-            if self.prompt
-            else None
-        )
+        input_prompt = prompt or (self.prompt.source if self.prompt else None)
         input_instructions = instructions or (
-            self.instructions.source
-            if self.instructions
-            else None
+            self.instructions.source if self.instructions else None
         )
         call_inputs = CallInputs(
             llm_api=llm_api,
@@ -318,7 +312,7 @@ class Guard(Generic[OT]):
             metadata=metadata,
             full_schema_reask=full_schema_reask,
             args=args,
-            kwargs=kwargs
+            kwargs=kwargs,
         )
         call_log = Call(inputs=call_inputs)
         self.history.push(call_log)
@@ -390,10 +384,7 @@ class Guard(Generic[OT]):
                 base_model=self.base_model,
                 full_schema_reask=full_schema_reask,
             )
-            call, error_message = runner(
-                call_log=call_log,
-                prompt_params=prompt_params
-            )
+            call, error_message = runner(call_log=call_log, prompt_params=prompt_params)
             return ValidationOutcome[OT].from_guard_history(call, error_message)
 
     async def _call_async(
@@ -451,8 +442,7 @@ class Guard(Generic[OT]):
                 full_schema_reask=full_schema_reask,
             )
             call, error_message = await runner.async_run(
-                call_log=call_log,
-                prompt_params=prompt_params
+                call_log=call_log, prompt_params=prompt_params
             )
             return ValidationOutcome[OT].from_guard_history(call, error_message)
 
@@ -548,16 +538,8 @@ class Guard(Generic[OT]):
         context = contextvars.ContextVar("kwargs")
         context.set(kwargs)
 
-        input_prompt = (
-            self.prompt.source
-            if self.prompt
-            else None
-        )
-        input_instructions = (
-            self.instructions.source
-            if self.instructions
-            else None
-        )
+        input_prompt = self.prompt.source if self.prompt else None
+        input_instructions = self.instructions.source if self.instructions else None
         call_inputs = CallInputs(
             llm_api=llm_api,
             llm_output=llm_output,
@@ -568,7 +550,7 @@ class Guard(Generic[OT]):
             metadata=metadata,
             full_schema_reask=full_schema_reask,
             args=args,
-            kwargs=kwargs
+            kwargs=kwargs,
         )
         call_log = Call(inputs=call_inputs)
         self.history.push(call_log)
@@ -635,10 +617,7 @@ class Guard(Generic[OT]):
                 base_model=self.base_model,
                 full_schema_reask=full_schema_reask,
             )
-            call, error_message = runner(
-                call_log=call_log,
-                prompt_params=prompt_params
-            )
+            call, error_message = runner(call_log=call_log, prompt_params=prompt_params)
 
             return ValidationOutcome[OT].from_guard_history(call, error_message)
 
@@ -679,8 +658,7 @@ class Guard(Generic[OT]):
                 full_schema_reask=full_schema_reask,
             )
             call, error_message = await runner.async_run(
-                call_log=call_log,
-                prompt_params=prompt_params
+                call_log=call_log, prompt_params=prompt_params
             )
 
             return ValidationOutcome[OT].from_guard_history(call, error_message)

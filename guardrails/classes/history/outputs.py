@@ -1,5 +1,3 @@
-import functools
-
 from typing import Dict, List, Optional, Sequence, Union
 
 from pydantic import Field
@@ -8,7 +6,7 @@ from guardrails.constants import error_status, fail_status, not_run_status, pass
 from guardrails.utils.llm_response import LLMResponse
 from guardrails.utils.logs_utils import ValidatorLogs
 from guardrails.utils.pydantic_utils import ArbitraryModel
-from guardrails.utils.reask_utils import ReAsk, gather_reasks
+from guardrails.utils.reask_utils import ReAsk
 from guardrails.validator_base import FailResult
 
 
@@ -75,11 +73,11 @@ class Outputs(ArbitraryModel):
         """
         all_fail_results: List[FailResult] = []
         for reask in self.reasks:
-            all_fail_results.extend(reask.fail_results)        
+            all_fail_results.extend(reask.fail_results)
 
-        all_reasks_have_fixes = all(list(
-            fail.fix_value is not None for fail in all_fail_results
-        ))
+        all_reasks_have_fixes = all(
+            list(fail.fix_value is not None for fail in all_fail_results)
+        )
         if self._all_empty() is True:
             return not_run_status
         elif self.error:

@@ -1,10 +1,10 @@
 from typing import Dict, List, Optional, Sequence, Union
+
+from pydantic import Field
 from rich.console import Group
 from rich.panel import Panel
 from rich.pretty import pretty_repr
 from rich.table import Table
-
-from pydantic import Field
 
 from guardrails.classes.history.inputs import Inputs
 from guardrails.classes.history.outputs import Outputs
@@ -81,8 +81,10 @@ class Iteration(ArbitraryModel):
     @property
     def validated_output(self) -> Optional[Union[str, Dict]]:
         """The valid output from the LLM after undergoing validation.
+
         Could be only a partial structure if field level reasks occur.
-        Could contain fixed values."""
+        Could contain fixed values.
+        """
         return self.outputs.validated_output
 
     @property
@@ -120,7 +122,6 @@ class Iteration(ArbitraryModel):
         """
         return self.outputs.status
 
-
     @property
     def rich_group(self) -> Group:
         def create_msg_history_table(
@@ -147,10 +148,14 @@ class Iteration(ArbitraryModel):
                     style="on #F0F8FF",
                 ),
                 Panel(
-                    self.inputs.instructions.source, title="Instructions", style="on #FFF0F2"
+                    self.inputs.instructions.source,
+                    title="Instructions",
+                    style="on #FFF0F2",
                 ),
                 Panel(table, title="Message History", style="on #E7DFEB"),
-                Panel(self.raw_output or "", title="Raw LLM Output", style="on #F5F5DC"),
+                Panel(
+                    self.raw_output or "", title="Raw LLM Output", style="on #F5F5DC"
+                ),
                 Panel(
                     pretty_repr(self.validation_output),
                     title="Validated Output",
@@ -165,7 +170,9 @@ class Iteration(ArbitraryModel):
                     style="on #F0F8FF",
                 ),
                 Panel(table, title="Message History", style="on #E7DFEB"),
-                Panel(self.raw_output or "", title="Raw LLM Output", style="on #F5F5DC"),
+                Panel(
+                    self.raw_output or "", title="Raw LLM Output", style="on #F5F5DC"
+                ),
                 Panel(
                     pretty_repr(self.validation_output),
                     title="Validated Output",

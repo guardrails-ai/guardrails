@@ -256,8 +256,7 @@ class JsonSchema(Schema):
                     + constants["json_suffix_without_examples"]
                 )
             np_reask: NonParseableReAsk = next(
-                r for r in reasks
-                if isinstance(r, NonParseableReAsk)
+                r for r in reasks if isinstance(r, NonParseableReAsk)
             )
             # This is correct
             reask_value = np_reask.incorrect_value
