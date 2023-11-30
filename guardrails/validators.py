@@ -2576,7 +2576,7 @@ class CompetitorCheck(Validator):
 
         self.nlp = spacy.load(model)
 
-    def exact_match(self, text: str, competitors: list[str]) -> list[str]:
+    def exact_match(self, text: str, competitors: List[str]) -> List[str]:
         """Performs exact match to find competitors from a list in a given
         text.
 
@@ -2596,7 +2596,7 @@ class CompetitorCheck(Validator):
                 found_entities.append(entity)
         return found_entities
 
-    def perform_ner(self, text: str, nlp) -> list[str]:
+    def perform_ner(self, text: str, nlp) -> List[str]:
         """Performs named entity recognition on text using a provided NLP
         model.
 
@@ -2614,7 +2614,7 @@ class CompetitorCheck(Validator):
             entities.append(ent.text)
         return entities
 
-    def is_entity_in_list(self, entities: list[str], competitors: list[str]) -> List:
+    def is_entity_in_list(self, entities: List[str], competitors: List[str]) -> List:
         """Checks if any entity from a list is present in a given list of
         competitors.
 
