@@ -81,28 +81,11 @@ class OpenAIClientV1(BaseOpenAIClient):
         """
         if stream:
             # If stream is defined and set to True,
-            # openai returns a generator object
-            complete_output = ""
+            # openai returns a generator
             openai_response = cast(Iterable[Dict[str, Any]], openai_response)
-            for response in openai_response:
-                complete_output += response["choices"][0]["text"]
 
-            # Also, it no longer returns usage information
-            # So manually count the tokens using tiktoken
-            prompt_token_count = num_tokens_from_string(
-                text=prompt,
-                model_name=engine,
-            )
-            response_token_count = num_tokens_from_string(
-                text=complete_output, model_name=engine
-            )
-
-            # Return the LLMResponse
-            return LLMResponse(
-                output=complete_output,
-                prompt_token_count=prompt_token_count,
-                response_token_count=response_token_count,
-            )
+            # Simply return the generator wrapped in an LLMResponse
+            return LLMResponse(output="", stream_output=openai_response)
 
         # If stream is not defined or is set to False,
         # return default behavior
