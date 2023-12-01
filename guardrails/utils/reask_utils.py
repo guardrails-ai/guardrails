@@ -1,4 +1,5 @@
-from typing import Any, Dict, List, Optional, Union
+from copy import deepcopy
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import pydantic
 
@@ -24,7 +25,9 @@ class NonParseableReAsk(ReAsk):
     pass
 
 
-def gather_reasks(validated_output: Optional[Union[str, Dict, ReAsk]]) -> List[ReAsk]:
+def gather_reasks(
+    validated_output: Optional[Union[str, Dict, ReAsk]]
+) -> Tuple[List[ReAsk], Optional[Dict]]:
     """Traverse output and gather all ReAsk objects.
 
     Args:
@@ -35,47 +38,51 @@ def gather_reasks(validated_output: Optional[Union[str, Dict, ReAsk]]) -> List[R
         A list of ReAsk objects found in the output.
     """
     if validated_output is None:
-        return []
+        return [], None
     if isinstance(validated_output, ReAsk):
-        return [validated_output]
+        return [validated_output], None
 
     reasks = []
 
     def _gather_reasks_in_dict(
-        output: Dict, path: Optional[List[Union[str, int]]] = None
+        original: Dict, valid_output: Dict, path: Optional[List[Union[str, int]]] = None
     ) -> None:
         if path is None:
             path = []
-        for field, value in output.items():
+        for field, value in original.items():
             if isinstance(value, FieldReAsk):
                 value.path = path + [field]
                 reasks.append(value)
+                del valid_output[field]
 
             if isinstance(value, dict):
-                _gather_reasks_in_dict(value, path + [field])
+                _gather_reasks_in_dict(value, valid_output[field], path + [field])
 
             if isinstance(value, list):
-                _gather_reasks_in_list(value, path + [field])
+                _gather_reasks_in_list(value, valid_output[field], path + [field])
         return
 
     def _gather_reasks_in_list(
-        output: List, path: Optional[List[Union[str, int]]] = None
+        original: List, valid_output: List, path: Optional[List[Union[str, int]]] = None
     ) -> None:
         if path is None:
             path = []
-        for idx, item in enumerate(output):
+        for idx, item in enumerate(original):
             if isinstance(item, FieldReAsk):
                 item.path = path + [idx]
                 reasks.append(item)
+                del valid_output[idx]
             elif isinstance(item, dict):
-                _gather_reasks_in_dict(item, path + [idx])
+                _gather_reasks_in_dict(item, valid_output[idx], path + [idx])
             elif isinstance(item, list):
-                _gather_reasks_in_list(item, path + [idx])
+                _gather_reasks_in_list(item, valid_output[idx], path + [idx])
         return
 
     if isinstance(validated_output, Dict):
-        _gather_reasks_in_dict(validated_output)
-    return reasks
+        valid_output = deepcopy(validated_output)
+        _gather_reasks_in_dict(validated_output, valid_output)
+        return reasks, valid_output
+    return reasks, None
 
 
 def get_pruned_tree(

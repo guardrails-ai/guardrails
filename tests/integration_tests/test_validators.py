@@ -66,7 +66,7 @@ def test_similar_to_list():
 
     # 1.2 Test not passing prev_values
     # Should raise ValueError
-    val = 3
+    val = "3"
     output = guard.parse(
         llm_output=val,
     )
@@ -74,7 +74,7 @@ def test_similar_to_list():
 
     # 1.3 Test passing str prev values for int val
     # Should raise ValueError
-    val = 3
+    val = "3"
     output = guard.parse(
         llm_output=val,
         metadata={"prev_values": [str(i) for i in int_prev_values]},
