@@ -458,9 +458,10 @@ class Object(NonScalarType):
             # child_key is an expected key that the schema defined
             # child_data_type is the data type of the expected key
             child_value = value.get(child_key, None)
-            # TODO: Temporary fix for when the child_value is None
-            # This is required for when JSON schema is a subschema
-            # of the expected schema and will not contain all the expected keys
+
+            # Skip validation for instances where child_value is None
+            # by adding a check for child_value
+            # This will happen during streaming (sub-schema validation)
             if child_value:
                 child_validation = child_data_type.collect_validation(
                     child_key,
