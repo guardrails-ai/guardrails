@@ -15,6 +15,7 @@ class BasePrompt:
     """Base class for representing an LLM prompt."""
 
     def __init__(self, source: str, output_schema: Optional[str] = None):
+        self._source = source
         self.format_instructions_start = self.get_format_instructions_idx(source)
 
         # Substitute constants in the prompt.

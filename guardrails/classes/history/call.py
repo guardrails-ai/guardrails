@@ -48,6 +48,12 @@ class Call(ArbitraryModel):
         """The prompt as provided by the user when intializing or calling the
         Guard."""
         return self.inputs.prompt
+    
+    @property
+    def prompt_params(self) -> Optional[str]:
+        """The prompt parameters as provided by the user when intializing
+        or calling the Guard."""
+        return self.inputs.prompt_params
 
     @property
     def compiled_prompt(self) -> Optional[str]:

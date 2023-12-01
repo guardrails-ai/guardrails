@@ -298,9 +298,9 @@ class Guard(Generic[OT]):
                 "This should never happen."
             )
 
-        input_prompt = prompt or (self.prompt.source if self.prompt else None)
+        input_prompt = prompt or (self.prompt._source if self.prompt else None)
         input_instructions = instructions or (
-            self.instructions.source if self.instructions else None
+            self.instructions._source if self.instructions else None
         )
         call_inputs = CallInputs(
             llm_api=llm_api,
@@ -538,8 +538,8 @@ class Guard(Generic[OT]):
         context = contextvars.ContextVar("kwargs")
         context.set(kwargs)
 
-        input_prompt = self.prompt.source if self.prompt else None
-        input_instructions = self.instructions.source if self.instructions else None
+        input_prompt = self.prompt._source if self.prompt else None
+        input_instructions = self.instructions._source if self.instructions else None
         call_inputs = CallInputs(
             llm_api=llm_api,
             llm_output=llm_output,
