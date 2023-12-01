@@ -9,9 +9,9 @@ from pydantic import BaseModel
 from guardrails.datatypes import verify_metadata_requirements
 from guardrails.llm_providers import AsyncPromptCallableBase, PromptCallableBase
 from guardrails.prompt import Instructions, Prompt
-from guardrails.schema import Schema, JsonSchema
-from guardrails.utils.logs_utils import GuardHistory, GuardLogs, GuardState
+from guardrails.schema import JsonSchema, Schema
 from guardrails.utils.llm_response import LLMResponse
+from guardrails.utils.logs_utils import GuardHistory, GuardLogs, GuardState
 from guardrails.utils.reask_utils import (
     FieldReAsk,
     NonParseableReAsk,
@@ -741,9 +741,9 @@ class AsyncRunner(Runner):
 class StreamRunner(Runner):
     """Runner class that calls a streaming LLM API with a prompt.
 
-    This class performs output validation when the output
-    is a stream of chunks. Inherits from Runner class,
-    as overall structure remains similar.
+    This class performs output validation when the output is a stream of
+    chunks. Inherits from Runner class, as overall structure remains
+    similar.
     """
 
     def __call__(self, prompt_params: Optional[Dict] = None) -> str:
@@ -899,8 +899,12 @@ class StreamRunner(Runner):
                         f"Error formatting validated fragment JSON: {e}"
                     ) from e
 
+                raw_output = f"Raw LLM response:\n{fragment}\n"
+                validated_output = (
+                    f"\nValidated response:\n{pretty_validated_fragment}\n"
+                )
                 # 5. Yield raw and validated fragments
-                yield f"Raw LLM response:\n{fragment}\n\n\nValidated response:\n{pretty_validated_fragment}\n"
+                yield raw_output + validated_output
 
             # Add to logs
             guard_logs.raw_output = fragment
@@ -923,7 +927,8 @@ class StreamRunner(Runner):
 
             # Error can be either of (True/False/None/string representing error)
             if error:
-                # If parsing error is a string, it is an error from output_schema.parse_fragment()
+                # If parsing error is a string,
+                # it is an error from output_schema.parse_fragment()
                 if isinstance(error, str):
                     raise ValueError("Unable to parse output: " + error)
             # Else if either of (None/True/False), return parsed_output and error
