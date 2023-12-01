@@ -170,9 +170,6 @@ class Runner:
                     )
 
         except Exception as e:
-            # print("An exception was raised in Runner.__call__")
-            # import traceback
-            # traceback.print_exception(e)
             error_message = str(e)
         return call_log, error_message
 
@@ -249,9 +246,6 @@ class Runner:
                     index, raw_output, output_schema
                 )
                 if parsing_error:
-                    # print("A parsing error occurred in Runner.step")
-                    # import traceback
-                    # traceback.print_exception(parsing_error)
                     iteration.outputs.error = str(parsing_error)
 
                 iteration.outputs.parsed_output = parsed_output
@@ -276,9 +270,6 @@ class Runner:
                 iteration.outputs.reasks = reasks
 
         except Exception as e:
-            # print("An exception was raised in Runner.step")
-            # import traceback
-            # traceback.print_exception(e)
             error_message = str(e)
             iteration.outputs.error = error_message
             raise e
@@ -586,9 +577,6 @@ class AsyncRunner(Runner):
                         prompt_params=prompt_params,
                     )
         except Exception as e:
-            # print("An exception was raised in AsyncRunner.async_run")
-            # import traceback
-            # traceback.print_exception(e)
             error_message = str(e)
 
         return call_log, error_message
@@ -663,9 +651,6 @@ class AsyncRunner(Runner):
                 # Parse: parse the output.
                 parsed_output, parsing_error = self.parse(index, output, output_schema)
                 if parsing_error:
-                    # print("A parsing error occurred in AsyncRunner.async_step")
-                    # import traceback
-                    # traceback.print_exception(parsing_error)
                     iteration.outputs.error = str(parsing_error)
 
                 iteration.outputs.parsed_output = parsed_output
@@ -689,9 +674,6 @@ class AsyncRunner(Runner):
                 iteration.outputs.reasks = reasks
 
         except Exception as e:
-            # print("An exception was raised in AsyncRunner.async_step")
-            # import traceback
-            # traceback.print_exception(e)
             error_message = str(e)
             iteration.outputs.error = error_message
             raise e
