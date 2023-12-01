@@ -48,6 +48,7 @@ class GuardLogs(ArbitraryModel):
     instructions: Optional[Instructions] = None
     llm_response: Optional[LLMResponse] = None
     msg_history: Optional[List[Dict[str, Prompt]]] = None
+    raw_output: Optional[str] = None
     parsed_output: Optional[Dict] = None
     validated_output: Optional[Union[Dict, ReAsk]] = None
     reasks: Optional[Sequence[ReAsk]] = None
@@ -77,6 +78,8 @@ class GuardLogs(ArbitraryModel):
     def output(self) -> Optional[str]:
         if self.llm_response is None:
             return None
+        if self.raw_output is not None:
+            return self.raw_output
         return self.llm_response.output
 
     @property

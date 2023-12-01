@@ -115,6 +115,7 @@ class DictPlaceholder(Placeholder):
         json_value,
         prune_extra_keys: bool,
         coerce_types: bool,
+        validate_subschema: bool = False,
     ) -> bool:
         # If json value is None, and the placeholder is optional, return True
         super_result = super().verify(
@@ -143,24 +144,25 @@ class DictPlaceholder(Placeholder):
             for key in extra_keys:
                 del json_value[key]
 
-        # TODO: Check this again.
-        # Commenting out this code for now. This will allow some keys to not be
-        # in the expected schema, which is ideal for sub-schema validation.
-
-        # If the json value does not contain all the required keys, return False.
-        # if any(
-        #     key not in json_keys and not self.children[key].optional
-        #     for key in schema_keys
-        # ):
-        #     return False
+        if not validate_subschema:
+            # If the json value does not contain all the required keys, return False.
+            if any(
+                key not in json_keys and not self.children[key].optional
+                for key in schema_keys
+            ):
+                return False
+        # Else, when validating sub-schema, some keys may be missing, hence
+        # we skip checking for all required keys.
 
         # Verify each key in the json value.
         for key, placeholder in self.children.items():
-            # TODO: Check this again. Temporary fix.
-            # if placeholder.optional and key not in json_value:
-            #     continue
-            if key not in json_value:
-                continue
+            if not validate_subschema:
+                if placeholder.optional and key not in json_value:
+                    continue
+            else:
+                # In sub-schema validation, some non-optional keys may be missing
+                if key not in json_value:
+                    continue
 
             if isinstance(placeholder, ValuePlaceholder):
                 value = placeholder.verify(
@@ -176,6 +178,7 @@ class DictPlaceholder(Placeholder):
                     json_value[key],
                     prune_extra_keys=prune_extra_keys,
                     coerce_types=coerce_types,
+                    validate_subschema=validate_subschema,
                 ):
                     return False
 
@@ -191,6 +194,7 @@ class ListPlaceholder(Placeholder):
         json_value,
         prune_extra_keys: bool,
         coerce_types: bool,
+        validate_subschema: bool = False,
     ) -> bool:
         super_result = super().verify(
             json_value,
@@ -223,6 +227,7 @@ class ListPlaceholder(Placeholder):
                     item,
                     prune_extra_keys=prune_extra_keys,
                     coerce_types=coerce_types,
+                    validate_subschema=validate_subschema,
                 ):
                     return False
 
@@ -239,6 +244,7 @@ class ChoicePlaceholder(Placeholder):
         json_value,
         prune_extra_keys: bool,
         coerce_types: bool,
+        validate_subschema: bool = False,
     ) -> bool:
         super_result = super().verify(
             json_value,
@@ -268,6 +274,7 @@ class ChoicePlaceholder(Placeholder):
             value,
             prune_extra_keys=prune_extra_keys,
             coerce_types=coerce_types,
+            validate_subschema=validate_subschema,
         )
 
 
@@ -335,6 +342,7 @@ def verify_schema_against_json(
     generated_json: Dict[str, Any],
     prune_extra_keys: bool = False,
     coerce_types: bool = False,
+    validate_subschema: bool = False,
 ):
     """Verify that a JSON schema is valid for a given XML."""
 
@@ -343,6 +351,7 @@ def verify_schema_against_json(
         generated_json,
         prune_extra_keys=prune_extra_keys,
         coerce_types=coerce_types,
+        validate_subschema=validate_subschema,
     )
 
 
