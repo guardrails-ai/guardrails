@@ -63,16 +63,12 @@ class OpenAIClientV1(BaseOpenAIClient):
         return self.construct_nonchat_response(
             stream=kwargs.get("stream", False),
             openai_response=response,
-            prompt=prompt,
-            engine=engine,
         )
 
     def construct_nonchat_response(
         self,
         stream: bool,
         openai_response: Any,
-        prompt: str,
-        engine: str,
     ) -> LLMResponse:
         """Construct an LLMResponse from an OpenAI response.
 
@@ -110,16 +106,12 @@ class OpenAIClientV1(BaseOpenAIClient):
         return self.construct_chat_response(
             stream=kwargs.get("stream", False),
             openai_response=response,
-            prompt=messages,
-            model=model,
         )
 
     def construct_chat_response(
         self,
         stream: bool,
         openai_response: Any,
-        prompt: List[Any],
-        model: str,
     ) -> LLMResponse:
         """Construct an LLMResponse from an OpenAI response.
 
@@ -129,32 +121,10 @@ class OpenAIClientV1(BaseOpenAIClient):
         if stream:
             # If stream is defined and set to True,
             # openai returns a generator object
-            collected_messages = []
             openai_response = cast(Iterable[Dict[str, Any]], openai_response)
-            for chunk in openai_response:
-                chunk_message = chunk["choices"][0]["delta"]  # extract the message
-                collected_messages.append(chunk_message)  # save the message
 
-            complete_output = "".join(
-                [msg.get("content", "") for msg in collected_messages]
-            )
-
-            # Also, it no longer returns usage information
-            # So manually count the tokens using tiktoken
-            prompt_token_count = num_tokens_from_messages(
-                messages=prompt,
-                model=model,
-            )
-            response_token_count = num_tokens_from_string(
-                text=complete_output, model_name=model
-            )
-
-            # Return the LLMResponse
-            return LLMResponse(
-                output=complete_output,
-                prompt_token_count=prompt_token_count,
-                response_token_count=response_token_count,
-            )
+            # Simply return the generator wrapped in an LLMResponse
+            return LLMResponse(output="", stream_output=openai_response)
 
         # If stream is not defined or is set to False,
         # extract string from response

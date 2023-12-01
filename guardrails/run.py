@@ -7,7 +7,12 @@ from eliot import add_destinations, start_action
 from pydantic import BaseModel
 
 from guardrails.datatypes import verify_metadata_requirements
-from guardrails.llm_providers import AsyncPromptCallableBase, PromptCallableBase
+from guardrails.llm_providers import (
+    AsyncPromptCallableBase,
+    OpenAICallable,
+    OpenAIChatCallable,
+    PromptCallableBase,
+)
 from guardrails.prompt import Instructions, Prompt
 from guardrails.schema import JsonSchema, Schema
 from guardrails.utils.llm_response import LLMResponse
@@ -859,7 +864,8 @@ class StreamRunner(Runner):
             # Loop over the stream
             # and construct "fragments" of concatenated chunks
             for chunk in stream:
-                chunk_text = chunk["choices"][0]["text"]
+                # 1. Get the text from the chunk
+                chunk_text = self.get_chunk_text(chunk, api)
                 fragment += chunk_text
 
                 parsed_fragment, move_to_next = self.parse(
@@ -899,18 +905,43 @@ class StreamRunner(Runner):
                         f"Error formatting validated fragment JSON: {e}"
                     ) from e
 
-                raw_output = f"Raw LLM response:\n{fragment}\n"
-                validated_output = (
+                raw_yield = f"Raw LLM response:\n{fragment}\n"
+                validated_yield = (
                     f"\nValidated response:\n{pretty_validated_fragment}\n"
                 )
                 # 5. Yield raw and validated fragments
-                yield raw_output + validated_output
+                yield raw_yield + validated_yield
 
             # Add to logs
             guard_logs.raw_output = fragment
             guard_logs.parsed_output = parsed_fragment
             guard_logs.set_validated_output(validated_fragment, self.full_schema_reask)
             self.guard_history.push(guard_logs)
+
+    def get_chunk_text(self, chunk: Any, api: PromptCallableBase) -> str:
+        """Get the text from a chunk."""
+        if isinstance(api, OpenAICallable):
+            finished = chunk["choices"][0]["finish_reason"]
+            if finished:
+                chunk_text = ""
+            else:
+                chunk_text = chunk["choices"][0]["text"]
+        elif isinstance(api, OpenAIChatCallable):
+            finished = chunk["choices"][0]["finish_reason"]
+            if finished:
+                chunk_text = ""
+            else:
+                chunk_text = chunk["choices"][0]["delta"]["content"]
+        else:
+            try:
+                chunk_text = chunk
+            except Exception as e:
+                raise ValueError(
+                    f"Error getting chunk from stream: {e}. "
+                    "Non-OpenAI API callables expected to return "
+                    "a generator of strings."
+                ) from e
+        return chunk_text
 
     def parse(
         self,

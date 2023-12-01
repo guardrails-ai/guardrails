@@ -334,7 +334,7 @@ class Guard:
         full_schema_reask: bool,
         *args,
         **kwargs,
-    ) -> Tuple[Optional[str], Any]:
+    ) -> Union[str, Tuple[Optional[str], Any]]:
         instructions_obj = instructions or self.instructions
         prompt_obj = prompt or self.prompt
         msg_history_obj = msg_history or []
@@ -358,8 +358,6 @@ class Guard:
                     output_schema=self.output_schema,
                     num_reasks=num_reasks,
                     metadata=metadata,
-                    reask_prompt=self.reask_prompt,
-                    reask_instructions=self.reask_instructions,
                     base_model=self.base_model,
                     guard_state=self.guard_state,
                     full_schema_reask=full_schema_reask,
@@ -377,8 +375,6 @@ class Guard:
                     output_schema=self.output_schema,
                     num_reasks=num_reasks,
                     metadata=metadata,
-                    reask_prompt=self.reask_prompt,
-                    reask_instructions=self.reask_instructions,
                     base_model=self.base_model,
                     guard_state=self.guard_state,
                     full_schema_reask=full_schema_reask,
