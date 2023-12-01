@@ -9,12 +9,13 @@ from pydantic import BaseModel
 from guardrails.datatypes import verify_metadata_requirements
 from guardrails.llm_providers import AsyncPromptCallableBase, PromptCallableBase
 from guardrails.prompt import Instructions, Prompt
-from guardrails.schema import Schema
+from guardrails.schema import Schema, JsonSchema
 from guardrails.utils.logs_utils import GuardHistory, GuardLogs, GuardState, LLMResponse
 from guardrails.utils.reask_utils import (
     FieldReAsk,
     NonParseableReAsk,
     ReAsk,
+    SkeletonReAsk,
     reasks_to_dict,
     sub_reasks_with_fixed_values,
 )
@@ -403,12 +404,23 @@ class Runner:
         index: int,
         parsed_output: Any,
         output_schema: Schema,
+        validate_subschema: bool = False,
     ):
         """Validate the output."""
         with start_action(action_type="validate", index=index) as action:
-            validated_output = output_schema.validate(
-                guard_logs, parsed_output, self.metadata
-            )
+            if isinstance(output_schema, JsonSchema):
+                validated_output = output_schema.validate(
+                    guard_logs,
+                    parsed_output,
+                    self.metadata,
+                    validate_subschema=validate_subschema,
+                )
+            else:
+                validated_output = output_schema.validate(
+                    guard_logs,
+                    parsed_output,
+                    self.metadata,
+                )
 
             action.log(
                 message_type="info",
@@ -736,12 +748,12 @@ class AsyncRunner(Runner):
 class StreamRunner(Runner):
     """Runner class that calls a streaming LLM API with a prompt.
 
-    This class performs input and output validation when the output
+    This class performs output validation when the output
     is a stream of chunks. Inherits from Runner class,
     as overall structure remains similar.
     """
 
-    def __call__(self, prompt_params: Optional[Dict] = None) -> GuardHistory:
+    def __call__(self, prompt_params: Optional[Dict] = None) -> str:
         """Execute the StreamRunner.
 
         Args:
@@ -749,7 +761,7 @@ class StreamRunner(Runner):
                 generate the prompt string.
 
         Returns:
-            The guard history.
+            output (str): A string concatenation of raw and validated response.
         """
         if prompt_params is None:
             prompt_params = {}
@@ -765,11 +777,6 @@ class StreamRunner(Runner):
 
         # Reset the guard history
         self._reset_guard_history()
-
-        # Figure out if we need to include instructions in the prompt.
-        include_instructions = not (
-            self.instructions is None and self.msg_history is None
-        )
 
         with start_action(
             action_type="run",
@@ -801,35 +808,6 @@ class StreamRunner(Runner):
                 output=self.output,
             )
 
-            # for index in range(self.num_reasks + 1):
-            #     # Run a single step.
-            #     validated_output, reasks = self.step(
-            #         index=index,
-            #         api=self.api,
-            #         instructions=instructions,
-            #         prompt=prompt,
-            #         msg_history=msg_history,
-            #         prompt_params=prompt_params,
-            #         input_schema=input_schema,
-            #         output_schema=output_schema,
-            #         output=self.output,
-            #     )
-
-            #     # Loop again?
-            #     if not self.do_loop(index, reasks):
-            #         break
-
-            #     # Get new prompt and output schema.
-            #     prompt, instructions, output_schema, msg_history = self.prepare_to_loop(
-            #         reasks,
-            #         validated_output,
-            #         output_schema,
-            #         prompt_params=prompt_params,
-            #         include_instructions=include_instructions,
-            #     )
-
-            # return self.guard_history
-
     def step(
         self,
         index: int,
@@ -843,10 +821,7 @@ class StreamRunner(Runner):
         output: str | None = None,
     ):
         """Run a full step."""
-
         guard_logs = GuardLogs()
-        self.guard_history.push(guard_logs)
-
         with start_action(
             action_type="step",
             index=index,
@@ -887,113 +862,86 @@ class StreamRunner(Runner):
             stream = llm_response.stream_output
 
             fragment = ""
-            # prev_len = 0
             verified = set()
+            # Loop over the stream
+            # and construct "fragments" of concatenated chunks
             for chunk in stream:
                 chunk_text = chunk["choices"][0]["text"]
                 fragment += chunk_text
 
-                # 1. Check if the fragment is valid JSON
-                is_valid_fragment = self.is_valid_fragment(fragment, verified)
-                if not is_valid_fragment:
+                parsed_fragment, move_to_next = self.parse(
+                    index, fragment, output_schema, verified
+                )
+                if move_to_next:
+                    # Continue to next chunk
                     continue
 
-                # print(f"Fragment:\n{fragment}\n")
-
-                # 2. Parse the fragment
-                parsed_fragment, addition, parsing_error = self.parse_fragment(fragment)
-                if parsing_error:
-                    continue
-
-                # print(f"Parsed fragment:\n{parsed_fragment}\n")
-
-                # At this point, we have a valid JSON fragment
                 # 3. Run output validation
                 validated_fragment = self.validate(
-                    guard_logs, index, parsed_fragment, output_schema
+                    guard_logs,
+                    index,
+                    parsed_fragment,
+                    output_schema,
+                    validate_subschema=True,
                 )
-
-                # print(f"Validated fragment:\n{validated_fragment}\n")
+                if isinstance(validated_fragment, SkeletonReAsk):
+                    raise ValueError(
+                        "Received fragment schema is an invalid sub-schema "
+                        "of the expected output JSON schema."
+                    )
 
                 # 4. Introspect: inspect the validated fragment for reasks
                 reasks = self.introspect(index, validated_fragment, output_schema)
-                # print(f"Reasks:\n{reasks}\n")
+                if reasks:
+                    raise ValueError(
+                        "Reasks are not yet supported with streaming. Please "
+                        "remove reasks from schema or disable streaming."
+                    )
 
-                # Output should be the portion of the
-                # validated fragment minus the one from the previous iteration and the addition
-                # out = str(validated_fragment)[prev_len : -len(addition)]
-                yield str(validated_fragment)
-                # prev_len = len(str(validated_fragment)) - len(addition)
+                # Convert validated fragment to a pretty JSON string
+                try:
+                    pretty_validated_fragment = json.dumps(validated_fragment, indent=4)
+                except Exception as e:
+                    raise ValueError(
+                        f"Error formatting validated fragment JSON: {e}"
+                    ) from e
 
-            #     if reasks:
-            #         break
+                # 5. Yield raw and validated fragments
+                yield f"Raw LLM response:\n{fragment}\n\n\nValidated response:\n{pretty_validated_fragment}\n"
 
-            # guard_logs.reasks = reasks
-            # guard_logs.set_validated_output(validated_fragment, self.full_schema_reask)
+            # Add to logs
+            guard_logs.raw_output = fragment
+            guard_logs.parsed_output = parsed_fragment
+            guard_logs.set_validated_output(validated_fragment, self.full_schema_reask)
+            self.guard_history.push(guard_logs)
 
-            # return validated_fragment, reasks
+    def parse(
+        self,
+        index: int,
+        output: str,
+        output_schema: Schema,
+        verified: set,
+    ):
+        """Parse the output."""
+        with start_action(action_type="parse", index=index) as action:
+            parsed_output, error = output_schema.parse(
+                output, stream=True, verified=verified
+            )
 
-    def is_valid_fragment(self, fragment: str, verified: set) -> bool:
-        """Check if the fragment is a somewhat valid JSON."""
+            # Error can be either of (True/False/None/string representing error)
+            if error:
+                # If parsing error is a string, it is an error from output_schema.parse_fragment()
+                if isinstance(error, str):
+                    raise ValueError("Unable to parse output: " + error)
+            # Else if either of (None/True/False), return parsed_output and error
 
-        # Strip fragment of whitespaces and newlines
-        # to avoid duplicate checks
-        text = fragment.strip(" \n")
+            action.log(
+                message_type="info",
+                parsed_output=parsed_output,
+                error=error,
+            )
 
-        # Check if text is already verified
-        if text in verified:
-            return False
-
-        # Check if text is valid JSON
-        try:
-            json.loads(text)
-            verified.add(text)
-            return True
-        except ValueError as e:
-            error_msg = str(e)
-            # Check if error is due to missing comma
-            if "Expecting ',' delimiter" in error_msg:
-                verified.add(text)
-                return True
-            return False
-
-    def parse_fragment(self, fragment: str):
-        """Parse the fragment into a dict."""
-
-        # Complete the JSON fragment to handle missing brackets
-        # Stack to keep track of opening brackets
-        stack = []
-
-        # Process each character in the string
-        for char in fragment:
-            if char in "{[":
-                # Push opening brackets onto the stack
-                stack.append(char)
-            elif char in "}]":
-                # Pop from stack if matching opening bracket is found
-                if stack and (
-                    (char == "}" and stack[-1] == "{")
-                    or (char == "]" and stack[-1] == "[")
-                ):
-                    stack.pop()
-
-        addition = ""
-        # Add the necessary closing brackets in reverse order
-        while stack:
-            opening_bracket = stack.pop()
-            if opening_bracket == "{":
-                fragment += "}"
-                addition += "}"
-            elif opening_bracket == "[":
-                fragment += "]"
-                addition += "]"
-
-        # Parse the fragment
-        try:
-            parsed_fragment = json.loads(fragment)
-            return parsed_fragment, addition, None
-        except ValueError as e:
-            return fragment, addition, str(e)
+            return parsed_output, error
 
 
 def msg_history_source(msg_history) -> List[Dict[str, str]]:
