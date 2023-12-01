@@ -9,7 +9,7 @@ from guardrails.utils.xml_utils import cast_xml_to_string
 from guardrails.validator_base import Validator, ValidatorSpec
 
 
-class FormatAttr(pydantic.BaseModel):
+class ValidatorsAttr(pydantic.BaseModel):
     """Class for parsing and manipulating the `format` attribute of an element.
 
     The format attribute is a string that contains semi-colon separated
@@ -29,10 +29,10 @@ class FormatAttr(pydantic.BaseModel):
         arbitrary_types_allowed = True
 
     # The format attribute string.
-    format: Optional[str]
+    validators_spec: Optional[str]
 
     # The on-fail handlers.
-    on_fail_handlers: Dict[str, str]
+    on_fail_handlers: Mapping[str, Union[str, Callable]]
 
     # The validator arguments.
     validator_args: Mapping[str, Union[Dict[str, Any], List[Any]]]
@@ -65,7 +65,10 @@ class FormatAttr(pydantic.BaseModel):
                 validator_args = val.get_args()
                 validators_with_args[validator_name] = validator_args
                 # Set the on-fail attribute based on the on_fail value
-                on_fail = val.on_fail_descriptor
+                if val.on_fail_descriptor == "custom":
+                    on_fail = val.on_fail_method
+                else:
+                    on_fail = val.on_fail_descriptor
                 on_fails[val.rail_alias] = on_fail
             elif isinstance(val, tuple) and len(val) == 2:
                 validator, on_fail = val
@@ -112,7 +115,7 @@ class FormatAttr(pydantic.BaseModel):
         )
 
         return cls(
-            format=None,
+            validators_spec=None,
             on_fail_handlers=on_fails,
             validator_args=validators_with_args,
             validators=registered_validators,
@@ -122,26 +125,35 @@ class FormatAttr(pydantic.BaseModel):
     @classmethod
     def from_xml(
         cls, element: ET._Element, tag: str, strict: bool = False
-    ) -> "FormatAttr":
-        """Create a FormatAttr object from an XML element.
+    ) -> "ValidatorsAttr":
+        """Create a ValidatorsAttr object from an XML element.
 
         Args:
             element (ET._Element): The XML element.
 
         Returns:
-            A FormatAttr object.
+            A ValidatorsAttr object.
         """
+        validators_str = element.get("validators")
         format_str = element.get("format")
-        if format_str is None:
+        if format_str is not None:
+            warnings.warn(
+                "Attribute `format` is deprecated and will be removed in 0.4.x. "
+                "Use `validators` instead.",
+                DeprecationWarning,
+            )
+            validators_str = format_str
+
+        if validators_str is None:
             return cls(
-                format=None,
+                validators_spec=None,
                 on_fail_handlers={},
                 validator_args={},
                 validators=[],
                 unregistered_validators=[],
             )
 
-        validator_args = cls.parse(format_str)
+        validator_args = cls.parse(validators_str)
 
         on_fail_handlers = {}
         for key, value in element.attrib.items():
@@ -159,7 +171,7 @@ class FormatAttr(pydantic.BaseModel):
         )
 
         return cls(
-            format=format_str,
+            validators_spec=validators_str,
             on_fail_handlers=on_fail_handlers,
             validator_args=validator_args,
             validators=validators,
@@ -227,7 +239,7 @@ class FormatAttr(pydantic.BaseModel):
         validators = {}
         for token in tokens:
             # Parse the token into a validator name and a list of parameters.
-            validator_name, args = FormatAttr.parse_token(token)
+            validator_name, args = ValidatorsAttr.parse_token(token)
             validators[validator_name] = args
 
         return validators

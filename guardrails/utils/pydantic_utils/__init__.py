@@ -11,7 +11,13 @@ if PYDANTIC_VERSION.startswith("1"):
         convert_pydantic_model_to_openai_fn,
     )
 else:
-    raise NotImplementedError(f"Pydantic version {PYDANTIC_VERSION} is not supported.")
+    from .v2 import (
+        ArbitraryModel,
+        add_pydantic_validators_as_guardrails_validators,
+        add_validator,
+        convert_pydantic_model_to_datatype,
+        convert_pydantic_model_to_openai_fn,
+    )
 
 
 __all__ = [

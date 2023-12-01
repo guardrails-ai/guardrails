@@ -13,14 +13,17 @@ import re
 import string
 import warnings
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union, cast
 
-import openai
 import rstr
 from tenacity import retry, stop_after_attempt, wait_random_exponential
 
 from guardrails.utils.casting_utils import to_int
 from guardrails.utils.docs_utils import get_chunks_from_text, sentence_split
+from guardrails.utils.openai_utils import (
+    OpenAIClient,
+    get_static_openai_chat_create_func,
+)
 from guardrails.utils.sql_utils import SQLDriver, create_sql_driver
 from guardrails.utils.validator_utils import PROVENANCE_V1_PROMPT
 from guardrails.validator_base import (
@@ -41,7 +44,14 @@ else:
 try:
     import detect_secrets  # type: ignore
 except ImportError:
-    detect_secrets = None  # type: ignore
+    detect_secrets = None
+
+try:
+    from presidio_analyzer import AnalyzerEngine
+    from presidio_anonymizer import AnonymizerEngine
+except ImportError:
+    AnalyzerEngine = None
+    AnonymizerEngine = None
 
 try:
     import nltk  # type: ignore
@@ -53,6 +63,11 @@ if nltk is not None:
         nltk.data.find("tokenizers/punkt")
     except LookupError:
         nltk.download("punkt")
+
+try:
+    import spacy
+except ImportError:
+    spacy = None
 
 
 logger = logging.getLogger(__name__)
@@ -693,12 +708,14 @@ class SimilarToDocument(Validator):
         if not _HAS_NUMPY:
             raise ImportError(
                 f"The {self.__class__.__name__} validator requires the numpy package.\n"
-                "`pip install numpy` to install it."
+                "`poetry add numpy` to install it."
             )
 
+        self.client = OpenAIClient()
+
         self._document = document
-        embedding_response = openai.Embedding.create(input=[document], model=model)
-        embedding = embedding_response["data"][0]["embedding"]  # type: ignore
+        embedding_response = self.client.create_embedding(input=[document], model=model)
+        embedding = embedding_response[0]  # type: ignore
         self._document_embedding = np.array(embedding)
         self._model = model
         self._threshold = float(threshold)
@@ -719,11 +736,11 @@ class SimilarToDocument(Validator):
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         logger.debug(f"Validating {value} is similar to document...")
 
-        embedding_response = openai.Embedding.create(input=[value], model=self._model)
-
-        value_embedding = np.array(
-            embedding_response["data"][0]["embedding"]  # type: ignore
+        embedding_response = self.client.create_embedding(
+            input=[value], model=self._model
         )
+
+        value_embedding = np.array(embedding_response[0])  # type: ignore
 
         similarity = self.cosine_similarity(
             self._document_embedding,
@@ -763,7 +780,7 @@ class IsProfanityFree(Validator):
         except ImportError:
             raise ImportError(
                 "`is-profanity-free` validator requires the `alt-profanity-check`"
-                "package. Please install it with `pip install profanity-check`."
+                "package. Please install it with `poetry add profanity-check`."
             )
 
         prediction = predict([value])
@@ -799,12 +816,19 @@ class IsHighQualityTranslation(Validator):
         try:
             from inspiredco.critique import Critique  # type: ignore
 
-            self._critique = Critique(api_key=os.environ["INSPIREDCO_API_KEY"])
+            inspiredco_api_key = os.environ.get("INSPIREDCO_API_KEY")
+            if not inspiredco_api_key:
+                raise ValueError(
+                    "The INSPIREDCO_API_KEY environment variable must be set"
+                    "in order to use the is-high-quality-translation validator!"
+                )
+
+            self._critique = Critique(api_key=inspiredco_api_key)
 
         except ImportError:
             raise ImportError(
                 "`is-high-quality-translation` validator requires the `inspiredco`"
-                "package. Please install it with `pip install inspiredco`."
+                "package. Please install it with `poetry add inspiredco`."
             )
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
@@ -1103,7 +1127,7 @@ class ExtractiveSummary(Validator):
         except ImportError:
             raise ImportError(
                 "`thefuzz` library is required for `extractive-summary` validator. "
-                "Please install it with `pip install thefuzz`."
+                "Please install it with `poetry add thefuzz`."
             )
 
         # Split the value into sentences.
@@ -1198,7 +1222,7 @@ class RemoveRedundantSentences(Validator):
         except ImportError:
             raise ImportError(
                 "`thefuzz` library is required for `remove-redundant-sentences` "
-                "validator. Please install it with `pip install thefuzz`."
+                "validator. Please install it with `poetry add thefuzz`."
             )
 
         # Split the value into sentences.
@@ -1281,7 +1305,7 @@ class SaliencyCheck(Validator):
             )
 
         self.llm_callable = (
-            llm_callable if llm_callable else openai.ChatCompletion.create
+            llm_callable if llm_callable else get_static_openai_chat_create_func()
         )
 
         self._threshold = threshold
@@ -1338,7 +1362,7 @@ Make sure that topics are relevant to text, and topics are not too specific or g
     """
 
         guard = Guard.from_rail_string(spec)
-        _, validated_output = guard(llm_api=self.llm_callable)
+        _, validated_output = guard(llm_api=self.llm_callable)  # type: ignore
         return validated_output["topics"]
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
@@ -1393,7 +1417,7 @@ class QARelevanceLLMEval(Validator):
             )
 
         self.llm_callable = (
-            llm_callable if llm_callable else openai.ChatCompletion.create
+            llm_callable if llm_callable else get_static_openai_chat_create_func()
         )
 
     def _selfeval(self, question: str, answer: str):
@@ -1419,11 +1443,12 @@ Relevant (as a JSON with a single boolean key, "relevant"):\
         )
         guard = Guard.from_rail_string(spec)
 
-        return guard(
-            self.llm_callable,
+        _, validated_output = guard(
+            self.llm_callable,  # type: ignore
             max_tokens=10,
             temperature=0.1,
-        )[1]
+        )
+        return validated_output
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         if "question" not in metadata:
@@ -1593,7 +1618,7 @@ class ProvenanceV0(Validator):
         if nltk is None:
             raise ImportError(
                 "`nltk` library is required for `provenance-v0` validator. "
-                "Please install it with `pip install nltk`."
+                "Please install it with `poetry add nltk`."
             )
         # Split the value into sentences using nltk sentence tokenizer.
         sentences = nltk.sent_tokenize(value)
@@ -1821,6 +1846,8 @@ class ProvenanceV1(Validator):
         self._top_k = int(top_k)
         self._max_tokens = int(max_tokens)
 
+        self.client = OpenAIClient()
+
     def set_callable(self, llm_callable: Union[str, Callable]) -> None:
         """Set the LLM callable.
 
@@ -1837,14 +1864,14 @@ class ProvenanceV1(Validator):
                 )
 
             def openai_callable(prompt: str) -> str:
-                response = openai.ChatCompletion.create(
+                response = self.client.create_chat_completion(
                     model=llm_callable,
                     messages=[
                         {"role": "user", "content": prompt},
                     ],
                     max_tokens=self._max_tokens,
                 )
-                return response["choices"][0]["message"]["content"]  # type: ignore
+                return response.output
 
             self._llm_callable = openai_callable
         elif isinstance(llm_callable, Callable):
@@ -1951,7 +1978,7 @@ class ProvenanceV1(Validator):
         if nltk is None:
             raise ImportError(
                 "`nltk` library is required for `provenance-v0` validator. "
-                "Please install it with `pip install nltk`."
+                "Please install it with `poetry add nltk`."
             )
         # Split the value into sentences using nltk sentence tokenizer.
         sentences = nltk.sent_tokenize(value)
@@ -2007,13 +2034,13 @@ class ProvenanceV1(Validator):
 
         # Set the OpenAI API key
         if os.getenv("OPENAI_API_KEY"):  # Check if set in environment
-            openai.api_key = os.getenv("OPENAI_API_KEY")
+            self.client.api_key = os.getenv("OPENAI_API_KEY")
         elif api_key:  # Check if set when calling guard() or parse()
-            openai.api_key = api_key
+            self.client.api_key = api_key
 
         # Set the OpenAI API base if specified
         if api_base:
-            openai.api_base = api_base
+            self.client.api_base = api_base
 
         query_function = self.get_query_function(metadata)
         if self._validation_method == "sentence":
@@ -2065,6 +2092,130 @@ class ProvenanceV1(Validator):
             raise ValueError("distance_metric must be 'cosine'.")
 
         return top_chunks
+
+
+@register_validator(name="pii", data_type="string")
+class PIIFilter(Validator):
+    """Validates that any text does not contain any PII.
+
+    This validator uses Microsoft's Presidio (https://github.com/microsoft/presidio)
+    to detect PII in the text. If PII is detected, the validator will fail with a
+    programmatic fix that anonymizes the text. Otherwise, the validator will pass.
+
+    **Key Properties**
+
+    | Property                      | Description                         |
+    | ----------------------------- | ----------------------------------- |
+    | Name for `format` attribute   | `pii`                               |
+    | Supported data types          | `string`                            |
+    | Programmatic fix              | Anonymized text with PII filtered   |
+
+    Parameters: Arguments
+        pii_entities (str | List[str], optional): The PII entities to filter. Must be
+            one of `pii` or `spi`. Defaults to None. Can also be set in metadata.
+    """
+
+    PII_ENTITIES_MAP = {
+        "pii": [
+            "EMAIL_ADDRESS",
+            "PHONE_NUMBER",
+            "DOMAIN_NAME",
+            "IP_ADDRESS",
+            "DATE_TIME",
+            "LOCATION",
+            "PERSON",
+            "URL",
+        ],
+        "spi": [
+            "CREDIT_CARD",
+            "CRYPTO",
+            "IBAN_CODE",
+            "NRP",
+            "MEDICAL_LICENSE",
+            "US_BANK_NUMBER",
+            "US_DRIVER_LICENSE",
+            "US_ITIN",
+            "US_PASSPORT",
+            "US_SSN",
+        ],
+    }
+
+    def __init__(
+        self,
+        pii_entities: Union[str, List[str], None] = None,
+        on_fail: Union[Callable[..., Any], None] = None,
+        **kwargs,
+    ):
+        if AnalyzerEngine is None or AnonymizerEngine is None:
+            raise ImportError(
+                "You must install the `presidio-analyzer`, `presidio-anonymizer`"
+                "and a spaCy language model to use the PII validator."
+                "Refer to https://microsoft.github.io/presidio/installation/"
+            )
+
+        super().__init__(on_fail, pii_entities=pii_entities, **kwargs)
+        self.pii_entities = pii_entities
+        self.pii_analyzer = AnalyzerEngine()
+        self.pii_anonymizer = AnonymizerEngine()
+
+    def get_anonymized_text(self, text: str, entities: List[str]) -> str:
+        """Analyze and anonymize the text for PII.
+
+        Args:
+            text (str): The text to analyze.
+            pii_entities (List[str]): The PII entities to filter.
+
+        Returns:
+            anonymized_text (str): The anonymized text.
+        """
+        results = self.pii_analyzer.analyze(text=text, entities=entities, language="en")
+        results = cast(List[Any], results)
+        anonymized_text = self.pii_anonymizer.anonymize(
+            text=text, analyzer_results=results
+        ).text
+        return anonymized_text
+
+    def validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
+        # Entities to filter passed through metadata take precedence
+        pii_entities = metadata.get("pii_entities", self.pii_entities)
+        if pii_entities is None:
+            raise ValueError(
+                "`pii_entities` must be set in order to use the `PIIFilter` validator."
+                "Add this: `pii_entities=['PERSON', 'PHONE_NUMBER']`"
+                "OR pii_entities='pii' or 'spi'"
+                "in init or metadata."
+            )
+
+        # Check that pii_entities is a string OR list of strings
+        if isinstance(pii_entities, str):
+            # A key to the PII_ENTITIES_MAP
+            entities_to_filter = self.PII_ENTITIES_MAP.get(pii_entities, None)
+            if entities_to_filter is None:
+                raise ValueError(
+                    f"`pii_entities` must be one of {self.PII_ENTITIES_MAP.keys()}"
+                )
+        elif isinstance(pii_entities, list):
+            entities_to_filter = pii_entities
+        else:
+            raise ValueError(
+                f"`pii_entities` must be one of {self.PII_ENTITIES_MAP.keys()}"
+                " or a list of strings."
+            )
+
+        # Analyze the text, and anonymize it if there is PII
+        anonymized_text = self.get_anonymized_text(
+            text=value, entities=entities_to_filter
+        )
+
+        # If anonymized value text is different from original value, then there is PII
+        if anonymized_text != value:
+            return FailResult(
+                error_message=(
+                    f"The following text in your response contains PII:\n{value}"
+                ),
+                fix_value=anonymized_text,
+            )
+        return PassResult()
 
 
 @register_validator(name="similar-to-list", data_type="string")
@@ -2389,3 +2540,150 @@ class DetectSecrets(Validator):
                 fix_value=modified_value,
             )
         return PassResult()
+
+
+@register_validator(name="competitor-check", data_type="string")
+class CompetitorCheck(Validator):
+    """Validates that LLM-generated text is not naming any competitors from a
+    given list.
+
+    In order to use this validator you need to provide an extensive list of the
+    competitors you want to avoid naming including all common variations.
+
+    Args:
+        competitors (List[str]): List of competitors you want to avoid naming
+    """
+
+    def __init__(
+        self,
+        competitors: List[str],
+        on_fail: Optional[Callable] = None,
+    ):
+        super().__init__(competitors=competitors, on_fail=on_fail)
+        self._competitors = competitors
+        model = "en_core_web_trf"
+        if spacy is None:
+            raise ImportError(
+                "You must install spacy in order to use the CompetitorCheck validator."
+            )
+
+        if not spacy.util.is_package(model):
+            logger.info(
+                f"Spacy model {model} not installed. "
+                "Download should start now and take a few minutes."
+            )
+            spacy.cli.download(model)  # type: ignore
+
+        self.nlp = spacy.load(model)
+
+    def exact_match(self, text: str, competitors: List[str]) -> List[str]:
+        """Performs exact match to find competitors from a list in a given
+        text.
+
+        Args:
+            text (str): The text to search for competitors.
+            competitors (list): A list of competitor entities to match.
+
+        Returns:
+            list: A list of matched entities.
+        """
+
+        found_entities = []
+        for entity in competitors:
+            pattern = rf"\b{re.escape(entity)}\b"
+            match = re.search(pattern.lower(), text.lower())
+            if match:
+                found_entities.append(entity)
+        return found_entities
+
+    def perform_ner(self, text: str, nlp) -> List[str]:
+        """Performs named entity recognition on text using a provided NLP
+        model.
+
+        Args:
+            text (str): The text to perform named entity recognition on.
+            nlp: The NLP model to use for entity recognition.
+
+        Returns:
+            entities: A list of entities found.
+        """
+
+        doc = nlp(text)
+        entities = []
+        for ent in doc.ents:
+            entities.append(ent.text)
+        return entities
+
+    def is_entity_in_list(self, entities: List[str], competitors: List[str]) -> List:
+        """Checks if any entity from a list is present in a given list of
+        competitors.
+
+        Args:
+            entities (list): A list of entities to check
+            competitors (list): A list of competitor names to match
+
+        Returns:
+            List: List of found competitors
+        """
+
+        found_competitors = []
+        for entity in entities:
+            for item in competitors:
+                pattern = rf"\b{re.escape(item)}\b"
+                match = re.search(pattern.lower(), entity.lower())
+                if match:
+                    found_competitors.append(item)
+        return found_competitors
+
+    def validate(self, value: str, metadata=Dict) -> ValidationResult:
+        """Checks a text to find competitors' names in it.
+
+        While running, store sentences naming competitors and generate a fixed output
+        filtering out all flagged sentences.
+
+        Args:
+            value (str): The value to be validated.
+            metadata (Dict, optional): Additional metadata. Defaults to empty dict.
+
+        Returns:
+            ValidationResult: The validation result.
+        """
+
+        if nltk is None:
+            raise ImportError(
+                "`nltk` library is required for `competitors-check` validator. "
+                "Please install it with `poetry add nltk`."
+            )
+        sentences = nltk.sent_tokenize(value)
+        flagged_sentences = []
+        filtered_sentences = []
+        list_of_competitors_found = []
+
+        for sentence in sentences:
+            entities = self.exact_match(sentence, self._competitors)
+            if entities:
+                ner_entities = self.perform_ner(sentence, self.nlp)
+                found_competitors = self.is_entity_in_list(ner_entities, entities)
+
+                if found_competitors:
+                    flagged_sentences.append((found_competitors, sentence))
+                    list_of_competitors_found.append(found_competitors)
+                    logger.debug(f"Found: {found_competitors} named in '{sentence}'")
+                else:
+                    filtered_sentences.append(sentence)
+
+            else:
+                filtered_sentences.append(sentence)
+
+        filtered_output = " ".join(filtered_sentences)
+
+        if len(flagged_sentences):
+            return FailResult(
+                error_message=(
+                    f"Found the following competitors: {list_of_competitors_found}. "
+                    "Please avoid naming those competitors next time"
+                ),
+                fix_value=filtered_output,
+            )
+        else:
+            return PassResult()

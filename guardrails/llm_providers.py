@@ -1,111 +1,24 @@
-import os
 from typing import Any, Awaitable, Callable, Dict, List, Optional, cast, Iterable
-
-import openai
-import openai.error
-
-# import tiktoken
 from pydantic import BaseModel
-from tenacity import retry, retry_if_exception_type, wait_exponential_jitter
 
-from guardrails.utils.logs_utils import LLMResponse
+from guardrails.utils.llm_response import LLMResponse
+from guardrails.utils.openai_utils import (
+    AsyncOpenAIClient,
+    OpenAIClient,
+    get_static_openai_acreate_func,
+    get_static_openai_chat_acreate_func,
+    get_static_openai_chat_create_func,
+    get_static_openai_create_func,
+)
 from guardrails.utils.pydantic_utils import convert_pydantic_model_to_openai_fn
-
-OPENAI_RETRYABLE_ERRORS = [
-    openai.error.APIConnectionError,
-    openai.error.APIError,
-    openai.error.TryAgain,
-    openai.error.Timeout,
-    openai.error.RateLimitError,
-    openai.error.ServiceUnavailableError,
-]
-RETRYABLE_ERRORS = tuple(OPENAI_RETRYABLE_ERRORS)
 
 
 class PromptCallableException(Exception):
     pass
 
-
-# TODO: Figure out where to add the following 2 methods
-# def num_tokens_from_string(text: str, model_name: str) -> int:
-#     """Returns the number of tokens in a text string.
-
-#     Supported for OpenAI models only. This is a helper function
-#     that is required when OpenAI's `stream` parameter is set to `True`,
-#     because OpenAI does not return the number of tokens in that case.
-#     Requires the `tiktoken` package to be installed.
-
-#     Args:
-#         text (str): The text string to count the number of tokens in.
-#         model_name (str): The name of the OpenAI model to use.
-
-#     Returns:
-#         num_tokens (int): The number of tokens in the text string.
-#     """
-#     encoding = tiktoken.encoding_for_model(model_name)
-#     num_tokens = len(encoding.encode(text))
-#     return num_tokens
-
-# def num_tokens_from_messages(
-#     messages: List[Dict[str, str]], model: str = "gpt-3.5-turbo-0613"
-# ) -> int:
-#     """Return the number of tokens used by a list of messages."""
-#     try:
-#         encoding = tiktoken.encoding_for_model(model)
-#     except KeyError:
-#         print("Warning: model not found. Using cl100k_base encoding.")
-#         encoding = tiktoken.get_encoding("cl100k_base")
-#     if model in {
-#         "gpt-3.5-turbo-0613",
-#         "gpt-3.5-turbo-16k-0613",
-#         "gpt-4-0314",
-#         "gpt-4-32k-0314",
-#         "gpt-4-0613",
-#         "gpt-4-32k-0613",
-#     }:
-#         tokens_per_message = 3
-#         tokens_per_name = 1
-#     elif model == "gpt-3.5-turbo-0301":
-#         tokens_per_message = (
-#             4  # every message follows <|start|>{role/name}\n{content}<|end|>\n
-#         )
-#         tokens_per_name = -1  # if there's a name, the role is omitted
-#     elif "gpt-3.5-turbo" in model:
-#         print(
-#             """Warning: gpt-3.5-turbo may update over time.
-#             Returning num tokens assuming gpt-3.5-turbo-0613."""
-#         )
-#         return num_tokens_from_messages(messages, model="gpt-3.5-turbo-0613")
-#     elif "gpt-4" in model:
-#         print(
-#             """Warning: gpt-4 may update over time.
-#             Returning num tokens assuming gpt-4-0613."""
-#         )
-#         return num_tokens_from_messages(messages, model="gpt-4-0613")
-#     else:
-#         raise NotImplementedError(
-#             f"""num_tokens_from_messages() is not implemented for model {model}.
-#             See https://github.com/openai/openai-python/blob/main/chatml.md for
-#             information on how messages are converted to tokens."""
-#         )
-
-#     num_tokens = 0
-#     for message in messages:
-#         num_tokens += tokens_per_message
-#         for key, value in message.items():
-#             num_tokens += len(encoding.encode(value))
-#             if key == "name":
-#                 num_tokens += tokens_per_name
-
-#     # every reply is primed with <|start|>assistant<|message|>
-#     num_tokens += 3
-#     return num_tokens
-
-
 ###
 # Synchronous wrappers
 ###
-
 
 class PromptCallableBase:
     """A wrapper around a callable that takes in a prompt.
@@ -121,16 +34,11 @@ class PromptCallableBase:
     def _invoke_llm(self, *args, **kwargs) -> LLMResponse:
         raise NotImplementedError
 
-    @retry(
-        wait=wait_exponential_jitter(max=60),
-        retry=retry_if_exception_type(RETRYABLE_ERRORS),
-    )
-    def _call_llm(self, *args, **kwargs) -> LLMResponse:
-        return self._invoke_llm(*self.init_args, *args, **self.init_kwargs, **kwargs)
-
     def __call__(self, *args, **kwargs) -> LLMResponse:
         try:
-            result = self._call_llm(*args, **kwargs)
+            result = self._invoke_llm(
+                *self.init_args, *args, **self.init_kwargs, **kwargs
+            )
         except Exception as e:
             raise PromptCallableException(
                 "The callable `fn` passed to `Guard(fn, ...)` failed"
@@ -188,36 +96,21 @@ class OpenAICallable(PromptCallableBase):
         *args,
         **kwargs,
     ) -> LLMResponse:
-        api_key = kwargs.pop("api_key", os.environ.get("OPENAI_API_KEY"))
-        openai_response = openai.Completion.create(
-            api_key=api_key,
+        if "api_key" in kwargs:
+            api_key = kwargs.pop("api_key")
+        else:
+            api_key = None
+
+        if "model" in kwargs:
+            engine = kwargs.pop("model")
+
+        client = OpenAIClient(api_key=api_key)
+        return client.create_completion(
             engine=engine,
             prompt=nonchat_prompt(prompt=text, instructions=instructions),
             *args,
             **kwargs,
         )
-
-        # Check if kwargs stream is passed in
-        if kwargs.get("stream", None) in [None, False]:
-            # If stream is not defined or set to False,
-            # return default behavior
-            openai_response = cast(Dict[str, Any], openai_response)
-            return LLMResponse(
-                output=openai_response["choices"][0]["text"],  # type: ignore
-                prompt_token_count=openai_response["usage"][  # type: ignore
-                    "prompt_tokens"
-                ],
-                response_token_count=openai_response["usage"][  # type: ignore
-                    "completion_tokens"
-                ],
-            )
-        else:
-            # If stream is defined and set to True,
-            # openai returns a generator
-            openai_response = cast(Iterable[Dict[str, Any]], openai_response)
-
-            # Simply return the generator wrapped in an LLMResponse
-            return LLMResponse(output="", stream_output=openai_response)
 
 
 class OpenAIChatCallable(PromptCallableBase):
@@ -266,9 +159,13 @@ class OpenAIChatCallable(PromptCallableBase):
             fn_kwargs = {}
 
         # Call OpenAI
-        api_key = kwargs.pop("api_key", os.environ.get("OPENAI_API_KEY"))
-        openai_response = openai.ChatCompletion.create(
-            api_key=api_key,
+        if "api_key" in kwargs:
+            api_key = kwargs.pop("api_key")
+        else:
+            api_key = None
+
+        client = OpenAIClient(api_key=api_key)
+        return client.create_chat_completion(
             model=model,
             messages=chat_prompt(
                 prompt=text, instructions=instructions, msg_history=msg_history
@@ -278,6 +175,7 @@ class OpenAIChatCallable(PromptCallableBase):
             **kwargs,
         )
 
+<<<<<<< HEAD
         # Check if kwargs stream is passed in
         if kwargs.get("stream", None) in [None, False]:
             # If stream is not defined, or set to False,
@@ -312,6 +210,8 @@ class OpenAIChatCallable(PromptCallableBase):
             # Simply return the generator wrapped in an LLMResponse
             return LLMResponse(output=openai_response)
 
+=======
+>>>>>>> main
 
 class ManifestCallable(PromptCallableBase):
     def _invoke_llm(
@@ -391,17 +291,42 @@ class ArbitraryCallable(PromptCallableBase):
         )
         ```
         """
-        return LLMResponse(
-            output=self.llm_api(*args, **kwargs),
-        )
+        # Get the response from the callable
+        # The LLM response should either be a
+        # string or an generator object of strings
+        llm_response = self.llm_api(*args, **kwargs)
+
+        # Check if kwargs stream is passed in
+        if kwargs.get("stream", None) in [None, False]:
+            # If stream is not defined or is set to False,
+            # return default behavior
+            # Strongly type the response as a string
+            llm_response = cast(str, llm_response)
+            return LLMResponse(
+                output=llm_response,
+            )
+        else:
+            # If stream is defined and set to True,
+            # the callable returns a generator object
+            complete_output = ""
+
+            # Strongly type the response as an iterable of strings
+            llm_response = cast(Iterable[str], llm_response)
+            for response in llm_response:
+                complete_output += response
+
+            # Return the LLMResponse
+            return LLMResponse(
+                output=complete_output,
+            )
 
 
 def get_llm_ask(llm_api: Callable, *args, **kwargs) -> PromptCallableBase:
     if "temperature" not in kwargs:
         kwargs.update({"temperature": 0})
-    if llm_api == openai.Completion.create:
+    if llm_api == get_static_openai_create_func():
         return OpenAICallable(*args, **kwargs)
-    if llm_api == openai.ChatCompletion.create:
+    if llm_api == get_static_openai_chat_create_func():
         return OpenAIChatCallable(*args, **kwargs)
 
     try:
@@ -440,18 +365,11 @@ class AsyncPromptCallableBase(PromptCallableBase):
     ) -> LLMResponse:
         raise NotImplementedError
 
-    @retry(
-        wait=wait_exponential_jitter(max=60),
-        retry=retry_if_exception_type(RETRYABLE_ERRORS),
-    )
-    async def call_llm(self, *args, **kwargs) -> LLMResponse:
-        return await self.invoke_llm(
-            *self.init_args, *args, **self.init_kwargs, **kwargs
-        )
-
     async def __call__(self, *args, **kwargs) -> LLMResponse:
         try:
-            result = await self.call_llm(*args, **kwargs)
+            result = await self.invoke_llm(
+                *self.init_args, *args, **self.init_kwargs, **kwargs
+            )
         except Exception as e:
             raise PromptCallableException(
                 "The callable `fn` passed to `Guard(fn, ...)` failed"
@@ -480,22 +398,20 @@ class AsyncOpenAICallable(AsyncPromptCallableBase):
         *args,
         **kwargs,
     ):
-        api_key = kwargs.pop("api_key", os.environ.get("OPENAI_API_KEY"))
-        openai_response = await openai.Completion.acreate(
-            api_key=api_key,
+        if "api_key" in kwargs:
+            api_key = kwargs.pop("api_key")
+        else:
+            api_key = None
+
+        if "model" in kwargs:
+            engine = kwargs.pop("model")
+
+        aclient = AsyncOpenAIClient(api_key=api_key)
+        return await aclient.create_completion(
             engine=engine,
             prompt=nonchat_prompt(prompt=text, instructions=instructions),
             *args,
             **kwargs,
-        )
-        return LLMResponse(
-            output=openai_response["choices"][0]["text"],  # type: ignore
-            prompt_token_count=openai_response["usage"][  # type: ignore
-                "prompt_tokens"
-            ],
-            response_token_count=openai_response["usage"][  # type: ignore
-                "completion_tokens"
-            ],
         )
 
 
@@ -545,9 +461,13 @@ class AsyncOpenAIChatCallable(AsyncPromptCallableBase):
             fn_kwargs = {}
 
         # Call OpenAI
-        api_key = kwargs.pop("api_key", os.environ.get("OPENAI_API_KEY"))
-        openai_response = await openai.ChatCompletion.acreate(
-            api_key=api_key,
+        if "api_key" in kwargs:
+            api_key = kwargs.pop("api_key")
+        else:
+            api_key = None
+
+        aclient = AsyncOpenAIClient(api_key=api_key)
+        return await aclient.create_chat_completion(
             model=model,
             messages=chat_prompt(
                 prompt=text, instructions=instructions, msg_history=msg_history
@@ -555,24 +475,6 @@ class AsyncOpenAIChatCallable(AsyncPromptCallableBase):
             *args,
             **fn_kwargs,
             **kwargs,
-        )
-
-        # Extract string from response
-        if "function_call" in openai_response["choices"][0]["message"]:  # type: ignore
-            output = openai_response["choices"][0]["message"][  # type: ignore
-                "function_call"
-            ]["arguments"]
-        else:
-            output = openai_response["choices"][0]["message"]["content"]  # type: ignore
-
-        return LLMResponse(
-            output=output,
-            prompt_token_count=openai_response["usage"][  # type: ignore
-                "prompt_tokens"
-            ],
-            response_token_count=openai_response["usage"][  # type: ignore
-                "completion_tokens"
-            ],
         )
 
 
@@ -640,9 +542,10 @@ class AsyncArbitraryCallable(AsyncPromptCallableBase):
 def get_async_llm_ask(
     llm_api: Callable[[Any], Awaitable[Any]], *args, **kwargs
 ) -> AsyncPromptCallableBase:
-    if llm_api == openai.Completion.acreate:
+    # these only work with openai v0 (None otherwise)
+    if llm_api == get_static_openai_acreate_func():
         return AsyncOpenAICallable(*args, **kwargs)
-    if llm_api == openai.ChatCompletion.acreate:
+    if llm_api == get_static_openai_chat_acreate_func():
         return AsyncOpenAIChatCallable(*args, **kwargs)
 
     try:
