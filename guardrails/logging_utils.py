@@ -1,11 +1,6 @@
-import logging
-import logging.config
+from guardrails.logger import set_config, set_level
 
 
 def configure_logging(logging_config=None, log_level=None):
-    if logging_config is not None:
-        logging.config.dictConfig(logging_config)
-
-    if log_level is not None:
-        logger = logging.getLogger(__name__)
-        logger.setLevel(log_level)
+    set_config(logging_config)
+    set_level(log_level)
