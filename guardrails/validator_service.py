@@ -247,7 +247,7 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
         self, value, metadata, validator_setup, validation_logs
     ):
         async def process_child(child_setup):
-            child_value = value[child_setup.key]
+            child_value = safe_get(value, child_setup.key)
             child_validation_logs = FieldValidationLogs()
             validation_logs.children[child_setup.key] = child_validation_logs
             new_child_value, new_metadata = await self.async_validate(
