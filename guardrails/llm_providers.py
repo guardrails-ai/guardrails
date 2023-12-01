@@ -263,28 +263,20 @@ class ArbitraryCallable(PromptCallableBase):
         llm_response = self.llm_api(*args, **kwargs)
 
         # Check if kwargs stream is passed in
-        if kwargs.get("stream", None) in [None, False]:
-            # If stream is not defined or is set to False,
-            # return default behavior
-            # Strongly type the response as a string
-            llm_response = cast(str, llm_response)
-            return LLMResponse(
-                output=llm_response,
-            )
-        else:
+        if kwargs.get("stream", False):
             # If stream is defined and set to True,
             # the callable returns a generator object
-            complete_output = ""
-
-            # Strongly type the response as an iterable of strings
             llm_response = cast(Iterable[str], llm_response)
-            for response in llm_response:
-                complete_output += response
-
-            # Return the LLMResponse
             return LLMResponse(
-                output=complete_output,
+                output="",
+                stream_output=llm_response,
             )
+
+        # Else, the callable returns a string
+        llm_response = cast(str, llm_response)
+        return LLMResponse(
+            output=llm_response,
+        )
 
 
 def get_llm_ask(llm_api: Callable, *args, **kwargs) -> PromptCallableBase:
