@@ -16,9 +16,11 @@ from guardrails.utils.pydantic_utils import convert_pydantic_model_to_openai_fn
 class PromptCallableException(Exception):
     pass
 
+
 ###
 # Synchronous wrappers
 ###
+
 
 class PromptCallableBase:
     """A wrapper around a callable that takes in a prompt.
@@ -175,43 +177,6 @@ class OpenAIChatCallable(PromptCallableBase):
             **kwargs,
         )
 
-<<<<<<< HEAD
-        # Check if kwargs stream is passed in
-        if kwargs.get("stream", None) in [None, False]:
-            # If stream is not defined, or set to False,
-            # return default behavior
-
-            openai_response = cast(Dict[str, Any], openai_response)
-            # Extract string from response
-            if (
-                "function_call" in openai_response["choices"][0]["message"]
-            ):  # type: ignore
-                output = openai_response["choices"][0]["message"][  # type: ignore
-                    "function_call"
-                ]["arguments"]
-            else:
-                output = openai_response["choices"][0]["message"][
-                    "content"
-                ]  # type: ignore
-
-            return LLMResponse(
-                output=output,
-                prompt_token_count=openai_response["usage"][  # type: ignore
-                    "prompt_tokens"
-                ],
-                response_token_count=openai_response["usage"][  # type: ignore
-                    "completion_tokens"
-                ],
-            )
-        else:
-            # If stream is defined, openai returns a generator
-            openai_response = cast(Iterable[Dict[str, Any]], openai_response)
-
-            # Simply return the generator wrapped in an LLMResponse
-            return LLMResponse(output=openai_response)
-
-=======
->>>>>>> main
 
 class ManifestCallable(PromptCallableBase):
     def _invoke_llm(
