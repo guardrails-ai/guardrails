@@ -864,10 +864,11 @@ class StreamRunner(Runner):
             # Loop over the stream
             # and construct "fragments" of concatenated chunks
             for chunk in stream:
-                # 1. Get the text from the chunk
+                # 1. Get the text from the chunk and append to fragment
                 chunk_text = self.get_chunk_text(chunk, api)
                 fragment += chunk_text
 
+                # 2. Parse the fragment
                 parsed_fragment, move_to_next = self.parse(
                     index, fragment, output_schema, verified
                 )
@@ -897,7 +898,7 @@ class StreamRunner(Runner):
                         "remove reasks from schema or disable streaming."
                     )
 
-                # Convert validated fragment to a pretty JSON string
+                # 5. Convert validated fragment to a pretty JSON string
                 try:
                     pretty_validated_fragment = json.dumps(validated_fragment, indent=4)
                 except Exception as e:
@@ -905,14 +906,15 @@ class StreamRunner(Runner):
                         f"Error formatting validated fragment JSON: {e}"
                     ) from e
 
+                # 6. Yield raw and validated fragments
                 raw_yield = f"Raw LLM response:\n{fragment}\n"
                 validated_yield = (
                     f"\nValidated response:\n{pretty_validated_fragment}\n"
                 )
-                # 5. Yield raw and validated fragments
+
                 yield raw_yield + validated_yield
 
-            # Add to logs
+            # Finally, add to logs
             guard_logs.raw_output = fragment
             guard_logs.parsed_output = parsed_fragment
             guard_logs.set_validated_output(validated_fragment, self.full_schema_reask)
