@@ -256,7 +256,7 @@ class Guard:
         full_schema_reask: Optional[bool] = None,
         *args,
         **kwargs,
-    ) -> Union[Tuple[Optional[str], Any], Awaitable[Tuple[Optional[str], Any]]]:
+    ) -> Union[str, Tuple[Optional[str], Any], Awaitable[Tuple[Optional[str], Any]]]:
         """Call the LLM and validate the output. Pass an async LLM API to
         return a coroutine.
 

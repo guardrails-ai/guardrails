@@ -144,7 +144,7 @@ class Schema:
         """
         raise NotImplementedError
 
-    def parse(self, output: str) -> Tuple[Any, Optional[Exception]]:
+    def parse(self, output: str, **kwargs) -> Tuple[Any, Optional[Exception]]:
         """Parse the output from the large language model.
 
         Args:

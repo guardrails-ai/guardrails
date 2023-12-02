@@ -751,7 +751,7 @@ class StreamRunner(Runner):
     similar.
     """
 
-    def __call__(self, prompt_params: Optional[Dict] = None) -> str:
+    def __call__(self, prompt_params: Optional[Dict] = None):
         """Execute the StreamRunner.
 
         Args:
@@ -860,6 +860,7 @@ class StreamRunner(Runner):
             stream = llm_response.stream_output
 
             fragment = ""
+            parsed_fragment, validated_fragment = None, None
             verified = set()
             # Loop over the stream
             # and construct "fragments" of concatenated chunks
@@ -923,7 +924,7 @@ class StreamRunner(Runner):
             )
             self.guard_history.push(guard_logs)
 
-    def get_chunk_text(self, chunk: Any, api: PromptCallableBase) -> str:
+    def get_chunk_text(self, chunk: Any, api: Union[PromptCallableBase, None]) -> str:
         """Get the text from a chunk."""
         if isinstance(api, OpenAICallable):
             finished = chunk["choices"][0]["finish_reason"]
