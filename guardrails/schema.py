@@ -353,11 +353,12 @@ class JsonSchema(Schema):
 
     def parse(
         self, output: str, **kwargs
-    ) -> Tuple[Union[Optional[Dict], NonParseableReAsk], Optional[Exception]]:
+    ) -> Tuple[Union[Optional[Dict], NonParseableReAsk, str], Optional[Exception]]:
         if kwargs.get("stream", False):
             # Do expected behavior for StreamRunner
             # 1. Check if the fragment is valid JSON
-            is_valid_fragment = self.is_valid_fragment(output, kwargs.get("verified"))
+            verified = kwargs.get("verified", set())
+            is_valid_fragment = self.is_valid_fragment(output, verified)
             if not is_valid_fragment:
                 return output, True
 

@@ -6,6 +6,7 @@ from typing import (
     Awaitable,
     Callable,
     Dict,
+    Iterable,
     List,
     Optional,
     Sequence,
@@ -334,7 +335,7 @@ class Guard:
         full_schema_reask: bool,
         *args,
         **kwargs,
-    ) -> Union[str, Tuple[Optional[str], Any]]:
+    ) -> Union[Iterable, Tuple[Optional[str], Any]]:
         instructions_obj = instructions or self.instructions
         prompt_obj = prompt or self.prompt
         msg_history_obj = msg_history or []

@@ -858,6 +858,11 @@ class StreamRunner(Runner):
 
             # Get the stream (generator) from the LLMResponse
             stream = llm_response.stream_output
+            if stream is None:
+                raise ValueError(
+                    "No stream was returned from the API. Please check that "
+                    "the API is returning a generator."
+                )
 
             fragment = ""
             parsed_fragment, validated_fragment = None, None
