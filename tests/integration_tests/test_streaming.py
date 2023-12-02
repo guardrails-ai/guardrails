@@ -3,6 +3,7 @@
 # 2. Test streaming with OpenAIChatCallable (mock openai.ChatCompletion.create)
 # Using the LowerCase Validator
 
+import json
 import os
 
 import openai
@@ -15,16 +16,6 @@ from guardrails.validators import LowerCase
 
 # Set mock OpenAI API key
 os.environ["OPENAI_API_KEY"] = "sk-xxxxxxxxxxxxxx"
-
-
-@pytest.fixture(scope="module")
-def non_chat_token_count_mock() -> int:
-    return 10
-
-
-@pytest.fixture(scope="module")
-def chat_token_count_mock() -> int:
-    return 10
 
 
 @pytest.fixture(scope="module")
@@ -41,7 +32,7 @@ def mock_openai_completion_create():
     def gen():
         for chunk in chunks:
             yield {
-                "choices": [{"text": chunk}],
+                "choices": [{"text": chunk, "finish_reason": None}],
                 "model": "OpenAI model name",
             }
 
@@ -66,6 +57,7 @@ def mock_openai_chat_completion_create():
                     {
                         "index": 0,
                         "delta": {"content": chunk},
+                        "finish_reason": None,
                     }
                 ]
             }
@@ -87,9 +79,7 @@ ${gr.complete_json_suffix}
 """
 
 
-def test_streaming_with_openai_callable(
-    mocker, mock_openai_completion_create, non_chat_token_count_mock
-):
+def test_streaming_with_openai_callable(mocker, mock_openai_completion_create):
     """Test streaming with OpenAICallable.
 
     Mocks openai.Completion.create.
@@ -99,18 +89,10 @@ def test_streaming_with_openai_callable(
         mocker.patch(
             "openai.Completion.create", return_value=mock_openai_completion_create
         )
-        mocker.patch(
-            "guardrails.utils.openai_utils.v0.num_tokens_from_string",
-            return_value=non_chat_token_count_mock,
-        )
     else:
         mocker.patch(
             "openai.resources.Completions.create",
             return_value=mock_openai_completion_create,
-        )
-        mocker.patch(
-            "guardrails.utils.openai_utils.v1.num_tokens_from_string",
-            return_value=non_chat_token_count_mock,
         )
 
     # Create a guard object
@@ -121,7 +103,7 @@ def test_streaming_with_openai_callable(
         if OPENAI_VERSION.startswith("0")
         else openai.completions.create
     )
-    raw_output, validated_output = guard(
+    generator = guard(
         method,
         engine="text-davinci-003",
         max_tokens=10,
@@ -129,18 +111,25 @@ def test_streaming_with_openai_callable(
         stream=True,
     )
 
-    assert raw_output == '{"statement": "I am DOING well, and I HOPE you aRe too."}'
+    actual_output = ""
+    for op in generator:
+        actual_output = op
+
+    expected_raw_output = '{"statement": "I am DOING well, and I HOPE you aRe too."}'
+    expected_validated_output = json.dumps(
+        {"statement": "i am doing well, and i hope you are too."}, indent=4
+    )
+
     assert (
-        str(validated_output)
-        == "{'statement': 'i am doing well, and i hope you are too.'}"
+        actual_output
+        == f"Raw LLM response:\n{expected_raw_output}\n"
+        + f"\nValidated response:\n{expected_validated_output}\n"
     )
 
 
 def test_streaming_with_openai_chat_callable(
     mocker,
     mock_openai_chat_completion_create,
-    chat_token_count_mock,
-    non_chat_token_count_mock,
 ):
     """Test streaming with OpenAIChatCallable.
 
@@ -152,26 +141,10 @@ def test_streaming_with_openai_chat_callable(
             "openai.ChatCompletion.create",
             return_value=mock_openai_chat_completion_create,
         )
-        mocker.patch(
-            "guardrails.utils.openai_utils.v0.num_tokens_from_messages",
-            return_value=chat_token_count_mock,
-        )
-        mocker.patch(
-            "guardrails.utils.openai_utils.v0.num_tokens_from_string",
-            return_value=non_chat_token_count_mock,
-        )
     else:
         mocker.patch(
             "openai.resources.chat.completions.Completions.create",
             return_value=mock_openai_chat_completion_create,
-        )
-        mocker.patch(
-            "guardrails.utils.openai_utils.v1.num_tokens_from_messages",
-            return_value=chat_token_count_mock,
-        )
-        mocker.patch(
-            "guardrails.utils.openai_utils.v1.num_tokens_from_string",
-            return_value=non_chat_token_count_mock,
         )
 
     # Create a guard object
@@ -182,7 +155,7 @@ def test_streaming_with_openai_chat_callable(
         if OPENAI_VERSION.startswith("0")
         else openai.chat.completions.create
     )
-    raw_output, validated_output = guard(
+    generator = guard(
         method,
         model="gpt-3.5-turbo",
         max_tokens=10,
@@ -190,8 +163,17 @@ def test_streaming_with_openai_chat_callable(
         stream=True,
     )
 
-    assert raw_output == '{"statement": "I am DOING well, and I HOPE you aRe too."}'
+    actual_output = ""
+    for op in generator:
+        actual_output = op
+
+    expected_raw_output = '{"statement": "I am DOING well, and I HOPE you aRe too."}'
+    expected_validated_output = json.dumps(
+        {"statement": "i am doing well, and i hope you are too."}, indent=4
+    )
+
     assert (
-        str(validated_output)
-        == "{'statement': 'i am doing well, and i hope you are too.'}"
+        actual_output
+        == f"Raw LLM response:\n{expected_raw_output}\n"
+        + f"\nValidated response:\n{expected_validated_output}\n"
     )
