@@ -809,14 +809,14 @@ class StreamRunner(Runner):
     def step(
         self,
         index: int,
-        api: PromptCallableBase | None,
-        instructions: Instructions | None,
-        prompt: Prompt | None,
-        msg_history: List[Dict] | None,
+        api: Union[PromptCallableBase, None],
+        instructions: Union[Instructions, None],
+        prompt: Union[Prompt, None],
+        msg_history: Union[List[Dict], None],
         prompt_params: Dict,
-        input_schema: Schema | None,
+        input_schema: Union[Schema, None],
         output_schema: Schema,
-        output: str | None = None,
+        output: Union[str, None] = None,
     ):
         """Run a full step."""
         guard_logs = GuardLogs()
