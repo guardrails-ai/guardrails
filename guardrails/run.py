@@ -917,7 +917,10 @@ class StreamRunner(Runner):
             # Finally, add to logs
             guard_logs.raw_output = fragment
             guard_logs.parsed_output = parsed_fragment
-            guard_logs.set_validated_output(validated_fragment, self.full_schema_reask)
+            guard_logs.set_validated_output(
+                validated_fragment,
+                self.full_schema_reask,
+            )
             self.guard_history.push(guard_logs)
 
     def get_chunk_text(self, chunk: Any, api: PromptCallableBase) -> str:
