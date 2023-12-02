@@ -37,6 +37,7 @@ class Placeholder:
         json_value,
         prune_extra_keys: bool,
         coerce_types: bool,
+        validate_subschema: bool,
     ):
         if self.optional and json_value is None:
             return True
@@ -86,6 +87,7 @@ class ValuePlaceholder(Placeholder):
             json_value,
             prune_extra_keys=prune_extra_keys,
             coerce_types=coerce_types,
+            validate_subschema=validate_subschema,
         )
         if super_result is not None:
             return super_result
@@ -123,6 +125,7 @@ class DictPlaceholder(Placeholder):
             json_value,
             prune_extra_keys=prune_extra_keys,
             coerce_types=coerce_types,
+            validate_subschema=validate_subschema,
         )
         if super_result is not None:
             return super_result
@@ -201,6 +204,7 @@ class ListPlaceholder(Placeholder):
             json_value,
             prune_extra_keys=prune_extra_keys,
             coerce_types=coerce_types,
+            validate_subschema=validate_subschema,
         )
         if super_result is not None:
             return super_result
@@ -251,6 +255,7 @@ class ChoicePlaceholder(Placeholder):
             json_value,
             prune_extra_keys=prune_extra_keys,
             coerce_types=coerce_types,
+            validate_subschema=validate_subschema,
         )
         if super_result is not None:
             return super_result
