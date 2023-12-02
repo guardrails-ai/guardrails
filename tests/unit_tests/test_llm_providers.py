@@ -1,6 +1,6 @@
 import importlib.util
 import os
-from typing import Any, Callable
+from typing import Any, Callable, Iterable
 from unittest.mock import MagicMock
 
 import pytest
@@ -258,6 +258,14 @@ def test_openai_stream_callable(mocker, openai_stream_mock):
     response = openai_callable(text="1,2,3,", stream=True)
 
     assert isinstance(response, LLMResponse) is True
+    assert isinstance(response.stream_output, Iterable) is True
+
+    actual_op = None
+    i = 4
+    for fragment in response.stream_output:
+        actual_op = fragment["choices"][0]["text"]
+        assert actual_op == f"{i},"
+        i += 1
 
 
 @pytest.mark.asyncio
@@ -312,6 +320,14 @@ def test_openai_chat_stream_callable(mocker, openai_chat_stream_mock):
     response = openai_chat_callable(text="1,2,3,", stream=True)
 
     assert isinstance(response, LLMResponse) is True
+    assert isinstance(response.stream_output, Iterable) is True
+
+    actual_op = None
+    i = 4
+    for fragment in response.stream_output:
+        actual_op = fragment["choices"][0]["delta"]["content"]
+        assert actual_op == f"{i},"
+        i += 1
 
 
 @pytest.mark.asyncio

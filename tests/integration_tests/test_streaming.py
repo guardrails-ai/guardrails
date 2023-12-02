@@ -5,6 +5,7 @@
 
 import json
 import os
+from typing import Iterable
 
 import openai
 import pytest
@@ -152,6 +153,8 @@ def test_streaming_with_openai_callable(
         stream=True,
     )
 
+    assert isinstance(generator, Iterable)
+
     actual_output = ""
     for op in generator:
         actual_output = op
@@ -208,6 +211,8 @@ def test_streaming_with_openai_chat_callable(
         temperature=0,
         stream=True,
     )
+
+    assert isinstance(generator, Iterable)
 
     actual_output = ""
     for op in generator:
