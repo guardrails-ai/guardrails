@@ -353,7 +353,10 @@ class JsonSchema(Schema):
 
     def parse(
         self, output: str, **kwargs
-    ) -> Tuple[Union[Optional[Dict], NonParseableReAsk, str], Optional[Exception]]:
+    ) -> Tuple[
+        Union[Optional[Dict], NonParseableReAsk, str],
+        Union[Optional[Exception], str, bool, None],
+    ]:
         if kwargs.get("stream", False):
             # Do expected behavior for StreamRunner
             # 1. Check if the fragment is valid JSON

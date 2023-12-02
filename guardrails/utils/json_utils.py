@@ -80,6 +80,7 @@ class ValuePlaceholder(Placeholder):
         json_value,
         prune_extra_keys: bool,
         coerce_types: bool,
+        validate_subschema: bool = False,
     ) -> Union[Type[VerificationFailed], Any]:
         super_result = super().verify(
             json_value,
