@@ -11,13 +11,7 @@ from guardrails.llm_providers import AsyncPromptCallableBase, PromptCallableBase
 from guardrails.prompt import Instructions, Prompt
 from guardrails.schema import Schema, StringSchema
 from guardrails.utils.llm_response import LLMResponse
-from guardrails.utils.reask_utils import (
-    FieldReAsk,
-    NonParseableReAsk,
-    ReAsk,
-    reasks_to_dict,
-    sub_reasks_with_fixed_values,
-)
+from guardrails.utils.reask_utils import NonParseableReAsk, ReAsk, reasks_to_dict
 from guardrails.validator_base import ValidatorError
 
 logger = logging.getLogger(__name__)
@@ -361,7 +355,8 @@ class Runner:
                     iteration.outputs.validation_output = validated_msg_history
                     if isinstance(validated_msg_history, ReAsk):
                         raise ValidatorError(
-                            f"Message history validation failed: {validated_msg_history}"
+                            f"Message history validation failed: "
+                            f"{validated_msg_history}"
                         )
                     if validated_msg_history != msg_str:
                         raise ValidatorError("Message history validation failed")
@@ -698,6 +693,8 @@ class AsyncRunner(Runner):
                         output_schema,
                         prompt_params=prompt_params,
                     )
+        except (ValidatorError, ValueError) as e:
+            raise e
         except Exception as e:
             error_message = str(e)
 
@@ -934,7 +931,8 @@ class AsyncRunner(Runner):
                     )
                     if isinstance(validated_msg_history, ReAsk):
                         raise ValidatorError(
-                            f"Message history validation failed: {validated_msg_history}"
+                            f"Message history validation failed: "
+                            f"{validated_msg_history}"
                         )
                     if validated_msg_history != msg_str:
                         raise ValidatorError("Message history validation failed")
@@ -963,6 +961,7 @@ class AsyncRunner(Runner):
                     validated_prompt = await prompt_schema.async_validate(
                         iteration, prompt.source, self.metadata
                     )
+                    iteration.outputs.validation_output = validated_prompt
                     if validated_prompt is None:
                         raise ValidatorError("Prompt validation failed")
                     if isinstance(validated_prompt, ReAsk):
@@ -981,6 +980,7 @@ class AsyncRunner(Runner):
                     validated_instructions = await instructions_schema.async_validate(
                         iteration, instructions.source, self.metadata
                     )
+                    iteration.outputs.validation_output = validated_instructions
                     if validated_instructions is None:
                         raise ValidatorError("Instructions validation failed")
                     if isinstance(validated_instructions, ReAsk):
