@@ -50,12 +50,13 @@ def test_set_config(mocker):
 
 def test_set_scope():
     from guardrails.logger import (
-        logger,
         logger_config,
         get_scope_handler,
         set_scope,
         base_scope
     )
+
+    set_scope(base_scope)
 
     scope_handler = get_scope_handler()
     assert logger_config.scope == base_scope
