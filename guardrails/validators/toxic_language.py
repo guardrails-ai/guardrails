@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, List, cast
+from typing import Any, Callable, Dict, List, Union, cast
 
 from guardrails.validator_base import (
     FailResult,
@@ -12,6 +12,17 @@ try:
     from transformers import pipeline
 except ImportError:
     pipeline = None
+
+try:
+    import nltk  # type: ignore
+except ImportError:
+    nltk = None  # type: ignore
+
+if nltk is not None:
+    try:
+        nltk.data.find("tokenizers/punkt")
+    except LookupError:
+        nltk.download("punkt")
 
 
 @register_validator(name="toxic-language", data_type="string")
