@@ -1,4 +1,4 @@
-from typing import Any, Awaitable, Callable, Dict, List, Optional, cast
+from typing import Any, Awaitable, Callable, Dict, Iterable, List, Optional, cast
 
 from pydantic import BaseModel
 
@@ -103,6 +103,10 @@ class OpenAICallable(PromptCallableBase):
             api_key = kwargs.pop("api_key")
         else:
             api_key = None
+
+        if "model" in kwargs:
+            engine = kwargs.pop("model")
+
         client = OpenAIClient(api_key=api_key)
         return client.create_completion(
             engine=engine,
@@ -128,7 +132,7 @@ class OpenAIChatCallable(PromptCallableBase):
 
         Use Guardrails with OpenAI chat engines by doing
         ```
-        raw_llm_response, validated_response = guard(
+        raw_llm_response, validated_response, *rest = guard(
             openai.ChatCompletion.create,
             prompt_params={...},
             text=...,
@@ -162,6 +166,7 @@ class OpenAIChatCallable(PromptCallableBase):
             api_key = kwargs.pop("api_key")
         else:
             api_key = None
+
         client = OpenAIClient(api_key=api_key)
         return client.create_chat_completion(
             model=model,
@@ -188,7 +193,7 @@ class ManifestCallable(PromptCallableBase):
         To use manifest for guardrailse, do
         ```
         client = Manifest(client_name=..., client_connection=...)
-        raw_llm_response, validated_response = guard(
+        raw_llm_response, validated_response, *rest = guard(
             client,
             prompt_params={...},
             ...
@@ -217,7 +222,7 @@ class CohereCallable(PromptCallableBase):
         """To use cohere for guardrails, do ``` client =
         cohere.Client(api_key=...)
 
-        raw_llm_response, validated_response = guard(
+        raw_llm_response, validated_response, *rest = guard(
             client.generate,
             prompt_params={...},
             model="command-nightly",
@@ -292,16 +297,41 @@ class ArbitraryCallable(PromptCallableBase):
 
         To use an arbitrary callable for guardrails, do
         ```
-        raw_llm_response, validated_response = guard(
+        raw_llm_response, validated_response, *rest = guard(
             my_callable,
             prompt_params={...},
             ...
         )
         ```
         """
-        return LLMResponse(
-            output=self.llm_api(*args, **kwargs),
-        )
+        # Get the response from the callable
+        # The LLM response should either be a
+        # string or an generator object of strings
+        llm_response = self.llm_api(*args, **kwargs)
+
+        # Check if kwargs stream is passed in
+        if kwargs.get("stream", None) in [None, False]:
+            # If stream is not defined or is set to False,
+            # return default behavior
+            # Strongly type the response as a string
+            llm_response = cast(str, llm_response)
+            return LLMResponse(
+                output=llm_response,
+            )
+        else:
+            # If stream is defined and set to True,
+            # the callable returns a generator object
+            complete_output = ""
+
+            # Strongly type the response as an iterable of strings
+            llm_response = cast(Iterable[str], llm_response)
+            for response in llm_response:
+                complete_output += response
+
+            # Return the LLMResponse
+            return LLMResponse(
+                output=complete_output,
+            )
 
 
 def get_llm_ask(llm_api: Callable, *args, **kwargs) -> PromptCallableBase:
@@ -396,6 +426,10 @@ class AsyncOpenAICallable(AsyncPromptCallableBase):
             api_key = kwargs.pop("api_key")
         else:
             api_key = None
+
+        if "model" in kwargs:
+            engine = kwargs.pop("model")
+
         aclient = AsyncOpenAIClient(api_key=api_key)
         return await aclient.create_completion(
             engine=engine,
@@ -421,7 +455,7 @@ class AsyncOpenAIChatCallable(AsyncPromptCallableBase):
 
         Use Guardrails with OpenAI chat engines by doing
         ```
-        raw_llm_response, validated_response = guard(
+        raw_llm_response, validated_response, *rest = guard(
             openai.ChatCompletion.create,
             prompt_params={...},
             text=...,
@@ -455,6 +489,7 @@ class AsyncOpenAIChatCallable(AsyncPromptCallableBase):
             api_key = kwargs.pop("api_key")
         else:
             api_key = None
+
         aclient = AsyncOpenAIClient(api_key=api_key)
         return await aclient.create_chat_completion(
             model=model,
@@ -481,7 +516,7 @@ class AsyncManifestCallable(AsyncPromptCallableBase):
         To use manifest for guardrails, do
         ```
         client = Manifest(client_name=..., client_connection=...)
-        raw_llm_response, validated_response = guard(
+        raw_llm_response, validated_response, *rest = guard(
             client,
             prompt_params={...},
             ...
@@ -515,7 +550,7 @@ class AsyncArbitraryCallable(AsyncPromptCallableBase):
 
         To use an arbitrary callable for guardrails, do
         ```
-        raw_llm_response, validated_response = guard(
+        raw_llm_response, validated_response, *rest = guard(
             my_callable,
             prompt_params={...},
             ...
@@ -531,7 +566,6 @@ class AsyncArbitraryCallable(AsyncPromptCallableBase):
 def get_async_llm_ask(
     llm_api: Callable[[Any], Awaitable[Any]], *args, **kwargs
 ) -> AsyncPromptCallableBase:
-
     # these only work with openai v0 (None otherwise)
     if llm_api == get_static_openai_acreate_func():
         return AsyncOpenAICallable(*args, **kwargs)

@@ -80,9 +80,9 @@ Dummy prompt.
 </rail>
 """
     guard = Guard.from_rail_string(rail_spec)
+    response = guard.parse(
+        llm_output='{"name": "John Doe", "dob": "' + date_string + '"}',
+        num_reasks=0,
+    )
+    assert response.error is not None
     # this should always raise either a ValueError or an OverflowError
-    with pytest.raises((ValueError, OverflowError)):
-        guard.parse(
-            llm_output='{"name": "John Doe", "dob": "' + date_string + '"}',
-            num_reasks=0,
-        )
