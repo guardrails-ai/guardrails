@@ -1,6 +1,6 @@
-
 from typing import Any, Callable, Dict, Optional
 
+from guardrails.logger import logger
 from guardrails.utils.openai_utils import OpenAIClient
 from guardrails.validator_base import (
     FailResult,
@@ -10,7 +10,6 @@ from guardrails.validator_base import (
     register_validator,
 )
 
-from guardrails.logger import logger
 
 try:
     import numpy as np

@@ -1,9 +1,9 @@
-
 import string
 from typing import Callable, Dict, List, Optional, Union
 
 import rstr
 
+from guardrails.logger import logger
 from guardrails.utils.casting_utils import to_int
 from guardrails.validator_base import (
     FailResult,
@@ -12,8 +12,6 @@ from guardrails.validator_base import (
     Validator,
     register_validator,
 )
-
-from guardrails.logger import logger
 
 
 @register_validator(name="length", data_type=["string", "list"])
