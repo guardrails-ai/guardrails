@@ -29,9 +29,9 @@ class Rail:
         4. `<instructions>`, which contains the instructions to be passed to the LLM
     """
 
-    prompt_schema: Optional[Schema]
-    instructions_schema: Optional[Schema]
-    msg_history_schema: Optional[Schema]
+    prompt_schema: Optional[StringSchema]
+    instructions_schema: Optional[StringSchema]
+    msg_history_schema: Optional[StringSchema]
     output_schema: Schema
     instructions: Optional[Instructions]
     prompt: Optional[Prompt]
@@ -168,10 +168,12 @@ class Rail:
 
     @staticmethod
     def load_input_schema_from_xml(
-        root: Optional[ET._Element]
+        root: Optional[ET._Element],
     ) -> Optional[StringSchema]:
         """Given the RAIL <input> element, create a Schema object."""
-        if root is None:
+        if root is None or all(
+            tag not in root.attrib for tag in ["format", "validators"]
+        ):
             return None
         return StringSchema.from_xml(root)
 

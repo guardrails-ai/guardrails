@@ -28,9 +28,8 @@ from guardrails.llm_providers import get_async_llm_ask, get_llm_ask
 from guardrails.prompt import Instructions, Prompt
 from guardrails.rail import Rail
 from guardrails.run import AsyncRunner, Runner
-from guardrails.schema import StringSchema
+from guardrails.schema import Schema, StringSchema
 from guardrails.utils.reask_utils import sub_reasks_with_fixed_values
-from guardrails.schema import Schema
 from guardrails.validators import Validator
 
 logger = logging.getLogger(__name__)
@@ -68,17 +67,17 @@ class Guard(Generic[OT]):
         self.base_model = base_model
 
     @property
-    def prompt_schema(self) -> Optional[Schema]:
+    def prompt_schema(self) -> Optional[StringSchema]:
         """Return the input schema."""
         return self.rail.prompt_schema
 
     @property
-    def instructions_schema(self) -> Optional[Schema]:
+    def instructions_schema(self) -> Optional[StringSchema]:
         """Return the input schema."""
         return self.rail.instructions_schema
 
     @property
-    def msg_history_schema(self) -> Optional[Schema]:
+    def msg_history_schema(self) -> Optional[StringSchema]:
         """Return the input schema."""
         return self.rail.msg_history_schema
 
@@ -694,9 +693,7 @@ class Guard(Generic[OT]):
             validators: The validators to add to the prompt.
         """
         if self.rail.prompt_schema:
-            warnings.warn(
-                "Overriding existing prompt validators."
-            )
+            warnings.warn("Overriding existing prompt validators.")
         schema = StringSchema.from_string(
             validators=validators,
         )
@@ -713,9 +710,7 @@ class Guard(Generic[OT]):
             validators: The validators to add to the instructions.
         """
         if self.rail.instructions_schema:
-            warnings.warn(
-                "Overriding existing instructions validators."
-            )
+            warnings.warn("Overriding existing instructions validators.")
         schema = StringSchema.from_string(
             validators=validators,
         )
@@ -732,9 +727,7 @@ class Guard(Generic[OT]):
             validators: The validators to add to the msg_history.
         """
         if self.rail.msg_history_schema:
-            warnings.warn(
-                "Overriding existing msg_history validators."
-            )
+            warnings.warn("Overriding existing msg_history validators.")
         schema = StringSchema.from_string(
             validators=validators,
         )

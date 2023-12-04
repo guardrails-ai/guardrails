@@ -19,7 +19,6 @@ from guardrails.utils.reask_utils import (
     sub_reasks_with_fixed_values,
 )
 from guardrails.validator_base import ValidatorError
-from guardrails.utils.reask_utils import NonParseableReAsk, ReAsk, reasks_to_dict
 
 logger = logging.getLogger(__name__)
 actions_logger = logging.getLogger(f"{__name__}.actions")
@@ -143,7 +142,15 @@ class Runner:
                 num_reasks=self.num_reasks,
                 metadata=self.metadata,
             ):
-                instructions, prompt, msg_history, prompt_schema, instructions_schema, msg_history_schema, output_schema = (
+                (
+                    instructions,
+                    prompt,
+                    msg_history,
+                    prompt_schema,
+                    instructions_schema,
+                    msg_history_schema,
+                    output_schema,
+                ) = (
                     self.instructions,
                     self.prompt,
                     self.msg_history,
@@ -186,7 +193,9 @@ class Runner:
                         prompt_params=prompt_params,
                         include_instructions=include_instructions,
                     )
-
+        # TODO decide how to handle errors
+        except (ValidatorError, ValueError) as e:
+            raise e
         except Exception as e:
             error_message = str(e)
         return call_log, error_message
@@ -207,6 +216,19 @@ class Runner:
         output: Optional[str] = None,
     ) -> Iteration:
         """Run a full step."""
+        inputs = Inputs(
+            llm_api=api,
+            llm_output=output,
+            instructions=instructions,
+            prompt=prompt,
+            msg_history=msg_history,
+            prompt_params=prompt_params,
+            num_reasks=self.num_reasks,
+            metadata=self.metadata,
+            full_schema_reask=self.full_schema_reask,
+        )
+        outputs = Outputs()
+        iteration = Iteration(inputs=inputs, outputs=outputs)
         try:
             with start_action(
                 action_type="step",
@@ -239,19 +261,10 @@ class Runner:
                         output_schema,
                     )
 
-                inputs = Inputs(
-                    llm_api=api,
-                    llm_output=output,
-                    instructions=instructions,
-                    prompt=prompt,
-                    msg_history=msg_history,
-                    prompt_params=prompt_params,
-                    num_reasks=self.num_reasks,
-                    metadata=self.metadata,
-                    full_schema_reask=self.full_schema_reask,
-                )
-                outputs = Outputs()
-                iteration = Iteration(inputs=inputs, outputs=outputs)
+                iteration.inputs.instructions = instructions
+                iteration.inputs.prompt = prompt
+                iteration.inputs.msg_history = msg_history
+
                 call_log.iterations.push(iteration)
 
                 # Call: run the API.
@@ -345,6 +358,7 @@ class Runner:
                     validated_msg_history = msg_history_schema.validate(
                         iteration, msg_str, self.metadata
                     )
+                    iteration.outputs.validation_output = validated_msg_history
                     if isinstance(validated_msg_history, ReAsk):
                         raise ValidatorError(
                             f"Message history validation failed: {validated_msg_history}"
@@ -372,7 +386,7 @@ class Runner:
                 )
 
                 # validate prompt
-                if prompt_schema is not None:
+                if prompt_schema is not None and prompt is not None:
                     inputs = Inputs(
                         llm_output=prompt.source,
                     )
@@ -381,6 +395,7 @@ class Runner:
                     validated_prompt = prompt_schema.validate(
                         iteration, prompt.source, self.metadata
                     )
+                    iteration.outputs.validation_output = validated_prompt
                     if validated_prompt is None:
                         raise ValidatorError("Prompt validation failed")
                     if isinstance(validated_prompt, ReAsk):
@@ -390,7 +405,7 @@ class Runner:
                     prompt = Prompt(validated_prompt)
 
                 # validate instructions
-                if instructions_schema is not None:
+                if instructions_schema is not None and instructions is not None:
                     inputs = Inputs(
                         llm_output=instructions.source,
                     )
@@ -399,6 +414,7 @@ class Runner:
                     validated_instructions = instructions_schema.validate(
                         iteration, instructions.source, self.metadata
                     )
+                    iteration.outputs.validation_output = validated_instructions
                     if validated_instructions is None:
                         raise ValidatorError("Instructions validation failed")
                     if isinstance(validated_instructions, ReAsk):
@@ -632,7 +648,15 @@ class AsyncRunner(Runner):
                 num_reasks=self.num_reasks,
                 metadata=self.metadata,
             ):
-                instructions, prompt, msg_history, prompt_schema, instructions_schema, msg_history_schema, output_schema = (
+                (
+                    instructions,
+                    prompt,
+                    msg_history,
+                    prompt_schema,
+                    instructions_schema,
+                    msg_history_schema,
+                    output_schema,
+                ) = (
                     self.instructions,
                     self.prompt,
                     self.msg_history,
@@ -695,6 +719,19 @@ class AsyncRunner(Runner):
         output: Optional[str] = None,
     ) -> Iteration:
         """Run a full step."""
+        inputs = Inputs(
+            llm_api=api,
+            llm_output=output,
+            instructions=instructions,
+            prompt=prompt,
+            msg_history=msg_history,
+            prompt_params=prompt_params,
+            num_reasks=self.num_reasks,
+            metadata=self.metadata,
+            full_schema_reask=self.full_schema_reask,
+        )
+        outputs = Outputs()
+        iteration = Iteration(inputs=inputs, outputs=outputs)
         try:
             with start_action(
                 action_type="step",
@@ -727,19 +764,10 @@ class AsyncRunner(Runner):
                         output_schema,
                     )
 
-                inputs = Inputs(
-                    llm_api=api,
-                    llm_output=output,
-                    instructions=instructions,
-                    prompt=prompt,
-                    msg_history=msg_history,
-                    prompt_params=prompt_params,
-                    num_reasks=self.num_reasks,
-                    metadata=self.metadata,
-                    full_schema_reask=self.full_schema_reask,
-                )
-                outputs = Outputs()
-                iteration = Iteration(inputs=inputs, outputs=outputs)
+                iteration.inputs.instructions = instructions
+                iteration.inputs.prompt = prompt
+                iteration.inputs.msg_history = msg_history
+
                 call_log.iterations.push(iteration)
 
                 # Call: run the API.
@@ -926,7 +954,7 @@ class AsyncRunner(Runner):
                 )
 
                 # validate prompt
-                if prompt_schema is not None:
+                if prompt_schema is not None and prompt is not None:
                     inputs = Inputs(
                         llm_output=prompt.source,
                     )
@@ -944,7 +972,7 @@ class AsyncRunner(Runner):
                     prompt = Prompt(validated_prompt)
 
                 # validate instructions
-                if instructions_schema is not None:
+                if instructions_schema is not None and instructions is not None:
                     inputs = Inputs(
                         llm_output=instructions.source,
                     )

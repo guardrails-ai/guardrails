@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 from guardrails import Guard
 from guardrails.datatypes import DataType
 from guardrails.schema import StringSchema
-from guardrails.utils.openai_utils import OPENAI_VERSION
+from guardrails.utils.openai_utils import OPENAI_VERSION, get_static_openai_create_func
 from guardrails.utils.reask_utils import FieldReAsk
 from guardrails.validator_base import (
     FailResult,
@@ -623,15 +623,230 @@ def test_custom_on_fail_handler(
             assert validated_output == expected_result
 
 
-def test_xml_input_validation():
-    rail_str = """
+class Pet(BaseModel):
+    name: str = Field(description="a unique pet name")
+
+
+def test_input_validation_fix(mocker):
+    if OPENAI_VERSION.startswith("0"):
+        mocker.patch("openai.ChatCompletion.create", new=mock_chat_completion)
+    else:
+        mocker.patch(
+            "openai.resources.chat.completions.Completions.create",
+            new=mock_chat_completion,
+        )
+
+    # fix returns an amended value for prompt/instructions validation,
+    guard = Guard.from_pydantic(output_class=Pet).with_prompt_validation(
+        validators=[TwoWords(on_fail="fix")]
+    )
+    guard(
+        get_static_openai_create_func(),
+        prompt="What kind of pet should I get?",
+    )
+    assert guard.history.first.iterations.first.outputs.validation_output == "What kind"
+    guard = Guard.from_pydantic(output_class=Pet).with_instructions_validation(
+        validators=[TwoWords(on_fail="fix")]
+    )
+    guard(
+        get_static_openai_create_func(),
+        prompt="What kind of pet should I get and what should I name it?",
+        instructions="But really, what kind of pet should I get?",
+    )
+    assert (
+        guard.history.first.iterations.first.outputs.validation_output == "But really,"
+    )
+
+    # but raises for msg_history validation
+    with pytest.raises(ValidatorError):
+        guard = Guard.from_pydantic(output_class=Pet).with_msg_history_validation(
+            validators=[TwoWords(on_fail="fix")]
+        )
+        guard(
+            get_static_openai_create_func(),
+            msg_history=[
+                {
+                    "role": "user",
+                    "content": "What kind of pet should I get?",
+                }
+            ],
+        )
+
+    # rail prompt validation
+    guard = Guard.from_rail_string(
+        f"""
 <rail version="0.1">
-<prompt validators="two-words">
+<prompt
+    validators="two-words"
+    on-fail-two-words="fix"
+>
 This is not two words
 </prompt>
 <output type="string">
 </output>
-</rail>"""
-    guard = Guard.from_rail_string(rail_str)
+</rail>
+"""
+    )
+    guard(
+        get_static_openai_create_func(),
+    )
+    assert guard.history.first.iterations.first.outputs.validation_output == "This is"
+
+    # rail instructions validation
+    guard = Guard.from_rail_string(
+        f"""
+<rail version="0.1">
+<prompt>
+This is not two words
+</prompt>
+<instructions
+    validators="two-words"
+    on-fail-two-words="fix"
+>
+This also is not two words
+</instructions>
+<output type="string">
+</output>
+</rail>
+"""
+    )
+    guard(
+        get_static_openai_create_func(),
+    )
+    assert guard.history.first.iterations.first.outputs.validation_output == "This also"
+
+
+@pytest.mark.parametrize(
+    "on_fail",
+    [
+        "reask",
+        "filter",
+        "refrain",
+        "exception",
+    ],
+)
+def test_input_validation_fail(mocker, on_fail):
+    if OPENAI_VERSION.startswith("0"):
+        mocker.patch("openai.ChatCompletion.create", new=mock_chat_completion)
+    else:
+        mocker.patch(
+            "openai.resources.chat.completions.Completions.create",
+            new=mock_chat_completion,
+        )
+
+    # with_prompt_validation
     with pytest.raises(ValidatorError):
-        guard.parse("")
+        guard = Guard.from_pydantic(output_class=Pet).with_prompt_validation(
+            validators=[TwoWords(on_fail=on_fail)]
+        )
+        guard(
+            get_static_openai_create_func(),
+            prompt="What kind of pet should I get?",
+        )
+    # with_instructions_validation
+    with pytest.raises(ValidatorError):
+        guard = Guard.from_pydantic(output_class=Pet).with_instructions_validation(
+            validators=[TwoWords(on_fail=on_fail)]
+        )
+        guard(
+            get_static_openai_create_func(),
+            prompt="What kind of pet should I get and what should I name it?",
+            instructions="What kind of pet should I get?",
+        )
+    # with_msg_history_validation
+    with pytest.raises(ValidatorError):
+        guard = Guard.from_pydantic(output_class=Pet).with_msg_history_validation(
+            validators=[TwoWords(on_fail=on_fail)]
+        )
+        guard(
+            get_static_openai_create_func(),
+            msg_history=[
+                {
+                    "role": "user",
+                    "content": "What kind of pet should I get?",
+                }
+            ],
+        )
+    # rail prompt validation
+    guard = Guard.from_rail_string(
+        f"""
+<rail version="0.1">
+<prompt 
+    validators="two-words"
+    on-fail-two-words="{on_fail}"
+>
+This is not two words
+</prompt>
+<output type="string">
+</output>
+</rail>
+"""
+    )
+    with pytest.raises(ValidatorError):
+        guard(
+            get_static_openai_create_func(),
+        )
+    # rail instructions validation
+    guard = Guard.from_rail_string(
+        f"""
+<rail version="0.1">
+<prompt>
+This is not two words
+</prompt>
+<instructions
+    validators="two-words"
+    on-fail-two-words="{on_fail}"
+>
+This also is not two words
+</instructions>
+<output type="string">
+</output>
+</rail>
+"""
+    )
+    with pytest.raises(ValidatorError):
+        guard(
+            get_static_openai_create_func(),
+        )
+
+
+def test_input_validation_mismatch_raise():
+    # prompt validation, msg_history argument
+    guard = Guard.from_pydantic(output_class=Pet).with_prompt_validation(
+        validators=[TwoWords(on_fail="fix")]
+    )
+    with pytest.raises(ValueError):
+        guard(
+            get_static_openai_create_func(),
+            msg_history=[
+                {
+                    "role": "user",
+                    "content": "What kind of pet should I get?",
+                }
+            ],
+        )
+
+    # instructions validation, msg_history argument
+    guard = Guard.from_pydantic(output_class=Pet).with_instructions_validation(
+        validators=[TwoWords(on_fail="fix")]
+    )
+    with pytest.raises(ValueError):
+        guard(
+            get_static_openai_create_func(),
+            msg_history=[
+                {
+                    "role": "user",
+                    "content": "What kind of pet should I get?",
+                }
+            ],
+        )
+
+    # msg_history validation, prompt argument
+    guard = Guard.from_pydantic(output_class=Pet).with_msg_history_validation(
+        validators=[TwoWords(on_fail="fix")]
+    )
+    with pytest.raises(ValueError):
+        guard(
+            get_static_openai_create_func(),
+            prompt="What kind of pet should I get?",
+        )
