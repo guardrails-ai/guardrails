@@ -7,7 +7,6 @@ import ast
 import contextvars
 import inspect
 import itertools
-import logging
 import os
 import re
 import string
@@ -18,6 +17,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union, cast
 import rstr
 from tenacity import retry, stop_after_attempt, wait_random_exponential
 
+from guardrails.logger import logger
 from guardrails.utils.casting_utils import to_int
 from guardrails.utils.docs_utils import get_chunks_from_text, sentence_split
 from guardrails.utils.openai_utils import (
@@ -63,9 +63,6 @@ if nltk is not None:
         nltk.data.find("tokenizers/punkt")
     except LookupError:
         nltk.download("punkt")
-
-
-logger = logging.getLogger(__name__)
 
 
 # @register_validator('required', 'all')
