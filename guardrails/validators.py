@@ -419,7 +419,7 @@ class TwoWords(Validator):
 
 @register_validator(name="one-line", data_type="string")
 class OneLine(Validator):
-    """Validates that a value is a single line.
+    """Validates that a value is a single line, based on whether or not the output has a newline character (\\n).
 
     **Key Properties**
 
