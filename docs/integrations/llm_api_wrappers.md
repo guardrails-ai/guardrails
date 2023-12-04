@@ -18,7 +18,7 @@ import guardrails as gd
 guard = gd.Guard.from_rail(...)
 
 # Wrap openai API call
-raw_llm_output, guardrail_output = guard(
+raw_llm_output, guardrail_output, *rest = guard(
     openai.Completion.create,
     prompt_params={"prompt_param_1": "value_1", "prompt_param_2": "value_2", ..},
     engine="text-davinci-003",
@@ -37,7 +37,7 @@ import guardrails as gd
 guard = gd.Guard.from_rail(...)
 
 # Wrap openai API call
-raw_llm_output, guardrail_output = guard(
+raw_llm_output, guardrail_output, *rest = guard(
     openai.ChatCompletion.create,
     prompt_params={"prompt_param_1": "value_1", "prompt_param_2": "value_2", ..},
     system_prompt="You are a helpful assistant...",
@@ -62,7 +62,7 @@ guard = gd.Guard.from_rail(...)
 cohere_client = cohere.Client(api_key="my_api_key")
 
 # Wrap cohere API call
-raw_llm_output, guardrail_output = guard(
+raw_llm_output, guardrail_output, *rest = guard(
     cohere_client.generate,
     prompt_params={"prompt_param_1": "value_1", "prompt_param_2": "value_2", ..},
     model="command-nightly",
@@ -91,7 +91,7 @@ manifest = manifest.Manifest(
 )
 
 # Wrap openai API call
-raw_llm_output, guardrail_output = guard(
+raw_llm_output, guardrail_output, *rest = guard(
     manifest,
     prompt_params={"prompt_param_1": "value_1", "prompt_param_2": "value_2", ..},
     max_tokens=100,
@@ -125,7 +125,7 @@ def my_llm_api(prompt: str, **kwargs) -> str:
 
 
 # Wrap your LLM API call
-raw_llm_output, guardrail_output = guard(
+raw_llm_output, guardrail_output, *rest = guard(
     my_llm_api,
     prompt_params={"prompt_param_1": "value_1", "prompt_param_2": "value_2", ..},
     **kwargs,

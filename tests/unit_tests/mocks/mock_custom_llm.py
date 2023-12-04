@@ -1,7 +1,7 @@
-import openai
+from guardrails.utils.openai_utils import OpenAIServiceUnavailableError
 
 
-class MockCustomLlm:
+class MockOpenAILlm:
     def __init__(self, times_called=0, response="Hello world!"):
         self.times_called = times_called
         self.response = response
@@ -9,7 +9,7 @@ class MockCustomLlm:
     def fail_retryable(self, prompt: str, *args, **kwargs) -> str:
         if self.times_called == 0:
             self.times_called = self.times_called + 1
-            raise openai.error.ServiceUnavailableError("ServiceUnavailableError")
+            raise OpenAIServiceUnavailableError("ServiceUnavailableError")
         return self.response
 
     def fail_non_retryable(self, prompt: str, *args, **kwargs) -> str:
@@ -19,7 +19,7 @@ class MockCustomLlm:
         return self.response
 
 
-class MockAsyncCustomLlm:
+class MockAsyncOpenAILlm:
     def __init__(self, times_called=0, response="Hello world!"):
         self.times_called = times_called
         self.response = response
@@ -27,7 +27,7 @@ class MockAsyncCustomLlm:
     async def fail_retryable(self, prompt: str, *args, **kwargs) -> str:
         if self.times_called == 0:
             self.times_called = self.times_called + 1
-            raise openai.error.ServiceUnavailableError("ServiceUnavailableError")
+            raise OpenAIServiceUnavailableError("ServiceUnavailableError")
         return self.response
 
     async def fail_non_retryable(self, prompt: str, *args, **kwargs) -> str:

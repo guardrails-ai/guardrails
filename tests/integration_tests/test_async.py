@@ -5,13 +5,19 @@ import pytest
 
 import guardrails as gd
 from guardrails.schema import JsonSchema
+from guardrails.utils.openai_utils import OPENAI_VERSION
+from tests.integration_tests.test_assets.fixtures import (  # noqa
+    fixture_llm_output,
+    fixture_rail_spec,
+    fixture_validated_output,
+)
 
 from .mock_llm_outputs import MockAsyncOpenAICallable, entity_extraction
-from .test_guard import *  # noqa: F403, F401
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("multiprocessing_validators", (True, False))
+@pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="Only for OpenAI v0")
 async def test_entity_extraction_with_reask(mocker, multiprocessing_validators: bool):
     """Test that the entity extraction works with re-asking."""
     mocker.patch(
@@ -29,7 +35,7 @@ async def test_entity_extraction_with_reask(mocker, multiprocessing_validators: 
     with patch.object(
         JsonSchema, "preprocess_prompt", wraps=guard.output_schema.preprocess_prompt
     ) as mock_preprocess_prompt:
-        _, final_output = await guard(
+        final_output = await guard(
             llm_api=openai.Completion.acreate,
             prompt_params={"document": content[:6000]},
             num_reasks=1,
@@ -39,31 +45,38 @@ async def test_entity_extraction_with_reask(mocker, multiprocessing_validators: 
         mock_preprocess_prompt.assert_called()
 
     # Assertions are made on the guard state object.
-    assert final_output == entity_extraction.VALIDATED_OUTPUT_REASK_2
+    assert final_output.validated_output == entity_extraction.VALIDATED_OUTPUT_REASK_2
 
-    guard_history = guard.guard_state.most_recent_call.history
+    # FIXME
+    guard_history = guard.history
+    call = guard_history.first
 
-    # Check that the guard state object has the correct number of re-asks.
-    assert len(guard_history) == 2
+    # Check that the guard was only called once and
+    # has the correct number of re-asks.
+    assert guard_history.length == 1
+    assert call.iterations.length == 2
 
     # For orginal prompt and output
-    assert guard_history[0].prompt == gd.Prompt(entity_extraction.COMPILED_PROMPT)
-    assert guard_history[0].llm_response.prompt_token_count == 123
-    assert guard_history[0].llm_response.response_token_count == 1234
-    assert guard_history[0].llm_response.output == entity_extraction.LLM_OUTPUT
-    assert (
-        guard_history[0].validated_output == entity_extraction.VALIDATED_OUTPUT_REASK_1
-    )
+    first = call.iterations.first
+    assert first.inputs.prompt == gd.Prompt(entity_extraction.COMPILED_PROMPT)
+    # Same as above
+    assert call.compiled_prompt == entity_extraction.COMPILED_PROMPT
+    assert first.prompt_tokens_consumed == 123
+    assert first.completion_tokens_consumed == 1234
+    assert first.raw_output == entity_extraction.LLM_OUTPUT
+    assert first.validation_output == entity_extraction.VALIDATED_OUTPUT_REASK_1
 
     # For re-asked prompt and output
-    assert guard_history[1].prompt == gd.Prompt(entity_extraction.COMPILED_PROMPT_REASK)
-    assert guard_history[1].output == entity_extraction.LLM_OUTPUT_REASK
-    assert (
-        guard_history[1].validated_output == entity_extraction.VALIDATED_OUTPUT_REASK_2
-    )
+    final = call.iterations.last
+    assert final.inputs.prompt == gd.Prompt(entity_extraction.COMPILED_PROMPT_REASK)
+    # Same as above
+    assert call.reask_prompts.last == entity_extraction.COMPILED_PROMPT_REASK
+    assert final.raw_output == entity_extraction.LLM_OUTPUT_REASK
+    assert call.validated_output == entity_extraction.VALIDATED_OUTPUT_REASK_2
 
 
 @pytest.mark.asyncio
+@pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="Only for OpenAI v0")
 async def test_entity_extraction_with_noop(mocker):
     mocker.patch(
         "guardrails.llm_providers.AsyncOpenAICallable",
@@ -71,27 +84,30 @@ async def test_entity_extraction_with_noop(mocker):
     )
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
     guard = gd.Guard.from_rail_string(entity_extraction.RAIL_SPEC_WITH_NOOP)
-    _, final_output = await guard(
+    final_output = await guard(
         llm_api=openai.Completion.acreate,
         prompt_params={"document": content[:6000]},
         num_reasks=1,
     )
 
     # Assertions are made on the guard state object.
-    assert final_output == entity_extraction.VALIDATED_OUTPUT_NOOP
+    assert final_output.validated_output == entity_extraction.VALIDATED_OUTPUT_NOOP
 
-    guard_history = guard.guard_state.most_recent_call.history
+    call = guard.history.first
 
-    # Check that the guard state object has the correct number of re-asks.
-    assert len(guard_history) == 1
+    # Check that the guard was called once
+    # and did not have to reask
+    assert guard.history.length == 1
+    assert call.iterations.length == 1
 
     # For orginal prompt and output
-    assert guard_history[0].prompt == gd.Prompt(entity_extraction.COMPILED_PROMPT)
-    assert guard_history[0].output == entity_extraction.LLM_OUTPUT
-    assert guard_history[0].validated_output == entity_extraction.VALIDATED_OUTPUT_NOOP
+    assert call.compiled_prompt == entity_extraction.COMPILED_PROMPT
+    assert call.raw_outputs.last == entity_extraction.LLM_OUTPUT
+    assert call.validated_output == entity_extraction.VALIDATED_OUTPUT_NOOP
 
 
 @pytest.mark.asyncio
+@pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="Only for OpenAI v0")
 async def test_entity_extraction_with_noop_pydantic(mocker):
     mocker.patch(
         "guardrails.llm_providers.AsyncOpenAICallable",
@@ -101,27 +117,30 @@ async def test_entity_extraction_with_noop_pydantic(mocker):
     guard = gd.Guard.from_pydantic(
         entity_extraction.PYDANTIC_RAIL_WITH_NOOP, entity_extraction.PYDANTIC_PROMPT
     )
-    _, final_output = await guard(
+    final_output = await guard(
         llm_api=openai.Completion.acreate,
         prompt_params={"document": content[:6000]},
         num_reasks=1,
     )
 
     # Assertions are made on the guard state object.
-    assert final_output == entity_extraction.VALIDATED_OUTPUT_NOOP
+    assert final_output.validated_output == entity_extraction.VALIDATED_OUTPUT_NOOP
 
-    guard_history = guard.guard_state.most_recent_call.history
+    call = guard.history.first
 
-    # Check that the guard state object has the correct number of re-asks.
-    assert len(guard_history) == 1
+    # Check that the guard was called once
+    # and did not have toreask
+    assert guard.history.length == 1
+    assert call.iterations.length == 1
 
     # For orginal prompt and output
-    assert guard_history[0].prompt == gd.Prompt(entity_extraction.COMPILED_PROMPT)
-    assert guard_history[0].output == entity_extraction.LLM_OUTPUT
-    assert guard_history[0].validated_output == entity_extraction.VALIDATED_OUTPUT_NOOP
+    assert call.compiled_prompt == entity_extraction.COMPILED_PROMPT
+    assert call.raw_outputs.last == entity_extraction.LLM_OUTPUT
+    assert call.validated_output == entity_extraction.VALIDATED_OUTPUT_NOOP
 
 
 @pytest.mark.asyncio
+@pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="Only for OpenAI v0")
 async def test_entity_extraction_with_filter(mocker):
     """Test that the entity extraction works with re-asking."""
     mocker.patch(
@@ -131,29 +150,29 @@ async def test_entity_extraction_with_filter(mocker):
 
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
     guard = gd.Guard.from_rail_string(entity_extraction.RAIL_SPEC_WITH_FILTER)
-    _, final_output = await guard(
+    final_output = await guard(
         llm_api=openai.Completion.acreate,
         prompt_params={"document": content[:6000]},
         num_reasks=1,
     )
 
     # Assertions are made on the guard state object.
-    assert final_output == entity_extraction.VALIDATED_OUTPUT_FILTER
+    assert final_output.validated_output == entity_extraction.VALIDATED_OUTPUT_FILTER
 
-    guard_history = guard.guard_state.most_recent_call.history
+    call = guard.history.first
 
     # Check that the guard state object has the correct number of re-asks.
-    assert len(guard_history) == 1
+    assert guard.history.length == 1
+    assert call.iterations.length == 1
 
     # For orginal prompt and output
-    assert guard_history[0].prompt == gd.Prompt(entity_extraction.COMPILED_PROMPT)
-    assert guard_history[0].output == entity_extraction.LLM_OUTPUT
-    assert (
-        guard_history[0].validated_output == entity_extraction.VALIDATED_OUTPUT_FILTER
-    )
+    assert call.compiled_prompt == entity_extraction.COMPILED_PROMPT
+    assert call.raw_outputs.last == entity_extraction.LLM_OUTPUT
+    assert call.validated_output == entity_extraction.VALIDATED_OUTPUT_FILTER
 
 
 @pytest.mark.asyncio
+@pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="Only for OpenAI v0")
 async def test_entity_extraction_with_fix(mocker):
     """Test that the entity extraction works with re-asking."""
     mocker.patch(
@@ -163,27 +182,28 @@ async def test_entity_extraction_with_fix(mocker):
 
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
     guard = gd.Guard.from_rail_string(entity_extraction.RAIL_SPEC_WITH_FIX)
-    _, final_output = await guard(
+    final_output = await guard(
         llm_api=openai.Completion.acreate,
         prompt_params={"document": content[:6000]},
         num_reasks=1,
     )
 
     # Assertions are made on the guard state object.
-    assert final_output == entity_extraction.VALIDATED_OUTPUT_FIX
+    assert final_output.validated_output == entity_extraction.VALIDATED_OUTPUT_FIX
 
-    guard_history = guard.guard_state.most_recent_call.history
+    call = guard.history.first
 
     # Check that the guard state object has the correct number of re-asks.
-    assert len(guard_history) == 1
+    assert guard.history.length == 1
 
     # For orginal prompt and output
-    assert guard_history[0].prompt == gd.Prompt(entity_extraction.COMPILED_PROMPT)
-    assert guard_history[0].output == entity_extraction.LLM_OUTPUT
-    assert guard_history[0].validated_output == entity_extraction.VALIDATED_OUTPUT_FIX
+    assert call.compiled_prompt == entity_extraction.COMPILED_PROMPT
+    assert call.raw_outputs.last == entity_extraction.LLM_OUTPUT
+    assert call.validated_output == entity_extraction.VALIDATED_OUTPUT_FIX
 
 
 @pytest.mark.asyncio
+@pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="Only for OpenAI v0")
 async def test_entity_extraction_with_refrain(mocker):
     """Test that the entity extraction works with re-asking."""
     mocker.patch(
@@ -193,28 +213,27 @@ async def test_entity_extraction_with_refrain(mocker):
 
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
     guard = gd.Guard.from_rail_string(entity_extraction.RAIL_SPEC_WITH_REFRAIN)
-    _, final_output = await guard(
+    final_output = await guard(
         llm_api=openai.Completion.acreate,
         prompt_params={"document": content[:6000]},
         num_reasks=1,
     )
     # Assertions are made on the guard state object.
-    assert final_output == entity_extraction.VALIDATED_OUTPUT_REFRAIN
+    assert final_output.validated_output == entity_extraction.VALIDATED_OUTPUT_REFRAIN
 
-    guard_history = guard.guard_state.most_recent_call.history
+    call = guard.history.first
 
     # Check that the guard state object has the correct number of re-asks.
-    assert len(guard_history) == 1
+    assert guard.history.length == 1
 
     # For orginal prompt and output
-    assert guard_history[0].prompt == gd.Prompt(entity_extraction.COMPILED_PROMPT)
-    assert guard_history[0].output == entity_extraction.LLM_OUTPUT
-    assert (
-        guard_history[0].validated_output == entity_extraction.VALIDATED_OUTPUT_REFRAIN
-    )
+    assert call.compiled_prompt == entity_extraction.COMPILED_PROMPT
+    assert call.raw_outputs.last == entity_extraction.LLM_OUTPUT
+    assert call.validated_output == entity_extraction.VALIDATED_OUTPUT_REFRAIN
 
 
 @pytest.mark.asyncio
+@pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="Only for OpenAI v0")
 async def test_rail_spec_output_parse(rail_spec, llm_output, validated_output):
     """Test that the rail_spec fixture is working."""
     guard = gd.Guard.from_rail_string(rail_spec)
@@ -222,7 +241,7 @@ async def test_rail_spec_output_parse(rail_spec, llm_output, validated_output):
         llm_output,
         llm_api=openai.Completion.acreate,
     )
-    assert output == validated_output
+    assert output.validated_output == validated_output
 
 
 @pytest.fixture
@@ -231,7 +250,7 @@ def string_rail_spec():
 <rail version="0.1">
 <output
   type="string"
-  format="two-words"
+  validators="two-words"
   on-fail-two-words="fix"
 />
 <prompt>
@@ -252,6 +271,7 @@ def validated_string_output():
 
 
 @pytest.mark.asyncio
+@pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="Only for OpenAI v0")
 async def test_string_rail_spec_output_parse(
     string_rail_spec, string_llm_output, validated_string_output
 ):
@@ -262,4 +282,4 @@ async def test_string_rail_spec_output_parse(
         llm_api=openai.Completion.acreate,
         num_reasks=0,
     )
-    assert output == validated_string_output
+    assert output.validated_output == validated_string_output

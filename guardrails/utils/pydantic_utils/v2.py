@@ -21,8 +21,8 @@ from guardrails.datatypes import Object as ObjectDataType
 from guardrails.datatypes import PythonCode as PythonCodeDataType
 from guardrails.datatypes import String as StringDataType
 from guardrails.datatypes import Time as TimeDataType
-from guardrails.formatattr import FormatAttr
 from guardrails.validator_base import Validator
+from guardrails.validatorsattr import ValidatorsAttr
 
 DataTypeT = TypeVar("DataTypeT", bound=DataType)
 
@@ -462,5 +462,5 @@ def construct_datatype(
     if validators is None:
         validators = []
 
-    format_attr = FormatAttr.from_validators(validators, datatype.tag, strict)
-    return datatype(children, format_attr, optional, name, description, **kwargs)
+    validators_attr = ValidatorsAttr.from_validators(validators, datatype.tag, strict)
+    return datatype(children, validators_attr, optional, name, description, **kwargs)

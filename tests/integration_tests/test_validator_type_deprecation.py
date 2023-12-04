@@ -45,5 +45,5 @@ noop
 """
     )
     with pytest.warns(DeprecationWarning):
-        validated_output = guard.parse(llm_output=json.dumps(llm_output))
-        assert validated_output == llm_output
+        response = guard.parse(llm_output=json.dumps(llm_output))
+        assert response.validated_output == llm_output

@@ -20,6 +20,7 @@ from pydantic import BaseModel
 from typing_extensions import Self
 
 from guardrails import validator_service
+from guardrails.classes.history import Iteration
 from guardrails.datatypes import Choice, DataType, Object, String
 from guardrails.llm_providers import (
     AsyncOpenAICallable,
@@ -34,11 +35,11 @@ from guardrails.utils.json_utils import (
     extract_json_from_ouput,
     verify_schema_against_json,
 )
-from guardrails.utils.logs_utils import FieldValidationLogs, GuardLogs
 from guardrails.utils.pydantic_utils import convert_pydantic_model_to_datatype
 from guardrails.utils.reask_utils import (
     FieldReAsk,
     NonParseableReAsk,
+    ReAsk,
     SkeletonReAsk,
     gather_reasks,
     get_pruned_tree,
@@ -111,7 +112,7 @@ class Schema:
         else:
             self._reask_instructions_template = None
 
-    def validate(self, guard_logs: GuardLogs, data: Any, metadata: Dict) -> Any:
+    def validate(self, iteration: Iteration, data: Any, metadata: Dict) -> Any:
         """Validate a dictionary of data against the schema.
 
         Args:
@@ -123,7 +124,7 @@ class Schema:
         raise NotImplementedError
 
     async def async_validate(
-        self, guard_logs: GuardLogs, data: Any, metadata: Dict
+        self, iteration: Iteration, data: Any, metadata: Dict
     ) -> Any:
         """Asynchronously validate a dictionary of data against the schema.
 
@@ -155,7 +156,9 @@ class Schema:
         """
         raise NotImplementedError
 
-    def introspect(self, data: Any) -> List[FieldReAsk]:
+    def introspect(
+        self, data: Any
+    ) -> Tuple[Sequence[ReAsk], Optional[Union[str, Dict]]]:
         """Inspect the data for reasks.
 
         Args:
@@ -168,7 +171,7 @@ class Schema:
 
     def get_reask_setup(
         self,
-        reasks: List[FieldReAsk],
+        reasks: Sequence[ReAsk],
         original_response: Any,
         use_full_schema: bool,
         prompt_params: Optional[Dict[str, Any]] = None,
@@ -233,7 +236,7 @@ class JsonSchema(Schema):
 
     def get_reask_setup(
         self,
-        reasks: List[FieldReAsk],
+        reasks: List[ReAsk],
         original_response: Any,
         use_full_schema: bool,
         prompt_params: Optional[Dict[str, Any]] = None,
@@ -254,7 +257,10 @@ class JsonSchema(Schema):
                     constants["high_level_json_parsing_reask_prompt"]
                     + constants["json_suffix_without_examples"]
                 )
-            np_reask: NonParseableReAsk = original_response
+            np_reask: NonParseableReAsk = next(
+                r for r in reasks if isinstance(r, NonParseableReAsk)
+            )
+            # This is correct
             reask_value = np_reask.incorrect_value
         elif is_skeleton_reask:
             pruned_tree_schema = self
@@ -266,18 +272,24 @@ class JsonSchema(Schema):
                     + constants["json_suffix_without_examples"]
                 )
 
+            # This is incorrect
+            # This should be the parsed output
             reask_value = original_response
         else:
             if use_full_schema:
+                # This is incorrect
+                # This should be the parsed output
                 reask_value = original_response
                 # Don't prune the tree if we're reasking with pydantic model
                 # (and openai function calling)
                 pruned_tree_schema = self
             else:
+                # This is correct
                 reask_value = prune_obj_for_reasking(original_response)
 
                 # Get the pruned tree so that it only contains ReAsk objects
-                pruned_tree = get_pruned_tree(root, reasks)
+                field_reasks = [r for r in reasks if isinstance(r, FieldReAsk)]
+                pruned_tree = get_pruned_tree(root, field_reasks)
                 pruned_tree_schema = type(self)(pruned_tree)
 
             reask_prompt_template = self.reask_prompt_template
@@ -373,7 +385,7 @@ class JsonSchema(Schema):
 
     def validate(
         self,
-        guard_logs: GuardLogs,
+        iteration: Iteration,
         data: Optional[Dict[str, Any]],
         metadata: Dict,
     ) -> Any:
@@ -415,18 +427,15 @@ class JsonSchema(Schema):
             schema=validated_response,
         )
 
-        validation_logs = FieldValidationLogs()
-        guard_logs.field_validation_logs = validation_logs
-
         validated_response, metadata = validator_service.validate(
             value=validated_response,
             metadata=metadata,
             validator_setup=validation,
-            validation_logs=validation_logs,
+            iteration=iteration,
         )
 
         if check_refrain_in_dict(validated_response):
-            # If the data contains a `Refain` value, we return an empty
+            # If the data contains a `Refrain` value, we return an empty
             # dictionary.
             logger.debug("Refrain detected.")
             validated_response = {}
@@ -438,7 +447,7 @@ class JsonSchema(Schema):
 
     async def async_validate(
         self,
-        guard_logs: GuardLogs,
+        iteration: Iteration,
         data: Optional[Dict[str, Any]],
         metadata: Dict,
     ) -> Any:
@@ -481,14 +490,11 @@ class JsonSchema(Schema):
             schema=validated_response,
         )
 
-        validation_logs = FieldValidationLogs()
-        guard_logs.field_validation_logs = validation_logs
-
         validated_response, metadata = await validator_service.async_validate(
             value=validated_response,
             metadata=metadata,
             validator_setup=validation,
-            validation_logs=validation_logs,
+            iteration=iteration,
         )
 
         if check_refrain_in_dict(validated_response):
@@ -502,11 +508,11 @@ class JsonSchema(Schema):
 
         return validated_response
 
-    def introspect(self, data: Any) -> list:
+    def introspect(self, data: Any) -> Tuple[List[ReAsk], Optional[Dict]]:
         if isinstance(data, SkeletonReAsk):
-            return [data]
+            return [data], None
         elif isinstance(data, NonParseableReAsk):
-            return [data]
+            return [data], None
         return gather_reasks(data)
 
     def preprocess_prompt(
@@ -637,7 +643,7 @@ class StringSchema(Schema):
 
     def validate(
         self,
-        guard_logs: GuardLogs,
+        iteration: Iteration,
         data: Any,
         metadata: Dict,
     ) -> Any:
@@ -655,9 +661,6 @@ class StringSchema(Schema):
         if not isinstance(data, str):
             raise TypeError(f"Argument `data` must be a string, not {type(data)}.")
 
-        validation_logs = FieldValidationLogs()
-        guard_logs.field_validation_logs = validation_logs
-
         # FIXME instead of writing the validation infrastructure for dicts (JSON),
         #  make it more structure-invariant
         dummy_key = "string"
@@ -673,7 +676,7 @@ class StringSchema(Schema):
             value=data,
             metadata=metadata,
             validator_setup=validation,
-            validation_logs=validation_logs,
+            iteration=iteration,
         )
 
         validated_response = {dummy_key: validated_response}
@@ -693,7 +696,7 @@ class StringSchema(Schema):
 
     async def async_validate(
         self,
-        guard_logs: GuardLogs,
+        iteration: Iteration,
         data: Any,
         metadata: Dict,
     ) -> Any:
@@ -711,9 +714,6 @@ class StringSchema(Schema):
         if not isinstance(data, str):
             raise TypeError(f"Argument `data` must be a string, not {type(data)}.")
 
-        validation_logs = FieldValidationLogs()
-        guard_logs.field_validation_logs = validation_logs
-
         dummy_key = "string"
         validation = self.root_datatype.collect_validation(
             key=dummy_key,
@@ -727,7 +727,7 @@ class StringSchema(Schema):
             value=data,
             metadata=metadata,
             validator_setup=validation,
-            validation_logs=validation_logs,
+            iteration=iteration,
         )
 
         validated_response = {dummy_key: validated_response}
@@ -745,10 +745,12 @@ class StringSchema(Schema):
             return validated_response[dummy_key]
         return None
 
-    def introspect(self, data: Any) -> List[FieldReAsk]:
+    def introspect(
+        self, data: Union[ReAsk, Optional[str]]
+    ) -> Tuple[List[FieldReAsk], Optional[str]]:
         if isinstance(data, FieldReAsk):
-            return [data]
-        return []
+            return [data], None
+        return [], data  # type: ignore
 
     def preprocess_prompt(
         self,
@@ -778,11 +780,11 @@ class StringSchema(Schema):
                 "Here's a description of what I want you to generate: "
                 f"{obj.description}"
             )
-        if not obj.format_attr.empty:
+        if not obj.validators_attr.empty:
             schema += (
                 "\n\nYour generated response should satisfy the following properties:"
             )
-            for validator in obj.format_attr.validators:
+            for validator in obj.validators_attr.validators:
                 schema += f"\n- {validator.to_prompt()}"
 
         schema += "\n\nDon't talk; just go."
@@ -816,8 +818,8 @@ class Schema2Prompt:
         if dt.description:
             el.attrib["description"] = dt.description
 
-        if dt.format_attr:
-            format_prompt = dt.format_attr.to_prompt()
+        if dt.validators_attr:
+            format_prompt = dt.validators_attr.to_prompt()
             if format_prompt:
                 el.attrib["format"] = format_prompt
 
