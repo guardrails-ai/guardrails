@@ -8,10 +8,11 @@ from guardrails import Guard, Validator, register_validator
 from guardrails.datatypes import DataType
 from guardrails.schema import StringSchema
 from guardrails.validator_base import PassResult, ValidationResult
-from guardrails.validators import DetectSecrets, SimilarToList, ToxicLanguage
+from guardrails.validators import DetectSecrets, SimilarToList, PIIFilter, ToxicLanguage
 
 from .mock_embeddings import MOCK_EMBEDDINGS
 from .mock_llm_outputs import MockOpenAICallable
+from .mock_presidio import MockAnalyzerEngine, MockAnonymizerEngine, mock_anonymize
 from .mock_secrets import (
     EXPECTED_SECRETS_CODE_SNIPPET,
     NO_SECRETS_CODE_SNIPPET,
@@ -53,7 +54,7 @@ def test_similar_to_list():
     # Check types remain intact
     output_schema: StringSchema = guard.rail.output_schema
     data_type: DataType = output_schema.root_datatype
-    validators = data_type.format_attr.validators
+    validators = data_type.validators_attr.validators
     validator: SimilarToList = validators[0]
 
     assert isinstance(validator._standard_deviations, int)
@@ -61,37 +62,40 @@ def test_similar_to_list():
 
     # 1. Test for integer values
     # 1.1 Test for values within the standard deviation
-    val = 3
-    output = guard.parse(
+    # llm_output must be a string
+    val = "3"
+    _, output, *rest = guard.parse(
         llm_output=val,
         metadata={"prev_values": int_prev_values},
     )
-    assert int(output) == val
+    # Guard.from_string will always return a string
+    # For other return types, we would need some return_type specifiers
+    assert output == str(val)
 
     # 1.2 Test not passing prev_values
     # Should raise ValueError
-    with pytest.raises(ValueError):
-        val = 3
-        output = guard.parse(
-            llm_output=val,
-        )
+    val = "3"
+    output = guard.parse(
+        llm_output=val,
+    )
+    assert output.error is not None
 
     # 1.3 Test passing str prev values for int val
     # Should raise ValueError
-    with pytest.raises(ValueError):
-        val = 3
-        output = guard.parse(
-            llm_output=val,
-            metadata={"prev_values": [str(i) for i in int_prev_values]},
-        )
+    val = "3"
+    output = guard.parse(
+        llm_output=val,
+        metadata={"prev_values": [str(i) for i in int_prev_values]},
+    )
+    assert output.error is not None
 
     # 1.4 Test for values outside the standard deviation
-    val = 300
+    val = "300"
     output = guard.parse(
         llm_output=val,
         metadata={"prev_values": int_prev_values},
     )
-    assert output is None
+    assert output.validated_output is None
 
     # 2. Test for string values
     # 2.1 Test for values within the standard deviation
@@ -100,34 +104,34 @@ def test_similar_to_list():
         llm_output=val,
         metadata={"prev_values": str_prev_values, "embed_function": embed_function},
     )
-    assert output == val
+    assert output.validated_output == val
 
     # 2.2 Test not passing prev_values
     # Should raise ValueError
-    with pytest.raises(ValueError):
-        val = "cisco"
-        output = guard.parse(
-            llm_output=val,
-            metadata={"embed_function": embed_function},
-        )
+    val = "cisco"
+    output = guard.parse(
+        llm_output=val,
+        metadata={"embed_function": embed_function},
+    )
+    assert output.error is not None
 
     # 2.3 Test passing int prev values for str val
     # Should raise ValueError
-    with pytest.raises(ValueError):
-        val = "cisco"
-        output = guard.parse(
-            llm_output=val,
-            metadata={"prev_values": int_prev_values, "embed_function": embed_function},
-        )
+    val = "cisco"
+    output = guard.parse(
+        llm_output=val,
+        metadata={"prev_values": int_prev_values, "embed_function": embed_function},
+    )
+    assert output.error is not None
 
     # 2.4 Test not pasisng embed_function
     # Should raise ValueError
-    with pytest.raises(ValueError):
-        val = "cisco"
-        output = guard.parse(
-            llm_output=val,
-            metadata={"prev_values": str_prev_values},
-        )
+    val = "cisco"
+    output = guard.parse(
+        llm_output=val,
+        metadata={"prev_values": str_prev_values},
+    )
+    assert output.error is not None
 
     # 2.5 Test for values outside the standard deviation
     val = "taj mahal"
@@ -135,7 +139,7 @@ def test_similar_to_list():
         llm_output=val,
         metadata={"prev_values": str_prev_values, "embed_function": embed_function},
     )
-    assert output is None
+    assert output.validated_output is None
 
 
 def test_detect_secrets(mocker):
@@ -160,10 +164,10 @@ def test_detect_secrets(mocker):
         llm_output=SECRETS_CODE_SNIPPET,
     )
     # Check if the output is different from the input
-    assert output != SECRETS_CODE_SNIPPET
+    assert output.validated_output != SECRETS_CODE_SNIPPET
 
     # Check if output matches the expected output
-    assert output == EXPECTED_SECRETS_CODE_SNIPPET
+    assert output.validated_output == EXPECTED_SECRETS_CODE_SNIPPET
 
     # Check if temp.txt does not exist in current directory
     assert not os.path.exists("temp.txt")
@@ -174,7 +178,7 @@ def test_detect_secrets(mocker):
         llm_output=NO_SECRETS_CODE_SNIPPET,
     )
     # Check if the output is same as the input
-    assert output == NO_SECRETS_CODE_SNIPPET
+    assert output.validated_output == NO_SECRETS_CODE_SNIPPET
 
     # Check if temp.txt does not exist in current directory
     assert not os.path.exists("temp.txt")
@@ -188,116 +192,272 @@ def test_detect_secrets(mocker):
         )
 
     # Check if the output is same as the input
-    assert output == "import os"
+    assert output.validated_output == "import os"
 
     # Check if temp.txt does not exist in current directory
     assert not os.path.exists("temp.txt")
 
 
-def test_toxic_language(mocker):
-    """Test the integration of the ToxicLanguage validator.
+def test_pii_filter(mocker):
+    """Integration test for PIIFilter."""
 
-    1. Test default initialisation (should be validation_method="sentence"
-     and threshold=0.5)
-    2. Test with a toxic paragraph (with validation_method="full")
-    3. Test with a paragraph containing toxic sentences
-     (with validation_method="sentence")
-    4. Text with a non-toxic paragraph (with validation_method="full")
-    5. Test with a paragraph containing no toxic sentences
-     (with validation_method="sentence")
-    6. Test with a paragraph also specifying threshold
-    """
+    # Mock the the intialisations of AnalyzerEngine and AnonymizerEngine
+    mocker.patch("guardrails.validators.AnalyzerEngine", new=MockAnalyzerEngine)
+    mocker.patch("guardrails.validators.AnonymizerEngine", new=MockAnonymizerEngine)
 
-    # Set the mockers
-    mocker.patch("guardrails.validators.pipeline", new=MockPipeline)
+    # Mock the analyze and anomymize functions
     mocker.patch(
-        "guardrails.validators.ToxicLanguage.get_toxicity", new=mock_get_toxicity
+        "guardrails.validators.PIIFilter.get_anonymized_text", new=mock_anonymize
     )
 
-    # ----------------------------
-    # 1. Test default initialisation (should be validation_method="sentence"
-    # and threshold=0.25)
+    # ------------------
+    # 1. Initialise Guard from string with setting pii_entities as a string
+    # Also check whether all parameters are correctly initialised
     guard = Guard.from_string(
-        validators=[ToxicLanguage(on_fail="fix")],
+        validators=[PIIFilter(pii_entities="pii", on_fail="fix")],
         description="testmeout",
     )
 
-    # ----------------------------
-    # 2. Test with a toxic paragraph (with validation_method="full")
-    # Should return empty string
-    guard = Guard.from_string(
-        validators=[ToxicLanguage(validation_method="full", on_fail="fix")],
-        description="testmeout",
-    )
-
+    # Do parse call
+    text = "My email address is demo@lol.com, and my phone number is 1234567890"
     output = guard.parse(
-        llm_output=TOXIC_PARAGRAPH,
+        llm_output=text,
     )
-    # Check if the output is empty
-    assert output == ""
+    # Validated output should be different from input
+    assert output.validated_output != text
 
-    # ----------------------------
-    # 3. Test with a paragraph containing toxic sentences
-    # (with validation_method="sentence")
-    # Should return a paragraph with toxic sentences removed
-    guard = Guard.from_string(
-        validators=[ToxicLanguage(validation_method="sentence", on_fail="fix")],
-        description="testmeout",
+    # Validated output should contain masked pii entities
+    assert all(
+        entity in output.validated_output
+        for entity in ["<EMAIL_ADDRESS>", "<PHONE_NUMBER>"]
     )
 
-    output = guard.parse(
-        llm_output=PARAGRAPH_WITH_TOXIC_SENTENCES,
-    )
-
-    # Check if the output matches the expected output
-    assert output == EXPECTED_PARAGRAPH_WITH_TOXIC_SENTENCES
-
-    # ----------------------------
-    # 4. Text with a non-toxic paragraph (with validation_method="full")
-    # Should return the same paragraph
-    guard = Guard.from_string(
-        validators=[ToxicLanguage(validation_method="full", on_fail="fix")],
-        description="testmeout",
-    )
-
-    output = guard.parse(
-        llm_output=NON_TOXIC_PARAGRAPH,
-    )
-    # Check if the output is same as the input
-    assert output == NON_TOXIC_PARAGRAPH
-
-    # ----------------------------
-    # 5. Test with a paragraph containing no toxic sentences
-    # (with validation_method="sentence")
-    # Should return the same paragraph
-
-    guard = Guard.from_string(
-        validators=[ToxicLanguage(validation_method="sentence", on_fail="fix")],
-        description="testmeout",
-    )
-
-    output = guard.parse(
-        llm_output=NON_TOXIC_PARAGRAPH,
-    )
-    # Check if the output is same as the input
-    assert output == NON_TOXIC_PARAGRAPH
-
-    # ----------------------------
-    # 6. Test with a paragraph also specifying threshold
-    # Should return a paragraph with toxic sentences removed
+    # ------------------
+    # 2. Initialise Guard from string with setting pii_entities as a list
+    # Also check whether all parameters are correctly initialised
     guard = Guard.from_string(
         validators=[
-            ToxicLanguage(validation_method="sentence", threshold=0.1, on_fail="fix")
+            PIIFilter(pii_entities=["EMAIL_ADDRESS", "PHONE_NUMBER"], on_fail="fix")
         ],
         description="testmeout",
     )
 
+    # Do parse call
+    text = "My email address is demo@lol.com, and my phone number is 1234567890"
     output = guard.parse(
-        llm_output=NON_TOXIC_PARAGRAPH,
+        llm_output=text,
     )
-    # Check if the output matches the expected output
-    assert output == NON_TOXIC_PARAGRAPH
+    # Validated output should be different from input
+    assert output.validated_output != text
 
+    # Validated output should contain masked pii entities
+    assert all(
+        entity in output.validated_output
+        for entity in ["<EMAIL_ADDRESS>", "<PHONE_NUMBER>"]
+    )
+
+    # Check with text without any pii entities
+    text = "My email address is xyz and my phone number is unavailable."
+    output = guard.parse(
+        llm_output=text,
+    )
+    # Validated output should be same as input
+    assert output.validated_output == text
+
+    # ------------------
+    # 3. Initialise Guard from string without setting pii_entities
+    # Also don't pass through metadata
+    # Should raise ValueError
+    guard = Guard.from_string(
+        validators=[PIIFilter(on_fail="fix")],
+        description="testmeout",
+    )
+
+    text = "My email address is demo@lol.com, and my phone number is 1234567890"
+    output = guard.parse(
+        llm_output=text,
+    )
+    assert output.error is not None
+
+    # ------------------
+    # 4. Initialise Guard from string without setting pii_entities
+    guard = Guard.from_string(
+        validators=[PIIFilter(on_fail="fix")],
+        description="testmeout",
+    )
+    text = "My email address is demo@lol.com, and my phone number is 1234567890"
+
+    # Now try with string of pii entities passed through metadata
+    output = guard.parse(
+        llm_output=text,
+        metadata={"pii_entities": "pii"},
+    )
+    # Validated output should be different from input
+    assert output.validated_output != text
+
+    # Validated output should contain masked pii entities
+    assert all(
+        entity in output.validated_output
+        for entity in ["<EMAIL_ADDRESS>", "<PHONE_NUMBER>"]
+    )
+
+    # Now try with list of pii entities passed through metadata
+    output = guard.parse(
+        llm_output=text,
+        metadata={"pii_entities": ["EMAIL_ADDRESS", "PHONE_NUMBER"]},
+    )
+    # Validated output should be different from input
+    assert output.validated_output != text
+
+    # Validated output should contain masked pii entities
+    assert all(
+        entity in output.validated_output
+        for entity in ["<EMAIL_ADDRESS>", "<PHONE_NUMBER>"]
+    )
+
+    # ------------------
+    # 5. Initialise Guard from string setting
+    # pii_entities as a string "pii" -> all entities
+    # But also pass in metadata with all pii_entities as a list
+    # only containing EMAIL_ADDRESS
+    # metadata should override the pii_entities passed in the constructor,
+    # and only mask in EMAIL_ADDRESS
+
+    guard = Guard.from_string(
+        validators=[PIIFilter(pii_entities="pii", on_fail="fix")],
+        description="testmeout",
+    )
+    text = "My email address is demo@lol.com, and my phone number is 1234567890"
+
+    output = guard.parse(
+        llm_output=text,
+        metadata={"pii_entities": ["EMAIL_ADDRESS"]},
+    )
+    # Validated output should be different from input
+    assert output.validated_output != text
+
+    # Validated output should contain masked EMAIL_ADDRESS
+    # and not PHONE_NUMBER
+    assert "<EMAIL_ADDRESS>" in output.validated_output
+    assert "<PHONE_NUMBER>" not in output.validated_output
+
+    # ------------------
+    # 6. Initialise Guard from string setting an incorrect string of pii_entities
+    # Should raise ValueError during validate
+
+    guard = Guard.from_string(
+        validators=[PIIFilter(pii_entities="piii", on_fail="fix")],
+        description="testmeout",
+    )
+    text = "My email address is demo@lol.com, and my phone number is 1234567890"
+
+    output = guard.parse(
+        llm_output=text,
+    )
+    assert output.error is not None
+
+def test_toxic_language(mocker):
+     """Test the integration of the ToxicLanguage validator.
+     1. Test default initialisation (should be validation_method="sentence"
+      and threshold=0.5)
+     2. Test with a toxic paragraph (with validation_method="full")
+     3. Test with a paragraph containing toxic sentences
+      (with validation_method="sentence")
+     4. Text with a non-toxic paragraph (with validation_method="full")
+     5. Test with a paragraph containing no toxic sentences
+      (with validation_method="sentence")
+     6. Test with a paragraph also specifying threshold
+     """
+
+     # Set the mockers
+     mocker.patch("guardrails.validators.pipeline", new=MockPipeline)
+     mocker.patch(
+         "guardrails.validators.ToxicLanguage.get_toxicity", new=mock_get_toxicity
+     )
+
+     # ----------------------------
+     # 1. Test default initialisation (should be validation_method="sentence"
+     # and threshold=0.25)
+     guard = Guard.from_string(
+         validators=[ToxicLanguage(on_fail="fix")],
+         description="testmeout",
+     )
+
+     # ----------------------------
+     # 2. Test with a toxic paragraph (with validation_method="full")
+     # Should return empty string
+     guard = Guard.from_string(
+         validators=[ToxicLanguage(validation_method="full", on_fail="fix")],
+         description="testmeout",
+     )
+
+     output = guard.parse(
+         llm_output=TOXIC_PARAGRAPH,
+     )
+     # Check if the output is empty
+     assert output == ""
+
+     # ----------------------------
+     # 3. Test with a paragraph containing toxic sentences
+     # (with validation_method="sentence")
+     # Should return a paragraph with toxic sentences removed
+     guard = Guard.from_string(
+         validators=[ToxicLanguage(validation_method="sentence", on_fail="fix")],
+         description="testmeout",
+     )
+
+     output = guard.parse(
+         llm_output=PARAGRAPH_WITH_TOXIC_SENTENCES,
+     )
+
+     # Check if the output matches the expected output
+     assert output == EXPECTED_PARAGRAPH_WITH_TOXIC_SENTENCES
+
+     # ----------------------------
+     # 4. Text with a non-toxic paragraph (with validation_method="full")
+     # Should return the same paragraph
+     guard = Guard.from_string(
+         validators=[ToxicLanguage(validation_method="full", on_fail="fix")],
+         description="testmeout",
+     )
+
+     output = guard.parse(
+         llm_output=NON_TOXIC_PARAGRAPH,
+     )
+     # Check if the output is same as the input
+     assert output == NON_TOXIC_PARAGRAPH
+
+     # ----------------------------
+     # 5. Test with a paragraph containing no toxic sentences
+     # (with validation_method="sentence")
+     # Should return the same paragraph
+
+     guard = Guard.from_string(
+         validators=[ToxicLanguage(validation_method="sentence", on_fail="fix")],
+         description="testmeout",
+     )
+
+     output = guard.parse(
+         llm_output=NON_TOXIC_PARAGRAPH,
+     )
+     # Check if the output is same as the input
+     assert output == NON_TOXIC_PARAGRAPH
+
+     # ----------------------------
+     # 6. Test with a paragraph also specifying threshold
+     # Should return a paragraph with toxic sentences removed
+     guard = Guard.from_string(
+         validators=[
+             ToxicLanguage(validation_method="sentence", threshold=0.1, on_fail="fix")
+         ],
+         description="testmeout",
+     )
+
+     output = guard.parse(
+         llm_output=NON_TOXIC_PARAGRAPH,
+     )
+     # Check if the output matches the expected output
+     assert output == NON_TOXIC_PARAGRAPH
 
 @register_validator("mycustominstancecheckvalidator", data_type="string")
 class MyValidator(Validator):

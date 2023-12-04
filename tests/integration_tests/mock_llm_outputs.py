@@ -5,7 +5,7 @@ from guardrails.llm_providers import (
     OpenAICallable,
     OpenAIChatCallable,
 )
-from guardrails.utils.logs_utils import LLMResponse
+from guardrails.utils.llm_response import LLMResponse
 
 from .test_assets import entity_extraction, pydantic, python_rail, string
 
@@ -76,6 +76,10 @@ class MockOpenAIChatCallable(OpenAIChatCallable):
             ): entity_extraction.LLM_OUTPUT_REASK,
             (
                 python_rail.COMPILED_PROMPT_1_WITHOUT_INSTRUCTIONS,
+                python_rail.COMPILED_INSTRUCTIONS,
+            ): python_rail.LLM_OUTPUT_1_FAIL_GUARDRAILS_VALIDATION,
+            (
+                python_rail.COMPILED_PROMPT_1_PYDANTIC_2_WITHOUT_INSTRUCTIONS,
                 python_rail.COMPILED_INSTRUCTIONS,
             ): python_rail.LLM_OUTPUT_1_FAIL_GUARDRAILS_VALIDATION,
             (

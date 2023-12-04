@@ -7,6 +7,9 @@ reader = (
 )
 
 COMPILED_PROMPT_1_WITHOUT_INSTRUCTIONS = reader("compiled_prompt_1.txt")
+COMPILED_PROMPT_1_PYDANTIC_2_WITHOUT_INSTRUCTIONS = reader(
+    "compiled_prompt_1_pydantic_2.txt"
+)
 COMPILED_PROMPT_2_WITHOUT_INSTRUCTIONS = reader("compiled_prompt_2.txt")
 COMPILED_INSTRUCTIONS = reader("compiled_instructions.txt")
 

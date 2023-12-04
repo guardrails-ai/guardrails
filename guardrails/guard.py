@@ -6,26 +6,28 @@ from typing import (
     Awaitable,
     Callable,
     Dict,
+    Generic,
     List,
     Optional,
     Sequence,
-    Tuple,
     Type,
     Union,
+    cast,
     overload,
 )
 
 from eliot import add_destinations, start_action
 from pydantic import BaseModel
 
+from guardrails.classes import OT, ValidationOutcome
+from guardrails.classes.generic import Stack
+from guardrails.classes.history import Call
+from guardrails.classes.history.call_inputs import CallInputs
 from guardrails.llm_providers import get_async_llm_ask, get_llm_ask
 from guardrails.prompt import Instructions, Prompt
 from guardrails.rail import Rail
 from guardrails.run import AsyncRunner, Runner
 from guardrails.schema import Schema
-from guardrails.utils.logs_utils import GuardState
-from guardrails.utils.parsing_utils import get_template_variables
-from guardrails.utils.reask_utils import sub_reasks_with_fixed_values
 from guardrails.validators import Validator
 
 logger = logging.getLogger(__name__)
@@ -33,7 +35,7 @@ actions_logger = logging.getLogger(f"{__name__}.actions")
 add_destinations(actions_logger.debug)
 
 
-class Guard:
+class Guard(Generic[OT]):
     """The Guard class.
 
     This class is the main entry point for using Guardrails. It is
@@ -59,9 +61,7 @@ class Guard:
         """Initialize the Guard."""
         self.rail = rail
         self.num_reasks = num_reasks
-        self.guard_state = GuardState(all_histories=[])
-        self._reask_prompt = None
-        self._reask_instructions = None
+        self.history: Stack[Call] = Stack()
         self.base_model = base_model
 
     @property
@@ -97,42 +97,24 @@ class Guard:
         return self.prompt.source
 
     @property
-    def state(self) -> GuardState:
-        """Return the state."""
-        return self.guard_state
-
-    @property
     def reask_prompt(self) -> Optional[Prompt]:
         """Return the reask prompt."""
-        return self._reask_prompt
+        return self.output_schema.reask_prompt_template
 
     @reask_prompt.setter
-    def reask_prompt(self, reask_prompt: Union[str, Prompt]):
+    def reask_prompt(self, reask_prompt: Optional[str]):
         """Set the reask prompt."""
-
-        if isinstance(reask_prompt, str):
-            reask_prompt = Prompt(reask_prompt)
-
-        # Check that the reask prompt has the correct variables
-        variables = get_template_variables(reask_prompt.source)
-        variable_set = set(variables)
-        assert variable_set.__contains__("previous_response")
-        assert variable_set.__contains__("output_schema")
-        self._reask_prompt = reask_prompt
+        self.output_schema.reask_prompt_template = reask_prompt
 
     @property
     def reask_instructions(self) -> Optional[Instructions]:
         """Return the reask prompt."""
-        return self._reask_instructions
+        return self.output_schema.reask_instructions_template
 
     @reask_instructions.setter
-    def reask_instructions(self, reask_instructions: Union[str, Instructions]):
+    def reask_instructions(self, reask_instructions: Optional[str]):
         """Set the reask prompt."""
-
-        if isinstance(reask_instructions, str):
-            reask_instructions = Instructions(reask_instructions)
-
-        self._reask_instructions = reask_instructions
+        self.output_schema.reask_instructions_template = reask_instructions
 
     def configure(
         self,
@@ -148,7 +130,7 @@ class Guard:
         )
 
     @classmethod
-    def from_rail(cls, rail_file: str, num_reasks: Optional[int] = None) -> "Guard":
+    def from_rail(cls, rail_file: str, num_reasks: Optional[int] = None):
         """Create a Schema from a `.rail` file.
 
         Args:
@@ -158,12 +140,13 @@ class Guard:
         Returns:
             An instance of the `Guard` class.
         """
-        return cls(Rail.from_file(rail_file), num_reasks=num_reasks)
+        rail = Rail.from_file(rail_file)
+        if rail.output_type == "str":
+            return cast(Guard[str], cls(rail=rail, num_reasks=num_reasks))
+        return cast(Guard[Dict], cls(rail=rail, num_reasks=num_reasks))
 
     @classmethod
-    def from_rail_string(
-        cls, rail_string: str, num_reasks: Optional[int] = None
-    ) -> "Guard":
+    def from_rail_string(cls, rail_string: str, num_reasks: Optional[int] = None):
         """Create a Schema from a `.rail` string.
 
         Args:
@@ -173,7 +156,10 @@ class Guard:
         Returns:
             An instance of the `Guard` class.
         """
-        return cls(Rail.from_string(rail_string), num_reasks=num_reasks)
+        rail = Rail.from_string(rail_string)
+        if rail.output_type == "str":
+            return cast(Guard[str], cls(rail=rail, num_reasks=num_reasks))
+        return cast(Guard[Dict], cls(rail=rail, num_reasks=num_reasks))
 
     @classmethod
     def from_pydantic(
@@ -182,12 +168,20 @@ class Guard:
         prompt: Optional[str] = None,
         instructions: Optional[str] = None,
         num_reasks: Optional[int] = None,
-    ) -> "Guard":
+        reask_prompt: Optional[str] = None,
+        reask_instructions: Optional[str] = None,
+    ):
         """Create a Guard instance from a Pydantic model and prompt."""
         rail = Rail.from_pydantic(
-            output_class=output_class, prompt=prompt, instructions=instructions
+            output_class=output_class,
+            prompt=prompt,
+            instructions=instructions,
+            reask_prompt=reask_prompt,
+            reask_instructions=reask_instructions,
         )
-        return cls(rail, num_reasks=num_reasks, base_model=output_class)
+        return cast(
+            Guard[Dict], cls(rail, num_reasks=num_reasks, base_model=output_class)
+        )
 
     @classmethod
     def from_string(
@@ -199,7 +193,7 @@ class Guard:
         reask_prompt: Optional[str] = None,
         reask_instructions: Optional[str] = None,
         num_reasks: Optional[int] = None,
-    ) -> "Guard":
+    ):
         """Create a Guard instance for a string response with prompt,
         instructions, and validations.
 
@@ -220,23 +214,7 @@ class Guard:
             reask_prompt=reask_prompt,
             reask_instructions=reask_instructions,
         )
-        return cls(rail, num_reasks=num_reasks)
-
-    @overload
-    def __call__(
-        self,
-        llm_api: Callable[[Any], Awaitable[Any]],
-        prompt_params: Optional[Dict] = None,
-        num_reasks: Optional[int] = None,
-        prompt: Optional[str] = None,
-        instructions: Optional[str] = None,
-        msg_history: Optional[List[Dict]] = None,
-        metadata: Optional[Dict] = None,
-        full_schema_reask: Optional[bool] = None,
-        *args,
-        **kwargs,
-    ) -> Awaitable[Tuple[str, Any]]:
-        ...
+        return cast(Guard[str], cls(rail, num_reasks=num_reasks))
 
     @overload
     def __call__(
@@ -251,7 +229,23 @@ class Guard:
         full_schema_reask: Optional[bool] = None,
         *args,
         **kwargs,
-    ) -> Tuple[str, Any]:
+    ) -> ValidationOutcome[OT]:
+        ...
+
+    @overload
+    def __call__(
+        self,
+        llm_api: Callable[[Any], Awaitable[Any]],
+        prompt_params: Optional[Dict] = None,
+        num_reasks: Optional[int] = None,
+        prompt: Optional[str] = None,
+        instructions: Optional[str] = None,
+        msg_history: Optional[List[Dict]] = None,
+        metadata: Optional[Dict] = None,
+        full_schema_reask: Optional[bool] = None,
+        *args,
+        **kwargs,
+    ) -> Awaitable[ValidationOutcome[OT]]:
         ...
 
     def __call__(
@@ -266,7 +260,7 @@ class Guard:
         full_schema_reask: Optional[bool] = None,
         *args,
         **kwargs,
-    ) -> Union[Tuple[Optional[str], Any], Awaitable[Tuple[Optional[str], Any]]]:
+    ) -> Union[ValidationOutcome[OT], Awaitable[ValidationOutcome[OT]]]:
         """Call the LLM and validate the output. Pass an async LLM API to
         return a coroutine.
 
@@ -304,6 +298,25 @@ class Guard:
                 "This should never happen."
             )
 
+        input_prompt = prompt or (self.prompt._source if self.prompt else None)
+        input_instructions = instructions or (
+            self.instructions._source if self.instructions else None
+        )
+        call_inputs = CallInputs(
+            llm_api=llm_api,
+            prompt=input_prompt,
+            instructions=input_instructions,
+            msg_history=msg_history,
+            prompt_params=prompt_params,
+            num_reasks=self.num_reasks,
+            metadata=metadata,
+            full_schema_reask=full_schema_reask,
+            args=list(args),
+            kwargs=kwargs,
+        )
+        call_log = Call(inputs=call_inputs)
+        self.history.push(call_log)
+
         # If the LLM API is async, return a coroutine
         if asyncio.iscoroutinefunction(llm_api):
             return self._call_async(
@@ -315,6 +328,7 @@ class Guard:
                 msg_history=msg_history,
                 metadata=metadata,
                 full_schema_reask=full_schema_reask,
+                call_log=call_log,
                 *args,
                 **kwargs,
             )
@@ -328,6 +342,7 @@ class Guard:
             msg_history=msg_history,
             metadata=metadata,
             full_schema_reask=full_schema_reask,
+            call_log=call_log,
             *args,
             **kwargs,
         )
@@ -342,9 +357,10 @@ class Guard:
         msg_history: Optional[List[Dict]],
         metadata: Dict,
         full_schema_reask: bool,
+        call_log: Call,
         *args,
         **kwargs,
-    ) -> Tuple[Optional[str], Any]:
+    ) -> ValidationOutcome[OT]:
         instructions_obj = instructions or self.instructions
         prompt_obj = prompt or self.prompt
         msg_history_obj = msg_history or []
@@ -365,14 +381,11 @@ class Guard:
                 output_schema=self.output_schema,
                 num_reasks=num_reasks,
                 metadata=metadata,
-                reask_prompt=self.reask_prompt,
-                reask_instructions=self.reask_instructions,
                 base_model=self.base_model,
-                guard_state=self.guard_state,
                 full_schema_reask=full_schema_reask,
             )
-            guard_history = runner(prompt_params=prompt_params)
-            return guard_history.output, guard_history.validated_output
+            call, error_message = runner(call_log=call_log, prompt_params=prompt_params)
+            return ValidationOutcome[OT].from_guard_history(call, error_message)
 
     async def _call_async(
         self,
@@ -384,9 +397,10 @@ class Guard:
         msg_history: Optional[List[Dict]],
         metadata: Dict,
         full_schema_reask: bool,
+        call_log: Call,
         *args,
         **kwargs,
-    ) -> Tuple[Optional[str], Any]:
+    ) -> ValidationOutcome[OT]:
         """Call the LLM asynchronously and validate the output.
 
         Args:
@@ -424,14 +438,13 @@ class Guard:
                 output_schema=self.output_schema,
                 num_reasks=num_reasks,
                 metadata=metadata,
-                reask_prompt=self.reask_prompt,
-                reask_instructions=self.reask_instructions,
                 base_model=self.base_model,
-                guard_state=self.guard_state,
                 full_schema_reask=full_schema_reask,
             )
-            guard_history = await runner.async_run(prompt_params=prompt_params)
-            return guard_history.output, guard_history.validated_output
+            call, error_message = await runner.async_run(
+                call_log=call_log, prompt_params=prompt_params
+            )
+            return ValidationOutcome[OT].from_guard_history(call, error_message)
 
     def __repr__(self):
         return f"Guard(RAIL={self.rail})"
@@ -450,7 +463,7 @@ class Guard:
         full_schema_reask: Optional[bool] = None,
         *args,
         **kwargs,
-    ) -> Any:
+    ) -> ValidationOutcome[OT]:
         ...
 
     @overload
@@ -464,7 +477,7 @@ class Guard:
         full_schema_reask: Optional[bool] = None,
         *args,
         **kwargs,
-    ) -> Awaitable[Any]:
+    ) -> Awaitable[ValidationOutcome[OT]]:
         ...
 
     @overload
@@ -478,7 +491,7 @@ class Guard:
         full_schema_reask: Optional[bool] = None,
         *args,
         **kwargs,
-    ) -> Any:
+    ) -> ValidationOutcome[OT]:
         ...
 
     def parse(
@@ -491,7 +504,7 @@ class Guard:
         full_schema_reask: Optional[bool] = None,
         *args,
         **kwargs,
-    ) -> Union[Any, Awaitable[Any]]:
+    ) -> Union[ValidationOutcome[OT], Awaitable[ValidationOutcome[OT]]]:
         """Alternate flow to using Guard where the llm_output is known.
 
         Args:
@@ -525,6 +538,23 @@ class Guard:
         context = contextvars.ContextVar("kwargs")
         context.set(kwargs)
 
+        input_prompt = self.prompt._source if self.prompt else None
+        input_instructions = self.instructions._source if self.instructions else None
+        call_inputs = CallInputs(
+            llm_api=llm_api,
+            llm_output=llm_output,
+            prompt=input_prompt,
+            instructions=input_instructions,
+            prompt_params=prompt_params,
+            num_reasks=self.num_reasks,
+            metadata=metadata,
+            full_schema_reask=full_schema_reask,
+            args=list(args),
+            kwargs=kwargs,
+        )
+        call_log = Call(inputs=call_inputs)
+        self.history.push(call_log)
+
         # If the LLM API is async, return a coroutine
         if asyncio.iscoroutinefunction(llm_api):
             return self._async_parse(
@@ -534,6 +564,7 @@ class Guard:
                 num_reasks=self.num_reasks,
                 prompt_params=prompt_params,
                 full_schema_reask=full_schema_reask,
+                call_log=call_log,
                 *args,
                 **kwargs,
             )
@@ -545,6 +576,7 @@ class Guard:
             num_reasks=self.num_reasks,
             prompt_params=prompt_params,
             full_schema_reask=full_schema_reask,
+            call_log=call_log,
             *args,
             **kwargs,
         )
@@ -557,9 +589,10 @@ class Guard:
         num_reasks: int,
         prompt_params: Dict,
         full_schema_reask: bool,
+        call_log: Call,
         *args,
         **kwargs,
-    ) -> Any:
+    ) -> ValidationOutcome[OT]:
         """Alternate flow to using Guard where the llm_output is known.
 
         Args:
@@ -581,14 +614,12 @@ class Guard:
                 num_reasks=num_reasks,
                 metadata=metadata,
                 output=llm_output,
-                reask_prompt=self.reask_prompt,
-                reask_instructions=self.reask_instructions,
                 base_model=self.base_model,
-                guard_state=self.guard_state,
                 full_schema_reask=full_schema_reask,
             )
-            guard_history = runner(prompt_params=prompt_params)
-            return sub_reasks_with_fixed_values(guard_history.validated_output)
+            call, error_message = runner(call_log=call_log, prompt_params=prompt_params)
+
+            return ValidationOutcome[OT].from_guard_history(call, error_message)
 
     async def _async_parse(
         self,
@@ -598,9 +629,10 @@ class Guard:
         num_reasks: int,
         prompt_params: Dict,
         full_schema_reask: bool,
+        call_log: Call,
         *args,
         **kwargs,
-    ) -> Any:
+    ) -> ValidationOutcome[OT]:
         """Alternate flow to using Guard where the llm_output is known.
 
         Args:
@@ -622,11 +654,11 @@ class Guard:
                 num_reasks=num_reasks,
                 metadata=metadata,
                 output=llm_output,
-                reask_prompt=self.reask_prompt,
-                reask_instructions=self.reask_instructions,
                 base_model=self.base_model,
-                guard_state=self.guard_state,
                 full_schema_reask=full_schema_reask,
             )
-            guard_history = await runner.async_run(prompt_params=prompt_params)
-            return sub_reasks_with_fixed_values(guard_history.validated_output)
+            call, error_message = await runner.async_run(
+                call_log=call_log, prompt_params=prompt_params
+            )
+
+            return ValidationOutcome[OT].from_guard_history(call, error_message)
