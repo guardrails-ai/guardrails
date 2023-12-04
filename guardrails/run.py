@@ -207,25 +207,6 @@ class Runner:
         output: Optional[str] = None,
     ) -> Iteration:
         """Run a full step."""
-        inputs = Inputs(
-            llm_api=api,
-            llm_output=output,
-            instructions=instructions,
-            prompt=prompt,
-            msg_history=msg_history,
-            prompt_params=prompt_params,
-            prompt_schema=prompt_schema,
-            instructions_schema=instructions_schema,
-            msg_history_schema=msg_history_schema,
-            output_schema=output_schema,
-            num_reasks=self.num_reasks,
-            metadata=self.metadata,
-            full_schema_reask=self.full_schema_reask,
-        )
-        outputs = Outputs()
-        iteration = Iteration(inputs=inputs, outputs=outputs)
-        call_log.iterations.push(iteration)
-
         try:
             with start_action(
                 action_type="step",
@@ -233,7 +214,9 @@ class Runner:
                 instructions=instructions,
                 prompt=prompt,
                 prompt_params=prompt_params,
-                input_schema=input_schema,
+                prompt_schema=prompt_schema,
+                instructions_schema=instructions_schema,
+                msg_history_schema=msg_history_schema,
                 output_schema=output_schema,
             ):
                 # Prepare: run pre-processing, and input validation.
@@ -243,7 +226,7 @@ class Runner:
                     msg_history = None
                 else:
                     instructions, prompt, msg_history = self.prepare(
-                        iteration,
+                        call_log,
                         index,
                         instructions,
                         prompt,
@@ -256,9 +239,20 @@ class Runner:
                         output_schema,
                     )
 
-                iteration.inputs.prompt = prompt
-                iteration.inputs.instructions = instructions
-                iteration.inputs.msg_history = msg_history
+                inputs = Inputs(
+                    llm_api=api,
+                    llm_output=output,
+                    instructions=instructions,
+                    prompt=prompt,
+                    msg_history=msg_history,
+                    prompt_params=prompt_params,
+                    num_reasks=self.num_reasks,
+                    metadata=self.metadata,
+                    full_schema_reask=self.full_schema_reask,
+                )
+                outputs = Outputs()
+                iteration = Iteration(inputs=inputs, outputs=outputs)
+                call_log.iterations.push(iteration)
 
                 # Call: run the API.
                 llm_response = self.call(
@@ -303,7 +297,7 @@ class Runner:
 
     def prepare(
         self,
-        iteration: Iteration,
+        call_log: Call,
         index: int,
         instructions: Optional[Instructions],
         prompt: Optional[Prompt],
@@ -342,16 +336,21 @@ class Runner:
 
                 # validate msg_history
                 if msg_history_schema is not None:
-                    validated_msg_history = msg_history_schema.validate(
-                        iteration, msg_history_string(msg_history), self.metadata
+                    msg_str = msg_history_string(msg_history)
+                    inputs = Inputs(
+                        llm_output=msg_str,
                     )
-                    if validated_msg_history is None:
-                        raise ValidatorError("Message history validation failed")
+                    iteration = Iteration(inputs=inputs)
+                    call_log.iterations.push(iteration)
+                    validated_msg_history = msg_history_schema.validate(
+                        iteration, msg_str, self.metadata
+                    )
                     if isinstance(validated_msg_history, ReAsk):
                         raise ValidatorError(
                             f"Message history validation failed: {validated_msg_history}"
                         )
-                    msg_history = validated_msg_history
+                    if validated_msg_history != msg_str:
+                        raise ValidatorError("Message history validation failed")
             elif prompt is not None:
                 if msg_history_schema is not None:
                     raise ValueError(
@@ -374,6 +373,11 @@ class Runner:
 
                 # validate prompt
                 if prompt_schema is not None:
+                    inputs = Inputs(
+                        llm_output=prompt.source,
+                    )
+                    iteration = Iteration(inputs=inputs)
+                    call_log.iterations.push(iteration)
                     validated_prompt = prompt_schema.validate(
                         iteration, prompt.source, self.metadata
                     )
@@ -387,6 +391,11 @@ class Runner:
 
                 # validate instructions
                 if instructions_schema is not None:
+                    inputs = Inputs(
+                        llm_output=instructions.source,
+                    )
+                    iteration = Iteration(inputs=inputs)
+                    call_log.iterations.push(iteration)
                     validated_instructions = instructions_schema.validate(
                         iteration, instructions.source, self.metadata
                     )
@@ -686,24 +695,6 @@ class AsyncRunner(Runner):
         output: Optional[str] = None,
     ) -> Iteration:
         """Run a full step."""
-        inputs = Inputs(
-            llm_api=api,
-            llm_output=output,
-            instructions=instructions,
-            prompt=prompt,
-            msg_history=msg_history,
-            prompt_params=prompt_params,
-            prompt_schema=prompt_schema,
-            instructions_schema=instructions_schema,
-            msg_history_schema=self.msg_history_schema,
-            output_schema=output_schema,
-            num_reasks=self.num_reasks,
-            metadata=self.metadata,
-            full_schema_reask=self.full_schema_reask,
-        )
-        outputs = Outputs()
-        iteration = Iteration(inputs=inputs, outputs=outputs)
-        call_log.iterations.push(iteration)
         try:
             with start_action(
                 action_type="step",
@@ -722,8 +713,8 @@ class AsyncRunner(Runner):
                     prompt = None
                     msg_history = None
                 else:
-                    instructions, prompt, msg_history = self.prepare(
-                        iteration,
+                    instructions, prompt, msg_history = await self.async_prepare(
+                        call_log,
                         index,
                         instructions,
                         prompt,
@@ -736,9 +727,20 @@ class AsyncRunner(Runner):
                         output_schema,
                     )
 
-                iteration.inputs.prompt = prompt
-                iteration.inputs.instructions = instructions
-                iteration.inputs.msg_history = msg_history
+                inputs = Inputs(
+                    llm_api=api,
+                    llm_output=output,
+                    instructions=instructions,
+                    prompt=prompt,
+                    msg_history=msg_history,
+                    prompt_params=prompt_params,
+                    num_reasks=self.num_reasks,
+                    metadata=self.metadata,
+                    full_schema_reask=self.full_schema_reask,
+                )
+                outputs = Outputs()
+                iteration = Iteration(inputs=inputs, outputs=outputs)
+                call_log.iterations.push(iteration)
 
                 # Call: run the API.
                 llm_response = await self.async_call(
@@ -859,7 +861,7 @@ class AsyncRunner(Runner):
 
     async def async_prepare(
         self,
-        iteration: Iteration,
+        call_log: Call,
         index: int,
         instructions: Optional[Instructions],
         prompt: Optional[Prompt],
@@ -893,16 +895,21 @@ class AsyncRunner(Runner):
 
                 # validate msg_history
                 if msg_history_schema is not None:
-                    validated_msg_history = await msg_history_schema.async_validate(
-                        iteration, msg_history_string(msg_history), self.metadata
+                    msg_str = msg_history_string(msg_history)
+                    inputs = Inputs(
+                        llm_output=msg_str,
                     )
-                    if validated_msg_history is None:
-                        raise ValidatorError("Message history validation failed")
+                    iteration = Iteration(inputs=inputs)
+                    call_log.iterations.push(iteration)
+                    validated_msg_history = await msg_history_schema.async_validate(
+                        iteration, msg_str, self.metadata
+                    )
                     if isinstance(validated_msg_history, ReAsk):
                         raise ValidatorError(
                             f"Message history validation failed: {validated_msg_history}"
                         )
-                    msg_history = validated_msg_history
+                    if validated_msg_history != msg_str:
+                        raise ValidatorError("Message history validation failed")
             elif prompt is not None:
                 if isinstance(prompt, str):
                     prompt = Prompt(prompt)
@@ -920,6 +927,11 @@ class AsyncRunner(Runner):
 
                 # validate prompt
                 if prompt_schema is not None:
+                    inputs = Inputs(
+                        llm_output=prompt.source,
+                    )
+                    iteration = Iteration(inputs=inputs)
+                    call_log.iterations.push(iteration)
                     validated_prompt = await prompt_schema.async_validate(
                         iteration, prompt.source, self.metadata
                     )
@@ -933,6 +945,11 @@ class AsyncRunner(Runner):
 
                 # validate instructions
                 if instructions_schema is not None:
+                    inputs = Inputs(
+                        llm_output=instructions.source,
+                    )
+                    iteration = Iteration(inputs=inputs)
+                    call_log.iterations.push(iteration)
                     validated_instructions = await instructions_schema.async_validate(
                         iteration, instructions.source, self.metadata
                     )
