@@ -20,7 +20,7 @@ class EmbeddingBase(ABC):
         except ImportError:
             raise ImportError(
                 f"`numpy` is required for `{self.__class__.__name__}` class."
-                "Please install it with `pip install numpy`."
+                "Please install it with `poetry add numpy`."
             )
 
         self._model = model
@@ -55,7 +55,7 @@ class EmbeddingBase(ABC):
         except ImportError:
             raise ImportError(
                 f"`numpy` is required for `{self.__class__.__name__}` class."
-                "Please install it with `pip install numpy`."
+                "Please install it with `poetry add numpy`."
             )
 
         chunk_embeddings_list = []
@@ -179,7 +179,7 @@ class ManifestEmbedding(EmbeddingBase):
         except ImportError:
             raise ImportError(
                 "The `manifest` package is not installed. "
-                "Install with `pip install manifest-ml`"
+                "Install with `poetry add manifest-ml`"
             )
         super().__init__(engine, encoding_name, max_tokens)
         self._client_name = client_name

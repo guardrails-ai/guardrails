@@ -132,7 +132,7 @@ class OpenAIChatCallable(PromptCallableBase):
 
         Use Guardrails with OpenAI chat engines by doing
         ```
-        raw_llm_response, validated_response = guard(
+        raw_llm_response, validated_response, *rest = guard(
             openai.ChatCompletion.create,
             prompt_params={...},
             text=...,
@@ -193,7 +193,7 @@ class ManifestCallable(PromptCallableBase):
         To use manifest for guardrailse, do
         ```
         client = Manifest(client_name=..., client_connection=...)
-        raw_llm_response, validated_response = guard(
+        raw_llm_response, validated_response, *rest = guard(
             client,
             prompt_params={...},
             ...
@@ -204,7 +204,7 @@ class ManifestCallable(PromptCallableBase):
         except ImportError:
             raise PromptCallableException(
                 "The `manifest` package is not installed. "
-                "Install with `pip install manifest-ml`"
+                "Install with `poetry add manifest-ml`"
             )
         client = cast(manifest.Manifest, client)
         manifest_response = client.run(
@@ -222,7 +222,7 @@ class CohereCallable(PromptCallableBase):
         """To use cohere for guardrails, do ``` client =
         cohere.Client(api_key=...)
 
-        raw_llm_response, validated_response = guard(
+        raw_llm_response, validated_response, *rest = guard(
             client.generate,
             prompt_params={...},
             model="command-nightly",
@@ -250,7 +250,7 @@ class ArbitraryCallable(PromptCallableBase):
 
         To use an arbitrary callable for guardrails, do
         ```
-        raw_llm_response, validated_response = guard(
+        raw_llm_response, validated_response, *rest = guard(
             my_callable,
             prompt_params={...},
             ...
@@ -397,7 +397,7 @@ class AsyncOpenAIChatCallable(AsyncPromptCallableBase):
 
         Use Guardrails with OpenAI chat engines by doing
         ```
-        raw_llm_response, validated_response = guard(
+        raw_llm_response, validated_response, *rest = guard(
             openai.ChatCompletion.create,
             prompt_params={...},
             text=...,
@@ -458,7 +458,7 @@ class AsyncManifestCallable(AsyncPromptCallableBase):
         To use manifest for guardrails, do
         ```
         client = Manifest(client_name=..., client_connection=...)
-        raw_llm_response, validated_response = guard(
+        raw_llm_response, validated_response, *rest = guard(
             client,
             prompt_params={...},
             ...
@@ -469,7 +469,7 @@ class AsyncManifestCallable(AsyncPromptCallableBase):
         except ImportError:
             raise PromptCallableException(
                 "The `manifest` package is not installed. "
-                "Install with `pip install manifest-ml`"
+                "Install with `poetry add manifest-ml`"
             )
         client = cast(manifest.Manifest, client)
         manifest_response = await client.arun_batch(
@@ -492,7 +492,7 @@ class AsyncArbitraryCallable(AsyncPromptCallableBase):
 
         To use an arbitrary callable for guardrails, do
         ```
-        raw_llm_response, validated_response = guard(
+        raw_llm_response, validated_response, *rest = guard(
             my_callable,
             prompt_params={...},
             ...
