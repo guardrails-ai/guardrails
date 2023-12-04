@@ -169,7 +169,7 @@ def test_non_empty_initialization():
     assert call.instructions == instructions.source
     assert call.compiled_instructions == instructions.source
     assert call.reask_instructions == Stack(instructions.source)
-    
+
     # TODO: Test this in the integration tests
     assert call.logs == []
 

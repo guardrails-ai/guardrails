@@ -172,7 +172,7 @@ def test_failed_validations():
                     fail_results=[non_fixable_fail_result],
                 ),
             ),
-            fail_status
+            fail_status,
         ),
     ],
 )

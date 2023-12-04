@@ -1,6 +1,3 @@
-from guardrails.logger import logger
-
-
 try:
     import nltk  # type: ignore
 except ImportError:

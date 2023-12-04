@@ -10,7 +10,6 @@ from guardrails.validator_base import (
     register_validator,
 )
 
-
 try:
     import numpy as np
 except ImportError:

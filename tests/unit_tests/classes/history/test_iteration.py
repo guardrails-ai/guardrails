@@ -8,7 +8,7 @@ from guardrails.prompt.instructions import Instructions
 from guardrails.prompt.prompt import Prompt
 from guardrails.utils.llm_response import LLMResponse
 from guardrails.utils.logs_utils import ValidatorLogs
-from guardrails.utils.reask_utils import FieldReAsk, ReAsk
+from guardrails.utils.reask_utils import FieldReAsk
 from guardrails.validator_base import FailResult
 
 
@@ -71,9 +71,7 @@ def test_non_empty_initialization():
     parsed_output = "Hello there!"
     validated_output = "Hello there"
     reask = FieldReAsk(
-        incorrect_value="Hello there!",
-        fail_results=[validation_result],
-        path=[]
+        incorrect_value="Hello there!", fail_results=[validation_result], path=[]
     )
     reasks = [reask]
     validator_logs = [
