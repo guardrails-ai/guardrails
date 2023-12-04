@@ -198,6 +198,7 @@ class Runner:
         prompt_params: Dict,
         prompt_schema: Optional[StringSchema],
         instructions_schema: Optional[StringSchema],
+        msg_history_schema: Optional[StringSchema],
         output_schema: Schema,
         output: Optional[str] = None,
     ):
@@ -212,7 +213,7 @@ class Runner:
             prompt_params=prompt_params,
             prompt_schema=prompt_schema,
             instructions_schema=instructions_schema,
-            msg_history_schema=self.msg_history_schema,
+            msg_history_schema=msg_history_schema,
             output_schema=output_schema,
         ):
             # Prepare: run pre-processing, and input validation.
@@ -231,6 +232,7 @@ class Runner:
                     api,
                     prompt_schema,
                     instructions_schema,
+                    msg_history_schema,
                     output_schema,
                 )
 
@@ -305,6 +307,11 @@ class Runner:
                 prompt_params = {}
 
             if msg_history:
+                if prompt_schema is not None or instructions_schema is not None:
+                    raise ValueError(
+                        "Prompt and instructions validation are "
+                        "not supported when using message history."
+                    )
                 msg_history = copy.deepcopy(msg_history)
                 # Format any variables in the message history with the prompt params.
                 for msg in msg_history:
@@ -325,6 +332,11 @@ class Runner:
                         )
                     msg_history = validated_msg_history
             elif prompt is not None:
+                if msg_history_schema is not None:
+                    raise ValueError(
+                        "Message history validation is "
+                        "not supported when using prompt/instructions."
+                    )
                 if isinstance(prompt, str):
                     prompt = Prompt(prompt)
 
