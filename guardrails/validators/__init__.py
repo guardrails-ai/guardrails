@@ -36,6 +36,7 @@ from guardrails.validators.saliency_check import SaliencyCheck
 from guardrails.validators.similar_to_document import SimilarToDocument
 from guardrails.validators.similar_to_list import SimilarToList
 from guardrails.validators.sql_column_presence import SqlColumnPresence
+from guardrails.validators.toxic_language import ToxicLanguage
 from guardrails.validators.two_words import TwoWords
 from guardrails.validators.upper_case import UpperCase
 from guardrails.validators.valid_choices import ValidChoices
@@ -75,6 +76,7 @@ __all__ = [
     "PIIFilter",
     "SimilarToList",
     "DetectSecrets",
+    "ToxicLanguage",
     # Validator helpers
     "detect_secrets",
     "AnalyzerEngine",
