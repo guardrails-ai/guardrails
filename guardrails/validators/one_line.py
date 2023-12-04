@@ -14,15 +14,16 @@ logger = logging.getLogger(__name__)
 
 @register_validator(name="one-line", data_type="string")
 class OneLine(Validator):
-    """Validates that a value is a single line or sentence.
+    """Validates that a value is a single line, based on whether or not the
+     output has a newline character (\\n).
 
-    **Key Properties**
+     **Key Properties**
 
-    | Property                      | Description                       |
-    | ----------------------------- | --------------------------------- |
-    | Name for `format` attribute   | `one-line`                        |
-    | Supported data types          | `string`                          |
-    | Programmatic fix              | Pick the first line.              |
+     | Property                      | Description                            |
+     | ----------------------------- | -------------------------------------- |
+     | Name for `format` attribute   | `one-line`                             |
+     | Supported data types          | `string`                               |
+     | Programmatic fix              | Keep the first line, delete other text |
     """
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
