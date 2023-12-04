@@ -8,10 +8,11 @@ from guardrails.validator_base import (
     register_validator,
 )
 
-try:     
-    from transformers import pipeline 
-except ImportError:     
+try:
+    from transformers import pipeline
+except ImportError:
     pipeline = None
+
 
 @register_validator(name="toxic-language", data_type="string")
 class ToxicLanguage(Validator):

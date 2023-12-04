@@ -548,7 +548,8 @@ def test_toxic_language():
     """
     pred_labels = validator.get_toxicity(non_toxic_text)
     assert len(pred_labels) == 0
-    
+
+
 def custom_fix_on_fail_handler(value: Any, fail_results: List[FailResult]):
     return value + " " + value
 
