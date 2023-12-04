@@ -1,7 +1,3 @@
-import logging
-
-logger = logging.getLogger(__name__)
-
 try:
     import nltk  # type: ignore
 except ImportError:
