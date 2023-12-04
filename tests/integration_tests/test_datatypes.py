@@ -30,6 +30,7 @@ Dummy prompt.
         ("2021-01-01"),  # standard date
         ("2021-01-01T11:10:00+01:00"),  # Cohere-style
         ("2023-10-03T14:18:38.476Z"),  # ISO
+        ("2023-W01-1"),  # ISO 8601 week date (start of year)
     ],
 )
 def test_defaulted_date_parser(date_string: str):
