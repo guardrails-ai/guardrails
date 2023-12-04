@@ -37,6 +37,13 @@ class Rail:
     prompt: Optional[Prompt]
     version: str = "0.1"
 
+    @property
+    def output_type(self):
+        if isinstance(self.output_schema, StringSchema):
+            return "str"
+        else:
+            return "dict"
+
     @classmethod
     def from_pydantic(
         cls,

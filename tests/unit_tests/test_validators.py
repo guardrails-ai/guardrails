@@ -217,7 +217,7 @@ def test_validator_as_tuple():
         num_reasks=0,
     )
 
-    assert output == {"a_field": "hullo"}
+    assert output.validated_output == {"a_field": "hullo"}
 
     # (string, on_fail) tuple fix
 
@@ -232,7 +232,7 @@ def test_validator_as_tuple():
         num_reasks=0,
     )
 
-    assert output == {"a_field": "hullo"}
+    assert output.validated_output == {"a_field": "hullo"}
 
     # (Validator, on_fail) tuple fix
 
@@ -245,7 +245,7 @@ def test_validator_as_tuple():
         num_reasks=0,
     )
 
-    assert output == {"a_field": "hello there"}
+    assert output.validated_output == {"a_field": "hello there"}
 
     # (Validator, on_fail) tuple reask
 
@@ -270,8 +270,8 @@ def test_validator_as_tuple():
         num_reasks=0,
     )
 
-    assert output == {"a_field": "hullo"}
-    assert guard.guard_state.all_histories[0].history[0].reasks[0] == hullo_reask
+    assert output.validated_output == {"a_field": "hullo"}
+    assert guard.history.first.iterations.first.reasks[0] == hullo_reask
 
     hello_reask = FieldReAsk(
         incorrect_value="hello there yo",
@@ -296,8 +296,8 @@ def test_validator_as_tuple():
         num_reasks=0,
     )
 
-    assert output == {"a_field": "hello there"}
-    assert guard.guard_state.all_histories[0].history[0].reasks[0] == hello_reask
+    assert output.validated_output == {"a_field": "hello there"}
+    assert guard.history.first.iterations.first.reasks[0] == hello_reask
 
     # (Validator, on_fail) tuple reask
 
@@ -311,8 +311,8 @@ def test_validator_as_tuple():
         num_reasks=0,
     )
 
-    assert output == {"a_field": "hello there"}
-    assert guard.guard_state.all_histories[0].history[0].reasks[0] == hello_reask
+    assert output.validated_output == {"a_field": "hello there"}
+    assert guard.history.first.iterations.first.reasks[0] == hello_reask
 
     # Fail on string
 
@@ -340,13 +340,11 @@ def test_custom_func_validator():
         '{"greeting": "hello"}',
         num_reasks=0,
     )
-    assert output == {"greeting": "hullo"}
+    assert output.validated_output == {"greeting": "hullo"}
 
-    guard_history = guard.guard_state.all_histories[0].history
-    assert len(guard_history) == 1
-    validator_log = (
-        guard_history[0].field_validation_logs.children["greeting"].validator_logs[0]
-    )
+    call = guard.history.first
+    assert call.iterations.length == 1
+    validator_log = call.iterations.first.validator_logs[0]
     assert validator_log.validator_name == "mycustomhellovalidator"
     assert validator_log.validation_result == FailResult(
         error_message="Hello is too basic, try something more creative.",
@@ -405,11 +403,11 @@ def test_provenance_v1(mocker):
     if OPENAI_VERSION.startswith("0"):  # not supported in v1 anymore
         openai.api_key = API_KEY
 
-        output = string_guard.parse(
-            llm_output=LLM_RESPONSE,
-            metadata={"query_function": mock_chromadb_query_function},
-        )
-        assert output == LLM_RESPONSE
+    output = string_guard.parse(
+        llm_output=LLM_RESPONSE,
+        metadata={"query_function": mock_chromadb_query_function},
+    )
+    assert output.validated_output == LLM_RESPONSE
 
     # 2. Setting the environment variable
     os.environ["OPENAI_API_KEY"] = API_KEY
@@ -417,7 +415,7 @@ def test_provenance_v1(mocker):
         llm_output=LLM_RESPONSE,
         metadata={"query_function": mock_chromadb_query_function},
     )
-    assert output == LLM_RESPONSE
+    assert output.validated_output == LLM_RESPONSE
 
     # 3. Passing the API key as an argument
     output = string_guard.parse(
@@ -426,7 +424,7 @@ def test_provenance_v1(mocker):
         api_key=API_KEY,
         api_base="https://api.openai.com",
     )
-    assert output == LLM_RESPONSE
+    assert output.validated_output == LLM_RESPONSE
 
 
 @pytest.mark.parametrize(
@@ -608,9 +606,12 @@ def test_custom_on_fail_handler(
         name: str = Field(description="a unique pet name")
 
     guard = Guard.from_pydantic(output_class=Pet, prompt=prompt)
+    response = guard.parse(output, num_reasks=0)
     if isinstance(expected_result, type) and issubclass(expected_result, Exception):
-        with pytest.raises(expected_result):
-            guard.parse(output)
+        assert response.error is not None
+        assert response.error == "Something went wrong!"
+    elif isinstance(expected_result, FieldReAsk):
+        assert guard.history.first.iterations.first.reasks[0] == expected_result
     else:
         validated_output = guard.parse(output, num_reasks=0)
         if isinstance(expected_result, FieldReAsk):
@@ -632,5 +633,5 @@ This is not two words
 </output>
 </rail>"""
     guard = Guard.from_rail_string(rail_str)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValidatorError):
         guard.parse("")

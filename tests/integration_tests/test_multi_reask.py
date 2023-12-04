@@ -11,7 +11,7 @@ def test_multi_reask(mocker):
 
     guard = gd.Guard.from_rail_string(python_rail.RAIL_SPEC_WITH_VALIDATOR_PARALLELISM)
 
-    _, final_output = guard(
+    guard(
         llm_api=get_static_openai_create_func(),
         engine="text-davinci-003",
         num_reasks=5,
@@ -20,25 +20,24 @@ def test_multi_reask(mocker):
     # Assertions are made on the guard state object.
     # assert final_output == python_rail
 
-    guard_history = guard.guard_state.most_recent_call.history
+    call = guard.history.first
 
-    assert len(guard_history) == 3
+    assert len(call.iterations) == 3
 
-    assert guard_history[0].prompt.source == python_rail.VALIDATOR_PARALLELISM_PROMPT_1
-    assert guard_history[0].output == python_rail.VALIDATOR_PARALLELISM_RESPONSE_1
+    assert call.compiled_prompt == python_rail.VALIDATOR_PARALLELISM_PROMPT_1
+    assert call.raw_outputs.first == python_rail.VALIDATOR_PARALLELISM_RESPONSE_1
     assert (
-        guard_history[0].validated_output == python_rail.VALIDATOR_PARALLELISM_REASK_1
+        call.iterations.first.validation_output
+        == python_rail.VALIDATOR_PARALLELISM_REASK_1
     )
 
-    assert guard_history[1].prompt.source == python_rail.VALIDATOR_PARALLELISM_PROMPT_2
-    assert guard_history[1].output == python_rail.VALIDATOR_PARALLELISM_RESPONSE_2
+    assert call.reask_prompts.first == python_rail.VALIDATOR_PARALLELISM_PROMPT_2
+    assert call.raw_outputs.at(1) == python_rail.VALIDATOR_PARALLELISM_RESPONSE_2
     assert (
-        guard_history[1].validated_output == python_rail.VALIDATOR_PARALLELISM_REASK_2
+        call.iterations.at(1).validation_output
+        == python_rail.VALIDATOR_PARALLELISM_REASK_2
     )
 
-    assert guard_history[2].prompt.source == python_rail.VALIDATOR_PARALLELISM_PROMPT_3
-    assert guard_history[2].output == python_rail.VALIDATOR_PARALLELISM_RESPONSE_3
-    assert (
-        guard_history[2].validated_output
-        == python_rail.VALIDATOR_PARALLELISM_RESPONSE_3
-    )
+    assert call.reask_prompts.last == python_rail.VALIDATOR_PARALLELISM_PROMPT_3
+    assert call.raw_outputs.last == python_rail.VALIDATOR_PARALLELISM_RESPONSE_3
+    assert call.validated_output == python_rail.VALIDATOR_PARALLELISM_RESPONSE_3
