@@ -132,7 +132,7 @@ class OpenAIChatCallable(PromptCallableBase):
 
         Use Guardrails with OpenAI chat engines by doing
         ```
-        raw_llm_response, validated_response = guard(
+        raw_llm_response, validated_response, *rest = guard(
             openai.ChatCompletion.create,
             prompt_params={...},
             text=...,
@@ -193,7 +193,7 @@ class ManifestCallable(PromptCallableBase):
         To use manifest for guardrailse, do
         ```
         client = Manifest(client_name=..., client_connection=...)
-        raw_llm_response, validated_response = guard(
+        raw_llm_response, validated_response, *rest = guard(
             client,
             prompt_params={...},
             ...
@@ -222,7 +222,7 @@ class CohereCallable(PromptCallableBase):
         """To use cohere for guardrails, do ``` client =
         cohere.Client(api_key=...)
 
-        raw_llm_response, validated_response = guard(
+        raw_llm_response, validated_response, *rest = guard(
             client.generate,
             prompt_params={...},
             model="command-nightly",
@@ -250,7 +250,7 @@ class ArbitraryCallable(PromptCallableBase):
 
         To use an arbitrary callable for guardrails, do
         ```
-        raw_llm_response, validated_response = guard(
+        raw_llm_response, validated_response, *rest = guard(
             my_callable,
             prompt_params={...},
             ...
@@ -389,7 +389,7 @@ class AsyncOpenAIChatCallable(AsyncPromptCallableBase):
 
         Use Guardrails with OpenAI chat engines by doing
         ```
-        raw_llm_response, validated_response = guard(
+        raw_llm_response, validated_response, *rest = guard(
             openai.ChatCompletion.create,
             prompt_params={...},
             text=...,
@@ -450,7 +450,7 @@ class AsyncManifestCallable(AsyncPromptCallableBase):
         To use manifest for guardrails, do
         ```
         client = Manifest(client_name=..., client_connection=...)
-        raw_llm_response, validated_response = guard(
+        raw_llm_response, validated_response, *rest = guard(
             client,
             prompt_params={...},
             ...
@@ -484,7 +484,7 @@ class AsyncArbitraryCallable(AsyncPromptCallableBase):
 
         To use an arbitrary callable for guardrails, do
         ```
-        raw_llm_response, validated_response = guard(
+        raw_llm_response, validated_response, *rest = guard(
             my_callable,
             prompt_params={...},
             ...

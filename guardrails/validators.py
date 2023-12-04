@@ -1362,7 +1362,8 @@ Make sure that topics are relevant to text, and topics are not too specific or g
     """
 
         guard = Guard.from_rail_string(spec)
-        _, validated_output = guard(llm_api=self.llm_callable)  # type: ignore
+        _, validated_output, *rest = guard(llm_api=self.llm_callable)  # type: ignore
+        validated_output = cast(Dict, validated_output)
         return validated_output["topics"]
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
@@ -1420,7 +1421,7 @@ class QARelevanceLLMEval(Validator):
             llm_callable if llm_callable else get_static_openai_chat_create_func()
         )
 
-    def _selfeval(self, question: str, answer: str):
+    def _selfeval(self, question: str, answer: str) -> Dict:
         from guardrails import Guard
 
         spec = """
@@ -1441,13 +1442,14 @@ Relevant (as a JSON with a single boolean key, "relevant"):\
             question=question,
             answer=answer,
         )
-        guard = Guard.from_rail_string(spec)
+        guard = Guard[Dict].from_rail_string(spec)
 
-        _, validated_output = guard(
+        response = guard(
             self.llm_callable,  # type: ignore
             max_tokens=10,
             temperature=0.1,
         )
+        validated_output = cast(Dict, response.validated_output)
         return validated_output
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
@@ -1458,7 +1460,8 @@ Relevant (as a JSON with a single boolean key, "relevant"):\
 
         question = metadata["question"]
 
-        relevant = self._selfeval(question, value)["relevant"]
+        self_evaluation: Dict = self._selfeval(question, value)
+        relevant = self_evaluation["relevant"]
         if relevant:
             return PassResult()
 

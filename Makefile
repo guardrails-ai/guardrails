@@ -59,6 +59,9 @@ dev:
 full:
 	poetry install --all-extras
 
+self-install:
+	pip install -e .
+
 all: autoformat type lint docs test
 
 precommit:
