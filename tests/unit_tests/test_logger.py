@@ -49,11 +49,22 @@ def test_set_config(mocker):
 
 
 def test_set_scope():
-    from guardrails.logger import logger, set_level
+    from guardrails.logger import (
+        logger,
+        logger_config,
+        get_scope_handler,
+        set_scope,
+        base_scope
+    )
 
-    assert logger.level == logging.NOTSET
-    set_level(logging.INFO)
-    assert logger.level == logging.INFO
+    scope_handler = get_scope_handler()
+    assert logger_config.scope == base_scope
+    assert scope_handler.scope == base_scope
+    
+    set_scope("custom")
+
+    assert logger_config.scope == "custom"
+    assert scope_handler.scope == "custom"
 
 
 """
@@ -84,7 +95,7 @@ def test_scope_handler():
     assert len(test_2_logs) == 1
     assert test_2_logs[0].getMessage() == "test log 2"
 
-    all_logs = new_handler.get_all_logs()
+    all_logs = new_handler.get_logs("all")
     assert len(all_logs) == 2
     assert all_logs[0].getMessage() == "test log 1"
     assert all_logs[1].getMessage() == "test log 2"

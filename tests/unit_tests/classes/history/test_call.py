@@ -17,22 +17,32 @@ from guardrails.validator_base import FailResult, PassResult
 def test_empty_initialization():
     call = Call()
 
-    # Overrides and additional properties
     assert call.iterations == Stack()
-    assert isinstance(call.iterations, Stack) is True
     assert call.inputs == CallInputs()
+    assert call.prompt is None
+    assert call.prompt_params is None
+    assert call.compiled_prompt is None
+    assert call.reask_prompts == Stack()
+    assert call.instructions is None
+    assert call.compiled_instructions is None
+    assert call.reask_instructions == Stack()
+    assert call.logs == Stack()
     assert call.tokens_consumed is None
     assert call.prompt_tokens_consumed is None
     assert call.completion_tokens_consumed is None
-    assert call.status == not_run_status
-
     assert call.raw_outputs == Stack()
     assert call.parsed_outputs == Stack()
+    assert call.validation_output is None
+    assert call.fixed_output is None
     assert call.validated_output is None
-    assert call.reasks == []
-    assert call.validator_logs == []
+    assert call.reasks == Stack()
+    assert call.validator_logs == Stack()
     assert call.error is None
-    assert call.failed_validations == []
+    assert call.failed_validations == Stack()
+    assert call.status == not_run_status
+    # FIXME: how to do shallow comparison?
+    # assert call.tree == Tree("Logs")
+    assert call.tree is not None
 
 
 def test_non_empty_initialization():
@@ -42,15 +52,17 @@ def test_non_empty_initialization():
         return "Hello there!"
 
     llm_api = custom_llm
-    prompt = "Respond with a friendly greeting."
+    prompt = "Respond with a ${greeting_type} greeting."
     instructions = "You are a greeting bot."
     args = ["arg1"]
     kwargs = {"kwarg1": 1}
+    prompt_params = {"greeting_type": "friendly"}
 
     call_inputs = CallInputs(
         llm_api=llm_api,
         prompt=prompt,
         instructions=instructions,
+        prompt_params=prompt_params,
         args=args,
         kwargs=kwargs,
     )
@@ -58,9 +70,8 @@ def test_non_empty_initialization():
     # First Iteration Inputs
     iter_llm_api = ArbitraryCallable(llm_api=llm_api)
     llm_output = "Hello there!"
-    instructions = Instructions(source="You are a greeting bot.")
-    iter_prompt = Prompt(source="Respond with a ${greeting_type} greeting.")
-    prompt_params = {"greeting_type": "friendly"}
+    instructions = Instructions(source=instructions)
+    iter_prompt = Prompt(source=prompt)
     num_reasks = 0
     metadata = {"some_meta_data": "doesn't actually matter"}
     full_schema_reask = False
@@ -90,14 +101,13 @@ def test_non_empty_initialization():
     first_reasks = [
         ReAsk(incorrect_value="Hello there!", fail_results=[first_validation_result])
     ]
-    first_validator_logs = [
-        ValidatorLogs(
-            validator_name="no-punctuation",
-            value_before_validation="Hello there!",
-            validation_result=first_validation_result,
-            value_after_validation="Hello there",
-        )
-    ]
+    first_validator_log = ValidatorLogs(
+        validator_name="no-punctuation",
+        value_before_validation="Hello there!",
+        validation_result=first_validation_result,
+        value_after_validation="Hello there",
+    )
+    first_validator_logs = [first_validator_log]
     first_outputs = Outputs(
         llm_response_info=first_llm_response_info,
         parsed_output=first_parsed_output,
@@ -108,29 +118,41 @@ def test_non_empty_initialization():
 
     first_iteration = Iteration(inputs=inputs, outputs=first_outputs)
 
+    second_iter_prompt = Prompt(source="That wasn't quite right. Try again.")
+
+    second_inputs = Inputs(
+        llm_api=iter_llm_api,
+        llm_output=llm_output,
+        instructions=instructions,
+        prompt=second_iter_prompt,
+        num_reasks=num_reasks,
+        metadata=metadata,
+        full_schema_reask=full_schema_reask,
+    )
+
     second_llm_response_info = LLMResponse(
         output="Hello there", prompt_token_count=10, response_token_count=3
     )
     second_parsed_output = "Hello there"
     second_validated_output = "Hello there"
     second_reasks = []
-    second_validator_logs = [
-        ValidatorLogs(
-            validator_name="no-punctuation",
-            value_before_validation="Hello there",
-            validation_result=PassResult(),
-            value_after_validation="Hello there",
-        )
-    ]
+    second_validator_log = ValidatorLogs(
+        validator_name="no-punctuation",
+        value_before_validation="Hello there",
+        validation_result=PassResult(),
+        value_after_validation="Hello there",
+    )
+    second_validator_logs = [second_validator_log]
     second_outputs = Outputs(
         llm_response_info=second_llm_response_info,
         parsed_output=second_parsed_output,
+        validation_output="Hello there",
         validated_output=second_validated_output,
         reasks=second_reasks,
         validator_logs=second_validator_logs,
     )
 
-    second_iteration = Iteration(inputs=inputs, outputs=second_outputs)
+    second_iteration = Iteration(inputs=second_inputs, outputs=second_outputs)
 
     iterations: Stack[Iteration] = Stack(first_iteration, second_iteration)
 
@@ -139,7 +161,32 @@ def test_non_empty_initialization():
     assert call.iterations == iterations
     assert isinstance(call.iterations, Stack) is True
     assert call.inputs == call_inputs
+
+    assert call.prompt == prompt
+    assert call.prompt_params == prompt_params
+    assert call.compiled_prompt == "Respond with a friendly greeting."
+    assert call.reask_prompts == Stack(second_iter_prompt.source)
+    assert call.instructions == instructions.source
+    assert call.compiled_instructions == instructions.source
+    assert call.reask_instructions == Stack(instructions.source)
+    
+    # TODO: Test this in the integration tests
+    assert call.logs == []
+
     assert call.tokens_consumed == 26
     assert call.prompt_tokens_consumed == 20
     assert call.completion_tokens_consumed == 6
+
+    assert call.raw_outputs == Stack("Hello there!", "Hello there")
+    assert call.parsed_outputs == Stack("Hello there!", "Hello there")
+    assert call.validation_output == "Hello there"
+    assert call.fixed_output == "Hello there"
+    assert call.validated_output == "Hello there"
+    assert call.reasks == Stack()
+    assert call.validator_logs == Stack(first_validator_log, second_validator_log)
+    assert call.error is None
+    assert call.failed_validations == Stack(first_validator_log)
     assert call.status == pass_status
+    # TODO: How to do shallow comparison
+    # assert call.tree == "something"
+    assert call.tree is not None

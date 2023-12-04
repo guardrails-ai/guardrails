@@ -89,3 +89,11 @@ def test_top(stack: Stack, expected_value: int):
     elem = stack.top
 
     assert elem == expected_value
+
+def test_length():
+    stack = Stack()
+    
+    assert stack.length == 0
+
+    stack.push(1)
+    assert stack.length == 1

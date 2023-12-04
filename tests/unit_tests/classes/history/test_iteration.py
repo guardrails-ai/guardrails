@@ -1,3 +1,4 @@
+from guardrails.classes.generic.stack import Stack
 from guardrails.classes.history.inputs import Inputs
 from guardrails.classes.history.iteration import Iteration
 from guardrails.classes.history.outputs import Outputs
@@ -7,7 +8,7 @@ from guardrails.prompt.instructions import Instructions
 from guardrails.prompt.prompt import Prompt
 from guardrails.utils.llm_response import LLMResponse
 from guardrails.utils.logs_utils import ValidatorLogs
-from guardrails.utils.reask_utils import ReAsk
+from guardrails.utils.reask_utils import FieldReAsk, ReAsk
 from guardrails.validator_base import FailResult
 
 
@@ -16,16 +17,20 @@ def test_empty_initialization():
 
     assert iteration.inputs == Inputs()
     assert iteration.outputs == Outputs()
+    assert iteration.logs == Stack()
     assert iteration.tokens_consumed is None
     assert iteration.prompt_tokens_consumed is None
     assert iteration.completion_tokens_consumed is None
     assert iteration.raw_output is None
     assert iteration.parsed_output is None
+    assert iteration.validation_output is None
     assert iteration.validated_output is None
     assert iteration.reasks == []
     assert iteration.validator_logs == []
     assert iteration.error is None
+    assert iteration.failed_validations == []
     assert iteration.status == not_run_status
+    assert iteration.rich_group is not None
 
 
 def test_non_empty_initialization():
@@ -65,7 +70,12 @@ def test_non_empty_initialization():
     )
     parsed_output = "Hello there!"
     validated_output = "Hello there"
-    reasks = [ReAsk(incorrect_value="Hello there!", fail_results=[validation_result])]
+    reask = FieldReAsk(
+        incorrect_value="Hello there!",
+        fail_results=[validation_result],
+        path=[]
+    )
+    reasks = [reask]
     validator_logs = [
         ValidatorLogs(
             validator_name="no-punctuation",
@@ -78,6 +88,7 @@ def test_non_empty_initialization():
     outputs = Outputs(
         llm_response_info=llm_response_info,
         parsed_output=parsed_output,
+        validation_output=reask,
         validated_output=validated_output,
         reasks=reasks,
         validator_logs=validator_logs,
@@ -88,11 +99,13 @@ def test_non_empty_initialization():
 
     assert iteration.inputs == inputs
     assert iteration.outputs == outputs
+    assert iteration.logs == Stack()
     assert iteration.tokens_consumed == 13
     assert iteration.prompt_tokens_consumed == 10
     assert iteration.completion_tokens_consumed == 3
     assert iteration.raw_output == "Hello there!"
     assert iteration.parsed_output == "Hello there!"
+    assert iteration.validation_output == reask
     assert iteration.validated_output == "Hello there"
     assert iteration.reasks == reasks
     assert iteration.validator_logs == validator_logs
