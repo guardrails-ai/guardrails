@@ -27,7 +27,6 @@ class Iteration(ArbitraryModel):
         description="The outputs from the iteration/step.", default_factory=Outputs
     )
 
-    # TODO
     @property
     def logs(self) -> Stack[str]:
         """Returns the logs from this iteration as a stack."""
