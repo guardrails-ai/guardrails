@@ -5,6 +5,7 @@ from types import SimpleNamespace
 from typing import Any, Dict, Iterable
 from typing import List as TypedList
 from typing import Optional, Sequence, Type, TypeVar, Union
+from enum import Enum
 
 from dateutil.parser import parse
 from lxml import etree as ET
@@ -380,6 +381,50 @@ class Percentage(ScalarType):
     """Element tag: `<percentage>`"""
 
     tag = "percentage"
+
+
+@register_type("enum")
+class Enum(ScalarType):
+    """Element tag: `<enum>`"""
+
+    tag = "enum"
+
+    def __init__(
+        self,
+        children: Dict[str, Any],
+        validators_attr: ValidatorsAttr,
+        optional: bool,
+        name: Optional[str],
+        description: Optional[str],
+        enum_values: TypedList[str],
+    ) -> None:
+        super().__init__(children, validators_attr, optional, name, description)
+        self.enum_values = enum_values
+
+    def from_str(self, s: str) -> Optional[str]:
+        """Create an Enum from a string."""
+        if s is None:
+            return None
+        if s not in self.enum_values:
+            raise ValueError(f"Invalid enum value: {s}")
+        return s
+
+    @classmethod
+    def from_xml(
+        cls,
+        enum_values: TypedList[str],
+        validators: Sequence[ValidatorSpec],
+        description: Optional[str] = None,
+        strict: bool = False,
+    ) -> "Enum":
+        return cls(
+            children={},
+            validators_attr=ValidatorsAttr.from_validators(validators, cls.tag, strict),
+            optional=False,
+            name=None,
+            description=description,
+            enum_values=enum_values,
+        )
 
 
 @register_type("list")
