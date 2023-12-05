@@ -10,7 +10,6 @@ from guardrails.validator_base import (
     register_validator,
 )
 
-
 try:
     import nltk  # type: ignore
 except ImportError:
@@ -21,11 +20,12 @@ if nltk is not None:
         nltk.data.find("tokenizers/punkt")
     except LookupError:
         nltk.download("punkt")
-        
+
 try:
     import spacy
 except ImportError:
     spacy = None
+
 
 @register_validator(name="competitor-check", data_type="string")
 class CompetitorCheck(Validator):
