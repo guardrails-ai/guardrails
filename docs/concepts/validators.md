@@ -35,7 +35,7 @@ Sometimes validators need addtional parameters that are only availble during run
 ```python
 guard = Guard.from_rail("my_railspec.rail")
 
-raw_output, guarded_output = guard(
+raw_output, guarded_output, *rest = guard(
     llm_api=openai.ChatCompletion.create,
     model="gpt-3.5-turbo",
     num_reasks=3,
@@ -134,7 +134,7 @@ ${guardrails.complete_json_suffix}
 
 guard = Guard.from_rail_string(rail_string=rail_str)
 
-raw_output, guarded_output = guard(
+raw_output, guarded_output, *rest = guard(
     llm_api=openai.ChatCompletion.create,
     model="gpt-3.5-turbo"
 )

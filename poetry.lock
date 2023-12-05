@@ -5534,4 +5534,4 @@ vectordb = ["faiss-cpu", "numpy", "tiktoken"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "932435f8391c46c2cbb5f9dce6a1d9e1ea16d639247df949f422fdf9ccfffa2b"
+content-hash = "4438ea617409d8fe5b62a9e7a2ab21b77bb37939031fa1f730fee7547f161915"

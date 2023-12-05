@@ -2,7 +2,7 @@ import asyncio
 import json
 import os
 from string import Template
-from typing import Callable, Dict, Optional, Type
+from typing import Callable, Dict, Optional, Type, cast
 
 from guardrails.document_store import DocumentStoreBase, EphemeralDocumentStore
 from guardrails.embedding import EmbeddingBase, OpenAIEmbedding
@@ -186,21 +186,22 @@ class Text2Sql:
                 "Async API is not supported in Text2SQL application. "
                 "Please use a synchronous API."
             )
-        if self.llm_api is None:
-            return None
-        try:
-            return self.guard(
-                self.llm_api,
-                prompt_params={
-                    "nl_instruction": text,
-                    "examples": similar_examples_prompt,
-                    "db_info": str(self.sql_schema),
-                },
-                **self.llm_api_kwargs,
-            )[  # type: ignore
-                1
-            ][
-                "generated_sql"
-            ]
-        except TypeError:
-            return None
+        else:
+            if self.llm_api is None:
+                return None
+            try:
+                response = self.guard(
+                    self.llm_api,
+                    prompt_params={
+                        "nl_instruction": text,
+                        "examples": similar_examples_prompt,
+                        "db_info": str(self.sql_schema),
+                    },
+                    **self.llm_api_kwargs,
+                )
+                validated_output: Dict = cast(Dict, response.validated_output)
+                output = validated_output["generated_sql"]
+            except TypeError:
+                output = None
+
+            return output
