@@ -3,6 +3,7 @@ import typing
 import warnings
 from copy import deepcopy
 from datetime import date, time
+from enum import Enum
 from typing import Any, Callable, Dict, Optional, Type, Union, get_args, get_origin
 
 from pydantic import BaseModel, validator
@@ -20,6 +21,7 @@ from guardrails.datatypes import List as ListDataType
 from guardrails.datatypes import Object as ObjectDataType
 from guardrails.datatypes import String as StringDataType
 from guardrails.datatypes import Time as TimeDataType
+from guardrails.datatypes import Enum as EnumDataType
 from guardrails.validator_base import Validator
 from guardrails.validatorsattr import ValidatorsAttr
 
@@ -66,6 +68,16 @@ def is_dict(type_annotation: Any) -> bool:
         return True
     return False
 
+def is_enum(type_annotation: Any) -> bool:
+    """Check if a type_annotation is an enum"""
+
+    type_annotation = prepare_type_annotation(type_annotation)
+
+    if is_pydantic_base_model(type_annotation):
+        return False
+    if issubclass(type_annotation, Enum):
+        return True 
+    return False
 
 def prepare_type_annotation(type_annotation: Union[ModelField, Type]) -> Type:
     """Get the raw type annotation that can be used for downstream processing.
@@ -262,6 +274,8 @@ def field_to_datatype(field: Union[ModelField, Type]) -> Type[DataType]:
         return ListDataType
     elif is_dict(type_annotation):
         return ObjectDataType
+    elif is_enum(type_annotation):
+        return EnumDataType
     elif type_annotation == bool:
         return BooleanDataType
     elif type_annotation == date:
@@ -300,6 +314,9 @@ def convert_pydantic_model_to_datatype(
         model = model_field
 
     model_fields = add_pydantic_validators_as_guardrails_validators(model)
+
+    # Use inline import to avoid circular dependency
+    from guardrails.validators import ValidChoices
 
     children = {}
     for field_name, field in model_fields.items():
@@ -355,6 +372,15 @@ def convert_pydantic_model_to_datatype(
                 children=choice_children,
                 strict=strict,
                 discriminator_key=discriminator,
+            )
+        elif target_datatype == EnumDataType:
+            valid_choices = type_annotation._member_names_
+            field.field_info.extra["validators"] = [ValidChoices(choices=valid_choices)]
+            return pydantic_field_to_datatype(
+                EnumDataType,
+                field,
+                strict=strict,
+                enum_values=valid_choices
             )
         elif isinstance(field.type_, type) and issubclass(field.type_, BaseModel):
             children[field_name] = convert_pydantic_model_to_datatype(
