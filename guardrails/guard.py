@@ -1,6 +1,5 @@
 import asyncio
 import contextvars
-import logging
 import warnings
 from typing import (
     Any,
@@ -25,15 +24,14 @@ from guardrails.classes.generic import Stack
 from guardrails.classes.history import Call
 from guardrails.classes.history.call_inputs import CallInputs
 from guardrails.llm_providers import get_async_llm_ask, get_llm_ask
+from guardrails.logger import logger, set_scope
 from guardrails.prompt import Instructions, Prompt
 from guardrails.rail import Rail
 from guardrails.run import AsyncRunner, Runner
 from guardrails.schema import Schema, StringSchema
 from guardrails.validators import Validator
 
-logger = logging.getLogger(__name__)
-actions_logger = logging.getLogger(f"{__name__}.actions")
-add_destinations(actions_logger.debug)
+add_destinations(logger.debug)
 
 
 class Guard(Generic[OT]):
@@ -62,6 +60,7 @@ class Guard(Generic[OT]):
         """Initialize the Guard."""
         self.rail = rail
         self.num_reasks = num_reasks
+        # TODO: Support a sink for history so that it is not solely held in memory
         self.history: Stack[Call] = Stack()
         self.base_model = base_model
 
@@ -326,6 +325,7 @@ class Guard(Generic[OT]):
             kwargs=kwargs,
         )
         call_log = Call(inputs=call_inputs)
+        set_scope(str(id(call_log)))
         self.history.push(call_log)
 
         # If the LLM API is async, return a coroutine
@@ -568,6 +568,7 @@ class Guard(Generic[OT]):
             kwargs=kwargs,
         )
         call_log = Call(inputs=call_inputs)
+        set_scope(str(id(call_log)))
         self.history.push(call_log)
 
         # If the LLM API is async, return a coroutine

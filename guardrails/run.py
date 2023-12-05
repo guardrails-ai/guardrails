@@ -1,5 +1,4 @@
 import copy
-import logging
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union
 
 from eliot import add_destinations, start_action
@@ -8,15 +7,14 @@ from pydantic import BaseModel
 from guardrails.classes.history import Call, Inputs, Iteration, Outputs
 from guardrails.datatypes import verify_metadata_requirements
 from guardrails.llm_providers import AsyncPromptCallableBase, PromptCallableBase
+from guardrails.logger import logger, set_scope
 from guardrails.prompt import Instructions, Prompt
 from guardrails.schema import Schema, StringSchema
 from guardrails.utils.llm_response import LLMResponse
 from guardrails.utils.reask_utils import NonParseableReAsk, ReAsk, reasks_to_dict
 from guardrails.validator_base import ValidatorError
 
-logger = logging.getLogger(__name__)
-actions_logger = logging.getLogger(f"{__name__}.actions")
-add_destinations(actions_logger.debug)
+add_destinations(logger.debug)
 
 
 class Runner:
@@ -223,6 +221,8 @@ class Runner:
         )
         outputs = Outputs()
         iteration = Iteration(inputs=inputs, outputs=outputs)
+        set_scope(str(id(iteration)))
+
         try:
             with start_action(
                 action_type="step",
