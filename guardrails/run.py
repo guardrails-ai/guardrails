@@ -222,6 +222,7 @@ class Runner:
         outputs = Outputs()
         iteration = Iteration(inputs=inputs, outputs=outputs)
         set_scope(str(id(iteration)))
+        call_log.iterations.push(iteration)
 
         try:
             with start_action(
@@ -258,8 +259,6 @@ class Runner:
                 iteration.inputs.instructions = instructions
                 iteration.inputs.prompt = prompt
                 iteration.inputs.msg_history = msg_history
-
-                call_log.iterations.push(iteration)
 
                 # Call: run the API.
                 llm_response = self.call(
@@ -348,7 +347,7 @@ class Runner:
                         llm_output=msg_str,
                     )
                     iteration = Iteration(inputs=inputs)
-                    call_log.iterations.push(iteration)
+                    call_log.iterations.insert(0, iteration)
                     validated_msg_history = msg_history_schema.validate(
                         iteration, msg_str, self.metadata
                     )
@@ -386,7 +385,7 @@ class Runner:
                         llm_output=prompt.source,
                     )
                     iteration = Iteration(inputs=inputs)
-                    call_log.iterations.push(iteration)
+                    call_log.iterations.insert(0, iteration)
                     validated_prompt = prompt_schema.validate(
                         iteration, prompt.source, self.metadata
                     )
@@ -405,7 +404,7 @@ class Runner:
                         llm_output=instructions.source,
                     )
                     iteration = Iteration(inputs=inputs)
-                    call_log.iterations.push(iteration)
+                    call_log.iterations.insert(0, iteration)
                     validated_instructions = instructions_schema.validate(
                         iteration, instructions.source, self.metadata
                     )
@@ -729,6 +728,8 @@ class AsyncRunner(Runner):
         )
         outputs = Outputs()
         iteration = Iteration(inputs=inputs, outputs=outputs)
+        call_log.iterations.push(iteration)
+
         try:
             with start_action(
                 action_type="step",
@@ -764,8 +765,6 @@ class AsyncRunner(Runner):
                 iteration.inputs.instructions = instructions
                 iteration.inputs.prompt = prompt
                 iteration.inputs.msg_history = msg_history
-
-                call_log.iterations.push(iteration)
 
                 # Call: run the API.
                 llm_response = await self.async_call(
@@ -925,7 +924,7 @@ class AsyncRunner(Runner):
                         llm_output=msg_str,
                     )
                     iteration = Iteration(inputs=inputs)
-                    call_log.iterations.push(iteration)
+                    call_log.iterations.insert(0, iteration)
                     validated_msg_history = await msg_history_schema.async_validate(
                         iteration, msg_str, self.metadata
                     )
@@ -957,7 +956,7 @@ class AsyncRunner(Runner):
                         llm_output=prompt.source,
                     )
                     iteration = Iteration(inputs=inputs)
-                    call_log.iterations.push(iteration)
+                    call_log.iterations.insert(0, iteration)
                     validated_prompt = await prompt_schema.async_validate(
                         iteration, prompt.source, self.metadata
                     )
@@ -976,7 +975,7 @@ class AsyncRunner(Runner):
                         llm_output=instructions.source,
                     )
                     iteration = Iteration(inputs=inputs)
-                    call_log.iterations.push(iteration)
+                    call_log.iterations.insert(0, iteration)
                     validated_instructions = await instructions_schema.async_validate(
                         iteration, instructions.source, self.metadata
                     )
