@@ -10,6 +10,7 @@ from guardrails.llm_providers import AsyncPromptCallableBase, PromptCallableBase
 from guardrails.logger import logger, set_scope
 from guardrails.prompt import Instructions, Prompt
 from guardrails.schema import Schema, StringSchema
+from guardrails.utils.exception_utils import UserFacingException
 from guardrails.utils.llm_response import LLMResponse
 from guardrails.utils.reask_utils import NonParseableReAsk, ReAsk, reasks_to_dict
 from guardrails.validator_base import ValidatorError
@@ -185,9 +186,8 @@ class Runner:
                         prompt_params=prompt_params,
                         include_instructions=include_instructions,
                     )
-        # TODO decide how to handle errors
-        except (ValidatorError, ValueError) as e:
-            raise e
+        except UserFacingException as e:
+            raise e.original_exception
         except Exception as e:
             error_message = str(e)
         return call_log, error_message
@@ -273,6 +273,7 @@ class Runner:
                     index, raw_output, output_schema
                 )
                 if parsing_error:
+                    iteration.outputs.exception = parsing_error
                     iteration.outputs.error = str(parsing_error)
 
                 iteration.outputs.parsed_output = parsed_output
@@ -298,6 +299,7 @@ class Runner:
         except Exception as e:
             error_message = str(e)
             iteration.outputs.error = error_message
+            iteration.outputs.exception = e
             raise e
         return iteration
 
@@ -322,16 +324,18 @@ class Runner:
         """
         with start_action(action_type="prepare", index=index) as action:
             if api is None:
-                raise ValueError("API must be provided.")
+                raise UserFacingException(ValueError("API must be provided."))
 
             if prompt_params is None:
                 prompt_params = {}
 
             if msg_history:
                 if prompt_schema is not None or instructions_schema is not None:
-                    raise ValueError(
-                        "Prompt and instructions validation are "
-                        "not supported when using message history."
+                    raise UserFacingException(
+                        ValueError(
+                            "Prompt and instructions validation are "
+                            "not supported when using message history."
+                        )
                     )
                 msg_history = copy.deepcopy(msg_history)
                 # Format any variables in the message history with the prompt params.
@@ -361,9 +365,11 @@ class Runner:
                         raise ValidatorError("Message history validation failed")
             elif prompt is not None:
                 if msg_history_schema is not None:
-                    raise ValueError(
-                        "Message history validation is "
-                        "not supported when using prompt/instructions."
+                    raise UserFacingException(
+                        ValueError(
+                            "Message history validation is "
+                            "not supported when using prompt/instructions."
+                        )
                     )
                 if isinstance(prompt, str):
                     prompt = Prompt(prompt)
@@ -417,7 +423,9 @@ class Runner:
                         )
                     instructions = Instructions(validated_instructions)
             else:
-                raise ValueError("Prompt or message history must be provided.")
+                raise UserFacingException(
+                    ValueError("Prompt or message history must be provided.")
+                )
 
             action.log(
                 message_type="info",
@@ -692,8 +700,8 @@ class AsyncRunner(Runner):
                         output_schema,
                         prompt_params=prompt_params,
                     )
-        except (ValidatorError, ValueError) as e:
-            raise e
+        except UserFacingException as e:
+            raise e.original_exception
         except Exception as e:
             error_message = str(e)
 
@@ -777,6 +785,7 @@ class AsyncRunner(Runner):
                 # Parse: parse the output.
                 parsed_output, parsing_error = self.parse(index, output, output_schema)
                 if parsing_error:
+                    iteration.outputs.exception = parsing_error
                     iteration.outputs.error = str(parsing_error)
 
                 iteration.outputs.parsed_output = parsed_output
@@ -801,6 +810,7 @@ class AsyncRunner(Runner):
         except Exception as e:
             error_message = str(e)
             iteration.outputs.error = error_message
+            iteration.outputs.exception = e
             raise e
         return iteration
 
