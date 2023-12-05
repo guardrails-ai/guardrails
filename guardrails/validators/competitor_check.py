@@ -1,5 +1,5 @@
 import re
-from typing import Any, Callable, Dict, List, Optional
+from typing import Callable, Dict, List, Optional
 
 from guardrails.logger import logger
 from guardrails.validators import (
