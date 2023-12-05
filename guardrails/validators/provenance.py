@@ -182,7 +182,7 @@ class ProvenanceV0(Validator):
         if nltk is None:
             raise ImportError(
                 "`nltk` library is required for `provenance-v0` validator. "
-                "Please install it with `pip install nltk`."
+                "Please install it with `poetry add nltk`."
             )
         # Split the value into sentences using nltk sentence tokenizer.
         sentences = nltk.sent_tokenize(value)
@@ -542,7 +542,7 @@ class ProvenanceV1(Validator):
         if nltk is None:
             raise ImportError(
                 "`nltk` library is required for `provenance-v0` validator. "
-                "Please install it with `pip install nltk`."
+                "Please install it with `poetry add nltk`."
             )
         # Split the value into sentences using nltk sentence tokenizer.
         sentences = nltk.sent_tokenize(value)

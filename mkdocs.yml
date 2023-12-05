@@ -60,6 +60,7 @@ nav:
     - 'Detect and limit hallucinations in generated text': examples/provenance.ipynb
     - 'Check whether a value is similar to a set of other values': examples/value_within_distribution.ipynb
     - 'Using GuardrailsOutputParser in LlamaIndex': examples/llamaindex-output-parsing.ipynb
+    - 'Check if a competitor is named': examples/competitors_check.ipynb
   - 'Integrations':
     - 'Azure OpenAI': integrations/azure_openai.ipynb
     - 'OpenAI Functions': integrations/openai_functions.ipynb
