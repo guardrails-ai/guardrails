@@ -1,6 +1,6 @@
-import logging
 from typing import Any, Callable, Dict, Optional
 
+from guardrails.logger import logger
 from guardrails.utils.openai_utils import OpenAIClient
 from guardrails.validator_base import (
     FailResult,
@@ -9,8 +9,6 @@ from guardrails.validator_base import (
     Validator,
     register_validator,
 )
-
-logger = logging.getLogger(__name__)
 
 try:
     import numpy as np
@@ -55,7 +53,7 @@ class SimilarToDocument(Validator):
         if not _HAS_NUMPY:
             raise ImportError(
                 f"The {self.__class__.__name__} validator requires the numpy package.\n"
-                "`pip install numpy` to install it."
+                "`poetry add numpy` to install it."
             )
 
         self.client = OpenAIClient()

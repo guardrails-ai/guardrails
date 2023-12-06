@@ -45,7 +45,7 @@ class IsHighQualityTranslation(Validator):
         except ImportError:
             raise ImportError(
                 "`is-high-quality-translation` validator requires the `inspiredco`"
-                "package. Please install it with `pip install inspiredco`."
+                "package. Please install it with `poetry add inspiredco`."
             )
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:

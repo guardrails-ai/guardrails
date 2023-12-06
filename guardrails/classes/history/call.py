@@ -134,10 +134,13 @@ class Call(ArbitraryModel):
     #     # To allow chaining without getting AttributeErrors
     #     return Outputs()
 
-    # TODO
-    # @property
-    # def logs(self) -> Stack[str]:
-    #     """Returns all logs from all iterations as a stack"""
+    @property
+    def logs(self) -> Stack[str]:
+        """Returns all logs from all iterations as a stack."""
+        all_logs = []
+        for i in self.iterations:
+            all_logs.extend(i.logs)
+        return Stack(*all_logs)
 
     @property
     def tokens_consumed(self) -> Optional[int]:

@@ -5988,6 +5988,7 @@ test = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 
 [extras]
+competitor-check = ["spacy"]
 critique = ["inspiredco"]
 detect-secrets = ["detect-secrets"]
 manifest = ["manifest-ml"]

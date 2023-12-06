@@ -13,6 +13,7 @@ from guardrails.validator_base import (
 )
 from guardrails.validators.bug_free_python import BugFreePython
 from guardrails.validators.bug_free_sql import BugFreeSQL
+from guardrails.validators.competitor_check import CompetitorCheck
 from guardrails.validators.detect_secrets import DetectSecrets, detect_secrets
 from guardrails.validators.endpoint_is_reachable import EndpointIsReachable
 from guardrails.validators.ends_with import EndsWith
@@ -77,6 +78,7 @@ __all__ = [
     "SimilarToList",
     "DetectSecrets",
     "ToxicLanguage",
+    "CompetitorCheck",
     # Validator helpers
     "detect_secrets",
     "AnalyzerEngine",

@@ -44,6 +44,7 @@ transformers = {version = "^4.11.3", optional = true}
 torch = {version = "^2.1.0", optional = true, source = "torch"}
 presidio_analyzer = {version = "^2.2.33", optional = true}
 presidio_anonymizer = {version = "^2.2.33", optional = true}
+spacy = {version = "^3.7.2", optional = true}
 
 [tool.poetry.extras]
 sql = ["sqlvalidator", "sqlalchemy", "sqlglot"]
@@ -55,6 +56,7 @@ manifest = ["manifest-ml"]
 critique = ["inspiredco"]
 toxic_language = ["transformers", "torch"]
 pii = ["presidio_analyzer", "presidio_anonymizer"]
+competitor-check = ["spacy"]
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.3"

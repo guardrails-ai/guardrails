@@ -19,7 +19,7 @@ class Outputs(ArbitraryModel):
         "as it was passed into validation.",
         default=None,
     )
-    validation_output: Optional[Union[str, Dict, ReAsk]] = Field(
+    validation_output: Optional[Union[str, ReAsk, Dict]] = Field(
         description="The output from the validation process.", default=None
     )
     validated_output: Optional[Union[str, Dict]] = Field(
@@ -48,6 +48,7 @@ class Outputs(ArbitraryModel):
         return (
             self.llm_response_info is None
             and self.parsed_output is None
+            and self.validation_output is None
             and self.validated_output is None
             and len(self.reasks) == 0
             and len(self.validator_logs) == 0
@@ -79,6 +80,7 @@ class Outputs(ArbitraryModel):
         all_reasks_have_fixes = all(
             list(fail.fix_value is not None for fail in all_fail_results)
         )
+
         if self._all_empty() is True:
             return not_run_status
         elif self.error:

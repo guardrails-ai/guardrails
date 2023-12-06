@@ -1,6 +1,6 @@
-import logging
 from typing import Any, Dict
 
+from guardrails.logger import logger
 from guardrails.validator_base import (
     FailResult,
     PassResult,
@@ -8,8 +8,6 @@ from guardrails.validator_base import (
     Validator,
     register_validator,
 )
-
-logger = logging.getLogger(__name__)
 
 
 @register_validator(name="is-reachable", data_type=["string"])

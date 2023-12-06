@@ -118,6 +118,7 @@ class BasePrompt:
         return earliest_match.start()
 
     def escape(self) -> str:
+        """Escape single curly braces into double curly braces."""
         start_replaced = regex.sub(r"(?<!\$){", "{{", self.source)
         # This variable length negative lookbehind is why we need `regex` over `re`
         return regex.sub(r"(?<!\${.*)}", "}}", start_replaced)
