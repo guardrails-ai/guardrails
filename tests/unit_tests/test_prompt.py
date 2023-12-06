@@ -278,14 +278,13 @@ def test_gr_dot_prefixed_prompt_item_fails():
 
 def test_escape():
     prompt_string = (
-        'My prompt with a some sample json { "a" : 1 } and a {f_var} and a ${safe_var}'
+        'My prompt with a some sample json { "a" : 1 } and a {f_var} and a'
+        " ${safe_var}. Also an incomplete brace {."
     )
     prompt = Prompt(prompt_string)
 
-    escaped_prompt = prompt.escape()
-
     assert prompt.source == prompt_string
-    assert (
-        escaped_prompt
-        == 'My prompt with a some sample json {{ "a" : 1 }} and a {{f_var}} and a ${safe_var}'  # noqa
+    assert prompt.escape() == (
+        'My prompt with a some sample json {{ "a" : 1 }} and a {{f_var}} and a'
+        " ${safe_var}. Also an incomplete brace {{."
     )
