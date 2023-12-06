@@ -11,7 +11,7 @@ RAIL_SPEC = """
 <output>
     <object name="patient_info">
         <string name="gender" description="Patient's gender" />
-        <integer name="age" format="valid-range: 0 100" />
+        <integer name="age" validators="valid-range: 0 100" />
         <string name="symptoms" description="Symptoms that the patient is currently experiencing" />
     </object>
 </output>

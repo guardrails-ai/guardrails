@@ -9,7 +9,7 @@ Welcome and thank you for your interest in contributing to Guardrails! We apprec
 
 ## Setting Up Your Environment
 
-1. Clone the repository: `git clone https://github.com/ShreyaR/guardrails.git`
+1. Clone the repository: `git clone https://github.com/guardrails-ai/guardrails.git`
 2. Enter the project directory: `cd guardrails`
 3. Install the project in developer mode (use a virtual environment if preferred): `make dev`
 4. Install [pre-commit](https://pre-commit.com/): `pre-commit install`

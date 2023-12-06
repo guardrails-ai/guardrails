@@ -2,7 +2,7 @@ import pytest
 from lxml.builder import E
 
 import guardrails.datatypes as datatypes
-from guardrails.schema import FormatAttr
+from guardrails.validatorsattr import ValidatorsAttr
 
 
 @pytest.mark.parametrize(
@@ -26,7 +26,7 @@ from guardrails.schema import FormatAttr
     ],
 )
 def test_get_args(input_string, expected):
-    _, args = FormatAttr.parse_token(input_string)
+    _, args = ValidatorsAttr.parse_token(input_string)
     assert args == expected
 
 

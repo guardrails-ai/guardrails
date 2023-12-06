@@ -4,11 +4,14 @@ from string import Template
 from unittest import mock
 
 import pytest
+from pydantic import BaseModel, Field
 
 import guardrails as gd
+from guardrails.prompt.instructions import Instructions
+from guardrails.prompt.prompt import Prompt
 from guardrails.utils.constants import constants
 
-INSTRUCTIONS = "You are a helpful bot, who answers only with valid JSON"
+INSTRUCTIONS = "\nYou are a helpful bot, who answers only with valid JSON\n"
 
 PROMPT = "Extract a string from the text"
 
@@ -203,12 +206,14 @@ def test_format_instructions():
 
 def test_reask_prompt():
     guard = gd.Guard.from_rail_string(RAIL_WITH_REASK_PROMPT)
-    assert guard.output_schema.reask_prompt_template == REASK_PROMPT
+    assert guard.output_schema.reask_prompt_template == Prompt(REASK_PROMPT)
 
 
 def test_reask_instructions():
     guard = gd.Guard.from_rail_string(RAIL_WITH_REASK_INSTRUCTIONS)
-    assert guard.output_schema.reask_instructions_template.strip() == INSTRUCTIONS
+    assert guard.output_schema._reask_instructions_template == Instructions(
+        INSTRUCTIONS
+    )
 
 
 @pytest.mark.parametrize(
@@ -247,6 +252,40 @@ def test_uses_old_constant_schema(text, is_old_schema):
             warn_mock.assert_called_once_with(
                 """It appears that you are using an old schema for gaurdrails\
  variables, follow the new namespaced convention documented here:\
- https://docs.getguardrails.ai/0-2-migration/\
+ https://docs.guardrailsai.com/0-2-migration/\
 """
             )
+
+
+class TestResponse(BaseModel):
+    grade: int = Field(description="The grade of the response")
+
+
+def test_gr_prefixed_prompt_item_passes():
+    # From pydantic:
+    prompt = """Give me a response to ${grade}"""
+
+    guard = gd.Guard.from_pydantic(output_class=TestResponse, prompt=prompt)
+    assert len(guard.prompt.variable_names) == 1
+
+
+def test_gr_dot_prefixed_prompt_item_fails():
+    with pytest.raises(Exception):
+        # From pydantic:
+        prompt = """Give me a response to ${gr.ade}"""
+        gd.Guard.from_pydantic(output_class=TestResponse, prompt=prompt)
+
+
+def test_escape():
+    prompt_string = (
+        'My prompt with a some sample json { "a" : 1 } and a {f_var} and a ${safe_var}'
+    )
+    prompt = Prompt(prompt_string)
+
+    escaped_prompt = prompt.escape()
+
+    assert prompt.source == prompt_string
+    assert (
+        escaped_prompt
+        == 'My prompt with a some sample json {{ "a" : 1 }} and a {{f_var}} and a ${safe_var}'  # noqa
+    )

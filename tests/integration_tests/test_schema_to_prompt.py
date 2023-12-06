@@ -13,7 +13,7 @@ def test_choice_schema():
         <case name="fight">
             <string
                 name="fight_move"
-                format="valid-choices: {['punch','kick','headbutt']}"
+                validators="valid-choices: {['punch','kick','headbutt']}"
                 on-fail-valid-choices="exception"
             />
         </case>
@@ -21,12 +21,12 @@ def test_choice_schema():
             <object name="flight">
                 <string
                     name="flight_direction"
-                    format="valid-choices: {['north','south','east','west']}"
+                    validators="valid-choices: {['north','south','east','west']}"
                     on-fail-valid-choices="exception"
                 />
                 <integer
                     name="flight_speed"
-                    format="valid-choices: {[1,2,3,4]}"
+                    validators="valid-choices: {[1,2,3,4]}"
                     on-fail-valid-choices="exception"
                 />
             </object>
@@ -44,7 +44,7 @@ Dummy prompt
     guard = Guard.from_rail_string(rail_spec)
     schema_2_prompt = guard.output_schema.transpile()
     expected_schema_2_prompt = """<output>
-    <choice name="action">
+    <choice name="action" discriminator="discriminator">
         <case name="fight">
             <string name="fight_move" format="valid-choices: choices=['punch', 'kick', 'headbutt']"/>
         </case>

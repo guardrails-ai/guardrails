@@ -5,6 +5,7 @@ import pytest
 
 import guardrails as gd
 from guardrails.schema import JsonSchema
+from guardrails.utils.openai_utils import OPENAI_VERSION
 
 from .mock_llm_outputs import MockAsyncOpenAICallable, entity_extraction
 from .test_guard import *  # noqa: F403, F401
@@ -12,6 +13,7 @@ from .test_guard import *  # noqa: F403, F401
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("multiprocessing_validators", (True, False))
+@pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="Only for OpenAI v0")
 async def test_entity_extraction_with_reask(mocker, multiprocessing_validators: bool):
     """Test that the entity extraction works with re-asking."""
     mocker.patch(
@@ -64,6 +66,7 @@ async def test_entity_extraction_with_reask(mocker, multiprocessing_validators: 
 
 
 @pytest.mark.asyncio
+@pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="Only for OpenAI v0")
 async def test_entity_extraction_with_noop(mocker):
     mocker.patch(
         "guardrails.llm_providers.AsyncOpenAICallable",
@@ -92,6 +95,7 @@ async def test_entity_extraction_with_noop(mocker):
 
 
 @pytest.mark.asyncio
+@pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="Only for OpenAI v0")
 async def test_entity_extraction_with_noop_pydantic(mocker):
     mocker.patch(
         "guardrails.llm_providers.AsyncOpenAICallable",
@@ -122,6 +126,7 @@ async def test_entity_extraction_with_noop_pydantic(mocker):
 
 
 @pytest.mark.asyncio
+@pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="Only for OpenAI v0")
 async def test_entity_extraction_with_filter(mocker):
     """Test that the entity extraction works with re-asking."""
     mocker.patch(
@@ -154,6 +159,7 @@ async def test_entity_extraction_with_filter(mocker):
 
 
 @pytest.mark.asyncio
+@pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="Only for OpenAI v0")
 async def test_entity_extraction_with_fix(mocker):
     """Test that the entity extraction works with re-asking."""
     mocker.patch(
@@ -184,6 +190,7 @@ async def test_entity_extraction_with_fix(mocker):
 
 
 @pytest.mark.asyncio
+@pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="Only for OpenAI v0")
 async def test_entity_extraction_with_refrain(mocker):
     """Test that the entity extraction works with re-asking."""
     mocker.patch(
@@ -215,6 +222,7 @@ async def test_entity_extraction_with_refrain(mocker):
 
 
 @pytest.mark.asyncio
+@pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="Only for OpenAI v0")
 async def test_rail_spec_output_parse(rail_spec, llm_output, validated_output):
     """Test that the rail_spec fixture is working."""
     guard = gd.Guard.from_rail_string(rail_spec)
@@ -223,3 +231,44 @@ async def test_rail_spec_output_parse(rail_spec, llm_output, validated_output):
         llm_api=openai.Completion.acreate,
     )
     assert output == validated_output
+
+
+@pytest.fixture
+def string_rail_spec():
+    return """
+<rail version="0.1">
+<output
+  type="string"
+  validators="two-words"
+  on-fail-two-words="fix"
+/>
+<prompt>
+Hi please make me a string
+</prompt>
+</rail>
+"""
+
+
+@pytest.fixture
+def string_llm_output():
+    return "string output yes"
+
+
+@pytest.fixture
+def validated_string_output():
+    return "string output"
+
+
+@pytest.mark.asyncio
+@pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="Only for OpenAI v0")
+async def test_string_rail_spec_output_parse(
+    string_rail_spec, string_llm_output, validated_string_output
+):
+    """Test that the string_rail_spec fixture is working."""
+    guard = gd.Guard.from_rail_string(string_rail_spec)
+    output = await guard.parse(
+        string_llm_output,
+        llm_api=openai.Completion.acreate,
+        num_reasks=0,
+    )
+    assert output == validated_string_output
