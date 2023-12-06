@@ -6,7 +6,6 @@ from types import SimpleNamespace
 from typing import Any, Dict, Iterable
 from typing import List as TypedList
 from typing import Optional, Sequence, Type, TypeVar, Union
-from enum import Enum
 
 from dateutil.parser import parse
 from lxml import etree as ET
