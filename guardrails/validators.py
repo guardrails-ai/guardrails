@@ -371,9 +371,10 @@ class QualitySummary(Validator):
         #Get a rating from the rating model
         from guardrails import Guard
         #TODO: Move guard out of validate? Can pass the prompt into the guard's __call__
+        rating_prompt = self._prompt_tmplt.format(input_doc=self._input_doc, summary=value)
         guard = Guard.from_pydantic(
             output_class=self._rating_schema,
-            prompt=self._prompt_tmplt.format(input_doc=self._input_doc, summary=value)
+            prompt=rating_prompt
         )
         raw_llm_response, ratings = guard(
             self._llm_api,
@@ -391,7 +392,7 @@ class QualitySummary(Validator):
             #TODO: STOPPED HERE - Modify fix instructions to give better feedback to the model
             fix_instructions = f"On your last attempt you provided a summary with " + \
                                " and ".join([f'''a {criteria.title()} score of {ratings[criteria]}''' for criteria in failed_criteria]) + \
-                               f".\nYou must provide a summary that achieves the following scores:\n{str({k.title():v for k,v in self._thresh.items()})}.\n\nPlease attempt your summary again."
+                               f".\nYou must provide a summary that achieves the following scores:\n{str({k.title():v for k,v in self._thresh.items()})}.\n\n"
             return FailResult(
                 error_message=fix_instructions
             )
