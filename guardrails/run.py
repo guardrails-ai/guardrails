@@ -695,7 +695,9 @@ class AsyncRunner(Runner):
                 except Exception:
                     llm_response = await api(prompt.source)
             else:
-                raise ValueError("'output', 'prompt' or 'msg_history' must be provided.")
+                raise ValueError(
+                    "'output', 'prompt' or 'msg_history' must be provided."
+                )
 
             action.log(
                 message_type="info",
