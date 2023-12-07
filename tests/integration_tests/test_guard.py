@@ -1,3 +1,4 @@
+import enum
 import json
 import os
 from typing import Optional, Union
@@ -782,3 +783,29 @@ def test_in_memory_validator_log_is_not_duplicated(mocker):
 
     finally:
         OneLine.run_in_separate_process = separate_proc_bak
+
+
+def test_enum_datatype(mocker):
+    mocker.patch("guardrails.llm_providers.OpenAICallable", new=MockOpenAICallable)
+
+    class TaskStatus(enum.Enum):
+        not_started = "not started"
+        on_hold = "on hold"
+        in_progress = "in progress"
+
+    class Task(BaseModel):
+        status: TaskStatus
+
+    guard = gd.Guard.from_pydantic(Task)
+    _, dict_o = guard(
+        get_static_openai_create_func(),
+        prompt="What is the status of this task?",
+    )
+    assert dict_o == {"status": "not started"}
+
+    guard = gd.Guard.from_pydantic(Task)
+    with pytest.raises(ValueError):
+        guard(
+            get_static_openai_create_func(),
+            prompt="What is the status of this task REALLY?",
+        )
