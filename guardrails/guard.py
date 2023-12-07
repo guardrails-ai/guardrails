@@ -260,7 +260,9 @@ class Guard(Generic[OT]):
         full_schema_reask: Optional[bool] = None,
         *args,
         **kwargs,
-    ) -> Union[ValidationOutcome[OT], Awaitable[ValidationOutcome[OT]]]:
+    ) -> Union[
+        Union[ValidationOutcome[OT], Iterable], Awaitable[ValidationOutcome[OT]]
+    ]:
         """Call the LLM and validate the output. Pass an async LLM API to
         return a coroutine.
 

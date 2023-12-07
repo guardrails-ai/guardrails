@@ -915,7 +915,7 @@ class StreamRunner(Runner):
                 )
 
             fragment = ""
-            parsed_fragment, validated_fragment = None, None
+            parsed_fragment, validated_fragment, valid_op = None, None, None
             verified = set()
             # Loop over the stream
             # and construct "fragments" of concatenated chunks
