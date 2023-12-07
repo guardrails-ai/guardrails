@@ -261,7 +261,7 @@ def test_openai_callable(mocker, openai_mock):
 def test_openai_stream_callable(mocker, openai_stream_mock):
     mock_environ = mocker.patch("os.environ.get")
     mock_environ.return_value = "sk-xxxxxxxxxxxxxx"
-    
+
     if OPENAI_VERSION.startswith("0"):
         mocker.patch("openai.Completion.create", return_value=openai_stream_mock)
     else:

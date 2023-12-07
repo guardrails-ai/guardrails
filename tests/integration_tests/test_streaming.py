@@ -161,7 +161,7 @@ def test_streaming_with_openai_callable(
         temperature=0,
         stream=True,
     )
-    
+
     assert isinstance(generator, Iterable)
 
     actual_output = ""

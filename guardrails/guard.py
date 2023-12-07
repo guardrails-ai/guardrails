@@ -5,8 +5,8 @@ from typing import (
     Awaitable,
     Callable,
     Dict,
-    Iterable,
     Generic,
+    Iterable,
     List,
     Optional,
     Sequence,
@@ -386,27 +386,28 @@ class Guard(Generic[OT]):
                     num_reasks=num_reasks,
                     metadata=metadata,
                     base_model=self.base_model,
-                    guard_state=self.guard_state,
                     full_schema_reask=full_schema_reask,
                 )
-                return runner(prompt_params=prompt_params)
+                return runner(call_log=call_log, prompt_params=prompt_params)
         else:
             # Otherwise, use Runner
             with start_action(action_type="guard_call", prompt_params=prompt_params):
-				runner = Runner(
-					instructions=instructions_obj,
-					prompt=prompt_obj,
-					msg_history=msg_history_obj,
-					api=get_llm_ask(llm_api, *args, **kwargs),
-					input_schema=self.input_schema,
-					output_schema=self.output_schema,
-					num_reasks=num_reasks,
-					metadata=metadata,
-					base_model=self.base_model,
-					full_schema_reask=full_schema_reask,
-				)
-				call, error_message = runner(call_log=call_log, prompt_params=prompt_params)
-				return ValidationOutcome[OT].from_guard_history(call, error_message)
+                runner = Runner(
+                    instructions=instructions_obj,
+                    prompt=prompt_obj,
+                    msg_history=msg_history_obj,
+                    api=get_llm_ask(llm_api, *args, **kwargs),
+                    input_schema=self.input_schema,
+                    output_schema=self.output_schema,
+                    num_reasks=num_reasks,
+                    metadata=metadata,
+                    base_model=self.base_model,
+                    full_schema_reask=full_schema_reask,
+                )
+                call, error_message = runner(
+                    call_log=call_log, prompt_params=prompt_params
+                )
+                return ValidationOutcome[OT].from_guard_history(call, error_message)
 
     async def _call_async(
         self,

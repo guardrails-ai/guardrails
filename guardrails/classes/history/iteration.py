@@ -66,6 +66,8 @@ class Iteration(ArbitraryModel):
         response = self.outputs.llm_response_info
         if response is not None:
             return response.output
+        if self.outputs.raw_output is not None:
+            return self.outputs.raw_output
 
     @property
     def parsed_output(self) -> Optional[Union[str, Dict]]:

@@ -18,7 +18,6 @@ from guardrails.logger import logger, set_scope
 from guardrails.prompt import Instructions, Prompt
 from guardrails.schema import JsonSchema, Schema
 from guardrails.utils.llm_response import LLMResponse
-from guardrails.utils.logs_utils import GuardHistory, GuardLogs, GuardState
 from guardrails.utils.reask_utils import (
     FieldReAsk,
     NonParseableReAsk,
@@ -792,7 +791,7 @@ class StreamRunner(Runner):
     similar.
     """
 
-    def __call__(self, prompt_params: Optional[Dict] = None):
+    def __call__(self, call_log: Call, prompt_params: Optional[Dict] = None):
         """Execute the StreamRunner.
 
         Args:
@@ -800,7 +799,7 @@ class StreamRunner(Runner):
                 generate the prompt string.
 
         Returns:
-            output (str): A string concatenation of raw and validated response.
+            The Call log for this run.
         """
         if prompt_params is None:
             prompt_params = {}
@@ -813,9 +812,6 @@ class StreamRunner(Runner):
             raise ValueError(
                 f"Missing required metadata keys: {', '.join(missing_keys)}"
             )
-
-        # Reset the guard history
-        self._reset_guard_history()
 
         with start_action(
             action_type="run",
@@ -845,22 +841,38 @@ class StreamRunner(Runner):
                 input_schema=input_schema,
                 output_schema=output_schema,
                 output=self.output,
+                call_log=call_log,
             )
 
     def step(
         self,
         index: int,
-        api: Union[PromptCallableBase, None],
-        instructions: Union[Instructions, None],
-        prompt: Union[Prompt, None],
-        msg_history: Union[List[Dict], None],
+        api: Optional[PromptCallableBase],
+        instructions: Optional[Instructions],
+        prompt: Optional[Prompt],
+        msg_history: Optional[List[Dict]],
         prompt_params: Dict,
-        input_schema: Union[Schema, None],
+        input_schema: Optional[Schema],
         output_schema: Schema,
-        output: Union[str, None] = None,
+        call_log: Call,
+        output: Optional[str] = None,
     ):
         """Run a full step."""
-        guard_logs = GuardLogs()
+        inputs = Inputs(
+            llm_api=api,
+            llm_output=output,
+            instructions=instructions,
+            prompt=prompt,
+            msg_history=msg_history,
+            prompt_params=prompt_params,
+            num_reasks=self.num_reasks,
+            metadata=self.metadata,
+            full_schema_reask=self.full_schema_reask,
+        )
+        outputs = Outputs()
+        iteration = Iteration(inputs=inputs, outputs=outputs)
+        call_log.iterations.push(iteration)
+
         with start_action(
             action_type="step",
             index=index,
@@ -887,15 +899,15 @@ class StreamRunner(Runner):
                     output_schema,
                 )
 
-            guard_logs.prompt = prompt
-            guard_logs.instructions = instructions
-            guard_logs.msg_history = msg_history
+            iteration.inputs.prompt = prompt
+            iteration.inputs.instructions = instructions
+            iteration.inputs.msg_history = msg_history
 
             # Call: run the API that returns a generator wrapped in LLMResponse
             llm_response = self.call(
                 index, instructions, prompt, msg_history, api, output
             )
-            guard_logs.llm_response = llm_response
+            # iteration.outputs.llm_response_info = llm_response
 
             # Get the stream (generator) from the LLMResponse
             stream = llm_response.stream_output
@@ -925,7 +937,7 @@ class StreamRunner(Runner):
 
                 # 3. Run output validation
                 validated_fragment = self.validate(
-                    guard_logs,
+                    iteration,
                     index,
                     parsed_fragment,
                     output_schema,
@@ -938,7 +950,9 @@ class StreamRunner(Runner):
                     )
 
                 # 4. Introspect: inspect the validated fragment for reasks
-                reasks = self.introspect(index, validated_fragment, output_schema)
+                reasks, valid_op = self.introspect(
+                    index, validated_fragment, output_schema
+                )
                 if reasks:
                     raise ValueError(
                         "Reasks are not yet supported with streaming. Please "
@@ -947,7 +961,7 @@ class StreamRunner(Runner):
 
                 # 5. Convert validated fragment to a pretty JSON string
                 try:
-                    pretty_validated_fragment = json.dumps(validated_fragment, indent=4)
+                    pretty_validated_fragment = json.dumps(valid_op, indent=4)
                 except Exception as e:
                     raise ValueError(
                         f"Error formatting validated fragment JSON: {e}"
@@ -961,14 +975,13 @@ class StreamRunner(Runner):
 
                 yield raw_yield + validated_yield
 
-            # Finally, add to logs
-            guard_logs.raw_output = fragment
-            guard_logs.parsed_output = parsed_fragment
-            guard_logs.set_validated_output(
-                validated_fragment,
-                self.full_schema_reask,
-            )
-            self.guard_history.push(guard_logs)
+        # Finally, add to logs
+        # iteration.outputs.llm_response_info = LLMResponse(output=fragment)
+        iteration.outputs.raw_output = fragment
+        iteration.outputs.parsed_output = parsed_fragment
+        iteration.outputs.validation_output = validated_fragment
+        iteration.outputs.validated_output = valid_op
+        # TODO: Re-check. Not returning iteration as of now
 
     def get_chunk_text(self, chunk: Any, api: Union[PromptCallableBase, None]) -> str:
         """Get the text from a chunk."""
