@@ -1,5 +1,6 @@
 import asyncio
 import contextvars
+import warnings
 from typing import (
     Any,
     Awaitable,
@@ -27,7 +28,7 @@ from guardrails.logger import logger, set_scope
 from guardrails.prompt import Instructions, Prompt
 from guardrails.rail import Rail
 from guardrails.run import AsyncRunner, Runner
-from guardrails.schema import Schema
+from guardrails.schema import Schema, StringSchema
 from guardrails.validators import Validator
 
 add_destinations(logger.debug)
@@ -64,9 +65,19 @@ class Guard(Generic[OT]):
         self.base_model = base_model
 
     @property
-    def input_schema(self) -> Optional[Schema]:
+    def prompt_schema(self) -> Optional[StringSchema]:
         """Return the input schema."""
-        return self.rail.input_schema
+        return self.rail.prompt_schema
+
+    @property
+    def instructions_schema(self) -> Optional[StringSchema]:
+        """Return the input schema."""
+        return self.rail.instructions_schema
+
+    @property
+    def msg_history_schema(self) -> Optional[StringSchema]:
+        """Return the input schema."""
+        return self.rail.msg_history_schema
 
     @property
     def output_schema(self) -> Schema:
@@ -377,7 +388,9 @@ class Guard(Generic[OT]):
                 prompt=prompt_obj,
                 msg_history=msg_history_obj,
                 api=get_llm_ask(llm_api, *args, **kwargs),
-                input_schema=self.input_schema,
+                prompt_schema=self.prompt_schema,
+                instructions_schema=self.instructions_schema,
+                msg_history_schema=self.msg_history_schema,
                 output_schema=self.output_schema,
                 num_reasks=num_reasks,
                 metadata=metadata,
@@ -434,7 +447,9 @@ class Guard(Generic[OT]):
                 prompt=prompt_obj,
                 msg_history=msg_history_obj,
                 api=get_async_llm_ask(llm_api, *args, **kwargs),
-                input_schema=self.input_schema,
+                prompt_schema=self.prompt_schema,
+                instructions_schema=self.instructions_schema,
+                msg_history_schema=self.msg_history_schema,
                 output_schema=self.output_schema,
                 num_reasks=num_reasks,
                 metadata=metadata,
@@ -610,7 +625,9 @@ class Guard(Generic[OT]):
                 prompt=kwargs.pop("prompt", None),
                 msg_history=kwargs.pop("msg_history", None),
                 api=get_llm_ask(llm_api, *args, **kwargs) if llm_api else None,
-                input_schema=None,
+                prompt_schema=self.prompt_schema,
+                instructions_schema=self.instructions_schema,
+                msg_history_schema=self.msg_history_schema,
                 output_schema=self.output_schema,
                 num_reasks=num_reasks,
                 metadata=metadata,
@@ -650,7 +667,9 @@ class Guard(Generic[OT]):
                 prompt=kwargs.pop("prompt", None),
                 msg_history=kwargs.pop("msg_history", None),
                 api=get_async_llm_ask(llm_api, *args, **kwargs) if llm_api else None,
-                input_schema=None,
+                prompt_schema=self.prompt_schema,
+                instructions_schema=self.instructions_schema,
+                msg_history_schema=self.msg_history_schema,
                 output_schema=self.output_schema,
                 num_reasks=num_reasks,
                 metadata=metadata,
@@ -663,3 +682,54 @@ class Guard(Generic[OT]):
             )
 
             return ValidationOutcome[OT].from_guard_history(call, error_message)
+
+    def with_prompt_validation(
+        self,
+        validators: Sequence[Validator],
+    ):
+        """Add prompt validation to the Guard.
+
+        Args:
+            validators: The validators to add to the prompt.
+        """
+        if self.rail.prompt_schema:
+            warnings.warn("Overriding existing prompt validators.")
+        schema = StringSchema.from_string(
+            validators=validators,
+        )
+        self.rail.prompt_schema = schema
+        return self
+
+    def with_instructions_validation(
+        self,
+        validators: Sequence[Validator],
+    ):
+        """Add instructions validation to the Guard.
+
+        Args:
+            validators: The validators to add to the instructions.
+        """
+        if self.rail.instructions_schema:
+            warnings.warn("Overriding existing instructions validators.")
+        schema = StringSchema.from_string(
+            validators=validators,
+        )
+        self.rail.instructions_schema = schema
+        return self
+
+    def with_msg_history_validation(
+        self,
+        validators: Sequence[Validator],
+    ):
+        """Add msg_history validation to the Guard.
+
+        Args:
+            validators: The validators to add to the msg_history.
+        """
+        if self.rail.msg_history_schema:
+            warnings.warn("Overriding existing msg_history validators.")
+        schema = StringSchema.from_string(
+            validators=validators,
+        )
+        self.rail.msg_history_schema = schema
+        return self
