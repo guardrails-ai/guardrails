@@ -53,7 +53,7 @@ class SimilarToDocument(Validator):
         if not _HAS_NUMPY:
             raise ImportError(
                 f"The {self.__class__.__name__} validator requires the numpy package.\n"
-                "`pip install numpy` to install it."
+                "`poetry add numpy` to install it."
             )
 
         self.client = OpenAIClient()

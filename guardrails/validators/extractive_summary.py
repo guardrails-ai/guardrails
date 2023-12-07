@@ -73,7 +73,7 @@ class ExtractiveSummary(Validator):
         except ImportError:
             raise ImportError(
                 "`thefuzz` library is required for `extractive-summary` validator. "
-                "Please install it with `pip install thefuzz`."
+                "Please install it with `poetry add thefuzz`."
             )
 
         # Split the value into sentences.

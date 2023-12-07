@@ -84,8 +84,8 @@ class OpenAIClientV0(BaseSyncOpenAIClient):
     ) -> LLMResponse:
         """Construct an LLMResponse from an OpenAI response.
 
-        Splits execution based on whether the `stream` parameter
-        is set in the kwargs.
+        Splits execution based on whether the `stream` parameter is set
+        in the kwargs.
         """
         if stream:
             # If stream is defined and set to True,
@@ -152,8 +152,8 @@ class OpenAIClientV0(BaseSyncOpenAIClient):
     ) -> LLMResponse:
         """Construct an LLMResponse from an OpenAI response.
 
-        Splits execution based on whether the `stream` parameter
-        is set in the kwargs.
+        Splits execution based on whether the `stream` parameter is set
+        in the kwargs.
         """
         if stream:
             # If stream is defined and set to True,
@@ -296,8 +296,8 @@ class AsyncOpenAIClientV0(BaseAsyncOpenAIClient):
     ) -> LLMResponse:
         """Construct an LLMResponse from an OpenAI response.
 
-        Splits execution based on whether the `stream` parameter
-        is set in the kwargs.
+        Splits execution based on whether the `stream` parameter is set
+        in the kwargs.
         """
         if stream:
             # If stream is defined and set to True,

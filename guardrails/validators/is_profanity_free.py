@@ -31,7 +31,7 @@ class IsProfanityFree(Validator):
         except ImportError:
             raise ImportError(
                 "`is-profanity-free` validator requires the `alt-profanity-check`"
-                "package. Please install it with `pip install profanity-check`."
+                "package. Please install it with `poetry add profanity-check`."
             )
 
         prediction = predict([value])
