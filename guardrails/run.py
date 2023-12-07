@@ -484,7 +484,7 @@ class Runner:
                 )
             else:
                 raise UserFacingException(
-                    ValueError("Prompt or message history must be provided.")
+                    ValueError("'prompt' or 'msg_history' must be provided.")
                 )
 
             action.log(
@@ -544,7 +544,7 @@ class Runner:
                 except Exception:
                     llm_response = api(prompt.source)
             else:
-                raise ValueError("Prompt or message history must be provided.")
+                raise ValueError("'prompt' or 'msg_history' must be provided.")
 
             action.log(
                 message_type="info",
@@ -924,7 +924,9 @@ class AsyncRunner(Runner):
                 except Exception:
                     llm_response = await api(prompt.source)
             else:
-                raise ValueError("Output, prompt or message history must be provided.")
+                raise ValueError(
+                    "'output', 'prompt' or 'msg_history' must be provided."
+                )
 
             action.log(
                 message_type="info",
