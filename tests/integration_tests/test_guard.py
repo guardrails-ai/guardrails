@@ -781,8 +781,9 @@ def test_enum_datatype(mocker):
     assert dict_o == {"status": "not started"}
 
     guard = gd.Guard.from_pydantic(Task)
-    with pytest.raises(ValueError):
-        guard(
-            get_static_openai_create_func(),
-            prompt="What is the status of this task REALLY?",
-        )
+    response = guard(
+        get_static_openai_create_func(),
+        prompt="What is the status of this task REALLY?",
+    )
+
+    assert response.error is not None
