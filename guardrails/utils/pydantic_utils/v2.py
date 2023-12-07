@@ -2,7 +2,6 @@ import typing
 import warnings
 from copy import deepcopy
 from datetime import date, time
-from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, Union, get_args
 
 from pydantic import BaseModel, ConfigDict, HttpUrl, field_validator
@@ -15,7 +14,6 @@ from guardrails.datatypes import Choice
 from guardrails.datatypes import Choice as ChoiceDataType
 from guardrails.datatypes import DataType
 from guardrails.datatypes import Date as DateDataType
-from guardrails.datatypes import Enum as EnumDataType
 from guardrails.datatypes import Float as FloatDataType
 from guardrails.datatypes import Integer as IntegerDataType
 from guardrails.datatypes import List as ListDataType
@@ -87,19 +85,6 @@ def is_dict(type_annotation: Any) -> bool:
         return True
     elif type_annotation == dict:
         return True
-    return False
-
-
-def is_enum(type_annotation: Any) -> bool:
-    """Check if a type_annotation is an enum."""
-
-    type_annotation = prepare_type_annotation(type_annotation)
-
-    try:
-        if issubclass(type_annotation, Enum):
-            return True
-    except TypeError:
-        pass
     return False
 
 
@@ -292,8 +277,6 @@ def field_to_datatype(field: Union[FieldInfo, Type]) -> Type[DataType]:
         return ListDataType
     elif is_dict(type_annotation):
         return ObjectDataType
-    elif is_enum(type_annotation):
-        return EnumDataType
     elif type_annotation == bool:
         return BooleanDataType
     elif type_annotation == date:
@@ -397,16 +380,6 @@ def convert_pydantic_model_to_datatype(
                 children=choice_children,
                 strict=strict,
                 discriminator_key=discriminator,
-                name=field_name,
-            )
-        elif target_datatype == EnumDataType:
-            assert issubclass(type_annotation, Enum)
-            valid_choices = [choice.value for choice in type_annotation]
-            children[field_name] = pydantic_field_to_datatype(
-                EnumDataType,
-                field,
-                strict=strict,
-                enum_values=valid_choices,
                 name=field_name,
             )
         elif is_pydantic_base_model(field.annotation):

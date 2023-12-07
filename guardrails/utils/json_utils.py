@@ -12,7 +12,6 @@ from guardrails.datatypes import (
     DataType,
     Date,
     Email,
-    Enum,
     Float,
     Integer,
 )
@@ -53,7 +52,6 @@ type_map: Dict[Type[DataType], Type] = {
     ListDataType: list,
     Date: str,
     Time: str,
-    Enum: str,
 }
 
 ignore_types = [
