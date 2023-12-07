@@ -282,6 +282,13 @@ class Call(ArbitraryModel):
         return self.iterations.last.error  # type: ignore
 
     @property
+    def exception(self) -> Optional[Exception]:
+        """The exception that interrupted the run."""
+        if self.iterations.empty():
+            return None
+        return self.iterations.last.exception  # type: ignore
+
+    @property
     def failed_validations(self) -> Stack[ValidatorLogs]:
         """The validator logs for any validations that failed during the
         entirety of the run."""

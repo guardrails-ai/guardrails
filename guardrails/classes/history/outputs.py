@@ -46,6 +46,9 @@ class Outputs(ArbitraryModel):
         "that raised and interrupted the process.",
         default=None,
     )
+    exception: Optional[Exception] = Field(
+        description="The exception that interrupted the process.", default=None
+    )
 
     def _all_empty(self) -> bool:
         return (

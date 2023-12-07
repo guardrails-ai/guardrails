@@ -114,6 +114,11 @@ class Iteration(ArbitraryModel):
         return self.outputs.error
 
     @property
+    def exception(self) -> Optional[Exception]:
+        """The exception that interrupted this iteration."""
+        return self.outputs.exception
+
+    @property
     def failed_validations(self) -> List[ValidatorLogs]:
         """The validator logs for any validations that failed during this
         iteration."""
