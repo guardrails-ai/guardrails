@@ -395,7 +395,7 @@ def test_toxic_language(mocker):
 
     output = guard.parse(
         llm_output=TOXIC_PARAGRAPH,
-    )
+    ).validated_output
     # Check if the output is empty
     assert output == ""
 
@@ -410,7 +410,7 @@ def test_toxic_language(mocker):
 
     output = guard.parse(
         llm_output=PARAGRAPH_WITH_TOXIC_SENTENCES,
-    )
+    ).validated_output
 
     # Check if the output matches the expected output
     assert output == EXPECTED_PARAGRAPH_WITH_TOXIC_SENTENCES
@@ -425,7 +425,7 @@ def test_toxic_language(mocker):
 
     output = guard.parse(
         llm_output=NON_TOXIC_PARAGRAPH,
-    )
+    ).validated_output
     # Check if the output is same as the input
     assert output == NON_TOXIC_PARAGRAPH
 
@@ -441,7 +441,7 @@ def test_toxic_language(mocker):
 
     output = guard.parse(
         llm_output=NON_TOXIC_PARAGRAPH,
-    )
+    ).validated_output
     # Check if the output is same as the input
     assert output == NON_TOXIC_PARAGRAPH
 
@@ -457,7 +457,7 @@ def test_toxic_language(mocker):
 
     output = guard.parse(
         llm_output=NON_TOXIC_PARAGRAPH,
-    )
+    ).validated_output
     # Check if the output matches the expected output
     assert output == NON_TOXIC_PARAGRAPH
 
