@@ -1,6 +1,6 @@
 import copy
 import json
-import logging
+
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union
 
 from eliot import add_destinations, start_action
@@ -14,6 +14,7 @@ from guardrails.llm_providers import (
     OpenAIChatCallable,
     PromptCallableBase,
 )
+from guardrails.logger import logger, set_scope
 from guardrails.prompt import Instructions, Prompt
 from guardrails.schema import JsonSchema, Schema
 from guardrails.utils.llm_response import LLMResponse
@@ -27,9 +28,7 @@ from guardrails.utils.reask_utils import (
     sub_reasks_with_fixed_values,
 )
 
-logger = logging.getLogger(__name__)
-actions_logger = logging.getLogger(f"{__name__}.actions")
-add_destinations(actions_logger.debug)
+add_destinations(logger.debug)
 
 
 class Runner:
@@ -214,6 +213,7 @@ class Runner:
         )
         outputs = Outputs()
         iteration = Iteration(inputs=inputs, outputs=outputs)
+        set_scope(str(id(iteration)))
         call_log.iterations.push(iteration)
 
         try:

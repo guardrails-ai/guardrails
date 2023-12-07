@@ -1,5 +1,4 @@
 import json
-import logging
 import warnings
 from dataclasses import dataclass
 from typing import Any, Dict, Optional, Tuple, Type, Union
@@ -24,8 +23,6 @@ from guardrails.datatypes import (
     deprecated_string_types,
 )
 from guardrails.utils.parsing_utils import get_code_block, has_code_block
-
-logger = logging.getLogger(__name__)
 
 
 @dataclass

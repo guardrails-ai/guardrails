@@ -1,7 +1,6 @@
 """Unit tests for prompt and instructions parsing."""
 
 from string import Template
-from unittest import mock
 
 import pytest
 from pydantic import BaseModel, Field
@@ -232,31 +231,6 @@ def test_substitute_constants(prompt_str, final_prompt):
     assert prompt.source == final_prompt
 
 
-# TODO: Deprecate when we can confirm migration off the old, non-namespaced standard
-@pytest.mark.parametrize(
-    "text, is_old_schema",
-    [
-        (RAIL_WITH_OLD_CONSTANT_SCHEMA, True),  # Test with a single match
-        (
-            RAIL_WITH_FORMAT_INSTRUCTIONS,
-            False,
-        ),  # Test with no matches/correct namespacing
-    ],
-)
-def test_uses_old_constant_schema(text, is_old_schema):
-    with mock.patch("warnings.warn") as warn_mock:
-        guard = gd.Guard.from_rail_string(text)
-        assert guard.prompt.uses_old_constant_schema(text) == is_old_schema
-        if is_old_schema:
-            # we only check for the warning when we have an older schema
-            warn_mock.assert_called_once_with(
-                """It appears that you are using an old schema for gaurdrails\
- variables, follow the new namespaced convention documented here:\
- https://docs.guardrailsai.com/0-2-migration/\
-"""
-            )
-
-
 class TestResponse(BaseModel):
     grade: int = Field(description="The grade of the response")
 
@@ -278,14 +252,13 @@ def test_gr_dot_prefixed_prompt_item_fails():
 
 def test_escape():
     prompt_string = (
-        'My prompt with a some sample json { "a" : 1 } and a {f_var} and a ${safe_var}'
+        'My prompt with a some sample json { "a" : 1 } and a {f_var} and a'
+        " ${safe_var}. Also an incomplete brace {."
     )
     prompt = Prompt(prompt_string)
 
-    escaped_prompt = prompt.escape()
-
     assert prompt.source == prompt_string
-    assert (
-        escaped_prompt
-        == 'My prompt with a some sample json {{ "a" : 1 }} and a {{f_var}} and a ${safe_var}'  # noqa
+    assert prompt.escape() == (
+        'My prompt with a some sample json {{ "a" : 1 }} and a {{f_var}} and a'
+        " ${safe_var}. Also an incomplete brace {{."
     )

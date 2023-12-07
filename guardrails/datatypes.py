@@ -1,5 +1,4 @@
 import datetime
-import logging
 import warnings
 from dataclasses import dataclass
 from types import SimpleNamespace
@@ -15,9 +14,6 @@ from guardrails.utils.casting_utils import to_float, to_int, to_string
 from guardrails.utils.xml_utils import cast_xml_to_string
 from guardrails.validator_base import Validator, ValidatorSpec
 from guardrails.validatorsattr import ValidatorsAttr
-
-logger = logging.getLogger(__name__)
-
 
 # TODO - deprecate these altogether
 deprecated_string_types = {"sql", "email", "url", "pythoncode"}

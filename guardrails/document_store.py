@@ -241,21 +241,21 @@ except ImportError:
         def __init__(self):
             raise ImportError(
                 "SQLAlchemy is required for EphemeralDocumentStore"
-                "Please install it using `pip install SqlAlchemy`"
+                "Please install it using `poetry add SqlAlchemy`"
             )
 
     class FallbackSQLDocument:
         def __init__(self):
             raise ImportError(
                 "SQLAlchemy is required for SQLDocument"
-                "Please install it using `pip install SqlAlchemy`"
+                "Please install it using `poetry add SqlAlchemy`"
             )
 
     class FallbackSQLMetadataStore:
         def __init__(self):
             raise ImportError(
                 "SQLAlchemy is required for SQLMetadataStore"
-                "Please install it using `pip install SqlAlchemy`"
+                "Please install it using `poetry add SqlAlchemy`"
             )
 
     EphemeralDocumentStore = FallbackEphemeralDocumentStore

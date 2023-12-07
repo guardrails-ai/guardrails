@@ -1,12 +1,12 @@
 import asyncio
 import itertools
-import logging
 import os
 from concurrent.futures import ProcessPoolExecutor
 from typing import Any, Dict, List, Optional, Tuple
 
 from guardrails.classes.history import Iteration
 from guardrails.datatypes import FieldValidation
+from guardrails.logger import logger
 from guardrails.utils.logs_utils import ValidatorLogs
 from guardrails.utils.reask_utils import FieldReAsk, ReAsk
 from guardrails.utils.safe_get import safe_get
@@ -18,8 +18,6 @@ from guardrails.validator_base import (
     Validator,
     ValidatorError,
 )
-
-logger = logging.getLogger(__name__)
 
 
 class ValidatorServiceBase:
@@ -258,7 +256,7 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
         iteration: Iteration,
     ):
         async def process_child(child_setup):
-            child_value = value[child_setup.key]
+            child_value = safe_get(value, child_setup.key)
             new_child_value, new_metadata = await self.async_validate(
                 child_value,
                 metadata,

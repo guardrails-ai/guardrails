@@ -6,12 +6,12 @@ from rich.panel import Panel
 from rich.pretty import pretty_repr
 from rich.table import Table
 
+from guardrails.classes.generic.stack import Stack
 from guardrails.classes.history.inputs import Inputs
 from guardrails.classes.history.outputs import Outputs
+from guardrails.logger import get_scope_handler
 from guardrails.prompt.prompt import Prompt
 from guardrails.utils.logs_utils import ValidatorLogs
-
-# from guardrails.classes.stack import Stack
 from guardrails.utils.pydantic_utils import ArbitraryModel
 from guardrails.utils.reask_utils import ReAsk
 
@@ -27,10 +27,13 @@ class Iteration(ArbitraryModel):
         description="The outputs from the iteration/step.", default_factory=Outputs
     )
 
-    # TODO
-    # @property
-    # def logs() -> Stack[str]:
-    #     """Returns the logs from this iteration as a stack"""
+    @property
+    def logs(self) -> Stack[str]:
+        """Returns the logs from this iteration as a stack."""
+        scope = str(id(self))
+        scope_handler = get_scope_handler()
+        scoped_logs = scope_handler.get_logs(scope)
+        return Stack(*[log.getMessage() for log in scoped_logs])
 
     @property
     def tokens_consumed(self) -> Optional[int]:

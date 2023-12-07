@@ -1,5 +1,4 @@
 import json
-import logging
 import pprint
 from copy import deepcopy
 from typing import (
@@ -29,6 +28,7 @@ from guardrails.llm_providers import (
     OpenAIChatCallable,
     PromptCallableBase,
 )
+from guardrails.logger import logger
 from guardrails.prompt import Instructions, Prompt
 from guardrails.utils.constants import constants
 from guardrails.utils.json_utils import (
@@ -54,8 +54,6 @@ from guardrails.validator_base import (
 
 if TYPE_CHECKING:
     pass
-
-logger = logging.getLogger(__name__)
 
 
 class Schema:
