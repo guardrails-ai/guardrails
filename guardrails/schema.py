@@ -110,7 +110,9 @@ class Schema:
         else:
             self._reask_instructions_template = None
 
-    def validate(self, iteration: Iteration, data: Any, metadata: Dict) -> Any:
+    def validate(
+        self, iteration: Iteration, data: Any, metadata: Dict, **kwargs
+    ) -> Any:
         """Validate a dictionary of data against the schema.
 
         Args:
@@ -461,7 +463,7 @@ class JsonSchema(Schema):
         iteration: Iteration,
         data: Optional[Dict[str, Any]],
         metadata: Dict,
-        validate_subschema: bool = False,
+        **kwargs,
     ) -> Any:
         """Validate a dictionary of data against the schema.
 
@@ -484,7 +486,7 @@ class JsonSchema(Schema):
             validated_response,
             prune_extra_keys=True,
             coerce_types=True,
-            validate_subschema=validate_subschema,
+            validate_subschema=kwargs.get("validate_subschema", False),
         ):
             return SkeletonReAsk(
                 incorrect_value=validated_response,
@@ -721,6 +723,7 @@ class StringSchema(Schema):
         iteration: Iteration,
         data: Any,
         metadata: Dict,
+        **kwargs,
     ) -> Any:
         """Validate a dictionary of data against the schema.
 

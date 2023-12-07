@@ -421,23 +421,13 @@ class Runner:
         index: int,
         parsed_output: Any,
         output_schema: Schema,
-        validate_subschema: bool = False,
+        **kwargs,
     ):
         """Validate the output."""
         with start_action(action_type="validate", index=index) as action:
-            if isinstance(output_schema, JsonSchema):
-                validated_output = output_schema.validate(
-                    iteration,
-                    parsed_output,
-                    self.metadata,
-                    validate_subschema=validate_subschema,
-                )
-            else:
-                validated_output = output_schema.validate(
-                    iteration,
-                    parsed_output,
-                    self.metadata,
-                )
+            validated_output = output_schema.validate(
+                iteration, parsed_output, self.metadata, **kwargs
+            )
 
             action.log(
                 message_type="info",
@@ -985,13 +975,19 @@ class StreamRunner(Runner):
             if finished:
                 chunk_text = ""
             else:
-                chunk_text = chunk["choices"][0]["text"]
+                if "text" not in chunk["choices"][0]:
+                    chunk_text = ""
+                else:
+                    chunk_text = chunk["choices"][0]["text"]
         elif isinstance(api, OpenAIChatCallable):
             finished = chunk["choices"][0]["finish_reason"]
             if finished:
                 chunk_text = ""
             else:
-                chunk_text = chunk["choices"][0]["delta"]["content"]
+                if "content" not in chunk["choices"][0]["delta"]:
+                    chunk_text = ""
+                else:
+                    chunk_text = chunk["choices"][0]["delta"]["content"]
         else:
             try:
                 chunk_text = chunk
