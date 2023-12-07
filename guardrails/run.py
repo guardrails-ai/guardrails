@@ -1,6 +1,5 @@
 import copy
 import json
-
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union
 
 from eliot import add_destinations, start_action
@@ -19,12 +18,10 @@ from guardrails.prompt import Instructions, Prompt
 from guardrails.schema import JsonSchema, Schema
 from guardrails.utils.llm_response import LLMResponse
 from guardrails.utils.reask_utils import (
-    FieldReAsk,
     NonParseableReAsk,
     ReAsk,
     SkeletonReAsk,
     reasks_to_dict,
-    sub_reasks_with_fixed_values,
 )
 
 add_destinations(logger.debug)
@@ -976,12 +973,10 @@ class StreamRunner(Runner):
                 yield raw_yield + validated_yield
 
         # Finally, add to logs
-        # iteration.outputs.llm_response_info = LLMResponse(output=fragment)
         iteration.outputs.raw_output = fragment
         iteration.outputs.parsed_output = parsed_fragment
         iteration.outputs.validation_output = validated_fragment
         iteration.outputs.validated_output = valid_op
-        # TODO: Re-check. Not returning iteration as of now
 
     def get_chunk_text(self, chunk: Any, api: Union[PromptCallableBase, None]) -> str:
         """Get the text from a chunk."""

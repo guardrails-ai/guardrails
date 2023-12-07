@@ -361,7 +361,7 @@ class Guard(Generic[OT]):
         call_log: Call,
         *args,
         **kwargs,
-    ) -> ValidationOutcome[OT]:
+    ) -> Union[ValidationOutcome[OT], Iterable]:
         instructions_obj = instructions or self.instructions
         prompt_obj = prompt or self.prompt
         msg_history_obj = msg_history or []

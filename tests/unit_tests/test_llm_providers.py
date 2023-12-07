@@ -1,5 +1,4 @@
 import importlib.util
-import os
 from typing import Any, Callable, Iterable
 from unittest.mock import MagicMock
 
@@ -17,9 +16,6 @@ from guardrails.llm_providers import (
 from guardrails.utils.openai_utils import OPENAI_VERSION
 
 from .mocks import MockAsyncOpenAILlm, MockOpenAILlm
-
-# Set the mock OpenAI API key
-# os.environ["OPENAI_API_KEY"] = "sk-xxxxxxxxxxxxxx"
 
 # def test_openai_callable_retries_on_retryable_errors(mocker):
 #     llm = MockCustomLlm()
