@@ -1,10 +1,10 @@
 import unittest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 from guardrails.validators import CompetitorCheck, FailResult
 
 
-class TestCompetitorCheck(unittest.TestCase):
+class TestCompetitorCheck:  # (unittest.TestCase):
     def setUp(self):
         # You can initialize any required resources or configurations here.
         pass
@@ -13,10 +13,13 @@ class TestCompetitorCheck(unittest.TestCase):
         # You can clean up any resources used during the tests here.
         pass
 
-    @patch("spacy.load")
-    def test_perform_ner(self, mock_spacy_load):
+    def test_perform_ner(self, mocker):
         # Create a mock NLP object
+        mock_util_is_package = mocker.patch("spacy.util.is_package")
+        mock_util_is_package.return_value = True
+        mocker.patch("spacy.cli.download")
         mock_nlp = MagicMock()
+        mock_spacy_load = mocker.patch("spacy.load")
         mock_spacy_load.return_value = mock_nlp
 
         # Mock the doc.ents property
@@ -28,14 +31,17 @@ class TestCompetitorCheck(unittest.TestCase):
 
         text_with_entities = "I have an Apple laptop and a Google phone."
         entities = validator.perform_ner(text_with_entities, mock_nlp)
-        self.assertEqual(entities, ["Apple", "Google"])
+        assert entities == ["Apple", "Google"]
 
         del validator
 
-    @patch("spacy.load")
-    def test_validator_with_match_and_ner(self, mock_spacy_load):
+    def test_validator_with_match_and_ner(self, mocker):
         # Create a mock NLP object
+        mock_util_is_package = mocker.patch("spacy.util.is_package")
+        mock_util_is_package.return_value = True
+        mocker.patch("spacy.cli.download")
         mock_nlp = MagicMock()
+        mock_spacy_load = mocker.patch("spacy.load")
         mock_spacy_load.return_value = mock_nlp
 
         # Mock the doc.ents property
@@ -57,7 +63,7 @@ class TestCompetitorCheck(unittest.TestCase):
             fix_value="",
         )
 
-        self.assertEqual(result, expected_fail_result)
+        assert result == expected_fail_result
 
 
 if __name__ == "__main__":
