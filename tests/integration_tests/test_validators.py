@@ -8,7 +8,7 @@ from guardrails import Guard, Validator, register_validator
 from guardrails.datatypes import DataType
 from guardrails.schema import StringSchema
 from guardrails.validator_base import PassResult, ValidationResult
-from guardrails.validators import DetectSecrets, PIIFilter, SimilarToList
+from guardrails.validators import DetectSecrets, PIIFilter, SimilarToList, ToxicLanguage
 
 from .mock_embeddings import MOCK_EMBEDDINGS
 from .mock_llm_outputs import MockOpenAICallable
@@ -19,6 +19,14 @@ from .mock_secrets import (
     SECRETS_CODE_SNIPPET,
     MockDetectSecrets,
     mock_get_unique_secrets,
+)
+from .mock_toxic_language import (
+    EXPECTED_PARAGRAPH_WITH_TOXIC_SENTENCES,
+    NON_TOXIC_PARAGRAPH,
+    PARAGRAPH_WITH_TOXIC_SENTENCES,
+    TOXIC_PARAGRAPH,
+    MockPipeline,
+    mock_get_toxicity,
 )
 
 
@@ -347,6 +355,111 @@ def test_pii_filter(mocker):
         llm_output=text,
     )
     assert output.error is not None
+
+
+def test_toxic_language(mocker):
+    """Test the integration of the ToxicLanguage validator.
+
+    1. Test default initialisation (should be validation_method="sentence"
+     and threshold=0.5)
+    2. Test with a toxic paragraph (with validation_method="full")
+    3. Test with a paragraph containing toxic sentences
+     (with validation_method="sentence")
+    4. Text with a non-toxic paragraph (with validation_method="full")
+    5. Test with a paragraph containing no toxic sentences
+     (with validation_method="sentence")
+    6. Test with a paragraph also specifying threshold
+    """
+
+    # Set the mockers
+    mocker.patch("guardrails.validators.pipeline", new=MockPipeline)
+    mocker.patch(
+        "guardrails.validators.ToxicLanguage.get_toxicity", new=mock_get_toxicity
+    )
+
+    # ----------------------------
+    # 1. Test default initialisation (should be validation_method="sentence"
+    # and threshold=0.25)
+    guard = Guard.from_string(
+        validators=[ToxicLanguage(on_fail="fix")],
+        description="testmeout",
+    )
+
+    # ----------------------------
+    # 2. Test with a toxic paragraph (with validation_method="full")
+    # Should return empty string
+    guard = Guard.from_string(
+        validators=[ToxicLanguage(validation_method="full", on_fail="fix")],
+        description="testmeout",
+    )
+
+    output = guard.parse(
+        llm_output=TOXIC_PARAGRAPH,
+    ).validated_output
+    # Check if the output is empty
+    assert output == ""
+
+    # ----------------------------
+    # 3. Test with a paragraph containing toxic sentences
+    # (with validation_method="sentence")
+    # Should return a paragraph with toxic sentences removed
+    guard = Guard.from_string(
+        validators=[ToxicLanguage(validation_method="sentence", on_fail="fix")],
+        description="testmeout",
+    )
+
+    output = guard.parse(
+        llm_output=PARAGRAPH_WITH_TOXIC_SENTENCES,
+    ).validated_output
+
+    # Check if the output matches the expected output
+    assert output == EXPECTED_PARAGRAPH_WITH_TOXIC_SENTENCES
+
+    # ----------------------------
+    # 4. Text with a non-toxic paragraph (with validation_method="full")
+    # Should return the same paragraph
+    guard = Guard.from_string(
+        validators=[ToxicLanguage(validation_method="full", on_fail="fix")],
+        description="testmeout",
+    )
+
+    output = guard.parse(
+        llm_output=NON_TOXIC_PARAGRAPH,
+    ).validated_output
+    # Check if the output is same as the input
+    assert output == NON_TOXIC_PARAGRAPH
+
+    # ----------------------------
+    # 5. Test with a paragraph containing no toxic sentences
+    # (with validation_method="sentence")
+    # Should return the same paragraph
+
+    guard = Guard.from_string(
+        validators=[ToxicLanguage(validation_method="sentence", on_fail="fix")],
+        description="testmeout",
+    )
+
+    output = guard.parse(
+        llm_output=NON_TOXIC_PARAGRAPH,
+    ).validated_output
+    # Check if the output is same as the input
+    assert output == NON_TOXIC_PARAGRAPH
+
+    # ----------------------------
+    # 6. Test with a paragraph also specifying threshold
+    # Should return a paragraph with toxic sentences removed
+    guard = Guard.from_string(
+        validators=[
+            ToxicLanguage(validation_method="sentence", threshold=0.1, on_fail="fix")
+        ],
+        description="testmeout",
+    )
+
+    output = guard.parse(
+        llm_output=NON_TOXIC_PARAGRAPH,
+    ).validated_output
+    # Check if the output matches the expected output
+    assert output == NON_TOXIC_PARAGRAPH
 
 
 @register_validator("mycustominstancecheckvalidator", data_type="string")
