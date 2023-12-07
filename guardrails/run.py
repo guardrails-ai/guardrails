@@ -303,6 +303,128 @@ class Runner:
             raise e
         return iteration
 
+    def validate_msg_history(
+        self,
+        call_log: Call,
+        msg_history: List[Dict],
+        msg_history_schema: StringSchema,
+    ):
+        msg_str = msg_history_string(msg_history)
+        inputs = Inputs(
+            llm_output=msg_str,
+        )
+        iteration = Iteration(inputs=inputs)
+        call_log.iterations.insert(0, iteration)
+        validated_msg_history = msg_history_schema.validate(
+            iteration, msg_str, self.metadata
+        )
+        iteration.outputs.validation_output = validated_msg_history
+        if isinstance(validated_msg_history, ReAsk):
+            raise ValidatorError(
+                f"Message history validation failed: " f"{validated_msg_history}"
+            )
+        if validated_msg_history != msg_str:
+            raise ValidatorError("Message history validation failed")
+
+    def prepare_msg_history(
+        self,
+        call_log: Call,
+        msg_history: List[Dict],
+        prompt_params: Dict,
+        msg_history_schema: Optional[StringSchema],
+    ):
+        msg_history = copy.deepcopy(msg_history)
+        # Format any variables in the message history with the prompt params.
+        for msg in msg_history:
+            msg["content"] = msg["content"].format(**prompt_params)
+
+        # validate msg_history
+        if msg_history_schema is not None:
+            self.validate_msg_history(call_log, msg_history, msg_history_schema)
+
+        return msg_history
+
+    def validate_prompt(
+        self,
+        call_log: Call,
+        prompt_schema: StringSchema,
+        prompt: Prompt,
+    ):
+        inputs = Inputs(
+            llm_output=prompt.source,
+        )
+        iteration = Iteration(inputs=inputs)
+        call_log.iterations.insert(0, iteration)
+        validated_prompt = prompt_schema.validate(
+            iteration, prompt.source, self.metadata
+        )
+        iteration.outputs.validation_output = validated_prompt
+        if validated_prompt is None:
+            raise ValidatorError("Prompt validation failed")
+        if isinstance(validated_prompt, ReAsk):
+            raise ValidatorError(f"Prompt validation failed: {validated_prompt}")
+        return Prompt(validated_prompt)
+
+    def validate_instructions(
+        self,
+        call_log: Call,
+        instructions_schema: StringSchema,
+        instructions: Instructions,
+    ):
+        inputs = Inputs(
+            llm_output=instructions.source,
+        )
+        iteration = Iteration(inputs=inputs)
+        call_log.iterations.insert(0, iteration)
+        validated_instructions = instructions_schema.validate(
+            iteration, instructions.source, self.metadata
+        )
+        iteration.outputs.validation_output = validated_instructions
+        if validated_instructions is None:
+            raise ValidatorError("Instructions validation failed")
+        if isinstance(validated_instructions, ReAsk):
+            raise ValidatorError(
+                f"Instructions validation failed: {validated_instructions}"
+            )
+        return Instructions(validated_instructions)
+
+    def prepare_prompt(
+        self,
+        call_log: Call,
+        instructions: Optional[Instructions],
+        prompt: Prompt,
+        prompt_params: Dict,
+        api: Union[PromptCallableBase, AsyncPromptCallableBase],
+        prompt_schema: Optional[StringSchema],
+        instructions_schema: Optional[StringSchema],
+        output_schema: Schema,
+    ):
+        if isinstance(prompt, str):
+            prompt = Prompt(prompt)
+
+        prompt = prompt.format(**prompt_params)
+
+        # TODO(shreya): should there be any difference
+        #  to parsing params for prompt?
+        if instructions is not None and isinstance(instructions, Instructions):
+            instructions = instructions.format(**prompt_params)
+
+        instructions, prompt = output_schema.preprocess_prompt(
+            api, instructions, prompt
+        )
+
+        # validate prompt
+        if prompt_schema is not None and prompt is not None:
+            prompt = self.validate_prompt(call_log, prompt_schema, prompt)
+
+        # validate instructions
+        if instructions_schema is not None and instructions is not None:
+            instructions = self.validate_instructions(
+                call_log, instructions_schema, instructions
+            )
+
+        return instructions, prompt
+
     def prepare(
         self,
         call_log: Call,
@@ -337,32 +459,10 @@ class Runner:
                             "not supported when using message history."
                         )
                     )
-                msg_history = copy.deepcopy(msg_history)
-                # Format any variables in the message history with the prompt params.
-                for msg in msg_history:
-                    msg["content"] = msg["content"].format(**prompt_params)
-
                 prompt, instructions = None, None
-
-                # validate msg_history
-                if msg_history_schema is not None:
-                    msg_str = msg_history_string(msg_history)
-                    inputs = Inputs(
-                        llm_output=msg_str,
-                    )
-                    iteration = Iteration(inputs=inputs)
-                    call_log.iterations.insert(0, iteration)
-                    validated_msg_history = msg_history_schema.validate(
-                        iteration, msg_str, self.metadata
-                    )
-                    iteration.outputs.validation_output = validated_msg_history
-                    if isinstance(validated_msg_history, ReAsk):
-                        raise ValidatorError(
-                            f"Message history validation failed: "
-                            f"{validated_msg_history}"
-                        )
-                    if validated_msg_history != msg_str:
-                        raise ValidatorError("Message history validation failed")
+                msg_history = self.prepare_msg_history(
+                    call_log, msg_history, prompt_params, msg_history_schema
+                )
             elif prompt is not None:
                 if msg_history_schema is not None:
                     raise UserFacingException(
@@ -371,57 +471,17 @@ class Runner:
                             "not supported when using prompt/instructions."
                         )
                     )
-                if isinstance(prompt, str):
-                    prompt = Prompt(prompt)
-
-                prompt = prompt.format(**prompt_params)
-
-                # TODO(shreya): should there be any difference
-                #  to parsing params for prompt?
-                if instructions is not None and isinstance(instructions, Instructions):
-                    instructions = instructions.format(**prompt_params)
-
-                instructions, prompt = output_schema.preprocess_prompt(
-                    api, instructions, prompt
+                msg_history = None
+                instructions, prompt = self.prepare_prompt(
+                    call_log,
+                    instructions,
+                    prompt,
+                    prompt_params,
+                    api,
+                    prompt_schema,
+                    instructions_schema,
+                    output_schema,
                 )
-
-                # validate prompt
-                if prompt_schema is not None and prompt is not None:
-                    inputs = Inputs(
-                        llm_output=prompt.source,
-                    )
-                    iteration = Iteration(inputs=inputs)
-                    call_log.iterations.insert(0, iteration)
-                    validated_prompt = prompt_schema.validate(
-                        iteration, prompt.source, self.metadata
-                    )
-                    iteration.outputs.validation_output = validated_prompt
-                    if validated_prompt is None:
-                        raise ValidatorError("Prompt validation failed")
-                    if isinstance(validated_prompt, ReAsk):
-                        raise ValidatorError(
-                            f"Prompt validation failed: {validated_prompt}"
-                        )
-                    prompt = Prompt(validated_prompt)
-
-                # validate instructions
-                if instructions_schema is not None and instructions is not None:
-                    inputs = Inputs(
-                        llm_output=instructions.source,
-                    )
-                    iteration = Iteration(inputs=inputs)
-                    call_log.iterations.insert(0, iteration)
-                    validated_instructions = instructions_schema.validate(
-                        iteration, instructions.source, self.metadata
-                    )
-                    iteration.outputs.validation_output = validated_instructions
-                    if validated_instructions is None:
-                        raise ValidatorError("Instructions validation failed")
-                    if isinstance(validated_instructions, ReAsk):
-                        raise ValidatorError(
-                            f"Instructions validation failed: {validated_instructions}"
-                        )
-                    instructions = Instructions(validated_instructions)
             else:
                 raise UserFacingException(
                     ValueError("Prompt or message history must be provided.")
