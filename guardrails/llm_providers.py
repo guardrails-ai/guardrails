@@ -240,6 +240,53 @@ class CohereCallable(PromptCallableBase):
         )
 
 
+class AnthropicCallable(PromptCallableBase):
+    def _invoke_llm(
+        self,
+        prompt: str,
+        client_callable: Any,
+        model: str = "claude-instant-1",
+        max_tokens_to_sample: int = 100,
+        *args,
+        **kwargs,
+    ) -> LLMResponse:
+        """Wrapper for Anthropic Completions.
+
+        To use Anthropic for guardrails, do
+        ```
+        client = anthropic.Anthropic(api_key=...)
+
+        raw_llm_response, validated_response = guard(
+            client,
+            model="claude-2",
+            max_tokens_to_sample=200,
+            prompt_params={...},
+            ...
+        ```
+        """
+        try:
+            import anthropic
+        except ImportError:
+            raise PromptCallableException(
+                "The `anthropic` package is not installed. "
+                "Install with `pip install anthropic`"
+            )
+
+        if "instructions" in kwargs:
+            prompt = kwargs.pop("instructions") + "\n\n" + prompt
+
+        anthropic_prompt = f"{anthropic.HUMAN_PROMPT} {prompt} {anthropic.AI_PROMPT}"
+
+        anthropic_response = client_callable(
+            model=model,
+            prompt=anthropic_prompt,
+            max_tokens_to_sample=max_tokens_to_sample,
+            *args,
+            **kwargs,
+        )
+        return LLMResponse(output=anthropic_response.completion)
+
+
 class ArbitraryCallable(PromptCallableBase):
     def __init__(self, llm_api: Callable, *args, **kwargs):
         self.llm_api = llm_api
@@ -311,6 +358,17 @@ def get_llm_ask(llm_api: Callable, *args, **kwargs) -> PromptCallableBase:
             and getattr(llm_api, "__name__", None) == "generate"
         ):
             return CohereCallable(*args, client_callable=llm_api, **kwargs)
+    except ImportError:
+        pass
+
+    try:
+        import anthropic.resources  # noqa: F401 # type: ignore
+
+        if isinstance(
+            getattr(llm_api, "__self__", None),
+            anthropic.resources.completions.Completions,
+        ):
+            return AnthropicCallable(*args, client_callable=llm_api, **kwargs)
     except ImportError:
         pass
 
