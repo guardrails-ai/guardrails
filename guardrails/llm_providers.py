@@ -204,7 +204,7 @@ class ManifestCallable(PromptCallableBase):
         except ImportError:
             raise PromptCallableException(
                 "The `manifest` package is not installed. "
-                "Install with `pip install manifest-ml`"
+                "Install with `poetry add manifest-ml`"
             )
         client = cast(manifest.Manifest, client)
         manifest_response = client.run(
@@ -469,7 +469,7 @@ class AsyncManifestCallable(AsyncPromptCallableBase):
         except ImportError:
             raise PromptCallableException(
                 "The `manifest` package is not installed. "
-                "Install with `pip install manifest-ml`"
+                "Install with `poetry add manifest-ml`"
             )
         client = cast(manifest.Manifest, client)
         manifest_response = await client.arun_batch(

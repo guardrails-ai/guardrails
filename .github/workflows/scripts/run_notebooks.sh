@@ -9,7 +9,7 @@ cd docs/examples
 # Function to process a notebook
 process_notebook() {
     notebook="$1"
-    invalid_notebooks=("valid_chess_moves.ipynb" "translation_with_quality_check.ipynb" "llamaindex-output-parsing.ipynb" "competitors_check.ipynb")
+    invalid_notebooks=("valid_chess_moves.ipynb" "translation_with_quality_check.ipynb" "llamaindex-output-parsing.ipynb")
     if [[ ! " ${invalid_notebooks[@]} " =~ " ${notebook} " ]]; then
         echo "Processing $notebook..."
         poetry run jupyter nbconvert --to notebook --execute "$notebook"
