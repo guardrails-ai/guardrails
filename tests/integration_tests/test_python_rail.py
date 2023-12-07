@@ -156,29 +156,33 @@ def test_python_rail(mocker):
     )
     assert final_output.validated_output == expected_gd_output
 
-    guard_history = guard.guard_state.most_recent_call.history
+    call = guard.history.first
 
     # Check that the guard state object has the correct number of re-asks.
-    assert len(guard_history) == 2
+    assert call.iterations.length == 2
 
     if PYDANTIC_VERSION.startswith("1"):
-        assert guard_history[0].prompt == gd.Prompt(
-            python_rail.COMPILED_PROMPT_1_WITHOUT_INSTRUCTIONS
+        assert (
+            call.compiled_prompt == python_rail.COMPILED_PROMPT_1_WITHOUT_INSTRUCTIONS
         )
     else:
-        assert guard_history[0].prompt == gd.Prompt(
-            python_rail.COMPILED_PROMPT_1_PYDANTIC_2_WITHOUT_INSTRUCTIONS
+        assert (
+            call.compiled_prompt
+            == python_rail.COMPILED_PROMPT_1_PYDANTIC_2_WITHOUT_INSTRUCTIONS
         )
 
     assert (
-        guard_history[0].output == python_rail.LLM_OUTPUT_1_FAIL_GUARDRAILS_VALIDATION
+        call.iterations.first.raw_output
+        == python_rail.LLM_OUTPUT_1_FAIL_GUARDRAILS_VALIDATION
     )
 
-    assert guard_history[1].prompt == gd.Prompt(
+    assert call.iterations.last.inputs.prompt == gd.Prompt(
         python_rail.COMPILED_PROMPT_2_WITHOUT_INSTRUCTIONS
     )
+    # Same as above
+    assert call.reask_prompts.last == python_rail.COMPILED_PROMPT_2_WITHOUT_INSTRUCTIONS
     assert (
-        guard_history[1].output
+        call.raw_outputs.last
         == python_rail.LLM_OUTPUT_2_SUCCEED_GUARDRAILS_BUT_FAIL_PYDANTIC_VALIDATION
     )
 
@@ -295,23 +299,24 @@ def test_python_rail_add_validator(mocker):
     )
     assert final_output.validated_output == expected_gd_output
 
-    guard_history = guard.guard_state.most_recent_call.history
+    call = guard.history.first
 
     # Check that the guard state object has the correct number of re-asks.
-    assert len(guard_history) == 2
+    assert call.iterations.length == 2
 
-    assert guard_history[0].prompt == gd.Prompt(
-        python_rail.COMPILED_PROMPT_1_WITHOUT_INSTRUCTIONS
-    )
+    assert call.compiled_prompt == python_rail.COMPILED_PROMPT_1_WITHOUT_INSTRUCTIONS
     assert (
-        guard_history[0].output == python_rail.LLM_OUTPUT_1_FAIL_GUARDRAILS_VALIDATION
+        call.iterations.first.raw_output
+        == python_rail.LLM_OUTPUT_1_FAIL_GUARDRAILS_VALIDATION
     )
 
-    assert guard_history[1].prompt == gd.Prompt(
+    assert call.iterations.last.inputs.prompt == gd.Prompt(
         python_rail.COMPILED_PROMPT_2_WITHOUT_INSTRUCTIONS
     )
+    # Same as above
+    assert call.reask_prompts.last == python_rail.COMPILED_PROMPT_2_WITHOUT_INSTRUCTIONS
     assert (
-        guard_history[1].output
+        call.raw_outputs.last
         == python_rail.LLM_OUTPUT_2_SUCCEED_GUARDRAILS_BUT_FAIL_PYDANTIC_VALIDATION
     )
 
@@ -358,20 +363,20 @@ ${ingredients}
 
     assert final_output.validated_output == string.LLM_OUTPUT_REASK
 
-    guard_history = guard.guard_state.most_recent_call.history
+    call = guard.history.first
 
     # Check that the guard state object has the correct number of re-asks.
-    assert len(guard_history) == 2
+    assert call.iterations.length == 2
 
     # For orginal prompt and output
-    assert guard_history[0].instructions == gd.Instructions(
-        string.COMPILED_INSTRUCTIONS
-    )
-    assert guard_history[0].prompt == gd.Prompt(string.COMPILED_PROMPT)
-    assert guard_history[0].output == string.LLM_OUTPUT
-    assert guard_history[0].validated_output == string.VALIDATED_OUTPUT_REASK
+    assert call.compiled_instructions == string.COMPILED_INSTRUCTIONS
+    assert call.compiled_prompt == string.COMPILED_PROMPT
+    assert call.iterations.first.raw_output == string.LLM_OUTPUT
+    assert call.iterations.first.validation_output == string.VALIDATED_OUTPUT_REASK
 
     # For re-asked prompt and output
-    assert guard_history[1].prompt == gd.Prompt(string.COMPILED_PROMPT_REASK)
-    assert guard_history[1].output == string.LLM_OUTPUT_REASK
-    assert guard_history[1].validated_output == string.LLM_OUTPUT_REASK
+    assert call.iterations.last.inputs.prompt == gd.Prompt(string.COMPILED_PROMPT_REASK)
+    # Same as above
+    assert call.reask_prompts.last == string.COMPILED_PROMPT_REASK
+    assert call.raw_outputs.last == string.LLM_OUTPUT_REASK
+    assert call.validated_output == string.LLM_OUTPUT_REASK

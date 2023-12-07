@@ -11,7 +11,6 @@
             - "!validate"
             - "!register_validator"
             - "!PydanticReAsk"
-            - "!Filter"
             - "!Refrain"
             - "!ValidationResult"
             - "!PassResult"

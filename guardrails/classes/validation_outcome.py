@@ -2,8 +2,10 @@ from typing import Generic, Iterator, Optional, Tuple, Union, cast
 
 from pydantic import Field
 
+from guardrails.classes.history import Call
 from guardrails.classes.output_type import OT
-from guardrails.utils.logs_utils import ArbitraryModel, GuardHistory
+from guardrails.constants import pass_status
+from guardrails.utils.logs_utils import ArbitraryModel
 from guardrails.utils.reask_utils import ReAsk
 
 
@@ -30,32 +32,23 @@ class ValidationOutcome(Generic[OT], ArbitraryModel):
     error: Optional[str] = Field(default=None)
 
     @classmethod
-    def from_guard_history(
-        cls, guard_history: GuardHistory, error_message: Optional[str]
-    ):
-        raw_output = guard_history.output
-        validated_output = guard_history.validated_output
-        any_validations_failed = len(guard_history.failed_validations) > 0
-        if error_message:
-            return cls(
-                raw_llm_output=raw_output or "",
-                validation_passed=False,
-                error=error_message,
-            )
-        elif isinstance(validated_output, ReAsk):
-            reask: ReAsk = validated_output
-            return cls(
-                raw_llm_output=raw_output,
-                reask=reask,
-                validation_passed=any_validations_failed,
-            )
-        else:
-            output = cast(OT, validated_output)
-            return cls(
-                raw_llm_output=raw_output,
-                validated_output=output,
-                validation_passed=any_validations_failed,
-            )
+    def from_guard_history(cls, call: Call, error_message: Optional[str]):
+        last_output = (
+            call.iterations.last.validation_output
+            if not call.iterations.empty() and call.iterations.last is not None
+            else None
+        )
+        validation_passed = call.status == pass_status
+        reask = last_output if isinstance(last_output, ReAsk) else None
+        error = call.error or error_message
+        output = cast(OT, call.validated_output)
+        return cls(
+            raw_llm_output=call.raw_outputs.last,
+            validated_output=output,
+            reask=reask,
+            validation_passed=validation_passed,
+            error=error,
+        )
 
     def __iter__(
         self,

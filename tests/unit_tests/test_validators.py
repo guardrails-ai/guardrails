@@ -31,6 +31,7 @@ from guardrails.validators import (
     SimilarToDocument,
     SimilarToList,
     SqlColumnPresence,
+    ToxicLanguage,
     TwoWords,
     ValidLength,
 )
@@ -271,7 +272,7 @@ def test_validator_as_tuple():
     )
 
     assert output.validated_output == {"a_field": "hullo"}
-    assert guard.guard_state.all_histories[0].history[0].reasks[0] == hullo_reask
+    assert guard.history.first.iterations.first.reasks[0] == hullo_reask
 
     hello_reask = FieldReAsk(
         incorrect_value="hello there yo",
@@ -297,7 +298,7 @@ def test_validator_as_tuple():
     )
 
     assert output.validated_output == {"a_field": "hello there"}
-    assert guard.guard_state.all_histories[0].history[0].reasks[0] == hello_reask
+    assert guard.history.first.iterations.first.reasks[0] == hello_reask
 
     # (Validator, on_fail) tuple reask
 
@@ -312,7 +313,7 @@ def test_validator_as_tuple():
     )
 
     assert output.validated_output == {"a_field": "hello there"}
-    assert guard.guard_state.all_histories[0].history[0].reasks[0] == hello_reask
+    assert guard.history.first.iterations.first.reasks[0] == hello_reask
 
     # Fail on string
 
@@ -342,11 +343,9 @@ def test_custom_func_validator():
     )
     assert output.validated_output == {"greeting": "hullo"}
 
-    guard_history = guard.guard_state.all_histories[0].history
-    assert len(guard_history) == 1
-    validator_log = (
-        guard_history[0].field_validation_logs.children["greeting"].validator_logs[0]
-    )
+    call = guard.history.first
+    assert call.iterations.length == 1
+    validator_log = call.iterations.first.validator_logs[0]
     assert validator_log.validator_name == "mycustomhellovalidator"
     assert validator_log.validation_result == FailResult(
         error_message="Hello is too basic, try something more creative.",
@@ -522,6 +521,35 @@ def test_detect_secrets():
     assert mod_value == NO_SECRETS_CODE_SNIPPET
 
 
+def test_toxic_language():
+    """Test ToxicLanguage validator's get_toxicity() method.
+
+    1. Test with dummy text with toxicity
+    2. Test with dummy text without toxicity
+    """
+
+    # Initialise validator
+    validator = ToxicLanguage()
+
+    # ----------------------------
+    # 1. Test get_toxicity with dummy text with toxicity
+    toxic_text = """
+    He is an arrogant, self serving, immature idiot.
+    Get it right through your thick skull.
+    """
+    pred_labels = validator.get_toxicity(toxic_text)
+    assert len(pred_labels) > 0
+
+    # ----------------------------
+    # 2. Test get_toxicity with dummy text without toxicity
+    non_toxic_text = """
+    I love you.
+    You are the best.
+    """
+    pred_labels = validator.get_toxicity(non_toxic_text)
+    assert len(pred_labels) == 0
+
+
 def custom_fix_on_fail_handler(value: Any, fail_results: List[FailResult]):
     return value + " " + value
 
@@ -613,8 +641,6 @@ def test_custom_on_fail_handler(
         assert response.error is not None
         assert response.error == "Something went wrong!"
     elif isinstance(expected_result, FieldReAsk):
-        assert (
-            guard.guard_state.all_histories[0].history[0].reasks[0] == expected_result
-        )
+        assert guard.history.first.iterations.first.reasks[0] == expected_result
     else:
         assert response.validated_output == expected_result

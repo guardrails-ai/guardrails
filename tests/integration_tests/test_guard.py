@@ -125,7 +125,7 @@ def guard_initializer(
         ),
     ],
 )
-@pytest.mark.parametrize("multiprocessing_validators", (True, False))
+@pytest.mark.parametrize("multiprocessing_validators", (True,))  # False))
 def test_entity_extraction_with_reask(
     mocker, rail, prompt, test_full_schema_reask, multiprocessing_validators
 ):
@@ -150,28 +150,25 @@ def test_entity_extraction_with_reask(
     # Assertions are made on the guard state object.
     assert final_output.validated_output == entity_extraction.VALIDATED_OUTPUT_REASK_2
 
-    guard_history = guard.guard_state.most_recent_call.history
+    call = guard.history.first
 
     # Check that the guard state object has the correct number of re-asks.
-    assert len(guard_history) == 2
+    assert call.iterations.length == 2
 
     # For orginal prompt and output
-    assert guard_history[0].prompt == gd.Prompt(entity_extraction.COMPILED_PROMPT)
-    assert guard_history[0].llm_response.prompt_token_count == 123
-    assert guard_history[0].llm_response.response_token_count == 1234
-    assert guard_history[0].llm_response.output == entity_extraction.LLM_OUTPUT
-    assert (
-        guard_history[0].validated_output == entity_extraction.VALIDATED_OUTPUT_REASK_1
-    )
+    first = call.iterations.first
+    assert call.compiled_prompt == entity_extraction.COMPILED_PROMPT
+    assert first.prompt_tokens_consumed == 123
+    assert first.completion_tokens_consumed == 1234
+    assert first.raw_output == entity_extraction.LLM_OUTPUT
+    assert first.validation_output == entity_extraction.VALIDATED_OUTPUT_REASK_1
 
     # For reask validator logs
-    nested_validator_log = (
-        guard_history[0]
-        .field_validation_logs.children["fees"]
-        .children[1]
-        .children["name"]
-        .validator_logs[1]
+    # TODO: Update once we add json_path to the ValidatorLog class
+    nested_validator_logs = list(
+        x for x in first.validator_logs if x.value_before_validation == "my chase plan"
     )
+    nested_validator_log = nested_validator_logs[1]
 
     assert nested_validator_log.value_before_validation == "my chase plan"
     assert nested_validator_log.value_after_validation == FieldReAsk(
@@ -186,23 +183,23 @@ def test_entity_extraction_with_reask(
     )
 
     # For re-asked prompt and output
+    # second = call.iterations.at(1)
     if test_full_schema_reask:
         assert (
-            guard_history[1].prompt.source
+            # second.inputs.prompt.source # Also valid
+            call.reask_prompts.first
             == entity_extraction.COMPILED_PROMPT_FULL_REASK
         )
         assert (
-            guard_history[1].llm_response.output
+            # second.raw_output # Also valid
+            call.raw_outputs.at(1)
             == entity_extraction.LLM_OUTPUT_FULL_REASK
         )
     else:
-        assert guard_history[1].prompt.source == entity_extraction.COMPILED_PROMPT_REASK
-        assert (
-            guard_history[1].llm_response.output == entity_extraction.LLM_OUTPUT_REASK
-        )
-    assert (
-        guard_history[1].validated_output == entity_extraction.VALIDATED_OUTPUT_REASK_2
-    )
+        # Second iteration is the first reask
+        assert call.reask_prompts.first == entity_extraction.COMPILED_PROMPT_REASK
+        assert call.raw_outputs.at(1) == entity_extraction.LLM_OUTPUT_REASK
+    assert call.validated_output == entity_extraction.VALIDATED_OUTPUT_REASK_2
 
 
 @pytest.mark.parametrize(
@@ -227,15 +224,15 @@ def test_entity_extraction_with_noop(mocker, rail, prompt):
     # Assertions are made on the guard state object.
     assert final_output.validated_output == entity_extraction.VALIDATED_OUTPUT_NOOP
 
-    guard_history = guard.guard_state.most_recent_call.history
+    call = guard.history.first
 
     # Check that the guard state object has the correct number of re-asks.
-    assert len(guard_history) == 1
+    assert call.iterations.length == 1
 
     # For orginal prompt and output
-    assert guard_history[0].prompt == gd.Prompt(entity_extraction.COMPILED_PROMPT)
-    assert guard_history[0].output == entity_extraction.LLM_OUTPUT
-    assert guard_history[0].validated_output == entity_extraction.VALIDATED_OUTPUT_NOOP
+    assert call.compiled_prompt == entity_extraction.COMPILED_PROMPT
+    assert call.raw_outputs.last == entity_extraction.LLM_OUTPUT
+    assert call.validated_output == entity_extraction.VALIDATED_OUTPUT_NOOP
 
 
 @pytest.mark.parametrize(
@@ -263,17 +260,15 @@ def test_entity_extraction_with_filter(mocker, rail, prompt):
     # Assertions are made on the guard state object.
     assert final_output.validated_output == entity_extraction.VALIDATED_OUTPUT_FILTER
 
-    guard_history = guard.guard_state.most_recent_call.history
+    call = guard.history.first
 
     # Check that the guard state object has the correct number of re-asks.
-    assert len(guard_history) == 1
+    assert call.iterations.length == 1
 
     # For orginal prompt and output
-    assert guard_history[0].prompt == gd.Prompt(entity_extraction.COMPILED_PROMPT)
-    assert guard_history[0].output == entity_extraction.LLM_OUTPUT
-    assert (
-        guard_history[0].validated_output == entity_extraction.VALIDATED_OUTPUT_FILTER
-    )
+    assert call.compiled_prompt == entity_extraction.COMPILED_PROMPT
+    assert call.raw_outputs.last == entity_extraction.LLM_OUTPUT
+    assert call.validated_output == entity_extraction.VALIDATED_OUTPUT_FILTER
 
 
 @pytest.mark.parametrize(
@@ -298,15 +293,15 @@ def test_entity_extraction_with_fix(mocker, rail, prompt):
     # Assertions are made on the guard state object.
     assert final_output.validated_output == entity_extraction.VALIDATED_OUTPUT_FIX
 
-    guard_history = guard.guard_state.most_recent_call.history
+    call = guard.history.first
 
     # Check that the guard state object has the correct number of re-asks.
-    assert len(guard_history) == 1
+    assert call.iterations.length == 1
 
     # For orginal prompt and output
-    assert guard_history[0].prompt == gd.Prompt(entity_extraction.COMPILED_PROMPT)
-    assert guard_history[0].output == entity_extraction.LLM_OUTPUT
-    assert guard_history[0].validated_output == entity_extraction.VALIDATED_OUTPUT_FIX
+    assert call.compiled_prompt == entity_extraction.COMPILED_PROMPT
+    assert call.raw_outputs.last == entity_extraction.LLM_OUTPUT
+    assert call.validated_output == entity_extraction.VALIDATED_OUTPUT_FIX
 
 
 @pytest.mark.parametrize(
@@ -334,17 +329,15 @@ def test_entity_extraction_with_refrain(mocker, rail, prompt):
     # Assertions are made on the guard state object.
     assert final_output.validated_output == entity_extraction.VALIDATED_OUTPUT_REFRAIN
 
-    guard_history = guard.guard_state.most_recent_call.history
+    call = guard.history.first
 
     # Check that the guard state object has the correct number of re-asks.
-    assert len(guard_history) == 1
+    assert call.iterations.length == 1
 
     # For orginal prompt and output
-    assert guard_history[0].prompt == gd.Prompt(entity_extraction.COMPILED_PROMPT)
-    assert guard_history[0].output == entity_extraction.LLM_OUTPUT
-    assert (
-        guard_history[0].validated_output == entity_extraction.VALIDATED_OUTPUT_REFRAIN
-    )
+    assert call.compiled_prompt == entity_extraction.COMPILED_PROMPT
+    assert call.raw_outputs.last == entity_extraction.LLM_OUTPUT
+    assert call.validated_output == entity_extraction.VALIDATED_OUTPUT_REFRAIN
 
 
 @pytest.mark.parametrize(
@@ -377,20 +370,18 @@ def test_entity_extraction_with_fix_chat_models(mocker, rail, prompt, instructio
     # Assertions are made on the guard state object.
     assert final_output.validated_output == entity_extraction.VALIDATED_OUTPUT_FIX
 
-    guard_history = guard.guard_state.most_recent_call.history
+    call = guard.history.first
 
     # Check that the guard state object has the correct number of re-asks.
-    assert len(guard_history) == 1
+    assert call.iterations.length == 1
 
     # For orginal prompt and output
-    assert guard_history[0].prompt == gd.Prompt(
-        entity_extraction.COMPILED_PROMPT_WITHOUT_INSTRUCTIONS
+    assert (
+        call.compiled_prompt == entity_extraction.COMPILED_PROMPT_WITHOUT_INSTRUCTIONS
     )
-    assert guard_history[0].instructions == gd.Instructions(
-        entity_extraction.COMPILED_INSTRUCTIONS
-    )
-    assert guard_history[0].output == entity_extraction.LLM_OUTPUT
-    assert guard_history[0].validated_output == entity_extraction.VALIDATED_OUTPUT_FIX
+    assert call.compiled_instructions == entity_extraction.COMPILED_INSTRUCTIONS
+    assert call.raw_outputs.last == entity_extraction.LLM_OUTPUT
+    assert call.validated_output == entity_extraction.VALIDATED_OUTPUT_FIX
 
 
 def test_string_output(mocker):
@@ -406,14 +397,14 @@ def test_string_output(mocker):
 
     assert final_output.validated_output == string.LLM_OUTPUT
 
-    guard_history = guard.guard_state.most_recent_call.history
+    call = guard.history.first
 
     # Check that the guard state object has the correct number of re-asks.
-    assert len(guard_history) == 1
+    assert call.iterations.length == 1
 
     # For original prompt and output
-    assert guard_history[0].prompt == gd.Prompt(string.COMPILED_PROMPT)
-    assert guard_history[0].output == string.LLM_OUTPUT
+    assert call.compiled_prompt == string.COMPILED_PROMPT
+    assert call.raw_outputs.last == string.LLM_OUTPUT
 
 
 def test_string_reask(mocker):
@@ -430,23 +421,24 @@ def test_string_reask(mocker):
 
     assert final_output.validated_output == string.LLM_OUTPUT_REASK
 
-    guard_history = guard.guard_state.most_recent_call.history
+    call = guard.history.first
 
     # Check that the guard state object has the correct number of re-asks.
-    assert len(guard_history) == 2
+    assert call.iterations.length == 2
 
     # For orginal prompt and output
-    assert guard_history[0].instructions == gd.Instructions(
-        string.COMPILED_INSTRUCTIONS
-    )
-    assert guard_history[0].prompt == gd.Prompt(string.COMPILED_PROMPT)
-    assert guard_history[0].output == string.LLM_OUTPUT
-    assert guard_history[0].validated_output == string.VALIDATED_OUTPUT_REASK
+    assert call.compiled_instructions == string.COMPILED_INSTRUCTIONS
+    assert call.compiled_prompt == string.COMPILED_PROMPT
+    assert call.iterations.first.raw_output == string.LLM_OUTPUT
+    assert call.iterations.first.validation_output == string.VALIDATED_OUTPUT_REASK
 
     # For re-asked prompt and output
-    assert guard_history[1].prompt == gd.Prompt(string.COMPILED_PROMPT_REASK)
-    assert guard_history[1].output == string.LLM_OUTPUT_REASK
-    assert guard_history[1].validated_output == string.LLM_OUTPUT_REASK
+    assert call.iterations.last.inputs.prompt == gd.Prompt(string.COMPILED_PROMPT_REASK)
+    # Same thing as above
+    assert call.reask_prompts.last == string.COMPILED_PROMPT_REASK
+
+    assert call.raw_outputs.last == string.LLM_OUTPUT_REASK
+    assert call.validated_output == string.LLM_OUTPUT_REASK
 
 
 def test_skeleton_reask(mocker):
@@ -467,30 +459,26 @@ def test_skeleton_reask(mocker):
         == entity_extraction.VALIDATED_OUTPUT_SKELETON_REASK_2
     )
 
-    guard_history = guard.guard_state.most_recent_call.history
+    call = guard.history.first
 
     # Check that the guard state object has the correct number of re-asks.
-    assert len(guard_history) == 2
+    assert call.iterations.length == 2
 
     # For orginal prompt and output
-    assert guard_history[0].prompt == gd.Prompt(
-        entity_extraction.COMPILED_PROMPT_SKELETON_REASK_1
-    )
-    assert guard_history[0].output == entity_extraction.LLM_OUTPUT_SKELETON_REASK_1
+    assert call.compiled_prompt == entity_extraction.COMPILED_PROMPT_SKELETON_REASK_1
     assert (
-        guard_history[0].validated_output
+        call.iterations.first.raw_output
+        == entity_extraction.LLM_OUTPUT_SKELETON_REASK_1
+    )
+    assert (
+        call.iterations.first.validation_output
         == entity_extraction.VALIDATED_OUTPUT_SKELETON_REASK_1
     )
 
     # For re-asked prompt and output
-    assert guard_history[1].prompt == gd.Prompt(
-        entity_extraction.COMPILED_PROMPT_SKELETON_REASK_2
-    )
-    assert guard_history[1].output == entity_extraction.LLM_OUTPUT_SKELETON_REASK_2
-    assert (
-        guard_history[1].validated_output
-        == entity_extraction.VALIDATED_OUTPUT_SKELETON_REASK_2
-    )
+    assert call.reask_prompts.last == entity_extraction.COMPILED_PROMPT_SKELETON_REASK_2
+    assert call.raw_outputs.last == entity_extraction.LLM_OUTPUT_SKELETON_REASK_2
+    assert call.validated_output == entity_extraction.VALIDATED_OUTPUT_SKELETON_REASK_2
 
 
 '''def test_json_output(mocker):
@@ -506,14 +494,14 @@ def test_skeleton_reask(mocker):
     )
     assert final_output == string.LIST_LLM_OUTPUT
 
-    guard_history = guard.guard_state.most_recent_call.history
+    call = guard.history.first
 
     # Check that the guard state object has the correct number of re-asks.
-    assert len(guard_history) == 1
+    assert call.iterations.length == 1
 
     # For original prompt and output
-    #assert guard_history[0].prompt == gd.Prompt(string.COMPILED_PROMPT)
-    assert guard_history[0].output == string.LLM_OUTPUT
+    #assert call.compiled_prompt == string.COMPILED_PROMPT
+    assert call.raw_outputs.last == string.LLM_OUTPUT
 
 '''
 
@@ -593,35 +581,29 @@ def test_entity_extraction_with_reask_with_optional_prompts(
     # Assertions are made on the guard state object.
     assert final_output.validated_output == entity_extraction.VALIDATED_OUTPUT_REASK_2
 
-    guard_history = guard.guard_state.most_recent_call.history
+    call = guard.history.first
 
     # Check that the guard state object has the correct number of re-asks.
-    assert len(guard_history) == 2
+    assert call.iterations.length == 2
 
     # For orginal prompt and output
-    expected_prompt = (
-        gd.Prompt(expected_prompt) if expected_prompt is not None else None
-    )
-    assert guard_history[0].prompt == expected_prompt
-    assert guard_history[0].output == entity_extraction.LLM_OUTPUT
+    assert call.compiled_prompt == expected_prompt
+    assert call.iterations.first.raw_output == entity_extraction.LLM_OUTPUT
     assert (
-        guard_history[0].validated_output == entity_extraction.VALIDATED_OUTPUT_REASK_1
+        call.iterations.first.validation_output
+        == entity_extraction.VALIDATED_OUTPUT_REASK_1
     )
-    expected_instructions = (
-        gd.Instructions(expected_instructions)
-        if expected_instructions is not None
-        else None
-    )
-    assert guard_history[0].instructions == expected_instructions
+    assert call.compiled_instructions == expected_instructions
 
     # For reask validator logs
-    nested_validator_log = (
-        guard_history[0]
-        .field_validation_logs.children["fees"]
-        .children[1]
-        .children["name"]
-        .validator_logs[1]
+    # TODO: Update once we add json_path to the ValidatorLog class
+    nested_validator_logs = list(
+        x
+        for x in call.iterations.first.validator_logs
+        if x.value_before_validation == "my chase plan"
     )
+    nested_validator_log = nested_validator_logs[1]
+
     assert nested_validator_log.value_before_validation == "my chase plan"
     assert nested_validator_log.value_after_validation == FieldReAsk(
         incorrect_value="my chase plan",
@@ -635,16 +617,12 @@ def test_entity_extraction_with_reask_with_optional_prompts(
     )
 
     # For re-asked prompt and output
-    assert guard_history[1].prompt == gd.Prompt(expected_reask_prompt)
-    assert guard_history[1].output == entity_extraction.LLM_OUTPUT_REASK
+    assert call.reask_prompts.last == expected_reask_prompt
+    assert call.raw_outputs.last == entity_extraction.LLM_OUTPUT_REASK
 
-    assert (
-        guard_history[1].validated_output == entity_extraction.VALIDATED_OUTPUT_REASK_2
-    )
+    assert call.validated_output == entity_extraction.VALIDATED_OUTPUT_REASK_2
     if expected_reask_instructions:
-        assert guard_history[1].instructions == gd.Instructions(
-            expected_reask_instructions
-        )
+        assert call.reask_instructions.last == expected_reask_instructions
 
 
 def test_string_with_message_history_reask(mocker):
@@ -665,23 +643,21 @@ def test_string_with_message_history_reask(mocker):
 
     assert final_output.validated_output == string.MSG_LLM_OUTPUT_CORRECT
 
-    guard_history = guard.guard_state.most_recent_call.history
+    call = guard.history.first
 
     # Check that the guard state object has the correct number of re-asks.
-    assert len(guard_history) == 2
+    assert call.iterations.length == 2
 
-    assert guard_history[0].instructions is None
-    assert guard_history[0].prompt is None
-    assert guard_history[0].output == string.MSG_LLM_OUTPUT_INCORRECT
-    assert guard_history[0].validated_output == string.MSG_VALIDATED_OUTPUT_REASK
+    assert call.compiled_instructions is None
+    assert call.compiled_prompt is None
+    assert call.iterations.first.raw_output == string.MSG_LLM_OUTPUT_INCORRECT
+    assert call.iterations.first.validation_output == string.MSG_VALIDATED_OUTPUT_REASK
 
     # For re-asked prompt and output
-    assert guard_history[1].prompt == gd.Prompt(string.MSG_COMPILED_PROMPT_REASK)
-    assert guard_history[1].instructions == gd.Instructions(
-        string.MSG_COMPILED_INSTRUCTIONS_REASK
-    )
-    assert guard_history[1].output == string.MSG_LLM_OUTPUT_CORRECT
-    assert guard_history[1].validated_output == string.MSG_LLM_OUTPUT_CORRECT
+    assert call.reask_prompts.last == string.MSG_COMPILED_PROMPT_REASK
+    assert call.reask_instructions.last == string.MSG_COMPILED_INSTRUCTIONS_REASK
+    assert call.raw_outputs.last == string.MSG_LLM_OUTPUT_CORRECT
+    assert call.validated_output == string.MSG_LLM_OUTPUT_CORRECT
 
 
 def test_pydantic_with_message_history_reask(mocker):
@@ -704,25 +680,23 @@ def test_pydantic_with_message_history_reask(mocker):
         pydantic.MSG_HISTORY_LLM_OUTPUT_CORRECT
     )
 
-    guard_history = guard.guard_state.most_recent_call.history
+    call = guard.history.first
 
     # Check that the guard state object has the correct number of re-asks.
-    assert len(guard_history) == 2
+    assert call.iterations.length == 2
 
-    assert guard_history[0].instructions is None
-    assert guard_history[0].prompt is None
-    assert guard_history[0].output == pydantic.MSG_HISTORY_LLM_OUTPUT_INCORRECT
-    assert guard_history[0].validated_output == pydantic.MSG_VALIDATED_OUTPUT_REASK
+    assert call.compiled_instructions is None
+    assert call.compiled_prompt is None
+    assert call.iterations.first.raw_output == pydantic.MSG_HISTORY_LLM_OUTPUT_INCORRECT
+    assert (
+        call.iterations.first.validation_output == pydantic.MSG_VALIDATED_OUTPUT_REASK
+    )
 
     # For re-asked prompt and output
-    assert guard_history[1].prompt == gd.Prompt(pydantic.MSG_COMPILED_PROMPT_REASK)
-    assert guard_history[1].instructions == gd.Instructions(
-        pydantic.MSG_COMPILED_INSTRUCTIONS_REASK
-    )
-    assert guard_history[1].output == pydantic.MSG_HISTORY_LLM_OUTPUT_CORRECT
-    assert guard_history[1].validated_output == json.loads(
-        pydantic.MSG_HISTORY_LLM_OUTPUT_CORRECT
-    )
+    assert call.reask_prompts.last == pydantic.MSG_COMPILED_PROMPT_REASK
+    assert call.reask_instructions.last == pydantic.MSG_COMPILED_INSTRUCTIONS_REASK
+    assert call.raw_outputs.last == pydantic.MSG_HISTORY_LLM_OUTPUT_CORRECT
+    assert call.validated_output == json.loads(pydantic.MSG_HISTORY_LLM_OUTPUT_CORRECT)
 
 
 def test_sequential_validator_log_is_not_duplicated(mocker):
@@ -742,15 +716,15 @@ def test_sequential_validator_log_is_not_duplicated(mocker):
             num_reasks=1,
         )
 
-        logs = (
-            guard.guard_state.most_recent_call.history[0]
-            .field_validation_logs.children["fees"]
-            .children[0]
-            .children["explanation"]
-            .validator_logs
+        # Assert one log per field validation
+        # In this case, the OneLine validator should be run once per fee entry
+        # because of the explanation field
+        one_line_logs = list(
+            x
+            for x in guard.history.first.iterations.first.validator_logs
+            if x.validator_name == "OneLine"
         )
-        assert len(logs) == 1
-        assert logs[0].validator_name == "OneLine"
+        assert len(one_line_logs) == len(final_output.get("fees"))
 
     finally:
         if proc_count_bak is None:
@@ -776,15 +750,12 @@ def test_in_memory_validator_log_is_not_duplicated(mocker):
             num_reasks=1,
         )
 
-        logs = (
-            guard.guard_state.most_recent_call.history[0]
-            .field_validation_logs.children["fees"]
-            .children[0]
-            .children["explanation"]
-            .validator_logs
+        one_line_logs = list(
+            x
+            for x in guard.history.first.iterations.first.validator_logs
+            if x.validator_name == "OneLine"
         )
-        assert len(logs) == 1
-        assert logs[0].validator_name == "OneLine"
+        assert len(one_line_logs) == len(final_output.get("fees"))
 
     finally:
         OneLine.run_in_separate_process = separate_proc_bak

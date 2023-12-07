@@ -47,6 +47,9 @@ test-cov:
 view-test-cov:
 	poetry run pytest tests/ --cov=./guardrails/ --cov-report html && open htmlcov/index.html
 
+view-test-cov-file:
+	poetry run pytest tests/unit_tests/test_logger.py --cov=./guardrails/ --cov-report html && open htmlcov/index.html
+
 docs-serve:
 	poetry run mkdocs serve -a $(MKDOCS_SERVE_ADDR)
 
@@ -58,6 +61,9 @@ dev:
 
 full:
 	poetry install --all-extras
+
+self-install:
+	pip install -e .
 
 all: autoformat type lint docs test
 
