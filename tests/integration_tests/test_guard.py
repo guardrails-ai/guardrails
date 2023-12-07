@@ -774,7 +774,7 @@ def test_enum_datatype(mocker):
         status: TaskStatus
 
     guard = gd.Guard.from_pydantic(Task)
-    _, dict_o = guard(
+    _, dict_o, *rest = guard(
         get_static_openai_create_func(),
         prompt="What is the status of this task?",
     )
