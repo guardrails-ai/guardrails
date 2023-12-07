@@ -399,8 +399,10 @@ class List(NonScalarType):
         schema: Dict,
     ) -> FieldValidation:
         # Validators in the main list data type are applied to the list overall.
-
         validation = self._constructor_validation(key, value)
+
+        if value is None and self.optional:
+            return validation
 
         if len(self._children) == 0:
             return validation
@@ -439,8 +441,10 @@ class Object(NonScalarType):
         schema: Dict,
     ) -> FieldValidation:
         # Validators in the main object data type are applied to the object overall.
-
         validation = self._constructor_validation(key, value)
+
+        if value is None and self.optional:
+            return validation
 
         if len(self._children) == 0:
             return validation
