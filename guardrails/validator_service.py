@@ -1,25 +1,23 @@
 import asyncio
 import itertools
-import logging
 import os
 from concurrent.futures import ProcessPoolExecutor
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
+from guardrails.classes.history import Iteration
 from guardrails.datatypes import FieldValidation
-from guardrails.utils.logs_utils import FieldValidationLogs, ValidatorLogs
+from guardrails.logger import logger
+from guardrails.utils.logs_utils import ValidatorLogs
 from guardrails.utils.reask_utils import FieldReAsk, ReAsk
 from guardrails.utils.safe_get import safe_get
-from guardrails.validators import (
+from guardrails.validator_base import (
     FailResult,
     Filter,
     PassResult,
-    PydanticReAsk,
     Refrain,
     Validator,
     ValidatorError,
 )
-
-logger = logging.getLogger(__name__)
 
 
 class ValidatorServiceBase:
@@ -36,9 +34,7 @@ class ValidatorServiceBase:
             return results[0].fix_value
         elif on_fail_descriptor == "fix_reask":
             fixed_value = results[0].fix_value
-            result = validator.validate(fixed_value, results[0].metadata)
-            if result.metadata is None:
-                result.metadata = result.metadata
+            result = validator.validate(fixed_value, results[0].metadata or {})
 
             if isinstance(result, FailResult):
                 return FieldReAsk(
@@ -48,7 +44,9 @@ class ValidatorServiceBase:
 
             return fixed_value
         if on_fail_descriptor == "custom":
-            return validator.on_fail_method(value, results[0])
+            if validator.on_fail_method is None:
+                raise ValueError("on_fail is 'custom' but on_fail_method is None")
+            return validator.on_fail_method(value, results)
         if on_fail_descriptor == "reask":
             return FieldReAsk(
                 incorrect_value=value,
@@ -72,14 +70,14 @@ class ValidatorServiceBase:
             )
 
     def run_validator(
-        self, validation_logs, validator, value, metadata
+        self, iteration: Iteration, validator: Validator, value: Any, metadata: Dict
     ) -> ValidatorLogs:
         validator_class_name = validator.__class__.__name__
         validator_logs = ValidatorLogs(
             validator_name=validator_class_name,
             value_before_validation=value,
         )
-        validation_logs.validator_logs.append(validator_logs)
+        iteration.outputs.validator_logs.append(validator_logs)
 
         result = validator.validate(value, metadata)
         if result is None:
@@ -92,16 +90,14 @@ class ValidatorServiceBase:
 class SequentialValidatorService(ValidatorServiceBase):
     def run_validators(
         self,
-        validation_logs: FieldValidationLogs,
+        iteration: Iteration,
         validator_setup: FieldValidation,
         value: Any,
         metadata: Dict[str, Any],
-    ):
+    ) -> Tuple[Any, Dict[str, Any]]:
         # Validate the field
         for validator in validator_setup.validators:
-            validator_logs = self.run_validator(
-                validation_logs, validator, value, metadata
-            )
+            validator_logs = self.run_validator(iteration, validator, value, metadata)
 
             result = validator_logs.validation_result
             if isinstance(result, FailResult):
@@ -118,22 +114,27 @@ class SequentialValidatorService(ValidatorServiceBase):
                 raise RuntimeError(f"Unexpected result type {type(result)}")
 
             validator_logs.value_after_validation = value
-            metadata = validator_logs.validation_result.metadata
+            if result.metadata is not None:
+                metadata = result.metadata
 
-            if isinstance(value, (Refrain, Filter, ReAsk, PydanticReAsk)):
+            if isinstance(value, (Refrain, Filter, ReAsk)):
                 return value, metadata
         return value, metadata
 
-    def validate_dependents(self, value, metadata, validator_setup, validation_logs):
+    def validate_dependents(
+        self,
+        value: Any,
+        metadata: Dict,
+        validator_setup: FieldValidation,
+        iteration: Iteration,
+    ):
         for child_setup in validator_setup.children:
             child_schema = safe_get(value, child_setup.key)
-            child_validation_logs = FieldValidationLogs()
-            validation_logs.children[child_setup.key] = child_validation_logs
             child_schema, metadata = self.validate(
                 child_schema,
                 metadata,
                 child_setup,
-                child_validation_logs,
+                iteration,
             )
             value[child_setup.key] = child_schema
 
@@ -142,22 +143,22 @@ class SequentialValidatorService(ValidatorServiceBase):
         value: Any,
         metadata: dict,
         validator_setup: FieldValidation,
-        validation_logs: FieldValidationLogs,
+        iteration: Iteration,
     ) -> Tuple[Any, dict]:
         # Validate children first
         if validator_setup.children:
-            self.validate_dependents(value, metadata, validator_setup, validation_logs)
+            self.validate_dependents(value, metadata, validator_setup, iteration)
 
         # Validate the field
         value, metadata = self.run_validators(
-            validation_logs, validator_setup, value, metadata
+            iteration, validator_setup, value, metadata
         )
 
         return value, metadata
 
 
 class MultiprocMixin:
-    multiprocessing_executor: ProcessPoolExecutor = None
+    multiprocessing_executor: Optional[ProcessPoolExecutor] = None
     process_count = int(os.environ.get("GUARDRAILS_PROCESS_COUNT", 10))
 
     def __init__(self):
@@ -179,7 +180,13 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
             else:
                 yield on_fail_descriptor, list(group)
 
-    async def run_validators(self, validation_logs, validator_setup, value, metadata):
+    async def run_validators(
+        self,
+        iteration: Iteration,
+        validator_setup: FieldValidation,
+        value: Any,
+        metadata: Dict,
+    ):
         loop = asyncio.get_running_loop()
         for on_fail, validator_group in self.group_validators(
             validator_setup.validators
@@ -193,7 +200,7 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
                         loop.run_in_executor(
                             self.multiprocessing_executor,
                             self.run_validator,
-                            validation_logs,
+                            iteration,
                             validator,
                             value,
                             metadata,
@@ -201,15 +208,13 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
                     )
                 else:
                     # run the validators in the current process
-                    result = self.run_validator(
-                        validation_logs, validator, value, metadata
-                    )
+                    result = self.run_validator(iteration, validator, value, metadata)
                     validators_logs.append(result)
 
             # wait for the parallel tasks to finish
             if parallel_tasks:
                 parallel_results = await asyncio.gather(*parallel_tasks)
-                validation_logs.validator_logs.extend(parallel_results)
+                iteration.outputs.validator_logs.extend(parallel_results)
                 validators_logs.extend(parallel_results)
 
             # process the results, handle failures
@@ -238,23 +243,25 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
                 logs.value_after_validation = value
 
             # return early if we have a filter, refrain, or reask
-            if isinstance(value, (Filter, Refrain, FieldReAsk, PydanticReAsk)):
+            if isinstance(value, (Filter, Refrain, FieldReAsk)):
                 return value, metadata
 
         return value, metadata
 
     async def validate_dependents(
-        self, value, metadata, validator_setup, validation_logs
+        self,
+        value: Any,
+        metadata: Dict,
+        validator_setup: FieldValidation,
+        iteration: Iteration,
     ):
         async def process_child(child_setup):
-            child_value = value[child_setup.key]
-            child_validation_logs = FieldValidationLogs()
-            validation_logs.children[child_setup.key] = child_validation_logs
+            child_value = safe_get(value, child_setup.key)
             new_child_value, new_metadata = await self.async_validate(
                 child_value,
                 metadata,
                 child_setup,
-                child_validation_logs,
+                iteration,
             )
             return child_setup.key, new_child_value, new_metadata
 
@@ -273,17 +280,15 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
         value: Any,
         metadata: dict,
         validator_setup: FieldValidation,
-        validation_logs: FieldValidationLogs,
+        iteration: Iteration,
     ) -> Tuple[Any, dict]:
         # Validate children first
         if validator_setup.children:
-            await self.validate_dependents(
-                value, metadata, validator_setup, validation_logs
-            )
+            await self.validate_dependents(value, metadata, validator_setup, iteration)
 
         # Validate the field
         value, metadata = await self.run_validators(
-            validation_logs, validator_setup, value, metadata
+            iteration, validator_setup, value, metadata
         )
 
         return value, metadata
@@ -293,7 +298,7 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
         value: Any,
         metadata: dict,
         validator_setup: FieldValidation,
-        validation_logs: FieldValidationLogs,
+        iteration: Iteration,
     ) -> Tuple[Any, dict]:
         # Run validate_async in an async loop
         loop = asyncio.get_event_loop()
@@ -306,17 +311,14 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
                 value,
                 metadata,
                 validator_setup,
-                validation_logs,
+                iteration,
             )
         )
         return value, metadata
 
 
 def validate(
-    value: Any,
-    metadata: dict,
-    validator_setup: FieldValidation,
-    validation_logs: FieldValidationLogs,
+    value: Any, metadata: dict, validator_setup: FieldValidation, iteration: Iteration
 ):
     process_count = int(os.environ.get("GUARDRAILS_PROCESS_COUNT", 10))
 
@@ -342,7 +344,7 @@ def validate(
         value,
         metadata,
         validator_setup,
-        validation_logs,
+        iteration,
     )
 
 
@@ -350,12 +352,12 @@ async def async_validate(
     value: Any,
     metadata: dict,
     validator_setup: FieldValidation,
-    validation_logs: FieldValidationLogs,
+    iteration: Iteration,
 ):
     validator_service = AsyncValidatorService()
     return await validator_service.async_validate(
         value,
         metadata,
         validator_setup,
-        validation_logs,
+        iteration,
     )

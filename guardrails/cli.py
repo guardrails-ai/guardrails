@@ -1,4 +1,5 @@
 import json
+from typing import Dict, Union
 
 import typer
 
@@ -12,11 +13,11 @@ def compile_rail(rail: str, out: str) -> None:
     raise NotImplementedError("Currently compiling rail is not supported.")
 
 
-def validate_llm_output(rail: str, llm_output: str) -> bool:
+def validate_llm_output(rail: str, llm_output: str) -> Union[str, Dict, None]:
     """Validate guardrails.yml file."""
     guard = Guard.from_rail(rail)
     result = guard.parse(llm_output)
-    return result
+    return result.validated_output
 
 
 @cli.command()

@@ -4,9 +4,10 @@ import pytest
 from lxml import etree as ET
 
 from guardrails import Instructions, Prompt
+from guardrails.classes.history.iteration import Iteration
+from guardrails.datatypes import Object
 from guardrails.schema import JsonSchema
 from guardrails.utils import reask_utils
-from guardrails.utils.logs_utils import GuardLogs
 from guardrails.utils.reask_utils import (
     FieldReAsk,
     gather_reasks,
@@ -239,7 +240,8 @@ def test_gather_reasks():
             path=["h", 2, 2],
         ),
     ]
-    assert gather_reasks(input_dict) == expected_reasks
+    actual_reasks, _ = gather_reasks(input_dict)
+    assert actual_reasks == expected_reasks
 
 
 @pytest.mark.parametrize(
@@ -340,12 +342,17 @@ def test_prune_json_for_reasking(input_dict, expected_dict):
 
 
 @pytest.mark.parametrize(
-    "example_rail, reasks, original_response, reask_json",
+    "example_rail, expected_rail, reasks, original_response, reask_json",
     [
         (
             """
 <output>
     <string name="name" required="true"/>
+</output>
+""",
+            """
+<output>
+    <string name="name"/>
 </output>
 """,
             [
@@ -376,6 +383,12 @@ def test_prune_json_for_reasking(input_dict, expected_dict):
 <output>
     <string name="name" required="true"/>
     <integer name="age" required="true"/>
+</output>
+""",
+            """
+<output>
+    <string name="name"/>
+    <integer name="age"/>
 </output>
 """,
             [
@@ -419,7 +432,9 @@ def test_prune_json_for_reasking(input_dict, expected_dict):
         ),
     ],
 )
-def test_get_reask_prompt(example_rail, reasks, original_response, reask_json):
+def test_get_reask_prompt(
+    example_rail, expected_rail, reasks, original_response, reask_json
+):
     """Test that get_reask_prompt function returns the correct prompt."""
     expected_result_template = """
 I was given the following JSON response, which had problems due to incorrect values.
@@ -443,9 +458,9 @@ Here are examples of simple (XML, JSON) pairs that show the expected behavior:
 - `<list name='bar'><string format='upper-case' /></list>` => `{"bar": ['STRING ONE', 'STRING TWO', etc.]}`
 - `<object name='baz'><string name="foo" format="capitalize two-words" /><integer name="index" format="1-indexed" /></object>` => `{'baz': {'foo': 'Some String', 'index': 1}}`
 """  # noqa: E501
-    output_schema = JsonSchema(ET.fromstring(example_rail))
-    guard_logs = GuardLogs()
-    validated = output_schema.validate(guard_logs, original_response, {})
+    output_schema = JsonSchema(Object.from_xml(ET.fromstring(example_rail)))
+    iteration = Iteration()
+    validated = output_schema.validate(iteration, original_response, {})
     reasks = output_schema.introspect(validated)
     (
         reask_schema,
@@ -457,7 +472,7 @@ Here are examples of simple (XML, JSON) pairs that show the expected behavior:
         expected_result_template
         % (
             json.dumps(reask_json, indent=2),
-            example_rail,
+            expected_rail,
         )
     )
 

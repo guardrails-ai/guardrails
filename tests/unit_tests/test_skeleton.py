@@ -1,6 +1,7 @@
 import lxml.etree as ET
 import pytest
 
+from guardrails.datatypes import Object
 from guardrails.utils.json_utils import verify_schema_against_json
 
 
@@ -86,19 +87,19 @@ from guardrails.utils.json_utils import verify_schema_against_json
     <case name="fight">
         <string
             name="fight_move"
-            format="valid-choices: {['punch','kick','headbutt']}"
+            validators="valid-choices: {['punch','kick','headbutt']}"
             on-fail-valid-choices="exception"
         />
     </case>
     <case name="flight">
         <string
             name="flight_direction"
-            format="valid-choices: {['north','south','east','west']}"
+            validators="valid-choices: {['north','south','east','west']}"
             on-fail-valid-choices="exception"
         />
         <integer
             name="flight_speed"
-            format="valid-choices: {[1,2,3,4]}"
+            validators="valid-choices: {[1,2,3,4]}"
             on-fail-valid-choices="exception"
         />
     </case>
@@ -122,7 +123,7 @@ from guardrails.utils.json_utils import verify_schema_against_json
         <case name="fight">
             <list name="fight">
                 <string
-                    format="valid-choices: {['punch','kick','headbutt']}"
+                    validators="valid-choices: {['punch','kick','headbutt']}"
                     on-fail-valid-choices="exception"
                 />
             </list>
@@ -130,12 +131,12 @@ from guardrails.utils.json_utils import verify_schema_against_json
         <case name="flight">
             <string
                 name="flight_direction"
-                format="valid-choices: {['north','south','east','west']}"
+                validators="valid-choices: {['north','south','east','west']}"
                 on-fail-valid-choices="exception"
             />
             <integer
                 name="flight_speed"
-                format="valid-choices: {[1,2,3,4]}"
+                validators="valid-choices: {[1,2,3,4]}"
                 on-fail-valid-choices="exception"
             />
         </case>
@@ -168,7 +169,7 @@ from guardrails.utils.json_utils import verify_schema_against_json
         <case name="fight">
             <string
                 name="fight_move"
-                format="valid-choices: {['punch','kick','headbutt']}"
+                validators="valid-choices: {['punch','kick','headbutt']}"
                 on-fail-valid-choices="exception"
             />
         </case>
@@ -176,7 +177,7 @@ from guardrails.utils.json_utils import verify_schema_against_json
             <object name="flight">
                 <string
                     name="flight_direction"
-                    format="valid-choices: {['north','south','east','west']}"
+                    validators="valid-choices: {['north','south','east','west']}"
                     on-fail-valid-choices="exception"
                 />
                 <integer
@@ -296,11 +297,5 @@ from guardrails.utils.json_utils import verify_schema_against_json
 )
 def test_skeleton(xml, generated_json, result, coerce_types):
     xml_schema = ET.fromstring(xml)
-    assert (
-        verify_schema_against_json(
-            xml_schema,
-            generated_json,
-            coerce_types=coerce_types,
-        )
-        is result
-    )
+    datatype = Object.from_xml(xml_schema)
+    assert verify_schema_against_json(datatype, generated_json) is result

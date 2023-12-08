@@ -2,8 +2,6 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import List, Optional
 
-from pydantic import ValidationError
-
 try:
     import sqlalchemy
     from sqlalchemy import text
@@ -57,11 +55,11 @@ class SqlAlchemyDriver(SQLDriver):
         if not _HAS_SQLALCHEMY:
             raise ImportError(
                 """The functionality requires sqlalchemy to be installed.
-                              Please install it using `pip install SqlAlchemy`"""
+                              Please install it using `poetry add SqlAlchemy`"""
             )
 
         if schema_file is not None and conn is None:
-            raise ValidationError(
+            raise RuntimeError(
                 """schema_file should accompany a sql connection string for
            guardrails to apply it to a database backend.
            Use sqlite for ex: sqlite://"""
@@ -76,8 +74,8 @@ class SqlAlchemyDriver(SQLDriver):
 
         if schema_file is not None:
             schema = Path(schema_file).read_text()
-            if conn.startswith("sqlite"):
-                self._conn.connection.executescript(schema)
+            if conn is not None and conn.startswith("sqlite"):
+                self._conn.connection.executescript(schema)  # type: ignore
             else:
                 from sqlalchemy import text
 

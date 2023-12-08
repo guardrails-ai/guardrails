@@ -1,10 +1,11 @@
-from collections import defaultdict
-from typing import Any, Dict, List, Union
+from copy import deepcopy
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import pydantic
-from lxml import etree as ET
 
-from guardrails.validators import FailResult
+from guardrails.datatypes import List as ListType
+from guardrails.datatypes import Object as ObjectType
+from guardrails.validator_base import FailResult
 
 
 class ReAsk(pydantic.BaseModel):
@@ -13,7 +14,7 @@ class ReAsk(pydantic.BaseModel):
 
 
 class FieldReAsk(ReAsk):
-    path: List[Any] = None
+    path: Optional[List[Any]] = None
 
 
 class SkeletonReAsk(ReAsk):
@@ -24,88 +25,70 @@ class NonParseableReAsk(ReAsk):
     pass
 
 
-def gather_reasks(validated_output: Dict) -> List[FieldReAsk]:
+def gather_reasks(
+    validated_output: Optional[Union[str, Dict, ReAsk]]
+) -> Tuple[List[ReAsk], Optional[Dict]]:
     """Traverse output and gather all ReAsk objects.
 
     Args:
-        validated_output (Dict): The output of a model. Each value can be a ReAsk,
-            a list, a dictionary, or a single value.
+        validated_output (Union[str, Dict, ReAsk], optional): The output of a model.
+            Each value can be a ReAsk, a list, a dictionary, or a single value.
 
     Returns:
         A list of ReAsk objects found in the output.
     """
-    from guardrails.validators import PydanticReAsk
+    if validated_output is None:
+        return [], None
+    if isinstance(validated_output, ReAsk):
+        return [validated_output], None
 
     reasks = []
 
-    def _gather_reasks_in_dict(output: Dict, path: List[str] = []) -> None:
-        is_pydantic = isinstance(output, PydanticReAsk)
-        for field, value in output.items():
+    def _gather_reasks_in_dict(
+        original: Dict, valid_output: Dict, path: Optional[List[Union[str, int]]] = None
+    ) -> None:
+        if path is None:
+            path = []
+        for field, value in original.items():
             if isinstance(value, FieldReAsk):
-                if is_pydantic:
-                    value.path = path
-                else:
-                    value.path = path + [field]
+                value.path = path + [field]
                 reasks.append(value)
+                del valid_output[field]
 
             if isinstance(value, dict):
-                _gather_reasks_in_dict(value, path + [field])
+                _gather_reasks_in_dict(value, valid_output[field], path + [field])
 
             if isinstance(value, list):
-                _gather_reasks_in_list(value, path + [field])
+                _gather_reasks_in_list(value, valid_output[field], path + [field])
         return
 
-    def _gather_reasks_in_list(output: List, path: List[str] = []) -> None:
-        for idx, item in enumerate(output):
+    def _gather_reasks_in_list(
+        original: List, valid_output: List, path: Optional[List[Union[str, int]]] = None
+    ) -> None:
+        if path is None:
+            path = []
+        for idx, item in enumerate(original):
             if isinstance(item, FieldReAsk):
                 item.path = path + [idx]
                 reasks.append(item)
+                del valid_output[idx]
             elif isinstance(item, dict):
-                _gather_reasks_in_dict(item, path + [idx])
+                _gather_reasks_in_dict(item, valid_output[idx], path + [idx])
             elif isinstance(item, list):
-                _gather_reasks_in_list(item, path + [idx])
+                _gather_reasks_in_list(item, valid_output[idx], path + [idx])
         return
 
-    _gather_reasks_in_dict(validated_output)
-    return reasks
-
-
-def get_reasks_by_element(
-    reasks: List[FieldReAsk],
-    parsed_rail: ET._Element,
-) -> Dict[ET._Element, List[tuple]]:
-    """Cluster reasks by the XML element they are associated with."""
-    # This should be guaranteed to work, since the path corresponding
-    # to a ReAsk should always be valid in the element tree.
-
-    # This is because ReAsk objects are only created for elements
-    # with corresponding validators i.e. the element must have been
-    # in the tree in the first place for the ReAsk to be created.
-
-    reasks_by_element = defaultdict(list)
-
-    for reask in reasks:
-        path = reask.path
-        # TODO: does this work for all cases?
-        query = "."
-        for part in path:
-            if isinstance(part, int):
-                query += "/*"
-            else:
-                query += f"/*[@name='{part}']"
-
-        # Find the element
-        element = parsed_rail.find(query)
-
-        reasks_by_element[element].append(reask)
-
-    return reasks_by_element
+    if isinstance(validated_output, Dict):
+        valid_output = deepcopy(validated_output)
+        _gather_reasks_in_dict(validated_output, valid_output)
+        return reasks, valid_output
+    return reasks, None
 
 
 def get_pruned_tree(
-    root: ET._Element,
-    reask_elements: List[ET._Element] = None,
-) -> ET._Element:
+    root: ObjectType,
+    reasks: Optional[List[FieldReAsk]] = None,
+) -> ObjectType:
     """Prune tree of any elements that are not in `reasks`.
 
     Return the tree with only the elements that are keys of `reasks` and
@@ -119,34 +102,44 @@ def get_pruned_tree(
     Returns:
         The prompt.
     """
-    if reask_elements is None:
+    if reasks is None:
         return root
 
-    # Get all elements in `root`
-    elements = root.findall(".//*")
-    for element in elements:
-        if (element not in reask_elements) and len(element) == 0:
-            parent = element.getparent()
-            parent.remove(element)
+    # Find all elements that are to be retained
+    retain = [root]
+    for reask in reasks:
+        path = reask.path
+        if path is None:
+            raise RuntimeError("FieldReAsk path is None")
+        current_root = root
+        for part in path:
+            # TODO does this work for all cases?
+            if isinstance(part, int):
+                current_root = current_root.children.item
+            else:
+                current_root = vars(current_root.children)[part]
+            retain.append(current_root)
 
-            # Remove all ancestors that have no children
-            while parent is not None and len(parent) == 0:
-                grandparent = parent.getparent()
-                if grandparent is not None:
-                    grandparent.remove(parent)
-                parent = grandparent
+    # Remove all elements that are not to be retained
+    def _remove_children(element: Union[ObjectType, ListType]) -> None:
+        if isinstance(element, ListType):
+            if element.children.item not in retain:
+                del element._children["item"]
+            else:
+                _remove_children(element.children.item)
+        else:  # if isinstance(element, ObjectType):
+            for child_name, child in vars(element.children).items():
+                if child not in retain:
+                    del element._children[child_name]
+                else:
+                    _remove_children(child)
 
-    pruned_elements = root.findall(".//*")
-    for element in pruned_elements:
-        if element not in reask_elements:
-            # Remove the format attribute
-            if "format" in element.attrib:
-                del element.attrib["format"]
+    _remove_children(root)
 
     return root
 
 
-def prune_obj_for_reasking(obj: Any) -> Union[None, Dict, List]:
+def prune_obj_for_reasking(obj: Any) -> Union[None, Dict, List, ReAsk]:
     """After validation, we get a nested dictionary where some keys may be
     ReAsk objects.
 
@@ -159,9 +152,8 @@ def prune_obj_for_reasking(obj: Any) -> Union[None, Dict, List]:
     Returns:
         The pruned validated object.
     """
-    from guardrails.validators import PydanticReAsk
 
-    if isinstance(obj, ReAsk) or isinstance(obj, PydanticReAsk):
+    if isinstance(obj, ReAsk):
         return obj
     elif isinstance(obj, list):
         pruned_list = []
@@ -175,7 +167,7 @@ def prune_obj_for_reasking(obj: Any) -> Union[None, Dict, List]:
     elif isinstance(obj, dict):
         pruned_json = {}
         for key, value in obj.items():
-            if isinstance(value, FieldReAsk) or isinstance(value, PydanticReAsk):
+            if isinstance(value, FieldReAsk):
                 pruned_json[key] = value
             elif isinstance(value, dict):
                 pruned_output = prune_obj_for_reasking(value)

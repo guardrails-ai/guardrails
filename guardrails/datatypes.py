@@ -1,25 +1,22 @@
 import datetime
-import logging
 import warnings
 from dataclasses import dataclass
 from types import SimpleNamespace
-from typing import TYPE_CHECKING, Any, Dict, Generator, Iterable
-from typing import List
+from typing import Any, Dict, Iterable
 from typing import List as TypedList
-from typing import Tuple, Type, Union
+from typing import Optional, Sequence, Type, TypeVar, Union
 
 from dateutil.parser import parse
 from lxml import etree as ET
-from pydantic import BaseModel
+from typing_extensions import Self
 
 from guardrails.utils.casting_utils import to_float, to_int, to_string
-from guardrails.utils.json_utils import deprecated_string_types
-from guardrails.validators import Validator
+from guardrails.utils.xml_utils import cast_xml_to_string
+from guardrails.validator_base import Validator, ValidatorSpec
+from guardrails.validatorsattr import ValidatorsAttr
 
-if TYPE_CHECKING:
-    from guardrails.schema import FormatAttr
-
-logger = logging.getLogger(__name__)
+# TODO - deprecate these altogether
+deprecated_string_types = {"sql", "email", "url", "pythoncode"}
 
 
 def update_deprecated_type_to_string(type):
@@ -37,9 +34,11 @@ class FieldValidation:
 
 
 def verify_metadata_requirements(
-    metadata: dict, datatypes: Iterable["DataType"]
-) -> List[str]:
+    metadata: dict, datatypes: Union["DataType", Iterable["DataType"]]
+) -> TypedList[str]:
     missing_keys = set()
+    if isinstance(datatypes, DataType):
+        datatypes = [datatypes]
     for datatype in datatypes:
         for validator in datatype.validators:
             for requirement in validator.required_metadata_keys:
@@ -53,53 +52,31 @@ def verify_metadata_requirements(
 
 
 class DataType:
+    rail_alias: str
+    tag: str
+
     def __init__(
         self,
         children: Dict[str, Any],
-        format_attr: "FormatAttr",
-        element: ET._Element,
+        validators_attr: ValidatorsAttr,
+        optional: bool,
+        name: Optional[str],
+        description: Optional[str],
     ) -> None:
         self._children = children
-        self.format_attr = format_attr
-        self.element = element
+        self.validators_attr = validators_attr
+        self.name = name
+        self.description = description
+        self.optional = optional
 
     @property
     def validators(self) -> TypedList:
-        return self.format_attr.validators
+        return self.validators_attr.validators
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self._children})"
 
-    def __iter__(self) -> Generator[Tuple[str, "DataType", ET._Element], None, None]:
-        """Return a tuple of (name, child_data_type, child_element) for each
-        child."""
-        for el_child in self.element:
-            if "name" in el_child.attrib:
-                name: str = el_child.attrib["name"]
-                child_data_type: DataType = self._children[name]
-                yield name, child_data_type, el_child
-            else:
-                assert len(self._children) == 1, "Must have exactly one child."
-                yield None, list(self._children.values())[0], el_child
-
-    def iter(
-        self, element: ET._Element
-    ) -> Generator[Tuple[str, "DataType", ET._Element], None, None]:
-        """Iterate over the children of an element.
-
-        Yields tuples of (name, child_data_type, child_element) for each
-        child.
-        """
-        for el_child in element:
-            if element.tag == "list":
-                assert len(self._children) == 1, "Must have exactly one child."
-                yield None, list(self._children.values())[0], el_child
-            else:
-                name: str = el_child.attrib["name"]
-                child_data_type: DataType = self._children[name]
-                yield name, child_data_type, el_child
-
-    def from_str(self, s: str) -> "DataType":
+    def from_str(self, s: str) -> str:
         """Create a DataType from a string.
 
         Note: ScalarTypes like int, float, bool, etc. will override this method.
@@ -132,21 +109,28 @@ class DataType:
         value = self.from_str(value)
         return self._constructor_validation(key, value)
 
-    def set_children(self, element: ET._Element):
+    def set_children_from_xml(self, element: ET._Element):
         raise NotImplementedError("Abstract method.")
 
     @classmethod
-    def from_xml(cls, element: ET._Element, strict: bool = False) -> "DataType":
-        from guardrails.schema import FormatAttr
-
+    def from_xml(cls, element: ET._Element, strict: bool = False, **kwargs) -> Self:
         # TODO: don't want to pass strict through to DataType,
-        # but need to pass it to FormatAttr.from_element
+        # but need to pass it to ValidatorsAttr.from_element
         # how to handle this?
-        format_attr = FormatAttr.from_element(element)
-        format_attr.get_validators(strict)
+        validators_attr = ValidatorsAttr.from_xml(element, cls.tag, strict)
 
-        data_type = cls({}, format_attr, element)
-        data_type.set_children(element)
+        is_optional = element.attrib.get("required", "true") == "false"
+
+        name = element.attrib.get("name")
+        if name is not None:
+            name = cast_xml_to_string(name)
+
+        description = element.attrib.get("description")
+        if description is not None:
+            description = cast_xml_to_string(description)
+
+        data_type = cls({}, validators_attr, is_optional, name, description, **kwargs)
+        data_type.set_children_from_xml(element)
         return data_type
 
     @property
@@ -154,13 +138,21 @@ class DataType:
         """Return a SimpleNamespace of the children of this DataType."""
         return SimpleNamespace(**self._children)
 
+    def __eq__(self, other):
+        if not isinstance(other, type(self)):
+            return False
+        return self.__dict__ == other.__dict__
 
-registry: Dict[str, DataType] = {}
+
+registry: Dict[str, Type[DataType]] = {}
+
+
+T = TypeVar("T", bound=Type[DataType])
 
 
 # Create a decorator to register a type
 def register_type(name: str):
-    def decorator(cls: type):
+    def decorator(cls: T) -> T:
         registry[name] = cls
         cls.rail_alias = name
         return cls
@@ -175,10 +167,11 @@ def deprecate_type(cls: type):
 versions 0.3.0 and beyond. Use the pydantic 'str' primitive instead.""",
         DeprecationWarning,
     )
+    return cls
 
 
 class ScalarType(DataType):
-    def set_children(self, element: ET._Element):
+    def set_children_from_xml(self, element: ET._Element):
         for _ in element:
             raise ValueError("ScalarType data type must not have any children.")
 
@@ -191,16 +184,35 @@ class NonScalarType(DataType):
 class String(ScalarType):
     """Element tag: `<string>`"""
 
-    def from_str(self, s: str) -> "String":
+    tag = "string"
+
+    def from_str(self, s: str) -> Optional[str]:
         """Create a String from a string."""
         return to_string(s)
+
+    @classmethod
+    def from_string_rail(
+        cls,
+        validators: Sequence[ValidatorSpec],
+        description: Optional[str] = None,
+        strict: bool = False,
+    ) -> Self:
+        return cls(
+            children={},
+            validators_attr=ValidatorsAttr.from_validators(validators, cls.tag, strict),
+            optional=False,
+            name=None,
+            description=description,
+        )
 
 
 @register_type("integer")
 class Integer(ScalarType):
     """Element tag: `<integer>`"""
 
-    def from_str(self, s: str) -> "Integer":
+    tag = "integer"
+
+    def from_str(self, s: str) -> Optional[int]:
         """Create an Integer from a string."""
         return to_int(s)
 
@@ -209,7 +221,9 @@ class Integer(ScalarType):
 class Float(ScalarType):
     """Element tag: `<float>`"""
 
-    def from_str(self, s: str) -> "Float":
+    tag = "float"
+
+    def from_str(self, s: str) -> Optional[float]:
         """Create a Float from a string."""
         return to_float(s)
 
@@ -218,7 +232,9 @@ class Float(ScalarType):
 class Boolean(ScalarType):
     """Element tag: `<bool>`"""
 
-    def from_str(self, s: Union[str, bool]) -> "Boolean":
+    tag = "bool"
+
+    def from_str(self, s: Union[str, bool]) -> Optional[bool]:
         """Create a Boolean from a string."""
         if s is None:
             return None
@@ -242,22 +258,29 @@ class Date(ScalarType):
     element. E.g. `<date name="..." ... date-format="%Y-%m-%d" />`
     """
 
-    def __init__(
-        self, children: Dict[str, Any], format_attr: "FormatAttr", element: ET._Element
-    ) -> None:
-        self.date_format = None
-        super().__init__(children, format_attr, element)
+    tag = "date"
 
-    def from_str(self, s: str) -> "Date":
+    def __init__(
+        self,
+        children: Dict[str, Any],
+        validators_attr: "ValidatorsAttr",
+        optional: bool,
+        name: Optional[str],
+        description: Optional[str],
+    ) -> None:
+        super().__init__(children, validators_attr, optional, name, description)
+        self.date_format = None
+
+    def from_str(self, s: str) -> Optional[datetime.date]:
         """Create a Date from a string."""
         if s is None:
             return None
-        if self.date_format is None:
+        if not self.date_format:
             return parse(s).date()
         return datetime.datetime.strptime(s, self.date_format).date()
 
     @classmethod
-    def from_xml(cls, element: ET._Element, strict: bool = False) -> "DataType":
+    def from_xml(cls, element: ET._Element, strict: bool = False) -> "Date":
         datatype = super().from_xml(element, strict)
 
         if "date-format" in element.attrib or "date_format" in element.attrib:
@@ -274,13 +297,20 @@ class Time(ScalarType):
     element. E.g. `<time name="..." ... time-format="%H:%M:%S" />`
     """
 
+    tag = "time"
+
     def __init__(
-        self, children: Dict[str, Any], format_attr: "FormatAttr", element: ET._Element
+        self,
+        children: Dict[str, Any],
+        validators_attr: "ValidatorsAttr",
+        optional: bool,
+        name: Optional[str],
+        description: Optional[str],
     ) -> None:
         self.time_format = "%H:%M:%S"
-        super().__init__(children, format_attr, element)
+        super().__init__(children, validators_attr, optional, name, description)
 
-    def from_str(self, s: str) -> "Time":
+    def from_str(self, s: str) -> Optional[datetime.time]:
         """Create a Time from a string."""
         if s is None:
             return None
@@ -288,11 +318,11 @@ class Time(ScalarType):
         return datetime.datetime.strptime(s, self.time_format).time()
 
     @classmethod
-    def from_xml(cls, element: ET._Element, strict: bool = False) -> "DataType":
+    def from_xml(cls, element: ET._Element, strict: bool = False) -> "Time":
         datatype = super().from_xml(element, strict)
 
         if "time-format" in element.attrib or "time_format" in element.attrib:
-            datatype.date_format = element.attrib["time-format"]
+            datatype.time_format = element.attrib["time-format"]
 
         return datatype
 
@@ -302,11 +332,23 @@ class Time(ScalarType):
 class Email(ScalarType):
     """Element tag: `<email>`"""
 
+    tag = "email"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        deprecate_type(type(self))
+
 
 @deprecate_type
 @register_type("url")
 class URL(ScalarType):
     """Element tag: `<url>`"""
+
+    tag = "url"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        deprecate_type(type(self))
 
 
 @deprecate_type
@@ -314,21 +356,81 @@ class URL(ScalarType):
 class PythonCode(ScalarType):
     """Element tag: `<pythoncode>`"""
 
+    tag = "pythoncode"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        deprecate_type(type(self))
+
 
 @deprecate_type
 @register_type("sql")
 class SQLCode(ScalarType):
     """Element tag: `<sql>`"""
 
+    tag = "sql"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        deprecate_type(type(self))
+
 
 @register_type("percentage")
 class Percentage(ScalarType):
     """Element tag: `<percentage>`"""
 
+    tag = "percentage"
+
+
+@register_type("enum")
+class Enum(ScalarType):
+    """Element tag: `<enum>`"""
+
+    tag = "enum"
+
+    def __init__(
+        self,
+        children: Dict[str, Any],
+        validators_attr: ValidatorsAttr,
+        optional: bool,
+        name: Optional[str],
+        description: Optional[str],
+        enum_values: TypedList[str],
+    ) -> None:
+        super().__init__(children, validators_attr, optional, name, description)
+        self.enum_values = enum_values
+
+    def from_str(self, s: str) -> Optional[str]:
+        """Create an Enum from a string."""
+        if s is None:
+            return None
+        if s not in self.enum_values:
+            raise ValueError(f"Invalid enum value: {s}")
+        return s
+
+    @classmethod
+    def from_xml(
+        cls,
+        enum_values: TypedList[str],
+        validators: Sequence[ValidatorSpec],
+        description: Optional[str] = None,
+        strict: bool = False,
+    ) -> "Enum":
+        return cls(
+            children={},
+            validators_attr=ValidatorsAttr.from_validators(validators, cls.tag, strict),
+            optional=False,
+            name=None,
+            description=description,
+            enum_values=enum_values,
+        )
+
 
 @register_type("list")
 class List(NonScalarType):
     """Element tag: `<list>`"""
+
+    tag = "list"
 
     def collect_validation(
         self,
@@ -337,8 +439,10 @@ class List(NonScalarType):
         schema: Dict,
     ) -> FieldValidation:
         # Validators in the main list data type are applied to the list overall.
-
         validation = self._constructor_validation(key, value)
+
+        if value is None and self.optional:
+            return validation
 
         if len(self._children) == 0:
             return validation
@@ -352,20 +456,23 @@ class List(NonScalarType):
 
         return validation
 
-    def set_children(self, element: ET._Element):
+    def set_children_from_xml(self, element: ET._Element):
         for idx, child in enumerate(element, start=1):
             if idx > 1:
                 # Only one child is allowed in a list data type.
                 # The child must be the datatype that all items in the list
                 # must conform to.
                 raise ValueError("List data type must have exactly one child.")
-            child_data_type = update_deprecated_type_to_string(registry[child.tag])
+            child_data_type_tag = update_deprecated_type_to_string(child.tag)
+            child_data_type = registry[child_data_type_tag]
             self._children["item"] = child_data_type.from_xml(child)
 
 
 @register_type("object")
 class Object(NonScalarType):
     """Element tag: `<object>`"""
+
+    tag = "object"
 
     def collect_validation(
         self,
@@ -374,8 +481,10 @@ class Object(NonScalarType):
         schema: Dict,
     ) -> FieldValidation:
         # Validators in the main object data type are applied to the object overall.
-
         validation = self._constructor_validation(key, value)
+
+        if value is None and self.optional:
+            return validation
 
         if len(self._children) == 0:
             return validation
@@ -402,22 +511,45 @@ class Object(NonScalarType):
 
         return validation
 
-    def set_children(self, element: ET._Element):
+    def set_children_from_xml(self, element: ET._Element):
         for child in element:
-            child_data_type = update_deprecated_type_to_string(registry[child.tag])
-            self._children[child.attrib["name"]] = child_data_type.from_xml(child)
+            child_data_type = registry[child.tag]
+
+            name = child.attrib["name"]
+            name = cast_xml_to_string(name)
+
+            self._children[name] = child_data_type.from_xml(child)
 
 
 @register_type("choice")
 class Choice(NonScalarType):
     """Element tag: `<object>`"""
 
+    tag = "choice"
+
     def __init__(
-        self, children: Dict[str, Any], format_attr: "FormatAttr", element: ET._Element
+        self,
+        children: Dict[str, Any],
+        validators_attr: "ValidatorsAttr",
+        optional: bool,
+        name: Optional[str],
+        description: Optional[str],
+        discriminator_key: str,
     ) -> None:
-        super().__init__(children, format_attr, element)
+        super().__init__(children, validators_attr, optional, name, description)
+        self.discriminator_key = discriminator_key
+
+    @classmethod
+    def from_xml(cls, element: ET._Element, strict: bool = False, **kwargs) -> Self:
         # grab `discriminator` attribute
-        self.discriminator_key = element.attrib.get("discriminator", "discriminator")
+        disc = element.attrib.get("discriminator")
+        if disc is not None:
+            disc = cast_xml_to_string(disc)
+        else:
+            disc = "discriminator"
+
+        datatype = super().from_xml(element, strict, discriminator_key=disc, **kwargs)
+        return datatype
 
     def collect_validation(
         self,
@@ -436,11 +568,15 @@ class Choice(NonScalarType):
 
         return validation
 
-    def set_children(self, element: ET._Element):
+    def set_children_from_xml(self, element: ET._Element):
         for child in element:
-            child_data_type = update_deprecated_type_to_string(registry[child.tag])
+            child_data_type = registry[child.tag]
             assert child_data_type == Case
-            self._children[child.attrib["name"]] = child_data_type.from_xml(child)
+
+            name = child.attrib["name"]
+            name = cast_xml_to_string(name)
+
+            self._children[name] = child_data_type.from_xml(child)
 
     @property
     def validators(self) -> TypedList:
@@ -451,10 +587,17 @@ class Choice(NonScalarType):
 class Case(NonScalarType):
     """Element tag: `<case>`"""
 
+    tag = "case"
+
     def __init__(
-        self, children: Dict[str, Any], format_attr: "FormatAttr", element: ET._Element
+        self,
+        children: Dict[str, Any],
+        validators_attr: "ValidatorsAttr",
+        optional: bool,
+        name: Optional[str],
+        description: Optional[str],
     ) -> None:
-        super().__init__(children, format_attr, element)
+        super().__init__(children, validators_attr, optional, name, description)
 
     def collect_validation(
         self,
@@ -480,134 +623,14 @@ class Case(NonScalarType):
 
         return validation
 
-    def set_children(self, element: ET._Element):
+    def set_children_from_xml(self, element: ET._Element):
         for child in element:
-            child_data_type = update_deprecated_type_to_string(registry[child.tag])
-            self._children[child.attrib["name"]] = child_data_type.from_xml(child)
+            child_data_type = registry[child.tag]
 
+            name = child.attrib["name"]
+            name = cast_xml_to_string(name)
 
-@register_type("pydantic")
-class Pydantic(NonScalarType):
-    """Element tag: `<pydantic>`"""
-
-    def __init__(
-        self,
-        model: Type[BaseModel],
-        children: Dict[str, Any],
-        format_attr: "FormatAttr",
-        element: ET._Element,
-    ) -> None:
-        super().__init__(children, format_attr, element)
-        assert (
-            format_attr.empty
-        ), "The <pydantic /> data type does not support the `format` attribute."
-        assert isinstance(model, type) and issubclass(
-            model, BaseModel
-        ), "The `model` argument must be a Pydantic model."
-
-        self.model = model
-
-    @property
-    def validators(self) -> TypedList:
-        from guardrails.validators import Pydantic as PydanticValidator
-
-        # Check if the <pydantic /> element has an `on-fail` attribute.
-        # If so, use that as the `on_fail` argument for the PydanticValidator.
-        on_fail = None
-        on_fail_attr_name = "on-fail-pydantic"
-        if on_fail_attr_name in self.element.attrib:
-            on_fail = self.element.attrib[on_fail_attr_name]
-        return [PydanticValidator(self.model, on_fail=on_fail)]
-
-    def set_children(self, element: ET._Element):
-        for child in element:
-            child_data_type = update_deprecated_type_to_string(registry[child.tag])
-            self._children[child.attrib["name"]] = child_data_type.from_xml(child)
-
-    @classmethod
-    def from_xml(cls, element: ET._Element, strict: bool = False) -> "DataType":
-        from guardrails.schema import FormatAttr
-        from guardrails.utils.pydantic_utils import pydantic_models
-
-        model_name = element.attrib["model"]
-        model = pydantic_models.get(model_name, None)
-
-        if model is None:
-            raise ValueError(f"Invalid Pydantic model: {model_name}")
-
-        data_type = cls(model, {}, FormatAttr(), element)
-        data_type.set_children(element)
-        return data_type
-
-    def to_object_element(self) -> ET._Element:
-        """Convert the Pydantic data type to an <object /> element."""
-        from guardrails.utils.pydantic_utils import (
-            PYDANTIC_SCHEMA_TYPE_MAP,
-            get_field_descriptions,
-            pydantic_validators,
-        )
-
-        # Get the following attributes
-        # TODO: add on-fail
-        try:
-            name = self.element.attrib["name"]
-        except KeyError:
-            name = None
-        try:
-            description = self.element.attrib["description"]
-        except KeyError:
-            description = None
-
-        # Get the Pydantic model schema.
-        schema = self.model.schema()
-        field_descriptions = get_field_descriptions(self.model)
-
-        # Make the XML as follows using lxml
-        # <object name="..." description="..." format="semicolon separated root validators" pydantic="ModelName"> # noqa: E501
-        #     <type name="..." description="..." format="semicolon separated validators" /> # noqa: E501
-        # </object>
-
-        # Add the object element, opening tag
-        xml = ""
-        root_validators = "; ".join(
-            list(pydantic_validators[self.model]["__root__"].keys())
-        )
-        xml += "<object "
-        if name:
-            xml += f' name="{name}"'
-        if description:
-            xml += f' description="{description}"'
-        if root_validators:
-            xml += f' format="{root_validators}"'
-        xml += f' pydantic="{self.model.__name__}"'
-        xml += ">"
-
-        # Add all the nested fields
-        for field in schema["properties"]:
-            properties = schema["properties"][field]
-            field_type = PYDANTIC_SCHEMA_TYPE_MAP[properties["type"]]
-            field_validators = "; ".join(
-                list(pydantic_validators[self.model][field].keys())
-            )
-            try:
-                field_description = field_descriptions[field]
-            except KeyError:
-                field_description = ""
-            xml += f"<{field_type}"
-            xml += f' name="{field}"'
-            if field_description:
-                xml += f' description="{field_descriptions[field]}"'
-            if field_validators:
-                xml += f' format="{field_validators}"'
-            xml += " />"
-
-        # Close the object element
-        xml += "</object>"
-
-        # Convert the string to an XML element, making sure to format it.
-        return ET.fromstring(
-            xml, parser=ET.XMLParser(encoding="utf-8", remove_blank_text=True)
-        )
+            self._children[name] = child_data_type.from_xml(child)
 
 
 # @register_type("key")

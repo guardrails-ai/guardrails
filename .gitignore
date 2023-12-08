@@ -20,6 +20,7 @@ dist/*
 .cache
 scratch/
 .coverage*
+coverage.xml
 test.db
 test.index
 htmlcov
@@ -28,3 +29,4 @@ node_modules
 docs-build
 .vercel
 docusaurus/examples-toc.json
+.python-version

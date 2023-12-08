@@ -1,15 +1,16 @@
 """Unit tests for prompt and instructions parsing."""
 
 from string import Template
-from unittest import mock
 
 import pytest
 from pydantic import BaseModel, Field
 
 import guardrails as gd
+from guardrails.prompt.instructions import Instructions
+from guardrails.prompt.prompt import Prompt
 from guardrails.utils.constants import constants
 
-INSTRUCTIONS = "You are a helpful bot, who answers only with valid JSON"
+INSTRUCTIONS = "\nYou are a helpful bot, who answers only with valid JSON\n"
 
 PROMPT = "Extract a string from the text"
 
@@ -204,12 +205,14 @@ def test_format_instructions():
 
 def test_reask_prompt():
     guard = gd.Guard.from_rail_string(RAIL_WITH_REASK_PROMPT)
-    assert guard.output_schema.reask_prompt_template == REASK_PROMPT
+    assert guard.output_schema.reask_prompt_template == Prompt(REASK_PROMPT)
 
 
 def test_reask_instructions():
     guard = gd.Guard.from_rail_string(RAIL_WITH_REASK_INSTRUCTIONS)
-    assert guard.output_schema.reask_instructions_template.strip() == INSTRUCTIONS
+    assert guard.output_schema._reask_instructions_template == Instructions(
+        INSTRUCTIONS
+    )
 
 
 @pytest.mark.parametrize(
@@ -226,31 +229,6 @@ def test_substitute_constants(prompt_str, final_prompt):
     """Test substituting constants in a prompt."""
     prompt = gd.Prompt(prompt_str)
     assert prompt.source == final_prompt
-
-
-# TODO: Deprecate when we can confirm migration off the old, non-namespaced standard
-@pytest.mark.parametrize(
-    "text, is_old_schema",
-    [
-        (RAIL_WITH_OLD_CONSTANT_SCHEMA, True),  # Test with a single match
-        (
-            RAIL_WITH_FORMAT_INSTRUCTIONS,
-            False,
-        ),  # Test with no matches/correct namespacing
-    ],
-)
-def test_uses_old_constant_schema(text, is_old_schema):
-    with mock.patch("warnings.warn") as warn_mock:
-        guard = gd.Guard.from_rail_string(text)
-        assert guard.prompt.uses_old_constant_schema(text) == is_old_schema
-        if is_old_schema:
-            # we only check for the warning when we have an older schema
-            warn_mock.assert_called_once_with(
-                """It appears that you are using an old schema for gaurdrails\
- variables, follow the new namespaced convention documented here:\
- https://docs.getguardrails.ai/0-2-migration/\
-"""
-            )
 
 
 class TestResponse(BaseModel):
@@ -270,3 +248,17 @@ def test_gr_dot_prefixed_prompt_item_fails():
         # From pydantic:
         prompt = """Give me a response to ${gr.ade}"""
         gd.Guard.from_pydantic(output_class=TestResponse, prompt=prompt)
+
+
+def test_escape():
+    prompt_string = (
+        'My prompt with a some sample json { "a" : 1 } and a {f_var} and a'
+        " ${safe_var}. Also an incomplete brace {."
+    )
+    prompt = Prompt(prompt_string)
+
+    assert prompt.source == prompt_string
+    assert prompt.escape() == (
+        'My prompt with a some sample json {{ "a" : 1 }} and a {{f_var}} and a'
+        " ${safe_var}. Also an incomplete brace {{."
+    )

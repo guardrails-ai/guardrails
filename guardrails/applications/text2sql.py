@@ -1,13 +1,13 @@
+import asyncio
 import json
 import os
 from string import Template
-from typing import Callable, Dict, Optional
-
-import openai
+from typing import Callable, Dict, Optional, Type, cast
 
 from guardrails.document_store import DocumentStoreBase, EphemeralDocumentStore
 from guardrails.embedding import EmbeddingBase, OpenAIEmbedding
 from guardrails.guard import Guard
+from guardrails.utils.openai_utils import get_static_openai_create_func
 from guardrails.utils.sql_utils import create_sql_driver
 from guardrails.vectordb import Faiss, VectorDBBase
 
@@ -63,14 +63,14 @@ class Text2Sql:
         conn_str: str,
         schema_file: Optional[str] = None,
         examples: Optional[Dict] = None,
-        embedding: Optional[EmbeddingBase] = OpenAIEmbedding,
-        vector_db: Optional[VectorDBBase] = Faiss,
-        document_store: Optional[DocumentStoreBase] = EphemeralDocumentStore,
+        embedding: Type[EmbeddingBase] = OpenAIEmbedding,
+        vector_db: Type[VectorDBBase] = Faiss,
+        document_store: Type[DocumentStoreBase] = EphemeralDocumentStore,
         rail_spec: Optional[str] = None,
         rail_params: Optional[Dict] = None,
-        example_formatter: Optional[Callable] = example_formatter,
-        reask_prompt: Optional[str] = REASK_PROMPT,
-        llm_api: Optional[Callable] = openai.Completion.create,
+        example_formatter: Callable = example_formatter,
+        reask_prompt: str = REASK_PROMPT,
+        llm_api: Optional[Callable] = None,
         llm_api_kwargs: Optional[Dict] = None,
         num_relevant_examples: int = 2,
     ):
@@ -87,6 +87,8 @@ class Text2Sql:
             example_formatter: Fn to format examples. Defaults to example_formatter.
             reask_prompt: Prompt to use for reasking. Defaults to REASK_PROMPT.
         """
+        if llm_api is None:
+            llm_api = get_static_openai_create_func()
 
         self.example_formatter = example_formatter
         self.llm_api = llm_api
@@ -119,7 +121,7 @@ class Text2Sql:
         schema_file: Optional[str] = None,
         rail_spec: Optional[str] = None,
         rail_params: Optional[Dict] = None,
-        reask_prompt: Optional[str] = REASK_PROMPT,
+        reask_prompt: str = REASK_PROMPT,
     ):
         # Initialize the Guard class
         if rail_spec is None:
@@ -144,9 +146,9 @@ class Text2Sql:
     def _create_docstore_with_examples(
         self,
         examples: Optional[Dict],
-        embedding: EmbeddingBase,
-        vector_db: VectorDBBase,
-        document_store: DocumentStoreBase,
+        embedding: Type[EmbeddingBase],
+        vector_db: Type[VectorDBBase],
+        document_store: Type[DocumentStoreBase],
     ) -> Optional[DocumentStoreBase]:
         if examples is None:
             return None
@@ -167,7 +169,7 @@ class Text2Sql:
     def output_schema_formatter(output) -> str:
         return json.dumps({"generated_sql": output}, indent=4)
 
-    def __call__(self, text: str) -> str:
+    def __call__(self, text: str) -> Optional[str]:
         """Run text2sql on a text query and return the SQL query."""
 
         if self.store is not None:
@@ -179,17 +181,27 @@ class Text2Sql:
         else:
             similar_examples_prompt = ""
 
-        try:
-            output = self.guard(
-                self.llm_api,
-                prompt_params={
-                    "nl_instruction": text,
-                    "examples": similar_examples_prompt,
-                    "db_info": str(self.sql_schema),
-                },
-                **self.llm_api_kwargs,
-            )[1]["generated_sql"]
-        except TypeError:
-            output = None
+        if asyncio.iscoroutinefunction(self.llm_api):
+            raise ValueError(
+                "Async API is not supported in Text2SQL application. "
+                "Please use a synchronous API."
+            )
+        else:
+            if self.llm_api is None:
+                return None
+            try:
+                response = self.guard(
+                    self.llm_api,
+                    prompt_params={
+                        "nl_instruction": text,
+                        "examples": similar_examples_prompt,
+                        "db_info": str(self.sql_schema),
+                    },
+                    **self.llm_api_kwargs,
+                )
+                validated_output: Dict = cast(Dict, response.validated_output)
+                output = validated_output["generated_sql"]
+            except TypeError:
+                output = None
 
-        return output
+            return output
