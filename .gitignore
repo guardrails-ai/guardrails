@@ -31,3 +31,4 @@ docs-build
 docusaurus/examples-toc.json
 .python-version
 static/docs
+docusaurus/static/docs
