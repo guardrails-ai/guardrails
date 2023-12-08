@@ -1,12 +1,12 @@
-# Guardrails.ai
+# Guardrails AI
 
-_Note: Guardrails is an alpha release, so expect sharp edges and bugs._
+_Note: Guardrails is in beta, so expect sharp edges and bugs._
 
-## 🛤️ What is Guardrails?
+## 🛤️ What is Guardrails AI?
 
-Guardrails AI is a fully open source library that assures interactions with Large Language Models (LLMs). It offers
+Guardrails AI is the leading open-source framework to define and enforce assurance for LLM applications. It offers
 
-✅ Framework for creating custom validators
+✅ Framework for creating custom validations at an application level
 
 ✅ Orchestration of prompting → verification → re-prompting
 
@@ -18,7 +18,7 @@ Guardrails AI is a fully open source library that assures interactions with Larg
 
 Guardrails provides an object definition called a `Rail` for enforcing a specification on an LLM output, and a lightweight wrapper called a `Guard` around LLM API calls to implement this spec.
 
-1. `rail` (**R**eliable **AI** markup **L**anguage) files for specifying structure and type information, validators and corrective actions over LLM outputs. The concept of a Rail has evolved from markup - Rails can be defined in either <a href='/defining_guards/pydantic'>Pydantic</a> or <a href='/defining_guards/rail'>rail</a> for structured outputs, or directly in <a href='/defining_guards/strings'>Python</a> for string outputs.
+1. `rail` (**R**eliable **AI** markup **L**anguage) files for specifying structure and type information, validators and corrective actions over LLM outputs. The concept of a Rail has evolved from markup - Rails can be defined in either <a href='/defining_guards/pydantic'>Pydantic</a> or <a href='/defining_guards/rail'>RAIL</a> for structured outputs, or directly in <a href='/defining_guards/strings'>Python</a> for string outputs.
 2. `Guard` wraps around LLM API calls to structure, validate and correct the outputs.
 
 ```mermaid
@@ -31,12 +31,14 @@ Check out the [Getting Started](guardrails_ai/getting_started) guide to learn ho
 
 ## 📍 Roadmap
 
-- [ ] Adding more examples, new use cases and domains
-- [x] Adding integrations with langchain, gpt-index, minichain, manifest
-- [~] Expanding validators offering
+- [ ] Javascript SDK
 - [ ] Wider variety of language support (TypeScript, Go, etc)
 - [ ] Informative logging
-- [x] Improving reasking logic
 - [ ] VSCode extension for `.rail` files
 - [ ] Next version of `.rail` format
+- [ ] Validator playground
+- [x] Input Validation
+- [x] Pydantic 2.0
+- [x] Improving reasking logic
+- [x] Integration with LangChain
 - [x] Add more LLM providers
