@@ -30,3 +30,4 @@ docs-build
 .vercel
 docusaurus/examples-toc.json
 .python-version
+static/docs
