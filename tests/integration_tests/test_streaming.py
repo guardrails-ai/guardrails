@@ -16,9 +16,6 @@ from guardrails.utils.openai_utils import OPENAI_VERSION
 from guardrails.utils.safe_get import safe_get_with_brackets
 from guardrails.validators import LowerCase
 
-# Set mock OpenAI API key
-os.environ["OPENAI_API_KEY"] = "sk-xxxxxxxxxxxxxx"
-
 expected_raw_output = '{"statement": "I am DOING well, and I HOPE you aRe too."}'
 expected_fix_output = json.dumps(
     {"statement": "i am doing well, and i hope you are too."}, indent=4
@@ -27,6 +24,35 @@ expected_noop_output = json.dumps(
     {"statement": "I am DOING well, and I HOPE you aRe too."}, indent=4
 )
 expected_filter_refrain_output = json.dumps({}, indent=4)
+
+
+class Delta:
+    content: str
+
+    def __init__(self, content):
+        self.content = content
+
+
+class Choice:
+    text: str
+    finish_reason: str
+    index: int
+    delta: Delta
+
+    def __init__(self, text, delta, finish_reason, index=0):
+        self.index = index
+        self.delta = delta
+        self.text = text
+        self.finish_reason = finish_reason
+
+
+class MockOpenAIV1ChunkResponse:
+    choices: list
+    model: str
+
+    def __init__(self, choices, model):
+        self.choices = choices
+        self.model = model
 
 
 def mock_openai_completion_create():
@@ -41,10 +67,22 @@ def mock_openai_completion_create():
 
     def gen():
         for chunk in chunks:
-            yield {
-                "choices": [{"text": chunk, "finish_reason": None}],
-                "model": "OpenAI model name",
-            }
+            if OPENAI_VERSION.startswith("0"):
+                yield {
+                    "choices": [{"text": chunk, "finish_reason": None}],
+                    "model": "OpenAI model name",
+                }
+            else:
+                yield MockOpenAIV1ChunkResponse(
+                    choices=[
+                        Choice(
+                            text=chunk,
+                            delta=Delta(content=""),
+                            finish_reason=None,
+                        )
+                    ],
+                    model="OpenAI model name",
+                )
 
     return gen()
 
@@ -61,15 +99,27 @@ def mock_openai_chat_completion_create():
 
     def gen():
         for chunk in chunks:
-            yield {
-                "choices": [
-                    {
-                        "index": 0,
-                        "delta": {"content": chunk},
-                        "finish_reason": None,
-                    }
-                ]
-            }
+            if OPENAI_VERSION.startswith("0"):
+                yield {
+                    "choices": [
+                        {
+                            "index": 0,
+                            "delta": {"content": chunk},
+                            "finish_reason": None,
+                        }
+                    ]
+                }
+            else:
+                yield MockOpenAIV1ChunkResponse(
+                    choices=[
+                        Choice(
+                            text="",
+                            delta=Delta(content=chunk),
+                            finish_reason=None,
+                        )
+                    ],
+                    model="OpenAI model name",
+                )
 
     return gen()
 
