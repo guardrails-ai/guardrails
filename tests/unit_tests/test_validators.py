@@ -39,6 +39,12 @@ from guardrails.validators import (
     TwoWords,
     ValidLength,
 )
+from tests.integration_tests.mock_toxic_language import (
+    NON_TOXIC_SENTENCES,
+    TOXIC_SENTENCES,
+    MockPipeline,
+    mock_get_toxicity,
+)
 
 from .mock_embeddings import MOCK_EMBEDDINGS, mock_create_embedding
 from .mock_provenance_v1 import mock_chat_completion, mock_chromadb_query_function
@@ -525,32 +531,29 @@ def test_detect_secrets():
     assert mod_value == NO_SECRETS_CODE_SNIPPET
 
 
-def test_toxic_language():
+def test_toxic_language(mocker):
     """Test ToxicLanguage validator's get_toxicity() method.
 
     1. Test with dummy text with toxicity
     2. Test with dummy text without toxicity
     """
+    mocker.patch("guardrails.validators.toxic_language.pipeline", new=MockPipeline)
+    mocker.patch(
+        "guardrails.validators.toxic_language.ToxicLanguage.get_toxicity",
+        new=mock_get_toxicity,
+    )
 
     # Initialise validator
     validator = ToxicLanguage()
 
     # ----------------------------
     # 1. Test get_toxicity with dummy text with toxicity
-    toxic_text = """
-    He is an arrogant, self serving, immature idiot.
-    Get it right through your thick skull.
-    """
-    pred_labels = validator.get_toxicity(toxic_text)
+    pred_labels = validator.get_toxicity(TOXIC_SENTENCES[1])
     assert len(pred_labels) > 0
 
     # ----------------------------
     # 2. Test get_toxicity with dummy text without toxicity
-    non_toxic_text = """
-    I love you.
-    You are the best.
-    """
-    pred_labels = validator.get_toxicity(non_toxic_text)
+    pred_labels = validator.get_toxicity(NON_TOXIC_SENTENCES[0])
     assert len(pred_labels) == 0
 
 

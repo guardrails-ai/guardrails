@@ -202,8 +202,12 @@ def test_pii_filter(mocker):
     """Integration test for PIIFilter."""
 
     # Mock the the intialisations of AnalyzerEngine and AnonymizerEngine
-    mocker.patch("guardrails.validators.AnalyzerEngine", new=MockAnalyzerEngine)
-    mocker.patch("guardrails.validators.AnonymizerEngine", new=MockAnonymizerEngine)
+    mocker.patch(
+        "guardrails.validators.pii_filter.AnalyzerEngine", new=MockAnalyzerEngine
+    )
+    mocker.patch(
+        "guardrails.validators.pii_filter.AnonymizerEngine", new=MockAnonymizerEngine
+    )
 
     # Mock the analyze and anomymize functions
     mocker.patch(
@@ -322,7 +326,6 @@ def test_pii_filter(mocker):
     # only containing EMAIL_ADDRESS
     # metadata should override the pii_entities passed in the constructor,
     # and only mask in EMAIL_ADDRESS
-
     guard = Guard.from_string(
         validators=[PIIFilter(pii_entities="pii", on_fail="fix")],
         description="testmeout",
@@ -344,7 +347,6 @@ def test_pii_filter(mocker):
     # ------------------
     # 6. Initialise Guard from string setting an incorrect string of pii_entities
     # Should raise ValueError during validate
-
     guard = Guard.from_string(
         validators=[PIIFilter(pii_entities="piii", on_fail="fix")],
         description="testmeout",
@@ -372,9 +374,10 @@ def test_toxic_language(mocker):
     """
 
     # Set the mockers
-    mocker.patch("guardrails.validators.pipeline", new=MockPipeline)
+    mocker.patch("guardrails.validators.toxic_language.pipeline", new=MockPipeline)
     mocker.patch(
-        "guardrails.validators.ToxicLanguage.get_toxicity", new=mock_get_toxicity
+        "guardrails.validators.toxic_language.ToxicLanguage.get_toxicity",
+        new=mock_get_toxicity,
     )
 
     # ----------------------------

@@ -86,7 +86,6 @@ class Outputs(ArbitraryModel):
         all_reasks_have_fixes = all(
             list(fail.fix_value is not None for fail in all_fail_results)
         )
-
         if self._all_empty() is True:
             return not_run_status
         elif self.error:
