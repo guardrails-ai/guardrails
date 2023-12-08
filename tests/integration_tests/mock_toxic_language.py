@@ -64,3 +64,5 @@ def mock_get_toxicity(self, value: str) -> List[str]:
         return ["toxicity", "insult"]
     elif value in NON_TOXIC_SENTENCES:
         return []
+    else:
+        return []
