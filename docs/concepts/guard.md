@@ -19,7 +19,7 @@ from guardrails import Guard
 
 guard = Guard.from_rail(...)
 
-raw_output, validated_output = guard(
+raw_output, validated_output, *rest = guard(
     openai.Completion.create,
     engine="text-davinci-003",
     max_tokens=1024,

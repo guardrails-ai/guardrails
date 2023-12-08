@@ -1,5 +1,4 @@
 """The LLM prompt."""
-import warnings
 from string import Template
 
 from guardrails.utils.parsing_utils import get_template_variables
@@ -21,12 +20,6 @@ class Prompt(BasePrompt):
         # Only use the keyword arguments that are present in the prompt.
         vars = get_template_variables(self.source)
         filtered_kwargs = {k: v for k, v in kwargs.items() if k in vars}
-        if len(filtered_kwargs) == 0:
-            warnings.warn(
-                "Prompt does not have any variables, "
-                "if you are migrating follow the new variable convention "
-                "documented here: https://docs.guardrailsai.com/0-2-migration/"
-            )
 
         # Return another instance of the class with the formatted prompt.
         formatted_prompt = Template(self.source).safe_substitute(**filtered_kwargs)

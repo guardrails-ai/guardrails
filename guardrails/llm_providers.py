@@ -132,7 +132,7 @@ class OpenAIChatCallable(PromptCallableBase):
 
         Use Guardrails with OpenAI chat engines by doing
         ```
-        raw_llm_response, validated_response = guard(
+        raw_llm_response, validated_response, *rest = guard(
             openai.ChatCompletion.create,
             prompt_params={...},
             text=...,
@@ -193,7 +193,7 @@ class ManifestCallable(PromptCallableBase):
         To use manifest for guardrailse, do
         ```
         client = Manifest(client_name=..., client_connection=...)
-        raw_llm_response, validated_response = guard(
+        raw_llm_response, validated_response, *rest = guard(
             client,
             prompt_params={...},
             ...
@@ -204,7 +204,7 @@ class ManifestCallable(PromptCallableBase):
         except ImportError:
             raise PromptCallableException(
                 "The `manifest` package is not installed. "
-                "Install with `pip install manifest-ml`"
+                "Install with `poetry add manifest-ml`"
             )
         client = cast(manifest.Manifest, client)
         manifest_response = client.run(
@@ -222,7 +222,7 @@ class CohereCallable(PromptCallableBase):
         """To use cohere for guardrails, do ``` client =
         cohere.Client(api_key=...)
 
-        raw_llm_response, validated_response = guard(
+        raw_llm_response, validated_response, *rest = guard(
             client.generate,
             prompt_params={...},
             model="command-nightly",
@@ -240,6 +240,53 @@ class CohereCallable(PromptCallableBase):
         )
 
 
+class AnthropicCallable(PromptCallableBase):
+    def _invoke_llm(
+        self,
+        prompt: str,
+        client_callable: Any,
+        model: str = "claude-instant-1",
+        max_tokens_to_sample: int = 100,
+        *args,
+        **kwargs,
+    ) -> LLMResponse:
+        """Wrapper for Anthropic Completions.
+
+        To use Anthropic for guardrails, do
+        ```
+        client = anthropic.Anthropic(api_key=...)
+
+        raw_llm_response, validated_response = guard(
+            client,
+            model="claude-2",
+            max_tokens_to_sample=200,
+            prompt_params={...},
+            ...
+        ```
+        """
+        try:
+            import anthropic
+        except ImportError:
+            raise PromptCallableException(
+                "The `anthropic` package is not installed. "
+                "Install with `pip install anthropic`"
+            )
+
+        if "instructions" in kwargs:
+            prompt = kwargs.pop("instructions") + "\n\n" + prompt
+
+        anthropic_prompt = f"{anthropic.HUMAN_PROMPT} {prompt} {anthropic.AI_PROMPT}"
+
+        anthropic_response = client_callable(
+            model=model,
+            prompt=anthropic_prompt,
+            max_tokens_to_sample=max_tokens_to_sample,
+            *args,
+            **kwargs,
+        )
+        return LLMResponse(output=anthropic_response.completion)
+
+
 class ArbitraryCallable(PromptCallableBase):
     def __init__(self, llm_api: Callable, *args, **kwargs):
         self.llm_api = llm_api
@@ -250,7 +297,7 @@ class ArbitraryCallable(PromptCallableBase):
 
         To use an arbitrary callable for guardrails, do
         ```
-        raw_llm_response, validated_response = guard(
+        raw_llm_response, validated_response, *rest = guard(
             my_callable,
             prompt_params={...},
             ...
@@ -311,6 +358,17 @@ def get_llm_ask(llm_api: Callable, *args, **kwargs) -> PromptCallableBase:
             and getattr(llm_api, "__name__", None) == "generate"
         ):
             return CohereCallable(*args, client_callable=llm_api, **kwargs)
+    except ImportError:
+        pass
+
+    try:
+        import anthropic.resources  # noqa: F401 # type: ignore
+
+        if isinstance(
+            getattr(llm_api, "__self__", None),
+            anthropic.resources.completions.Completions,
+        ):
+            return AnthropicCallable(*args, client_callable=llm_api, **kwargs)
     except ImportError:
         pass
 
@@ -397,7 +455,7 @@ class AsyncOpenAIChatCallable(AsyncPromptCallableBase):
 
         Use Guardrails with OpenAI chat engines by doing
         ```
-        raw_llm_response, validated_response = guard(
+        raw_llm_response, validated_response, *rest = guard(
             openai.ChatCompletion.create,
             prompt_params={...},
             text=...,
@@ -458,7 +516,7 @@ class AsyncManifestCallable(AsyncPromptCallableBase):
         To use manifest for guardrails, do
         ```
         client = Manifest(client_name=..., client_connection=...)
-        raw_llm_response, validated_response = guard(
+        raw_llm_response, validated_response, *rest = guard(
             client,
             prompt_params={...},
             ...
@@ -469,7 +527,7 @@ class AsyncManifestCallable(AsyncPromptCallableBase):
         except ImportError:
             raise PromptCallableException(
                 "The `manifest` package is not installed. "
-                "Install with `pip install manifest-ml`"
+                "Install with `poetry add manifest-ml`"
             )
         client = cast(manifest.Manifest, client)
         manifest_response = await client.arun_batch(
@@ -492,7 +550,7 @@ class AsyncArbitraryCallable(AsyncPromptCallableBase):
 
         To use an arbitrary callable for guardrails, do
         ```
-        raw_llm_response, validated_response = guard(
+        raw_llm_response, validated_response, *rest = guard(
             my_callable,
             prompt_params={...},
             ...

@@ -6,12 +6,12 @@ from lxml.etree import Element as E
 from rich.pretty import pretty_repr
 
 from guardrails import datatypes as dt
-from guardrails.utils.logs_utils import GuardHistory
+from guardrails.classes.history.call import Call
 from guardrails.utils.reask_utils import gather_reasks
 
 
 def generate_test_artifacts(
-    rail_spec: str, guard_history: GuardHistory, on_fail_type: str, artifact_dir: str
+    rail_spec: str, call_log: Call, on_fail_type: str, artifact_dir: str
 ) -> None:
     """Generate artifacts for testing.
 
@@ -20,7 +20,7 @@ def generate_test_artifacts(
     tests/integration_tests/test_assets/entity_extraction/ for examples.
 
     This function is only intended to be used to create artifacts for integration tests
-    once the GuardHistory object has been manually checked to be correct.
+    once the call log (Call) object has been manually checked to be correct.
 
     Args:
         rail_spec: This should be a string representation of the rail.
@@ -37,11 +37,11 @@ def generate_test_artifacts(
     with open(os.path.join(artifact_dir, f"{on_fail_type}.rail"), "w") as f:
         f.write(rail_spec)
 
-    for i, logs in enumerate(guard_history.history):
+    for i, logs in enumerate(call_log.iterations):
         if i == 0:
             ext = ""
         elif i == 1:
-            if len(guard_history.history) == 2:
+            if call_log.iterations.length == 2:
                 ext = "_reask"
             else:
                 ext = "_reask_1"
@@ -49,14 +49,14 @@ def generate_test_artifacts(
             ext = f"_reask_{i}"
 
         # Save the compiled prompt.
-        compiled_prompt = logs.prompt
+        compiled_prompt = logs.inputs.prompt
         with open(
             os.path.join(artifact_dir, f"compiled_prompt_{on_fail_type}{ext}.txt"), "w"
         ) as f:
             f.write(str(compiled_prompt or ""))
 
         # Save the llm output.
-        llm_output = logs.output
+        llm_output = logs.raw_output
         with open(
             os.path.join(artifact_dir, f"llm_output_{on_fail_type}{ext}.txt"), "w"
         ) as f:
@@ -70,7 +70,7 @@ def generate_test_artifacts(
         ) as f:
             f.write("# flake8: noqa: E501\n")
 
-            reasks = gather_reasks(validated_output)
+            reasks, _ = gather_reasks(validated_output)
             if len(reasks):
                 f.write("from guardrails.utils.reask_utils import ReAsk\n")
 

@@ -1,5 +1,4 @@
 import importlib.util
-import os
 from typing import Any, Callable
 from unittest.mock import MagicMock
 
@@ -19,7 +18,7 @@ from guardrails.utils.openai_utils import OPENAI_VERSION
 from .mocks import MockAsyncOpenAILlm, MockOpenAILlm
 
 # Set the mock OpenAI API key
-os.environ["OPENAI_API_KEY"] = "sk-xxxxxxxxxxxxxx"
+# os.environ["OPENAI_API_KEY"] = "sk-xxxxxxxxxxxxxx"
 
 # def test_openai_callable_retries_on_retryable_errors(mocker):
 #     llm = MockCustomLlm()
@@ -37,6 +36,9 @@ os.environ["OPENAI_API_KEY"] = "sk-xxxxxxxxxxxxxx"
 
 @pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="OpenAI v0 only")
 def test_openai_callable_does_not_retry_on_non_retryable_errors(mocker):
+    mock_environ = mocker.patch("os.environ.get")
+    mock_environ.return_value = "sk-xxxxxxxxxxxxxx"
+
     with pytest.raises(Exception) as e:
         llm = MockOpenAILlm()
         fail_non_retryable_spy = mocker.spy(llm, "fail_non_retryable")
@@ -53,6 +55,9 @@ def test_openai_callable_does_not_retry_on_non_retryable_errors(mocker):
 
 
 def test_openai_callable_does_not_retry_on_success(mocker):
+    mock_environ = mocker.patch("os.environ.get")
+    mock_environ.return_value = "sk-xxxxxxxxxxxxxx"
+
     llm = MockOpenAILlm()
     succeed_spy = mocker.spy(llm, "succeed")
 
@@ -85,6 +90,8 @@ def test_openai_callable_does_not_retry_on_success(mocker):
 @pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="OpenAI v0 only")
 @pytest.mark.asyncio
 async def test_async_openai_callable_does_not_retry_on_non_retryable_errors(mocker):
+    mock_environ = mocker.patch("os.environ.get")
+    mock_environ.return_value = "sk-xxxxxxxxxxxxxx"
     with pytest.raises(Exception) as e:
         llm = MockAsyncOpenAILlm()
         fail_non_retryable_spy = mocker.spy(llm, "fail_non_retryable")
@@ -102,6 +109,9 @@ async def test_async_openai_callable_does_not_retry_on_non_retryable_errors(mock
 
 @pytest.mark.asyncio
 async def test_async_openai_callable_does_not_retry_on_success(mocker):
+    mock_environ = mocker.patch("os.environ.get")
+    mock_environ.return_value = "sk-xxxxxxxxxxxxxx"
+
     llm = MockAsyncOpenAILlm()
     succeed_spy = mocker.spy(llm, "succeed")
 
@@ -274,6 +284,9 @@ def openai_async_stream_mock():
 
 
 def test_openai_callable(mocker, openai_mock):
+    mock_environ = mocker.patch("os.environ.get")
+    mock_environ.return_value = "sk-xxxxxxxxxxxxxx"
+
     if OPENAI_VERSION.startswith("0"):
         mocker.patch("openai.Completion.create", return_value=openai_mock)
     else:
@@ -292,6 +305,9 @@ def test_openai_callable(mocker, openai_mock):
 
 
 def test_openai_stream_callable(mocker, openai_stream_mock, non_chat_token_count_mock):
+    mock_environ = mocker.patch("os.environ.get")
+    mock_environ.return_value = "sk-xxxxxxxxxxxxxx"
+
     if OPENAI_VERSION.startswith("0"):
         mocker.patch("openai.Completion.create", return_value=openai_stream_mock)
         mocker.patch(
@@ -322,6 +338,9 @@ def test_openai_stream_callable(mocker, openai_stream_mock, non_chat_token_count
 @pytest.mark.asyncio
 @pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="OpenAI v0 only")
 async def test_async_openai_callable(mocker, openai_mock):
+    mock_environ = mocker.patch("os.environ.get")
+    mock_environ.return_value = "sk-xxxxxxxxxxxxxx"
+
     mocker.patch("openai.Completion.acreate", return_value=openai_mock)
 
     from guardrails.llm_providers import AsyncOpenAICallable
@@ -340,6 +359,9 @@ async def test_async_openai_callable(mocker, openai_mock):
 async def test_async_openai_stream_callable(
     mocker, openai_async_stream_mock, non_chat_token_count_mock
 ):
+    mock_environ = mocker.patch("os.environ.get")
+    mock_environ.return_value = "sk-xxxxxxxxxxxxxx"
+
     mocker.patch("openai.Completion.acreate", return_value=openai_async_stream_mock)
     if OPENAI_VERSION.startswith("0"):
         mocker.patch(
@@ -364,6 +386,9 @@ async def test_async_openai_stream_callable(
 
 
 def test_openai_chat_callable(mocker, openai_chat_mock):
+    mock_environ = mocker.patch("os.environ.get")
+    mock_environ.return_value = "sk-xxxxxxxxxxxxxx"
+
     if OPENAI_VERSION.startswith("0"):
         mocker.patch("openai.ChatCompletion.create", return_value=openai_chat_mock)
     else:
@@ -386,6 +411,9 @@ def test_openai_chat_callable(mocker, openai_chat_mock):
 def test_openai_chat_stream_callable(
     mocker, openai_chat_stream_mock, chat_token_count_mock, non_chat_token_count_mock
 ):
+    mock_environ = mocker.patch("os.environ.get")
+    mock_environ.return_value = "sk-xxxxxxxxxxxxxx"
+
     if OPENAI_VERSION.startswith("0"):
         mocker.patch(
             "openai.ChatCompletion.create", return_value=openai_chat_stream_mock
@@ -426,6 +454,9 @@ def test_openai_chat_stream_callable(
 @pytest.mark.asyncio
 @pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="OpenAI v0 only")
 async def test_async_openai_chat_callable(mocker, openai_chat_mock):
+    mock_environ = mocker.patch("os.environ.get")
+    mock_environ.return_value = "sk-xxxxxxxxxxxxxx"
+
     mocker.patch("openai.ChatCompletion.acreate", return_value=openai_chat_mock)
 
     from guardrails.llm_providers import AsyncOpenAIChatCallable
@@ -447,6 +478,9 @@ async def test_async_openai_chat_stream_callable(
     chat_token_count_mock,
     non_chat_token_count_mock,
 ):
+    mock_environ = mocker.patch("os.environ.get")
+    mock_environ.return_value = "sk-xxxxxxxxxxxxxx"
+
     mocker.patch(
         "openai.ChatCompletion.acreate", return_value=openai_async_chat_stream_mock
     )
@@ -482,6 +516,9 @@ async def test_async_openai_chat_stream_callable(
 
 
 def test_openai_chat_model_callable(mocker, openai_chat_mock):
+    mock_environ = mocker.patch("os.environ.get")
+    mock_environ.return_value = "sk-xxxxxxxxxxxxxx"
+
     if OPENAI_VERSION.startswith("0"):
         mocker.patch("openai.ChatCompletion.create", return_value=openai_chat_mock)
     else:
@@ -510,6 +547,9 @@ def test_openai_chat_model_callable(mocker, openai_chat_mock):
 @pytest.mark.asyncio
 @pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="OpenAI v0 only")
 async def test_async_openai_chat_model_callable(mocker, openai_chat_mock):
+    mock_environ = mocker.patch("os.environ.get")
+    mock_environ.return_value = "sk-xxxxxxxxxxxxxx"
+
     mocker.patch("openai.ChatCompletion.acreate", return_value=openai_chat_mock)
 
     from guardrails.llm_providers import AsyncOpenAIChatCallable
