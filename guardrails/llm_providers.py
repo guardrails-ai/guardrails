@@ -152,8 +152,8 @@ class OpenAIChatCallable(PromptCallableBase):
                 "You must pass in either `text` or `msg_history` to `guard.__call__`."
             )
 
-        # Configure function calling if applicable
-        if base_model:
+        # Configure function calling if applicable (only for non-streaming)
+        if base_model and not kwargs.get("stream", False):
             function_params = [convert_pydantic_model_to_openai_fn(base_model)]
             if function_call is None:
                 function_call = {"name": function_params[0]["name"]}

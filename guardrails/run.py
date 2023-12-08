@@ -18,6 +18,7 @@ from guardrails.prompt import Instructions, Prompt
 from guardrails.schema import Schema, StringSchema
 from guardrails.utils.exception_utils import UserFacingException
 from guardrails.utils.llm_response import LLMResponse
+from guardrails.utils.openai_utils import OPENAI_VERSION
 from guardrails.utils.reask_utils import (
     NonParseableReAsk,
     ReAsk,
@@ -39,7 +40,6 @@ class Runner:
     Args:
         prompt: The prompt to use.
         api: The LLM API to call, which should return a string.
-        input_schema: The input schema to use for validation.
         output_schema: The output schema to use for validation.
         num_reasks: The maximum number of times to reask the LLM in case of
             validation failure, defaults to 0.
@@ -1120,16 +1120,28 @@ class StreamRunner(Runner):
             instructions=self.instructions,
             prompt=self.prompt,
             api=self.api,
-            input_schema=self.input_schema,
+            prompt_schema=self.prompt_schema,
+            instructions_schema=self.instructions_schema,
+            msg_history_schema=self.msg_history_schema,
             output_schema=self.output_schema,
             num_reasks=self.num_reasks,
             metadata=self.metadata,
         ):
-            instructions, prompt, msg_history, input_schema, output_schema = (
+            (
+                instructions,
+                prompt,
+                msg_history,
+                prompt_schema,
+                instructions_schema,
+                msg_history_schema,
+                output_schema,
+            ) = (
                 self.instructions,
                 self.prompt,
                 self.msg_history,
-                self.input_schema,
+                self.prompt_schema,
+                self.instructions_schema,
+                self.msg_history_schema,
                 self.output_schema,
             )
 
@@ -1140,7 +1152,9 @@ class StreamRunner(Runner):
                 prompt=prompt,
                 msg_history=msg_history,
                 prompt_params=prompt_params,
-                input_schema=input_schema,
+                prompt_schema=prompt_schema,
+                instructions_schema=instructions_schema,
+                msg_history_schema=msg_history_schema,
                 output_schema=output_schema,
                 output=self.output,
                 call_log=call_log,
@@ -1154,7 +1168,9 @@ class StreamRunner(Runner):
         prompt: Optional[Prompt],
         msg_history: Optional[List[Dict]],
         prompt_params: Dict,
-        input_schema: Optional[Schema],
+        prompt_schema: Optional[StringSchema],
+        instructions_schema: Optional[StringSchema],
+        msg_history_schema: Optional[StringSchema],
         output_schema: Schema,
         call_log: Call,
         output: Optional[str] = None,
@@ -1181,7 +1197,9 @@ class StreamRunner(Runner):
             instructions=instructions,
             prompt=prompt,
             prompt_params=prompt_params,
-            input_schema=input_schema,
+            prompt_schema=prompt_schema,
+            instructions_schema=instructions_schema,
+            msg_history_schema=msg_history_schema,
             output_schema=output_schema,
         ):
             # Prepare: run pre-processing, and input validation.
@@ -1191,13 +1209,16 @@ class StreamRunner(Runner):
                 msg_history = None
             else:
                 instructions, prompt, msg_history = self.prepare(
+                    call_log,
                     index,
                     instructions,
                     prompt,
                     msg_history,
                     prompt_params,
                     api,
-                    input_schema,
+                    prompt_schema,
+                    instructions_schema,
+                    msg_history_schema,
                     output_schema,
                 )
 
@@ -1209,7 +1230,6 @@ class StreamRunner(Runner):
             llm_response = self.call(
                 index, instructions, prompt, msg_history, api, output
             )
-            # iteration.outputs.llm_response_info = llm_response
 
             # Get the stream (generator) from the LLMResponse
             stream = llm_response.stream_output
@@ -1285,24 +1305,31 @@ class StreamRunner(Runner):
 
     def get_chunk_text(self, chunk: Any, api: Union[PromptCallableBase, None]) -> str:
         """Get the text from a chunk."""
+        chunk_text = ""
         if isinstance(api, OpenAICallable):
-            finished = chunk["choices"][0]["finish_reason"]
-            if finished:
-                chunk_text = ""
+            if OPENAI_VERSION.startswith("0"):
+                finished = chunk["choices"][0]["finish_reason"]
+                if "text" in chunk["choices"][0]:
+                    content = chunk["choices"][0]["text"]
+                    if not finished and content:
+                        chunk_text = content
             else:
-                if "text" not in chunk["choices"][0]:
-                    chunk_text = ""
-                else:
-                    chunk_text = chunk["choices"][0]["text"]
+                finished = chunk.choices[0].finish_reason
+                content = chunk.choices[0].text
+                if not finished and content:
+                    chunk_text = content
         elif isinstance(api, OpenAIChatCallable):
-            finished = chunk["choices"][0]["finish_reason"]
-            if finished:
-                chunk_text = ""
+            if OPENAI_VERSION.startswith("0"):
+                finished = chunk["choices"][0]["finish_reason"]
+                if "content" in chunk["choices"][0]["delta"]:
+                    content = chunk["choices"][0]["delta"]["content"]
+                    if not finished and content:
+                        chunk_text = content
             else:
-                if "content" not in chunk["choices"][0]["delta"]:
-                    chunk_text = ""
-                else:
-                    chunk_text = chunk["choices"][0]["delta"]["content"]
+                finished = chunk.choices[0].finish_reason
+                content = chunk.choices[0].delta.content
+                if not finished and content:
+                    chunk_text = content
         else:
             try:
                 chunk_text = chunk
