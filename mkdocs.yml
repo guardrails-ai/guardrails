@@ -45,18 +45,18 @@ nav:
   #   - 'Validating structured data': recipes/validate_structured_data.ipynb
   - 'Examples':
     - 'Text to SQL': use_cases/text2sql/text2sql.ipynb
-    - 'Use Guardrails with Chat Models': examples/guardrails_with_chat_models/RAIL.ipynb
-    - 'If condition: generate different JSON objects based on condition': examples/select_choice_based_on_action/RAIL.ipynb
-    - 'Extracting entities from ToS': examples/extracting_entities/RAIL.ipynb
-    - 'Generating bug-free Python code': examples/bug_free_python_code/RAIL.ipynb
-    - 'No secrets in generated text': examples/no_secrets_in_generated_text/RAIL.ipynb
-    - 'Natural language to bug-free SQL': examples/syntax_error_free_sql/RAIL.ipynb
-    - 'Vegan Mac & Cheese Recipe Generator': examples/recipe_generation/RAIL.ipynb
-    - 'Using GPT to play valid chess moves': examples/valid_chess_moves/RAIL.ipynb
-    - 'Translate text with profanity filtering': examples/translation_to_specific_language/RAIL.ipynb
-    - 'Generate structured synthetic data': examples/generate_structured_data/RAIL.ipynb
-    - 'Ensure translated text is high quality': examples/translation_with_quality_check/RAIL.ipynb
-    - 'Check key info present in generated summary': examples/text_summarization_quality/RAIL.ipynb
+    - 'Use Guardrails with Chat Models': examples/guardrails_with_chat_models.ipynb
+    - 'If condition: generate different JSON objects based on condition': examples/select_choice_based_on_action.ipynb
+    - 'Extracting entities from ToS': examples/extracting_entities.ipynb
+    - 'Generating bug-free Python code': examples/bug_free_python_code.ipynb
+    - 'No secrets in generated text': examples/no_secrets_in_generated_text.ipynb
+    - 'Natural language to bug-free SQL': examples/syntax_error_free_sql.ipynb
+    - 'Vegan Mac & Cheese Recipe Generator': examples/recipe_generation.ipynb
+    - 'Using GPT to play valid chess moves': examples/valid_chess_moves.ipynb
+    - 'Translate text with profanity filtering': examples/translation_to_specific_language.ipynb
+    - 'Generate structured synthetic data': examples/generate_structured_data.ipynb
+    - 'Ensure translated text is high quality': examples/translation_with_quality_check.ipynb
+    - 'Check key info present in generated summary': examples/text_summarization_quality.ipynb
     - 'Detect and limit hallucinations in generated text': examples/provenance.ipynb
     - 'Check whether a value is similar to a set of other values': examples/value_within_distribution.ipynb
     - 'Using GuardrailsOutputParser in LlamaIndex': examples/llamaindex-output-parsing.ipynb

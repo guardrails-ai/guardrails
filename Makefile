@@ -65,8 +65,8 @@ full:
 docs-gen:
 	cp -r docs docs-build
 	mkdir docs-build/api_reference_markdown
-	nbdoc_build --force_all True --srcdir ./docs-build
-	sphinx-build -M markdown docs/pydocs/ docs-build/api_reference_markdown 
+	poetry run nbdoc_build --force_all True --srcdir ./docs-build
+	poetry run sphinx-build -M markdown docs/pydocs/ docs-build/api_reference_markdown 
 
 self-install:
 	pip install -e .
