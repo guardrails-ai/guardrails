@@ -81,10 +81,15 @@ class ValidatorsAttr(pydantic.BaseModel):
                     on_fails[validator.rail_alias] = on_fail
                 elif isinstance(validator, str):
                     # `validator` is a string, use it as the validator prompt
-                    validator_name = validator
-                    validator_args = []
+                    if ":" in validator:
+                        parts = validator.split(":", 1)
+                        validator_name = parts[0].strip()
+                        validator_args = [arg.strip() for arg in parts[1].split() if len(parts) > 1]
+                    else:
+                        validator_name = validator
+                        validator_args = []
                     validators_with_args[validator_name] = validator_args
-                    on_fails[validator] = on_fail
+                    on_fails[validator_name] = on_fail
                 elif isinstance(validator, Callable):
                     # `validator` is a callable, use it as the validator prompt
                     if not hasattr(validator, "rail_alias"):
@@ -297,9 +302,15 @@ class ValidatorsAttr(pydantic.BaseModel):
             # This method should be loaded from an optional script given at the
             # beginning of a rail file.
 
+            # Use inline import to avoid circular dependency
+            from guardrails.validators import ValidChoices
+
             # Create the validator.
             if isinstance(args, list):
-                v = validator(*args, on_fail=on_fail)
+                if (validator == ValidChoices):
+                    v = validator(args, on_fail=on_fail)
+                else:
+                    v = validator(*args, on_fail=on_fail)
             elif isinstance(args, dict):
                 v = validator(**args, on_fail=on_fail)
             else:
