@@ -8,6 +8,12 @@ from guardrails.validator_base import (
     register_validator,
 )
 
+try:
+    from comet import download_model, load_from_checkpoint
+except ImportError:
+    download_model = None
+    load_from_checkpoint = None
+
 
 @register_validator(name="is-high-quality-translation", data_type="string")
 class IsHighQualityTranslation(Validator):
@@ -42,14 +48,12 @@ class IsHighQualityTranslation(Validator):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        try:
-            from comet import download_model, load_from_checkpoint  # type: ignore
-        except ImportError as ie:
-            raise ImportError(
-                "`is-high-quality-translation` validator requires the "
-                "`unbabel-comet` package to be installed. Please install from source: "
-                "`pip install git+https://github.com/Unbabel/COMET`"
-            ) from ie
+        if download_model is None or load_from_checkpoint is None:
+            raise RuntimeError(
+                "is-high-quality-translation validator requires "
+                "unbabel-comet to be installed. Please install it using "
+                "`pip install git+https://github.com/Unbabel/COMET`."
+            )
         self._model_name = "Unbabel/wmt22-cometkiwi-da"
         self._quality_threshold = 0.5
 
