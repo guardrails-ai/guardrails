@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any, Dict, cast
 
 from guardrails.validator_base import (
     FailResult,
@@ -83,6 +83,7 @@ class IsHighQualityTranslation(Validator):
             [{"src": metadata["translation_source"], "mt": value}],
             accelerator="cpu",
         )
+        model_output = cast(Any, model_output)
         translation_quality = model_output.scores[0]
         print(f"Translation quality: {translation_quality}")
         if translation_quality < self._quality_threshold:
