@@ -84,7 +84,9 @@ class ValidatorsAttr(pydantic.BaseModel):
                     if ":" in validator:
                         parts = validator.split(":", 1)
                         validator_name = parts[0].strip()
-                        validator_args = [arg.strip() for arg in parts[1].split() if len(parts) > 1]
+                        validator_args = [
+                            arg.strip() for arg in parts[1].split() if len(parts) > 1
+                        ]
                     else:
                         validator_name = validator
                         validator_args = []
@@ -307,7 +309,7 @@ class ValidatorsAttr(pydantic.BaseModel):
 
             # Create the validator.
             if isinstance(args, list):
-                if (validator == ValidChoices):
+                if validator == ValidChoices:
                     v = validator(args, on_fail=on_fail)
                 else:
                     v = validator(*args, on_fail=on_fail)
