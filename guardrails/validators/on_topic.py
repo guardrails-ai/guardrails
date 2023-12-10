@@ -88,7 +88,12 @@ class OnTopic(Validator):
             on_fail=on_fail,
         )
         self._valid_topics = valid_topics
-        self._invalid_topics = invalid_topics
+
+        if invalid_topics is None:
+            self._invalid_topics = []
+        else:
+            self._invalid_topics = invalid_topics
+
         self._device = to_int(device)
         self._model = model
         self._disable_classifier = disable_classifier
@@ -152,13 +157,17 @@ class OnTopic(Validator):
         else:
             return FailResult(error_message=f"Most relevant topic is {topic}.")
 
-    def set_callable(self, llm_callable: str) -> None:
+    def set_callable(self, llm_callable: Union[str, Callable, None]) -> None:
         """Set the LLM callable.
 
         Args:
             llm_callable: Either the name of the OpenAI model, or a callable that takes
                 a prompt and returns a response.
         """
+
+        if llm_callable is None:
+            llm_callable = "gpt-3.5-turbo"
+
         if isinstance(llm_callable, str):
             if llm_callable not in ["gpt-3.5-turbo", "gpt-4"]:
                 raise ValueError(
@@ -203,7 +212,7 @@ class OnTopic(Validator):
         elif isinstance(llm_callable, Callable):
             self._llm_callable = llm_callable
         else:
-            self._llm_callable = None
+            raise ValueError("llm_callable must be a string or a Callable")
 
     def get_topic_zero_shot(
         self, text: str, candidate_topics: List[str]
@@ -215,9 +224,9 @@ class OnTopic(Validator):
             hypothesis_template="This example has to do with topic {}.",
         )
         result = classifier(text, candidate_topics)
-        topic = result["labels"][0]
-        score = result["scores"][0]
-        return topic, score
+        topic = result["labels"][0]  # type: ignore
+        score = result["scores"][0]  # type: ignore
+        return topic, score  # type: ignore
 
     def validate(self, value: str) -> ValidationResult:
         valid_topics = set(self._valid_topics)
@@ -237,7 +246,8 @@ class OnTopic(Validator):
         if "other" not in invalid_topics:
             self._invalid_topics.append("other")
 
-        candidate_topics = valid_topics + invalid_topics
+        # Combine valid and invalid topics
+        candidate_topics = valid_topics.union(invalid_topics)
 
         # Check which model(s) to use
         if self._disable_classifier and self._disable_llm:  # Error, no model set
@@ -246,10 +256,11 @@ class OnTopic(Validator):
             not self._disable_classifier and not self._disable_llm
         ):  # Use ensemble (Zero-Shot + Ensemble)
             self.set_client()
-            return self.get_topic_ensemble(value, candidate_topics)
+            return self.get_topic_ensemble(value, list(candidate_topics))
         elif self._disable_classifier and not self._disable_llm:  # Use only LLM
             self.set_client()
-            return self.get_topic_llm(value, candidate_topics)
-        elif not self._disable_classifier and self._disable_llm:  # Use only Zero-Shot
-            topic, _score = self.get_topic_zero_shot(value, candidate_topics)
-            return self.verify_topic(topic)
+            return self.get_topic_llm(value, list(candidate_topics))
+
+        # Use only Zero-Shot
+        topic, _score = self.get_topic_zero_shot(value, list(candidate_topics))
+        return self.verify_topic(topic)
