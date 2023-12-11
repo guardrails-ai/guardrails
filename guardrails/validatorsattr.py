@@ -310,7 +310,10 @@ class ValidatorsAttr(pydantic.BaseModel):
             # Create the validator.
             if isinstance(args, list):
                 if validator == ValidChoices:
-                    v = validator(args, on_fail=on_fail)
+                    if isinstance(args[0], list):
+                        v = validator(args[0], on_fail=on_fail)
+                    else:
+                        v = validator(args, on_fail=on_fail)
                 else:
                     v = validator(*args, on_fail=on_fail)
             elif isinstance(args, dict):
