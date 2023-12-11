@@ -3154,8 +3154,8 @@ files = [
 [package.dependencies]
 numpy = [
     {version = ">=1.20.3", markers = "python_version < \"3.10\""},
-    {version = ">=1.21.0", markers = "python_version >= \"3.10\" and python_version < \"3.11\""},
     {version = ">=1.23.2", markers = "python_version >= \"3.11\""},
+    {version = ">=1.21.0", markers = "python_version >= \"3.10\" and python_version < \"3.11\""},
 ]
 python-dateutil = ">=2.8.2"
 pytz = ">=2020.1"
@@ -6542,7 +6542,7 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 anthropic = ["anthropic"]
 competitor-check = ["spacy"]
 detect-secrets = ["detect-secrets"]
-high-quality-translation = ["unbabel-comet"]
+high-quality-translation = ["huggingface_hub", "unbabel-comet"]
 manifest = ["manifest-ml"]
 pii = ["presidio_analyzer", "presidio_anonymizer"]
 profanity = ["alt-profanity-check"]
@@ -6554,4 +6554,4 @@ vectordb = ["faiss-cpu", "numpy", "tiktoken"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "0f2d00ffc76d9fb0c43e9c7bc3057454deaea3ae50cb0fde2c8ea7331df829fc"
+content-hash = "d1ddbc3e03fbf506a13ad4cc2233c9e737593d752fcc2bf5b6864755ab0c4df0"
