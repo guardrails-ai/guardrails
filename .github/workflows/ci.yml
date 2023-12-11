@@ -1,187 +1,189 @@
 name: CI
 
 on:
-    push:
-        branches:
-            - main
-            - dev
-    pull_request:
-        branches:
-            - main
-            - dev
-            - '0.3.0'
-    
-    # Allows you to run this workflow manually from the Actions tab
-    workflow_dispatch:
+  push:
+    branches:
+      - main
+      - dev
+  pull_request:
+    branches:
+      - main
+      - dev
+      - "0.3.0"
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
 
 jobs:
-    
-    Linting:
-        runs-on: ubuntu-latest
-        strategy:
-            matrix:
-                python-version: ['3.8', '3.9', '3.10', '3.11']
-        steps:
-            -   uses: actions/checkout@v2
-            -   name: Set up Python ${{ matrix.python-version }}
-                uses: actions/setup-python@v2
-                with:
-                    python-version: ${{ matrix.python-version }}
-                    
-            -   name: Poetry cache
-                uses: actions/cache@v3
-                with:
-                    path: ~/.cache/pypoetry
-                    key: poetry-cache-${{ runner.os }}-${{ steps.setup_python.outputs.python-version }}-${{ env.POETRY_VERSION }}
+  Linting:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11"]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
 
-            -   name: Install Poetry
-                uses: snok/install-poetry@v1
+      - name: Poetry cache
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pypoetry
+          key: poetry-cache-${{ runner.os }}-${{ steps.setup_python.outputs.python-version }}-${{ env.POETRY_VERSION }}
 
-            -   name: Install Dependencies
-                # TODO: fix errors so that we can run `make dev` instead
-                run: |
-                    make full
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
 
-            -   name: Lint with isort, black, docformatter, flake8
-                run: |
-                    make lint
+      - name: Install Dependencies
+        # TODO: fix errors so that we can run `make dev` instead
+        run: |
+          make full
 
-    Typing:
-        runs-on: ubuntu-latest
-        strategy:
-            matrix:
-                python-version: ['3.8', '3.9', '3.10', '3.11']
-                pydantic-version: ['1.10.9', '2.4.2']
-                openai-version: ['0.28.1', '1.2.4']
-        steps:
-            -   uses: actions/checkout@v2
-            -   name: Set up Python ${{ matrix.python-version }}
-                uses: actions/setup-python@v2
-                with:
-                    python-version: ${{ matrix.python-version }}
+      - name: Lint with isort, black, docformatter, flake8
+        run: |
+          make lint
 
-            -   name: Poetry cache
-                uses: actions/cache@v3
-                with:
-                    path: ~/.cache/pypoetry
-                    key: poetry-cache-${{ runner.os }}-${{ steps.setup_python.outputs.python-version }}-${{ env.POETRY_VERSION }}-${{ matrix.pydantic-version }}
+  Typing:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11"]
+        pydantic-version: ["1.10.9", "2.4.2"]
+        openai-version: ["0.28.1", "1.2.4"]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
 
-            -   name: Install Poetry
-                uses: snok/install-poetry@v1
+      - name: Poetry cache
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pypoetry
+          key: poetry-cache-${{ runner.os }}-${{ steps.setup_python.outputs.python-version }}-${{ env.POETRY_VERSION }}-${{ matrix.pydantic-version }}
 
-            -   name: Install Dependencies
-                # TODO: fix errors so that we can run `make dev` instead
-                run: |
-                    make full
-                    poetry run pip install pydantic==${{ matrix.pydantic-version }}
-                    poetry run pip install openai==${{ matrix.openai-version }}
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
 
-            -   if: matrix.pydantic-version == '2.4.2' && matrix.openai-version == '0.28.1'
-                name: Static analysis with pyright (ignoring pydantic v1 and openai v1)
-                run: |
-                    make type-pydantic-v2-openai-v0
+      - name: Install Dependencies
+        # TODO: fix errors so that we can run `make dev` instead
+        run: |
+          make full
+          poetry run pip install pydantic==${{ matrix.pydantic-version }}
+          poetry run pip install openai==${{ matrix.openai-version }}
 
-            -   if: matrix.pydantic-version == '1.10.9' && matrix.openai-version == '0.28.1'
-                name: Static analysis with mypy (ignoring pydantic v2 and openai v1)
-                run: |
-                    make type-pydantic-v1-openai-v0
+      - if: matrix.pydantic-version == '2.4.2' && matrix.openai-version == '0.28.1'
+        name: Static analysis with pyright (ignoring pydantic v1 and openai v1)
+        run: |
+          make type-pydantic-v2-openai-v0
 
-            -   if: matrix.pydantic-version == '2.4.2' && matrix.openai-version == '1.2.4'
-                name: Static analysis with pyright (ignoring pydantic v1 and openai v0)
-                run: |
-                    make type-pydantic-v2-openai-v1
+      - if: matrix.pydantic-version == '1.10.9' && matrix.openai-version == '0.28.1'
+        name: Static analysis with mypy (ignoring pydantic v2 and openai v1)
+        run: |
+          make type-pydantic-v1-openai-v0
 
-            -   if: matrix.pydantic-version == '1.10.9' && matrix.openai-version == '1.2.4'
-                name: Static analysis with mypy (ignoring pydantic v2 and openai v0)
-                run: |
-                    make type-pydantic-v1-openai-v1
+      - if: matrix.pydantic-version == '2.4.2' && matrix.openai-version == '1.2.4'
+        name: Static analysis with pyright (ignoring pydantic v1 and openai v0)
+        run: |
+          make type-pydantic-v2-openai-v1
 
-    Pytests:
-        runs-on: ubuntu-latest
-        strategy:
-            matrix:
-                python-version: ['3.8', '3.9', '3.10', '3.11']
-                # TODO: fix errors so that we can run both `make dev` and `make full`
-                # dependencies: ['dev', 'full']
-                dependencies: ['full']
-                pydantic-version: ['1.10.9', '2.4.2']
-                openai-version: ['0.28.1', '1.2.4']
-        steps:
-            -   uses: actions/checkout@v2
-            -   name: Set up Python ${{ matrix.python-version }}
-                uses: actions/setup-python@v2
-                with:
-                    python-version: ${{ matrix.python-version }}
-                    
-            -   name: Poetry cache
-                uses: actions/cache@v3
-                with:
-                    path: ~/.cache/pypoetry
-                    key: poetry-cache-${{ runner.os }}-${{ steps.setup_python.outputs.python-version }}-${{ env.POETRY_VERSION }}-${{ matrix.pydantic-version }}-${{ matrix.openai-version }}
+      - if: matrix.pydantic-version == '1.10.9' && matrix.openai-version == '1.2.4'
+        name: Static analysis with mypy (ignoring pydantic v2 and openai v0)
+        run: |
+          make type-pydantic-v1-openai-v1
 
-            -   name: Install Poetry
-                uses: snok/install-poetry@v1
+  Pytests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11"]
+        # TODO: fix errors so that we can run both `make dev` and `make full`
+        # dependencies: ['dev', 'full']
+        dependencies: ["full"]
+        pydantic-version: ["1.10.9", "2.4.2"]
+        openai-version: ["0.28.1", "1.2.4"]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
 
-            -   name: Install Dependencies
-                run: |
-                    make ${{ matrix.dependencies }}
-                    poetry run pip install pydantic==${{ matrix.pydantic-version }}
-                    poetry run pip install openai==${{ matrix.openai-version }}
+      - name: Poetry cache
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pypoetry
+          key: poetry-cache-${{ runner.os }}-${{ steps.setup_python.outputs.python-version }}-${{ env.POETRY_VERSION }}-${{ matrix.pydantic-version }}-${{ matrix.openai-version }}
 
-            -   name: Run Pytests
-                run: |
-                    make test-cov
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
 
-            -   name: Upload to codecov.io
-                uses: codecov/codecov-action@v3
-                with:
-                    token: ${{ secrets.CODECOV_TOKEN }}
-                    file: ./coverage.xml
-                    flags: unittests
-                    name: codecov-umbrella
-                    fail_ci_if_error: true
-    
-    Notebooks:
-        runs-on: ubuntu-latest
-        if: ${{ always() && contains(join(needs.*.result, ','), 'success') }}
-        needs: [Linting, Typing, Pytests]
-        
-        env:
-          COHERE_API_KEY: ${{ secrets.COHERE_API_KEY }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      - name: Install Dependencies
+        run: |
+          make ${{ matrix.dependencies }}
+          poetry run pip install pydantic==${{ matrix.pydantic-version }}
+          poetry run pip install openai==${{ matrix.openai-version }}
 
+      - name: Run Pytests
+        run: |
+          make test-cov
 
-        steps:
-        - name: Checkout repository
-          uses: actions/checkout@v2
+      - name: Upload to codecov.io
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: ./coverage.xml
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: true
 
-        - name: Set up Python
-          uses: actions/setup-python@v2
-          with:
-            python-version: 3.11.x
+  Notebooks:
+    runs-on: ubuntu-latest
+    if: ${{ always() && contains(join(needs.*.result, ','), 'success') }}
+    needs: [Linting, Typing, Pytests]
 
-        - name: Poetry cache
-          uses: actions/cache@v3
-          with:
-            path: ~/.cache/pypoetry
-            key: poetry-cache-${{ runner.os }}-${{ steps.setup_python.outputs.python-version }}-${{ env.POETRY_VERSION }}
+    env:
+      COHERE_API_KEY: ${{ secrets.COHERE_API_KEY }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      HUGGINGFACE_API_KEY: ${{ secrets.HUGGINGFACE_API_KEY }}
 
-        - name: Install Poetry
-          uses: snok/install-poetry@v1
-          with:
-              virtualenvs-create: true
-              virtualenvs-in-project: true
-              installer-parallel: true
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
 
-        - name: Install dependencies
-          run: |
-            make full;
-            poetry add openai==0.28.1 jupyter nbconvert cohere;
-            # pip install openai==0.28.1 jupyter nbconvert;
-            # pip install .;
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.11.x
 
-        - name: Check for pypdfium2
-          run: poetry run pip show pypdfium2
+      - name: Poetry cache
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pypoetry
+          key: poetry-cache-${{ runner.os }}-${{ steps.setup_python.outputs.python-version }}-${{ env.POETRY_VERSION }}
 
-        - name: Execute notebooks and check for errors
-          run: ./.github/workflows/scripts/run_notebooks.sh
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          installer-parallel: true
+
+      - name: Install dependencies
+        run: |
+          make full;
+          poetry add openai==0.28.1 jupyter nbconvert cohere;
+          # pip install openai==0.28.1 jupyter nbconvert;
+          # pip install .;
+
+      - name: Check for pypdfium2
+        run: poetry run pip show pypdfium2
+
+      - name: Huggingface Hub Login
+        run: huggingface-cli login --token $HUGGINGFACE_API_KEY
+
+      - name: Execute notebooks and check for errors
+        run: ./.github/workflows/scripts/run_notebooks.sh

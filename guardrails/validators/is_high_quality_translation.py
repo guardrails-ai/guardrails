@@ -70,6 +70,7 @@ class IsHighQualityTranslation(Validator):
                 f"Error while downloading the model {self._model_name} "
                 "from COMET: {e}.\n Please review the validator "
                 "documentation for more details on the pre-requisites."
+                "Ensure that you are logged into Huggingface Hub."
             ) from e
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
