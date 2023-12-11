@@ -1,8 +1,8 @@
 from typing import Any, Awaitable, Callable, Dict, Iterable, List, Optional, cast
 
 from pydantic import BaseModel
-from guardrails.utils.exception_utils import UserFacingException
 
+from guardrails.utils.exception_utils import UserFacingException
 from guardrails.utils.llm_response import LLMResponse
 from guardrails.utils.openai_utils import (
     AsyncOpenAIClient,
@@ -288,10 +288,13 @@ class AnthropicCallable(PromptCallableBase):
         )
         return LLMResponse(output=anthropic_response.completion)
 
+
 class HuggingFaceModelCallable(PromptCallableBase):
-    def _invoke_llm(self, prompt: str, model_generate: Any, *args, **kwargs) -> LLMResponse:
+    def _invoke_llm(
+        self, prompt: str, model_generate: Any, *args, **kwargs
+    ) -> LLMResponse:
         try:
-            import transformers
+            import transformers  # noqa: F401 # type: ignore
         except ImportError:
             raise PromptCallableException(
                 "The `transformers` package is not installed. "
@@ -308,9 +311,11 @@ class HuggingFaceModelCallable(PromptCallableBase):
         tokenizer = kwargs.pop("tokenizer")
         if not tokenizer:
             raise UserFacingException(
-                ValueError("'tokenizer' must be provided in order to use Hugging Face models!")
+                ValueError(
+                    "'tokenizer' must be provided in order to use Hugging Face models!"
+                )
             )
-        
+
         torch_device = "cuda" if torch.cuda.is_available() else "cpu"
 
         return_tensors = kwargs.pop("return_tensors", "pt")
@@ -318,8 +323,10 @@ class HuggingFaceModelCallable(PromptCallableBase):
 
         input_ids = kwargs.pop("input_ids")
         model_inputs = kwargs.pop("model_inputs", {})
-        if input_ids is None and not model_inputs is None:
-            model_inputs = tokenizer(prompt, return_tensors=return_tensors).to(torch_device)
+        if input_ids is None and model_inputs is None:
+            model_inputs = tokenizer(prompt, return_tensors=return_tensors).to(
+                torch_device
+            )
 
         model_inputs["input_ids"] = input_ids
 
@@ -327,26 +334,30 @@ class HuggingFaceModelCallable(PromptCallableBase):
             **model_inputs,
             **kwargs,
         )
-        
+
         # NOTE: This is currently restricted to single outputs
         # Should we choose to support multiple return sequences,
-        # We would need to either validate all of them and choose the one with the least failures,
+        # We would need to either validate all of them
+        # and choose the one with the least failures,
         # or accept a selection function
-        decoded_output = tokenizer.decode(output[0], skip_special_tokens=skip_special_tokens)
+        decoded_output = tokenizer.decode(
+            output[0], skip_special_tokens=skip_special_tokens
+        )
 
         return LLMResponse(output=decoded_output)
+
 
 class HuggingFacePipelineCallable(PromptCallableBase):
     def _invoke_llm(self, prompt: str, pipeline: Any, *args, **kwargs) -> LLMResponse:
         try:
-            import transformers
+            import transformers  # noqa: F401 # type: ignore
         except ImportError:
             raise PromptCallableException(
                 "The `transformers` package is not installed. "
                 "Install with `pip install transformers`"
             )
         try:
-            import torch
+            import torch  # noqa: F401 # type: ignore
         except ImportError:
             raise PromptCallableException(
                 "The `torch` package is not installed. "
@@ -365,14 +376,16 @@ class HuggingFacePipelineCallable(PromptCallableBase):
             *args,
             **kwargs,
         )
-        
+
         # NOTE: This is currently restricted to single outputs
         # Should we choose to support multiple return sequences,
-        # We would need to either validate all of them and choose the one with the least failures,
+        # We would need to either validate all of them
+        # and choose the one with the least failures,
         # or accept a selection function
         content = safe_get(output[0], content_key)
 
         return LLMResponse(output=content)
+
 
 class ArbitraryCallable(PromptCallableBase):
     def __init__(self, llm_api: Callable, *args, **kwargs):
@@ -460,11 +473,11 @@ def get_llm_ask(llm_api: Callable, *args, **kwargs) -> PromptCallableBase:
         pass
 
     try:
-        from transformers import (
+        from transformers import (  # noqa: F401 # type: ignore
+            FlaxPreTrainedModel,
             PreTrainedModel,
             TFPreTrainedModel,
-            FlaxPreTrainedModel
-        )  # noqa: F401 # type: ignore
+        )
 
         api_self = getattr(llm_api, "__self__", None)
 
