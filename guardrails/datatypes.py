@@ -143,6 +143,21 @@ class DataType:
             return False
         return self.__dict__ == other.__dict__
 
+    def to_json_schema(self) -> Dict[str, Any]:
+        schema =  {
+            "type": self.tag
+        }
+        if self.children:
+            properties = {}
+            for child in self.children:
+                properties[child.name] = child.to_json_schema()
+            schema["properties"] = properties
+
+        for v in self.validators:
+            if v.rail_alias == "valid-choices":
+                choices = v.get_args().get("choices")
+                schema["enum"] = choices
+        return schema
 
 registry: Dict[str, Type[DataType]] = {}
 
@@ -179,6 +194,21 @@ class ScalarType(DataType):
 class NonScalarType(DataType):
     pass
 
+class Number(ScalarType):
+    def to_json_schema(self) -> Dict[str, Any]:
+        schema = super().to_json_schema()
+        schema["type"] = "number"
+
+        for v in self.validators:
+            if v.rail_alias == "valid-range":
+                min = v.get_args().get("min")
+                if min:
+                    schema["minimum"] = min
+                max = v.get_args().get("max")
+                if max:
+                    schema["maximum"] = max
+
+        return schema
 
 @register_type("string")
 class String(ScalarType):
@@ -205,9 +235,56 @@ class String(ScalarType):
             description=description,
         )
 
+    def to_json_schema(self) -> Dict[str, Any]:
+        schema = super().to_json_schema()
+        for v in self.validators:
+            python_validators = ["bug-free-python"]
+            sql_validators = ["bug-free-sql", "exclude-sql-predicates", "sql-column-presence"]
+            url_validators = ["is-reachable", "valid-url"]
+            format_validators = [
+                *python_validators,
+                *sql_validators,
+                *url_validators,
+                "lower-case",
+                "one-line",
+                "two-words",
+                "upper-case"
+            ]
+            # isinstance might be better here but would be heavier
+            # and would require importing the actual validators
+            # which could lead to circular dependencies
+            if not schema.get("format") and v.rail_alias in format_validators:
+                # Informational only format
+                # Only attach if format is not populated
+                # by a more functional type 
+                if v.rail_alias == "bug-free-python":
+                    schema["format"] = "python"
+                elif v.rail_alias in sql_validators:
+                    schema["format"] = "sql"
+                elif v.rail_alias in url_validators:
+                    schema["format"] = "uri"
+                else:
+                    schema["format"] = v.rail_alias
+            elif v.rail_alias == "regex_match":
+                schema["format"] = "regex"
+                pattern = v.get_args().get("regex")
+                match_type = v.get_args().get("match_type")
+                if match_type == "fullmatch":
+                    prefix = "^" if not pattern.startswith("^") else ""
+                    postfix = "$" if not pattern.startswith("$") else ""
+                    pattern = f"{prefix}{pattern}{postfix}"
+                schema["pattern"] = pattern
+            elif v.rail_alias == "length":
+                min = v.get_args().get("min")
+                if min:
+                    schema["minLength"] = min
+                max = v.get_args().get("max")
+                if max:
+                    schema["maxLength"] = max
+        return schema
 
 @register_type("integer")
-class Integer(ScalarType):
+class Integer(Number):
     """Element tag: `<integer>`"""
 
     tag = "integer"
@@ -216,9 +293,13 @@ class Integer(ScalarType):
         """Create an Integer from a string."""
         return to_int(s)
 
+    def to_json_schema(self) -> Dict[str, Any]:
+        schema = super().to_json_schema()
+        schema["type"] = self.tag
+        return schema
 
 @register_type("float")
-class Float(ScalarType):
+class Float(Number):
     """Element tag: `<float>`"""
 
     tag = "float"
@@ -226,7 +307,6 @@ class Float(ScalarType):
     def from_str(self, s: str) -> Optional[float]:
         """Create a Float from a string."""
         return to_float(s)
-
 
 @register_type("bool")
 class Boolean(ScalarType):
@@ -248,6 +328,11 @@ class Boolean(ScalarType):
             return False
         else:
             raise ValueError(f"Invalid boolean value: {s}")
+        
+    def to_json_schema(self) -> Dict[str, Any]:
+        schema = super().to_json_schema()
+        schema["type"] = "boolean"
+        return schema
 
 
 @register_type("date")
@@ -287,6 +372,11 @@ class Date(ScalarType):
             datatype.date_format = element.attrib["date-format"]
 
         return datatype
+    
+    def to_json_schema(self) -> Dict[str, Any]:
+        schema = super().to_json_schema()
+        schema["type"] = "string"
+        schema["format"] = self.tag
 
 
 @register_type("time")
@@ -325,6 +415,11 @@ class Time(ScalarType):
             datatype.time_format = element.attrib["time-format"]
 
         return datatype
+    
+    def to_json_schema(self) -> Dict[str, Any]:
+        schema = super().to_json_schema()
+        schema["type"] = "string"
+        schema["format"] = self.tag
 
 
 @deprecate_type
@@ -338,6 +433,11 @@ class Email(ScalarType):
         super().__init__(*args, **kwargs)
         deprecate_type(type(self))
 
+    def to_json_schema(self) -> Dict[str, Any]:
+        schema = super().to_json_schema()
+        schema["type"] = "string"
+        schema["format"] = self.tag
+
 
 @deprecate_type
 @register_type("url")
@@ -349,6 +449,11 @@ class URL(ScalarType):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         deprecate_type(type(self))
+
+    def to_json_schema(self) -> Dict[str, Any]:
+        schema = super().to_json_schema()
+        schema["type"] = "string"
+        schema["format"] = "uri"
 
 
 @deprecate_type
@@ -362,6 +467,10 @@ class PythonCode(ScalarType):
         super().__init__(*args, **kwargs)
         deprecate_type(type(self))
 
+    def to_json_schema(self) -> Dict[str, Any]:
+        schema = super().to_json_schema()
+        schema["type"] = "string"
+        schema["format"] = "python"
 
 @deprecate_type
 @register_type("sql")
@@ -374,12 +483,21 @@ class SQLCode(ScalarType):
         super().__init__(*args, **kwargs)
         deprecate_type(type(self))
 
+    def to_json_schema(self) -> Dict[str, Any]:
+        schema = super().to_json_schema()
+        schema["type"] = "string"
+        schema["format"] = "sql"
 
 @register_type("percentage")
-class Percentage(ScalarType):
+class Percentage(Number):
     """Element tag: `<percentage>`"""
 
     tag = "percentage"
+
+    def to_json_schema(self) -> Dict[str, Any]:
+        schema = super().to_json_schema()
+        schema["format"] = self.tag
+        return schema
 
 
 @register_type("enum")
@@ -425,6 +543,12 @@ class Enum(ScalarType):
             enum_values=enum_values,
         )
 
+    # TODO: What type is Enum valid for? Just string or all?
+    def to_json_schema(self) -> Dict[str, Any]:
+        schema = super().to_json_schema()
+        schema["type"] = "string"
+        schema["enum"] = self.enum_values
+        return schema
 
 @register_type("list")
 class List(NonScalarType):
@@ -467,7 +591,14 @@ class List(NonScalarType):
             child_data_type = registry[child_data_type_tag]
             self._children["item"] = child_data_type.from_xml(child)
 
-
+    def to_json_schema(self) -> Dict[str, Any]:
+        schema = super().to_json_schema()
+        schema["type"] = "array"
+        if self.children and self.children.get("item"):
+            # FIXME
+            items = None
+            schema["items"] = items
+        return schema
 @register_type("object")
 class Object(NonScalarType):
     """Element tag: `<object>`"""
