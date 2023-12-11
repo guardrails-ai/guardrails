@@ -1,5 +1,4 @@
-import os
-from typing import Any, Dict
+from typing import Any, Dict, cast
 
 from guardrails.validator_base import (
     FailResult,
@@ -9,10 +8,16 @@ from guardrails.validator_base import (
     register_validator,
 )
 
+try:
+    from comet import download_model, load_from_checkpoint
+except ImportError:
+    download_model = None
+    load_from_checkpoint = None
+
 
 @register_validator(name="is-high-quality-translation", data_type="string")
 class IsHighQualityTranslation(Validator):
-    """Using inpiredco.critique to check if a translation is high quality.
+    """Validates that the translation is of high quality.
 
     **Key Properties**
 
@@ -24,29 +29,49 @@ class IsHighQualityTranslation(Validator):
 
     Other parameters: Metadata
         translation_source (str): The source of the translation.
-    """
 
-    required_metadata_keys = ["translation_source"]
+    This validator uses one of the reference-free models from Unbabel/COMET
+    to check the quality of the translation. Specifically, it uses the
+    `Unbabel/wmt22-cometkiwi-da` model.
+
+    Unbabel/COMET details: https://github.com/Unbabel/COMET
+    Model details: https://huggingface.co/Unbabel/wmt22-cometkiwi-da
+
+    Pre-requisites:
+        - Install the `unbabel-comet` from source:
+            `pip install git+https://github.com/Unbabel/COMET`
+        - Please accept the model license from:
+            https://huggingface.co/Unbabel/wmt22-cometkiwi-da
+        - Login into Huggingface Hub using:
+            huggingface-cli login --token $HUGGINGFACE_TOKEN
+    """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        try:
-            from inspiredco.critique import Critique  # type: ignore
-
-            inspiredco_api_key = os.environ.get("INSPIREDCO_API_KEY")
-            if not inspiredco_api_key:
-                raise ValueError(
-                    "The INSPIREDCO_API_KEY environment variable must be set"
-                    "in order to use the is-high-quality-translation validator!"
-                )
-
-            self._critique = Critique(api_key=inspiredco_api_key)
-
-        except ImportError:
-            raise ImportError(
-                "`is-high-quality-translation` validator requires the `inspiredco`"
-                "package. Please install it with `poetry add inspiredco`."
+        if download_model is None or load_from_checkpoint is None:
+            raise RuntimeError(
+                "is-high-quality-translation validator requires "
+                "unbabel-comet to be installed. Please install it using "
+                "`pip install git+https://github.com/Unbabel/COMET`."
             )
+        self._model_name = "Unbabel/wmt22-cometkiwi-da"
+        self._quality_threshold = 0.5
+
+        try:
+            # Download the model
+            print("\nDownloading the model. This may take a while the 1st time...")
+            model_path = download_model(self._model_name)
+
+            # Load the model
+            print("\nLoading the model from checkpoint...")
+            self.model = load_from_checkpoint(model_path)
+        except Exception as e:
+            raise RuntimeError(
+                f"Error while downloading the model {self._model_name} "
+                "from COMET: {e}.\n Please review the validator "
+                "documentation for more details on the pre-requisites."
+                "Ensure that you are logged into Huggingface Hub."
+            ) from e
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         if "translation_source" not in metadata:
@@ -54,17 +79,18 @@ class IsHighQualityTranslation(Validator):
                 "is-high-quality-translation validator expects "
                 "`translation_source` key in metadata"
             )
-        src = metadata["translation_source"]
-        prediction = self._critique.evaluate(
-            metric="comet",
-            config={"model": "unbabel_comet/wmt21-comet-qe-da"},
-            dataset=[{"source": src, "target": value}],
+
+        model_output = self.model.predict(
+            [{"src": metadata["translation_source"], "mt": value}],
+            accelerator="cpu",
         )
-        quality = prediction["examples"][0]["value"]
-        if quality < -0.1:
+        model_output = cast(Any, model_output)
+        translation_quality = model_output.scores[0]
+        print(f"Translation quality: {translation_quality}")
+        if translation_quality < self._quality_threshold:
             return FailResult(
-                error_message=f"{value} is a low quality translation."
-                "Please return a higher quality output.",
+                error_message=f"{value} is a low quality translation. "
+                "Hence, not returning.",
                 fix_value="",
             )
         return PassResult()
