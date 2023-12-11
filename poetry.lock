@@ -6637,7 +6637,7 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 
 [extras]
 anthropic = ["anthropic"]
-competitor-check = ["spacy"]
+competitor-check = ["spacy-transformers"]
 detect-secrets = ["detect-secrets"]
 high-quality-translation = ["huggingface_hub", "unbabel-comet"]
 manifest = ["manifest-ml"]
@@ -6651,4 +6651,4 @@ vectordb = ["faiss-cpu", "numpy", "tiktoken"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "d1ddbc3e03fbf506a13ad4cc2233c9e737593d752fcc2bf5b6864755ab0c4df0"
+content-hash = "3959055900713c27ac972c653de87772805b5ff5325362922eddad03700d8f0b"
