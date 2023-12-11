@@ -183,7 +183,7 @@ jobs:
         run: poetry run pip show pypdfium2
 
       - name: Huggingface Hub Login
-        run: huggingface-cli login --token $HUGGINGFACE_API_KEY
+        run: poetry run huggingface-cli login --token $HUGGINGFACE_API_KEY
 
       - name: Execute notebooks and check for errors
         run: ./.github/workflows/scripts/run_notebooks.sh
