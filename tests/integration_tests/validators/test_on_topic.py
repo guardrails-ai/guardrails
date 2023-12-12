@@ -16,7 +16,7 @@ class TestOnTopicIntegrationCPU(TestCase):
         )
         text = "This is an article about sports."
         expected_result = PassResult()
-        actual_result = validator.validate(text)
+        actual_result = validator.validate(text, metadata={})
         self.assertEqual(actual_result, expected_result)
 
     def test_validate_invalid_topic_cpu_disable_llm(self):
@@ -28,7 +28,7 @@ class TestOnTopicIntegrationCPU(TestCase):
         )
         text = "This is an article about music."
         expected_result = FailResult(error_message="Most relevant topic is other.")
-        actual_result = validator.validate(text)
+        actual_result = validator.validate(text, metadata={})
         self.assertEqual(actual_result, expected_result)
 
 
@@ -72,7 +72,7 @@ class TestOnTopicIntegrationCPUllm(TestCase):
         )
         text = "This is a historical analysis of political events."
         expected_result = PassResult()
-        actual_result = validator.validate(text)
+        actual_result = validator.validate(text, metadata={})
         self.assertEqual(actual_result, expected_result)
 
     def test_validate_invalid_topic_cpu_enable_llm(self):
@@ -84,7 +84,7 @@ class TestOnTopicIntegrationCPUllm(TestCase):
         )
         text = "This is an article about cooking recipes."
         expected_result = FailResult(error_message="Most relevant topic is other.")
-        actual_result = validator.validate(text)
+        actual_result = validator.validate(text, metadata={})
         self.assertEqual(actual_result, expected_result)
 
 
@@ -101,7 +101,7 @@ class TestOnTopicIntegrationLlm(TestCase):
         )
         text = "This is a movie review for the new sports action film."
         expected_result = PassResult()
-        actual_result = validator.validate(text)
+        actual_result = validator.validate(text, metadata={})
         self.assertEqual(actual_result, expected_result)
 
     def test_validate_invalid_topic_disable_model(self):
@@ -112,5 +112,5 @@ class TestOnTopicIntegrationLlm(TestCase):
         )
         text = "This is a research paper on medical advancements."
         expected_result = FailResult(error_message="Most relevant topic is other.")
-        actual_result = validator.validate(text)
+        actual_result = validator.validate(text, metadata={})
         self.assertEqual(actual_result, expected_result)

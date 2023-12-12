@@ -113,7 +113,7 @@ class TestOnTopic(unittest.TestCase):
     def test_validate_valid_topic(self):
         text = "This is an article about sports."
         validator = OnTopic(valid_topics=self.valid_topics)
-        validation_result = validator.validate(text)
+        validation_result = validator.validate(text, metadata={})
         self.assertEqual(validation_result, PassResult())
 
     def test_validate_invalid_topic(self):
@@ -122,7 +122,7 @@ class TestOnTopic(unittest.TestCase):
             mock_llm.return_value = '{"topic": "other"}'
 
             text = "This is an article about music."
-            validation_result = validator.validate(text)
+            validation_result = validator.validate(text, metadata={})
 
             self.assertEqual(
                 validation_result,
@@ -132,9 +132,9 @@ class TestOnTopic(unittest.TestCase):
     def test_validate_no_valid_topics(self):
         with self.assertRaises(ValueError):
             validator = OnTopic(valid_topics=[])
-            validator.validate("This is a test text.")
+            validator.validate("This is a test text.", metadata={})
 
     def test_validate_overlapping_topics(self):
         with self.assertRaises(ValueError):
             validator = OnTopic(valid_topics=["sports"], invalid_topics=["sports"])
-            validator.validate("This is a test text.")
+            validator.validate("This is a test text.", metadata={})
