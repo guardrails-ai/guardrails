@@ -321,14 +321,34 @@ class HuggingFaceModelCallable(PromptCallableBase):
         return_tensors = kwargs.pop("return_tensors", "pt")
         skip_special_tokens = kwargs.pop("skip_special_tokens", True)
 
-        input_ids = kwargs.pop("input_ids")
+        input_ids = kwargs.pop("input_ids", None)
+        input_values = kwargs.pop("input_values", None)
+        input_features = kwargs.pop("input_features", None)
+        pixel_values = kwargs.pop("pixel_values", None)
         model_inputs = kwargs.pop("model_inputs", {})
-        if input_ids is None and model_inputs is None:
+        if (
+            input_ids is None
+            and input_values is None
+            and input_features is None
+            and pixel_values is None
+            and model_inputs is None
+        ):
             model_inputs = tokenizer(prompt, return_tensors=return_tensors).to(
                 torch_device
             )
+        else:
+            model_inputs["input_ids"] = input_ids
+            model_inputs["input_values"] = input_values
+            model_inputs["input_features"] = input_features
+            model_inputs["pixel_values"] = pixel_values
 
-        model_inputs["input_ids"] = input_ids
+        do_sample = kwargs.pop("do_sample", None)
+        temperature = kwargs.pop("temperature", None)
+        if not do_sample and temperature == 0:
+            temperature = None
+        
+        model_inputs["do_sample"] = do_sample
+        model_inputs["temperature"] = temperature
 
         output = model_generate(
             **model_inputs,
