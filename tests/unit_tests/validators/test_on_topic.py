@@ -1,8 +1,9 @@
 import json
-from unittest.mock import patch
 import unittest
+from unittest.mock import patch
+
+from guardrails.validator_base import FailResult, PassResult
 from guardrails.validators.on_topic import OnTopic
-from guardrails.validator_base import PassResult, FailResult
 
 
 class TestOnTopic(unittest.TestCase):

@@ -1,8 +1,8 @@
 import contextvars
 import json
-import os
 from typing import Any, Callable, List, Optional, Tuple, Union
 
+import openai
 from tenacity import retry, stop_after_attempt, wait_random_exponential
 from transformers import pipeline
 
@@ -19,8 +19,8 @@ from guardrails.validator_base import (
 
 @register_validator(name="on_topic", data_type="string")
 class OnTopic(Validator):
-    """Checks if text's main topic is specified within a list of valid
-    topics and ensures that the text is not about any of the invalid topics.
+    """Checks if text's main topic is specified within a list of valid topics
+    and ensures that the text is not about any of the invalid topics.
 
     This validator accepts at least one valid topic and an optional list of
     invalid topics.
@@ -64,6 +64,9 @@ class OnTopic(Validator):
         disable_llm (bool, Optional, defaults to False): controls whether to use
             the LLM fallback. At least one of disable_classifier and
             disable_llm must be False.
+        model_threshold (float, Optional, defaults to 0.5): The threshold used to
+            determine whether to accept a topic from the Zero-Shot model. Must be
+            a number between 0 and 1.
     """
 
     def __init__(
@@ -76,6 +79,7 @@ class OnTopic(Validator):
         disable_classifier: Optional[bool] = False,
         disable_llm: Optional[bool] = False,
         on_fail: Optional[Callable[..., Any]] = None,
+        model_threshold: Optional[float] = 0.5,
     ):
         super().__init__(
             valid_topics=valid_topics,
@@ -86,6 +90,7 @@ class OnTopic(Validator):
             disable_llm=disable_llm,
             llm_callable=llm_callable,
             on_fail=on_fail,
+            model_threshold=model_threshold,
         )
         self._valid_topics = valid_topics
 
@@ -98,16 +103,16 @@ class OnTopic(Validator):
         self._model = model
         self._disable_classifier = disable_classifier
         self._disable_llm = disable_llm
+        self._model_threshold = model_threshold
 
         self.set_callable(llm_callable)
-        self.client = OpenAIClient()
 
     def get_topic_ensemble(
         self, text: str, candidate_topics: List[str]
     ) -> ValidationResult:
         topic, confidence = self.get_topic_zero_shot(text, candidate_topics)
 
-        if confidence > 0.5:
+        if confidence > self._model_threshold:
             return self.verify_topic(topic)
         else:
             return self.get_topic_llm(text, candidate_topics)
@@ -129,16 +134,15 @@ class OnTopic(Validator):
         api_base = kwargs.get("api_base")
 
         # Set the OpenAI API key
-        if os.getenv("OPENAI_API_KEY"):  # Check if set in environment
-            self.client.api_key = os.getenv("OPENAI_API_KEY")
-        elif api_key:  # Check if set when calling guard() or parse()
-            self.client.api_key = api_key
+        if api_key:  # Check if set when calling guard() or parse()
+            openai.api_key = api_key
 
         # Set the OpenAI API base if specified
         if api_base:
-            self.client.api_base = api_base
+            openai.api_version = api_base
 
-    @retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(6))
+    # todo: extract some of these similar methods into a base class w provenance
+    @retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(0))
     def call_llm(self, text: str, topics: List[str]) -> str:
         """Call the LLM with the given prompt.
 
@@ -177,35 +181,19 @@ class OnTopic(Validator):
                 )
 
             def openai_callable(text: str, topics: List[str]) -> str:
-                response = self.client.create_chat_completion(
+                response = OpenAIClient().create_chat_completion(
                     model=llm_callable,
                     messages=[
                         {
                             "role": "user",
                             "content": f"""Classify the following text {text}
-                                into one of these topics: {topics}.""",
+                                into one of these topics: {topics}.
+                                Format the response as JSON with the following schema:
+                                {{"topic": "topic_name"}}""",
                         },
                     ],
-                    functions=[
-                        {
-                            "name": "get_topic",
-                            "description": """Get the topic from the body of
-                                the input text""",
-                            "parameters": {
-                                "type": "object",
-                                "properties": {
-                                    "topic": {
-                                        "type": "string",
-                                        "description": "Topic of the text",
-                                        "enum": topics,
-                                    }
-                                },
-                                "required": ["topic"],
-                            },
-                        }
-                    ],
-                    function_call={"name": "get_topic"},
                 )
+
                 return response.output
 
             self._llm_callable = openai_callable
@@ -263,4 +251,8 @@ class OnTopic(Validator):
 
         # Use only Zero-Shot
         topic, _score = self.get_topic_zero_shot(value, list(candidate_topics))
-        return self.verify_topic(topic)
+
+        if _score > self._model_threshold:
+            return self.verify_topic(topic)
+        else:
+            return self.verify_topic("other")
