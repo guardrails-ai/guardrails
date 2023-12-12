@@ -24,7 +24,6 @@ class TestOnTopicIntegrationCPU(TestCase):
             valid_topics=["sports", "politics"],
             disable_classifier=False,
             disable_llm=True,
-            model_threshold=0.6,
         )
         text = "This is an article about music."
         expected_result = FailResult(error_message="Most relevant topic is other.")
