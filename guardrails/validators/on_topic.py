@@ -220,7 +220,9 @@ class OnTopic(Validator):
         score = result["scores"][0]  # type: ignore
         return topic, score  # type: ignore
 
-    def validate(self, value: str, metadata: Dict[str, Any]) -> ValidationResult:
+    def validate(
+        self, value: str, metadata: Optional[Dict[str, Any]]
+    ) -> ValidationResult:
         valid_topics = set(self._valid_topics)
         invalid_topics = set(self._invalid_topics)
 
@@ -236,7 +238,7 @@ class OnTopic(Validator):
 
         # Add 'other' to the invalid topics list
         if "other" not in invalid_topics:
-            self._invalid_topics.append("other")
+            invalid_topics.add("other")
 
         # Combine valid and invalid topics
         candidate_topics = valid_topics.union(invalid_topics)
