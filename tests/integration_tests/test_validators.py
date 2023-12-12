@@ -8,8 +8,15 @@ from guardrails import Guard, Validator, register_validator
 from guardrails.datatypes import DataType
 from guardrails.schema import StringSchema
 from guardrails.validator_base import PassResult, ValidationResult
-from guardrails.validators import DetectSecrets, PIIFilter, SimilarToList, ToxicLanguage
+from guardrails.validators import (
+    DetectSecrets,
+    IsHighQualityTranslation,
+    PIIFilter,
+    SimilarToList,
+    ToxicLanguage,
+)
 
+from ..unit_tests.mocks.mock_comet import BAD_TRANSLATION, GOOD_TRANSLATION, MockModel
 from .mock_embeddings import MOCK_EMBEDDINGS
 from .mock_llm_outputs import MockOpenAICallable
 from .mock_presidio import MockAnalyzerEngine, MockAnonymizerEngine, mock_anonymize
@@ -463,6 +470,51 @@ def test_toxic_language(mocker):
     ).validated_output
     # Check if the output matches the expected output
     assert output == NON_TOXIC_PARAGRAPH
+
+
+def test_translation_quality(mocker):
+    # Set the mockers
+    mocker.patch(
+        "guardrails.validators.is_high_quality_translation.download_model",
+        return_value="some_path",
+    )
+    mocker.patch(
+        "guardrails.validators.is_high_quality_translation.load_from_checkpoint",
+        return_value=MockModel(),
+    )
+
+    # ----------------------------
+    # 1. Test with a good translation
+    # Should return the same translation
+    guard = Guard.from_string(
+        validators=[IsHighQualityTranslation(on_fail="fix")],
+        description="testmeout",
+    )
+
+    output = guard.parse(
+        llm_output=GOOD_TRANSLATION,
+        metadata={"translation_source": "some input"},
+    ).validated_output
+
+    # Check if the output is same as the input
+    assert output == GOOD_TRANSLATION
+
+    # ----------------------------
+
+    # 2. Test with a bad translation
+    # Should return None
+    guard = Guard.from_string(
+        validators=[IsHighQualityTranslation(on_fail="fix")],
+        description="testmeout",
+    )
+
+    output = guard.parse(
+        llm_output=BAD_TRANSLATION,
+        metadata={"translation_source": "some input"},
+    ).validated_output
+
+    # Check if the output is empty
+    assert output == ""
 
 
 @register_validator("mycustominstancecheckvalidator", data_type="string")

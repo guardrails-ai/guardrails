@@ -14,6 +14,9 @@ class Outputs(ArbitraryModel):
     llm_response_info: Optional[LLMResponse] = Field(
         description="Information from the LLM response.", default=None
     )
+    raw_output: Optional[str] = Field(
+        description="The exact output from the LLM.", default=None
+    )
     parsed_output: Optional[Union[str, Dict]] = Field(
         description="The output parsed from the LLM response"
         "as it was passed into validation.",

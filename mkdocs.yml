@@ -16,6 +16,7 @@ nav:
   - 'Getting Started': guardrails_ai/getting_started.ipynb
   - 'Installation': guardrails_ai/installation.md
   - 'Migrating to 0.2.x': 0-2-migration.md
+  - 'Migrating to 0.3.x': 0-3-migration.md
   - 'FAQ': faq.md
   - 'Defining Guardrails':
     - 'Pydantic': defining_guards/pydantic.ipynb
@@ -33,6 +34,7 @@ nav:
     - 'Guard': api_reference/guard.md
     - 'Rail': api_reference/rail.md
     - 'Validators': api_reference/validators.md
+    - 'Validation Outcome': api_reference/validation_outcome.md
     - 'Response Structures': api_reference/response_structures.md
     - 'Schema': api_reference/schema.md
     - 'Document Store': api_reference/document_store.md
