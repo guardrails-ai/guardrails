@@ -31,6 +31,7 @@ from guardrails.validators import (
     DetectSecrets,
     ExtractedSummarySentencesMatch,
     ExtractiveSummary,
+    IsHighQualityTranslation,
     ProvenanceV1,
     SimilarToDocument,
     SimilarToList,
@@ -53,6 +54,7 @@ from .mock_secrets import (
     NO_SECRETS_CODE_SNIPPET,
     SECRETS_CODE_SNIPPET,
 )
+from .mocks.mock_comet import BAD_TRANSLATION, GOOD_TRANSLATION, MockModel
 
 
 @pytest.mark.parametrize(
@@ -555,6 +557,36 @@ def test_toxic_language(mocker):
     # 2. Test get_toxicity with dummy text without toxicity
     pred_labels = validator.get_toxicity(NON_TOXIC_SENTENCES[0])
     assert len(pred_labels) == 0
+
+
+def test_translation_quality_validator(mocker):
+    """Test IsHighQualityTranslation validator.
+
+    1. Test with dummy translation with high quality
+    2. Test with dummy translation with low quality
+    """
+    mocker.patch(
+        "guardrails.validators.is_high_quality_translation.download_model",
+        return_value="some_path",
+    )
+    mocker.patch(
+        "guardrails.validators.is_high_quality_translation.load_from_checkpoint",
+        return_value=MockModel(),
+    )
+
+    # Initialise validator
+    validator = IsHighQualityTranslation()
+
+    # ----------------------------
+    # 1. Test with dummy translation with high quality
+    metadata = {"translation_source": "input text"}
+    result = validator.validate(GOOD_TRANSLATION, metadata)
+    assert isinstance(result, PassResult)
+
+    # ----------------------------
+    # 2. Test with dummy translation with low quality
+    result = validator.validate(BAD_TRANSLATION, metadata)
+    assert isinstance(result, FailResult)
 
 
 def custom_fix_on_fail_handler(value: Any, fail_results: List[FailResult]):
