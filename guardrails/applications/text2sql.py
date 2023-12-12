@@ -4,7 +4,7 @@ import os
 from string import Template
 from typing import Callable, Dict, Optional, Type, cast
 
-from guardrails.classes import OT, ValidationOutcome
+from guardrails.classes import ValidationOutcome
 from guardrails.document_store import DocumentStoreBase, EphemeralDocumentStore
 from guardrails.embedding import EmbeddingBase, OpenAIEmbedding
 from guardrails.guard import Guard
@@ -200,7 +200,7 @@ class Text2Sql:
                     },
                     **self.llm_api_kwargs,
                 )
-                response = cast(ValidationOutcome[OT], response)
+                response = cast(ValidationOutcome, response)
                 validated_output: Dict = cast(Dict, response.validated_output)
                 output = validated_output["generated_sql"]
             except TypeError:
