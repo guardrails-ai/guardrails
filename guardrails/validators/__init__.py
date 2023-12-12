@@ -25,6 +25,7 @@ from guardrails.validators.extractive_summary import ExtractiveSummary
 from guardrails.validators.is_high_quality_translation import IsHighQualityTranslation
 from guardrails.validators.is_profanity_free import IsProfanityFree
 from guardrails.validators.lower_case import LowerCase
+from guardrails.validators.on_topic import OnTopic
 from guardrails.validators.one_line import OneLine
 from guardrails.validators.pii_filter import AnalyzerEngine, AnonymizerEngine, PIIFilter
 from guardrails.validators.provenance import ProvenanceV0, ProvenanceV1
@@ -79,6 +80,7 @@ __all__ = [
     "DetectSecrets",
     "ToxicLanguage",
     "CompetitorCheck",
+    "OnTopic",
     # Validator helpers
     "detect_secrets",
     "AnalyzerEngine",
