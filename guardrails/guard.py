@@ -238,9 +238,10 @@ class Guard(Generic[OT]):
         msg_history: Optional[List[Dict]] = None,
         metadata: Optional[Dict] = None,
         full_schema_reask: Optional[bool] = None,
+        stream: Optional[bool] = False,
         *args,
         **kwargs,
-    ) -> ValidationOutcome[OT]:
+    ) -> Union[ValidationOutcome[OT], Iterable[str]]:
         ...
 
     @overload
@@ -272,7 +273,7 @@ class Guard(Generic[OT]):
         *args,
         **kwargs,
     ) -> Union[
-        Union[ValidationOutcome[OT], Iterable], Awaitable[ValidationOutcome[OT]]
+        Union[ValidationOutcome[OT], Iterable[str]], Awaitable[ValidationOutcome[OT]]
     ]:
         """Call the LLM and validate the output. Pass an async LLM API to
         return a coroutine.
