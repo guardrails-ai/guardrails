@@ -1,6 +1,6 @@
 import contextvars
 import json
-from typing import Any, Callable, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import openai
 from tenacity import retry, stop_after_attempt, wait_random_exponential
@@ -103,7 +103,11 @@ class OnTopic(Validator):
         self._model = model
         self._disable_classifier = disable_classifier
         self._disable_llm = disable_llm
-        self._model_threshold = model_threshold
+
+        if not model_threshold:
+            model_threshold = 0.5
+        else:
+            self._model_threshold = model_threshold
 
         self.set_callable(llm_callable)
 
@@ -142,7 +146,7 @@ class OnTopic(Validator):
             openai.api_version = api_base
 
     # todo: extract some of these similar methods into a base class w provenance
-    @retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(0))
+    @retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(5))
     def call_llm(self, text: str, topics: List[str]) -> str:
         """Call the LLM with the given prompt.
 
@@ -216,7 +220,7 @@ class OnTopic(Validator):
         score = result["scores"][0]  # type: ignore
         return topic, score  # type: ignore
 
-    def validate(self, value: str) -> ValidationResult:
+    def validate(self, value: str, metadata: Dict[str, Any]) -> ValidationResult:
         valid_topics = set(self._valid_topics)
         invalid_topics = set(self._invalid_topics)
 
