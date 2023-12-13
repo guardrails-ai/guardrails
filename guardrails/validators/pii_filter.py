@@ -108,20 +108,18 @@ class PIIFilter(Validator):
                 "in init or metadata."
             )
 
+        pii_keys = list(self.PII_ENTITIES_MAP.keys())
         # Check that pii_entities is a string OR list of strings
         if isinstance(pii_entities, str):
             # A key to the PII_ENTITIES_MAP
             entities_to_filter = self.PII_ENTITIES_MAP.get(pii_entities, None)
             if entities_to_filter is None:
-                raise ValueError(
-                    f"`pii_entities` must be one of {list(self.PII_ENTITIES_MAP.keys())}"
-                )
+                raise ValueError(f"`pii_entities` must be one of {pii_keys}")
         elif isinstance(pii_entities, list):
             entities_to_filter = pii_entities
         else:
             raise ValueError(
-                f"`pii_entities` must be one of {list(self.PII_ENTITIES_MAP.keys())}"
-                " or a list of strings."
+                f"`pii_entities` must be one of {pii_keys}" " or a list of strings."
             )
 
         # Analyze the text, and anonymize it if there is PII

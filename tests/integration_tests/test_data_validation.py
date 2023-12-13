@@ -26,8 +26,18 @@ test_cases = [
     ),
     ('{"choice": {"action": "random_action"}}', False, True, False),
     ('{"choice": {"action": "fight", "fight_move": "random_move"}}', True, True, True),
-    ('{"choice": {"action": "flight", "random_key": "random_value"}}', False, True, False),
-    ('{"choice": {"action": "flight", "random_key": "random_value"}', False, True, True),
+    (
+        '{"choice": {"action": "flight", "random_key": "random_value"}}',
+        False,
+        True,
+        False,
+    ),
+    (
+        '{"choice": {"action": "flight", "random_key": "random_value"}',
+        False,
+        True,
+        True,
+    ),
 ]
 
 

@@ -1,7 +1,6 @@
 from typing import Dict, Optional, Union
-from pydantic import PrivateAttr
 
-from pydantic import Field
+from pydantic import Field, PrivateAttr
 from rich.panel import Panel
 from rich.tree import Tree
 
@@ -41,7 +40,9 @@ class Call(ArbitraryModel):
     ):
         iterations = iterations or Stack()
         inputs = inputs or CallInputs()
-        super().__init__(iterations=iterations, inputs=inputs, _exception=None)  # type: ignore
+        super().__init__(  # type: ignore
+            iterations=iterations, inputs=inputs, _exception=None
+        )
         self.iterations = iterations
         self.inputs = inputs
         self._exception = None
@@ -285,7 +286,6 @@ class Call(ArbitraryModel):
         elif self.iterations.empty():
             return None
         return self.iterations.last.error  # type: ignore
-    
 
     @property
     def exception(self) -> Optional[Exception]:

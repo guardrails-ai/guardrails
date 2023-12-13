@@ -1,6 +1,6 @@
 import pytest
-
 from dateutil.parser import ParserError
+
 from guardrails.guard import Guard
 
 
@@ -64,7 +64,9 @@ Dummy prompt.
         ("1697579939213", OverflowError),  # Unix timestamp/milliseconds
     ],
 )
-def test_defaulted_date_parser_unsupported_values(date_string: str, error_type: Exception):
+def test_defaulted_date_parser_unsupported_values(
+    date_string: str, error_type: Exception
+):
     rail_spec = """
 <rail version="0.1">
 

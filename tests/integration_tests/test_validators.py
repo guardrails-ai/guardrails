@@ -86,7 +86,9 @@ def test_similar_to_list():
         guard.parse(
             llm_output=val,
         )
-    assert str(excinfo.value) == "You must provide a list of previous values in metadata."
+    assert (
+        str(excinfo.value) == "You must provide a list of previous values in metadata."
+    )
 
     # 1.3 Test passing str prev values for int val
     # Should raise ValueError
@@ -126,7 +128,9 @@ def test_similar_to_list():
             llm_output=val,
             metadata={"embed_function": embed_function},
         )
-    assert str(excinfo.value) == "You must provide a list of previous values in metadata."
+    assert (
+        str(excinfo.value) == "You must provide a list of previous values in metadata."
+    )
 
     # 2.3 Test passing int prev values for str val
     # Should raise ValueError

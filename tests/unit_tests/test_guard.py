@@ -1,4 +1,3 @@
-from typing import Dict
 import openai
 import pytest
 from pydantic import BaseModel
@@ -37,7 +36,7 @@ class RequiringValidator2(Validator):
 </rail>
         """,
             {"required_key": "a"},
-            "Missing required metadata keys: required_key"
+            "Missing required metadata keys: required_key",
         ),
         (
             """
@@ -53,7 +52,7 @@ class RequiringValidator2(Validator):
 </rail>
         """,
             {"required_key": "a", "required_key2": "b"},
-            "Missing required metadata keys: required_key2, required_key"
+            "Missing required metadata keys: required_key, required_key2",
         ),
         (
             """
@@ -75,7 +74,7 @@ class RequiringValidator2(Validator):
 </rail>
 """,
             {"required_key": "a"},
-            "Missing required metadata keys: required_key"
+            "Missing required metadata keys: required_key",
         ),
     ],
 )
@@ -103,12 +102,8 @@ async def test_required_metadata(spec, metadata, error_message):
     # test async guard
     with pytest.raises(ValueError) as excinfo:
         guard.parse("{}")
-        await guard.parse(
-            "{}", llm_api=openai.ChatCompletion.acreate, num_reasks=0
-        )
+        await guard.parse("{}", llm_api=openai.ChatCompletion.acreate, num_reasks=0)
     assert str(excinfo.value) == error_message
-
-
 
     response = await guard.parse(
         "{}", metadata=metadata, llm_api=openai.ChatCompletion.acreate, num_reasks=0
