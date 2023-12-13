@@ -624,7 +624,7 @@ def custom_refrain_on_fail_handler(value: Any, fail_results: List[FailResult]):
                 fail_results=[
                     FailResult(
                         error_message="must be exactly two words",
-                        fix_value="dog",
+                        fix_value="dog dog",
                     )
                 ],
             ),

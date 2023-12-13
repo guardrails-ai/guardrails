@@ -47,6 +47,7 @@ anthropic = {version = "^0.7.2", optional = true}
 torch = {version = "^2.1.1", optional = true}
 guardrails-ai-unbabel-comet = {version = "^2.2.1", optional = true}
 huggingface_hub = {version = "^0.16.4", optional = true}
+pydash = "^7.0.6"
 
 
 [tool.poetry.extras]

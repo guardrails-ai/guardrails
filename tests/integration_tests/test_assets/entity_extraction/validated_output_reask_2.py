@@ -39,7 +39,7 @@ VALIDATED_OUTPUT_REASK_2 = {
         },
         {
             "index": 7,
-            "name": "over-the-credit-limit",
+            "name": "over the",
             "explanation": "Over-the-Credit-Limit None",
             "value": 0,
         },
