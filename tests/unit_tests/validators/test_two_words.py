@@ -1,6 +1,6 @@
 import pytest
 
-from guardrails.validators import FailResult, PassResult, TwoWords, ValidationResult
+from guardrails.validators import FailResult, PassResult, TwoWords
 
 
 def test_two_words_happy_path():
