@@ -213,14 +213,15 @@ def sub_reasks_with_fixed_values(value: Any) -> Any:
     Returns:
         The value with ReAsk objects replaced with their fixed values.
     """
-    if isinstance(value, list):
-        for index, item in enumerate(value):
-            value[index] = sub_reasks_with_fixed_values(item)
-    elif isinstance(value, dict):
+    copy = deepcopy(value)
+    if isinstance(copy, list):
+        for index, item in enumerate(copy):
+            copy[index] = sub_reasks_with_fixed_values(item)
+    elif isinstance(copy, dict):
         for dict_key, dict_value in value.items():
-            value[dict_key] = sub_reasks_with_fixed_values(dict_value)
-    elif isinstance(value, FieldReAsk):
+            copy[dict_key] = sub_reasks_with_fixed_values(dict_value)
+    elif isinstance(copy, FieldReAsk):
         # TODO handle multiple fail results
-        value = value.fail_results[0].fix_value
+        copy = copy.fail_results[0].fix_value
 
-    return value
+    return copy

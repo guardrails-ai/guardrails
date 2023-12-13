@@ -1,15 +1,15 @@
 # flake8: noqa: E501
 VALIDATED_OUTPUT_SKELETON_REASK_2 = {
     "fees": [
-        {"name": "annual_membership_fee", "explanation": "", "value": 0.0},
-        {"name": "my_chase_plan_fee", "explanation": "", "value": 1.72},
-        {"name": "balance_transfers", "explanation": "", "value": 5.0},
-        {"name": "cash_advances", "explanation": "", "value": 5.0},
-        {"name": "foreign_transactions", "explanation": "", "value": 3.0},
-        {"name": "late_payment", "explanation": "", "value": 0.0},
-        {"name": "over-the-credit-limit", "explanation": "", "value": 0.0},
-        {"name": "return_payment", "explanation": "", "value": 0.0},
-        {"name": "return_check", "explanation": "", "value": 0.0},
+        {"name": "annual membership", "explanation": "", "value": 0.0},
+        {"name": "my chase", "explanation": "", "value": 1.72},
+        {"name": "balance transfers", "explanation": "", "value": 5.0},
+        {"name": "cash advances", "explanation": "", "value": 5.0},
+        {"name": "foreign transactions", "explanation": "", "value": 3.0},
+        {"name": "late payment", "explanation": "", "value": 0.0},
+        {"name": "over the", "explanation": "", "value": 0.0},
+        {"name": "return payment", "explanation": "", "value": 0.0},
+        {"name": "return check", "explanation": "", "value": 0.0},
     ],
     "interest_rates": {
         "purchase": {
