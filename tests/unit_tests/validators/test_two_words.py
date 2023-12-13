@@ -1,6 +1,6 @@
 import pytest
 
-from guardrails.validators import TwoWords, PassResult, FailResult, ValidationResult
+from guardrails.validators import FailResult, PassResult, TwoWords, ValidationResult
 
 
 def test_two_words_happy_path():
@@ -10,38 +10,18 @@ def test_two_words_happy_path():
 
     assert result.outcome == "pass"
 
+
 @pytest.mark.parametrize(
     "input, expected_output",
     [
-        (
-            "Hello there general",
-            "Hello there"
-        ),
-        (
-            "hello-there-general",
-            "hello there"
-        ),
-        (
-            "hello_there_general",
-            "hello there"
-        ),
-        (
-            "helloThereGeneral",
-            "hello There"
-        ),
-        (
-            "HelloThereGeneral",
-            "Hello There"
-        ),
-        (
-            "hello.there.general",
-            "hello there"
-        ),
-        (
-            "hello",
-            "hello hello"
-        )
-    ]
+        ("Hello there general", "Hello there"),
+        ("hello-there-general", "hello there"),
+        ("hello_there_general", "hello there"),
+        ("helloThereGeneral", "hello There"),
+        ("HelloThereGeneral", "Hello There"),
+        ("hello.there.general", "hello there"),
+        ("hello", "hello hello"),
+    ],
 )
 def test_two_words_failures(input, expected_output):
     validator = TwoWords()

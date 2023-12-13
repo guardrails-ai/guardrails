@@ -331,7 +331,7 @@ class Call(ArbitraryModel):
         tree = Tree("Logs")
         for i, iteration in enumerate(self.iterations):
             tree.add(Panel(iteration.rich_group, title=f"Step {i}"))
-        
+
         # Replace the last Validated Output panel if we applied fixes
         if self.failed_validations.length > 0 and self.status == pass_status:
             previous_panels = tree.children[-1].label.renderable._renderables[:-1]
@@ -340,6 +340,8 @@ class Call(ArbitraryModel):
                 title="Validated Output",
                 style="on #F0FFF0",
             )
-            tree.children[-1].label.renderable._renderables = previous_panels + (validated_outcome_panel,)
-        
+            tree.children[-1].label.renderable._renderables = previous_panels + (
+                validated_outcome_panel,
+            )
+
         return tree
