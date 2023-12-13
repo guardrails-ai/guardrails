@@ -12,7 +12,7 @@ except ImportError:
 
 faiss_error = (
     "`faiss` is required for using vectordb.faiss."
-    "Install it with `pip install faiss-cpu`."
+    "Install it with `poetry add faiss-cpu`."
 )
 
 

@@ -1,5 +1,4 @@
 import datetime
-import logging
 import warnings
 from dataclasses import dataclass
 from types import SimpleNamespace
@@ -15,9 +14,6 @@ from guardrails.utils.casting_utils import to_float, to_int, to_string
 from guardrails.utils.xml_utils import cast_xml_to_string
 from guardrails.validator_base import Validator, ValidatorSpec
 from guardrails.validatorsattr import ValidatorsAttr
-
-logger = logging.getLogger(__name__)
-
 
 # TODO - deprecate these altogether
 deprecated_string_types = {"sql", "email", "url", "pythoncode"}
@@ -443,8 +439,10 @@ class List(NonScalarType):
         schema: Dict,
     ) -> FieldValidation:
         # Validators in the main list data type are applied to the list overall.
-
         validation = self._constructor_validation(key, value)
+
+        if value is None and self.optional:
+            return validation
 
         if len(self._children) == 0:
             return validation
@@ -483,8 +481,10 @@ class Object(NonScalarType):
         schema: Dict,
     ) -> FieldValidation:
         # Validators in the main object data type are applied to the object overall.
-
         validation = self._constructor_validation(key, value)
+
+        if value is None and self.optional:
+            return validation
 
         if len(self._children) == 0:
             return validation
@@ -502,12 +502,17 @@ class Object(NonScalarType):
             # child_key is an expected key that the schema defined
             # child_data_type is the data type of the expected key
             child_value = value.get(child_key, None)
-            child_validation = child_data_type.collect_validation(
-                child_key,
-                child_value,
-                value,
-            )
-            validation.children.append(child_validation)
+
+            # Skip validation for instances where child_value is None
+            # by adding a check for child_value
+            # This will happen during streaming (sub-schema validation)
+            if child_value:
+                child_validation = child_data_type.collect_validation(
+                    child_key,
+                    child_value,
+                    value,
+                )
+                validation.children.append(child_validation)
 
         return validation
 

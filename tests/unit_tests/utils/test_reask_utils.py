@@ -4,10 +4,10 @@ import pytest
 from lxml import etree as ET
 
 from guardrails import Instructions, Prompt
+from guardrails.classes.history.iteration import Iteration
 from guardrails.datatypes import Object
 from guardrails.schema import JsonSchema
 from guardrails.utils import reask_utils
-from guardrails.utils.logs_utils import GuardLogs
 from guardrails.utils.reask_utils import (
     FieldReAsk,
     gather_reasks,
@@ -240,7 +240,8 @@ def test_gather_reasks():
             path=["h", 2, 2],
         ),
     ]
-    assert gather_reasks(input_dict) == expected_reasks
+    actual_reasks, _ = gather_reasks(input_dict)
+    assert actual_reasks == expected_reasks
 
 
 @pytest.mark.parametrize(
@@ -458,8 +459,8 @@ Here are examples of simple (XML, JSON) pairs that show the expected behavior:
 - `<object name='baz'><string name="foo" format="capitalize two-words" /><integer name="index" format="1-indexed" /></object>` => `{'baz': {'foo': 'Some String', 'index': 1}}`
 """  # noqa: E501
     output_schema = JsonSchema(Object.from_xml(ET.fromstring(example_rail)))
-    guard_logs = GuardLogs()
-    validated = output_schema.validate(guard_logs, original_response, {})
+    iteration = Iteration()
+    validated = output_schema.validate(iteration, original_response, {})
     reasks = output_schema.introspect(validated)
     (
         reask_schema,

@@ -1,5 +1,4 @@
 import json
-import logging
 import pprint
 from copy import deepcopy
 from typing import (
@@ -20,6 +19,7 @@ from pydantic import BaseModel
 from typing_extensions import Self
 
 from guardrails import validator_service
+from guardrails.classes.history import Iteration
 from guardrails.datatypes import Choice, DataType, Object, String
 from guardrails.llm_providers import (
     AsyncOpenAICallable,
@@ -28,17 +28,18 @@ from guardrails.llm_providers import (
     OpenAIChatCallable,
     PromptCallableBase,
 )
+from guardrails.logger import logger
 from guardrails.prompt import Instructions, Prompt
 from guardrails.utils.constants import constants
 from guardrails.utils.json_utils import (
     extract_json_from_ouput,
     verify_schema_against_json,
 )
-from guardrails.utils.logs_utils import FieldValidationLogs, GuardLogs
 from guardrails.utils.pydantic_utils import convert_pydantic_model_to_datatype
 from guardrails.utils.reask_utils import (
     FieldReAsk,
     NonParseableReAsk,
+    ReAsk,
     SkeletonReAsk,
     gather_reasks,
     get_pruned_tree,
@@ -53,8 +54,6 @@ from guardrails.validator_base import (
 
 if TYPE_CHECKING:
     pass
-
-logger = logging.getLogger(__name__)
 
 
 class Schema:
@@ -111,7 +110,9 @@ class Schema:
         else:
             self._reask_instructions_template = None
 
-    def validate(self, guard_logs: GuardLogs, data: Any, metadata: Dict) -> Any:
+    def validate(
+        self, iteration: Iteration, data: Any, metadata: Dict, **kwargs
+    ) -> Any:
         """Validate a dictionary of data against the schema.
 
         Args:
@@ -123,7 +124,7 @@ class Schema:
         raise NotImplementedError
 
     async def async_validate(
-        self, guard_logs: GuardLogs, data: Any, metadata: Dict
+        self, iteration: Iteration, data: Any, metadata: Dict
     ) -> Any:
         """Asynchronously validate a dictionary of data against the schema.
 
@@ -144,7 +145,7 @@ class Schema:
         """
         raise NotImplementedError
 
-    def parse(self, output: str) -> Tuple[Any, Optional[Exception]]:
+    def parse(self, output: str, **kwargs) -> Tuple[Any, Optional[Exception]]:
         """Parse the output from the large language model.
 
         Args:
@@ -155,7 +156,9 @@ class Schema:
         """
         raise NotImplementedError
 
-    def introspect(self, data: Any) -> List[FieldReAsk]:
+    def introspect(
+        self, data: Any
+    ) -> Tuple[Sequence[ReAsk], Optional[Union[str, Dict]]]:
         """Inspect the data for reasks.
 
         Args:
@@ -168,7 +171,7 @@ class Schema:
 
     def get_reask_setup(
         self,
-        reasks: List[FieldReAsk],
+        reasks: Sequence[ReAsk],
         original_response: Any,
         use_full_schema: bool,
         prompt_params: Optional[Dict[str, Any]] = None,
@@ -233,7 +236,7 @@ class JsonSchema(Schema):
 
     def get_reask_setup(
         self,
-        reasks: List[FieldReAsk],
+        reasks: List[ReAsk],
         original_response: Any,
         use_full_schema: bool,
         prompt_params: Optional[Dict[str, Any]] = None,
@@ -254,7 +257,10 @@ class JsonSchema(Schema):
                     constants["high_level_json_parsing_reask_prompt"]
                     + constants["json_suffix_without_examples"]
                 )
-            np_reask: NonParseableReAsk = original_response
+            np_reask: NonParseableReAsk = next(
+                r for r in reasks if isinstance(r, NonParseableReAsk)
+            )
+            # This is correct
             reask_value = np_reask.incorrect_value
         elif is_skeleton_reask:
             pruned_tree_schema = self
@@ -266,18 +272,24 @@ class JsonSchema(Schema):
                     + constants["json_suffix_without_examples"]
                 )
 
+            # This is incorrect
+            # This should be the parsed output
             reask_value = original_response
         else:
             if use_full_schema:
+                # This is incorrect
+                # This should be the parsed output
                 reask_value = original_response
                 # Don't prune the tree if we're reasking with pydantic model
                 # (and openai function calling)
                 pruned_tree_schema = self
             else:
+                # This is correct
                 reask_value = prune_obj_for_reasking(original_response)
 
                 # Get the pruned tree so that it only contains ReAsk objects
-                pruned_tree = get_pruned_tree(root, reasks)
+                field_reasks = [r for r in reasks if isinstance(r, FieldReAsk)]
+                pruned_tree = get_pruned_tree(root, field_reasks)
                 pruned_tree_schema = type(self)(pruned_tree)
 
             reask_prompt_template = self.reask_prompt_template
@@ -352,8 +364,24 @@ class JsonSchema(Schema):
         )
 
     def parse(
-        self, output: str
-    ) -> Tuple[Union[Optional[Dict], NonParseableReAsk], Optional[Exception]]:
+        self, output: str, **kwargs
+    ) -> Tuple[
+        Union[Optional[Dict], NonParseableReAsk, str],
+        Union[Optional[Exception], str, bool, None],
+    ]:
+        if kwargs.get("stream", False):
+            # Do expected behavior for StreamRunner
+            # 1. Check if the fragment is valid JSON
+            verified = kwargs.get("verified", set())
+            is_valid_fragment = self.is_valid_fragment(output, verified)
+            if not is_valid_fragment:
+                return output, True
+
+            # 2. Parse the fragment
+            parsed_fragment, parsing_error = self.parse_fragment(output)
+            return parsed_fragment, parsing_error
+
+        # Else do expected behavior for Runner
         # Try to get json code block from output.
         # Return error and reask if it is not parseable.
         parsed_output, error = extract_json_from_ouput(output)
@@ -371,11 +399,71 @@ class JsonSchema(Schema):
             return reask, error
         return parsed_output, None
 
+    def is_valid_fragment(self, fragment: str, verified: set) -> bool:
+        """Check if the fragment is a somewhat valid JSON."""
+
+        # Strip fragment of whitespaces and newlines
+        # to avoid duplicate checks
+        text = fragment.strip(" \n")
+
+        # Check if text is already verified
+        if text in verified:
+            return False
+
+        # Check if text is valid JSON
+        try:
+            json.loads(text)
+            verified.add(text)
+            return True
+        except ValueError as e:
+            error_msg = str(e)
+            # Check if error is due to missing comma
+            if "Expecting ',' delimiter" in error_msg:
+                verified.add(text)
+                return True
+            return False
+
+    def parse_fragment(self, fragment: str):
+        """Parse the fragment into a dict."""
+
+        # Complete the JSON fragment to handle missing brackets
+        # Stack to keep track of opening brackets
+        stack = []
+
+        # Process each character in the string
+        for char in fragment:
+            if char in "{[":
+                # Push opening brackets onto the stack
+                stack.append(char)
+            elif char in "}]":
+                # Pop from stack if matching opening bracket is found
+                if stack and (
+                    (char == "}" and stack[-1] == "{")
+                    or (char == "]" and stack[-1] == "[")
+                ):
+                    stack.pop()
+
+        # Add the necessary closing brackets in reverse order
+        while stack:
+            opening_bracket = stack.pop()
+            if opening_bracket == "{":
+                fragment += "}"
+            elif opening_bracket == "[":
+                fragment += "]"
+
+        # Parse the fragment
+        try:
+            parsed_fragment = json.loads(fragment)
+            return parsed_fragment, None
+        except ValueError as e:
+            return fragment, str(e)
+
     def validate(
         self,
-        guard_logs: GuardLogs,
+        iteration: Iteration,
         data: Optional[Dict[str, Any]],
         metadata: Dict,
+        **kwargs,
     ) -> Any:
         """Validate a dictionary of data against the schema.
 
@@ -398,6 +486,7 @@ class JsonSchema(Schema):
             validated_response,
             prune_extra_keys=True,
             coerce_types=True,
+            validate_subschema=kwargs.get("validate_subschema", False),
         ):
             return SkeletonReAsk(
                 incorrect_value=validated_response,
@@ -415,18 +504,15 @@ class JsonSchema(Schema):
             schema=validated_response,
         )
 
-        validation_logs = FieldValidationLogs()
-        guard_logs.field_validation_logs = validation_logs
-
         validated_response, metadata = validator_service.validate(
             value=validated_response,
             metadata=metadata,
             validator_setup=validation,
-            validation_logs=validation_logs,
+            iteration=iteration,
         )
 
         if check_refrain_in_dict(validated_response):
-            # If the data contains a `Refain` value, we return an empty
+            # If the data contains a `Refrain` value, we return an empty
             # dictionary.
             logger.debug("Refrain detected.")
             validated_response = {}
@@ -438,7 +524,7 @@ class JsonSchema(Schema):
 
     async def async_validate(
         self,
-        guard_logs: GuardLogs,
+        iteration: Iteration,
         data: Optional[Dict[str, Any]],
         metadata: Dict,
     ) -> Any:
@@ -481,14 +567,11 @@ class JsonSchema(Schema):
             schema=validated_response,
         )
 
-        validation_logs = FieldValidationLogs()
-        guard_logs.field_validation_logs = validation_logs
-
         validated_response, metadata = await validator_service.async_validate(
             value=validated_response,
             metadata=metadata,
             validator_setup=validation,
-            validation_logs=validation_logs,
+            iteration=iteration,
         )
 
         if check_refrain_in_dict(validated_response):
@@ -502,11 +585,11 @@ class JsonSchema(Schema):
 
         return validated_response
 
-    def introspect(self, data: Any) -> list:
+    def introspect(self, data: Any) -> Tuple[List[ReAsk], Optional[Dict]]:
         if isinstance(data, SkeletonReAsk):
-            return [data]
+            return [data], None
         elif isinstance(data, NonParseableReAsk):
-            return [data]
+            return [data], None
         return gather_reasks(data)
 
     def preprocess_prompt(
@@ -632,14 +715,15 @@ class StringSchema(Schema):
 
         return self, prompt, instructions
 
-    def parse(self, output: str) -> Tuple[Any, Optional[Exception]]:
+    def parse(self, output: str, **kwargs) -> Tuple[Any, Optional[Exception]]:
         return output, None
 
     def validate(
         self,
-        guard_logs: GuardLogs,
+        iteration: Iteration,
         data: Any,
         metadata: Dict,
+        **kwargs,
     ) -> Any:
         """Validate a dictionary of data against the schema.
 
@@ -654,9 +738,6 @@ class StringSchema(Schema):
 
         if not isinstance(data, str):
             raise TypeError(f"Argument `data` must be a string, not {type(data)}.")
-
-        validation_logs = FieldValidationLogs()
-        guard_logs.field_validation_logs = validation_logs
 
         # FIXME instead of writing the validation infrastructure for dicts (JSON),
         #  make it more structure-invariant
@@ -673,7 +754,7 @@ class StringSchema(Schema):
             value=data,
             metadata=metadata,
             validator_setup=validation,
-            validation_logs=validation_logs,
+            iteration=iteration,
         )
 
         validated_response = {dummy_key: validated_response}
@@ -693,7 +774,7 @@ class StringSchema(Schema):
 
     async def async_validate(
         self,
-        guard_logs: GuardLogs,
+        iteration: Iteration,
         data: Any,
         metadata: Dict,
     ) -> Any:
@@ -711,9 +792,6 @@ class StringSchema(Schema):
         if not isinstance(data, str):
             raise TypeError(f"Argument `data` must be a string, not {type(data)}.")
 
-        validation_logs = FieldValidationLogs()
-        guard_logs.field_validation_logs = validation_logs
-
         dummy_key = "string"
         validation = self.root_datatype.collect_validation(
             key=dummy_key,
@@ -727,7 +805,7 @@ class StringSchema(Schema):
             value=data,
             metadata=metadata,
             validator_setup=validation,
-            validation_logs=validation_logs,
+            iteration=iteration,
         )
 
         validated_response = {dummy_key: validated_response}
@@ -745,10 +823,12 @@ class StringSchema(Schema):
             return validated_response[dummy_key]
         return None
 
-    def introspect(self, data: Any) -> List[FieldReAsk]:
+    def introspect(
+        self, data: Union[ReAsk, Optional[str]]
+    ) -> Tuple[List[FieldReAsk], Optional[str]]:
         if isinstance(data, FieldReAsk):
-            return [data]
-        return []
+            return [data], None
+        return [], data  # type: ignore
 
     def preprocess_prompt(
         self,

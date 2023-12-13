@@ -1,6 +1,5 @@
 import importlib.util
-import os
-from typing import Any, Callable
+from typing import Any, Callable, Iterable
 from unittest.mock import MagicMock
 
 import pytest
@@ -18,9 +17,6 @@ from guardrails.utils.openai_utils import OPENAI_VERSION
 
 from .mocks import MockAsyncOpenAILlm, MockOpenAILlm
 
-# Set the mock OpenAI API key
-os.environ["OPENAI_API_KEY"] = "sk-xxxxxxxxxxxxxx"
-
 # def test_openai_callable_retries_on_retryable_errors(mocker):
 #     llm = MockCustomLlm()
 #     fail_retryable_spy = mocker.spy(llm, "fail_retryable")
@@ -37,6 +33,9 @@ os.environ["OPENAI_API_KEY"] = "sk-xxxxxxxxxxxxxx"
 
 @pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="OpenAI v0 only")
 def test_openai_callable_does_not_retry_on_non_retryable_errors(mocker):
+    mock_environ = mocker.patch("os.environ.get")
+    mock_environ.return_value = "sk-xxxxxxxxxxxxxx"
+
     with pytest.raises(Exception) as e:
         llm = MockOpenAILlm()
         fail_non_retryable_spy = mocker.spy(llm, "fail_non_retryable")
@@ -53,6 +52,9 @@ def test_openai_callable_does_not_retry_on_non_retryable_errors(mocker):
 
 
 def test_openai_callable_does_not_retry_on_success(mocker):
+    mock_environ = mocker.patch("os.environ.get")
+    mock_environ.return_value = "sk-xxxxxxxxxxxxxx"
+
     llm = MockOpenAILlm()
     succeed_spy = mocker.spy(llm, "succeed")
 
@@ -85,6 +87,8 @@ def test_openai_callable_does_not_retry_on_success(mocker):
 @pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="OpenAI v0 only")
 @pytest.mark.asyncio
 async def test_async_openai_callable_does_not_retry_on_non_retryable_errors(mocker):
+    mock_environ = mocker.patch("os.environ.get")
+    mock_environ.return_value = "sk-xxxxxxxxxxxxxx"
     with pytest.raises(Exception) as e:
         llm = MockAsyncOpenAILlm()
         fail_non_retryable_spy = mocker.spy(llm, "fail_non_retryable")
@@ -102,6 +106,9 @@ async def test_async_openai_callable_does_not_retry_on_non_retryable_errors(mock
 
 @pytest.mark.asyncio
 async def test_async_openai_callable_does_not_retry_on_success(mocker):
+    mock_environ = mocker.patch("os.environ.get")
+    mock_environ.return_value = "sk-xxxxxxxxxxxxxx"
+
     llm = MockAsyncOpenAILlm()
     succeed_spy = mocker.spy(llm, "succeed")
 
@@ -113,16 +120,6 @@ async def test_async_openai_callable_does_not_retry_on_success(mocker):
     assert response.output == "Hello world!"
     assert response.prompt_token_count is None
     assert response.response_token_count is None
-
-
-@pytest.fixture(scope="module")
-def non_chat_token_count_mock():
-    return 10
-
-
-@pytest.fixture(scope="module")
-def chat_token_count_mock() -> int:
-    return 10
 
 
 @pytest.fixture(scope="module")
@@ -177,23 +174,7 @@ def openai_chat_stream_mock():
                     {
                         "index": 0,
                         "delta": {"content": f"{i},"},
-                    }
-                ]
-            }
-
-    return gen()
-
-
-@pytest.fixture(scope="module")
-def openai_async_chat_stream_mock():
-    async def gen():
-        # Returns a generator object
-        for i in range(4, 8):
-            yield {
-                "choices": [
-                    {
-                        "index": 0,
-                        "delta": {"content": f"{i},"},
+                        "finish_reason": None,
                     }
                 ]
             }
@@ -245,28 +226,7 @@ def openai_stream_mock():
         # Returns a generator object
         for i in range(4, 8):
             yield {
-                "choices": [
-                    {
-                        "text": f"{i},",
-                    }
-                ],
-                "model": "openai-model-name",
-            }
-
-    return gen()
-
-
-@pytest.fixture(scope="module")
-def openai_async_stream_mock():
-    async def gen():
-        # Returns a generator object
-        for i in range(4, 8):
-            yield {
-                "choices": [
-                    {
-                        "text": f"{i},",
-                    }
-                ],
+                "choices": [{"text": f"{i},", "finish_reason": None}],
                 "model": "openai-model-name",
             }
 
@@ -274,6 +234,9 @@ def openai_async_stream_mock():
 
 
 def test_openai_callable(mocker, openai_mock):
+    mock_environ = mocker.patch("os.environ.get")
+    mock_environ.return_value = "sk-xxxxxxxxxxxxxx"
+
     if OPENAI_VERSION.startswith("0"):
         mocker.patch("openai.Completion.create", return_value=openai_mock)
     else:
@@ -291,37 +254,39 @@ def test_openai_callable(mocker, openai_mock):
     assert response.response_token_count == 20
 
 
-def test_openai_stream_callable(mocker, openai_stream_mock, non_chat_token_count_mock):
+def test_openai_stream_callable(mocker, openai_stream_mock):
+    mock_environ = mocker.patch("os.environ.get")
+    mock_environ.return_value = "sk-xxxxxxxxxxxxxx"
+
     if OPENAI_VERSION.startswith("0"):
         mocker.patch("openai.Completion.create", return_value=openai_stream_mock)
-        mocker.patch(
-            "guardrails.utils.openai_utils.v0.num_tokens_from_string",
-            return_value=non_chat_token_count_mock,
-        )
     else:
         mocker.patch(
             "openai.resources.Completions.create", return_value=openai_stream_mock
-        )
-        mocker.patch(
-            "guardrails.utils.openai_utils.v1.num_tokens_from_string",
-            return_value=non_chat_token_count_mock,
         )
 
     from guardrails.llm_providers import OpenAICallable
 
     openai_callable = OpenAICallable()
     response = openai_callable(text="1,2,3,", stream=True)
-    print(f"RESPONSE: {response}")
 
     assert isinstance(response, LLMResponse) is True
-    assert response.output == "4,5,6,7,"
-    assert response.prompt_token_count == 10
-    assert response.response_token_count == 10
+    assert isinstance(response.stream_output, Iterable) is True
+
+    actual_op = None
+    i = 4
+    for fragment in response.stream_output:
+        actual_op = fragment["choices"][0]["text"]
+        assert actual_op == f"{i},"
+        i += 1
 
 
 @pytest.mark.asyncio
 @pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="OpenAI v0 only")
 async def test_async_openai_callable(mocker, openai_mock):
+    mock_environ = mocker.patch("os.environ.get")
+    mock_environ.return_value = "sk-xxxxxxxxxxxxxx"
+
     mocker.patch("openai.Completion.acreate", return_value=openai_mock)
 
     from guardrails.llm_providers import AsyncOpenAICallable
@@ -335,35 +300,10 @@ async def test_async_openai_callable(mocker, openai_mock):
     assert response.response_token_count == 20
 
 
-@pytest.mark.asyncio
-@pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="OpenAI v0 only")
-async def test_async_openai_stream_callable(
-    mocker, openai_async_stream_mock, non_chat_token_count_mock
-):
-    mocker.patch("openai.Completion.acreate", return_value=openai_async_stream_mock)
-    if OPENAI_VERSION.startswith("0"):
-        mocker.patch(
-            "guardrails.utils.openai_utils.v0.num_tokens_from_string",
-            return_value=non_chat_token_count_mock,
-        )
-    else:
-        mocker.patch(
-            "guardrails.utils.openai_utils.v1.num_tokens_from_string",
-            return_value=non_chat_token_count_mock,
-        )
-
-    from guardrails.llm_providers import AsyncOpenAICallable
-
-    openai_callable = AsyncOpenAICallable()
-    response = await openai_callable(text="1,2,3,", stream=True)
-
-    assert isinstance(response, LLMResponse) is True
-    assert response.output == "4,5,6,7,"
-    assert response.prompt_token_count == 10
-    assert response.response_token_count == 10
-
-
 def test_openai_chat_callable(mocker, openai_chat_mock):
+    mock_environ = mocker.patch("os.environ.get")
+    mock_environ.return_value = "sk-xxxxxxxxxxxxxx"
+
     if OPENAI_VERSION.startswith("0"):
         mocker.patch("openai.ChatCompletion.create", return_value=openai_chat_mock)
     else:
@@ -383,49 +323,41 @@ def test_openai_chat_callable(mocker, openai_chat_mock):
     assert response.response_token_count == 20
 
 
-def test_openai_chat_stream_callable(
-    mocker, openai_chat_stream_mock, chat_token_count_mock, non_chat_token_count_mock
-):
+def test_openai_chat_stream_callable(mocker, openai_chat_stream_mock):
+    mock_environ = mocker.patch("os.environ.get")
+    mock_environ.return_value = "sk-xxxxxxxxxxxxxx"
+
     if OPENAI_VERSION.startswith("0"):
         mocker.patch(
             "openai.ChatCompletion.create", return_value=openai_chat_stream_mock
-        )
-        mocker.patch(
-            "guardrails.utils.openai_utils.v0.num_tokens_from_messages",
-            return_value=chat_token_count_mock,
-        )
-        mocker.patch(
-            "guardrails.utils.openai_utils.v0.num_tokens_from_string",
-            return_value=non_chat_token_count_mock,
         )
     else:
         mocker.patch(
             "openai.resources.chat.completions.Completions.create",
             return_value=openai_chat_stream_mock,
         )
-        mocker.patch(
-            "guardrails.utils.openai_utils.v1.num_tokens_from_messages",
-            return_value=chat_token_count_mock,
-        )
-        mocker.patch(
-            "guardrails.utils.openai_utils.v1.num_tokens_from_string",
-            return_value=non_chat_token_count_mock,
-        )
-
     from guardrails.llm_providers import OpenAIChatCallable
 
     openai_chat_callable = OpenAIChatCallable()
     response = openai_chat_callable(text="1,2,3,", stream=True)
 
     assert isinstance(response, LLMResponse) is True
-    assert response.output == "4,5,6,7,"
-    assert response.prompt_token_count == 10
-    assert response.response_token_count == 10
+    assert isinstance(response.stream_output, Iterable) is True
+
+    actual_op = None
+    i = 4
+    for fragment in response.stream_output:
+        actual_op = fragment["choices"][0]["delta"]["content"]
+        assert actual_op == f"{i},"
+        i += 1
 
 
 @pytest.mark.asyncio
 @pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="OpenAI v0 only")
 async def test_async_openai_chat_callable(mocker, openai_chat_mock):
+    mock_environ = mocker.patch("os.environ.get")
+    mock_environ.return_value = "sk-xxxxxxxxxxxxxx"
+
     mocker.patch("openai.ChatCompletion.acreate", return_value=openai_chat_mock)
 
     from guardrails.llm_providers import AsyncOpenAIChatCallable
@@ -439,49 +371,10 @@ async def test_async_openai_chat_callable(mocker, openai_chat_mock):
     assert response.response_token_count == 20
 
 
-@pytest.mark.asyncio
-@pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="OpenAI v0 only")
-async def test_async_openai_chat_stream_callable(
-    mocker,
-    openai_async_chat_stream_mock,
-    chat_token_count_mock,
-    non_chat_token_count_mock,
-):
-    mocker.patch(
-        "openai.ChatCompletion.acreate", return_value=openai_async_chat_stream_mock
-    )
-
-    if OPENAI_VERSION.startswith("0"):
-        mocker.patch(
-            "guardrails.utils.openai_utils.v0.num_tokens_from_messages",
-            return_value=chat_token_count_mock,
-        )
-        mocker.patch(
-            "guardrails.utils.openai_utils.v0.num_tokens_from_string",
-            return_value=non_chat_token_count_mock,
-        )
-    else:
-        mocker.patch(
-            "guardrails.utils.openai_utils.v1.num_tokens_from_messages",
-            return_value=chat_token_count_mock,
-        )
-        mocker.patch(
-            "guardrails.utils.openai_utils.v1.num_tokens_from_string",
-            return_value=non_chat_token_count_mock,
-        )
-
-    from guardrails.llm_providers import AsyncOpenAIChatCallable
-
-    openai_chat_callable = AsyncOpenAIChatCallable()
-    response = await openai_chat_callable(text="1,2,3,", stream=True)
-
-    assert isinstance(response, LLMResponse) is True
-    assert response.output == "4,5,6,7,"
-    assert response.prompt_token_count == 10
-    assert response.response_token_count == 10
-
-
 def test_openai_chat_model_callable(mocker, openai_chat_mock):
+    mock_environ = mocker.patch("os.environ.get")
+    mock_environ.return_value = "sk-xxxxxxxxxxxxxx"
+
     if OPENAI_VERSION.startswith("0"):
         mocker.patch("openai.ChatCompletion.create", return_value=openai_chat_mock)
     else:
@@ -510,6 +403,9 @@ def test_openai_chat_model_callable(mocker, openai_chat_mock):
 @pytest.mark.asyncio
 @pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="OpenAI v0 only")
 async def test_async_openai_chat_model_callable(mocker, openai_chat_mock):
+    mock_environ = mocker.patch("os.environ.get")
+    mock_environ.return_value = "sk-xxxxxxxxxxxxxx"
+
     mocker.patch("openai.ChatCompletion.acreate", return_value=openai_chat_mock)
 
     from guardrails.llm_providers import AsyncOpenAIChatCallable

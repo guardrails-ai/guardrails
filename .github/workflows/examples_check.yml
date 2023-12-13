@@ -12,6 +12,7 @@ jobs:
     env:
       COHERE_API_KEY: ${{ secrets.COHERE_API_KEY }}
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      HUGGINGFACE_API_KEY: ${{ secrets.HUGGINGFACE_API_KEY }}
 
 
     steps:
@@ -45,6 +46,9 @@ jobs:
 
     - name: Check for pypdfium2
       run: poetry run pip show pypdfium2
+
+    - name: Huggingface Hub Login
+      run: huggingface-cli login --token $HUGGINGFACE_API_KEY
 
     - name: Execute notebooks and check for errors
       run: ./.github/workflows/scripts/run_notebooks.sh
