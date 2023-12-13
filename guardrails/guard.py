@@ -422,10 +422,8 @@ class Guard(Generic[OT]):
                     base_model=self.base_model,
                     full_schema_reask=full_schema_reask,
                 )
-                call, error_message = runner(
-                    call_log=call_log, prompt_params=prompt_params
-                )
-                return ValidationOutcome[OT].from_guard_history(call, error_message)
+                call = runner(call_log=call_log, prompt_params=prompt_params)
+                return ValidationOutcome[OT].from_guard_history(call)
 
     async def _call_async(
         self,
@@ -483,10 +481,10 @@ class Guard(Generic[OT]):
                 base_model=self.base_model,
                 full_schema_reask=full_schema_reask,
             )
-            call, error_message = await runner.async_run(
+            call = await runner.async_run(
                 call_log=call_log, prompt_params=prompt_params
             )
-            return ValidationOutcome[OT].from_guard_history(call, error_message)
+            return ValidationOutcome[OT].from_guard_history(call)
 
     def __repr__(self):
         return f"Guard(RAIL={self.rail})"
@@ -662,9 +660,9 @@ class Guard(Generic[OT]):
                 base_model=self.base_model,
                 full_schema_reask=full_schema_reask,
             )
-            call, error_message = runner(call_log=call_log, prompt_params=prompt_params)
+            call = runner(call_log=call_log, prompt_params=prompt_params)
 
-            return ValidationOutcome[OT].from_guard_history(call, error_message)
+            return ValidationOutcome[OT].from_guard_history(call)
 
     async def _async_parse(
         self,
@@ -704,11 +702,11 @@ class Guard(Generic[OT]):
                 base_model=self.base_model,
                 full_schema_reask=full_schema_reask,
             )
-            call, error_message = await runner.async_run(
+            call = await runner.async_run(
                 call_log=call_log, prompt_params=prompt_params
             )
 
-            return ValidationOutcome[OT].from_guard_history(call, error_message)
+            return ValidationOutcome[OT].from_guard_history(call)
 
     def with_prompt_validation(
         self,

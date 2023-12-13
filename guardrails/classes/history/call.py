@@ -1,4 +1,5 @@
 from typing import Dict, Optional, Union
+from pydantic import PrivateAttr
 
 from pydantic import Field
 from rich.panel import Panel
@@ -29,6 +30,7 @@ class Call(ArbitraryModel):
     inputs: CallInputs = Field(
         description="The inputs as passed in to Guard.__call__ or Guard.parse"
     )
+    _exception: Exception = PrivateAttr()
 
     # Prevent Pydantic from changing our types
     # Without this, Pydantic casts iterations to a list
@@ -39,9 +41,10 @@ class Call(ArbitraryModel):
     ):
         iterations = iterations or Stack()
         inputs = inputs or CallInputs()
-        super().__init__(iterations=iterations, inputs=inputs)  # type: ignore
+        super().__init__(iterations=iterations, inputs=inputs, _exception=None)  # type: ignore
         self.iterations = iterations
         self.inputs = inputs
+        self._exception = None
 
     @property
     def prompt(self) -> Optional[str]:
@@ -277,16 +280,25 @@ class Call(ArbitraryModel):
     def error(self) -> Optional[str]:
         """The error message from any exception that raised and interrupted the
         run."""
-        if self.iterations.empty():
+        if self._exception:
+            return str(self._exception)
+        elif self.iterations.empty():
             return None
         return self.iterations.last.error  # type: ignore
+    
 
     @property
     def exception(self) -> Optional[Exception]:
         """The exception that interrupted the run."""
-        if self.iterations.empty():
+        if self._exception:
+            return self._exception
+        elif self.iterations.empty():
             return None
         return self.iterations.last.exception  # type: ignore
+
+    @exception.setter
+    def exception(self, value: Exception) -> None:
+        self._exception = value
 
     @property
     def failed_validations(self) -> Stack[ValidatorLogs]:

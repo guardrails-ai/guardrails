@@ -1,3 +1,4 @@
+from typing import Dict
 import openai
 import pytest
 from pydantic import BaseModel
@@ -25,7 +26,7 @@ class RequiringValidator2(Validator):
 
 
 @pytest.mark.parametrize(
-    "spec,metadata",
+    "spec,metadata,error_message",
     [
         (
             """
@@ -36,6 +37,7 @@ class RequiringValidator2(Validator):
 </rail>
         """,
             {"required_key": "a"},
+            "Missing required metadata keys: required_key"
         ),
         (
             """
@@ -51,6 +53,7 @@ class RequiringValidator2(Validator):
 </rail>
         """,
             {"required_key": "a", "required_key2": "b"},
+            "Missing required metadata keys: required_key2, required_key"
         ),
         (
             """
@@ -72,12 +75,13 @@ class RequiringValidator2(Validator):
 </rail>
 """,
             {"required_key": "a"},
+            "Missing required metadata keys: required_key"
         ),
     ],
 )
 @pytest.mark.asyncio
 @pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="Only for OpenAI v0")
-async def test_required_metadata(spec, metadata):
+async def test_required_metadata(spec, metadata, error_message):
     guard = Guard.from_rail_string(spec)
 
     missing_keys = verify_metadata_requirements({}, guard.output_schema.root_datatype)
@@ -89,17 +93,22 @@ async def test_required_metadata(spec, metadata):
     assert not_missing_keys == []
 
     # test sync guard
-    response = guard.parse("{}")
-    assert response.error is not None
+    with pytest.raises(ValueError) as excinfo:
+        guard.parse("{}")
+    assert str(excinfo.value) == error_message
 
     response = guard.parse("{}", metadata=metadata, num_reasks=0)
     assert response.error is None
 
     # test async guard
-    response = await guard.parse(
-        "{}", llm_api=openai.ChatCompletion.acreate, num_reasks=0
-    )
-    assert response.error is not None
+    with pytest.raises(ValueError) as excinfo:
+        guard.parse("{}")
+        await guard.parse(
+            "{}", llm_api=openai.ChatCompletion.acreate, num_reasks=0
+        )
+    assert str(excinfo.value) == error_message
+
+
 
     response = await guard.parse(
         "{}", metadata=metadata, llm_api=openai.ChatCompletion.acreate, num_reasks=0

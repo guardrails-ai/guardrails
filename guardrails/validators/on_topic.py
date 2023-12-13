@@ -143,7 +143,7 @@ class OnTopic(Validator):
 
         # Set the OpenAI API base if specified
         if api_base:
-            openai.api_version = api_base
+            openai.api_base = api_base
 
     # todo: extract some of these similar methods into a base class w provenance
     @retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(5))
@@ -242,6 +242,8 @@ class OnTopic(Validator):
         candidate_topics = valid_topics.union(invalid_topics)
 
         # Check which model(s) to use
+        print("self._disable_classifier: ", self._disable_classifier)
+        print("self._disable_llm: ", self._disable_llm)
         if self._disable_classifier and self._disable_llm:  # Error, no model set
             raise ValueError("Either classifier or llm must be enabled.")
         elif (

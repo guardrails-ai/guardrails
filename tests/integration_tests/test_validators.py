@@ -82,19 +82,24 @@ def test_similar_to_list():
     # 1.2 Test not passing prev_values
     # Should raise ValueError
     val = "3"
-    output = guard.parse(
-        llm_output=val,
-    )
-    assert output.error is not None
+    with pytest.raises(ValueError) as excinfo:
+        guard.parse(
+            llm_output=val,
+        )
+    assert str(excinfo.value) == "You must provide a list of previous values in metadata."
 
     # 1.3 Test passing str prev values for int val
     # Should raise ValueError
     val = "3"
-    output = guard.parse(
-        llm_output=val,
-        metadata={"prev_values": [str(i) for i in int_prev_values]},
+    with pytest.raises(ValueError) as excinfo:
+        guard.parse(
+            llm_output=val,
+            metadata={"prev_values": [str(i) for i in int_prev_values]},
+        )
+    assert str(excinfo.value) == (
+        "Both given value and all the previous values must be "
+        "integers in order to use the distribution check validator."
     )
-    assert output.error is not None
 
     # 1.4 Test for values outside the standard deviation
     val = "300"
@@ -116,29 +121,38 @@ def test_similar_to_list():
     # 2.2 Test not passing prev_values
     # Should raise ValueError
     val = "cisco"
-    output = guard.parse(
-        llm_output=val,
-        metadata={"embed_function": embed_function},
-    )
-    assert output.error is not None
+    with pytest.raises(ValueError) as excinfo:
+        guard.parse(
+            llm_output=val,
+            metadata={"embed_function": embed_function},
+        )
+    assert str(excinfo.value) == "You must provide a list of previous values in metadata."
 
     # 2.3 Test passing int prev values for str val
     # Should raise ValueError
     val = "cisco"
-    output = guard.parse(
-        llm_output=val,
-        metadata={"prev_values": int_prev_values, "embed_function": embed_function},
+    with pytest.raises(ValueError) as excinfo:
+        guard.parse(
+            llm_output=val,
+            metadata={"prev_values": int_prev_values, "embed_function": embed_function},
+        )
+    assert str(excinfo.value) == (
+        "Both given value and all the previous values must be "
+        "strings in order to use the distribution check validator."
     )
-    assert output.error is not None
 
     # 2.4 Test not pasisng embed_function
     # Should raise ValueError
     val = "cisco"
-    output = guard.parse(
-        llm_output=val,
-        metadata={"prev_values": str_prev_values},
+    with pytest.raises(ValueError) as excinfo:
+        guard.parse(
+            llm_output=val,
+            metadata={"prev_values": str_prev_values},
+        )
+    assert str(excinfo.value) == (
+        "You must provide `embed_function` in metadata in order to "
+        "check the semantic similarity of the generated string."
     )
-    assert output.error is not None
 
     # 2.5 Test for values outside the standard deviation
     val = "taj mahal"
@@ -285,10 +299,16 @@ def test_pii_filter(mocker):
     )
 
     text = "My email address is demo@lol.com, and my phone number is 1234567890"
-    output = guard.parse(
-        llm_output=text,
+    with pytest.raises(ValueError) as excinfo:
+        guard.parse(
+            llm_output=text,
+        )
+    assert str(excinfo.value) == (
+        "`pii_entities` must be set in order to use the `PIIFilter` validator."
+        "Add this: `pii_entities=['PERSON', 'PHONE_NUMBER']`"
+        "OR pii_entities='pii' or 'spi'"
+        "in init or metadata."
     )
-    assert output.error is not None
 
     # ------------------
     # 4. Initialise Guard from string without setting pii_entities
@@ -360,10 +380,11 @@ def test_pii_filter(mocker):
     )
     text = "My email address is demo@lol.com, and my phone number is 1234567890"
 
-    output = guard.parse(
-        llm_output=text,
-    )
-    assert output.error is not None
+    with pytest.raises(ValueError) as excinfo:
+        guard.parse(
+            llm_output=text,
+        )
+    assert str(excinfo.value) == "`pii_entities` must be one of ['pii', 'spi']"
 
 
 def test_toxic_language(mocker):

@@ -7,6 +7,8 @@ from guardrails.validator_base import FailResult, PassResult
 from guardrails.validators.on_topic import OnTopic
 
 
+# TODO: Skip this is the CI.
+# This test downloads the model which takes a substantial amount of space and time.
 class TestOnTopicIntegrationCPU(TestCase):
     def test_validate_valid_topic_cpu_disable_llm(self):
         validator = OnTopic(
