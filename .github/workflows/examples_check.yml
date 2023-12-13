@@ -6,12 +6,16 @@ on:
   workflow_dispatch:  # This enables manual triggering
 
 jobs:
-  setup:
+  execute_notebooks:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        notebook: [ "*.ipynb" ]
     env:
       COHERE_API_KEY: ${{ secrets.COHERE_API_KEY }}
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       HUGGINGFACE_API_KEY: ${{ secrets.HUGGINGFACE_API_KEY }}
+      NLTK_DATA: /tmp/nltk_data
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2    
@@ -42,33 +46,6 @@ jobs:
       run: |
         mkdir /tmp/nltk_data;
         poetry run python -m nltk.downloader -d /tmp/nltk_data punkt;
-    - name: Upload artifacts
-      uses: actions/upload-artifact@v3
-      with:
-        path: |
-          /tmp/nltk_data
-          ./.venv
-          ./guardrails
-          ~/.cache/pypoetry
-  
-  execute_notebooks:
-    runs-on: ubuntu-latest
-    needs: setup
-    strategy:
-      matrix:
-        notebook: [ "*.ipynb" ]
-    env:
-      COHERE_API_KEY: ${{ secrets.COHERE_API_KEY }}
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-      HUGGINGFACE_API_KEY: ${{ secrets.HUGGINGFACE_API_KEY }}
-      NLTK_DATA: /tmp/nltk_data
-
-
-    steps:
-    - name: Download artifacts
-      uses: actions/download-artifact@v3
-      with:
-        name: setup-artifacts
     - name: Use venv
       run: source .venv/bin/activate
     - name: Execute notebooks and check for errors
