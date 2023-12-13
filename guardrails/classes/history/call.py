@@ -323,13 +323,19 @@ class Call(ArbitraryModel):
 
         # Replace the last Validated Output panel if we applied fixes
         if self.failed_validations.length > 0 and self.status == pass_status:
-            previous_panels = tree.children[-1].label.renderable._renderables[:-1]  # type: ignore
+            previous_panels = tree.children[  # type: ignore
+                -1
+            ].label.renderable._renderables[  # type: ignore
+                :-1
+            ]
             validated_outcome_panel = Panel(
                 pretty_repr(self.validated_output),
                 title="Validated Output",
                 style="on #F0FFF0",
             )
-            tree.children[-1].label.renderable._renderables = previous_panels + ( # type: ignore
+            tree.children[
+                -1
+            ].label.renderable._renderables = previous_panels + (  # type: ignore
                 validated_outcome_panel,
             )
 
