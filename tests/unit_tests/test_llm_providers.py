@@ -650,7 +650,7 @@ def test_get_llm_ask_anthropic():
     not importlib.util.find_spec("transformers"),
     reason="transformers is not installed",
 )
-def test_get_llm_ask_hugging_face_model():
+def test_get_llm_ask_hugging_face_model(mocker):
     from transformers import PreTrainedModel
 
     from guardrails.llm_providers import HuggingFaceModelCallable
@@ -660,9 +660,6 @@ def test_get_llm_ask_hugging_face_model():
 
         def __init__(self, *args, **kwargs):
             self._modules = {}
-
-        def generate(self, *args, **kwargs):
-            pass
 
     mock_model = MockModel()
 
@@ -681,6 +678,8 @@ def test_get_llm_ask_hugging_face_pipeline():
     from guardrails.llm_providers import HuggingFacePipelineCallable
 
     class MockPipeline(Pipeline):
+        task = "text-generation"
+
         def __init__(self, *args, **kwargs):
             pass
 

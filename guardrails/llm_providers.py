@@ -487,6 +487,7 @@ def get_llm_ask(llm_api: Callable, *args, **kwargs) -> PromptCallableBase:
     try:
         from transformers import (  # noqa: F401 # type: ignore
             FlaxPreTrainedModel,
+            GenerationMixin,
             PreTrainedModel,
             TFPreTrainedModel,
         )
@@ -498,14 +499,24 @@ def get_llm_ask(llm_api: Callable, *args, **kwargs) -> PromptCallableBase:
             or isinstance(api_self, TFPreTrainedModel)
             or isinstance(api_self, FlaxPreTrainedModel)
         ):
-            return HuggingFaceModelCallable(*args, model_generate=llm_api, **kwargs)
+            if (
+                hasattr(llm_api, "__func__")
+                and llm_api.__func__ == GenerationMixin.generate
+            ):
+                return HuggingFaceModelCallable(*args, model_generate=llm_api, **kwargs)
+            raise ValueError("Only text generation models are supported at this time.")
     except ImportError:
         pass
     try:
         from transformers import Pipeline  # noqa: F401 # type: ignore
 
         if isinstance(llm_api, Pipeline):
-            return HuggingFacePipelineCallable(*args, pipeline=llm_api, **kwargs)
+            # Couldn't find a constant for this
+            if llm_api.task == "text-generation":
+                return HuggingFacePipelineCallable(*args, pipeline=llm_api, **kwargs)
+            raise ValueError(
+                "Only text generation pipelines are supported at this time."
+            )
     except ImportError:
         pass
 
