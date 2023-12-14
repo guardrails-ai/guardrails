@@ -142,7 +142,6 @@ jobs:
 
   Notebooks:
     runs-on: ubuntu-latest
-    if: ${{ always() && contains(join(needs.*.result, ','), 'success') }}
     needs: [Linting, Typing, Pytests]
     strategy:
       matrix:
