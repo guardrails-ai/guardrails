@@ -440,7 +440,10 @@ def test_provenance_v1(mocker):
         api_base="https://api.openai.com",
     )
     assert output.validated_output == LLM_RESPONSE
-    os.environ["OPENAI_API_KEY"] = openai_api_key_backup
+    if openai_api_key_backup is not None:
+        os.environ["OPENAI_API_KEY"] = openai_api_key_backup
+    else:
+        del os.environ["OPENAI_API_KEY"]
 
 
 @pytest.mark.parametrize(
