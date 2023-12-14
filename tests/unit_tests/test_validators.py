@@ -424,7 +424,7 @@ def test_provenance_v1(mocker):
     assert output.validated_output == LLM_RESPONSE
 
     # 2. Setting the environment variable
-    openai_api_key_backup = os.environ["OPENAI_API_KEY"]
+    openai_api_key_backup = os.environ.get("OPENAI_API_KEY")
     os.environ["OPENAI_API_KEY"] = API_KEY
     output = string_guard.parse(
         llm_output=LLM_RESPONSE,

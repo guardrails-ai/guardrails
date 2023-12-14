@@ -29,7 +29,7 @@ class Call(ArbitraryModel):
     inputs: CallInputs = Field(
         description="The inputs as passed in to Guard.__call__ or Guard.parse"
     )
-    _exception: Exception = PrivateAttr()
+    _exception: Optional[Exception] = PrivateAttr()
 
     # Prevent Pydantic from changing our types
     # Without this, Pydantic casts iterations to a list
@@ -37,15 +37,18 @@ class Call(ArbitraryModel):
         self,
         iterations: Optional[Stack[Iteration]] = None,
         inputs: Optional[CallInputs] = None,
+        exception: Optional[Exception] = None,
     ):
         iterations = iterations or Stack()
         inputs = inputs or CallInputs()
-        super().__init__(  # type: ignore
-            iterations=iterations, inputs=inputs, _exception=None  # type: ignore
+        super().__init__(
+            iterations=iterations,  # type: ignore
+            inputs=inputs,  # type: ignore
+            _exception=exception,  # type: ignore
         )
         self.iterations = iterations
         self.inputs = inputs
-        self._exception = None  # type: ignore
+        self._exception = exception
 
     @property
     def prompt(self) -> Optional[str]:
@@ -295,10 +298,6 @@ class Call(ArbitraryModel):
         elif self.iterations.empty():
             return None
         return self.iterations.last.exception  # type: ignore
-
-    @exception.setter
-    def exception(self, value: Exception) -> None:
-        self._exception = value
 
     @property
     def failed_validations(self) -> Stack[ValidatorLogs]:

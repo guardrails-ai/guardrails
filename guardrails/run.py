@@ -195,10 +195,12 @@ class Runner:
                         include_instructions=include_instructions,
                     )
         except UserFacingException as e:
-            call_log.exception = e.original_exception
+            # Because Pydantic v1 doesn't respect property setters
+            call_log._exception = e.original_exception
             raise e.original_exception
         except Exception as e:
-            call_log.exception = e
+            # Because Pydantic v1 doesn't respect property setters
+            call_log._exception = e
             raise e
         return call_log
 
@@ -771,10 +773,12 @@ class AsyncRunner(Runner):
                         prompt_params=prompt_params,
                     )
         except UserFacingException as e:
-            call_log.exception = e.original_exception
+            # Because Pydantic v1 doesn't respect property setters
+            call_log._exception = e.original_exception
             raise e.original_exception
         except Exception as e:
-            call_log.exception = e
+            # Because Pydantic v1 doesn't respect property setters
+            call_log._exception = e
             raise e
 
         return call_log
