@@ -196,13 +196,9 @@ class Runner:
                     )
         except UserFacingException as e:
             call_log.exception = e.original_exception
-            # import traceback
-            # traceback.print_exception(e)
             raise e.original_exception
         except Exception as e:
             call_log.exception = e
-            # import traceback
-            # traceback.print_exception(e)
             raise e
         return call_log
 
@@ -314,8 +310,6 @@ class Runner:
             error_message = str(e)
             iteration.outputs.error = error_message
             iteration.outputs.exception = e
-            # import traceback
-            # traceback.print_exception(e)
             raise e
         return iteration
 
@@ -778,13 +772,9 @@ class AsyncRunner(Runner):
                     )
         except UserFacingException as e:
             call_log.exception = e.original_exception
-            # import traceback
-            # traceback.print_exception(e)
             raise e.original_exception
         except Exception as e:
             call_log.exception = e
-            # import traceback
-            # traceback.print_exception(e)
             raise e
 
         return call_log
@@ -896,8 +886,6 @@ class AsyncRunner(Runner):
             error_message = str(e)
             iteration.outputs.error = error_message
             iteration.outputs.exception = e
-            # import traceback
-            # traceback.print_exception(e)
             raise e
         return iteration
 
