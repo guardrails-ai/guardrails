@@ -1,5 +1,6 @@
 import importlib.util
-from typing import Any, Callable, Iterable
+import os
+from typing import Any, Callable, Dict, Iterable
 from unittest.mock import MagicMock
 
 import pytest
@@ -14,6 +15,7 @@ from guardrails.llm_providers import (
     get_llm_ask,
 )
 from guardrails.utils.openai_utils import OPENAI_VERSION
+from guardrails.utils.safe_get import safe_get_with_brackets
 
 from .mocks import MockAsyncOpenAILlm, MockOpenAILlm
 
@@ -468,6 +470,69 @@ async def test_async_manifest_callable():
     assert response.response_token_count is None
 
 
+@pytest.mark.skipif(
+    not importlib.util.find_spec("transformers")
+    and not importlib.util.find_spec("torch"),
+    reason="transformers or torch is not installed",
+)
+@pytest.mark.parametrize(
+    "model_inputs,tokenizer_call_count", [(None, 1), ({"input_ids": ["Hello"]}, 0)]
+)
+def test_hugging_face_model_callable(mocker, model_inputs, tokenizer_call_count):
+    class MockTokenizer:
+        def __call__(self, prompt: str, *args: Any, **kwds: Any) -> Dict[str, Any]:
+            self.prompt = prompt
+            return self
+
+        def to(self, *args, **kwargs):
+            return {"input_ids": [self.prompt]}
+
+        def decode(self, output: str, *args, **kwargs) -> str:
+            return output
+
+    tokenizer = MockTokenizer()
+
+    tokenizer_call_spy = mocker.spy(tokenizer, "to")
+    tokenizer_decode_spy = mocker.spy(tokenizer, "decode")
+
+    model_generate = MagicMock()
+    model_generate.return_value = ["Hello there!"]
+
+    from guardrails.llm_providers import HuggingFaceModelCallable
+
+    hf_model_callable = HuggingFaceModelCallable()
+    response = hf_model_callable(
+        "Hello", model_generate=model_generate, tokenizer=tokenizer
+    )
+
+    assert tokenizer_call_spy.call_count == 1
+    assert tokenizer_decode_spy.call_count == 1
+    assert isinstance(response, LLMResponse) is True
+    assert response.output == "Hello there!"
+    assert response.prompt_token_count is None
+    assert response.response_token_count is None
+
+
+@pytest.mark.skipif(
+    not importlib.util.find_spec("transformers")
+    and not importlib.util.find_spec("torch"),
+    reason="transformers or torch is not installed",
+)
+def test_hugging_face_pipeline_callable():
+    pipeline = MagicMock()
+    pipeline.return_value = [{"generated_text": "Hello there!"}]
+
+    from guardrails.llm_providers import HuggingFacePipelineCallable
+
+    hf_model_callable = HuggingFacePipelineCallable()
+    response = hf_model_callable("Hello", pipeline=pipeline)
+
+    assert isinstance(response, LLMResponse) is True
+    assert response.output == "Hello there!"
+    assert response.prompt_token_count is None
+    assert response.response_token_count is None
+
+
 class ReturnTempCallable(Callable):
     def __call__(*args, **kwargs) -> Any:
         return ""
@@ -484,6 +549,157 @@ def test_get_llm_ask_temperature(llm_api, args, kwargs, expected_temperature):
     result = get_llm_ask(llm_api, *args, **kwargs)
     assert "temperature" in result.init_kwargs
     assert result.init_kwargs["temperature"] == expected_temperature
+
+
+@pytest.mark.skipif(
+    not importlib.util.find_spec("openai"),
+    reason="openai is not installed",
+)
+def test_get_llm_ask_openai_completion():
+    import openai
+
+    from guardrails.llm_providers import OpenAICallable
+
+    completion_create = None
+    if OPENAI_VERSION.startswith("0"):
+        completion_create = openai.Completion.create
+    else:
+        completion_create = openai.completions.create
+
+    prompt_callable = get_llm_ask(completion_create)
+
+    assert isinstance(prompt_callable, OpenAICallable)
+
+
+@pytest.mark.skipif(
+    not importlib.util.find_spec("openai"),
+    reason="openai is not installed",
+)
+def test_get_llm_ask_openai_chat():
+    import openai
+
+    from guardrails.llm_providers import OpenAIChatCallable
+
+    chat_completion_create = None
+    if OPENAI_VERSION.startswith("0"):
+        chat_completion_create = openai.ChatCompletion.create
+    else:
+        chat_completion_create = openai.chat.completions.create
+
+    prompt_callable = get_llm_ask(chat_completion_create)
+
+    assert isinstance(prompt_callable, OpenAIChatCallable)
+
+
+@pytest.mark.skipif(
+    not importlib.util.find_spec("manifest"),
+    reason="manifest is not installed",
+)
+def test_get_llm_ask_manifest(mocker):
+    def mock_os_environ_get(key, *args):
+        if key == "OPENAI_API_KEY":
+            return "sk-xxxxxxxxxxxxxx"
+        return safe_get_with_brackets(os.environ, key, *args)
+
+    mocker.patch("os.environ.get", side_effect=mock_os_environ_get)
+
+    from manifest import Manifest
+
+    from guardrails.llm_providers import ManifestCallable
+
+    manifest_client = Manifest("openai")
+
+    prompt_callable = get_llm_ask(manifest_client)
+
+    assert isinstance(prompt_callable, ManifestCallable)
+
+
+@pytest.mark.skipif(
+    not importlib.util.find_spec("cohere"),
+    reason="cohere is not installed",
+)
+def test_get_llm_ask_cohere():
+    from cohere import Client
+
+    from guardrails.llm_providers import CohereCallable
+
+    cohere_client = Client(api_key="mock_api_key")
+
+    prompt_callable = get_llm_ask(cohere_client.generate)
+
+    assert isinstance(prompt_callable, CohereCallable)
+
+
+@pytest.mark.skipif(
+    not importlib.util.find_spec("anthropic.resources"),
+    reason="antrhopic is not installed",
+)
+def test_get_llm_ask_anthropic():
+    from anthropic import Anthropic
+
+    from guardrails.llm_providers import AnthropicCallable
+
+    anthropic_client = Anthropic(api_key="my_api_key")
+
+    prompt_callable = get_llm_ask(anthropic_client.completions.create)
+
+    assert isinstance(prompt_callable, AnthropicCallable)
+
+
+@pytest.mark.skipif(
+    not importlib.util.find_spec("transformers"),
+    reason="transformers is not installed",
+)
+def test_get_llm_ask_hugging_face_model(mocker):
+    from transformers import PreTrainedModel
+
+    from guardrails.llm_providers import HuggingFaceModelCallable
+
+    class MockModel(PreTrainedModel):
+        _modules: Any
+
+        def __init__(self, *args, **kwargs):
+            self._modules = {}
+
+    mock_model = MockModel()
+
+    prompt_callable = get_llm_ask(mock_model.generate)
+
+    assert isinstance(prompt_callable, HuggingFaceModelCallable)
+
+
+@pytest.mark.skipif(
+    not importlib.util.find_spec("transformers"),
+    reason="transformers is not installed",
+)
+def test_get_llm_ask_hugging_face_pipeline():
+    from transformers import Pipeline
+
+    from guardrails.llm_providers import HuggingFacePipelineCallable
+
+    class MockPipeline(Pipeline):
+        task = "text-generation"
+
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def _forward():
+            pass
+
+        def _sanitize_parameters():
+            pass
+
+        def postprocess():
+            pass
+
+        def preprocess():
+            pass
+
+    mock_pipeline = MockPipeline()
+
+    prompt_callable = get_llm_ask(mock_pipeline)
+
+    assert isinstance(prompt_callable, HuggingFacePipelineCallable)
 
 
 def test_chat_prompt():
