@@ -915,15 +915,20 @@ This also is not two words
 
 
 @pytest.mark.parametrize(
-    "on_fail, structured_prompt_error, structured_instructions_error, structured_message_history_error, unstructured_prompt_error, unstructured_instructions_error",
+    "on_fail,"
+    "structured_prompt_error,"
+    "structured_instructions_error,"
+    "structured_message_history_error,"
+    "unstructured_prompt_error,"
+    "unstructured_instructions_error",
     [
         (
             "reask",
-            "Prompt validation failed: incorrect_value='What kind of pet should I get?\\n\\nJson Output:\\n\\n' fail_results=[FailResult(outcome='fail', metadata=None, error_message='must be exactly two words', fix_value='What kind')] path=None",
-            "Instructions validation failed: incorrect_value='What kind of pet should I get?' fail_results=[FailResult(outcome='fail', metadata=None, error_message='must be exactly two words', fix_value='What kind')] path=None",
-            "Message history validation failed: incorrect_value='What kind of pet should I get?' fail_results=[FailResult(outcome='fail', metadata=None, error_message='must be exactly two words', fix_value='What kind')] path=None",
-            "Prompt validation failed: incorrect_value='\\nThis is not two words\\n\\n\\nString Output:\\n\\n' fail_results=[FailResult(outcome='fail', metadata=None, error_message='must be exactly two words', fix_value='This is')] path=None",
-            "Instructions validation failed: incorrect_value='\\nThis also is not two words\\n' fail_results=[FailResult(outcome='fail', metadata=None, error_message='must be exactly two words', fix_value='This also')] path=None",
+            "Prompt validation failed: incorrect_value='What kind of pet should I get?\\n\\nJson Output:\\n\\n' fail_results=[FailResult(outcome='fail', metadata=None, error_message='must be exactly two words', fix_value='What kind')] path=None",  # noqa
+            "Instructions validation failed: incorrect_value='What kind of pet should I get?' fail_results=[FailResult(outcome='fail', metadata=None, error_message='must be exactly two words', fix_value='What kind')] path=None",  # noqa
+            "Message history validation failed: incorrect_value='What kind of pet should I get?' fail_results=[FailResult(outcome='fail', metadata=None, error_message='must be exactly two words', fix_value='What kind')] path=None",  # noqa
+            "Prompt validation failed: incorrect_value='\\nThis is not two words\\n\\n\\nString Output:\\n\\n' fail_results=[FailResult(outcome='fail', metadata=None, error_message='must be exactly two words', fix_value='This is')] path=None",  # noqa
+            "Instructions validation failed: incorrect_value='\\nThis also is not two words\\n' fail_results=[FailResult(outcome='fail', metadata=None, error_message='must be exactly two words', fix_value='This also')] path=None",  # noqa
         ),
         (
             "filter",
@@ -1055,15 +1060,20 @@ This also is not two words
 
 
 @pytest.mark.parametrize(
-    "on_fail, structured_prompt_error, structured_instructions_error, structured_message_history_error, unstructured_prompt_error, unstructured_instructions_error",
+    "on_fail,"
+    "structured_prompt_error,"
+    "structured_instructions_error,"
+    "structured_message_history_error,"
+    "unstructured_prompt_error,"
+    "unstructured_instructions_error",
     [
         (
             "reask",
-            "Prompt validation failed: incorrect_value='What kind of pet should I get?\\n\\nJson Output:\\n\\n' fail_results=[FailResult(outcome='fail', metadata=None, error_message='must be exactly two words', fix_value='What kind')] path=None",
-            "Instructions validation failed: incorrect_value='What kind of pet should I get?' fail_results=[FailResult(outcome='fail', metadata=None, error_message='must be exactly two words', fix_value='What kind')] path=None",
-            "Message history validation failed: incorrect_value='What kind of pet should I get?' fail_results=[FailResult(outcome='fail', metadata=None, error_message='must be exactly two words', fix_value='What kind')] path=None",
-            "Prompt validation failed: incorrect_value='\\nThis is not two words\\n\\n\\nString Output:\\n\\n' fail_results=[FailResult(outcome='fail', metadata=None, error_message='must be exactly two words', fix_value='This is')] path=None",
-            "Instructions validation failed: incorrect_value='\\nThis also is not two words\\n' fail_results=[FailResult(outcome='fail', metadata=None, error_message='must be exactly two words', fix_value='This also')] path=None",
+            "Prompt validation failed: incorrect_value='What kind of pet should I get?\\n\\nJson Output:\\n\\n' fail_results=[FailResult(outcome='fail', metadata=None, error_message='must be exactly two words', fix_value='What kind')] path=None",  # noqa
+            "Instructions validation failed: incorrect_value='What kind of pet should I get?' fail_results=[FailResult(outcome='fail', metadata=None, error_message='must be exactly two words', fix_value='What kind')] path=None",  # noqa
+            "Message history validation failed: incorrect_value='What kind of pet should I get?' fail_results=[FailResult(outcome='fail', metadata=None, error_message='must be exactly two words', fix_value='What kind')] path=None",  # noqa
+            "Prompt validation failed: incorrect_value='\\nThis is not two words\\n\\n\\nString Output:\\n\\n' fail_results=[FailResult(outcome='fail', metadata=None, error_message='must be exactly two words', fix_value='This is')] path=None",  # noqa
+            "Instructions validation failed: incorrect_value='\\nThis also is not two words\\n' fail_results=[FailResult(outcome='fail', metadata=None, error_message='must be exactly two words', fix_value='This also')] path=None",  # noqa
         ),
         (
             "filter",

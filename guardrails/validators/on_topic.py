@@ -242,8 +242,6 @@ class OnTopic(Validator):
         candidate_topics = valid_topics.union(invalid_topics)
 
         # Check which model(s) to use
-        print("self._disable_classifier: ", self._disable_classifier)
-        print("self._disable_llm: ", self._disable_llm)
         if self._disable_classifier and self._disable_llm:  # Error, no model set
             raise ValueError("Either classifier or llm must be enabled.")
         elif (

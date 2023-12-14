@@ -41,11 +41,11 @@ class Call(ArbitraryModel):
         iterations = iterations or Stack()
         inputs = inputs or CallInputs()
         super().__init__(  # type: ignore
-            iterations=iterations, inputs=inputs, _exception=None
+            iterations=iterations, inputs=inputs, _exception=None  # type: ignore
         )
         self.iterations = iterations
         self.inputs = inputs
-        self._exception = None
+        self._exception = None  # type: ignore
 
     @property
     def prompt(self) -> Optional[str]:
