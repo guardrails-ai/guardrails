@@ -4,7 +4,6 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import openai
 from tenacity import retry, stop_after_attempt, wait_random_exponential
-from transformers import pipeline
 
 from guardrails.utils.casting_utils import to_int
 from guardrails.utils.openai_utils import OpenAIClient
@@ -15,6 +14,11 @@ from guardrails.validator_base import (
     Validator,
     register_validator,
 )
+
+try:
+    from transformers import pipeline
+except ImportError:
+    pipeline = None
 
 
 @register_validator(name="on_topic", data_type="string")
@@ -93,6 +97,13 @@ class OnTopic(Validator):
             model_threshold=model_threshold,
         )
         self._valid_topics = valid_topics
+
+        if pipeline is None:
+            raise ValueError(
+                "You must install transformers in order to "
+                "use the OnTopic validator."
+                "Install it using `pip install transformers`."
+            )
 
         if invalid_topics is None:
             self._invalid_topics = []
@@ -209,7 +220,7 @@ class OnTopic(Validator):
     def get_topic_zero_shot(
         self, text: str, candidate_topics: List[str]
     ) -> Tuple[str, float]:
-        classifier = pipeline(
+        classifier = pipeline(  # type: ignore
             "zero-shot-classification",
             model=self._model,
             device=self._device,
