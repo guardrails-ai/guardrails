@@ -46,6 +46,8 @@ presidio_anonymizer = {version = "^2.2.33", optional = true}
 spacy = {version = "^3.7.2", optional = true}
 anthropic = {version = "^0.7.2", optional = true}
 torch = {version = "^2.1.1", optional = true}
+nbdoc = {version = "^0.0.82", optional = true}
+sphinx_markdown_builder = {version = "^0.6.5", optional = true}
 
 
 [tool.poetry.extras]

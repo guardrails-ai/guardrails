@@ -64,6 +64,7 @@ full:
 
 docs-gen:
 	cp -r docs docs-build
+	rm -rf docs-build/api_reference_markdown
 	mkdir docs-build/api_reference_markdown
 	poetry run nbdoc_build --force_all True --srcdir ./docs-build
 	poetry run sphinx-build -M markdown docs/pydocs/ docs-build/api_reference_markdown 
