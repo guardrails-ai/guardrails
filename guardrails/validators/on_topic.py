@@ -2,7 +2,6 @@ import contextvars
 import json
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
-import openai
 from tenacity import retry, stop_after_attempt, wait_random_exponential
 
 from guardrails.utils.casting_utils import to_int
@@ -137,7 +136,7 @@ class OnTopic(Validator):
         topic = json.loads(response)["topic"]
         return self.verify_topic(topic)
 
-    def set_client(self):
+    def get_client_args(self) -> Tuple[Optional[str], Optional[str]]:
         kwargs = {}
         context_copy = contextvars.copy_context()
         for key, context_var in context_copy.items():
@@ -148,13 +147,7 @@ class OnTopic(Validator):
         api_key = kwargs.get("api_key")
         api_base = kwargs.get("api_base")
 
-        # Set the OpenAI API key
-        if api_key:  # Check if set when calling guard() or parse()
-            openai.api_key = api_key
-
-        # Set the OpenAI API base if specified
-        if api_base:
-            openai.api_version = api_base
+        return (api_key, api_base)
 
     # todo: extract some of these similar methods into a base class w provenance
     @retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(5))
@@ -196,7 +189,8 @@ class OnTopic(Validator):
                 )
 
             def openai_callable(text: str, topics: List[str]) -> str:
-                response = OpenAIClient().create_chat_completion(
+                api_key, api_base = self.get_client_args()
+                response = OpenAIClient(api_key, api_base).create_chat_completion(
                     model=llm_callable,
                     messages=[
                         {
@@ -260,10 +254,8 @@ class OnTopic(Validator):
         elif (
             not self._disable_classifier and not self._disable_llm
         ):  # Use ensemble (Zero-Shot + Ensemble)
-            self.set_client()
             return self.get_topic_ensemble(value, list(candidate_topics))
         elif self._disable_classifier and not self._disable_llm:  # Use only LLM
-            self.set_client()
             return self.get_topic_llm(value, list(candidate_topics))
 
         # Use only Zero-Shot

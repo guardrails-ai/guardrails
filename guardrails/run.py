@@ -102,9 +102,7 @@ class Runner:
         self.base_model = base_model
         self.full_schema_reask = full_schema_reask
 
-    def __call__(
-        self, call_log: Call, prompt_params: Optional[Dict] = None
-    ) -> Tuple[Call, Optional[str]]:
+    def __call__(self, call_log: Call, prompt_params: Optional[Dict] = None) -> Call:
         """Execute the runner by repeatedly calling step until the reask budget
         is exhausted.
 
@@ -115,7 +113,6 @@ class Runner:
         Returns:
             The Call log for this run.
         """
-        error_message = None
         try:
             if prompt_params is None:
                 prompt_params = {}
@@ -198,10 +195,14 @@ class Runner:
                         include_instructions=include_instructions,
                     )
         except UserFacingException as e:
+            # Because Pydantic v1 doesn't respect property setters
+            call_log._exception = e.original_exception
             raise e.original_exception
         except Exception as e:
-            error_message = str(e)
-        return call_log, error_message
+            # Because Pydantic v1 doesn't respect property setters
+            call_log._exception = e
+            raise e
+        return call_log
 
     def step(
         self,
@@ -684,7 +685,7 @@ class AsyncRunner(Runner):
 
     async def async_run(
         self, call_log: Call, prompt_params: Optional[Dict] = None
-    ) -> Tuple[Call, Optional[str]]:
+    ) -> Call:
         """Execute the runner by repeatedly calling step until the reask budget
         is exhausted.
 
@@ -695,7 +696,6 @@ class AsyncRunner(Runner):
         Returns:
             The Call log for this run.
         """
-        error_message = None
         try:
             if prompt_params is None:
                 prompt_params = {}
@@ -773,11 +773,15 @@ class AsyncRunner(Runner):
                         prompt_params=prompt_params,
                     )
         except UserFacingException as e:
+            # Because Pydantic v1 doesn't respect property setters
+            call_log._exception = e.original_exception
             raise e.original_exception
         except Exception as e:
-            error_message = str(e)
+            # Because Pydantic v1 doesn't respect property setters
+            call_log._exception = e
+            raise e
 
-        return call_log, error_message
+        return call_log
 
     async def async_step(
         self,
@@ -857,6 +861,9 @@ class AsyncRunner(Runner):
                 # Parse: parse the output.
                 parsed_output, parsing_error = self.parse(index, output, output_schema)
                 if parsing_error:
+                    # Parsing errors are captured and not raised
+                    #   because they are recoverable
+                    #   i.e. result in a reask
                     iteration.outputs.exception = parsing_error
                     iteration.outputs.error = str(parsing_error)
 

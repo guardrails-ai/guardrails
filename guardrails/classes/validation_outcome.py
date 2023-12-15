@@ -2,7 +2,7 @@ from typing import Generic, Iterator, Optional, Tuple, Union, cast
 
 from pydantic import Field
 
-from guardrails.classes.history import Call
+from guardrails.classes.history import Call, Iteration
 from guardrails.classes.output_type import OT
 from guardrails.constants import pass_status
 from guardrails.utils.logs_utils import ArbitraryModel
@@ -32,15 +32,12 @@ class ValidationOutcome(Generic[OT], ArbitraryModel):
     error: Optional[str] = Field(default=None)
 
     @classmethod
-    def from_guard_history(cls, call: Call, error_message: Optional[str]):
-        last_output = (
-            call.iterations.last.validation_output
-            if not call.iterations.empty() and call.iterations.last is not None
-            else None
-        )
+    def from_guard_history(cls, call: Call):
+        last_iteration = call.iterations.last or Iteration()
+        last_output = last_iteration.validation_output or last_iteration.parsed_output
         validation_passed = call.status == pass_status
         reask = last_output if isinstance(last_output, ReAsk) else None
-        error = call.error or error_message
+        error = call.error
         output = cast(OT, call.validated_output)
         return cls(
             raw_llm_output=call.raw_outputs.last,
