@@ -53,7 +53,7 @@ pydash = "^7.0.6"
 [tool.poetry.extras]
 sql = ["sqlvalidator", "sqlalchemy", "sqlglot"]
 summary = ["thefuzz", "nltk"]
-vectordb = ["faiss-cpu", "tiktoken", "numpy"]
+vectordb = ["faiss-cpu", "numpy"]
 profanity = ["alt-profanity-check"]
 detect-secrets = ["detect-secrets"]
 manifest = ["manifest-ml"]
