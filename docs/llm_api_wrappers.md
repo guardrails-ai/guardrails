@@ -86,7 +86,7 @@ guard = gd.Guard.from_rail(...)
 anthropic_client = Anthropic(api_key="my_api_key")
 
 # Wrap Anthropic API call
-raw_llm_output, guardrail_output = guard(
+raw_llm_output, guardrail_output, *rest = guard(
     anthropic_client.completions.create,
     prompt_params={
         "prompt_param_1": "value_1", 
@@ -97,6 +97,108 @@ raw_llm_output, guardrail_output = guard(
     max_tokens_to_sample=100,
     ...
 )
+```
+
+
+## Hugging Face
+
+### Text Generation Models
+```py
+from guardrails import Guard
+from guardrails.validators import ValidLength, ToxicLanguage
+import torch
+from transformers import AutoModelForCausalLM, AutoTokenizer
+
+
+# Create your prompt or starting text
+prompt = "Hello, I'm a language model,"
+
+# Setup torch
+torch_device = "cuda" if torch.cuda.is_available() else "cpu"
+
+# Instantiate your tokenizer
+tokenizer = AutoTokenizer.from_pretrained("gpt2")
+
+# Instantiate your model
+model = AutoModelForCausalLM.from_pretrained("gpt2", pad_token_id=tokenizer.eos_token_id).to(torch_device)
+
+# Customize your model inputs if desired.
+# If you don't pass and inputs (`input_ids`, `input_values`, `input_features`, or `pixel_values`)
+# We'll try to do something similar to below using the tokenizer and the prompt.
+# We strongly suggest passing in your own inputs.
+model_inputs = tokenizer(prompt, return_tensors="pt").to(torch_device)
+
+
+# Create the Guard
+guard = Guard.from_string(
+    validators=[
+        ValidLength(
+            min=48,
+            on_fail="fix"
+        ),
+        ToxicLanguage(
+            on_fail="fix"
+        )
+    ],
+    prompt=prompt
+)
+
+# Run the Guard
+response = guard(
+    llm_api=model.generate,
+    max_new_tokens=40,
+    tokenizer=tokenizer,
+    **model_inputs,
+)
+
+# Check the output
+if response.validation_passed:
+    print("validated_output: ", response.validated_output)
+else:
+    print("error: ", response.error)
+
+```
+
+### Pipelines
+```py
+from guardrails import Guard
+from guardrails.validators import ValidLength, ToxicLanguage
+import torch
+from transformers import pipeline
+
+
+# Create your prompt or starting text
+prompt = "What are we having for dinner?"
+
+# Setup pipeline
+generator = pipeline("text-generation", model="facebook/opt-350m")
+
+
+# Create the Guard
+guard = Guard.from_string(
+    validators=[
+        ValidLength(
+            min=48,
+            on_fail="fix"
+        ),
+        ToxicLanguage(
+            on_fail="fix"
+        )
+    ],
+    prompt=prompt
+)
+
+# Run the Guard
+response = guard(
+    llm_api=generator,
+    max_new_tokens=40
+)
+
+if response.validation_passed:
+    print("validated_output: ", response.validated_output)
+else:
+    print("error: ", response.error)
+
 ```
 
 

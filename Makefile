@@ -71,3 +71,4 @@ precommit:
 	# pytest -x -q --no-summary
 	pyright guardrails/
 	make lint
+	./github/workflows/scripts/update_notebook_matrix.sh
