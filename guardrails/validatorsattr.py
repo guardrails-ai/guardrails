@@ -309,6 +309,7 @@ class ValidatorsAttr(pydantic.BaseModel):
 
             # Create the validator.
             if isinstance(args, list):
+                # TODO: Handle different args type properly
                 if validator == ValidChoices:
                     if isinstance(args[0], list):
                         v = validator(args[0], on_fail=on_fail)
