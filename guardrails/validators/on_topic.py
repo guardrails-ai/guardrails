@@ -2,9 +2,7 @@ import contextvars
 import json
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
-import openai
 from tenacity import retry, stop_after_attempt, wait_random_exponential
-from transformers import pipeline
 
 from guardrails.utils.casting_utils import to_int
 from guardrails.utils.openai_utils import OpenAIClient
@@ -15,6 +13,11 @@ from guardrails.validator_base import (
     Validator,
     register_validator,
 )
+
+try:
+    from transformers import pipeline
+except ImportError:
+    pipeline = None
 
 
 @register_validator(name="on_topic", data_type="string")
@@ -94,6 +97,13 @@ class OnTopic(Validator):
         )
         self._valid_topics = valid_topics
 
+        if pipeline is None:
+            raise ValueError(
+                "You must install transformers in order to "
+                "use the OnTopic validator."
+                "Install it using `pip install transformers`."
+            )
+
         if invalid_topics is None:
             self._invalid_topics = []
         else:
@@ -126,7 +136,7 @@ class OnTopic(Validator):
         topic = json.loads(response)["topic"]
         return self.verify_topic(topic)
 
-    def set_client(self):
+    def get_client_args(self) -> Tuple[Optional[str], Optional[str]]:
         kwargs = {}
         context_copy = contextvars.copy_context()
         for key, context_var in context_copy.items():
@@ -137,13 +147,7 @@ class OnTopic(Validator):
         api_key = kwargs.get("api_key")
         api_base = kwargs.get("api_base")
 
-        # Set the OpenAI API key
-        if api_key:  # Check if set when calling guard() or parse()
-            openai.api_key = api_key
-
-        # Set the OpenAI API base if specified
-        if api_base:
-            openai.api_version = api_base
+        return (api_key, api_base)
 
     # todo: extract some of these similar methods into a base class w provenance
     @retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(5))
@@ -185,7 +189,8 @@ class OnTopic(Validator):
                 )
 
             def openai_callable(text: str, topics: List[str]) -> str:
-                response = OpenAIClient().create_chat_completion(
+                api_key, api_base = self.get_client_args()
+                response = OpenAIClient(api_key, api_base).create_chat_completion(
                     model=llm_callable,
                     messages=[
                         {
@@ -209,7 +214,7 @@ class OnTopic(Validator):
     def get_topic_zero_shot(
         self, text: str, candidate_topics: List[str]
     ) -> Tuple[str, float]:
-        classifier = pipeline(
+        classifier = pipeline(  # type: ignore
             "zero-shot-classification",
             model=self._model,
             device=self._device,
@@ -249,10 +254,8 @@ class OnTopic(Validator):
         elif (
             not self._disable_classifier and not self._disable_llm
         ):  # Use ensemble (Zero-Shot + Ensemble)
-            self.set_client()
             return self.get_topic_ensemble(value, list(candidate_topics))
         elif self._disable_classifier and not self._disable_llm:  # Use only LLM
-            self.set_client()
             return self.get_topic_llm(value, list(candidate_topics))
 
         # Use only Zero-Shot

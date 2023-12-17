@@ -48,7 +48,9 @@ def verify_metadata_requirements(
             metadata, vars(datatype.children).values()
         )
         missing_keys.update(nested_missing_keys)
-    return list(missing_keys)
+    missing_keys = list(missing_keys)
+    missing_keys.sort()
+    return missing_keys
 
 
 class DataType:

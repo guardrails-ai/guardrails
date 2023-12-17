@@ -781,9 +781,10 @@ def test_enum_datatype(mocker):
     assert dict_o == {"status": "not started"}
 
     guard = gd.Guard.from_pydantic(Task)
-    response = guard(
-        get_static_openai_create_func(),
-        prompt="What is the status of this task REALLY?",
-    )
+    with pytest.raises(ValueError) as excinfo:
+        guard(
+            get_static_openai_create_func(),
+            prompt="What is the status of this task REALLY?",
+        )
 
-    assert response.error is not None
+    assert str(excinfo.value).startswith("Invalid enum value") is True
