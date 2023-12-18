@@ -14,9 +14,8 @@ copyright: |
 nav:
   - 'Introduction': index.md
   - 'Installation': guardrails_ai/installation.md
-  - 'Getting Started': guardrails_ai/getting_started.ipynb
-  - 'Migration Guides'
-    - 'Migrating to 0.2.x': 0-2-migration.md
+  - 'Migrating to 0.2.x': 0-2-migration.md
+  - 'Migrating to 0.3.x': 0-3-migration.md
   - 'FAQ': faq.md
   - 'Defining Guardrails':
     - 'Pydantic': defining_guards/pydantic.ipynb
@@ -34,6 +33,7 @@ nav:
     - 'Guard': api_reference/guard.md
     - 'Rail': api_reference/rail.md
     - 'Validators': api_reference/validators.md
+    - 'Validation Outcome': api_reference/validation_outcome.md
     - 'Response Structures': api_reference/response_structures.md
     - 'Schema': api_reference/schema.md
     - 'Document Store': api_reference/document_store.md
@@ -62,6 +62,7 @@ nav:
     - 'Check whether a value is similar to a set of other values': examples/value_within_distribution.ipynb
     - 'Using GuardrailsOutputParser in LlamaIndex': examples/llamaindex-output-parsing.ipynb
     - 'Check if a competitor is named': examples/competitors_check.ipynb
+    - 'Assure that responses are on topic': examples/response_is_on_topic.ipynb
   - 'Integrations':
     - 'Azure OpenAI': integrations/azure_openai.ipynb
     - 'OpenAI Functions': integrations/openai_functions.ipynb

@@ -48,7 +48,9 @@ def verify_metadata_requirements(
             metadata, vars(datatype.children).values()
         )
         missing_keys.update(nested_missing_keys)
-    return list(missing_keys)
+    missing_keys = list(missing_keys)
+    missing_keys.sort()
+    return missing_keys
 
 
 class DataType:
@@ -502,12 +504,17 @@ class Object(NonScalarType):
             # child_key is an expected key that the schema defined
             # child_data_type is the data type of the expected key
             child_value = value.get(child_key, None)
-            child_validation = child_data_type.collect_validation(
-                child_key,
-                child_value,
-                value,
-            )
-            validation.children.append(child_validation)
+
+            # Skip validation for instances where child_value is None
+            # by adding a check for child_value
+            # This will happen during streaming (sub-schema validation)
+            if child_value:
+                child_validation = child_data_type.collect_validation(
+                    child_key,
+                    child_value,
+                    value,
+                )
+                validation.children.append(child_validation)
 
         return validation
 

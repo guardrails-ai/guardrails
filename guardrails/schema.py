@@ -110,7 +110,9 @@ class Schema:
         else:
             self._reask_instructions_template = None
 
-    def validate(self, iteration: Iteration, data: Any, metadata: Dict) -> Any:
+    def validate(
+        self, iteration: Iteration, data: Any, metadata: Dict, **kwargs
+    ) -> Any:
         """Validate a dictionary of data against the schema.
 
         Args:
@@ -143,7 +145,7 @@ class Schema:
         """
         raise NotImplementedError
 
-    def parse(self, output: str) -> Tuple[Any, Optional[Exception]]:
+    def parse(self, output: str, **kwargs) -> Tuple[Any, Optional[Exception]]:
         """Parse the output from the large language model.
 
         Args:
@@ -362,8 +364,24 @@ class JsonSchema(Schema):
         )
 
     def parse(
-        self, output: str
-    ) -> Tuple[Union[Optional[Dict], NonParseableReAsk], Optional[Exception]]:
+        self, output: str, **kwargs
+    ) -> Tuple[
+        Union[Optional[Dict], NonParseableReAsk, str],
+        Union[Optional[Exception], str, bool, None],
+    ]:
+        if kwargs.get("stream", False):
+            # Do expected behavior for StreamRunner
+            # 1. Check if the fragment is valid JSON
+            verified = kwargs.get("verified", set())
+            is_valid_fragment = self.is_valid_fragment(output, verified)
+            if not is_valid_fragment:
+                return output, True
+
+            # 2. Parse the fragment
+            parsed_fragment, parsing_error = self.parse_fragment(output)
+            return parsed_fragment, parsing_error
+
+        # Else do expected behavior for Runner
         # Try to get json code block from output.
         # Return error and reask if it is not parseable.
         parsed_output, error = extract_json_from_ouput(output)
@@ -381,11 +399,71 @@ class JsonSchema(Schema):
             return reask, error
         return parsed_output, None
 
+    def is_valid_fragment(self, fragment: str, verified: set) -> bool:
+        """Check if the fragment is a somewhat valid JSON."""
+
+        # Strip fragment of whitespaces and newlines
+        # to avoid duplicate checks
+        text = fragment.strip(" \n")
+
+        # Check if text is already verified
+        if text in verified:
+            return False
+
+        # Check if text is valid JSON
+        try:
+            json.loads(text)
+            verified.add(text)
+            return True
+        except ValueError as e:
+            error_msg = str(e)
+            # Check if error is due to missing comma
+            if "Expecting ',' delimiter" in error_msg:
+                verified.add(text)
+                return True
+            return False
+
+    def parse_fragment(self, fragment: str):
+        """Parse the fragment into a dict."""
+
+        # Complete the JSON fragment to handle missing brackets
+        # Stack to keep track of opening brackets
+        stack = []
+
+        # Process each character in the string
+        for char in fragment:
+            if char in "{[":
+                # Push opening brackets onto the stack
+                stack.append(char)
+            elif char in "}]":
+                # Pop from stack if matching opening bracket is found
+                if stack and (
+                    (char == "}" and stack[-1] == "{")
+                    or (char == "]" and stack[-1] == "[")
+                ):
+                    stack.pop()
+
+        # Add the necessary closing brackets in reverse order
+        while stack:
+            opening_bracket = stack.pop()
+            if opening_bracket == "{":
+                fragment += "}"
+            elif opening_bracket == "[":
+                fragment += "]"
+
+        # Parse the fragment
+        try:
+            parsed_fragment = json.loads(fragment)
+            return parsed_fragment, None
+        except ValueError as e:
+            return fragment, str(e)
+
     def validate(
         self,
         iteration: Iteration,
         data: Optional[Dict[str, Any]],
         metadata: Dict,
+        **kwargs,
     ) -> Any:
         """Validate a dictionary of data against the schema.
 
@@ -408,6 +486,7 @@ class JsonSchema(Schema):
             validated_response,
             prune_extra_keys=True,
             coerce_types=True,
+            validate_subschema=kwargs.get("validate_subschema", False),
         ):
             return SkeletonReAsk(
                 incorrect_value=validated_response,
@@ -636,7 +715,7 @@ class StringSchema(Schema):
 
         return self, prompt, instructions
 
-    def parse(self, output: str) -> Tuple[Any, Optional[Exception]]:
+    def parse(self, output: str, **kwargs) -> Tuple[Any, Optional[Exception]]:
         return output, None
 
     def validate(
@@ -644,6 +723,7 @@ class StringSchema(Schema):
         iteration: Iteration,
         data: Any,
         metadata: Dict,
+        **kwargs,
     ) -> Any:
         """Validate a dictionary of data against the schema.
 

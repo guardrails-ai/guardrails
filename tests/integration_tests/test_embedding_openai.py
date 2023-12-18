@@ -31,6 +31,9 @@ class MockResponse:
     def json(self):
         return {"data": self.data}
 
+    def __getitem__(self, key: str):
+        return getattr(self, key)
+
 
 @pytest.mark.skipif(
     os.environ.get("OPENAI_API_KEY") in [None, "mocked"],
@@ -69,10 +72,12 @@ class TestOpenAIEmbedding:
         mock_create = None
         if OPENAI_VERSION.startswith("0"):
             mock_create = mocker.patch("openai.Embedding.create")
+            mock_create.return_value = MockResponse(
+                data=[{"embedding": [1.0, 2.0, 3.0]}]
+            )
         else:
             mock_create = mocker.patch("openai.resources.Embeddings.create")
-
-        mock_create.return_value = MockResponse(data=[[1.0, 2.0, 3.0]])
+            mock_create.return_value = MockResponse(data=[[1.0, 2.0, 3.0]])
 
         instance = OpenAIEmbedding(api_key="test_api_key")
         result = instance._get_embedding(["test text"])
