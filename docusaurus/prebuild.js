@@ -12,7 +12,6 @@ function processFile(relativeFilePath) {
     // Define a regular expression pattern to match <HTMLOutputBlock center>...</HTMLOutputBlock> tags
     const pattern = /<HTMLOutputBlock center>(.*?)<\/HTMLOutputBlock>/gs;
 
-    let index = 0;
     // Replace matched tags with HTML fragments and set them dangerously
     data = data.replace(pattern, (_, match) => {
       // Remove whitespace and additional prefix/suffix
