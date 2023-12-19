@@ -4,7 +4,7 @@ import pydoc
 from guardrails import Rail, Guard, validators, schema, document_store, datatypes
 from guardrails.classes import history
 from guardrails.classes.validation_outcome import ValidationOutcome
-from guardrails.classes.generic import Stack
+from guardrails.classes import generic
 from pydocs_to_md import class_to_string, module_to_string
 
 
@@ -87,7 +87,7 @@ write_to_file(
         display_string="Response Structures",
     ),
     filename="docs/api_reference_markdown/response_structures.md",
-) 
+)
 write_to_file(
     str=module_to_string(
         schema,
@@ -131,19 +131,18 @@ write_to_file(
 write_to_file(
     str=module_to_string(
         history,
-        include_list=[
-            "Call",
-            "CallInputs",
-            "Inputs",
-            "Iteration",
-            "Outputs"
-        ],
+        include_list=["Call", "CallInputs", "Inputs", "Iteration", "Outputs"],
         display_string="History & Logs",
     ),
     filename="docs/api_reference_markdown/history_and_logs.md",
 )
 
 write_to_file(
-    str=class_to_string(Stack, ignore_prefix_list=["load", "_"]),
+    str=module_to_string(
+        generic,
+        ignore_prefix_list=["load", "_"],
+        display_string="Helper Classes",
+        include_list=["Stack"],
+    ),
     filename="docs/api_reference_markdown/stack.md",
 )

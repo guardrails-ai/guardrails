@@ -1,5 +1,4 @@
 import inspect
-import pdb
 
 
 def check_if_prefixed(text, prefix_list):
@@ -7,7 +6,12 @@ def check_if_prefixed(text, prefix_list):
 
 
 def module_to_string(
-    module, display_string, ignore_prefix_list=[], include_list=[], indents=1, visited=set()
+    module,
+    display_string,
+    ignore_prefix_list=[],
+    include_list=[],
+    indents=1,
+    visited=set(),
 ):
     if module in visited:
         return ""
@@ -32,15 +36,20 @@ def module_to_string(
                     print(f"{name} is not part of a module")
                     continue
 
-                print(f"checking {name} in module {obj.__module__} for {module.__name__}")
-                if not obj.__module__.startswith(module.__name__) and obj.__module__ != 'builtins':
+                print(
+                    f"checking {name} in module {obj.__module__} for {module.__name__}"
+                )
+                if (
+                    not obj.__module__.startswith(module.__name__)
+                    and obj.__module__ != "builtins"
+                ):
                     continue
                 print(f"recursing into {name}")
                 unwrapped = module_to_string(
                     obj,
                     ignore_prefix_list=ignore_prefix_list,
                     indents=2,
-                    include_list=include_list,
+                    # include_list=include_list,
                     display_string=obj.__name__,
                     visited=visited,
                 )
@@ -55,9 +64,17 @@ def module_to_string(
     return module_str
 
 
-def class_to_string(cls, ignore_prefix_list=[], include_list=[], indents=1):
+def class_to_string(
+    cls, ignore_prefix_list=[], include_list=[], indents=1, display_string=None
+):
+    if display_string is None:
+        display_string = cls.__name__
     return module_to_string(
-        cls, cls.__name__, ignore_prefix_list, include_list, indents=indents
+        cls,
+        display_string,
+        ignore_prefix_list,
+        include_list,
+        indents=indents,
     )
 
 

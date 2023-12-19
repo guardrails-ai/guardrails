@@ -30,7 +30,7 @@ __call__(
   full_schema_reask: Optional[bool] = None,
   *args,
   **kwargs
-) -> typing.Union[guardrails.classes.validation_outcome.ValidationOutcome[~OT], typing.Awaitable[guardrails.classes.validation_outcome.ValidationOutcome[~OT]]]
+) -> typing.Union[guardrails.classes.validation_outcome.ValidationOutcome[~OT], typing.Iterable[str], typing.Awaitable[guardrails.classes.validation_outcome.ValidationOutcome[~OT]]]
 ```
 
 Call the LLM and validate the output. Pass an async LLM API to

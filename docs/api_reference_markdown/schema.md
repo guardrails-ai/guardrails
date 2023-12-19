@@ -1085,13 +1085,26 @@ Args:
 Returns:
     A list of ReAsk objects.
 
+### is_valid_fragment `classfunction`
+
+```
+is_valid_fragment(
+  self,
+  fragment: str,
+  verified: set
+) -> <class 'bool'>
+```
+
+Check if the fragment is a somewhat valid JSON.
+
 ### parse `classfunction`
 
 ```
 parse(
   self,
-  output: str
-) -> typing.Tuple[typing.Union[typing.Dict, NoneType, guardrails.utils.reask_utils.NonParseableReAsk], typing.Optional[Exception]]
+  output: str,
+  **kwargs
+) -> typing.Tuple[typing.Union[typing.Dict, NoneType, guardrails.utils.reask_utils.NonParseableReAsk, str], typing.Union[Exception, NoneType, str, bool]]
 ```
 
 Parse the output from the large language model.
@@ -1101,6 +1114,17 @@ Args:
 
 Returns:
     The parsed output, and the exception that was raised (if any).
+
+### parse_fragment `classfunction`
+
+```
+parse_fragment(
+  self,
+  fragment: str
+)
+```
+
+Parse the fragment into a dict.
 
 ### preprocess_prompt `classfunction`
 
@@ -1154,7 +1178,8 @@ validate(
   self,
   iteration: guardrails.classes.history.iteration.Iteration,
   data: Optional[Dict[str, Any]],
-  metadata: Dict
+  metadata: Dict,
+  **kwargs
 ) -> typing.Any
 ```
 
@@ -1543,7 +1568,8 @@ Returns:
 ```
 parse(
   self,
-  output: str
+  output: str,
+  **kwargs
 ) -> typing.Tuple[typing.Any, typing.Optional[Exception]]
 ```
 
@@ -1600,7 +1626,8 @@ validate(
   self,
   iteration: guardrails.classes.history.iteration.Iteration,
   data: Any,
-  metadata: Dict
+  metadata: Dict,
+  **kwargs
 ) -> typing.Any
 ```
 
@@ -2303,7 +2330,8 @@ Returns:
 ```
 parse(
   self,
-  output: str
+  output: str,
+  **kwargs
 ) -> typing.Tuple[typing.Any, typing.Optional[Exception]]
 ```
 
@@ -2367,7 +2395,8 @@ validate(
   self,
   iteration: guardrails.classes.history.iteration.Iteration,
   data: Any,
-  metadata: Dict
+  metadata: Dict,
+  **kwargs
 ) -> typing.Any
 ```
 
@@ -2708,7 +2737,8 @@ verify_schema_against_json(
   schema: guardrails.datatypes.Object,
   generated_json: Dict[str, Any],
   prune_extra_keys: bool = False,
-  coerce_types: bool = False
+  coerce_types: bool = False,
+  validate_subschema: bool = False
 )
 ```
 

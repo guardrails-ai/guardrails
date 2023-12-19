@@ -549,7 +549,7 @@ declarative_base(
   name: 'str' = 'Base',
   class_registry: 'Optional[clsregistry._ClsRegistryType]' = None,
   type_annotation_map: 'Optional[_TypeAnnotationMapType]' = None,
-  constructor: 'Callable[..., None]' = <function _declarative_constructor at 0x7f9285a3d160>,
+  constructor: 'Callable[..., None]' = <function _declarative_constructor at 0x7f1f849d0b80>,
   metaclass: 'Type[Any]' = <class 'sqlalchemy.orm.decl_api.DeclarativeMeta'>
 ) -> Any
 ```

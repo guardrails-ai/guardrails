@@ -83,8 +83,7 @@ dict(
 
 ```
 from_guard_history(
-  call: guardrails.classes.history.call.Call,
-  error_message: Optional[str]
+  call: guardrails.classes.history.call.Call
 )
 ```
 

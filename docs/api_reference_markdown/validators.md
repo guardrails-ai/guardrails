@@ -984,7 +984,7 @@ Convert the validator to an XML attribute.
 
 ## IsHighQualityTranslation
 
-Using inpiredco.critique to check if a translation is high quality.
+Validates that the translation is of high quality.
 
 **Key Properties**
 
@@ -996,6 +996,21 @@ Using inpiredco.critique to check if a translation is high quality.
 
 Other parameters: Metadata
     translation_source (str): The source of the translation.
+
+This validator uses one of the reference-free models from Unbabel/COMET
+to check the quality of the translation. Specifically, it uses the
+`Unbabel/wmt22-cometkiwi-da` model.
+
+Unbabel/COMET details: https://github.com/Unbabel/COMET
+Model details: https://huggingface.co/Unbabel/wmt22-cometkiwi-da
+
+Pre-requisites:
+    - Install the `unbabel-comet` from source:
+        `pip install git+https://github.com/Unbabel/COMET`
+    - Please accept the model license from:
+        https://huggingface.co/Unbabel/wmt22-cometkiwi-da
+    - Login into Huggingface Hub using:
+        huggingface-cli login --token $HUGGINGFACE_TOKEN
 
 ### get_args `classfunction`
 
@@ -1253,6 +1268,215 @@ to_xml_attrib(
 ```
 
 Convert the validator to an XML attribute.
+
+
+## OnTopic
+
+Checks if text's main topic is specified within a list of valid topics
+and ensures that the text is not about any of the invalid topics.
+
+This validator accepts at least one valid topic and an optional list of
+invalid topics.
+
+Default behavior first runs a Zero-Shot model, and then falls back to
+ask OpenAI's `gpt-3.5-turbo` if the Zero-Shot model is not confident
+in the topic classification (score < 0.5).
+
+In our experiments this LLM fallback increases accuracy by 15% but also
+increases latency (more than doubles the latency in the worst case).
+
+Both the Zero-Shot classification and the GPT classification may be toggled.
+
+**Key Properties**
+
+| Property                      | Description                              |
+| ----------------------------- | ---------------------------------------- |
+| Name for `format` attribute   | `on_topic`                               |
+| Supported data types          | `string`                                 |
+| Programmatic fix              | Removes lines with off-topic information |
+
+Parameters: Arguments
+    valid_topics (List[str]): topics that the text should be about
+        (one or many).
+    invalid_topics (List[str], Optional, defaults to []): topics that the
+        text cannot be about.
+    device (int, Optional, defaults to -1): Device ordinal for CPU/GPU
+        supports for Zero-Shot classifier. Setting this to -1 will leverage
+        CPU, a positive will run the Zero-Shot model on the associated CUDA
+        device id.
+    model (str, Optional, defaults to 'facebook/bart-large-mnli'): The
+        Zero-Shot model that will be used to classify the topic. See a
+        list of all models here:
+        https://huggingface.co/models?pipeline_tag=zero-shot-classification
+    llm_callable (Union[str, Callable, None], Optional, defaults to
+        'gpt-3.5-turbo'): Either the name of the OpenAI model, or a callable
+        that takes a prompt and returns a response.
+    disable_classifier (bool, Optional, defaults to False): controls whether
+        to use the Zero-Shot model. At least one of disable_classifier and
+        disable_llm must be False.
+    disable_llm (bool, Optional, defaults to False): controls whether to use
+        the LLM fallback. At least one of disable_classifier and
+        disable_llm must be False.
+    model_threshold (float, Optional, defaults to 0.5): The threshold used to
+        determine whether to accept a topic from the Zero-Shot model. Must be
+        a number between 0 and 1.
+
+### call_llm `classfunction`
+
+```
+call_llm(
+  self,
+  text: str,
+  topics: List[str]
+) -> <class 'str'>
+```
+
+Call the LLM with the given prompt.
+
+Expects a function that takes a string and returns a string.
+Args:
+    text (str): The input text to classify using the LLM.
+    topics (List[str]): The list of candidate topics.
+Returns:
+    response (str): String representing the LLM response.
+
+### get_args `classfunction`
+
+```
+get_args(
+  self
+)
+```
+
+Get the arguments for the validator.
+
+### get_client_args `classfunction`
+
+```
+get_client_args(
+  self
+) -> typing.Tuple[typing.Optional[str], typing.Optional[str]]
+```
+
+### get_topic_ensemble `classfunction`
+
+```
+get_topic_ensemble(
+  self,
+  text: str,
+  candidate_topics: List[str]
+) -> <class 'guardrails.validator_base.ValidationResult'>
+```
+
+### get_topic_llm `classfunction`
+
+```
+get_topic_llm(
+  self,
+  text: str,
+  candidate_topics: List[str]
+) -> <class 'guardrails.validator_base.ValidationResult'>
+```
+
+### get_topic_zero_shot `classfunction`
+
+```
+get_topic_zero_shot(
+  self,
+  text: str,
+  candidate_topics: List[str]
+) -> typing.Tuple[str, float]
+```
+
+### override_value_on_pass `classbool`
+
+bool(x) -> bool
+
+Returns True when the argument x is true, False otherwise.
+The builtins True and False are the only two instances of the class bool.
+The class bool is a subclass of the class int, and cannot be subclassed.
+
+### rail_alias `classstr`
+
+str(object='') -> str
+str(bytes_or_buffer[, encoding[, errors]]) -> str
+
+Create a new string object from the given object. If encoding or
+errors is specified, then the object must expose a data buffer
+that will be decoded using the given encoding and error handler.
+Otherwise, returns the result of object.__str__() (if defined)
+or repr(object).
+encoding defaults to sys.getdefaultencoding().
+errors defaults to 'strict'.
+
+### required_metadata_keys `classlist`
+
+Built-in mutable sequence.
+
+If no argument is given, the constructor creates a new empty list.
+The argument must be an iterable if specified.
+
+### run_in_separate_process `classbool`
+
+bool(x) -> bool
+
+Returns True when the argument x is true, False otherwise.
+The builtins True and False are the only two instances of the class bool.
+The class bool is a subclass of the class int, and cannot be subclassed.
+
+### set_callable `classfunction`
+
+```
+set_callable(
+  self,
+  llm_callable: Union[str, Callable, NoneType]
+) -> None
+```
+
+Set the LLM callable.
+
+Args:
+    llm_callable: Either the name of the OpenAI model, or a callable that takes
+        a prompt and returns a response.
+
+### to_prompt `classfunction`
+
+```
+to_prompt(
+  self,
+  with_keywords: bool = True
+) -> <class 'str'>
+```
+
+Convert the validator to a prompt.
+
+E.g. ValidLength(5, 10) -> "length: 5 10" when with_keywords is False.
+ValidLength(5, 10) -> "length: min=5 max=10" when with_keywords is True.
+
+Args:
+    with_keywords: Whether to include the keyword arguments in the prompt.
+
+Returns:
+    A string representation of the validator.
+
+### to_xml_attrib `classfunction`
+
+```
+to_xml_attrib(
+  self
+)
+```
+
+Convert the validator to an XML attribute.
+
+### verify_topic `classfunction`
+
+```
+verify_topic(
+  self,
+  topic: str
+) -> <class 'guardrails.validator_base.ValidationResult'>
+```
 
 
 ## OneLine
@@ -2928,6 +3152,15 @@ Validates that a value is two words.
 | Supported data types          | `string`                          |
 | Programmatic fix              | Pick the first two words.         |
 
+### _get_fix_value `classfunction`
+
+```
+_get_fix_value(
+  self,
+  value: str
+) -> <class 'str'>
+```
+
 ### get_args `classfunction`
 
 ```
@@ -3474,7 +3707,7 @@ pipeline(
   framework: Optional[str] = None,
   revision: Optional[str] = None,
   use_fast: bool = True,
-  token: Union[bool, str, NoneType] = None,
+  token: Union[str, bool, NoneType] = None,
   device: Union[int, str, ForwardRef('torch.device'), NoneType] = None,
   device_map=None,
   torch_dtype=None,

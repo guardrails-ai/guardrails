@@ -1,4 +1,5 @@
-# Stack
+# Helper Classes
+## Stack
 
 Built-in mutable sequence.
 
@@ -230,4 +231,5 @@ The reverse flag can be set to sort in descending order.
 Returns the item on the top of the stack without removing it.
 
 Same as Stack.last.
+
 

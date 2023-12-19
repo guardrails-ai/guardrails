@@ -110,5 +110,5 @@ function escapeHtml (fp) {
   });
 }
 
-const apiReferenceDir = "./docs-build/api_reference_markdown/markdown";
+const apiReferenceDir = "./docs-build/api_reference_markdown";
 escapeHtml(apiReferenceDir);
