@@ -1,16 +1,4 @@
 # Schema
-### Any `classtyping._SpecialForm`
-
-Special type indicating an unconstrained type.
-
-- Any is compatible with every type.
-- Any assumed to have all methods.
-- All values assumed to be instances of Any.
-
-Note that all the above statements are true from the point of view of
-static type checkers. At runtime, Any should not be used with instance
-or class checks.
-
 ### Dict `classtyping._SpecialGenericAlias`
 
 A generic version of dict.
@@ -37,6 +25,8 @@ type(object) -> the object's type
 type(name, bases, dict, **kwds) -> a new type
 
 ### __abstractmethods__ `classgetset_descriptor`
+
+### __annotations__ `classgetset_descriptor`
 
 ## object
 
@@ -123,6 +113,16 @@ __getattribute__(
 ```
 
 Return getattr(self, name).
+
+### __getstate__ `classmethod_descriptor`
+
+```
+__getstate__(
+  self
+)
+```
+
+Helper for pickle.
 
 ### __gt__ `classwrapper_descriptor`
 
@@ -442,6 +442,16 @@ __getattribute__(
 
 Return getattr(self, name).
 
+### __getstate__ `classmethod_descriptor`
+
+```
+__getstate__(
+  self
+)
+```
+
+Helper for pickle.
+
 ### __gt__ `classwrapper_descriptor`
 
 ```
@@ -593,6 +603,17 @@ __new__(
 
 Create and return a new object.  See help(type) for accurate signature.
 
+### __or__ `classwrapper_descriptor`
+
+```
+__or__(
+  self,
+  value
+)
+```
+
+Return self|value.
+
 ### __prepare__ `classbuiltin_function_or_method`
 
 ```
@@ -645,6 +666,17 @@ __repr__(
 ```
 
 Return repr(self).
+
+### __ror__ `classwrapper_descriptor`
+
+```
+__ror__(
+  self,
+  value
+)
+```
+
+Return value|self.
 
 ### __setattr__ `classwrapper_descriptor`
 
@@ -810,6 +842,16 @@ __getattribute__(
 ```
 
 Return getattr(self, name).
+
+### __getstate__ `classmethod_descriptor`
+
+```
+__getstate__(
+  self
+)
+```
+
+Helper for pickle.
 
 ### __gt__ `classwrapper_descriptor`
 
@@ -991,7 +1033,7 @@ overrides the normal algorithm (and the outcome is cached).
 
 ### __weakref__ `classgetset_descriptor`
 
-list of weak references to the object (if defined)
+list of weak references to the object
 
 ### async_validate `classfunction`
 
@@ -1028,7 +1070,7 @@ from_pydantic(
   model: Type[pydantic.main.BaseModel],
   reask_prompt_template: Optional[str] = None,
   reask_instructions_template: Optional[str] = None
-) -> typing_extensions.Self
+) -> typing.Self
 ```
 
 ### from_xml `classmethod`
@@ -1038,7 +1080,7 @@ from_xml(
   root: lxml.etree._Element,
   reask_prompt_template: Optional[str] = None,
   reask_instructions_template: Optional[str] = None
-) -> typing_extensions.Self
+) -> typing.Self
 ```
 
 Create a schema from an XML element.
@@ -1198,8 +1240,6 @@ A generic version of list.
 
 ### Optional `classtyping._SpecialForm`
 
-Optional type.
-
 Optional[X] is equivalent to Union[X, None].
 
 ## Schema
@@ -1298,6 +1338,16 @@ __getattribute__(
 ```
 
 Return getattr(self, name).
+
+### __getstate__ `classmethod_descriptor`
+
+```
+__getstate__(
+  self
+)
+```
+
+Helper for pickle.
 
 ### __gt__ `classwrapper_descriptor`
 
@@ -1479,7 +1529,7 @@ overrides the normal algorithm (and the outcome is cached).
 
 ### __weakref__ `classgetset_descriptor`
 
-list of weak references to the object (if defined)
+list of weak references to the object
 
 ### async_validate `classfunction`
 
@@ -1516,7 +1566,7 @@ from_xml(
   root: lxml.etree._Element,
   reask_prompt_template: Optional[str] = None,
   reask_instructions_template: Optional[str] = None
-) -> typing_extensions.Self
+) -> typing.Self
 ```
 
 Create a schema from an XML element.
@@ -1729,6 +1779,16 @@ __getattribute__(
 
 Return getattr(self, name).
 
+### __getstate__ `classmethod_descriptor`
+
+```
+__getstate__(
+  self
+)
+```
+
+Helper for pickle.
+
 ### __gt__ `classwrapper_descriptor`
 
 ```
@@ -1908,7 +1968,7 @@ overrides the normal algorithm (and the outcome is cached).
 
 ### __weakref__ `classgetset_descriptor`
 
-list of weak references to the object (if defined)
+list of weak references to the object
 
 ### datatypes_to_xml `classfunction`
 
@@ -1943,18 +2003,22 @@ Returns:
     The prompt.
 
 
-### Self `classtyping_extensions._SpecialForm`
+### Self `classtyping._SpecialForm`
 
 Used to spell the type of "self" in classes.
 
 Example::
 
-  from typing import Self
+    from typing import Self
 
-  class ReturnsSelf:
-      def parse(self, data: bytes) -> Self:
-          ...
-          return self
+    class Foo:
+        def return_self(self) -> Self:
+            ...
+            return self
+
+This is especially useful for:
+    - classmethods that are used as alternative constructors
+    - annotating an `__enter__` method which returns self
 
 ### Sequence `classtyping._SpecialGenericAlias`
 
@@ -2049,6 +2113,16 @@ __getattribute__(
 ```
 
 Return getattr(self, name).
+
+### __getstate__ `classmethod_descriptor`
+
+```
+__getstate__(
+  self
+)
+```
+
+Helper for pickle.
 
 ### __gt__ `classwrapper_descriptor`
 
@@ -2230,7 +2304,7 @@ overrides the normal algorithm (and the outcome is cached).
 
 ### __weakref__ `classgetset_descriptor`
 
-list of weak references to the object (if defined)
+list of weak references to the object
 
 ### async_validate `classfunction`
 
@@ -2278,7 +2352,7 @@ from_xml(
   root: lxml.etree._Element,
   reask_prompt_template: Optional[str] = None,
   reask_instructions_template: Optional[str] = None
-) -> typing_extensions.Self
+) -> typing.Self
 ```
 
 Create a schema from an XML element.
@@ -2419,7 +2493,9 @@ The class bool is a subclass of the class int, and cannot be subclassed.
 
 ### Tuple `classtyping._TupleType`
 
-Tuple type; Tuple[X, Y] is the cross-product type of X and Y.
+Deprecated alias to builtins.tuple.
+
+Tuple[X, Y] is the cross-product type of X and Y.
 
 Example: Tuple[T1, T2] is a tuple of two elements corresponding
 to type variables T1 and T2.  Tuple[int, float, str] is a tuple
@@ -2429,25 +2505,26 @@ To specify a variable-length tuple of homogeneous type, use Tuple[T, ...].
 
 ### Type `classtyping._SpecialGenericAlias`
 
-A special construct usable to annotate class objects.
+Deprecated alias to builtins.type.
 
+builtins.type or typing.Type can be used to annotate class objects.
 For example, suppose we have the following classes::
 
-  class User: ...  # Abstract base for User classes
-  class BasicUser(User): ...
-  class ProUser(User): ...
-  class TeamUser(User): ...
+    class User: ...  # Abstract base for User classes
+    class BasicUser(User): ...
+    class ProUser(User): ...
+    class TeamUser(User): ...
 
 And a function that takes a class argument that's a subclass of
 User and returns an instance of the corresponding class::
 
-  U = TypeVar('U', bound=User)
-  def new_user(user_class: Type[U]) -> U:
-      user = user_class()
-      # (Here we could write the user object to a database)
-      return user
+    U = TypeVar('U', bound=User)
+    def new_user(user_class: Type[U]) -> U:
+        user = user_class()
+        # (Here we could write the user object to a database)
+        return user
 
-  joe = new_user(BasicUser)
+    joe = new_user(BasicUser)
 
 At this point the type checker knows that joe has type BasicUser.
 
@@ -2455,25 +2532,29 @@ At this point the type checker knows that joe has type BasicUser.
 
 Union type; Union[X, Y] means either X or Y.
 
-To define a union, use e.g. Union[int, str].  Details:
+On Python 3.10 and higher, the | operator
+can also be used to denote unions;
+X | Y means the same thing to the type checker as Union[X, Y].
+
+To define a union, use e.g. Union[int, str]. Details:
 - The arguments must be types and there must be at least one.
 - None as an argument is a special case and is replaced by
   type(None).
 - Unions of unions are flattened, e.g.::
 
-    Union[Union[int, str], float] == Union[int, str, float]
+    assert Union[Union[int, str], float] == Union[int, str, float]
 
 - Unions of a single argument vanish, e.g.::
 
-    Union[int] == int  # The constructor actually returns int
+    assert Union[int] == int  # The constructor actually returns int
 
 - Redundant arguments are skipped, e.g.::
 
-    Union[int, str, int] == Union[int, str]
+    assert Union[int, str, int] == Union[int, str]
 
 - When comparing unions, the argument order is ignored, e.g.::
 
-    Union[int, str] == Union[str, int]
+    assert Union[int, str] == Union[str, int]
 
 - You cannot subclass or instantiate a union.
 - You can use Optional[X] as a shorthand for Union[X, None].

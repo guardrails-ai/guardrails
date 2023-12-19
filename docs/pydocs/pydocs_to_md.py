@@ -12,6 +12,7 @@ def module_to_string(
     include_list=[],
     indents=1,
     visited=set(),
+    ignore_attrs=False
 ):
     if module in visited:
         return ""
@@ -48,13 +49,14 @@ def module_to_string(
                 unwrapped = module_to_string(
                     obj,
                     ignore_prefix_list=ignore_prefix_list,
+                    ignore_attrs=ignore_attrs,
                     indents=2,
                     # include_list=include_list,
                     display_string=obj.__name__,
                     visited=visited,
                 )
                 module_str += f"{unwrapped}\n"
-            else:
+            elif not ignore_attrs:
                 module_str += f"{attr_to_string(name, obj)}\n"
     except Exception as e:
         print(f"failed to get members of {module.__name__}")

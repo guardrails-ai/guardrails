@@ -229,6 +229,8 @@ __getstate__(
 ) -> dict[Any, Any]
 ```
 
+Helper for pickle.
+
 ### __gt__ `classwrapper_descriptor`
 
 ```
@@ -632,7 +634,7 @@ overrides the normal algorithm (and the outcome is cached).
 
 ### __weakref__ `classgetset_descriptor`
 
-list of weak references to the object (if defined)
+list of weak references to the object
 
 ### _abc_impl `class_abc._abc_data`
 
@@ -1497,6 +1499,8 @@ __getstate__(
 ) -> dict[Any, Any]
 ```
 
+Helper for pickle.
+
 ### __gt__ `classwrapper_descriptor`
 
 ```
@@ -1887,7 +1891,7 @@ overrides the normal algorithm (and the outcome is cached).
 
 ### __weakref__ `classgetset_descriptor`
 
-list of weak references to the object (if defined)
+list of weak references to the object
 
 ### _abc_impl `class_abc._abc_data`
 
@@ -2629,6 +2633,8 @@ __getstate__(
 ) -> dict[Any, Any]
 ```
 
+Helper for pickle.
+
 ### __gt__ `classwrapper_descriptor`
 
 ```
@@ -3019,7 +3025,7 @@ overrides the normal algorithm (and the outcome is cached).
 
 ### __weakref__ `classgetset_descriptor`
 
-list of weak references to the object (if defined)
+list of weak references to the object
 
 ### _abc_impl `class_abc._abc_data`
 
@@ -3761,6 +3767,8 @@ __getstate__(
 ) -> dict[Any, Any]
 ```
 
+Helper for pickle.
+
 ### __gt__ `classwrapper_descriptor`
 
 ```
@@ -4151,7 +4159,7 @@ overrides the normal algorithm (and the outcome is cached).
 
 ### __weakref__ `classgetset_descriptor`
 
-list of weak references to the object (if defined)
+list of weak references to the object
 
 ### _abc_impl `class_abc._abc_data`
 
@@ -4968,6 +4976,8 @@ __getstate__(
 ) -> dict[Any, Any]
 ```
 
+Helper for pickle.
+
 ### __gt__ `classwrapper_descriptor`
 
 ```
@@ -5358,7 +5368,7 @@ overrides the normal algorithm (and the outcome is cached).
 
 ### __weakref__ `classgetset_descriptor`
 
-list of weak references to the object (if defined)
+list of weak references to the object
 
 ### _abc_impl `class_abc._abc_data`
 

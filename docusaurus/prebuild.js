@@ -1,5 +1,7 @@
 const fs = require("fs");
 const path = require("path");
+const oldTabRegex = /^=== \"(.*)\"$/;
+
 
 function processFile(relativeFilePath) {
   // Read the input file
@@ -21,8 +23,22 @@ function processFile(relativeFilePath) {
       // escape all double quotes that aren't already escaped
       cleanedHTML = cleanedHTML.replace(/(?<!\\)"/g, '\\"');
 
+      // remove straggling ```html lines
+      cleanedHTML = cleanedHTML.replace(/```html/g, '');
+
       return `<CodeOutputBlock dangerouslySetInnerHTML={{ __html: "${cleanedHTML }"}} />`;
     });
+
+    // compute path to the docusaurus/code-output-block.jsx file
+    const codeOutputBlockPath = path.relative(path.dirname(relativeFilePath), './docusaurus/code-output-block.jsx');
+
+    // import the code-output-block component at the top of each file
+    data = `import CodeOutputBlock from '${codeOutputBlockPath}';\n\n` + data;
+
+    // look for an old tab match anywhere in the file
+    if (data.split("\n").find(s => s.match(oldTabRegex))) {
+      data = tabs(data);
+    }
 
     // Write the modified content back to the input file
     fs.writeFile(relativeFilePath, data, 'utf8', (err) => {
@@ -33,6 +49,50 @@ function processFile(relativeFilePath) {
       }
     });
   });
+}
+
+function tabs(data) {
+  data = `import Tabs from '@theme/Tabs';import TabItem from '@theme/TabItem';\n\n` + data;
+  const splitData = data.split("\n");
+  // regex for old tab style
+
+  let inTab = false;
+  let inTabGroup = false
+  for (let i = 0; i < splitData.length; i++) {
+    const line = splitData[i];
+    if (inTab) {
+      // check if the line is empty or starts with four spaces
+      if (!line.startsWith("    ") && line.length !== 0 && !line.match(/^\s*$/)) {
+        // we are no longer in a tab
+        inTab = false;
+        
+        // if the line is not a tab, we're no longer in a tab group
+        if (!line.match(oldTabRegex)) {
+          splitData.splice(i, 0, "</Tabs>");
+          inTabGroup = false;
+        }
+
+        splitData.splice(i, 0, "</TabItem>");
+        i++;
+      }
+    }
+    if (line.match(oldTabRegex)) {
+      // we are in a tab
+      inTab = true;
+      const tabName = line.match(oldTabRegex)[1];
+      if (!inTabGroup) {
+        splitData.splice(i, 1, `<Tabs>`);
+        splitData.splice(i+1, 0, `<TabItem value="${tabName.split(" ").join("")}" label="${tabName}">`);
+        i+=2;
+        inTabGroup = true;
+      } else {
+        splitData.splice(i, 1, `<TabItem value="${tabName.split(" ").join("")}" label="${tabName}">`);
+        i++;
+      }
+    }
+  }
+
+  return splitData.join("\n");
 }
 
 function snakeCaseToSentence(str) {
@@ -111,4 +171,4 @@ function escapeHtml (fp) {
 }
 
 const apiReferenceDir = "./docs-build/api_reference_markdown";
-escapeHtml(apiReferenceDir);
+// escapeHtml(apiReferenceDir);

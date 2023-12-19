@@ -108,22 +108,14 @@ write_to_file(
 write_to_file(
     str=module_to_string(
         datatypes,
-        ignore_prefix_list=[
-            "get_validators",
-            "registry",
-            "DataType",
-            "register_type",
-            "Scalar",
-            "set_children",
-            "validate",
-            "from_str",
-            "from_xml",
-            "model",
-            "validators",
-            "to_object_element",
-            "_",
-        ],
+        ignore_attrs=True,
         display_string="Data Types",
+        ignore_prefix_list=[
+            "NonScalarType",
+            "ScalarType",
+            "FieldValidation",
+            "DataType",
+        ]
     ),
     filename="docs/api_reference_markdown/datatypes.md",
 )

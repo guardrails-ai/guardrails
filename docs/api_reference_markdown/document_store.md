@@ -1,16 +1,4 @@
 # Document Store
-### Any `classtyping._SpecialForm`
-
-Special type indicating an unconstrained type.
-
-- Any is compatible with every type.
-- Any assumed to have all methods.
-- All values assumed to be instances of Any.
-
-Note that all the above statements are true from the point of view of
-static type checkers. At runtime, Any should not be used with instance
-or class checks.
-
 ### Dict `classtyping._SpecialGenericAlias`
 
 A generic version of dict.
@@ -342,8 +330,6 @@ A generic version of list.
 
 ### Optional `classtyping._SpecialForm`
 
-Optional type.
-
 Optional[X] is equivalent to Union[X, None].
 
 ## Page
@@ -511,7 +497,7 @@ Usage:
 
     class C(metaclass=ABCMeta):
         @abstractmethod
-        def my_abstract_method(self, ...):
+        def my_abstract_method(self, arg1, arg2, argN):
             ...
 
 ### dataclass `classfunction`
@@ -524,20 +510,26 @@ dataclass(
   eq=True,
   order=False,
   unsafe_hash=False,
-  frozen=False
+  frozen=False,
+  match_args=True,
+  kw_only=False,
+  slots=False,
+  weakref_slot=False
 )
 ```
 
-Returns the same class as was passed in, with dunder methods
-added based on the fields defined in the class.
+Add dunder methods based on the fields defined in the class.
 
 Examines PEP 526 __annotations__ to determine fields.
 
-If init is true, an __init__() method is added to the class. If
-repr is true, a __repr__() method is added. If order is true, rich
+If init is true, an __init__() method is added to the class. If repr
+is true, a __repr__() method is added. If order is true, rich
 comparison dunder methods are added. If unsafe_hash is true, a
-__hash__() method function is added. If frozen is true, fields may
-not be assigned to after instance creation.
+__hash__() method is added. If frozen is true, fields may not be
+assigned to after instance creation. If match_args is true, the
+__match_args__ tuple is added. If kw_only is true, then by default
+all fields are keyword-only. If slots is true, a new class with a
+__slots__ attribute is returned.
 
 ### declarative_base `classfunction`
 
@@ -549,7 +541,7 @@ declarative_base(
   name: 'str' = 'Base',
   class_registry: 'Optional[clsregistry._ClsRegistryType]' = None,
   type_annotation_map: 'Optional[_TypeAnnotationMapType]' = None,
-  constructor: 'Callable[..., None]' = <function _declarative_constructor at 0x7f1f849d0b80>,
+  constructor: 'Callable[..., None]' = <function _declarative_constructor at 0x2ba6944a0>,
   metaclass: 'Type[Any]' = <class 'sqlalchemy.orm.decl_api.DeclarativeMeta'>
 ) -> Any
 ```

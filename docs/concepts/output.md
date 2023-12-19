@@ -217,20 +217,23 @@ Each element can have attributes that specify additional information about the d
 
 1. `name` attribute that specifies the name of the field. This will be the key in the output JSON. E.g.
 
-    === "RAIL Spec"
-        ```xml
-        <rail version="0.1">
-            <output>
-                <string name="some_key" />
-            </output>
-        </rail>
-        ```
-    === "Output JSON"
-        ```json
-        {
-            "some_key": "..."
-        }
-        ```
+=== "RAIL Spec"
+
+    ```xml
+    <rail version="0.1">
+        <output>
+            <string name="some_key" />
+        </output>
+    </rail>
+    ```
+
+=== "Output JSON"
+
+    ```json
+    {
+        "some_key": "..."
+    }
+    ```
 
 2. `description` attribute that specifies the description of the field. This is similar to a prompt that will be provided to the LLM. It can contain more context to help the LLM generate the correct output.
 3. (Coming soon!) `required` attribute that specifies whether the field is required or not. If the field is required, the LLM will be asked to generate the field until it is generated correctly. If the field is not required, the LLM will not be asked to generate the field if it is not generated correctly.

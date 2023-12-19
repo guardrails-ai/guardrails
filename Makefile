@@ -63,6 +63,7 @@ full:
 	poetry install --all-extras
 
 docs-gen:
+	poetry run python ./docs/pydocs/generate_pydocs.py
 	cp -r docs docs-build
 	poetry run nbdoc_build --force_all True --srcdir ./docs-build
 
