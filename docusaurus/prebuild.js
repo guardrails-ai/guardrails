@@ -17,18 +17,22 @@ function processFile(relativeFilePath) {
     // Replace matched tags with HTML fragments and set them dangerously
     data = data.replace(pattern, (_, match) => {
       hasCodeBlocks = true;
-      // Remove whitespace and additional prefix/suffix
+      
       let cleanedHTML = match.trim().replace(/^```html\s*/, '').replace(/\s*```$/, '');
-      // remove all internal newlines and replace with a single space
-      cleanedHTML = cleanedHTML.replace(/\n/g, '<br />');
-      // escape all double quotes that aren't already escaped
-      cleanedHTML = cleanedHTML.replace(/(?<!\\)"/g, '\\"');
-
-      // remove straggling ```html lines
-      cleanedHTML = cleanedHTML.replace(/```html/g, '');
-
-      return `<CodeOutputBlock dangerouslySetInnerHTML={{ __html: "${cleanedHTML }"}} />`;
+      return writeSafeHtml(cleanedHTML);
     });
+
+    // look for an html insertion
+    if (data.split('\n').find(s => s === "--8<--")) {
+      hasCodeBlocks = true;
+      data = extractHtml(data, relativeFilePath);
+    }
+
+    // look for an old tab match anywhere in the file
+    if (data.split("\n").find(s => s.match(oldTabRegex))) {
+      data = tabs(data);
+    }
+
 
     // compute path to the docusaurus/code-output-block.jsx file
     if (hasCodeBlocks) {
@@ -36,12 +40,6 @@ function processFile(relativeFilePath) {
 
       // import the code-output-block component at the top of each file
       data = `import CodeOutputBlock from '${codeOutputBlockPath}';\n\n` + data;
-    }
-    
-
-    // look for an old tab match anywhere in the file
-    if (data.split("\n").find(s => s.match(oldTabRegex))) {
-      data = tabs(data);
     }
 
     // Write the modified content back to the input file
@@ -53,6 +51,50 @@ function processFile(relativeFilePath) {
       }
     });
   });
+}
+
+function writeSafeHtml(cleanedHTML) {
+  // Remove whitespace and additional prefix/suffix
+  // remove all internal newlines and replace with a single space
+  cleanedHTML = cleanedHTML.replace(/\n/g, '<br />');
+  // escape all double quotes that aren't already escaped
+  cleanedHTML = cleanedHTML.replace(/(?<!\\)"/g, '\\"');
+
+  // remove straggling ```html lines
+  cleanedHTML = cleanedHTML.replace(/```html/g, '');
+
+  return `<CodeOutputBlock dangerouslySetInnerHTML={{ __html: "${cleanedHTML}"}} />`;
+}
+
+function extractHtml(data, relativeFilePath) {
+  const splitData = data.split("\n");
+  let inHtml = false;
+  let htmlFilePath = '';
+  for (let i = 0; i < splitData.length; i++) {
+    const line = splitData[i];
+    if (inHtml) {
+      if (line === "--8<--") {
+        inHtml = false;
+        // read in html file path 
+        const htmlData = fs.readFileSync(htmlFilePath, 'utf8');
+        console.log(htmlData);
+        const safeHtml = writeSafeHtml(htmlData);
+        splitData.splice(i, 1, safeHtml); 
+          
+      } else if (line !== '' && line.trim() !== '') {
+        htmlFilePath = "./" + line.trim();
+        // console.log("\n\n\n\n\n\n\n\n" + htmlFilePath)
+        splitData.splice(i, 1);
+        i--;
+      }
+    } else if (line === "--8<--") {
+      inHtml = true;
+      splitData.splice(i, 1);
+      i--;
+    }
+  }
+
+  return splitData.join("\n");
 }
 
 function tabs(data) {
@@ -166,7 +208,7 @@ function escapeHtml (fp) {
           if (err) {
             console.error(`Error writing file: ${err}`);
           } else {
-            console.log('Processing complete.');
+            console.log(`Successfully processed file ${filePath}.`);
           }
         });
       });
