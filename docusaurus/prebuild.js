@@ -13,9 +13,10 @@ function processFile(relativeFilePath) {
 
     // Define a regular expression pattern to match <HTMLOutputBlock center>...</HTMLOutputBlock> tags
     const pattern = /<HTMLOutputBlock center>(.*?)<\/HTMLOutputBlock>/gs;
-
+    let hasCodeBlocks = false;
     // Replace matched tags with HTML fragments and set them dangerously
     data = data.replace(pattern, (_, match) => {
+      hasCodeBlocks = true;
       // Remove whitespace and additional prefix/suffix
       let cleanedHTML = match.trim().replace(/^```html\s*/, '').replace(/\s*```$/, '');
       // remove all internal newlines and replace with a single space
@@ -30,10 +31,13 @@ function processFile(relativeFilePath) {
     });
 
     // compute path to the docusaurus/code-output-block.jsx file
-    const codeOutputBlockPath = path.relative(path.dirname(relativeFilePath), './docusaurus/code-output-block.jsx');
+    if (hasCodeBlocks) {
+      const codeOutputBlockPath = path.relative(path.dirname(relativeFilePath), './docusaurus/code-output-block.jsx');
 
-    // import the code-output-block component at the top of each file
-    data = `import CodeOutputBlock from '${codeOutputBlockPath}';\n\n` + data;
+      // import the code-output-block component at the top of each file
+      data = `import CodeOutputBlock from '${codeOutputBlockPath}';\n\n` + data;
+    }
+    
 
     // look for an old tab match anywhere in the file
     if (data.split("\n").find(s => s.match(oldTabRegex))) {
