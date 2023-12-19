@@ -63,6 +63,7 @@ toxic_language = ["transformers", "torch"]
 pii = ["presidio_analyzer", "presidio_anonymizer"]
 competitor-check = ["spacy-transformers"]
 anthropic = ["anthropic"]
+docs-build = ["nbdoc"]
 
 
 [tool.poetry.group.dev.dependencies]
