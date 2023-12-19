@@ -3,6 +3,21 @@
 
 Element tag: `<bool>`
 
+## type
+
+type(object) -> the object's type
+type(name, bases, dict, **kwds) -> a new type
+
+## object
+
+The base class of the class hierarchy.
+
+When called, it accepts no arguments and returns a new featureless
+instance that has no instance attributes and cannot be given any.
+
+
+
+
 
 
 ## Case

@@ -47,54 +47,55 @@ write_to_file(
 )
 
 
-write_to_file(
-    str=module_to_string(
-        validators,
-        ignore_prefix_list=[
-            "logger",
-            "types_to_validators",
-            "validators_registry",
-            "EventDetail",
-            "Validator",
-            "validate",
-            "register_validator",
-            "PydanticReAsk",
-            "Refrain",
-            "ValidationResult",
-            "PassResult",
-            "FailResult",
-            "__",
-        ],
-        display_string="Validators",
-    ),
-    filename="docs/api_reference_markdown/validators.md",
-)
+# write_to_file(
+#     str=module_to_string(
+#         validators,
+#         ignore_prefix_list=[
+#             "logger",
+#             "types_to_validators",
+#             "validators_registry",
+#             "EventDetail",
+#             "Validator",
+#             "validate",
+#             "register_validator",
+#             "PydanticReAsk",
+#             "Refrain",
+#             "ValidationResult",
+#             "PassResult",
+#             "FailResult",
+#             "__",
+#         ],
+#         display_string="Validators",
+#     ),
+#     filename="docs/api_reference_markdown/validators.md",
+# )
 
 write_to_file(
     str=class_to_string(ValidationOutcome, ignore_prefix_list=["load", "_"]),
     filename="docs/api_reference_markdown/validation_outcome.md",
 )
 
-write_to_file(
-    str=module_to_string(
-        validators,
-        include_list=[
-            "ValidationResult",
-            "PassResult",
-            "FailResult",
-            "ValidationError",
-        ],
-        display_string="Response Structures",
-    ),
-    filename="docs/api_reference_markdown/response_structures.md",
-)
-write_to_file(
-    str=module_to_string(
-        schema,
-        display_string="Schema",
-    ),
-    filename="docs/api_reference_markdown/schema.md",
-)
+# write_to_file(
+#     str=module_to_string(
+#         validators,
+#         include_list=[
+#             "ValidationResult",
+#             "PassResult",
+#             "FailResult",
+#             "ValidationError",
+#         ],
+#         display_string="Response Structures",
+#     ),
+#     filename="docs/api_reference_markdown/response_structures.md",
+# )
+
+# write_to_file(
+#     str=module_to_string(
+#         schema,
+#         display_string="Schema",
+#     ),
+#     filename="docs/api_reference_markdown/schema.md",
+# )
 
 write_to_file(
     str=module_to_string(
@@ -120,14 +121,14 @@ write_to_file(
     filename="docs/api_reference_markdown/datatypes.md",
 )
 
-write_to_file(
-    str=module_to_string(
-        history,
-        include_list=["Call", "CallInputs", "Inputs", "Iteration", "Outputs"],
-        display_string="History & Logs",
-    ),
-    filename="docs/api_reference_markdown/history_and_logs.md",
-)
+# write_to_file(
+#     str=module_to_string(
+#         history,
+#         include_list=["Call", "CallInputs", "Inputs", "Iteration", "Outputs"],
+#         display_string="History & Logs",
+#     ),
+#     filename="docs/api_reference_markdown/history_and_logs.md",
+# )
 
 write_to_file(
     str=module_to_string(

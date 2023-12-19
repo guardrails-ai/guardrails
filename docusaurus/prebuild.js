@@ -22,6 +22,10 @@ function processFile(relativeFilePath) {
       return writeSafeHtml(cleanedHTML);
     });
 
+    if (data.includes("CodeOutputBlock")) {
+      hasCodeBlocks = true;
+    }
+
     // look for an html insertion
     if (data.split('\n').find(s => s === "--8<--")) {
       hasCodeBlocks = true;
