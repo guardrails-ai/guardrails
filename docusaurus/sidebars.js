@@ -83,7 +83,8 @@ const sidebars = {
           label: "Migration Guides",
           collapsed: true,
           items: [
-            "migration_guides/0-2-migration"
+            "migration_guides/0-2-migration",
+            "0-3-migration",
           ],
         },
         {
