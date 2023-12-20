@@ -1,3 +1,4 @@
+import os
 from docspec_python import ParserOptions
 from docs.pydocs.pydocs_markdown_impl import load_validators, render_loader
 from pydoc_markdown.contrib.loaders.python import PythonLoader
@@ -9,6 +10,9 @@ from pydocs_to_md import class_to_string, module_to_string
 
 
 def write_to_file(str, filename):
+    # if the directory where the filename does not exist, create it
+    if not os.path.exists(os.path.dirname(filename)):
+        os.makedirs(os.path.dirname(filename))
     with open(filename, "w") as f:
         f.write(str)
         f.close()
