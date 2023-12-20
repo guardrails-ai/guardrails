@@ -1,10 +1,7 @@
-import pdb
 from docspec_python import ParserOptions
-from docs.pydocs.pydocs_markdown_impl import load_validators, load_document_store, render_loader
+from docs.pydocs.pydocs_markdown_impl import load_validators, render_loader
 from pydoc_markdown.contrib.loaders.python import PythonLoader
-import pydoc
-from guardrails import Rail, Guard, validators, schema, document_store, datatypes
-from guardrails.classes import history
+from guardrails import Rail, Guard, validators, datatypes
 from guardrails.classes.validation_outcome import ValidationOutcome
 from guardrails.classes import generic
 from pydocs_to_md import class_to_string, module_to_string
@@ -68,7 +65,7 @@ write_to_file(
 
 
 write_to_file(
-    str=render_loader(PythonLoader(
+    str="# Schema\n\n" + render_loader(PythonLoader(
         modules=['guardrails.schema'],
         parser=ParserOptions(
             print_function=False
