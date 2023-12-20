@@ -97,14 +97,14 @@ write_to_file(
 #     filename="docs/api_reference_markdown/schema.md",
 # )
 
-write_to_file(
-    str=module_to_string(
-        document_store,
-        ignore_prefix_list=["load", "_"],
-        display_string="Document Store",
-    ),
-    filename="docs/api_reference_markdown/document_store.md",
-)
+# write_to_file(
+#     str=module_to_string(
+#         document_store,
+#         ignore_prefix_list=["load", "_"],
+#         display_string="Document Store",
+#     ),
+#     filename="docs/api_reference_markdown/document_store.md",
+# )
 
 write_to_file(
     str=module_to_string(
