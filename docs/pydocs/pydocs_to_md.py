@@ -34,18 +34,13 @@ def module_to_string(
                 # ignore any class that does not belong to this module or do not have a module
                 # ignore if no module
                 if not hasattr(obj, "__module__") or not obj.__module__:
-                    print(f"{name} is not part of a module")
                     continue
 
-                print(
-                    f"checking {name} in module {obj.__module__} for {module.__name__}"
-                )
                 if (
                     not obj.__module__.startswith(module.__name__)
                     and obj.__module__ != "builtins"
                 ):
                     continue
-                print(f"recursing into {name}")
                 unwrapped = module_to_string(
                     obj,
                     ignore_prefix_list=ignore_prefix_list,
