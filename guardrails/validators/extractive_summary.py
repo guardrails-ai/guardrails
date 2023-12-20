@@ -30,7 +30,7 @@ class ExtractiveSummary(Validator):
     | Supported data types          | `string`                            |
     | Programmatic fix              | Remove any sentences that can not be verified. |
 
-    Parameters: Arguments
+    Args:
 
         threshold: The minimum fuzz ratio to be considered summarized.  Defaults to 85.
 

@@ -28,7 +28,7 @@ class SimilarToList(Validator):
     | Supported data types          | `string`                          |
     | Programmatic fix              | None                              |
 
-    Parameters: Arguments
+    Args:
         standard_deviations (int): The number of standard deviations from the mean to check.
         threshold (float): The threshold for the average semantic similarity for strings.
 

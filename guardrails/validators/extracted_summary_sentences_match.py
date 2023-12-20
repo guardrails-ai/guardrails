@@ -24,7 +24,7 @@ class ExtractedSummarySentencesMatch(Validator):
     | Supported data types          | `string`                            |
     | Programmatic fix              | Remove any sentences that can not be verified. |
 
-    Parameters: Arguments
+    Args:
 
         threshold: The minimum cosine similarity to be considered similar. Default to 0.7.
 

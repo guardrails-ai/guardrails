@@ -1,5 +1,7 @@
 import pdb
-from pydocs_to_md_lib import MarkdownDoc
+from docspec_python import ParserOptions
+from docs.pydocs.pydocs_markdown_impl import load_validators, load_document_store, render_loader
+from pydoc_markdown.contrib.loaders.python import PythonLoader
 import pydoc
 from guardrails import Rail, Guard, validators, schema, document_store, datatypes
 from guardrails.classes import history
@@ -7,14 +9,6 @@ from guardrails.classes.validation_outcome import ValidationOutcome
 from guardrails.classes import generic
 from pydocs_to_md import class_to_string, module_to_string
 
-
-def write_pydoc_to_file(obj, file_name):
-    with open(file_name, "w") as f:
-        doc = pydoc.render_doc(obj, renderer=MarkdownDoc())
-        print(doc)
-        print("writing doc to file")
-        f.write(doc)
-        f.close()
 
 
 def write_to_file(str, filename):
@@ -47,64 +41,47 @@ write_to_file(
 )
 
 
-# write_to_file(
-#     str=module_to_string(
-#         validators,
-#         ignore_prefix_list=[
-#             "logger",
-#             "types_to_validators",
-#             "validators_registry",
-#             "EventDetail",
-#             "Validator",
-#             "validate",
-#             "register_validator",
-#             "PydanticReAsk",
-#             "Refrain",
-#             "ValidationResult",
-#             "PassResult",
-#             "FailResult",
-#             "__",
-#         ],
-#         display_string="Validators",
-#     ),
-#     filename="docs/api_reference_markdown/validators.md",
-# )
+write_to_file(
+    str=f"# Validators\n\n{load_validators()}",
+    filename="docs/api_reference_markdown/validators.md",
+)
 
 write_to_file(
     str=class_to_string(ValidationOutcome, ignore_prefix_list=["load", "_"]),
     filename="docs/api_reference_markdown/validation_outcome.md",
 )
 
-# write_to_file(
-#     str=module_to_string(
-#         validators,
-#         include_list=[
-#             "ValidationResult",
-#             "PassResult",
-#             "FailResult",
-#             "ValidationError",
-#         ],
-#         display_string="Response Structures",
-#     ),
-#     filename="docs/api_reference_markdown/response_structures.md",
-# )
+write_to_file(
+    str=module_to_string(
+        validators,
+        include_list=[
+            "ValidationResult",
+            "PassResult",
+            "FailResult",
+            "ValidationError",
+        ],
+        display_string="Response Structures",
+    ),
+    filename="docs/api_reference_markdown/response_structures.md",
+)
+
+
+
+write_to_file(
+    str=render_loader(PythonLoader(
+        modules=['guardrails.schema'],
+        parser=ParserOptions(
+            print_function=False
+        )
+    )),
+    filename="docs/api_reference_markdown/schema.md",
+)
 
 # write_to_file(
-#     str=module_to_string(
-#         schema,
-#         display_string="Schema",
-#     ),
-#     filename="docs/api_reference_markdown/schema.md",
-# )
-
-# write_to_file(
-#     str=module_to_string(
-#         document_store,
-#         ignore_prefix_list=["load", "_"],
-#         display_string="Document Store",
-#     ),
+#     str=f"# Document Store\n\n{load_document_store()}",
 #     filename="docs/api_reference_markdown/document_store.md",
 # )
+
 
 write_to_file(
     str=module_to_string(
@@ -121,14 +98,15 @@ write_to_file(
     filename="docs/api_reference_markdown/datatypes.md",
 )
 
-# write_to_file(
-#     str=module_to_string(
-#         history,
-#         include_list=["Call", "CallInputs", "Inputs", "Iteration", "Outputs"],
-#         display_string="History & Logs",
-#     ),
-#     filename="docs/api_reference_markdown/history_and_logs.md",
-# )
+write_to_file(
+    str="# History and Logs\n\n" + render_loader(PythonLoader(
+        packages=['classes.history'],
+        parser=ParserOptions(
+            print_function=False
+        )
+    )),
+    filename="docs/api_reference_markdown/history_and_logs.md",
+)
 
 write_to_file(
     str=module_to_string(

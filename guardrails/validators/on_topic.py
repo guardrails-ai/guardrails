@@ -45,7 +45,7 @@ class OnTopic(Validator):
     | Supported data types          | `string`                                 |
     | Programmatic fix              | Removes lines with off-topic information |
 
-    Parameters: Arguments
+    Args:
         valid_topics (List[str]): topics that the text should be about
             (one or many).
         invalid_topics (List[str], Optional, defaults to []): topics that the

@@ -32,7 +32,7 @@ class PIIFilter(Validator):
     | Supported data types          | `string`                            |
     | Programmatic fix              | Anonymized text with PII filtered   |
 
-    Parameters: Arguments
+    Args:
         pii_entities (str | List[str], optional): The PII entities to filter. Must be
             one of `pii` or `spi`. Defaults to None. Can also be set in metadata.
     """

@@ -132,7 +132,7 @@ from_string(
 Create a Guard instance for a string response with prompt,
 instructions, and validations.
 
-Parameters: Arguments
+Args:
     validators: (List[Validator]): The list of validators to apply to the string output.
     description (str, optional): A description for the string to be generated. Defaults to None.
     prompt (str, optional): The prompt used to generate the string. Defaults to None.

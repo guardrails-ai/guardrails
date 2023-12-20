@@ -26,7 +26,7 @@ class ValidLength(Validator):
     | Supported data types          | `string`, `list`, `object`        |
     | Programmatic fix              | If shorter than the minimum, pad with empty last elements. If longer than the maximum, truncate. |
 
-    Parameters: Arguments
+    Args:
         min: The inclusive minimum length.
         max: The inclusive maximum length.
     """  # noqa

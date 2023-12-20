@@ -22,7 +22,7 @@ class ValidChoices(Validator):
     | Supported data types          | `all`                             |
     | Programmatic fix              | None                              |
 
-    Parameters: Arguments
+    Args:
         choices: The list of valid choices.
     """
 

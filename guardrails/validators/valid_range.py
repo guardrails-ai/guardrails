@@ -22,7 +22,7 @@ class ValidRange(Validator):
     | Supported data types          | `integer`, `float`, `percentage`  |
     | Programmatic fix              | Closest value within the range.   |
 
-    Parameters: Arguments
+    Args:
         min: The inclusive minimum value of the range.
         max: The inclusive maximum value of the range.
     """

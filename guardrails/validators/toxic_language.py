@@ -36,7 +36,7 @@ class ToxicLanguage(Validator):
     | Supported data types          | `string`                          |
     | Programmatic fix              | None                              |
 
-    Parameters: Arguments
+    Args:
         threshold: The confidence threshold (model inference) for toxicity.
             Defaults to 0.5.
         validation_method: Whether to validate at the sentence level or

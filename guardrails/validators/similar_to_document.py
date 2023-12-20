@@ -34,7 +34,7 @@ class SimilarToDocument(Validator):
     | Supported data types          | `string`                             |
     | Programmatic fix              | None                              |
 
-    Parameters: Arguments
+    Args:
         document: The document to use for the similarity check.
         threshold: The minimum cosine similarity to be considered similar.  Defaults to 0.7.
         model: The embedding model to use.  Defaults to text-embedding-ada-002.

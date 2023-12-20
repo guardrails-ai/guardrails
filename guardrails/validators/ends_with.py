@@ -22,7 +22,7 @@ class EndsWith(Validator):
     | Supported data types          | `list`                            |
     | Programmatic fix              | Append the given value to the list. |
 
-    Parameters: Arguments
+    Args:
         end: The required last element.
     """
 

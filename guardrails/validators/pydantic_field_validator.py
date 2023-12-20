@@ -22,7 +22,7 @@ class PydanticFieldValidator(Validator):
     | Supported data types          | `Any`                             |
     | Programmatic fix              | Override with return value from `field_validator`.   |
 
-    Parameters: Arguments
+    Args:
 
         field_validator (Callable): A validator for a specific field in a Pydantic model.
     """  # noqa

@@ -39,11 +39,11 @@ function processFile(relativeFilePath) {
 
 
     // compute path to the docusaurus/code-output-block.jsx file
-    if (hasCodeBlocks) {
-      const codeOutputBlockPath = path.relative(path.dirname(relativeFilePath), './docusaurus/code-output-block.jsx');
-
+    const codeOutputBlockPath = path.relative(path.dirname(relativeFilePath), './docusaurus/code-output-block.jsx');
+    const importStatement = `import CodeOutputBlock from '${codeOutputBlockPath}';\n\n`;
+    if (hasCodeBlocks && !data.includes(importStatement)) {
       // import the code-output-block component at the top of each file
-      data = `import CodeOutputBlock from '${codeOutputBlockPath}';\n\n` + data;
+      data =  importStatement + data;
     }
 
     // Write the modified content back to the input file

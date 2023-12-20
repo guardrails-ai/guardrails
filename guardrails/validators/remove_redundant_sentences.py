@@ -26,7 +26,7 @@ class RemoveRedundantSentences(Validator):
     | Supported data types          | `string`                            |
     | Programmatic fix              | Remove any redundant sentences.     |
 
-    Parameters: Arguments
+    Args:
 
         threshold: The minimum fuzz ratio to be considered redundant.  Defaults to 70.
     """
