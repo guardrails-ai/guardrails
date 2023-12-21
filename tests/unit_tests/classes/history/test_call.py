@@ -46,7 +46,6 @@ def test_empty_initialization():
 
 
 def test_non_empty_initialization():
-
     # Call input
     def custom_llm():
         return "Hello there!"

@@ -30,13 +30,22 @@ class Rail:
     """
 
     prompt_schema: Optional[StringSchema]
-    """The schema for the prompt. If None, the prompt is not validated."""
+    """The schema for the prompt.
+
+    If None, the prompt is not validated.
+    """
 
     instructions_schema: Optional[StringSchema]
-    """The schema for the instructions. If None, the instructions are not validated."""
-    
+    """The schema for the instructions.
+
+    If None, the instructions are not validated.
+    """
+
     msg_history_schema: Optional[StringSchema]
-    """The schema for the message history. If None, the message history is not validated."""
+    """The schema for the message history.
+
+    If None, the message history is not validated.
+    """
 
     output_schema: Schema
     """The schema for the output."""
@@ -68,9 +77,7 @@ class Rail:
         reask_prompt: Optional[str] = None,
         reask_instructions: Optional[str] = None,
     ):
-        """
-        Initializes a RAIL from a Pydantic model.
-        """
+        """Initializes a RAIL from a Pydantic model."""
         output_schema = cls.load_json_schema_from_pydantic(
             output_class,
             reask_prompt_template=reask_prompt,
@@ -88,9 +95,7 @@ class Rail:
 
     @classmethod
     def from_file(cls, file_path: str) -> "Rail":
-        """
-        Loads a RAIL from a file.
-        """
+        """Loads a RAIL from a file."""
 
         with open(file_path, "r") as f:
             xml = f.read()
@@ -98,17 +103,13 @@ class Rail:
 
     @classmethod
     def from_string(cls, string: str) -> "Rail":
-        """
-        Initializes a RAIL from a string.
-        """
+        """Initializes a RAIL from a string."""
 
         return cls.from_xml(ET.fromstring(string, parser=XMLPARSER))
 
     @classmethod
     def from_xml(cls, xml: ET._Element):
-        """
-        Initializes a RAIL from an XML tree.
-        """
+        """Initializes a RAIL from an XML tree."""
 
         if "version" not in xml.attrib or xml.attrib["version"] != "0.1":
             raise ValueError(
@@ -180,9 +181,7 @@ class Rail:
         reask_prompt: Optional[str] = None,
         reask_instructions: Optional[str] = None,
     ):
-        """
-        Initializes a RAIL from a list of validators.
-        """
+        """Initializes a RAIL from a list of validators."""
         output_schema = cls.load_string_schema_from_string(
             validators,
             description=description,
@@ -247,9 +246,7 @@ class Rail:
         reask_prompt_template: Optional[str] = None,
         reask_instructions_template: Optional[str] = None,
     ):
-        """
-        Initializes a StringSchema using a list of validators.
-        """
+        """Initializes a StringSchema using a list of validators."""
         return StringSchema.from_string(
             validators,
             description=description,
@@ -263,9 +260,7 @@ class Rail:
         reask_prompt_template: Optional[str] = None,
         reask_instructions_template: Optional[str] = None,
     ):
-        """
-        Initializes a JsonSchema using a Pydantic model.
-        """
+        """Initializes a JsonSchema using a Pydantic model."""
 
         return JsonSchema.from_pydantic(
             output_class,
