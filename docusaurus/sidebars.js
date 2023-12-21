@@ -84,7 +84,7 @@ const sidebars = {
           collapsed: false,
           items: [
             "migration_guides/0-2-migration",
-            "0-3-migration",
+            "migration_guides/0-3-migration",
           ],
         },
         {

@@ -4,7 +4,7 @@ All `Guard` calls are logged internally, and can be accessed via the guard histo
 
 ## 🇻🇦 Accessing logs via `Guard.history`
 
-`history` is an attribute of the `Guard` class. It implements a standard `Stack` interface with a few extra helper methods and properties.  For more information on our `Stack` implementation see the [Helper Classes](/api_reference/helper_classes) page.
+`history` is an attribute of the `Guard` class. It implements a standard `Stack` interface with a few extra helper methods and properties.  For more information on our `Stack` implementation see the [Helper Classes](/docs/api_reference_markdown/helper_classes) page.
 
 Each entry in the history stack is a `Call` log which will contain information specific to a particular `Guard.__call__` or `Guard.parse` call in the order that they were executed within the current session.
 
@@ -188,4 +188,4 @@ completion token usage:  16
 token usage for this step:  633
 ```
 
-For more information on the properties available on `Iteration`, ee the [History & Logs](/api_reference/history_and_logs/#guardrails.classes.history.Iteration) page.
+For more information on the properties available on `Iteration`, see the [History & Logs](/docs/api_reference_markdown/history_and_logs/#guardrails.classes.history.Iteration) page.
