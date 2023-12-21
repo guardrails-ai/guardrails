@@ -25,7 +25,7 @@ class RegexMatch(Validator):
     | Supported data types          | `string`                          |
     | Programmatic fix              | Generate a string that matches the regular expression |
 
-    Parameters: Arguments
+    Args:
         regex: Str regex pattern
         match_type: Str in {"search", "fullmatch"} for a regex search or full-match option
     """  # noqa

@@ -12,8 +12,7 @@ copyright: |
 
 
 nav:
-  - 'Introduction': guardrails_ai/introduction.md
-  - 'Getting Started': guardrails_ai/getting_started.ipynb
+  - 'Introduction': index.md
   - 'Installation': guardrails_ai/installation.md
   - 'Migrating to 0.2.x': 0-2-migration.md
   - 'Migrating to 0.3.x': 0-3-migration.md

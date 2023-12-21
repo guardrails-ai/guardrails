@@ -50,7 +50,7 @@ class ProvenanceV0(Validator):
     | Supported data types          | `string`                            |
     | Programmatic fix              | None                                |
 
-    Parameters: Arguments
+    Args:
         threshold: The minimum cosine similarity between the generated text and
             the source text. Defaults to 0.8.
         validation_method: Whether to validate at the sentence level or over the full text.  Must be one of `sentence` or `full`. Defaults to `sentence`
@@ -320,30 +320,35 @@ class ProvenanceV1(Validator):
         chunk and the LLM-generated text.
 
     Example using str callable:
-        >>> def query_function(text: str, k: int) -> List[str]:
-        ...     return ["This is a chunk", "This is another chunk"]
 
-        >>> guard = Guard.from_string(validators=[
-                    ProvenanceV1(llm_callable="gpt-3.5-turbo", ...)
-                ]
-            )
-        >>> guard.parse(
-        ...   llm_output=...,
-        ...   metadata={"query_function": query_function}
-        ... )
+    ``` py
+    def query_function(text: str, k: int) -> List[str]:
+        return ["This is a chunk", "This is another chunk"]
+
+    guard = Guard.from_string(validators=[
+        ProvenanceV1(llm_callable="gpt-3.5-turbo", ...)
+    ])
+    guard.parse(
+        llm_output=...,
+        metadata={"query_function": query_function}
+    )
+    ```
 
     Example using a custom llm callable:
-        >>> def query_function(text: str, k: int) -> List[str]:
-        ...     return ["This is a chunk", "This is another chunk"]
 
-        >>> guard = Guard.from_string(validators=[
-                    ProvenanceV1(llm_callable=your_custom_callable, ...)
-                ]
-            )
-        >>> guard.parse(
-        ...   llm_output=...,
-        ...   metadata={"query_function": query_function}
-        ... )
+    ``` py
+    def query_function(text: str, k: int) -> List[str]:
+        return ["This is a chunk", "This is another chunk"]
+
+    guard = Guard.from_string(validators=[
+            ProvenanceV1(llm_callable=your_custom_callable, ...)
+        ]
+    )
+    guard.parse(
+        llm_output=...,
+        metadata={"query_function": query_function}
+    )
+    ```
 
     OR
 
@@ -352,20 +357,22 @@ class ProvenanceV1(Validator):
     The vector should be normalized to unit length.
 
     Example:
-        ```py
-        def embed_function(text: Union[str, List[str]]) -> np.ndarray:
-            return np.array([[0.1, 0.2, 0.3]])
 
-        guard = Guard.from_rail(...)
-        guard(
-            openai.ChatCompletion.create(...),
-            prompt_params={...},
-            temperature=0.0,
-            metadata={
-                "sources": ["This is a source text"],
-                "embed_function": embed_function
-            },
-        )
+    ```py
+    def embed_function(text: Union[str, List[str]]) -> np.ndarray:
+        return np.array([[0.1, 0.2, 0.3]])
+
+    guard = Guard.from_rail(...)
+    guard(
+        openai.ChatCompletion.create(...),
+        prompt_params={...},
+        temperature=0.0,
+        metadata={
+            "sources": ["This is a source text"],
+            "embed_function": embed_function
+        },
+    )
+    ```
     """
 
     def __init__(

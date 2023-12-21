@@ -21,7 +21,7 @@ class SqlColumnPresence(Validator):
     | Supported data types          | `string`                          |
     | Programmatic fix              | None                              |
 
-    Parameters: Arguments
+    Args:
         cols: The list of valid columns.
     """
 

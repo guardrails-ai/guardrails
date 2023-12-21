@@ -7,7 +7,7 @@ _Validation Outcome_
 
 Previous when calling `__call__` or `parse` on a Guard, the Guard would return a tuple of the raw llm output and the validated output or just the validated output respecitvely.
 
-Now, in order to communicate more information, we respond with a `ValidationOutcome` class that contains the above information and more. See [ValidationOutcome](/api_reference/validation_outcome/#ValidationOutcome) in the API Reference for more information on these additioanl properties.
+Now, in order to communicate more information, we respond with a `ValidationOutcome` class that contains the above information and more. See [ValidationOutcome](/docs/api_reference_markdown/validation_outcome/#ValidationOutcome) in the API Reference for more information on these additioanl properties.
 
 In order to limit how much this changes breaks the current experience, we made this class iterable so you can still deconstruct its properties.
 
@@ -45,7 +45,7 @@ One new property that we want to highlight on this return structure is `validati
 ## History & Logs Improvements
 If you're familiar with Guardrails, then you might have used the `Guard.state` property to inspect how the Guard process behaved over time.  In order to make the Guard process more transparent, as part of `v0.3.0` we redesigned how you access this information.  
 
-Now, on a Guard, you can access logs related to any `__call__` or `parse` call within the current session via `Guard.history`.  We documented this new structure and how it works [here](/concepts/logs), but to give a quick example of the differences, where before if you needed to check if validation of a particualr step succeeded or not you might need to do something like this:
+Now, on a Guard, you can access logs related to any `__call__` or `parse` call within the current session via `Guard.history`.  We documented this new structure and how it works [here](/docs/concepts/logs), but to give a quick example of the differences, where before if you needed to check if validation of a particualr step succeeded or not you might need to do something like this:
 ```py
 guard_history = guard.state.most_recent_call
 last_step_logs: GuardLogs = guard_history.history[-1]
@@ -74,4 +74,4 @@ Now, in `v0.3.0` you can simply:
 guard.history.last.tokens_consumed
 ```
 
-Besides the examples above, if you dive deeper into the new history structure you can find more insights into exactly how the LLM was called in each step of the process.  See [here](/concepts/logs) for more details.
+Besides the examples above, if you dive deeper into the new history structure you can find more insights into exactly how the LLM was called in each step of the process.  See [here](/docs/concepts/logs) for more details.

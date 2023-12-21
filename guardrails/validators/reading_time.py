@@ -23,7 +23,7 @@ class ReadingTime(Validator):
     | Supported data types          | `string`                            |
     | Programmatic fix              | None                                |
 
-    Parameters: Arguments
+    Args:
 
         reading_time: The maximum reading time.
     """

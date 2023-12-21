@@ -9,7 +9,7 @@ def has_code_block(
     """Checks if a string contains a code block denoted by leading and trailing
     tripple ticks (```) with an optional code type for the opening tag.
 
-    Parameters: Arguments:
+    Args::
         string_value (str): The string to check.
         code_type (str, optional): The specific code type to check for. Defaults to empty string.
 
@@ -40,7 +40,7 @@ def get_code_block(
     """Takes a string, start and end indexes, and an optional code type to
     extract a code block from a string.
 
-    Parameters: Arguments:
+    Args::
         string_value (str): The string to extract a the code block from.
         start (int): The starting index of the code block.  This is assumed to be inclusive of the block boundaries.
         end (int): The ending index of the code block.  This is assumed to be inclusive of the block boundaries.

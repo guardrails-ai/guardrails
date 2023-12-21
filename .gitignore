@@ -1,3 +1,4 @@
+docs/api_reference_markdown/
 openai_api_key.txt
 *__pycache__*
 data/*
@@ -24,4 +25,11 @@ coverage.xml
 test.db
 test.index
 htmlcov
+node_modules
+.docusaurus
+docs-build
+.vercel
+docusaurus/examples-toc.json
 .python-version
+static/docs
+docusaurus/static/docs

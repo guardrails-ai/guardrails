@@ -23,7 +23,7 @@ class ExcludeSqlPredicates(Validator):
     | Supported data types          | `string`                          |
     | Programmatic fix              | None                              |
 
-    Parameters: Arguments
+    Args:
         predicates: The list of predicates to avoid.
     """
 

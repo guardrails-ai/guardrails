@@ -25,7 +25,7 @@ class SaliencyCheck(Validator):
     | Supported data types          | `string`                            |
     | Programmatic fix              | None                                |
 
-    Parameters: Arguments
+    Args:
 
         docs_dir: Path to the directory containing the documents.
         threshold: Threshold for overlap between topics in document and summary. Defaults to 0.25

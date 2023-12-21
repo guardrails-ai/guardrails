@@ -97,7 +97,10 @@ class DocumentStoreBase(ABC):
         """Adds a list of texts to the store.
         Args:
             texts: List of texts to add, and their associalted metadata.
-            example: [{"I am feeling good", {"sentiment": "postive"}}]
+            example:
+            ``` json
+            [{"I am feeling good", {"sentiment": "postive"}}]
+            ```
 
         Returns:
             List of ids of the texts."""

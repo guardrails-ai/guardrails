@@ -27,7 +27,7 @@ class DetectSecrets(Validator):
     | Supported data types          | `string`                          |
     | Programmatic fix              | None                              |
 
-    Parameters: Arguments
+    Args:
         None
 
     This validator uses the detect-secrets library to check whether the generated code
@@ -52,6 +52,7 @@ class DetectSecrets(Validator):
         guard.parse(
             llm_output=code_snippet,
         )
+        ```
     """
 
     def __init__(self, on_fail: Union[Callable[..., Any], None] = None, **kwargs):
