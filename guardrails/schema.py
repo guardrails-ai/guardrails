@@ -219,7 +219,7 @@ class Schema:
 
 
 class JsonSchema(Schema):
-    reask_prompt_vars = {"previous_response", "output_schema"}
+    reask_prompt_vars = {"previous_response", "output_schema", "json_example"}
 
     def __init__(
         self,
@@ -269,7 +269,7 @@ class JsonSchema(Schema):
             if reask_prompt_template is None:
                 reask_prompt_template = Prompt(
                     constants["high_level_skeleton_reask_prompt"]
-                    + constants["json_suffix_without_examples"]
+                    + constants["json_suffix_with_structure_example"]
                 )
 
             # This is incorrect
@@ -300,6 +300,10 @@ class JsonSchema(Schema):
                 )
 
         pruned_tree_string = pruned_tree_schema.transpile()
+        json_example = json.dumps(
+            pruned_tree_schema.root_datatype.get_example(),
+            indent=2,
+        )
 
         def reask_decoder(obj):
             decoded = {}
@@ -317,6 +321,7 @@ class JsonSchema(Schema):
                 reask_value, indent=2, default=reask_decoder, ensure_ascii=False
             ),
             output_schema=pruned_tree_string,
+            json_example=json_example,
             **(prompt_params or {}),
         )
 

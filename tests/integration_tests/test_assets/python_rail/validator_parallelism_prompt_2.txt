@@ -17,7 +17,7 @@ Your generated response should satisfy the following properties:
 - lower-case
 - one-line
 - valid-url
-- valid-choices: choices=a
+- valid-choices: choices=['a']
 - length: min=1 max=10
 
 Don't talk; just go.

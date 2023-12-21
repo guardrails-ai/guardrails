@@ -3,7 +3,6 @@ import json
 import pytest
 from lxml import etree as ET
 
-from guardrails import Instructions, Prompt
 from guardrails.classes.history.iteration import Iteration
 from guardrails.datatypes import Object
 from guardrails.schema import JsonSchema
@@ -443,10 +442,14 @@ I was given the following JSON response, which had problems due to incorrect val
 
 Help me correct the incorrect values based on the given error messages.
 
+
 Given below is XML that describes the information to extract from this document and the tags to extract it into.
 %s
 
 ONLY return a valid JSON object (no other text is necessary), where the key of the field in JSON is the `name` attribute of the corresponding XML, and the value is of the type specified by the corresponding XML's tag. The JSON MUST conform to the XML format, including any types and format requests e.g. requests for lists, objects and specific types. Be correct and concise. If you are unsure anywhere, enter `null`.
+
+Here's an example of the structure:
+%s
 """  # noqa: E501
     expected_instructions = """
 You are a helpful assistant only capable of communicating with valid JSON, and no other text.
@@ -467,13 +470,15 @@ Here are examples of simple (XML, JSON) pairs that show the expected behavior:
         result_prompt,
         instructions,
     ) = output_schema.get_reask_setup(reasks, reask_json, False)
+    json_example = output_schema.root_datatype.get_example()
 
-    assert result_prompt == Prompt(
+    assert result_prompt.source == (
         expected_result_template
         % (
             json.dumps(reask_json, indent=2),
             expected_rail,
+            json.dumps(json_example, indent=2),
         )
     )
 
-    assert instructions == Instructions(expected_instructions)
+    assert instructions.source == expected_instructions
