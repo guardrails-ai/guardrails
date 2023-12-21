@@ -43,13 +43,13 @@ write_to_file(
 write_to_file(
     str="# Guard\n\n" + render_loader(
         PythonLoader(
-            modules=['guardrails.Guard'],
+            modules=['guardrails.guard'],
             parser=ParserOptions(
                 print_function=False
             ),
         ),
         processor = FilterProcessor(
-            expression="name in ['Guard', 'guardrails.Guard', 'from_rail', 'from_rail_string', 'from_pydantic', 'from_string', 'configure', '__call__', 'parse', 'state']",
+            expression="name in ['Guard', 'guardrails.guard', 'guard', 'from_rail', 'from_rail_string', 'from_pydantic', 'from_string', 'configure', '__call__', 'parse', 'state']",
             skip_empty_modules=True
         )
     ),
