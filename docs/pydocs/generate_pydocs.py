@@ -25,7 +25,7 @@ write_to_file(
     # str=class_to_string(Rail, ignore_prefix_list=["load", "_"]),
     str="# Rail\n\n" + render_loader(
         PythonLoader(
-            modules=['guardrails.Rail'],
+            modules=['guardrails.rail'],
             parser=ParserOptions(
                 print_function=False,
             ),
