@@ -179,9 +179,9 @@ write_to_file(
 )
 
 write_to_file(
-    str="# Stack\n\n" + render_loader(
+    str="# Helper Classes\n\n" + render_loader(
         PythonLoader(
-            modules=['guardrails.classes.generic.Stack'],
+            modules=['guardrails.classes.generic.stack'],
             parser=ParserOptions(
                 print_function=False
             ),
@@ -191,5 +191,5 @@ write_to_file(
             skip_empty_modules=True
         )
     ),
-    filename="docs/api_reference_markdown/stack.md",
+    filename="docs/api_reference_markdown/helper_classes.md",
 )
