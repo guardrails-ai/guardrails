@@ -70,7 +70,27 @@ write_to_file(
 )
 
 write_to_file(
-    str=class_to_string(ValidationOutcome, ignore_prefix_list=["load", "_"]),
+    # str=class_to_string(ValidationOutcome, ignore_prefix_list=["load", "_"]),
+    str="# Validation Outcome\n\n" + render_loader(
+        PythonLoader(
+            modules=['guardrails.classes.validation_outcome'],
+            parser=ParserOptions(
+                print_function=False
+            ),
+        ),
+        processor = FilterProcessor(
+            documented_only=True,
+        ),
+        renderer = MarkdownRenderer(
+            render_module_header=False,
+            insert_header_anchors=False,
+            classdef_code_block=False,
+            descriptive_class_title=False,
+            classdef_with_decorators=False,
+            render_typehint_in_data_header=True,
+            data_code_block=True,
+        )
+    ),
     filename="docs/api_reference_markdown/validation_outcome.md",
 )
 
@@ -159,12 +179,6 @@ write_to_file(
 )
 
 write_to_file(
-    # str=module_to_string(
-    #     generic,
-    #     ignore_prefix_list=["load", "_"],
-    #     display_string="Helper Classes",
-    #     include_list=["Stack"],
-    # ),
     str="# Stack\n\n" + render_loader(
         PythonLoader(
             modules=['guardrails.classes.generic.Stack'],
