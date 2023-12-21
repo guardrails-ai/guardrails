@@ -532,4 +532,4 @@ prompt = PromptTemplate(
 )
 ```
 
-See the [LangChain integration docs](/integrations/langchain) for more details.
+See the [LangChain integration docs](/docs/integrations/langchain) for more details.
