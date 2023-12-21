@@ -159,11 +159,23 @@ write_to_file(
 )
 
 write_to_file(
-    str=module_to_string(
-        generic,
-        ignore_prefix_list=["load", "_"],
-        display_string="Helper Classes",
-        include_list=["Stack"],
+    # str=module_to_string(
+    #     generic,
+    #     ignore_prefix_list=["load", "_"],
+    #     display_string="Helper Classes",
+    #     include_list=["Stack"],
+    # ),
+    str="# Stack\n\n" + render_loader(
+        PythonLoader(
+            modules=['guardrails.classes.generic.Stack'],
+            parser=ParserOptions(
+                print_function=False
+            ),
+        ),
+        processor = FilterProcessor(
+            # expression="name in ['Stack', 'guardrails.classes.generic.Stack']",
+            skip_empty_modules=True
+        )
     ),
     filename="docs/api_reference_markdown/stack.md",
 )
