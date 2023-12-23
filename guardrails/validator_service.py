@@ -1,12 +1,14 @@
 import asyncio
 import itertools
 import os
+import datetime
 from concurrent.futures import ProcessPoolExecutor
 from typing import Any, Dict, List, Optional, Tuple
 
 from guardrails.classes.history import Iteration
 from guardrails.datatypes import FieldValidation
 from guardrails.logger import logger
+from guardrails.utils.casting_utils import to_string
 from guardrails.utils.logs_utils import ValidatorLogs
 from guardrails.utils.reask_utils import FieldReAsk, ReAsk
 from guardrails.utils.safe_get import safe_get
@@ -16,12 +18,31 @@ from guardrails.validator_base import (
     PassResult,
     Refrain,
     Validator,
+    ValidationResult,
     ValidatorError,
 )
-
+from guardrails.utils.telemetry_utils import trace_validator
 
 class ValidatorServiceBase:
     """Base class for validator services."""
+
+    # NOTE: This is avoiding an issue with multiprocessing.
+    #       If we wrap the validate methods at the class level or anytime before 
+    #       loop.run_in_executor is called, multiprocessing fails with a Pickling error.
+    #       This is a well known issue without any real solutions.
+    #       Using `fork` instead of `spawn` may alleviate the symptom for POSIX systems,
+    #       but is relatively unsupported on Windows.
+    def execute_validator(self, validator: Validator, value: Any, metadata: Optional[Dict]) -> ValidationResult:
+        traced_validator = trace_validator(
+            validator_name=validator.rail_alias,
+            obj_id=id(validator),
+            # TODO - re-enable once we have namespace support
+            # namespace=validator.namespace,
+            on_fail_descriptor=validator.on_fail_descriptor,
+            **validator._kwargs,
+        )(validator.validate)
+        result = traced_validator(value, metadata)
+        return result
 
     def perform_correction(
         self,
@@ -34,7 +55,7 @@ class ValidatorServiceBase:
             return results[0].fix_value
         elif on_fail_descriptor == "fix_reask":
             fixed_value = results[0].fix_value
-            result = validator.validate(fixed_value, results[0].metadata or {})
+            result = self.execute_validator(validator, fixed_value, results[0].metadata or {})
 
             if isinstance(result, FailResult):
                 return FieldReAsk(
@@ -76,14 +97,24 @@ class ValidatorServiceBase:
         validator_logs = ValidatorLogs(
             validator_name=validator_class_name,
             value_before_validation=value,
+            registered_name=validator.rail_alias,
         )
         iteration.outputs.validator_logs.append(validator_logs)
+
+        start_time = datetime.now()
+        result = self.execute_validator(validator, value, metadata)
+        end_time = datetime.now()
 
         result = validator.validate(value, metadata)
         if result is None:
             result = PassResult()
 
         validator_logs.validation_result = result
+        validator_logs.start_time = start_time
+        validator_logs.end_time = end_time
+        # If we ever re-use validator instances across multiple properties,
+        #   this will have to change.
+        validator_logs.instance_id = to_string(id(validator))
         return validator_logs
 
 
@@ -209,12 +240,14 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
                 else:
                     # run the validators in the current process
                     result = self.run_validator(iteration, validator, value, metadata)
+                    # VALIDATOR_LOG DUPLICATION
                     validators_logs.append(result)
 
             # wait for the parallel tasks to finish
             if parallel_tasks:
                 parallel_results = await asyncio.gather(*parallel_tasks)
                 iteration.outputs.validator_logs.extend(parallel_results)
+                # VALIDATOR_LOG DUPLICATION
                 validators_logs.extend(parallel_results)
 
             # process the results, handle failures

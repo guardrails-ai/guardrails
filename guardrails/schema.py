@@ -45,6 +45,7 @@ from guardrails.utils.reask_utils import (
     get_pruned_tree,
     prune_obj_for_reasking,
 )
+from guardrails.utils.telemetry_utils import trace_validation_result
 from guardrails.validator_base import (
     FailResult,
     ValidatorSpec,
@@ -111,7 +112,7 @@ class Schema:
             self._reask_instructions_template = None
 
     def validate(
-        self, iteration: Iteration, data: Any, metadata: Dict, **kwargs
+        self, iteration: Iteration, data: Any, metadata: Dict, attempt_number: int, **kwargs
     ) -> Any:
         """Validate a dictionary of data against the schema.
 
@@ -124,7 +125,7 @@ class Schema:
         raise NotImplementedError
 
     async def async_validate(
-        self, iteration: Iteration, data: Any, metadata: Dict
+        self, iteration: Iteration, data: Any, metadata: Dict, attempt_number: int
     ) -> Any:
         """Asynchronously validate a dictionary of data against the schema.
 
@@ -468,6 +469,7 @@ class JsonSchema(Schema):
         iteration: Iteration,
         data: Optional[Dict[str, Any]],
         metadata: Dict,
+        attempt_number: int,
         **kwargs,
     ) -> Any:
         """Validate a dictionary of data against the schema.
@@ -525,6 +527,11 @@ class JsonSchema(Schema):
         # Remove all keys that have `Filter` values.
         validated_response = filter_in_dict(validated_response)
 
+        # TODO: Capture error messages once Top Level error handling is merged in
+        trace_validation_result(
+            validation_logs=iteration.validator_logs(), attempt_number=attempt_number
+        )
+
         return validated_response
 
     async def async_validate(
@@ -532,6 +539,7 @@ class JsonSchema(Schema):
         iteration: Iteration,
         data: Optional[Dict[str, Any]],
         metadata: Dict,
+        attempt_number: int,
     ) -> Any:
         """Validate a dictionary of data against the schema.
 
@@ -587,6 +595,11 @@ class JsonSchema(Schema):
 
         # Remove all keys that have `Filter` values.
         validated_response = filter_in_dict(validated_response)
+        
+        # TODO: Capture error messages once Top Level error handling is merged in
+        trace_validation_result(
+            validation_logs=iteration.validator_logs(), attempt_number=attempt_number
+        )
 
         return validated_response
 

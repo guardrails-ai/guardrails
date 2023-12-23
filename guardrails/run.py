@@ -26,6 +26,7 @@ from guardrails.utils.reask_utils import (
     reasks_to_dict,
 )
 from guardrails.validator_base import ValidatorError
+from guardrails.utils.telemetry_utils import async_trace, trace
 
 add_destinations(logger.debug)
 
@@ -204,6 +205,7 @@ class Runner:
             raise e
         return call_log
 
+    @trace(name="step")
     def step(
         self,
         index: int,
@@ -509,6 +511,7 @@ class Runner:
 
         return instructions, prompt, msg_history
 
+    @trace(name="call")
     def call(
         self,
         index: int,
@@ -783,6 +786,7 @@ class AsyncRunner(Runner):
 
         return call_log
 
+    @async_trace(name="step")
     async def async_step(
         self,
         index: int,
@@ -893,6 +897,7 @@ class AsyncRunner(Runner):
             raise e
         return iteration
 
+    @async_trace(name="call")
     async def async_call(
         self,
         index: int,
