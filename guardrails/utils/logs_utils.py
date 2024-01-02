@@ -1,13 +1,13 @@
 from copy import deepcopy
-from typing import Any, Dict, List, Optional
 from datetime import datetime
+from typing import Any, Dict, List, Optional
 
 from guardrails.utils.pydantic_utils import ArbitraryModel
 from guardrails.utils.reask_utils import FieldReAsk, ReAsk, prune_obj_for_reasking
 from guardrails.validators import ValidationResult
 
 
-class   ValidatorLogs(ArbitraryModel):
+class ValidatorLogs(ArbitraryModel):
     """Logs for a single validator."""
 
     validator_name: str
@@ -18,6 +18,7 @@ class   ValidatorLogs(ArbitraryModel):
     start_time: Optional[datetime] = None
     end_time: Optional[datetime] = None
     instance_id: Optional[int] = None
+
 
 def update_response_by_path(output: dict, path: List[Any], value: Any) -> None:
     """Update the output by path.

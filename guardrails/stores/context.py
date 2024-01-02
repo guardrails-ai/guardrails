@@ -1,7 +1,6 @@
 from contextvars import ContextVar, copy_context
 from typing import Any, Dict, Literal, Optional, Union
 
-
 try:
     from opentelemetry import context
     from opentelemetry.context import Context as TracerContext
@@ -10,8 +9,10 @@ except Exception:
 
     class Tracer:
         pass
+
     class TracerContext:
         pass
+
     context = None
 
 
@@ -24,20 +25,19 @@ CALL_KWARGS_KEY: Literal["call_kwargs"] = "gr.reserved.call_kwargs"
 def set_tracer(tracer: Optional[Tracer] = None) -> None:
     set_context_var(TRACER_KEY, tracer)
 
+
 def get_tracer() -> Union[Tracer, None]:
     return get_context_var(TRACER_KEY)
+
 
 def set_tracer_context(tracer_context: Optional[TracerContext] = None) -> None:
     tracer_context = (
         tracer_context
         if tracer_context
-        else (
-            context.get_current()
-            if context is not None
-            else None
-        )
+        else (context.get_current() if context is not None else None)
     )
     set_context_var(TRACER_CONTEXT_KEY, tracer_context)
+
 
 def get_tracer_context() -> Union[TracerContext, None]:
     return get_context_var(TRACER_CONTEXT_KEY)

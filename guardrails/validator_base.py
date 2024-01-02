@@ -118,6 +118,7 @@ def filter_in_dict(schema: Dict) -> Dict:
 validators_registry = {}
 types_to_validators = defaultdict(list)
 
+
 def validator_factory(name: str, validate: Callable):
     def validate_wrapper(self, *args, **kwargs):
         return validate(*args, **kwargs)

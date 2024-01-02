@@ -30,7 +30,13 @@ from guardrails.prompt import Instructions, Prompt
 from guardrails.rail import Rail
 from guardrails.run import AsyncRunner, Runner, StreamRunner
 from guardrails.schema import Schema, StringSchema
-from guardrails.stores.context import Tracer, get_tracer_context, set_call_kwargs, set_tracer, set_tracer_context
+from guardrails.stores.context import (
+    Tracer,
+    get_tracer_context,
+    set_call_kwargs,
+    set_tracer,
+    set_tracer_context,
+)
 from guardrails.validators import Validator
 
 add_destinations(logger.debug)
@@ -52,6 +58,7 @@ class Guard(Generic[OT]):
     API, and optional prompt parameters, and returns the raw output from
     the LLM and the validated output.
     """
+
     _tracer = None
     _tracer_context = None
 
@@ -145,7 +152,6 @@ class Guard(Generic[OT]):
             else 1
         )
 
-
     def _set_tracer(self, tracer: Tracer = None) -> None:
         self._tracer = tracer
         set_tracer(tracer)
@@ -153,7 +159,9 @@ class Guard(Generic[OT]):
         self._tracer_context = get_tracer_context()
 
     @classmethod
-    def from_rail(cls, rail_file: str, num_reasks: Optional[int] = None, tracer: Tracer = None):
+    def from_rail(
+        cls, rail_file: str, num_reasks: Optional[int] = None, tracer: Tracer = None
+    ):
         """Create a Schema from a `.rail` file.
 
         Args:
@@ -174,7 +182,12 @@ class Guard(Generic[OT]):
         return cast(Guard[Dict], cls(rail=rail, num_reasks=num_reasks))
 
     @classmethod
-    def from_rail_string(cls, rail_string: str, num_reasks: Optional[int] = None, tracer: Tracer = None,):
+    def from_rail_string(
+        cls,
+        rail_string: str,
+        num_reasks: Optional[int] = None,
+        tracer: Tracer = None,
+    ):
         """Create a Schema from a `.rail` string.
 
         Args:
@@ -335,7 +348,7 @@ class Guard(Generic[OT]):
         set_call_kwargs(kwargs)
         set_tracer(self._tracer)
         set_tracer_context(self._tracer_context)
-        
+
         self.configure(num_reasks)
         if self.num_reasks is None:
             raise RuntimeError(

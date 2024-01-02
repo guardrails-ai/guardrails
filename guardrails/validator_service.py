@@ -1,7 +1,7 @@
 import asyncio
+import datetime
 import itertools
 import os
-import datetime
 from concurrent.futures import ProcessPoolExecutor
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -12,27 +12,30 @@ from guardrails.utils.casting_utils import to_string
 from guardrails.utils.logs_utils import ValidatorLogs
 from guardrails.utils.reask_utils import FieldReAsk, ReAsk
 from guardrails.utils.safe_get import safe_get
+from guardrails.utils.telemetry_utils import trace_validator
 from guardrails.validator_base import (
     FailResult,
     Filter,
     PassResult,
     Refrain,
-    Validator,
     ValidationResult,
+    Validator,
     ValidatorError,
 )
-from guardrails.utils.telemetry_utils import trace_validator
+
 
 class ValidatorServiceBase:
     """Base class for validator services."""
 
     # NOTE: This is avoiding an issue with multiprocessing.
-    #       If we wrap the validate methods at the class level or anytime before 
+    #       If we wrap the validate methods at the class level or anytime before
     #       loop.run_in_executor is called, multiprocessing fails with a Pickling error.
     #       This is a well known issue without any real solutions.
     #       Using `fork` instead of `spawn` may alleviate the symptom for POSIX systems,
     #       but is relatively unsupported on Windows.
-    def execute_validator(self, validator: Validator, value: Any, metadata: Optional[Dict]) -> ValidationResult:
+    def execute_validator(
+        self, validator: Validator, value: Any, metadata: Optional[Dict]
+    ) -> ValidationResult:
         traced_validator = trace_validator(
             validator_name=validator.rail_alias,
             obj_id=id(validator),
@@ -55,7 +58,9 @@ class ValidatorServiceBase:
             return results[0].fix_value
         elif on_fail_descriptor == "fix_reask":
             fixed_value = results[0].fix_value
-            result = self.execute_validator(validator, fixed_value, results[0].metadata or {})
+            result = self.execute_validator(
+                validator, fixed_value, results[0].metadata or {}
+            )
 
             if isinstance(result, FailResult):
                 return FieldReAsk(

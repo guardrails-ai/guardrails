@@ -112,7 +112,12 @@ class Schema:
             self._reask_instructions_template = None
 
     def validate(
-        self, iteration: Iteration, data: Any, metadata: Dict, attempt_number: int, **kwargs
+        self,
+        iteration: Iteration,
+        data: Any,
+        metadata: Dict,
+        attempt_number: int,
+        **kwargs,
     ) -> Any:
         """Validate a dictionary of data against the schema.
 
@@ -595,7 +600,7 @@ class JsonSchema(Schema):
 
         # Remove all keys that have `Filter` values.
         validated_response = filter_in_dict(validated_response)
-        
+
         # TODO: Capture error messages once Top Level error handling is merged in
         trace_validation_result(
             validation_logs=iteration.validator_logs(), attempt_number=attempt_number

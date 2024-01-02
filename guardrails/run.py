@@ -25,8 +25,8 @@ from guardrails.utils.reask_utils import (
     SkeletonReAsk,
     reasks_to_dict,
 )
-from guardrails.validator_base import ValidatorError
 from guardrails.utils.telemetry_utils import async_trace, trace
+from guardrails.validator_base import ValidatorError
 
 add_destinations(logger.debug)
 
