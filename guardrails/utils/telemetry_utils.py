@@ -7,7 +7,7 @@ from guardrails.stores.context import Tracer, TracerContext
 from guardrails.stores.context import get_tracer as get_context_tracer
 from guardrails.stores.context import get_tracer_context
 from guardrails.utils.casting_utils import to_string
-from guardrails.utils.logs_utils import FieldValidationLogs, ValidatorLogs
+from guardrails.utils.logs_utils import ValidatorLogs
 from guardrails.utils.reask_utils import ReAsk
 from guardrails.validator_base import Filter, Refrain
 

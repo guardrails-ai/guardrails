@@ -1844,13 +1844,13 @@ files = [
 
 [[package]]
 name = "importlib-metadata"
-version = "7.0.0"
+version = "6.11.0"
 description = "Read metadata from Python packages"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "importlib_metadata-7.0.0-py3-none-any.whl", hash = "sha256:d97503976bb81f40a193d41ee6570868479c69d5068651eb039c40d850c59d67"},
-    {file = "importlib_metadata-7.0.0.tar.gz", hash = "sha256:7fc841f8b8332803464e5dc1c63a2e59121f46ca186c0e2e182e80bf8c1319f7"},
+    {file = "importlib_metadata-6.11.0-py3-none-any.whl", hash = "sha256:f0afba6205ad8f8947c7d338b5342d5db2afbfd82f9cbef7879a9539cc12eb9b"},
+    {file = "importlib_metadata-6.11.0.tar.gz", hash = "sha256:1231cf92d825c9e03cfc4da076a16de6422c863558229ea0b22b675657463443"},
 ]
 
 [package.dependencies]
@@ -3761,6 +3761,48 @@ typing-extensions = ">=4.7,<5"
 datalib = ["numpy (>=1)", "pandas (>=1.2.3)", "pandas-stubs (>=1.1.0.11)"]
 
 [[package]]
+name = "opentelemetry-api"
+version = "1.22.0"
+description = "OpenTelemetry Python API"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "opentelemetry_api-1.22.0-py3-none-any.whl", hash = "sha256:43621514301a7e9f5d06dd8013a1b450f30c2e9372b8e30aaeb4562abf2ce034"},
+    {file = "opentelemetry_api-1.22.0.tar.gz", hash = "sha256:15ae4ca925ecf9cfdfb7a709250846fbb08072260fca08ade78056c502b86bed"},
+]
+
+[package.dependencies]
+deprecated = ">=1.2.6"
+importlib-metadata = ">=6.0,<7.0"
+
+[[package]]
+name = "opentelemetry-sdk"
+version = "1.22.0"
+description = "OpenTelemetry Python SDK"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "opentelemetry_sdk-1.22.0-py3-none-any.whl", hash = "sha256:a730555713d7c8931657612a88a141e3a4fe6eb5523d9e2d5a8b1e673d76efa6"},
+    {file = "opentelemetry_sdk-1.22.0.tar.gz", hash = "sha256:45267ac1f38a431fc2eb5d6e0c0d83afc0b78de57ac345488aa58c28c17991d0"},
+]
+
+[package.dependencies]
+opentelemetry-api = "1.22.0"
+opentelemetry-semantic-conventions = "0.43b0"
+typing-extensions = ">=3.7.4"
+
+[[package]]
+name = "opentelemetry-semantic-conventions"
+version = "0.43b0"
+description = "OpenTelemetry Semantic Conventions"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "opentelemetry_semantic_conventions-0.43b0-py3-none-any.whl", hash = "sha256:291284d7c1bf15fdaddf309b3bd6d3b7ce12a253cec6d27144439819a15d8445"},
+    {file = "opentelemetry_semantic_conventions-0.43b0.tar.gz", hash = "sha256:b9576fb890df479626fa624e88dde42d3d60b8b6c8ae1152ad157a8b97358635"},
+]
+
+[[package]]
 name = "orjson"
 version = "3.9.10"
 description = "Fast, correct Python JSON library supporting dataclasses, datetimes, and numpy"
@@ -3888,8 +3930,8 @@ files = [
 [package.dependencies]
 numpy = [
     {version = ">=1.20.3", markers = "python_version < \"3.10\""},
-    {version = ">=1.21.0", markers = "python_version >= \"3.10\" and python_version < \"3.11\""},
     {version = ">=1.23.2", markers = "python_version >= \"3.11\""},
+    {version = ">=1.21.0", markers = "python_version >= \"3.10\" and python_version < \"3.11\""},
 ]
 python-dateutil = ">=2.8.2"
 pytz = ">=2020.1"
@@ -7888,4 +7930,4 @@ vectordb = ["faiss-cpu", "numpy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "812b50a74ce902958c5ec258e4d0468ac40319a791e730dc47d94a20301ea77f"
+content-hash = "58bb953613b03fb3db20b65048638f70f1f6a31182aa2d368beb9957689158a6"
