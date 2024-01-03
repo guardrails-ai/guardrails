@@ -225,10 +225,6 @@ def sub_reasks_with_fixed_values(value: Any) -> Any:
         # TODO handle multiple fail results
         # Leave the ReAsk in place if there is no fix value
         # This allows us to determine the proper status for the call
-        copy = (
-            fix_value
-            if fix_value is not None
-            else copy
-        )
+        copy = fix_value if fix_value is not None else copy
 
     return copy
