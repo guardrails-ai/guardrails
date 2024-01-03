@@ -40,6 +40,7 @@ def test_non_empty_initialization():
             value_before_validation="Hello there!",
             validation_result=validation_result,
             value_after_validation="Hello there",
+            property_path="$",
         )
     ]
     error = "Validation Failed!"
@@ -106,6 +107,7 @@ non_fixable_fail_result = FailResult(
                         value_before_validation="Hello there!",
                         validation_result=fixable_fail_result,
                         value_after_validation="Hello there",
+                        property_path="$",
                     )
                 ]
             ),
@@ -127,12 +129,14 @@ def test_failed_validations():
             value_before_validation="Hello there!",
             validation_result=fixable_fail_result,
             value_after_validation="Hello there",
+            property_path="$",
         ),
         ValidatorLogs(
             validator_name="valid-length",
             value_before_validation="Hello there!",
             validation_result=PassResult(),
             value_after_validation="Hello there!",
+            property_path="$",
         ),
     ]
     outputs = Outputs(validator_logs=validator_logs)
@@ -153,6 +157,7 @@ def test_failed_validations():
                         value_before_validation="Hello there!",
                         validation_result=non_fixable_fail_result,
                         value_after_validation="Hello there",
+                        property_path="$",
                     )
                 ],
                 reasks=[

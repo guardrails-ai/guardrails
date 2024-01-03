@@ -13,6 +13,7 @@ class ValidatorLogs(ArbitraryModel):
     value_before_validation: Any
     validation_result: Optional[ValidationResult] = None
     value_after_validation: Optional[Any] = None
+    property_path: str
 
 
 def update_response_by_path(output: dict, path: List[Any], value: Any) -> None:

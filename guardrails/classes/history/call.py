@@ -18,6 +18,8 @@ from guardrails.utils.reask_utils import (
     gather_reasks,
     sub_reasks_with_fixed_values,
 )
+from guardrails.utils.safe_get import get_value_from_path
+from guardrails.validator_base import Refrain
 
 
 # We can't inherit from Iteration because python
@@ -303,6 +305,24 @@ class Call(ArbitraryModel):
             ]
         )
 
+    def _has_unresolved_failures(self) -> bool:
+        # Check for unresolved ReAsks
+        if len(self.reasks) > 0:
+            return True
+
+        # Check for scenario where no specified on-fail's produced an unfixed ReAsk,
+        #   but valdiation still failed (i.e. Refrain or NoOp).
+        output = self.fixed_output
+        for failure in self.failed_validations:
+            value = get_value_from_path(output, failure.property_path)
+            if value == failure.value_before_validation or isinstance(
+                failure.value_after_validation, Refrain
+            ):
+                return True
+
+        # No ReAsks and no unresolved failed validations
+        return False
+
     @property
     def status(self) -> str:
         """Returns the cumulative status of the run based on the validity of
@@ -311,14 +331,7 @@ class Call(ArbitraryModel):
             return not_run_status
         elif self.error:
             return error_status
-        # There are unresolved ReAsks
-        elif len(self.reasks) > 0:
-            return fail_status
-        # No specified on-fail's produced an unfixed ReAsk, but valdiation still failed.
-        elif (
-            len(self.failed_validations) > 0
-            and self.fixed_output == self.validation_output
-        ):
+        elif self._has_unresolved_failures():
             return fail_status
         return pass_status
 

@@ -20,3 +20,21 @@ def safe_get(
         return container.get(key, default)
     else:
         return safe_get_with_brackets(container, key, default)
+
+
+def get_value_from_path(
+    object: Union[str, List[Any], Dict[Any, Any]], property_path: str
+) -> Any:
+    path_elems = property_path.split(".")
+    path_elems.pop(0)
+
+    value = object
+    for elem in path_elems:
+        obj_value = safe_get(value, elem)
+        if not obj_value and elem.isnumeric():
+            # value was empty but the key may be an array index
+            value = safe_get(value, int(elem))
+        else:
+            value = obj_value
+
+    return value

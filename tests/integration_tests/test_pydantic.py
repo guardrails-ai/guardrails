@@ -31,7 +31,8 @@ def test_pydantic_with_reask(mocker):
     )
 
     # Assertions are made on the guard state object.
-    assert final_output.validated_output == pydantic.VALIDATED_OUTPUT_REASK_3
+    assert final_output.validation_passed is False
+    assert final_output.validated_output is None
 
     call = guard.history.first
 
@@ -76,7 +77,8 @@ def test_pydantic_with_reask(mocker):
     # Same as above
     assert call.reask_prompts.last == pydantic.COMPILED_PROMPT_REASK_2
     assert call.raw_outputs.last == pydantic.LLM_OUTPUT_REASK_2
-    assert call.validated_output == pydantic.VALIDATED_OUTPUT_REASK_3
+    assert call.validated_output is None
+    assert call.validation_output == pydantic.VALIDATED_OUTPUT_REASK_3
 
 
 def test_pydantic_with_full_schema_reask(mocker):
@@ -86,7 +88,7 @@ def test_pydantic_with_full_schema_reask(mocker):
     )
 
     guard = gd.Guard.from_pydantic(ListOfPeople, prompt=VALIDATED_RESPONSE_REASK_PROMPT)
-    _, final_output, *rest = guard(
+    final_output = guard(
         get_static_openai_chat_create_func(),
         model="gpt-3.5-turbo",
         max_tokens=512,
@@ -96,7 +98,8 @@ def test_pydantic_with_full_schema_reask(mocker):
     )
 
     # Assertions are made on the guard state object.
-    assert final_output == pydantic.VALIDATED_OUTPUT_REASK_3
+    assert final_output.validation_passed is False
+    assert final_output.validated_output is None
 
     call = guard.history.first
 
@@ -127,7 +130,8 @@ def test_pydantic_with_full_schema_reask(mocker):
         pydantic.COMPILED_INSTRUCTIONS_CHAT
     )
     assert call.raw_outputs.last == pydantic.LLM_OUTPUT_FULL_REASK_2
-    assert call.validated_output == pydantic.VALIDATED_OUTPUT_REASK_3
+    assert call.validated_output is None
+    assert call.validation_output == pydantic.VALIDATED_OUTPUT_REASK_3
 
 
 class ContainerModel(BaseModel):

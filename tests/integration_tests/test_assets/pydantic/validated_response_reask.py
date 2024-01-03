@@ -147,7 +147,24 @@ VALIDATED_OUTPUT_2 = {
 
 VALIDATED_OUTPUT_3 = {
     "people": [
-        {"name": "John Doe", "age": 28, "zip_code": None},
+        {
+            "name": "John Doe",
+            "age": 28,
+            "zip_code": FieldReAsk(
+                incorrect_value="None",
+                fail_results=[
+                    FailResult(
+                        error_message="Zip code must be numeric.",
+                        fix_value=None,
+                    ),
+                    FailResult(
+                        error_message="Zip code must be in California, and start with 9.",
+                        fix_value=None,
+                    ),
+                ],
+                path=["people", 0, "zip_code"],
+            ),
+        },
         {"name": "Jane Doe", "age": 32, "zip_code": "94103"},
         {"name": "James Smith", "age": 40, "zip_code": "92101"},
     ]

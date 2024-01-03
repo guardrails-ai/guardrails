@@ -85,11 +85,13 @@ async def test_async_validate_with_children(mocker):
 
     assert validate_dependents_mock.call_count == 1
     validate_dependents_mock.assert_called_once_with(
-        True, {}, field_validation, iteration
+        True, {}, field_validation, iteration, "$.mock-parent-key"
     )
 
     assert run_validators_mock.call_count == 1
-    run_validators_mock.assert_called_once_with(iteration, field_validation, True, {})
+    run_validators_mock.assert_called_once_with(
+        iteration, field_validation, True, {}, "$.mock-parent-key"
+    )
 
     assert validated_value == "run_validators_mock"
     assert validated_metadata == {"async": True}
@@ -115,7 +117,7 @@ async def test_async_validate_without_children(mocker):
 
     assert run_validators_mock.call_count == 1
     run_validators_mock.assert_called_once_with(
-        iteration, empty_field_validation, True, {}
+        iteration, empty_field_validation, True, {}, "$.mock-key"
     )
 
     assert validated_value == "run_validators_mock"
@@ -152,13 +154,14 @@ async def test_validate_dependents(mocker):
         metadata={},
         validator_setup=field_validation,
         iteration=iteration,
+        parent_path="$",
     )
 
     assert gather_spy.call_count == 1
 
     assert async_validate_mock.call_count == 2
-    async_validate_mock.assert_any_call(child_one.value, {}, child_one, iteration)
-    async_validate_mock.assert_any_call(child_two.value, {}, child_two, iteration)
+    async_validate_mock.assert_any_call(child_one.value, {}, child_one, iteration, "$")
+    async_validate_mock.assert_any_call(child_two.value, {}, child_two, iteration, "$")
 
     assert validated_value == {
         "child-one-key": "new-child-one-value",
@@ -182,11 +185,12 @@ async def test_run_validators(mocker):
         ("noop", [noop_validator_1, noop_validator_2]),
     ]
 
-    def mock_run_validator(iteration, validator, value, metadata):
+    def mock_run_validator(iteration, validator, value, metadata, property_path):
         return ValidatorLogs(
             validator_name=validator.name,
             value_before_validation=value,
             validation_result=PassResult(),
+            property_path=property_path,
         )
 
     run_validator_mock = mocker.patch.object(
@@ -211,6 +215,7 @@ async def test_run_validators(mocker):
         metadata={},
         validator_setup=empty_field_validation,
         iteration=iteration,
+        property_path="$",
     )
 
     assert get_running_loop_mock.call_count == 1
@@ -226,6 +231,7 @@ async def test_run_validators(mocker):
         noop_validator_2,
         empty_field_validation.value,
         {},
+        "$",
     )
 
     assert run_validator_mock.call_count == 3
@@ -250,6 +256,7 @@ async def test_run_validators_with_override(mocker):
         validator_name="override",
         value_before_validation="mock-value",
         validation_result=PassResult(value_override="override"),
+        property_path="$",
     )
 
     mock_loop = MockLoop(True)
@@ -267,6 +274,7 @@ async def test_run_validators_with_override(mocker):
         metadata={},
         validator_setup=empty_field_validation,
         iteration=iteration,
+        property_path="$",
     )
 
     assert get_running_loop_mock.call_count == 1
