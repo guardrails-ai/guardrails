@@ -14,7 +14,9 @@ def safe_get_with_brackets(
 
 
 def safe_get(
-    container: Union[str, List[Any], Dict[Any, Any]], key: Any, default: Optional[Any] = None
+    container: Union[str, List[Any], Dict[Any, Any]],
+    key: Any,
+    default: Optional[Any] = None,
 ) -> Any:
     if isinstance(container, dict):
         return container.get(key, default)
