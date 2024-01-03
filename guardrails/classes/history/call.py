@@ -132,16 +132,6 @@ class Call(ArbitraryModel):
 
         return Stack()
 
-    # # Since all properties now are cumulative in nature, this has no place here
-    # @property
-    # def outputs(self) -> Outputs:
-    #     """The outputs from the last iteration."""
-    #     last_iteration = self.iterations.last
-    #     if last_iteration:
-    #         return last_iteration.outputs
-    #     # To allow chaining without getting AttributeErrors
-    #     return Outputs()
-
     @property
     def logs(self) -> Stack[str]:
         """Returns all logs from all iterations as a stack."""
@@ -321,7 +311,14 @@ class Call(ArbitraryModel):
             return not_run_status
         elif self.error:
             return error_status
+        # There are unresolved ReAsks
         elif len(self.reasks) > 0:
+            return fail_status
+        # No specified on-fail's produced an unfixed ReAsk, but valdiation still failed.
+        elif (
+            len(self.failed_validations) > 0
+            and self.fixed_output == self.validation_output
+        ):
             return fail_status
         return pass_status
 

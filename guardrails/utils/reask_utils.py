@@ -221,7 +221,14 @@ def sub_reasks_with_fixed_values(value: Any) -> Any:
         for dict_key, dict_value in value.items():
             copy[dict_key] = sub_reasks_with_fixed_values(dict_value)
     elif isinstance(copy, FieldReAsk):
+        fix_value = copy.fail_results[0].fix_value
         # TODO handle multiple fail results
-        copy = copy.fail_results[0].fix_value
+        # Leave the ReAsk in place if there is no fix value
+        # This allows us to determine the proper status for the call
+        copy = (
+            fix_value
+            if fix_value is not None
+            else copy
+        )
 
     return copy
