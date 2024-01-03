@@ -101,6 +101,7 @@ def test_non_empty_initialization():
         ReAsk(incorrect_value="Hello there!", fail_results=[first_validation_result])
     ]
     first_validator_log = ValidatorLogs(
+        registered_name="no-punctuation",
         validator_name="no-punctuation",
         value_before_validation="Hello there!",
         validation_result=first_validation_result,
@@ -136,6 +137,7 @@ def test_non_empty_initialization():
     second_validated_output = "Hello there"
     second_reasks = []
     second_validator_log = ValidatorLogs(
+        registered_name="no-punctuation",
         validator_name="no-punctuation",
         value_before_validation="Hello there",
         validation_result=PassResult(),

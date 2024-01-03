@@ -1,5 +1,5 @@
 import asyncio
-import datetime
+from datetime import datetime
 import itertools
 import os
 from concurrent.futures import ProcessPoolExecutor

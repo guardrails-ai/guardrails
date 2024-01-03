@@ -116,7 +116,7 @@ class Schema:
         iteration: Iteration,
         data: Any,
         metadata: Dict,
-        attempt_number: int,
+        attempt_number: int = 0,
         **kwargs,
     ) -> Any:
         """Validate a dictionary of data against the schema.
@@ -130,7 +130,7 @@ class Schema:
         raise NotImplementedError
 
     async def async_validate(
-        self, iteration: Iteration, data: Any, metadata: Dict, attempt_number: int
+        self, iteration: Iteration, data: Any, metadata: Dict, attempt_number: int = 0
     ) -> Any:
         """Asynchronously validate a dictionary of data against the schema.
 
@@ -474,7 +474,7 @@ class JsonSchema(Schema):
         iteration: Iteration,
         data: Optional[Dict[str, Any]],
         metadata: Dict,
-        attempt_number: int,
+        attempt_number: int = 0,
         **kwargs,
     ) -> Any:
         """Validate a dictionary of data against the schema.
@@ -534,7 +534,7 @@ class JsonSchema(Schema):
 
         # TODO: Capture error messages once Top Level error handling is merged in
         trace_validation_result(
-            validation_logs=iteration.validator_logs(), attempt_number=attempt_number
+            validation_logs=iteration.validator_logs, attempt_number=attempt_number
         )
 
         return validated_response
@@ -544,7 +544,7 @@ class JsonSchema(Schema):
         iteration: Iteration,
         data: Optional[Dict[str, Any]],
         metadata: Dict,
-        attempt_number: int,
+        attempt_number: int = 0,
     ) -> Any:
         """Validate a dictionary of data against the schema.
 
@@ -603,7 +603,7 @@ class JsonSchema(Schema):
 
         # TODO: Capture error messages once Top Level error handling is merged in
         trace_validation_result(
-            validation_logs=iteration.validator_logs(), attempt_number=attempt_number
+            validation_logs=iteration.validator_logs, attempt_number=attempt_number
         )
 
         return validated_response

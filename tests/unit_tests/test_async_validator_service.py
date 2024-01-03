@@ -184,6 +184,7 @@ async def test_run_validators(mocker):
 
     def mock_run_validator(iteration, validator, value, metadata):
         return ValidatorLogs(
+            registered_name=validator.name,
             validator_name=validator.name,
             value_before_validation=value,
             validation_result=PassResult(),
@@ -247,6 +248,7 @@ async def test_run_validators_with_override(mocker):
 
     run_validator_mock = mocker.patch.object(avs, "run_validator")
     run_validator_mock.return_value = ValidatorLogs(
+        registered_name="override",
         validator_name="override",
         value_before_validation="mock-value",
         validation_result=PassResult(value_override="override"),
