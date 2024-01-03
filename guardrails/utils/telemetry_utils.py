@@ -1,7 +1,7 @@
 import logging
 from functools import wraps
 from operator import attrgetter
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from guardrails.stores.context import Tracer, TracerContext
 from guardrails.stores.context import get_tracer as get_context_tracer
