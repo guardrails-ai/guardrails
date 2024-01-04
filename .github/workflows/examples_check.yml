@@ -48,7 +48,7 @@ jobs:
         mkdir /tmp/nltk_data;
         poetry run python -m nltk.downloader -d /tmp/nltk_data punkt;
     - name: Use venv
-      run: source .venv/bin/activate
+      run: source $VENV
     - name: Execute notebooks and check for errors
       run: bash ./.github/workflows/scripts/run_notebooks.sh ${{ matrix.notebook }}
 
