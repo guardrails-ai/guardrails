@@ -38,7 +38,7 @@ jobs:
     - name: Install dependencies
       run: |
         make full;
-        poetry add "openai>=1.x" jupyter nbconvert cohere;
+        poetry add "openai>=1.2.4" jupyter nbconvert cohere;
     - name: Check for pypdfium2
       run: poetry run pip show pypdfium2
     - name: Huggingface Hub Login
