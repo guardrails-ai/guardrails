@@ -45,9 +45,9 @@ async def test_entity_extraction_with_reask(mocker, multiprocessing_validators: 
         mock_preprocess_prompt.assert_called()
 
     # Assertions are made on the guard state object.
+    assert final_output.validation_passed is True
     assert final_output.validated_output == entity_extraction.VALIDATED_OUTPUT_REASK_2
 
-    # FIXME
     guard_history = guard.history
     call = guard_history.first
 
@@ -91,7 +91,13 @@ async def test_entity_extraction_with_noop(mocker):
     )
 
     # Assertions are made on the guard state object.
-    assert final_output.validated_output == entity_extraction.VALIDATED_OUTPUT_NOOP
+
+    # Old assertion which is wrong
+    # This should not pass validation and therefore will not have a validated output
+    # assert final_output.validated_output == entity_extraction.VALIDATED_OUTPUT_NOOP
+
+    assert final_output.validation_passed is False
+    assert final_output.validated_output is None
 
     call = guard.history.first
 
@@ -103,7 +109,7 @@ async def test_entity_extraction_with_noop(mocker):
     # For orginal prompt and output
     assert call.compiled_prompt == entity_extraction.COMPILED_PROMPT
     assert call.raw_outputs.last == entity_extraction.LLM_OUTPUT
-    assert call.validated_output == entity_extraction.VALIDATED_OUTPUT_NOOP
+    assert call.validation_output == entity_extraction.VALIDATED_OUTPUT_NOOP
 
 
 @pytest.mark.asyncio
@@ -124,7 +130,8 @@ async def test_entity_extraction_with_noop_pydantic(mocker):
     )
 
     # Assertions are made on the guard state object.
-    assert final_output.validated_output == entity_extraction.VALIDATED_OUTPUT_NOOP
+    assert final_output.validation_passed is False
+    assert final_output.validated_output is None
 
     call = guard.history.first
 
@@ -136,7 +143,7 @@ async def test_entity_extraction_with_noop_pydantic(mocker):
     # For orginal prompt and output
     assert call.compiled_prompt == entity_extraction.COMPILED_PROMPT
     assert call.raw_outputs.last == entity_extraction.LLM_OUTPUT
-    assert call.validated_output == entity_extraction.VALIDATED_OUTPUT_NOOP
+    assert call.validation_output == entity_extraction.VALIDATED_OUTPUT_NOOP
 
 
 @pytest.mark.asyncio
@@ -157,6 +164,7 @@ async def test_entity_extraction_with_filter(mocker):
     )
 
     # Assertions are made on the guard state object.
+    assert final_output.validation_passed is True
     assert final_output.validated_output == entity_extraction.VALIDATED_OUTPUT_FILTER
 
     call = guard.history.first
@@ -168,6 +176,7 @@ async def test_entity_extraction_with_filter(mocker):
     # For orginal prompt and output
     assert call.compiled_prompt == entity_extraction.COMPILED_PROMPT
     assert call.raw_outputs.last == entity_extraction.LLM_OUTPUT
+    assert call.validation_output == entity_extraction.VALIDATED_OUTPUT_FILTER
     assert call.validated_output == entity_extraction.VALIDATED_OUTPUT_FILTER
 
 
@@ -189,6 +198,7 @@ async def test_entity_extraction_with_fix(mocker):
     )
 
     # Assertions are made on the guard state object.
+    assert final_output.validation_passed is True
     assert final_output.validated_output == entity_extraction.VALIDATED_OUTPUT_FIX
 
     call = guard.history.first
@@ -219,6 +229,8 @@ async def test_entity_extraction_with_refrain(mocker):
         num_reasks=1,
     )
     # Assertions are made on the guard state object.
+
+    assert final_output.validation_passed is False
     assert final_output.validated_output == entity_extraction.VALIDATED_OUTPUT_REFRAIN
 
     call = guard.history.first

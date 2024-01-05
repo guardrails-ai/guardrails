@@ -80,6 +80,7 @@ def test_non_empty_initialization():
             value_before_validation="Hello there!",
             validation_result=validation_result,
             value_after_validation="Hello there",
+            property_path="$",
         )
     ]
     error = "Validation Failed!"

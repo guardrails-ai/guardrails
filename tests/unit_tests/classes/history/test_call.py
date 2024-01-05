@@ -105,6 +105,7 @@ def test_non_empty_initialization():
         value_before_validation="Hello there!",
         validation_result=first_validation_result,
         value_after_validation="Hello there",
+        property_path="$",
     )
     first_validator_logs = [first_validator_log]
     first_outputs = Outputs(
@@ -140,6 +141,7 @@ def test_non_empty_initialization():
         value_before_validation="Hello there",
         validation_result=PassResult(),
         value_after_validation="Hello there",
+        property_path="$",
     )
     second_validator_logs = [second_validator_log]
     second_outputs = Outputs(
