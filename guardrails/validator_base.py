@@ -162,6 +162,18 @@ def register_validator(name: str, data_type: Union[str, List[str]]):
     return decorator
 
 
+def get_validator(name: str):
+    is_hub_validator = name.startswith("hub://")
+    validator_key = name.replace("hub://", "") if is_hub_validator else name
+    registration = validators_registry.get(validator_key)
+    if not registration and name.startswith("hub://"):
+        # This should import everything and trigger registration
+        import guardrails.hub  # noqa
+
+        return validators_registry.get(validator_key)
+    return registration
+
+
 class ValidationResult(BaseModel):
     outcome: str
     metadata: Optional[Dict[str, Any]] = None
