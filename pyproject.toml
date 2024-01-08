@@ -52,6 +52,7 @@ pydash = "^7.0.6"
 docspec_python = "2.2.1"
 pydoc-markdown = "4.8.2"
 opentelemetry-sdk = "^1.22.0"
+opentelemetry-exporter-otlp-proto-grpc = "^1.22.0"
 
 
 [tool.poetry.extras]
