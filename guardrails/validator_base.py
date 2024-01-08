@@ -4,6 +4,8 @@ from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Type, Un
 
 from pydantic import BaseModel, Field
 
+from guardrails.constants import hub
+
 
 class ValidatorError(Exception):
     """Base class for all validator errors."""
@@ -163,10 +165,10 @@ def register_validator(name: str, data_type: Union[str, List[str]]):
 
 
 def get_validator(name: str):
-    is_hub_validator = name.startswith("hub://")
-    validator_key = name.replace("hub://", "") if is_hub_validator else name
+    is_hub_validator = name.startswith(hub)
+    validator_key = name.replace(hub, "") if is_hub_validator else name
     registration = validators_registry.get(validator_key)
-    if not registration and name.startswith("hub://"):
+    if not registration and name.startswith(hub):
         # This should import everything and trigger registration
         import guardrails.hub  # noqa
 
