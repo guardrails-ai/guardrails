@@ -30,6 +30,9 @@ def get_value_from_path(
     if object is None:
         return None
 
+    if isinstance(object, str) and property_path == "$.string":
+        return object
+
     path_elems = property_path.split(".")
     path_elems.pop(0)
 
