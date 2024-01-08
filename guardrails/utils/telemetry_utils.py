@@ -257,3 +257,30 @@ def async_trace(name: str, tracer: Optional[Tracer] = None):
         return to_trace_or_not_to_trace
 
     return trace_wrapper
+
+
+def default_otel_collector_tracer():
+    """This is the standard otel tracer set to talk to a grpc open telemetry
+    collector running on port 4317.
+
+    Follow ups:
+    1. create a sep func that creates a tracer that talks directly to grafana
+    2. Integrate these more cleanly so that the servicename = the guardname
+    """
+    from opentelemetry import trace
+    from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+    from opentelemetry.sdk.resources import SERVICE_NAME, Resource
+    from opentelemetry.sdk.trace import TracerProvider
+    from opentelemetry.sdk.trace.export import BatchSpanProcessor
+
+    # Service name is required for most backends
+    resource = Resource(attributes={SERVICE_NAME: "guardsrails"})
+
+    traceProvider = TracerProvider(resource=resource)
+    processor = BatchSpanProcessor(
+        OTLPSpanExporter(endpoint="localhost:4317", insecure=True)
+    )
+    traceProvider.add_span_processor(processor)
+    trace.set_tracer_provider(traceProvider)
+
+    return trace.get_tracer("gr")

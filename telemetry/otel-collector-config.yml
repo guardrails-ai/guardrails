@@ -4,16 +4,16 @@ extensions:
   basicauth/grafana_cloud_tempo:
     # https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/extension/basicauthextension
     client_auth:
-      username: USERNAME
-      password: PASSWORD
+      username: "734526"
+      password: "glc_eyJvIjoiOTc5MDAyIiwibiI6InN0YWNrLTc4MjQyNi1pbnRlZ3JhdGlvbi10ZXN0aW5nIiwiayI6IjYwakp3YmJ6RmsxN3NNMTc2OTVIVTJ5SSIsIm0iOnsiciI6InByb2QtdXMtZWFzdC0wIn19"
   basicauth/grafana_cloud_prometheus:
     client_auth:
-      username: USERNAME
-      password: PASSWORD
+      username: "1272753"
+      password: "glc_eyJvIjoiOTc5MDAyIiwibiI6InN0YWNrLTc4MjQyNi1pbnRlZ3JhdGlvbi10ZXN0aW5nIiwiayI6IjYwakp3YmJ6RmsxN3NNMTc2OTVIVTJ5SSIsIm0iOnsiciI6InByb2QtdXMtZWFzdC0wIn19"
   basicauth/grafana_cloud_loki:
     client_auth:
-      username: USERNAME
-      password: PASSWORD
+      username: "735422"
+      password: "glc_eyJvIjoiOTc5MDAyIiwibiI6InN0YWNrLTc4MjQyNi1pbnRlZ3JhdGlvbi10ZXN0aW5nIiwiayI6IjYwakp3YmJ6RmsxN3NNMTc2OTVIVTJ5SSIsIm0iOnsiciI6InByb2QtdXMtZWFzdC0wIn19"
 
 receivers:
   otlp:
