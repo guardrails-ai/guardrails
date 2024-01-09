@@ -1,6 +1,7 @@
 import typer
 
 from guardrails.cli.guardrails import guardrails
+from guardrails.cli.logger import logger
 
 
 def compile_rail(rail: str, out: str) -> None:
@@ -21,4 +22,4 @@ def compile(
     ),
 ):
     """Compile guardrails from a `rail` spec."""
-    print("Not supported yet. Use `validate` instead.")
+    logger.error("Not supported yet. Use `validate` instead.")

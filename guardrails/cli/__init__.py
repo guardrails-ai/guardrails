@@ -1,4 +1,5 @@
 import guardrails.cli.compile
+import guardrails.cli.configure
 import guardrails.cli.validate
 
 from guardrails.cli.guardrails import guardrails as cli

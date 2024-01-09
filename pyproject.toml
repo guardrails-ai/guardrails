@@ -51,6 +51,7 @@ huggingface_hub = {version = "^0.16.4", optional = true}
 pydash = "^7.0.6"
 docspec_python = "2.2.1"
 pydoc-markdown = "4.8.2"
+coloredlogs = "^15.0.1"
 
 
 [tool.poetry.extras]

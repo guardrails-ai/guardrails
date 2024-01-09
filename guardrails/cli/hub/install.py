@@ -1,6 +1,7 @@
 import typer
 
 from guardrails.cli.hub.hub import hub
+from guardrails.cli.logger import logger
 
 @hub.command()
 def install(
@@ -9,4 +10,4 @@ def install(
     )
 ):
     """Install a validator from the Hub."""
-    print(f"Installing {package_uri}...")
+    logger.info(f"Installing {package_uri}...")
