@@ -20,6 +20,10 @@ from guardrails.validator_base import (
 )
 
 
+def key_not_empty(key: str) -> bool:
+    return key is not None and len(str(key)) > 0
+
+
 class ValidatorServiceBase:
     """Base class for validator services."""
 
@@ -153,7 +157,7 @@ class SequentialValidatorService(ValidatorServiceBase):
         iteration: Iteration,
         path: str = "$",
     ) -> Tuple[Any, dict]:
-        property_path = f"{path}.{validator_setup.key}"
+        property_path = f"{path}.{validator_setup.key}" if key_not_empty(validator_setup.key) else path
         # Validate children first
         if validator_setup.children:
             self.validate_dependents(
@@ -296,7 +300,7 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
         iteration: Iteration,
         path: str = "$",
     ) -> Tuple[Any, dict]:
-        property_path = f"{path}.{validator_setup.key}" if validator_setup.key else path
+        property_path = f"{path}.{validator_setup.key}" if key_not_empty(validator_setup.key) else path
         # Validate children first
         if validator_setup.children:
             await self.validate_dependents(
