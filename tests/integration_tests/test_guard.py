@@ -713,7 +713,7 @@ def test_sequential_validator_log_is_not_duplicated(mocker):
             entity_extraction.PYDANTIC_RAIL_WITH_NOOP, entity_extraction.PYDANTIC_PROMPT
         )
 
-        _, final_output, *rest = guard(
+        guard(
             llm_api=get_static_openai_create_func(),
             prompt_params={"document": content[:6000]},
             num_reasks=1,
@@ -727,7 +727,9 @@ def test_sequential_validator_log_is_not_duplicated(mocker):
             for x in guard.history.first.iterations.first.validator_logs
             if x.validator_name == "OneLine"
         )
-        assert len(one_line_logs) == len(final_output.get("fees"))
+        assert len(one_line_logs) == len(
+            guard.history.first.validation_output.get("fees")
+        )
 
     finally:
         if proc_count_bak is None:
