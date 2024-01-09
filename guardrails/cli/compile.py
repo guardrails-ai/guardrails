@@ -1,13 +1,14 @@
 import typer
 
-from guardrails.cli.cli import cli
+from guardrails.cli.guardrails import guardrails
+
 
 def compile_rail(rail: str, out: str) -> None:
     """Compile guardrails from the guardrails.yml file."""
     raise NotImplementedError("Currently compiling rail is not supported.")
 
 
-@cli.command()
+@guardrails.command()
 def compile(
     rail: str = typer.Argument(
         ..., help="Path to the rail spec.", exists=True, file_okay=True, dir_okay=False

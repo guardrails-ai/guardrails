@@ -1,9 +1,10 @@
 import json
 from typing import Dict, Union
-
+import typer
 
 from guardrails import Guard
-from guardrails.cli.cli import cli
+from guardrails.cli.guardrails import guardrails
+
 
 def validate_llm_output(rail: str, llm_output: str) -> Union[str, Dict, None]:
     """Validate guardrails.yml file."""
@@ -12,7 +13,7 @@ def validate_llm_output(rail: str, llm_output: str) -> Union[str, Dict, None]:
     return result.validated_output
 
 
-@cli.command()
+@guardrails.command()
 def validate(
     rail: str = typer.Argument(
         ..., help="Path to the rail spec.", exists=True, file_okay=True, dir_okay=False
