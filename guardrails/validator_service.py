@@ -157,7 +157,11 @@ class SequentialValidatorService(ValidatorServiceBase):
         iteration: Iteration,
         path: str = "$",
     ) -> Tuple[Any, dict]:
-        property_path = f"{path}.{validator_setup.key}" if key_not_empty(validator_setup.key) else path
+        property_path = (
+            f"{path}.{validator_setup.key}"
+            if key_not_empty(validator_setup.key)
+            else path
+        )
         # Validate children first
         if validator_setup.children:
             self.validate_dependents(
@@ -300,7 +304,11 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
         iteration: Iteration,
         path: str = "$",
     ) -> Tuple[Any, dict]:
-        property_path = f"{path}.{validator_setup.key}" if key_not_empty(validator_setup.key) else path
+        property_path = (
+            f"{path}.{validator_setup.key}"
+            if key_not_empty(validator_setup.key)
+            else path
+        )
         # Validate children first
         if validator_setup.children:
             await self.validate_dependents(
