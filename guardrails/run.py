@@ -596,7 +596,7 @@ class Runner:
         """Validate the output."""
         with start_action(action_type="validate", index=index) as action:
             validated_output = output_schema.validate(
-                iteration, parsed_output, self.metadata, **kwargs
+                iteration, parsed_output, self.metadata, attempt_number=index, **kwargs
             )
 
             action.log(
@@ -969,7 +969,7 @@ class AsyncRunner(Runner):
         """Validate the output."""
         with start_action(action_type="validate", index=index) as action:
             validated_output = await output_schema.async_validate(
-                iteration, parsed_output, self.metadata
+                iteration, parsed_output, self.metadata, attempt_number=index
             )
 
             action.log(

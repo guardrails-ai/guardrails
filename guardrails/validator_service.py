@@ -245,14 +245,12 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
                 else:
                     # run the validators in the current process
                     result = self.run_validator(iteration, validator, value, metadata)
-                    # VALIDATOR_LOG DUPLICATION
                     validators_logs.append(result)
 
             # wait for the parallel tasks to finish
             if parallel_tasks:
                 parallel_results = await asyncio.gather(*parallel_tasks)
                 iteration.outputs.validator_logs.extend(parallel_results)
-                # VALIDATOR_LOG DUPLICATION
                 validators_logs.extend(parallel_results)
 
             # process the results, handle failures
