@@ -28,6 +28,7 @@ class ModuleManifest(Serializeable):
     author: Contributor
     maintainers: List[Contributor]
     repository: Repository
+    namespace: str
     package_name: str
     module_name: str
     post_install: str
@@ -42,6 +43,7 @@ class ModuleManifest(Serializeable):
             Contributor.from_dict(data.get("author", {})),
             [Contributor.from_dict(m) for m in data.get("maintainers", [])],
             Repository.from_dict(data.get("repository", {})),
+            data.get("namespace"),
             data.get("package-name"),
             data.get("module-name"),
             data.get("post-install"),
