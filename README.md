@@ -105,11 +105,8 @@ Using `RAIL`, we:
 <prompt>
 Explain what a bank run is in a tweet.
 
-${gr.xml_prefix_prompt}
-
 ${output_schema}
 
-${gr.json_suffix_prompt_v2_wo_none}
 </prompt>
 </rail>
 ```
@@ -155,8 +152,8 @@ import openai
 
 # Wrap the OpenAI API call with the `guard` object
 raw_llm_output, validated_output, *rest = guard(
-    openai.Completion.create,
-    engine="text-davinci-003",
+    openai.completions.create,
+    engine="gpt-3.5-turbo-instruct",
     max_tokens=1024,
     temperature=0.3
 )
