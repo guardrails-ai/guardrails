@@ -27,6 +27,7 @@ class Credentials(Serializeable):
                 for line in lines:
                     key, value = line.split('=', 1)
                     creds[key.strip()] = value.strip()
+                rc_file.close()
                 return Credentials.from_dict(creds)
 
         except FileNotFoundError as e:

@@ -13,7 +13,7 @@ class Contributor(Serializeable):
 @dataclass
 class Repository(Serializeable):
     url: str
-    branch: Optional[str]
+    branch: Optional[str] = None
 
 
 @dataclass
@@ -31,10 +31,10 @@ class ModuleManifest(Serializeable):
     namespace: str
     package_name: str
     module_name: str
-    post_install: str
-    index: str
     exports: List[str]
     tags: ModuleTags
+    post_install: Optional[str] = None
+    index: Optional[str] = None
 
     # @override
     @classmethod

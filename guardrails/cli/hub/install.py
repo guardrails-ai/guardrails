@@ -78,7 +78,7 @@ def get_hub_directory(manifest: ModuleManifest, site_packages: str) -> str:
 def add_to_hub_init(manifest: ModuleManifest, site_packages: str):
     org_package = get_org_and_package_dirs(manifest)
     exports: List[str] = manifest.exports or []
-    sorted_exports = sorted(exports)
+    sorted_exports = sorted(exports, reverse=True)
     module_name = manifest.module_name
     relative_path = '.'.join([*org_package, module_name])
     import_line = f"from guardrails.hub.{relative_path} import {', '.join(sorted_exports)}"
@@ -89,33 +89,31 @@ def add_to_hub_init(manifest: ModuleManifest, site_packages: str):
         content = hub_init.read()
         if import_line in content:
             hub_init.close()
-            return
-        hub_init.seek(0, 2)
-        if len(content) > 0:
-            hub_init.write("\n")
-        hub_init.write(import_line)
-        hub_init.close()
+        else:
+            hub_init.seek(0, 2)
+            if len(content) > 0:
+                hub_init.write("\n")
+            hub_init.write(import_line)
+            hub_init.close()
 
     namespace = org_package[0]
     namespace_init_location = os.path.join(site_packages, 'guardrails', 'hub', namespace, '__init__.py')
     if os.path.isfile(namespace_init_location):
         with open(namespace_init_location, 'a+') as namespace_init:
             namespace_init.seek(0, 0)
-            content = hub_init.read()
+            content = namespace_init.read()
             if import_line in content:
                 namespace_init.close()
-                return
-            namespace_init.seek(0, 2)
-            if len(content) > 0:
-                namespace_init.write("\n")
-            namespace_init.write(import_line)
-            namespace_init.close()
-            return
+            else:
+                namespace_init.seek(0, 2)
+                if len(content) > 0:
+                    namespace_init.write("\n")
+                namespace_init.write(import_line)
+                namespace_init.close()
     else:
         with open(namespace_init_location, 'w') as namespace_init:
             namespace_init.write(import_line)
             namespace_init.close()
-            return
 
 
 def run_post_install(manifest: ModuleManifest):
