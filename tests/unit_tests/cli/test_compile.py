@@ -1,6 +1,6 @@
 import pytest
 
-from guardrails.cli.compile import compile_rail, compile, logger
+from guardrails.cli.compile import compile, compile_rail, logger
 
 
 def test_compile_rail():

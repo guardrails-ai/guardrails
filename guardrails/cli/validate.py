@@ -1,5 +1,6 @@
 import json
 from typing import Dict, Union
+
 import typer
 
 from guardrails import Guard

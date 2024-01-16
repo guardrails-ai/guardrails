@@ -1,14 +1,12 @@
 import json
 import sys
+from typing import Any, Dict, List
+from urllib.request import Request, urlopen
 
 from guardrails.cli.hub.credentials import Credentials
 from guardrails.cli.logger import logger
 from guardrails.cli.server.auth import authenticate
-from typing import List, Dict, Any
-from urllib.request import Request, urlopen
-
 from guardrails.cli.server.module_manifest import ModuleManifest
-
 
 hub_url = "https://raw.githubusercontent.com/guardrails-ai/guardrails-hub"
 branch = "install-script"
@@ -35,6 +33,7 @@ def fetch_hub_index() -> List[Dict[str, Any]]:
     index_path = "index.json"
     index_url = f"{hub_url}/{branch}/{index_path}"
     return fetch_content(index_url)
+
 
 def fetch_module(module_name: str) -> ModuleManifest:
     creds = Credentials.from_rc_file()

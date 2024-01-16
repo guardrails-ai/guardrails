@@ -6,8 +6,8 @@ from guardrails.cli.server.serializeable import Serializeable
 
 @dataclass
 class Contributor(Serializeable):
-   name: str
-   email: str
+    name: str
+    email: str
 
 
 @dataclass
@@ -43,11 +43,11 @@ class ModuleManifest(Serializeable):
             Contributor.from_dict(data.get("author", {})),
             [Contributor.from_dict(m) for m in data.get("maintainers", [])],
             Repository.from_dict(data.get("repository", {})),
-            data.get("namespace"),
-            data.get("package-name"),
-            data.get("module-name"),
+            data.get("namespace"),  # type: ignore
+            data.get("package-name"),  # type: ignore
+            data.get("module-name"),  # type: ignore
+            data.get("exports"),  # type: ignore
+            ModuleTags.from_dict(data.get("tags", {})),
             data.get("post-install"),
             data.get("index"),
-            data.get("exports"),
-            ModuleTags.from_dict(data.get("tags", {}))
         )
