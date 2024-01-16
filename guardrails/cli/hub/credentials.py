@@ -9,6 +9,7 @@ from guardrails.cli.server.serializeable import Serializeable
 
 @dataclass
 class Credentials(Serializeable):
+    id: str
     client_id: str
     client_secret: str
     no_metrics: bool = False

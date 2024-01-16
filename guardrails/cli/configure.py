@@ -1,4 +1,5 @@
 import os
+import uuid
 from os.path import expanduser
 from typing import Optional
 
@@ -15,6 +16,7 @@ def save_configuration_file(
     guardrails_rc = os.path.join(home, ".guardrailsrc")
     with open(guardrails_rc, "w") as rc_file:
         lines = [
+            f"id={str(uuid.uuid4())}{os.linesep}",
             f"client_id={client_id}{os.linesep}",
             f"client_secret={client_secret}{os.linesep}",
             f"no_metrics={str(no_metrics).lower()}{os.linesep}",

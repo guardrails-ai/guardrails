@@ -66,6 +66,9 @@ def test_save_configuration_file(mocker):
     mock_open = mocker.patch("guardrails.cli.configure.open")
     mock_open.return_value = mock_file
 
+    mock_uuid = mocker.patch("guardrails.cli.configure.uuid.uuid4")
+    mock_uuid.return_value = "f49354e0-80c7-4591-81db-cc2f945e5f1e"
+
     writelines_spy = mocker.spy(mock_file, "writelines")
     close_spy = mocker.spy(mock_file, "close")
 
@@ -79,6 +82,7 @@ def test_save_configuration_file(mocker):
     assert mock_open.call_count == 1
     writelines_spy.assert_called_once_with(
         [
+            f"id=f49354e0-80c7-4591-81db-cc2f945e5f1e{os.linesep}",
             f"client_id=id{os.linesep}",
             f"client_secret=secret{os.linesep}",
             f"no_metrics=true{os.linesep}",

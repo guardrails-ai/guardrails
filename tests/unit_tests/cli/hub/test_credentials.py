@@ -34,4 +34,7 @@ def test_from_rc_file(mocker):
     assert mock_open.call_count == 1
     assert readlines_spy.call_count == 1
     assert close_spy.call_count == 1
+    # This is supposed to look wrong; since this method is on the super,
+    # it doesn't care if the key values are actually correct.
+    # Something to watch out for.
     mock_from_dict.assert_called_once_with({"key1": "val1", "key2": "val2"})
