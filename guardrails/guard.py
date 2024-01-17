@@ -38,6 +38,8 @@ from guardrails.stores.context import (
     set_tracer_context,
 )
 from guardrails.validators import Validator
+from guardrails.utils.hub_telemetry_utils import HubTelemetry
+from guardrails.cli_dir.hub.credentials import Credentials
 
 add_destinations(logger.debug)
 
@@ -61,6 +63,10 @@ class Guard(Generic[OT]):
 
     _tracer = None
     _tracer_context = None
+    _hub_telemetry = None
+    _hub_tracer = None
+    _guard_id = None
+    _user_id = None
 
     def __init__(
         self,
@@ -76,6 +82,17 @@ class Guard(Generic[OT]):
         self.history: Stack[Call] = Stack()
         self.base_model = base_model
         self._set_tracer(tracer)
+
+        # Initialize Hub Telemetry singleton and get the tracer
+        self._hub_telemetry = HubTelemetry()
+        self._hub_tracer = self._hub_telemetry.get_tracer()
+
+        # Get id of guard object (that is unique)
+        self._guard_id = id(self)  # id of guard object; not the class
+
+        # Get unique id of user (from rc file)
+        self._user_id = Credentials.from_rc_file().id
+        print(f"Guard init complete with tracer @ location {id(self._hub_tracer)}")
 
     @property
     def prompt_schema(self) -> Optional[StringSchema]:
@@ -358,6 +375,15 @@ class Guard(Generic[OT]):
                 full_schema_reask = self.base_model is not None
             if prompt_params is None:
                 prompt_params = {}
+
+            # TODO: Add tracing: guard usage and user usage for Validator Hub
+            # Start a span for this guard call
+            with self._hub_tracer.start_as_current_span("/guard_call") as span:
+                # Inject the current context
+                self._hub_telemetry.inject_current_context()
+
+                span.set_attribute("guard_id", self._guard_id)
+                span.set_attribute("user_id", self._user_id)
 
             set_call_kwargs(kwargs)
             set_tracer(self._tracer)
@@ -650,6 +676,16 @@ class Guard(Generic[OT]):
             final_num_reasks = (
                 num_reasks if num_reasks is not None else 0 if llm_api is None else None
             )
+
+            # TODO: Add tracing: guard usage and user usage for Validator Hub
+            # Start a span for this guard parse
+            with self._hub_tracer.start_as_current_span("/guard_parse") as span:
+                # Inject the current context
+                self._hub_telemetry.inject_current_context()
+
+                span.set_attribute("guard_id", self._guard_id)
+                span.set_attribute("user_id", self._user_id)
+
             self.configure(final_num_reasks)
             if self.num_reasks is None:
                 raise RuntimeError(

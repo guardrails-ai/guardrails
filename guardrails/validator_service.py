@@ -22,6 +22,7 @@ from guardrails.validator_base import (
     Validator,
     ValidatorError,
 )
+from guardrails.utils.hub_telemetry_utils import HubTelemetry
 
 
 class ValidatorServiceBase:
@@ -120,6 +121,20 @@ class ValidatorServiceBase:
         # If we ever re-use validator instances across multiple properties,
         #   this will have to change.
         validator_logs.instance_id = to_string(id(validator))
+
+        # Get HubTelemetry singleton and tracer
+        hub_telemetry = HubTelemetry()
+        hub_tracer = hub_telemetry.get_tracer()
+        print(f"Getting tracer from location: {id(hub_tracer)}")
+
+        with hub_tracer.start_as_current_span(
+            "/validator_usage", context=hub_telemetry.extract_current_context()
+        ) as span:
+            # Inject the current context
+            hub_telemetry.inject_current_context()
+
+            span.set_attribute("validator_name", validator_class_name)
+
         return validator_logs
 
 
