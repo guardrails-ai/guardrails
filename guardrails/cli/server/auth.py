@@ -1,4 +1,4 @@
-import http
+import http.client
 import json
 import sys
 
@@ -8,7 +8,7 @@ from guardrails.cli.logger import logger
 
 def authenticate(creds: Credentials):
     audience = "https://api.validator-hub.guardrailsai.com"
-    conn = http.client.HTTPSConnection("guardrailsai.us.auth0.com")  # type: ignore
+    conn = http.client.HTTPSConnection("guardrailsai.us.auth0.com")
     payload = json.dumps(
         {
             "client_id": creds.client_id,
