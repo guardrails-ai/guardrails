@@ -1,53 +1,53 @@
-import json
 import sys
-from typing import Any, Dict, List
-from urllib.request import Request, urlopen
+from string import Template
+from typing import Any, Dict
+
+import requests
 
 from guardrails.cli.hub.credentials import Credentials
 from guardrails.cli.logger import logger
 from guardrails.cli.server.auth import authenticate
 from guardrails.cli.server.module_manifest import ModuleManifest
 
-hub_url = "https://raw.githubusercontent.com/guardrails-ai/guardrails-hub"
-branch = "install-script"
+# FIXME: Update with hosted endpoint
+validator_hub_service = "http://localhost:8000"
+validator_manifest_endpoint = Template(
+    "validator-manifests/{namespace}/{validator_name}"
+)
 
 
-# TODO: Error handling
-def fetch_content(url: str):
-    req = Request(url)
-    # For Debugging
-    # req.add_header("Cache-Control", "no-cache")
-    conn = urlopen(req)
-    contents = conn.read()
-    conn.close()
-    return json.loads(contents)
+def fetch(url: str, token: str):
+    try:
+        # For Debugging
+        # headers = { "Authorization": f"Bearer {token}", "Cache-Control": "no-cache" }
+        headers = {"Authorization": f"Bearer {token}"}
+        req = requests.get(url, headers=headers)
+        body = req.json()
+
+        if not req.ok:
+            logger.error(req.status_code)
+            logger.error(body.get("message"))
+            sys.exit(1)
+
+        return body
+    except Exception as e:
+        logger.error("An unexpected error occurred!", e)
+        sys.exit(1)
 
 
-def fetch_module_manifest(module_summary: Dict[str, Any]) -> Dict[str, Any]:
-    manifest_path = module_summary.get("manifest")
-    manifest_url = f"{hub_url}/{branch}/{manifest_path}"
-    return fetch_content(manifest_url)
-
-
-def fetch_hub_index() -> List[Dict[str, Any]]:
-    index_path = "index.json"
-    index_url = f"{hub_url}/{branch}/{index_path}"
-    return fetch_content(index_url)
+def fetch_module_manifest(module_name: str, token: str) -> Dict[str, Any]:
+    namespace, validator_name = module_name.split("/", 1)
+    manifest_path = validator_manifest_endpoint.safe_substitute(
+        namespace=namespace, validator_name=validator_name
+    )
+    manifest_url = f"{validator_hub_service}/{manifest_path}"
+    return fetch(manifest_url, token)
 
 
 def fetch_module(module_name: str) -> ModuleManifest:
     creds = Credentials.from_rc_file()
-    authenticate(creds)
+    token = authenticate(creds)
 
-    # Discovery
-    hub_index = fetch_hub_index()
-    try:
-        module_summary = next(x for x in hub_index if x.get("id") == module_name)
-    except StopIteration:
-        logger.error("Not Found!")
-        logger.error(f"{module_name} does not exist in the hub!")
-        sys.exit(1)
-
-    module_manifest_json = fetch_module_manifest(module_summary)
+    module_manifest_json = fetch_module_manifest(module_name, token)
     module_manifest = ModuleManifest.from_dict(module_manifest_json)
     return module_manifest

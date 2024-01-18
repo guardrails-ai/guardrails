@@ -4,6 +4,8 @@ from dataclasses import InitVar, asdict, dataclass, field, is_dataclass
 from json import JSONEncoder
 from typing import Any, Dict
 
+from pydash.strings import snake_case
+
 
 class SerializeableJSONEncoder(JSONEncoder):
     def default(self, o):
@@ -23,6 +25,10 @@ class Serializeable:
         annotations = inspect.get_annotations(cls)
         attributes = dict.keys(annotations)
         kwargs = {k: data.get(k) for k in data if k in attributes}
+        snake_case_kwargs = {
+            snake_case(k): data.get(k) for k in data if snake_case(k) in attributes
+        }
+        kwargs.update(snake_case_kwargs)
         return cls(**kwargs)  # type: ignore
 
     @property

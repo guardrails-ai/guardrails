@@ -1,13 +1,11 @@
 import http.client
 import json
-import sys
 
 from guardrails.cli.hub.credentials import Credentials
-from guardrails.cli.logger import logger
 
 
-def authenticate(creds: Credentials):
-    audience = "https://api.validator-hub.guardrailsai.com"
+def authenticate(creds: Credentials) -> str:
+    audience = "https://validator-hub-service.guardrailsai.com"
     conn = http.client.HTTPSConnection("guardrailsai.us.auth0.com")
     payload = json.dumps(
         {
@@ -22,10 +20,4 @@ def authenticate(creds: Credentials):
 
     res = conn.getresponse()
     data = json.loads(res.read().decode("utf-8"))
-    if not data.get("access_token"):
-        logger.error("Unauthorized!")
-        sys.exit(1)
-
-
-def authorize(validator_module_name: str, creds: Credentials):
-    logger.error("Not yet supported!")
+    return data.get("access_token", "")

@@ -44,10 +44,10 @@ class ModuleManifest(Serializeable):
             [Contributor.from_dict(m) for m in data.get("maintainers", [])],
             Repository.from_dict(data.get("repository", {})),
             data.get("namespace"),  # type: ignore
-            data.get("package-name"),  # type: ignore
-            data.get("module-name"),  # type: ignore
+            data.get("packageName"),  # type: ignore
+            data.get("moduleName"),  # type: ignore
             data.get("exports"),  # type: ignore
             ModuleTags.from_dict(data.get("tags", {})),
-            data.get("post-install"),
+            data.get("postInstall"),
             data.get("index"),
         )
