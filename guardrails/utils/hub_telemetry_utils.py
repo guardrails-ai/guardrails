@@ -1,9 +1,22 @@
 # Imports
 from opentelemetry import trace
-from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+
+# 2 exporters available: HTTP and GRPC, only use one at a time
+from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
+    OTLPSpanExporter,
+)  # HTTP
+
+# from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import (
+#     OTLPSpanExporter,
+# )  # GRPC
+
 from opentelemetry.sdk.resources import SERVICE_NAME, Resource
 from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
+from opentelemetry.sdk.trace.export import (
+    BatchSpanProcessor,
+    ConsoleSpanExporter,
+    SimpleSpanProcessor,
+)
 from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
 
 
@@ -24,9 +37,9 @@ class HubTelemetry:
     def __new__(
         cls,
         service_name: str = "guardrails-hub",
-        endpoint: str = "localhost:4317",
+        endpoint: str = "http://localhost:4318/v1/traces",  # HTTP: 4318, GRPC: 4317
         tracer_name: str = "gr_hub",
-        export_locally: bool = True,
+        export_locally: bool = False,
     ):
         if cls._instance is None:
             print("Creating HubTelemetry instance...")
@@ -58,10 +71,10 @@ class HubTelemetry:
         self._tracer_provider = TracerProvider(resource=self._resource)
 
         if export_locally:
-            self._processor = BatchSpanProcessor(ConsoleSpanExporter())
+            self._processor = SimpleSpanProcessor(ConsoleSpanExporter())
         else:
-            self._processor = BatchSpanProcessor(
-                OTLPSpanExporter(endpoint=self._endpoint, insecure=True)
+            self._processor = SimpleSpanProcessor(
+                OTLPSpanExporter(endpoint=self._endpoint)
             )
 
         # Add the processor to the provider
