@@ -111,6 +111,27 @@ HTTP Request: POST https://api.openai.com/v1/completions "HTTP/1.1 200 OK"
 {'pet_type': 'dog', 'name': 'Fido'}
 ```
 
+## Structured Outputs with Validation 
+We can add onto our Guard by adding validation instead of just structuring the formation in a specific format. In the below code, we add a Validator that checks if the pet name generated is of valid length. If it does not pass the validation, the reask is triggered and the query is reasked to the LLM. Check out the [Link Validators API Spec](https://www.guardrailsai.com/docs/api_reference_markdown/validators/) for a list of supported validators. 
+
+```
+from guardrails.validators import ValidLength, TwoWords
+from rich import print
+
+class Pet(BaseModel):
+    pet_type: str = Field(description="Species of pet")
+    name: str = Field(description="a unique pet name", validators=[ValidLength(min=1, max=32, on_fail='reask')])
+
+guard = Guard.from_pydantic(output_class=Pet, prompt=prompt)
+
+raw_llm_output, validated_output, *rest = guard(
+    llm_api=openai.chat.completions.create,
+    model="gpt-3.5-turbo",
+    max_tokens=1024,
+    temperature=0.5
+)
+
+print(guard.history.last.tree)```
 
 
 
