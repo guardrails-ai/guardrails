@@ -113,9 +113,9 @@ HTTP Request: POST https://api.openai.com/v1/completions "HTTP/1.1 200 OK"
 ```
 
 ## Structured Outputs with Validation 
-We can add onto our Guard by adding validation instead of just structuring the formation in a specific format. In the below code, we add a Validator that checks if the pet name generated is of valid length. If it does not pass the validation, the reask is triggered and the query is reasked to the LLM. Check out the [Link Validators API Spec](https://www.guardrailsai.com/docs/api_reference_markdown/validators/) for a list of supported validators. 
+We can add onto our Guard by adding validation instead of just structuring the formation in a specific format. In the below code, we add a Validator that checks if the pet name generated is of valid length. If it does not pass the validation, the reask is triggered and the query is reasked to the LLM. Check out the [Link Validators API Spec](https://www.guardrailsai.com/docs/api_reference_markdown/validators/) for a list of supported validators.
 
-```
+```py
 from guardrails.validators import ValidLength, TwoWords
 from rich import print
 
@@ -132,104 +132,7 @@ raw_llm_output, validated_output, *rest = guard(
     temperature=0.5
 )
 
-print(guard.history.last.tree)```
-
-
-
-
-Using `RAIL`, we:
-- Request the LLM to generate an object with two fields: `explanation` and `follow_up_url`.
-- For the `explanation` field, ensure the max length of the generated string should be between 200 and 280 characters.
-  - If the explanation is not of valid length, `reask` the LLM.
-- For the `follow_up_url` field, the URL should be reachable.
-  - If the URL is not reachable, we will `filter` it out of the response.
-
-
-```xml
-<rail version="0.1">
-<output>
-    <object name="bank_run" format="length: 2">
-        <string
-            name="explanation"
-            description="A paragraph about what a bank run is."
-            format="length: 200 280"
-            on-fail-length="reask"
-        />
-        <url
-            name="follow_up_url"
-            description="A web URL where I can read more about bank runs."
-            format="valid-url"
-            on-fail-valid-url="filter"
-        />
-    </object>
-</output>
-
-<prompt>
-Explain what a bank run is in a tweet.
-
-${output_schema}
-
-</prompt>
-</rail>
-```
-
-We specify our quality criteria (generated length, URL reachability) in the `format` fields of the `RAIL` spec below. We `reask` if `explanation` is not valid, and filter the `follow_up_url` if it is not valid.
-
-### 🛠️ Using Guardrails to enforce the `RAIL` spec
-
-Next, we'll use the `RAIL` spec to create a `Guard` object. The `Guard` object will wrap the LLM API call and enforce the `RAIL` spec on its output.
-
-```python
-import guardrails as gd
-
-guard = gd.Guard.from_rail(f.name)
-```
-
-The `Guard` object compiles the `RAIL` specification and adds it to the prompt. (Right now this is a passthrough operation, more compilers are planned to find the best way to express the spec in a prompt.)
-
-Here's what the prompt looks like after the `RAIL` spec is compiled and added to it.
-
-```xml
-Explain what a bank run is in a tweet.
-
-Given below is XML that describes the information to extract from this document and the tags to extract it into.
-
-<output>
-    <object name="bank_run" format="length: 2">
-        <string name="explanation" description="A paragraph about what a bank run is." format="length: 200 280" on-fail-length="reask" />
-        <url name="follow_up_url" description="A web URL where I can read more about bank runs." required="true" format="valid-url" on-fail-valid-url="filter" />
-    </object>
-</output>
-
-ONLY return a valid JSON object (no other text is necessary). The JSON MUST conform to the XML format, including any types and format requests e.g. requests for lists, objects and specific types. Be correct and concise.
-
-JSON Output:
-```
-
-Call the `Guard` object with the LLM API call as the first argument and add any additional arguments to the LLM API call as the remaining arguments.
-
-
-```python
-import openai
-
-# Wrap the OpenAI API call with the `guard` object
-raw_llm_output, validated_output, *rest = guard(
-    openai.completions.create,
-    engine="gpt-3.5-turbo-instruct",
-    max_tokens=1024,
-    temperature=0.3
-)
-
-print(validated_output)
-```
-```python
-{
-    'bank_run': {
-        'explanation': 'A bank run is when a large number of people withdraw their deposits from a bank due to concerns about its solvency. This can cause a financial crisis if the bank is unable to meet the demand for withdrawals.',
-        'follow_up_url': 'https://www.investopedia.com/terms/b/bankrun.asp'
-    }
-}
-
+print(guard.history.last.tree)
 ```
 
 ## 🛠️ Contributing
