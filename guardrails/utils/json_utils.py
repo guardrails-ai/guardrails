@@ -3,6 +3,8 @@ import warnings
 from dataclasses import dataclass
 from typing import Any, Dict, Optional, Tuple, Type, Union
 
+import regex
+
 from guardrails.datatypes import (
     URL,
     Boolean,
@@ -370,6 +372,14 @@ def extract_json_from_ouput(output: str) -> Tuple[Optional[Dict], Optional[Excep
         has_block, block_start, block_end = has_code_block(output)
         if has_block and block_start is not None and block_end is not None:
             extracted_code_block = get_code_block(output, block_start, block_end)
+        else:
+            json_pattern = regex.compile(r"\{(?:[^{}]+|\{(?:(?R)|[^{}]+)*\})*\}")
+            json_groups = json_pattern.findall(output)
+            json_start, json_end = output.find("{"), output.rfind("}")
+            if len(json_groups) > 0 and len(json_groups[0]) == (
+                json_end - json_start + 1
+            ):
+                extracted_code_block = json_groups[0]
 
     # Treat the output as a JSON string, and load it into a dict.
     error = None
