@@ -96,7 +96,7 @@ prompt = """
 """
 guard = Guard.from_pydantic(output_class=Pet, prompt=prompt)
 
-raw_llm_output, validated_output, *rest = guard(
+validated_output, *rest = guard(
     llm_api=openai.completions.create,
     engine="gpt-3.5-turbo-instruct"
 )
@@ -105,11 +105,11 @@ print(f"{validated_output}")
 ```
 
 This prints: 
-
 ```
-HTTP Request: POST https://api.openai.com/v1/completions "HTTP/1.1 200 OK"
-
-{'pet_type': 'dog', 'name': 'Fido'}
+{
+    "pet_type": "dog",
+    "name": "Buddy
+}
 ```
 
 ## Structured Outputs with Validation 
