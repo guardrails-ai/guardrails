@@ -69,11 +69,51 @@ pip install guardrails-ai
 - [ ] Add more LLM providers
 
 ## 🚀 Getting Started
-Let's go through an example where we ask an LLM to explain what a "bank run" is in a tweet, and generate URLs to relevant news articles. We'll generate a `.rail` spec for this and then use Guardrails to enforce it. You can see more examples in the docs.
+Let's go through an example where we ask an LLM to generate fake pet names. To do this, we'll use Pydantic, a popular data validation library for Python.  
 
-### 📝 Creating a `RAIL` spec
+### 📝 Creating Structured Outputs
 
-We create a `RAIL` spec to describe the expected structure and types of the LLM output, the quality criteria for the output to be considered valid, and corrective actions to be taken if the output is invalid.
+In order to create a LLM that generates fake pet names, we can create a class `Pet` that inherits from the Pydantic class [Link BaseModel](https://docs.pydantic.dev/latest/api/base_model/): 
+
+```from pydantic import BaseModel, Field
+
+class Pet(BaseModel):
+    pet_type: str = Field(description="Species of pet")
+    name: str = Field(description="a unique pet name")
+```
+
+We can now pass in this new `Pet` class as the `output_class` parameter in our Guard. When we run the code, the LLM's output is formatted to the pydnatic structure. We also add `${gr.complete_json_suffix_v2}` to the prompt which tells our LLM to only respond with JSON: 
+
+```
+from guardrails import Guard
+import openai
+
+prompt = """
+    What kind of pet should I get and what should I name it?
+
+    ${gr.complete_json_suffix_v2}
+"""
+guard = Guard.from_pydantic(output_class=Pet, prompt=prompt)
+
+raw_llm_output, validated_output, *rest = guard(
+    llm_api=openai.completions.create,
+    engine="gpt-3.5-turbo-instruct"
+)
+
+print(f"{validated_output}")
+```
+
+This prints: 
+
+```
+HTTP Request: POST https://api.openai.com/v1/completions "HTTP/1.1 200 OK"
+
+{'pet_type': 'dog', 'name': 'Fido'}
+```
+
+
+
+
 
 Using `RAIL`, we:
 - Request the LLM to generate an object with two fields: `explanation` and `follow_up_url`.
