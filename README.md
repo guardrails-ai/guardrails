@@ -113,7 +113,7 @@ HTTP Request: POST https://api.openai.com/v1/completions "HTTP/1.1 200 OK"
 ```
 
 ## Structured Outputs with Validation 
-We can add onto our Guard by adding validation instead of just structuring the formation in a specific format. In the below code, we add a Validator that checks if the pet name generated is of valid length. If it does not pass the validation, the reask is triggered and the query is reasked to the LLM. Check out the [Link Validators API Spec](https://www.guardrailsai.com/docs/api_reference_markdown/validators/) for a list of supported validators.
+We can add validation to our Guard instead of just structuring the ouput in a specific format. In the below code, we add a Validator that checks if the pet name generated is of valid length. If it does not pass the validation, the reask is triggered and the query is reasked to the LLM. Check out the [Link Validators API Spec](https://www.guardrailsai.com/docs/api_reference_markdown/validators/) for a list of supported validators.
 
 ```py
 from guardrails.validators import ValidLength, TwoWords
