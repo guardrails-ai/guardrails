@@ -75,7 +75,8 @@ Let's go through an example where we ask an LLM to generate fake pet names. To d
 
 In order to create a LLM that generates fake pet names, we can create a class `Pet` that inherits from the Pydantic class [Link BaseModel](https://docs.pydantic.dev/latest/api/base_model/): 
 
-```from pydantic import BaseModel, Field
+```py
+from pydantic import BaseModel, Field
 
 class Pet(BaseModel):
     pet_type: str = Field(description="Species of pet")
@@ -84,7 +85,7 @@ class Pet(BaseModel):
 
 We can now pass in this new `Pet` class as the `output_class` parameter in our Guard. When we run the code, the LLM's output is formatted to the pydnatic structure. We also add `${gr.complete_json_suffix_v2}` to the prompt which tells our LLM to only respond with JSON: 
 
-```
+```py
 from guardrails import Guard
 import openai
 
