@@ -34,7 +34,7 @@ class RemoveRedundantSentences(Validator):
     def __init__(
         self, threshold: int = 70, on_fail: Optional[Callable] = None, **kwargs
     ):
-        super().__init__(on_fail, **kwargs)
+        super().__init__(on_fail, threshold=threshold, **kwargs)
         self._threshold = threshold
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
