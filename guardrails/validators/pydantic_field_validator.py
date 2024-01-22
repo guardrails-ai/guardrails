@@ -35,8 +35,8 @@ class PydanticFieldValidator(Validator):
         on_fail: Optional[Callable[..., Any]] = None,
         **kwargs,
     ):
+        super().__init__(on_fail, field_validator=field_validator, **kwargs)
         self.field_validator = field_validator
-        super().__init__(on_fail, **kwargs)
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         try:
@@ -51,4 +51,4 @@ class PydanticFieldValidator(Validator):
         )
 
     def to_prompt(self, with_keywords: bool = True) -> str:
-        return self.field_validator.__func__.__name__
+        return self.field_validator.__name__
