@@ -298,16 +298,23 @@ ${ingredients}
     }
 }
 
+
 validator_test_xml = {
     "ValidLength": {
         "expected_xml": "length: 4 17",
         "instance_variables": {"min": 4, "max": 17},
     },
     "BugFreeSQL": {
-        "expected_xml": "bug-free-sql",
+        "expected_xml": "bug-free-sql: None None",
     },
     "ExtractedSummarySentencesMatch": {
-        "expected_xml": "extracted-summary-sentences-match",
+        "expected_xml": "extracted-summary-sentences-match: 0.7",
+    },
+    "ExtractiveSummary": {
+        "expected_xml": "extractive-summary: 85",
+    },
+    "QARelevanceLLMEval": {
+        "expected_xml": "qa-relevance-llm-eval: None",
     },
     "LowerCase": {
         "expected_xml": "lower-case",
@@ -355,7 +362,7 @@ validator_test_xml = {
         "instance_variables": {"predicates": ["EXISTS", "IN"]},
     },
     "IsProfanityFree": {"expected_xml": "is-profanity-free"},
-    "RemoveRedundantSentences": {"expected_xml": "remove-redundant-sentences"},
+    "RemoveRedundantSentences": {"expected_xml": "remove-redundant-sentences: 70"},
     "RegexMatch": {
         "expected_xml": "regex_match: \\w+\\d\\w+ fullmatch",
         "instance_variables": {"regex": "\\w+\\d\\w+", "match_type": "fullmatch"},
@@ -366,13 +373,18 @@ validator_test_xml = {
     },
 }
 
+
+def test_field_validator():
+    pass
+
+
 validator_test_prompt = {
     "ValidLength": {
         "expected_prompt": "length: min=4 max=17",
         "instance_variables": {"min": 4, "max": 17},
     },
     "BugFreeSQL": {
-        "expected_prompt": "bug-free-sql",
+        "expected_prompt": "bug-free-sql: conn=None schema_file=None",
     },
     "LowerCase": {
         "expected_prompt": "lower-case",
@@ -420,9 +432,15 @@ validator_test_prompt = {
         "instance_variables": {"predicates": ["EXISTS", "IN"]},
     },
     "IsProfanityFree": {"expected_prompt": "is-profanity-free"},
-    "RemoveRedundantSentences": {"expected_prompt": "remove-redundant-sentences"},
+    "RemoveRedundantSentences": {
+        "expected_prompt": "remove-redundant-sentences: threshold=70"
+    },
     "RegexMatch": {
         "expected_prompt": "results should match \\w+\\d\\w+",
         "instance_variables": {"regex": "\\w+\\d\\w+", "match_type": "fullmatch"},
+    },
+    "PydanticFieldValidator": {
+        "expected_prompt": "test_field_validator",
+        "instance_variables": {"field_validator": test_field_validator},
     },
 }
