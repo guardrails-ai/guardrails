@@ -624,7 +624,6 @@ class StringSchema(Schema):
             output_schema=pruned_tree_string,
             **(prompt_params or {}),
         )
-
         instructions = self.reask_instructions_template
         if instructions is None:
             instructions = Instructions("You are a helpful assistant.")
