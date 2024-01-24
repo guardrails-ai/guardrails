@@ -28,6 +28,8 @@ class MockOpenAICallable(OpenAICallable):
             pydantic.COMPILED_PROMPT_FULL_REASK_1: pydantic.LLM_OUTPUT_FULL_REASK_1,
             pydantic.COMPILED_PROMPT_REASK_2: pydantic.LLM_OUTPUT_REASK_2,
             pydantic.COMPILED_PROMPT_FULL_REASK_2: pydantic.LLM_OUTPUT_FULL_REASK_2,
+            pydantic.COMPILED_PROMPT_ENUM: pydantic.LLM_OUTPUT_ENUM,
+            pydantic.COMPILED_PROMPT_ENUM_2: pydantic.LLM_OUTPUT_ENUM_2,
             string.COMPILED_PROMPT: string.LLM_OUTPUT,
             string.COMPILED_PROMPT_REASK: string.LLM_OUTPUT_REASK,
             string.COMPILED_LIST_PROMPT: string.LIST_LLM_OUTPUT,

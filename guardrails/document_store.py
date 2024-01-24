@@ -97,7 +97,10 @@ class DocumentStoreBase(ABC):
         """Adds a list of texts to the store.
         Args:
             texts: List of texts to add, and their associalted metadata.
-            example: [{"I am feeling good", {"sentiment": "postive"}}]
+            example:
+            ``` json
+            [{"I am feeling good", {"sentiment": "postive"}}]
+            ```
 
         Returns:
             List of ids of the texts."""
@@ -241,21 +244,21 @@ except ImportError:
         def __init__(self):
             raise ImportError(
                 "SQLAlchemy is required for EphemeralDocumentStore"
-                "Please install it using `pip install SqlAlchemy`"
+                "Please install it using `poetry add SqlAlchemy`"
             )
 
     class FallbackSQLDocument:
         def __init__(self):
             raise ImportError(
                 "SQLAlchemy is required for SQLDocument"
-                "Please install it using `pip install SqlAlchemy`"
+                "Please install it using `poetry add SqlAlchemy`"
             )
 
     class FallbackSQLMetadataStore:
         def __init__(self):
             raise ImportError(
                 "SQLAlchemy is required for SQLMetadataStore"
-                "Please install it using `pip install SqlAlchemy`"
+                "Please install it using `poetry add SqlAlchemy`"
             )
 
     EphemeralDocumentStore = FallbackEphemeralDocumentStore

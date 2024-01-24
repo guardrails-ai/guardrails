@@ -47,6 +47,9 @@ test-cov:
 view-test-cov:
 	poetry run pytest tests/ --cov=./guardrails/ --cov-report html && open htmlcov/index.html
 
+view-test-cov-file:
+	poetry run pytest tests/unit_tests/test_logger.py --cov=./guardrails/ --cov-report html && open htmlcov/index.html
+
 docs-serve:
 	poetry run mkdocs serve -a $(MKDOCS_SERVE_ADDR)
 
@@ -59,9 +62,18 @@ dev:
 full:
 	poetry install --all-extras
 
+docs-gen:
+	poetry run python ./docs/pydocs/generate_pydocs.py
+	cp -r docs docs-build
+	poetry run nbdoc_build --force_all True --srcdir ./docs-build
+
+self-install:
+	pip install -e .
+
 all: autoformat type lint docs test
 
 precommit:
 	# pytest -x -q --no-summary
 	pyright guardrails/
 	make lint
+	./github/workflows/scripts/update_notebook_matrix.sh

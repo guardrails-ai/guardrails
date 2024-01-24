@@ -313,7 +313,7 @@ Previously, Validators had a `validate` method that accepted the key, value, and
         | Supported data types          | `string`, `list`, `object`        |
         | Programmatic fix              | If shorter than the minimum, pad with empty last elements. If longer than the maximum, truncate. |
 
-        Parameters: Arguments
+        Args:
             min: The inclusive minimum length.
             max: The inclusive maximum length.
         """
@@ -532,4 +532,4 @@ prompt = PromptTemplate(
 )
 ```
 
-See the [LangChain integration docs](/integrations/langchain) for more details.
+See the [LangChain integration docs](/docs/integrations/langchain) for more details.

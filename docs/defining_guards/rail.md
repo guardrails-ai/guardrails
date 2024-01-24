@@ -1,4 +1,4 @@
-# Overview
+# RailSpec
 
 ## 🤖 What is `RAIL`?
 
@@ -65,8 +65,8 @@ The `RAIL` specification contains 2 main components:
 
 1. `Output`: Contains information about the expected output of the LLM. It contains the spec for the overall structure of the LLM output, type info for each field, and the quality criteria for each field and the corrective action to be taken in case quality criteria is not met.
    This is the main component of the `RAIL` specification, which enforces the guarantees that the LLM should provide.
-   Check out the [RAIL Output](../concepts/output.md) page for more details, including the full specifcation of how to create complex output schemas.
-2. `Prompt`: Prompt template, and contains the high level instructions that are sent to the LLM. Check out the [RAIL Prompt](../concepts/prompt.md) page for more details.
+   Check out the [RAIL Output](/concepts/output.md) page for more details, including the full specifcation of how to create complex output schemas.
+2. `Prompt`: Prompt template, and contains the high level instructions that are sent to the LLM. Check out the [RAIL Prompt](/concepts/prompt.md) page for more details.
 
 Let's see an example of an `RAIL` specification in action:
 
@@ -86,7 +86,7 @@ Let's see an example of an `RAIL` specification in action:
 ```
 
 1. The `output` element contains the structure of the expected output of the LLM. It contains the spec for the overall structure of the LLM output, type info for each field, and the quality criteria for each field and the corrective action to be taken in case quality criteria is not met.
-2. The `prompt` element contains the high level instructions that are sent to the LLM. Check out the [RAIL Prompt](../concepts/prompt.md) page for more details.
+2. The `prompt` element contains the high level instructions that are sent to the LLM. Check out the [RAIL Prompt](/concepts/prompt.md) page for more details.
 
 ## 📖 How to use `RAIL` in Guardrails?
 
@@ -98,7 +98,7 @@ import guardrails as gd
 
 # Create a Guard object
 guard = gd.Guard.from_rail('path/to/rail/spec.xml')  # (1)!
-validated_output = guard(
+_, validated_output, *rest = guard(
     openai.Completion.create,  # (2)!
     **prompt_args,
     *args,

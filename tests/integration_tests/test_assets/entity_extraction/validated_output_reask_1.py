@@ -56,7 +56,7 @@ VALIDATED_OUTPUT_REASK_1 = {
                 fail_results=[
                     FailResult(
                         error_message="must be exactly two words",
-                        fix_value="over-the-credit-limit",
+                        fix_value="over the",
                     )
                 ],
                 path=["fees", 6, "name"],

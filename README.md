@@ -154,7 +154,7 @@ Call the `Guard` object with the LLM API call as the first argument and add any 
 import openai
 
 # Wrap the OpenAI API call with the `guard` object
-raw_llm_output, validated_output = guard(
+raw_llm_output, validated_output, *rest = guard(
     openai.Completion.create,
     engine="text-davinci-003",
     max_tokens=1024,

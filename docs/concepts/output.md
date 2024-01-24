@@ -196,7 +196,7 @@ At the heart of the `RAIL` specification is the use of elements. Each element's 
 
 Guardrails supports many data types, including:, `string`, `integer`, `float`, `bool`, `list`, `object`, `url`, `email` and many more.
 
-Check out the [RAIL Data Types](../data_types.md) page for a list of supported data types.
+Check out the [RAIL Data Types](/docs/api_reference_markdown/datatypes) page for a list of supported data types.
 
 
 #### Scalar vs Non-scalar types
@@ -207,7 +207,7 @@ Guardrails supports two types of data types: scalar and non-scalar.
 | Scalar                                                                  | Non Scalar                                                                           |
 |-------------------------------------------------------------------------|--------------------------------------------------------------------------------------|
 | Scalar types are void elements, and can't have any child elements.      | Non-scalar types can be non-void, and can have closing tags and child elements.                       |
-| Syntax:   ``` <string ... /> ```                                        | Syntax: <list ...>     <string /> </list>|
+| Syntax:   ``` <string ... /> ```                                        | Syntax: ```<list ...>     <string /> </list>```|
 | Examples: `string`, `integer`, `float`, `bool`, `url`, `email`, etc. | Examples: `list` and `object` are the only non-scalar types supported by Guardrails. |
 
 
@@ -217,20 +217,23 @@ Each element can have attributes that specify additional information about the d
 
 1. `name` attribute that specifies the name of the field. This will be the key in the output JSON. E.g.
 
-    === "RAIL Spec"
-        ```xml
-        <rail version="0.1">
-            <output>
-                <string name="some_key" />
-            </output>
-        </rail>
-        ```
-    === "Output JSON"
-        ```json
-        {
-            "some_key": "..."
-        }
-        ```
+=== "RAIL Spec"
+
+    ```xml
+    <rail version="0.1">
+        <output>
+            <string name="some_key" />
+        </output>
+    </rail>
+    ```
+
+=== "Output JSON"
+
+    ```json
+    {
+        "some_key": "..."
+    }
+    ```
 
 2. `description` attribute that specifies the description of the field. This is similar to a prompt that will be provided to the LLM. It can contain more context to help the LLM generate the correct output.
 3. (Coming soon!) `required` attribute that specifies whether the field is required or not. If the field is required, the LLM will be asked to generate the field until it is generated correctly. If the field is not required, the LLM will not be asked to generate the field if it is not generated correctly.
@@ -297,7 +300,7 @@ Each quality criteria is then checked against the generated output. If the quali
 ### Supported criteria
 
 - Each quality critera is relevant to a specific data type. For example, the `two-words` quality criteria is only relevant to strings, and the `positive` quality criteria is only relevant to integers and floats.
-- To see the full list of supported quality criteria, check out the [Validation](../api_reference/validators.md) page.
+- To see the full list of supported quality criteria, check out the [Validation](/docs/api_reference_markdown/validators) page.
 
 
 ## 🛠️ Specifying corrective actions

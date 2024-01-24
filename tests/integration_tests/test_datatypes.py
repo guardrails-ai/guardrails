@@ -1,4 +1,5 @@
 import pytest
+from dateutil.parser import ParserError
 
 from guardrails.guard import Guard
 
@@ -57,13 +58,15 @@ Dummy prompt.
 
 
 @pytest.mark.parametrize(
-    "date_string",
+    "date_string,error_type",
     [
-        ("1696343743"),  # Unix timestamp/seconds
-        ("1697579939213"),  # Unix timestamp/milliseconds
+        ("1696343743", ParserError),  # Unix timestamp/seconds
+        ("1697579939213", OverflowError),  # Unix timestamp/milliseconds
     ],
 )
-def test_defaulted_date_parser_unsupported_values(date_string: str):
+def test_defaulted_date_parser_unsupported_values(
+    date_string: str, error_type: Exception
+):
     rail_spec = """
 <rail version="0.1">
 
@@ -80,9 +83,9 @@ Dummy prompt.
 </rail>
 """
     guard = Guard.from_rail_string(rail_spec)
-    # this should always raise either a ValueError or an OverflowError
-    with pytest.raises((ValueError, OverflowError)):
+    with pytest.raises(Exception) as excinfo:
         guard.parse(
             llm_output='{"name": "John Doe", "dob": "' + date_string + '"}',
             num_reasks=0,
         )
+    assert isinstance(excinfo.value, error_type) is True

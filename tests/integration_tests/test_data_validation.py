@@ -6,27 +6,43 @@ from pydantic import BaseModel, Field
 
 from guardrails import Guard
 from guardrails.utils.reask_utils import ReAsk
+from guardrails.validator_base import ValidatorError
 from guardrails.validators import ValidChoices
 
 test_cases = [
-    ('{"choice": {"action": "fight", "fight_move": "kick"}}', False),
+    ('{"choice": {"action": "fight", "fight_move": "kick"}}', False, False, False),
     (
         '{"choice": {"action": "flight", "flight_direction": "north", "flight_speed": 1}}',
         False,
+        False,
+        False,
     ),
-    ('{"choice": {"action": "flight", "fight_move": "punch"}}', True),
+    ('{"choice": {"action": "flight", "fight_move": "punch"}}', False, True, False),
     (
         '{"choice": {"action": "fight", "flight_direction": "north", "flight_speed": 1}}',
+        False,
+        True,
+        False,
+    ),
+    ('{"choice": {"action": "random_action"}}', False, True, False),
+    ('{"choice": {"action": "fight", "fight_move": "random_move"}}', True, True, True),
+    (
+        '{"choice": {"action": "flight", "random_key": "random_value"}}',
+        False,
+        True,
+        False,
+    ),
+    (
+        '{"choice": {"action": "flight", "random_key": "random_value"}',
+        False,
+        True,
         True,
     ),
-    ('{"choice": {"action": "random_action"}}', True),
-    ('{"choice": {"action": "fight", "fight": "random_move"}}', True),
-    ('{"choice": {"action": "flight", "random_key": "random_value"}', True),
 ]
 
 
-@pytest.mark.parametrize("llm_output, raises", test_cases)
-def test_choice_validation(llm_output, raises):
+@pytest.mark.parametrize("llm_output, raises, fails, has_error", test_cases)
+def test_choice_validation(llm_output, raises, fails, has_error):
     rail_spec = """
 <rail version="0.1">
 
@@ -52,18 +68,28 @@ Dummy prompt.
     guard = Guard.from_rail_string(rail_spec)
 
     # If raises is True, then the test should raise an exception.
+    # For our existing test cases this will always be a ValidatorError
     if raises:
-        with pytest.raises(ValueError):
-            result = guard.parse(llm_output, num_reasks=0)
-            if result is None or isinstance(result, ReAsk):
-                raise ValueError("Expected a result, but got None or ReAsk.")
+        with pytest.raises(ValidatorError):
+            guard.parse(llm_output, num_reasks=0)
     else:
         result = guard.parse(llm_output, num_reasks=0)
-        assert not isinstance(result, ReAsk)
+        if fails and not has_error:
+            assert result.validation_passed is False
+            assert result.reask is not None
+            assert result.error is None
+        elif fails and has_error:
+            assert result.validation_passed is False
+            assert result.reask is not None
+            assert result.error is not None
+        else:
+            assert result.validation_passed is True
+            assert result.validated_output is not None
+            assert not isinstance(result.validated_output, ReAsk)
 
 
-@pytest.mark.parametrize("llm_output, raises", test_cases)
-def test_choice_validation_pydantic(llm_output, raises):
+@pytest.mark.parametrize("llm_output, raises, fails, has_error", test_cases)
+def test_choice_validation_pydantic(llm_output, raises, has_error, fails):
     class Fight(BaseModel):
         action: Literal["fight"]
         fight_move: str = Field(
@@ -89,11 +115,21 @@ def test_choice_validation_pydantic(llm_output, raises):
     guard = Guard.from_pydantic(output_class=Choice, prompt="Dummy prompt.")
 
     # If raises is True, then the test should raise an exception.
+    # For our existing test cases this will always be a ValidatorError
     if raises:
-        with pytest.raises(ValueError):
-            result = guard.parse(llm_output, num_reasks=0)
-            if result is None or isinstance(result, ReAsk):
-                raise ValueError("Expected a result, but got None or ReAsk.")
+        with pytest.raises(ValidatorError):
+            guard.parse(llm_output, num_reasks=0)
     else:
         result = guard.parse(llm_output, num_reasks=0)
-        assert not isinstance(result, ReAsk)
+        if fails and not has_error:
+            assert result.validation_passed is False
+            assert result.reask is not None
+            assert result.error is None
+        elif fails and has_error:
+            assert result.validation_passed is False
+            assert result.reask is not None
+            assert result.error is not None
+        else:
+            assert result.validation_passed is True
+            assert result.validated_output is not None
+            assert not isinstance(result.validated_output, ReAsk)

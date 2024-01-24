@@ -55,7 +55,7 @@ class SqlAlchemyDriver(SQLDriver):
         if not _HAS_SQLALCHEMY:
             raise ImportError(
                 """The functionality requires sqlalchemy to be installed.
-                              Please install it using `pip install SqlAlchemy`"""
+                              Please install it using `poetry add SqlAlchemy`"""
             )
 
         if schema_file is not None and conn is None:

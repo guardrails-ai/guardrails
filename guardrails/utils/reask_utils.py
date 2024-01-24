@@ -1,4 +1,5 @@
-from typing import Any, Dict, List, Optional, Union
+from copy import deepcopy
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import pydantic
 
@@ -24,57 +25,64 @@ class NonParseableReAsk(ReAsk):
     pass
 
 
-def gather_reasks(validated_output: Optional[Union[Dict, ReAsk]]) -> List[ReAsk]:
+def gather_reasks(
+    validated_output: Optional[Union[str, Dict, ReAsk]]
+) -> Tuple[List[ReAsk], Optional[Dict]]:
     """Traverse output and gather all ReAsk objects.
 
     Args:
-        validated_output (Dict): The output of a model. Each value can be a ReAsk,
-            a list, a dictionary, or a single value.
+        validated_output (Union[str, Dict, ReAsk], optional): The output of a model.
+            Each value can be a ReAsk, a list, a dictionary, or a single value.
 
     Returns:
         A list of ReAsk objects found in the output.
     """
     if validated_output is None:
-        return []
+        return [], None
     if isinstance(validated_output, ReAsk):
-        return [validated_output]
+        return [validated_output], None
 
     reasks = []
 
     def _gather_reasks_in_dict(
-        output: Dict, path: Optional[List[Union[str, int]]] = None
+        original: Dict, valid_output: Dict, path: Optional[List[Union[str, int]]] = None
     ) -> None:
         if path is None:
             path = []
-        for field, value in output.items():
+        for field, value in original.items():
             if isinstance(value, FieldReAsk):
                 value.path = path + [field]
                 reasks.append(value)
+                del valid_output[field]
 
             if isinstance(value, dict):
-                _gather_reasks_in_dict(value, path + [field])
+                _gather_reasks_in_dict(value, valid_output[field], path + [field])
 
             if isinstance(value, list):
-                _gather_reasks_in_list(value, path + [field])
+                _gather_reasks_in_list(value, valid_output[field], path + [field])
         return
 
     def _gather_reasks_in_list(
-        output: List, path: Optional[List[Union[str, int]]] = None
+        original: List, valid_output: List, path: Optional[List[Union[str, int]]] = None
     ) -> None:
         if path is None:
             path = []
-        for idx, item in enumerate(output):
+        for idx, item in enumerate(original):
             if isinstance(item, FieldReAsk):
                 item.path = path + [idx]
                 reasks.append(item)
+                del valid_output[idx]
             elif isinstance(item, dict):
-                _gather_reasks_in_dict(item, path + [idx])
+                _gather_reasks_in_dict(item, valid_output[idx], path + [idx])
             elif isinstance(item, list):
-                _gather_reasks_in_list(item, path + [idx])
+                _gather_reasks_in_list(item, valid_output[idx], path + [idx])
         return
 
-    _gather_reasks_in_dict(validated_output)
-    return reasks
+    if isinstance(validated_output, Dict):
+        valid_output = deepcopy(validated_output)
+        _gather_reasks_in_dict(validated_output, valid_output)
+        return reasks, valid_output
+    return reasks, None
 
 
 def get_pruned_tree(
@@ -205,14 +213,18 @@ def sub_reasks_with_fixed_values(value: Any) -> Any:
     Returns:
         The value with ReAsk objects replaced with their fixed values.
     """
-    if isinstance(value, list):
-        for index, item in enumerate(value):
-            value[index] = sub_reasks_with_fixed_values(item)
-    elif isinstance(value, dict):
+    copy = deepcopy(value)
+    if isinstance(copy, list):
+        for index, item in enumerate(copy):
+            copy[index] = sub_reasks_with_fixed_values(item)
+    elif isinstance(copy, dict):
         for dict_key, dict_value in value.items():
-            value[dict_key] = sub_reasks_with_fixed_values(dict_value)
-    elif isinstance(value, FieldReAsk):
+            copy[dict_key] = sub_reasks_with_fixed_values(dict_value)
+    elif isinstance(copy, FieldReAsk):
+        fix_value = copy.fail_results[0].fix_value
         # TODO handle multiple fail results
-        value = value.fail_results[0].fix_value
+        # Leave the ReAsk in place if there is no fix value
+        # This allows us to determine the proper status for the call
+        copy = fix_value if fix_value is not None else copy
 
-    return value
+    return copy

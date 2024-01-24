@@ -1,4 +1,4 @@
-# Installing GuardRails AI 
+# Installing Guardrails AI 
 
 Guardrails AI runs anywhere your python app runs. It is a simple pip install away.
 
@@ -8,7 +8,7 @@ pip install guardrails-ai
 
 ## Releases
 
-Currently in beta, GuardRails AI maintains both stable and pre-release versions. 
+Currently in beta, Guardrails AI maintains both stable and pre-release versions. 
 
 Different versions can be found in the PyPi Release History:
 https://pypi.org/project/guardrails-ai/#history
@@ -40,12 +40,4 @@ Installing directly from GitHub is useful when a release has not yet been cut wi
 # Examples:
 pip install git+https://github.com/guardrails-ai/guardrails.git@main
 pip install git+https://github.com/guardrails-ai/guardrails.git@dev
-```
-
-## Recommended Python Dependency Versions
-
-The GuardRails package doesn't support pydantic versions 2.0.0 and above. We recommend using pydantic version 1.10.9.
-
-```bash
-pip install pydantic==1.10.9
 ```

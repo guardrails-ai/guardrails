@@ -1,5 +1,4 @@
 import datetime
-import logging
 import warnings
 from dataclasses import dataclass
 from types import SimpleNamespace
@@ -15,9 +14,6 @@ from guardrails.utils.casting_utils import to_float, to_int, to_string
 from guardrails.utils.xml_utils import cast_xml_to_string
 from guardrails.validator_base import Validator, ValidatorSpec
 from guardrails.validatorsattr import ValidatorsAttr
-
-logger = logging.getLogger(__name__)
-
 
 # TODO - deprecate these altogether
 deprecated_string_types = {"sql", "email", "url", "pythoncode"}
@@ -52,7 +48,9 @@ def verify_metadata_requirements(
             metadata, vars(datatype.children).values()
         )
         missing_keys.update(nested_missing_keys)
-    return list(missing_keys)
+    missing_keys = list(missing_keys)
+    missing_keys.sort()
+    return missing_keys
 
 
 class DataType:
@@ -72,6 +70,9 @@ class DataType:
         self.name = name
         self.description = description
         self.optional = optional
+
+    def get_example(self):
+        raise NotImplementedError
 
     @property
     def validators(self) -> TypedList:
@@ -190,6 +191,9 @@ class String(ScalarType):
 
     tag = "string"
 
+    def get_example(self):
+        return "string"
+
     def from_str(self, s: str) -> Optional[str]:
         """Create a String from a string."""
         return to_string(s)
@@ -216,6 +220,9 @@ class Integer(ScalarType):
 
     tag = "integer"
 
+    def get_example(self):
+        return 1
+
     def from_str(self, s: str) -> Optional[int]:
         """Create an Integer from a string."""
         return to_int(s)
@@ -227,6 +234,9 @@ class Float(ScalarType):
 
     tag = "float"
 
+    def get_example(self):
+        return 1.5
+
     def from_str(self, s: str) -> Optional[float]:
         """Create a Float from a string."""
         return to_float(s)
@@ -237,6 +247,9 @@ class Boolean(ScalarType):
     """Element tag: `<bool>`"""
 
     tag = "bool"
+
+    def get_example(self):
+        return True
 
     def from_str(self, s: Union[str, bool]) -> Optional[bool]:
         """Create a Boolean from a string."""
@@ -274,6 +287,9 @@ class Date(ScalarType):
     ) -> None:
         super().__init__(children, validators_attr, optional, name, description)
         self.date_format = None
+
+    def get_example(self):
+        return datetime.date.today()
 
     def from_str(self, s: str) -> Optional[datetime.date]:
         """Create a Date from a string."""
@@ -314,6 +330,9 @@ class Time(ScalarType):
         self.time_format = "%H:%M:%S"
         super().__init__(children, validators_attr, optional, name, description)
 
+    def get_example(self):
+        return datetime.time()
+
     def from_str(self, s: str) -> Optional[datetime.time]:
         """Create a Time from a string."""
         if s is None:
@@ -342,6 +361,9 @@ class Email(ScalarType):
         super().__init__(*args, **kwargs)
         deprecate_type(type(self))
 
+    def get_example(self):
+        return "hello@example.com"
+
 
 @deprecate_type
 @register_type("url")
@@ -353,6 +375,9 @@ class URL(ScalarType):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         deprecate_type(type(self))
+
+    def get_example(self):
+        return "https://example.com"
 
 
 @deprecate_type
@@ -366,6 +391,9 @@ class PythonCode(ScalarType):
         super().__init__(*args, **kwargs)
         deprecate_type(type(self))
 
+    def get_example(self):
+        return "print('hello world')"
+
 
 @deprecate_type
 @register_type("sql")
@@ -378,12 +406,65 @@ class SQLCode(ScalarType):
         super().__init__(*args, **kwargs)
         deprecate_type(type(self))
 
+    def get_example(self):
+        return "SELECT * FROM table"
+
 
 @register_type("percentage")
 class Percentage(ScalarType):
     """Element tag: `<percentage>`"""
 
     tag = "percentage"
+
+    def get_example(self):
+        return "20%"
+
+
+@register_type("enum")
+class Enum(ScalarType):
+    """Element tag: `<enum>`"""
+
+    tag = "enum"
+
+    def __init__(
+        self,
+        children: Dict[str, Any],
+        validators_attr: ValidatorsAttr,
+        optional: bool,
+        name: Optional[str],
+        description: Optional[str],
+        enum_values: TypedList[str],
+    ) -> None:
+        super().__init__(children, validators_attr, optional, name, description)
+        self.enum_values = enum_values
+
+    def get_example(self):
+        return self.enum_values[0]
+
+    def from_str(self, s: str) -> Optional[str]:
+        """Create an Enum from a string."""
+        if s is None:
+            return None
+        if s not in self.enum_values:
+            raise ValueError(f"Invalid enum value: {s}")
+        return s
+
+    @classmethod
+    def from_xml(
+        cls,
+        enum_values: TypedList[str],
+        validators: Sequence[ValidatorSpec],
+        description: Optional[str] = None,
+        strict: bool = False,
+    ) -> "Enum":
+        return cls(
+            children={},
+            validators_attr=ValidatorsAttr.from_validators(validators, cls.tag, strict),
+            optional=False,
+            name=None,
+            description=description,
+            enum_values=enum_values,
+        )
 
 
 @register_type("list")
@@ -392,6 +473,9 @@ class List(NonScalarType):
 
     tag = "list"
 
+    def get_example(self):
+        return [e.get_example() for e in self._children.values()]
+
     def collect_validation(
         self,
         key: str,
@@ -399,8 +483,10 @@ class List(NonScalarType):
         schema: Dict,
     ) -> FieldValidation:
         # Validators in the main list data type are applied to the list overall.
-
         validation = self._constructor_validation(key, value)
+
+        if value is None and self.optional:
+            return validation
 
         if len(self._children) == 0:
             return validation
@@ -432,6 +518,9 @@ class Object(NonScalarType):
 
     tag = "object"
 
+    def get_example(self):
+        return {k: v.get_example() for k, v in self._children.items()}
+
     def collect_validation(
         self,
         key: str,
@@ -439,8 +528,10 @@ class Object(NonScalarType):
         schema: Dict,
     ) -> FieldValidation:
         # Validators in the main object data type are applied to the object overall.
-
         validation = self._constructor_validation(key, value)
+
+        if value is None and self.optional:
+            return validation
 
         if len(self._children) == 0:
             return validation
@@ -458,12 +549,17 @@ class Object(NonScalarType):
             # child_key is an expected key that the schema defined
             # child_data_type is the data type of the expected key
             child_value = value.get(child_key, None)
-            child_validation = child_data_type.collect_validation(
-                child_key,
-                child_value,
-                value,
-            )
-            validation.children.append(child_validation)
+
+            # Skip validation for instances where child_value is None
+            # by adding a check for child_value
+            # This will happen during streaming (sub-schema validation)
+            if child_value:
+                child_validation = child_data_type.collect_validation(
+                    child_key,
+                    child_value,
+                    value,
+                )
+                validation.children.append(child_validation)
 
         return validation
 
@@ -494,6 +590,14 @@ class Choice(NonScalarType):
     ) -> None:
         super().__init__(children, validators_attr, optional, name, description)
         self.discriminator_key = discriminator_key
+
+    def get_example(self):
+        first_discriminator = list(self._children.keys())[0]
+        first_child = list(self._children.values())[0]
+        return {
+            self.discriminator_key: first_discriminator,
+            **first_child.get_example(),
+        }
 
     @classmethod
     def from_xml(cls, element: ET._Element, strict: bool = False, **kwargs) -> Self:
@@ -554,6 +658,9 @@ class Case(NonScalarType):
         description: Optional[str],
     ) -> None:
         super().__init__(children, validators_attr, optional, name, description)
+
+    def get_example(self):
+        return {k: v.get_example() for k, v in self._children.items()}
 
     def collect_validation(
         self,

@@ -2,6 +2,7 @@ from typing import Any, Awaitable, Callable, Dict, Iterable, List, Optional, cas
 
 from pydantic import BaseModel
 
+from guardrails.utils.exception_utils import UserFacingException
 from guardrails.utils.llm_response import LLMResponse
 from guardrails.utils.openai_utils import (
     AsyncOpenAIClient,
@@ -12,6 +13,7 @@ from guardrails.utils.openai_utils import (
     get_static_openai_create_func,
 )
 from guardrails.utils.pydantic_utils import convert_pydantic_model_to_openai_fn
+from guardrails.utils.safe_get import safe_get
 
 
 class PromptCallableException(Exception):
@@ -132,7 +134,7 @@ class OpenAIChatCallable(PromptCallableBase):
 
         Use Guardrails with OpenAI chat engines by doing
         ```
-        raw_llm_response, validated_response = guard(
+        raw_llm_response, validated_response, *rest = guard(
             openai.ChatCompletion.create,
             prompt_params={...},
             text=...,
@@ -152,8 +154,8 @@ class OpenAIChatCallable(PromptCallableBase):
                 "You must pass in either `text` or `msg_history` to `guard.__call__`."
             )
 
-        # Configure function calling if applicable
-        if base_model:
+        # Configure function calling if applicable (only for non-streaming)
+        if base_model and not kwargs.get("stream", False):
             function_params = [convert_pydantic_model_to_openai_fn(base_model)]
             if function_call is None:
                 function_call = {"name": function_params[0]["name"]}
@@ -193,7 +195,7 @@ class ManifestCallable(PromptCallableBase):
         To use manifest for guardrailse, do
         ```
         client = Manifest(client_name=..., client_connection=...)
-        raw_llm_response, validated_response = guard(
+        raw_llm_response, validated_response, *rest = guard(
             client,
             prompt_params={...},
             ...
@@ -204,7 +206,7 @@ class ManifestCallable(PromptCallableBase):
         except ImportError:
             raise PromptCallableException(
                 "The `manifest` package is not installed. "
-                "Install with `pip install manifest-ml`"
+                "Install with `poetry add manifest-ml`"
             )
         client = cast(manifest.Manifest, client)
         manifest_response = client.run(
@@ -222,7 +224,7 @@ class CohereCallable(PromptCallableBase):
         """To use cohere for guardrails, do ``` client =
         cohere.Client(api_key=...)
 
-        raw_llm_response, validated_response = guard(
+        raw_llm_response, validated_response, *rest = guard(
             client.generate,
             prompt_params={...},
             model="command-nightly",
@@ -240,6 +242,171 @@ class CohereCallable(PromptCallableBase):
         )
 
 
+class AnthropicCallable(PromptCallableBase):
+    def _invoke_llm(
+        self,
+        prompt: str,
+        client_callable: Any,
+        model: str = "claude-instant-1",
+        max_tokens_to_sample: int = 100,
+        *args,
+        **kwargs,
+    ) -> LLMResponse:
+        """Wrapper for Anthropic Completions.
+
+        To use Anthropic for guardrails, do
+        ```
+        client = anthropic.Anthropic(api_key=...)
+
+        raw_llm_response, validated_response = guard(
+            client,
+            model="claude-2",
+            max_tokens_to_sample=200,
+            prompt_params={...},
+            ...
+        ```
+        """
+        try:
+            import anthropic
+        except ImportError:
+            raise PromptCallableException(
+                "The `anthropic` package is not installed. "
+                "Install with `pip install anthropic`"
+            )
+
+        if "instructions" in kwargs:
+            prompt = kwargs.pop("instructions") + "\n\n" + prompt
+
+        anthropic_prompt = f"{anthropic.HUMAN_PROMPT} {prompt} {anthropic.AI_PROMPT}"
+
+        anthropic_response = client_callable(
+            model=model,
+            prompt=anthropic_prompt,
+            max_tokens_to_sample=max_tokens_to_sample,
+            *args,
+            **kwargs,
+        )
+        return LLMResponse(output=anthropic_response.completion)
+
+
+class HuggingFaceModelCallable(PromptCallableBase):
+    def _invoke_llm(
+        self, prompt: str, model_generate: Any, *args, **kwargs
+    ) -> LLMResponse:
+        try:
+            import transformers  # noqa: F401 # type: ignore
+        except ImportError:
+            raise PromptCallableException(
+                "The `transformers` package is not installed. "
+                "Install with `pip install transformers`"
+            )
+        try:
+            import torch
+        except ImportError:
+            raise PromptCallableException(
+                "The `torch` package is not installed. "
+                "Install with `pip install torch`"
+            )
+
+        tokenizer = kwargs.pop("tokenizer")
+        if not tokenizer:
+            raise UserFacingException(
+                ValueError(
+                    "'tokenizer' must be provided in order to use Hugging Face models!"
+                )
+            )
+
+        torch_device = "cuda" if torch.cuda.is_available() else "cpu"
+
+        return_tensors = kwargs.pop("return_tensors", "pt")
+        skip_special_tokens = kwargs.pop("skip_special_tokens", True)
+
+        input_ids = kwargs.pop("input_ids", None)
+        input_values = kwargs.pop("input_values", None)
+        input_features = kwargs.pop("input_features", None)
+        pixel_values = kwargs.pop("pixel_values", None)
+        model_inputs = kwargs.pop("model_inputs", {})
+        if (
+            input_ids is None
+            and input_values is None
+            and input_features is None
+            and pixel_values is None
+            and not model_inputs
+        ):
+            model_inputs = tokenizer(prompt, return_tensors=return_tensors).to(
+                torch_device
+            )
+        else:
+            model_inputs["input_ids"] = input_ids
+            model_inputs["input_values"] = input_values
+            model_inputs["input_features"] = input_features
+            model_inputs["pixel_values"] = pixel_values
+
+        do_sample = kwargs.pop("do_sample", None)
+        temperature = kwargs.pop("temperature", None)
+        if not do_sample and temperature == 0:
+            temperature = None
+
+        model_inputs["do_sample"] = do_sample
+        model_inputs["temperature"] = temperature
+
+        output = model_generate(
+            **model_inputs,
+            **kwargs,
+        )
+
+        # NOTE: This is currently restricted to single outputs
+        # Should we choose to support multiple return sequences,
+        # We would need to either validate all of them
+        # and choose the one with the least failures,
+        # or accept a selection function
+        decoded_output = tokenizer.decode(
+            output[0], skip_special_tokens=skip_special_tokens
+        )
+
+        return LLMResponse(output=decoded_output)
+
+
+class HuggingFacePipelineCallable(PromptCallableBase):
+    def _invoke_llm(self, prompt: str, pipeline: Any, *args, **kwargs) -> LLMResponse:
+        try:
+            import transformers  # noqa: F401 # type: ignore
+        except ImportError:
+            raise PromptCallableException(
+                "The `transformers` package is not installed. "
+                "Install with `pip install transformers`"
+            )
+        try:
+            import torch  # noqa: F401 # type: ignore
+        except ImportError:
+            raise PromptCallableException(
+                "The `torch` package is not installed. "
+                "Install with `pip install torch`"
+            )
+
+        content_key = kwargs.pop("content_key", "generated_text")
+
+        temperature = kwargs.pop("temperature", None)
+        if temperature == 0:
+            temperature = None
+
+        output = pipeline(
+            prompt,
+            temperature=temperature,
+            *args,
+            **kwargs,
+        )
+
+        # NOTE: This is currently restricted to single outputs
+        # Should we choose to support multiple return sequences,
+        # We would need to either validate all of them
+        # and choose the one with the least failures,
+        # or accept a selection function
+        content = safe_get(output[0], content_key)
+
+        return LLMResponse(output=content)
+
+
 class ArbitraryCallable(PromptCallableBase):
     def __init__(self, llm_api: Callable, *args, **kwargs):
         self.llm_api = llm_api
@@ -250,7 +417,7 @@ class ArbitraryCallable(PromptCallableBase):
 
         To use an arbitrary callable for guardrails, do
         ```
-        raw_llm_response, validated_response = guard(
+        raw_llm_response, validated_response, *rest = guard(
             my_callable,
             prompt_params={...},
             ...
@@ -263,28 +430,20 @@ class ArbitraryCallable(PromptCallableBase):
         llm_response = self.llm_api(*args, **kwargs)
 
         # Check if kwargs stream is passed in
-        if kwargs.get("stream", None) in [None, False]:
-            # If stream is not defined or is set to False,
-            # return default behavior
-            # Strongly type the response as a string
-            llm_response = cast(str, llm_response)
-            return LLMResponse(
-                output=llm_response,
-            )
-        else:
+        if kwargs.get("stream", False):
             # If stream is defined and set to True,
             # the callable returns a generator object
-            complete_output = ""
-
-            # Strongly type the response as an iterable of strings
             llm_response = cast(Iterable[str], llm_response)
-            for response in llm_response:
-                complete_output += response
-
-            # Return the LLMResponse
             return LLMResponse(
-                output=complete_output,
+                output="",
+                stream_output=llm_response,
             )
+
+        # Else, the callable returns a string
+        llm_response = cast(str, llm_response)
+        return LLMResponse(
+            output=llm_response,
+        )
 
 
 def get_llm_ask(llm_api: Callable, *args, **kwargs) -> PromptCallableBase:
@@ -311,6 +470,53 @@ def get_llm_ask(llm_api: Callable, *args, **kwargs) -> PromptCallableBase:
             and getattr(llm_api, "__name__", None) == "generate"
         ):
             return CohereCallable(*args, client_callable=llm_api, **kwargs)
+    except ImportError:
+        pass
+
+    try:
+        import anthropic.resources  # noqa: F401 # type: ignore
+
+        if isinstance(
+            getattr(llm_api, "__self__", None),
+            anthropic.resources.completions.Completions,
+        ):
+            return AnthropicCallable(*args, client_callable=llm_api, **kwargs)
+    except ImportError:
+        pass
+
+    try:
+        from transformers import (  # noqa: F401 # type: ignore
+            FlaxPreTrainedModel,
+            GenerationMixin,
+            PreTrainedModel,
+            TFPreTrainedModel,
+        )
+
+        api_self = getattr(llm_api, "__self__", None)
+
+        if (
+            isinstance(api_self, PreTrainedModel)
+            or isinstance(api_self, TFPreTrainedModel)
+            or isinstance(api_self, FlaxPreTrainedModel)
+        ):
+            if (
+                hasattr(llm_api, "__func__")
+                and llm_api.__func__ == GenerationMixin.generate
+            ):
+                return HuggingFaceModelCallable(*args, model_generate=llm_api, **kwargs)
+            raise ValueError("Only text generation models are supported at this time.")
+    except ImportError:
+        pass
+    try:
+        from transformers import Pipeline  # noqa: F401 # type: ignore
+
+        if isinstance(llm_api, Pipeline):
+            # Couldn't find a constant for this
+            if llm_api.task == "text-generation":
+                return HuggingFacePipelineCallable(*args, pipeline=llm_api, **kwargs)
+            raise ValueError(
+                "Only text generation pipelines are supported at this time."
+            )
     except ImportError:
         pass
 
@@ -397,7 +603,7 @@ class AsyncOpenAIChatCallable(AsyncPromptCallableBase):
 
         Use Guardrails with OpenAI chat engines by doing
         ```
-        raw_llm_response, validated_response = guard(
+        raw_llm_response, validated_response, *rest = guard(
             openai.ChatCompletion.create,
             prompt_params={...},
             text=...,
@@ -458,7 +664,7 @@ class AsyncManifestCallable(AsyncPromptCallableBase):
         To use manifest for guardrails, do
         ```
         client = Manifest(client_name=..., client_connection=...)
-        raw_llm_response, validated_response = guard(
+        raw_llm_response, validated_response, *rest = guard(
             client,
             prompt_params={...},
             ...
@@ -469,7 +675,7 @@ class AsyncManifestCallable(AsyncPromptCallableBase):
         except ImportError:
             raise PromptCallableException(
                 "The `manifest` package is not installed. "
-                "Install with `pip install manifest-ml`"
+                "Install with `poetry add manifest-ml`"
             )
         client = cast(manifest.Manifest, client)
         manifest_response = await client.arun_batch(
@@ -492,7 +698,7 @@ class AsyncArbitraryCallable(AsyncPromptCallableBase):
 
         To use an arbitrary callable for guardrails, do
         ```
-        raw_llm_response, validated_response = guard(
+        raw_llm_response, validated_response, *rest = guard(
             my_callable,
             prompt_params={...},
             ...

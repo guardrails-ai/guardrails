@@ -1,4 +1,5 @@
 # noqa:W291
+import json
 import os
 from typing import Any, Dict, List
 
@@ -9,7 +10,11 @@ from pydantic import BaseModel, Field
 from guardrails import Guard
 from guardrails.datatypes import DataType
 from guardrails.schema import StringSchema
-from guardrails.utils.openai_utils import OPENAI_VERSION
+from guardrails.utils.openai_utils import (
+    OPENAI_VERSION,
+    get_static_openai_acreate_func,
+    get_static_openai_create_func,
+)
 from guardrails.utils.reask_utils import FieldReAsk
 from guardrails.validator_base import (
     FailResult,
@@ -27,12 +32,20 @@ from guardrails.validators import (
     DetectSecrets,
     ExtractedSummarySentencesMatch,
     ExtractiveSummary,
+    IsHighQualityTranslation,
     ProvenanceV1,
     SimilarToDocument,
     SimilarToList,
     SqlColumnPresence,
+    ToxicLanguage,
     TwoWords,
     ValidLength,
+)
+from tests.integration_tests.mock_toxic_language import (
+    NON_TOXIC_SENTENCES,
+    TOXIC_SENTENCES,
+    MockPipeline,
+    mock_get_toxicity,
 )
 
 from .mock_embeddings import MOCK_EMBEDDINGS, mock_create_embedding
@@ -42,6 +55,7 @@ from .mock_secrets import (
     NO_SECRETS_CODE_SNIPPET,
     SECRETS_CODE_SNIPPET,
 )
+from .mocks.mock_comet import BAD_TRANSLATION, GOOD_TRANSLATION, MockModel
 
 
 @pytest.mark.parametrize(
@@ -217,7 +231,7 @@ def test_validator_as_tuple():
         num_reasks=0,
     )
 
-    assert output == {"a_field": "hullo"}
+    assert output.validated_output == {"a_field": "hullo"}
 
     # (string, on_fail) tuple fix
 
@@ -232,7 +246,7 @@ def test_validator_as_tuple():
         num_reasks=0,
     )
 
-    assert output == {"a_field": "hullo"}
+    assert output.validated_output == {"a_field": "hullo"}
 
     # (Validator, on_fail) tuple fix
 
@@ -245,7 +259,7 @@ def test_validator_as_tuple():
         num_reasks=0,
     )
 
-    assert output == {"a_field": "hello there"}
+    assert output.validated_output == {"a_field": "hello there"}
 
     # (Validator, on_fail) tuple reask
 
@@ -270,8 +284,8 @@ def test_validator_as_tuple():
         num_reasks=0,
     )
 
-    assert output == {"a_field": "hullo"}
-    assert guard.guard_state.all_histories[0].history[0].reasks[0] == hullo_reask
+    assert output.validated_output == {"a_field": "hullo"}
+    assert guard.history.first.iterations.first.reasks[0] == hullo_reask
 
     hello_reask = FieldReAsk(
         incorrect_value="hello there yo",
@@ -296,8 +310,8 @@ def test_validator_as_tuple():
         num_reasks=0,
     )
 
-    assert output == {"a_field": "hello there"}
-    assert guard.guard_state.all_histories[0].history[0].reasks[0] == hello_reask
+    assert output.validated_output == {"a_field": "hello there"}
+    assert guard.history.first.iterations.first.reasks[0] == hello_reask
 
     # (Validator, on_fail) tuple reask
 
@@ -311,8 +325,8 @@ def test_validator_as_tuple():
         num_reasks=0,
     )
 
-    assert output == {"a_field": "hello there"}
-    assert guard.guard_state.all_histories[0].history[0].reasks[0] == hello_reask
+    assert output.validated_output == {"a_field": "hello there"}
+    assert guard.history.first.iterations.first.reasks[0] == hello_reask
 
     # Fail on string
 
@@ -340,13 +354,11 @@ def test_custom_func_validator():
         '{"greeting": "hello"}',
         num_reasks=0,
     )
-    assert output == {"greeting": "hullo"}
+    assert output.validated_output == {"greeting": "hullo"}
 
-    guard_history = guard.guard_state.all_histories[0].history
-    assert len(guard_history) == 1
-    validator_log = (
-        guard_history[0].field_validation_logs.children["greeting"].validator_logs[0]
-    )
+    call = guard.history.first
+    assert call.iterations.length == 1
+    validator_log = call.iterations.first.validator_logs[0]
     assert validator_log.validator_name == "mycustomhellovalidator"
     assert validator_log.validation_result == FailResult(
         error_message="Hello is too basic, try something more creative.",
@@ -405,19 +417,20 @@ def test_provenance_v1(mocker):
     if OPENAI_VERSION.startswith("0"):  # not supported in v1 anymore
         openai.api_key = API_KEY
 
-        output = string_guard.parse(
-            llm_output=LLM_RESPONSE,
-            metadata={"query_function": mock_chromadb_query_function},
-        )
-        assert output == LLM_RESPONSE
+    output = string_guard.parse(
+        llm_output=LLM_RESPONSE,
+        metadata={"query_function": mock_chromadb_query_function},
+    )
+    assert output.validated_output == LLM_RESPONSE
 
     # 2. Setting the environment variable
+    openai_api_key_backup = os.environ.get("OPENAI_API_KEY")
     os.environ["OPENAI_API_KEY"] = API_KEY
     output = string_guard.parse(
         llm_output=LLM_RESPONSE,
         metadata={"query_function": mock_chromadb_query_function},
     )
-    assert output == LLM_RESPONSE
+    assert output.validated_output == LLM_RESPONSE
 
     # 3. Passing the API key as an argument
     output = string_guard.parse(
@@ -426,7 +439,11 @@ def test_provenance_v1(mocker):
         api_key=API_KEY,
         api_base="https://api.openai.com",
     )
-    assert output == LLM_RESPONSE
+    assert output.validated_output == LLM_RESPONSE
+    if openai_api_key_backup is not None:
+        os.environ["OPENAI_API_KEY"] = openai_api_key_backup
+    else:
+        del os.environ["OPENAI_API_KEY"]
 
 
 @pytest.mark.parametrize(
@@ -522,6 +539,62 @@ def test_detect_secrets():
     assert mod_value == NO_SECRETS_CODE_SNIPPET
 
 
+def test_toxic_language(mocker):
+    """Test ToxicLanguage validator's get_toxicity() method.
+
+    1. Test with dummy text with toxicity
+    2. Test with dummy text without toxicity
+    """
+    mocker.patch("guardrails.validators.toxic_language.pipeline", new=MockPipeline)
+    mocker.patch(
+        "guardrails.validators.toxic_language.ToxicLanguage.get_toxicity",
+        new=mock_get_toxicity,
+    )
+
+    # Initialise validator
+    validator = ToxicLanguage()
+
+    # ----------------------------
+    # 1. Test get_toxicity with dummy text with toxicity
+    pred_labels = validator.get_toxicity(TOXIC_SENTENCES[1])
+    assert len(pred_labels) > 0
+
+    # ----------------------------
+    # 2. Test get_toxicity with dummy text without toxicity
+    pred_labels = validator.get_toxicity(NON_TOXIC_SENTENCES[0])
+    assert len(pred_labels) == 0
+
+
+def test_translation_quality_validator(mocker):
+    """Test IsHighQualityTranslation validator.
+
+    1. Test with dummy translation with high quality
+    2. Test with dummy translation with low quality
+    """
+    mocker.patch(
+        "guardrails.validators.is_high_quality_translation.download_model",
+        return_value="some_path",
+    )
+    mocker.patch(
+        "guardrails.validators.is_high_quality_translation.load_from_checkpoint",
+        return_value=MockModel(),
+    )
+
+    # Initialise validator
+    validator = IsHighQualityTranslation()
+
+    # ----------------------------
+    # 1. Test with dummy translation with high quality
+    metadata = {"translation_source": "input text"}
+    result = validator.validate(GOOD_TRANSLATION, metadata)
+    assert isinstance(result, PassResult)
+
+    # ----------------------------
+    # 2. Test with dummy translation with low quality
+    result = validator.validate(BAD_TRANSLATION, metadata)
+    assert isinstance(result, FailResult)
+
+
 def custom_fix_on_fail_handler(value: Any, fail_results: List[FailResult]):
     return value + " " + value
 
@@ -557,7 +630,7 @@ def custom_refrain_on_fail_handler(value: Any, fail_results: List[FailResult]):
                 fail_results=[
                     FailResult(
                         error_message="must be exactly two words",
-                        fix_value="dog",
+                        fix_value="dog dog",
                     )
                 ],
             ),
@@ -572,7 +645,7 @@ def custom_refrain_on_fail_handler(value: Any, fail_results: List[FailResult]):
         ),
         (
             custom_refrain_on_fail_handler,
-            {},
+            None,
         ),
     ],
 )
@@ -609,14 +682,570 @@ def test_custom_on_fail_handler(
 
     guard = Guard.from_pydantic(output_class=Pet, prompt=prompt)
     if isinstance(expected_result, type) and issubclass(expected_result, Exception):
-        with pytest.raises(expected_result):
-            guard.parse(output)
+        with pytest.raises(ValidatorError) as excinfo:
+            guard.parse(output, num_reasks=0)
+        assert str(excinfo.value) == "Something went wrong!"
     else:
-        validated_output = guard.parse(output, num_reasks=0)
+        response = guard.parse(output, num_reasks=0)
         if isinstance(expected_result, FieldReAsk):
-            assert (
-                guard.guard_state.all_histories[0].history[0].reasks[0]
-                == expected_result
-            )
+            assert guard.history.first.iterations.first.reasks[0] == expected_result
         else:
-            assert validated_output == expected_result
+            assert response.validated_output == expected_result
+
+
+class Pet(BaseModel):
+    name: str = Field(description="a unique pet name")
+
+
+def test_input_validation_fix(mocker):
+    if OPENAI_VERSION.startswith("0"):
+        mock_openai = mocker.patch("openai.Completion.create")
+        mock_openai.return_value = {
+            "choices": [
+                {
+                    "text": json.dumps({"name": "Fluffy"}),
+                }
+            ],
+            "usage": {
+                "prompt_tokens": 10,
+                "completion_tokens": 20,
+            },
+        }
+    else:
+        from openai.types import Completion, CompletionChoice, CompletionUsage
+
+        return Completion(
+            id="",
+            choices=[
+                CompletionChoice(
+                    finish_reason="stop",
+                    index=0,
+                    logprobs=None,
+                    text=json.dumps({"name": "Fluffy"}),
+                ),
+            ],
+            created=0,
+            model="",
+            object="text_completion",
+            usage=CompletionUsage(
+                completion_tokens=20,
+                prompt_tokens=10,
+                total_tokens=30,
+            ),
+        )
+
+    # fix returns an amended value for prompt/instructions validation,
+    guard = Guard.from_pydantic(output_class=Pet).with_prompt_validation(
+        validators=[TwoWords(on_fail="fix")]
+    )
+    guard(
+        get_static_openai_create_func(),
+        prompt="What kind of pet should I get?",
+    )
+    assert guard.history.first.iterations.first.outputs.validation_output == "What kind"
+    guard = Guard.from_pydantic(output_class=Pet).with_instructions_validation(
+        validators=[TwoWords(on_fail="fix")]
+    )
+    guard(
+        get_static_openai_create_func(),
+        prompt="What kind of pet should I get and what should I name it?",
+        instructions="But really, what kind of pet should I get?",
+    )
+    assert (
+        guard.history.first.iterations.first.outputs.validation_output == "But really,"
+    )
+
+    # but raises for msg_history validation
+    guard = Guard.from_pydantic(output_class=Pet).with_msg_history_validation(
+        validators=[TwoWords(on_fail="fix")]
+    )
+    with pytest.raises(ValidatorError) as excinfo:
+        guard(
+            get_static_openai_create_func(),
+            msg_history=[
+                {
+                    "role": "user",
+                    "content": "What kind of pet should I get?",
+                }
+            ],
+        )
+    assert str(excinfo.value) == "Message history validation failed"
+    assert isinstance(guard.history.first.exception, ValidatorError)
+    assert guard.history.first.exception == excinfo.value
+
+    # rail prompt validation
+    guard = Guard.from_rail_string(
+        """
+<rail version="0.1">
+<prompt
+    validators="two-words"
+    on-fail-two-words="fix"
+>
+This is not two words
+</prompt>
+<output type="string">
+</output>
+</rail>
+"""
+    )
+    guard(
+        get_static_openai_create_func(),
+    )
+    assert guard.history.first.iterations.first.outputs.validation_output == "This is"
+
+    # rail instructions validation
+    guard = Guard.from_rail_string(
+        """
+<rail version="0.1">
+<prompt>
+This is not two words
+</prompt>
+<instructions
+    validators="two-words"
+    on-fail-two-words="fix"
+>
+This also is not two words
+</instructions>
+<output type="string">
+</output>
+</rail>
+"""
+    )
+    guard(
+        get_static_openai_create_func(),
+    )
+    assert guard.history.first.iterations.first.outputs.validation_output == "This also"
+
+
+@pytest.mark.asyncio
+@pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="Not supported in v1")
+async def test_async_input_validation_fix(mocker):
+    mock_openai = mocker.patch("openai.Completion.acreate")
+    mock_openai.return_value = {
+        "choices": [
+            {
+                "text": json.dumps({"name": "Fluffy"}),
+            }
+        ],
+        "usage": {
+            "prompt_tokens": 10,
+            "completion_tokens": 20,
+        },
+    }
+
+    # fix returns an amended value for prompt/instructions validation,
+    guard = Guard.from_pydantic(output_class=Pet).with_prompt_validation(
+        validators=[TwoWords(on_fail="fix")]
+    )
+    await guard(
+        get_static_openai_acreate_func(),
+        prompt="What kind of pet should I get?",
+    )
+    assert guard.history.first.iterations.first.outputs.validation_output == "What kind"
+
+    guard = Guard.from_pydantic(output_class=Pet).with_instructions_validation(
+        validators=[TwoWords(on_fail="fix")]
+    )
+    await guard(
+        get_static_openai_acreate_func(),
+        prompt="What kind of pet should I get and what should I name it?",
+        instructions="But really, what kind of pet should I get?",
+    )
+    assert (
+        guard.history.first.iterations.first.outputs.validation_output == "But really,"
+    )
+
+    # but raises for msg_history validation
+    guard = Guard.from_pydantic(output_class=Pet).with_msg_history_validation(
+        validators=[TwoWords(on_fail="fix")]
+    )
+    with pytest.raises(ValidatorError) as excinfo:
+        await guard(
+            get_static_openai_acreate_func(),
+            msg_history=[
+                {
+                    "role": "user",
+                    "content": "What kind of pet should I get?",
+                }
+            ],
+        )
+    assert str(excinfo.value) == "Message history validation failed"
+    assert isinstance(guard.history.first.exception, ValidatorError)
+    assert guard.history.first.exception == excinfo.value
+
+    # rail prompt validation
+    guard = Guard.from_rail_string(
+        """
+<rail version="0.1">
+<prompt
+    validators="two-words"
+    on-fail-two-words="fix"
+>
+This is not two words
+</prompt>
+<output type="string">
+</output>
+</rail>
+"""
+    )
+    await guard(
+        get_static_openai_acreate_func(),
+    )
+    assert guard.history.first.iterations.first.outputs.validation_output == "This is"
+
+    # rail instructions validation
+    guard = Guard.from_rail_string(
+        """
+<rail version="0.1">
+<prompt>
+This is not two words
+</prompt>
+<instructions
+    validators="two-words"
+    on-fail-two-words="fix"
+>
+This also is not two words
+</instructions>
+<output type="string">
+</output>
+</rail>
+"""
+    )
+    await guard(
+        get_static_openai_acreate_func(),
+    )
+    assert guard.history.first.iterations.first.outputs.validation_output == "This also"
+
+
+@pytest.mark.parametrize(
+    "on_fail,"
+    "structured_prompt_error,"
+    "structured_instructions_error,"
+    "structured_message_history_error,"
+    "unstructured_prompt_error,"
+    "unstructured_instructions_error",
+    [
+        (
+            "reask",
+            "Prompt validation failed: incorrect_value='What kind of pet should I get?\\n\\nJson Output:\\n\\n' fail_results=[FailResult(outcome='fail', metadata=None, error_message='must be exactly two words', fix_value='What kind')] path=None",  # noqa
+            "Instructions validation failed: incorrect_value='What kind of pet should I get?' fail_results=[FailResult(outcome='fail', metadata=None, error_message='must be exactly two words', fix_value='What kind')] path=None",  # noqa
+            "Message history validation failed: incorrect_value='What kind of pet should I get?' fail_results=[FailResult(outcome='fail', metadata=None, error_message='must be exactly two words', fix_value='What kind')] path=None",  # noqa
+            "Prompt validation failed: incorrect_value='\\nThis is not two words\\n\\n\\nString Output:\\n\\n' fail_results=[FailResult(outcome='fail', metadata=None, error_message='must be exactly two words', fix_value='This is')] path=None",  # noqa
+            "Instructions validation failed: incorrect_value='\\nThis also is not two words\\n' fail_results=[FailResult(outcome='fail', metadata=None, error_message='must be exactly two words', fix_value='This also')] path=None",  # noqa
+        ),
+        (
+            "filter",
+            "Prompt validation failed",
+            "Instructions validation failed",
+            "Message history validation failed",
+            "Prompt validation failed",
+            "Instructions validation failed",
+        ),
+        (
+            "refrain",
+            "Prompt validation failed",
+            "Instructions validation failed",
+            "Message history validation failed",
+            "Prompt validation failed",
+            "Instructions validation failed",
+        ),
+        (
+            "exception",
+            "Validation failed for field with errors: must be exactly two words",
+            "Validation failed for field with errors: must be exactly two words",
+            "Validation failed for field with errors: must be exactly two words",
+            "Validation failed for field with errors: must be exactly two words",
+            "Validation failed for field with errors: must be exactly two words",
+        ),
+    ],
+)
+def test_input_validation_fail(
+    on_fail,
+    structured_prompt_error,
+    structured_instructions_error,
+    structured_message_history_error,
+    unstructured_prompt_error,
+    unstructured_instructions_error,
+):
+    # with_prompt_validation
+    guard = Guard.from_pydantic(output_class=Pet).with_prompt_validation(
+        validators=[TwoWords(on_fail=on_fail)]
+    )
+    with pytest.raises(ValidatorError) as excinfo:
+        guard(
+            get_static_openai_create_func(),
+            prompt="What kind of pet should I get?",
+        )
+    assert str(excinfo.value) == structured_prompt_error
+    assert isinstance(guard.history.last.exception, ValidatorError)
+    assert guard.history.last.exception == excinfo.value
+
+    # with_instructions_validation
+    guard = Guard.from_pydantic(output_class=Pet).with_instructions_validation(
+        validators=[TwoWords(on_fail=on_fail)]
+    )
+    with pytest.raises(ValidatorError) as excinfo:
+        guard(
+            get_static_openai_create_func(),
+            prompt="What kind of pet should I get and what should I name it?",
+            instructions="What kind of pet should I get?",
+        )
+    assert str(excinfo.value) == structured_instructions_error
+    assert isinstance(guard.history.last.exception, ValidatorError)
+    assert guard.history.last.exception == excinfo.value
+
+    # with_msg_history_validation
+    guard = Guard.from_pydantic(output_class=Pet).with_msg_history_validation(
+        validators=[TwoWords(on_fail=on_fail)]
+    )
+    with pytest.raises(ValidatorError) as excinfo:
+        guard(
+            get_static_openai_create_func(),
+            msg_history=[
+                {
+                    "role": "user",
+                    "content": "What kind of pet should I get?",
+                }
+            ],
+        )
+    assert str(excinfo.value) == structured_message_history_error
+    assert isinstance(guard.history.last.exception, ValidatorError)
+    assert guard.history.last.exception == excinfo.value
+
+    # rail prompt validation
+    guard = Guard.from_rail_string(
+        f"""
+<rail version="0.1">
+<prompt
+    validators="two-words"
+    on-fail-two-words="{on_fail}"
+>
+This is not two words
+</prompt>
+<output type="string">
+</output>
+</rail>
+"""
+    )
+    with pytest.raises(ValidatorError) as excinfo:
+        guard(
+            get_static_openai_create_func(),
+        )
+    assert str(excinfo.value) == unstructured_prompt_error
+    assert isinstance(guard.history.last.exception, ValidatorError)
+    assert guard.history.last.exception == excinfo.value
+
+    # rail instructions validation
+    guard = Guard.from_rail_string(
+        f"""
+<rail version="0.1">
+<prompt>
+This is not two words
+</prompt>
+<instructions
+    validators="two-words"
+    on-fail-two-words="{on_fail}"
+>
+This also is not two words
+</instructions>
+<output type="string">
+</output>
+</rail>
+"""
+    )
+    with pytest.raises(ValidatorError) as excinfo:
+        guard(
+            get_static_openai_create_func(),
+        )
+    assert str(excinfo.value) == unstructured_instructions_error
+    assert isinstance(guard.history.last.exception, ValidatorError)
+    assert guard.history.last.exception == excinfo.value
+
+
+@pytest.mark.parametrize(
+    "on_fail,"
+    "structured_prompt_error,"
+    "structured_instructions_error,"
+    "structured_message_history_error,"
+    "unstructured_prompt_error,"
+    "unstructured_instructions_error",
+    [
+        (
+            "reask",
+            "Prompt validation failed: incorrect_value='What kind of pet should I get?\\n\\nJson Output:\\n\\n' fail_results=[FailResult(outcome='fail', metadata=None, error_message='must be exactly two words', fix_value='What kind')] path=None",  # noqa
+            "Instructions validation failed: incorrect_value='What kind of pet should I get?' fail_results=[FailResult(outcome='fail', metadata=None, error_message='must be exactly two words', fix_value='What kind')] path=None",  # noqa
+            "Message history validation failed: incorrect_value='What kind of pet should I get?' fail_results=[FailResult(outcome='fail', metadata=None, error_message='must be exactly two words', fix_value='What kind')] path=None",  # noqa
+            "Prompt validation failed: incorrect_value='\\nThis is not two words\\n\\n\\nString Output:\\n\\n' fail_results=[FailResult(outcome='fail', metadata=None, error_message='must be exactly two words', fix_value='This is')] path=None",  # noqa
+            "Instructions validation failed: incorrect_value='\\nThis also is not two words\\n' fail_results=[FailResult(outcome='fail', metadata=None, error_message='must be exactly two words', fix_value='This also')] path=None",  # noqa
+        ),
+        (
+            "filter",
+            "Prompt validation failed",
+            "Instructions validation failed",
+            "Message history validation failed",
+            "Prompt validation failed",
+            "Instructions validation failed",
+        ),
+        (
+            "refrain",
+            "Prompt validation failed",
+            "Instructions validation failed",
+            "Message history validation failed",
+            "Prompt validation failed",
+            "Instructions validation failed",
+        ),
+        (
+            "exception",
+            "Validation failed for field with errors: must be exactly two words",
+            "Validation failed for field with errors: must be exactly two words",
+            "Validation failed for field with errors: must be exactly two words",
+            "Validation failed for field with errors: must be exactly two words",
+            "Validation failed for field with errors: must be exactly two words",
+        ),
+    ],
+)
+@pytest.mark.asyncio
+@pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="Not supported in v1")
+async def test_input_validation_fail_async(
+    on_fail,
+    structured_prompt_error,
+    structured_instructions_error,
+    structured_message_history_error,
+    unstructured_prompt_error,
+    unstructured_instructions_error,
+):
+    # with_prompt_validation
+    guard = Guard.from_pydantic(output_class=Pet).with_prompt_validation(
+        validators=[TwoWords(on_fail=on_fail)]
+    )
+    with pytest.raises(ValidatorError) as excinfo:
+        await guard(
+            get_static_openai_acreate_func(),
+            prompt="What kind of pet should I get?",
+        )
+    assert str(excinfo.value) == structured_prompt_error
+    assert isinstance(guard.history.last.exception, ValidatorError)
+    assert guard.history.last.exception == excinfo.value
+
+    # with_instructions_validation
+    guard = Guard.from_pydantic(output_class=Pet).with_instructions_validation(
+        validators=[TwoWords(on_fail=on_fail)]
+    )
+    with pytest.raises(ValidatorError) as excinfo:
+        await guard(
+            get_static_openai_acreate_func(),
+            prompt="What kind of pet should I get and what should I name it?",
+            instructions="What kind of pet should I get?",
+        )
+    assert str(excinfo.value) == structured_instructions_error
+    assert isinstance(guard.history.last.exception, ValidatorError)
+    assert guard.history.last.exception == excinfo.value
+
+    # with_msg_history_validation
+    guard = Guard.from_pydantic(output_class=Pet).with_msg_history_validation(
+        validators=[TwoWords(on_fail=on_fail)]
+    )
+    with pytest.raises(ValidatorError) as excinfo:
+        await guard(
+            get_static_openai_acreate_func(),
+            msg_history=[
+                {
+                    "role": "user",
+                    "content": "What kind of pet should I get?",
+                }
+            ],
+        )
+    assert str(excinfo.value) == structured_message_history_error
+    assert isinstance(guard.history.last.exception, ValidatorError)
+    assert guard.history.last.exception == excinfo.value
+
+    # rail prompt validation
+    guard = Guard.from_rail_string(
+        f"""
+<rail version="0.1">
+<prompt
+    validators="two-words"
+    on-fail-two-words="{on_fail}"
+>
+This is not two words
+</prompt>
+<output type="string">
+</output>
+</rail>
+"""
+    )
+    with pytest.raises(ValidatorError) as excinfo:
+        await guard(
+            get_static_openai_acreate_func(),
+        )
+    assert str(excinfo.value) == unstructured_prompt_error
+    assert isinstance(guard.history.last.exception, ValidatorError)
+    assert guard.history.last.exception == excinfo.value
+
+    # rail instructions validation
+    guard = Guard.from_rail_string(
+        f"""
+<rail version="0.1">
+<prompt>
+This is not two words
+</prompt>
+<instructions
+    validators="two-words"
+    on-fail-two-words="{on_fail}"
+>
+This also is not two words
+</instructions>
+<output type="string">
+</output>
+</rail>
+"""
+    )
+    with pytest.raises(ValidatorError) as excinfo:
+        await guard(
+            get_static_openai_acreate_func(),
+        )
+    assert str(excinfo.value) == unstructured_instructions_error
+    assert isinstance(guard.history.last.exception, ValidatorError)
+    assert guard.history.last.exception == excinfo.value
+
+
+def test_input_validation_mismatch_raise():
+    # prompt validation, msg_history argument
+    guard = Guard.from_pydantic(output_class=Pet).with_prompt_validation(
+        validators=[TwoWords(on_fail="fix")]
+    )
+    with pytest.raises(ValueError):
+        guard(
+            get_static_openai_create_func(),
+            msg_history=[
+                {
+                    "role": "user",
+                    "content": "What kind of pet should I get?",
+                }
+            ],
+        )
+
+    # instructions validation, msg_history argument
+    guard = Guard.from_pydantic(output_class=Pet).with_instructions_validation(
+        validators=[TwoWords(on_fail="fix")]
+    )
+    with pytest.raises(ValueError):
+        guard(
+            get_static_openai_create_func(),
+            msg_history=[
+                {
+                    "role": "user",
+                    "content": "What kind of pet should I get?",
+                }
+            ],
+        )
+
+    # msg_history validation, prompt argument
+    guard = Guard.from_pydantic(output_class=Pet).with_msg_history_validation(
+        validators=[TwoWords(on_fail="fix")]
+    )
+    with pytest.raises(ValueError):
+        guard(
+            get_static_openai_create_func(),
+            prompt="What kind of pet should I get?",
+        )

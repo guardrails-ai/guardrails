@@ -2,7 +2,6 @@ import openai
 import pytest
 from pydantic import BaseModel
 
-import guardrails
 from guardrails import Guard, Rail, Validator
 from guardrails.datatypes import verify_metadata_requirements
 from guardrails.utils.openai_utils import OPENAI_VERSION
@@ -26,7 +25,7 @@ class RequiringValidator2(Validator):
 
 
 @pytest.mark.parametrize(
-    "spec,metadata",
+    "spec,metadata,error_message",
     [
         (
             """
@@ -37,6 +36,7 @@ class RequiringValidator2(Validator):
 </rail>
         """,
             {"required_key": "a"},
+            "Missing required metadata keys: required_key",
         ),
         (
             """
@@ -52,6 +52,7 @@ class RequiringValidator2(Validator):
 </rail>
         """,
             {"required_key": "a", "required_key2": "b"},
+            "Missing required metadata keys: required_key, required_key2",
         ),
         (
             """
@@ -73,13 +74,14 @@ class RequiringValidator2(Validator):
 </rail>
 """,
             {"required_key": "a"},
+            "Missing required metadata keys: required_key",
         ),
     ],
 )
 @pytest.mark.asyncio
 @pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="Only for OpenAI v0")
-async def test_required_metadata(spec, metadata):
-    guard = guardrails.Guard.from_rail_string(spec)
+async def test_required_metadata(spec, metadata, error_message):
+    guard = Guard.from_rail_string(spec)
 
     missing_keys = verify_metadata_requirements({}, guard.output_schema.root_datatype)
     assert set(missing_keys) == set(metadata)
@@ -90,16 +92,23 @@ async def test_required_metadata(spec, metadata):
     assert not_missing_keys == []
 
     # test sync guard
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError) as excinfo:
         guard.parse("{}")
-    guard.parse("{}", metadata=metadata, num_reasks=0)
+    assert str(excinfo.value) == error_message
+
+    response = guard.parse("{}", metadata=metadata, num_reasks=0)
+    assert response.error is None
 
     # test async guard
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError) as excinfo:
+        guard.parse("{}")
         await guard.parse("{}", llm_api=openai.ChatCompletion.acreate, num_reasks=0)
-    await guard.parse(
+    assert str(excinfo.value) == error_message
+
+    response = await guard.parse(
         "{}", metadata=metadata, llm_api=openai.ChatCompletion.acreate, num_reasks=0
     )
+    assert response.error is None
 
 
 rail = Rail.from_string_validators([], "empty railspec")
