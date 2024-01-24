@@ -1,5 +1,6 @@
 import pytest
 
+
 # TODO
 @pytest.mark.skip()
 def test_fetch():
@@ -16,4 +17,3 @@ def test_fetch_module_manifest():
 @pytest.mark.skip()
 def test_fetch_module():
     assert 1 == 1
-

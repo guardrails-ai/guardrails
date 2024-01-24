@@ -1,7 +1,7 @@
 import os
-import sys
 from dataclasses import dataclass
 from os.path import expanduser
+from typing import Optional
 
 from guardrails.cli.logger import logger
 from guardrails.cli.server.serializeable import Serializeable
@@ -9,10 +9,10 @@ from guardrails.cli.server.serializeable import Serializeable
 
 @dataclass
 class Credentials(Serializeable):
-    id: str
-    client_id: str
-    client_secret: str
-    no_metrics: bool = False
+    id: Optional[str] = None
+    client_id: Optional[str] = None
+    client_secret: Optional[str] = None
+    no_metrics: Optional[bool] = False
 
     @staticmethod
     def from_rc_file() -> "Credentials":
@@ -32,6 +32,7 @@ class Credentials(Serializeable):
             logger.error(e)
             logger.error(
                 "Guardrails Hub credentials not found!"
-                "Sign up to use the Hub here: {insert url}"
+                "You will need to sign up to use any authenticated Validators here:"
+                "{insert url}"
             )
-            sys.exit(1)
+            return Credentials()
