@@ -19,9 +19,9 @@ guard = gd.Guard.from_rail(...)
 
 # Wrap openai API call
 raw_llm_output, guardrail_output, *rest = guard(
-    openai.Completion.create,
+    openai.completions.create,
     prompt_params={"prompt_param_1": "value_1", "prompt_param_2": "value_2", ..},
-    engine="text-davinci-003",
+    engine="gpt-3.5-turbo-instruct",
     max_tokens=100,
     temperature=0.0,
 )

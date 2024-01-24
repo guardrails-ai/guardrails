@@ -199,14 +199,14 @@ def test_streaming_with_openai_callable(
     guard = gd.Guard.from_pydantic(output_class=op_class, prompt=PROMPT)
 
     method = (
-        openai.Completion.create
+        openai.completions.create
         if OPENAI_VERSION.startswith("0")
         else openai.completions.create
     )
 
     generator = guard(
         method,
-        engine="text-davinci-003",
+        engine="gpt-3.5-turbo-instruct",
         max_tokens=10,
         temperature=0,
         stream=True,
