@@ -32,10 +32,42 @@ js_code_block = """
 ```
 """
 
-invalid_json_code_block = """
+invalid_json_code_block__quotes = """
 ```json
 {
     a: 1
+}
+```
+"""
+
+invalid_json_code_block__braces = """
+```json
+{"choice": {"action": "flight", "random_key": "random_value"}
+```
+"""
+
+invalid_json_no_block__quotes = """
+{
+    a: 1
+}
+"""
+
+invalid_json_no_block__braces = """
+{"choice": {"action": "flight", "random_key": "random_value"}
+"""
+
+text_with_no_code_block = """
+Here is the data you requested
+
+{ "a": 1 , "b": { "c": [{"d": 2}, {"e": 3}]}}
+"""
+
+text_with_json_code_block = """
+Here is the data you requested
+
+```json
+{
+    "a": 1
 }
 ```
 """
@@ -49,11 +81,38 @@ not_even_json = "This isn't even json..."
         (json_code_block, {"a": 1}, None),
         (anonymous_code_block, {"a": 1}, None),
         (no_code_block, {"a": 1}, None),
+        (text_with_no_code_block, {"a": 1, "b": {"c": [{"d": 2}, {"e": 3}]}}, None),
+        (text_with_json_code_block, {"a": 1}, None),
         (js_code_block, None, "Expecting value: line 1 column 1 (char 0)"),
         (
-            invalid_json_code_block,
+            invalid_json_code_block__quotes,
             None,
             "Expecting property name enclosed in double quotes: line 2 column 5 (char 6)",  # noqa
+        ),
+        (
+            invalid_json_code_block__braces,
+            None,
+            "Expecting ',' delimiter: line 1 column 62 (char 61)",  # noqa
+        ),
+        (
+            invalid_json_no_block__quotes,
+            None,
+            "Expecting property name enclosed in double quotes: line 2 column 5 (char 6)",  # noqa
+        ),
+        (
+            invalid_json_no_block__braces,
+            None,
+            "Expecting ',' delimiter: line 3 column 1 (char 63)",  # noqa
+        ),
+        (
+            invalid_json_code_block__quotes,
+            None,
+            "Expecting property name enclosed in double quotes: line 2 column 5 (char 6)",  # noqa
+        ),
+        (
+            invalid_json_code_block__braces,
+            None,
+            "Expecting ',' delimiter: line 1 column 62 (char 61)",  # noqa
         ),
         (not_even_json, None, "Expecting value: line 1 column 1 (char 0)"),
     ],
