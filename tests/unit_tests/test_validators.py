@@ -699,7 +699,7 @@ class Pet(BaseModel):
 
 def test_input_validation_fix(mocker):
     if OPENAI_VERSION.startswith("0"):
-        mock_openai = mocker.patch("openai.Completion.create")
+        mock_openai = mocker.patch("openai.completions.create")
         mock_openai.return_value = {
             "choices": [
                 {
