@@ -26,6 +26,7 @@ from guardrails.utils.reask_utils import (
     reasks_to_dict,
 )
 from guardrails.utils.telemetry_utils import async_trace, trace
+from guardrails.utils.hub_telemetry_utils import HubTelemetry
 from guardrails.validator_base import ValidatorError
 
 add_destinations(logger.debug)
@@ -195,6 +196,18 @@ class Runner:
                         prompt_params=prompt_params,
                         include_instructions=include_instructions,
                     )
+
+                # Log how many times we reasked
+                # Get HubTelemetry singleton and tracer
+                hub_telemetry = HubTelemetry()
+                hub_tracer = hub_telemetry.get_tracer()
+                print(f"Getting tracer from location: {id(hub_tracer)}")
+
+                with hub_tracer.start_as_current_span(
+                    "/reasks", context=hub_telemetry.extract_current_context()
+                ) as span:
+                    span.set_attribute("reask_count", index)
+
         except UserFacingException as e:
             # Because Pydantic v1 doesn't respect property setters
             call_log._exception = e.original_exception

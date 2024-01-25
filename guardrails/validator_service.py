@@ -130,10 +130,9 @@ class ValidatorServiceBase:
         with hub_tracer.start_as_current_span(
             "/validator_usage", context=hub_telemetry.extract_current_context()
         ) as span:
-            # Inject the current context
-            hub_telemetry.inject_current_context()
-
-            span.set_attribute("validator_name", validator_class_name)
+            span.set_attribute("validator_name", validator.rail_alias)
+            span.set_attribute("validator_on_fail", validator.on_fail_descriptor)
+            span.set_attribute("validator_result", result.outcome)
 
         return validator_logs
 

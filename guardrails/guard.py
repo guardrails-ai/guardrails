@@ -384,6 +384,11 @@ class Guard(Generic[OT]):
 
                 span.set_attribute("guard_id", self._guard_id)
                 span.set_attribute("user_id", self._user_id)
+                span.set_attribute("llm_api", llm_api.__name__ if llm_api else "None")
+                span.set_attribute("custom_reask_prompt", self.reask_prompt is not None)
+                span.set_attribute(
+                    "custom_reask_instructions", self.reask_instructions is not None
+                )
 
             set_call_kwargs(kwargs)
             set_tracer(self._tracer)
@@ -685,6 +690,11 @@ class Guard(Generic[OT]):
 
                 span.set_attribute("guard_id", self._guard_id)
                 span.set_attribute("user_id", self._user_id)
+                span.set_attribute("llm_api", llm_api.__name__ if llm_api else "None")
+                span.set_attribute("custom_reask_prompt", self.reask_prompt is not None)
+                span.set_attribute(
+                    "custom_reask_instructions", self.reask_instructions is not None
+                )
 
             self.configure(final_num_reasks)
             if self.num_reasks is None:
