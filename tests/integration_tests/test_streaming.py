@@ -201,7 +201,7 @@ def test_streaming_with_openai_callable(
     method = (
         openai.Completion.create
         if OPENAI_VERSION.startswith("0")
-        else openai.completions.create
+        else openai.Completion.create
     )
 
     generator = guard(
