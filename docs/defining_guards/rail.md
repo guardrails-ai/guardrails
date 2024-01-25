@@ -99,7 +99,7 @@ import guardrails as gd
 # Create a Guard object
 guard = gd.Guard.from_rail('path/to/rail/spec.xml')  # (1)!
 _, validated_output, *rest = guard(
-    openai.completions.create,  # (2)!
+    openai.chat.completions.create,  # (2)!
     **prompt_args,
     *args,
     **kwargs
@@ -108,4 +108,4 @@ _, validated_output, *rest = guard(
 ```
 
 1. A `Guard` object is created from a `RAIL` specification. This object manages the validation and correction of the output of the LLM, as well as the prompt that is sent to the LLM.
-2. Wrap the LLM API call (`openai.completions.create`) with the `Guard` object, and add any additional arguments that you want to pass to the LLM API call. Instead of returning the raw text object, the `Guard` object will return a JSON object that is validated and corrected according to the `RAIL` specification.
+2. Wrap the LLM API call (`openai.chat.completions.create`) with the `Guard` object, and add any additional arguments that you want to pass to the LLM API call. Instead of returning the raw text object, the `Guard` object will return a JSON object that is validated and corrected according to the `RAIL` specification.

@@ -564,7 +564,7 @@ def test_get_llm_ask_openai_completion():
     if OPENAI_VERSION.startswith("0"):
         completion_create = openai.Completion.create
     else:
-        completion_create = openai.completions.create
+        completion_create = openai.chat.completions.create
 
     prompt_callable = get_llm_ask(completion_create)
 
