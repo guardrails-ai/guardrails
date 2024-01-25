@@ -240,7 +240,7 @@ def test_openai_callable(mocker, openai_mock):
     mock_environ.return_value = "sk-xxxxxxxxxxxxxx"
 
     if OPENAI_VERSION.startswith("0"):
-        mocker.patch("openai.Completion.create", return_value=openai_mock)
+        mocker.patch("openai.completions.create", return_value=openai_mock)
     else:
         mocker.patch("openai.resources.Completions.create", return_value=openai_mock)
 
@@ -261,7 +261,7 @@ def test_openai_stream_callable(mocker, openai_stream_mock):
     mock_environ.return_value = "sk-xxxxxxxxxxxxxx"
 
     if OPENAI_VERSION.startswith("0"):
-        mocker.patch("openai.Completion.create", return_value=openai_stream_mock)
+        mocker.patch("openai.completions.create", return_value=openai_stream_mock)
     else:
         mocker.patch(
             "openai.resources.Completions.create", return_value=openai_stream_mock
@@ -562,9 +562,9 @@ def test_get_llm_ask_openai_completion():
 
     completion_create = None
     if OPENAI_VERSION.startswith("0"):
-        completion_create = openai.Completion.create
+        completion_create = openai.completions.create
     else:
-        completion_create = openai.Completion.create
+        completion_create = openai.completions.create
 
     prompt_callable = get_llm_ask(completion_create)
 
