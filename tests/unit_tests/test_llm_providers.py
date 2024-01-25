@@ -562,7 +562,7 @@ def test_get_llm_ask_openai_completion():
 
     completion_create = None
     if OPENAI_VERSION.startswith("0"):
-        completion_create = openai.completions.create
+        completion_create = openai.Completion.create
     else:
         completion_create = openai.completions.create
 
