@@ -16,7 +16,7 @@ from guardrails.utils.openai_utils.streaming_utils import (
 
 
 def get_static_openai_create_func():
-    return openai.Completion.create
+    return openai.completions.create
 
 
 def get_static_openai_chat_create_func():
