@@ -65,7 +65,7 @@ class OpenAIClientV0(BaseSyncOpenAIClient):
     def create_completion(
         self, engine: str, prompt: str, *args, **kwargs
     ) -> LLMResponse:
-        response = openai.completions.create(
+        response = openai.Complete.create(
             api_key=self.api_key, engine=engine, prompt=prompt, *args, **kwargs
         )
         return self.construct_nonchat_response(
