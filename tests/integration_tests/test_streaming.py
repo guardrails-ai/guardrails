@@ -199,7 +199,7 @@ def test_streaming_with_openai_callable(
     guard = gd.Guard.from_pydantic(output_class=op_class, prompt=PROMPT)
 
     method = (
-        openai.completions.create
+        openai.Completion.create
         if OPENAI_VERSION.startswith("0")
         else openai.completions.create
     )
