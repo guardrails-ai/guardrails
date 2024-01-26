@@ -1,19 +1,16 @@
 # Imports
 from opentelemetry import trace
-from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
+from opentelemetry.exporter.otlp.proto.http.trace_exporter import (  # HTTP Exporter
     OTLPSpanExporter,
-)  # HTTP Exporter
+)
 from opentelemetry.sdk.resources import SERVICE_NAME, Resource
 from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import (
-    ConsoleSpanExporter,
-    SimpleSpanProcessor,
-)
+from opentelemetry.sdk.trace.export import ConsoleSpanExporter, SimpleSpanProcessor
 from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
 
 
 class HubTelemetry:
-    """Singleton class for initializing a tracer for Guardrails Hub"""
+    """Singleton class for initializing a tracer for Guardrails Hub."""
 
     _instance = None
     _service_name = None
@@ -45,11 +42,13 @@ class HubTelemetry:
         tracer_name: str,
         export_locally: bool,
     ):
-        """Initializes a tracer for Guardrails Hub"""
+        """Initializes a tracer for Guardrails Hub."""
 
         self._service_name = service_name
-        # self._endpoint = "http://localhost:4318/v1/traces"  # Local Otel Collector (Docker)
-        self._endpoint = "https://hty0gc1ok3.execute-api.us-east-1.amazonaws.com/v1/traces"  # AWS ECS
+        # self._endpoint = "http://localhost:4318/v1/traces"
+        self._endpoint = (
+            "https://hty0gc1ok3.execute-api.us-east-1.amazonaws.com/v1/traces"
+        )
         self._tracer_name = tracer_name
 
         # Create a resource
@@ -76,16 +75,16 @@ class HubTelemetry:
         self._prop = TraceContextTextMapPropagator()
 
     def get_tracer(self):
-        """Returns the tracer"""
+        """Returns the tracer."""
 
         return self._tracer
 
     def inject_current_context(self) -> None:
-        """Injects the current context into the carrier"""
+        """Injects the current context into the carrier."""
         self._prop.inject(carrier=self._carrier)
 
     def extract_current_context(self):
-        """Extracts the current context from the carrier"""
+        """Extracts the current context from the carrier."""
 
         context = self._prop.extract(carrier=self._carrier)
         return context

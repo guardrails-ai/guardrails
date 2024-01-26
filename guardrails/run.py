@@ -17,6 +17,7 @@ from guardrails.logger import logger, set_scope
 from guardrails.prompt import Instructions, Prompt
 from guardrails.schema import Schema, StringSchema
 from guardrails.utils.exception_utils import UserFacingException
+from guardrails.utils.hub_telemetry_utils import HubTelemetry
 from guardrails.utils.llm_response import LLMResponse
 from guardrails.utils.openai_utils import OPENAI_VERSION
 from guardrails.utils.reask_utils import (
@@ -26,7 +27,6 @@ from guardrails.utils.reask_utils import (
     reasks_to_dict,
 )
 from guardrails.utils.telemetry_utils import async_trace, trace
-from guardrails.utils.hub_telemetry_utils import HubTelemetry
 from guardrails.validator_base import ValidatorError
 
 add_destinations(logger.debug)

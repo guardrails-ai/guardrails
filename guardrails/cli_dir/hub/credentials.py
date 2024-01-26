@@ -27,8 +27,8 @@ class Credentials(Serializeable):
                 rc_file.close()
                 return Credentials.from_dict(creds)
 
-        except FileNotFoundError as e:
+        except FileNotFoundError:
             print(
-                "Guardrails Hub credentials not found!\nSign up to use the Hub here: {insert url}"
+                "Guardrails Hub credentials not found!\nSign up to use the Hub here: {insert url}"  # noqa: E501
             )
             sys.exit(1)
