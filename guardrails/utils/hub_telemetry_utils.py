@@ -1,19 +1,11 @@
 # Imports
 from opentelemetry import trace
-
-# 2 exporters available: HTTP and GRPC, only use one at a time
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
     OTLPSpanExporter,
-)  # HTTP
-
-# from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import (
-#     OTLPSpanExporter,
-# )  # GRPC
-
+)  # HTTP Exporter
 from opentelemetry.sdk.resources import SERVICE_NAME, Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import (
-    BatchSpanProcessor,
     ConsoleSpanExporter,
     SimpleSpanProcessor,
 )
@@ -37,7 +29,6 @@ class HubTelemetry:
     def __new__(
         cls,
         service_name: str = "guardrails-hub",
-        endpoint: str = "http://localhost:4318/v1/traces",  # HTTP: 4318, GRPC: 4317
         tracer_name: str = "gr_hub",
         export_locally: bool = False,
     ):
@@ -45,22 +36,20 @@ class HubTelemetry:
             print("Creating HubTelemetry instance...")
             cls._instance = super(HubTelemetry, cls).__new__(cls)
             print("Initializing HubTelemetry instance...")
-            cls._instance.initialize_tracer(
-                service_name, endpoint, tracer_name, export_locally
-            )
+            cls._instance.initialize_tracer(service_name, tracer_name, export_locally)
         return cls._instance
 
     def initialize_tracer(
         self,
         service_name: str,
-        endpoint: str,
         tracer_name: str,
         export_locally: bool,
     ):
         """Initializes a tracer for Guardrails Hub"""
 
         self._service_name = service_name
-        self._endpoint = endpoint
+        # self._endpoint = "http://localhost:4318/v1/traces"  # Local Otel Collector (Docker)
+        self._endpoint = "https://hty0gc1ok3.execute-api.us-east-1.amazonaws.com/v1/traces"  # AWS ECS
         self._tracer_name = tracer_name
 
         # Create a resource
