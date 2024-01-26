@@ -38,8 +38,9 @@ class PydanticFieldValidator(Validator):
     ):
         warn(
             """
-            PydanticFieldValidator is deprecated (v0.3.3); will be removed (v0.4.0).
-            Instead, use the `add_validator` function with a Guardrails validator class.
+            `PydanticFieldValidator` is deprecated (v0.3.3); will be removed (v0.4.0). 
+            Instead, use the `add_validator` function, or create a custom Guardrails validator as shown here:
+            https://www.guardrailsai.com/docs/concepts/validators#custom-validators
             """,
             DeprecationWarning,
             stacklevel=2,
