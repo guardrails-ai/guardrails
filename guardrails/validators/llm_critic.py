@@ -11,22 +11,20 @@ from guardrails.validator_base import (
 @register_validator(name="llm_critic", data_type="string")
 class LLMCritic(Validator):
     def __init__(self,
-                 input_doc: str,
                  rating_schema: BaseModel,
-                 rating_prompt_tmplt: str,
-                 rating_model: str = "gpt-4",
+                 critic_prompt_tmplt: str,
+                 critic_llm_api: Callable,
                  thresh: Union[int, dict] = 5,
                  on_fail: Optional[Callable] = None,
-                 rating_guard_kwargs: dict = {}
+                 critic_guard_kwargs: dict = {}
                  ):
-        super().__init__(input_doc=input_doc,
+        super().__init__(
                          rating_schema=rating_schema,
-                         rating_prompt_tmplt=rating_prompt_tmplt,
+                         critic_prompt_tmplt=critic_prompt_tmplt,
+                         critic_llm_api=critic_llm_api,
                          on_fail=on_fail,
-                         rating_model=rating_model,
                          thresh=thresh,
-                         rating_guard_kwargs=rating_guard_kwargs)
-        self._input_doc = input_doc
+                         critic_guard_kwargs=critic_guard_kwargs)
         self._rating_schema = rating_schema
         #Extract rating criteria from the Pydantic object
         criteria = set([k for k, v in self._rating_schema.__fields__.items()])
@@ -35,25 +33,29 @@ class LLMCritic(Validator):
             assert set(thresh.keys()) == criteria, "Must include a threshold for each criteria"
         #Store the threshold per criteria
         self._thresh = thresh if isinstance(thresh, dict) else {c:thresh for c in criteria}
-        self._rating_model = rating_model
+        self._critic_llm_api = critic_llm_api
         from langchain import PromptTemplate
-        self._prompt_tmplt = PromptTemplate.from_template(rating_prompt_tmplt)
+        self._prompt_tmplt = PromptTemplate.from_template(critic_prompt_tmplt)
+        assert len(self._prompt_tmplt.input_variables) == 1, ("The prompt template for the critic must have exactly one "
+                                                              "input variable, for the document the critic should rate.")
         self._is_chat_model = "gpt" in self._rating_model
         self._llm_api = openai.ChatCompletion.create if self._is_chat_model else openai.Completion.create
         from guardrails import Guard
         self._rating_guard = Guard.from_pydantic(output_class=self._rating_schema)
-        self._rating_guard_kwargs = rating_guard_kwargs
+        self._critic_guard_kwargs = critic_guard_kwargs
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         """Validates that the value receives ratings of at least self._thresh from the LLM critic."""
         #Get a rating from the rating model
-        rating_prompt = self._prompt_tmplt.format(input_doc=self._input_doc, summary=value)
+        #STOPPED HERE: Allowing an input varaible to the rating prompt with an arbitrary name, must be retested
+        rating_prompt = self._prompt_tmplt.format(**{self._prompt_tmplt.input_variables[0] : value})
+        print(rating_prompt)
         rating_prompt += "\n\n${gr.xml_prefix_prompt}\n${output_schema}\n${gr.complete_json_suffix_v2}"
         raw_llm_response, ratings = self._rating_guard(
             self._llm_api,
             prompt=rating_prompt,
             engine=self._rating_model,
-            **self._rating_guard_kwargs
+            **self._critic_guard_kwargs
         )
         #On which criteria was the threshold not met?
         failed_criteria = set([])
