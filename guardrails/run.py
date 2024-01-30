@@ -104,6 +104,9 @@ class Runner:
         self.base_model = base_model
         self.full_schema_reask = full_schema_reask
 
+        # Get the HubTelemetry singleton
+        self._hub_telemetry = HubTelemetry()
+
     def __call__(self, call_log: Call, prompt_params: Optional[Dict] = None) -> Call:
         """Execute the runner by repeatedly calling step until the reask budget
         is exhausted.
@@ -198,15 +201,13 @@ class Runner:
                     )
 
                 # Log how many times we reasked
-                # Get HubTelemetry singleton and tracer
-                hub_telemetry = HubTelemetry()
-                hub_tracer = hub_telemetry.get_tracer()
-                print(f"Getting tracer from location: {id(hub_tracer)}")
-
-                with hub_tracer.start_as_current_span(
-                    "/reasks", context=hub_telemetry.extract_current_context()
-                ) as span:
-                    span.set_attribute("reask_count", index)
+                # Use the HubTelemetry singleton
+                self._hub_telemetry.create_new_span(
+                    span_name="/reasks",
+                    attributes=[("reask_count", index)],
+                    is_parent=False,  # This span has no children
+                    has_parent=True,  # This span has a parent
+                )
 
         except UserFacingException as e:
             # Because Pydantic v1 doesn't respect property setters

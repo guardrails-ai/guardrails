@@ -64,7 +64,6 @@ class Guard(Generic[OT]):
     _tracer = None
     _tracer_context = None
     _hub_telemetry = None
-    _hub_tracer = None
     _guard_id = None
     _user_id = None
 
@@ -85,14 +84,12 @@ class Guard(Generic[OT]):
 
         # Initialize Hub Telemetry singleton and get the tracer
         self._hub_telemetry = HubTelemetry()
-        self._hub_tracer = self._hub_telemetry.get_tracer()
 
         # Get id of guard object (that is unique)
         self._guard_id = id(self)  # id of guard object; not the class
 
         # Get unique id of user (from rc file)
         self._user_id = Credentials.from_rc_file().id
-        print(f"Guard init complete with tracer @ location {id(self._hub_tracer)}")
 
     @property
     def prompt_schema(self) -> Optional[StringSchema]:
@@ -376,19 +373,19 @@ class Guard(Generic[OT]):
             if prompt_params is None:
                 prompt_params = {}
 
-            # TODO: Add tracing: guard usage and user usage for Validator Hub
-            # Start a span for this guard call
-            with self._hub_tracer.start_as_current_span("/guard_call") as span:
-                # Inject the current context
-                self._hub_telemetry.inject_current_context()
-
-                span.set_attribute("guard_id", self._guard_id)
-                span.set_attribute("user_id", self._user_id)
-                span.set_attribute("llm_api", llm_api.__name__ if llm_api else "None")
-                span.set_attribute("custom_reask_prompt", self.reask_prompt is not None)
-                span.set_attribute(
-                    "custom_reask_instructions", self.reask_instructions is not None
-                )
+            # Create a new span for this guard call
+            self._hub_telemetry.create_new_span(
+                span_name="/guard_call",
+                attributes=[
+                    ("guard_id", self._guard_id),
+                    ("user_id", self._user_id),
+                    ("llm_api", llm_api.__name__ if llm_api else "None"),
+                    ("custom_reask_prompt", self.reask_prompt is not None),
+                    ("custom_reask_instructions", self.reask_instructions is not None),
+                ],
+                is_parent=True,  # It will have children
+                has_parent=False,  # Has no parents
+            )
 
             set_call_kwargs(kwargs)
             set_tracer(self._tracer)
@@ -682,19 +679,19 @@ class Guard(Generic[OT]):
                 num_reasks if num_reasks is not None else 0 if llm_api is None else None
             )
 
-            # TODO: Add tracing: guard usage and user usage for Validator Hub
-            # Start a span for this guard parse
-            with self._hub_tracer.start_as_current_span("/guard_parse") as span:
-                # Inject the current context
-                self._hub_telemetry.inject_current_context()
-
-                span.set_attribute("guard_id", self._guard_id)
-                span.set_attribute("user_id", self._user_id)
-                span.set_attribute("llm_api", llm_api.__name__ if llm_api else "None")
-                span.set_attribute("custom_reask_prompt", self.reask_prompt is not None)
-                span.set_attribute(
-                    "custom_reask_instructions", self.reask_instructions is not None
-                )
+            # TODO: Create a new span for this guard parse
+            self._hub_telemetry.create_new_span(
+                span_name="/guard_parse",
+                attributes=[
+                    ("guard_id", self._guard_id),
+                    ("user_id", self._user_id),
+                    ("llm_api", llm_api.__name__ if llm_api else "None"),
+                    ("custom_reask_prompt", self.reask_prompt is not None),
+                    ("custom_reask_instructions", self.reask_instructions is not None),
+                ],
+                is_parent=True,  # It will have children
+                has_parent=False,  # Has no parents
+            )
 
             self.configure(final_num_reasks)
             if self.num_reasks is None:

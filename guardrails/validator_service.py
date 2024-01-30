@@ -122,17 +122,19 @@ class ValidatorServiceBase:
         #   this will have to change.
         validator_logs.instance_id = to_string(id(validator))
 
-        # Get HubTelemetry singleton and tracer
-        hub_telemetry = HubTelemetry()
-        hub_tracer = hub_telemetry.get_tracer()
-        print(f"Getting tracer from location: {id(hub_tracer)}")
-
-        with hub_tracer.start_as_current_span(
-            "/validator_usage", context=hub_telemetry.extract_current_context()
-        ) as span:
-            span.set_attribute("validator_name", validator.rail_alias)
-            span.set_attribute("validator_on_fail", validator.on_fail_descriptor)
-            span.set_attribute("validator_result", result.outcome)
+        # Get HubTelemetry singleton and create a new span to
+        # log the validator usage
+        _hub_telemetry = HubTelemetry()
+        _hub_telemetry.create_new_span(
+            span_name="/validator_usage",
+            attributes=[
+                ("validator_name", validator.rail_alias),
+                ("validator_on_fail", validator.on_fail_descriptor),
+                ("validator_result", result.outcome),
+            ],
+            is_parent=False,  # This span will have no children
+            has_parent=True,  # This span has a parent
+        )
 
         return validator_logs
 

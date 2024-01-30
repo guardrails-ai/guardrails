@@ -34,6 +34,8 @@ class HubTelemetry:
             cls._instance = super(HubTelemetry, cls).__new__(cls)
             print("Initializing HubTelemetry instance...")
             cls._instance.initialize_tracer(service_name, tracer_name, export_locally)
+        else:
+            print("Returning existing HubTelemetry instance...")
         return cls._instance
 
     def initialize_tracer(
@@ -74,11 +76,6 @@ class HubTelemetry:
 
         self._prop = TraceContextTextMapPropagator()
 
-    def get_tracer(self):
-        """Returns the tracer."""
-
-        return self._tracer
-
     def inject_current_context(self) -> None:
         """Injects the current context into the carrier."""
         self._prop.inject(carrier=self._carrier)
@@ -88,3 +85,34 @@ class HubTelemetry:
 
         context = self._prop.extract(carrier=self._carrier)
         return context
+
+    def create_new_span(
+        self,
+        span_name: str,
+        attributes: list,
+        is_parent: bool,  # Inject current context if IS a parent span
+        has_parent: bool,  # Extract current context if HAS a parent span
+    ):
+        """Creates a new span within the tracer with the given name and attributes.
+
+        If it's a parent span, the current context is injected into the carrier.
+        If it has a parent span, the current context is extracted from the carrier.
+        Both the conditions can co-exist e.g. if it's a parent span and also has a parent span.
+
+        Args:
+            span_name (str): The name of the span.
+            attributes (list): A list of attributes to set on the span.
+            is_parent (bool): True if the span is a parent span.
+            has_parent (bool): True if the span has a parent span.
+        """
+
+        with self._tracer.start_as_current_span(
+            span_name,
+            context=self.extract_current_context() if has_parent else None,
+        ) as span:
+            if is_parent:
+                # Inject the current context
+                self.inject_current_context()
+
+            for attribute in attributes:
+                span.set_attribute(attribute[0], attribute[1])
