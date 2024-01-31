@@ -645,7 +645,7 @@ def custom_refrain_on_fail_handler(value: Any, fail_results: List[FailResult]):
         ),
         (
             custom_refrain_on_fail_handler,
-            {},
+            None,
         ),
     ],
 )

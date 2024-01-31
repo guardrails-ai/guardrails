@@ -24,6 +24,10 @@ from guardrails.validator_base import (
 )
 
 
+def key_not_empty(key: str) -> bool:
+    return key is not None and len(str(key)) > 0
+
+
 class ValidatorServiceBase:
     """Base class for validator services."""
 
@@ -96,13 +100,19 @@ class ValidatorServiceBase:
             )
 
     def run_validator(
-        self, iteration: Iteration, validator: Validator, value: Any, metadata: Dict
+        self,
+        iteration: Iteration,
+        validator: Validator,
+        value: Any,
+        metadata: Dict,
+        property_path: str,
     ) -> ValidatorLogs:
         validator_class_name = validator.__class__.__name__
         validator_logs = ValidatorLogs(
             validator_name=validator_class_name,
             value_before_validation=value,
             registered_name=validator.rail_alias,
+            property_path=property_path,
         )
         iteration.outputs.validator_logs.append(validator_logs)
 
@@ -130,10 +140,13 @@ class SequentialValidatorService(ValidatorServiceBase):
         validator_setup: FieldValidation,
         value: Any,
         metadata: Dict[str, Any],
+        property_path: str,
     ) -> Tuple[Any, Dict[str, Any]]:
         # Validate the field
         for validator in validator_setup.validators:
-            validator_logs = self.run_validator(iteration, validator, value, metadata)
+            validator_logs = self.run_validator(
+                iteration, validator, value, metadata, property_path
+            )
 
             result = validator_logs.validation_result
             if isinstance(result, FailResult):
@@ -163,14 +176,12 @@ class SequentialValidatorService(ValidatorServiceBase):
         metadata: Dict,
         validator_setup: FieldValidation,
         iteration: Iteration,
+        parent_path: str,
     ):
         for child_setup in validator_setup.children:
             child_schema = safe_get(value, child_setup.key)
             child_schema, metadata = self.validate(
-                child_schema,
-                metadata,
-                child_setup,
-                iteration,
+                child_schema, metadata, child_setup, iteration, parent_path
             )
             value[child_setup.key] = child_schema
 
@@ -180,14 +191,22 @@ class SequentialValidatorService(ValidatorServiceBase):
         metadata: dict,
         validator_setup: FieldValidation,
         iteration: Iteration,
+        path: str = "$",
     ) -> Tuple[Any, dict]:
+        property_path = (
+            f"{path}.{validator_setup.key}"
+            if key_not_empty(validator_setup.key)
+            else path
+        )
         # Validate children first
         if validator_setup.children:
-            self.validate_dependents(value, metadata, validator_setup, iteration)
+            self.validate_dependents(
+                value, metadata, validator_setup, iteration, property_path
+            )
 
         # Validate the field
         value, metadata = self.run_validators(
-            iteration, validator_setup, value, metadata
+            iteration, validator_setup, value, metadata, property_path
         )
 
         return value, metadata
@@ -222,6 +241,7 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
         validator_setup: FieldValidation,
         value: Any,
         metadata: Dict,
+        property_path: str,
     ):
         loop = asyncio.get_running_loop()
         for on_fail, validator_group in self.group_validators(
@@ -240,11 +260,14 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
                             validator,
                             value,
                             metadata,
+                            property_path,
                         )
                     )
                 else:
                     # run the validators in the current process
-                    result = self.run_validator(iteration, validator, value, metadata)
+                    result = self.run_validator(
+                        iteration, validator, value, metadata, property_path
+                    )
                     validators_logs.append(result)
 
             # wait for the parallel tasks to finish
@@ -290,14 +313,12 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
         metadata: Dict,
         validator_setup: FieldValidation,
         iteration: Iteration,
+        parent_path: str,
     ):
         async def process_child(child_setup):
             child_value = safe_get(value, child_setup.key)
             new_child_value, new_metadata = await self.async_validate(
-                child_value,
-                metadata,
-                child_setup,
-                iteration,
+                child_value, metadata, child_setup, iteration, parent_path
             )
             return child_setup.key, new_child_value, new_metadata
 
@@ -317,14 +338,22 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
         metadata: dict,
         validator_setup: FieldValidation,
         iteration: Iteration,
+        path: str = "$",
     ) -> Tuple[Any, dict]:
+        property_path = (
+            f"{path}.{validator_setup.key}"
+            if key_not_empty(validator_setup.key)
+            else path
+        )
         # Validate children first
         if validator_setup.children:
-            await self.validate_dependents(value, metadata, validator_setup, iteration)
+            await self.validate_dependents(
+                value, metadata, validator_setup, iteration, property_path
+            )
 
         # Validate the field
         value, metadata = await self.run_validators(
-            iteration, validator_setup, value, metadata
+            iteration, validator_setup, value, metadata, property_path
         )
 
         return value, metadata

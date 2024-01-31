@@ -223,7 +223,8 @@ def test_entity_extraction_with_noop(mocker, rail, prompt):
     )
 
     # Assertions are made on the guard state object.
-    assert final_output.validated_output == entity_extraction.VALIDATED_OUTPUT_NOOP
+    assert final_output.validation_passed is False
+    assert final_output.validated_output is None
 
     call = guard.history.first
 
@@ -233,7 +234,8 @@ def test_entity_extraction_with_noop(mocker, rail, prompt):
     # For orginal prompt and output
     assert call.compiled_prompt == entity_extraction.COMPILED_PROMPT
     assert call.raw_outputs.last == entity_extraction.LLM_OUTPUT
-    assert call.validated_output == entity_extraction.VALIDATED_OUTPUT_NOOP
+    assert call.validated_output is None
+    assert call.validation_output == entity_extraction.VALIDATED_OUTPUT_NOOP
 
 
 @pytest.mark.parametrize(
@@ -711,7 +713,7 @@ def test_sequential_validator_log_is_not_duplicated(mocker):
             entity_extraction.PYDANTIC_RAIL_WITH_NOOP, entity_extraction.PYDANTIC_PROMPT
         )
 
-        _, final_output, *rest = guard(
+        guard(
             llm_api=get_static_openai_create_func(),
             prompt_params={"document": content[:6000]},
             num_reasks=1,
@@ -725,7 +727,9 @@ def test_sequential_validator_log_is_not_duplicated(mocker):
             for x in guard.history.first.iterations.first.validator_logs
             if x.validator_name == "OneLine"
         )
-        assert len(one_line_logs) == len(final_output.get("fees"))
+        assert len(one_line_logs) == len(
+            guard.history.first.validation_output.get("fees")
+        )
 
     finally:
         if proc_count_bak is None:
@@ -745,7 +749,7 @@ def test_in_memory_validator_log_is_not_duplicated(mocker):
             entity_extraction.PYDANTIC_RAIL_WITH_NOOP, entity_extraction.PYDANTIC_PROMPT
         )
 
-        _, final_output, *rest = guard(
+        guard(
             llm_api=get_static_openai_create_func(),
             prompt_params={"document": content[:6000]},
             num_reasks=1,
@@ -756,7 +760,10 @@ def test_in_memory_validator_log_is_not_duplicated(mocker):
             for x in guard.history.first.iterations.first.validator_logs
             if x.validator_name == "OneLine"
         )
-        assert len(one_line_logs) == len(final_output.get("fees"))
+
+        assert len(one_line_logs) == len(
+            guard.history.first.validation_output.get("fees")
+        )
 
     finally:
         OneLine.run_in_separate_process = separate_proc_bak

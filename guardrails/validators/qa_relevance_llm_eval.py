@@ -36,7 +36,7 @@ class QARelevanceLLMEval(Validator):
         on_fail: Optional[Callable] = None,
         **kwargs,
     ):
-        super().__init__(on_fail, **kwargs)
+        super().__init__(on_fail, llm_callable=llm_callable, **kwargs)
 
         if llm_callable is not None and inspect.iscoroutinefunction(llm_callable):
             raise ValueError(

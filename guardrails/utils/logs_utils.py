@@ -18,6 +18,7 @@ class ValidatorLogs(ArbitraryModel):
     start_time: Optional[datetime] = None
     end_time: Optional[datetime] = None
     instance_id: Optional[int] = None
+    property_path: str
 
 
 def update_response_by_path(output: dict, path: List[Any], value: Any) -> None:
