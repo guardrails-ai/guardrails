@@ -3909,6 +3909,30 @@ opentelemetry-sdk = ">=1.22.0,<1.23.0"
 test = ["pytest-grpc"]
 
 [[package]]
+name = "opentelemetry-exporter-otlp-proto-http"
+version = "1.22.0"
+description = "OpenTelemetry Collector Protobuf over HTTP Exporter"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "opentelemetry_exporter_otlp_proto_http-1.22.0-py3-none-any.whl", hash = "sha256:e002e842190af45b91dc55a97789d0b98e4308c88d886b16049ee90e17a4d396"},
+    {file = "opentelemetry_exporter_otlp_proto_http-1.22.0.tar.gz", hash = "sha256:79ed108981ec68d5f7985355bca32003c2f3a5be1534a96d62d5861b758a82f4"},
+]
+
+[package.dependencies]
+backoff = {version = ">=1.10.0,<3.0.0", markers = "python_version >= \"3.7\""}
+deprecated = ">=1.2.6"
+googleapis-common-protos = ">=1.52,<2.0"
+opentelemetry-api = ">=1.15,<2.0"
+opentelemetry-exporter-otlp-proto-common = "1.22.0"
+opentelemetry-proto = "1.22.0"
+opentelemetry-sdk = ">=1.22.0,<1.23.0"
+requests = ">=2.7,<3.0"
+
+[package.extras]
+test = ["responses (==0.22.0)"]
+
+[[package]]
 name = "opentelemetry-proto"
 version = "1.22.0"
 description = "OpenTelemetry Python Proto"
@@ -8077,4 +8101,4 @@ vectordb = ["faiss-cpu", "numpy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "f10c46407146b1cf25a7858c6aac51631b3c5e62abfc05d19f32dfd1b5895eec"
+content-hash = "5db0c4888fc5ae23dac12ceaf8c025a43309f712b643cdf8eb7e7fb8d9c88850"
