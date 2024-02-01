@@ -1,7 +1,5 @@
 # Guardrails AI
 
-_Note: Guardrails is in beta, so expect sharp edges and bugs._
-
 ## 🛤️ What is Guardrails AI?
 
 Guardrails AI is the leading open-source framework to define and enforce assurance for LLM applications. It offers

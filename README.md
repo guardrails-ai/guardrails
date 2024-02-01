@@ -9,8 +9,6 @@ Guardrails is an open-source Python package for specifying structure and type, v
 [**Docs**](https://docs.guardrailsai.com)
 </div>
 
-_Note: Guardrails is an alpha release, so expect sharp edges and bugs._
-
 ## 🧩 What is Guardrails?
 
 Guardrails is a Python package that lets a user add structure, type and quality guarantees to the outputs of large language models (LLMs). Guardrails:
@@ -57,16 +55,17 @@ pip install guardrails-ai
 ```
 
 ## 📍 Roadmap
-- [ ] Adding more examples, new use cases and domains
-- [ ] Adding integrations with langchain, gpt-index, minichain, manifest
-- [ ] Expanding validators offering
-- [ ] More compilers from `.rail` -> LLM prompt (e.g. `.rail` -> TypeScript)
+- [ ] Javascript SDK
+- [ ] Wider variety of language support (TypeScript, Go, etc)
 - [ ] Informative logging
-- [ ] Improving reasking logic
-- [ ] A guardrails.js implementation
 - [ ] VSCode extension for `.rail` files
 - [ ] Next version of `.rail` format
-- [ ] Add more LLM providers
+- [ ] Validator playground
+- [x] Input Validation
+- [x] Pydantic 2.0
+- [x] Improving reasking logic
+- [x] Integration with LangChain
+- [x] Add more LLM providers
 
 ## 🚀 Getting Started
 Let's go through an example where we ask an LLM to generate fake pet names. To do this, we'll use Pydantic, a popular data validation library for Python.  
