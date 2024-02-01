@@ -1,5 +1,6 @@
 import inspect
 from collections import defaultdict
+from string import Template
 from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Type, Union
 
 from pydantic import BaseModel, Field
@@ -277,6 +278,31 @@ class Validator:
         if not isinstance(other, Validator):
             return False
         return self.to_prompt() == other.to_prompt()
+
+    # TODO: Make this a generic method on an abstract class
+    def __stringify__(self):
+        template = Template(
+            """
+            ${class_name} {
+                rail_alias: ${rail_alias},
+                on_fail: ${on_fail_descriptor},
+                run_in_separate_process: ${run_in_separate_process},
+                override_value_on_pass: ${override_value_on_pass},
+                required_metadata_keys: ${required_metadata_keys},
+                kwargs: ${kwargs}
+            }"""
+        )
+        return template.safe_substitute(
+            {
+                "class_name": self.__class__.__name__,
+                "rail_alias": self.rail_alias,
+                "on_fail_descriptor": self.on_fail_descriptor,
+                "run_in_separate_process": self.run_in_separate_process,
+                "override_value_on_pass": self.override_value_on_pass,
+                "required_metadata_keys": self.required_metadata_keys,
+                "kwargs": self._kwargs,
+            }
+        )
 
 
 ValidatorSpec = Union[Validator, Tuple[Union[Validator, str, Callable], str]]

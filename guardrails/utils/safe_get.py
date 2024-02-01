@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 
 def safe_get_with_brackets(
@@ -14,7 +14,7 @@ def safe_get_with_brackets(
 
 
 def safe_get(
-    container: Union[str, List[Any], Dict[Any, Any]],
+    container: Union[str, List[Any], Dict[Any, Any], Tuple],
     key: Any,
     default: Optional[Any] = None,
 ) -> Any:
