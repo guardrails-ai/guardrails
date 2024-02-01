@@ -1,5 +1,12 @@
 from guardrails.functional import Guard, args, kwargs, on_fail
-from guardrails.validators import EndsWith, LowerCase, OneLine, TwoWords, ValidLength
+from guardrails.validators import (
+    EndsWith,
+    LowerCase,
+    OneLine,
+    TwoWords,
+    ValidLength,
+    ReadingTime
+)
 
 
 def test_add():
@@ -63,7 +70,7 @@ def test_integrate_tuple():
     guard: Guard = Guard().integrate(
         OneLine,
         (EndsWith, ["a"], {"on_fail": "exception"}),
-        (LowerCase, kwargs(on_fail="fix-reask", some_other_kwarg="kwarg")),
+        (LowerCase, kwargs(on_fail="fix_reask", some_other_kwarg="kwarg")),
         (TwoWords, on_fail("reask")),
         (ValidLength, args(0, 12), kwargs(on_fail="refrain")),
     )
@@ -82,7 +89,7 @@ def test_integrate_tuple():
     assert isinstance(guard.validators[2], LowerCase)
     assert guard.validators[2]._kwargs["some_other_kwarg"] == "kwarg"
     assert (
-        guard.validators[2].on_fail_descriptor == "fix-reask"
+        guard.validators[2].on_fail_descriptor == "fix_reask"
     )  # bc this is the default
 
     assert isinstance(guard.validators[3], TwoWords)
@@ -121,13 +128,13 @@ def test_validate():
 
 
 def test_call():
-    response = (
-        Guard()
-        .add(EndsWith("a"))
-        .add(OneLine)
-        .add(LowerCase(on_fail="fix"))
-        .add(TwoWords)
-        .add(ValidLength, 0, 12, on_fail="refrain")
+    response = Guard().integrate(
+        ReadingTime(5, on_fail="exception"),
+        OneLine,
+        (EndsWith, ["a"], {"on_fail": "exception"}),
+        (LowerCase, kwargs(on_fail="fix_reask", some_other_kwarg="kwarg")),
+        (TwoWords, on_fail("reask")),
+        (ValidLength, args(0, 12), kwargs(on_fail="refrain")),
     )("Oh Canada")
 
     assert response.validation_passed == True
