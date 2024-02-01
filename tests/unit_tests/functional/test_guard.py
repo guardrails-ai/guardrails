@@ -9,7 +9,7 @@ def test_add():
         .add(OneLine())
         .add(LowerCase)
         .add(TwoWords, on_fail="reask")
-        .add(ValidLength, 0, 12, on_fail="filter")
+        .add(ValidLength, 0, 12, on_fail="refrain")
     )
 
     # print(guard.__stringify__())
@@ -33,7 +33,7 @@ def test_add():
     assert guard.validators[4]._kwargs["min"] == 0
     assert guard.validators[4]._max == 12
     assert guard.validators[4]._kwargs["max"] == 12
-    assert guard.validators[4].on_fail_descriptor == "filter"  # bc we set it
+    assert guard.validators[4].on_fail_descriptor == "refrain"  # bc we set it
 
 
 def test_integrate_instances():
@@ -65,7 +65,7 @@ def test_integrate_tuple():
         (EndsWith, ["a"], {"on_fail": "exception"}),
         (LowerCase, kwargs(on_fail="fix-reask", some_other_kwarg="kwarg")),
         (TwoWords, on_fail("reask")),
-        (ValidLength, args(0, 12), kwargs(on_fail="filter")),
+        (ValidLength, args(0, 12), kwargs(on_fail="refrain")),
     )
 
     # print(guard.__stringify__())
@@ -93,4 +93,42 @@ def test_integrate_tuple():
     assert guard.validators[4]._kwargs["min"] == 0
     assert guard.validators[4]._max == 12
     assert guard.validators[4]._kwargs["max"] == 12
-    assert guard.validators[4].on_fail_descriptor == "filter"  # bc we set it
+    assert guard.validators[4].on_fail_descriptor == "refrain"  # bc we set it
+
+def test_validate():
+    guard: Guard = (
+        Guard()
+        .add(EndsWith("a"))
+        .add(OneLine)
+        .add(LowerCase(on_fail="fix"))
+        .add(TwoWords)
+        .add(ValidLength, 0, 12, on_fail="refrain")
+    )
+
+    llm_output = "Oh Canada" # bc it meets our criteria
+
+    response = guard.validate(llm_output)
+
+    assert response.validation_passed == True
+    assert response.validated_output == llm_output.lower()
+    
+    llm_output_2 = "Star Spangled Banner" # to stick with the theme
+
+    response_2 = guard.validate(llm_output_2)
+
+    assert response_2.validation_passed == False
+    assert response_2.validated_output == None
+
+
+def test_call():
+    response = (
+        Guard()
+        .add(EndsWith("a"))
+        .add(OneLine)
+        .add(LowerCase(on_fail="fix"))
+        .add(TwoWords)
+        .add(ValidLength, 0, 12, on_fail="refrain")
+    )("Oh Canada")
+
+    assert response.validation_passed == True
+    assert response.validated_output == "oh canada"

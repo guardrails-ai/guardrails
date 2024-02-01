@@ -315,6 +315,8 @@ class Call(ArbitraryModel):
         output = self.fixed_output
         for failure in self.failed_validations:
             value = get_value_from_path(output, failure.property_path)
+            # Should we also consider Filter's a failure
+            #   if the fixed_output is None?
             if value == failure.value_before_validation or isinstance(
                 failure.value_after_validation, Refrain
             ):
