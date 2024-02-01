@@ -42,7 +42,7 @@ class ReadingTime(Validator):
         logger.debug(f"Estimated reading time {reading_time} seconds...")
 
         if (reading_time - self._max_time) > 0:
-            logger.error(f"{value} took {reading_time} to read")
+            logger.error(f"{value} took {reading_time} seconds to read")
             return FailResult(
                 error_message=f"String should be readable "
                 f"within {self._max_time} seconds.",
