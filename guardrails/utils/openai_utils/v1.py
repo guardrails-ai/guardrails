@@ -14,7 +14,7 @@ from guardrails.utils.openai_utils.streaming_utils import (
 def get_static_openai_create_func():
     if "OPENAI_API_KEY" not in os.environ:
         return None
-    return openai.chat.completions.create
+    return openai.completions.create
 
 
 def get_static_openai_chat_create_func():
