@@ -1,6 +1,7 @@
 import logging
 from functools import wraps
 from operator import attrgetter
+import sys
 from typing import Any, Dict, List, Optional
 
 from guardrails.stores.context import Tracer, TracerContext
@@ -296,14 +297,27 @@ def default_otlp_tracer(resource_name: str = "guardsrails"):
     from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
     from opentelemetry.sdk.resources import SERVICE_NAME, Resource
     from opentelemetry.sdk.trace import TracerProvider
-    from opentelemetry.sdk.trace.export import BatchSpanProcessor
+    from opentelemetry.sdk.trace.export import BatchSpanProcessor, SimpleSpanProcessor, ConsoleSpanExporter
+    
+    import os
+
+    envvars_exist = os.environ.get("OTEL_EXPORTER_OTLP_PROTOCOL") and os.environ.get("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT")
 
     resource = Resource(attributes={SERVICE_NAME: resource_name})
 
     traceProvider = TracerProvider(resource=resource)
-    processor = BatchSpanProcessor(
-        OTLPSpanExporter()
-    )
+    if(envvars_exist):
+        processor = BatchSpanProcessor(
+            OTLPSpanExporter()
+        )
+    else:
+        processor = SimpleSpanProcessor(
+            ConsoleSpanExporter(
+                out=sys.stderr
+            )
+        )
+
+    
 
     traceProvider.add_span_processor(processor)
     trace.set_tracer_provider(traceProvider)

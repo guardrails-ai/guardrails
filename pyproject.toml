@@ -54,6 +54,8 @@ pydoc-markdown = "4.8.2"
 opentelemetry-sdk = "^1.22.0"
 opentelemetry-exporter-otlp-proto-grpc = "^1.22.0"
 opentelemetry-exporter-otlp-proto-http = "^1.22.0"
+flask = "^3.0.1"
+flask-restplus = "^0.13.0"
 
 
 [tool.poetry.extras]
