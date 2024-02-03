@@ -65,18 +65,18 @@ from guardrails.validators import (
     FailResult,
     PassResult,
     register_validator,
-    ValidationResult
+    ValidationResult,
 )
 
 @register_validator(name="starts-with-a", data_type="string")
 def starts_with_a(value: str, metadata: Dict) -> ValidationResult:
     if value.startswith("a"):
-        return PassResult(metadata)
-    
-    return FailResult(
-        error_message=f"Value {value} does not start with a."
-    )
+        return PassResult()
 
+    return FailResult(
+        error_message=f"Value {value} does not start with a.",
+        fix_value="a" + value,
+    )
 ```
 
 If you need to perform more complex operations or require addtional arguments to perform the validation, then the validator can be specified as a class that inherits from our base Validator class:
@@ -87,7 +87,7 @@ from guardrails.validators import (
     PassResult,
     register_validator,
     ValidationResult,
-    Validator
+    Validator,
 )
 
 @register_validator(name="starts-with", data_type="string")
@@ -96,17 +96,21 @@ class StartsWith(Validator):
         super().__init__(on_fail=on_fail, prefix=prefix)
         self.prefix = prefix
 
-    def validate(value: str, metadata: Dict) -> ValidationResult:
+    def validate(self, value: str, metadata: Dict) -> ValidationResult:
         if value.startswith(self.prefix):
-            return PassResult(metadata)
-        
+            return PassResult()
+
         return FailResult(
             error_message=f"Value {value} does not start with {self.prefix}.",
-            fix_value: f"{self.prefix}{value}" # To enable the "fix" option for on-fail
+            fix_value=self.prefix + value,  # To enable the "fix" option for on-fail
         )
 ```
 
-Custom validators must be defined before creating a `Guard` or `RAIL` spec in the code, but otherwise can be used like built in validators:
+Custom validators must be defined before creating a `Guard` or `RAIL` spec in the code, 
+but otherwise can be used like built in validators. It can be used in a `RAIL` spec OR
+a `Pydantic` model like so:
+
+### Using the RAIL Spec
 ```py
 import openai
 from guardrails import Guard
@@ -116,28 +120,67 @@ rail_str = """
 <rail version="0.1">
 
 <output>
-    <string name="a-string" type="string" format="starts-with-a">
-    <string name="custom-string" type="string" format="starts-with: my-prefix">
+    <string name="a-string" type="string" format="starts-with-a" />
+    <string name="custom-string" type="string" format="starts-with: my " />
 </output>
 
 
 <prompt>
 Generate a dataset of fake word pairs within a JSON object.
-The "a-string" property should start with the letter "a",
-and the "custom-string" property should start with "my-prefix".
 
-${guardrails.complete_json_suffix}
+${gr.complete_json_suffix_v2}
 </prompt>
 
 </rail>
 """
 
+# Initialise the Guard
 guard = Guard.from_rail_string(rail_string=rail_str)
 
+# Make the call
 raw_output, guarded_output, *rest = guard(
-    llm_api=openai.ChatCompletion.create,
-    model="gpt-3.5-turbo"
+    llm_api=openai.chat.completions.create,
+    model="gpt-3.5-turbo",
 )
 
-print("validated output: ", guarded_output)
+# See the outputs
+print(guard.history.last.tree)
 ``` 
+
+**OR**
+
+### Using Pydantic
+```py
+import openai
+from pydantic import BaseModel, Field
+
+from guardrails import Guard
+from .my_custom_validators import starts_with_a, StartsWith
+
+prompt = """
+Generate a dataset of fake word pairs within a JSON object.
+
+${gr.complete_json_suffix_v2}
+"""
+
+class MyModel(BaseModel):
+    a_string: str = Field(
+        description="A string that starts with a", validators=[starts_with_a()]
+    )
+    custom_string: str = Field(
+        description="A string that starts with a custom prefix",
+        validators=[StartsWith(prefix="my ", on_fail="fix")],
+    )
+
+# Initialise the Guard
+guard = Guard.from_pydantic(output_class=MyModel, prompt=prompt)
+
+# Make the call
+raw_output, guarded_output, *rest = guard(
+    llm_api=openai.chat.completions.create,
+    model="gpt-3.5-turbo",
+)
+
+# See the outputs
+print(guard.history.last.tree)
+```

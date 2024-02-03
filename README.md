@@ -9,8 +9,6 @@ Guardrails is an open-source Python package for specifying structure and type, v
 [**Docs**](https://docs.guardrailsai.com)
 </div>
 
-_Note: Guardrails is an alpha release, so expect sharp edges and bugs._
-
 ## 🧩 What is Guardrails?
 
 Guardrails is a Python package that lets a user add structure, type and quality guarantees to the outputs of large language models (LLMs). Guardrails:
@@ -57,120 +55,83 @@ pip install guardrails-ai
 ```
 
 ## 📍 Roadmap
-- [ ] Adding more examples, new use cases and domains
-- [ ] Adding integrations with langchain, gpt-index, minichain, manifest
-- [ ] Expanding validators offering
-- [ ] More compilers from `.rail` -> LLM prompt (e.g. `.rail` -> TypeScript)
+- [ ] Javascript SDK
+- [ ] Wider variety of language support (TypeScript, Go, etc)
 - [ ] Informative logging
-- [ ] Improving reasking logic
-- [ ] A guardrails.js implementation
 - [ ] VSCode extension for `.rail` files
 - [ ] Next version of `.rail` format
-- [ ] Add more LLM providers
+- [ ] Validator playground
+- [x] Input Validation
+- [x] Pydantic 2.0
+- [x] Improving reasking logic
+- [x] Integration with LangChain
+- [x] Add more LLM providers
 
 ## 🚀 Getting Started
-Let's go through an example where we ask an LLM to explain what a "bank run" is in a tweet, and generate URLs to relevant news articles. We'll generate a `.rail` spec for this and then use Guardrails to enforce it. You can see more examples in the docs.
+Let's go through an example where we ask an LLM to generate fake pet names. To do this, we'll use Pydantic, a popular data validation library for Python.  
 
-### 📝 Creating a `RAIL` spec
+### 📝 Creating Structured Outputs
 
-We create a `RAIL` spec to describe the expected structure and types of the LLM output, the quality criteria for the output to be considered valid, and corrective actions to be taken if the output is invalid.
+In order to create a LLM that generates fake pet names, we can create a class `Pet` that inherits from the Pydantic class [Link BaseModel](https://docs.pydantic.dev/latest/api/base_model/): 
 
-Using `RAIL`, we:
-- Request the LLM to generate an object with two fields: `explanation` and `follow_up_url`.
-- For the `explanation` field, ensure the max length of the generated string should be between 200 and 280 characters.
-  - If the explanation is not of valid length, `reask` the LLM.
-- For the `follow_up_url` field, the URL should be reachable.
-  - If the URL is not reachable, we will `filter` it out of the response.
+```py
+from pydantic import BaseModel, Field
 
-
-```xml
-<rail version="0.1">
-<output>
-    <object name="bank_run" format="length: 2">
-        <string
-            name="explanation"
-            description="A paragraph about what a bank run is."
-            format="length: 200 280"
-            on-fail-length="reask"
-        />
-        <url
-            name="follow_up_url"
-            description="A web URL where I can read more about bank runs."
-            format="valid-url"
-            on-fail-valid-url="filter"
-        />
-    </object>
-</output>
-
-<prompt>
-Explain what a bank run is in a tweet.
-
-${gr.xml_prefix_prompt}
-
-${output_schema}
-
-${gr.json_suffix_prompt_v2_wo_none}
-</prompt>
-</rail>
+class Pet(BaseModel):
+    pet_type: str = Field(description="Species of pet")
+    name: str = Field(description="a unique pet name")
 ```
 
-We specify our quality criteria (generated length, URL reachability) in the `format` fields of the `RAIL` spec below. We `reask` if `explanation` is not valid, and filter the `follow_up_url` if it is not valid.
+We can now pass in this new `Pet` class as the `output_class` parameter in our Guard. When we run the code, the LLM's output is formatted to the pydnatic structure. We also add `${gr.complete_json_suffix_v2}` to the prompt which tells our LLM to only respond with JSON: 
 
-### 🛠️ Using Guardrails to enforce the `RAIL` spec
-
-Next, we'll use the `RAIL` spec to create a `Guard` object. The `Guard` object will wrap the LLM API call and enforce the `RAIL` spec on its output.
-
-```python
-import guardrails as gd
-
-guard = gd.Guard.from_rail(f.name)
-```
-
-The `Guard` object compiles the `RAIL` specification and adds it to the prompt. (Right now this is a passthrough operation, more compilers are planned to find the best way to express the spec in a prompt.)
-
-Here's what the prompt looks like after the `RAIL` spec is compiled and added to it.
-
-```xml
-Explain what a bank run is in a tweet.
-
-Given below is XML that describes the information to extract from this document and the tags to extract it into.
-
-<output>
-    <object name="bank_run" format="length: 2">
-        <string name="explanation" description="A paragraph about what a bank run is." format="length: 200 280" on-fail-length="reask" />
-        <url name="follow_up_url" description="A web URL where I can read more about bank runs." required="true" format="valid-url" on-fail-valid-url="filter" />
-    </object>
-</output>
-
-ONLY return a valid JSON object (no other text is necessary). The JSON MUST conform to the XML format, including any types and format requests e.g. requests for lists, objects and specific types. Be correct and concise.
-
-JSON Output:
-```
-
-Call the `Guard` object with the LLM API call as the first argument and add any additional arguments to the LLM API call as the remaining arguments.
-
-
-```python
+```py
+from guardrails import Guard
 import openai
 
-# Wrap the OpenAI API call with the `guard` object
-raw_llm_output, validated_output, *rest = guard(
-    openai.Completion.create,
-    engine="text-davinci-003",
-    max_tokens=1024,
-    temperature=0.3
+prompt = """
+    What kind of pet should I get and what should I name it?
+
+    ${gr.complete_json_suffix_v2}
+"""
+guard = Guard.from_pydantic(output_class=Pet, prompt=prompt)
+
+validated_output, *rest = guard(
+    llm_api=openai.completions.create,
+    engine="gpt-3.5-turbo-instruct"
 )
 
-print(validated_output)
+print(f"{validated_output}")
 ```
-```python
-{
-    'bank_run': {
-        'explanation': 'A bank run is when a large number of people withdraw their deposits from a bank due to concerns about its solvency. This can cause a financial crisis if the bank is unable to meet the demand for withdrawals.',
-        'follow_up_url': 'https://www.investopedia.com/terms/b/bankrun.asp'
-    }
-}
 
+This prints: 
+```
+{
+    "pet_type": "dog",
+    "name": "Buddy
+}
+```
+
+## Structured Outputs with Validation 
+We can add validation to our Guard instead of just structuring the ouput in a specific format. In the below code, we add a Validator that checks if the pet name generated is of valid length. If it does not pass the validation, the reask is triggered and the query is reasked to the LLM. Check out the [Link Validators API Spec](https://www.guardrailsai.com/docs/api_reference_markdown/validators/) for a list of supported validators.
+
+```py
+from guardrails.validators import ValidLength, TwoWords
+from rich import print
+
+class Pet(BaseModel):
+    pet_type: str = Field(description="Species of pet")
+    name: str = Field(description="a unique pet name", validators=[ValidLength(min=1, max=32, on_fail='reask')])
+
+guard = Guard.from_pydantic(output_class=Pet, prompt=prompt)
+
+raw_llm_output, validated_output, *rest = guard(
+    llm_api=openai.chat.completions.create,
+    model="gpt-3.5-turbo",
+    max_tokens=1024,
+    temperature=0.5
+)
+
+print(guard.history.last.tree)
 ```
 
 ## 🛠️ Contributing

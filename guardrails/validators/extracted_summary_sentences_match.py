@@ -44,7 +44,7 @@ class ExtractedSummarySentencesMatch(Validator):
         on_fail: Optional[Callable] = None,
         **kwargs: Optional[Dict[str, Any]],
     ):
-        super().__init__(on_fail, **kwargs)
+        super().__init__(on_fail, threshold=threshold, **kwargs)
         # TODO(shreya): Pass embedding_model, vector_db, document_store from spec
 
         self._threshold = float(threshold)
