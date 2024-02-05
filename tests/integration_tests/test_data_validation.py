@@ -5,8 +5,8 @@ import pytest
 from pydantic import BaseModel, Field
 
 from guardrails import Guard
-from guardrails.utils.reask_utils import ReAsk
 from guardrails.errors import ValidationError
+from guardrails.utils.reask_utils import ReAsk
 from guardrails.validators import ValidChoices
 
 test_cases = [

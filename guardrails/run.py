@@ -7,6 +7,7 @@ from pydantic import BaseModel
 
 from guardrails.classes.history import Call, Inputs, Iteration, Outputs
 from guardrails.datatypes import verify_metadata_requirements
+from guardrails.errors import ValidationError
 from guardrails.llm_providers import (
     AsyncPromptCallableBase,
     OpenAICallable,
@@ -25,7 +26,6 @@ from guardrails.utils.reask_utils import (
     SkeletonReAsk,
     reasks_to_dict,
 )
-from guardrails.errors import ValidationError
 
 add_destinations(logger.debug)
 
