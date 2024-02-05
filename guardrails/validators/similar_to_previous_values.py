@@ -17,7 +17,7 @@ else:
 
 
 @register_validator(name="similar-to-list", data_type="string")
-class SimilarToList(Validator):
+class SimilarToPreviousValues(Validator):
     """Validates that a value is similar to a list of previously known values.
 
     **Key Properties**
