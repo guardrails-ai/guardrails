@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any, Dict, List, Union
 
 from guardrails.logger import logger
 from guardrails.validator_base import (
@@ -26,7 +26,7 @@ class EndsWith(Validator):
         end: The required last element.
     """
 
-    def __init__(self, end: str, on_fail: str = "fix"):
+    def __init__(self, end: Union[List[Any], Any, str], on_fail: str = "fix"):
         super().__init__(on_fail=on_fail, end=end)
         self._end = end
 
@@ -39,9 +39,19 @@ class EndsWith(Validator):
 
         ending_idxs = len(end)
         if not value[-ending_idxs:] == end:
+
+            if isinstance(value, list) and isinstance(end, list):
+                fix_value = value + end
+            elif isinstance(value, str) and isinstance(end, str):
+                fix_value = value + end
+            else:
+                raise TypeError(
+                    "Cannot concatenate `end` and `value` of different types"
+                )
+
             return FailResult(
                 error_message=f"{value} must end with {end}",
-                fix_value=value + end,
+                fix_value=fix_value,
             )
 
         return PassResult()
