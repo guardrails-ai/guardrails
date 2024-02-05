@@ -54,7 +54,9 @@ def test_similar_to_previous_values():
     )
 
     guard = Guard.from_string(
-        validators=[SimilarToPreviousValues(standard_deviations=2, threshold=0.2, on_fail="fix")],
+        validators=[
+            SimilarToPreviousValues(standard_deviations=2, threshold=0.2, on_fail="fix")
+        ],
         description="testmeout",
     )
 
