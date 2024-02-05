@@ -1497,6 +1497,26 @@ async = ["asgiref (>=3.2)"]
 dotenv = ["python-dotenv"]
 
 [[package]]
+name = "flask-restful"
+version = "0.3.10"
+description = "Simple framework for creating REST APIs"
+optional = false
+python-versions = "*"
+files = [
+    {file = "Flask-RESTful-0.3.10.tar.gz", hash = "sha256:fe4af2ef0027df8f9b4f797aba20c5566801b6ade995ac63b588abf1a59cec37"},
+    {file = "Flask_RESTful-0.3.10-py2.py3-none-any.whl", hash = "sha256:1cf93c535172f112e080b0d4503a8d15f93a48c88bdd36dd87269bdaf405051b"},
+]
+
+[package.dependencies]
+aniso8601 = ">=0.82"
+Flask = ">=0.8"
+pytz = "*"
+six = ">=1.3.0"
+
+[package.extras]
+docs = ["sphinx"]
+
+[[package]]
 name = "flask-restplus"
 version = "0.13.0"
 description = "Fully featured framework for fast, easy and documented API development with Flask"
@@ -8200,4 +8220,4 @@ vectordb = ["faiss-cpu", "numpy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "4b34f038a94c987fdb4e86383673c119aab3142a57b63f836f2411a28aae9916"
+content-hash = "4eb0fa7c0b619a373ce1bcab873eda1b3873b0211603380b3cd37c2b973eb0ba"
