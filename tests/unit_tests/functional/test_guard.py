@@ -128,8 +128,9 @@ def test_validate():
 
 
 def test_call():
+    five_seconds = 5 / 60
     response = Guard().integrate(
-        ReadingTime(5, on_fail="exception"),
+        ReadingTime(five_seconds, on_fail="exception"),
         OneLine,
         (EndsWith, ["a"], {"on_fail": "exception"}),
         (LowerCase, kwargs(on_fail="fix_reask", some_other_kwarg="kwarg")),

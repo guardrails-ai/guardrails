@@ -156,22 +156,15 @@ validator_test_pass_fail = {
                 the time frame to a fraction of the time
             This string is fairly short and should be able to be read in the given
               timeframe but I wonder if we copy this multiple times and shortened
+                the time frame to a fraction of the time
+            This string is fairly short and should be able to be read in the given
+              timeframe but I wonder if we copy this multiple times and shortened
+                the time frame to a fraction of the time
+            This string is fairly short and should be able to be read in the given
+              timeframe but I wonder if we copy this multiple times and shortened
                 the time frame to a fraction of the time""",
             "metadata": {},
             "expected_result": FailResult,
-            "fix_value": """
-            This string is fairly short and should be able to be read in the given
-              timeframe but I wonder if we copy this multiple times and shortened
-                the time frame to a fraction of the time
-            This string is fairly short and should be able to be read in the given
-              timeframe but I wonder if we copy this multiple times and shortened
-                the time frame to a fraction of the time
-            This string is fairly short and should be able to be read in the given
-              timeframe but I wonder if we copy this multiple times and shortened
-                the time frame to a fraction of the time
-            This string is fairly short and should be able to be read in the given
-              timeframe but I wonder if we copy this multiple times and shortened
-                the time frame to a fraction of the time""",
             "instance_variables": {
                 "reading_time": 1,
             },
