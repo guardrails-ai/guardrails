@@ -1,6 +1,6 @@
 import pytest
 
-from guardrails.validators import FailResult, PassResult, EndsWith
+from guardrails.validators import EndsWith, FailResult, PassResult
 
 
 @pytest.mark.parametrize(
