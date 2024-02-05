@@ -39,7 +39,6 @@ class EndsWith(Validator):
 
         ending_idxs = len(end)
         if not value[-ending_idxs:] == end:
-
             if isinstance(value, list) and isinstance(end, list):
                 fix_value = value + end
             elif isinstance(value, str) and isinstance(end, str):
