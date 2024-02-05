@@ -12,7 +12,7 @@ from guardrails.validators import (
     DetectSecrets,
     IsHighQualityTranslation,
     PIIFilter,
-    SimilarToList,
+    SimilarToPreviousValues,
     ToxicLanguage,
 )
 
@@ -37,8 +37,8 @@ from .mock_toxic_language import (
 )
 
 
-def test_similar_to_list():
-    """Test initialisation of SimilarToList."""
+def test_similar_to_previous_values():
+    """Test initialisation of SimilarToPreviousValues."""
 
     int_prev_values = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     str_prev_values = ["broadcom", "paypal"]
@@ -49,12 +49,12 @@ def test_similar_to_list():
 
     # Initialise Guard from string (default parameters)
     guard = Guard.from_string(
-        validators=[SimilarToList()],
+        validators=[SimilarToPreviousValues()],
         description="testmeout",
     )
 
     guard = Guard.from_string(
-        validators=[SimilarToList(standard_deviations=2, threshold=0.2, on_fail="fix")],
+        validators=[SimilarToPreviousValues(standard_deviations=2, threshold=0.2, on_fail="fix")],
         description="testmeout",
     )
 
@@ -62,7 +62,7 @@ def test_similar_to_list():
     output_schema: StringSchema = guard.rail.output_schema
     data_type: DataType = output_schema.root_datatype
     validators = data_type.validators_attr.validators
-    validator: SimilarToList = validators[0]
+    validator: SimilarToPreviousValues = validators[0]
 
     assert isinstance(validator._standard_deviations, int)
     assert isinstance(validator._threshold, float)
