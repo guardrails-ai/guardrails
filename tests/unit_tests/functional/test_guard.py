@@ -3,9 +3,9 @@ from guardrails.validators import (
     EndsWith,
     LowerCase,
     OneLine,
+    ReadingTime,
     TwoWords,
     ValidLength,
-    ReadingTime
 )
 
 
@@ -102,6 +102,7 @@ def test_integrate_tuple():
     assert guard.validators[4]._kwargs["max"] == 12
     assert guard.validators[4].on_fail_descriptor == "refrain"  # bc we set it
 
+
 def test_validate():
     guard: Guard = (
         Guard()
@@ -112,19 +113,19 @@ def test_validate():
         .add(ValidLength, 0, 12, on_fail="refrain")
     )
 
-    llm_output = "Oh Canada" # bc it meets our criteria
+    llm_output = "Oh Canada"  # bc it meets our criteria
 
     response = guard.validate(llm_output)
 
-    assert response.validation_passed == True
+    assert response.validation_passed is True
     assert response.validated_output == llm_output.lower()
-    
-    llm_output_2 = "Star Spangled Banner" # to stick with the theme
+
+    llm_output_2 = "Star Spangled Banner"  # to stick with the theme
 
     response_2 = guard.validate(llm_output_2)
 
-    assert response_2.validation_passed == False
-    assert response_2.validated_output == None
+    assert response_2.validation_passed is False
+    assert response_2.validated_output is None
 
 
 def test_call():
@@ -138,5 +139,5 @@ def test_call():
         (ValidLength, args(0, 12), kwargs(on_fail="refrain")),
     )("Oh Canada")
 
-    assert response.validation_passed == True
+    assert response.validation_passed is True
     assert response.validated_output == "oh canada"

@@ -1,11 +1,12 @@
 from string import Template
 from typing import Any, Dict, List, Optional, Tuple, Type, Union, overload
+
 from guardrails.classes.generic.stack import Stack
 from guardrails.classes.validation_outcome import ValidationOutcome
-
+from guardrails.guard import Guard as OGuard
 from guardrails.utils.safe_get import safe_get
 from guardrails.validator_base import Validator
-from guardrails.guard import Guard as OGuard
+
 
 class Guard:
     validators: List[Validator]
@@ -122,10 +123,10 @@ class Guard:
             self.guard = OGuard.from_string(validators=self.validators)
 
         return self.guard.parse(llm_output=llm_output, *args, **kwargs)
-    
-    def __call__ (self, llm_output: str, *args, **kwargs) -> ValidationOutcome[str]:
+
+    def __call__(self, llm_output: str, *args, **kwargs) -> ValidationOutcome[str]:
         return self.validate(llm_output, *args, **kwargs)
-    
+
     @property
     def history(self):
         return self.guard.history if self.guard else Stack()
