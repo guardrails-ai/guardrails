@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 
 from guardrails import Guard
 from guardrails.utils.reask_utils import ReAsk
-from guardrails.validator_base import ValidatorError
+from guardrails.errors import ValidationError
 from guardrails.validators import ValidChoices
 
 test_cases = [
@@ -68,9 +68,9 @@ Dummy prompt.
     guard = Guard.from_rail_string(rail_spec)
 
     # If raises is True, then the test should raise an exception.
-    # For our existing test cases this will always be a ValidatorError
+    # For our existing test cases this will always be a ValidationError
     if raises:
-        with pytest.raises(ValidatorError):
+        with pytest.raises(ValidationError):
             guard.parse(llm_output, num_reasks=0)
     else:
         result = guard.parse(llm_output, num_reasks=0)
@@ -115,9 +115,9 @@ def test_choice_validation_pydantic(llm_output, raises, has_error, fails):
     guard = Guard.from_pydantic(output_class=Choice, prompt="Dummy prompt.")
 
     # If raises is True, then the test should raise an exception.
-    # For our existing test cases this will always be a ValidatorError
+    # For our existing test cases this will always be a ValidationError
     if raises:
-        with pytest.raises(ValidatorError):
+        with pytest.raises(ValidationError):
             guard.parse(llm_output, num_reasks=0)
     else:
         result = guard.parse(llm_output, num_reasks=0)

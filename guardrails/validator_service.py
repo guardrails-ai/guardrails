@@ -4,6 +4,7 @@ import os
 from concurrent.futures import ProcessPoolExecutor
 from typing import Any, Dict, List, Optional, Tuple
 
+from guardrails.errors import ValidationError
 from guardrails.classes.history import Iteration
 from guardrails.datatypes import FieldValidation
 from guardrails.logger import logger
@@ -16,7 +17,6 @@ from guardrails.validator_base import (
     PassResult,
     Refrain,
     Validator,
-    ValidatorError,
 )
 
 
@@ -57,7 +57,7 @@ class ValidatorServiceBase:
                 fail_results=results,
             )
         if on_fail_descriptor == "exception":
-            raise ValidatorError(
+            raise ValidationError(
                 "Validation failed for field with errors: "
                 + ", ".join([result.error_message for result in results])
             )
