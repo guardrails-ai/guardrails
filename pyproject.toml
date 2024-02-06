@@ -13,7 +13,7 @@ packages = [
 guardrails = "guardrails.cli:cli"
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.8.1"
 lxml = "^4.9.3"
 openai = "<2"
 rich = "^13.6.0"
@@ -51,6 +51,7 @@ huggingface_hub = {version = "^0.16.4", optional = true}
 pydash = "^7.0.6"
 docspec_python = "2.2.1"
 pydoc-markdown = "4.8.2"
+llama-index = "^0.9.44"
 
 
 [tool.poetry.extras]
