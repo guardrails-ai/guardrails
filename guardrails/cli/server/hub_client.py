@@ -11,7 +11,7 @@ from guardrails.cli.server.module_manifest import ModuleManifest
 
 validator_hub_service = "https://so4sg4q4pb.execute-api.us-east-1.amazonaws.com"
 validator_manifest_endpoint = Template(
-    "validator-manifests/{namespace}/{validator_name}"
+    "validator-manifests/${namespace}/${validator_name}"
 )
 
 
