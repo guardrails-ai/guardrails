@@ -33,6 +33,6 @@ class Credentials(Serializeable):
             logger.error(
                 "Guardrails Hub credentials not found!"
                 "You will need to sign up to use any authenticated Validators here:"
-                "{insert url}"
+                "https://hub.guardrailsai.com/tokens"
             )
             return Credentials()
