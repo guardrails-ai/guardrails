@@ -17,12 +17,12 @@ from guardrails.cli.server.hub_client import fetch_module
 from guardrails.cli.server.module_manifest import ModuleManifest
 
 
-def removesuffix (string: str, suffix: str) -> str:
+def removesuffix(string: str, suffix: str) -> str:
     if sys.version_info.minor >= 9:
         return string.removesuffix(suffix)
     else:
         if string.endswith(suffix):
-            return string[:-len(suffix)]
+            return string[: -len(suffix)]
 
 
 string_format: Literal["string"] = "string"

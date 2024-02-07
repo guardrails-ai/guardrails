@@ -1,7 +1,7 @@
 import http.client
 import json
 
-from guardrails.cli.hub.credentials import Credentials
+from guardrails.cli.server.credentials import Credentials
 
 
 def authenticate(creds: Credentials) -> str:

@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
 from pydash.strings import snake_case
+
 from guardrails.cli.server.serializeable import Serializeable, SerializeableJSONEncoder
 
 
@@ -43,9 +44,7 @@ class ModuleManifest(Serializeable):
     # @override
     @classmethod
     def from_dict(cls, data: Dict[str, Any]):
-        init_kwargs = {
-            snake_case(k): data.get(k) for k in data
-        }
+        init_kwargs = {snake_case(k): data.get(k) for k in data}
         init_kwargs["encoder"] = init_kwargs.get("encoder", SerializeableJSONEncoder)
         author = init_kwargs.pop("author", {})
         maintainers = init_kwargs.pop("maintainers", [])

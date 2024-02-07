@@ -22,7 +22,7 @@ def test_from_rc_file(mocker):
     readlines_spy.return_value = ["key1=val1", "key2=val2"]
     close_spy = mocker.spy(mock_file, "close")
 
-    from guardrails.cli.hub.credentials import Credentials
+    from guardrails.cli.server.credentials import Credentials
 
     mock_from_dict = mocker.patch.object(Credentials, "from_dict")
 
