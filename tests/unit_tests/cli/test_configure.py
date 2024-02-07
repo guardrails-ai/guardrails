@@ -24,7 +24,10 @@ def test_configure(mocker, client_id, client_secret, no_metrics):
 
     configure(client_id, client_secret, no_metrics)
 
-    mock_logger_info.assert_called_once_with("Configuring...")
+    assert mock_logger_info.call_count == 2
+    expected_calls = [call("Configuring..."), call("Validating credentials...")]
+    mock_logger_info.assert_has_calls(expected_calls)
+    
     mock_save_configuration_file.assert_called_once_with(
         client_id, client_secret, no_metrics
     )
@@ -45,7 +48,11 @@ def test_configure_prompting(mocker):
     assert mock_typer_prompt.call_count == 2
     expected_calls = [call("Client ID"), call("Client secret", hide_input=True)]
     mock_typer_prompt.assert_has_calls(expected_calls)
-    mock_logger_info.assert_called_once_with("Configuring...")
+    
+    assert mock_logger_info.call_count == 2
+    expected_calls = [call("Configuring..."), call("Validating credentials...")]
+    mock_logger_info.assert_has_calls(expected_calls)
+    
     mock_save_configuration_file.assert_called_once_with("id", "secret", False)
 
 
