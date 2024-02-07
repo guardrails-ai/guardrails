@@ -6,10 +6,6 @@ from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Type, Un
 from pydantic import BaseModel, Field
 
 
-class ValidatorError(Exception):
-    """Base class for all validator errors."""
-
-
 class Filter:
     pass
 

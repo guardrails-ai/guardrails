@@ -6,18 +6,12 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from guardrails.classes.history import Iteration
 from guardrails.datatypes import FieldValidation
+from guardrails.errors import ValidationError
 from guardrails.logger import logger
 from guardrails.utils.logs_utils import ValidatorLogs
 from guardrails.utils.reask_utils import FieldReAsk, ReAsk
 from guardrails.utils.safe_get import safe_get
-from guardrails.validator_base import (
-    FailResult,
-    Filter,
-    PassResult,
-    Refrain,
-    Validator,
-    ValidatorError,
-)
+from guardrails.validator_base import FailResult, Filter, PassResult, Refrain, Validator
 
 
 def key_not_empty(key: str) -> bool:
@@ -57,7 +51,7 @@ class ValidatorServiceBase:
                 fail_results=results,
             )
         if on_fail_descriptor == "exception":
-            raise ValidatorError(
+            raise ValidationError(
                 "Validation failed for field with errors: "
                 + ", ".join([result.error_message for result in results])
             )

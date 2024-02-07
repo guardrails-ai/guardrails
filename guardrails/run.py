@@ -7,6 +7,7 @@ from pydantic import BaseModel
 
 from guardrails.classes.history import Call, Inputs, Iteration, Outputs
 from guardrails.datatypes import verify_metadata_requirements
+from guardrails.errors import ValidationError
 from guardrails.llm_providers import (
     AsyncPromptCallableBase,
     OpenAICallable,
@@ -25,7 +26,6 @@ from guardrails.utils.reask_utils import (
     SkeletonReAsk,
     reasks_to_dict,
 )
-from guardrails.validator_base import ValidatorError
 
 add_destinations(logger.debug)
 
@@ -332,11 +332,11 @@ class Runner:
         )
         iteration.outputs.validation_output = validated_msg_history
         if isinstance(validated_msg_history, ReAsk):
-            raise ValidatorError(
+            raise ValidationError(
                 f"Message history validation failed: " f"{validated_msg_history}"
             )
         if validated_msg_history != msg_str:
-            raise ValidatorError("Message history validation failed")
+            raise ValidationError("Message history validation failed")
 
     def prepare_msg_history(
         self,
@@ -372,9 +372,9 @@ class Runner:
         )
         iteration.outputs.validation_output = validated_prompt
         if validated_prompt is None:
-            raise ValidatorError("Prompt validation failed")
+            raise ValidationError("Prompt validation failed")
         if isinstance(validated_prompt, ReAsk):
-            raise ValidatorError(f"Prompt validation failed: {validated_prompt}")
+            raise ValidationError(f"Prompt validation failed: {validated_prompt}")
         return Prompt(validated_prompt)
 
     def validate_instructions(
@@ -393,9 +393,9 @@ class Runner:
         )
         iteration.outputs.validation_output = validated_instructions
         if validated_instructions is None:
-            raise ValidatorError("Instructions validation failed")
+            raise ValidationError("Instructions validation failed")
         if isinstance(validated_instructions, ReAsk):
-            raise ValidatorError(
+            raise ValidationError(
                 f"Instructions validation failed: {validated_instructions}"
             )
         return Instructions(validated_instructions)
@@ -1020,12 +1020,12 @@ class AsyncRunner(Runner):
                         iteration, msg_str, self.metadata
                     )
                     if isinstance(validated_msg_history, ReAsk):
-                        raise ValidatorError(
+                        raise ValidationError(
                             f"Message history validation failed: "
                             f"{validated_msg_history}"
                         )
                     if validated_msg_history != msg_str:
-                        raise ValidatorError("Message history validation failed")
+                        raise ValidationError("Message history validation failed")
             elif prompt is not None:
                 if isinstance(prompt, str):
                     prompt = Prompt(prompt)
@@ -1053,9 +1053,9 @@ class AsyncRunner(Runner):
                     )
                     iteration.outputs.validation_output = validated_prompt
                     if validated_prompt is None:
-                        raise ValidatorError("Prompt validation failed")
+                        raise ValidationError("Prompt validation failed")
                     if isinstance(validated_prompt, ReAsk):
-                        raise ValidatorError(
+                        raise ValidationError(
                             f"Prompt validation failed: {validated_prompt}"
                         )
                     prompt = Prompt(validated_prompt)
@@ -1072,9 +1072,9 @@ class AsyncRunner(Runner):
                     )
                     iteration.outputs.validation_output = validated_instructions
                     if validated_instructions is None:
-                        raise ValidatorError("Instructions validation failed")
+                        raise ValidationError("Instructions validation failed")
                     if isinstance(validated_instructions, ReAsk):
-                        raise ValidatorError(
+                        raise ValidationError(
                             f"Instructions validation failed: {validated_instructions}"
                         )
                     instructions = Instructions(validated_instructions)
