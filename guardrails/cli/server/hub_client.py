@@ -5,7 +5,7 @@ from typing import Any, Dict, Optional
 import requests
 
 from guardrails.cli.logger import logger
-from guardrails.cli.server.auth import authenticate
+from guardrails.cli.server.auth import get_auth_token
 from guardrails.cli.server.credentials import Credentials
 from guardrails.cli.server.module_manifest import ModuleManifest
 
@@ -64,11 +64,16 @@ def fetch_module_manifest(
 
 def fetch_module(module_name: str) -> ModuleManifest:
     creds = Credentials.from_rc_file()
-    token = authenticate(creds)
+    token = get_auth_token(creds)
 
+    module_manifest_json = fetch_module_manifest(module_name, token, creds.id)
+    return ModuleManifest.from_dict(module_manifest_json)
+
+
+# GET /validator-manifests/{namespace}/{validatorName}
+def get_validator_manifest(module_name: str):
     try:
-        module_manifest_json = fetch_module_manifest(module_name, token, creds.id)
-        module_manifest = ModuleManifest.from_dict(module_manifest_json)
+        module_manifest = fetch_module(module_name)
         if not module_manifest:
             logger.error(f"Failed to install hub://{module_name}")
             sys.exit(1)
@@ -81,13 +86,13 @@ def fetch_module(module_name: str) -> ModuleManifest:
         sys.exit(1)
 
 
-def check_auth():
+# GET /auth
+def get_auth():
     try:
         creds = Credentials.from_rc_file()
-        token = authenticate(creds)
+        token = get_auth_token(creds)
         auth_url = f"{validator_hub_service}/auth"
         response = fetch(auth_url, token, creds.id)
-        print("check_auth fetch response: ", response)
         if not response:
             raise AuthenticationError("Failed to authenticate!")
     except HttpError as http_error:
