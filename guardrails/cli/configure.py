@@ -66,6 +66,10 @@ def configure(
         logger.error(
             """
             Check that your Client ID and Client secret are correct and try again.
+
+            If you don't have your token credentials you can find them here:
+
+            https://hub.guardrailsai.com/tokens
             """
         )
         sys.exit(1)

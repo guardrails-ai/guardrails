@@ -19,6 +19,7 @@ def test_configure(mocker, client_id, client_secret, no_metrics):
         "guardrails.cli.configure.save_configuration_file"
     )
     mock_logger_info = mocker.patch("guardrails.cli.configure.logger.info")
+    mock_get_auth = mocker.patch("guardrails.cli.configure.get_auth")
 
     from guardrails.cli.configure import configure
 
@@ -32,6 +33,7 @@ def test_configure(mocker, client_id, client_secret, no_metrics):
         client_id, client_secret, no_metrics
     )
 
+    assert mock_get_auth.call_count == 1
 
 def test_configure_prompting(mocker):
     mock_typer_prompt = mocker.patch("typer.prompt")
@@ -40,7 +42,7 @@ def test_configure_prompting(mocker):
         "guardrails.cli.configure.save_configuration_file"
     )
     mock_logger_info = mocker.patch("guardrails.cli.configure.logger.info")
-    mock_get_auth = mocker.patch("guardrails.cli.server.hub_client.get_auth")
+    mock_get_auth = mocker.patch("guardrails.cli.configure.get_auth")
 
     from guardrails.cli.configure import configure
 
