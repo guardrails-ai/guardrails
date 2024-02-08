@@ -29,8 +29,11 @@ class ValidatorServiceBase:
         on_fail_descriptor: str,
     ):
         if on_fail_descriptor == "fix":
+            # FIXME: Should we still return fix_value if it is None?
+            # I think we should warn and return the original value.
             return results[0].fix_value
         elif on_fail_descriptor == "fix_reask":
+            # FIXME: Same thing here
             fixed_value = results[0].fix_value
             result = validator.validate(fixed_value, results[0].metadata or {})
 

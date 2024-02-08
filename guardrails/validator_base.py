@@ -1,9 +1,26 @@
 import inspect
 from collections import defaultdict
+from copy import deepcopy
 from string import Template
-from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Type, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+    cast,
+)
 
+from langchain_core.messages import BaseMessage
+from langchain_core.runnables import Runnable, RunnableConfig
 from pydantic import BaseModel, Field
+
+from guardrails.classes import InputType
+from guardrails.errors import ValidationError
 
 
 class Filter:
@@ -181,7 +198,7 @@ class FailResult(ValidationResult):
     fix_value: Optional[Any] = None
 
 
-class Validator:
+class Validator(Runnable):
     """Base class for validators."""
 
     rail_alias: str
@@ -189,6 +206,7 @@ class Validator:
     run_in_separate_process = False
     override_value_on_pass = False
     required_metadata_keys = []
+    _metadata = {}
 
     def __init__(self, on_fail: Optional[Union[Callable, str]] = None, **kwargs):
         if on_fail is None:
@@ -299,6 +317,57 @@ class Validator:
                 "kwargs": self._kwargs,
             }
         )
+
+    def invoke(
+        self, input: InputType, config: Optional[RunnableConfig] = None
+    ) -> InputType:
+        output = BaseMessage(content="", type="")
+        str_input = None
+        input_is_chat_message = False
+        if isinstance(input, BaseMessage):
+            input_is_chat_message = True
+            str_input = str(input.content)
+            output = deepcopy(input)
+        else:
+            str_input = str(input)
+
+        response = self.validate(str_input, self._metadata)
+
+        if isinstance(response, FailResult):
+            raise ValidationError(
+                (
+                    "The response from the LLM failed validation!"
+                    f"{response.error_message}"
+                )
+            )
+
+        if input_is_chat_message:
+            output.content = str_input
+            return cast(InputType, output)
+        return cast(InputType, str_input)
+
+    """
+    This method allows the user to provide metadata to validators used in an LCEL chain.
+    This is necessary because they can't pass metadata directly to `validate` in a chain
+        because is called internally during `invoke`.
+
+    Usage
+    ---
+    my_validator = Validator(args).with_metadata({ "key": "value" })
+
+    chain = prompt | model | my_validator | output_parser
+    chain.invoke({...})
+
+    When called multiple times on the same validator instance,
+        the metadata value will be override.
+    This allows the user to change the metadata programmatically
+        for different chains or calls.
+    """
+
+    def with_metadata(self, metadata: Dict[str, Any]):
+        """Assigns metadata to this validator to use during validation."""
+        self._metadata = metadata
+        return self
 
 
 ValidatorSpec = Union[Validator, Tuple[Union[Validator, str, Callable], str]]

@@ -74,6 +74,10 @@ class IsHighQualityTranslation(Validator):
             ) from e
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
+        if not metadata:
+            # default to value provided via Validator.with_metadata
+            metadata = self._metadata
+
         if "translation_source" not in metadata:
             raise RuntimeError(
                 "is-high-quality-translation validator expects "

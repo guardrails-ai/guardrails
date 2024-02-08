@@ -184,6 +184,10 @@ class ToxicLanguage(Validator):
         return PassResult()
 
     def validate(self, value: str, metadata: Dict[str, Any]) -> ValidationResult:
+        if not metadata:
+            # default to value provided via Validator.with_metadata
+            metadata = self._metadata
+
         if not value:
             raise ValueError("Value cannot be empty.")
 

@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from guardrails.logger import logger
 from guardrails.validator_base import (
@@ -28,7 +28,7 @@ class ReadingTime(Validator):
         reading_time: The maximum reading time in minutes.
     """
 
-    def __init__(self, reading_time: int, on_fail: str = "fix"):
+    def __init__(self, reading_time: int, on_fail: Optional[str] = None):
         super().__init__(on_fail=on_fail, reading_time=reading_time)
         self._max_time = reading_time
 

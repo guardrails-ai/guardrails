@@ -1,6 +1,8 @@
 import asyncio
 import contextvars
+import json
 import warnings
+from copy import deepcopy
 from string import Template
 from typing import (
     Any,
@@ -20,12 +22,15 @@ from typing import (
 )
 
 from eliot import add_destinations, start_action
+from langchain_core.messages import BaseMessage
+from langchain_core.runnables import Runnable, RunnableConfig
 from pydantic import BaseModel
 
-from guardrails.classes import OT, ValidationOutcome
+from guardrails.classes import OT, InputType, ValidationOutcome
 from guardrails.classes.generic import Stack
 from guardrails.classes.history import Call
 from guardrails.classes.history.call_inputs import CallInputs
+from guardrails.errors import ValidationError
 from guardrails.llm_providers import get_async_llm_ask, get_llm_ask
 from guardrails.logger import logger, set_scope
 from guardrails.prompt import Instructions, Prompt
@@ -38,7 +43,7 @@ from guardrails.validators import Validator
 add_destinations(logger.debug)
 
 
-class Guard(Generic[OT]):
+class Guard(Runnable, Generic[OT]):
     """The Guard class.
 
     This class is the main entry point for using Guardrails. It is
@@ -860,3 +865,35 @@ class Guard(Generic[OT]):
     # https://github.com/guardrails-ai/guardrails/pull/525 is merged
     # def __call__(self, llm_output: str, *args, **kwargs) -> ValidationOutcome[str]:
     #     return self.validate(llm_output, *args, **kwargs)
+
+    def invoke(
+        self, input: InputType, config: Optional[RunnableConfig] = None
+    ) -> InputType:
+        output = BaseMessage(content="", type="")
+        str_input = None
+        input_is_chat_message = False
+        if isinstance(input, BaseMessage):
+            input_is_chat_message = True
+            str_input = str(input.content)
+            output = deepcopy(input)
+        else:
+            str_input = str(input)
+
+        response = self.validate(str_input)
+
+        validated_output = response.validated_output
+        if not validated_output:
+            raise ValidationError(
+                (
+                    "The response from the LLM failed validation!"
+                    "See `guard.history` for more details."
+                )
+            )
+
+        if isinstance(validated_output, Dict):
+            validated_output = json.dumps(validated_output)
+
+        if input_is_chat_message:
+            output.content = validated_output
+            return cast(InputType, output)
+        return cast(InputType, validated_output)
