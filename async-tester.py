@@ -20,15 +20,17 @@ def home():
 @cross_origin()
 def validate():
   # extract format string from query parameters
-  validator = request.json['validator']
-  validatorArgs = request.json['validatorArgs']
+  req_validators = request.json['validators']
   prompt = request.json['prompt']
   num_reasks = int(request.json['num_reasks'] or 0)
 
-  validatorImport = getattr(validators, validator)
+  compiled_validators = []
+  for validator in req_validators:
+    validatorImport = getattr(validators, validator['name'])
+    compiled_validators.append(validatorImport(**(validator['args'])))
 
   guard = Guard.from_string(
-    validators=[validatorImport(**validatorArgs)],
+    validators=compiled_validators,
   )
 
   guard(
@@ -37,8 +39,12 @@ def validate():
     prompt=prompt,
   )
 
+
+  ret_resp = guard.history.last.validated_output
+  if ret_resp is None:
+    ret_resp = ''
   response_obj = {
-    "validated_output": guard.history.last.validated_output,
+    "validated_output": ret_resp,
     "failed_validations": guard.history.last.failed_validations.length,
     "passed_num_reasks": num_reasks,
     "raw_output": guard.history.last.raw_outputs,
