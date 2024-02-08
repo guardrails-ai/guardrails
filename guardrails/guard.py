@@ -1,6 +1,7 @@
 import asyncio
 import contextvars
 import warnings
+from string import Template
 from typing import (
     Any,
     Awaitable,
@@ -11,6 +12,7 @@ from typing import (
     List,
     Optional,
     Sequence,
+    Tuple,
     Type,
     Union,
     cast,
@@ -30,6 +32,7 @@ from guardrails.prompt import Instructions, Prompt
 from guardrails.rail import Rail
 from guardrails.run import AsyncRunner, Runner, StreamRunner
 from guardrails.schema import Schema, StringSchema
+from guardrails.utils.validator_utils import get_validator
 from guardrails.validators import Validator
 
 add_destinations(logger.debug)
@@ -52,18 +55,28 @@ class Guard(Generic[OT]):
     the LLM and the validated output.
     """
 
+    _validators: List[Validator]
+
     def __init__(
         self,
-        rail: Rail,
+        rail: Optional[Rail] = None,
         num_reasks: Optional[int] = None,
         base_model: Optional[Type[BaseModel]] = None,
     ):
-        """Initialize the Guard."""
+        """Initialize the Guard with optional Rail instance, num_reasks, and
+        base_model."""
+        if not rail:
+            rail = (
+                Rail.from_pydantic(base_model)
+                if base_model
+                else Rail.from_string_validators([])
+            )
         self.rail = rail
         self.num_reasks = num_reasks
         # TODO: Support a sink for history so that it is not solely held in memory
         self.history: Stack[Call] = Stack()
         self.base_model = base_model
+        self._validators = []
 
     @property
     def prompt_schema(self) -> Optional[StringSchema]:
@@ -492,6 +505,26 @@ class Guard(Generic[OT]):
     def __rich_repr__(self):
         yield "RAIL", self.rail
 
+    def __stringify__(self):
+        if self.rail and self.rail.output_type == "str":
+            template = Template(
+                """
+                Guard {
+                    validators: [
+                        ${validators}
+                    ]
+                }
+                    """
+            )
+            return template.safe_substitute(
+                {
+                    "validators": ",\n".join(
+                        [v.__stringify__() for v in self._validators]
+                    )
+                }
+            )
+        return self.__repr__()
+
     @overload
     def parse(
         self,
@@ -758,3 +791,72 @@ class Guard(Generic[OT]):
         )
         self.rail.msg_history_schema = schema
         return self
+
+    @overload
+    def use(self, validator: Validator) -> "Guard":
+        ...
+
+    @overload
+    def use(self, validator: Type[Validator], *args, **kwargs) -> "Guard":
+        ...
+
+    def use(
+        self, validator: Union[Validator, Type[Validator]], *args, **kwargs
+    ) -> "Guard":
+        if validator:
+            self._validators.append(get_validator(validator, *args, **kwargs))
+
+        return self
+
+    @overload
+    def use_many(self, *validators: Validator) -> "Guard":
+        ...
+
+    @overload
+    def use_many(
+        self,
+        *validators: Tuple[
+            Type[Validator],
+            Optional[Union[List[Any], Dict[str, Any]]],
+            Optional[Dict[str, Any]],
+        ],
+    ) -> "Guard":
+        ...
+
+    def use_many(
+        self,
+        *validators: Union[
+            Validator,
+            Tuple[
+                Type[Validator],
+                Optional[Union[List[Any], Dict[str, Any]]],
+                Optional[Dict[str, Any]],
+            ],
+        ],
+    ) -> "Guard":
+        for v in validators:
+            self._validators.append(get_validator(v))
+
+        return self
+
+    def validate(self, llm_output: str, *args, **kwargs) -> ValidationOutcome[str]:
+        if (
+            not self.rail
+            or self.rail.output_schema.root_datatype.validators != self._validators
+        ):
+            self.rail = Rail.from_string_validators(
+                validators=self._validators,
+                prompt=self.prompt.source if self.prompt else None,
+                instructions=self.instructions.source if self.instructions else None,
+                reask_prompt=self.reask_prompt.source if self.reask_prompt else None,
+                reask_instructions=self.reask_instructions.source
+                if self.reask_instructions
+                else None,
+            )
+
+        return self.parse(llm_output=llm_output, *args, **kwargs)
+
+    # No call support for this until
+    # https://github.com/guardrails-ai/guardrails/pull/525 is merged
+    # def __call__(self, llm_output: str, *args, **kwargs) -> ValidationOutcome[str]:
+    #     return self.validate(llm_output, *args, **kwargs)

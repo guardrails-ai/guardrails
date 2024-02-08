@@ -5,13 +5,13 @@ from typing import Dict, Optional, TypeVar, cast
 from langchain_core.messages import BaseMessage
 from langchain_core.runnables import Runnable, RunnableConfig
 
+from guardrails import Guard as OGuard
 from guardrails.errors import ValidationError
-from guardrails.functional.guard import Guard as FGuard
 
 T = TypeVar("T", str, BaseMessage)
 
 
-class Guard(FGuard, Runnable):
+class Guard(OGuard, Runnable):
     def invoke(self, input: T, config: Optional[RunnableConfig] = None) -> T:
         output = BaseMessage(content="", type="")
         str_input = None

@@ -166,7 +166,7 @@ validator_test_pass_fail = {
             "metadata": {},
             "expected_result": FailResult,
             "instance_variables": {
-                "reading_time": 1,
+                "reading_time": 1 / 60,
             },
         },
     ],
