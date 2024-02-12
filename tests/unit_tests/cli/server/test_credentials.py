@@ -7,7 +7,7 @@ def test_from_rc_file(mocker):
     mocker.patch("nltk.data.find")
     mocker.patch("nltk.download")
 
-    expanduser_mock = mocker.patch("guardrails.cli.hub.credentials.expanduser")
+    expanduser_mock = mocker.patch("guardrails.cli.server.credentials.expanduser")
     expanduser_mock.return_value = "/Home"
 
     import os
@@ -15,14 +15,14 @@ def test_from_rc_file(mocker):
     join_spy = mocker.spy(os.path, "join")
 
     mock_file = MockFile()
-    mock_open = mocker.patch("guardrails.cli.hub.credentials.open")
+    mock_open = mocker.patch("guardrails.cli.server.credentials.open")
     mock_open.return_value = mock_file
 
     readlines_spy = mocker.patch.object(mock_file, "readlines")
     readlines_spy.return_value = ["key1=val1", "key2=val2"]
     close_spy = mocker.spy(mock_file, "close")
 
-    from guardrails.cli.hub.credentials import Credentials
+    from guardrails.cli.server.credentials import Credentials
 
     mock_from_dict = mocker.patch.object(Credentials, "from_dict")
 

@@ -1,10 +1,10 @@
 import http.client
 import json
 
-from guardrails.cli.hub.credentials import Credentials
+from guardrails.cli.server.credentials import Credentials
 
 
-def authenticate(creds: Credentials) -> str:
+def get_auth_token(creds: Credentials) -> str:
     if creds.client_id and creds.client_secret:
         audience = "https://validator-hub-service.guardrailsai.com"
         conn = http.client.HTTPSConnection("guardrailsai.us.auth0.com")

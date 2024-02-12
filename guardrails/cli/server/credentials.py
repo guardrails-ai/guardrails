@@ -29,10 +29,10 @@ class Credentials(Serializeable):
                 return Credentials.from_dict(creds)
 
         except FileNotFoundError as e:
-            logger.error(e)
-            logger.error(
+            logger.warning(e)
+            logger.warning(
                 "Guardrails Hub credentials not found!"
                 "You will need to sign up to use any authenticated Validators here:"
-                "{insert url}"
+                "https://hub.guardrailsai.com/tokens"
             )
             return Credentials()

@@ -4,15 +4,24 @@ from typing import Any, Dict, Optional
 
 import requests
 
-from guardrails.cli.hub.credentials import Credentials
 from guardrails.cli.logger import logger
-from guardrails.cli.server.auth import authenticate
+from guardrails.cli.server.auth import get_auth_token
+from guardrails.cli.server.credentials import Credentials
 from guardrails.cli.server.module_manifest import ModuleManifest
 
 validator_hub_service = "https://so4sg4q4pb.execute-api.us-east-1.amazonaws.com"
 validator_manifest_endpoint = Template(
     "validator-manifests/${namespace}/${validator_name}"
 )
+
+
+class AuthenticationError(Exception):
+    pass
+
+
+class HttpError(Exception):
+    status: int
+    message: str
 
 
 def fetch(url: str, token: Optional[str], anonymousUserId: Optional[str]):
@@ -29,9 +38,14 @@ def fetch(url: str, token: Optional[str], anonymousUserId: Optional[str]):
         if not req.ok:
             logger.error(req.status_code)
             logger.error(body.get("message"))
-            sys.exit(1)
+            http_error = HttpError()
+            http_error.status = req.status_code
+            http_error.message = body.get("message")
+            raise http_error
 
         return body
+    except HttpError as http_e:
+        raise http_e
     except Exception as e:
         logger.error("An unexpected error occurred!", e)
         sys.exit(1)
@@ -50,8 +64,40 @@ def fetch_module_manifest(
 
 def fetch_module(module_name: str) -> ModuleManifest:
     creds = Credentials.from_rc_file()
-    token = authenticate(creds)
+    token = get_auth_token(creds)
 
     module_manifest_json = fetch_module_manifest(module_name, token, creds.id)
-    module_manifest = ModuleManifest.from_dict(module_manifest_json)
-    return module_manifest
+    return ModuleManifest.from_dict(module_manifest_json)
+
+
+# GET /validator-manifests/{namespace}/{validatorName}
+def get_validator_manifest(module_name: str):
+    try:
+        module_manifest = fetch_module(module_name)
+        if not module_manifest:
+            logger.error(f"Failed to install hub://{module_name}")
+            sys.exit(1)
+        return module_manifest
+    except HttpError:
+        logger.error(f"Failed to install hub://{module_name}")
+        sys.exit(1)
+    except Exception as e:
+        logger.error("An unexpected error occurred!", e)
+        sys.exit(1)
+
+
+# GET /auth
+def get_auth():
+    try:
+        creds = Credentials.from_rc_file()
+        token = get_auth_token(creds)
+        auth_url = f"{validator_hub_service}/auth"
+        response = fetch(auth_url, token, creds.id)
+        if not response:
+            raise AuthenticationError("Failed to authenticate!")
+    except HttpError as http_error:
+        logger.error(http_error)
+        raise AuthenticationError("Failed to authenticate!")
+    except Exception as e:
+        logger.error("An unexpected error occurred!", e)
+        raise AuthenticationError("Failed to authenticate!")

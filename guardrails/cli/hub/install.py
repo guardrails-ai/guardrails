@@ -13,8 +13,17 @@ from pydash.strings import snake_case
 from guardrails.classes.generic import Stack
 from guardrails.cli.hub.hub import hub
 from guardrails.cli.logger import LEVELS, logger
-from guardrails.cli.server.hub_client import fetch_module
+from guardrails.cli.server.hub_client import get_validator_manifest
 from guardrails.cli.server.module_manifest import ModuleManifest
+
+
+def removesuffix(string: str, suffix: str) -> str:
+    if sys.version_info.minor >= 9:
+        return string.removesuffix(suffix)
+    else:
+        if string.endswith(suffix):
+            return string[: -len(suffix)]
+
 
 string_format: Literal["string"] = "string"
 json_format: Literal["json"] = "json"
@@ -125,7 +134,7 @@ def run_post_install(manifest: ModuleManifest):
     post_install_script = manifest.post_install
     if post_install_script:
         module_name = manifest.module_name
-        post_install_module = post_install_script.removesuffix(".py")
+        post_install_module = removesuffix(post_install_script, ".py")
         relative_path = ".".join([*org_package, module_name])
         importlib.import_module(f"guardrails.hub.{relative_path}.{post_install_module}")
 
@@ -194,7 +203,7 @@ def install(
     module_name = package_uri.replace("hub://", "")
 
     # Prep
-    module_manifest = fetch_module(module_name)
+    module_manifest = get_validator_manifest(module_name)
     site_packages = get_site_packages_location()
 
     # Install

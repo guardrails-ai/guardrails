@@ -24,8 +24,10 @@ class TestInstall:
     def test_happy_path(self, mocker):
         mock_logger_log = mocker.patch("guardrails.cli.hub.install.logger.log")
 
-        mock_fetch_module = mocker.patch("guardrails.cli.hub.install.fetch_module")
+        mock_get_validator_manifest = mocker.patch("guardrails.cli.hub.install.get_validator_manifest")
         manifest = ModuleManifest(
+            "id",
+            "name",
             "me",
             [],
             Repository(url="some-repo"),
@@ -35,7 +37,7 @@ class TestInstall:
             ["TestValidator"],
             ModuleTags(),
         )
-        mock_fetch_module.return_value = manifest
+        mock_get_validator_manifest.return_value = manifest
 
         mock_get_site_packages_location = mocker.patch(
             "guardrails.cli.hub.install.get_site_packages_location"
@@ -67,7 +69,7 @@ class TestInstall:
         assert mock_logger_log.call_count == 2
         mock_logger_log.assert_has_calls(log_calls)
 
-        mock_fetch_module.assert_called_once_with("guardrails/test-validator")
+        mock_get_validator_manifest.assert_called_once_with("guardrails/test-validator")
 
         assert mock_get_site_packages_location.call_count == 1
 
@@ -213,6 +215,8 @@ def test_get_site_packages_location(mocker):
     [
         (
             ModuleManifest(
+                "id",
+                "name",
                 "me",
                 [],
                 Repository(url="some-repo"),
@@ -226,6 +230,8 @@ def test_get_site_packages_location(mocker):
         ),
         (
             ModuleManifest(
+                "id",
+                "name",
                 "me",
                 [],
                 Repository(url="some-repo"),
@@ -249,6 +255,8 @@ def test_get_org_and_package_dirs(manifest, expected):
 
 def test_get_hub_directory():
     manifest = ModuleManifest(
+        "id",
+        "name",
         "me",
         [],
         Repository(url="some-repo"),
@@ -269,6 +277,8 @@ def test_get_hub_directory():
 class TestAddToHubInits:
     def test_closes_early_if_already_added(self, mocker):
         manifest = ModuleManifest(
+            "id",
+            "name",
             "me",
             [],
             Repository(url="some-repo"),
@@ -328,6 +338,8 @@ class TestAddToHubInits:
 
     def test_appends_import_line_if_not_present(self, mocker):
         manifest = ModuleManifest(
+            "id",
+            "name",
             "me",
             [],
             Repository(url="some-repo"),
@@ -406,6 +418,8 @@ class TestAddToHubInits:
 
     def test_creates_namespace_init_if_not_exists(self, mocker):
         manifest = ModuleManifest(
+            "id",
+            "name",
             "me",
             [],
             Repository(url="some-repo"),
@@ -464,6 +478,8 @@ class TestRunPostInstall:
         "manifest",
         [
             ModuleManifest(
+                "id",
+                "name",
                 "me",
                 [],
                 Repository(url="some-repo"),
@@ -474,6 +490,8 @@ class TestRunPostInstall:
                 ModuleTags(),
             ),
             ModuleManifest(
+                "id",
+                "name",
                 "me",
                 [],
                 Repository(url="some-repo"),
@@ -503,6 +521,8 @@ class TestRunPostInstall:
         from guardrails.cli.hub.install import run_post_install
 
         manifest = ModuleManifest(
+            "id",
+            "name",
             "me",
             [],
             Repository(url="some-repo"),
@@ -527,6 +547,8 @@ class TestRunPostInstall:
     [
         (
             ModuleManifest(
+                "id",
+                "name",
                 "me",
                 [],
                 Repository(url="some-repo"),
@@ -540,6 +562,8 @@ class TestRunPostInstall:
         ),
         (
             ModuleManifest(
+                "id",
+                "name",
                 "me",
                 [],
                 Repository(url="git+some-repo"),
@@ -554,6 +578,8 @@ class TestRunPostInstall:
         ),
         (
             ModuleManifest(
+                "id",
+                "name",
                 "me",
                 [],
                 Repository(url="git+some-repo", branch="prod"),
@@ -611,6 +637,8 @@ def test_install_hub_module(mocker):
     from guardrails.cli.hub.install import install_hub_module
 
     manifest = ModuleManifest(
+        "id",
+        "name",
         "me",
         [],
         Repository(url="some-repo"),
