@@ -4,7 +4,6 @@ from unittest.mock import call
 import pytest
 
 from guardrails.cli.server.module_manifest import ModuleManifest, ModuleTags, Repository
-from guardrails.cli.server.serializeable import SerializeableJSONEncoder
 from tests.unit_tests.mocks.mock_file import MockFile
 
 
@@ -25,7 +24,7 @@ class TestInstall:
     def test_happy_path(self, mocker):
         mock_logger_log = mocker.patch("guardrails.cli.hub.install.logger.log")
 
-        mock_fetch_module = mocker.patch("guardrails.cli.hub.install.fetch_module")
+        mock_get_validator_manifest = mocker.patch("guardrails.cli.hub.install.get_validator_manifest")
         manifest = ModuleManifest(
             "id",
             "name",
@@ -38,7 +37,7 @@ class TestInstall:
             ["TestValidator"],
             ModuleTags(),
         )
-        mock_fetch_module.return_value = manifest
+        mock_get_validator_manifest.return_value = manifest
 
         mock_get_site_packages_location = mocker.patch(
             "guardrails.cli.hub.install.get_site_packages_location"
@@ -70,7 +69,7 @@ class TestInstall:
         assert mock_logger_log.call_count == 2
         mock_logger_log.assert_has_calls(log_calls)
 
-        mock_fetch_module.assert_called_once_with("guardrails/test-validator")
+        mock_get_validator_manifest.assert_called_once_with("guardrails/test-validator")
 
         assert mock_get_site_packages_location.call_count == 1
 

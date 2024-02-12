@@ -19,6 +19,7 @@ def test_configure(mocker, client_id, client_secret, no_metrics):
         "guardrails.cli.configure.save_configuration_file"
     )
     mock_logger_info = mocker.patch("guardrails.cli.configure.logger.info")
+    mock_get_auth = mocker.patch("guardrails.cli.configure.get_auth")
 
     from guardrails.cli.configure import configure
 
@@ -27,11 +28,12 @@ def test_configure(mocker, client_id, client_secret, no_metrics):
     assert mock_logger_info.call_count == 2
     expected_calls = [call("Configuring..."), call("Validating credentials...")]
     mock_logger_info.assert_has_calls(expected_calls)
-    
+
     mock_save_configuration_file.assert_called_once_with(
         client_id, client_secret, no_metrics
     )
 
+    assert mock_get_auth.call_count == 1
 
 def test_configure_prompting(mocker):
     mock_typer_prompt = mocker.patch("typer.prompt")
@@ -40,6 +42,7 @@ def test_configure_prompting(mocker):
         "guardrails.cli.configure.save_configuration_file"
     )
     mock_logger_info = mocker.patch("guardrails.cli.configure.logger.info")
+    mock_get_auth = mocker.patch("guardrails.cli.configure.get_auth")
 
     from guardrails.cli.configure import configure
 
@@ -48,12 +51,14 @@ def test_configure_prompting(mocker):
     assert mock_typer_prompt.call_count == 2
     expected_calls = [call("Client ID"), call("Client secret", hide_input=True)]
     mock_typer_prompt.assert_has_calls(expected_calls)
-    
+
     assert mock_logger_info.call_count == 2
     expected_calls = [call("Configuring..."), call("Validating credentials...")]
     mock_logger_info.assert_has_calls(expected_calls)
-    
+
     mock_save_configuration_file.assert_called_once_with("id", "secret", False)
+
+    assert mock_get_auth.call_count == 1
 
 
 def test_save_configuration_file(mocker):

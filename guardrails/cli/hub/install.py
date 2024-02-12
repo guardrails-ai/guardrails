@@ -13,7 +13,7 @@ from pydash.strings import snake_case
 from guardrails.classes.generic import Stack
 from guardrails.cli.hub.hub import hub
 from guardrails.cli.logger import LEVELS, logger
-from guardrails.cli.server.hub_client import fetch_module
+from guardrails.cli.server.hub_client import get_validator_manifest
 from guardrails.cli.server.module_manifest import ModuleManifest
 
 
@@ -203,7 +203,7 @@ def install(
     module_name = package_uri.replace("hub://", "")
 
     # Prep
-    module_manifest = fetch_module(module_name)
+    module_manifest = get_validator_manifest(module_name)
     site_packages = get_site_packages_location()
 
     # Install
