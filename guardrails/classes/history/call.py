@@ -19,7 +19,7 @@ from guardrails.utils.reask_utils import (
     sub_reasks_with_fixed_values,
 )
 from guardrails.utils.safe_get import get_value_from_path
-from guardrails.validator_base import Refrain
+from guardrails.validator_base import Filter, Refrain
 
 
 # We can't inherit from Iteration because python
@@ -315,10 +315,13 @@ class Call(ArbitraryModel):
         output = self.fixed_output
         for failure in self.failed_validations:
             value = get_value_from_path(output, failure.property_path)
-            # Should we also consider Filter's a failure
-            #   if the fixed_output is None?
-            if value == failure.value_before_validation or isinstance(
-                failure.value_after_validation, Refrain
+            if (
+                # NOTE: this means on_fail="fix" was applied
+                #       to a Validator without a programmatic fix.
+                (value is None and failure.value_before_validation is not None)
+                or value == failure.value_before_validation
+                or isinstance(failure.value_after_validation, Refrain)
+                or isinstance(failure.value_after_validation, Filter)
             ):
                 return True
 

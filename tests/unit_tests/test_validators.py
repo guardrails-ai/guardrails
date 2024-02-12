@@ -641,7 +641,7 @@ def custom_refrain_on_fail_handler(value: Any, fail_results: List[FailResult]):
         ),
         (
             custom_filter_on_fail_handler,
-            {"name": "Fido"},
+            None,
         ),
         (
             custom_refrain_on_fail_handler,

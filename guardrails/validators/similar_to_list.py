@@ -77,6 +77,10 @@ class SimilarToList(Validator):
         return similarity
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
+        if not metadata:
+            # default to value provided via Validator.with_metadata
+            metadata = self._metadata
+
         prev_values = metadata.get("prev_values", [])
         if not prev_values:
             raise ValueError("You must provide a list of previous values in metadata.")
