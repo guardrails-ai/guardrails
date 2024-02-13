@@ -96,7 +96,7 @@ jobs:
           make type-pydantic-v1-openai-v1
 
   Pytests:
-    runs-on: ubuntu-latest
+    runs-on: LargeBois
     strategy:
       matrix:
         python-version: ["3.8", "3.9", "3.10", "3.11"]
