@@ -6,6 +6,7 @@ from eliot import add_destinations, start_action
 from pydantic import BaseModel
 
 from guardrails.classes.history import Call, Inputs, Iteration, Outputs
+from guardrails.cli_dir.hub.credentials import Credentials
 from guardrails.datatypes import verify_metadata_requirements
 from guardrails.llm_providers import (
     AsyncPromptCallableBase,
@@ -104,8 +105,11 @@ class Runner:
         self.base_model = base_model
         self.full_schema_reask = full_schema_reask
 
-        # Get the HubTelemetry singleton
-        self._hub_telemetry = HubTelemetry()
+        # Get metrics opt-out from credentials
+        self._disable_tracer = Credentials.from_rc_file().no_metrics
+        if not self._disable_tracer:
+            # Get the HubTelemetry singleton
+            self._hub_telemetry = HubTelemetry()
 
     def __call__(self, call_log: Call, prompt_params: Optional[Dict] = None) -> Call:
         """Execute the runner by repeatedly calling step until the reask budget
@@ -202,12 +206,13 @@ class Runner:
 
                 # Log how many times we reasked
                 # Use the HubTelemetry singleton
-                self._hub_telemetry.create_new_span(
-                    span_name="/reasks",
-                    attributes=[("reask_count", index)],
-                    is_parent=False,  # This span has no children
-                    has_parent=True,  # This span has a parent
-                )
+                if not self._disable_tracer:
+                    self._hub_telemetry.create_new_span(
+                        span_name="/reasks",
+                        attributes=[("reask_count", index)],
+                        is_parent=False,  # This span has no children
+                        has_parent=True,  # This span has a parent
+                    )
 
         except UserFacingException as e:
             # Because Pydantic v1 doesn't respect property setters

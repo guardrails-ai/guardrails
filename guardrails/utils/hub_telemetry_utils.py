@@ -95,11 +95,13 @@ class HubTelemetry:
         is_parent: bool,  # Inject current context if IS a parent span
         has_parent: bool,  # Extract current context if HAS a parent span
     ):
-        """Creates a new span within the tracer with the given name and attributes.
+        """Creates a new span within the tracer with the given name and
+        attributes.
 
         If it's a parent span, the current context is injected into the carrier.
         If it has a parent span, the current context is extracted from the carrier.
-        Both the conditions can co-exist e.g. if it's a parent span and also has a parent span.
+        Both the conditions can co-exist e.g. a span can be a parent span which
+        also has a parent span.
 
         Args:
             span_name (str): The name of the span.

@@ -82,14 +82,19 @@ class Guard(Generic[OT]):
         self.base_model = base_model
         self._set_tracer(tracer)
 
-        # Initialize Hub Telemetry singleton and get the tracer
-        self._hub_telemetry = HubTelemetry()
+        # Get unique id of user from credentials
+        self._user_id = Credentials.from_rc_file().id
+
+        # Get metrics opt-out from credentials
+        self._disable_tracer = Credentials.from_rc_file().no_metrics
 
         # Get id of guard object (that is unique)
         self._guard_id = id(self)  # id of guard object; not the class
 
-        # Get unique id of user (from rc file)
-        self._user_id = Credentials.from_rc_file().id
+        # Initialize Hub Telemetry singleton and get the tracer
+        #  if it is not disabled
+        if not self._disable_tracer:
+            self._hub_telemetry = HubTelemetry()
 
     @property
     def prompt_schema(self) -> Optional[StringSchema]:
@@ -373,19 +378,23 @@ class Guard(Generic[OT]):
             if prompt_params is None:
                 prompt_params = {}
 
-            # Create a new span for this guard call
-            self._hub_telemetry.create_new_span(
-                span_name="/guard_call",
-                attributes=[
-                    ("guard_id", self._guard_id),
-                    ("user_id", self._user_id),
-                    ("llm_api", llm_api.__name__ if llm_api else "None"),
-                    ("custom_reask_prompt", self.reask_prompt is not None),
-                    ("custom_reask_instructions", self.reask_instructions is not None),
-                ],
-                is_parent=True,  # It will have children
-                has_parent=False,  # Has no parents
-            )
+            if not self._disable_tracer:
+                # Create a new span for this guard call
+                self._hub_telemetry.create_new_span(
+                    span_name="/guard_call",
+                    attributes=[
+                        ("guard_id", self._guard_id),
+                        ("user_id", self._user_id),
+                        ("llm_api", llm_api.__name__ if llm_api else "None"),
+                        ("custom_reask_prompt", self.reask_prompt is not None),
+                        (
+                            "custom_reask_instructions",
+                            self.reask_instructions is not None,
+                        ),
+                    ],
+                    is_parent=True,  # It will have children
+                    has_parent=False,  # Has no parents
+                )
 
             set_call_kwargs(kwargs)
             set_tracer(self._tracer)
@@ -679,19 +688,22 @@ class Guard(Generic[OT]):
                 num_reasks if num_reasks is not None else 0 if llm_api is None else None
             )
 
-            # TODO: Create a new span for this guard parse
-            self._hub_telemetry.create_new_span(
-                span_name="/guard_parse",
-                attributes=[
-                    ("guard_id", self._guard_id),
-                    ("user_id", self._user_id),
-                    ("llm_api", llm_api.__name__ if llm_api else "None"),
-                    ("custom_reask_prompt", self.reask_prompt is not None),
-                    ("custom_reask_instructions", self.reask_instructions is not None),
-                ],
-                is_parent=True,  # It will have children
-                has_parent=False,  # Has no parents
-            )
+            if not self._disable_tracer:
+                self._hub_telemetry.create_new_span(
+                    span_name="/guard_parse",
+                    attributes=[
+                        ("guard_id", self._guard_id),
+                        ("user_id", self._user_id),
+                        ("llm_api", llm_api.__name__ if llm_api else "None"),
+                        ("custom_reask_prompt", self.reask_prompt is not None),
+                        (
+                            "custom_reask_instructions",
+                            self.reask_instructions is not None,
+                        ),
+                    ],
+                    is_parent=True,  # It will have children
+                    has_parent=False,  # Has no parents
+                )
 
             self.configure(final_num_reasks)
             if self.num_reasks is None:

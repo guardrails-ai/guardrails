@@ -6,6 +6,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
 from guardrails.classes.history import Iteration
+from guardrails.cli_dir.hub.credentials import Credentials
 from guardrails.datatypes import FieldValidation
 from guardrails.logger import logger
 from guardrails.utils.casting_utils import to_string
@@ -122,19 +123,22 @@ class ValidatorServiceBase:
         #   this will have to change.
         validator_logs.instance_id = to_string(id(validator))
 
-        # Get HubTelemetry singleton and create a new span to
-        # log the validator usage
-        _hub_telemetry = HubTelemetry()
-        _hub_telemetry.create_new_span(
-            span_name="/validator_usage",
-            attributes=[
-                ("validator_name", validator.rail_alias),
-                ("validator_on_fail", validator.on_fail_descriptor),
-                ("validator_result", result.outcome),
-            ],
-            is_parent=False,  # This span will have no children
-            has_parent=True,  # This span has a parent
-        )
+        # Get metrics opt-out from credentials
+        disable_tracer = Credentials.from_rc_file().no_metrics
+        if not disable_tracer:
+            # Get HubTelemetry singleton and create a new span to
+            # log the validator usage
+            _hub_telemetry = HubTelemetry()
+            _hub_telemetry.create_new_span(
+                span_name="/validator_usage",
+                attributes=[
+                    ("validator_name", validator.rail_alias),
+                    ("validator_on_fail", validator.on_fail_descriptor),
+                    ("validator_result", result.outcome),
+                ],
+                is_parent=False,  # This span will have no children
+                has_parent=True,  # This span has a parent
+            )
 
         return validator_logs
 
