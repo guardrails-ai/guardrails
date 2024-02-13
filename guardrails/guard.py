@@ -24,6 +24,7 @@ from guardrails.classes import OT, ValidationOutcome
 from guardrails.classes.generic import Stack
 from guardrails.classes.history import Call
 from guardrails.classes.history.call_inputs import CallInputs
+from guardrails.cli_dir.hub.credentials import Credentials
 from guardrails.llm_providers import get_async_llm_ask, get_llm_ask
 from guardrails.logger import logger, set_scope
 from guardrails.prompt import Instructions, Prompt
@@ -37,6 +38,7 @@ from guardrails.stores.context import (
     set_tracer,
     set_tracer_context,
 )
+from guardrails.utils.hub_telemetry_utils import HubTelemetry
 from guardrails.validators import Validator
 
 add_destinations(logger.debug)
@@ -61,6 +63,9 @@ class Guard(Generic[OT]):
 
     _tracer = None
     _tracer_context = None
+    _hub_telemetry = None
+    _guard_id = None
+    _user_id = None
 
     def __init__(
         self,
@@ -76,6 +81,24 @@ class Guard(Generic[OT]):
         self.history: Stack[Call] = Stack()
         self.base_model = base_model
         self._set_tracer(tracer)
+
+        # Get unique id of user from credentials
+        self._user_id = Credentials.from_rc_file().id
+
+        # Get metrics opt-out from credentials
+        self._disable_tracer = Credentials.from_rc_file().no_metrics
+        if self._disable_tracer.strip().lower() == "true":
+            self._disable_tracer = True
+        elif self._disable_tracer.strip().lower() == "false":
+            self._disable_tracer = False
+
+        # Get id of guard object (that is unique)
+        self._guard_id = id(self)  # id of guard object; not the class
+
+        # Initialize Hub Telemetry singleton and get the tracer
+        #  if it is not disabled
+        if not self._disable_tracer:
+            self._hub_telemetry = HubTelemetry()
 
     @property
     def prompt_schema(self) -> Optional[StringSchema]:
@@ -358,6 +381,24 @@ class Guard(Generic[OT]):
                 full_schema_reask = self.base_model is not None
             if prompt_params is None:
                 prompt_params = {}
+
+            if not self._disable_tracer:
+                # Create a new span for this guard call
+                self._hub_telemetry.create_new_span(
+                    span_name="/guard_call",
+                    attributes=[
+                        ("guard_id", self._guard_id),
+                        ("user_id", self._user_id),
+                        ("llm_api", llm_api.__name__ if llm_api else "None"),
+                        ("custom_reask_prompt", self.reask_prompt is not None),
+                        (
+                            "custom_reask_instructions",
+                            self.reask_instructions is not None,
+                        ),
+                    ],
+                    is_parent=True,  # It will have children
+                    has_parent=False,  # Has no parents
+                )
 
             set_call_kwargs(kwargs)
             set_tracer(self._tracer)
@@ -650,6 +691,24 @@ class Guard(Generic[OT]):
             final_num_reasks = (
                 num_reasks if num_reasks is not None else 0 if llm_api is None else None
             )
+
+            if not self._disable_tracer:
+                self._hub_telemetry.create_new_span(
+                    span_name="/guard_parse",
+                    attributes=[
+                        ("guard_id", self._guard_id),
+                        ("user_id", self._user_id),
+                        ("llm_api", llm_api.__name__ if llm_api else "None"),
+                        ("custom_reask_prompt", self.reask_prompt is not None),
+                        (
+                            "custom_reask_instructions",
+                            self.reask_instructions is not None,
+                        ),
+                    ],
+                    is_parent=True,  # It will have children
+                    has_parent=False,  # Has no parents
+                )
+
             self.configure(final_num_reasks)
             if self.num_reasks is None:
                 raise RuntimeError(
