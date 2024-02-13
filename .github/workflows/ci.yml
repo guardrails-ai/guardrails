@@ -31,7 +31,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.cache/pypoetry
-          key: poetry-cache-${{ runner.os }}-${{ steps.setup_python.outputs.python-version }}-${{ env.POETRY_VERSION }}
+          key: poetry-cache-${{ runner.os }}-${{ steps.set_up_python.outputs.python-version }}-${{ env.POETRY_VERSION }}
 
       - name: Install Poetry
         uses: snok/install-poetry@v1
