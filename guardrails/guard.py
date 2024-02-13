@@ -38,7 +38,7 @@ from guardrails.rail import Rail
 from guardrails.run import AsyncRunner, Runner, StreamRunner
 from guardrails.schema import Schema, StringSchema
 from guardrails.utils.validator_utils import get_validator
-from guardrails.validators import Validator
+from guardrails.validator_base import Validator
 
 add_destinations(logger.debug)
 

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "guardrails-ai"
-version = "0.3.2"
+version = "0.3.3"
 description = "Adding guardrails to large language models."
 authors = ["Guardrails AI <contact@guardrailsai.com>"]
 license = "Apache License 2.0"
@@ -52,6 +52,8 @@ pydash = "^7.0.6"
 docspec_python = "2.2.1"
 pydoc-markdown = "4.8.2"
 langchain-core = "^0.1.18"
+coloredlogs = "^15.0.1"
+requests = "^2.31.0"
 
 
 [tool.poetry.extras]
