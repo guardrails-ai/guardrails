@@ -63,7 +63,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.cache/pypoetry
-          key: poetry-cache-${{ runner.os }}-${{ steps.setup_python.outputs.python-version }}-${{ env.POETRY_VERSION }}-${{ matrix.pydantic-version }}
+          key: poetry-cache-${{ runner.os }}-${{ matrix.python-version }}-${{ env.POETRY_VERSION }}-${{ matrix.pydantic-version }}
 
       - name: Install Poetry
         uses: snok/install-poetry@v1
@@ -116,7 +116,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.cache/pypoetry
-          key: poetry-cache-${{ runner.os }}-${{ steps.setup_python.outputs.python-version }}-${{ env.POETRY_VERSION }}-${{ matrix.pydantic-version }}-${{ matrix.openai-version }}
+          key: poetry-cache-${{ runner.os }}-${{ matrix.python-version }}-${{ env.POETRY_VERSION }}-${{ matrix.pydantic-version }}-${{ matrix.openai-version }}
 
       - name: Install Poetry
         uses: snok/install-poetry@v1
@@ -163,7 +163,7 @@ jobs:
           uses: actions/cache@v3
           with:
             path: ~/.cache/pypoetry
-            key: poetry-cache-${{ runner.os }}-${{ steps.set_up_python.outputs.python-version }}-${{ env.POETRY_VERSION }}
+            key: poetry-cache-${{ runner.os }}-3.11.x-${{ env.POETRY_VERSION }}
         - name: Install Poetry
           uses: snok/install-poetry@v1
           with:
