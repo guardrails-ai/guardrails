@@ -168,8 +168,7 @@ def register_type(name: str):
 # Decorator for deprecation
 def deprecate_type(cls: type):
     warnings.warn(
-        f"""The '{cls.__name__}' type  is deprecated and will be removed in \
-versions 0.3.0 and beyond. Use the pydantic 'str' primitive instead.""",
+        f"""Use the pydantic 'str' primitive instead.""",
         DeprecationWarning,
     )
     return cls
