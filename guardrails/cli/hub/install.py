@@ -1,4 +1,3 @@
-import importlib
 import json
 import os
 import subprocess
@@ -23,6 +22,7 @@ def removesuffix(string: str, suffix: str) -> str:
     else:
         if string.endswith(suffix):
             return string[: -len(suffix)]
+        return string
 
 
 string_format: Literal["string"] = "string"
@@ -129,14 +129,43 @@ def add_to_hub_inits(manifest: ModuleManifest, site_packages: str):
             namespace_init.close()
 
 
-def run_post_install(manifest: ModuleManifest):
+def run_post_install(manifest: ModuleManifest, site_packages: str):
     org_package = get_org_and_package_dirs(manifest)
     post_install_script = manifest.post_install
-    if post_install_script:
-        module_name = manifest.module_name
-        post_install_module = removesuffix(post_install_script, ".py")
-        relative_path = ".".join([*org_package, module_name])
-        importlib.import_module(f"guardrails.hub.{relative_path}.{post_install_module}")
+
+    if not post_install_script:
+        return
+
+    module_name = manifest.module_name
+    relative_path = os.path.join(
+        site_packages,
+        "guardrails",
+        "hub",
+        *org_package,
+        module_name,
+        post_install_script,
+    )
+
+    if post_install_script and os.path.isfile(relative_path):
+        try:
+            logger.debug("running post install script...")
+            command = [sys.executable, relative_path]
+            subprocess.check_output(command)
+        except subprocess.CalledProcessError as exc:
+            logger.error(
+                (
+                    f"Failed to run post install script for {manifest.id}\n"
+                    f"Exit code: {exc.returncode}\n"
+                    f"stdout: {exc.output}"
+                )
+            )
+            sys.exit(1)
+        except Exception as e:
+            logger.error(
+                f"An unexpected exception occurred while running the post install script for {manifest.id}!",  # noqa
+                e,
+            )
+            sys.exit(1)
 
 
 def get_install_url(manifest: ModuleManifest) -> str:
@@ -210,7 +239,7 @@ def install(
     install_hub_module(module_manifest, site_packages)
 
     # Post-install
-    run_post_install(module_manifest)
+    run_post_install(module_manifest, site_packages)
     add_to_hub_inits(module_manifest, site_packages)
     success_message = Template(
         """

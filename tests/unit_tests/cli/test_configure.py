@@ -35,6 +35,7 @@ def test_configure(mocker, client_id, client_secret, no_metrics):
 
     assert mock_get_auth.call_count == 1
 
+
 def test_configure_prompting(mocker):
     mock_typer_prompt = mocker.patch("typer.prompt")
     mock_typer_prompt.side_effect = ["id", "secret"]

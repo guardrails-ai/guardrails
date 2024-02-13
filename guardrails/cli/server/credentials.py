@@ -35,4 +35,4 @@ class Credentials(Serializeable):
                 "You will need to sign up to use any authenticated Validators here:"
                 "https://hub.guardrailsai.com/tokens"
             )
-            return Credentials()
+            return Credentials()  # type: ignore

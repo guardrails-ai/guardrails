@@ -112,10 +112,7 @@ def post_validator_submit(package_name: str, content: str):
         headers = {
             "Authorization": f"Bearer {token}",
         }
-        request_body = {
-            "packageName": package_name,
-            "content": content
-        }
+        request_body = {"packageName": package_name, "content": content}
         req = requests.post(submission_url, data=request_body, headers=headers)
 
         body = req.json()

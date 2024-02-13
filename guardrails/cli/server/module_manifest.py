@@ -52,8 +52,8 @@ class ModuleManifest(Serializeable):
         tags = init_kwargs.pop("tags", {})
         return cls(
             **init_kwargs,
-            author=Contributor.from_dict(author),
-            maintainers=[Contributor.from_dict(m) for m in maintainers],
-            repository=Repository.from_dict(repository),
-            tags=ModuleTags.from_dict(tags),
+            author=Contributor.from_dict(author),  # type: ignore
+            maintainers=[Contributor.from_dict(m) for m in maintainers],  # type: ignore
+            repository=Repository.from_dict(repository),  # type: ignore
+            tags=ModuleTags.from_dict(tags),  # type: ignore
         )

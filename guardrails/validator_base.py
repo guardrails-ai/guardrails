@@ -20,8 +20,8 @@ from langchain_core.runnables import Runnable, RunnableConfig
 from pydantic import BaseModel, Field
 
 from guardrails.classes import InputType
-from guardrails.errors import ValidationError
 from guardrails.constants import hub
+from guardrails.errors import ValidationError
 
 
 class Filter:

@@ -24,7 +24,9 @@ class TestInstall:
     def test_happy_path(self, mocker):
         mock_logger_log = mocker.patch("guardrails.cli.hub.install.logger.log")
 
-        mock_get_validator_manifest = mocker.patch("guardrails.cli.hub.install.get_validator_manifest")
+        mock_get_validator_manifest = mocker.patch(
+            "guardrails.cli.hub.install.get_validator_manifest"
+        )
         manifest = ModuleManifest(
             "id",
             "name",
@@ -75,7 +77,7 @@ class TestInstall:
 
         mock_install_hub_module.assert_called_once_with(manifest, site_packages)
 
-        mock_run_post_install.assert_called_once_with(manifest)
+        mock_run_post_install.assert_called_once_with(manifest, site_packages)
 
         mock_add_to_hub_init.assert_called_once_with(manifest, site_packages)
 
@@ -505,19 +507,22 @@ class TestRunPostInstall:
         ],
     )
     def test_does_not_run_if_no_script(self, mocker, manifest):
-        mock_import_module = mocker.patch(
-            "guardrails.cli.hub.install.importlib.import_module"
+        mock_subprocess_check_output = mocker.patch(
+            "guardrails.cli.hub.install.subprocess.check_output"
         )
         from guardrails.cli.hub.install import run_post_install
 
-        run_post_install(manifest)
+        run_post_install(manifest, "./site_packages")
 
-        assert mock_import_module.call_count == 0
+        assert mock_subprocess_check_output.call_count == 0
 
     def test_runs_script_if_exists(self, mocker):
-        mock_import_module = mocker.patch(
-            "guardrails.cli.hub.install.importlib.import_module"
+        mock_subprocess_check_output = mocker.patch(
+            "guardrails.cli.hub.install.subprocess.check_output"
         )
+        mock_sys_executable = mocker.patch("guardrails.cli.hub.install.sys.executable")
+        mock_isfile = mocker.patch("guardrails.cli.hub.install.os.path.isfile")
+        mock_isfile.return_value = True
         from guardrails.cli.hub.install import run_post_install
 
         manifest = ModuleManifest(
@@ -534,11 +539,14 @@ class TestRunPostInstall:
             post_install="post_install.py",
         )
 
-        run_post_install(manifest)
+        run_post_install(manifest, "./site_packages")
 
-        assert mock_import_module.call_count == 1
-        mock_import_module.assert_called_once_with(
-            "guardrails.hub.guardrails_ai.test_validator.validator.post_install"
+        assert mock_subprocess_check_output.call_count == 1
+        mock_subprocess_check_output.assert_called_once_with(
+            [
+                mock_sys_executable,
+                "./site_packages/guardrails/hub/guardrails_ai/test_validator/validator/post_install.py",  # noqa
+            ]
         )
 
 

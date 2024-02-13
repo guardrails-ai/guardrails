@@ -1,12 +1,15 @@
 import os
 from datetime import date
-from pydash import snake_case, pascal_case
 from string import Template
+
 import typer
+from pydash import pascal_case, snake_case
+
 from guardrails.cli.hub.hub import hub
 from guardrails.cli.logger import LEVELS, logger
 
-validator_template = Template("""from typing import Any, Callable, Dict, Optional
+validator_template = Template(
+    """from typing import Any, Callable, Dict, Optional
 
 from guardrails.validator_base import (
     FailResult,
@@ -143,33 +146,34 @@ class Test${class_name}:
         assert isinstance(result, FailResult) is True
         assert result.error_message == "{A descriptive but concise error message about why validation failed}"
         assert result.fix_value == "fails"
-""")
+"""
+)
 
 
-@hub.command(name='create-validator')
+@hub.command(name="create-validator")
 def create_validator(
-    name: str = typer.Argument(
-        help="The name for your validator."
-    ),
+    name: str = typer.Argument(help="The name for your validator."),
     filepath: str = typer.Argument(
         help="The location to write your validator template to",
-        default="./{validator_name}.py"
-    )
+        default="./{validator_name}.py",
+    ),
 ):
     package_name = snake_case(name)
     class_name = pascal_case(name)
     if not filepath or filepath == "./{validator_name}.py":
         filepath = f"./{package_name}.py"
 
-    template = validator_template.safe_substitute({
-        "package_name": package_name,
-        "class_name": class_name,
-        "filepath": filepath,
-        "dev_date": date.today().strftime("%b %d, %Y")
-    })
-    
+    template = validator_template.safe_substitute(
+        {
+            "package_name": package_name,
+            "class_name": class_name,
+            "filepath": filepath,
+            "dev_date": date.today().strftime("%b %d, %Y"),
+        }
+    )
+
     target = os.path.abspath(filepath)
-    with open(target, 'w') as validator_file:
+    with open(target, "w") as validator_file:
         validator_file.write(template)
         validator_file.close()
 
@@ -182,8 +186,5 @@ def create_validator(
 
     guardrails hub submit ${package_name} ${filepath}
     """
-    ).safe_substitute(
-        {"filepath": filepath, "package_name": package_name}
-    )
+    ).safe_substitute({"filepath": filepath, "package_name": package_name})
     logger.log(level=LEVELS.get("SUCCESS"), msg=success_message)  # type: ignore
-    
