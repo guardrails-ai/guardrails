@@ -31,7 +31,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.cache/pypoetry
-          key: poetry-cache-${{ runner.os }}-${{ steps.setup_python.outputs.python-version }}-${{ env.POETRY_VERSION }}
+          key: poetry-cache-${{ runner.os }}-${{ matrix.python-version }}-${{ env.POETRY_VERSION }}
 
       - name: Install Poetry
         uses: snok/install-poetry@v1
@@ -63,7 +63,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.cache/pypoetry
-          key: poetry-cache-${{ runner.os }}-${{ steps.setup_python.outputs.python-version }}-${{ env.POETRY_VERSION }}-${{ matrix.pydantic-version }}
+          key: poetry-cache-${{ runner.os }}-${{ matrix.python-version }}-${{ env.POETRY_VERSION }}-${{ matrix.pydantic-version }}
 
       - name: Install Poetry
         uses: snok/install-poetry@v1
@@ -96,7 +96,7 @@ jobs:
           make type-pydantic-v1-openai-v1
 
   Pytests:
-    runs-on: ubuntu-latest
+    runs-on: LargeBois
     strategy:
       matrix:
         python-version: ["3.8", "3.9", "3.10", "3.11"]
@@ -116,7 +116,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.cache/pypoetry
-          key: poetry-cache-${{ runner.os }}-${{ steps.setup_python.outputs.python-version }}-${{ env.POETRY_VERSION }}-${{ matrix.pydantic-version }}-${{ matrix.openai-version }}
+          key: poetry-cache-${{ runner.os }}-${{ matrix.python-version }}-${{ env.POETRY_VERSION }}-${{ matrix.pydantic-version }}-${{ matrix.openai-version }}
 
       - name: Install Poetry
         uses: snok/install-poetry@v1
@@ -154,7 +154,7 @@ jobs:
         NLTK_DATA: /tmp/nltk_data
     steps:
         - name: Checkout repository
-          uses: actions/checkout@v2 
+          uses: actions/checkout@v2    
         - name: Set up Python
           uses: actions/setup-python@v4
           with: 
@@ -163,7 +163,7 @@ jobs:
           uses: actions/cache@v3
           with:
             path: ~/.cache/pypoetry
-            key: poetry-cache-${{ runner.os }}-${{ steps.setup_python.outputs.python-version }}-${{ env.POETRY_VERSION }}
+            key: poetry-cache-${{ runner.os }}-3.11.x-${{ env.POETRY_VERSION }}
         - name: Install Poetry
           uses: snok/install-poetry@v1
           with:
