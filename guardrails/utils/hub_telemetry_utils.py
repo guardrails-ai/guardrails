@@ -1,4 +1,6 @@
 # Imports
+import logging
+
 from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import (  # HTTP Exporter
     OTLPSpanExporter,
@@ -30,12 +32,12 @@ class HubTelemetry:
         export_locally: bool = False,
     ):
         if cls._instance is None:
-            print("Creating HubTelemetry instance...")
+            logging.debug("Creating HubTelemetry instance...")
             cls._instance = super(HubTelemetry, cls).__new__(cls)
-            print("Initializing HubTelemetry instance...")
+            logging.debug("Initializing HubTelemetry instance...")
             cls._instance.initialize_tracer(service_name, tracer_name, export_locally)
         else:
-            print("Returning existing HubTelemetry instance...")
+            logging.debug("Returning existing HubTelemetry instance...")
         return cls._instance
 
     def initialize_tracer(
