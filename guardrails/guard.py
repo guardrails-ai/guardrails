@@ -170,7 +170,9 @@ class Guard(Generic[OT]):
         self.num_reasks = (
             num_reasks
             if num_reasks is not None
-            else self.num_reasks if self.num_reasks is not None else 1
+            else self.num_reasks
+            if self.num_reasks is not None
+            else 1
         )
 
     def _set_tracer(self, tracer: Tracer = None) -> None:
@@ -305,7 +307,8 @@ class Guard(Generic[OT]):
         stream: Optional[bool] = False,
         *args,
         **kwargs,
-    ) -> Union[ValidationOutcome[OT], Iterable[str]]: ...
+    ) -> Union[ValidationOutcome[OT], Iterable[str]]:
+        ...
 
     @overload
     def __call__(
@@ -320,7 +323,8 @@ class Guard(Generic[OT]):
         full_schema_reask: Optional[bool] = None,
         *args,
         **kwargs,
-    ) -> Awaitable[ValidationOutcome[OT]]: ...
+    ) -> Awaitable[ValidationOutcome[OT]]:
+        ...
 
     def __call__(
         self,
@@ -614,7 +618,8 @@ class Guard(Generic[OT]):
         full_schema_reask: Optional[bool] = None,
         *args,
         **kwargs,
-    ) -> ValidationOutcome[OT]: ...
+    ) -> ValidationOutcome[OT]:
+        ...
 
     @overload
     def parse(
@@ -627,7 +632,8 @@ class Guard(Generic[OT]):
         full_schema_reask: Optional[bool] = None,
         *args,
         **kwargs,
-    ) -> Awaitable[ValidationOutcome[OT]]: ...
+    ) -> Awaitable[ValidationOutcome[OT]]:
+        ...
 
     @overload
     def parse(
@@ -640,7 +646,8 @@ class Guard(Generic[OT]):
         full_schema_reask: Optional[bool] = None,
         *args,
         **kwargs,
-    ) -> ValidationOutcome[OT]: ...
+    ) -> ValidationOutcome[OT]:
+        ...
 
     def parse(
         self,
