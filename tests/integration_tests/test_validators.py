@@ -548,7 +548,7 @@ class MyValidator(Validator):
         self,
         an_instance_attr: str,
         on_fail: Optional[Union[Callable, str]] = None,
-        **kwargs
+        **kwargs,
     ):
         self.an_instance_attr = an_instance_attr
         super().__init__(on_fail=on_fail, an_instance_attr=an_instance_attr, **kwargs)
@@ -580,3 +580,54 @@ def test_validator_instance_attr_equality(mocker, instance_attr):
         guard.rail.output_schema.root_datatype.validators[0].an_instance_attr
         == instance_attr
     )
+
+
+@pytest.mark.parametrize(
+    "output,throws,error_message",
+    [
+        ("Ice cream is frozen.", False, ""),
+        (
+            "Ice cream is a frozen dairy product that is consumed in many places.",
+            True,
+            "String should be readable within 0.05 minutes.",
+        ),
+        ("This response isn't relevant.", True, "Result must match Ice cream"),
+    ],
+)
+def test_validators_as_runnables(output: str, throws: bool, error_message: str):
+    from langchain_core.language_models import LanguageModelInput
+    from langchain_core.messages import AIMessage, BaseMessage
+    from langchain_core.output_parsers import StrOutputParser
+    from langchain_core.prompts import ChatPromptTemplate
+    from langchain_core.runnables import Runnable, RunnableConfig
+
+    from guardrails.errors import ValidationError
+    from guardrails.validators import ReadingTime, RegexMatch
+
+    class MockModel(Runnable):
+        def invoke(
+            self, input: LanguageModelInput, config: Optional[RunnableConfig] = None
+        ) -> BaseMessage:
+            return AIMessage(content=output)
+
+    prompt = ChatPromptTemplate.from_template("ELIF: {topic}")
+    model = MockModel()
+    regex_match = RegexMatch("Ice cream", match_type="search")
+    reading_time = ReadingTime(0.05)  # 3 seconds
+    output_parser = StrOutputParser()
+
+    chain = prompt | model | regex_match | reading_time | output_parser
+
+    topic = "ice cream"
+    if throws:
+        with pytest.raises(ValidationError) as exc_info:
+            chain.invoke({"topic": topic})
+
+        assert str(exc_info.value) == (
+            "The response from the LLM failed validation!" f"{error_message}"
+        )
+
+    else:
+        result = chain.invoke({"topic": topic})
+
+        assert result == output

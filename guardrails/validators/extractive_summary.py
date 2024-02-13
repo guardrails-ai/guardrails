@@ -47,12 +47,15 @@ class ExtractiveSummary(Validator):
         on_fail: Optional[Callable] = None,
         **kwargs,
     ):
-        super().__init__(on_fail, **kwargs)
+        super().__init__(on_fail, threshold=threshold, **kwargs)
 
         self._threshold = threshold
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         """Make sure each sentence was precisely copied from the document."""
+        if not metadata:
+            # default to value provided via Validator.with_metadata
+            metadata = self._metadata
 
         if "filepaths" not in metadata:
             raise RuntimeError(
