@@ -101,3 +101,35 @@ def get_auth():
     except Exception as e:
         logger.error("An unexpected error occurred!", e)
         raise AuthenticationError("Failed to authenticate!")
+
+
+def post_validator_submit(package_name: str, content: str):
+    try:
+        creds = Credentials.from_rc_file()
+        token = get_auth_token(creds)
+        submission_url = f"{validator_hub_service}/validator/submit"
+
+        headers = {
+            "Authorization": f"Bearer {token}",
+        }
+        request_body = {
+            "packageName": package_name,
+            "content": content
+        }
+        req = requests.post(submission_url, data=request_body, headers=headers)
+
+        body = req.json()
+        if not req.ok:
+            logger.error(req.status_code)
+            logger.error(body.get("message"))
+            http_error = HttpError()
+            http_error.status = req.status_code
+            http_error.message = body.get("message")
+            raise http_error
+
+        return body
+    except HttpError as http_e:
+        raise http_e
+    except Exception as e:
+        logger.error("An unexpected error occurred!", e)
+        sys.exit(1)

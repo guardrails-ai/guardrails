@@ -1,9 +1,10 @@
 import os
+from datetime import date
 from pydash import snake_case, pascal_case
+from string import Template
 import typer
 from guardrails.cli.hub.hub import hub
 from guardrails.cli.logger import LEVELS, logger
-from string import Template
 
 validator_template = Template("""from typing import Any, Callable, Dict, Optional
 
@@ -15,34 +16,96 @@ from guardrails.validator_base import (
     register_validator,
 )
 
-# List any additional dependencies here.
-\"""
-dependencies = [                              
-    "guardrails-ai>=0.3.2"
-]
-                              
-[project.optional-dependencies]
-dev = [
-    "pytest"
-] 
-\"""
-                              
 
 @register_validator(name="guardrails/${package_name}", data_type="string")
 class ${class_name}(Validator):
-    \"""Validates that {fill in how you validator interacts with the passed value}.
+    \"""# Overview
 
-    **Key Properties**
+    | Developed by | {Your organization name} |
+    | Date of development | ${dev_date} |
+    | Validator type | Format |
+    | Blog |  |
+    | License | Apache 2 |
+    | Input/Output | Output |
 
-    | Property                      | Description                       |
-    | ----------------------------- | --------------------------------- |
-    | Name for `format` attribute   | `guardrails/${package_name}`   |
-    | Supported data types          | `string`                          |
-    | Programmatic fix              | {If you support programmatic fixes, explain it here. Otherwise `None`} |
+    # Description
 
-    Args:
-        arg_1 (string): {Description of the argument here}
-        arg_2 (string): {Description of the argument here}
+    This validator ensures that a generated output is the literal \"pass\".
+
+    # Installation
+
+    ```bash
+    $ guardrails hub install hub://guardrails/${package_name}
+    ```
+
+    # Usage Examples
+
+    ## Validating string output via Python
+
+    In this example, we'll test that a generated word is `pass`.
+
+    ```python
+    # Import Guard and Validator
+    from guardrails.hub import ${class_name}
+    from guardrails import Guard
+
+    # Initialize Validator
+    val = ${class_name}()
+
+    # Setup Guard
+    guard = Guard.from_string(
+        validators=[val, ...],
+    )
+
+    guard.parse(\"pass\")  # Validator passes
+    guard.parse(\"fail\")  # Validator fails
+    ```
+
+    ## Validating JSON output via Python
+
+    In this example, we verify that a processes's status is specified as `pass`.
+
+    ```python
+    # Import Guard and Validator
+    from pydantic import BaseModel
+    from guardrails.hub import ${class_name}
+    from guardrails import Guard
+
+    val = ${class_name}()
+
+    # Create Pydantic BaseModel
+    class Process(BaseModel):
+    		process_name: str
+    		status: str = Field(validators=[val])
+
+    # Create a Guard to check for valid Pydantic output
+    guard = Guard.from_pydantic(output_class=Process)
+
+    # Run LLM output generating JSON through guard
+    guard.parse(\"""
+    {
+    		"process_name": "templating",
+    		"status": "pass"
+    }
+    \""")
+    ```
+
+    # API Reference
+
+    `__init__`
+    - `arg_1`: A placeholder argument to demonstrate how to use init arguments.
+    - `arg_2`: Another placeholder argument to demonstrate how to use init arguments.
+    - `on_fail`: The policy to enact when a validator fails.
+
+    # Dependencies
+
+    ## Production
+    guardrails-ai >= 0.3.2
+
+    ## Development
+    pytest
+    pyright
+    ruff
     \"""  # noqa
 
     # If you don't have any init args, you can omit the __init__ method.
@@ -78,7 +141,7 @@ class Test${class_name}:
         validator = ${class_name}("s")
         result = validator.validate("fail", {})
         assert isinstance(result, FailResult) is True
-        assert result.error_message == "fail must end with s"
+        assert result.error_message == "{A descriptive but concise error message about why validation failed}"
         assert result.fix_value == "fails"
 """)
 
@@ -101,7 +164,8 @@ def create_validator(
     template = validator_template.safe_substitute({
         "package_name": package_name,
         "class_name": class_name,
-        "filepath": filepath
+        "filepath": filepath,
+        "dev_date": date.today().strftime("%b %d, %Y")
     })
     
     target = os.path.abspath(filepath)
