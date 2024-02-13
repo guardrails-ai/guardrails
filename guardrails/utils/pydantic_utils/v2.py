@@ -8,7 +8,7 @@ from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, Union, ge
 from pydantic import BaseModel, ConfigDict, HttpUrl, field_validator
 from pydantic.fields import FieldInfo
 
-from guardrails.datatypes import URL as URLDataType
+#from guardrails.datatypes import URL as URLDataType
 from guardrails.datatypes import Boolean as BooleanDataType
 from guardrails.datatypes import Case as CaseDataType
 from guardrails.datatypes import Choice
@@ -20,7 +20,7 @@ from guardrails.datatypes import Float as FloatDataType
 from guardrails.datatypes import Integer as IntegerDataType
 from guardrails.datatypes import List as ListDataType
 from guardrails.datatypes import Object as ObjectDataType
-from guardrails.datatypes import PythonCode as PythonCodeDataType
+#from guardrails.datatypes import PythonCode as PythonCodeDataType
 from guardrails.datatypes import String as StringDataType
 from guardrails.datatypes import Time as TimeDataType
 from guardrails.validator_base import Validator

@@ -350,64 +350,65 @@ class Time(ScalarType):
         return datatype
 
 
-@deprecate_type
-@register_type("email")
-class Email(ScalarType):
-    """Element tag: `<email>`"""
+# @deprecate_type
+# @register_type("email")
+# class Email(ScalarType):
+#     """Element tag: `<email>`"""
 
-    tag = "email"
+#     tag = "email"
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        deprecate_type(type(self))
+#     def __init__(self, *args, **kwargs):
+#         super().__init__(*args, **kwargs)
+#         deprecate_type(type(self))
 
-    def get_example(self):
-        return "hello@example.com"
-
-
-@deprecate_type
-@register_type("url")
-class URL(ScalarType):
-    """Element tag: `<url>`"""
-
-    tag = "url"
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        deprecate_type(type(self))
-
-    def get_example(self):
-        return "https://example.com"
+#     def get_example(self):
+#         return "hello@example.com"
 
 
-@deprecate_type
-@register_type("pythoncode")
-class PythonCode(ScalarType):
-    """Element tag: `<pythoncode>`"""
+# @deprecate_type
+# @register_type("url")
+# class URL(ScalarType):
+#     """Element tag: `<url>`"""
 
-    tag = "pythoncode"
+#     tag = "url"
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        deprecate_type(type(self))
+#     def __init__(self, *args, **kwargs):
+#         super().__init__(*args, **kwargs)
+#         deprecate_type(type(self))
 
-    def get_example(self):
-        return "print('hello world')"
+#     def get_example(self):
+#         return "https://example.com"
 
 
-@deprecate_type
-@register_type("sql")
-class SQLCode(ScalarType):
-    """Element tag: `<sql>`"""
+# @deprecate_type
+# @register_type("pythoncode")
+# class PythonCode(ScalarType):
+#     """Element tag: `<pythoncode>`"""
 
-    tag = "sql"
+#     tag = "pythoncode"
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        deprecate_type(type(self))
+#     def __init__(self, *args, **kwargs):
+#         super().__init__(*args, **kwargs)
+#         deprecate_type(type(self))
 
-    def get_example(self):
-        return "SELECT * FROM table"
+#     def get_example(self):
+#         return "print('hello world')"
+
+
+# @deprecate_type
+# @register_type("sql")
+# class SQLCode(ScalarType):
+#     """Element tag: `<sql>`"""
+
+#     tag = "sql"
+#     value: str
+
+#     def __init__(self, *args, **kwargs):
+#         super().__init__(*args, **kwargs)
+#         deprecate_type(type(self))
+
+#     def get_example(self):
+#         return "SELECT * FROM table"
 
 
 @register_type("percentage")

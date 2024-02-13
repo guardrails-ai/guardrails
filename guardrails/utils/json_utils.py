@@ -4,13 +4,11 @@ from dataclasses import dataclass
 from typing import Any, Dict, Optional, Tuple, Type, Union
 
 from guardrails.datatypes import (
-    URL,
     Boolean,
     Case,
     Choice,
     DataType,
     Date,
-    Email,
     Enum,
     Float,
     Integer,
@@ -18,7 +16,6 @@ from guardrails.datatypes import (
 from guardrails.datatypes import List as ListDataType
 from guardrails.datatypes import (
     Object,
-    PythonCode,
     String,
     Time,
     deprecated_string_types,
@@ -54,11 +51,11 @@ type_map: Dict[Type[DataType], Type] = {
     Enum: str,
 }
 
-ignore_types = [
-    Email,  # email and url should become string validators
-    URL,
-    PythonCode,
-]
+# ignore_types = [
+#     Email,  # email and url should become string validators
+#     URL,
+#     PythonCode,
+# ]
 
 
 @dataclass
