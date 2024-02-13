@@ -51,21 +51,12 @@ type_map: Dict[Type[DataType], Type] = {
     Enum: str,
 }
 
-# ignore_types = [
-#     Email,  # email and url should become string validators
-#     URL,
-#     PythonCode,
-# ]
-
-
 @dataclass
 class ValuePlaceholder(Placeholder):
     datatype_type: Type[DataType]
 
     @property
     def type_object(self):
-        if self.datatype_type in ignore_types:
-            return Any
         return type_map[self.datatype_type]
 
     class VerificationFailed:
