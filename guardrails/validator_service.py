@@ -125,6 +125,11 @@ class ValidatorServiceBase:
 
         # Get metrics opt-out from credentials
         disable_tracer = Credentials.from_rc_file().no_metrics
+        if disable_tracer.strip().lower() == "true":
+            disable_tracer = True
+        elif disable_tracer.strip().lower() == "false":
+            disable_tracer = False
+
         if not disable_tracer:
             # Get HubTelemetry singleton and create a new span to
             # log the validator usage
