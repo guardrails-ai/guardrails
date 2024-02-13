@@ -189,7 +189,7 @@ def install_hub_module(module_manifest: ModuleManifest, site_packages: str):
 @hub.command()
 def install(
     package_uri: str = typer.Argument(
-        help="URI to the package to install. Example: hub://guardrails/regex-match."
+        help="URI to the package to install. Example: hub://guardrails/regex_match."
     ),
 ):
     """Install a validator from the Hub."""
