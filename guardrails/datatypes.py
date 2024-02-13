@@ -348,68 +348,6 @@ class Time(ScalarType):
 
         return datatype
 
-
-# @deprecate_type
-# @register_type("email")
-# class Email(ScalarType):
-#     """Element tag: `<email>`"""
-
-#     tag = "email"
-
-#     def __init__(self, *args, **kwargs):
-#         super().__init__(*args, **kwargs)
-#         deprecate_type(type(self))
-
-#     def get_example(self):
-#         return "hello@example.com"
-
-
-# @deprecate_type
-# @register_type("url")
-# class URL(ScalarType):
-#     """Element tag: `<url>`"""
-
-#     tag = "url"
-
-#     def __init__(self, *args, **kwargs):
-#         super().__init__(*args, **kwargs)
-#         deprecate_type(type(self))
-
-#     def get_example(self):
-#         return "https://example.com"
-
-
-# @deprecate_type
-# @register_type("pythoncode")
-# class PythonCode(ScalarType):
-#     """Element tag: `<pythoncode>`"""
-
-#     tag = "pythoncode"
-
-#     def __init__(self, *args, **kwargs):
-#         super().__init__(*args, **kwargs)
-#         deprecate_type(type(self))
-
-#     def get_example(self):
-#         return "print('hello world')"
-
-
-# @deprecate_type
-# @register_type("sql")
-# class SQLCode(ScalarType):
-#     """Element tag: `<sql>`"""
-
-#     tag = "sql"
-#     value: str
-
-#     def __init__(self, *args, **kwargs):
-#         super().__init__(*args, **kwargs)
-#         deprecate_type(type(self))
-
-#     def get_example(self):
-#         return "SELECT * FROM table"
-
-
 @register_type("percentage")
 class Percentage(ScalarType):
     """Element tag: `<percentage>`"""
