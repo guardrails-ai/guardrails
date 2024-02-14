@@ -4,23 +4,16 @@ from functools import wraps
 from operator import attrgetter
 from typing import Any, List, Optional, Union
 
-from guardrails.stores.context import Tracer, Context
+from opentelemetry import context
+from opentelemetry.context import Context
+from opentelemetry.trace import Tracer
+
 from guardrails.stores.context import get_tracer as get_context_tracer
 from guardrails.stores.context import get_tracer_context
 from guardrails.utils.casting_utils import to_string
 from guardrails.utils.logs_utils import ValidatorLogs
 from guardrails.utils.reask_utils import ReAsk
 from guardrails.validator_base import Filter, Refrain
-
-try:
-    from opentelemetry import context
-    from opentelemetry.context import Context as OtelContext
-    from opentelemetry.trace import Span
-    from opentelemetry.trace import Tracer as OtelTracer
-except ImportError:
-
-    class Span:
-        pass
 
 
 def get_result_type(before_value: Any, after_value: Any, outcome: str):
@@ -46,13 +39,13 @@ def get_error_code() -> int:
         return 2
 
 
-def get_tracer(tracer: Optional[Tracer] = None) -> Union[Tracer, OtelTracer, None]:
+def get_tracer(tracer: Optional[Tracer] = None) -> Union[Tracer, None]:
     # TODO: Do we ever need to consider supporting non-otel tracers?
     _tracer = tracer if tracer is not None else get_context_tracer()
     return _tracer
 
 
-def get_current_context() -> Union[Context, OtelContext, None]:
+def get_current_context() -> Union[Context, None]:
     otel_current_context = (
         context.get_current()
         if context is not None and hasattr(context, "get_current")
@@ -173,22 +166,25 @@ def trace_validator(
                 f"{validator_name}.validate"
             )
             trace_context = get_current_context()
+            if _tracer is None:
+                return fn(*args, **kwargs)
             with _tracer.start_as_current_span(
                 span_name, trace_context
             ) as validator_span:
                 try:
                     validator_span.set_attribute(
-                        "on_fail_descriptor", on_fail_descriptor
+                        "on_fail_descriptor", on_fail_descriptor or "noop"
                     )
                     validator_span.set_attribute(
                         "args",
-                        to_string({k: to_string(v) for k, v in init_kwargs.items()}),
+                        to_string({k: to_string(v) for k, v in init_kwargs.items()})
+                        or "{}",
                     )
-                    validator_span.set_attribute("instance_id", to_string(obj_id))
+                    validator_span.set_attribute("instance_id", to_string(obj_id) or "")
 
                     # NOTE: Update if Validator.validate method signature ever changes
                     if args is not None and len(args) > 1:
-                        validator_span.set_attribute("input", to_string(args[1]))
+                        validator_span.set_attribute("input", to_string(args[1]) or "")
 
                     return fn(*args, **kwargs)
                 except Exception as e:

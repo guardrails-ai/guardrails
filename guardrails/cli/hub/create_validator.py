@@ -169,7 +169,7 @@ def create_validator(
         https://github.com/guardrails-ai/validator-template
     """
 
-    logger.log(level=LEVELS.get("NOTICE"), msg=disclaimer)
+    logger.log(level=LEVELS.get("NOTICE") or 0, msg=disclaimer)
 
     package_name = snake_case(name)
     class_name = pascal_case(name)

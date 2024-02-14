@@ -107,12 +107,6 @@ class Runner:
 
         # Get metrics opt-out from credentials
         self._disable_tracer = Credentials.from_rc_file().no_metrics
-        if self._disable_tracer is None:
-            self._disable_tracer = False
-        elif self._disable_tracer.strip().lower() == "true":
-            self._disable_tracer = True
-        elif self._disable_tracer.strip().lower() == "false":
-            self._disable_tracer = False
 
         if not self._disable_tracer:
             # Get the HubTelemetry singleton

@@ -10,7 +10,6 @@ from guardrails.cli_dir.hub.credentials import Credentials
 from guardrails.datatypes import FieldValidation
 from guardrails.errors import ValidationError
 from guardrails.logger import logger
-from guardrails.utils.casting_utils import to_string
 from guardrails.utils.hub_telemetry_utils import HubTelemetry
 from guardrails.utils.logs_utils import ValidatorLogs
 from guardrails.utils.reask_utils import FieldReAsk, ReAsk
@@ -134,14 +133,10 @@ class ValidatorServiceBase:
         validator_logs.end_time = end_time
         # If we ever re-use validator instances across multiple properties,
         #   this will have to change.
-        validator_logs.instance_id = to_string(id(validator))
+        validator_logs.instance_id = id(validator)
 
         # Get metrics opt-out from credentials
         disable_tracer = Credentials.from_rc_file().no_metrics
-        if disable_tracer.strip().lower() == "true":
-            disable_tracer = True
-        elif disable_tracer.strip().lower() == "false":
-            disable_tracer = False
 
         if not disable_tracer:
             # Get HubTelemetry singleton and create a new span to

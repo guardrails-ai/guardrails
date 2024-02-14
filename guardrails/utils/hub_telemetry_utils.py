@@ -80,11 +80,14 @@ class HubTelemetry:
 
     def inject_current_context(self) -> None:
         """Injects the current context into the carrier."""
+        if not self._prop:
+            return
         self._prop.inject(carrier=self._carrier)
 
     def extract_current_context(self):
         """Extracts the current context from the carrier."""
-
+        if not self._prop:
+            return None
         context = self._prop.extract(carrier=self._carrier)
         return context
 
@@ -109,7 +112,8 @@ class HubTelemetry:
             is_parent (bool): True if the span is a parent span.
             has_parent (bool): True if the span has a parent span.
         """
-
+        if self._tracer is None:
+            return
         with self._tracer.start_as_current_span(
             span_name,
             context=self.extract_current_context() if has_parent else None,
