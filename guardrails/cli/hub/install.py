@@ -146,7 +146,7 @@ def run_post_install(manifest: ModuleManifest, site_packages: str):
         post_install_script,
     )
 
-    if post_install_script and os.path.isfile(relative_path):
+    if os.path.isfile(relative_path):
         try:
             logger.debug("running post install script...")
             command = [sys.executable, relative_path]
@@ -246,11 +246,10 @@ def install(
 
     Successfully installed ${module_name}!
 
-    To use it in your python project, run:
-
-    from guardrails.hub import ${export_name}
+    See how to use it here: https://hub.guardrailsai.com/validator/${id}
     """
     ).safe_substitute(
-        {"module_name": module_name, "export_name": module_manifest.exports[0]}
+        module_name=module_name,
+        id=module_manifest.id
     )
     logger.log(level=LEVELS.get("SUCCESS"), msg=success_message)  # type: ignore

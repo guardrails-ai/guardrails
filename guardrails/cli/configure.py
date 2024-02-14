@@ -41,6 +41,11 @@ def configure(
 ):
     """Set the global configuration for the Guardrails CLI and Hub."""
     try:
+        notice_message = """
+
+    You can find your tokens at https://hub.guardrailsai.com/tokens
+    """
+        logger.log(level=LEVELS.get("NOTICE"), msg=notice_message)  # type: ignore
         if not client_id:
             client_id = typer.prompt("Client ID")
         if not client_secret:
@@ -54,10 +59,13 @@ def configure(
 
     Login successful.
 
-    Get started by installing a validator from the Guardrails Hub!
+    Get started by installing our RegexMatch validator: https://hub.guardrailsai.com/validator/guardrails_ai/regex_match
 
-    guardrails hub install hub://guardrails/lowercase
+    You can install it by running:
+    
+    guardrails hub install hub://guardrails/regex_match
 
+    
     Find more validators at https://hub.guardrailsai.com
     """
         logger.log(level=LEVELS.get("SUCCESS"), msg=success_message)  # type: ignore
