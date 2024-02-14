@@ -2,7 +2,7 @@ import logging
 import sys
 from functools import wraps
 from operator import attrgetter
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, List, Optional, Union
 
 from guardrails.stores.context import Tracer, TracerContext
 from guardrails.stores.context import get_tracer as get_context_tracer
@@ -18,6 +18,7 @@ try:
     from opentelemetry.trace import Span
     from opentelemetry.trace import Tracer as OtelTracer
 except ImportError:
+
     class Span:
         pass
 

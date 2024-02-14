@@ -12,7 +12,7 @@ class Credentials(Serializeable):
     id: Optional[str] = None
     client_id: Optional[str] = None
     client_secret: Optional[str] = None
-    no_metrics: Optional[str] = 'False'
+    no_metrics: Optional[str] = "False"
 
     @staticmethod
     def from_rc_file() -> "Credentials":
