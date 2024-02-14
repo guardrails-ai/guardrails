@@ -2,7 +2,7 @@ import logging
 import sys
 from functools import wraps
 from operator import attrgetter
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from guardrails.stores.context import Tracer, TracerContext
 from guardrails.stores.context import get_tracer as get_context_tracer
@@ -14,9 +14,10 @@ from guardrails.validator_base import Filter, Refrain
 
 try:
     from opentelemetry import context
+    from opentelemetry.context import Context as OtelContext
     from opentelemetry.trace import Span
+    from opentelemetry.trace import Tracer as OtelTracer
 except ImportError:
-
     class Span:
         pass
 
@@ -38,19 +39,19 @@ def get_error_code() -> int:
     try:
         from opentelemetry.trace import StatusCode
 
-        return StatusCode.ERROR
+        return StatusCode.ERROR.value
     except Exception as e:
         logging.debug(f"Failed to import StatusCode from opentelemetry.trace: {str(e)}")
         return 2
 
 
-def get_tracer(tracer: Tracer = None) -> Tracer:
+def get_tracer(tracer: Optional[Tracer] = None) -> Union[Tracer, OtelTracer, None]:
     # TODO: Do we ever need to consider supporting non-otel tracers?
     _tracer = tracer if tracer is not None else get_context_tracer()
     return _tracer
 
 
-def get_current_context() -> Optional[TracerContext]:
+def get_current_context() -> Union[TracerContext, OtelContext, None]:
     otel_current_context = (
         context.get_current()
         if context is not None and hasattr(context, "get_current")
@@ -106,7 +107,7 @@ def trace_validator_result(
         value_before_validation, value_after_validation, result
     )
 
-    event: Dict[str, str] = {
+    event = {
         "validator_name": validator_name,
         "attempt_number": attempt_number,
         "result": result,
@@ -154,7 +155,7 @@ def trace_validator(
     obj_id: int,
     # TODO - re-enable once we have namespace support
     # namespace: str = None,
-    on_fail_descriptor: str = None,
+    on_fail_descriptor: Optional[str] = None,
     tracer: Optional[Tracer] = None,
     **init_kwargs,
 ):

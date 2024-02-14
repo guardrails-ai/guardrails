@@ -81,7 +81,7 @@ class Guard(Runnable, Generic[OT]):
         rail: Optional[Rail] = None,
         num_reasks: Optional[int] = None,
         base_model: Optional[Type[BaseModel]] = None,
-        tracer: Tracer = None,
+        tracer: Optional[Tracer] = None,
     ):
         """Initialize the Guard with optional Rail instance, num_reasks, and
         base_model."""
@@ -103,7 +103,9 @@ class Guard(Runnable, Generic[OT]):
 
         # Get metrics opt-out from credentials
         self._disable_tracer = Credentials.from_rc_file().no_metrics
-        if self._disable_tracer.strip().lower() == "true":
+        if self._disable_tracer is None:
+            self._disable_tracer = False
+        elif self._disable_tracer.strip().lower() == "true":
             self._disable_tracer = True
         elif self._disable_tracer.strip().lower() == "false":
             self._disable_tracer = False
@@ -192,7 +194,7 @@ class Guard(Runnable, Generic[OT]):
             else 1
         )
 
-    def _set_tracer(self, tracer: Tracer = None) -> None:
+    def _set_tracer(self, tracer: Optional[Tracer] = None) -> None:
         self._tracer = tracer
         set_tracer(tracer)
         set_tracer_context()
@@ -200,7 +202,7 @@ class Guard(Runnable, Generic[OT]):
 
     @classmethod
     def from_rail(
-        cls, rail_file: str, num_reasks: Optional[int] = None, tracer: Tracer = None
+        cls, rail_file: str, num_reasks: Optional[int] = None, tracer: Optional[Tracer] = None
     ):
         """Create a Schema from a `.rail` file.
 
@@ -226,7 +228,7 @@ class Guard(Runnable, Generic[OT]):
         cls,
         rail_string: str,
         num_reasks: Optional[int] = None,
-        tracer: Tracer = None,
+        tracer: Optional[Tracer] = None,
     ):
         """Create a Schema from a `.rail` string.
 
@@ -255,7 +257,7 @@ class Guard(Runnable, Generic[OT]):
         num_reasks: Optional[int] = None,
         reask_prompt: Optional[str] = None,
         reask_instructions: Optional[str] = None,
-        tracer: Tracer = None,
+        tracer: Optional[Tracer] = None,
     ):
         """Create a Guard instance from a Pydantic model and prompt."""
         # We have to set the tracer in the ContextStore before the Rail,
@@ -283,7 +285,7 @@ class Guard(Runnable, Generic[OT]):
         reask_prompt: Optional[str] = None,
         reask_instructions: Optional[str] = None,
         num_reasks: Optional[int] = None,
-        tracer: Tracer = None,
+        tracer: Optional[Tracer] = None,
     ):
         """Create a Guard instance for a string response with prompt,
         instructions, and validations.
