@@ -4,7 +4,7 @@ from functools import wraps
 from operator import attrgetter
 from typing import Any, List, Optional, Union
 
-from guardrails.stores.context import Tracer, TracerContext
+from guardrails.stores.context import Tracer, Context
 from guardrails.stores.context import get_tracer as get_context_tracer
 from guardrails.stores.context import get_tracer_context
 from guardrails.utils.casting_utils import to_string
@@ -52,7 +52,7 @@ def get_tracer(tracer: Optional[Tracer] = None) -> Union[Tracer, OtelTracer, Non
     return _tracer
 
 
-def get_current_context() -> Union[TracerContext, OtelContext, None]:
+def get_current_context() -> Union[Context, OtelContext, None]:
     otel_current_context = (
         context.get_current()
         if context is not None and hasattr(context, "get_current")

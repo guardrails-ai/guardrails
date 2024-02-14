@@ -176,6 +176,7 @@ class Runner:
                     self.msg_history_schema,
                     self.output_schema,
                 )
+                index = 0
                 for index in range(self.num_reasks + 1):
                     # Run a single step.
                     iteration = self.step(
