@@ -27,10 +27,10 @@ from langchain_core.runnables import Runnable, RunnableConfig
 from pydantic import BaseModel
 
 from guardrails.classes import OT, InputType, ValidationOutcome
+from guardrails.classes.credentials import Credentials
 from guardrails.classes.generic import Stack
 from guardrails.classes.history import Call
 from guardrails.classes.history.call_inputs import CallInputs
-from guardrails.cli.server.credentials import Credentials
 from guardrails.errors import ValidationError
 from guardrails.llm_providers import get_async_llm_ask, get_llm_ask
 from guardrails.logger import logger, set_scope

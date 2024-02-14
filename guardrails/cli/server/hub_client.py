@@ -4,9 +4,9 @@ from typing import Any, Dict, Optional
 
 import requests
 
+from guardrails.classes.credentials import Credentials
 from guardrails.cli.logger import logger
 from guardrails.cli.server.auth import get_auth_token
-from guardrails.cli.server.credentials import Credentials
 from guardrails.cli.server.module_manifest import ModuleManifest
 
 validator_hub_service = "https://so4sg4q4pb.execute-api.us-east-1.amazonaws.com"

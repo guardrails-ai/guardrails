@@ -3,8 +3,7 @@ from dataclasses import dataclass
 from os.path import expanduser
 from typing import Optional
 
-from guardrails.cli.logger import logger
-from guardrails.cli.server.serializeable import Serializeable
+from guardrails.classes.generic.serializeable import Serializeable
 
 
 @dataclass
@@ -28,11 +27,5 @@ class Credentials(Serializeable):
                 rc_file.close()
                 return Credentials.from_dict(creds)
 
-        except FileNotFoundError as e:
-            logger.warning(e)
-            logger.warning(
-                "Guardrails Hub credentials not found!"
-                "You will need to sign up to use any authenticated Validators here:"
-                "https://hub.guardrailsai.com/tokens"
-            )
+        except FileNotFoundError:
             return Credentials()  # type: ignore

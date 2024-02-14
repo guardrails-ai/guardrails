@@ -3,7 +3,10 @@ from typing import Any, Dict, List, Optional
 
 from pydash.strings import snake_case
 
-from guardrails.cli.server.serializeable import Serializeable, SerializeableJSONEncoder
+from guardrails.classes.generic.serializeable import (
+    Serializeable,
+    SerializeableJSONEncoder,
+)
 
 
 @dataclass
@@ -36,7 +39,7 @@ class ModuleManifest(Serializeable):
     package_name: str
     module_name: str
     exports: List[str]
-    tags: ModuleTags
+    tags: Optional[ModuleTags] = None
     requires_auth: Optional[bool] = True
     post_install: Optional[str] = None
     index: Optional[str] = None

@@ -1,7 +1,7 @@
 import http.client
 import json
 
-from guardrails.cli.server.credentials import Credentials
+from guardrails.classes.credentials import Credentials
 
 
 def get_auth_token(creds: Credentials) -> str:
