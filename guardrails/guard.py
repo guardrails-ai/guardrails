@@ -202,7 +202,10 @@ class Guard(Runnable, Generic[OT]):
 
     @classmethod
     def from_rail(
-        cls, rail_file: str, num_reasks: Optional[int] = None, tracer: Optional[Tracer] = None
+        cls,
+        rail_file: str,
+        num_reasks: Optional[int] = None,
+        tracer: Optional[Tracer] = None,
     ):
         """Create a Schema from a `.rail` file.
 
@@ -216,7 +219,7 @@ class Guard(Runnable, Generic[OT]):
 
         # We have to set the tracer in the ContextStore before the Rail,
         #   and therefore the Validators, are initialized
-        cls._set_tracer(cls, tracer)
+        cls._set_tracer(cls, tracer)  # type: ignore
 
         rail = Rail.from_file(rail_file)
         if rail.output_type == "str":
@@ -241,7 +244,7 @@ class Guard(Runnable, Generic[OT]):
         """
         # We have to set the tracer in the ContextStore before the Rail,
         #   and therefore the Validators, are initialized
-        cls._set_tracer(cls, tracer)
+        cls._set_tracer(cls, tracer)  # type: ignore
 
         rail = Rail.from_string(rail_string)
         if rail.output_type == "str":
@@ -262,7 +265,7 @@ class Guard(Runnable, Generic[OT]):
         """Create a Guard instance from a Pydantic model and prompt."""
         # We have to set the tracer in the ContextStore before the Rail,
         #   and therefore the Validators, are initialized
-        cls._set_tracer(cls, tracer)
+        cls._set_tracer(cls, tracer)  # type: ignore
 
         rail = Rail.from_pydantic(
             output_class=output_class,
@@ -300,7 +303,7 @@ class Guard(Runnable, Generic[OT]):
             num_reasks (int, optional): The max times to re-ask the LLM for invalid output.
         """  # noqa
 
-        cls._set_tracer(cls, tracer)
+        cls._set_tracer(cls, tracer)  # type: ignore
 
         rail = Rail.from_string_validators(
             validators=validators,
