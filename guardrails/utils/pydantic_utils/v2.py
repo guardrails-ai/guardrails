@@ -473,10 +473,12 @@ def pydantic_field_to_datatype(
         **kwargs,
     )
 
+
 def is_optional_annotation(annotation) -> bool:
     """Check if a annotation is optional."""
-    return typing.get_origin(annotation) is Union and \
-           type(None) in typing.get_args(annotation)
+    return typing.get_origin(annotation) is Union and type(None) in typing.get_args(
+        annotation
+    )
 
 
 def construct_datatype(
