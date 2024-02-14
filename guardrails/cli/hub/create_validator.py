@@ -153,16 +153,22 @@ def create_validator(
         default="./{validator_name}.py",
     ),
 ):
-    """Lightweight method for creating simple validators.  For more complex submissions see here: https://github.com/guardrails-ai/validator-template?tab=readme-ov-file#how-to-create-a-guardrails-validator"""
+    """Lightweight method for creating simple validators.
+
+    For more complex submissions see here:
+    https://github.com/guardrails-ai/validator-template?tab=readme-ov-file#how-to-create-a-guardrails-validator
+    """
     disclaimer = """
 
     This utility is intended for creating simple validators.
 
-    If your validator is complex or requires additional post-installation steps, consider using the template repository instead.
+    If your validator is complex or requires additional post-installation steps,\
+        consider using the template repository instead.
 
-    The template repository can be found here: https://github.com/guardrails-ai/validator-template
+    The template repository can be found here:\
+        https://github.com/guardrails-ai/validator-template
     """
-    
+
     logger.log(level=LEVELS.get("NOTICE"), msg=disclaimer)
 
     package_name = snake_case(name)

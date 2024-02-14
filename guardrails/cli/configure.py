@@ -59,13 +59,12 @@ def configure(
 
     Login successful.
 
-    Get started by installing our RegexMatch validator: https://hub.guardrailsai.com/validator/guardrails_ai/regex_match
+    Get started by installing our RegexMatch validator:
+    https://hub.guardrailsai.com/validator/guardrails_ai/regex_match
 
     You can install it by running:
-    
     guardrails hub install hub://guardrails/regex_match
 
-    
     Find more validators at https://hub.guardrailsai.com
     """
         logger.log(level=LEVELS.get("SUCCESS"), msg=success_message)  # type: ignore

@@ -17,7 +17,8 @@ def submit(
         help="The location to your validator file.", default="./{package_name}.py"
     ),
 ):
-    """Submit a validator to the Guardrails AI team for review and publishing."""
+    """Submit a validator to the Guardrails AI team for review and
+    publishing."""
     try:
         if not filepath or filepath == "./{validator_name}.py":
             filepath = f"./{package_name}.py"

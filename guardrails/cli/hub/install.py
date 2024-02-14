@@ -248,8 +248,5 @@ def install(
 
     See how to use it here: https://hub.guardrailsai.com/validator/${id}
     """
-    ).safe_substitute(
-        module_name=module_name,
-        id=module_manifest.id
-    )
+    ).safe_substitute(module_name=module_name, id=module_manifest.id)
     logger.log(level=LEVELS.get("SUCCESS"), msg=success_message)  # type: ignore
