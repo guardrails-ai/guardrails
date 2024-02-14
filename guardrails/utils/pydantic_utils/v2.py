@@ -456,7 +456,7 @@ def pydantic_field_to_datatype(
     else:
         validators = field.json_schema_extra.get("validators", [])
 
-    is_optional = not field.is_required()
+    is_optional = is_optional_annotation(field.annotation) or not field.is_required()
 
     if field.title is not None:
         name = field.title
@@ -472,6 +472,11 @@ def pydantic_field_to_datatype(
         strict=strict,
         **kwargs,
     )
+
+def is_optional_annotation(annotation) -> bool:
+    """Check if a annotation is optional."""
+    return typing.get_origin(annotation) is Union and \
+           type(None) in typing.get_args(annotation)
 
 
 def construct_datatype(
