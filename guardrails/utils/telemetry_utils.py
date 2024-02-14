@@ -4,6 +4,10 @@ from functools import wraps
 from operator import attrgetter
 from typing import Any, List, Optional, Union
 
+from opentelemetry import context
+from opentelemetry.context import Context
+from opentelemetry.trace import Tracer
+
 from guardrails.stores.context import get_tracer as get_context_tracer
 from guardrails.stores.context import get_tracer_context
 from guardrails.utils.casting_utils import to_string
@@ -11,9 +15,6 @@ from guardrails.utils.logs_utils import ValidatorLogs
 from guardrails.utils.reask_utils import ReAsk
 from guardrails.validator_base import Filter, Refrain
 
-from opentelemetry import context
-from opentelemetry.context import Context
-from opentelemetry.trace import Span, Tracer
 
 def get_result_type(before_value: Any, after_value: Any, outcome: str):
     try:
@@ -176,7 +177,8 @@ def trace_validator(
                     )
                     validator_span.set_attribute(
                         "args",
-                        to_string({k: to_string(v) for k, v in init_kwargs.items()}) or "{}",
+                        to_string({k: to_string(v) for k, v in init_kwargs.items()})
+                        or "{}",
                     )
                     validator_span.set_attribute("instance_id", to_string(obj_id) or "")
 
