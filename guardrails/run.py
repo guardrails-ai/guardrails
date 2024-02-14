@@ -6,7 +6,7 @@ from eliot import add_destinations, start_action
 from pydantic import BaseModel
 
 from guardrails.classes.history import Call, Inputs, Iteration, Outputs
-from guardrails.cli_dir.hub.credentials import Credentials
+from guardrails.cli.server.credentials import Credentials
 from guardrails.datatypes import verify_metadata_requirements
 from guardrails.errors import ValidationError
 from guardrails.llm_providers import (

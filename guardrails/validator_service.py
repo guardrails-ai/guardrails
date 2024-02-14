@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
 from guardrails.classes.history import Iteration
-from guardrails.cli_dir.hub.credentials import Credentials
+from guardrails.cli.server.credentials import Credentials
 from guardrails.datatypes import FieldValidation
 from guardrails.errors import ValidationError
 from guardrails.logger import logger
