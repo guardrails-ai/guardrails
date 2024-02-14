@@ -123,7 +123,6 @@ def mock_openai_chat_completion_create():
 
     return gen()
 
-
 class LowerCaseFix(BaseModel):
     statement: str = Field(
         description="Validates whether the text is in lower case.",
@@ -204,6 +203,8 @@ def test_streaming_with_openai_callable(
         else openai.completions.create
     )
 
+    method.__name__ = "mock_openai_completion_create"
+
     generator = guard(
         method,
         engine="text-davinci-003",
@@ -270,6 +271,8 @@ def test_streaming_with_openai_chat_callable(
         if OPENAI_VERSION.startswith("0")
         else openai.chat.completions.create
     )
+
+    method.__name__ = "mock_openai_chat_completion_create"
 
     generator = guard(
         method,
