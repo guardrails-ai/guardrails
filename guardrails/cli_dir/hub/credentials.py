@@ -12,7 +12,7 @@ class Credentials(Serializeable):
     id: Optional[str] = None
     client_id: Optional[str] = None
     client_secret: Optional[str] = None
-    no_metrics: Optional[str] = "False"
+    no_metrics: Optional[bool] = False
 
     @staticmethod
     def from_rc_file() -> "Credentials":
@@ -26,7 +26,10 @@ class Credentials(Serializeable):
                     key, value = line.split("=", 1)
                     creds[key.strip()] = value.strip()
                 rc_file.close()
-                return Credentials.from_dict(creds)
+                creds = Credentials.from_dict(creds)
+                if creds.no_metrics is None:
+                    creds.no_metrics = False
+                return creds
 
         except FileNotFoundError as e:
             logger.error(e)

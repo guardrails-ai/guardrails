@@ -103,12 +103,6 @@ class Guard(Runnable, Generic[OT]):
 
         # Get metrics opt-out from credentials
         self._disable_tracer = Credentials.from_rc_file().no_metrics
-        if self._disable_tracer is None:
-            self._disable_tracer = False
-        elif self._disable_tracer.strip().lower() == "true":
-            self._disable_tracer = True
-        elif self._disable_tracer.strip().lower() == "false":
-            self._disable_tracer = False
 
         # Get id of guard object (that is unique)
         self._guard_id = id(self)  # id of guard object; not the class
