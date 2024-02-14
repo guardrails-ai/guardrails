@@ -76,6 +76,7 @@ def test_non_empty_initialization():
     reasks = [reask]
     validator_logs = [
         ValidatorLogs(
+            registered_name="no-punctuation",
             validator_name="no-punctuation",
             value_before_validation="Hello there!",
             validation_result=validation_result,

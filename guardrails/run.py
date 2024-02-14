@@ -6,6 +6,7 @@ from eliot import add_destinations, start_action
 from pydantic import BaseModel
 
 from guardrails.classes.history import Call, Inputs, Iteration, Outputs
+from guardrails.cli_dir.hub.credentials import Credentials
 from guardrails.datatypes import verify_metadata_requirements
 from guardrails.errors import ValidationError
 from guardrails.llm_providers import (
@@ -18,6 +19,7 @@ from guardrails.logger import logger, set_scope
 from guardrails.prompt import Instructions, Prompt
 from guardrails.schema import Schema, StringSchema
 from guardrails.utils.exception_utils import UserFacingException
+from guardrails.utils.hub_telemetry_utils import HubTelemetry
 from guardrails.utils.llm_response import LLMResponse
 from guardrails.utils.openai_utils import OPENAI_VERSION
 from guardrails.utils.reask_utils import (
@@ -26,6 +28,7 @@ from guardrails.utils.reask_utils import (
     SkeletonReAsk,
     reasks_to_dict,
 )
+from guardrails.utils.telemetry_utils import async_trace, trace
 
 add_destinations(logger.debug)
 
@@ -101,6 +104,17 @@ class Runner:
         self.output = output
         self.base_model = base_model
         self.full_schema_reask = full_schema_reask
+
+        # Get metrics opt-out from credentials
+        self._disable_tracer = Credentials.from_rc_file().no_metrics
+        if self._disable_tracer.strip().lower() == "true":
+            self._disable_tracer = True
+        elif self._disable_tracer.strip().lower() == "false":
+            self._disable_tracer = False
+
+        if not self._disable_tracer:
+            # Get the HubTelemetry singleton
+            self._hub_telemetry = HubTelemetry()
 
     def __call__(self, call_log: Call, prompt_params: Optional[Dict] = None) -> Call:
         """Execute the runner by repeatedly calling step until the reask budget
@@ -194,6 +208,17 @@ class Runner:
                         prompt_params=prompt_params,
                         include_instructions=include_instructions,
                     )
+
+                # Log how many times we reasked
+                # Use the HubTelemetry singleton
+                if not self._disable_tracer:
+                    self._hub_telemetry.create_new_span(
+                        span_name="/reasks",
+                        attributes=[("reask_count", index)],
+                        is_parent=False,  # This span has no children
+                        has_parent=True,  # This span has a parent
+                    )
+
         except UserFacingException as e:
             # Because Pydantic v1 doesn't respect property setters
             call_log._exception = e.original_exception
@@ -204,6 +229,7 @@ class Runner:
             raise e
         return call_log
 
+    @trace(name="step")
     def step(
         self,
         index: int,
@@ -509,6 +535,7 @@ class Runner:
 
         return instructions, prompt, msg_history
 
+    @trace(name="call")
     def call(
         self,
         index: int,
@@ -593,7 +620,7 @@ class Runner:
         """Validate the output."""
         with start_action(action_type="validate", index=index) as action:
             validated_output = output_schema.validate(
-                iteration, parsed_output, self.metadata, **kwargs
+                iteration, parsed_output, self.metadata, attempt_number=index, **kwargs
             )
 
             action.log(
@@ -783,6 +810,7 @@ class AsyncRunner(Runner):
 
         return call_log
 
+    @async_trace(name="step")
     async def async_step(
         self,
         index: int,
@@ -893,6 +921,7 @@ class AsyncRunner(Runner):
             raise e
         return iteration
 
+    @async_trace(name="call")
     async def async_call(
         self,
         index: int,
@@ -964,7 +993,7 @@ class AsyncRunner(Runner):
         """Validate the output."""
         with start_action(action_type="validate", index=index) as action:
             validated_output = await output_schema.async_validate(
-                iteration, parsed_output, self.metadata
+                iteration, parsed_output, self.metadata, attempt_number=index
             )
 
             action.log(

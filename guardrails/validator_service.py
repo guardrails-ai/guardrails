@@ -2,16 +2,28 @@ import asyncio
 import itertools
 import os
 from concurrent.futures import ProcessPoolExecutor
+from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
 from guardrails.classes.history import Iteration
+from guardrails.cli_dir.hub.credentials import Credentials
 from guardrails.datatypes import FieldValidation
 from guardrails.errors import ValidationError
 from guardrails.logger import logger
+from guardrails.utils.casting_utils import to_string
+from guardrails.utils.hub_telemetry_utils import HubTelemetry
 from guardrails.utils.logs_utils import ValidatorLogs
 from guardrails.utils.reask_utils import FieldReAsk, ReAsk
 from guardrails.utils.safe_get import safe_get
-from guardrails.validator_base import FailResult, Filter, PassResult, Refrain, Validator
+from guardrails.utils.telemetry_utils import trace_validator
+from guardrails.validator_base import (
+    FailResult,
+    Filter,
+    PassResult,
+    Refrain,
+    ValidationResult,
+    Validator,
+)
 
 
 def key_not_empty(key: str) -> bool:
@@ -20,6 +32,26 @@ def key_not_empty(key: str) -> bool:
 
 class ValidatorServiceBase:
     """Base class for validator services."""
+
+    # NOTE: This is avoiding an issue with multiprocessing.
+    #       If we wrap the validate methods at the class level or anytime before
+    #       loop.run_in_executor is called, multiprocessing fails with a Pickling error.
+    #       This is a well known issue without any real solutions.
+    #       Using `fork` instead of `spawn` may alleviate the symptom for POSIX systems,
+    #       but is relatively unsupported on Windows.
+    def execute_validator(
+        self, validator: Validator, value: Any, metadata: Optional[Dict]
+    ) -> ValidationResult:
+        traced_validator = trace_validator(
+            validator_name=validator.rail_alias,
+            obj_id=id(validator),
+            # TODO - re-enable once we have namespace support
+            # namespace=validator.namespace,
+            on_fail_descriptor=validator.on_fail_descriptor,
+            **validator._kwargs,
+        )(validator.validate)
+        result = traced_validator(value, metadata)
+        return result
 
     def perform_correction(
         self,
@@ -35,7 +67,9 @@ class ValidatorServiceBase:
         elif on_fail_descriptor == "fix_reask":
             # FIXME: Same thing here
             fixed_value = results[0].fix_value
-            result = validator.validate(fixed_value, results[0].metadata or {})
+            result = self.execute_validator(
+                validator, fixed_value, results[0].metadata or {}
+            )
 
             if isinstance(result, FailResult):
                 return FieldReAsk(
@@ -82,15 +116,48 @@ class ValidatorServiceBase:
         validator_logs = ValidatorLogs(
             validator_name=validator_class_name,
             value_before_validation=value,
+            registered_name=validator.rail_alias,
             property_path=property_path,
         )
         iteration.outputs.validator_logs.append(validator_logs)
+
+        start_time = datetime.now()
+        result = self.execute_validator(validator, value, metadata)
+        end_time = datetime.now()
 
         result = validator.validate(value, metadata)
         if result is None:
             result = PassResult()
 
         validator_logs.validation_result = result
+        validator_logs.start_time = start_time
+        validator_logs.end_time = end_time
+        # If we ever re-use validator instances across multiple properties,
+        #   this will have to change.
+        validator_logs.instance_id = to_string(id(validator))
+
+        # Get metrics opt-out from credentials
+        disable_tracer = Credentials.from_rc_file().no_metrics
+        if disable_tracer.strip().lower() == "true":
+            disable_tracer = True
+        elif disable_tracer.strip().lower() == "false":
+            disable_tracer = False
+
+        if not disable_tracer:
+            # Get HubTelemetry singleton and create a new span to
+            # log the validator usage
+            _hub_telemetry = HubTelemetry()
+            _hub_telemetry.create_new_span(
+                span_name="/validator_usage",
+                attributes=[
+                    ("validator_name", validator.rail_alias),
+                    ("validator_on_fail", validator.on_fail_descriptor),
+                    ("validator_result", result.outcome),
+                ],
+                is_parent=False,  # This span will have no children
+                has_parent=True,  # This span has a parent
+            )
+
         return validator_logs
 
 

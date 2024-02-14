@@ -134,6 +134,18 @@ validators_registry = {}
 types_to_validators = defaultdict(list)
 
 
+def validator_factory(name: str, validate: Callable):
+    def validate_wrapper(self, *args, **kwargs):
+        return validate(*args, **kwargs)
+
+    validator = type(
+        name,
+        (Validator,),
+        {"validate": validate_wrapper, "rail_alias": name},
+    )
+    return validator
+
+
 def register_validator(name: str, data_type: Union[str, List[str]]):
     """Register a validator for a data type."""
     from guardrails.datatypes import registry as types_registry
@@ -161,11 +173,7 @@ def register_validator(name: str, data_type: Union[str, List[str]]):
                     f"Validator function {func.__name__} must take two arguments."
                 )
             # dynamically create Validator subclass with `validate` method as `func`
-            cls = type(
-                name,
-                (Validator,),
-                {"validate": staticmethod(func), "rail_alias": name},
-            )
+            cls = validator_factory(name, func)
         else:
             raise ValueError(
                 "Only functions and Validator subclasses "

@@ -36,6 +36,7 @@ def test_non_empty_initialization():
     reasks = [ReAsk(incorrect_value="Hello there!", fail_results=[validation_result])]
     validator_logs = [
         ValidatorLogs(
+            registered_name="no-punctuation",
             validator_name="no-punctuation",
             value_before_validation="Hello there!",
             validation_result=validation_result,
@@ -103,6 +104,7 @@ non_fixable_fail_result = FailResult(
             Outputs(
                 validator_logs=[
                     ValidatorLogs(
+                        registered_name="no-punctuation",
                         validator_name="no-punctuation",
                         value_before_validation="Hello there!",
                         validation_result=fixable_fail_result,
@@ -125,6 +127,7 @@ def test__all_empty(outputs: Outputs, expected_result: bool):
 def test_failed_validations():
     validator_logs = [
         ValidatorLogs(
+            registered_name="no-punctuation",
             validator_name="no-punctuation",
             value_before_validation="Hello there!",
             validation_result=fixable_fail_result,
@@ -132,6 +135,7 @@ def test_failed_validations():
             property_path="$",
         ),
         ValidatorLogs(
+            registered_name="valid-length",
             validator_name="valid-length",
             value_before_validation="Hello there!",
             validation_result=PassResult(),
@@ -153,6 +157,7 @@ def test_failed_validations():
             Outputs(
                 validator_logs=[
                     ValidatorLogs(
+                        registered_name="no-punctuation",
                         validator_name="no-punctuation",
                         value_before_validation="Hello there!",
                         validation_result=non_fixable_fail_result,
