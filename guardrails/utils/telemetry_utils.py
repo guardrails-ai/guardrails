@@ -1,7 +1,7 @@
 import logging
+import sys
 from functools import wraps
 from operator import attrgetter
-import sys
 from typing import Any, Dict, List, Optional
 
 from guardrails.stores.context import Tracer, TracerContext
@@ -262,8 +262,7 @@ def async_trace(name: str, tracer: Optional[Tracer] = None):
 
 def default_otel_collector_tracer(resource_name: str = "guardsrails"):
     """This is the standard otel tracer set to talk to a grpc open telemetry
-    collector running on port 4317.
-    """
+    collector running on port 4317."""
 
     from opentelemetry import trace
     from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
@@ -282,42 +281,41 @@ def default_otel_collector_tracer(resource_name: str = "guardsrails"):
 
     return trace.get_tracer("gr")
 
+
 def default_otlp_tracer(resource_name: str = "guardsrails"):
     """This tracer will emit spans directly to an otlp endpoint, configured by
     the following environment variables:
 
-    OTEL_EXPORTER_OTLP_PROTOCOL 
+    OTEL_EXPORTER_OTLP_PROTOCOL
     OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
     OTEL_EXPORTER_OTLP_HEADERS
 
     We recommend using Grafana to collect your metrics. A full example of how to
     do that is in our (docs)[https://docs.guardsrails.com/telemetry]
     """
+    import os
+
     from opentelemetry import trace
     from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
     from opentelemetry.sdk.resources import SERVICE_NAME, Resource
     from opentelemetry.sdk.trace import TracerProvider
-    from opentelemetry.sdk.trace.export import BatchSpanProcessor, SimpleSpanProcessor, ConsoleSpanExporter
-    
-    import os
+    from opentelemetry.sdk.trace.export import (
+        BatchSpanProcessor,
+        ConsoleSpanExporter,
+        SimpleSpanProcessor,
+    )
 
-    envvars_exist = os.environ.get("OTEL_EXPORTER_OTLP_PROTOCOL") and os.environ.get("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT")
+    envvars_exist = os.environ.get("OTEL_EXPORTER_OTLP_PROTOCOL") and os.environ.get(
+        "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"
+    )
 
     resource = Resource(attributes={SERVICE_NAME: resource_name})
 
     traceProvider = TracerProvider(resource=resource)
-    if(envvars_exist):
-        processor = BatchSpanProcessor(
-            OTLPSpanExporter()
-        )
+    if envvars_exist:
+        processor = BatchSpanProcessor(OTLPSpanExporter())
     else:
-        processor = SimpleSpanProcessor(
-            ConsoleSpanExporter(
-                out=sys.stderr
-            )
-        )
-
-    
+        processor = SimpleSpanProcessor(ConsoleSpanExporter(out=sys.stderr))
 
     traceProvider.add_span_processor(processor)
     trace.set_tracer_provider(traceProvider)

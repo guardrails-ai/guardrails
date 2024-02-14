@@ -1,6 +1,9 @@
 import asyncio
+import contextvars
+import json
 import warnings
-from contextvars import Context, ContextVar
+from copy import deepcopy
+from string import Template
 from typing import (
     Any,
     Awaitable,
@@ -11,6 +14,7 @@ from typing import (
     List,
     Optional,
     Sequence,
+    Tuple,
     Type,
     Union,
     cast,
@@ -18,13 +22,16 @@ from typing import (
 )
 
 from eliot import add_destinations, start_action
+from langchain_core.messages import BaseMessage
+from langchain_core.runnables import Runnable, RunnableConfig
 from pydantic import BaseModel
 
-from guardrails.classes import OT, ValidationOutcome
+from guardrails.classes import OT, InputType, ValidationOutcome
 from guardrails.classes.generic import Stack
 from guardrails.classes.history import Call
 from guardrails.classes.history.call_inputs import CallInputs
 from guardrails.cli_dir.hub.credentials import Credentials
+from guardrails.errors import ValidationError
 from guardrails.llm_providers import get_async_llm_ask, get_llm_ask
 from guardrails.logger import logger, set_scope
 from guardrails.prompt import Instructions, Prompt
@@ -39,12 +46,13 @@ from guardrails.stores.context import (
     set_tracer_context,
 )
 from guardrails.utils.hub_telemetry_utils import HubTelemetry
-from guardrails.validators import Validator
+from guardrails.utils.validator_utils import get_validator
+from guardrails.validator_base import Validator
 
 add_destinations(logger.debug)
 
 
-class Guard(Generic[OT]):
+class Guard(Runnable, Generic[OT]):
     """The Guard class.
 
     This class is the main entry point for using Guardrails. It is
@@ -66,15 +74,23 @@ class Guard(Generic[OT]):
     _hub_telemetry = None
     _guard_id = None
     _user_id = None
+    _validators: List[Validator]
 
     def __init__(
         self,
-        rail: Rail,
+        rail: Optional[Rail] = None,
         num_reasks: Optional[int] = None,
         base_model: Optional[Type[BaseModel]] = None,
         tracer: Tracer = None,
     ):
-        """Initialize the Guard."""
+        """Initialize the Guard with optional Rail instance, num_reasks, and
+        base_model."""
+        if not rail:
+            rail = (
+                Rail.from_pydantic(base_model)
+                if base_model
+                else Rail.from_string_validators([])
+            )
         self.rail = rail
         self.num_reasks = num_reasks
         # TODO: Support a sink for history so that it is not solely held in memory
@@ -99,6 +115,7 @@ class Guard(Generic[OT]):
         #  if it is not disabled
         if not self._disable_tracer:
             self._hub_telemetry = HubTelemetry()
+        self._validators = []
 
     @property
     def prompt_schema(self) -> Optional[StringSchema]:
@@ -461,7 +478,7 @@ class Guard(Generic[OT]):
                 **kwargs,
             )
 
-        guard_context = Context()
+        guard_context = contextvars.Context()
         return guard_context.run(
             __call,
             self,
@@ -607,6 +624,26 @@ class Guard(Generic[OT]):
     def __rich_repr__(self):
         yield "RAIL", self.rail
 
+    def __stringify__(self):
+        if self.rail and self.rail.output_type == "str":
+            template = Template(
+                """
+                Guard {
+                    validators: [
+                        ${validators}
+                    ]
+                }
+                    """
+            )
+            return template.safe_substitute(
+                {
+                    "validators": ",\n".join(
+                        [v.__stringify__() for v in self._validators]
+                    )
+                }
+            )
+        return self.__repr__()
+
     @overload
     def parse(
         self,
@@ -720,7 +757,7 @@ class Guard(Generic[OT]):
             metadata = metadata or {}
             prompt_params = prompt_params or {}
 
-            context = ContextVar("kwargs")
+            context = contextvars.ContextVar("kwargs")
             context.set(kwargs)
 
             input_prompt = self.prompt._source if self.prompt else None
@@ -769,7 +806,7 @@ class Guard(Generic[OT]):
                 **kwargs,
             )
 
-        guard_context = Context()
+        guard_context = contextvars.Context()
         return guard_context.run(
             __parse,
             self,
@@ -919,3 +956,104 @@ class Guard(Generic[OT]):
         )
         self.rail.msg_history_schema = schema
         return self
+
+    @overload
+    def use(self, validator: Validator) -> "Guard":
+        ...
+
+    @overload
+    def use(self, validator: Type[Validator], *args, **kwargs) -> "Guard":
+        ...
+
+    def use(
+        self, validator: Union[Validator, Type[Validator]], *args, **kwargs
+    ) -> "Guard":
+        if validator:
+            self._validators.append(get_validator(validator, *args, **kwargs))
+
+        return self
+
+    @overload
+    def use_many(self, *validators: Validator) -> "Guard":
+        ...
+
+    @overload
+    def use_many(
+        self,
+        *validators: Tuple[
+            Type[Validator],
+            Optional[Union[List[Any], Dict[str, Any]]],
+            Optional[Dict[str, Any]],
+        ],
+    ) -> "Guard":
+        ...
+
+    def use_many(
+        self,
+        *validators: Union[
+            Validator,
+            Tuple[
+                Type[Validator],
+                Optional[Union[List[Any], Dict[str, Any]]],
+                Optional[Dict[str, Any]],
+            ],
+        ],
+    ) -> "Guard":
+        for v in validators:
+            self._validators.append(get_validator(v))
+
+        return self
+
+    def validate(self, llm_output: str, *args, **kwargs) -> ValidationOutcome[str]:
+        if (
+            not self.rail
+            or self.rail.output_schema.root_datatype.validators != self._validators
+        ):
+            self.rail = Rail.from_string_validators(
+                validators=self._validators,
+                prompt=self.prompt.source if self.prompt else None,
+                instructions=self.instructions.source if self.instructions else None,
+                reask_prompt=self.reask_prompt.source if self.reask_prompt else None,
+                reask_instructions=self.reask_instructions.source
+                if self.reask_instructions
+                else None,
+            )
+
+        return self.parse(llm_output=llm_output, *args, **kwargs)
+
+    # No call support for this until
+    # https://github.com/guardrails-ai/guardrails/pull/525 is merged
+    # def __call__(self, llm_output: str, *args, **kwargs) -> ValidationOutcome[str]:
+    #     return self.validate(llm_output, *args, **kwargs)
+
+    def invoke(
+        self, input: InputType, config: Optional[RunnableConfig] = None
+    ) -> InputType:
+        output = BaseMessage(content="", type="")
+        str_input = None
+        input_is_chat_message = False
+        if isinstance(input, BaseMessage):
+            input_is_chat_message = True
+            str_input = str(input.content)
+            output = deepcopy(input)
+        else:
+            str_input = str(input)
+
+        response = self.validate(str_input)
+
+        validated_output = response.validated_output
+        if not validated_output:
+            raise ValidationError(
+                (
+                    "The response from the LLM failed validation!"
+                    "See `guard.history` for more details."
+                )
+            )
+
+        if isinstance(validated_output, Dict):
+            validated_output = json.dumps(validated_output)
+
+        if input_is_chat_message:
+            output.content = validated_output
+            return cast(InputType, output)
+        return cast(InputType, validated_output)

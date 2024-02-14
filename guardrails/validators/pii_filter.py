@@ -99,6 +99,10 @@ class PIIFilter(Validator):
 
     def validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
         # Entities to filter passed through metadata take precedence
+        if not metadata:
+            # default to value provided via Validator.with_metadata
+            metadata = self._metadata
+
         pii_entities = metadata.get("pii_entities", self.pii_entities)
         if pii_entities is None:
             raise ValueError(

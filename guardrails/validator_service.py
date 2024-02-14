@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from guardrails.classes.history import Iteration
 from guardrails.cli_dir.hub.credentials import Credentials
 from guardrails.datatypes import FieldValidation
+from guardrails.errors import ValidationError
 from guardrails.logger import logger
 from guardrails.utils.casting_utils import to_string
 from guardrails.utils.hub_telemetry_utils import HubTelemetry
@@ -22,7 +23,6 @@ from guardrails.validator_base import (
     Refrain,
     ValidationResult,
     Validator,
-    ValidatorError,
 )
 
 
@@ -61,8 +61,11 @@ class ValidatorServiceBase:
         on_fail_descriptor: str,
     ):
         if on_fail_descriptor == "fix":
+            # FIXME: Should we still return fix_value if it is None?
+            # I think we should warn and return the original value.
             return results[0].fix_value
         elif on_fail_descriptor == "fix_reask":
+            # FIXME: Same thing here
             fixed_value = results[0].fix_value
             result = self.execute_validator(
                 validator, fixed_value, results[0].metadata or {}
@@ -85,7 +88,7 @@ class ValidatorServiceBase:
                 fail_results=results,
             )
         if on_fail_descriptor == "exception":
-            raise ValidatorError(
+            raise ValidationError(
                 "Validation failed for field with errors: "
                 + ", ".join([result.error_message for result in results])
             )

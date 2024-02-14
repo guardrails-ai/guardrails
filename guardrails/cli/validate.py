@@ -4,13 +4,7 @@ from typing import Dict, Union
 import typer
 
 from guardrails import Guard
-
-cli = typer.Typer()
-
-
-def compile_rail(rail: str, out: str) -> None:
-    """Compile guardrails from the guardrails.yml file."""
-    raise NotImplementedError("Currently compiling rail is not supported.")
+from guardrails.cli.guardrails import guardrails
 
 
 def validate_llm_output(rail: str, llm_output: str) -> Union[str, Dict, None]:
@@ -20,23 +14,7 @@ def validate_llm_output(rail: str, llm_output: str) -> Union[str, Dict, None]:
     return result.validated_output
 
 
-@cli.command()
-def compile(
-    rail: str = typer.Argument(
-        ..., help="Path to the rail spec.", exists=True, file_okay=True, dir_okay=False
-    ),
-    out: str = typer.Option(
-        default=".rail_output",
-        help="Path to the compiled output directory.",
-        file_okay=False,
-        dir_okay=True,
-    ),
-):
-    """Compile guardrails from a `rail` spec."""
-    print("Not supported yet. Use `validate` instead.")
-
-
-@cli.command()
+@guardrails.command()
 def validate(
     rail: str = typer.Argument(
         ..., help="Path to the rail spec.", exists=True, file_okay=True, dir_okay=False
@@ -59,7 +37,3 @@ def validate(
         f.write("\n")
 
     return result
-
-
-if __name__ == "__main__":
-    cli()

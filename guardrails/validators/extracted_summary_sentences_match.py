@@ -77,6 +77,10 @@ class ExtractedSummarySentencesMatch(Validator):
         return EphemeralDocumentStore(vector_db)
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
+        if not metadata:
+            # default to value provided via Validator.with_metadata
+            metadata = self._metadata
+
         if "filepaths" not in metadata:
             raise RuntimeError(
                 "extracted-sentences-summary-match validator expects "

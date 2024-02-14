@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional
 
 from guardrails.utils.pydantic_utils import ArbitraryModel
 from guardrails.utils.reask_utils import FieldReAsk, ReAsk, prune_obj_for_reasking
-from guardrails.validators import ValidationResult
+from guardrails.validator_base import ValidationResult
 
 
 class ValidatorLogs(ArbitraryModel):
