@@ -65,10 +65,11 @@ class TestInstall:
             call(level=25, msg="Installing hub://guardrails/test-validator..."),
             call(
                 level=35,
-                msg="\n\n    Successfully installed guardrails/test-validator!\n\n    To use it in your python project, run:\n\n    from guardrails.hub import TestValidator\n    ",  # noqa
+                msg="\n\n    Successfully installed guardrails/test-validator!\n\n    See how to use it here: https://hub.guardrailsai.com/validator/id\n    ",  # noqa
             ),  # noqa
         ]
         assert mock_logger_log.call_count == 2
+        print(mock_logger_log)
         mock_logger_log.assert_has_calls(log_calls)
 
         mock_get_validator_manifest.assert_called_once_with("guardrails/test-validator")
