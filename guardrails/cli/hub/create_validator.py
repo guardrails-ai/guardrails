@@ -9,7 +9,16 @@ from guardrails.cli.hub.hub import hub
 from guardrails.cli.logger import LEVELS, logger
 
 validator_template = Template(
-    """from typing import Any, Callable, Dict, Optional
+    """
+\"""
+This template is intended for creating simple validators.
+
+If your validator is complex or requires additional post-installation steps, consider using the template repository instead.
+
+The template repository can be found here: https://github.com/guardrails-ai/validator-template
+\"""
+    
+from typing import Any, Callable, Dict, Optional
 
 from guardrails.validator_base import (
     FailResult,
@@ -27,7 +36,6 @@ class ${class_name}(Validator):
     | Developed by | {Your organization name} |
     | Date of development | ${dev_date} |
     | Validator type | Format |
-    | Blog |  |
     | License | Apache 2 |
     | Input/Output | Output |
 
@@ -82,7 +90,7 @@ class ${class_name}(Validator):
 
     ```python
     # Import Guard and Validator
-    from pydantic import BaseModel
+    from pydantic import BaseModel, Field
     from guardrails.hub import ${class_name}
     from guardrails import Guard
 
@@ -91,8 +99,8 @@ class ${class_name}(Validator):
     # Create Pydantic BaseModel
     # Update or replace this model to match your use case.
     class Process(BaseModel):
-    		process_name: str
-    		status: str = Field(validators=[val])
+        process_name: str
+        status: str = Field(validators=[val])
 
     # Create a Guard to check for valid Pydantic output
     guard = Guard.from_pydantic(output_class=Process)
@@ -100,8 +108,8 @@ class ${class_name}(Validator):
     # Run LLM output generating JSON through guard
     guard.parse(\"""
     {
-    		"process_name": "templating",
-    		"status": "pass"
+        "process_name": "templating",
+        "status": "pass"
     }
     \""")
     ```
@@ -164,6 +172,7 @@ class ${class_name}(Validator):
 # Run tests via `pytest -rP ${filepath}`
 class Test${class_name}:
     def test_success_case(self):
+        # TODO: Add
         validator = ${class_name}("s")
         result = validator.validate("pass", {})
         assert isinstance(result, PassResult) is True
@@ -186,6 +195,18 @@ def create_validator(
         default="./{validator_name}.py",
     ),
 ):
+    """Lightweight method for creating simple validators.  For more complex submissions see here: https://github.com/guardrails-ai/validator-template?tab=readme-ov-file#how-to-create-a-guardrails-validator"""
+    disclaimer = """
+
+    This utility is intended for creating simple validators.
+
+    If your validator is complex or requires additional post-installation steps, consider using the template repository instead.
+
+    The template repository can be found here: https://github.com/guardrails-ai/validator-template
+    """
+    
+    logger.log(level=LEVELS.get("NOTICE"), msg=disclaimer)
+
     package_name = snake_case(name)
     class_name = pascal_case(name)
     if not filepath or filepath == "./{validator_name}.py":
