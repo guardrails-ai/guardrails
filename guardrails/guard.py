@@ -202,7 +202,10 @@ class Guard(Runnable, Generic[OT]):
 
     @classmethod
     def from_rail(
-        cls, rail_file: str, num_reasks: Optional[int] = None, tracer: Optional[Tracer] = None
+        cls,
+        rail_file: str,
+        num_reasks: Optional[int] = None,
+        tracer: Optional[Tracer] = None,
     ):
         """Create a Schema from a `.rail` file.
 
