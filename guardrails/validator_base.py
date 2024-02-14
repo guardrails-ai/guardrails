@@ -1,9 +1,13 @@
 import inspect
 from collections import defaultdict
+from enum import Enum
 from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Type, Union
 
 from pydantic import BaseModel, Field
 
+class OnFailAction(Enum):
+    NOOP = "noop"
+    CUSTOM = "custom"
 
 class ValidatorError(Exception):
     """Base class for all validator errors."""
@@ -193,14 +197,14 @@ class Validator:
     override_value_on_pass = False
     required_metadata_keys = []
 
-    def __init__(self, on_fail: Optional[Union[Callable, str]] = None, **kwargs):
+    def __init__(self, on_fail: Optional[Union[Callable, OnFailAction]] = None, **kwargs):
         if on_fail is None:
-            on_fail = "noop"
-        if isinstance(on_fail, str):
-            self.on_fail_descriptor = on_fail
+            on_fail = OnFailAction.NOOP.value
+        if isinstance(on_fail, OnFailAction):
+            self.on_fail_descriptor = on_fail.value
             self.on_fail_method = None
         else:
-            self.on_fail_descriptor = "custom"
+            self.on_fail_descriptor = OnFailAction.CUSTOM.value
             self.on_fail_method = on_fail
 
         # Store the kwargs for the validator.
