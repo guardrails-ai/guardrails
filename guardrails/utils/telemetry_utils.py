@@ -1,4 +1,3 @@
-import logging
 import sys
 from functools import wraps
 from operator import attrgetter
@@ -6,7 +5,7 @@ from typing import Any, List, Optional, Union
 
 from opentelemetry import context
 from opentelemetry.context import Context
-from opentelemetry.trace import Tracer
+from opentelemetry.trace import StatusCode, Tracer
 
 from guardrails.stores.context import get_tracer as get_context_tracer
 from guardrails.stores.context import get_tracer_context
@@ -27,16 +26,6 @@ def get_result_type(before_value: Any, after_value: Any, outcome: str):
         return name
     except Exception:
         return type(after_value)
-
-
-def get_error_code() -> int:
-    try:
-        from opentelemetry.trace import StatusCode
-
-        return StatusCode.ERROR.value
-    except Exception as e:
-        logging.debug(f"Failed to import StatusCode from opentelemetry.trace: {str(e)}")
-        return 2
 
 
 def get_tracer(tracer: Optional[Tracer] = None) -> Union[Tracer, None]:
@@ -189,7 +178,7 @@ def trace_validator(
                     return fn(*args, **kwargs)
                 except Exception as e:
                     validator_span.set_status(
-                        status=get_error_code(), description=str(e)
+                        status=StatusCode.ERROR, description=str(e)
                     )
                     raise e
 
@@ -220,7 +209,7 @@ def trace(name: str, tracer: Optional[Tracer] = None):
                         return response
                     except Exception as e:
                         trace_span.set_status(
-                            status=get_error_code(), description=str(e)
+                            status=StatusCode.ERROR, description=str(e)
                         )
                         raise e
             else:
@@ -246,7 +235,7 @@ def async_trace(name: str, tracer: Optional[Tracer] = None):
                         return response
                     except Exception as e:
                         trace_span.set_status(
-                            status=get_error_code(), description=str(e)
+                            status=StatusCode.ERROR, description=str(e)
                         )
                         raise e
             else:
