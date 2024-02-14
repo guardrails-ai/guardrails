@@ -123,6 +123,7 @@ def mock_openai_chat_completion_create():
 
     return gen()
 
+
 class LowerCaseFix(BaseModel):
     statement: str = Field(
         description="Validates whether the text is in lower case.",
