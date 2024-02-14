@@ -17,6 +17,7 @@ def submit(
         help="The location to your validator file.", default="./{package_name}.py"
     ),
 ):
+    """Submit a validator to the Guardrails AI team for review and publishing."""
     try:
         if not filepath or filepath == "./{validator_name}.py":
             filepath = f"./{package_name}.py"
@@ -37,6 +38,8 @@ def submit(
         Once your submission is reviewed and published you will be able to install it via:
 
         guardrails hub install hub://guardrails/${package_name}
+
+        The Guardrails AI team will be in touch with you soon regarding the status of your submission.
         """  # noqa
         ).safe_substitute({"package_name": snake_case(package_name)})
         logger.log(level=LEVELS.get("SUCCESS"), msg=success_message)  # type: ignore
