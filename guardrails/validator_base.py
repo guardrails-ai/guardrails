@@ -9,6 +9,11 @@ class OnFailAction(Enum):
     NOOP = "noop"
     CUSTOM = "custom"
     REASK = "reask"
+    FIX = "fix"
+    FILTER = "filter"
+    REFRAIN = "refrain"
+    EXCEPTION = "exception"
+    FIX_REASK = "fix_reask"
 
 class ValidatorError(Exception):
     """Base class for all validator errors."""
