@@ -1,19 +1,9 @@
 from contextvars import ContextVar, copy_context
-from typing import Any, Dict, Literal, Optional, Union
+from typing import Any, Dict, Literal, Optional, Union, cast
 
-try:
-    from opentelemetry import context
-    from opentelemetry.context import Context as TracerContext
-    from opentelemetry.trace import Tracer
-except Exception:
-
-    class Tracer:
-        pass
-
-    class TracerContext:
-        pass
-
-    context = None
+from opentelemetry import context
+from opentelemetry.context import Context
+from opentelemetry.trace import Tracer
 
 
 TRACER_KEY: Literal["tracer"] = "gr.reserved.tracer"
@@ -27,10 +17,13 @@ def set_tracer(tracer: Optional[Tracer] = None) -> None:
 
 
 def get_tracer() -> Union[Tracer, None]:
-    return get_context_var(TRACER_KEY)
+    cvar = get_context_var(TRACER_KEY)
+    if cvar is None:
+        return None
+    return cast(Tracer, cvar)
 
 
-def set_tracer_context(tracer_context: Optional[TracerContext] = None) -> None:
+def set_tracer_context(tracer_context: Optional[Context] = None) -> None:
     tracer_context = (
         tracer_context
         if tracer_context
@@ -39,7 +32,7 @@ def set_tracer_context(tracer_context: Optional[TracerContext] = None) -> None:
     set_context_var(TRACER_CONTEXT_KEY, tracer_context)
 
 
-def get_tracer_context() -> Union[TracerContext, None]:
+def get_tracer_context() -> Union[Context, None]:
     return get_context_var(TRACER_CONTEXT_KEY)
 
 
