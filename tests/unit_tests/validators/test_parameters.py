@@ -266,7 +266,7 @@ validator_test_pass_fail = {
             "expected_result": FailResult,
         },
     ],
-    "SimilarToList": [
+    "SimilarToPreviousValues": [
         {
             "input_data": "3",
             "metadata": {"prev_values": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]},
@@ -367,7 +367,7 @@ validator_test_xml = {
         "expected_xml": "regex_match: \\w+\\d\\w+ fullmatch",
         "instance_variables": {"regex": "\\w+\\d\\w+", "match_type": "fullmatch"},
     },
-    "SimilarToList": {
+    "SimilarToPreviousValues": {
         "expected_xml": "similar-to-list: 2 0.5",
         "instance_variables": {"standard_deviations": 2, "threshold": 0.5},
     },

@@ -35,7 +35,7 @@ from guardrails.validators import (
     IsHighQualityTranslation,
     ProvenanceV1,
     SimilarToDocument,
-    SimilarToList,
+    SimilarToPreviousValues,
     SqlColumnPresence,
     ToxicLanguage,
     TwoWords,
@@ -462,14 +462,14 @@ def test_to_xml_attrib(min, max, expected_xml):
     assert xml_validator == expected_xml
 
 
-def test_similar_to_list():
+def test_similar_to_previous_values():
     # Mock embedding function
     def embed_function(text: str):
         """Mock embedding function."""
         return MOCK_EMBEDDINGS[text]
 
     # Initialise validator
-    validator = SimilarToList()
+    validator = SimilarToPreviousValues()
 
     # Test get_semantic_similarity method
     similarity = validator.get_semantic_similarity(

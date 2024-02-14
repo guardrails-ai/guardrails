@@ -36,7 +36,7 @@ from guardrails.validators.regex_match import RegexMatch
 from guardrails.validators.remove_redundant_sentences import RemoveRedundantSentences
 from guardrails.validators.saliency_check import SaliencyCheck
 from guardrails.validators.similar_to_document import SimilarToDocument
-from guardrails.validators.similar_to_list import SimilarToList
+from guardrails.validators.similar_to_previous_values import SimilarToPreviousValues
 from guardrails.validators.sql_column_presence import SqlColumnPresence
 from guardrails.validators.toxic_language import ToxicLanguage, pipeline
 from guardrails.validators.two_words import TwoWords
@@ -76,7 +76,7 @@ __all__ = [
     "ProvenanceV0",
     "ProvenanceV1",
     "PIIFilter",
-    "SimilarToList",
+    "SimilarToPreviousValues",
     "DetectSecrets",
     "ToxicLanguage",
     "CompetitorCheck",
