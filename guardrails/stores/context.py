@@ -5,7 +5,6 @@ from opentelemetry import context
 from opentelemetry.context import Context
 from opentelemetry.trace import Tracer
 
-
 TRACER_KEY: Literal["tracer"] = "gr.reserved.tracer"
 TRACER_CONTEXT_KEY: Literal["tracer"] = "gr.reserved.tracer.context"
 DOCUMENT_STORE_KEY: Literal["document_store"] = "gr.reserved.document_store"
