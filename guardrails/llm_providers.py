@@ -96,7 +96,7 @@ class OpenAICallable(PromptCallableBase):
     def _invoke_llm(
         self,
         text: str,
-        engine: str = "text-davinci-003",
+        engine: str = "gpt-3.5-turbo-instruct",
         instructions: Optional[str] = None,
         *args,
         **kwargs,
@@ -565,7 +565,7 @@ class AsyncOpenAICallable(AsyncPromptCallableBase):
     async def invoke_llm(
         self,
         text: str,
-        engine: str = "text-davinci-003",
+        engine: str = "gpt-3.5-turbo-instruct",
         instructions: Optional[str] = None,
         *args,
         **kwargs,

@@ -206,7 +206,7 @@ def test_streaming_with_openai_callable(
 
     generator = guard(
         method,
-        engine="text-davinci-003",
+        engine="gpt-3.5-turbo-instruct",
         max_tokens=10,
         temperature=0,
         stream=True,

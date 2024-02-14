@@ -13,7 +13,7 @@ def test_multi_reask(mocker):
 
     guard(
         llm_api=get_static_openai_create_func(),
-        engine="text-davinci-003",
+        engine="gpt-3.5-turbo-instruct",
         num_reasks=5,
     )
 

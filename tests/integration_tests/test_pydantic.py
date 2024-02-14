@@ -23,7 +23,7 @@ def test_pydantic_with_reask(mocker):
     guard = gd.Guard.from_pydantic(ListOfPeople, prompt=VALIDATED_RESPONSE_REASK_PROMPT)
     final_output = guard(
         get_static_openai_create_func(),
-        engine="text-davinci-003",
+        engine="gpt-3.5-turbo-instruct",
         max_tokens=512,
         temperature=0.5,
         num_reasks=2,
