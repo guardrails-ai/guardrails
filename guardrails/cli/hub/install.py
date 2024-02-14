@@ -10,7 +10,7 @@ import typer
 from pydash.strings import snake_case
 
 from guardrails.classes.generic import Stack
-from guardrails.cli.hub.hub import hub
+from guardrails.cli.hub.hub import hub_command
 from guardrails.cli.logger import LEVELS, logger
 from guardrails.cli.server.hub_client import get_validator_manifest
 from guardrails.cli.server.module_manifest import ModuleManifest
@@ -215,7 +215,7 @@ def install_hub_module(module_manifest: ModuleManifest, site_packages: str):
             logger.info(dep_install_output)
 
 
-@hub.command()
+@hub_command.command()
 def install(
     package_uri: str = typer.Argument(
         help="URI to the package to install. Example: hub://guardrails/regex_match."

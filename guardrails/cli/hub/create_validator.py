@@ -5,7 +5,7 @@ from string import Template
 import typer
 from pydash import pascal_case, snake_case
 
-from guardrails.cli.hub.hub import hub
+from guardrails.cli.hub.hub import hub_command
 from guardrails.cli.logger import LEVELS, logger
 
 validator_template = Template(
@@ -145,7 +145,7 @@ class Test${class_name}:
 )
 
 
-@hub.command(name="create-validator")
+@hub_command.command(name="create-validator")
 def create_validator(
     name: str = typer.Argument(help="The name for your validator."),
     filepath: str = typer.Argument(

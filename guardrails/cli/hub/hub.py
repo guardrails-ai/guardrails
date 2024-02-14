@@ -1,3 +1,3 @@
 import typer
 
-hub = typer.Typer()
+hub_command = typer.Typer()

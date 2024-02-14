@@ -9,7 +9,7 @@ from pydash.strings import snake_case
 
 
 def get_annotations(obj):
-    if sys.version_info.minor >= 10:
+    if sys.version_info.minor >= 10 and hasattr(inspect, "get_annotations"):
         return inspect.get_annotations(obj)
     else:
         return obj.__annotations__

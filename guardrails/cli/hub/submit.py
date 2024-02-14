@@ -5,12 +5,12 @@ from string import Template
 import typer
 from pydash import snake_case
 
-from guardrails.cli.hub.hub import hub
+from guardrails.cli.hub.hub import hub_command
 from guardrails.cli.logger import LEVELS, logger
 from guardrails.cli.server.hub_client import HttpError, post_validator_submit
 
 
-@hub.command(name="submit")
+@hub_command.command(name="submit")
 def submit(
     package_name: str = typer.Argument(help="The package name for your validator."),
     filepath: str = typer.Argument(
