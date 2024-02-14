@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 class OnFailAction(Enum):
     NOOP = "noop"
     CUSTOM = "custom"
+    REASK = "reask"
 
 class ValidatorError(Exception):
     """Base class for all validator errors."""
