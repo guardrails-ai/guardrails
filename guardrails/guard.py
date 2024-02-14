@@ -757,8 +757,9 @@ class Guard(Runnable, Generic[OT]):
             metadata = metadata or {}
             prompt_params = prompt_params or {}
 
-            context = contextvars.ContextVar("kwargs")
-            context.set(kwargs)
+            set_call_kwargs(kwargs)
+            set_tracer(self._tracer)
+            set_tracer_context(self._tracer_context)
 
             input_prompt = self.prompt._source if self.prompt else None
             input_instructions = (
