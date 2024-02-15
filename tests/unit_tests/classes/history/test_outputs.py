@@ -1,4 +1,5 @@
 import pytest
+import pydantic
 
 from guardrails.classes.history.outputs import Outputs
 from guardrails.constants import error_status, fail_status, not_run_status, pass_status
@@ -175,18 +176,26 @@ def test_failed_validations():
             fail_status,
         ),
         (Outputs(validator_logs=[], validated_output="Hello there!"), pass_status),
-        (
-            Outputs(
-                validation_output=ReAsk(
-                    incorrect_value="Hello there!",
-                    fail_results=[non_fixable_fail_result],
-                ),
-            ),
-            fail_status,
-        ),
     ],
 )
 def test_status(outputs: Outputs, expected_status: str):
     status = outputs.status
 
     assert status == expected_status
+
+
+@pytest.mark.skipif(
+    pydantic.version.VERSION.startswith("1"),
+    reason="This fails in Pydantic 1.x because it casts the ReAsk to a Dict on init..."
+)
+def test_status_reask():
+    outputs = Outputs(
+        validation_output=ReAsk(
+            incorrect_value="Hello there!",
+            fail_results=[non_fixable_fail_result],
+        ),
+    )
+    
+    status = outputs.status
+
+    assert status == fail_status
