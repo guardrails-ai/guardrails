@@ -699,7 +699,7 @@ class Pet(BaseModel):
 
 def test_input_validation_fix(mocker):
     if OPENAI_VERSION.startswith("0"):
-        mock_openai = mocker.patch("openai.Completion.create")
+        mock_openai = mocker.patch("guardrails.utils.openai_utils.v0.openai.Completion.create")
         mock_openai.return_value = {
             "choices": [
                 {
@@ -716,7 +716,7 @@ def test_input_validation_fix(mocker):
     else:
         from openai.types import Completion, CompletionChoice, CompletionUsage
 
-        mock_openai = mocker.patch("openai.completions.create")
+        mock_openai = mocker.patch("guardrails.utils.openai_utils.v1.openai.completions.create")
 
         mock_openai.return_value = Completion(
             id="",
