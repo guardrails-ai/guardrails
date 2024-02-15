@@ -27,18 +27,20 @@ class TestInstall:
         mock_get_validator_manifest = mocker.patch(
             "guardrails.cli.hub.install.get_validator_manifest"
         )
-        manifest = ModuleManifest.from_dict({
-            "id": "id",
-            "name": "name",
-            "author": {"name": "me","email": "me@me.me"},
-            "maintainers": [],
-            "repository": {"url": "some-repo"},
-            "namespace": "guardrails",
-            "package_name": "test-validator",
-            "module_name": "test_validator",
-            "exports": ["TestValidator"],
-            "tags": {},
-        })
+        manifest = ModuleManifest.from_dict(
+            {
+                "id": "id",
+                "name": "name",
+                "author": {"name": "me", "email": "me@me.me"},
+                "maintainers": [],
+                "repository": {"url": "some-repo"},
+                "namespace": "guardrails",
+                "package_name": "test-validator",
+                "module_name": "test_validator",
+                "exports": ["TestValidator"],
+                "tags": {},
+            }
+        )
         mock_get_validator_manifest.return_value = manifest
 
         mock_get_site_packages_location = mocker.patch(
@@ -217,33 +219,37 @@ def test_get_site_packages_location(mocker):
     "manifest,expected",
     [
         (
-            ModuleManifest.from_dict({
-                "id": "id",
-                "name": "name",
-                "author": {"name": "me","email": "me@me.me"},
-                "maintainers": [],
-                "repository": {"url": "some-repo"},
-                "namespace": "guardrails-ai",
-                "package_name": "test-validator",
-                "module_name": "test_validator",
-                "exports": ["TestValidator"],
-                "tags": {},
-            }),
+            ModuleManifest.from_dict(
+                {
+                    "id": "id",
+                    "name": "name",
+                    "author": {"name": "me", "email": "me@me.me"},
+                    "maintainers": [],
+                    "repository": {"url": "some-repo"},
+                    "namespace": "guardrails-ai",
+                    "package_name": "test-validator",
+                    "module_name": "test_validator",
+                    "exports": ["TestValidator"],
+                    "tags": {},
+                }
+            ),
             ["guardrails_ai", "test_validator"],
         ),
         (
-            ModuleManifest.from_dict({
-                "id": "id",
-                "name": "name",
-                "author": {"name": "me","email": "me@me.me"},
-                "maintainers": [],
-                "repository": {"url": "some-repo"},
-                "namespace": "",
-                "package_name": "test-validator",
-                "module_name": "test_validator",
-                "exports": ["TestValidator"],
-                "tags": {},
-            }),
+            ModuleManifest.from_dict(
+                {
+                    "id": "id",
+                    "name": "name",
+                    "author": {"name": "me", "email": "me@me.me"},
+                    "maintainers": [],
+                    "repository": {"url": "some-repo"},
+                    "namespace": "",
+                    "package_name": "test-validator",
+                    "module_name": "test_validator",
+                    "exports": ["TestValidator"],
+                    "tags": {},
+                }
+            ),
             ["test_validator"],
         ),
     ],
@@ -257,18 +263,20 @@ def test_get_org_and_package_dirs(manifest, expected):
 
 
 def test_get_hub_directory():
-    manifest = ModuleManifest.from_dict({
-        "id": "id",
-        "name": "name",
-        "author": {"name": "me","email": "me@me.me"},
-        "maintainers": [],
-        "repository": {"url": "some-repo"},
-        "namespace": "guardrails-ai",
-        "package_name": "test-validator",
-        "module_name": "test_validator",
-        "exports": ["TestValidator"],
-        "tags": {},
-    })
+    manifest = ModuleManifest.from_dict(
+        {
+            "id": "id",
+            "name": "name",
+            "author": {"name": "me", "email": "me@me.me"},
+            "maintainers": [],
+            "repository": {"url": "some-repo"},
+            "namespace": "guardrails-ai",
+            "package_name": "test-validator",
+            "module_name": "test_validator",
+            "exports": ["TestValidator"],
+            "tags": {},
+        }
+    )
 
     from guardrails.cli.hub.install import get_hub_directory
 
@@ -279,18 +287,20 @@ def test_get_hub_directory():
 
 class TestAddToHubInits:
     def test_closes_early_if_already_added(self, mocker):
-        manifest = ModuleManifest.from_dict({
-            "id": "id",
-            "name": "name",
-            "author": {"name": "me","email": "me@me.me"},
-            "maintainers": [],
-            "repository": {"url": "some-repo"},
-            "namespace": "guardrails-ai",
-            "package_name": "test-validator",
-            "module_name": "validator",
-            "exports": ["TestValidator", "helper"],
-            "tags": {},
-        })
+        manifest = ModuleManifest.from_dict(
+            {
+                "id": "id",
+                "name": "name",
+                "author": {"name": "me", "email": "me@me.me"},
+                "maintainers": [],
+                "repository": {"url": "some-repo"},
+                "namespace": "guardrails-ai",
+                "package_name": "test-validator",
+                "module_name": "validator",
+                "exports": ["TestValidator", "helper"],
+                "tags": {},
+            }
+        )
         site_packages = "./site-packages"
 
         hub_init_file = MockFile()
@@ -340,18 +350,20 @@ class TestAddToHubInits:
         assert ns_close_spy.call_count == 1
 
     def test_appends_import_line_if_not_present(self, mocker):
-        manifest = ModuleManifest.from_dict({
-            "id": "id",
-            "name": "name",
-            "author": {"name": "me","email": "me@me.me"},
-            "maintainers": [],
-            "repository": {"url": "some-repo"},
-            "namespace": "guardrails-ai",
-            "package_name": "test-validator",
-            "module_name": "validator",
-            "exports": ["TestValidator"],
-            "tags": {},
-        })
+        manifest = ModuleManifest.from_dict(
+            {
+                "id": "id",
+                "name": "name",
+                "author": {"name": "me", "email": "me@me.me"},
+                "maintainers": [],
+                "repository": {"url": "some-repo"},
+                "namespace": "guardrails-ai",
+                "package_name": "test-validator",
+                "module_name": "validator",
+                "exports": ["TestValidator"],
+                "tags": {},
+            }
+        )
         site_packages = "./site-packages"
 
         hub_init_file = MockFile()
@@ -420,18 +432,20 @@ class TestAddToHubInits:
         assert ns_close_spy.call_count == 1
 
     def test_creates_namespace_init_if_not_exists(self, mocker):
-        manifest = ModuleManifest.from_dict({
-            "id": "id",
-            "name": "name",
-            "author": {"name": "me","email": "me@me.me"},
-            "maintainers": [],
-            "repository": {"url": "some-repo"},
-            "namespace": "guardrails-ai",
-            "package_name": "test-validator",
-            "module_name": "validator",
-            "exports": ["TestValidator"],
-            "tags": {},
-        })
+        manifest = ModuleManifest.from_dict(
+            {
+                "id": "id",
+                "name": "name",
+                "author": {"name": "me", "email": "me@me.me"},
+                "maintainers": [],
+                "repository": {"url": "some-repo"},
+                "namespace": "guardrails-ai",
+                "package_name": "test-validator",
+                "module_name": "validator",
+                "exports": ["TestValidator"],
+                "tags": {},
+            }
+        )
         site_packages = "./site-packages"
 
         hub_init_file = MockFile()
@@ -480,31 +494,35 @@ class TestRunPostInstall:
     @pytest.mark.parametrize(
         "manifest",
         [
-            ModuleManifest.from_dict({
-                "id": "id",
-                "name": "name",
-                "author": {"name": "me","email": "me@me.me"},
-                "maintainers": [],
-                "repository": {"url": "some-repo"},
-                "namespace": "guardrails-ai",
-                "package_name": "test-validator",
-                "module_name": "validator",
-                "exports": ["TestValidator"],
-                "tags": {},
-            }),
-            ModuleManifest.from_dict({
-                "id": "id",
-                "name": "name",
-                "author": {"name": "me","email": "me@me.me"},
-                "maintainers": [],
-                "repository": {"url": "some-repo"},
-                "namespace": "guardrails-ai",
-                "package_name": "test-validator",
-                "module_name": "validator",
-                "exports": ["TestValidator"],
-                "tags": {},
-                "post_install": "",
-            }),
+            ModuleManifest.from_dict(
+                {
+                    "id": "id",
+                    "name": "name",
+                    "author": {"name": "me", "email": "me@me.me"},
+                    "maintainers": [],
+                    "repository": {"url": "some-repo"},
+                    "namespace": "guardrails-ai",
+                    "package_name": "test-validator",
+                    "module_name": "validator",
+                    "exports": ["TestValidator"],
+                    "tags": {},
+                }
+            ),
+            ModuleManifest.from_dict(
+                {
+                    "id": "id",
+                    "name": "name",
+                    "author": {"name": "me", "email": "me@me.me"},
+                    "maintainers": [],
+                    "repository": {"url": "some-repo"},
+                    "namespace": "guardrails-ai",
+                    "package_name": "test-validator",
+                    "module_name": "validator",
+                    "exports": ["TestValidator"],
+                    "tags": {},
+                    "post_install": "",
+                }
+            ),
         ],
     )
     def test_does_not_run_if_no_script(self, mocker, manifest):
@@ -526,19 +544,21 @@ class TestRunPostInstall:
         mock_isfile.return_value = True
         from guardrails.cli.hub.install import run_post_install
 
-        manifest = ModuleManifest.from_dict({
-            "id": "id",
-            "name": "name",
-            "author": {"name": "me","email": "me@me.me"},
-            "maintainers": [],
-            "repository": {"url": "some-repo"},
-            "namespace": "guardrails-ai",
-            "package_name": "test-validator",
-            "module_name": "validator",
-            "exports": ["TestValidator"],
-            "tags": {},
-            "post_install": "post_install.py",
-        })
+        manifest = ModuleManifest.from_dict(
+            {
+                "id": "id",
+                "name": "name",
+                "author": {"name": "me", "email": "me@me.me"},
+                "maintainers": [],
+                "repository": {"url": "some-repo"},
+                "namespace": "guardrails-ai",
+                "package_name": "test-validator",
+                "module_name": "validator",
+                "exports": ["TestValidator"],
+                "tags": {},
+                "post_install": "post_install.py",
+            }
+        )
 
         run_post_install(manifest, "./site_packages")
 
@@ -555,50 +575,56 @@ class TestRunPostInstall:
     "manifest,expected",
     [
         (
-            ModuleManifest.from_dict({
-                "id": "id",
-                "name": "name",
-                "author": {"name": "me","email": "me@me.me"},
-                "maintainers": [],
-                "repository": {"url": "some-repo"},
-                "namespace": "guardrails-ai",
-                "package_name": "test-validator",
-                "module_name": "validator",
-                "exports": ["TestValidator"],
-                "tags": {},
-            }),
+            ModuleManifest.from_dict(
+                {
+                    "id": "id",
+                    "name": "name",
+                    "author": {"name": "me", "email": "me@me.me"},
+                    "maintainers": [],
+                    "repository": {"url": "some-repo"},
+                    "namespace": "guardrails-ai",
+                    "package_name": "test-validator",
+                    "module_name": "validator",
+                    "exports": ["TestValidator"],
+                    "tags": {},
+                }
+            ),
             "git+some-repo",
         ),
         (
-            ModuleManifest.from_dict({
-                "id": "id",
-                "name": "name",
-                "author": {"name": "me","email": "me@me.me"},
-                "maintainers": [],
-                "repository": {"url": "git+some-repo"},
-                "namespace": "guardrails-ai",
-                "package_name": "test-validator",
-                "module_name": "validator",
-                "exports": ["TestValidator"],
-                "tags": {},
-                "post_install": "",
-            }),
+            ModuleManifest.from_dict(
+                {
+                    "id": "id",
+                    "name": "name",
+                    "author": {"name": "me", "email": "me@me.me"},
+                    "maintainers": [],
+                    "repository": {"url": "git+some-repo"},
+                    "namespace": "guardrails-ai",
+                    "package_name": "test-validator",
+                    "module_name": "validator",
+                    "exports": ["TestValidator"],
+                    "tags": {},
+                    "post_install": "",
+                }
+            ),
             "git+some-repo",
         ),
         (
-            ModuleManifest.from_dict({
-                "id": "id",
-                "name": "name",
-                "author": {"name": "me","email": "me@me.me"},
-                "maintainers": [],
-                "repository": {"url": "git+some-repo", "branch": "prod"},
-                "namespace": "guardrails-ai",
-                "package_name": "test-validator",
-                "module_name": "validator",
-                "exports": ["TestValidator"],
-                "tags": {},
-                "post_install": "",
-            }),
+            ModuleManifest.from_dict(
+                {
+                    "id": "id",
+                    "name": "name",
+                    "author": {"name": "me", "email": "me@me.me"},
+                    "maintainers": [],
+                    "repository": {"url": "git+some-repo", "branch": "prod"},
+                    "namespace": "guardrails-ai",
+                    "package_name": "test-validator",
+                    "module_name": "validator",
+                    "exports": ["TestValidator"],
+                    "tags": {},
+                    "post_install": "",
+                }
+            ),
             "git+some-repo@prod",
         ),
     ],
@@ -613,6 +639,7 @@ def test_get_install_url(manifest, expected):
 
 def test_install_hub_module(mocker):
     from guardrails.cli.hub.install import get_install_url
+
     mock_get_install_url = mocker.patch("guardrails.cli.hub.install.get_install_url")
     mock_get_install_url.return_value = "mock-install-url"
 
@@ -646,18 +673,20 @@ def test_install_hub_module(mocker):
 
     from guardrails.cli.hub.install import install_hub_module
 
-    manifest = ModuleManifest.from_dict({
-        "id": "id",
-        "name": "name",
-        "author": {"name": "me","email": "me@me.me"},
-        "maintainers": [],
-        "repository": {"url": "some-repo"},
-        "namespace": "guardrails-ai",
-        "package_name": "test-validator",
-        "module_name": "validator",
-        "exports": ["TestValidator"],
-        "tags": {},
-    })
+    manifest = ModuleManifest.from_dict(
+        {
+            "id": "id",
+            "name": "name",
+            "author": {"name": "me", "email": "me@me.me"},
+            "maintainers": [],
+            "repository": {"url": "some-repo"},
+            "namespace": "guardrails-ai",
+            "package_name": "test-validator",
+            "module_name": "validator",
+            "exports": ["TestValidator"],
+            "tags": {},
+        }
+    )
     site_packages = "./site-packages"
     install_hub_module(manifest, site_packages)
 
