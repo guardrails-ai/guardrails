@@ -698,54 +698,8 @@ class Pet(BaseModel):
 
 
 def test_input_validation_fix(mocker):
-    if OPENAI_VERSION.startswith("0"):
-        mock_openai = mocker.patch(
-            "guardrails.utils.openai_utils.v0.openai.Completion.create"
-        )
-        mock_openai.return_value = {
-            "choices": [
-                {
-                    "text": json.dumps({"name": "Fluffy"}),
-                }
-            ],
-            "usage": {
-                "prompt_tokens": 10,
-                "completion_tokens": 20,
-            },
-        }
-
-        mock_openai.__name__ = "openai.Completion.create"
-    else:
-        from openai.types import Completion, CompletionChoice, CompletionUsage
-
-        mock_openai = mocker.patch(
-            "guardrails.utils.openai_utils.v1.openai.completions.create"
-        )
-
-        mock_openai.return_value = Completion(
-            id="",
-            choices=[
-                CompletionChoice(
-                    finish_reason="stop",
-                    index=0,
-                    logprobs=None,
-                    text=json.dumps({"name": "Fluffy"}),
-                ),
-            ],
-            created=0,
-            model="",
-            object="text_completion",
-            usage=CompletionUsage(
-                completion_tokens=20,
-                prompt_tokens=10,
-                total_tokens=30,
-            ),
-        )
-
-        mock_openai.__name__ = "openai.completions.create"
-
-    mock_llm_api = get_static_openai_create_func()
-    mock_llm_api.__name__ = "mock_llm_api"
+    def mock_llm_api(*args, **kwargs):
+        return json.dumps({"name": "Fluffy"})
 
     # fix returns an amended value for prompt/instructions validation,
     guard = Guard.from_pydantic(output_class=Pet).with_prompt_validation(
