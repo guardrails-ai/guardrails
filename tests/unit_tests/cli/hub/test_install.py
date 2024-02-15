@@ -638,8 +638,6 @@ def test_get_install_url(manifest, expected):
 
 
 def test_install_hub_module(mocker):
-    from guardrails.cli.hub.install import get_install_url
-
     mock_get_install_url = mocker.patch("guardrails.cli.hub.install.get_install_url")
     mock_get_install_url.return_value = "mock-install-url"
 
