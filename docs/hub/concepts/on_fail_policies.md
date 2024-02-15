@@ -1,5 +1,5 @@
 
-# `on_fail` policies for validators
+# `on_fail` Policies for Validators
 
 While initializing a validator, you can specify `on_fail` policies to handle the failure of the validator. The `on_fail` policy specifies the corrective action that should be taken if the quality criteria is not met. The corrective action can be one of the following:
 
