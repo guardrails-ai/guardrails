@@ -1,5 +1,5 @@
-import pytest
 import pydantic
+import pytest
 
 from guardrails.classes.history.outputs import Outputs
 from guardrails.constants import error_status, fail_status, not_run_status, pass_status
@@ -186,7 +186,7 @@ def test_status(outputs: Outputs, expected_status: str):
 
 @pytest.mark.skipif(
     pydantic.version.VERSION.startswith("1"),
-    reason="This fails in Pydantic 1.x because it casts the ReAsk to a Dict on init..."
+    reason="This fails in Pydantic 1.x because it casts the ReAsk to a Dict on init...",
 )
 def test_status_reask():
     outputs = Outputs(
@@ -195,7 +195,7 @@ def test_status_reask():
             fail_results=[non_fixable_fail_result],
         ),
     )
-    
+
     status = outputs.status
 
     assert status == fail_status
