@@ -28,4 +28,4 @@ class Credentials(Serializeable):
                 return Credentials.from_dict(creds)
 
         except FileNotFoundError:
-            return Credentials()  # type: ignore
+            return Credentials.from_dict({})  # type: ignore
