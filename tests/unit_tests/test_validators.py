@@ -787,25 +787,15 @@ This also is not two words
 @pytest.mark.asyncio
 @pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="Not supported in v1")
 async def test_async_input_validation_fix(mocker):
-    mock_openai = mocker.patch("openai.Completion.acreate")
-    mock_openai.return_value = {
-        "choices": [
-            {
-                "text": json.dumps({"name": "Fluffy"}),
-            }
-        ],
-        "usage": {
-            "prompt_tokens": 10,
-            "completion_tokens": 20,
-        },
-    }
+    async def mock_llm_api(*args, **kwargs):
+        return json.dumps({"name": "Fluffy"})
 
     # fix returns an amended value for prompt/instructions validation,
     guard = Guard.from_pydantic(output_class=Pet).with_prompt_validation(
         validators=[TwoWords(on_fail="fix")]
     )
     await guard(
-        get_static_openai_acreate_func(),
+        mock_llm_api,
         prompt="What kind of pet should I get?",
     )
     assert guard.history.first.iterations.first.outputs.validation_output == "What kind"
@@ -814,7 +804,7 @@ async def test_async_input_validation_fix(mocker):
         validators=[TwoWords(on_fail="fix")]
     )
     await guard(
-        get_static_openai_acreate_func(),
+        mock_llm_api,
         prompt="What kind of pet should I get and what should I name it?",
         instructions="But really, what kind of pet should I get?",
     )
@@ -828,7 +818,7 @@ async def test_async_input_validation_fix(mocker):
     )
     with pytest.raises(ValidationError) as excinfo:
         await guard(
-            get_static_openai_acreate_func(),
+            mock_llm_api,
             msg_history=[
                 {
                     "role": "user",
@@ -856,7 +846,7 @@ This is not two words
 """
     )
     await guard(
-        get_static_openai_acreate_func(),
+        mock_llm_api,
     )
     assert guard.history.first.iterations.first.outputs.validation_output == "This is"
 
@@ -879,7 +869,7 @@ This also is not two words
 """
     )
     await guard(
-        get_static_openai_acreate_func(),
+        mock_llm_api,
     )
     assert guard.history.first.iterations.first.outputs.validation_output == "This also"
 
