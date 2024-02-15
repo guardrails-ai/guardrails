@@ -1,5 +1,5 @@
 
-## 🛠️ Specifying corrective actions
+# Specifying corrective actions
 
 The `on-fail-{quality-criteria}` attribute allows specifying the corrective action that should be taken if the quality criteria is not met. The corrective action can be one of the following:
 
