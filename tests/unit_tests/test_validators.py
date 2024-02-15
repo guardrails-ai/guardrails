@@ -711,10 +711,14 @@ def test_input_validation_fix(mocker):
                 "completion_tokens": 20,
             },
         }
+
+        mock_openai.__name__ = "openai.Completion.create"
     else:
         from openai.types import Completion, CompletionChoice, CompletionUsage
 
-        return Completion(
+        mock_openai = mocker.patch("openai.completions.create")
+
+        mock_openai.return_value = Completion(
             id="",
             choices=[
                 CompletionChoice(
@@ -734,12 +738,17 @@ def test_input_validation_fix(mocker):
             ),
         )
 
+        mock_openai.__name__ = "openai.completions.create"
+
+    mock_llm_api = get_static_openai_create_func()
+    mock_llm_api.__name__ = "mock_llm_api"
+
     # fix returns an amended value for prompt/instructions validation,
     guard = Guard.from_pydantic(output_class=Pet).with_prompt_validation(
         validators=[TwoWords(on_fail="fix")]
     )
     guard(
-        get_static_openai_create_func(),
+        mock_llm_api,
         prompt="What kind of pet should I get?",
     )
     assert guard.history.first.iterations.first.outputs.validation_output == "What kind"
@@ -747,7 +756,7 @@ def test_input_validation_fix(mocker):
         validators=[TwoWords(on_fail="fix")]
     )
     guard(
-        get_static_openai_create_func(),
+        mock_llm_api,
         prompt="What kind of pet should I get and what should I name it?",
         instructions="But really, what kind of pet should I get?",
     )
@@ -761,7 +770,7 @@ def test_input_validation_fix(mocker):
     )
     with pytest.raises(ValidationError) as excinfo:
         guard(
-            get_static_openai_create_func(),
+            mock_llm_api,
             msg_history=[
                 {
                     "role": "user",
@@ -789,7 +798,7 @@ This is not two words
 """
     )
     guard(
-        get_static_openai_create_func(),
+        mock_llm_api,
     )
     assert guard.history.first.iterations.first.outputs.validation_output == "This is"
 
@@ -812,7 +821,7 @@ This also is not two words
 """
     )
     guard(
-        get_static_openai_create_func(),
+        mock_llm_api,
     )
     assert guard.history.first.iterations.first.outputs.validation_output == "This also"
 
