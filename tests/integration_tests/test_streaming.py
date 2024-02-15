@@ -204,6 +204,8 @@ def test_streaming_with_openai_callable(
         else openai.completions.create
     )
 
+    method.__name__ = "mock_openai_completion_create"
+
     generator = guard(
         method,
         engine="text-davinci-003",
@@ -270,6 +272,8 @@ def test_streaming_with_openai_chat_callable(
         if OPENAI_VERSION.startswith("0")
         else openai.chat.completions.create
     )
+
+    method.__name__ = "mock_openai_chat_completion_create"
 
     generator = guard(
         method,

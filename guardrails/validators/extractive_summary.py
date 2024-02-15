@@ -53,6 +53,9 @@ class ExtractiveSummary(Validator):
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         """Make sure each sentence was precisely copied from the document."""
+        if not metadata:
+            # default to value provided via Validator.with_metadata
+            metadata = self._metadata
 
         if "filepaths" not in metadata:
             raise RuntimeError(

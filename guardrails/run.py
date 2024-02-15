@@ -5,8 +5,10 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union
 from eliot import add_destinations, start_action
 from pydantic import BaseModel
 
+from guardrails.classes.credentials import Credentials
 from guardrails.classes.history import Call, Inputs, Iteration, Outputs
 from guardrails.datatypes import verify_metadata_requirements
+from guardrails.errors import ValidationError
 from guardrails.llm_providers import (
     AsyncPromptCallableBase,
     OpenAICallable,
@@ -17,6 +19,7 @@ from guardrails.logger import logger, set_scope
 from guardrails.prompt import Instructions, Prompt
 from guardrails.schema import Schema, StringSchema
 from guardrails.utils.exception_utils import UserFacingException
+from guardrails.utils.hub_telemetry_utils import HubTelemetry
 from guardrails.utils.llm_response import LLMResponse
 from guardrails.utils.openai_utils import OPENAI_VERSION
 from guardrails.utils.reask_utils import (
@@ -25,7 +28,7 @@ from guardrails.utils.reask_utils import (
     SkeletonReAsk,
     reasks_to_dict,
 )
-from guardrails.validator_base import ValidatorError
+from guardrails.utils.telemetry_utils import async_trace, trace
 
 add_destinations(logger.debug)
 
@@ -102,6 +105,13 @@ class Runner:
         self.base_model = base_model
         self.full_schema_reask = full_schema_reask
 
+        # Get metrics opt-out from credentials
+        self._disable_tracer = Credentials.from_rc_file().no_metrics
+
+        if not self._disable_tracer:
+            # Get the HubTelemetry singleton
+            self._hub_telemetry = HubTelemetry()
+
     def __call__(self, call_log: Call, prompt_params: Optional[Dict] = None) -> Call:
         """Execute the runner by repeatedly calling step until the reask budget
         is exhausted.
@@ -160,6 +170,7 @@ class Runner:
                     self.msg_history_schema,
                     self.output_schema,
                 )
+                index = 0
                 for index in range(self.num_reasks + 1):
                     # Run a single step.
                     iteration = self.step(
@@ -194,6 +205,17 @@ class Runner:
                         prompt_params=prompt_params,
                         include_instructions=include_instructions,
                     )
+
+                # Log how many times we reasked
+                # Use the HubTelemetry singleton
+                if not self._disable_tracer:
+                    self._hub_telemetry.create_new_span(
+                        span_name="/reasks",
+                        attributes=[("reask_count", index)],
+                        is_parent=False,  # This span has no children
+                        has_parent=True,  # This span has a parent
+                    )
+
         except UserFacingException as e:
             # Because Pydantic v1 doesn't respect property setters
             call_log._exception = e.original_exception
@@ -204,6 +226,7 @@ class Runner:
             raise e
         return call_log
 
+    @trace(name="step")
     def step(
         self,
         index: int,
@@ -332,11 +355,11 @@ class Runner:
         )
         iteration.outputs.validation_output = validated_msg_history
         if isinstance(validated_msg_history, ReAsk):
-            raise ValidatorError(
+            raise ValidationError(
                 f"Message history validation failed: " f"{validated_msg_history}"
             )
         if validated_msg_history != msg_str:
-            raise ValidatorError("Message history validation failed")
+            raise ValidationError("Message history validation failed")
 
     def prepare_msg_history(
         self,
@@ -372,9 +395,9 @@ class Runner:
         )
         iteration.outputs.validation_output = validated_prompt
         if validated_prompt is None:
-            raise ValidatorError("Prompt validation failed")
+            raise ValidationError("Prompt validation failed")
         if isinstance(validated_prompt, ReAsk):
-            raise ValidatorError(f"Prompt validation failed: {validated_prompt}")
+            raise ValidationError(f"Prompt validation failed: {validated_prompt}")
         return Prompt(validated_prompt)
 
     def validate_instructions(
@@ -393,9 +416,9 @@ class Runner:
         )
         iteration.outputs.validation_output = validated_instructions
         if validated_instructions is None:
-            raise ValidatorError("Instructions validation failed")
+            raise ValidationError("Instructions validation failed")
         if isinstance(validated_instructions, ReAsk):
-            raise ValidatorError(
+            raise ValidationError(
                 f"Instructions validation failed: {validated_instructions}"
             )
         return Instructions(validated_instructions)
@@ -509,6 +532,7 @@ class Runner:
 
         return instructions, prompt, msg_history
 
+    @trace(name="call")
     def call(
         self,
         index: int,
@@ -593,7 +617,7 @@ class Runner:
         """Validate the output."""
         with start_action(action_type="validate", index=index) as action:
             validated_output = output_schema.validate(
-                iteration, parsed_output, self.metadata, **kwargs
+                iteration, parsed_output, self.metadata, attempt_number=index, **kwargs
             )
 
             action.log(
@@ -783,6 +807,7 @@ class AsyncRunner(Runner):
 
         return call_log
 
+    @async_trace(name="step")
     async def async_step(
         self,
         index: int,
@@ -893,6 +918,7 @@ class AsyncRunner(Runner):
             raise e
         return iteration
 
+    @async_trace(name="call")
     async def async_call(
         self,
         index: int,
@@ -964,7 +990,7 @@ class AsyncRunner(Runner):
         """Validate the output."""
         with start_action(action_type="validate", index=index) as action:
             validated_output = await output_schema.async_validate(
-                iteration, parsed_output, self.metadata
+                iteration, parsed_output, self.metadata, attempt_number=index
             )
 
             action.log(
@@ -1020,12 +1046,12 @@ class AsyncRunner(Runner):
                         iteration, msg_str, self.metadata
                     )
                     if isinstance(validated_msg_history, ReAsk):
-                        raise ValidatorError(
+                        raise ValidationError(
                             f"Message history validation failed: "
                             f"{validated_msg_history}"
                         )
                     if validated_msg_history != msg_str:
-                        raise ValidatorError("Message history validation failed")
+                        raise ValidationError("Message history validation failed")
             elif prompt is not None:
                 if isinstance(prompt, str):
                     prompt = Prompt(prompt)
@@ -1053,9 +1079,9 @@ class AsyncRunner(Runner):
                     )
                     iteration.outputs.validation_output = validated_prompt
                     if validated_prompt is None:
-                        raise ValidatorError("Prompt validation failed")
+                        raise ValidationError("Prompt validation failed")
                     if isinstance(validated_prompt, ReAsk):
-                        raise ValidatorError(
+                        raise ValidationError(
                             f"Prompt validation failed: {validated_prompt}"
                         )
                     prompt = Prompt(validated_prompt)
@@ -1072,9 +1098,9 @@ class AsyncRunner(Runner):
                     )
                     iteration.outputs.validation_output = validated_instructions
                     if validated_instructions is None:
-                        raise ValidatorError("Instructions validation failed")
+                        raise ValidationError("Instructions validation failed")
                     if isinstance(validated_instructions, ReAsk):
-                        raise ValidatorError(
+                        raise ValidationError(
                             f"Instructions validation failed: {validated_instructions}"
                         )
                     instructions = Instructions(validated_instructions)
