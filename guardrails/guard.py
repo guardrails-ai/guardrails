@@ -99,7 +99,7 @@ class Guard(Runnable, Generic[OT]):
         self._set_tracer(tracer)
 
         # Get unique id of user from credentials
-        self._user_id = Credentials.from_rc_file().id
+        self._user_id = Credentials.from_rc_file().id or ""
 
         # Get metrics opt-out from credentials
         self._disable_tracer = Credentials.from_rc_file().no_metrics
