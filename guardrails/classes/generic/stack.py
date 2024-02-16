@@ -49,7 +49,7 @@ class Stack(List[T]):
         except ValueError:
             pass
 
-    def at(self, index: int) -> Optional[T]:
+    def at(self, index: int, default: Optional[T] = None) -> Optional[T]:
         """Returns the item located at the index.
 
         If the index does not exist in the stack (Overflow or
@@ -59,7 +59,7 @@ class Stack(List[T]):
             value = self[index]
             return value
         except IndexError:
-            pass
+            return default
 
     def copy(self) -> "Stack[T]":
         """Returns a copy of the current Stack."""

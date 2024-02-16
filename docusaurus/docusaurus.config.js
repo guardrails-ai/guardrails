@@ -73,9 +73,15 @@ const config = {
         },
         items: [
           {
+            type: "doc",
             position: "left",
             label: "Docs",
-            to: "/docs",
+            docId: "index",
+          }, {
+            type: 'docSidebar',
+            position: 'left',
+            sidebarId: 'hubSidebar',
+            label: 'Hub Docs',
           }
         ],
       },

@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 
 from guardrails import Guard
 from guardrails.datatypes import DataType
+from guardrails.errors import ValidationError
 from guardrails.schema import StringSchema
 from guardrails.utils.openai_utils import (
     OPENAI_VERSION,
@@ -22,7 +23,6 @@ from guardrails.validator_base import (
     PassResult,
     Refrain,
     ValidationResult,
-    ValidatorError,
     check_refrain_in_dict,
     filter_in_dict,
     register_validator,
@@ -604,7 +604,7 @@ def custom_reask_on_fail_handler(value: Any, fail_results: List[FailResult]):
 
 
 def custom_exception_on_fail_handler(value: Any, fail_results: List[FailResult]):
-    raise ValidatorError("Something went wrong!")
+    raise ValidationError("Something went wrong!")
 
 
 def custom_filter_on_fail_handler(value: Any, fail_results: List[FailResult]):
@@ -637,11 +637,11 @@ def custom_refrain_on_fail_handler(value: Any, fail_results: List[FailResult]):
         ),
         (
             custom_exception_on_fail_handler,
-            ValidatorError,
+            ValidationError,
         ),
         (
             custom_filter_on_fail_handler,
-            {"name": "Fido"},
+            None,
         ),
         (
             custom_refrain_on_fail_handler,
@@ -682,7 +682,7 @@ def test_custom_on_fail_handler(
 
     guard = Guard.from_pydantic(output_class=Pet, prompt=prompt)
     if isinstance(expected_result, type) and issubclass(expected_result, Exception):
-        with pytest.raises(ValidatorError) as excinfo:
+        with pytest.raises(ValidationError) as excinfo:
             guard.parse(output, num_reasks=0)
         assert str(excinfo.value) == "Something went wrong!"
     else:
@@ -698,48 +698,15 @@ class Pet(BaseModel):
 
 
 def test_input_validation_fix(mocker):
-    if OPENAI_VERSION.startswith("0"):
-        mock_openai = mocker.patch("openai.Completion.create")
-        mock_openai.return_value = {
-            "choices": [
-                {
-                    "text": json.dumps({"name": "Fluffy"}),
-                }
-            ],
-            "usage": {
-                "prompt_tokens": 10,
-                "completion_tokens": 20,
-            },
-        }
-    else:
-        from openai.types import Completion, CompletionChoice, CompletionUsage
-
-        return Completion(
-            id="",
-            choices=[
-                CompletionChoice(
-                    finish_reason="stop",
-                    index=0,
-                    logprobs=None,
-                    text=json.dumps({"name": "Fluffy"}),
-                ),
-            ],
-            created=0,
-            model="",
-            object="text_completion",
-            usage=CompletionUsage(
-                completion_tokens=20,
-                prompt_tokens=10,
-                total_tokens=30,
-            ),
-        )
+    def mock_llm_api(*args, **kwargs):
+        return json.dumps({"name": "Fluffy"})
 
     # fix returns an amended value for prompt/instructions validation,
     guard = Guard.from_pydantic(output_class=Pet).with_prompt_validation(
         validators=[TwoWords(on_fail="fix")]
     )
     guard(
-        get_static_openai_create_func(),
+        mock_llm_api,
         prompt="What kind of pet should I get?",
     )
     assert guard.history.first.iterations.first.outputs.validation_output == "What kind"
@@ -747,7 +714,7 @@ def test_input_validation_fix(mocker):
         validators=[TwoWords(on_fail="fix")]
     )
     guard(
-        get_static_openai_create_func(),
+        mock_llm_api,
         prompt="What kind of pet should I get and what should I name it?",
         instructions="But really, what kind of pet should I get?",
     )
@@ -759,9 +726,9 @@ def test_input_validation_fix(mocker):
     guard = Guard.from_pydantic(output_class=Pet).with_msg_history_validation(
         validators=[TwoWords(on_fail="fix")]
     )
-    with pytest.raises(ValidatorError) as excinfo:
+    with pytest.raises(ValidationError) as excinfo:
         guard(
-            get_static_openai_create_func(),
+            mock_llm_api,
             msg_history=[
                 {
                     "role": "user",
@@ -770,7 +737,7 @@ def test_input_validation_fix(mocker):
             ],
         )
     assert str(excinfo.value) == "Message history validation failed"
-    assert isinstance(guard.history.first.exception, ValidatorError)
+    assert isinstance(guard.history.first.exception, ValidationError)
     assert guard.history.first.exception == excinfo.value
 
     # rail prompt validation
@@ -789,7 +756,7 @@ This is not two words
 """
     )
     guard(
-        get_static_openai_create_func(),
+        mock_llm_api,
     )
     assert guard.history.first.iterations.first.outputs.validation_output == "This is"
 
@@ -812,7 +779,7 @@ This also is not two words
 """
     )
     guard(
-        get_static_openai_create_func(),
+        mock_llm_api,
     )
     assert guard.history.first.iterations.first.outputs.validation_output == "This also"
 
@@ -820,25 +787,15 @@ This also is not two words
 @pytest.mark.asyncio
 @pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="Not supported in v1")
 async def test_async_input_validation_fix(mocker):
-    mock_openai = mocker.patch("openai.Completion.acreate")
-    mock_openai.return_value = {
-        "choices": [
-            {
-                "text": json.dumps({"name": "Fluffy"}),
-            }
-        ],
-        "usage": {
-            "prompt_tokens": 10,
-            "completion_tokens": 20,
-        },
-    }
+    async def mock_llm_api(*args, **kwargs):
+        return json.dumps({"name": "Fluffy"})
 
     # fix returns an amended value for prompt/instructions validation,
     guard = Guard.from_pydantic(output_class=Pet).with_prompt_validation(
         validators=[TwoWords(on_fail="fix")]
     )
     await guard(
-        get_static_openai_acreate_func(),
+        mock_llm_api,
         prompt="What kind of pet should I get?",
     )
     assert guard.history.first.iterations.first.outputs.validation_output == "What kind"
@@ -847,7 +804,7 @@ async def test_async_input_validation_fix(mocker):
         validators=[TwoWords(on_fail="fix")]
     )
     await guard(
-        get_static_openai_acreate_func(),
+        mock_llm_api,
         prompt="What kind of pet should I get and what should I name it?",
         instructions="But really, what kind of pet should I get?",
     )
@@ -859,9 +816,9 @@ async def test_async_input_validation_fix(mocker):
     guard = Guard.from_pydantic(output_class=Pet).with_msg_history_validation(
         validators=[TwoWords(on_fail="fix")]
     )
-    with pytest.raises(ValidatorError) as excinfo:
+    with pytest.raises(ValidationError) as excinfo:
         await guard(
-            get_static_openai_acreate_func(),
+            mock_llm_api,
             msg_history=[
                 {
                     "role": "user",
@@ -870,7 +827,7 @@ async def test_async_input_validation_fix(mocker):
             ],
         )
     assert str(excinfo.value) == "Message history validation failed"
-    assert isinstance(guard.history.first.exception, ValidatorError)
+    assert isinstance(guard.history.first.exception, ValidationError)
     assert guard.history.first.exception == excinfo.value
 
     # rail prompt validation
@@ -889,7 +846,7 @@ This is not two words
 """
     )
     await guard(
-        get_static_openai_acreate_func(),
+        mock_llm_api,
     )
     assert guard.history.first.iterations.first.outputs.validation_output == "This is"
 
@@ -912,7 +869,7 @@ This also is not two words
 """
     )
     await guard(
-        get_static_openai_acreate_func(),
+        mock_llm_api,
     )
     assert guard.history.first.iterations.first.outputs.validation_output == "This also"
 
@@ -971,34 +928,34 @@ def test_input_validation_fail(
     guard = Guard.from_pydantic(output_class=Pet).with_prompt_validation(
         validators=[TwoWords(on_fail=on_fail)]
     )
-    with pytest.raises(ValidatorError) as excinfo:
+    with pytest.raises(ValidationError) as excinfo:
         guard(
             get_static_openai_create_func(),
             prompt="What kind of pet should I get?",
         )
     assert str(excinfo.value) == structured_prompt_error
-    assert isinstance(guard.history.last.exception, ValidatorError)
+    assert isinstance(guard.history.last.exception, ValidationError)
     assert guard.history.last.exception == excinfo.value
 
     # with_instructions_validation
     guard = Guard.from_pydantic(output_class=Pet).with_instructions_validation(
         validators=[TwoWords(on_fail=on_fail)]
     )
-    with pytest.raises(ValidatorError) as excinfo:
+    with pytest.raises(ValidationError) as excinfo:
         guard(
             get_static_openai_create_func(),
             prompt="What kind of pet should I get and what should I name it?",
             instructions="What kind of pet should I get?",
         )
     assert str(excinfo.value) == structured_instructions_error
-    assert isinstance(guard.history.last.exception, ValidatorError)
+    assert isinstance(guard.history.last.exception, ValidationError)
     assert guard.history.last.exception == excinfo.value
 
     # with_msg_history_validation
     guard = Guard.from_pydantic(output_class=Pet).with_msg_history_validation(
         validators=[TwoWords(on_fail=on_fail)]
     )
-    with pytest.raises(ValidatorError) as excinfo:
+    with pytest.raises(ValidationError) as excinfo:
         guard(
             get_static_openai_create_func(),
             msg_history=[
@@ -1009,7 +966,7 @@ def test_input_validation_fail(
             ],
         )
     assert str(excinfo.value) == structured_message_history_error
-    assert isinstance(guard.history.last.exception, ValidatorError)
+    assert isinstance(guard.history.last.exception, ValidationError)
     assert guard.history.last.exception == excinfo.value
 
     # rail prompt validation
@@ -1027,12 +984,12 @@ This is not two words
 </rail>
 """
     )
-    with pytest.raises(ValidatorError) as excinfo:
+    with pytest.raises(ValidationError) as excinfo:
         guard(
             get_static_openai_create_func(),
         )
     assert str(excinfo.value) == unstructured_prompt_error
-    assert isinstance(guard.history.last.exception, ValidatorError)
+    assert isinstance(guard.history.last.exception, ValidationError)
     assert guard.history.last.exception == excinfo.value
 
     # rail instructions validation
@@ -1053,12 +1010,12 @@ This also is not two words
 </rail>
 """
     )
-    with pytest.raises(ValidatorError) as excinfo:
+    with pytest.raises(ValidationError) as excinfo:
         guard(
             get_static_openai_create_func(),
         )
     assert str(excinfo.value) == unstructured_instructions_error
-    assert isinstance(guard.history.last.exception, ValidatorError)
+    assert isinstance(guard.history.last.exception, ValidationError)
     assert guard.history.last.exception == excinfo.value
 
 
@@ -1118,34 +1075,34 @@ async def test_input_validation_fail_async(
     guard = Guard.from_pydantic(output_class=Pet).with_prompt_validation(
         validators=[TwoWords(on_fail=on_fail)]
     )
-    with pytest.raises(ValidatorError) as excinfo:
+    with pytest.raises(ValidationError) as excinfo:
         await guard(
             get_static_openai_acreate_func(),
             prompt="What kind of pet should I get?",
         )
     assert str(excinfo.value) == structured_prompt_error
-    assert isinstance(guard.history.last.exception, ValidatorError)
+    assert isinstance(guard.history.last.exception, ValidationError)
     assert guard.history.last.exception == excinfo.value
 
     # with_instructions_validation
     guard = Guard.from_pydantic(output_class=Pet).with_instructions_validation(
         validators=[TwoWords(on_fail=on_fail)]
     )
-    with pytest.raises(ValidatorError) as excinfo:
+    with pytest.raises(ValidationError) as excinfo:
         await guard(
             get_static_openai_acreate_func(),
             prompt="What kind of pet should I get and what should I name it?",
             instructions="What kind of pet should I get?",
         )
     assert str(excinfo.value) == structured_instructions_error
-    assert isinstance(guard.history.last.exception, ValidatorError)
+    assert isinstance(guard.history.last.exception, ValidationError)
     assert guard.history.last.exception == excinfo.value
 
     # with_msg_history_validation
     guard = Guard.from_pydantic(output_class=Pet).with_msg_history_validation(
         validators=[TwoWords(on_fail=on_fail)]
     )
-    with pytest.raises(ValidatorError) as excinfo:
+    with pytest.raises(ValidationError) as excinfo:
         await guard(
             get_static_openai_acreate_func(),
             msg_history=[
@@ -1156,7 +1113,7 @@ async def test_input_validation_fail_async(
             ],
         )
     assert str(excinfo.value) == structured_message_history_error
-    assert isinstance(guard.history.last.exception, ValidatorError)
+    assert isinstance(guard.history.last.exception, ValidationError)
     assert guard.history.last.exception == excinfo.value
 
     # rail prompt validation
@@ -1174,12 +1131,12 @@ This is not two words
 </rail>
 """
     )
-    with pytest.raises(ValidatorError) as excinfo:
+    with pytest.raises(ValidationError) as excinfo:
         await guard(
             get_static_openai_acreate_func(),
         )
     assert str(excinfo.value) == unstructured_prompt_error
-    assert isinstance(guard.history.last.exception, ValidatorError)
+    assert isinstance(guard.history.last.exception, ValidationError)
     assert guard.history.last.exception == excinfo.value
 
     # rail instructions validation
@@ -1200,12 +1157,12 @@ This also is not two words
 </rail>
 """
     )
-    with pytest.raises(ValidatorError) as excinfo:
+    with pytest.raises(ValidationError) as excinfo:
         await guard(
             get_static_openai_acreate_func(),
         )
     assert str(excinfo.value) == unstructured_instructions_error
-    assert isinstance(guard.history.last.exception, ValidatorError)
+    assert isinstance(guard.history.last.exception, ValidationError)
     assert guard.history.last.exception == excinfo.value
 
 

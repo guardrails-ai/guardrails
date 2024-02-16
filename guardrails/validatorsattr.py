@@ -5,6 +5,7 @@ from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Tuple
 import lxml.etree as ET
 import pydantic
 
+from guardrails.constants import hub
 from guardrails.utils.xml_utils import cast_xml_to_string
 from guardrails.validator_base import Validator, ValidatorSpec
 
@@ -82,10 +83,18 @@ class ValidatorsAttr(pydantic.BaseModel):
                 elif isinstance(validator, str):
                     # `validator` is a string, use it as the validator prompt
                     if ":" in validator:
-                        parts = validator.split(":", 1)
-                        validator_name = parts[0].strip()
+                        is_hub_validator = validator.startswith(hub)
+                        max_splits = 2 if is_hub_validator else 1
+                        parts = validator.split(":", max_splits)
+                        validator_name = (
+                            ":".join(parts[0:2])
+                            if is_hub_validator
+                            else parts[0].strip()
+                        )
                         validator_args = [
-                            arg.strip() for arg in parts[1].split() if len(parts) > 1
+                            arg.strip()
+                            for arg in parts[max_splits].split()
+                            if len(parts) > 1
                         ]
                     else:
                         validator_name = validator
@@ -197,11 +206,20 @@ class ValidatorsAttr(pydantic.BaseModel):
         Returns:
             A tuple of the validator name and the list of arguments.
         """
-        validator_with_args = token.strip().split(":", 1)
+        is_hub_validator = token.startswith(hub)
+        max_splits = 2 if is_hub_validator else 1
+
+        validator_with_args = token.strip().split(":", max_splits)
         if len(validator_with_args) == 1:
             return validator_with_args[0].strip(), []
+        elif is_hub_validator and len(validator_with_args) == 2:
+            return ":".join(validator_with_args[0:2]).strip(), []
 
-        validator, args_token = validator_with_args
+        validator, args_token = (
+            [":".join(validator_with_args[0:2]).strip(), validator_with_args[2]]
+            if is_hub_validator
+            else validator_with_args
+        )
 
         # Split using whitespace as a delimiter, but not if it is inside curly braces or
         # single quotes.
@@ -273,11 +291,23 @@ class ValidatorsAttr(pydantic.BaseModel):
         Returns:
             A list of validators.
         """
-        from guardrails.validator_base import types_to_validators, validators_registry
+        from guardrails.validator_base import get_validator, types_to_validators
 
         _validators = []
         _unregistered_validators = []
-        for validator_name, args in validator_args.items():
+        for validator_ref, args in validator_args.items():
+            # Get or fetch validator
+            validator = get_validator(validator_ref)
+            validator_name = validator_ref.replace(hub, "")
+
+            if not validator:
+                if strict:
+                    raise ValueError(f"Validator {validator_name} is not installed!")
+                else:
+                    warnings.warn(f"Validator {validator_name} is not installed!")
+                    _unregistered_validators.append(validator_name)
+                continue
+
             # Check if the validator is registered for this element.
             # The validators in `format` that are not registered for this element
             # will be ignored (with an error or warning, depending on the value of
@@ -295,8 +325,6 @@ class ValidatorsAttr(pydantic.BaseModel):
                     )
                     _unregistered_validators.append(validator_name)
                 continue
-
-            validator = validators_registry[validator_name]
 
             # See if the formatter has an associated on_fail method.
             on_fail = on_fail_handlers.get(validator_name, None)
