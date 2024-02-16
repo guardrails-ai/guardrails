@@ -2,6 +2,7 @@ import inspect
 from collections import defaultdict
 from copy import deepcopy
 from string import Template
+from enum import Enum
 from typing import (
     Any,
     Callable,
@@ -31,6 +32,15 @@ class Filter:
 class Refrain:
     pass
 
+class OnFailAction: 
+    NOOP = "noop"
+    CUSTOM = "custom"
+    REASK = "reask"
+    FIX = "fix"
+    FILTER = "filter"
+    REFRAIN = "refrain"
+    EXCEPTION = "exception"
+    FIX_REASK = "fix_reask"
 
 def check_refrain_in_list(schema: List) -> bool:
     """Checks if a Refrain object exists in a list.
