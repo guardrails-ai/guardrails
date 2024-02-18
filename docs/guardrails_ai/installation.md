@@ -41,3 +41,12 @@ Installing directly from GitHub is useful when a release has not yet been cut wi
 pip install git+https://github.com/guardrails-ai/guardrails.git@main
 pip install git+https://github.com/guardrails-ai/guardrails.git@dev
 ```
+
+
+## Install Guardrails-JS
+
+Guardrails AI also has a JavaScript version. To install the JavaScript version, run:
+
+```bash
+npm i git+https://github.com/guardrails-ai/guardrails-js.git
+```

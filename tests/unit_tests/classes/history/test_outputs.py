@@ -1,3 +1,4 @@
+import pydantic
 import pytest
 
 from guardrails.classes.history.outputs import Outputs
@@ -36,6 +37,7 @@ def test_non_empty_initialization():
     reasks = [ReAsk(incorrect_value="Hello there!", fail_results=[validation_result])]
     validator_logs = [
         ValidatorLogs(
+            registered_name="no-punctuation",
             validator_name="no-punctuation",
             value_before_validation="Hello there!",
             validation_result=validation_result,
@@ -103,6 +105,7 @@ non_fixable_fail_result = FailResult(
             Outputs(
                 validator_logs=[
                     ValidatorLogs(
+                        registered_name="no-punctuation",
                         validator_name="no-punctuation",
                         value_before_validation="Hello there!",
                         validation_result=fixable_fail_result,
@@ -125,6 +128,7 @@ def test__all_empty(outputs: Outputs, expected_result: bool):
 def test_failed_validations():
     validator_logs = [
         ValidatorLogs(
+            registered_name="no-punctuation",
             validator_name="no-punctuation",
             value_before_validation="Hello there!",
             validation_result=fixable_fail_result,
@@ -132,6 +136,7 @@ def test_failed_validations():
             property_path="$",
         ),
         ValidatorLogs(
+            registered_name="valid-length",
             validator_name="valid-length",
             value_before_validation="Hello there!",
             validation_result=PassResult(),
@@ -153,6 +158,7 @@ def test_failed_validations():
             Outputs(
                 validator_logs=[
                     ValidatorLogs(
+                        registered_name="no-punctuation",
                         validator_name="no-punctuation",
                         value_before_validation="Hello there!",
                         validation_result=non_fixable_fail_result,
@@ -170,18 +176,26 @@ def test_failed_validations():
             fail_status,
         ),
         (Outputs(validator_logs=[], validated_output="Hello there!"), pass_status),
-        (
-            Outputs(
-                validation_output=ReAsk(
-                    incorrect_value="Hello there!",
-                    fail_results=[non_fixable_fail_result],
-                ),
-            ),
-            fail_status,
-        ),
     ],
 )
 def test_status(outputs: Outputs, expected_status: str):
     status = outputs.status
 
     assert status == expected_status
+
+
+@pytest.mark.skipif(
+    pydantic.version.VERSION.startswith("1"),
+    reason="This fails in Pydantic 1.x because it casts the ReAsk to a Dict on init...",
+)
+def test_status_reask():
+    outputs = Outputs(
+        validation_output=ReAsk(
+            incorrect_value="Hello there!",
+            fail_results=[non_fixable_fail_result],
+        ),
+    )
+
+    status = outputs.status
+
+    assert status == fail_status

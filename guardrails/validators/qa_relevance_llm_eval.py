@@ -79,6 +79,10 @@ Relevant (as a JSON with a single boolean key, "relevant"):\
         return validated_output
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
+        if not metadata:
+            # default to value provided via Validator.with_metadata
+            metadata = self._metadata
+
         if "question" not in metadata:
             raise RuntimeError(
                 "qa-relevance-llm-eval validator expects " "`question` key in metadata"

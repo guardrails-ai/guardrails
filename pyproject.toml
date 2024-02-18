@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "guardrails-ai"
-version = "0.3.2"
+version = "0.4.0"
 description = "Adding guardrails to large language models."
 authors = ["Guardrails AI <contact@guardrailsai.com>"]
 license = "Apache License 2.0"
@@ -13,14 +13,14 @@ packages = [
 guardrails = "guardrails.cli:cli"
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.8.1"
 lxml = "^4.9.3"
 openai = "<2"
 rich = "^13.6.0"
 eliot = "^1.15.0"
 eliot-tree = "^21.0.0"
 pydantic = ">=1.10.9, <2.5"
-typer = "^0.9.0"
+typer = {extras = ["all"], version = "^0.9.0"}
 griffe = "^0.36.9"
 tenacity = ">=8.1.0"
 regex = "^2023.10.3"
@@ -51,6 +51,12 @@ huggingface_hub = {version = "^0.16.4", optional = true}
 pydash = "^7.0.6"
 docspec_python = "2.2.1"
 pydoc-markdown = "4.8.2"
+opentelemetry-sdk = "^1.22.0"
+opentelemetry-exporter-otlp-proto-grpc = "^1.22.0"
+opentelemetry-exporter-otlp-proto-http = "^1.22.0"
+langchain-core = "^0.1.18"
+coloredlogs = "^15.0.1"
+requests = "^2.31.0"
 
 
 [tool.poetry.extras]

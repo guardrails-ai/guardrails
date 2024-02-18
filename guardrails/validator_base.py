@@ -1,12 +1,27 @@
 import inspect
 from collections import defaultdict
-from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Type, Union
+from copy import deepcopy
+from string import Template
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+    cast,
+)
 
+from langchain_core.messages import BaseMessage
+from langchain_core.runnables import Runnable, RunnableConfig
 from pydantic import BaseModel, Field
 
-
-class ValidatorError(Exception):
-    """Base class for all validator errors."""
+from guardrails.classes import InputType
+from guardrails.constants import hub
+from guardrails.errors import ValidationError
 
 
 class Filter:
@@ -119,6 +134,18 @@ validators_registry = {}
 types_to_validators = defaultdict(list)
 
 
+def validator_factory(name: str, validate: Callable):
+    def validate_wrapper(self, *args, **kwargs):
+        return validate(*args, **kwargs)
+
+    validator = type(
+        name,
+        (Validator,),
+        {"validate": validate_wrapper, "rail_alias": name},
+    )
+    return validator
+
+
 def register_validator(name: str, data_type: Union[str, List[str]]):
     """Register a validator for a data type."""
     from guardrails.datatypes import registry as types_registry
@@ -146,11 +173,7 @@ def register_validator(name: str, data_type: Union[str, List[str]]):
                     f"Validator function {func.__name__} must take two arguments."
                 )
             # dynamically create Validator subclass with `validate` method as `func`
-            cls = type(
-                name,
-                (Validator,),
-                {"validate": staticmethod(func), "rail_alias": name},
-            )
+            cls = validator_factory(name, func)
         else:
             raise ValueError(
                 "Only functions and Validator subclasses "
@@ -160,6 +183,18 @@ def register_validator(name: str, data_type: Union[str, List[str]]):
         return cls
 
     return decorator
+
+
+def get_validator(name: str):
+    is_hub_validator = name.startswith(hub)
+    validator_key = name.replace(hub, "") if is_hub_validator else name
+    registration = validators_registry.get(validator_key)
+    if not registration and name.startswith(hub):
+        # This should import everything and trigger registration
+        import guardrails.hub  # noqa
+
+        return validators_registry.get(validator_key)
+    return registration
 
 
 class ValidationResult(BaseModel):
@@ -184,7 +219,7 @@ class FailResult(ValidationResult):
     fix_value: Optional[Any] = None
 
 
-class Validator:
+class Validator(Runnable):
     """Base class for validators."""
 
     rail_alias: str
@@ -192,6 +227,7 @@ class Validator:
     run_in_separate_process = False
     override_value_on_pass = False
     required_metadata_keys = []
+    _metadata = {}
 
     def __init__(self, on_fail: Optional[Union[Callable, str]] = None, **kwargs):
         if on_fail is None:
@@ -277,6 +313,82 @@ class Validator:
         if not isinstance(other, Validator):
             return False
         return self.to_prompt() == other.to_prompt()
+
+    # TODO: Make this a generic method on an abstract class
+    def __stringify__(self):
+        template = Template(
+            """
+            ${class_name} {
+                rail_alias: ${rail_alias},
+                on_fail: ${on_fail_descriptor},
+                run_in_separate_process: ${run_in_separate_process},
+                override_value_on_pass: ${override_value_on_pass},
+                required_metadata_keys: ${required_metadata_keys},
+                kwargs: ${kwargs}
+            }"""
+        )
+        return template.safe_substitute(
+            {
+                "class_name": self.__class__.__name__,
+                "rail_alias": self.rail_alias,
+                "on_fail_descriptor": self.on_fail_descriptor,
+                "run_in_separate_process": self.run_in_separate_process,
+                "override_value_on_pass": self.override_value_on_pass,
+                "required_metadata_keys": self.required_metadata_keys,
+                "kwargs": self._kwargs,
+            }
+        )
+
+    def invoke(
+        self, input: InputType, config: Optional[RunnableConfig] = None
+    ) -> InputType:
+        output = BaseMessage(content="", type="")
+        str_input = None
+        input_is_chat_message = False
+        if isinstance(input, BaseMessage):
+            input_is_chat_message = True
+            str_input = str(input.content)
+            output = deepcopy(input)
+        else:
+            str_input = str(input)
+
+        response = self.validate(str_input, self._metadata)
+
+        if isinstance(response, FailResult):
+            raise ValidationError(
+                (
+                    "The response from the LLM failed validation!"
+                    f"{response.error_message}"
+                )
+            )
+
+        if input_is_chat_message:
+            output.content = str_input
+            return cast(InputType, output)
+        return cast(InputType, str_input)
+
+    """
+    This method allows the user to provide metadata to validators used in an LCEL chain.
+    This is necessary because they can't pass metadata directly to `validate` in a chain
+        because is called internally during `invoke`.
+
+    Usage
+    ---
+    my_validator = Validator(args).with_metadata({ "key": "value" })
+
+    chain = prompt | model | my_validator | output_parser
+    chain.invoke({...})
+
+    When called multiple times on the same validator instance,
+        the metadata value will be override.
+    This allows the user to change the metadata programmatically
+        for different chains or calls.
+    """
+
+    def with_metadata(self, metadata: Dict[str, Any]):
+        """Assigns metadata to this validator to use during validation."""
+        self._metadata = metadata
+        return self
 
 
 ValidatorSpec = Union[Validator, Tuple[Union[Validator, str, Callable], str]]

@@ -593,6 +593,10 @@ class ProvenanceV1(Validator):
         return PassResult(metadata=metadata)
 
     def validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
+        if not metadata:
+            # default to value provided via Validator.with_metadata
+            metadata = self._metadata
+
         kwargs = {}
         context_copy = contextvars.copy_context()
         for key, context_var in context_copy.items():

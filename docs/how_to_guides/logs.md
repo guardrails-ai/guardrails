@@ -1,8 +1,8 @@
-# Logs
+# Inspect Guard Run History and Logs
 
 All `Guard` calls are logged internally, and can be accessed via the guard history.
 
-## 🇻🇦 Accessing logs via `Guard.history`
+## Accessing logs via `Guard.history`
 
 `history` is an attribute of the `Guard` class. It implements a standard `Stack` interface with a few extra helper methods and properties.  For more information on our `Stack` implementation see the [Helper Classes](/docs/api_reference_markdown/helper_classes) page.
 
