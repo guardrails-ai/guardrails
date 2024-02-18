@@ -34,12 +34,12 @@ class LLMCritic(Validator):
         #Store the threshold per criteria
         self._thresh = thresh if isinstance(thresh, dict) else {c:thresh for c in criteria}
         self._critic_llm_api = critic_llm_api
-        from langchain import PromptTemplate
-        self._prompt_tmplt = PromptTemplate.from_template(critic_prompt_tmplt)
-        assert len(self._prompt_tmplt.input_variables) == 1, ("The prompt template for the critic must have exactly one "
+        from string import Formatter
+        self._prompt_tmplt = critic_prompt_tmplt
+        prompt_vars = [fn for _, fn, _, _ in Formatter().parse(self._prompt_tmplt) if fn is not None]
+        assert len(prompt_vars) == 1, ("The prompt template for the critic must have exactly one "
                                                               "input variable, for the document the critic should rate.")
-        self._is_chat_model = "gpt" in self._rating_model
-        self._llm_api = openai.ChatCompletion.create if self._is_chat_model else openai.Completion.create
+        self._prompt_var = prompt_vars[0]
         from guardrails import Guard
         self._rating_guard = Guard.from_pydantic(output_class=self._rating_schema)
         self._critic_guard_kwargs = critic_guard_kwargs
@@ -47,14 +47,12 @@ class LLMCritic(Validator):
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         """Validates that the value receives ratings of at least self._thresh from the LLM critic."""
         #Get a rating from the rating model
-        #STOPPED HERE: Allowing an input varaible to the rating prompt with an arbitrary name, must be retested
-        rating_prompt = self._prompt_tmplt.format(**{self._prompt_tmplt.input_variables[0] : value})
-        print(rating_prompt)
+        rating_prompt = self._prompt_tmplt.format(**{self._prompt_var : value})
         rating_prompt += "\n\n${gr.xml_prefix_prompt}\n${output_schema}\n${gr.complete_json_suffix_v2}"
         raw_llm_response, ratings = self._rating_guard(
-            self._llm_api,
+            self._critic_llm_api,
             prompt=rating_prompt,
-            engine=self._rating_model,
+            #engine=self._rating_model,
             **self._critic_guard_kwargs
         )
         #On which criteria was the threshold not met?
