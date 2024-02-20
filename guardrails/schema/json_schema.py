@@ -8,7 +8,9 @@ from typing_extensions import Self
 
 from guardrails import validator_service
 from guardrails.classes.history import Iteration
-from guardrails.datatypes import Choice, DataType, Object
+from guardrails.datatypes import Choice, DataType
+from guardrails.datatypes import List as ListDataType
+from guardrails.datatypes import Object
 from guardrails.llm_providers import (
     AsyncOpenAICallable,
     AsyncOpenAIChatCallable,
@@ -35,7 +37,7 @@ from guardrails.utils.reask_utils import (
     prune_obj_for_reasking,
 )
 from guardrails.utils.telemetry_utils import trace_validation_result
-from guardrails.validator_base import FailResult, check_refrain_in_dict, filter_in_dict
+from guardrails.validator_base import FailResult, check_refrain, filter_in_schema
 
 
 class JsonSchema(Schema):
@@ -43,7 +45,7 @@ class JsonSchema(Schema):
 
     def __init__(
         self,
-        schema: Object,
+        schema: Union[Object, ListDataType],
         reask_prompt_template: Optional[str] = None,
         reask_instructions_template: Optional[str] = None,
     ) -> None:
@@ -163,7 +165,12 @@ class JsonSchema(Schema):
         if "strict" in root.attrib and root.attrib["strict"] == "true":
             strict = True
 
-        schema = Object.from_xml(root, strict=strict)
+        schema_type = root.attrib["type"] if "type" in root.attrib else "object"
+
+        if schema_type == "list":
+            schema = ListDataType.from_xml(root, strict=strict)
+        else:
+            schema = Object.from_xml(root, strict=strict)
 
         return cls(
             schema,
@@ -302,9 +309,6 @@ class JsonSchema(Schema):
         if data is None:
             return None
 
-        if not isinstance(data, dict):
-            raise TypeError(f"Argument `data` must be a dictionary, not {type(data)}.")
-
         validated_response = deepcopy(data)
 
         if not verify_schema_against_json(
@@ -337,14 +341,14 @@ class JsonSchema(Schema):
             iteration=iteration,
         )
 
-        if check_refrain_in_dict(validated_response):
+        if check_refrain(validated_response):
             # If the data contains a `Refrain` value, we return an empty
             # dictionary.
             logger.debug("Refrain detected.")
             validated_response = {}
 
         # Remove all keys that have `Filter` values.
-        validated_response = filter_in_dict(validated_response)
+        validated_response = filter_in_schema(validated_response)
 
         # TODO: Capture error messages once Top Level error handling is merged in
         trace_validation_result(
@@ -370,9 +374,6 @@ class JsonSchema(Schema):
         """
         if data is None:
             return None
-
-        if not isinstance(data, dict):
-            raise TypeError(f"Argument `data` must be a dictionary, not {type(data)}.")
 
         validated_response = deepcopy(data)
 
@@ -406,14 +407,14 @@ class JsonSchema(Schema):
             iteration=iteration,
         )
 
-        if check_refrain_in_dict(validated_response):
+        if check_refrain(validated_response):
             # If the data contains a `Refain` value, we return an empty
             # dictionary.
             logger.debug("Refrain detected.")
             validated_response = {}
 
         # Remove all keys that have `Filter` values.
-        validated_response = filter_in_dict(validated_response)
+        validated_response = filter_in_schema(validated_response)
 
         # TODO: Capture error messages once Top Level error handling is merged in
         trace_validation_result(

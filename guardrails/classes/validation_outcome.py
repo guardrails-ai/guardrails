@@ -9,7 +9,7 @@ from guardrails.utils.logs_utils import ArbitraryModel
 from guardrails.utils.reask_utils import ReAsk
 
 
-class ValidationOutcome(Generic[OT], ArbitraryModel):
+class ValidationOutcome(ArbitraryModel, Generic[OT]):
     raw_llm_output: Optional[str] = Field(
         description="The raw, unchanged output from the LLM call.", default=None
     )

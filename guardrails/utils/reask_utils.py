@@ -86,9 +86,9 @@ def gather_reasks(
 
 
 def get_pruned_tree(
-    root: ObjectType,
+    root: Union[ObjectType, ListType],
     reasks: Optional[List[FieldReAsk]] = None,
-) -> ObjectType:
+) -> Union[ObjectType, ListType]:
     """Prune tree of any elements that are not in `reasks`.
 
     Return the tree with only the elements that are keys of `reasks` and
