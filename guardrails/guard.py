@@ -843,6 +843,8 @@ class Guard(Runnable, Generic[OT]):
             The validated response.
         """
         with start_action(action_type="guard_parse"):
+            if llm_output.startswith("["):
+                return ValidationOutcome(validation_passed=False, data=None, errors=["LLM output is a JSON array, expeccted an object."])
             runner = Runner(
                 instructions=kwargs.pop("instructions", None),
                 prompt=kwargs.pop("prompt", None),
