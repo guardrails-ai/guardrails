@@ -19,7 +19,11 @@ from guardrails.schema.schema import Schema
 from guardrails.utils.constants import constants
 from guardrails.utils.reask_utils import FieldReAsk, ReAsk
 from guardrails.utils.telemetry_utils import trace_validation_result
-from guardrails.validator_base import ValidatorSpec, check_refrain_in_dict, filter_in_dict
+from guardrails.validator_base import (
+    ValidatorSpec,
+    check_refrain_in_dict,
+    filter_in_dict,
+)
 
 
 class StringSchema(Schema):

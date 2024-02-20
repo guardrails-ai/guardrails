@@ -1,12 +1,12 @@
 """Rail class."""
 import warnings
 from dataclasses import dataclass
-from typing import Optional, Sequence, Type
+from typing import List, Optional, Sequence, Type, Union
 
 from lxml import etree as ET
 from pydantic import BaseModel
 
-from guardrails.datatypes import List
+from guardrails.datatypes import List as ListDataType
 from guardrails.prompt import Instructions, Prompt
 from guardrails.schema import JsonSchema, Schema, StringSchema
 from guardrails.utils.xml_utils import cast_xml_to_string
@@ -67,7 +67,7 @@ class Rail:
         if isinstance(self.output_schema, StringSchema):
             return "str"
         elif isinstance(self.output_schema, JsonSchema) and isinstance(
-            self.output_schema.root_datatype, List
+            self.output_schema.root_datatype, ListDataType
         ):
             return "list"
         return "dict"
@@ -75,7 +75,7 @@ class Rail:
     @classmethod
     def from_pydantic(
         cls,
-        output_class: Type[BaseModel],
+        output_class: Union[Type[BaseModel], Type[List[Type[BaseModel]]]],
         prompt: Optional[str] = None,
         instructions: Optional[str] = None,
         reask_prompt: Optional[str] = None,
@@ -267,7 +267,7 @@ class Rail:
 
     @staticmethod
     def load_json_schema_from_pydantic(
-        output_class: Type[BaseModel],
+        output_class: Union[Type[BaseModel], Type[List[Type[BaseModel]]]],
         reask_prompt_template: Optional[str] = None,
         reask_instructions_template: Optional[str] = None,
     ):

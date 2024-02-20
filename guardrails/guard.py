@@ -80,7 +80,9 @@ class Guard(Runnable, Generic[OT]):
         self,
         rail: Optional[Rail] = None,
         num_reasks: Optional[int] = None,
-        base_model: Optional[Type[BaseModel]] = None,
+        base_model: Optional[
+            Union[Type[BaseModel], Type[List[Type[BaseModel]]]]
+        ] = None,
         tracer: Optional[Tracer] = None,
     ):
         """Initialize the Guard with optional Rail instance, num_reasks, and
@@ -260,7 +262,7 @@ class Guard(Runnable, Generic[OT]):
     @classmethod
     def from_pydantic(
         cls,
-        output_class: Type[BaseModel],
+        output_class: Union[Type[BaseModel], Type[List[Type[BaseModel]]]],
         prompt: Optional[str] = None,
         instructions: Optional[str] = None,
         num_reasks: Optional[int] = None,
@@ -280,7 +282,10 @@ class Guard(Runnable, Generic[OT]):
             reask_prompt=reask_prompt,
             reask_instructions=reask_instructions,
         )
-        # TODO: Add List[BaseModel] support
+        if rail.output_type == "list":
+            return cast(
+                Guard[List], cls(rail, num_reasks=num_reasks, base_model=output_class)
+            )
         return cast(
             Guard[Dict],
             cls(rail, num_reasks=num_reasks, base_model=output_class, tracer=tracer),

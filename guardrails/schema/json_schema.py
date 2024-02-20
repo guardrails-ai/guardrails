@@ -1,6 +1,17 @@
 import json
 from copy import deepcopy
-from typing import Any, Dict, List, Optional, Tuple, Type, Union
+from typing import (
+    Any,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+    cast,
+    get_args,
+    get_origin,
+)
 
 from lxml import etree as ET
 from pydantic import BaseModel
@@ -36,8 +47,10 @@ from guardrails.utils.reask_utils import (
     get_pruned_tree,
     prune_obj_for_reasking,
 )
+from guardrails.utils.safe_get import safe_get
 from guardrails.utils.telemetry_utils import trace_validation_result
 from guardrails.validator_base import FailResult, check_refrain, filter_in_schema
+from guardrails.validatorsattr import ValidatorsAttr
 
 
 class JsonSchema(Schema):
@@ -181,13 +194,30 @@ class JsonSchema(Schema):
     @classmethod
     def from_pydantic(
         cls,
-        model: Type[BaseModel],
+        model: Union[Type[BaseModel], Type[List[Type[BaseModel]]]],
         reask_prompt_template: Optional[str] = None,
         reask_instructions_template: Optional[str] = None,
     ) -> Self:
         strict = False
 
-        schema = convert_pydantic_model_to_datatype(model, strict=strict)
+        type_origin = get_origin(model)
+
+        if type_origin == list:
+            item_types = get_args(model)
+            if len(item_types) > 1:
+                raise ValueError("List data type must have exactly one child.")
+            item_type = safe_get(item_types, 0)
+            if not item_type or not issubclass(item_type, BaseModel):
+                raise ValueError("List item type must be a Pydantic model.")
+            item_schema = convert_pydantic_model_to_datatype(item_type, strict=strict)
+            children = {"item": item_schema}
+            validators_attr = ValidatorsAttr.from_validators(
+                [], ListDataType.tag, strict
+            )
+            schema = ListDataType(children, validators_attr, False, None, None)
+        else:
+            pydantic_model = cast(Type[BaseModel], model)
+            schema = convert_pydantic_model_to_datatype(pydantic_model, strict=strict)
 
         return cls(
             schema,
