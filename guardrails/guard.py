@@ -48,6 +48,8 @@ from guardrails.stores.context import (
 from guardrails.utils.hub_telemetry_utils import HubTelemetry
 from guardrails.utils.validator_utils import get_validator
 from guardrails.validator_base import Validator
+from guardrails.utils.reask_utils import ReAsk
+
 
 add_destinations(logger.debug)
 
@@ -844,7 +846,7 @@ class Guard(Runnable, Generic[OT]):
         """
         with start_action(action_type="guard_parse"):
             if llm_output.startswith("["):
-                return ValidationOutcome(validation_passed=False, data=None, errors=["LLM output is a JSON array, expeccted an object."])
+                return ValidationOutcome(validation_passed=False, data=None, reask = ReAsk(), errors=["LLM output is a JSON array, expeccted an object."])
             runner = Runner(
                 instructions=kwargs.pop("instructions", None),
                 prompt=kwargs.pop("prompt", None),
