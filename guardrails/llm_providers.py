@@ -32,6 +32,8 @@ class PromptCallableBase:
     failed, and how to fix it.
     """
 
+    supports_base_model = False
+
     def __init__(self, *args, **kwargs):
         self.init_args = args
         self.init_kwargs = kwargs
@@ -119,6 +121,9 @@ class OpenAICallable(PromptCallableBase):
 
 
 class OpenAIChatCallable(PromptCallableBase):
+
+    supports_base_model = True
+
     def _invoke_llm(
         self,
         text: Optional[str] = None,
@@ -588,6 +593,9 @@ class AsyncOpenAICallable(AsyncPromptCallableBase):
 
 
 class AsyncOpenAIChatCallable(AsyncPromptCallableBase):
+
+    supports_base_model = True
+
     async def invoke_llm(
         self,
         text: Optional[str] = None,

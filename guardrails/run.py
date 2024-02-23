@@ -1,4 +1,5 @@
 import copy
+from functools import partial
 import json
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union
 
@@ -549,36 +550,22 @@ class Runner:
         3. Log the output
         """
 
+        # If the API supports a base model, pass it in.
+        supports_base_model = getattr(api, "supports_base_model", False)
+        if supports_base_model:
+            api = partial(api, base_model=self.base_model)
+
         with start_action(action_type="call", index=index, prompt=prompt) as action:
             if output is not None:
-                llm_response = LLMResponse(
-                    output=output,
-                )
+                llm_response = LLMResponse(output=output)
             elif api is None:
                 raise ValueError("API or output must be provided.")
             elif msg_history:
-                try:
-                    llm_response = api(
-                        msg_history=msg_history_source(msg_history),
-                        base_model=self.base_model,
-                    )
-                except Exception:
-                    # If the API call fails, try calling again without the base model.
-                    llm_response = api(msg_history=msg_history_source(msg_history))
+                llm_response = api(msg_history=msg_history_source(msg_history))
             elif prompt and instructions:
-                try:
-                    llm_response = api(
-                        prompt.source,
-                        instructions=instructions.source,
-                        base_model=self.base_model,
-                    )
-                except Exception:
-                    llm_response = api(prompt.source, instructions=instructions.source)
+                llm_response = api(prompt.source, instructions=instructions.source)
             elif prompt:
-                try:
-                    llm_response = api(prompt.source, base_model=self.base_model)
-                except Exception:
-                    llm_response = api(prompt.source)
+                llm_response = api(prompt.source)
             else:
                 raise ValueError("'prompt' or 'msg_history' must be provided.")
 
