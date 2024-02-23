@@ -341,11 +341,6 @@ class LiteLLMCallable(PromptCallableBase):
                 "Install with `pip install litellm`"
             ) from e
 
-        if msg_history is None and text is None:
-            raise PromptCallableException(
-                "Either `text` or `msg_history` required for `guard.__call__`."
-            )
-
         response = completion(
             model=model,
             messages=litellm_messages(
