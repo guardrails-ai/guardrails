@@ -540,7 +540,7 @@ class Runner:
         instructions: Optional[Instructions],
         prompt: Optional[Prompt],
         msg_history: Optional[List[Dict[str, str]]],
-        api: Optional[PromptCallableBase | partial[LLMResponse]],
+        api: Optional[Union[PromptCallableBase, partial[LLMResponse]]],
         output: Optional[str] = None,
     ) -> LLMResponse:
         """Run a step.
