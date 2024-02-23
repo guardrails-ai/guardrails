@@ -328,6 +328,7 @@ class LiteLLMCallable(PromptCallableBase):
             completion,
             model="gpt-3.5-turbo",
             prompt_params={...},
+            temperature=...,
             ...
         )
         ```
