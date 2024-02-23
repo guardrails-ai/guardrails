@@ -540,7 +540,7 @@ class Runner:
         instructions: Optional[Instructions],
         prompt: Optional[Prompt],
         msg_history: Optional[List[Dict[str, str]]],
-        api: Optional[Union[PromptCallableBase, partial[LLMResponse]]],
+        api: Optional[PromptCallableBase],
         output: Optional[str] = None,
     ) -> LLMResponse:
         """Run a step.
@@ -551,22 +551,23 @@ class Runner:
         """
 
         # If the API supports a base model, pass it in.
+        api_fn = api
         if api is not None:
             supports_base_model = getattr(api, "supports_base_model", False)
             if supports_base_model:
-                api = partial(api, base_model=self.base_model)
+                api_fn = partial(api, base_model=self.base_model)
 
         with start_action(action_type="call", index=index, prompt=prompt) as action:
             if output is not None:
                 llm_response = LLMResponse(output=output)
-            elif api is None:
+            elif api_fn is None:
                 raise ValueError("API or output must be provided.")
             elif msg_history:
-                llm_response = api(msg_history=msg_history_source(msg_history))
+                llm_response = api_fn(msg_history=msg_history_source(msg_history))
             elif prompt and instructions:
-                llm_response = api(prompt.source, instructions=instructions.source)
+                llm_response = api_fn(prompt.source, instructions=instructions.source)
             elif prompt:
-                llm_response = api(prompt.source)
+                llm_response = api_fn(prompt.source)
             else:
                 raise ValueError("'prompt' or 'msg_history' must be provided.")
 
