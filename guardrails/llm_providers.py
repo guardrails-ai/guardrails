@@ -352,9 +352,9 @@ class LiteLLMCallable(PromptCallableBase):
             **kwargs,
         )
         return LLMResponse(
-            output=response.choices[0].message.content,
-            prompt_token_count=response.usage.prompt_tokens,
-            response_token_count=response.usage.completion_tokens,
+            output=response.choices[0].message.content,  # type: ignore
+            prompt_token_count=response.usage.prompt_tokens,  # type: ignore
+            response_token_count=response.usage.completion_tokens,  # type: ignore
         )
 
 
