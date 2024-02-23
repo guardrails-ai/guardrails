@@ -551,9 +551,10 @@ class Runner:
         """
 
         # If the API supports a base model, pass it in.
-        supports_base_model = getattr(api, "supports_base_model", False)
-        if supports_base_model:
-            api = partial(api, base_model=self.base_model)
+        if api is not None:
+            supports_base_model = getattr(api, "supports_base_model", False)
+            if supports_base_model:
+                api = partial(api, base_model=self.base_model)
 
         with start_action(action_type="call", index=index, prompt=prompt) as action:
             if output is not None:
