@@ -1,6 +1,6 @@
 import copy
-from functools import partial
 import json
+from functools import partial
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union
 
 from eliot import add_destinations, start_action

@@ -121,7 +121,6 @@ class OpenAICallable(PromptCallableBase):
 
 
 class OpenAIChatCallable(PromptCallableBase):
-
     supports_base_model = True
 
     def _invoke_llm(
@@ -593,7 +592,6 @@ class AsyncOpenAICallable(AsyncPromptCallableBase):
 
 
 class AsyncOpenAIChatCallable(AsyncPromptCallableBase):
-
     supports_base_model = True
 
     async def invoke_llm(
