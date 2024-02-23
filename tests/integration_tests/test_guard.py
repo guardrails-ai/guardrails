@@ -1,7 +1,7 @@
 import enum
 import json
 import os
-from typing import Optional, Union
+from typing import List, Optional, Union
 
 import pytest
 from pydantic import BaseModel
@@ -19,6 +19,7 @@ from .mock_llm_outputs import (
     MockOpenAICallable,
     MockOpenAIChatCallable,
     entity_extraction,
+    lists_object,
 )
 from .test_assets import pydantic, string
 
@@ -56,6 +57,7 @@ ${gr.complete_json_suffix}
 
 @pytest.fixture(scope="module")
 def llm_output():
+    """Mock LLM output for the rail_spec."""
     return """
 {
     "dummy_string": "Some string",
@@ -77,6 +79,7 @@ def llm_output():
 
 @pytest.fixture(scope="module")
 def validated_output():
+    """Mock validated output for the rail_spec."""
     return {
         "dummy_string": "Some string",
         "dummy_integer": 42,
@@ -94,8 +97,7 @@ def validated_output():
 def guard_initializer(
     rail: Union[str, BaseModel], prompt: str, instructions: Optional[str] = None
 ) -> Guard:
-    """Helper function to initialize a Guard object using the correct
-    method."""
+    """Helper function to initialize a Guard using the correct method."""
 
     if isinstance(rail, str):
         return Guard.from_rail_string(rail)
@@ -130,7 +132,11 @@ def guard_initializer(
 def test_entity_extraction_with_reask(
     mocker, rail, prompt, test_full_schema_reask, multiprocessing_validators
 ):
-    """Test that the entity extraction works with re-asking."""
+    """Test that the entity extraction works with re-asking.
+
+    This test creates a Guard for the entity extraction use case. It performs
+    a single call to the LLM and then re-asks the LLM for a second time.
+    """
     mocker.patch("guardrails.llm_providers.OpenAICallable", new=MockOpenAICallable)
     mocker.patch(
         "guardrails.validators.Validator.run_in_separate_process",
@@ -851,3 +857,31 @@ def test_guard_as_runnable(output: str, throws: bool):
         result = chain.invoke({"topic": topic})
 
         assert result == output
+
+
+@pytest.mark.parametrize(
+    "rail,prompt",
+    [
+        (
+            lists_object.PYDANTIC_RAIL_WITH_LIST,
+            "Create a list of items that may be found in a grocery store."
+        ),
+        (lists_object.RAIL_SPEC_WITH_LIST, None)
+    ],
+)
+def test_guard_with_top_level_list_return_type(mocker, rail, prompt):
+    # Create a Guard with a top level list return type
+
+    # Mock the LLM
+    mocker.patch("guardrails.llm_providers.OpenAICallable", new=MockOpenAICallable)
+
+    guard = guard_initializer(rail, prompt=prompt)
+
+    output = guard(llm_api=get_static_openai_create_func())
+
+    # Validate the output
+    assert output.validated_output == [
+        {"name": "apple", "price": 1.0},
+        {"name": "banana", "price": 0.5},
+        {"name": "orange", "price": 1.5},
+    ]

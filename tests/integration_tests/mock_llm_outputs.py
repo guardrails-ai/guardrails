@@ -7,7 +7,7 @@ from guardrails.llm_providers import (
 )
 from guardrails.utils.llm_response import LLMResponse
 
-from .test_assets import entity_extraction, pydantic, python_rail, string
+from .test_assets import entity_extraction, pydantic, python_rail, string, lists_object
 
 
 class MockOpenAICallable(OpenAICallable):
@@ -36,6 +36,7 @@ class MockOpenAICallable(OpenAICallable):
             python_rail.VALIDATOR_PARALLELISM_PROMPT_1: python_rail.VALIDATOR_PARALLELISM_RESPONSE_1,  # noqa: E501
             python_rail.VALIDATOR_PARALLELISM_PROMPT_2: python_rail.VALIDATOR_PARALLELISM_RESPONSE_2,  # noqa: E501
             python_rail.VALIDATOR_PARALLELISM_PROMPT_3: python_rail.VALIDATOR_PARALLELISM_RESPONSE_3,  # noqa: E501
+            lists_object.LIST_PROMPT: lists_object.LIST_OUTPUT,
         }
 
         try:
