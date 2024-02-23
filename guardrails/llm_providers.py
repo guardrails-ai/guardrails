@@ -92,6 +92,25 @@ def chat_prompt(
     ]
 
 
+def litellm_messages(
+    prompt: Optional[str],
+    instructions: Optional[str] = None,
+    msg_history: Optional[List[Dict]] = None,
+) -> List[Dict[str, str]]:
+    """Prepare messages for LiteLLM."""
+    if msg_history:
+        return msg_history
+    if prompt is None:
+        raise PromptCallableException(
+            "Either `text` or `msg_history` required for `guard.__call__`."
+        )
+
+    if instructions:
+        prompt = "\n\n".join([instructions, prompt])
+
+    return [{"role": "user", "content": prompt}]
+
+
 class OpenAICallable(PromptCallableBase):
     def _invoke_llm(
         self,
@@ -291,7 +310,13 @@ class AnthropicCallable(PromptCallableBase):
 
 class LiteLLMCallable(PromptCallableBase):
     def _invoke_llm(
-        self, model: str, messages: list = [], *args, **kwargs
+        self,
+        text: Optional[str] = None,
+        model: str = "gpt-3.5-turbo",
+        instructions: Optional[str] = None,
+        msg_history: Optional[List[Dict]] = None,
+        *args,
+        **kwargs,
     ) -> LLMResponse:
         """Wrapper for Lite LLM completions.
 
@@ -309,14 +334,28 @@ class LiteLLMCallable(PromptCallableBase):
         ```
         """
         try:
-            from litellm import completion
-        except ImportError:
+            from litellm import completion  # type: ignore
+        except ImportError as e:
             raise PromptCallableException(
                 "The `litellm` package is not installed. "
                 "Install with `pip install litellm`"
+            ) from e
+
+        if msg_history is None and text is None:
+            raise PromptCallableException(
+                "Either `text` or `msg_history` required for `guard.__call__`."
             )
 
-        response = completion(model=model, messages=messages, *args, **kwargs)
+        response = completion(
+            model=model,
+            messages=litellm_messages(
+                prompt=text,
+                instructions=instructions,
+                msg_history=msg_history,
+            ),
+            *args,
+            **kwargs,
+        )
         return LLMResponse(
             output=response.choices[0].message.content,
             prompt_token_count=response.usage.prompt_tokens,

@@ -1,7 +1,7 @@
 from typing import Any, AsyncIterable, Dict, Iterable, List, cast
 
 import openai
-import openai.error
+import openai.error  # type: ignore
 from tenacity import retry, retry_if_exception_type, wait_exponential_jitter
 
 from guardrails.utils.llm_response import LLMResponse
