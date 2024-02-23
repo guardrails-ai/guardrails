@@ -327,7 +327,6 @@ class LiteLLMCallable(PromptCallableBase):
         raw_llm_response, validated_response = guard(
             completion,
             model="gpt-3.5-turbo",
-            messages=[{ "content": "Hello, how are you?","role": "user"}]
             prompt_params={...},
             ...
         )
