@@ -291,7 +291,7 @@ class AnthropicCallable(PromptCallableBase):
 
 class LiteLLMCallable(PromptCallableBase):
     def _invoke_llm(
-        self, model: str, msg_history: list = [], *args, **kwargs
+        self, model: str, messages: list = [], *args, **kwargs
     ) -> LLMResponse:
         """Wrapper for Lite LLM completions.
 
@@ -312,11 +312,11 @@ class LiteLLMCallable(PromptCallableBase):
             from litellm import completion
         except ImportError:
             raise PromptCallableException(
-                "The `lite_llm` package is not installed. "
+                "The `litellm` package is not installed. "
                 "Install with `pip install litellm`"
             )
 
-        response = completion(model=model, messages=msg_history, *args, **kwargs)
+        response = completion(model=model, messages=messages, *args, **kwargs)
         return LLMResponse(
             output=response.choices[0].message.content,
             prompt_token_count=response.usage.prompt_tokens,
@@ -560,7 +560,6 @@ def get_llm_ask(llm_api: Callable, *args, **kwargs) -> PromptCallableBase:
         from litellm import completion  # noqa: F401 # type: ignore
 
         if llm_api == completion:
-            # model = kwargs.pop("model", None)
             return LiteLLMCallable(*args, **kwargs)
     except ImportError:
         pass
