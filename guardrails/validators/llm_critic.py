@@ -10,6 +10,20 @@ from guardrails.validator_base import (
 )
 @register_validator(name="llm_critic", data_type="string")
 class LLMCritic(Validator):
+    """Validates that generated text meets a threshold according to criteria.
+
+    Generated text will be criticized by a user-defined LLM. The ratings that the LLM critic produces will be
+    compared to a threshold, to determine whether the generated text is valid.
+
+    **Key Properties**
+
+    | Property                      | Description                       |
+    | ----------------------------- | --------------------------------- |
+    | Rating Schema                 | Pydantic BaseModel                |
+    | Threshold                     | Dict of str -> int                |
+    | Critic LLM API                | Callable str -> str               |
+    | Critic Prompt Template        | str                               |
+    """
     def __init__(self,
                  rating_schema: BaseModel,
                  critic_prompt_tmplt: str,
@@ -18,6 +32,24 @@ class LLMCritic(Validator):
                  on_fail: Optional[Callable] = None,
                  critic_guard_kwargs: dict = {}
                  ):
+        '''
+
+        :param rating_schema: Pydantic BaseModel.
+            The Pydantic class that represents the criteria used by the critic.
+            Important, but optional, points:
+            * Use adjectives for the field names. It will make the class easier to represent in prompts.
+            * Include a to_prompt()->str class method, which will allow your class to be inserted into reask prompts.
+            * Use a ValidRange validator on each field. This ensures that the Critic's ratings are within
+              your expectations.
+        :param critic_prompt_tmplt: Str
+            The prompt template for the Critic. This must only have one variable, for the output of the candidate
+            algorithm.
+        :param critic_llm_api: Callable mapping str->str
+        :param thresh: Int or Dict mapping str->int.
+            If Int, will use the same integer as threshold for all criteria.
+        :param on_fail: Str or callable defining behaviour on validation failure
+        :param critic_guard_kwargs: Dict mapping str to argument values for the critic LLM
+        '''
         super().__init__(
                          rating_schema=rating_schema,
                          critic_prompt_tmplt=critic_prompt_tmplt,
