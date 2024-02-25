@@ -42,10 +42,10 @@ class JsonSchema(Schema):
     reask_prompt_vars = {"previous_response", "output_schema", "json_example"}
 
     def __init__(
-            self,
-            schema: Object,
-            reask_prompt_template: Optional[str] = None,
-            reask_instructions_template: Optional[str] = None,
+        self,
+        schema: Object,
+        reask_prompt_template: Optional[str] = None,
+        reask_instructions_template: Optional[str] = None,
     ) -> None:
         super().__init__(
             schema,
@@ -55,11 +55,11 @@ class JsonSchema(Schema):
         self.root_datatype = schema
 
     def get_reask_setup(
-            self,
-            reasks: List[ReAsk],
-            original_response: Any,
-            use_full_schema: bool,
-            prompt_params: Optional[Dict[str, Any]] = None,
+        self,
+        reasks: List[ReAsk],
+        original_response: Any,
+        use_full_schema: bool,
+        prompt_params: Optional[Dict[str, Any]] = None,
     ) -> Tuple["Schema", Prompt, Instructions]:
         root = deepcopy(self.root_datatype)
 
@@ -154,10 +154,10 @@ class JsonSchema(Schema):
 
     @classmethod
     def from_xml(
-            cls,
-            root: ET._Element,
-            reask_prompt_template: Optional[str] = None,
-            reask_instructions_template: Optional[str] = None,
+        cls,
+        root: ET._Element,
+        reask_prompt_template: Optional[str] = None,
+        reask_instructions_template: Optional[str] = None,
     ) -> Self:
         strict = False
         if "strict" in root.attrib and root.attrib["strict"] == "true":
@@ -173,10 +173,10 @@ class JsonSchema(Schema):
 
     @classmethod
     def from_pydantic(
-            cls,
-            model: Type[BaseModel],
-            reask_prompt_template: Optional[str] = None,
-            reask_instructions_template: Optional[str] = None,
+        cls,
+        model: Type[BaseModel],
+        reask_prompt_template: Optional[str] = None,
+        reask_instructions_template: Optional[str] = None,
     ) -> Self:
         strict = False
 
@@ -189,7 +189,7 @@ class JsonSchema(Schema):
         )
 
     def parse(
-            self, output: str, **kwargs
+        self, output: str, **kwargs
     ) -> Tuple[
         Union[Optional[Dict], NonParseableReAsk, str],
         Union[Optional[Exception], str, bool, None],
@@ -263,8 +263,8 @@ class JsonSchema(Schema):
             elif char in "}]":
                 # Pop from stack if matching opening bracket is found
                 if stack and (
-                        (char == "}" and stack[-1] == "{")
-                        or (char == "]" and stack[-1] == "[")
+                    (char == "}" and stack[-1] == "{")
+                    or (char == "]" and stack[-1] == "[")
                 ):
                     stack.pop()
 
@@ -284,12 +284,12 @@ class JsonSchema(Schema):
             return fragment, str(e)
 
     def validate(
-            self,
-            iteration: Iteration,
-            data: Optional[Dict[str, Any]],
-            metadata: Dict,
-            attempt_number: int = 0,
-            **kwargs,
+        self,
+        iteration: Iteration,
+        data: Optional[Dict[str, Any]],
+        metadata: Dict,
+        attempt_number: int = 0,
+        **kwargs,
     ) -> Any:
         """Validate a dictionary of data against the schema.
 
@@ -308,11 +308,11 @@ class JsonSchema(Schema):
         validated_response = deepcopy(data)
 
         if not verify_schema_against_json(
-                self.root_datatype,
-                validated_response,
-                prune_extra_keys=True,
-                coerce_types=True,
-                validate_subschema=kwargs.get("validate_subschema", False),
+            self.root_datatype,
+            validated_response,
+            prune_extra_keys=True,
+            coerce_types=True,
+            validate_subschema=kwargs.get("validate_subschema", False),
         ):
             return SkeletonReAsk(
                 incorrect_value=validated_response,
@@ -354,11 +354,11 @@ class JsonSchema(Schema):
         return validated_response
 
     async def async_validate(
-            self,
-            iteration: Iteration,
-            data: Optional[Dict[str, Any]],
-            metadata: Dict,
-            attempt_number: int = 0,
+        self,
+        iteration: Iteration,
+        data: Optional[Dict[str, Any]],
+        metadata: Dict,
+        attempt_number: int = 0,
     ) -> Any:
         """Validate a dictionary of data against the schema.
 
@@ -377,10 +377,10 @@ class JsonSchema(Schema):
         validated_response = deepcopy(data)
 
         if not verify_schema_against_json(
-                self.root_datatype,
-                validated_response,
-                prune_extra_keys=True,
-                coerce_types=True,
+            self.root_datatype,
+            validated_response,
+            prune_extra_keys=True,
+            coerce_types=True,
         ):
             return SkeletonReAsk(
                 incorrect_value=validated_response,
@@ -430,18 +430,18 @@ class JsonSchema(Schema):
         return gather_reasks(data)
 
     def preprocess_prompt(
-            self,
-            prompt_callable: PromptCallableBase,
-            instructions: Optional[Instructions],
-            prompt: Prompt,
+        self,
+        prompt_callable: PromptCallableBase,
+        instructions: Optional[Instructions],
+        prompt: Prompt,
     ):
         if isinstance(prompt_callable, OpenAICallable) or isinstance(
-                prompt_callable, AsyncOpenAICallable
+            prompt_callable, AsyncOpenAICallable
         ):
             prompt.source += "\n\nJson Output:\n\n"
         if (
-                isinstance(prompt_callable, OpenAIChatCallable)
-                or isinstance(prompt_callable, AsyncOpenAIChatCallable)
+            isinstance(prompt_callable, OpenAIChatCallable)
+            or isinstance(prompt_callable, AsyncOpenAIChatCallable)
         ) and not instructions:
             instructions = Instructions(
                 "You are a helpful assistant, "
@@ -466,9 +466,9 @@ class Schema2Prompt:
 
     @staticmethod
     def datatypes_to_xml(
-            dt: DataType,
-            root: Optional[ET._Element] = None,
-            override_tag_name: Optional[str] = None,
+        dt: DataType,
+        root: Optional[ET._Element] = None,
+        override_tag_name: Optional[str] = None,
     ) -> ET._Element:
         """Recursively convert the datatypes to XML elements."""
         if root is None:
