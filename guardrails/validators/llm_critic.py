@@ -49,10 +49,9 @@ class LLMCritic(Validator):
         #Get a rating from the rating model
         rating_prompt = self._prompt_tmplt.format(**{self._prompt_var : value})
         rating_prompt += "\n\n${gr.xml_prefix_prompt}\n${output_schema}\n${gr.complete_json_suffix_v2}"
-        raw_llm_response, ratings = self._rating_guard(
+        raw_output, ratings, *rest = self._rating_guard(
             self._critic_llm_api,
             prompt=rating_prompt,
-            #engine=self._rating_model,
             **self._critic_guard_kwargs
         )
         #On which criteria was the threshold not met?
@@ -61,7 +60,7 @@ class LLMCritic(Validator):
             if score < self._thresh[criteria]:
                 failed_criteria.add(criteria)
         if len(failed_criteria) > 0:
-            criteria2descrip = {k:v.field_info.description for k,v in self._rating_schema.__fields__.items()}
+            criteria2descrip = {k:v.description for k,v in self._rating_schema.__fields__.items()}
             fix_instructions = "Your last attempt failed according to the following criteria:\n"
             for criteria in failed_criteria:
                 fix_instructions += (f"\n- It was not {criteria} enough. "
@@ -70,3 +69,9 @@ class LLMCritic(Validator):
                 error_message=fix_instructions
             )
         return PassResult()
+
+    def to_prompt(self) -> str:
+        try:
+            return self._rating_schema.to_prompt()
+        except AttributeError:
+            return "\n- " + "\n- ".join([f"{str(k.title())}: {v.description}" for k, v in self._rating_schema.model_fields.items()])
