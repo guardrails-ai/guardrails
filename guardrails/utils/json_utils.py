@@ -40,7 +40,7 @@ class Placeholder:
         validate_subschema: bool,
     ):
         if self.optional and json_value is None:
-            return json_value
+            return True
         return None
 
 
@@ -92,6 +92,7 @@ class ValuePlaceholder(Placeholder):
         )
         if super_result is not None:
             return super_result
+
         expected_type = self.type_object
         if expected_type == Any:
             return json_value
@@ -177,7 +178,7 @@ class DictPlaceholder(Placeholder):
                 )
                 if value is ValuePlaceholder.VerificationFailed:
                     return False
-                json_value[key] = value
+                # json_value[key] = value
             else:
                 if not placeholder.verify(
                     json_value[key],
@@ -225,7 +226,7 @@ class ListPlaceholder(Placeholder):
                 )
                 if value is ValuePlaceholder.VerificationFailed:
                     return False
-                json_value[i] = value
+                # json_value[i] = value
             return True
         else:
             for item in json_value:

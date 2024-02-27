@@ -188,9 +188,7 @@ class JsonSchema(Schema):
             reask_instructions_template=reask_instructions_template,
         )
 
-    def parse(
-        self, output: str, **kwargs
-    ) -> Tuple[
+    def parse(self, output: str, **kwargs) -> Tuple[
         Union[Optional[Dict], NonParseableReAsk, str],
         Union[Optional[Exception], str, bool, None],
     ]:
