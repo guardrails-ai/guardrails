@@ -7,7 +7,7 @@ from guardrails.llm_providers import (
 )
 from guardrails.utils.llm_response import LLMResponse
 
-from .test_assets import entity_extraction, pydantic, python_rail, string, lists_object
+from .test_assets import entity_extraction, lists_object, pydantic, python_rail, string
 
 
 class MockOpenAICallable(OpenAICallable):

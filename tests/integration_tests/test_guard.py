@@ -134,8 +134,9 @@ def test_entity_extraction_with_reask(
 ):
     """Test that the entity extraction works with re-asking.
 
-    This test creates a Guard for the entity extraction use case. It performs
-    a single call to the LLM and then re-asks the LLM for a second time.
+    This test creates a Guard for the entity extraction use case. It
+    performs a single call to the LLM and then re-asks the LLM for a
+    second time.
     """
     mocker.patch("guardrails.llm_providers.OpenAICallable", new=MockOpenAICallable)
     mocker.patch(
@@ -864,9 +865,9 @@ def test_guard_as_runnable(output: str, throws: bool):
     [
         (
             lists_object.PYDANTIC_RAIL_WITH_LIST,
-            "Create a list of items that may be found in a grocery store."
+            "Create a list of items that may be found in a grocery store.",
         ),
-        (lists_object.RAIL_SPEC_WITH_LIST, None)
+        (lists_object.RAIL_SPEC_WITH_LIST, None),
     ],
 )
 def test_guard_with_top_level_list_return_type(mocker, rail, prompt):

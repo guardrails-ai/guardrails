@@ -1,8 +1,9 @@
 import sys
 from typing import List
-from pydantic import BaseModel
+
 import pytest
 from lxml import etree as ET
+from pydantic import BaseModel
 
 from guardrails.schema.json_schema import JsonSchema
 
@@ -28,7 +29,7 @@ def test_json_schema_from_xml_outermost_list():
 def test_json_schema_from_pydantic_outermost_list_typing():
     class Foo(BaseModel):
         field: str
-    
+
     # Test 1: typing.List with BaseModel
     try:
         JsonSchema.from_pydantic(model=List[Foo])
@@ -37,13 +38,13 @@ def test_json_schema_from_pydantic_outermost_list_typing():
 
 
 @pytest.mark.skipif(
-        sys.version_info.major <= 3 and sys.version_info.minor <= 8,
-        reason="requires Python > 3.8"
+    sys.version_info.major <= 3 and sys.version_info.minor <= 8,
+    reason="requires Python > 3.8",
 )
 def test_json_schema_from_pydantic_outermost_list():
     class Foo(BaseModel):
         field: str
-    
+
     # Test 1: typing.List with BaseModel
     try:
         JsonSchema.from_pydantic(model=list[Foo])

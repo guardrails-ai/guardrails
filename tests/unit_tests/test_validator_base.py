@@ -1,7 +1,7 @@
 # Write tests for check_refrain and filter_in_schema in guardrails/validator_base.py
 import pytest
 
-from guardrails.validator_base import check_refrain, filter_in_schema, Refrain, Filter
+from guardrails.validator_base import Filter, Refrain, check_refrain, filter_in_schema
 
 
 @pytest.mark.parametrize(
@@ -19,7 +19,7 @@ from guardrails.validator_base import check_refrain, filter_in_schema, Refrain, 
         ({"a": "b", "c": {"d": "e"}}, False),
         ({"a": "b", "c": ["d", Refrain()]}, True),
         ({"a": "b", "c": ["d", "e"]}, False),
-    ]
+    ],
 )
 def test_check_refrain(schema, expected):
     assert check_refrain(schema) == expected
@@ -37,7 +37,7 @@ def test_check_refrain(schema, expected):
         ({"a": "b", "c": {"d": Filter()}}, {"a": "b", "c": {}}),
         ({"a": "b", "c": {"d": "e"}}, {"a": "b", "c": {"d": "e"}}),
         ({"a": "b", "c": ["d", Filter()]}, {"a": "b", "c": ["d"]}),
-    ]
+    ],
 )
 def test_filter_in_schema(schema, expected):
     assert filter_in_schema(schema) == expected

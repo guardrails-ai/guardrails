@@ -1,6 +1,6 @@
 from typing import List
-from pydantic import BaseModel
 
+from pydantic import BaseModel
 
 LIST_PROMPT = """Create a list of items that may be found in a grocery store.
 
