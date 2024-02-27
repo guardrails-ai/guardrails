@@ -40,7 +40,7 @@ class Placeholder:
         validate_subschema: bool,
     ):
         if self.optional and json_value is None:
-            return True
+            return json_value
         return None
 
 
