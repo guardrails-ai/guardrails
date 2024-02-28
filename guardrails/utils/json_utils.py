@@ -32,6 +32,15 @@ from guardrails.utils.parsing_utils import get_code_block, has_code_block
 class Placeholder:
     optional: bool
 
+    def verify(
+        self,
+        json_value,
+        prune_extra_keys: bool,
+        coerce_types: bool,
+        validate_subschema: bool = False,
+    ) -> Optional[bool]:
+        raise NotImplementedError
+
     def is_optional_and_null(self, json_value):
         """Checks if json value is optional and null."""
         return self.optional and json_value is None
