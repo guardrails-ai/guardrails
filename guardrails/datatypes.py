@@ -10,6 +10,7 @@ from dateutil.parser import parse
 from lxml import etree as ET
 from typing_extensions import Self
 
+from guard_rails_api_client.models import SchemaElement, OnFail
 from guardrails.utils.casting_utils import to_float, to_int, to_string
 from guardrails.utils.xml_utils import cast_xml_to_string
 from guardrails.validator_base import Validator, ValidatorSpec
@@ -147,6 +148,41 @@ class DataType:
         if not isinstance(other, type(self)):
             return False
         return self.__dict__ == other.__dict__
+    
+    def _to_request(self) -> Dict[str, Any]:
+        element: Dict[str, Any] = {
+            "type": self.tag,
+            "name": self.name,
+            "description": self.description,
+            # This isn't stored anywhere and is inconsistently passed to ValidatorsAttr
+            # (i.e. is never passed to child properties) meaning its purpose isn't consistenly enforced.
+            # Since this is an XML only property and isn't properly implemented anymore,
+            # I'm just going to ignore it for now.
+            "strict": False,
+            "onFails": [
+                {
+                    "validatorTag": v.rail_alias,
+                    "method": v.on_fail_descriptor
+                }
+                for v in self.validators_attr.validators
+            ],
+            "dateFormat": getattr(self, 'date_format', None),
+            "timeFormat": getattr(self, 'time_format', None)
+        }
+        formatters: List[str] = [
+            v.to_xml_attrib()
+            for v in self.validators_attr.validators
+        ]
+        children: Dict[str, Any] = {
+            k: v._to_request()
+            for k, v in self._children
+        }
+        
+        return {
+            "children": children,
+            "formatters": formatters,
+            "element": element
+        }
 
 
 registry: Dict[str, Type[DataType]] = {}
