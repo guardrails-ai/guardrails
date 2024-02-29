@@ -15,13 +15,7 @@ from guardrails.utils.xml_utils import cast_xml_to_string
 from guardrails.validator_base import Validator, ValidatorSpec
 from guardrails.validatorsattr import ValidatorsAttr
 
-# TODO - deprecate these altogether
-deprecated_string_types = {"sql", "email", "url", "pythoncode"}
-
-
 def update_deprecated_type_to_string(type):
-    if type in deprecated_string_types:
-        return "string"
     return type
 
 
@@ -169,7 +163,7 @@ def register_type(name: str):
 def deprecate_type(cls: type):
     warnings.warn(
         f"""The '{cls.__name__}' type  is deprecated and will be removed in \
-versions 0.3.0 and beyond. Use the pydantic 'str' primitive instead.""",
+versions 0.4.0 and beyond. Use the pydantic 'str' primitive instead.""",
         DeprecationWarning,
     )
     return cls
@@ -348,77 +342,6 @@ class Time(ScalarType):
             datatype.time_format = element.attrib["time-format"]
 
         return datatype
-
-
-@deprecate_type
-@register_type("email")
-class Email(ScalarType):
-    """Element tag: `<email>`"""
-
-    tag = "email"
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        deprecate_type(type(self))
-
-    def get_example(self):
-        return "hello@example.com"
-
-
-@deprecate_type
-@register_type("url")
-class URL(ScalarType):
-    """Element tag: `<url>`"""
-
-    tag = "url"
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        deprecate_type(type(self))
-
-    def get_example(self):
-        return "https://example.com"
-
-
-@deprecate_type
-@register_type("pythoncode")
-class PythonCode(ScalarType):
-    """Element tag: `<pythoncode>`"""
-
-    tag = "pythoncode"
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        deprecate_type(type(self))
-
-    def get_example(self):
-        return "print('hello world')"
-
-
-@deprecate_type
-@register_type("sql")
-class SQLCode(ScalarType):
-    """Element tag: `<sql>`"""
-
-    tag = "sql"
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        deprecate_type(type(self))
-
-    def get_example(self):
-        return "SELECT * FROM table"
-
-
-@register_type("percentage")
-class Percentage(ScalarType):
-    """Element tag: `<percentage>`"""
-
-    tag = "percentage"
-
-    def get_example(self):
-        return "20%"
-
 
 @register_type("enum")
 class Enum(ScalarType):
