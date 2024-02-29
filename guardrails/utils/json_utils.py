@@ -48,6 +48,7 @@ type_map: Dict[Type[DataType], Type] = {
     Enum: str,
 }
 
+
 @dataclass
 class ValuePlaceholder(Placeholder):
     datatype_type: Type[DataType]
@@ -310,14 +311,13 @@ def generate_type_skeleton_from_schema(schema: Object) -> Placeholder:
             )
         else:
             datatype_type = type(schema)
-            if schema.tag in deprecated_string_types:
-                datatype_type = String
-                warnings.warn(
-                    f"""The '{schema.tag}' type is deprecated. Use the \
+            datatype_type = String
+            warnings.warn(
+                f"""The '{schema.tag}' type is deprecated. Use the \
 string type instead. Support for this type will \
-be dropped in version 0.3.0 and beyond.""",
-                    DeprecationWarning,
-                )
+be dropped in version 0.4.0 and beyond.""",
+                DeprecationWarning,
+            )
 
             return ValuePlaceholder(
                 datatype_type=datatype_type,
