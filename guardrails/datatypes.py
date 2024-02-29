@@ -8,12 +8,7 @@ from typing import Optional, Sequence, Type, TypeVar, Union
 
 from dateutil.parser import parse
 from lxml import etree as ET
-from typing_extensions import Self
 
-from guardrails.utils.casting_utils import to_float, to_int, to_string
-from guardrails.utils.xml_utils import cast_xml_to_string
-from guardrails.validator_base import Validator, ValidatorSpec
-from guardrails.validatorsattr import ValidatorsAttr
 
 def update_deprecated_type_to_string(type):
     return type

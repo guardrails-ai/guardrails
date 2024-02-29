@@ -16,11 +16,7 @@ from guardrails.datatypes import (
     Integer,
 )
 from guardrails.datatypes import List as ListDataType
-from guardrails.datatypes import (
-    Object,
-    String,
-    Time,
-)
+from guardrails.datatypes import Object, String, Time
 from guardrails.utils.parsing_utils import get_code_block, has_code_block
 
 
