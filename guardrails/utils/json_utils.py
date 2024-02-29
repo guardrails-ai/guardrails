@@ -6,13 +6,11 @@ from typing import Any, Dict, Optional, Tuple, Type, Union
 import regex
 
 from guardrails.datatypes import (
-    URL,
     Boolean,
     Case,
     Choice,
     DataType,
     Date,
-    Email,
     Enum,
     Float,
     Integer,
@@ -20,10 +18,8 @@ from guardrails.datatypes import (
 from guardrails.datatypes import List as ListDataType
 from guardrails.datatypes import (
     Object,
-    PythonCode,
     String,
     Time,
-    deprecated_string_types,
 )
 from guardrails.utils.parsing_utils import get_code_block, has_code_block
 
@@ -56,21 +52,12 @@ type_map: Dict[Type[DataType], Type] = {
     Enum: str,
 }
 
-ignore_types = [
-    Email,  # email and url should become string validators
-    URL,
-    PythonCode,
-]
-
-
 @dataclass
 class ValuePlaceholder(Placeholder):
     datatype_type: Type[DataType]
 
     @property
     def type_object(self):
-        if self.datatype_type in ignore_types:
-            return Any
         return type_map[self.datatype_type]
 
     class VerificationFailed:
