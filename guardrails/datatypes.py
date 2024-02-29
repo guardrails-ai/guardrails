@@ -15,7 +15,13 @@ from guardrails.utils.xml_utils import cast_xml_to_string
 from guardrails.validator_base import Validator, ValidatorSpec
 from guardrails.validatorsattr import ValidatorsAttr
 
+# TODO - deprecate these altogether
+deprecated_string_types = {"sql", "email", "url", "pythoncode"}
+
+
 def update_deprecated_type_to_string(type):
+    if type in deprecated_string_types:
+        return "string"
     return type
 
 
@@ -342,6 +348,16 @@ class Time(ScalarType):
             datatype.time_format = element.attrib["time-format"]
 
         return datatype
+
+@register_type("percentage")
+class Percentage(ScalarType):
+    """Element tag: `<percentage>`"""
+
+    tag = "percentage"
+
+    def get_example(self):
+        return "20%"
+
 
 @register_type("enum")
 class Enum(ScalarType):
