@@ -307,4 +307,4 @@ def default_otlp_tracer(resource_name: str = "guardsrails"):
     traceProvider.add_span_processor(processor)
     trace.set_tracer_provider(traceProvider)
 
-    return trace.get_tracer("gr")
+    return trace.get_tracer("guardrails-ai")
