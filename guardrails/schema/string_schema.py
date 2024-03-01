@@ -287,6 +287,7 @@ class StringSchema(Schema):
 
     def _to_request(self):
         if self.root_datatype is not None:
-            request_body = super()._to_request()
-            request_body["schema"]["element"]["name"] = "$string"
-            return request_body
+            request_body: Optional[Dict[str, Any]] = super()._to_request()
+            if request_body is not None:
+                request_body["schema"]["element"]["name"] = "$string"
+                return request_body

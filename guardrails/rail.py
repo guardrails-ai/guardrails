@@ -1,7 +1,7 @@
 """Rail class."""
 import warnings
 from dataclasses import dataclass
-from typing import Dict, Optional, Sequence, Type
+from typing import Any, Dict, Optional, Sequence, Type
 
 from lxml import etree as ET
 from pydantic import BaseModel
@@ -291,7 +291,7 @@ class Rail:
         )
 
     def _to_request(self) -> Dict:
-        rail = {"version": self.version}
+        rail: Dict[str, Any] = {"version": self.version}
 
         # input_schema = (
         #     self.input_schema._to_request() if self.input_schema is not None else None
