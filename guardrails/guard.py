@@ -217,8 +217,10 @@ class Guard(Runnable, Generic[OT]):
 
         rail = Rail.from_file(rail_file)
         if rail.output_type == "str":
-            return cast(Guard[str], cls(rail=rail, num_reasks=num_reasks))
-        return cast(Guard[Dict], cls(rail=rail, num_reasks=num_reasks))
+            return cast(
+                Guard[str], cls(rail=rail, num_reasks=num_reasks, tracer=tracer)
+            )
+        return cast(Guard[Dict], cls(rail=rail, num_reasks=num_reasks, tracer=tracer))
 
     @classmethod
     def from_rail_string(
@@ -242,8 +244,10 @@ class Guard(Runnable, Generic[OT]):
 
         rail = Rail.from_string(rail_string)
         if rail.output_type == "str":
-            return cast(Guard[str], cls(rail=rail, num_reasks=num_reasks))
-        return cast(Guard[Dict], cls(rail=rail, num_reasks=num_reasks))
+            return cast(
+                Guard[str], cls(rail=rail, num_reasks=num_reasks, tracer=tracer)
+            )
+        return cast(Guard[Dict], cls(rail=rail, num_reasks=num_reasks, tracer=tracer))
 
     @classmethod
     def from_pydantic(
@@ -269,7 +273,8 @@ class Guard(Runnable, Generic[OT]):
             reask_instructions=reask_instructions,
         )
         return cast(
-            Guard[Dict], cls(rail, num_reasks=num_reasks, base_model=output_class)
+            Guard[Dict],
+            cls(rail, num_reasks=num_reasks, base_model=output_class, tracer=tracer),
         )
 
     @classmethod
