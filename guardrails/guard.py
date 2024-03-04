@@ -1,6 +1,7 @@
 import asyncio
 import contextvars
 import json
+import os
 import warnings
 from copy import deepcopy
 from string import Template
@@ -22,17 +23,35 @@ from typing import (
 )
 
 from eliot import add_destinations, start_action
+from guard_rails_api_client.models import AnyObject
+from guard_rails_api_client.models import Guard as GuardModel
+from guard_rails_api_client.models import (
+    History,
+    HistoryEvent,
+    ValidatePayload,
+    ValidationOutput,
+)
+from guard_rails_api_client.types import UNSET
 from langchain_core.messages import BaseMessage
 from langchain_core.runnables import Runnable, RunnableConfig
 from pydantic import BaseModel
 
+from guardrails.api_client import GuardrailsApiClient
 from guardrails.classes import OT, InputType, ValidationOutcome
 from guardrails.classes.credentials import Credentials
 from guardrails.classes.generic import Stack
 from guardrails.classes.history import Call
 from guardrails.classes.history.call_inputs import CallInputs
+from guardrails.classes.history.inputs import Inputs
+from guardrails.classes.history.iteration import Iteration
+from guardrails.classes.history.outputs import Outputs
 from guardrails.errors import ValidationError
-from guardrails.llm_providers import get_async_llm_ask, get_llm_ask
+from guardrails.llm_providers import (
+    get_async_llm_ask,
+    get_llm_api_enum,
+    get_llm_ask,
+    model_is_supported_server_side,
+)
 from guardrails.logger import logger, set_scope
 from guardrails.prompt import Instructions, Prompt
 from guardrails.rail import Rail
@@ -40,14 +59,17 @@ from guardrails.run import AsyncRunner, Runner, StreamRunner
 from guardrails.schema import Schema, StringSchema
 from guardrails.stores.context import (
     Tracer,
+    get_call_kwarg,
     get_tracer_context,
     set_call_kwargs,
     set_tracer,
     set_tracer_context,
 )
 from guardrails.utils.hub_telemetry_utils import HubTelemetry
+from guardrails.utils.llm_response import LLMResponse
+from guardrails.utils.reask_utils import FieldReAsk
 from guardrails.utils.validator_utils import get_validator
-from guardrails.validator_base import Validator
+from guardrails.validator_base import FailResult, Validator
 
 add_destinations(logger.debug)
 
@@ -75,6 +97,7 @@ class Guard(Runnable, Generic[OT]):
     _guard_id = None
     _user_id = None
     _validators: List[Validator]
+    _api_client: Optional[GuardrailsApiClient] = None
 
     def __init__(
         self,
@@ -82,6 +105,9 @@ class Guard(Runnable, Generic[OT]):
         num_reasks: Optional[int] = None,
         base_model: Optional[Type[BaseModel]] = None,
         tracer: Optional[Tracer] = None,
+        *,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
     ):
         """Initialize the Guard with optional Rail instance, num_reasks, and
         base_model."""
@@ -112,6 +138,23 @@ class Guard(Runnable, Generic[OT]):
         if not self._disable_tracer:
             self._hub_telemetry = HubTelemetry()
         self._validators = []
+
+        # Gaurdrails As A Service Initialization
+        self.description = description
+        self.name = name
+
+        api_key = os.environ.get("GUARDRAILS_API_KEY")
+        if api_key is not None:
+            if self.name is None:
+                self.name = f"gr-{str(self._guard_id)}"
+                logger.warn("Warning: No name passed to guard!")
+                logger.warn(
+                    "Use this auto-generated name to re-use this guard: {name}".format(
+                        name=self.name
+                    )
+                )
+            self._api_client = GuardrailsApiClient(api_key=api_key)
+            self.upsert_guard()
 
     @property
     def prompt_schema(self) -> Optional[StringSchema]:
@@ -200,6 +243,9 @@ class Guard(Runnable, Generic[OT]):
         rail_file: str,
         num_reasks: Optional[int] = None,
         tracer: Optional[Tracer] = None,
+        *,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
     ):
         """Create a Schema from a `.rail` file.
 
@@ -217,8 +263,16 @@ class Guard(Runnable, Generic[OT]):
 
         rail = Rail.from_file(rail_file)
         if rail.output_type == "str":
-            return cast(Guard[str], cls(rail=rail, num_reasks=num_reasks))
-        return cast(Guard[Dict], cls(rail=rail, num_reasks=num_reasks))
+            return cast(
+                Guard[str],
+                cls(
+                    rail=rail, num_reasks=num_reasks, name=name, description=description
+                ),
+            )
+        return cast(
+            Guard[Dict],
+            cls(rail=rail, num_reasks=num_reasks, name=name, description=description),
+        )
 
     @classmethod
     def from_rail_string(
@@ -226,6 +280,9 @@ class Guard(Runnable, Generic[OT]):
         rail_string: str,
         num_reasks: Optional[int] = None,
         tracer: Optional[Tracer] = None,
+        *,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
     ):
         """Create a Schema from a `.rail` string.
 
@@ -242,8 +299,16 @@ class Guard(Runnable, Generic[OT]):
 
         rail = Rail.from_string(rail_string)
         if rail.output_type == "str":
-            return cast(Guard[str], cls(rail=rail, num_reasks=num_reasks))
-        return cast(Guard[Dict], cls(rail=rail, num_reasks=num_reasks))
+            return cast(
+                Guard[str],
+                cls(
+                    rail=rail, num_reasks=num_reasks, name=name, description=description
+                ),
+            )
+        return cast(
+            Guard[Dict],
+            cls(rail=rail, num_reasks=num_reasks, name=name, description=description),
+        )
 
     @classmethod
     def from_pydantic(
@@ -255,6 +320,9 @@ class Guard(Runnable, Generic[OT]):
         reask_prompt: Optional[str] = None,
         reask_instructions: Optional[str] = None,
         tracer: Optional[Tracer] = None,
+        *,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
     ):
         """Create a Guard instance from a Pydantic model and prompt."""
         # We have to set the tracer in the ContextStore before the Rail,
@@ -269,7 +337,14 @@ class Guard(Runnable, Generic[OT]):
             reask_instructions=reask_instructions,
         )
         return cast(
-            Guard[Dict], cls(rail, num_reasks=num_reasks, base_model=output_class)
+            Guard[Dict],
+            cls(
+                rail,
+                num_reasks=num_reasks,
+                base_model=output_class,
+                name=name,
+                description=description,
+            ),
         )
 
     @classmethod
@@ -283,6 +358,9 @@ class Guard(Runnable, Generic[OT]):
         reask_instructions: Optional[str] = None,
         num_reasks: Optional[int] = None,
         tracer: Optional[Tracer] = None,
+        *,
+        name: Optional[str] = None,
+        guard_description: Optional[str] = None,
     ):
         """Create a Guard instance for a string response with prompt,
         instructions, and validations.
@@ -307,7 +385,16 @@ class Guard(Runnable, Generic[OT]):
             reask_prompt=reask_prompt,
             reask_instructions=reask_instructions,
         )
-        return cast(Guard[str], cls(rail, num_reasks=num_reasks, tracer=tracer))
+        return cast(
+            Guard[str],
+            cls(
+                rail,
+                num_reasks=num_reasks,
+                tracer=tracer,
+                name=name,
+                description=guard_description,
+            ),
+        )
 
     @overload
     def __call__(
@@ -446,6 +533,19 @@ class Guard(Runnable, Generic[OT]):
             call_log = Call(inputs=call_inputs)
             set_scope(str(id(call_log)))
             self.history.push(call_log)
+
+            if self._api_client is not None and model_is_supported_server_side(
+                llm_api, *args, **kwargs
+            ):
+                return self._call_server(
+                    llm_api=llm_api,
+                    num_reasks=self.num_reasks,
+                    prompt_params=prompt_params,
+                    full_schema_reask=full_schema_reask,
+                    call_log=call_log,
+                    *args,
+                    **kwargs,
+                )
 
             # If the LLM API is async, return a coroutine
             if asyncio.iscoroutinefunction(llm_api):
@@ -780,6 +880,20 @@ class Guard(Runnable, Generic[OT]):
             set_scope(str(id(call_log)))
             self.history.push(call_log)
 
+            if self._api_client is not None and model_is_supported_server_side(
+                llm_api, *args, **kwargs
+            ):
+                return self._call_server(
+                    llm_output=llm_output,
+                    llm_api=llm_api,
+                    num_reasks=self.num_reasks,
+                    prompt_params=prompt_params,
+                    full_schema_reask=full_schema_reask,
+                    call_log=call_log,
+                    *args,
+                    **kwargs,
+                )
+
             # If the LLM API is async, return a coroutine
             if asyncio.iscoroutinefunction(llm_api):
                 return self._async_parse(
@@ -1057,3 +1171,147 @@ class Guard(Runnable, Generic[OT]):
             output.content = validated_output
             return cast(InputType, output)
         return cast(InputType, validated_output)
+
+    def _to_request(self) -> Dict:
+        return {
+            "name": self.name,
+            "description": self.description,
+            "railspec": self.rail._to_request(),
+            "numReasks": self.num_reasks,
+        }
+
+    def upsert_guard(self):
+        if self._api_client:
+            guard_dict = self._to_request()
+            self._api_client.upsert_guard(GuardModel.from_dict(guard_dict))
+        else:
+            raise ValueError("Guard does not have an api client!")
+
+    def _call_server(
+        self,
+        *args,
+        llm_output: Optional[str] = None,
+        llm_api: Optional[Callable] = None,
+        num_reasks: Optional[int] = None,
+        prompt_params: Optional[Dict] = None,
+        metadata: Optional[Dict] = {},
+        full_schema_reask: Optional[bool] = True,
+        call_log: Optional[Call],
+        # prompt: Optional[str],
+        # instructions: Optional[str],
+        # msg_history: Optional[List[Dict]],
+        **kwargs,
+    ):
+        if self._api_client:
+            payload: Dict[str, Any] = {"args": list(args)}
+            payload.update(**kwargs)
+            if llm_output is not None:
+                payload["llmOutput"] = llm_output
+            if num_reasks is not None:
+                payload["numReasks"] = num_reasks
+            if prompt_params is not None:
+                payload["promptParams"] = prompt_params
+            if llm_api is not None:
+                payload["llmApi"] = get_llm_api_enum(llm_api)
+            # TODO: get enum for llm_api
+            validation_output: Optional[ValidationOutput] = self._api_client.validate(
+                guard=self,  # type: ignore
+                payload=ValidatePayload.from_dict(payload),
+                openai_api_key=get_call_kwarg("api_key"),
+            )
+
+            if not validation_output:
+                return ValidationOutcome[OT](
+                    raw_llm_output=None,
+                    validated_output=None,
+                    validation_passed=False,
+                    error="The response from the server was empty!",
+                )
+
+            call_log = call_log or Call()
+            if llm_api is not None:
+                llm_api = get_llm_ask(llm_api)
+                if asyncio.iscoroutinefunction(llm_api):
+                    llm_api = get_async_llm_ask(llm_api)
+            session_history = (
+                validation_output.session_history
+                if validation_output is not None and validation_output.session_history
+                else []
+            )
+            history: History
+            for history in session_history:
+                history_events: Optional[List[HistoryEvent]] = (  # type: ignore
+                    history.history if history.history != UNSET else None
+                )
+                if history_events is None:
+                    continue
+
+                iterations = [
+                    Iteration(
+                        inputs=Inputs(
+                            llm_api=llm_api,
+                            llm_output=llm_output,
+                            instructions=(
+                                Instructions(h.instructions) if h.instructions else None
+                            ),
+                            prompt=(
+                                Prompt(h.prompt.source)  # type: ignore
+                                if h.prompt is not None and h.prompt != UNSET
+                                else None
+                            ),
+                            prompt_params=prompt_params,
+                            num_reasks=(num_reasks or 0),
+                            metadata=metadata,
+                            full_schema_reask=full_schema_reask,
+                        ),
+                        outputs=Outputs(
+                            llm_response_info=LLMResponse(
+                                output=h.output  # type: ignore
+                            ),
+                            raw_output=h.output,
+                            parsed_output=(
+                                h.parsed_output.to_dict()
+                                if isinstance(h.parsed_output, AnyObject)
+                                else h.parsed_output
+                            ),
+                            validation_output=(
+                                h.validated_output.to_dict()
+                                if isinstance(h.validated_output, AnyObject)
+                                else h.validated_output
+                            ),
+                            reasks=(
+                                [
+                                    (
+                                        FieldReAsk(
+                                            incorrect_value=r.to_dict().get(
+                                                "incorrect_value"
+                                            ),
+                                            path=r.to_dict().get("path"),
+                                            fail_results=[
+                                                FailResult(
+                                                    error_message=r.to_dict().get(
+                                                        "error_message"
+                                                    ),
+                                                    fix_value=r.to_dict().get(
+                                                        "fix_value"
+                                                    ),
+                                                )
+                                            ],
+                                        )
+                                        for r in h.reasks  # type: ignore
+                                    )
+                                ]
+                                if h.reasks != UNSET
+                                else []
+                            ),
+                        ),
+                    )
+                    for h in history_events
+                ]
+                call_log.iterations.extend(iterations)
+                if self.history.length == 0:
+                    self.history.push(call_log)
+
+            return ValidationOutcome[OT].from_guard_history(call_log)
+        else:
+            raise ValueError("Guard does not have an api client!")
