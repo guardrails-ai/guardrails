@@ -189,21 +189,27 @@ class ProvenanceV0(Validator):
 
         unsupported_sentences = []
         supported_sentences = []
+        cosine_similarities = []
+
         for sentence in sentences:
             most_similar_chunks = query_function(text=sentence, k=1)
             if most_similar_chunks is None:
                 unsupported_sentences.append(sentence)
+                cosine_similarities.append((sentence, None))
                 continue
             most_similar_chunk = most_similar_chunks[0]
             if most_similar_chunk[1] < self._threshold:
                 supported_sentences.append((sentence, most_similar_chunk[0]))
+                cosine_similarities.append((sentence, most_similar_chunk[1]))
             else:
                 unsupported_sentences.append(sentence)
+                cosine_similarities.append((sentence, most_similar_chunk[1]))
 
         metadata["unsupported_sentences"] = "- " + "\n- ".join(unsupported_sentences)
         metadata["supported_sentences"] = supported_sentences
+        metadata["cosine_similarities"] = cosine_similarities
+
         if unsupported_sentences:
-            unsupported_sentences = "- " + "\n- ".join(unsupported_sentences)
             return FailResult(
                 metadata=metadata,
                 error_message=(
@@ -222,6 +228,7 @@ class ProvenanceV0(Validator):
         if most_similar_chunks is None:
             metadata["unsupported_text"] = value
             metadata["supported_text_citations"] = {}
+            metadata["cosine_similarity"] = None
             return FailResult(
                 metadata=metadata,
                 error_message=(
@@ -233,6 +240,7 @@ class ProvenanceV0(Validator):
         if most_similar_chunk[1] > self._threshold:
             metadata["unsupported_text"] = value
             metadata["supported_text_citations"] = {}
+            metadata["cosine_similarity"] = most_similar_chunk[1]
             return FailResult(
                 metadata=metadata,
                 error_message=(
@@ -245,6 +253,7 @@ class ProvenanceV0(Validator):
         metadata["supported_text_citations"] = {
             value: most_similar_chunk[0],
         }
+        metadata["cosine_similarity"] = most_similar_chunk[1]
         return PassResult(metadata=metadata)
 
     def validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
