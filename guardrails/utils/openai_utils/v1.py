@@ -131,17 +131,20 @@ class OpenAIClientV1(BaseOpenAIClient):
         openai_response = cast(Dict[str, Any], openai_response)
         if not openai_response.choices:
             raise ValueError("No choices returned from OpenAI")
-        if not openai_response.choices[0].message.content:
+        if not openai_response.choices[0].message:
             raise ValueError("No message returned from OpenAI")
         if openai_response.usage is None:
             raise ValueError("No token counts returned from OpenAI")
 
-        if "function_call" in openai_response.choices[0].message:  # type: ignore
-            output = openai_response.choices[
-                0
-            ].message.function_call.arguments  # noqa: E501 # type: ignore
+        if openai_response.choices[0].message.content is not None:
+            output = openai_response.choices[0].message.content
         else:
-            output = openai_response.choices[0].message.content  # type: ignore
+            try:
+                output = openai_response.choices[0].message.function_call.arguments
+            except AttributeError as ae:
+                raise ValueError(
+                    "No message content or function call arguments returned from OpenAI"
+                ) from ae
 
         return LLMResponse(
             output=output,
@@ -287,19 +290,23 @@ class AsyncOpenAIClientV1(BaseOpenAIClient):
         # If stream is not defined or is set to False,
         # Extract string from response
         openai_response = cast(Dict[str, Any], openai_response)
-        if "function_call" in openai_response["choices"][0]["message"]:  # type: ignore
-            output = openai_response["choices"][0]["message"][  # type: ignore
-                "function_call"
-            ]["arguments"]
-        else:
-            output = openai_response["choices"][0]["message"]["content"]  # type: ignore
-
         if not openai_response.choices:
             raise ValueError("No choices returned from OpenAI")
-        if not openai_response.choices[0].message.content:
+        if not openai_response.choices[0].message:
             raise ValueError("No message returned from OpenAI")
         if openai_response.usage is None:
             raise ValueError("No token counts returned from OpenAI")
+
+        if openai_response.choices[0].message.content is not None:
+            output = openai_response.choices[0].message.content
+        else:
+            try:
+                output = openai_response.choices[0].message.function_call.arguments
+            except AttributeError as ae:
+                raise ValueError(
+                    "No message content or function call arguments returned from OpenAI"
+                ) from ae
+
         return LLMResponse(
             output=output,
             prompt_token_count=openai_response.usage.prompt_tokens,  # type: ignore

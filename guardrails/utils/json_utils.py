@@ -37,11 +37,13 @@ class Placeholder:
         json_value,
         prune_extra_keys: bool,
         coerce_types: bool,
-        validate_subschema: bool,
-    ):
-        if self.optional and json_value is None:
-            return True
-        return None
+        validate_subschema: bool = False,
+    ) -> Optional[bool]:
+        raise NotImplementedError
+
+    def is_optional_and_null(self, json_value):
+        """Checks if json value is optional and null."""
+        return self.optional and json_value is None
 
 
 type_map: Dict[Type[DataType], Type] = {
@@ -83,15 +85,11 @@ class ValuePlaceholder(Placeholder):
         prune_extra_keys: bool,
         coerce_types: bool,
         validate_subschema: bool = False,
-    ) -> Union[Type[VerificationFailed], Any]:
-        super_result = super().verify(
-            json_value,
-            prune_extra_keys=prune_extra_keys,
-            coerce_types=coerce_types,
-            validate_subschema=validate_subschema,
-        )
-        if super_result is not None:
-            return super_result
+    ) -> Optional[Union[Type[VerificationFailed], Any]]:
+        # Check if the json value is optional and null
+        if self.is_optional_and_null(json_value):
+            return None
+
         expected_type = self.type_object
         if expected_type == Any:
             return json_value
@@ -120,16 +118,10 @@ class DictPlaceholder(Placeholder):
         prune_extra_keys: bool,
         coerce_types: bool,
         validate_subschema: bool = False,
-    ) -> bool:
-        # If json value is None, and the placeholder is optional, return True
-        super_result = super().verify(
-            json_value,
-            prune_extra_keys=prune_extra_keys,
-            coerce_types=coerce_types,
-            validate_subschema=validate_subschema,
-        )
-        if super_result is not None:
-            return super_result
+    ) -> Optional[bool]:
+        # Check if the json value is optional and null
+        if self.is_optional_and_null(json_value):
+            return None
 
         # If the json value is not a dict, return False
         if not isinstance(json_value, dict):
@@ -200,15 +192,10 @@ class ListPlaceholder(Placeholder):
         prune_extra_keys: bool,
         coerce_types: bool,
         validate_subschema: bool = False,
-    ) -> bool:
-        super_result = super().verify(
-            json_value,
-            prune_extra_keys=prune_extra_keys,
-            coerce_types=coerce_types,
-            validate_subschema=validate_subschema,
-        )
-        if super_result is not None:
-            return super_result
+    ) -> Optional[bool]:
+        # Check if the json value is optional and null
+        if self.is_optional_and_null(json_value):
+            return None
 
         if not isinstance(json_value, list):
             return False
@@ -251,15 +238,10 @@ class ChoicePlaceholder(Placeholder):
         prune_extra_keys: bool,
         coerce_types: bool,
         validate_subschema: bool = False,
-    ) -> bool:
-        super_result = super().verify(
-            json_value,
-            prune_extra_keys=prune_extra_keys,
-            coerce_types=coerce_types,
-            validate_subschema=validate_subschema,
-        )
-        if super_result is not None:
-            return super_result
+    ) -> Optional[bool]:
+        # Check if the json value is optional and null
+        if self.is_optional_and_null(json_value):
+            return None
 
         if not isinstance(json_value, dict):
             return False
