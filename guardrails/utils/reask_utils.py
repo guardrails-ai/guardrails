@@ -82,6 +82,10 @@ def gather_reasks(
         valid_output = deepcopy(validated_output)
         _gather_reasks_in_dict(validated_output, valid_output)
         return reasks, valid_output
+    elif isinstance(validated_output, List):
+        valid_output = deepcopy(validated_output)
+        _gather_reasks_in_list(validated_output, valid_output)
+        return reasks, valid_output
     return reasks, None
 
 

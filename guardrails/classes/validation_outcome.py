@@ -1,6 +1,7 @@
 from typing import Generic, Iterator, Optional, Tuple, Union, cast
 
 from pydantic import Field
+from rich.pretty import pretty_repr
 
 from guardrails.classes.history import Call, Iteration
 from guardrails.classes.output_type import OT
@@ -83,3 +84,6 @@ class ValidationOutcome(ArbitraryModel, Generic[OT]):
     def __getitem__(self, keys):
         """Get a subset of the ValidationOutcome's fields."""
         return iter(getattr(self, k) for k in keys)
+
+    def __str__(self) -> str:
+        return pretty_repr(self)
