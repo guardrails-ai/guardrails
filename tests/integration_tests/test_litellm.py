@@ -1,5 +1,6 @@
 import importlib.util
 from dataclasses import dataclass
+from typing import List
 
 import pytest
 
@@ -27,7 +28,7 @@ class Usage:
 
 @dataclass
 class MockResponse:
-    choices: list[Choice]
+    choices: List[Choice]
     usage: Usage
 
 
