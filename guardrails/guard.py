@@ -616,7 +616,7 @@ class Guard(Runnable, Generic[OT]):
                 call_log=call_log, prompt_params=prompt_params
             )
             return ValidationOutcome[OT].from_guard_history(call)
-    
+
     def __repr__(self):
         return f"Guard(RAIL={self.rail})"
 
