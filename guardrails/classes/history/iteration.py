@@ -189,3 +189,6 @@ class Iteration(ArbitraryModel):
                     style="on #F0FFF0",
                 ),
             )
+
+    def __str__(self) -> str:
+        return pretty_repr(self)
