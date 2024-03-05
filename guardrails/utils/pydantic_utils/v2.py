@@ -63,12 +63,15 @@ def add_validator(
 
 def is_pydantic_base_model(type_annotation: Any) -> Union[Type[BaseModel], None]:
     """Check if a type_annotation is a Pydantic BaseModel."""
-    if (
-        type_annotation is not None
-        and isinstance(type_annotation, type)
-        and issubclass(type_annotation, BaseModel)
-    ):
-        return type_annotation
+    try:
+        if (
+            type_annotation is not None
+            and isinstance(type_annotation, type)
+            and issubclass(type_annotation, BaseModel)
+        ):
+            return type_annotation
+    except TypeError:
+        pass
     return None
 
 

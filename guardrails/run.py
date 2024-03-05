@@ -64,7 +64,9 @@ class Runner:
         msg_history_schema: Optional[StringSchema] = None,
         metadata: Optional[Dict[str, Any]] = None,
         output: Optional[str] = None,
-        base_model: Optional[Type[BaseModel]] = None,
+        base_model: Optional[
+            Union[Type[BaseModel], Type[List[Type[BaseModel]]]]
+        ] = None,
         full_schema_reask: bool = False,
     ):
         if prompt:
@@ -676,7 +678,9 @@ class AsyncRunner(Runner):
         msg_history_schema: Optional[StringSchema] = None,
         metadata: Optional[Dict[str, Any]] = None,
         output: Optional[str] = None,
-        base_model: Optional[Type[BaseModel]] = None,
+        base_model: Optional[
+            Union[Type[BaseModel], Type[List[Type[BaseModel]]]]
+        ] = None,
         full_schema_reask: bool = False,
     ):
         super().__init__(

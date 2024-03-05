@@ -366,3 +366,6 @@ class Call(ArbitraryModel):
             )
 
         return tree
+
+    def __str__(self) -> str:
+        return pretty_repr(self)

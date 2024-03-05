@@ -1,6 +1,17 @@
 import json
 from copy import deepcopy
-from typing import Any, Dict, List, Optional, Tuple, Type, Union
+from typing import (
+    Any,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+    cast,
+    get_args,
+    get_origin,
+)
 
 from lxml import etree as ET
 from pydantic import BaseModel
@@ -8,7 +19,9 @@ from typing_extensions import Self
 
 from guardrails import validator_service
 from guardrails.classes.history import Iteration
-from guardrails.datatypes import Choice, DataType, Object
+from guardrails.datatypes import Choice, DataType
+from guardrails.datatypes import List as ListDataType
+from guardrails.datatypes import Object
 from guardrails.llm_providers import (
     AsyncOpenAICallable,
     AsyncOpenAIChatCallable,
@@ -34,8 +47,10 @@ from guardrails.utils.reask_utils import (
     get_pruned_tree,
     prune_obj_for_reasking,
 )
+from guardrails.utils.safe_get import safe_get
 from guardrails.utils.telemetry_utils import trace_validation_result
-from guardrails.validator_base import FailResult, check_refrain_in_dict, filter_in_dict
+from guardrails.validator_base import FailResult, check_refrain, filter_in_schema
+from guardrails.validatorsattr import ValidatorsAttr
 
 
 class JsonSchema(Schema):
@@ -43,7 +58,7 @@ class JsonSchema(Schema):
 
     def __init__(
         self,
-        schema: Object,
+        schema: Union[Object, ListDataType],
         reask_prompt_template: Optional[str] = None,
         reask_instructions_template: Optional[str] = None,
     ) -> None:
@@ -163,7 +178,12 @@ class JsonSchema(Schema):
         if "strict" in root.attrib and root.attrib["strict"] == "true":
             strict = True
 
-        schema = Object.from_xml(root, strict=strict)
+        schema_type = root.attrib["type"] if "type" in root.attrib else "object"
+
+        if schema_type == "list":
+            schema = ListDataType.from_xml(root, strict=strict)
+        else:
+            schema = Object.from_xml(root, strict=strict)
 
         return cls(
             schema,
@@ -174,13 +194,30 @@ class JsonSchema(Schema):
     @classmethod
     def from_pydantic(
         cls,
-        model: Type[BaseModel],
+        model: Union[Type[BaseModel], Type[List[Type[BaseModel]]]],
         reask_prompt_template: Optional[str] = None,
         reask_instructions_template: Optional[str] = None,
     ) -> Self:
         strict = False
 
-        schema = convert_pydantic_model_to_datatype(model, strict=strict)
+        type_origin = get_origin(model)
+
+        if type_origin == list:
+            item_types = get_args(model)
+            if len(item_types) > 1:
+                raise ValueError("List data type must have exactly one child.")
+            item_type = safe_get(item_types, 0)
+            if not item_type or not issubclass(item_type, BaseModel):
+                raise ValueError("List item type must be a Pydantic model.")
+            item_schema = convert_pydantic_model_to_datatype(item_type, strict=strict)
+            children = {"item": item_schema}
+            validators_attr = ValidatorsAttr.from_validators(
+                [], ListDataType.tag, strict
+            )
+            schema = ListDataType(children, validators_attr, False, None, None)
+        else:
+            pydantic_model = cast(Type[BaseModel], model)
+            schema = convert_pydantic_model_to_datatype(pydantic_model, strict=strict)
 
         return cls(
             schema,
@@ -302,9 +339,6 @@ class JsonSchema(Schema):
         if data is None:
             return None
 
-        if not isinstance(data, dict):
-            raise TypeError(f"Argument `data` must be a dictionary, not {type(data)}.")
-
         validated_response = deepcopy(data)
 
         if not verify_schema_against_json(
@@ -337,14 +371,14 @@ class JsonSchema(Schema):
             iteration=iteration,
         )
 
-        if check_refrain_in_dict(validated_response):
+        if check_refrain(validated_response):
             # If the data contains a `Refrain` value, we return an empty
             # dictionary.
             logger.debug("Refrain detected.")
             validated_response = {}
 
         # Remove all keys that have `Filter` values.
-        validated_response = filter_in_dict(validated_response)
+        validated_response = filter_in_schema(validated_response)
 
         # TODO: Capture error messages once Top Level error handling is merged in
         trace_validation_result(
@@ -370,9 +404,6 @@ class JsonSchema(Schema):
         """
         if data is None:
             return None
-
-        if not isinstance(data, dict):
-            raise TypeError(f"Argument `data` must be a dictionary, not {type(data)}.")
 
         validated_response = deepcopy(data)
 
@@ -406,14 +437,14 @@ class JsonSchema(Schema):
             iteration=iteration,
         )
 
-        if check_refrain_in_dict(validated_response):
+        if check_refrain(validated_response):
             # If the data contains a `Refain` value, we return an empty
             # dictionary.
             logger.debug("Refrain detected.")
             validated_response = {}
 
         # Remove all keys that have `Filter` values.
-        validated_response = filter_in_dict(validated_response)
+        validated_response = filter_in_schema(validated_response)
 
         # TODO: Capture error messages once Top Level error handling is merged in
         trace_validation_result(
@@ -422,7 +453,7 @@ class JsonSchema(Schema):
 
         return validated_response
 
-    def introspect(self, data: Any) -> Tuple[List[ReAsk], Optional[Dict]]:
+    def introspect(self, data: Any) -> Tuple[List[ReAsk], Union[Dict, List, None]]:
         if isinstance(data, SkeletonReAsk):
             return [data], None
         elif isinstance(data, NonParseableReAsk):

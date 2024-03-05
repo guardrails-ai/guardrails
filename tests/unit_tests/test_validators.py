@@ -69,7 +69,7 @@ from .mocks.mock_comet import BAD_TRANSLATION, GOOD_TRANSLATION, MockModel
         ({"a": 1}, False),
     ],
 )
-def test_check_refrain(input_dict, expected):
+def test_check_refrain_in_dict(input_dict, expected):
     assert check_refrain_in_dict(input_dict) == expected
 
 

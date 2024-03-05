@@ -76,6 +76,12 @@ def check_refrain_in_dict(schema: Dict) -> bool:
     return False
 
 
+def check_refrain(schema: Union[List, Dict]) -> bool:
+    if isinstance(schema, List):
+        return check_refrain_in_list(schema)
+    return check_refrain_in_dict(schema)
+
+
 def filter_in_list(schema: List) -> List:
     """Remove out all Filter objects from a list.
 
@@ -128,6 +134,12 @@ def filter_in_dict(schema: Dict) -> Dict:
             filtered_dict[key] = value
 
     return filtered_dict
+
+
+def filter_in_schema(schema: Union[Dict, List]) -> Union[Dict, List]:
+    if isinstance(schema, List):
+        return filter_in_list(schema)
+    return filter_in_dict(schema)
 
 
 validators_registry = {}
