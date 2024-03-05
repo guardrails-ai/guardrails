@@ -1,5 +1,6 @@
 import importlib.util
 import os
+from dataclasses import dataclass
 from typing import Any, Callable, Dict, Iterable
 from unittest.mock import MagicMock
 
@@ -533,6 +534,52 @@ def test_hugging_face_pipeline_callable():
     assert response.response_token_count is None
 
 
+@pytest.mark.skipif(
+    not importlib.util.find_spec("litellm"),
+    reason="`litellm` is not installed",
+)
+def test_litellm_callable(mocker):
+    # Mock the litellm.completion function and
+    # the classes it returns
+    @dataclass
+    class Message:
+        content: str
+
+    @dataclass
+    class Choice:
+        message: Message
+
+    @dataclass
+    class Usage:
+        prompt_tokens: int
+        completion_tokens: int
+
+    @dataclass
+    class MockResponse:
+        choices: list[Choice]
+        usage: Usage
+
+    class MockCompletion:
+        @staticmethod
+        def create() -> MockResponse:
+            return MockResponse(
+                choices=[Choice(message=Message(content="Hello there!"))],
+                usage=Usage(prompt_tokens=10, completion_tokens=20),
+            )
+
+    mocker.patch("litellm.completion", return_value=MockCompletion.create())
+
+    from guardrails.llm_providers import LiteLLMCallable
+
+    litellm_callable = LiteLLMCallable()
+    response = litellm_callable("Hello")
+
+    assert isinstance(response, LLMResponse) is True
+    assert response.output == "Hello there!"
+    assert response.prompt_token_count == 10
+    assert response.response_token_count == 20
+
+
 class ReturnTempCallable(Callable):
     def __call__(*args, **kwargs) -> Any:
         return ""
@@ -700,6 +747,20 @@ def test_get_llm_ask_hugging_face_pipeline():
     prompt_callable = get_llm_ask(mock_pipeline)
 
     assert isinstance(prompt_callable, HuggingFacePipelineCallable)
+
+
+@pytest.mark.skipif(
+    not importlib.util.find_spec("litellm"),
+    reason="`litellm` is not installed",
+)
+def test_get_llm_ask_litellm():
+    from litellm import completion
+
+    from guardrails.llm_providers import LiteLLMCallable
+
+    prompt_callable = get_llm_ask(completion)
+
+    assert isinstance(prompt_callable, LiteLLMCallable)
 
 
 def test_chat_prompt():
