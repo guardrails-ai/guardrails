@@ -453,7 +453,7 @@ class JsonSchema(Schema):
 
         return validated_response
 
-    def introspect(self, data: Any) -> Tuple[List[ReAsk], Optional[Dict]]:
+    def introspect(self, data: Any) -> Tuple[List[ReAsk], Union[Dict, List, None]]:
         if isinstance(data, SkeletonReAsk):
             return [data], None
         elif isinstance(data, NonParseableReAsk):
