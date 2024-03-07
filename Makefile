@@ -1,5 +1,12 @@
 MKDOCS_SERVE_ADDR ?= localhost:8000 # Default address for mkdocs serve, format: <host>:<port>, override with `make docs-serve MKDOCS_SERVE_ADDR=<host>:<port>`
 
+# Extract major package versions for OpenAI and Pydantic
+OPENAI_VERSION_MAJOR := $(shell python -c 'import openai; print(openai.__version__.split(".")[0])')
+PYDANTIC_VERSION_MAJOR := $(shell python -c 'import pydantic; print(pydantic.__version__.split(".")[0])')
+
+# Construct the typing command using only major versions
+TYPING_CMD := type-pydantic-v$(PYDANTIC_VERSION_MAJOR)-openai-v$(OPENAI_VERSION_MAJOR)
+
 autoformat:
 	poetry run black guardrails/ tests/
 	poetry run isort --atomic guardrails/ tests/
@@ -7,6 +14,10 @@ autoformat:
 
 type:
 	poetry run pyright guardrails/
+
+.PHONY: typing
+type-local:
+	@make $(TYPING_CMD)
 
 type-pydantic-v1-openai-v0:
 	echo '{"exclude": ["guardrails/utils/pydantic_utils/v2.py", "guardrails/utils/openai_utils/v1.py"]}' > pyrightconfig.json
