@@ -74,25 +74,9 @@ jobs:
           poetry run pip install pydantic==${{ matrix.pydantic-version }}
           poetry run pip install openai==${{ matrix.openai-version }}
 
-      - if: matrix.pydantic-version == '2.4.2' && matrix.openai-version == '0.28.1'
-        name: Static analysis with pyright (ignoring pydantic v1 and openai v1)
+      - name: Static analysis with pyright
         run: |
-          make type-pydantic-v2-openai-v0
-
-      - if: matrix.pydantic-version == '1.10.9' && matrix.openai-version == '0.28.1'
-        name: Static analysis with mypy (ignoring pydantic v2 and openai v1)
-        run: |
-          make type-pydantic-v1-openai-v0
-
-      - if: matrix.pydantic-version == '2.4.2' && matrix.openai-version == '1.2.4'
-        name: Static analysis with pyright (ignoring pydantic v1 and openai v0)
-        run: |
-          make type-pydantic-v2-openai-v1
-
-      - if: matrix.pydantic-version == '1.10.9' && matrix.openai-version == '1.2.4'
-        name: Static analysis with mypy (ignoring pydantic v2 and openai v0)
-        run: |
-          make type-pydantic-v1-openai-v1
+          make type-local
 
   Pytests:
     runs-on: LargeBois
