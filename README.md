@@ -21,18 +21,26 @@
 ## What is Guardrails?
 
 Guardrails is a Python framework that helps build reliable AI applications by performing two key functions:
-1. Guardrails runs Input/Output Guards in your application that detect, quanitfy and mitigate the presence of specific types of risks. To look at the full suite of risks, check out [Guardrails Hub](https://hub.guardrailsai.com/).
+1. Guardrails runs Input/Output Guards in your application that detect, quantify and mitigate the presence of specific types of risks. To look at the full suite of risks, check out [Guardrails Hub](https://hub.guardrailsai.com/).
 2. Guardrails help you generate structured data from LLMs.
 
-
-### Guardrails Hub
-
-Guardrails Hub is a collection of pre-built validators that can be combined together to create a Guard. Visit [Guardrails Hub](https://hub.guardrailsai.com/) to see the full list of validators and their documentation.
 
 <div align="center">
 
 <!-- TODO(shreya): Before merging, update url to main branch -->
 <img src="https://raw.githubusercontent.com/guardrails-ai/guardrails/shreya/add-pyright-badge/docs/img/with_and_without_guardrails.svg" alt="Guardrails in your application" width="1500px">
+
+</div>
+
+
+### Guardrails Hub
+
+Guardrails Hub is a collection of pre-built measures of specific types of risks (called 'validators'). Multiple validators can be combined together into Input and Output Guards that intercept the inputs and outputs of LLMs. Visit [Guardrails Hub](https://hub.guardrailsai.com/) to see the full list of validators and their documentation.
+
+<div align="center">
+
+<!-- TODO(shreya): Before merging, update url to main branch -->
+<img src="https://raw.githubusercontent.com/guardrails-ai/guardrails/shreya/add-pyright-badge/docs/img/guardrails_hub.gif" alt="Guardrails Hub gif" width="600px">
 
 </div>
 
@@ -45,11 +53,64 @@ pip install guardrails-ai
 
 
 ## Getting Started
-Let's go through an example where we ask an LLM to generate fake pet names. To do this, we'll use Pydantic, a popular data validation library for Python.  
 
-### Creating Structured Outputs
 
-In order to create a LLM that generates fake pet names, we can create a class `Pet` that inherits from the Pydantic class [Link BaseModel](https://docs.pydantic.dev/latest/api/base_model/): 
+### Create Input and Output Guards for LLM Validation
+
+1. Download and configure the Guardrails Hub CLI.
+    
+    ```bash
+    pip install guardrails-ai
+    guardrails configure
+    ```
+2. Install a guardrail from Guardrails Hub.
+
+    ```bash
+    gudardrails hub install hub://guardrails/regex_match
+    ```
+3. Create a Guard from the installed guardrail.
+
+    ```python
+    # Import Guard and Validator
+    from guardrails.hub import RegexMatch
+    from guardrails import Guard
+
+    # Initialize the Guard with 
+    val = Guard().use(
+        RegexMatch(regex="^[A-Z][a-z]*$")
+    )
+
+    guard.parse("Caesar")  # Guardrail Passes
+    guard.parse("Caesar is a great leader")  # Guardrail Fails
+    ```
+4. Run multiple guardrails within a Guard.
+    First, install the necessary guardrails from Guardrails Hub.
+
+    ```bash
+    guardrails hub install hub://guardrails/competitor_check
+    guardrails hub install hub://guardrails/toxic_language
+    ```
+
+    Then, create a Guard from the installed guardrails.
+    
+    ```python
+    from guardrails.hub import RegexMatch, ValidLength
+    from guardrails import Guard
+
+    guard = Guard().use(
+        RegexMatch(regex="^[A-Z][a-z]*$"),
+        ValidLength(min=1, max=32)
+    )
+
+    guard.parse("Caesar")  # Guardrail Passes
+    guard.parse("Caesar is a great leader")  # Guardrail Fails
+    ```
+
+
+### Use Guardrails to generate structured data from LLMs
+
+
+Let's go through an example where we ask an LLM to generate fake pet names. To do this, we'll create a Pydantic [BaseModel](https://docs.pydantic.dev/latest/api/base_model/) that represents the structure of the output we want.
 
 ```py
 from pydantic import BaseModel, Field
@@ -59,7 +120,9 @@ class Pet(BaseModel):
     name: str = Field(description="a unique pet name")
 ```
 
-We can now pass in this new `Pet` class as the `output_class` parameter in our Guard. When we run the code, the LLM's output is formatted to the pydnatic structure. We also add `${gr.complete_json_suffix_v2}` to the prompt which tells our LLM to only respond with JSON: 
+Now, create a Guard from the `Pet` class. The Guard can be used to call the LLM in a manner so that the output is formatted to the `Pet` class. Under the hood, this is done by either of two methods:
+1. Function calling: For LLMs that support function calling, we generate structured data using the function call syntax.
+2. Prompt optimization: For LLMs that don't support function calling, we add the schema of the expected output to the prompt so that the LLM can generate structured data.
 
 ```py
 from guardrails import Guard
@@ -88,45 +151,8 @@ This prints:
 }
 ```
 
-## Structured Outputs with Validation 
-We can add validation to our Guard instead of just structuring the ouput in a specific format. In the below code, we add a Validator that checks if the pet name generated is of valid length. If it does not pass the validation, the reask is triggered and the query is reasked to the LLM. Check out the [Link Validators API Spec](https://www.guardrailsai.com/docs/api_reference_markdown/validators/) for a list of supported validators.
-
-```py
-from guardrails.validators import ValidLength, TwoWords
-from rich import print
-
-class Pet(BaseModel):
-    pet_type: str = Field(description="Species of pet")
-    name: str = Field(description="a unique pet name", validators=[ValidLength(min=1, max=32, on_fail='reask')])
-
-guard = Guard.from_pydantic(output_class=Pet, prompt=prompt)
-
-raw_llm_output, validated_output, *rest = guard(
-    llm_api=openai.chat.completions.create,
-    model="gpt-3.5-turbo",
-    max_tokens=1024,
-    temperature=0.5
-)
-
-print(guard.history.last.tree)
-```
-
-## Under the hood
-
-Guardrails provides a file format (`.rail`) for enforcing a specification on an LLM output, and a lightweight wrapper around LLM API calls to implement this spec.
-
-1. `rail` (**R**eliable **AI** markup **L**anguage) files for specifying structure and type information, validators and corrective actions over LLM outputs.
-2. `gd.Guard` wraps around LLM API calls to structure, validate and correct the outputs.
-
-``` mermaid
-graph LR
-    A[Create `RAIL` spec] --> B["Initialize `guard` from spec"];
-    B --> C["Wrap LLM API call with `guard`"];
-```
-
-Check out the [Getting Started](https://docs.guardrailsai.com/guardrails_ai/getting_started/) guide to learn how to use Guardrails.
-
-
 ## Contributing
 
-Get started by checking out Github issues and of course using Guardrails to familiarize yourself with the project. Guardrails is still actively under development and any support is gladly welcomed. Feel free to open an issue, or reach out if you would like to add to the project!
+We welcome contributions to Guardrails!
+
+Get started by checking out Github issues and check out the [Contributing Guide](CONTRIBUTING.md). Feel free to open an issue, or reach out if you would like to add to the project!
