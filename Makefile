@@ -12,11 +12,8 @@ autoformat:
 	poetry run isort --atomic guardrails/ tests/
 	poetry run docformatter --in-place --recursive guardrails tests
 
+.PHONY: type
 type:
-	poetry run pyright guardrails/
-
-.PHONY: typing
-type-local:
 	@make $(TYPING_CMD)
 
 type-pydantic-v1-openai-v0:

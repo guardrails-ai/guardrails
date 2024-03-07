@@ -76,7 +76,7 @@ jobs:
 
       - name: Static analysis with pyright
         run: |
-          make type-local
+          make type
 
   Pytests:
     runs-on: LargeBois
