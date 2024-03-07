@@ -15,6 +15,7 @@ from guardrails.utils.xml_utils import cast_xml_to_string
 from guardrails.validator_base import Validator, ValidatorSpec
 from guardrails.validatorsattr import ValidatorsAttr
 
+
 @dataclass
 class FieldValidation:
     key: Any
@@ -153,6 +154,7 @@ def register_type(name: str):
         return cls
 
     return decorator
+
 
 class ScalarType(DataType):
     def set_children_from_xml(self, element: ET._Element):
