@@ -116,7 +116,7 @@ def is_enum(type_annotation: Any) -> bool:
     return False
 
 
-def _create_bare_model(model: Type[BaseModel]) -> Type[BaseModel]:
+def _create_bare_model(model: BaseModel) -> Type[BaseModel]:
     class BareModel(BaseModel):
         __annotations__ = getattr(model, "__annotations__", {})
 
@@ -133,7 +133,7 @@ def convert_pydantic_model_to_openai_fn(model: BaseModel) -> Dict:
         OpenAI function paramters.
     """
 
-    bare_model = _create_bare_model(type(model))
+    bare_model = _create_bare_model(model)
 
     # Convert Pydantic model to JSON schema
     json_schema = bare_model.model_json_schema()
