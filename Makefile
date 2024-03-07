@@ -1,8 +1,8 @@
 MKDOCS_SERVE_ADDR ?= localhost:8000 # Default address for mkdocs serve, format: <host>:<port>, override with `make docs-serve MKDOCS_SERVE_ADDR=<host>:<port>`
 
 # Extract major package versions for OpenAI and Pydantic
-OPENAI_VERSION_MAJOR := $(shell python -c 'import openai; print(openai.__version__.split(".")[0])')
-PYDANTIC_VERSION_MAJOR := $(shell python -c 'import pydantic; print(pydantic.__version__.split(".")[0])')
+OPENAI_VERSION_MAJOR := $(shell poetry run python -c 'import openai; print(openai.__version__.split(".")[0])')
+PYDANTIC_VERSION_MAJOR := $(shell poetry run python -c 'import pydantic; print(pydantic.__version__.split(".")[0])')
 
 # Construct the typing command using only major versions
 TYPING_CMD := type-pydantic-v$(PYDANTIC_VERSION_MAJOR)-openai-v$(OPENAI_VERSION_MAJOR)
