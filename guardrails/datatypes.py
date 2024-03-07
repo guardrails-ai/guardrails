@@ -15,15 +15,6 @@ from guardrails.utils.xml_utils import cast_xml_to_string
 from guardrails.validator_base import Validator, ValidatorSpec
 from guardrails.validatorsattr import ValidatorsAttr
 
-deprecated_string_types = {"sql", "email", "url", "pythoncode"}
-
-
-def update_deprecated_type_to_string(type):
-    if type in deprecated_string_types:
-        return "string"
-    return type
-
-
 @dataclass
 class FieldValidation:
     key: Any
@@ -162,17 +153,6 @@ def register_type(name: str):
         return cls
 
     return decorator
-
-
-# Decorator for deprecation
-def deprecate_type(cls: type):
-    warnings.warn(
-        f"""The '{cls.__name__}' type  is deprecated and will be removed in \
-versions 0.4.0 and beyond. Use the pydantic 'str' primitive instead.""",
-        DeprecationWarning,
-    )
-    return cls
-
 
 class ScalarType(DataType):
     def set_children_from_xml(self, element: ET._Element):
@@ -446,7 +426,7 @@ class List(NonScalarType):
                 # The child must be the datatype that all items in the list
                 # must conform to.
                 raise ValueError("List data type must have exactly one child.")
-            child_data_type_tag = update_deprecated_type_to_string(child.tag)
+            child_data_type_tag = child.tag
             child_data_type = registry[child_data_type_tag]
             self._children["item"] = child_data_type.from_xml(child)
 
