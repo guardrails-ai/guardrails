@@ -1,8 +1,7 @@
 <div align="center">
 
-<!-- TODO(shreya): Before merging, update url to main branch -->
-<img src="https://raw.githubusercontent.com/guardrails-ai/guardrails/shreya/add-pyright-badge/docs/img/Guardrails-ai-logo-for-dark-bg.svg#gh-dark-mode-only" alt="Guardrails AI Logo" width="600px">
-<img src="https://raw.githubusercontent.com/guardrails-ai/guardrails/shreya/add-pyright-badge/docs/img/Guardrails-ai-logo-for-white-bg.svg#gh-light-mode-only" alt="Guardrails AI Logo" width="600px">
+<img src="https://raw.githubusercontent.com/guardrails-ai/guardrails/main/docs/img/Guardrails-ai-logo-for-dark-bg.svg#gh-dark-mode-only" alt="Guardrails AI Logo" width="600px">
+<img src="https://raw.githubusercontent.com/guardrails-ai/guardrails/main/docs/img/Guardrails-ai-logo-for-white-bg.svg#gh-light-mode-only" alt="Guardrails AI Logo" width="600px">
 
 <hr>
 
@@ -11,10 +10,10 @@
 [![CI](https://github.com/guardrails-ai/guardrails/actions/workflows/ci.yml/badge.svg)](https://github.com/guardrails-ai/guardrails/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/guardrails-ai/guardrails/graph/badge.svg?token=CPkjw91Ngo)](https://codecov.io/gh/guardrails-ai/guardrails)
 [![Checked with pyright](https://microsoft.github.io/pyright/img/pyright_badge.svg)](https://microsoft.github.io/pyright/)
-![X (formerly Twitter) Follow](https://img.shields.io/twitter/follow/guardrails_ai)
-![Discord](https://img.shields.io/discord/1085077079697150023?logo=discord&label=support&link=https%3A%2F%2Fdiscord.gg%2Fgw4cR9QvYE)
-![Static Badge](https://img.shields.io/badge/Docs-blue?link=https%3A%2F%2Fwww.guardrailsai.com%2Fdocs)
-![Static Badge](https://img.shields.io/badge/Blog-blue?link=https%3A%2F%2Fwww.guardrailsai.com%2Fblog)
+[![X (formerly Twitter) Follow](https://img.shields.io/twitter/follow/guardrails_ai)](https://x.com/guardrails_ai)
+[![Discord](https://img.shields.io/discord/1085077079697150023?logo=discord&label=support&link=https%3A%2F%2Fdiscord.gg%2Fgw4cR9QvYE)](https://discord.gg/U9RKkZSBgx)
+[![Static Badge](https://img.shields.io/badge/Docs-blue?link=https%3A%2F%2Fwww.guardrailsai.com%2Fdocs)](https://www.guardrailsai.com/docs)
+[![Static Badge](https://img.shields.io/badge/Blog-blue?link=https%3A%2F%2Fwww.guardrailsai.com%2Fblog)](https://www.guardrailsai.com/blog)
 
 </div>
 
@@ -26,10 +25,7 @@ Guardrails is a Python framework that helps build reliable AI applications by pe
 
 
 <div align="center">
-
-<!-- TODO(shreya): Before merging, update url to main branch -->
-<img src="https://raw.githubusercontent.com/guardrails-ai/guardrails/shreya/add-pyright-badge/docs/img/with_and_without_guardrails.svg" alt="Guardrails in your application" width="1500px">
-
+<img src="https://raw.githubusercontent.com/guardrails-ai/guardrails/main/docs/img/with_and_without_guardrails.svg" alt="Guardrails in your application" width="1500px">
 </div>
 
 
@@ -38,10 +34,7 @@ Guardrails is a Python framework that helps build reliable AI applications by pe
 Guardrails Hub is a collection of pre-built measures of specific types of risks (called 'validators'). Multiple validators can be combined together into Input and Output Guards that intercept the inputs and outputs of LLMs. Visit [Guardrails Hub](https://hub.guardrailsai.com/) to see the full list of validators and their documentation.
 
 <div align="center">
-
-<!-- TODO(shreya): Before merging, update url to main branch -->
-<img src="https://raw.githubusercontent.com/guardrails-ai/guardrails/shreya/add-pyright-badge/docs/img/guardrails_hub.gif" alt="Guardrails Hub gif" width="600px">
-
+<img src="https://raw.githubusercontent.com/guardrails-ai/guardrails/main/docs/img/guardrails_hub.gif" alt="Guardrails Hub gif" width="600px">
 </div>
 
 
