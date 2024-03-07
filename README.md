@@ -4,6 +4,8 @@
 <img src="https://raw.githubusercontent.com/guardrails-ai/guardrails/shreya/add-pyright-badge/docs/img/Guardrails-ai-logo-for-dark-bg.svg#gh-dark-mode-only" alt="Guardrails AI Logo" width="600px">
 <img src="https://raw.githubusercontent.com/guardrails-ai/guardrails/shreya/add-pyright-badge/docs/img/Guardrails-ai-logo-for-white-bg.svg#gh-light-mode-only" alt="Guardrails AI Logo" width="600px">
 
+<hr>
+
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/guardrails-ai)
 [![CI](https://github.com/guardrails-ai/guardrails/actions/workflows/ci.yml/badge.svg)](https://github.com/guardrails-ai/guardrails/actions/workflows/ci.yml)
