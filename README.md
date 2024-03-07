@@ -151,6 +151,25 @@ This prints:
 }
 ```
 
+## FAQ
+
+#### I'm running into issues with Guardrails. Where can I get help?
+
+You can reach out to us on [Discord](https://discord.gg/gw4cR9QvYE) or [Twitter](https://twitter.com/guardrails_ai).
+
+#### Can I use Guardrails with any LLM?
+
+Yes, Guardrails can be used with proprietary and open-source LLMs. Check out this guide on [how to use Guardrails with any LLM](https://www.guardrailsai.com/docs/how_to_guides/llm_api_wrappers).
+
+#### Can I create my own validators?
+
+Yes, you can create your own validators and contribute them to Guardrails Hub. Check out this guide on [how to create your own validators](https://www.guardrailsai.com/docs/hub/how_to_guides/custom_validator).
+
+#### Does Guardrails support other languages?
+
+Guardrails can be used with Python and JavaScript. Check out the docs on how to use Guardrails from JavaScript. We are working on adding support for other languages. If you would like to contribute to Guardrails, please reach out to us on [Discord](https://discord.gg/gw4cR9QvYE) or [Twitter](https://twitter.com/guardrails_ai).
+
+
 ## Contributing
 
 We welcome contributions to Guardrails!
