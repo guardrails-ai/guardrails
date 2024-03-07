@@ -1,7 +1,8 @@
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/guardrails-ai/guardrails/shreya/add-pyright-badge/docs/img/Guardrails-ai-logo-for-dark-bg.svg#gh-dark-mode-only" alt="Guardrails AI Logo" width="300px">
-<img src="https://raw.githubusercontent.com/guardrails-ai/guardrails/shreya/add-pyright-badge/docs/img/Guardrails-ai-logo-for-white-bg.svg#gh-light-mode-only" alt="Guardrails AI Logo" width="300px">
+<!-- TODO(shreya): Before merging, update url to main branch -->
+<img src="https://raw.githubusercontent.com/guardrails-ai/guardrails/shreya/add-pyright-badge/docs/img/Guardrails-ai-logo-for-dark-bg.svg#gh-dark-mode-only" alt="Guardrails AI Logo" width="600px">
+<img src="https://raw.githubusercontent.com/guardrails-ai/guardrails/shreya/add-pyright-badge/docs/img/Guardrails-ai-logo-for-white-bg.svg#gh-light-mode-only" alt="Guardrails AI Logo" width="600px">
 
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/guardrails-ai)
@@ -10,11 +11,9 @@
 [![Checked with pyright](https://microsoft.github.io/pyright/img/pyright_badge.svg)](https://microsoft.github.io/pyright/)
 ![X (formerly Twitter) Follow](https://img.shields.io/twitter/follow/guardrails_ai)
 ![Discord](https://img.shields.io/discord/1085077079697150023?logo=discord&label=support&link=https%3A%2F%2Fdiscord.gg%2Fgw4cR9QvYE)
+![Static Badge](https://img.shields.io/badge/Docs-blue?link=https%3A%2F%2Fwww.guardrailsai.com%2Fdocs)
+![Static Badge](https://img.shields.io/badge/Blog-blue?link=https%3A%2F%2Fwww.guardrailsai.com%2Fblog)
 
-
-Guardrails is an open-source Python package for specifying structure and type, validating and correcting the outputs of large language models (LLMs).
-
-[**Docs**](https://docs.guardrailsai.com)
 </div>
 
 ## 🧩 What is Guardrails?
