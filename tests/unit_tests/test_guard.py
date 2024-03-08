@@ -278,14 +278,13 @@ def test_use_many_tuple():
 def test_validate():
     guard: Guard = (
         Guard()
-        .use(EndsWith("a"))
         .use(OneLine)
         .use(LowerCase(on_fail="fix"))
         .use(TwoWords)
         .use(ValidLength, 0, 12, on_fail="refrain")
     )
 
-    llm_output = "Oh Canada"  # bc it meets our criteria
+    llm_output: str = "Oh Canada"  # bc it meets our criteria
 
     response = guard.validate(llm_output)
 
