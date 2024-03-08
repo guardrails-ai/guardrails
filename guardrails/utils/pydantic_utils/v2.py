@@ -137,6 +137,7 @@ def convert_pydantic_model_to_openai_fn(model: BaseModel) -> Dict:
 
     # Convert Pydantic model to JSON schema
     json_schema = bare_model.model_json_schema()
+    json_schema["title"] = model.__name__
 
     # Create OpenAI function parameters
     fn_params = {
