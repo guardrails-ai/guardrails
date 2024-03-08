@@ -1,5 +1,5 @@
 import json
-from typing import Dict, Union
+from typing import Dict, List, Union
 
 import typer
 
@@ -7,7 +7,7 @@ from guardrails import Guard
 from guardrails.cli.guardrails import guardrails
 
 
-def validate_llm_output(rail: str, llm_output: str) -> Union[str, Dict, None]:
+def validate_llm_output(rail: str, llm_output: str) -> Union[str, Dict, List, None]:
     """Validate guardrails.yml file."""
     guard = Guard.from_rail(rail)
     result = guard.parse(llm_output)

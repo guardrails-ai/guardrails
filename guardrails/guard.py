@@ -103,7 +103,9 @@ class Guard(Runnable, Generic[OT]):
         self,
         rail: Optional[Rail] = None,
         num_reasks: Optional[int] = None,
-        base_model: Optional[Type[BaseModel]] = None,
+        base_model: Optional[
+            Union[Type[BaseModel], Type[List[Type[BaseModel]]]]
+        ] = None,
         tracer: Optional[Tracer] = None,
         *,
         name: Optional[str] = None,
@@ -264,15 +266,13 @@ class Guard(Runnable, Generic[OT]):
         rail = Rail.from_file(rail_file)
         if rail.output_type == "str":
             return cast(
-                Guard[str],
-                cls(
-                    rail=rail, num_reasks=num_reasks, name=name, description=description
-                ),
+                Guard[str], cls(rail=rail, num_reasks=num_reasks, tracer=tracer, name=name, description=description)
             )
-        return cast(
-            Guard[Dict],
-            cls(rail=rail, num_reasks=num_reasks, name=name, description=description),
-        )
+        elif rail.output_type == "list":
+            return cast(
+                Guard[List], cls(rail=rail, num_reasks=num_reasks, tracer=tracer, name=name, description=description)
+            )
+        return cast(Guard[Dict], cls(rail=rail, num_reasks=num_reasks, tracer=tracer, name=name, description=description))
 
     @classmethod
     def from_rail_string(
@@ -300,20 +300,18 @@ class Guard(Runnable, Generic[OT]):
         rail = Rail.from_string(rail_string)
         if rail.output_type == "str":
             return cast(
-                Guard[str],
-                cls(
-                    rail=rail, num_reasks=num_reasks, name=name, description=description
-                ),
+                Guard[str], cls(rail=rail, num_reasks=num_reasks, tracer=tracer, name=name, description=description)
             )
-        return cast(
-            Guard[Dict],
-            cls(rail=rail, num_reasks=num_reasks, name=name, description=description),
-        )
+        elif rail.output_type == "list":
+            return cast(
+                Guard[List], cls(rail=rail, num_reasks=num_reasks, tracer=tracer, name=name, description=description)
+            )
+        return cast(Guard[Dict], cls(rail=rail, num_reasks=num_reasks, tracer=tracer, name=name, description=description))
 
     @classmethod
     def from_pydantic(
         cls,
-        output_class: Type[BaseModel],
+        output_class: Union[Type[BaseModel], Type[List[Type[BaseModel]]]],
         prompt: Optional[str] = None,
         instructions: Optional[str] = None,
         num_reasks: Optional[int] = None,
@@ -336,12 +334,17 @@ class Guard(Runnable, Generic[OT]):
             reask_prompt=reask_prompt,
             reask_instructions=reask_instructions,
         )
+        if rail.output_type == "list":
+            return cast(
+                Guard[List], cls(rail, num_reasks=num_reasks, base_model=output_class)
+            )
         return cast(
             Guard[Dict],
             cls(
                 rail,
                 num_reasks=num_reasks,
                 base_model=output_class,
+                tracer=tracer,
                 name=name,
                 description=description,
             ),

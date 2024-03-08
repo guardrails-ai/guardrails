@@ -96,6 +96,25 @@ def chat_prompt(
     ]
 
 
+def litellm_messages(
+    prompt: Optional[str],
+    instructions: Optional[str] = None,
+    msg_history: Optional[List[Dict]] = None,
+) -> List[Dict[str, str]]:
+    """Prepare messages for LiteLLM."""
+    if msg_history:
+        return msg_history
+    if prompt is None:
+        raise PromptCallableException(
+            "Either `text` or `msg_history` required for `guard.__call__`."
+        )
+
+    if instructions:
+        prompt = "\n\n".join([instructions, prompt])
+
+    return [{"role": "user", "content": prompt}]
+
+
 class OpenAIModel(PromptCallableBase):
     pass
 
@@ -297,6 +316,56 @@ class AnthropicCallable(PromptCallableBase):
             **kwargs,
         )
         return LLMResponse(output=anthropic_response.completion)
+
+
+class LiteLLMCallable(PromptCallableBase):
+    def _invoke_llm(
+        self,
+        text: Optional[str] = None,
+        model: str = "gpt-3.5-turbo",
+        instructions: Optional[str] = None,
+        msg_history: Optional[List[Dict]] = None,
+        *args,
+        **kwargs,
+    ) -> LLMResponse:
+        """Wrapper for Lite LLM completions.
+
+        To use Lite LLM for guardrails, do
+        ```
+        from litellm import completion
+
+        raw_llm_response, validated_response = guard(
+            completion,
+            model="gpt-3.5-turbo",
+            prompt_params={...},
+            temperature=...,
+            ...
+        )
+        ```
+        """
+        try:
+            from litellm import completion  # type: ignore
+        except ImportError as e:
+            raise PromptCallableException(
+                "The `litellm` package is not installed. "
+                "Install with `pip install litellm`"
+            ) from e
+
+        response = completion(
+            model=model,
+            messages=litellm_messages(
+                prompt=text,
+                instructions=instructions,
+                msg_history=msg_history,
+            ),
+            *args,
+            **kwargs,
+        )
+        return LLMResponse(
+            output=response.choices[0].message.content,  # type: ignore
+            prompt_token_count=response.usage.prompt_tokens,  # type: ignore
+            response_token_count=response.usage.completion_tokens,  # type: ignore
+        )
 
 
 class HuggingFaceModelCallable(PromptCallableBase):
@@ -517,6 +586,7 @@ def get_llm_ask(llm_api: Callable, *args, **kwargs) -> PromptCallableBase:
             raise ValueError("Only text generation models are supported at this time.")
     except ImportError:
         pass
+
     try:
         from transformers import Pipeline  # noqa: F401 # type: ignore
 
@@ -527,6 +597,14 @@ def get_llm_ask(llm_api: Callable, *args, **kwargs) -> PromptCallableBase:
             raise ValueError(
                 "Only text generation pipelines are supported at this time."
             )
+    except ImportError:
+        pass
+
+    try:
+        from litellm import completion  # noqa: F401 # type: ignore
+
+        if llm_api == completion:
+            return LiteLLMCallable(*args, **kwargs)
     except ImportError:
         pass
 
