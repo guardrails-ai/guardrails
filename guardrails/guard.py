@@ -988,7 +988,10 @@ class Guard(Runnable, Generic[OT]):
         self, validator: Union[Validator, Type[Validator]], *args, **kwargs
     ) -> "Guard":
         if validator:
-            self._validators.append(get_validator(validator, *args, **kwargs))
+            hydrated_validator = get_validator(validator, *args, **kwargs)
+            self._validators.append(hydrated_validator)
+
+            self.rail.output_schema.root_datatype.validators.append(hydrated_validator)
 
         return self
 
@@ -1019,7 +1022,10 @@ class Guard(Runnable, Generic[OT]):
         ],
     ) -> "Guard":
         for v in validators:
-            self._validators.append(get_validator(v))
+            hydrated_validator = get_validator(v)
+            self._validators.append(hydrated_validator)
+            self.rail.output_schema.root_datatype.validators.append(hydrated_validator)
+
 
         return self
 
