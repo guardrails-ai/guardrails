@@ -1026,7 +1026,6 @@ class Guard(Runnable, Generic[OT]):
             self._validators.append(hydrated_validator)
             self.rail.output_schema.root_datatype.validators.append(hydrated_validator)
 
-
         return self
 
     def validate(self, llm_output: str, *args, **kwargs) -> ValidationOutcome[str]:
