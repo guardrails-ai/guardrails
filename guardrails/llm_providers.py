@@ -1,4 +1,15 @@
-from typing import Any, Awaitable, Callable, Dict, Iterable, List, Optional, cast
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Type,
+    Union,
+    cast,
+)
 
 from pydantic import BaseModel
 
@@ -148,7 +159,9 @@ class OpenAIChatCallable(PromptCallableBase):
         model: str = "gpt-3.5-turbo",
         instructions: Optional[str] = None,
         msg_history: Optional[List[Dict]] = None,
-        base_model: Optional[BaseModel] = None,
+        base_model: Optional[
+            Union[Type[BaseModel], Type[List[Type[BaseModel]]]]
+        ] = None,
         function_call: Optional[Any] = None,
         *args,
         **kwargs,
@@ -678,7 +691,9 @@ class AsyncOpenAIChatCallable(AsyncPromptCallableBase):
         model: str = "gpt-3.5-turbo",
         instructions: Optional[str] = None,
         msg_history: Optional[List[Dict]] = None,
-        base_model: Optional[BaseModel] = None,
+        base_model: Optional[
+            Union[Type[BaseModel], Type[List[Type[BaseModel]]]]
+        ] = None,
         function_call: Optional[Any] = None,
         *args,
         **kwargs,

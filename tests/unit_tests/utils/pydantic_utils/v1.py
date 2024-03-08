@@ -1,3 +1,6 @@
+from copy import deepcopy
+from typing import List
+
 import pydantic.version
 import pytest
 from pydantic import BaseModel, Field
@@ -7,42 +10,70 @@ from guardrails.utils.pydantic_utils.v1 import convert_pydantic_model_to_openai_
 PYDANTIC_VERSION = pydantic.version.VERSION
 
 
+class Foo(BaseModel):
+    bar: str = Field(description="some string value")
+
+
+# fmt: off
+foo_schema = {
+    "title": "Foo",
+    "type": "object",
+    "properties": {
+        "bar": {
+            "title": "Bar",
+            "description": "some string value",
+            "type": "string"
+        }
+    },
+    "required": [
+        "bar"
+    ]
+}
+# fmt: on
+
+
 # This test is descriptive, not prescriptive.
 @pytest.mark.skipif(
     not PYDANTIC_VERSION.startswith("1"),
     reason="Tests function calling syntax for Pydantic v1",
 )
-def test_convert_pydantic_model_to_openai_fn():
-    class Foo(BaseModel):
-        bar: str = Field(description="some string value")
+class TestConvertPydanticModelToOpenaiFn:
+    def test_object_schema(self):
+        expected_schema = deepcopy(foo_schema)
+        # When pushed through BareModel it loses the description on any properties.
+        del expected_schema["properties"]["bar"]["description"]
 
-    # fmt: off
-    expected_schema = {
-        "title": "Foo",
-        "type": "object",
-        "properties": {
-            "bar": {
-                "title": "Bar",
-                "description": "some string value",
-                "type": "string"
-            }
-        },
-        "required": [
-            "bar"
-        ]
-    }
-    # fmt: on
+        # fmt: off
+        expected_fn_params = {
+            "name": "Foo",
+            "parameters": expected_schema
+        }
+        # fmt: on
 
-    # When pushed through BareModel it loses the description on any properties.
-    del expected_schema["properties"]["bar"]["description"]
+        actual_fn_params = convert_pydantic_model_to_openai_fn(Foo)
 
-    # fmt: off
-    expected_fn_params = {
-        "name": "Foo",
-        "parameters": expected_schema
-    }
-    # fmt: on
+        assert actual_fn_params == expected_fn_params
 
-    actual_fn_params = convert_pydantic_model_to_openai_fn(Foo)
+    def test_list_schema(self):
+        expected_schema = deepcopy(foo_schema)
+        # When pushed through BareModel it loses the description on any properties.
+        del expected_schema["properties"]["bar"]["description"]
 
-    assert actual_fn_params == expected_fn_params
+        # fmt: off
+        expected_schema = {
+            "title": f"List<{expected_schema.get('title')}>",
+            "type": "array",
+            "items": expected_schema
+        }
+        # fmt: on
+
+        # fmt: off
+        expected_fn_params = {
+            "name": "List<Foo>",
+            "parameters": expected_schema
+        }
+        # fmt: on
+
+        actual_fn_params = convert_pydantic_model_to_openai_fn(List[Foo])
+
+        assert actual_fn_params == expected_fn_params

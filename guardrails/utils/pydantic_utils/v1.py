@@ -4,7 +4,17 @@ import warnings
 from copy import deepcopy
 from datetime import date, time
 from enum import Enum
-from typing import Any, Callable, Dict, Optional, Type, Union, get_args, get_origin
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Type,
+    Union,
+    get_args,
+    get_origin,
+)
 
 from pydantic import BaseModel, validator
 from pydantic.fields import ModelField
@@ -22,6 +32,7 @@ from guardrails.datatypes import List as ListDataType
 from guardrails.datatypes import Object as ObjectDataType
 from guardrails.datatypes import String as StringDataType
 from guardrails.datatypes import Time as TimeDataType
+from guardrails.utils.safe_get import safe_get
 from guardrails.validator_base import Validator
 from guardrails.validatorsattr import ValidatorsAttr
 
@@ -228,7 +239,9 @@ def add_pydantic_validators_as_guardrails_validators(
     return model_fields
 
 
-def convert_pydantic_model_to_openai_fn(model: BaseModel) -> Dict:
+def convert_pydantic_model_to_openai_fn(
+    model: Union[Type[BaseModel], Type[List[Type[BaseModel]]]]
+) -> Dict:
     """Convert a Pydantic BaseModel to an OpenAI function.
 
     Args:
@@ -238,13 +251,30 @@ def convert_pydantic_model_to_openai_fn(model: BaseModel) -> Dict:
         OpenAI function paramters.
     """
 
+    schema_model = model
+
+    type_origin = get_origin(model)
+    if type_origin == list:
+        item_types = get_args(model)
+        if len(item_types) > 1:
+            raise ValueError("List data type must have exactly one child.")
+        # No List[List] support; we've already declared that in our types
+        schema_model = safe_get(item_types, 0)
+
     # Create a bare model with no extra fields
     class BareModel(BaseModel):
-        __annotations__ = model.__annotations__
+        __annotations__ = schema_model.__annotations__
 
     # Convert Pydantic model to JSON schema
     json_schema = BareModel.schema()
-    json_schema["title"] = model.__name__
+    json_schema["title"] = schema_model.__name__
+
+    if type_origin == list:
+        json_schema = {
+            "title": f"List<{json_schema.get('title')}>",
+            "type": "array",
+            "items": json_schema,
+        }
 
     # Create OpenAI function parameters
     fn_params = {

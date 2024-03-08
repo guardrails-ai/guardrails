@@ -1,4 +1,5 @@
 from copy import deepcopy
+from typing import List
 
 import pydantic.version
 import pytest
@@ -39,21 +40,46 @@ foo_schema = {
     not PYDANTIC_VERSION.startswith("2"),
     reason="Tests function calling syntax for Pydantic v2",
 )
-def test_convert_pydantic_model_to_openai_fn():
-    expected_schema = deepcopy(foo_schema)
-    # When pushed through BareModel it loses the description on any properties.
-    del expected_schema["properties"]["bar"]["description"]
+class TestConvertPydanticModelToOpenaiFn:
+    def test_object_schema(self):
+        expected_schema = deepcopy(foo_schema)
+        # When pushed through BareModel it loses the description on any properties.
+        del expected_schema["properties"]["bar"]["description"]
 
-    # fmt: off
-    expected_fn_params = {
-        "name": "Foo",
-        "parameters": expected_schema
-    }
-    # fmt: on
+        # fmt: off
+        expected_fn_params = {
+            "name": "Foo",
+            "parameters": expected_schema
+        }
+        # fmt: on
 
-    actual_fn_params = convert_pydantic_model_to_openai_fn(Foo)
+        actual_fn_params = convert_pydantic_model_to_openai_fn(Foo)
 
-    assert actual_fn_params == expected_fn_params
+        assert actual_fn_params == expected_fn_params
+
+    def test_list_schema(self):
+        expected_schema = deepcopy(foo_schema)
+        # When pushed through BareModel it loses the description on any properties.
+        del expected_schema["properties"]["bar"]["description"]
+
+        # fmt: off
+        expected_schema = {
+            "title": f"List<{expected_schema.get('title')}>",
+            "type": "array",
+            "items": expected_schema
+        }
+        # fmt: on
+
+        # fmt: off
+        expected_fn_params = {
+            "name": "List<Foo>",
+            "parameters": expected_schema
+        }
+        # fmt: on
+
+        actual_fn_params = convert_pydantic_model_to_openai_fn(List[Foo])
+
+        assert actual_fn_params == expected_fn_params
 
 
 # These tests demonstrate the issue fixed in PR #616

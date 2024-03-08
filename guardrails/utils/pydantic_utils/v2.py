@@ -3,7 +3,18 @@ import warnings
 from copy import deepcopy
 from datetime import date, time
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, Union, get_args
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Type,
+    TypeVar,
+    Union,
+    get_args,
+    get_origin,
+)
 
 from pydantic import BaseModel, ConfigDict, HttpUrl, field_validator
 from pydantic.fields import FieldInfo
@@ -23,6 +34,7 @@ from guardrails.datatypes import Object as ObjectDataType
 from guardrails.datatypes import PythonCode as PythonCodeDataType
 from guardrails.datatypes import String as StringDataType
 from guardrails.datatypes import Time as TimeDataType
+from guardrails.utils.safe_get import safe_get
 from guardrails.validator_base import Validator
 from guardrails.validatorsattr import ValidatorsAttr
 
@@ -116,14 +128,18 @@ def is_enum(type_annotation: Any) -> bool:
     return False
 
 
-def _create_bare_model(model: BaseModel) -> Type[BaseModel]:
+def _create_bare_model(
+    model: Union[Type[BaseModel], Type[List[Type[BaseModel]]]]
+) -> Type[BaseModel]:
     class BareModel(BaseModel):
         __annotations__ = getattr(model, "__annotations__", {})
 
     return BareModel
 
 
-def convert_pydantic_model_to_openai_fn(model: BaseModel) -> Dict:
+def convert_pydantic_model_to_openai_fn(
+    model: Union[Type[BaseModel], Type[List[Type[BaseModel]]]]
+) -> Dict:
     """Convert a Pydantic BaseModel to an OpenAI function.
 
     Args:
@@ -133,11 +149,28 @@ def convert_pydantic_model_to_openai_fn(model: BaseModel) -> Dict:
         OpenAI function paramters.
     """
 
-    bare_model = _create_bare_model(model)
+    schema_model = model
+
+    type_origin = get_origin(model)
+    if type_origin == list:
+        item_types = get_args(model)
+        if len(item_types) > 1:
+            raise ValueError("List data type must have exactly one child.")
+        # No List[List] support; we've already declared that in our types
+        schema_model = safe_get(item_types, 0)
+
+    bare_model = _create_bare_model(schema_model)
 
     # Convert Pydantic model to JSON schema
     json_schema = bare_model.model_json_schema()
-    json_schema["title"] = model.__name__
+    json_schema["title"] = schema_model.__name__
+
+    if type_origin == list:
+        json_schema = {
+            "title": f"List<{json_schema.get('title')}>",
+            "type": "array",
+            "items": json_schema,
+        }
 
     # Create OpenAI function parameters
     fn_params = {
