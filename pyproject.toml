@@ -57,7 +57,7 @@ opentelemetry-exporter-otlp-proto-http = "1.20.0"
 langchain-core = "^0.1.18"
 coloredlogs = "^15.0.1"
 requests = "^2.31.0"
-guard-rails-api-client = {git = "https://github.com/guardrails-ai/guardrails-api-client.git", rev = "try-generating-sdk-in-hook", subdirectory = "guard-rails-api-client"}
+guard-rails-api-client = {git = "https://github.com/guardrails-ai/guardrails-api-client.git", rev = "v0.0.2", subdirectory = "guard-rails-api-client"}
 
 
 [tool.poetry.extras]
