@@ -1380,13 +1380,15 @@ class StreamRunner(Runner):
                 output, stream=True, verified=verified
             )
 
-            # Error can be either of (True/False/None/string representing error)
+            # Error can be either of
+            # (True/False/None/ValueError/string representing error)
             if error:
                 # If parsing error is a string,
                 # it is an error from output_schema.parse_fragment()
                 if isinstance(error, str):
                     raise ValueError("Unable to parse output: " + error)
-            # Else if either of (None/True/False), return parsed_output and error
+            # Else if either of
+            # (None/True/False/ValueError), return parsed_output and error
 
             action.log(
                 message_type="info",

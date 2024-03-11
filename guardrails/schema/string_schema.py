@@ -122,8 +122,9 @@ class StringSchema(Schema):
 
         return self, prompt, instructions
 
-    def parse(self, output: str, **kwargs) -> Tuple[Any, bool]:
-        error = not output  # True if empty/None, else False
+    def parse(self, output: str, **kwargs) -> Tuple[Any, Optional[Exception]]:
+        # Return a ValueError if the output is empty, else None
+        error = ValueError("Empty response received.") if not output else None
         return output, error
 
     def validate(
