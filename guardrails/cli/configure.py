@@ -21,7 +21,7 @@ def save_configuration_file(
             f"id={str(uuid.uuid4())}{os.linesep}",
             f"client_id={client_id}{os.linesep}",
             f"client_secret={client_secret}{os.linesep}",
-            f"no_metrics={str(no_metrics).lower()}{os.linesep}",
+            f"no_metrics={str(no_metrics).lower()}",
         ]
         rc_file.writelines(lines)
         rc_file.close()

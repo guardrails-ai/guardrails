@@ -126,11 +126,13 @@ class Guard(Runnable, Generic[OT]):
         self.base_model = base_model
         self._set_tracer(tracer)
 
+        credentials = Credentials.from_rc_file(logger)
+
         # Get unique id of user from credentials
-        self._user_id = Credentials.from_rc_file().id or ""
+        self._user_id = credentials.id or ""
 
         # Get metrics opt-out from credentials
-        self._disable_tracer = Credentials.from_rc_file().no_metrics
+        self._disable_tracer = credentials.no_metrics
 
         # Get id of guard object (that is unique)
         self._guard_id = id(self)  # id of guard object; not the class
@@ -683,6 +685,7 @@ class Guard(Runnable, Generic[OT]):
                     metadata=metadata,
                     base_model=self.base_model,
                     full_schema_reask=full_schema_reask,
+                    disable_tracer=self._disable_tracer,
                 )
                 return runner(call_log=call_log, prompt_params=prompt_params)
         else:
@@ -701,6 +704,7 @@ class Guard(Runnable, Generic[OT]):
                     metadata=metadata,
                     base_model=self.base_model,
                     full_schema_reask=full_schema_reask,
+                    disable_tracer=self._disable_tracer,
                 )
                 call = runner(call_log=call_log, prompt_params=prompt_params)
                 return ValidationOutcome[OT].from_guard_history(call)
@@ -760,6 +764,7 @@ class Guard(Runnable, Generic[OT]):
                 metadata=metadata,
                 base_model=self.base_model,
                 full_schema_reask=full_schema_reask,
+                disable_tracer=self._disable_tracer,
             )
             call = await runner.async_run(
                 call_log=call_log, prompt_params=prompt_params
@@ -1020,6 +1025,7 @@ class Guard(Runnable, Generic[OT]):
                 output=llm_output,
                 base_model=self.base_model,
                 full_schema_reask=full_schema_reask,
+                disable_tracer=self._disable_tracer,
             )
             call = runner(call_log=call_log, prompt_params=prompt_params)
 
@@ -1062,6 +1068,7 @@ class Guard(Runnable, Generic[OT]):
                 output=llm_output,
                 base_model=self.base_model,
                 full_schema_reask=full_schema_reask,
+                disable_tracer=self._disable_tracer,
             )
             call = await runner.async_run(
                 call_log=call_log, prompt_params=prompt_params

@@ -6,7 +6,6 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union
 from eliot import add_destinations, start_action
 from pydantic import BaseModel
 
-from guardrails.classes.credentials import Credentials
 from guardrails.classes.history import Call, Inputs, Iteration, Outputs
 from guardrails.datatypes import verify_metadata_requirements
 from guardrails.errors import ValidationError
@@ -68,6 +67,7 @@ class Runner:
             Union[Type[BaseModel], Type[List[Type[BaseModel]]]]
         ] = None,
         full_schema_reask: bool = False,
+        disable_tracer: Optional[bool] = True,
     ):
         if prompt:
             assert api, "Must provide an API if a prompt is provided."
@@ -109,7 +109,7 @@ class Runner:
         self.full_schema_reask = full_schema_reask
 
         # Get metrics opt-out from credentials
-        self._disable_tracer = Credentials.from_rc_file().no_metrics
+        self._disable_tracer = disable_tracer
 
         if not self._disable_tracer:
             # Get the HubTelemetry singleton
@@ -354,7 +354,7 @@ class Runner:
         iteration = Iteration(inputs=inputs)
         call_log.iterations.insert(0, iteration)
         validated_msg_history = msg_history_schema.validate(
-            iteration, msg_str, self.metadata
+            iteration, msg_str, self.metadata, disable_tracer=self._disable_tracer
         )
         iteration.outputs.validation_output = validated_msg_history
         if isinstance(validated_msg_history, ReAsk):
@@ -394,7 +394,10 @@ class Runner:
         iteration = Iteration(inputs=inputs)
         call_log.iterations.insert(0, iteration)
         validated_prompt = prompt_schema.validate(
-            iteration, prompt.source, self.metadata
+            iteration,
+            prompt.source,
+            self.metadata,
+            disable_tracer=self._disable_tracer,
         )
         iteration.outputs.validation_output = validated_prompt
         if validated_prompt is None:
@@ -415,7 +418,10 @@ class Runner:
         iteration = Iteration(inputs=inputs)
         call_log.iterations.insert(0, iteration)
         validated_instructions = instructions_schema.validate(
-            iteration, instructions.source, self.metadata
+            iteration,
+            instructions.source,
+            self.metadata,
+            disable_tracer=self._disable_tracer,
         )
         iteration.outputs.validation_output = validated_instructions
         if validated_instructions is None:
@@ -608,7 +614,12 @@ class Runner:
         """Validate the output."""
         with start_action(action_type="validate", index=index) as action:
             validated_output = output_schema.validate(
-                iteration, parsed_output, self.metadata, attempt_number=index, **kwargs
+                iteration,
+                parsed_output,
+                self.metadata,
+                attempt_number=index,
+                disable_tracer=self._disable_tracer,
+                **kwargs,
             )
 
             action.log(
@@ -682,6 +693,7 @@ class AsyncRunner(Runner):
             Union[Type[BaseModel], Type[List[Type[BaseModel]]]]
         ] = None,
         full_schema_reask: bool = False,
+        disable_tracer: Optional[bool] = True,
     ):
         super().__init__(
             output_schema=output_schema,
@@ -697,6 +709,7 @@ class AsyncRunner(Runner):
             output=output,
             base_model=base_model,
             full_schema_reask=full_schema_reask,
+            disable_tracer=disable_tracer,
         )
         self.api: Optional[AsyncPromptCallableBase] = api
 

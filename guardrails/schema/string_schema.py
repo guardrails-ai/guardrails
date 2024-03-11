@@ -131,6 +131,7 @@ class StringSchema(Schema):
         data: Any,
         metadata: Dict,
         attempt_number: int = 0,
+        disable_tracer: Optional[bool] = True,
         **kwargs,
     ) -> Any:
         """Validate a dictionary of data against the schema.
@@ -163,6 +164,7 @@ class StringSchema(Schema):
             metadata=metadata,
             validator_setup=validation,
             iteration=iteration,
+            disable_tracer=disable_tracer,
         )
 
         validated_response = {dummy_key: validated_response}
