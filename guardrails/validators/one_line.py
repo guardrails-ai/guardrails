@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Callable
+from typing import Any, Callable, Dict, Optional
 from warnings import warn
 
 from guardrails.logger import logger
@@ -29,7 +29,7 @@ class OneLine(Validator):
         warn(
             """
             Using this validator from `guardrails.validators` is deprecated.
-            Please install and import this validator from Guardrails Hub instead. 
+            Please install and import this validator from Guardrails Hub instead.
             This validator would be removed from this module in the next major release.
             """,
             FutureWarning,

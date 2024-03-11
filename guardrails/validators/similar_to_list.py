@@ -51,7 +51,7 @@ class SimilarToList(Validator):
         warn(
             """
             Using this validator from `guardrails.validators` is deprecated.
-            Please install and import this validator from Guardrails Hub instead. 
+            Please install and import this validator from Guardrails Hub instead.
             This validator would be removed from this module in the next major release.
             """,
             FutureWarning,

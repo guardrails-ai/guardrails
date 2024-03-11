@@ -4,6 +4,7 @@ The name with which a validator is registered is the name that is used
 in the `RAIL` spec to specify formatters.
 """
 from warnings import warn
+
 from guardrails.validator_base import (
     FailResult,
     PassResult,
@@ -49,8 +50,8 @@ from guardrails.validators.valid_url import ValidURL
 warn(
     """
     Importing validators from `guardrails.validators` is deprecated.
-    All validators are now available in Guardrails Hub. Please install 
-    and import them from Guardrails Hub instead. All validators would be 
+    All validators are now available in Guardrails Hub. Please install
+    and import them from Guardrails Hub instead. All validators would be
     removed from this module in the next major release.
 
     Install with: `guardrails hub install hub://<namespace>/<validator_name>`
