@@ -2,16 +2,19 @@ from typing import Dict, List
 
 from pydantic import BaseModel, Field
 
+from guardrails.validator_base import OnFailAction
 from guardrails.validators import LowerCase, OneLine, TwoWords
 
 
 class FeeDetailsFilter(BaseModel):
-    index: int = Field(validators=("1-indexed", "noop"))
+    index: int = Field(validators=("1-indexed", OnFailAction.NOOP))
     name: str = Field(
-        validators=[LowerCase(on_fail="filter"), TwoWords(on_fail="filter")]
+        validators=[
+            LowerCase(on_fail=OnFailAction.FILTER), 
+            TwoWords(on_fail=OnFailAction.FILTER)]
     )
-    explanation: str = Field(validators=OneLine(on_fail="filter"))
-    value: float = Field(validators=("percentage", "noop"))
+    explanation: str = Field(validators=OneLine(on_fail=OnFailAction.FILTER))
+    value: float = Field(validators=("percentage", OnFailAction.NOOP))
 
 
 class ContractDetailsFilter(BaseModel):
@@ -25,10 +28,15 @@ class ContractDetailsFilter(BaseModel):
 
 
 class FeeDetailsFix(BaseModel):
-    index: int = Field(validators=("1-indexed", "noop"))
-    name: str = Field(validators=[LowerCase(on_fail="fix"), TwoWords(on_fail="fix")])
-    explanation: str = Field(validators=OneLine(on_fail="fix"))
-    value: float = Field(validators=("percentage", "noop"))
+    index: int = Field(validators=("1-indexed", OnFailAction.NOOP))
+    name: str = Field(
+        validators=[
+            LowerCase(on_fail=OnFailAction.FIX), 
+            TwoWords(on_fail=OnFailAction.FIX)
+        ]
+    )
+    explanation: str = Field(validators=OneLine(on_fail=OnFailAction.FIX))
+    value: float = Field(validators=("percentage", OnFailAction.NOOP))
 
 
 class ContractDetailsFix(BaseModel):
@@ -42,10 +50,13 @@ class ContractDetailsFix(BaseModel):
 
 
 class FeeDetailsNoop(BaseModel):
-    index: int = Field(validators=("1-indexed", "noop"))
-    name: str = Field(validators=[LowerCase(on_fail="noop"), TwoWords(on_fail="noop")])
-    explanation: str = Field(validators=OneLine(on_fail="noop"))
-    value: float = Field(validators=("percentage", "noop"))
+    index: int = Field(validators=("1-indexed", OnFailAction.NOOP))
+    name: str = Field(
+        validators=[
+            LowerCase(on_fail=OnFailAction.NOOP), 
+            TwoWords(on_fail=OnFailAction.NOOP)])
+    explanation: str = Field(validators=OneLine(on_fail=OnFailAction.NOOP))
+    value: float = Field(validators=("percentage", OnFailAction.NOOP))
 
 
 class ContractDetailsNoop(BaseModel):
@@ -59,10 +70,13 @@ class ContractDetailsNoop(BaseModel):
 
 
 class FeeDetailsReask(BaseModel):
-    index: int = Field(validators=("1-indexed", "noop"))
-    name: str = Field(validators=[LowerCase(on_fail="noop"), TwoWords(on_fail="reask")])
-    explanation: str = Field(validators=OneLine(on_fail="noop"))
-    value: float = Field(validators=("percentage", "noop"))
+    index: int = Field(validators=("1-indexed", OnFailAction.NOOP))
+    name: str = Field(
+        validators=[
+            LowerCase(on_fail=OnFailAction.NOOP), 
+            TwoWords(on_fail=OnFailAction.REASK)])
+    explanation: str = Field(validators=OneLine(on_fail=OnFailAction.NOOP))
+    value: float = Field(validators=("percentage", OnFailAction.NOOP))
 
 
 class ContractDetailsReask(BaseModel):
@@ -76,12 +90,14 @@ class ContractDetailsReask(BaseModel):
 
 
 class FeeDetailsRefrain(BaseModel):
-    index: int = Field(validators=("1-indexed", "noop"))
+    index: int = Field(validators=("1-indexed", OnFailAction.NOOP))
     name: str = Field(
-        validators=[LowerCase(on_fail="refrain"), TwoWords(on_fail="refrain")]
+        validators=[
+            LowerCase(on_fail=OnFailAction.REFRAIN), 
+            TwoWords(on_fail=OnFailAction.REFRAIN)]
     )
-    explanation: str = Field(validators=OneLine(on_fail="refrain"))
-    value: float = Field(validators=("percentage", "noop"))
+    explanation: str = Field(validators=OneLine(on_fail=OnFailAction.REFRAIN))
+    value: float = Field(validators=("percentage", OnFailAction.NOOP))
 
 
 class ContractDetailsRefrain(BaseModel):
