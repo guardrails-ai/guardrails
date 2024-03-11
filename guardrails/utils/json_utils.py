@@ -1,30 +1,21 @@
 import json
-import warnings
 from dataclasses import dataclass
 from typing import Any, Dict, Optional, Tuple, Type, Union
 
 import regex
 
 from guardrails.datatypes import (
-    URL,
     Boolean,
     Case,
     Choice,
     DataType,
     Date,
-    Email,
     Enum,
     Float,
     Integer,
 )
 from guardrails.datatypes import List as ListDataType
-from guardrails.datatypes import (
-    Object,
-    PythonCode,
-    String,
-    Time,
-    deprecated_string_types,
-)
+from guardrails.datatypes import Object, String, Time
 from guardrails.utils.parsing_utils import get_code_block, has_code_block
 
 
@@ -58,12 +49,6 @@ type_map: Dict[Type[DataType], Type] = {
     Enum: str,
 }
 
-ignore_types = [
-    Email,  # email and url should become string validators
-    URL,
-    PythonCode,
-]
-
 
 @dataclass
 class ValuePlaceholder(Placeholder):
@@ -71,8 +56,6 @@ class ValuePlaceholder(Placeholder):
 
     @property
     def type_object(self):
-        if self.datatype_type in ignore_types:
-            return Any
         return type_map[self.datatype_type]
 
     class VerificationFailed:
@@ -311,14 +294,6 @@ def generate_type_skeleton_from_schema(
             )
         else:
             datatype_type = type(schema)
-            if schema.tag in deprecated_string_types:
-                datatype_type = String
-                warnings.warn(
-                    f"""The '{schema.tag}' type is deprecated. Use the \
-string type instead. Support for this type will \
-be dropped in version 0.3.0 and beyond.""",
-                    DeprecationWarning,
-                )
 
             return ValuePlaceholder(
                 datatype_type=datatype_type,
