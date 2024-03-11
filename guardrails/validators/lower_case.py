@@ -24,7 +24,7 @@ class LowerCase(Validator):
     | Programmatic fix              | Convert to lower case.            |
     """
 
-    def __init__(self, on_fail: Optional[Callable] = None):
+    def __init__(self, on_fail: Optional[Callable] = None, **kwargs):
         warn(
             """
             Using this validator from `guardrails.validators` is deprecated.
@@ -33,7 +33,7 @@ class LowerCase(Validator):
             """,
             FutureWarning,
         )
-        super().__init__(on_fail=on_fail)
+        super().__init__(on_fail=on_fail, **kwargs)
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         logger.debug(f"Validating {value} is lower case...")
