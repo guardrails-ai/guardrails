@@ -11,8 +11,6 @@ def fixture_rail_spec():
     <integer name="dummy_integer" description="Any dummy integer" />
     <float name="dummy_float" description="Any dummy float" />
     <bool name="dummy_boolean" description="Any dummy boolean" />
-    <email name="dummy_email" description="Any dummy email" />
-    <url name="dummy_url" description="Any dummy url" />
     <date name="dummy_date" description="Any dummy date" />
     <time name="dummy_time" description="Any dummy time" />
     <list name="dummy_list" description="Any dummy list" />
