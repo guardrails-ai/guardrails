@@ -5,6 +5,7 @@ from typing import List
 import pytest
 
 import guardrails as gd
+from guardrails.validator_base import OnFailAction
 from guardrails.validators import LowerCase
 
 
@@ -42,7 +43,8 @@ class MockCompletion:
 
 
 TEST_PROMPT = "Suggest a name for an AI company. The name should be short and catchy."
-guard = gd.Guard.from_string(validators=[LowerCase(on_fail="fix")], prompt=TEST_PROMPT)
+guard = gd.Guard.from_string(
+    validators=[LowerCase(on_fail=OnFailAction.FIX)], prompt=TEST_PROMPT)
 
 
 @pytest.mark.skipif(

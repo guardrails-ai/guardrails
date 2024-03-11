@@ -165,12 +165,12 @@ Validates whether the generated code snippet contains any secrets.
     ```py
 
     guard = Guard.from_string(validators=[
-        DetectSecrets(on_fail="fix")
+        DetectSecrets(on_fail=OnFailAction.FIX)
     ])
     guard.parse(
         llm_output=code_snippet,
     )
-    ```
+    ``` 
 
 #### get\_unique\_secrets(value: str)
 

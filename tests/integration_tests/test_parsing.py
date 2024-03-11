@@ -5,6 +5,7 @@ import pytest
 import guardrails as gd
 from guardrails import register_validator
 from guardrails.utils.openai_utils import get_static_openai_chat_create_func
+from guardrails.validator_base import OnFailAction
 from guardrails.validators import FailResult, ValidationResult
 
 from .mock_llm_outputs import (
@@ -116,7 +117,7 @@ def test_reask_prompt_instructions(mocker):
         return FailResult(error_message=f"Value {value} should fail.")
 
     guard = gd.Guard.from_string(
-        validators=[(always_fail, "reask")],
+        validators=[(always_fail, OnFailAction.REASK)],
         description="Some description",
     )
 
