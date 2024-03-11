@@ -128,7 +128,7 @@ def guard_initializer(
         ),
     ],
 )
-@pytest.mark.parametrize("multiprocessing_validators", (True,))  # False))
+@pytest.mark.parametrize("multiprocessing_validators", (True, False))
 def test_entity_extraction_with_reask(
     mocker, rail, prompt, test_full_schema_reask, multiprocessing_validators
 ):
@@ -172,14 +172,17 @@ def test_entity_extraction_with_reask(
     assert first.validation_output == entity_extraction.VALIDATED_OUTPUT_REASK_1
 
     # For reask validator logs
-    # TODO: Update once we add json_path to the ValidatorLog class
-    nested_validator_logs = list(
-        x for x in first.validator_logs if x.value_before_validation == "my chase plan"
+    two_words_validator_logs = list(
+        x
+        for x in first.validator_logs
+        if x.property_path == "$.fees.1.name" and x.registered_name == "two-words"
     )
-    nested_validator_log = nested_validator_logs[1]
 
-    assert nested_validator_log.value_before_validation == "my chase plan"
-    assert nested_validator_log.value_after_validation == FieldReAsk(
+    two_words_validator_log = two_words_validator_logs[0]
+
+    assert two_words_validator_log.value_before_validation == "my chase plan"
+
+    expected_value_after_validation = FieldReAsk(
         incorrect_value="my chase plan",
         fail_results=[
             FailResult(
@@ -188,6 +191,10 @@ def test_entity_extraction_with_reask(
             )
         ],
         path=["fees", 1, "name"],
+    )
+    assert (
+        two_words_validator_log.value_after_validation
+        == expected_value_after_validation
     )
 
     # For re-asked prompt and output

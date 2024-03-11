@@ -98,7 +98,7 @@ def test_save_configuration_file(mocker):
             f"id=f49354e0-80c7-4591-81db-cc2f945e5f1e{os.linesep}",
             f"client_id=id{os.linesep}",
             f"client_secret=secret{os.linesep}",
-            f"no_metrics=true{os.linesep}",
+            "no_metrics=true",
         ]
     )
     assert close_spy.call_count == 1
