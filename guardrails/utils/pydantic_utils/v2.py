@@ -16,10 +16,9 @@ from typing import (
     get_origin,
 )
 
-from pydantic import BaseModel, ConfigDict, HttpUrl, field_validator
+from pydantic import BaseModel, ConfigDict, field_validator
 from pydantic.fields import FieldInfo
 
-from guardrails.datatypes import URL as URLDataType
 from guardrails.datatypes import Boolean as BooleanDataType
 from guardrails.datatypes import Case as CaseDataType
 from guardrails.datatypes import Choice
@@ -31,7 +30,6 @@ from guardrails.datatypes import Float as FloatDataType
 from guardrails.datatypes import Integer as IntegerDataType
 from guardrails.datatypes import List as ListDataType
 from guardrails.datatypes import Object as ObjectDataType
-from guardrails.datatypes import PythonCode as PythonCodeDataType
 from guardrails.datatypes import String as StringDataType
 from guardrails.datatypes import Time as TimeDataType
 from guardrails.utils.safe_get import safe_get
@@ -331,9 +329,6 @@ def field_to_datatype(field: Union[FieldInfo, Type]) -> Type[DataType]:
     # Get the type annotation from the type_annotation
     type_annotation = prepare_type_annotation(field)
 
-    # Use inline import to avoid circular dependency
-    from guardrails.datatypes import PythonCode
-
     # Map the type annotation to the corresponding field type
     if is_list(type_annotation):
         return ListDataType
@@ -353,12 +348,8 @@ def field_to_datatype(field: Union[FieldInfo, Type]) -> Type[DataType]:
         return StringDataType
     elif type_annotation == time:
         return TimeDataType
-    elif type_annotation == HttpUrl:
-        return URLDataType
     elif typing.get_origin(type_annotation) == Union:
         return ChoiceDataType
-    elif type_annotation == PythonCode:
-        return PythonCodeDataType
     else:
         raise ValueError(f"Unsupported type: {type_annotation}")
 

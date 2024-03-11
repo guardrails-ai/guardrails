@@ -51,12 +51,13 @@ huggingface_hub = {version = "^0.16.4", optional = true}
 pydash = "^7.0.6"
 docspec_python = "2.2.1"
 pydoc-markdown = "4.8.2"
-opentelemetry-sdk = "^1.22.0"
-opentelemetry-exporter-otlp-proto-grpc = "^1.22.0"
-opentelemetry-exporter-otlp-proto-http = "^1.22.0"
+opentelemetry-sdk = "1.20.0"
+opentelemetry-exporter-otlp-proto-grpc = "1.20.0"
+opentelemetry-exporter-otlp-proto-http = "1.20.0"
 langchain-core = "^0.1.18"
 coloredlogs = "^15.0.1"
 requests = "^2.31.0"
+guard-rails-api-client = {git = "https://github.com/guardrails-ai/guardrails-api-client.git", rev = "v0.0.2", subdirectory = "guard-rails-api-client"}
 
 
 [tool.poetry.extras]

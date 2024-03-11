@@ -63,7 +63,7 @@ def fetch_module_manifest(
 
 
 def fetch_module(module_name: str) -> ModuleManifest:
-    creds = Credentials.from_rc_file()
+    creds = Credentials.from_rc_file(logger)
     token = get_auth_token(creds)
 
     module_manifest_json = fetch_module_manifest(module_name, token, creds.id)
@@ -89,7 +89,7 @@ def get_validator_manifest(module_name: str):
 # GET /auth
 def get_auth():
     try:
-        creds = Credentials.from_rc_file()
+        creds = Credentials.from_rc_file(logger)
         token = get_auth_token(creds)
         auth_url = f"{validator_hub_service}/auth"
         response = fetch(auth_url, token, creds.id)
@@ -105,7 +105,7 @@ def get_auth():
 
 def post_validator_submit(package_name: str, content: str):
     try:
-        creds = Credentials.from_rc_file()
+        creds = Credentials.from_rc_file(logger)
         token = get_auth_token(creds)
         submission_url = f"{validator_hub_service}/validator/submit"
 

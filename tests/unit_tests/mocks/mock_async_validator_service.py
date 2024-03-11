@@ -2,6 +2,11 @@ import asyncio
 
 
 class MockAsyncValidatorService:
+    initialized: bool
+
+    def __init__(self, *args, **kwargs):
+        self.initialized = True
+
     async def async_validate(self, *args):
         await asyncio.sleep(0.1)
         # The return value doesn't really matter here.

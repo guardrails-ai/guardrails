@@ -1,3 +1,4 @@
+import asyncio
 from typing import (
     Any,
     Awaitable,
@@ -11,6 +12,7 @@ from typing import (
     cast,
 )
 
+from guard_rails_api_client.models.validate_payload_llm_api import ValidatePayloadLlmApi
 from pydantic import BaseModel
 
 from guardrails.utils.exception_utils import UserFacingException
@@ -124,7 +126,11 @@ def litellm_messages(
     return [{"role": "user", "content": prompt}]
 
 
-class OpenAICallable(PromptCallableBase):
+class OpenAIModel(PromptCallableBase):
+    pass
+
+
+class OpenAICallable(OpenAIModel):
     def _invoke_llm(
         self,
         text: str,
@@ -150,7 +156,7 @@ class OpenAICallable(PromptCallableBase):
         )
 
 
-class OpenAIChatCallable(PromptCallableBase):
+class OpenAIChatCallable(OpenAIModel):
     supports_base_model = True
 
     def _invoke_llm(
@@ -656,7 +662,11 @@ class AsyncPromptCallableBase(PromptCallableBase):
         return result
 
 
-class AsyncOpenAICallable(AsyncPromptCallableBase):
+class AsyncOpenAIModel(AsyncPromptCallableBase):
+    pass
+
+
+class AsyncOpenAICallable(AsyncOpenAIModel):
     async def invoke_llm(
         self,
         text: str,
@@ -682,7 +692,7 @@ class AsyncOpenAICallable(AsyncPromptCallableBase):
         )
 
 
-class AsyncOpenAIChatCallable(AsyncPromptCallableBase):
+class AsyncOpenAIChatCallable(AsyncOpenAIModel):
     supports_base_model = True
 
     async def invoke_llm(
@@ -828,3 +838,36 @@ def get_async_llm_ask(
         pass
 
     return AsyncArbitraryCallable(*args, llm_api=llm_api, **kwargs)
+
+
+def model_is_supported_server_side(
+    llm_api: Optional[Union[Callable, Callable[[Any], Awaitable[Any]]]] = None,
+    *args,
+    **kwargs,
+) -> bool:
+    if not llm_api:
+        return True
+    # TODO: Support other models; requires server-side updates
+    model = get_llm_ask(llm_api, *args, **kwargs)
+    if asyncio.iscoroutinefunction(llm_api):
+        model = get_async_llm_ask(llm_api, *args, **kwargs)
+    return issubclass(type(model), OpenAIModel) or issubclass(
+        type(model), AsyncOpenAIModel
+    )
+
+
+# FIXME: Update with newly supported LLMs
+def get_llm_api_enum(
+    llm_api: Callable[[Any], Awaitable[Any]]
+) -> Optional[ValidatePayloadLlmApi]:
+    # TODO: Distinguish between v1 and v2
+    if llm_api == get_static_openai_create_func():
+        return ValidatePayloadLlmApi.OPENAI_COMPLETION_CREATE
+    elif llm_api == get_static_openai_chat_create_func():
+        return ValidatePayloadLlmApi.OPENAI_CHATCOMPLETION_CREATE
+    elif llm_api == get_static_openai_acreate_func():
+        return ValidatePayloadLlmApi.OPENAI_COMPLETION_ACREATE
+    elif llm_api == get_static_openai_chat_acreate_func():
+        return ValidatePayloadLlmApi.OPENAI_CHATCOMPLETION_ACREATE
+    else:
+        return None

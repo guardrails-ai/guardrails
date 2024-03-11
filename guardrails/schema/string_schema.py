@@ -131,6 +131,7 @@ class StringSchema(Schema):
         data: Any,
         metadata: Dict,
         attempt_number: int = 0,
+        disable_tracer: Optional[bool] = True,
         **kwargs,
     ) -> Any:
         """Validate a dictionary of data against the schema.
@@ -163,6 +164,7 @@ class StringSchema(Schema):
             metadata=metadata,
             validator_setup=validation,
             iteration=iteration,
+            disable_tracer=disable_tracer,
         )
 
         validated_response = {dummy_key: validated_response}
@@ -284,3 +286,10 @@ class StringSchema(Schema):
 
         schema += "\n\nDon't talk; just go."
         return schema
+
+    def _to_request(self):
+        if self.root_datatype is not None:
+            request_body: Optional[Dict[str, Any]] = super()._to_request()
+            if request_body is not None:
+                request_body["schema"]["element"]["name"] = "$string"
+                return request_body

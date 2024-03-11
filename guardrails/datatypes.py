@@ -1,5 +1,4 @@
 import datetime
-import warnings
 from dataclasses import dataclass
 from types import SimpleNamespace
 from typing import Any, Dict, Iterable
@@ -14,15 +13,6 @@ from guardrails.utils.casting_utils import to_float, to_int, to_string
 from guardrails.utils.xml_utils import cast_xml_to_string
 from guardrails.validator_base import Validator, ValidatorSpec
 from guardrails.validatorsattr import ValidatorsAttr
-
-# TODO - deprecate these altogether
-deprecated_string_types = {"sql", "email", "url", "pythoncode"}
-
-
-def update_deprecated_type_to_string(type):
-    if type in deprecated_string_types:
-        return "string"
-    return type
 
 
 @dataclass
@@ -148,6 +138,31 @@ class DataType:
             return False
         return self.__dict__ == other.__dict__
 
+    def _to_request(self) -> Dict[str, Any]:
+        element: Dict[str, Any] = {
+            "type": self.tag,
+            "name": self.name,
+            "description": self.description,
+            # This isn't stored anywhere and is inconsistently passed to ValidatorsAttr
+            # (i.e. is never passed to child properties)
+            # meaning its purpose isn't consistenly enforced.
+            # Since this is an XML only property and isn't properly implemented anymore,
+            # I'm just going to ignore it for now.
+            "strict": False,
+            "onFails": [
+                {"validatorTag": v.rail_alias, "method": v.on_fail_descriptor}
+                for v in self.validators_attr.validators
+            ],
+            "dateFormat": getattr(self, "date_format", None),
+            "timeFormat": getattr(self, "time_format", None),
+        }
+        formatters = [v.to_xml_attrib() for v in self.validators_attr.validators]
+        children: Dict[str, Any] = {
+            k: v._to_request() for k, v in self._children.items()
+        }
+
+        return {"children": children, "formatters": formatters, "element": element}
+
 
 registry: Dict[str, Type[DataType]] = {}
 
@@ -163,16 +178,6 @@ def register_type(name: str):
         return cls
 
     return decorator
-
-
-# Decorator for deprecation
-def deprecate_type(cls: type):
-    warnings.warn(
-        f"""The '{cls.__name__}' type  is deprecated and will be removed in \
-versions 0.3.0 and beyond. Use the pydantic 'str' primitive instead.""",
-        DeprecationWarning,
-    )
-    return cls
 
 
 class ScalarType(DataType):
@@ -350,66 +355,6 @@ class Time(ScalarType):
         return datatype
 
 
-@deprecate_type
-@register_type("email")
-class Email(ScalarType):
-    """Element tag: `<email>`"""
-
-    tag = "email"
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        deprecate_type(type(self))
-
-    def get_example(self):
-        return "hello@example.com"
-
-
-@deprecate_type
-@register_type("url")
-class URL(ScalarType):
-    """Element tag: `<url>`"""
-
-    tag = "url"
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        deprecate_type(type(self))
-
-    def get_example(self):
-        return "https://example.com"
-
-
-@deprecate_type
-@register_type("pythoncode")
-class PythonCode(ScalarType):
-    """Element tag: `<pythoncode>`"""
-
-    tag = "pythoncode"
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        deprecate_type(type(self))
-
-    def get_example(self):
-        return "print('hello world')"
-
-
-@deprecate_type
-@register_type("sql")
-class SQLCode(ScalarType):
-    """Element tag: `<sql>`"""
-
-    tag = "sql"
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        deprecate_type(type(self))
-
-    def get_example(self):
-        return "SELECT * FROM table"
-
-
 @register_type("percentage")
 class Percentage(ScalarType):
     """Element tag: `<percentage>`"""
@@ -507,7 +452,7 @@ class List(NonScalarType):
                 # The child must be the datatype that all items in the list
                 # must conform to.
                 raise ValueError("List data type must have exactly one child.")
-            child_data_type_tag = update_deprecated_type_to_string(child.tag)
+            child_data_type_tag = child.tag
             child_data_type = registry[child_data_type_tag]
             self._children["item"] = child_data_type.from_xml(child)
 

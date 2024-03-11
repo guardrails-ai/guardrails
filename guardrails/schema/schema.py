@@ -179,3 +179,7 @@ class Schema:
         # TODO decide how to check this
         # variables = get_template_variables(reask_prompt)
         # assert set(variables) == self.reask_prompt_vars
+
+    def _to_request(self):
+        if self.root_datatype is not None:
+            return {"schema": self.root_datatype._to_request()}
