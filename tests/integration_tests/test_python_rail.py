@@ -248,7 +248,7 @@ def test_python_rail_add_validator(mocker):
 
         # Register guardrails validators
         _website_validator = add_validator(
-            "website", fn=ValidLength(min=9, max=100, on_fail="reask")
+            "website", fn=ValidLength(min=9, max=100, on_fail=OnFailAction.REASK)
         )
 
         # Root-level validation using Pydantic (Not in Guardrails)
@@ -338,7 +338,7 @@ def test_python_string(mocker):
     """Test single string (non-JSON) generation via pydantic with re-asking."""
     mocker.patch("guardrails.llm_providers.OpenAICallable", new=MockOpenAICallable)
 
-    validators = [TwoWords(on_fail="reask")]
+    validators = [TwoWords(on_fail=OnFailAction.REASK)]
     description = "Name for the pizza"
     instructions = """
 You are a helpful assistant, and you are helping me come up with a name for a pizza.

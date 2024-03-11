@@ -14,6 +14,7 @@ from pydantic import BaseModel, Field
 import guardrails as gd
 from guardrails.utils.openai_utils import OPENAI_VERSION
 from guardrails.utils.safe_get import safe_get_with_brackets
+from guardrails.validator_base import OnFailAction
 from guardrails.validators import LowerCase
 
 expected_raw_output = '{"statement": "I am DOING well, and I HOPE you aRe too."}'
