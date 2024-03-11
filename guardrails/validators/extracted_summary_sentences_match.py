@@ -1,6 +1,7 @@
 import contextvars
 import re
 from typing import Any, Callable, Dict, Optional
+from warnings import warn
 
 from guardrails.validator_base import (
     FailResult,
@@ -44,6 +45,14 @@ class ExtractedSummarySentencesMatch(Validator):
         on_fail: Optional[Callable] = None,
         **kwargs: Optional[Dict[str, Any]],
     ):
+        warn(
+            """
+            Using this validator from `guardrails.validators` is deprecated.
+            Please install and import this validator from Guardrails Hub instead. 
+            This validator would be removed from this module in the next major release.
+            """,
+            FutureWarning,
+        )
         super().__init__(on_fail, threshold=threshold, **kwargs)
         # TODO(shreya): Pass embedding_model, vector_db, document_store from spec
 

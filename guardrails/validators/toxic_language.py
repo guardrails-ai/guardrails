@@ -1,4 +1,5 @@
 from typing import Any, Callable, Dict, List, Union, cast
+from warnings import warn
 
 from guardrails.validator_base import (
     FailResult,
@@ -69,6 +70,14 @@ class ToxicLanguage(Validator):
         on_fail: Union[Callable[..., Any], None] = None,
         **kwargs,
     ):
+        warn(
+            """
+            Using this validator from `guardrails.validators` is deprecated.
+            Please install and import this validator from Guardrails Hub instead. 
+            This validator would be removed from this module in the next major release.
+            """,
+            FutureWarning,
+        )
         super().__init__(
             on_fail, threshold=threshold, validation_method=validation_method, **kwargs
         )

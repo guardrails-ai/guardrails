@@ -1,4 +1,5 @@
 from typing import Any, Dict, Optional
+from warnings import warn
 
 from guardrails.logger import logger
 from guardrails.validator_base import (
@@ -29,6 +30,14 @@ class ReadingTime(Validator):
     """
 
     def __init__(self, reading_time: int, on_fail: Optional[str] = None):
+        warn(
+            """
+            Using this validator from `guardrails.validators` is deprecated.
+            Please install and import this validator from Guardrails Hub instead. 
+            This validator would be removed from this module in the next major release.
+            """,
+            FutureWarning,
+        )
         super().__init__(on_fail=on_fail, reading_time=reading_time)
         self._max_time = reading_time
 

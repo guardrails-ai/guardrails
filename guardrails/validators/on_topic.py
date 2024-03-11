@@ -1,6 +1,7 @@
 import contextvars
 import json
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from warnings import warn
 
 from tenacity import retry, stop_after_attempt, wait_random_exponential
 
@@ -84,6 +85,14 @@ class OnTopic(Validator):
         on_fail: Optional[Callable[..., Any]] = None,
         model_threshold: Optional[float] = 0.5,
     ):
+        warn(
+            """
+            Using this validator from `guardrails.validators` is deprecated.
+            Please install and import this validator from Guardrails Hub instead. 
+            This validator would be removed from this module in the next major release.
+            """,
+            FutureWarning,
+        )
         super().__init__(
             valid_topics=valid_topics,
             invalid_topics=invalid_topics,

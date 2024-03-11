@@ -1,4 +1,5 @@
 from typing import Any, Callable, Dict, Optional
+from warnings import warn
 
 from guardrails.utils.sql_utils import SQLDriver, create_sql_driver
 from guardrails.validator_base import (
@@ -33,6 +34,14 @@ class BugFreeSQL(Validator):
         schema_file: Optional[str] = None,
         on_fail: Optional[Callable] = None,
     ):
+        warn(
+            """
+            Using this validator from `guardrails.validators` is deprecated.
+            Please install and import this validator from Guardrails Hub instead. 
+            This validator would be removed from this module in the next major release.
+            """,
+            FutureWarning,
+        )
         super().__init__(on_fail, conn=conn, schema_file=schema_file)
         self._driver: SQLDriver = create_sql_driver(schema_file=schema_file, conn=conn)
 

@@ -1,4 +1,5 @@
 from typing import Any, Callable, Dict, Optional
+from warnings import warn
 
 from guardrails.logger import logger
 from guardrails.validator_base import (
@@ -33,6 +34,14 @@ class ValidRange(Validator):
         max: Optional[int] = None,
         on_fail: Optional[Callable] = None,
     ):
+        warn(
+            """
+            Using this validator from `guardrails.validators` is deprecated.
+            Please install and import this validator from Guardrails Hub instead. 
+            This validator would be removed from this module in the next major release.
+            """,
+            FutureWarning,
+        )
         super().__init__(on_fail=on_fail, min=min, max=max)
 
         self._min = min

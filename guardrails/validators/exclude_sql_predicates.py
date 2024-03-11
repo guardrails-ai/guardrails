@@ -1,6 +1,6 @@
 # This file contains the validator for the exclude-sql-predicates guardrail
-
 from typing import Any, Callable, Dict, List, Optional
+from warnings import warn
 
 from guardrails.validator_base import (
     FailResult,
@@ -28,6 +28,14 @@ class ExcludeSqlPredicates(Validator):
     """
 
     def __init__(self, predicates: List[str], on_fail: Optional[Callable] = None):
+        warn(
+            """
+            Using this validator from `guardrails.validators` is deprecated.
+            Please install and import this validator from Guardrails Hub instead. 
+            This validator would be removed from this module in the next major release.
+            """,
+            FutureWarning,
+        )
         super().__init__(on_fail=on_fail, predicates=predicates)
         self._predicates = set(predicates)
 

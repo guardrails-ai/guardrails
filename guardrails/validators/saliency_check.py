@@ -1,6 +1,7 @@
 import inspect
 import os
 from typing import Any, Callable, Dict, List, Optional, cast
+from warnings import warn
 
 from guardrails.utils.openai_utils import get_static_openai_chat_create_func
 from guardrails.validator_base import (
@@ -46,7 +47,15 @@ class SaliencyCheck(Validator):
             on_fail: Function to call when validation fails.
             threshold: Threshold for overlap between topics in document and summary.
         """
-
+        
+        warn(
+            """
+            Using this validator from `guardrails.validators` is deprecated.
+            Please install and import this validator from Guardrails Hub instead. 
+            This validator would be removed from this module in the next major release.
+            """,
+            FutureWarning,
+        )
         super().__init__(
             on_fail,
             docs_dir=docs_dir,

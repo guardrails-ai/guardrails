@@ -56,6 +56,14 @@ class DetectSecrets(Validator):
     """
 
     def __init__(self, on_fail: Union[Callable[..., Any], None] = None, **kwargs):
+        warnings.warn(
+            """
+            Using this validator from `guardrails.validators` is deprecated.
+            Please install and import this validator from Guardrails Hub instead. 
+            This validator would be removed from this module in the next major release.
+            """,
+            FutureWarning,
+        )
         super().__init__(on_fail, **kwargs)
 
         # Check if detect-secrets is installed

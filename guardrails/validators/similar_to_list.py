@@ -1,4 +1,5 @@
 from typing import Any, Callable, Dict, Optional
+from warnings import warn
 
 from guardrails.validator_base import (
     FailResult,
@@ -47,6 +48,14 @@ class SimilarToList(Validator):
         on_fail: Optional[Callable] = None,
         **kwargs,
     ):
+        warn(
+            """
+            Using this validator from `guardrails.validators` is deprecated.
+            Please install and import this validator from Guardrails Hub instead. 
+            This validator would be removed from this module in the next major release.
+            """,
+            FutureWarning,
+        )
         super().__init__(
             on_fail,
             standard_deviations=standard_deviations,

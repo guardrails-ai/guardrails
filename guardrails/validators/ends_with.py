@@ -1,4 +1,5 @@
 from typing import Any, Dict
+from warnings import warn
 
 from guardrails.logger import logger
 from guardrails.validator_base import (
@@ -27,6 +28,14 @@ class EndsWith(Validator):
     """
 
     def __init__(self, end: str, on_fail: str = "fix"):
+        warn(
+            """
+            Using this validator from `guardrails.validators` is deprecated.
+            Please install and import this validator from Guardrails Hub instead. 
+            This validator would be removed from this module in the next major release.
+            """,
+            FutureWarning,
+        )
         super().__init__(on_fail=on_fail, end=end)
         self._end = end
 

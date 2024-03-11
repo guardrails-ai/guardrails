@@ -1,4 +1,5 @@
 from typing import Any, Callable, Dict, List, Union, cast
+from warnings import warn
 
 from guardrails.validator_base import (
     FailResult,
@@ -68,6 +69,14 @@ class PIIFilter(Validator):
         on_fail: Union[Callable[..., Any], None] = None,
         **kwargs,
     ):
+        warn(
+            """
+            Using this validator from `guardrails.validators` is deprecated.
+            Please install and import this validator from Guardrails Hub instead. 
+            This validator would be removed from this module in the next major release.
+            """,
+            FutureWarning,
+        )
         if AnalyzerEngine is None or AnonymizerEngine is None:
             raise ImportError(
                 "You must install the `presidio-analyzer`, `presidio-anonymizer`"

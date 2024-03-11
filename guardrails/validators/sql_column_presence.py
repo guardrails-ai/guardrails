@@ -1,4 +1,5 @@
 from typing import Any, Callable, Dict, List, Optional
+from warnings import warn
 
 from guardrails.validator_base import (
     FailResult,
@@ -26,6 +27,14 @@ class SqlColumnPresence(Validator):
     """
 
     def __init__(self, cols: List[str], on_fail: Optional[Callable] = None):
+        warn(
+            """
+            Using this validator from `guardrails.validators` is deprecated.
+            Please install and import this validator from Guardrails Hub instead. 
+            This validator would be removed from this module in the next major release.
+            """,
+            FutureWarning,
+        )
         super().__init__(on_fail=on_fail, cols=cols)
         self._cols = set(cols)
 

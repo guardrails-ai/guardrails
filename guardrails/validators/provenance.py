@@ -116,6 +116,14 @@ class ProvenanceV0(Validator):
         on_fail: Optional[Callable] = None,
         **kwargs,
     ):
+        warnings.warn(
+            """
+            Using this validator from `guardrails.validators` is deprecated.
+            Please install and import this validator from Guardrails Hub instead. 
+            This validator would be removed from this module in the next major release.
+            """,
+            FutureWarning,
+        )
         super().__init__(
             on_fail, threshold=threshold, validation_method=validation_method, **kwargs
         )
@@ -402,6 +410,14 @@ class ProvenanceV1(Validator):
             embed_function (Callable, optional): A callable that creates embeddings for
                 the sources. Must accept a list of strings and returns float np.array.
         """
+        warnings.warn(
+            """
+            Using this validator from `guardrails.validators` is deprecated.
+            Please install and import this validator from Guardrails Hub instead. 
+            This validator would be removed from this module in the next major release.
+            """,
+            FutureWarning,
+        )
         super().__init__(
             on_fail,
             validation_method=validation_method,

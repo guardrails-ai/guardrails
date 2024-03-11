@@ -1,4 +1,5 @@
-from typing import Any, Dict
+from typing import Any, Callable, Dict, Optional
+from warnings import warn
 
 from guardrails.validator_base import (
     FailResult,
@@ -24,6 +25,17 @@ class IsProfanityFree(Validator):
     | Supported data types          | `string`                          |
     | Programmatic fix              | None                              |
     """
+
+    def __init__(self, on_fail: Optional[Callable] = None):
+        warn(
+            """
+            Using this validator from `guardrails.validators` is deprecated.
+            Please install and import this validator from Guardrails Hub instead. 
+            This validator would be removed from this module in the next major release.
+            """,
+            FutureWarning,
+        )
+        super().__init__(on_fail=on_fail)
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         try:

@@ -1,4 +1,5 @@
 from typing import Any, Callable, Dict, Optional
+from warnings import warn
 
 from guardrails.logger import logger
 from guardrails.utils.openai_utils import OpenAIClient
@@ -47,6 +48,14 @@ class SimilarToDocument(Validator):
         model: str = "text-embedding-ada-002",
         on_fail: Optional[Callable] = None,
     ):
+        warn(
+            """
+            Using this validator from `guardrails.validators` is deprecated.
+            Please install and import this validator from Guardrails Hub instead. 
+            This validator would be removed from this module in the next major release.
+            """,
+            FutureWarning,
+        )
         super().__init__(
             on_fail=on_fail, document=document, threshold=threshold, model=model
         )

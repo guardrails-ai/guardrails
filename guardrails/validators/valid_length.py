@@ -1,5 +1,6 @@
 import string
 from typing import Callable, Dict, List, Optional, Union
+from warnings import warn
 
 import rstr
 
@@ -37,6 +38,14 @@ class ValidLength(Validator):
         max: Optional[int] = None,
         on_fail: Optional[Callable] = None,
     ):
+        warn(
+            """
+            Using this validator from `guardrails.validators` is deprecated.
+            Please install and import this validator from Guardrails Hub instead. 
+            This validator would be removed from this module in the next major release.
+            """,
+            FutureWarning,
+        )
         super().__init__(on_fail=on_fail, min=min, max=max)
         self._min = to_int(min)
         self._max = to_int(max)

@@ -1,6 +1,7 @@
 import re
 import string
 from typing import Any, Callable, Dict, Optional
+from warnings import warn
 
 import rstr
 
@@ -38,6 +39,14 @@ class RegexMatch(Validator):
     ):
         # todo -> something forces this to be passed as kwargs and therefore xml-ized.
         # match_types = ["fullmatch", "search"]
+        warn(
+            """
+            Using this validator from `guardrails.validators` is deprecated.
+            Please install and import this validator from Guardrails Hub instead. 
+            This validator would be removed from this module in the next major release.
+            """,
+            FutureWarning,
+        )
 
         if match_type is None:
             match_type = "fullmatch"

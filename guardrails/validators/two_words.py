@@ -1,4 +1,5 @@
-from typing import Any, Dict
+from typing import Any, Dict, Optional, Callable
+from warnings import warn
 
 from pydash.strings import words as _words
 
@@ -24,6 +25,17 @@ class TwoWords(Validator):
     | Supported data types          | `string`                          |
     | Programmatic fix              | Pick the first two words.         |
     """
+
+    def __init__(self, on_fail: Optional[Callable] = None):
+        warn(
+            """
+            Using this validator from `guardrails.validators` is deprecated.
+            Please install and import this validator from Guardrails Hub instead. 
+            This validator would be removed from this module in the next major release.
+            """,
+            FutureWarning,
+        )
+        super().__init__(on_fail=on_fail)
 
     def _get_fix_value(self, value: str) -> str:
         words = value.split()
