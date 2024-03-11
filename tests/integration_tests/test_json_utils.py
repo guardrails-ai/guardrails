@@ -29,7 +29,7 @@ def test_value_placeholder_verify(
 @pytest.mark.parametrize(
     "optional,children,value,coerce_types,expected_value",
     [
-        (True, {}, None, True, True),
+        (True, {}, None, True, None),
         (False, {}, None, False, False),
         (
             False,
@@ -38,6 +38,7 @@ def test_value_placeholder_verify(
             False,
             False,
         ),
+        (True, {}, {}, True, True),
     ],
 )
 def test_dict_placeholder_verify(
@@ -53,7 +54,7 @@ def test_dict_placeholder_verify(
 @pytest.mark.parametrize(
     "optional,children,value,coerce_types,expected_value",
     [
-        (True, None, None, True, True),
+        (True, None, None, True, None),
         (False, None, None, False, False),
         (False, ValuePlaceholder(False, Integer), [None], False, False),
     ],
@@ -71,7 +72,7 @@ def test_list_placeholder_verify(
 @pytest.mark.parametrize(
     "optional,cases,value,coerce_types,expected_value",
     [
-        (True, {}, None, True, True),
+        (True, {}, None, True, None),
         (False, {}, None, False, False),
         (False, {}, {}, False, False),
         (False, {}, {"discriminator": None}, False, False),

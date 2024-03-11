@@ -1,5 +1,6 @@
 import copy
 import json
+from functools import partial
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union
 
 from eliot import add_destinations, start_action
@@ -63,7 +64,9 @@ class Runner:
         msg_history_schema: Optional[StringSchema] = None,
         metadata: Optional[Dict[str, Any]] = None,
         output: Optional[str] = None,
-        base_model: Optional[Type[BaseModel]] = None,
+        base_model: Optional[
+            Union[Type[BaseModel], Type[List[Type[BaseModel]]]]
+        ] = None,
         full_schema_reask: bool = False,
     ):
         if prompt:
@@ -549,36 +552,24 @@ class Runner:
         3. Log the output
         """
 
+        # If the API supports a base model, pass it in.
+        api_fn = api
+        if api is not None:
+            supports_base_model = getattr(api, "supports_base_model", False)
+            if supports_base_model:
+                api_fn = partial(api, base_model=self.base_model)
+
         with start_action(action_type="call", index=index, prompt=prompt) as action:
             if output is not None:
-                llm_response = LLMResponse(
-                    output=output,
-                )
-            elif api is None:
+                llm_response = LLMResponse(output=output)
+            elif api_fn is None:
                 raise ValueError("API or output must be provided.")
             elif msg_history:
-                try:
-                    llm_response = api(
-                        msg_history=msg_history_source(msg_history),
-                        base_model=self.base_model,
-                    )
-                except Exception:
-                    # If the API call fails, try calling again without the base model.
-                    llm_response = api(msg_history=msg_history_source(msg_history))
+                llm_response = api_fn(msg_history=msg_history_source(msg_history))
             elif prompt and instructions:
-                try:
-                    llm_response = api(
-                        prompt.source,
-                        instructions=instructions.source,
-                        base_model=self.base_model,
-                    )
-                except Exception:
-                    llm_response = api(prompt.source, instructions=instructions.source)
+                llm_response = api_fn(prompt.source, instructions=instructions.source)
             elif prompt:
-                try:
-                    llm_response = api(prompt.source, base_model=self.base_model)
-                except Exception:
-                    llm_response = api(prompt.source)
+                llm_response = api_fn(prompt.source)
             else:
                 raise ValueError("'prompt' or 'msg_history' must be provided.")
 
@@ -687,7 +678,9 @@ class AsyncRunner(Runner):
         msg_history_schema: Optional[StringSchema] = None,
         metadata: Optional[Dict[str, Any]] = None,
         output: Optional[str] = None,
-        base_model: Optional[Type[BaseModel]] = None,
+        base_model: Optional[
+            Union[Type[BaseModel], Type[List[Type[BaseModel]]]]
+        ] = None,
         full_schema_reask: bool = False,
     ):
         super().__init__(

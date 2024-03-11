@@ -299,12 +299,13 @@ def default_otlp_tracer(resource_name: str = "guardsrails"):
     resource = Resource(attributes={SERVICE_NAME: resource_name})
 
     traceProvider = TracerProvider(resource=resource)
+    span_exporter = OTLPSpanExporter()
     if envvars_exist:
-        processor = BatchSpanProcessor(OTLPSpanExporter())
+        processor = BatchSpanProcessor(span_exporter=span_exporter)
     else:
         processor = SimpleSpanProcessor(ConsoleSpanExporter(out=sys.stderr))
 
     traceProvider.add_span_processor(processor)
     trace.set_tracer_provider(traceProvider)
 
-    return trace.get_tracer("gr")
+    return trace.get_tracer("guardrails-ai")

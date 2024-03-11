@@ -227,9 +227,7 @@ from guardrails.utils.json_utils import verify_schema_against_json
 />
 </root>
             """,
-            {
-                # "my_string": None,
-            },
+            {},
             True,
             False,
         ),

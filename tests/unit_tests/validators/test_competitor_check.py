@@ -4,15 +4,7 @@ from unittest.mock import MagicMock
 from guardrails.validators import CompetitorCheck, FailResult
 
 
-class TestCompetitorCheck:  # (unittest.TestCase):
-    def setUp(self):
-        # You can initialize any required resources or configurations here.
-        pass
-
-    def tearDown(self):
-        # You can clean up any resources used during the tests here.
-        pass
-
+class TestCompetitorCheck:
     def test_perform_ner(self, mocker):
         # Create a mock NLP object
         mock_util_is_package = mocker.patch("spacy.util.is_package")

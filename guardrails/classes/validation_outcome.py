@@ -1,6 +1,7 @@
 from typing import Generic, Iterator, Optional, Tuple, Union, cast
 
 from pydantic import Field
+from rich.pretty import pretty_repr
 
 from guardrails.classes.history import Call, Iteration
 from guardrails.classes.output_type import OT
@@ -9,7 +10,7 @@ from guardrails.utils.logs_utils import ArbitraryModel
 from guardrails.utils.reask_utils import ReAsk
 
 
-class ValidationOutcome(Generic[OT], ArbitraryModel):
+class ValidationOutcome(ArbitraryModel, Generic[OT]):
     raw_llm_output: Optional[str] = Field(
         description="The raw, unchanged output from the LLM call.", default=None
     )
@@ -83,3 +84,6 @@ class ValidationOutcome(Generic[OT], ArbitraryModel):
     def __getitem__(self, keys):
         """Get a subset of the ValidationOutcome's fields."""
         return iter(getattr(self, k) for k in keys)
+
+    def __str__(self) -> str:
+        return pretty_repr(self)

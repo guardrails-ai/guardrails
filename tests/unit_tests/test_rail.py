@@ -151,6 +151,25 @@ Hello world
     Rail.from_string(rail_spec)
 
 
+def test_rail_outermost_list():
+    rail_spec = """
+<rail version="0.1">
+
+<output type="list">
+    <object>
+        <string name="string_name" description="Any random string value" />
+    </object>
+</output>
+
+<prompt>
+Hello world
+</prompt>
+
+</rail>
+"""
+    Rail.from_string(rail_spec)
+
+
 def test_format_deprecated():
     rail_spec = """
     <rail version="0.1">

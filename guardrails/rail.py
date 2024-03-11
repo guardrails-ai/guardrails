@@ -1,11 +1,12 @@
 """Rail class."""
 import warnings
 from dataclasses import dataclass
-from typing import Optional, Sequence, Type
+from typing import Any, Dict, List, Optional, Sequence, Type, Union
 
 from lxml import etree as ET
 from pydantic import BaseModel
 
+from guardrails.datatypes import List as ListDataType
 from guardrails.prompt import Instructions, Prompt
 from guardrails.schema import JsonSchema, Schema, StringSchema
 from guardrails.utils.xml_utils import cast_xml_to_string
@@ -65,13 +66,16 @@ class Rail:
 
         if isinstance(self.output_schema, StringSchema):
             return "str"
-        else:
-            return "dict"
+        elif isinstance(self.output_schema, JsonSchema) and isinstance(
+            self.output_schema.root_datatype, ListDataType
+        ):
+            return "list"
+        return "dict"
 
     @classmethod
     def from_pydantic(
         cls,
-        output_class: Type[BaseModel],
+        output_class: Union[Type[BaseModel], Type[List[Type[BaseModel]]]],
         prompt: Optional[str] = None,
         instructions: Optional[str] = None,
         reask_prompt: Optional[str] = None,
@@ -226,18 +230,25 @@ class Rail:
         Returns:
             A Schema object.
         """
+        schema_type = root.attrib["type"] if "type" in root.attrib else "object"
         # If root contains a `type="string"` attribute, then it's a StringSchema
-        if "type" in root.attrib and root.attrib["type"] == "string":
+        if schema_type == "string":
             return StringSchema.from_xml(
                 root,
                 reask_prompt_template=reask_prompt,
                 reask_instructions_template=reask_instructions,
             )
-        return JsonSchema.from_xml(
-            root,
-            reask_prompt_template=reask_prompt,
-            reask_instructions_template=reask_instructions,
-        )
+        elif schema_type in ["object", "list"]:
+            return JsonSchema.from_xml(
+                root,
+                reask_prompt_template=reask_prompt,
+                reask_instructions_template=reask_instructions,
+            )
+        else:
+            raise ValueError(
+                "The type attribute of the <output /> tag must be one of:"
+                ' "string", "object", or "list"'
+            )
 
     @staticmethod
     def load_string_schema_from_string(
@@ -256,7 +267,7 @@ class Rail:
 
     @staticmethod
     def load_json_schema_from_pydantic(
-        output_class: Type[BaseModel],
+        output_class: Union[Type[BaseModel], Type[List[Type[BaseModel]]]],
         reask_prompt_template: Optional[str] = None,
         reask_instructions_template: Optional[str] = None,
     ):
@@ -289,3 +300,19 @@ class Rail:
             source=text or "",
             output_schema=output_schema.transpile(),
         )
+
+    def _to_request(self) -> Dict:
+        rail: Dict[str, Any] = {"version": self.version}
+
+        # input_schema = (
+        #     self.input_schema._to_request() if self.input_schema is not None else None
+        # )
+        # if input_schema is not None:
+        #     rail["inputSchema"] = input_schema
+        if self.output_schema is not None:
+            rail["outputSchema"] = self.output_schema._to_request()
+        if self.instructions is not None:
+            rail["instructions"] = self.instructions._to_request()
+        if self.prompt is not None:
+            rail["prompt"] = self.prompt._to_request()
+        return rail

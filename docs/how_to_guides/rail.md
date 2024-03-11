@@ -65,8 +65,8 @@ The `RAIL` specification contains 2 main components:
 
 1. `Output`: Contains information about the expected output of the LLM. It contains the spec for the overall structure of the LLM output, type info for each field, and the quality criteria for each field and the corrective action to be taken in case quality criteria is not met.
    This is the main component of the `RAIL` specification, which enforces the guarantees that the LLM should provide.
-   Check out the [RAIL Output](/concepts/output.md) page for more details, including the full specifcation of how to create complex output schemas.
-2. `Prompt`: Prompt template, and contains the high level instructions that are sent to the LLM. Check out the [RAIL Prompt](/concepts/prompt.md) page for more details.
+   Check out the [RAIL Output](#-specifying-output-structure) page for more details, including the full specifcation of how to create complex output schemas.
+2. `Prompt`: Prompt template, and contains the high level instructions that are sent to the LLM. Check out the [RAIL Prompt](#components-of-a-prompt-element) page for more details.
 
 Let's see an example of an `RAIL` specification in action:
 
@@ -86,7 +86,7 @@ Let's see an example of an `RAIL` specification in action:
 ```
 
 1. The `output` element contains the structure of the expected output of the LLM. It contains the spec for the overall structure of the LLM output, type info for each field, and the quality criteria for each field and the corrective action to be taken in case quality criteria is not met.
-2. The `prompt` element contains the high level instructions that are sent to the LLM. Check out the [RAIL Prompt](/concepts/prompt.md) page for more details.
+2. The `prompt` element contains the high level instructions that are sent to the LLM. Check out the [RAIL Prompt](#components-of-a-prompt-element) page for more details.
 
 ## 📖 How to use `RAIL` in Guardrails?
 
@@ -121,7 +121,7 @@ In addition to any static text describing the context of the task, instructions 
 | Component         | Syntax                   | Description                                                                                                                                                                                                                                                                                                                             |
 |-------------------|--------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Variables         | `${variable_name}`        | These are provided by the user at runtime, and substituted in the instructions.                                                                                                                                                                                                                                                             |
-| Output Schema     | `${output_schema}`      | This is the schema of the expected output, and is compiled based on the  `output` element.  For more information on how the output schema is compiled for the instructions, check out [`output` element compilation](/docs/concepts/output/#adding-compiled-output-element-to-prompt)                                                                    |
+| Output Schema     | `${output_schema}`      | This is the schema of the expected output, and is compiled based on the  `output` element.  For more information on how the output schema is compiled for the instructions, check out [`output` element compilation](#adding-compiled-output-element-to-prompt)                                                                    |
 | Prompt Primitives | `${gr.prompt_primitive_name}` | These are pre-constructed blocks of text that are useful for common tasks. E.g., some primitives may contain information that helps the LLM understand the output schema better.  To see the full list of prompt primitives, check out [`guardrails/constants.xml`](https://github.com/guardrails-ai/guardrails/blob/main/guardrails/constants.xml). |
 
 
@@ -183,7 +183,7 @@ Here are examples of simple (XML, JSON) pairs that show the expected behavior:
 ```
 
 
-For an example of using instructions alongside a prompt see [this example for using chat models](../examples/guardrails_with_chat_models.ipynb).
+For an example of using instructions alongside a prompt see [this example for using chat models](/docs/examples/guardrails_with_chat_models).
 
 # `Prompt` Element
 
@@ -196,7 +196,7 @@ In addition to the high level task description, the prompt also contains the fol
 | Component         | Syntax                   | Description                                                                                                                                                                                                                                                                                                                             |
 |-------------------|--------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Variables         | `${variable_name}`        | These are provided by the user at runtime, and substituted in the prompt.                                                                                                                                                                                                                                                               |
-| Output Schema     | `${output_schema}`      | This is the schema of the expected output, and is compiled based on the  `output` element.  For more information on how the output schema is compiled for the prompt, check out [`output` element compilation](/docs/concepts/output/#adding-compiled-output-element-to-prompt).                                                                    |
+| Output Schema     | `${output_schema}`      | This is the schema of the expected output, and is compiled based on the  `output` element.  For more information on how the output schema is compiled for the prompt, check out [`output` element compilation](#adding-compiled-output-element-to-prompt).                                                                    |
 | Prompt Primitives | `${gr.prompt_primitive_name}` | These are pre-constructed prompts that are useful for common tasks. E.g., some primitives may contain information that helps the LLM understand the output schema better.  To see the full list of prompt primitives, check out [`guardrails/constants.xml`](https://github.com/guardrails-ai/guardrails/blob/main/guardrails/constants.xml). |
 
 ```xml
@@ -425,9 +425,7 @@ At the heart of the `RAIL` specification is the use of elements. Each element's 
 
 ### Supported types
 
-Guardrails supports many data types, including:, `string`, `integer`, `float`, `bool`, `list`, `object`, `url`, `email` and many more.
-
-Check out the [RAIL Data Types](/docs/api_reference_markdown/datatypes) page for a list of supported data types.
+Guardrails supports all [JSON](https://www.w3schools.com/js/js_json_datatypes.asp) and pydantic compatible datatypes. 
 
 
 #### Scalar vs Non-scalar types
@@ -531,7 +529,7 @@ Each quality criteria is then checked against the generated output. If the quali
 ### Supported criteria
 
 - Each quality critera is relevant to a specific data type. For example, the `two-words` quality criteria is only relevant to strings, and the `positive` quality criteria is only relevant to integers and floats.
-- To see the full list of supported quality criteria, check out the [Validation](/docs/api_reference_markdown/validators) page.
+- To see the full list of supported quality criteria, check out the [Validation](/docs/hub/concepts/validators) page.
 
 
 ## 🛠️ Specifying corrective actions

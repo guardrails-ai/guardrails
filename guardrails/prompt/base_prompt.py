@@ -107,3 +107,6 @@ class BasePrompt:
         start_replaced = regex.sub(r"(?<!\$){", "{{", self.source)
         # This variable length negative lookbehind is why we need `regex` over `re`
         return regex.sub(r"(?<!\${.*)}", "}}", start_replaced)
+
+    def _to_request(self) -> str:
+        return self.source

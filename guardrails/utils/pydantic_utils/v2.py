@@ -28,6 +28,16 @@ from guardrails.validatorsattr import ValidatorsAttr
 
 DataTypeT = TypeVar("DataTypeT", bound=DataType)
 
+try:
+    from pydantic import Discriminator  # type: ignore
+
+    if not Discriminator:
+        raise ImportError("pydantic.Discriminator does not exist!")
+except ImportError:
+
+    class Discriminator:
+        pass
+
 
 class ArbitraryModel(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -53,12 +63,15 @@ def add_validator(
 
 def is_pydantic_base_model(type_annotation: Any) -> Union[Type[BaseModel], None]:
     """Check if a type_annotation is a Pydantic BaseModel."""
-    if (
-        type_annotation is not None
-        and isinstance(type_annotation, type)
-        and issubclass(type_annotation, BaseModel)
-    ):
-        return type_annotation
+    try:
+        if (
+            type_annotation is not None
+            and isinstance(type_annotation, type)
+            and issubclass(type_annotation, BaseModel)
+        ):
+            return type_annotation
+    except TypeError:
+        pass
     return None
 
 
@@ -375,7 +388,17 @@ def convert_pydantic_model_to_datatype(
                 name=field_name,
             )
         elif target_datatype == ChoiceDataType:
-            discriminator = field.discriminator or "discriminator"
+            discriminator = "discriminator"
+            if field.discriminator:
+                if isinstance(field.discriminator, str):
+                    discriminator = field.discriminator
+                elif isinstance(field.discriminator, Discriminator):
+                    discriminator = (
+                        field.discriminator.discriminator
+                        if isinstance(field.discriminator.discriminator, str)
+                        else "discriminator"
+                    )
+
             choice_children = {}
             for case in typing.get_args(field.annotation):
                 case_discriminator_type = case.model_fields[discriminator].annotation
@@ -465,7 +488,7 @@ def pydantic_field_to_datatype(
     return construct_datatype(
         datatype,
         children,
-        validators,
+        validators,  # type: ignore
         is_optional,
         name,
         description,
