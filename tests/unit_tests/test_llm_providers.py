@@ -1,7 +1,7 @@
 import importlib.util
 import os
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, Iterable
+from typing import Any, Callable, Dict, Iterable, List
 from unittest.mock import MagicMock
 
 import pytest
@@ -206,7 +206,7 @@ def openai_mock():
         @dataclass
         class MockCompletion:
             id: str
-            choices: list[MockCompletionChoice]
+            choices: List[MockCompletionChoice]
             created: int
             model: str
             object: str
