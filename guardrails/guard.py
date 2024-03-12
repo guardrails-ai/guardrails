@@ -987,6 +987,17 @@ class Guard(Runnable, Generic[OT]):
     def use(
         self, validator: Union[Validator, Type[Validator]], *args, **kwargs
     ) -> "Guard":
+        """
+        Use a validator to validate results of an LLM request.
+        
+        *Note*: `use` is only available for string output types.
+        """
+
+        if (self.rail.output_type != "str"):
+            raise RuntimeError(
+                "The `use` method is only available for string output types."
+            )
+
         if validator:
             hydrated_validator = get_validator(validator, *args, **kwargs)
             self._validators.append(hydrated_validator)
@@ -1021,6 +1032,17 @@ class Guard(Runnable, Generic[OT]):
             ],
         ],
     ) -> "Guard":
+        """
+        Use a validator to validate results of an LLM request.
+        
+        *Note*: `use_many` is only available for string output types.
+        """
+
+        if self.rail.output_type != "str":
+            raise RuntimeError(
+                "The `use_many` method is only available for string output types."
+            )
+
         for v in validators:
             hydrated_validator = get_validator(v)
             self._validators.append(hydrated_validator)
