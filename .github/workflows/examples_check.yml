@@ -3,6 +3,10 @@ name: Notebook Execution and Error Check
 on:
   schedule:
     - cron: "0 0 * * *"
+  push:
+    branches:
+      - main
+      - dev
   workflow_dispatch:  # This enables manual triggering
 
 jobs:
