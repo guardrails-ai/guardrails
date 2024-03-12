@@ -761,9 +761,7 @@ class Guard(Runnable, Generic[OT]):
             full_schema_reask=full_schema_reask,
             disable_tracer=self._disable_tracer,
         )
-        call = await runner.async_run(
-            call_log=call_log, prompt_params=prompt_params
-        )
+        call = await runner.async_run(call_log=call_log, prompt_params=prompt_params)
         return ValidationOutcome[OT].from_guard_history(call)
 
     def __repr__(self):
@@ -1063,9 +1061,7 @@ class Guard(Runnable, Generic[OT]):
             full_schema_reask=full_schema_reask,
             disable_tracer=self._disable_tracer,
         )
-        call = await runner.async_run(
-            call_log=call_log, prompt_params=prompt_params
-        )
+        call = await runner.async_run(call_log=call_log, prompt_params=prompt_params)
 
         return ValidationOutcome[OT].from_guard_history(call)
 

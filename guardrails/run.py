@@ -21,11 +21,7 @@ from guardrails.utils.exception_utils import UserFacingException
 from guardrails.utils.hub_telemetry_utils import HubTelemetry
 from guardrails.utils.llm_response import LLMResponse
 from guardrails.utils.openai_utils import OPENAI_VERSION
-from guardrails.utils.reask_utils import (
-    NonParseableReAsk,
-    ReAsk,
-    SkeletonReAsk,
-)
+from guardrails.utils.reask_utils import NonParseableReAsk, ReAsk, SkeletonReAsk
 from guardrails.utils.telemetry_utils import async_trace, trace
 
 
@@ -280,9 +276,7 @@ class Runner:
             raw_output = llm_response.output
 
             # Parse: parse the output.
-            parsed_output, parsing_error = self.parse(
-                index, raw_output, output_schema
-            )
+            parsed_output, parsing_error = self.parse(index, raw_output, output_schema)
             if parsing_error:
                 iteration.outputs.exception = parsing_error
                 iteration.outputs.error = str(parsing_error)
@@ -869,9 +863,7 @@ class AsyncRunner(Runner):
                 )
             except Exception:
                 # If the API call fails, try calling again without the base model.
-                llm_response = await api(
-                    msg_history=msg_history_source(msg_history)
-                )
+                llm_response = await api(msg_history=msg_history_source(msg_history))
         elif prompt and instructions:
             try:
                 llm_response = await api(
@@ -889,9 +881,7 @@ class AsyncRunner(Runner):
             except Exception:
                 llm_response = await api(prompt.source)
         else:
-            raise ValueError(
-                "'output', 'prompt' or 'msg_history' must be provided."
-            )
+            raise ValueError("'output', 'prompt' or 'msg_history' must be provided.")
 
         return llm_response
 
@@ -1015,7 +1005,6 @@ class AsyncRunner(Runner):
         else:
             raise ValueError("Prompt or message history must be provided.")
 
-
         return instructions, prompt, msg_history
 
 
@@ -1138,9 +1127,7 @@ class StreamRunner(Runner):
         iteration.inputs.msg_history = msg_history
 
         # Call: run the API that returns a generator wrapped in LLMResponse
-        llm_response = self.call(
-            index, instructions, prompt, msg_history, api, output
-        )
+        llm_response = self.call(index, instructions, prompt, msg_history, api, output)
 
         # Get the stream (generator) from the LLMResponse
         stream = llm_response.stream_output
@@ -1183,9 +1170,7 @@ class StreamRunner(Runner):
                 )
 
             # 4. Introspect: inspect the validated fragment for reasks
-            reasks, valid_op = self.introspect(
-                index, validated_fragment, output_schema
-            )
+            reasks, valid_op = self.introspect(index, validated_fragment, output_schema)
             if reasks:
                 raise ValueError(
                     "Reasks are not yet supported with streaming. Please "
@@ -1202,9 +1187,7 @@ class StreamRunner(Runner):
 
             # 6. Yield raw and validated fragments
             raw_yield = f"Raw LLM response:\n{fragment}\n"
-            validated_yield = (
-                f"\nValidated response:\n{pretty_validated_fragment}\n"
-            )
+            validated_yield = f"\nValidated response:\n{pretty_validated_fragment}\n"
 
             yield raw_yield + validated_yield
 
