@@ -50,8 +50,8 @@ from guardrails.validators.valid_url import ValidURL
 warn(
     """
     Importing validators from `guardrails.validators` is deprecated.
-    All validators are now available in Guardrails Hub. Please install
-    and import them from Guardrails Hub instead. All validators would be
+    All validators are now available in the Guardrails Hub. Please install
+    and import them from the hub instead. All validators will be
     removed from this module in the next major release.
 
     Install with: `guardrails hub install hub://<namespace>/<validator_name>`
