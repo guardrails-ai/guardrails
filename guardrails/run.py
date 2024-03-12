@@ -3,7 +3,6 @@ import json
 from functools import partial
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union
 
-from eliot import add_destinations, start_action
 from pydantic import BaseModel
 
 from guardrails.classes.history import Call, Inputs, Iteration, Outputs
@@ -15,22 +14,15 @@ from guardrails.llm_providers import (
     OpenAIChatCallable,
     PromptCallableBase,
 )
-from guardrails.logger import logger, set_scope
+from guardrails.logger import set_scope
 from guardrails.prompt import Instructions, Prompt
 from guardrails.schema import Schema, StringSchema
 from guardrails.utils.exception_utils import UserFacingException
 from guardrails.utils.hub_telemetry_utils import HubTelemetry
 from guardrails.utils.llm_response import LLMResponse
 from guardrails.utils.openai_utils import OPENAI_VERSION
-from guardrails.utils.reask_utils import (
-    NonParseableReAsk,
-    ReAsk,
-    SkeletonReAsk,
-    reasks_to_dict,
-)
+from guardrails.utils.reask_utils import NonParseableReAsk, ReAsk, SkeletonReAsk
 from guardrails.utils.telemetry_utils import async_trace, trace
-
-add_destinations(logger.debug)
 
 
 class Runner:
@@ -144,80 +136,68 @@ class Runner:
                 self.instructions is None and self.msg_history is None
             )
 
-            with start_action(
-                action_type="run",
-                instructions=self.instructions,
-                prompt=self.prompt,
-                api=self.api,
-                prompt_schema=self.prompt_schema,
-                instructions_schema=self.instructions_schema,
-                msg_history_schema=self.msg_history_schema,
-                output_schema=self.output_schema,
-                num_reasks=self.num_reasks,
-                metadata=self.metadata,
-            ):
-                (
-                    instructions,
-                    prompt,
-                    msg_history,
-                    prompt_schema,
-                    instructions_schema,
-                    msg_history_schema,
-                    output_schema,
-                ) = (
-                    self.instructions,
-                    self.prompt,
-                    self.msg_history,
-                    self.prompt_schema,
-                    self.instructions_schema,
-                    self.msg_history_schema,
-                    self.output_schema,
+            (
+                instructions,
+                prompt,
+                msg_history,
+                prompt_schema,
+                instructions_schema,
+                msg_history_schema,
+                output_schema,
+            ) = (
+                self.instructions,
+                self.prompt,
+                self.msg_history,
+                self.prompt_schema,
+                self.instructions_schema,
+                self.msg_history_schema,
+                self.output_schema,
+            )
+            index = 0
+            for index in range(self.num_reasks + 1):
+                # Run a single step.
+                iteration = self.step(
+                    index=index,
+                    api=self.api,
+                    instructions=instructions,
+                    prompt=prompt,
+                    msg_history=msg_history,
+                    prompt_params=prompt_params,
+                    prompt_schema=prompt_schema,
+                    instructions_schema=instructions_schema,
+                    msg_history_schema=msg_history_schema,
+                    output_schema=output_schema,
+                    output=self.output if index == 0 else None,
+                    call_log=call_log,
                 )
-                index = 0
-                for index in range(self.num_reasks + 1):
-                    # Run a single step.
-                    iteration = self.step(
-                        index=index,
-                        api=self.api,
-                        instructions=instructions,
-                        prompt=prompt,
-                        msg_history=msg_history,
-                        prompt_params=prompt_params,
-                        prompt_schema=prompt_schema,
-                        instructions_schema=instructions_schema,
-                        msg_history_schema=msg_history_schema,
-                        output_schema=output_schema,
-                        output=self.output if index == 0 else None,
-                        call_log=call_log,
-                    )
 
-                    # Loop again?
-                    if not self.do_loop(index, iteration.reasks):
-                        break
+                # Loop again?
+                if not self.do_loop(index, iteration.reasks):
+                    break
 
-                    # Get new prompt and output schema.
-                    (
-                        prompt,
-                        instructions,
-                        output_schema,
-                        msg_history,
-                    ) = self.prepare_to_loop(
-                        iteration.reasks,
-                        call_log.validation_output,
-                        output_schema,
-                        prompt_params=prompt_params,
-                        include_instructions=include_instructions,
-                    )
+                # Get new prompt and output schema.
+                (
+                    prompt,
+                    instructions,
+                    output_schema,
+                    msg_history,
+                ) = self.prepare_to_loop(
+                    iteration.reasks,
+                    call_log.validation_output,
+                    output_schema,
+                    prompt_params=prompt_params,
+                    include_instructions=include_instructions,
+                )
 
-                # Log how many times we reasked
-                # Use the HubTelemetry singleton
-                if not self._disable_tracer:
-                    self._hub_telemetry.create_new_span(
-                        span_name="/reasks",
-                        attributes=[("reask_count", index)],
-                        is_parent=False,  # This span has no children
-                        has_parent=True,  # This span has a parent
-                    )
+            # Log how many times we reasked
+            # Use the HubTelemetry singleton
+            if not self._disable_tracer:
+                self._hub_telemetry.create_new_span(
+                    span_name="/reasks",
+                    attributes=[("reask_count", index)],
+                    is_parent=False,  # This span has no children
+                    has_parent=True,  # This span has a parent
+                )
 
         except UserFacingException as e:
             # Because Pydantic v1 doesn't respect property setters
@@ -263,76 +243,63 @@ class Runner:
         call_log.iterations.push(iteration)
 
         try:
-            with start_action(
-                action_type="step",
-                index=index,
-                instructions=instructions,
-                prompt=prompt,
-                prompt_params=prompt_params,
-                prompt_schema=prompt_schema,
-                instructions_schema=instructions_schema,
-                msg_history_schema=msg_history_schema,
-                output_schema=output_schema,
-            ):
-                # Prepare: run pre-processing, and input validation.
-                if output:
-                    instructions = None
-                    prompt = None
-                    msg_history = None
-                else:
-                    instructions, prompt, msg_history = self.prepare(
-                        call_log,
-                        index,
-                        instructions,
-                        prompt,
-                        msg_history,
-                        prompt_params,
-                        api,
-                        prompt_schema,
-                        instructions_schema,
-                        msg_history_schema,
-                        output_schema,
-                    )
-
-                iteration.inputs.instructions = instructions
-                iteration.inputs.prompt = prompt
-                iteration.inputs.msg_history = msg_history
-
-                # Call: run the API.
-                llm_response = self.call(
-                    index, instructions, prompt, msg_history, api, output
+            # Prepare: run pre-processing, and input validation.
+            if output:
+                instructions = None
+                prompt = None
+                msg_history = None
+            else:
+                instructions, prompt, msg_history = self.prepare(
+                    call_log,
+                    index,
+                    instructions,
+                    prompt,
+                    msg_history,
+                    prompt_params,
+                    api,
+                    prompt_schema,
+                    instructions_schema,
+                    msg_history_schema,
+                    output_schema,
                 )
 
-                iteration.outputs.llm_response_info = llm_response
-                raw_output = llm_response.output
+            iteration.inputs.instructions = instructions
+            iteration.inputs.prompt = prompt
+            iteration.inputs.msg_history = msg_history
 
-                # Parse: parse the output.
-                parsed_output, parsing_error = self.parse(
-                    index, raw_output, output_schema
-                )
-                if parsing_error:
-                    iteration.outputs.exception = parsing_error
-                    iteration.outputs.error = str(parsing_error)
+            # Call: run the API.
+            llm_response = self.call(
+                index, instructions, prompt, msg_history, api, output
+            )
 
-                iteration.outputs.parsed_output = parsed_output
+            iteration.outputs.llm_response_info = llm_response
+            raw_output = llm_response.output
 
+            # Parse: parse the output.
+            parsed_output, parsing_error = self.parse(index, raw_output, output_schema)
+            if parsing_error:
+                iteration.outputs.exception = parsing_error
+                iteration.outputs.error = str(parsing_error)
+
+            iteration.outputs.parsed_output = parsed_output
+
+            # Validate: run output validation.
+            if parsing_error and isinstance(parsed_output, NonParseableReAsk):
+                reasks, _ = self.introspect(index, parsed_output, output_schema)
+            else:
                 # Validate: run output validation.
-                if parsing_error and isinstance(parsed_output, NonParseableReAsk):
-                    reasks, _ = self.introspect(index, parsed_output, output_schema)
-                else:
-                    # Validate: run output validation.
-                    validated_output = self.validate(
-                        iteration, index, parsed_output, output_schema
-                    )
-                    iteration.outputs.validation_output = validated_output
+                validated_output = self.validate(
+                    iteration, index, parsed_output, output_schema
+                )
+                iteration.outputs.validation_output = validated_output
 
-                    # Introspect: inspect validated output for reasks.
-                    reasks, valid_output = self.introspect(
-                        index, validated_output, output_schema
-                    )
-                    iteration.outputs.validated_output = valid_output
+                # Introspect: inspect validated output for reasks.
+                reasks, valid_output = self.introspect(
+                    index, validated_output, output_schema
+                )
+                iteration.outputs.validated_output = valid_output
 
-                iteration.outputs.reasks = reasks
+            iteration.outputs.reasks = reasks
 
         except Exception as e:
             error_message = str(e)
@@ -488,55 +455,46 @@ class Runner:
         Returns:
             The instructions, prompt, and message history.
         """
-        with start_action(action_type="prepare", index=index) as action:
-            if api is None:
-                raise UserFacingException(ValueError("API must be provided."))
+        if api is None:
+            raise UserFacingException(ValueError("API must be provided."))
 
-            if prompt_params is None:
-                prompt_params = {}
+        if prompt_params is None:
+            prompt_params = {}
 
-            if msg_history:
-                if prompt_schema is not None or instructions_schema is not None:
-                    raise UserFacingException(
-                        ValueError(
-                            "Prompt and instructions validation are "
-                            "not supported when using message history."
-                        )
-                    )
-                prompt, instructions = None, None
-                msg_history = self.prepare_msg_history(
-                    call_log, msg_history, prompt_params, msg_history_schema
-                )
-            elif prompt is not None:
-                if msg_history_schema is not None:
-                    raise UserFacingException(
-                        ValueError(
-                            "Message history validation is "
-                            "not supported when using prompt/instructions."
-                        )
-                    )
-                msg_history = None
-                instructions, prompt = self.prepare_prompt(
-                    call_log,
-                    instructions,
-                    prompt,
-                    prompt_params,
-                    api,
-                    prompt_schema,
-                    instructions_schema,
-                    output_schema,
-                )
-            else:
+        if msg_history:
+            if prompt_schema is not None or instructions_schema is not None:
                 raise UserFacingException(
-                    ValueError("'prompt' or 'msg_history' must be provided.")
+                    ValueError(
+                        "Prompt and instructions validation are "
+                        "not supported when using message history."
+                    )
                 )
-
-            action.log(
-                message_type="info",
-                instructions=instructions,
-                prompt=prompt,
-                prompt_params=prompt_params,
-                validated_prompt_params=prompt_params,
+            prompt, instructions = None, None
+            msg_history = self.prepare_msg_history(
+                call_log, msg_history, prompt_params, msg_history_schema
+            )
+        elif prompt is not None:
+            if msg_history_schema is not None:
+                raise UserFacingException(
+                    ValueError(
+                        "Message history validation is "
+                        "not supported when using prompt/instructions."
+                    )
+                )
+            msg_history = None
+            instructions, prompt = self.prepare_prompt(
+                call_log,
+                instructions,
+                prompt,
+                prompt_params,
+                api,
+                prompt_schema,
+                instructions_schema,
+                output_schema,
+            )
+        else:
+            raise UserFacingException(
+                ValueError("'prompt' or 'msg_history' must be provided.")
             )
 
         return instructions, prompt, msg_history
@@ -565,26 +523,20 @@ class Runner:
             if supports_base_model:
                 api_fn = partial(api, base_model=self.base_model)
 
-        with start_action(action_type="call", index=index, prompt=prompt) as action:
-            if output is not None:
-                llm_response = LLMResponse(output=output)
-            elif api_fn is None:
-                raise ValueError("API or output must be provided.")
-            elif msg_history:
-                llm_response = api_fn(msg_history=msg_history_source(msg_history))
-            elif prompt and instructions:
-                llm_response = api_fn(prompt.source, instructions=instructions.source)
-            elif prompt:
-                llm_response = api_fn(prompt.source)
-            else:
-                raise ValueError("'prompt' or 'msg_history' must be provided.")
+        if output is not None:
+            llm_response = LLMResponse(output=output)
+        elif api_fn is None:
+            raise ValueError("API or output must be provided.")
+        elif msg_history:
+            llm_response = api_fn(msg_history=msg_history_source(msg_history))
+        elif prompt and instructions:
+            llm_response = api_fn(prompt.source, instructions=instructions.source)
+        elif prompt:
+            llm_response = api_fn(prompt.source)
+        else:
+            raise ValueError("'prompt' or 'msg_history' must be provided.")
 
-            action.log(
-                message_type="info",
-                output=llm_response,
-            )
-
-            return llm_response
+        return llm_response
 
     def parse(
         self,
@@ -592,16 +544,8 @@ class Runner:
         output: str,
         output_schema: Schema,
     ):
-        with start_action(action_type="parse", index=index) as action:
-            parsed_output, error = output_schema.parse(output)
-
-            action.log(
-                message_type="info",
-                parsed_output=parsed_output,
-                error=error,
-            )
-
-            return parsed_output, error
+        parsed_output, error = output_schema.parse(output)
+        return parsed_output, error
 
     def validate(
         self,
@@ -612,22 +556,16 @@ class Runner:
         **kwargs,
     ):
         """Validate the output."""
-        with start_action(action_type="validate", index=index) as action:
-            validated_output = output_schema.validate(
-                iteration,
-                parsed_output,
-                self.metadata,
-                attempt_number=index,
-                disable_tracer=self._disable_tracer,
-                **kwargs,
-            )
+        validated_output = output_schema.validate(
+            iteration,
+            parsed_output,
+            self.metadata,
+            attempt_number=index,
+            disable_tracer=self._disable_tracer,
+            **kwargs,
+        )
 
-            action.log(
-                message_type="info",
-                validated_output=reasks_to_dict(validated_output),
-            )
-
-            return validated_output
+        return validated_output
 
     def introspect(
         self,
@@ -636,17 +574,11 @@ class Runner:
         output_schema: Schema,
     ) -> Tuple[Sequence[ReAsk], Optional[Union[str, Dict]]]:
         """Introspect the validated output."""
-        with start_action(action_type="introspect", index=index) as action:
-            if validated_output is None:
-                return [], None
-            reasks, valid_output = output_schema.introspect(validated_output)
+        if validated_output is None:
+            return [], None
+        reasks, valid_output = output_schema.introspect(validated_output)
 
-            action.log(
-                message_type="info",
-                reasks=[r.__dict__ for r in reasks],
-            )
-
-            return reasks, valid_output
+        return reasks, valid_output
 
     def do_loop(self, index: int, reasks: Sequence[ReAsk]) -> bool:
         """Determine if we should loop again."""
@@ -740,68 +672,56 @@ class AsyncRunner(Runner):
                     f"Missing required metadata keys: {', '.join(missing_keys)}"
                 )
 
-            with start_action(
-                action_type="run",
-                instructions=self.instructions,
-                prompt=self.prompt,
-                api=self.api,
-                prompt_schema=self.prompt_schema,
-                instructions_schema=self.instructions_schema,
-                msg_history_schema=self.msg_history_schema,
-                output_schema=self.output_schema,
-                num_reasks=self.num_reasks,
-                metadata=self.metadata,
-            ):
-                (
-                    instructions,
-                    prompt,
-                    msg_history,
-                    prompt_schema,
-                    instructions_schema,
-                    msg_history_schema,
-                    output_schema,
-                ) = (
-                    self.instructions,
-                    self.prompt,
-                    self.msg_history,
-                    self.prompt_schema,
-                    self.instructions_schema,
-                    self.msg_history_schema,
-                    self.output_schema,
+            (
+                instructions,
+                prompt,
+                msg_history,
+                prompt_schema,
+                instructions_schema,
+                msg_history_schema,
+                output_schema,
+            ) = (
+                self.instructions,
+                self.prompt,
+                self.msg_history,
+                self.prompt_schema,
+                self.instructions_schema,
+                self.msg_history_schema,
+                self.output_schema,
+            )
+            for index in range(self.num_reasks + 1):
+                # Run a single step.
+                iteration = await self.async_step(
+                    index=index,
+                    api=self.api,
+                    instructions=instructions,
+                    prompt=prompt,
+                    msg_history=msg_history,
+                    prompt_params=prompt_params,
+                    prompt_schema=prompt_schema,
+                    instructions_schema=instructions_schema,
+                    msg_history_schema=msg_history_schema,
+                    output_schema=output_schema,
+                    output=self.output if index == 0 else None,
+                    call_log=call_log,
                 )
-                for index in range(self.num_reasks + 1):
-                    # Run a single step.
-                    iteration = await self.async_step(
-                        index=index,
-                        api=self.api,
-                        instructions=instructions,
-                        prompt=prompt,
-                        msg_history=msg_history,
-                        prompt_params=prompt_params,
-                        prompt_schema=prompt_schema,
-                        instructions_schema=instructions_schema,
-                        msg_history_schema=msg_history_schema,
-                        output_schema=output_schema,
-                        output=self.output if index == 0 else None,
-                        call_log=call_log,
-                    )
 
-                    # Loop again?
-                    if not self.do_loop(index, iteration.reasks):
-                        break
+                # Loop again?
+                if not self.do_loop(index, iteration.reasks):
+                    break
 
-                    # Get new prompt and output schema.
-                    (
-                        prompt,
-                        instructions,
-                        output_schema,
-                        msg_history,
-                    ) = self.prepare_to_loop(
-                        iteration.reasks,
-                        call_log.validation_output,
-                        output_schema,
-                        prompt_params=prompt_params,
-                    )
+                # Get new prompt and output schema.
+                (
+                    prompt,
+                    instructions,
+                    output_schema,
+                    msg_history,
+                ) = self.prepare_to_loop(
+                    iteration.reasks,
+                    call_log.validation_output,
+                    output_schema,
+                    prompt_params=prompt_params,
+                )
         except UserFacingException as e:
             # Because Pydantic v1 doesn't respect property setters
             call_log._exception = e.original_exception
@@ -846,76 +766,65 @@ class AsyncRunner(Runner):
         call_log.iterations.push(iteration)
 
         try:
-            with start_action(
-                action_type="step",
-                index=index,
-                instructions=instructions,
-                prompt=prompt,
-                prompt_params=prompt_params,
-                prompt_schema=prompt_schema,
-                instructions_schema=instructions_schema,
-                msg_history_schema=msg_history_schema,
-                output_schema=output_schema,
-            ):
-                # Prepare: run pre-processing, and input validation.
-                if output:
-                    instructions = None
-                    prompt = None
-                    msg_history = None
-                else:
-                    instructions, prompt, msg_history = await self.async_prepare(
-                        call_log,
-                        index,
-                        instructions,
-                        prompt,
-                        msg_history,
-                        prompt_params,
-                        api,
-                        prompt_schema,
-                        instructions_schema,
-                        msg_history_schema,
-                        output_schema,
-                    )
-
-                iteration.inputs.instructions = instructions
-                iteration.inputs.prompt = prompt
-                iteration.inputs.msg_history = msg_history
-
-                # Call: run the API.
-                llm_response = await self.async_call(
-                    index, instructions, prompt, msg_history, api, output
+            # Prepare: run pre-processing, and input validation.
+            if output:
+                instructions = None
+                prompt = None
+                msg_history = None
+            else:
+                instructions, prompt, msg_history = await self.async_prepare(
+                    call_log,
+                    index,
+                    instructions,
+                    prompt,
+                    msg_history,
+                    prompt_params,
+                    api,
+                    prompt_schema,
+                    instructions_schema,
+                    msg_history_schema,
+                    output_schema,
                 )
 
-                iteration.outputs.llm_response_info = llm_response
-                output = llm_response.output
+            iteration.inputs.instructions = instructions
+            iteration.inputs.prompt = prompt
+            iteration.inputs.msg_history = msg_history
 
-                # Parse: parse the output.
-                parsed_output, parsing_error = self.parse(index, output, output_schema)
-                if parsing_error:
-                    # Parsing errors are captured and not raised
-                    #   because they are recoverable
-                    #   i.e. result in a reask
-                    iteration.outputs.exception = parsing_error
-                    iteration.outputs.error = str(parsing_error)
+            # Call: run the API.
+            llm_response = await self.async_call(
+                index, instructions, prompt, msg_history, api, output
+            )
 
-                iteration.outputs.parsed_output = parsed_output
+            iteration.outputs.llm_response_info = llm_response
+            output = llm_response.output
 
-                if parsing_error and isinstance(parsed_output, NonParseableReAsk):
-                    reasks, _ = self.introspect(index, parsed_output, output_schema)
-                else:
-                    # Validate: run output validation.
-                    validated_output = await self.async_validate(
-                        iteration, index, parsed_output, output_schema
-                    )
-                    iteration.outputs.validation_output = validated_output
+            # Parse: parse the output.
+            parsed_output, parsing_error = self.parse(index, output, output_schema)
+            if parsing_error:
+                # Parsing errors are captured and not raised
+                #   because they are recoverable
+                #   i.e. result in a reask
+                iteration.outputs.exception = parsing_error
+                iteration.outputs.error = str(parsing_error)
 
-                    # Introspect: inspect validated output for reasks.
-                    reasks, valid_output = self.introspect(
-                        index, validated_output, output_schema
-                    )
-                    iteration.outputs.validated_output = valid_output
+            iteration.outputs.parsed_output = parsed_output
 
-                iteration.outputs.reasks = reasks
+            if parsing_error and isinstance(parsed_output, NonParseableReAsk):
+                reasks, _ = self.introspect(index, parsed_output, output_schema)
+            else:
+                # Validate: run output validation.
+                validated_output = await self.async_validate(
+                    iteration, index, parsed_output, output_schema
+                )
+                iteration.outputs.validation_output = validated_output
+
+                # Introspect: inspect validated output for reasks.
+                reasks, valid_output = self.introspect(
+                    index, validated_output, output_schema
+                )
+                iteration.outputs.validated_output = valid_output
+
+            iteration.outputs.reasks = reasks
 
         except Exception as e:
             error_message = str(e)
@@ -940,51 +849,41 @@ class AsyncRunner(Runner):
         2. Convert the response string to a dict,
         3. Log the output
         """
-        with start_action(action_type="call", index=index, prompt=prompt) as action:
-            if output is not None:
-                llm_response = LLMResponse(
-                    output=output,
-                )
-            elif api is None:
-                raise ValueError("Either API or output must be provided.")
-            elif msg_history:
-                try:
-                    llm_response = await api(
-                        msg_history=msg_history_source(msg_history),
-                        base_model=self.base_model,
-                    )
-                except Exception:
-                    # If the API call fails, try calling again without the base model.
-                    llm_response = await api(
-                        msg_history=msg_history_source(msg_history)
-                    )
-            elif prompt and instructions:
-                try:
-                    llm_response = await api(
-                        prompt.source,
-                        instructions=instructions.source,
-                        base_model=self.base_model,
-                    )
-                except Exception:
-                    llm_response = await api(
-                        prompt.source, instructions=instructions.source
-                    )
-            elif prompt:
-                try:
-                    llm_response = await api(prompt.source, base_model=self.base_model)
-                except Exception:
-                    llm_response = await api(prompt.source)
-            else:
-                raise ValueError(
-                    "'output', 'prompt' or 'msg_history' must be provided."
-                )
-
-            action.log(
-                message_type="info",
-                output=llm_response,
+        if output is not None:
+            llm_response = LLMResponse(
+                output=output,
             )
+        elif api is None:
+            raise ValueError("Either API or output must be provided.")
+        elif msg_history:
+            try:
+                llm_response = await api(
+                    msg_history=msg_history_source(msg_history),
+                    base_model=self.base_model,
+                )
+            except Exception:
+                # If the API call fails, try calling again without the base model.
+                llm_response = await api(msg_history=msg_history_source(msg_history))
+        elif prompt and instructions:
+            try:
+                llm_response = await api(
+                    prompt.source,
+                    instructions=instructions.source,
+                    base_model=self.base_model,
+                )
+            except Exception:
+                llm_response = await api(
+                    prompt.source, instructions=instructions.source
+                )
+        elif prompt:
+            try:
+                llm_response = await api(prompt.source, base_model=self.base_model)
+            except Exception:
+                llm_response = await api(prompt.source)
+        else:
+            raise ValueError("'output', 'prompt' or 'msg_history' must be provided.")
 
-            return llm_response
+        return llm_response
 
     async def async_validate(
         self,
@@ -994,17 +893,11 @@ class AsyncRunner(Runner):
         output_schema: Schema,
     ):
         """Validate the output."""
-        with start_action(action_type="validate", index=index) as action:
-            validated_output = await output_schema.async_validate(
-                iteration, parsed_output, self.metadata, attempt_number=index
-            )
+        validated_output = await output_schema.async_validate(
+            iteration, parsed_output, self.metadata, attempt_number=index
+        )
 
-            action.log(
-                message_type="info",
-                validated_output=reasks_to_dict(validated_output),
-            )
-
-            return validated_output
+        return validated_output
 
     async def async_prepare(
         self,
@@ -1025,101 +918,92 @@ class AsyncRunner(Runner):
         Returns:
             The instructions, prompt, and message history.
         """
-        with start_action(action_type="prepare", index=index) as action:
-            if api is None:
-                raise ValueError("API must be provided.")
+        if api is None:
+            raise ValueError("API must be provided.")
 
-            if prompt_params is None:
-                prompt_params = {}
+        if prompt_params is None:
+            prompt_params = {}
 
-            if msg_history:
-                msg_history = copy.deepcopy(msg_history)
-                # Format any variables in the message history with the prompt params.
-                for msg in msg_history:
-                    msg["content"] = msg["content"].format(**prompt_params)
+        if msg_history:
+            msg_history = copy.deepcopy(msg_history)
+            # Format any variables in the message history with the prompt params.
+            for msg in msg_history:
+                msg["content"] = msg["content"].format(**prompt_params)
 
-                prompt, instructions = None, None
+            prompt, instructions = None, None
 
-                # validate msg_history
-                if msg_history_schema is not None:
-                    msg_str = msg_history_string(msg_history)
-                    inputs = Inputs(
-                        llm_output=msg_str,
-                    )
-                    iteration = Iteration(inputs=inputs)
-                    call_log.iterations.insert(0, iteration)
-                    validated_msg_history = await msg_history_schema.async_validate(
-                        iteration, msg_str, self.metadata
-                    )
-                    if isinstance(validated_msg_history, ReAsk):
-                        raise ValidationError(
-                            f"Message history validation failed: "
-                            f"{validated_msg_history}"
-                        )
-                    if validated_msg_history != msg_str:
-                        raise ValidationError("Message history validation failed")
-            elif prompt is not None:
-                if isinstance(prompt, str):
-                    prompt = Prompt(prompt)
-
-                prompt = prompt.format(**prompt_params)
-
-                # TODO(shreya): should there be any difference
-                #  to parsing params for prompt?
-                if instructions is not None and isinstance(instructions, Instructions):
-                    instructions = instructions.format(**prompt_params)
-
-                instructions, prompt = output_schema.preprocess_prompt(
-                    api, instructions, prompt
+            # validate msg_history
+            if msg_history_schema is not None:
+                msg_str = msg_history_string(msg_history)
+                inputs = Inputs(
+                    llm_output=msg_str,
                 )
+                iteration = Iteration(inputs=inputs)
+                call_log.iterations.insert(0, iteration)
+                validated_msg_history = await msg_history_schema.async_validate(
+                    iteration, msg_str, self.metadata
+                )
+                if isinstance(validated_msg_history, ReAsk):
+                    raise ValidationError(
+                        f"Message history validation failed: "
+                        f"{validated_msg_history}"
+                    )
+                if validated_msg_history != msg_str:
+                    raise ValidationError("Message history validation failed")
+        elif prompt is not None:
+            if isinstance(prompt, str):
+                prompt = Prompt(prompt)
 
-                # validate prompt
-                if prompt_schema is not None and prompt is not None:
-                    inputs = Inputs(
-                        llm_output=prompt.source,
-                    )
-                    iteration = Iteration(inputs=inputs)
-                    call_log.iterations.insert(0, iteration)
-                    validated_prompt = await prompt_schema.async_validate(
-                        iteration, prompt.source, self.metadata
-                    )
-                    iteration.outputs.validation_output = validated_prompt
-                    if validated_prompt is None:
-                        raise ValidationError("Prompt validation failed")
-                    if isinstance(validated_prompt, ReAsk):
-                        raise ValidationError(
-                            f"Prompt validation failed: {validated_prompt}"
-                        )
-                    prompt = Prompt(validated_prompt)
+            prompt = prompt.format(**prompt_params)
 
-                # validate instructions
-                if instructions_schema is not None and instructions is not None:
-                    inputs = Inputs(
-                        llm_output=instructions.source,
-                    )
-                    iteration = Iteration(inputs=inputs)
-                    call_log.iterations.insert(0, iteration)
-                    validated_instructions = await instructions_schema.async_validate(
-                        iteration, instructions.source, self.metadata
-                    )
-                    iteration.outputs.validation_output = validated_instructions
-                    if validated_instructions is None:
-                        raise ValidationError("Instructions validation failed")
-                    if isinstance(validated_instructions, ReAsk):
-                        raise ValidationError(
-                            f"Instructions validation failed: {validated_instructions}"
-                        )
-                    instructions = Instructions(validated_instructions)
-            else:
-                raise ValueError("Prompt or message history must be provided.")
+            # TODO(shreya): should there be any difference
+            #  to parsing params for prompt?
+            if instructions is not None and isinstance(instructions, Instructions):
+                instructions = instructions.format(**prompt_params)
 
-            action.log(
-                message_type="info",
-                instructions=instructions,
-                prompt=prompt,
-                prompt_params=prompt_params,
-                validated_prompt_params=prompt_params,
+            instructions, prompt = output_schema.preprocess_prompt(
+                api, instructions, prompt
             )
+
+            # validate prompt
+            if prompt_schema is not None and prompt is not None:
+                inputs = Inputs(
+                    llm_output=prompt.source,
+                )
+                iteration = Iteration(inputs=inputs)
+                call_log.iterations.insert(0, iteration)
+                validated_prompt = await prompt_schema.async_validate(
+                    iteration, prompt.source, self.metadata
+                )
+                iteration.outputs.validation_output = validated_prompt
+                if validated_prompt is None:
+                    raise ValidationError("Prompt validation failed")
+                if isinstance(validated_prompt, ReAsk):
+                    raise ValidationError(
+                        f"Prompt validation failed: {validated_prompt}"
+                    )
+                prompt = Prompt(validated_prompt)
+
+            # validate instructions
+            if instructions_schema is not None and instructions is not None:
+                inputs = Inputs(
+                    llm_output=instructions.source,
+                )
+                iteration = Iteration(inputs=inputs)
+                call_log.iterations.insert(0, iteration)
+                validated_instructions = await instructions_schema.async_validate(
+                    iteration, instructions.source, self.metadata
+                )
+                iteration.outputs.validation_output = validated_instructions
+                if validated_instructions is None:
+                    raise ValidationError("Instructions validation failed")
+                if isinstance(validated_instructions, ReAsk):
+                    raise ValidationError(
+                        f"Instructions validation failed: {validated_instructions}"
+                    )
+                instructions = Instructions(validated_instructions)
+        else:
+            raise ValueError("Prompt or message history must be provided.")
 
         return instructions, prompt, msg_history
 
@@ -1154,50 +1038,38 @@ class StreamRunner(Runner):
                 f"Missing required metadata keys: {', '.join(missing_keys)}"
             )
 
-        with start_action(
-            action_type="run",
-            instructions=self.instructions,
-            prompt=self.prompt,
-            api=self.api,
-            prompt_schema=self.prompt_schema,
-            instructions_schema=self.instructions_schema,
-            msg_history_schema=self.msg_history_schema,
-            output_schema=self.output_schema,
-            num_reasks=self.num_reasks,
-            metadata=self.metadata,
-        ):
-            (
-                instructions,
-                prompt,
-                msg_history,
-                prompt_schema,
-                instructions_schema,
-                msg_history_schema,
-                output_schema,
-            ) = (
-                self.instructions,
-                self.prompt,
-                self.msg_history,
-                self.prompt_schema,
-                self.instructions_schema,
-                self.msg_history_schema,
-                self.output_schema,
-            )
+        (
+            instructions,
+            prompt,
+            msg_history,
+            prompt_schema,
+            instructions_schema,
+            msg_history_schema,
+            output_schema,
+        ) = (
+            self.instructions,
+            self.prompt,
+            self.msg_history,
+            self.prompt_schema,
+            self.instructions_schema,
+            self.msg_history_schema,
+            self.output_schema,
+        )
 
-            return self.step(
-                index=0,
-                api=self.api,
-                instructions=instructions,
-                prompt=prompt,
-                msg_history=msg_history,
-                prompt_params=prompt_params,
-                prompt_schema=prompt_schema,
-                instructions_schema=instructions_schema,
-                msg_history_schema=msg_history_schema,
-                output_schema=output_schema,
-                output=self.output,
-                call_log=call_log,
-            )
+        return self.step(
+            index=0,
+            api=self.api,
+            instructions=instructions,
+            prompt=prompt,
+            msg_history=msg_history,
+            prompt_params=prompt_params,
+            prompt_schema=prompt_schema,
+            instructions_schema=instructions_schema,
+            msg_history_schema=msg_history_schema,
+            output_schema=output_schema,
+            output=self.output,
+            call_log=call_log,
+        )
 
     def step(
         self,
@@ -1230,111 +1102,94 @@ class StreamRunner(Runner):
         iteration = Iteration(inputs=inputs, outputs=outputs)
         call_log.iterations.push(iteration)
 
-        with start_action(
-            action_type="step",
-            index=index,
-            instructions=instructions,
-            prompt=prompt,
-            prompt_params=prompt_params,
-            prompt_schema=prompt_schema,
-            instructions_schema=instructions_schema,
-            msg_history_schema=msg_history_schema,
-            output_schema=output_schema,
-        ):
-            # Prepare: run pre-processing, and input validation.
-            if output:
-                instructions = None
-                prompt = None
-                msg_history = None
-            else:
-                instructions, prompt, msg_history = self.prepare(
-                    call_log,
-                    index,
-                    instructions,
-                    prompt,
-                    msg_history,
-                    prompt_params,
-                    api,
-                    prompt_schema,
-                    instructions_schema,
-                    msg_history_schema,
-                    output_schema,
-                )
-
-            iteration.inputs.prompt = prompt
-            iteration.inputs.instructions = instructions
-            iteration.inputs.msg_history = msg_history
-
-            # Call: run the API that returns a generator wrapped in LLMResponse
-            llm_response = self.call(
-                index, instructions, prompt, msg_history, api, output
+        # Prepare: run pre-processing, and input validation.
+        if output:
+            instructions = None
+            prompt = None
+            msg_history = None
+        else:
+            instructions, prompt, msg_history = self.prepare(
+                call_log,
+                index,
+                instructions,
+                prompt,
+                msg_history,
+                prompt_params,
+                api,
+                prompt_schema,
+                instructions_schema,
+                msg_history_schema,
+                output_schema,
             )
 
-            # Get the stream (generator) from the LLMResponse
-            stream = llm_response.stream_output
-            if stream is None:
+        iteration.inputs.prompt = prompt
+        iteration.inputs.instructions = instructions
+        iteration.inputs.msg_history = msg_history
+
+        # Call: run the API that returns a generator wrapped in LLMResponse
+        llm_response = self.call(index, instructions, prompt, msg_history, api, output)
+
+        # Get the stream (generator) from the LLMResponse
+        stream = llm_response.stream_output
+        if stream is None:
+            raise ValueError(
+                "No stream was returned from the API. Please check that "
+                "the API is returning a generator."
+            )
+
+        fragment = ""
+        parsed_fragment, validated_fragment, valid_op = None, None, None
+        verified = set()
+        # Loop over the stream
+        # and construct "fragments" of concatenated chunks
+        for chunk in stream:
+            # 1. Get the text from the chunk and append to fragment
+            chunk_text = self.get_chunk_text(chunk, api)
+            fragment += chunk_text
+
+            # 2. Parse the fragment
+            parsed_fragment, move_to_next = self.parse(
+                index, fragment, output_schema, verified
+            )
+            if move_to_next:
+                # Continue to next chunk
+                continue
+
+            # 3. Run output validation
+            validated_fragment = self.validate(
+                iteration,
+                index,
+                parsed_fragment,
+                output_schema,
+                validate_subschema=True,
+            )
+            if isinstance(validated_fragment, SkeletonReAsk):
                 raise ValueError(
-                    "No stream was returned from the API. Please check that "
-                    "the API is returning a generator."
+                    "Received fragment schema is an invalid sub-schema "
+                    "of the expected output JSON schema."
                 )
 
-            fragment = ""
-            parsed_fragment, validated_fragment, valid_op = None, None, None
-            verified = set()
-            # Loop over the stream
-            # and construct "fragments" of concatenated chunks
-            for chunk in stream:
-                # 1. Get the text from the chunk and append to fragment
-                chunk_text = self.get_chunk_text(chunk, api)
-                fragment += chunk_text
-
-                # 2. Parse the fragment
-                parsed_fragment, move_to_next = self.parse(
-                    index, fragment, output_schema, verified
-                )
-                if move_to_next:
-                    # Continue to next chunk
-                    continue
-
-                # 3. Run output validation
-                validated_fragment = self.validate(
-                    iteration,
-                    index,
-                    parsed_fragment,
-                    output_schema,
-                    validate_subschema=True,
-                )
-                if isinstance(validated_fragment, SkeletonReAsk):
-                    raise ValueError(
-                        "Received fragment schema is an invalid sub-schema "
-                        "of the expected output JSON schema."
-                    )
-
-                # 4. Introspect: inspect the validated fragment for reasks
-                reasks, valid_op = self.introspect(
-                    index, validated_fragment, output_schema
-                )
-                if reasks:
-                    raise ValueError(
-                        "Reasks are not yet supported with streaming. Please "
-                        "remove reasks from schema or disable streaming."
-                    )
-
-                # 5. Convert validated fragment to a pretty JSON string
-                try:
-                    pretty_validated_fragment = json.dumps(valid_op, indent=4)
-                except Exception as e:
-                    raise ValueError(
-                        f"Error formatting validated fragment JSON: {e}"
-                    ) from e
-
-                # 6. Yield raw and validated fragments
-                raw_yield = f"Raw LLM response:\n{fragment}\n"
-                validated_yield = (
-                    f"\nValidated response:\n{pretty_validated_fragment}\n"
+            # 4. Introspect: inspect the validated fragment for reasks
+            reasks, valid_op = self.introspect(index, validated_fragment, output_schema)
+            if reasks:
+                raise ValueError(
+                    "Reasks are not yet supported with streaming. Please "
+                    "remove reasks from schema or disable streaming."
                 )
 
-                yield raw_yield + validated_yield
+            # 5. Convert validated fragment to a pretty JSON string
+            try:
+                pretty_validated_fragment = json.dumps(valid_op, indent=4)
+            except Exception as e:
+                raise ValueError(
+                    f"Error formatting validated fragment JSON: {e}"
+                ) from e
+
+            # 6. Yield raw and validated fragments
+            raw_yield = f"Raw LLM response:\n{fragment}\n"
+            validated_yield = f"\nValidated response:\n{pretty_validated_fragment}\n"
+
+            yield raw_yield + validated_yield
 
         # Finally, add to logs
         iteration.outputs.raw_output = fragment
@@ -1388,28 +1243,21 @@ class StreamRunner(Runner):
         verified: set,
     ):
         """Parse the output."""
-        with start_action(action_type="parse", index=index) as action:
-            parsed_output, error = output_schema.parse(
-                output, stream=True, verified=verified
-            )
+        parsed_output, error = output_schema.parse(
+            output, stream=True, verified=verified
+        )
 
-            # Error can be either of
-            # (True/False/None/ValueError/string representing error)
-            if error:
-                # If parsing error is a string,
-                # it is an error from output_schema.parse_fragment()
-                if isinstance(error, str):
-                    raise ValueError("Unable to parse output: " + error)
-            # Else if either of
-            # (None/True/False/ValueError), return parsed_output and error
+        # Error can be either of
+        # (True/False/None/ValueError/string representing error)
+        if error:
+            # If parsing error is a string,
+            # it is an error from output_schema.parse_fragment()
+            if isinstance(error, str):
+                raise ValueError("Unable to parse output: " + error)
+        # Else if either of
+        # (None/True/False/ValueError), return parsed_output and error
 
-            action.log(
-                message_type="info",
-                parsed_output=parsed_output,
-                error=error,
-            )
-
-            return parsed_output, error
+        return parsed_output, error
 
 
 def msg_history_source(msg_history) -> List[Dict[str, str]]:
