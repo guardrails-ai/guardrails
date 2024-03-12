@@ -1,7 +1,7 @@
 import asyncio
 from typing import Any, Awaitable, Callable, Dict, Iterable, List, Optional, Union, cast
 
-from guard_rails_api_client.models.validate_payload_llm_api import ValidatePayloadLlmApi
+from guardrails_api_client.models.validate_payload_llm_api import ValidatePayloadLlmApi
 from pydantic import BaseModel
 
 from guardrails.utils.exception_utils import UserFacingException

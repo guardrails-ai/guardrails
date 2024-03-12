@@ -1,10 +1,10 @@
 import os
 from typing import Optional
 
-from guard_rails_api_client import AuthenticatedClient
-from guard_rails_api_client.api.guard import update_guard, validate
-from guard_rails_api_client.models import Guard, ValidatePayload
-from guard_rails_api_client.types import UNSET
+from guardrails_api_client import AuthenticatedClient
+from guardrails_api_client.api.guard import update_guard, validate
+from guardrails_api_client.models import Guard, ValidatePayload
+from guardrails_api_client.types import UNSET
 from httpx import Timeout
 
 
