@@ -1,4 +1,5 @@
 import importlib.util
+import os
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, Iterable
 from unittest.mock import MagicMock
@@ -15,6 +16,7 @@ from guardrails.llm_providers import (
     get_llm_ask,
 )
 from guardrails.utils.openai_utils import OPENAI_VERSION
+from guardrails.utils.safe_get import safe_get_with_brackets
 
 from .mocks import MockAsyncOpenAILlm, MockOpenAILlm
 
@@ -627,6 +629,13 @@ def test_get_llm_ask_openai_chat():
     reason="manifest is not installed",
 )
 def test_get_llm_ask_manifest(mocker):
+    def mock_os_environ_get(key, *args):
+        if key == "OPENAI_API_KEY":
+            return "sk-xxxxxxxxxxxxxx"
+        return safe_get_with_brackets(os.environ, key, *args)
+
+    mocker.patch("os.environ.get", side_effect=mock_os_environ_get)
+
     from manifest import Manifest
 
     from guardrails.llm_providers import ManifestCallable
