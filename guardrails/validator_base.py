@@ -32,7 +32,8 @@ class Filter:
 class Refrain:
     pass
 
-class OnFailAction: 
+
+class OnFailAction:
     NOOP = "noop"
     CUSTOM = "custom"
     REASK = "reask"
@@ -41,6 +42,7 @@ class OnFailAction:
     REFRAIN = "refrain"
     EXCEPTION = "exception"
     FIX_REASK = "fix_reask"
+
 
 def check_refrain_in_list(schema: List) -> bool:
     """Checks if a Refrain object exists in a list.
@@ -251,14 +253,16 @@ class Validator(Runnable):
     required_metadata_keys = []
     _metadata = {}
 
-    def __init__(self, on_fail: Optional[Union[Callable, OnFailAction]] = None, **kwargs):
+    def __init__(
+        self, on_fail: Optional[Union[Callable, OnFailAction]] = None, **kwargs
+    ):
         if on_fail is None:
-            on_fail = OnFailAction.NOOP.value
+            on_fail = OnFailAction.NOOP
         if isinstance(on_fail, OnFailAction):
-            self.on_fail_descriptor = on_fail.value
+            self.on_fail_descriptor = on_fail
             self.on_fail_method = None
         else:
-            self.on_fail_descriptor = OnFailAction.CUSTOM.value
+            self.on_fail_descriptor = OnFailAction.CUSTOM
             self.on_fail_method = on_fail
 
         # Store the kwargs for the validator.

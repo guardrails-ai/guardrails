@@ -27,7 +27,7 @@ class EndsWith(Validator):
         end: The required last element.
     """
 
-    def __init__(self, end: str, on_fail: str = OnFailAction.FIX):
+    def __init__(self, end: str, on_fail: OnFailAction.FIX):
         super().__init__(on_fail=on_fail, end=end)
         self._end = end
 
