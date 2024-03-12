@@ -18,5 +18,5 @@ notebook_names="${notebook_names%,}]"
 sed "s/notebook: \[.*\]/notebook: $notebook_names/" .github/workflows/examples_check.yml > .github/workflows/examples_check.yml.tmp
 mv .github/workflows/examples_check.yml.tmp .github/workflows/examples_check.yml
 
-sed "s/notebook: \[.*\]/notebook: $notebook_names/" .github/workflows/ci.yml > .github/workflows/ci.yml.tmp
-mv .github/workflows/ci.yml.tmp .github/workflows/ci.yml
+sed "s/notebook: \[.*\]/notebook: $notebook_names/" .github/workflows/notebook_checks.yml > .github/workflows/notebook_checks.yml.tmp
+mv .github/workflows/notebook_checks.yml.tmp .github/workflows/notebook_checks.yml
