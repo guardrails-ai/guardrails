@@ -216,8 +216,10 @@ def test_use():
 
     # Raises error when trying to `use` a validator on a non-string
     with pytest.raises(RuntimeError):
+
         class TestClass(BaseModel):
             another_field: str
+
         py_guard = Guard.from_pydantic(output_class=TestClass)
         py_guard.use(EndsWith("a"), OneLine(), LowerCase(), TwoWords(on_fail="reask"))
 
@@ -246,10 +248,14 @@ def test_use_many_instances():
 
     # Raises error when trying to `use_many` a validator on a non-string
     with pytest.raises(RuntimeError):
+
         class TestClass(BaseModel):
             another_field: str
+
         py_guard = Guard.from_pydantic(output_class=TestClass)
-        py_guard.use_many([EndsWith("a"), OneLine(), LowerCase(), TwoWords(on_fail="reask")])
+        py_guard.use_many(
+            [EndsWith("a"), OneLine(), LowerCase(), TwoWords(on_fail="reask")]
+        )
 
 
 def test_use_many_tuple():
