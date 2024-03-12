@@ -32,6 +32,7 @@ from guardrails.datatypes import List as ListDataType
 from guardrails.datatypes import Object as ObjectDataType
 from guardrails.datatypes import String as StringDataType
 from guardrails.datatypes import Time as TimeDataType
+from guardrails.utils.pydantic_utils.common import _create_bare_model
 from guardrails.utils.safe_get import safe_get
 from guardrails.validator_base import Validator
 from guardrails.validatorsattr import ValidatorsAttr
@@ -124,15 +125,6 @@ def is_enum(type_annotation: Any) -> bool:
     except TypeError:
         pass
     return False
-
-
-def _create_bare_model(
-    model: Union[Type[BaseModel], Type[List[Type[BaseModel]]]]
-) -> Type[BaseModel]:
-    class BareModel(BaseModel):
-        __annotations__ = getattr(model, "__annotations__", {})
-
-    return BareModel
 
 
 def convert_pydantic_model_to_openai_fn(
