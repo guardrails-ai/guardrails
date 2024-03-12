@@ -8,7 +8,7 @@ Guardrails is a Python framework that helps build reliable AI applications by pe
 
 
 <div align="center">
-<img src="img/with_and_without_guardrails.svg" alt="Guardrails in your application" width="1500px">
+<img src="static/img/with_and_without_guardrails.svg" alt="Guardrails in your application" width="1500px" />
 </div>
 
 
@@ -17,5 +17,5 @@ Guardrails is a Python framework that helps build reliable AI applications by pe
 Guardrails Hub is a collection of pre-built measures of specific types of risks (called 'validators'). Multiple validators can be combined together into Input and Output Guards that intercept the inputs and outputs of LLMs. Visit [Guardrails Hub](https://hub.guardrailsai.com/) to see the full list of validators and their documentation.
 
 <div align="center">
-<img src="img/guardrails_hub.gif" alt="Guardrails Hub gif" width="600px">
+<img src="static/img/guardrails_hub.gif" alt="Guardrails Hub gif" width="600px" />
 </div>
