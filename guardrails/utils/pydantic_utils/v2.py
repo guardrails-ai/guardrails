@@ -157,7 +157,7 @@ def convert_pydantic_model_to_openai_fn(
 
     if type_origin == list:
         json_schema = {
-            "title": f"List<{json_schema.get('title')}>",
+            "title": f"Array<{json_schema.get('title')}>",
             "type": "array",
             "items": json_schema,
         }

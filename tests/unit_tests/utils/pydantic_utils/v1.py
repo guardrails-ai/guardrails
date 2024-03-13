@@ -64,7 +64,7 @@ class TestConvertPydanticModelToOpenaiFn:
 
         # fmt: off
         expected_schema = {
-            "title": f"List<{expected_schema.get('title')}>",
+            "title": f"Array<{expected_schema.get('title')}>",
             "type": "array",
             "items": expected_schema
         }
@@ -72,7 +72,7 @@ class TestConvertPydanticModelToOpenaiFn:
 
         # fmt: off
         expected_fn_params = {  # noqa
-            "name": "List<Foo>",
+            "name": "Array<Foo>",
             "parameters": expected_schema
         }
         # fmt: on
