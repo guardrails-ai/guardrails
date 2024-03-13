@@ -1,12 +1,9 @@
 import inspect
 import os
 from typing import Any, Callable, Dict, List, Optional, cast
-from warnings import warn
 
 from guardrails.utils.openai_utils import get_static_openai_chat_create_func
 from guardrails.validator_base import (
-    VALIDATOR_IMPORT_WARNING,
-    VALIDATOR_NAMING,
     FailResult,
     PassResult,
     ValidationResult,
@@ -49,29 +46,12 @@ class SaliencyCheck(Validator):
             on_fail: Function to call when validation fails.
             threshold: Threshold for overlap between topics in document and summary.
         """
-
-        class_name = self.__class__.__name__
-        if class_name not in VALIDATOR_NAMING:
-            warn(
-                f"""Validator {class_name} is deprecated and
-                will be removed after version 0.5.x.
-                """,
-                FutureWarning,
-            )
-        else:
-            warn(
-                VALIDATOR_IMPORT_WARNING.format(
-                    validator_name=class_name,
-                    hub_validator_name=VALIDATOR_NAMING[class_name][0],
-                    hub_validator_url=VALIDATOR_NAMING[class_name][1],
-                ),
-                FutureWarning,
-            )
         super().__init__(
             on_fail,
             docs_dir=docs_dir,
             llm_callable=llm_callable,
             threshold=threshold,
+            class_name=self.__class__.__name__,
             **kwargs,
         )
 

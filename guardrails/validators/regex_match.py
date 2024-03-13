@@ -1,13 +1,10 @@
 import re
 import string
 from typing import Any, Callable, Dict, Optional
-from warnings import warn
 
 import rstr
 
 from guardrails.validator_base import (
-    VALIDATOR_IMPORT_WARNING,
-    VALIDATOR_NAMING,
     FailResult,
     PassResult,
     ValidationResult,
@@ -41,24 +38,6 @@ class RegexMatch(Validator):
     ):
         # todo -> something forces this to be passed as kwargs and therefore xml-ized.
         # match_types = ["fullmatch", "search"]
-        class_name = self.__class__.__name__
-        if class_name not in VALIDATOR_NAMING:
-            warn(
-                f"""Validator {class_name} is deprecated and
-                will be removed after version 0.5.x.
-                """,
-                FutureWarning,
-            )
-        else:
-            warn(
-                VALIDATOR_IMPORT_WARNING.format(
-                    validator_name=class_name,
-                    hub_validator_name=VALIDATOR_NAMING[class_name][0],
-                    hub_validator_url=VALIDATOR_NAMING[class_name][1],
-                ),
-                FutureWarning,
-            )
-
         if match_type is None:
             match_type = "fullmatch"
         assert match_type in [
@@ -66,7 +45,12 @@ class RegexMatch(Validator):
             "search",
         ], 'match_type must be in ["fullmatch", "search"]'
 
-        super().__init__(on_fail=on_fail, match_type=match_type, regex=regex)
+        super().__init__(
+            on_fail=on_fail,
+            match_type=match_type,
+            regex=regex,
+            class_name=self.__class__.__name__,
+        )
         self._regex = regex
         self._match_type = match_type
 

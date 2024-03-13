@@ -1,11 +1,8 @@
 import contextvars
 import re
 from typing import Any, Callable, Dict, Optional
-from warnings import warn
 
 from guardrails.validator_base import (
-    VALIDATOR_IMPORT_WARNING,
-    VALIDATOR_NAMING,
     FailResult,
     PassResult,
     ValidationResult,
@@ -47,24 +44,9 @@ class ExtractedSummarySentencesMatch(Validator):
         on_fail: Optional[Callable] = None,
         **kwargs: Optional[Dict[str, Any]],
     ):
-        class_name = self.__class__.__name__
-        if class_name not in VALIDATOR_NAMING:
-            warn(
-                f"""Validator {class_name} is deprecated and
-                will be removed after version 0.5.x.
-                """,
-                FutureWarning,
-            )
-        else:
-            warn(
-                VALIDATOR_IMPORT_WARNING.format(
-                    validator_name=class_name,
-                    hub_validator_name=VALIDATOR_NAMING[class_name][0],
-                    hub_validator_url=VALIDATOR_NAMING[class_name][1],
-                ),
-                FutureWarning,
-            )
-        super().__init__(on_fail, threshold=threshold, **kwargs)
+        super().__init__(
+            on_fail, threshold=threshold, class_name=self.__class__.__name__, **kwargs
+        )
         # TODO(shreya): Pass embedding_model, vector_db, document_store from spec
 
         self._threshold = float(threshold)

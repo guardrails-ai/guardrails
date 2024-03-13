@@ -14,6 +14,7 @@ from typing import (
     Union,
     cast,
 )
+from warnings import warn
 
 from langchain_core.messages import BaseMessage
 from langchain_core.runnables import Runnable, RunnableConfig
@@ -381,6 +382,26 @@ class Validator(Runnable):
     _metadata = {}
 
     def __init__(self, on_fail: Optional[Union[Callable, str]] = None, **kwargs):
+        # Raise a warning for deprecated validators
+        child_class_name = kwargs.get("class_name", None)
+        if child_class_name:
+            if child_class_name not in VALIDATOR_NAMING:
+                warn(
+                    f"""Validator {child_class_name} is deprecated and
+                    will be removed after version 0.5.x.
+                    """,
+                    FutureWarning,
+                )
+            else:
+                warn(
+                    VALIDATOR_IMPORT_WARNING.format(
+                        validator_name=child_class_name,
+                        hub_validator_name=VALIDATOR_NAMING[child_class_name][0],
+                        hub_validator_url=VALIDATOR_NAMING[child_class_name][1],
+                    ),
+                    FutureWarning,
+                )
+
         if on_fail is None:
             on_fail = "noop"
         if isinstance(on_fail, str):
