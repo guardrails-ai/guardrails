@@ -22,7 +22,6 @@ from typing import (
     overload,
 )
 
-from eliot import add_destinations, start_action
 from guardrails_api_client.models import AnyObject
 from guardrails_api_client.models import Guard as GuardModel
 from guardrails_api_client.models import (
