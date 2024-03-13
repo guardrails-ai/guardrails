@@ -1,7 +1,6 @@
 import inspect
 from collections import defaultdict
 from copy import deepcopy
-from dataclasses import dataclass
 from string import Template
 from typing import (
     Any,
@@ -23,6 +22,7 @@ from pydantic import BaseModel, Field
 from guardrails.classes import InputType
 from guardrails.constants import hub
 from guardrails.errors import ValidationError
+from guardrails.utils.dataclass import dataclass
 
 
 class Filter:
@@ -232,7 +232,7 @@ class FailResult(ValidationResult):
     fix_value: Optional[Any] = None
 
 
-@dataclass
+@dataclass  # type: ignore
 class Validator(Runnable):
     """Base class for validators."""
 

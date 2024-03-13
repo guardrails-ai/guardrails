@@ -197,13 +197,15 @@ class OpenAIChatCallable(OpenAIModel):
             )
 
         # Configure function calling if applicable (only for non-streaming)
+        fn_kwargs = {}
         if base_model and not kwargs.get("stream", False):
-            function_params = [convert_pydantic_model_to_openai_fn(base_model)]
-            if function_call is None:
-                function_call = {"name": function_params[0]["name"]}
-            fn_kwargs = {"functions": function_params, "function_call": function_call}
-        else:
-            fn_kwargs = {}
+            function_params = convert_pydantic_model_to_openai_fn(base_model)
+            if function_call is None and function_params:
+                function_call = {"name": function_params["name"]}
+                fn_kwargs = {
+                    "functions": [function_params],
+                    "function_call": function_call,
+                }
 
         # Call OpenAI
         if "api_key" in kwargs:
@@ -733,13 +735,15 @@ class AsyncOpenAIChatCallable(AsyncOpenAIModel):
             )
 
         # Configure function calling if applicable
+        fn_kwargs = {}
         if base_model:
-            function_params = [convert_pydantic_model_to_openai_fn(base_model)]
-            if function_call is None:
-                function_call = {"name": function_params[0]["name"]}
-            fn_kwargs = {"functions": function_params, "function_call": function_call}
-        else:
-            fn_kwargs = {}
+            function_params = convert_pydantic_model_to_openai_fn(base_model)
+            if function_call is None and function_params:
+                function_call = {"name": function_params["name"]}
+                fn_kwargs = {
+                    "functions": [function_params],
+                    "function_call": function_call,
+                }
 
         # Call OpenAI
         if "api_key" in kwargs:
