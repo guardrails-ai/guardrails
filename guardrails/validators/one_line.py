@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Dict
 
 from guardrails.logger import logger
 from guardrails.validator_base import (
@@ -23,11 +23,6 @@ class OneLine(Validator):
     | Supported data types          | `string`                               |
     | Programmatic fix              | Keep the first line, delete other text |
     """
-
-    def __init__(self, on_fail: Optional[Callable] = None):
-        super().__init__(
-            on_fail=on_fail,
-        )
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         logger.debug(f"Validating {value} is a single line...")

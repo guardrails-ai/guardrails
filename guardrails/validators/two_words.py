@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Dict
 
 from pydash.strings import words as _words
 
@@ -24,11 +24,6 @@ class TwoWords(Validator):
     | Supported data types          | `string`                          |
     | Programmatic fix              | Pick the first two words.         |
     """
-
-    def __init__(self, on_fail: Optional[Callable] = None):
-        super().__init__(
-            on_fail=on_fail,
-        )
 
     def _get_fix_value(self, value: str) -> str:
         words = value.split()

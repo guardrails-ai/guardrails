@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Dict
 
 from guardrails.validator_base import (
     FailResult,
@@ -24,11 +24,6 @@ class IsProfanityFree(Validator):
     | Supported data types          | `string`                          |
     | Programmatic fix              | None                              |
     """
-
-    def __init__(self, on_fail: Optional[Callable] = None):
-        super().__init__(
-            on_fail=on_fail,
-        )
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         try:
