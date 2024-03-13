@@ -32,7 +32,7 @@ from guardrails.datatypes import List as ListDataType
 from guardrails.datatypes import Object as ObjectDataType
 from guardrails.datatypes import String as StringDataType
 from guardrails.datatypes import Time as TimeDataType
-from guardrails.utils.pydantic_utils.common import _create_bare_model
+from guardrails.utils.pydantic_utils.common import schema_to_bare_model
 from guardrails.utils.safe_get import safe_get
 from guardrails.validator_base import Validator
 from guardrails.validatorsattr import ValidatorsAttr
@@ -263,7 +263,7 @@ def convert_pydantic_model_to_openai_fn(
         schema_model = safe_get(item_types, 0)
 
     # Create a bare model with no extra fields
-    bare_model = _create_bare_model(schema_model)
+    bare_model = schema_to_bare_model(schema_model)
 
     # Convert Pydantic model to JSON schema
     json_schema = bare_model.schema()

@@ -3,7 +3,7 @@ from copy import deepcopy
 import pydantic
 from pydantic import BaseModel, Field
 
-from guardrails.utils.pydantic_utils.common import _create_bare_model
+from guardrails.utils.pydantic_utils.common import schema_to_bare_model
 
 PYDANTIC_VERSION = pydantic.version.VERSION
 
@@ -31,14 +31,14 @@ foo_schema = {
 
 
 # These tests demonstrate the issue fixed in PR #616
-class TestCreateBareModel:
+class TestSchemaToBareModel:
     def test_with_model_type(self):
         expected_schema = deepcopy(foo_schema)
         # When pushed through BareModel it loses the description on any properties.
         del expected_schema["properties"]["bar"]["description"]
 
         # Current logic
-        bare_model = _create_bare_model(Foo)
+        bare_model = schema_to_bare_model(Foo)
 
         # Convert Pydantic model to JSON schema
         if PYDANTIC_VERSION.startswith("1"):
@@ -57,7 +57,7 @@ class TestCreateBareModel:
         empty_schema = {"properties": {}, "title": "BareModel", "type": "object"}
 
         # Previous logic
-        bare_model = _create_bare_model(type(Foo))
+        bare_model = schema_to_bare_model(type(Foo))
 
         # Convert Pydantic model to JSON schema
         if PYDANTIC_VERSION.startswith("1"):

@@ -1,6 +1,7 @@
 import inspect
 from collections import defaultdict
 from copy import deepcopy
+from dataclasses import dataclass
 from string import Template
 from typing import (
     Any,
@@ -231,10 +232,11 @@ class FailResult(ValidationResult):
     fix_value: Optional[Any] = None
 
 
+@dataclass
 class Validator(Runnable):
     """Base class for validators."""
 
-    rail_alias: str
+    rail_alias: str = ""
 
     run_in_separate_process = False
     override_value_on_pass = False

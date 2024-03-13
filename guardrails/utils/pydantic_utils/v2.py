@@ -12,6 +12,7 @@ from typing import (
     Type,
     TypeVar,
     Union,
+    cast,
     get_args,
     get_origin,
 )
@@ -32,7 +33,6 @@ from guardrails.datatypes import List as ListDataType
 from guardrails.datatypes import Object as ObjectDataType
 from guardrails.datatypes import String as StringDataType
 from guardrails.datatypes import Time as TimeDataType
-from guardrails.utils.pydantic_utils.common import _create_bare_model
 from guardrails.utils.safe_get import safe_get
 from guardrails.validator_base import Validator
 from guardrails.validatorsattr import ValidatorsAttr
@@ -149,10 +149,10 @@ def convert_pydantic_model_to_openai_fn(
         # No List[List] support; we've already declared that in our types
         schema_model = safe_get(item_types, 0)
 
-    bare_model = _create_bare_model(schema_model)
+    schema_model = cast(Type[BaseModel], schema_model)
 
     # Convert Pydantic model to JSON schema
-    json_schema = bare_model.model_json_schema()
+    json_schema = schema_model.model_json_schema()
     json_schema["title"] = schema_model.__name__
 
     if type_origin == list:
