@@ -38,7 +38,9 @@ class ValidLength(Validator):
         on_fail: Optional[Callable] = None,
     ):
         super().__init__(
-            on_fail=on_fail, min=min, max=max, class_name=self.__class__.__name__
+            on_fail=on_fail,
+            min=min,
+            max=max,
         )
         self._min = to_int(min)
         self._max = to_int(max)

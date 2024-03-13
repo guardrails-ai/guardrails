@@ -26,7 +26,9 @@ class TwoWords(Validator):
     """
 
     def __init__(self, on_fail: Optional[Callable] = None):
-        super().__init__(on_fail=on_fail, class_name=self.__class__.__name__)
+        super().__init__(
+            on_fail=on_fail,
+        )
 
     def _get_fix_value(self, value: str) -> str:
         words = value.split()

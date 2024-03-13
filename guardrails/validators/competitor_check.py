@@ -44,9 +44,7 @@ class CompetitorCheck(Validator):
         competitors: List[str],
         on_fail: Optional[Callable] = None,
     ):
-        super().__init__(
-            competitors=competitors, on_fail=on_fail, class_name=self.__class__.__name__
-        )
+        super().__init__(competitors=competitors, on_fail=on_fail)
         self._competitors = competitors
         model = "en_core_web_trf"
         if spacy is None:

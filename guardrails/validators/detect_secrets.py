@@ -56,7 +56,7 @@ class DetectSecrets(Validator):
     """
 
     def __init__(self, on_fail: Union[Callable[..., Any], None] = None, **kwargs):
-        super().__init__(on_fail, class_name=self.__class__.__name__, **kwargs)
+        super().__init__(on_fail, **kwargs)
 
         # Check if detect-secrets is installed
         if detect_secrets is None:

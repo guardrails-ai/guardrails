@@ -26,7 +26,10 @@ class SqlColumnPresence(Validator):
     """
 
     def __init__(self, cols: List[str], on_fail: Optional[Callable] = None):
-        super().__init__(on_fail=on_fail, cols=cols, class_name=self.__class__.__name__)
+        super().__init__(
+            on_fail=on_fail,
+            cols=cols,
+        )
         self._cols = set(cols)
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:

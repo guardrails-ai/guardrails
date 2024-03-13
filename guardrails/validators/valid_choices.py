@@ -28,7 +28,8 @@ class ValidChoices(Validator):
 
     def __init__(self, choices: List[Any], on_fail: Optional[Callable] = None):
         super().__init__(
-            on_fail=on_fail, choices=choices, class_name=self.__class__.__name__
+            on_fail=on_fail,
+            choices=choices,
         )
         self._choices = choices
 

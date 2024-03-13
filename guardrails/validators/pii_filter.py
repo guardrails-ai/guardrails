@@ -78,7 +78,6 @@ class PIIFilter(Validator):
         super().__init__(
             on_fail,
             pii_entities=pii_entities,
-            class_name=self.__class__.__name__,
             **kwargs,
         )
         self.pii_entities = pii_entities

@@ -28,7 +28,8 @@ class ExcludeSqlPredicates(Validator):
 
     def __init__(self, predicates: List[str], on_fail: Optional[Callable] = None):
         super().__init__(
-            on_fail=on_fail, predicates=predicates, class_name=self.__class__.__name__
+            on_fail=on_fail,
+            predicates=predicates,
         )
         self._predicates = set(predicates)
 

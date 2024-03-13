@@ -49,7 +49,6 @@ class RegexMatch(Validator):
             on_fail=on_fail,
             match_type=match_type,
             regex=regex,
-            class_name=self.__class__.__name__,
         )
         self._regex = regex
         self._match_type = match_type

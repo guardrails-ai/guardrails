@@ -47,9 +47,7 @@ class ExtractiveSummary(Validator):
         on_fail: Optional[Callable] = None,
         **kwargs,
     ):
-        super().__init__(
-            on_fail, threshold=threshold, class_name=self.__class__.__name__, **kwargs
-        )
+        super().__init__(on_fail, threshold=threshold, **kwargs)
 
         self._threshold = threshold
 

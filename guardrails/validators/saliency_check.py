@@ -51,7 +51,6 @@ class SaliencyCheck(Validator):
             docs_dir=docs_dir,
             llm_callable=llm_callable,
             threshold=threshold,
-            class_name=self.__class__.__name__,
             **kwargs,
         )
 

@@ -47,7 +47,7 @@ class IsHighQualityTranslation(Validator):
     """
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, class_name=self.__class__.__name__, **kwargs)
+        super().__init__(*args, **kwargs)
         if download_model is None or load_from_checkpoint is None:
             raise RuntimeError(
                 "is-high-quality-translation validator requires "

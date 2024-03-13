@@ -37,7 +37,6 @@ class BugFreeSQL(Validator):
             on_fail,
             conn=conn,
             schema_file=schema_file,
-            class_name=self.__class__.__name__,
         )
         self._driver: SQLDriver = create_sql_driver(schema_file=schema_file, conn=conn)
 

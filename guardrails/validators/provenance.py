@@ -120,7 +120,6 @@ class ProvenanceV0(Validator):
             on_fail,
             threshold=threshold,
             validation_method=validation_method,
-            class_name=self.__class__.__name__,
             **kwargs,
         )
         self._threshold = float(threshold)
@@ -412,7 +411,6 @@ class ProvenanceV1(Validator):
             llm_callable=llm_callable,
             top_k=top_k,
             max_tokens=max_tokens,
-            class_name=self.__class__.__name__,
             **kwargs,
         )
         if validation_method not in ["sentence", "full"]:

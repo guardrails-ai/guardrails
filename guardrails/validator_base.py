@@ -161,6 +161,7 @@ VALIDATOR_NAMING = {
         "ValidURL",
         "https://hub.guardrailsai.com/validator/guardrails/valid_url",
     ],
+    "PydanticFieldValidator": [],
 }
 
 
@@ -383,22 +384,22 @@ class Validator(Runnable):
 
     def __init__(self, on_fail: Optional[Union[Callable, str]] = None, **kwargs):
         # Raise a warning for deprecated validators
-        child_class_name = kwargs.get("class_name", None)
-        if child_class_name:
-            if child_class_name not in VALIDATOR_NAMING:
-                warn(
-                    f"""Validator {child_class_name} is deprecated and
-                    will be removed after version 0.5.x.
-                    """,
-                    FutureWarning,
-                )
-            else:
+        child_class_name = str(type(self).__name__)
+        if child_class_name in VALIDATOR_NAMING:
+            if VALIDATOR_NAMING[child_class_name]:
                 warn(
                     VALIDATOR_IMPORT_WARNING.format(
                         validator_name=child_class_name,
                         hub_validator_name=VALIDATOR_NAMING[child_class_name][0],
                         hub_validator_url=VALIDATOR_NAMING[child_class_name][1],
                     ),
+                    FutureWarning,
+                )
+            else:
+                warn(
+                    f"""{child_class_name} is deprecated and
+                    will be removed after version 0.5.x.
+                    """,
                     FutureWarning,
                 )
 

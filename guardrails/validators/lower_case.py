@@ -24,7 +24,7 @@ class LowerCase(Validator):
     """
 
     def __init__(self, on_fail: Optional[Callable] = None, **kwargs):
-        super().__init__(on_fail=on_fail, class_name=self.__class__.__name__, **kwargs)
+        super().__init__(on_fail=on_fail, **kwargs)
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         logger.debug(f"Validating {value} is lower case...")

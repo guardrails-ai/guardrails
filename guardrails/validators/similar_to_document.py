@@ -52,7 +52,6 @@ class SimilarToDocument(Validator):
             document=document,
             threshold=threshold,
             model=model,
-            class_name=self.__class__.__name__,
         )
         if not _HAS_NUMPY:
             raise ImportError(

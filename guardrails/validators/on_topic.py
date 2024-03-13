@@ -94,7 +94,6 @@ class OnTopic(Validator):
             llm_callable=llm_callable,
             on_fail=on_fail,
             model_threshold=model_threshold,
-            class_name=self.__class__.__name__,
         )
         self._valid_topics = valid_topics
 

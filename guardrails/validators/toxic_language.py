@@ -73,7 +73,6 @@ class ToxicLanguage(Validator):
             on_fail,
             threshold=threshold,
             validation_method=validation_method,
-            class_name=self.__class__.__name__,
             **kwargs,
         )
         self._threshold = float(threshold)

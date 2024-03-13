@@ -27,7 +27,10 @@ class EndsWith(Validator):
     """
 
     def __init__(self, end: str, on_fail: str = "fix"):
-        super().__init__(on_fail=on_fail, end=end, class_name=self.__class__.__name__)
+        super().__init__(
+            on_fail=on_fail,
+            end=end,
+        )
         self._end = end
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:

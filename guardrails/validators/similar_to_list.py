@@ -51,7 +51,6 @@ class SimilarToList(Validator):
             on_fail,
             standard_deviations=standard_deviations,
             threshold=threshold,
-            class_name=self.__class__.__name__,
             **kwargs,
         )
         self._standard_deviations = int(standard_deviations)

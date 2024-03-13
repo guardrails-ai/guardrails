@@ -38,7 +38,6 @@ class PydanticFieldValidator(Validator):
         super().__init__(
             on_fail,
             field_validator=field_validator,
-            class_name=self.__class__.__name__,
             **kwargs,
         )
         self.field_validator = field_validator

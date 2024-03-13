@@ -32,7 +32,6 @@ class ReadingTime(Validator):
         super().__init__(
             on_fail=on_fail,
             reading_time=reading_time,
-            class_name=self.__class__.__name__,
         )
         self._max_time = reading_time
 

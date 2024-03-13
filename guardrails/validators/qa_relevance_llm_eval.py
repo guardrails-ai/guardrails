@@ -39,7 +39,6 @@ class QARelevanceLLMEval(Validator):
         super().__init__(
             on_fail,
             llm_callable=llm_callable,
-            class_name=self.__class__.__name__,
             **kwargs,
         )
 
