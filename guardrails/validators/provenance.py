@@ -130,8 +130,8 @@ class ProvenanceV0(Validator):
             warnings.warn(
                 VALIDATOR_IMPORT_WARNING.format(
                     validator_name=class_name,
-                    hub_validator_name=VALIDATOR_NAMING.get(class_name)[0],
-                    hub_validator_url=VALIDATOR_NAMING.get(class_name)[1],
+                    hub_validator_name=VALIDATOR_NAMING[class_name][0],
+                    hub_validator_url=VALIDATOR_NAMING[class_name][1],
                 ),
                 FutureWarning,
             )
@@ -433,8 +433,8 @@ class ProvenanceV1(Validator):
             warnings.warn(
                 VALIDATOR_IMPORT_WARNING.format(
                     validator_name=class_name,
-                    hub_validator_name=VALIDATOR_NAMING.get(class_name)[0],
-                    hub_validator_url=VALIDATOR_NAMING.get(class_name)[1],
+                    hub_validator_name=VALIDATOR_NAMING[class_name][0],
+                    hub_validator_url=VALIDATOR_NAMING[class_name][1],
                 ),
                 FutureWarning,
             )
