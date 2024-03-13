@@ -46,7 +46,6 @@ class SaliencyCheck(Validator):
             on_fail: Function to call when validation fails.
             threshold: Threshold for overlap between topics in document and summary.
         """
-
         super().__init__(
             on_fail,
             docs_dir=docs_dir,

@@ -1,5 +1,4 @@
 # This file contains the validator for the exclude-sql-predicates guardrail
-
 from typing import Any, Callable, Dict, List, Optional
 
 from guardrails.validator_base import (
@@ -28,7 +27,10 @@ class ExcludeSqlPredicates(Validator):
     """
 
     def __init__(self, predicates: List[str], on_fail: Optional[Callable] = None):
-        super().__init__(on_fail=on_fail, predicates=predicates)
+        super().__init__(
+            on_fail=on_fail,
+            predicates=predicates,
+        )
         self._predicates = set(predicates)
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:

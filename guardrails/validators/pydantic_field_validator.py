@@ -1,5 +1,4 @@
 from typing import Any, Callable, Dict, Optional
-from warnings import warn
 
 from guardrails.validator_base import (
     FailResult,
@@ -36,16 +35,11 @@ class PydanticFieldValidator(Validator):
         on_fail: Optional[Callable[..., Any]] = None,
         **kwargs,
     ):
-        warn(
-            """
-            PydanticFieldValidator is deprecated (v0.3.3); will be removed (v0.4.0).
-            Instead, use a custom Guardrails validator as shown here:
-            https://www.guardrailsai.com/docs/concepts/validators#custom-validators
-            """,
-            DeprecationWarning,
-            stacklevel=2,
+        super().__init__(
+            on_fail,
+            field_validator=field_validator,
+            **kwargs,
         )
-        super().__init__(on_fail, field_validator=field_validator, **kwargs)
         self.field_validator = field_validator
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
