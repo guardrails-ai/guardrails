@@ -11,6 +11,8 @@ from guardrails.utils.docs_utils import get_chunks_from_text
 from guardrails.utils.openai_utils import OpenAIClient
 from guardrails.utils.validator_utils import PROVENANCE_V1_PROMPT
 from guardrails.validator_base import (
+    VALIDATOR_IMPORT_WARNING,
+    VALIDATOR_NAMING,
     FailResult,
     PassResult,
     ValidationResult,
@@ -116,14 +118,23 @@ class ProvenanceV0(Validator):
         on_fail: Optional[Callable] = None,
         **kwargs,
     ):
-        warnings.warn(
-            """
-            Using this validator from `guardrails.validators` is deprecated.
-            Please install and import this validator from Guardrails Hub instead.
-            This validator would be removed from this module in the next major release.
-            """,
-            FutureWarning,
-        )
+        class_name = self.__class__.__name__
+        if class_name not in VALIDATOR_NAMING:
+            warnings.warn(
+                f"""Validator {class_name} is deprecated and
+                will be removed after version 0.5.x.
+                """,
+                FutureWarning,
+            )
+        else:
+            warnings.warn(
+                VALIDATOR_IMPORT_WARNING.format(
+                    validator_name=class_name,
+                    hub_validator_name=VALIDATOR_NAMING.get(class_name)[0],
+                    hub_validator_url=VALIDATOR_NAMING.get(class_name)[1],
+                ),
+                FutureWarning,
+            )
         super().__init__(
             on_fail, threshold=threshold, validation_method=validation_method, **kwargs
         )
@@ -410,14 +421,23 @@ class ProvenanceV1(Validator):
             embed_function (Callable, optional): A callable that creates embeddings for
                 the sources. Must accept a list of strings and returns float np.array.
         """
-        warnings.warn(
-            """
-            Using this validator from `guardrails.validators` is deprecated.
-            Please install and import this validator from Guardrails Hub instead.
-            This validator would be removed from this module in the next major release.
-            """,
-            FutureWarning,
-        )
+        class_name = self.__class__.__name__
+        if class_name not in VALIDATOR_NAMING:
+            warnings.warn(
+                f"""Validator {class_name} is deprecated and
+                will be removed after version 0.5.x.
+                """,
+                FutureWarning,
+            )
+        else:
+            warnings.warn(
+                VALIDATOR_IMPORT_WARNING.format(
+                    validator_name=class_name,
+                    hub_validator_name=VALIDATOR_NAMING.get(class_name)[0],
+                    hub_validator_url=VALIDATOR_NAMING.get(class_name)[1],
+                ),
+                FutureWarning,
+            )
         super().__init__(
             on_fail,
             validation_method=validation_method,
