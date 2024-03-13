@@ -45,7 +45,7 @@ class TestConvertPydanticModelToOpenaiFn:
         del expected_schema["properties"]["bar"]["description"]
 
         # fmt: off
-        expected_fn_params = {
+        expected_fn_params = {  # noqa
             "name": "Foo",
             "parameters": expected_schema
         }
@@ -71,7 +71,7 @@ class TestConvertPydanticModelToOpenaiFn:
         # fmt: on
 
         # fmt: off
-        expected_fn_params = {
+        expected_fn_params = {  # noqa
             "name": "List<Foo>",
             "parameters": expected_schema
         }
