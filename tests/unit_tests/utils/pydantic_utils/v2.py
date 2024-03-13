@@ -40,8 +40,6 @@ foo_schema = {
 class TestConvertPydanticModelToOpenaiFn:
     def test_object_schema(self):
         expected_schema = deepcopy(foo_schema)
-        # When pushed through BareModel it loses the description on any properties.
-        del expected_schema["properties"]["bar"]["description"]
 
         # fmt: off
         expected_fn_params = {
@@ -56,8 +54,6 @@ class TestConvertPydanticModelToOpenaiFn:
 
     def test_list_schema(self):
         expected_schema = deepcopy(foo_schema)
-        # When pushed through BareModel it loses the description on any properties.
-        del expected_schema["properties"]["bar"]["description"]
 
         # fmt: off
         expected_schema = {
