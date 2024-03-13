@@ -17,8 +17,6 @@ python = "^3.8.1"
 lxml = "^4.9.3"
 openai = "<2"
 rich = "^13.6.0"
-eliot = "^1.15.0"
-eliot-tree = "^21.0.0"
 pydantic = ">=1.10.9, <3.0"
 typer = {extras = ["all"], version = "^0.9.0"}
 griffe = "^0.36.9"
@@ -39,15 +37,15 @@ numpy = {version = ">=1.24", optional = true}
 alt-profanity-check = {version = "^1.3.1", optional = true}
 detect-secrets = {version = "^1.4.0", optional = true}
 manifest-ml = {version = "^0.1.8", optional = true}
-transformers = {version = "^4.11.3", optional = true}
+transformers = {version = "^4.36.0", optional = true}
 presidio_analyzer = {version = "^2.2.33", optional = true}
 presidio_anonymizer = {version = "^2.2.33", optional = true}
-spacy-transformers = {version = "^1.3.3", optional = true}
+spacy-transformers = {version = "^1.3.4", optional = true}
 anthropic = {version = "^0.7.2", optional = true}
 torch = {version = "^2.1.1", optional = true}
 nbdoc = {version = "^0.0.82", optional = true}
-guardrails-ai-unbabel-comet = {version = "^2.2.1", optional = true}
-huggingface_hub = {version = "^0.16.4", optional = true}
+unbabel-comet = {version = "^2.2.1", optional = true}
+huggingface_hub = {version = "^0.19.3", optional = true}
 pydash = "^7.0.6"
 docspec_python = "2.2.1"
 pydoc-markdown = "4.8.2"
@@ -67,7 +65,7 @@ vectordb = ["faiss-cpu", "numpy"]
 profanity = ["alt-profanity-check"]
 detect-secrets = ["detect-secrets"]
 manifest = ["manifest-ml"]
-high_quality_translation = ["guardrails-ai-unbabel-comet", "huggingface_hub"]
+high_quality_translation = ["unbabel-comet", "huggingface_hub"]
 toxic_language = ["transformers", "torch"]
 pii = ["presidio_analyzer", "presidio_anonymizer"]
 competitor-check = ["spacy-transformers"]
@@ -116,3 +114,11 @@ priority = "primary"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.isort]
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+ensure_newline_before_comments = true
+line_length = 88
