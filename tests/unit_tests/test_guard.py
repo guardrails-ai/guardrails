@@ -214,6 +214,15 @@ def test_use():
     assert guard._validators[4]._kwargs["max"] == 12
     assert guard._validators[4].on_fail_descriptor == "refrain"  # bc we set it
 
+    # Raises error when trying to `use` a validator on a non-string
+    with pytest.raises(RuntimeError):
+
+        class TestClass(BaseModel):
+            another_field: str
+
+        py_guard = Guard.from_pydantic(output_class=TestClass)
+        py_guard.use(EndsWith("a"), OneLine(), LowerCase(), TwoWords(on_fail="reask"))
+
 
 def test_use_many_instances():
     guard: Guard = Guard().use_many(
@@ -236,6 +245,17 @@ def test_use_many_instances():
 
     assert isinstance(guard._validators[3], TwoWords)
     assert guard._validators[3].on_fail_descriptor == "reask"  # bc we set it
+
+    # Raises error when trying to `use_many` a validator on a non-string
+    with pytest.raises(RuntimeError):
+
+        class TestClass(BaseModel):
+            another_field: str
+
+        py_guard = Guard.from_pydantic(output_class=TestClass)
+        py_guard.use_many(
+            [EndsWith("a"), OneLine(), LowerCase(), TwoWords(on_fail="reask")]
+        )
 
 
 def test_use_many_tuple():
@@ -278,14 +298,13 @@ def test_use_many_tuple():
 def test_validate():
     guard: Guard = (
         Guard()
-        .use(EndsWith("a"))
         .use(OneLine)
         .use(LowerCase(on_fail="fix"))
         .use(TwoWords)
         .use(ValidLength, 0, 12, on_fail="refrain")
     )
 
-    llm_output = "Oh Canada"  # bc it meets our criteria
+    llm_output: str = "Oh Canada"  # bc it meets our criteria
 
     response = guard.validate(llm_output)
 
