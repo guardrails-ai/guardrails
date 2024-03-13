@@ -22,15 +22,15 @@ from typing import (
     overload,
 )
 
-from guard_rails_api_client.models import AnyObject
-from guard_rails_api_client.models import Guard as GuardModel
-from guard_rails_api_client.models import (
+from guardrails_api_client.models import AnyObject
+from guardrails_api_client.models import Guard as GuardModel
+from guardrails_api_client.models import (
     History,
     HistoryEvent,
     ValidatePayload,
     ValidationOutput,
 )
-from guard_rails_api_client.types import UNSET
+from guardrails_api_client.types import UNSET
 from langchain_core.messages import BaseMessage
 from langchain_core.runnables import Runnable, RunnableConfig
 from pydantic import BaseModel
