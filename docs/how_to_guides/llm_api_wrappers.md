@@ -6,12 +6,14 @@ import TabItem from '@theme/TabItem';
 Guardrails' `Guard` wrappers provide a simple way to add Guardrails to your LLM API calls. The wrappers are designed to be used with any LLM API.
 
 There are three ways to use Guardrails with an LLM API:
-1. [**Natively-supported LLMs**](#natively-supported-llms): Guardrails provides out-of-the-box wrappers for OpenAI, Cohere, Anthropic and HuggingFace. If you're using any of these APIs, check out the documentation in the [Natively-supported LLMs](#natively-supported-llms) section.
-2. [**LLMs supported through LiteLLM**](#litellm): Guardrails provides an easy integration with LiteLLM, a lightweight abstraction over LLM APIs that supports over 100+ LLMs. If you're using an LLM that isn't natively supported by Guardrails, you can use LiteLLM to integrate it with Guardrails. Check out the documentation in the [LiteLLM](#litellm) section.
-3. [**Custom LLM**](#custom-llm): If you're using an LLM that isn't natively supported by Guardrails and you don't want to use LiteLLM, you can build a custom LLM API wrapper. Check out the documentation in this [Custom LLM](#custom-llm) section.
+1. [**Natively-supported LLMs**](#natively-supported-llms): Guardrails provides out-of-the-box wrappers for OpenAI, Cohere, Anthropic and HuggingFace. If you're using any of these APIs, check out the documentation in [this](#natively-supported-llms) section.
+2. [**LLMs supported through LiteLLM**](#llms-supported-via-litellm): Guardrails provides an easy integration with [liteLLM](https://docs.litellm.ai/docs/), a lightweight abstraction over LLM APIs that supports over 100+ LLMs. If you're using an LLM that isn't natively supported by Guardrails, you can use LiteLLM to integrate it with Guardrails. Check out the documentation in [this](#llms-supported-via-litellm) section.
+3. [**Build a custom LLM wrapper**](#build-a-custom-llm-wrapper): If you're using an LLM that isn't natively supported by Guardrails and you don't want to use LiteLLM, you can build a custom LLM API wrapper. Check out the documentation in [this](#build-a-custom-llm-wrapper) section.
 
 
 ## Natively-supported LLMs
+
+Guardrails provides native support for a select few LLMs and Manifest. If you're using any of these LLMs, you can use Guardrails' out-of-the-box wrappers to add Guardrails to your LLM API calls.
 
 <Tabs>
   <TabItem value="openai" label="OpenAI" default>
@@ -79,7 +81,7 @@ There are three ways to use Guardrails with an LLM API:
     )
     ```
   </TabItem>
-  <TabItem value="huggingface" label="🤗 HuggingFace">
+  <TabItem value="huggingface" label="🤗 Transformers">
     ```python
     import torch
     from guardrails import Guard
@@ -196,7 +198,7 @@ There are three ways to use Guardrails with an LLM API:
 
 ## LLMs supported via LiteLLM
 
-LiteLLM is a lightweight wrapper that unifies the interface for over 100+ LLMs. Guardrails only supports 4 LLMs natively, but you can use Guardrails with LiteLLM to support over 100+ LLMs.
+[LiteLLM](https://docs.litellm.ai/docs/) is a lightweight wrapper that unifies the interface for over 100+ LLMs. Guardrails only supports 4 LLMs natively, but you can use Guardrails with LiteLLM to support over 100+ LLMs. You can read more about the LLMs supported by LiteLLM [here](https://docs.litellm.ai/docs/providers).
 
 In order to use Guardrails with any of the LLMs supported through liteLLM, you need to do the following:
 1. Call the `Guard.__call__` method with `litellm.completion` as the first argument.
@@ -244,7 +246,6 @@ response = guard(
     messages=[{"role": "user", "content": "hello"}]
 )
 ```
-
 
 ## Build a custom LLM wrapper
 
