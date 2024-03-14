@@ -1074,6 +1074,12 @@ class Guard(Runnable, Generic[OT]):
         Args:
             validators: The validators to add to the prompt.
         """
+        warnings.warn(
+            """The `with_prompt_validation` method is deprecated,
+            and will be removed in 0.5.x. Instead, please use
+            `Guard().use(YourValidator, on='prompt')`.""",
+            FutureWarning,
+        )
         if self.rail.prompt_schema:
             warnings.warn("Overriding existing prompt validators.")
         schema = StringSchema.from_string(
@@ -1091,6 +1097,12 @@ class Guard(Runnable, Generic[OT]):
         Args:
             validators: The validators to add to the instructions.
         """
+        warnings.warn(
+            """The `with_instructions_validation` method is deprecated,
+            and will be removed in 0.5.x. Instead, please use
+            `Guard().use(YourValidator, on='instructions')`.""",
+            FutureWarning,
+        )
         if self.rail.instructions_schema:
             warnings.warn("Overriding existing instructions validators.")
         schema = StringSchema.from_string(
@@ -1108,6 +1120,12 @@ class Guard(Runnable, Generic[OT]):
         Args:
             validators: The validators to add to the msg_history.
         """
+        warnings.warn(
+            """The `with_msg_history_validation` method is deprecated,
+            and will be removed in 0.5.x. Instead, please use
+            `Guard().use(YourValidator, on='msg_history')`.""",
+            FutureWarning,
+        )
         if self.rail.msg_history_schema:
             warnings.warn("Overriding existing msg_history validators.")
         schema = StringSchema.from_string(
