@@ -1117,31 +1117,88 @@ class Guard(Runnable, Generic[OT]):
         return self
 
     @overload
-    def use(self, validator: Validator) -> "Guard":
+    def use(self, validator: Validator, on="output") -> "Guard":
         ...
 
     @overload
-    def use(self, validator: Type[Validator], *args, **kwargs) -> "Guard":
+    def use(self, validator: Type[Validator], *args, on="output", **kwargs) -> "Guard":
         ...
 
     def use(
-        self, validator: Union[Validator, Type[Validator]], *args, **kwargs
+        self, validator: Union[Validator, Type[Validator]], *args, on="output", **kwargs
     ) -> "Guard":
-        """Use a validator to validate results of an LLM request.
+        """Use a validator to validate either of the following:
+        - The output of an LLM request
+        - The prompt
+        - The instructions
+        - The message history
 
-        *Note*: `use` is only available for string output types.
+        *Note*: For on="output", `use` is only available for string output types.
+
+        Args:
+            validator: The validator to use. Either the class or an instance.
+            on: The part of the LLM request to validate. Defaults to "output".
         """
+        if on == "prompt":
+            if validator:
+                hydrated_validator = get_validator(validator, *args, **kwargs)
+                # If the prompt schema exists, add the validator to it
+                if self.rail.prompt_schema:
+                    self.rail.prompt_schema.root_datatype.validators.append(
+                        hydrated_validator
+                    )
+                else:
+                    # Otherwise, create a new schema with the validator
+                    schema = StringSchema.from_string(
+                        validators=[hydrated_validator],
+                    )
+                    self.rail.prompt_schema = schema
+        elif on == "instructions":
+            if validator:
+                hydrated_validator = get_validator(validator, *args, **kwargs)
+                # If the instructions schema exists, add the validator to it
+                if self.rail.instructions_schema:
+                    self.rail.instructions_schema.root_datatype.validators.append(
+                        hydrated_validator
+                    )
+                else:
+                    # Otherwise, create a new schema with the validator
+                    schema = StringSchema.from_string(
+                        validators=[hydrated_validator],
+                    )
+                    self.rail.instructions_schema = schema
+        elif on == "msg_history":
+            if validator:
+                hydrated_validator = get_validator(validator, *args, **kwargs)
+                # If the msg_history schema exists, add the validator to it
+                if self.rail.msg_history_schema:
+                    self.rail.msg_history_schema.root_datatype.validators.append(
+                        hydrated_validator
+                    )
+                else:
+                    # Otherwise, create a new schema with the validator
+                    schema = StringSchema.from_string(
+                        validators=[hydrated_validator],
+                    )
+                    self.rail.msg_history_schema = schema
+        elif on == "output":
+            # Only available for string output types
+            if self.rail.output_type != "str":
+                raise RuntimeError(
+                    "The `use` method is only available for string output types."
+                )
 
-        if self.rail.output_type != "str":
-            raise RuntimeError(
-                "The `use` method is only available for string output types."
+            if validator:
+                hydrated_validator = get_validator(validator, *args, **kwargs)
+                self._validators.append(hydrated_validator)
+                self.rail.output_schema.root_datatype.validators.append(
+                    hydrated_validator
+                )
+        else:
+            raise ValueError(
+                """Invalid value for `on`. Must be one of 
+                'output', 'prompt', 'instructions', 'msg_history'."""
             )
-
-        if validator:
-            hydrated_validator = get_validator(validator, *args, **kwargs)
-            self._validators.append(hydrated_validator)
-
-            self.rail.output_schema.root_datatype.validators.append(hydrated_validator)
 
         return self
 
