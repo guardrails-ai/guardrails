@@ -4,7 +4,7 @@ All `Guard` calls are logged internally, and can be accessed via the guard histo
 
 ## Accessing logs via `Guard.history`
 
-`history` is an attribute of the `Guard` class. It implements a standard `Stack` interface with a few extra helper methods and properties.  For more information on our `Stack` implementation see the [Helper Classes](/docs/api_reference_markdown/helper_classes) page.
+`history` is an attribute of the `Guard` class. It implements a standard `Stack` interface with a few extra helper methods and properties.  For more information on our `Stack` implementation see the [Helper Classes](/docs/api_reference/helper_classes) page.
 
 Each entry in the history stack is a `Call` log which will contain information specific to a particular `Guard.__call__` or `Guard.parse` call in the order that they were executed within the current session.
 
@@ -119,7 +119,7 @@ llm responses
 }
 ```
 
-For more information on `Call`, see the [History & Logs](/api_reference/history_and_logs/#guardrails.classes.history.Call) page.
+For more information on `Call`, see the [History & Logs](/docs/api_reference/history_and_logs) page.
 
 ## 🇻🇦 Accessing logs from individual steps
 In addition to the cumulative values available directly on the `Call` log, it also contains a `Stack` of `Iteration`'s.  Each `Iteration` represent the logs from within a step in the guardrails process.  This includes the call to the LLM, as well as parsing and validating the LLM's response.
