@@ -209,7 +209,7 @@ versions 0.5.0 and beyond. Use 'validation_response' instead."""
     @property
     def validation_response(self) -> Optional[Union[str, Dict, ReAsk]]:
         """The aggregated responses from the validation process across all
-        iterations with the current call.
+        iterations within the current call.
 
         Could contain ReAsks.
         """
