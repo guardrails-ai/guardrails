@@ -26,10 +26,7 @@ class Outputs(ArbitraryModel):
     validation_response: Optional[Union[str, ReAsk, Dict]] = Field(
         description="The response from the validation process.", default=None
     )
-    # validation_output: Optional[Union[str, ReAsk, Dict]] = Field(
-    #     description="The output from the validation process.", default=None
-    # )
-    validated_output: Optional[Union[str, Dict]] = Field(
+    guarded_output: Optional[Union[str, Dict]] = Field(
         description="The valid output after validation."
         "Could be only a partial structure if field level reasks occur."
         "Could contain fixed values.",
@@ -59,7 +56,7 @@ class Outputs(ArbitraryModel):
             self.llm_response_info is None
             and self.parsed_output is None
             and self.validation_response is None
-            and self.validated_output is None
+            and self.guarded_output is None
             and len(self.reasks) == 0
             and len(self.validator_logs) == 0
             and self.error is None
@@ -97,7 +94,7 @@ class Outputs(ArbitraryModel):
             return error_status
         elif not all_reasks_have_fixes:
             return fail_status
-        elif self.validated_output is None and isinstance(
+        elif self.guarded_output is None and isinstance(
             self.validation_response, ReAsk
         ):
             return fail_status
@@ -110,3 +107,11 @@ versions 0.5.0 and beyond. Use 'validation_response' instead."""
     )
     def validation_output(self) -> Optional[Union[str, ReAsk, Dict]]:
         return self.validation_response
+
+    @property
+    @deprecated(
+        """'Outputs.validated_output' is deprecated and will be removed in \
+versions 0.5.0 and beyond. Use 'guarded_output' instead."""
+    )
+    def validated_output(self) -> Optional[Union[str, ReAsk, Dict]]:
+        return self.guarded_output

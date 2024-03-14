@@ -214,7 +214,7 @@ def test_entity_extraction_with_reask(
         # Second iteration is the first reask
         assert call.reask_prompts.first == entity_extraction.COMPILED_PROMPT_REASK
         assert call.raw_outputs.at(1) == entity_extraction.LLM_OUTPUT_REASK
-    assert call.validated_output == entity_extraction.VALIDATED_OUTPUT_REASK_2
+    assert call.guarded_output == entity_extraction.VALIDATED_OUTPUT_REASK_2
 
 
 @pytest.mark.parametrize(
@@ -248,7 +248,7 @@ def test_entity_extraction_with_noop(mocker, rail, prompt):
     # For orginal prompt and output
     assert call.compiled_prompt == entity_extraction.COMPILED_PROMPT
     assert call.raw_outputs.last == entity_extraction.LLM_OUTPUT
-    assert call.validated_output is None
+    assert call.guarded_output is None
     assert call.validation_response == entity_extraction.VALIDATED_OUTPUT_NOOP
 
 
@@ -287,7 +287,7 @@ def test_entity_extraction_with_filter(mocker, rail, prompt):
     assert call.compiled_prompt == entity_extraction.COMPILED_PROMPT
     assert call.raw_outputs.last == entity_extraction.LLM_OUTPUT
     assert call.status == "fail"
-    assert call.validated_output is None
+    assert call.guarded_output is None
 
 
 @pytest.mark.parametrize(
@@ -320,7 +320,7 @@ def test_entity_extraction_with_fix(mocker, rail, prompt):
     # For orginal prompt and output
     assert call.compiled_prompt == entity_extraction.COMPILED_PROMPT
     assert call.raw_outputs.last == entity_extraction.LLM_OUTPUT
-    assert call.validated_output == entity_extraction.VALIDATED_OUTPUT_FIX
+    assert call.guarded_output == entity_extraction.VALIDATED_OUTPUT_FIX
 
 
 @pytest.mark.parametrize(
@@ -356,7 +356,7 @@ def test_entity_extraction_with_refrain(mocker, rail, prompt):
     # For orginal prompt and output
     assert call.compiled_prompt == entity_extraction.COMPILED_PROMPT
     assert call.raw_outputs.last == entity_extraction.LLM_OUTPUT
-    assert call.validated_output == entity_extraction.VALIDATED_OUTPUT_REFRAIN
+    assert call.guarded_output == entity_extraction.VALIDATED_OUTPUT_REFRAIN
 
 
 @pytest.mark.parametrize(
@@ -400,7 +400,7 @@ def test_entity_extraction_with_fix_chat_models(mocker, rail, prompt, instructio
     )
     assert call.compiled_instructions == entity_extraction.COMPILED_INSTRUCTIONS
     assert call.raw_outputs.last == entity_extraction.LLM_OUTPUT
-    assert call.validated_output == entity_extraction.VALIDATED_OUTPUT_FIX
+    assert call.guarded_output == entity_extraction.VALIDATED_OUTPUT_FIX
 
 
 def test_string_output(mocker):
@@ -457,7 +457,7 @@ def test_string_reask(mocker):
     assert call.reask_prompts.last == string.COMPILED_PROMPT_REASK
 
     assert call.raw_outputs.last == string.LLM_OUTPUT_REASK
-    assert call.validated_output == string.LLM_OUTPUT_REASK
+    assert call.guarded_output == string.LLM_OUTPUT_REASK
 
 
 def test_skeleton_reask(mocker):
@@ -497,7 +497,7 @@ def test_skeleton_reask(mocker):
     # For re-asked prompt and output
     assert call.reask_prompts.last == entity_extraction.COMPILED_PROMPT_SKELETON_REASK_2
     assert call.raw_outputs.last == entity_extraction.LLM_OUTPUT_SKELETON_REASK_2
-    assert call.validated_output == entity_extraction.VALIDATED_OUTPUT_SKELETON_REASK_2
+    assert call.guarded_output == entity_extraction.VALIDATED_OUTPUT_SKELETON_REASK_2
 
 
 '''def test_json_output(mocker):
@@ -639,7 +639,7 @@ def test_entity_extraction_with_reask_with_optional_prompts(
     assert call.reask_prompts.last == expected_reask_prompt
     assert call.raw_outputs.last == entity_extraction.LLM_OUTPUT_REASK
 
-    assert call.validated_output == entity_extraction.VALIDATED_OUTPUT_REASK_2
+    assert call.guarded_output == entity_extraction.VALIDATED_OUTPUT_REASK_2
     if expected_reask_instructions:
         assert call.reask_instructions.last == expected_reask_instructions
 
@@ -678,7 +678,7 @@ def test_string_with_message_history_reask(mocker):
     assert call.reask_prompts.last == string.MSG_COMPILED_PROMPT_REASK
     assert call.reask_instructions.last == string.MSG_COMPILED_INSTRUCTIONS_REASK
     assert call.raw_outputs.last == string.MSG_LLM_OUTPUT_CORRECT
-    assert call.validated_output == string.MSG_LLM_OUTPUT_CORRECT
+    assert call.guarded_output == string.MSG_LLM_OUTPUT_CORRECT
 
 
 def test_pydantic_with_message_history_reask(mocker):
@@ -717,7 +717,7 @@ def test_pydantic_with_message_history_reask(mocker):
     assert call.reask_prompts.last == pydantic.MSG_COMPILED_PROMPT_REASK
     assert call.reask_instructions.last == pydantic.MSG_COMPILED_INSTRUCTIONS_REASK
     assert call.raw_outputs.last == pydantic.MSG_HISTORY_LLM_OUTPUT_CORRECT
-    assert call.validated_output == json.loads(pydantic.MSG_HISTORY_LLM_OUTPUT_CORRECT)
+    assert call.guarded_output == json.loads(pydantic.MSG_HISTORY_LLM_OUTPUT_CORRECT)
 
 
 def test_sequential_validator_log_is_not_duplicated(mocker):

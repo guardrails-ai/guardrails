@@ -44,7 +44,7 @@ def test_parsing_reask(mocker):
     # For orginal prompt and output
     assert call.compiled_prompt == pydantic.PARSING_COMPILED_PROMPT
     assert call.iterations.first.raw_output == pydantic.PARSING_UNPARSEABLE_LLM_OUTPUT
-    assert call.iterations.first.validated_output is None
+    assert call.iterations.first.guarded_output is None
 
     # For re-asked prompt and output
     assert call.iterations.last.inputs.prompt == gd.Prompt(
@@ -53,7 +53,7 @@ def test_parsing_reask(mocker):
     # Same as above
     assert call.reask_prompts.last == pydantic.PARSING_COMPILED_REASK
     assert call.raw_outputs.last == pydantic.PARSING_EXPECTED_LLM_OUTPUT
-    assert call.validated_output == pydantic.PARSING_EXPECTED_OUTPUT
+    assert call.guarded_output == pydantic.PARSING_EXPECTED_OUTPUT
 
 
 @pytest.mark.asyncio
@@ -87,7 +87,7 @@ async def test_async_parsing_reask(mocker):
     # For orginal prompt and output
     assert call.compiled_prompt == pydantic.PARSING_COMPILED_PROMPT
     assert call.iterations.first.raw_output == pydantic.PARSING_UNPARSEABLE_LLM_OUTPUT
-    assert call.iterations.first.validated_output is None
+    assert call.iterations.first.guarded_output is None
 
     # For re-asked prompt and output
     assert call.iterations.last.inputs.prompt == gd.Prompt(
@@ -96,7 +96,7 @@ async def test_async_parsing_reask(mocker):
     # Same as above
     assert call.reask_prompts.last == pydantic.PARSING_COMPILED_REASK
     assert call.raw_outputs.last == pydantic.PARSING_EXPECTED_LLM_OUTPUT
-    assert call.validated_output == pydantic.PARSING_EXPECTED_OUTPUT
+    assert call.guarded_output == pydantic.PARSING_EXPECTED_OUTPUT
 
 
 def test_reask_prompt_instructions(mocker):

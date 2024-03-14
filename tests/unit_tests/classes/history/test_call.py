@@ -34,7 +34,7 @@ def test_empty_initialization():
     assert call.parsed_outputs == Stack()
     assert call.validation_response is None
     assert call.fixed_output is None
-    assert call.validated_output is None
+    assert call.guarded_output is None
     assert call.reasks == Stack()
     assert call.validator_logs == Stack()
     assert call.error is None
@@ -184,7 +184,7 @@ def test_non_empty_initialization():
     assert call.parsed_outputs == Stack("Hello there!", "Hello there")
     assert call.validation_response == "Hello there"
     assert call.fixed_output == "Hello there"
-    assert call.validated_output == "Hello there"
+    assert call.guarded_output == "Hello there"
     assert call.reasks == Stack()
     assert call.validator_logs == Stack(first_validator_log, second_validator_log)
     assert call.error is None

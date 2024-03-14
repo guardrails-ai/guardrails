@@ -379,4 +379,4 @@ ${ingredients}
     # Same as above
     assert call.reask_prompts.last == string.COMPILED_PROMPT_REASK
     assert call.raw_outputs.last == string.LLM_OUTPUT_REASK
-    assert call.validated_output == string.LLM_OUTPUT_REASK
+    assert call.guarded_output == string.LLM_OUTPUT_REASK

@@ -24,7 +24,7 @@ def test_empty_initialization():
     assert iteration.raw_output is None
     assert iteration.parsed_output is None
     assert iteration.validation_response is None
-    assert iteration.validated_output is None
+    assert iteration.guarded_output is None
     assert iteration.reasks == []
     assert iteration.validator_logs == []
     assert iteration.error is None
@@ -69,7 +69,7 @@ def test_non_empty_initialization():
         output="Hello there!", prompt_token_count=10, response_token_count=3
     )
     parsed_output = "Hello there!"
-    validated_output = "Hello there"
+    guarded_output = "Hello there"
     reask = FieldReAsk(
         incorrect_value="Hello there!", fail_results=[validation_result], path=[]
     )
@@ -89,7 +89,7 @@ def test_non_empty_initialization():
         llm_response_info=llm_response_info,
         parsed_output=parsed_output,
         validation_response=reask,
-        validated_output=validated_output,
+        guarded_output=guarded_output,
         reasks=reasks,
         validator_logs=validator_logs,
         error=error,
@@ -106,7 +106,7 @@ def test_non_empty_initialization():
     assert iteration.raw_output == "Hello there!"
     assert iteration.parsed_output == "Hello there!"
     assert iteration.validation_response == reask
-    assert iteration.validated_output == "Hello there"
+    assert iteration.guarded_output == "Hello there"
     assert iteration.reasks == reasks
     assert iteration.validator_logs == validator_logs
     assert iteration.error == error

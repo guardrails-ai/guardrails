@@ -55,7 +55,7 @@ class ValidationOutcome(ArbitraryModel, Generic[OT]):
         validation_passed = call.status == pass_status
         reask = last_output if isinstance(last_output, ReAsk) else None
         error = call.error
-        output = cast(OT, call.validated_output)
+        output = cast(OT, call.guarded_output)
         return cls(
             raw_llm_output=call.raw_outputs.last,
             validated_output=output,

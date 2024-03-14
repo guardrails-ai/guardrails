@@ -43,5 +43,5 @@ def test_multi_reask(mocker):
     # The output here fails some validators but passes others.
     # Since those that it fails in the end are noop fixes, validation fails.
     assert call.validation_response == python_rail.VALIDATOR_PARALLELISM_RESPONSE_3
-    assert call.validated_output is None
+    assert call.guarded_output is None
     assert call.status == "fail"

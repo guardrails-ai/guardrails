@@ -297,7 +297,7 @@ class Runner:
                 reasks, valid_output = self.introspect(
                     index, validated_output, output_schema
                 )
-                iteration.outputs.validated_output = valid_output
+                iteration.outputs.guarded_output = valid_output
 
             iteration.outputs.reasks = reasks
 
@@ -822,7 +822,7 @@ class AsyncRunner(Runner):
                 reasks, valid_output = self.introspect(
                     index, validated_output, output_schema
                 )
-                iteration.outputs.validated_output = valid_output
+                iteration.outputs.guarded_output = valid_output
 
             iteration.outputs.reasks = reasks
 
@@ -1195,7 +1195,7 @@ class StreamRunner(Runner):
         iteration.outputs.raw_output = fragment
         iteration.outputs.parsed_output = parsed_fragment
         iteration.outputs.validation_response = validated_fragment
-        iteration.outputs.validated_output = valid_op
+        iteration.outputs.guarded_output = valid_op
 
     def get_chunk_text(self, chunk: Any, api: Union[PromptCallableBase, None]) -> str:
         """Get the text from a chunk."""

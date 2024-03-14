@@ -79,7 +79,7 @@ def test_pydantic_with_reask(mocker):
     # Same as above
     assert call.reask_prompts.last == pydantic.COMPILED_PROMPT_REASK_2
     assert call.raw_outputs.last == pydantic.LLM_OUTPUT_REASK_2
-    assert call.validated_output is None
+    assert call.guarded_output is None
     assert call.validation_response == pydantic.VALIDATED_OUTPUT_REASK_3
 
 
@@ -136,7 +136,7 @@ def test_pydantic_with_full_schema_reask(mocker):
         pydantic.COMPILED_INSTRUCTIONS_CHAT
     )
     assert call.raw_outputs.last == pydantic.LLM_OUTPUT_FULL_REASK_2
-    assert call.validated_output is None
+    assert call.guarded_output is None
     assert call.validation_response == pydantic.VALIDATED_OUTPUT_REASK_3
 
 

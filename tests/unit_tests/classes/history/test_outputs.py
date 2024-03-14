@@ -15,7 +15,7 @@ def test_empty_initialization():
     assert empty_outputs.llm_response_info is None
     assert empty_outputs.parsed_output is None
     assert empty_outputs.validation_response is None
-    assert empty_outputs.validated_output is None
+    assert empty_outputs.guarded_output is None
     assert empty_outputs.reasks == []
     assert empty_outputs.validator_logs == []
     assert empty_outputs.error is None
@@ -33,7 +33,7 @@ def test_non_empty_initialization():
         output="Hello there!", prompt_token_count=10, response_token_count=3
     )
     parsed_output = "Hello there!"
-    validated_output = "Hello there"
+    guarded_output = "Hello there"
     reasks = [ReAsk(incorrect_value="Hello there!", fail_results=[validation_result])]
     validator_logs = [
         ValidatorLogs(
@@ -49,7 +49,7 @@ def test_non_empty_initialization():
     non_empty_outputs = Outputs(
         llm_response_info=llm_response_info,
         parsed_output=parsed_output,
-        validated_output=validated_output,
+        guarded_output=guarded_output,
         reasks=reasks,
         validator_logs=validator_logs,
         error=error,
@@ -59,8 +59,8 @@ def test_non_empty_initialization():
     assert non_empty_outputs.llm_response_info == llm_response_info
     assert non_empty_outputs.parsed_output is not None
     assert non_empty_outputs.parsed_output == parsed_output
-    assert non_empty_outputs.validated_output is not None
-    assert non_empty_outputs.validated_output == validated_output
+    assert non_empty_outputs.guarded_output is not None
+    assert non_empty_outputs.guarded_output == guarded_output
     assert non_empty_outputs.reasks != []
     assert non_empty_outputs.reasks == reasks
     assert non_empty_outputs.validator_logs != []
@@ -89,7 +89,7 @@ non_fixable_fail_result = FailResult(
         (Outputs(llm_response_info=LLMResponse(output="Hello there!")), False),
         (Outputs(parsed_output="Hello there!"), False),
         (Outputs(parsed_output="Hello there!"), False),
-        (Outputs(validated_output="Hello there"), False),
+        (Outputs(guarded_output="Hello there"), False),
         (
             Outputs(
                 reasks=[
@@ -175,7 +175,7 @@ def test_failed_validations():
             ),
             fail_status,
         ),
-        (Outputs(validator_logs=[], validated_output="Hello there!"), pass_status),
+        (Outputs(validator_logs=[], guarded_output="Hello there!"), pass_status),
     ],
 )
 def test_status(outputs: Outputs, expected_status: str):

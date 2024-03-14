@@ -226,27 +226,29 @@ versions 0.5.0 and beyond. Use 'validation_response' instead."""
         if (
             self.inputs.full_schema_reask
             or number_of_iterations < 2
-            or isinstance(self.iterations.last.validation_output, ReAsk)  # type: ignore
-            or isinstance(self.iterations.last.validation_output, str)  # type: ignore
+            or isinstance(
+                self.iterations.last.validation_response, ReAsk  # type: ignore
+            )
+            or isinstance(self.iterations.last.validation_response, str)  # type: ignore
         ):
-            return self.iterations.last.validation_output  # type: ignore
+            return self.iterations.last.validation_response  # type: ignore
 
         current_index = 1
         # We've already established that there are iterations,
         #  hence the type ignores
-        merged_validation_output = (
-            self.iterations.first.validation_output  # type: ignore
+        merged_validation_responses = (
+            self.iterations.first.validation_response  # type: ignore
         )
         while current_index < number_of_iterations:
             current_validation_output = self.iterations.at(
                 current_index
-            ).validation_output  # type: ignore
-            merged_validation_output = merge_reask_output(
-                merged_validation_output, current_validation_output
+            ).validation_response  # type: ignore
+            merged_validation_responses = merge_reask_output(
+                merged_validation_responses, current_validation_output
             )
             current_index = current_index + 1
 
-        return merged_validation_output
+        return merged_validation_responses
 
     @property
     def fixed_output(self) -> Optional[Union[str, Dict]]:
@@ -258,13 +260,25 @@ versions 0.5.0 and beyond. Use 'validation_response' instead."""
         return sub_reasks_with_fixed_values(self.validation_response)
 
     @property
-    def validated_output(self) -> Optional[Union[str, Dict]]:
+    def guarded_output(self) -> Optional[Union[str, Dict]]:
         """The output from the LLM after undergoing validation.
 
         This will only have a value if the Guard is in a passing state.
         """
         if self.status == pass_status:
             return self.fixed_output
+
+    @property
+    @deprecated(
+        """'Call.validated_output' is deprecated and will be removed in \
+versions 0.5.0 and beyond. Use 'guarded_output' instead."""
+    )
+    def validated_output(self) -> Optional[Union[str, Dict]]:
+        """The output from the LLM after undergoing validation.
+
+        This will only have a value if the Guard is in a passing state.
+        """
+        return self.guarded_output
 
     @property
     def reasks(self) -> Stack[ReAsk]:
@@ -368,7 +382,7 @@ versions 0.5.0 and beyond. Use 'validation_response' instead."""
                 :-1
             ]
             validated_outcome_panel = Panel(
-                pretty_repr(self.validated_output),
+                pretty_repr(self.guarded_output),
                 title="Validated Output",
                 style="on #F0FFF0",
             )
