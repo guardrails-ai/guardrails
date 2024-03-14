@@ -64,7 +64,7 @@ async def test_entity_extraction_with_reask(mocker, multiprocessing_validators: 
     assert first.prompt_tokens_consumed == 123
     assert first.completion_tokens_consumed == 1234
     assert first.raw_output == entity_extraction.LLM_OUTPUT
-    assert first.validation_output == entity_extraction.VALIDATED_OUTPUT_REASK_1
+    assert first.validation_response == entity_extraction.VALIDATED_OUTPUT_REASK_1
 
     # For re-asked prompt and output
     final = call.iterations.last
@@ -109,7 +109,7 @@ async def test_entity_extraction_with_noop(mocker):
     # For orginal prompt and output
     assert call.compiled_prompt == entity_extraction.COMPILED_PROMPT
     assert call.raw_outputs.last == entity_extraction.LLM_OUTPUT
-    assert call.validation_output == entity_extraction.VALIDATED_OUTPUT_NOOP
+    assert call.validation_response == entity_extraction.VALIDATED_OUTPUT_NOOP
 
 
 @pytest.mark.asyncio
@@ -143,7 +143,7 @@ async def test_entity_extraction_with_noop_pydantic(mocker):
     # For orginal prompt and output
     assert call.compiled_prompt == entity_extraction.COMPILED_PROMPT
     assert call.raw_outputs.last == entity_extraction.LLM_OUTPUT
-    assert call.validation_output == entity_extraction.VALIDATED_OUTPUT_NOOP
+    assert call.validation_response == entity_extraction.VALIDATED_OUTPUT_NOOP
 
 
 @pytest.mark.asyncio
@@ -176,7 +176,7 @@ async def test_entity_extraction_with_filter(mocker):
     # For orginal prompt and output
     assert call.compiled_prompt == entity_extraction.COMPILED_PROMPT
     assert call.raw_outputs.last == entity_extraction.LLM_OUTPUT
-    assert call.validation_output == entity_extraction.VALIDATED_OUTPUT_FILTER
+    assert call.validation_response == entity_extraction.VALIDATED_OUTPUT_FILTER
     assert call.validated_output is None
     assert call.status == "fail"
 

@@ -709,7 +709,9 @@ def test_input_validation_fix(mocker):
         mock_llm_api,
         prompt="What kind of pet should I get?",
     )
-    assert guard.history.first.iterations.first.outputs.validation_output == "What kind"
+    assert (
+        guard.history.first.iterations.first.outputs.validation_response == "What kind"
+    )
     guard = Guard.from_pydantic(output_class=Pet).with_instructions_validation(
         validators=[TwoWords(on_fail="fix")]
     )
@@ -719,7 +721,8 @@ def test_input_validation_fix(mocker):
         instructions="But really, what kind of pet should I get?",
     )
     assert (
-        guard.history.first.iterations.first.outputs.validation_output == "But really,"
+        guard.history.first.iterations.first.outputs.validation_response
+        == "But really,"
     )
 
     # but raises for msg_history validation
@@ -758,7 +761,7 @@ This is not two words
     guard(
         mock_llm_api,
     )
-    assert guard.history.first.iterations.first.outputs.validation_output == "This is"
+    assert guard.history.first.iterations.first.outputs.validation_response == "This is"
 
     # rail instructions validation
     guard = Guard.from_rail_string(
@@ -781,7 +784,9 @@ This also is not two words
     guard(
         mock_llm_api,
     )
-    assert guard.history.first.iterations.first.outputs.validation_output == "This also"
+    assert (
+        guard.history.first.iterations.first.outputs.validation_response == "This also"
+    )
 
 
 @pytest.mark.asyncio
@@ -798,7 +803,9 @@ async def test_async_input_validation_fix(mocker):
         mock_llm_api,
         prompt="What kind of pet should I get?",
     )
-    assert guard.history.first.iterations.first.outputs.validation_output == "What kind"
+    assert (
+        guard.history.first.iterations.first.outputs.validation_response == "What kind"
+    )
 
     guard = Guard.from_pydantic(output_class=Pet).with_instructions_validation(
         validators=[TwoWords(on_fail="fix")]
@@ -809,7 +816,8 @@ async def test_async_input_validation_fix(mocker):
         instructions="But really, what kind of pet should I get?",
     )
     assert (
-        guard.history.first.iterations.first.outputs.validation_output == "But really,"
+        guard.history.first.iterations.first.outputs.validation_response
+        == "But really,"
     )
 
     # but raises for msg_history validation
@@ -848,7 +856,7 @@ This is not two words
     await guard(
         mock_llm_api,
     )
-    assert guard.history.first.iterations.first.outputs.validation_output == "This is"
+    assert guard.history.first.iterations.first.outputs.validation_response == "This is"
 
     # rail instructions validation
     guard = Guard.from_rail_string(
@@ -871,7 +879,9 @@ This also is not two words
     await guard(
         mock_llm_api,
     )
-    assert guard.history.first.iterations.first.outputs.validation_output == "This also"
+    assert (
+        guard.history.first.iterations.first.outputs.validation_response == "This also"
+    )
 
 
 @pytest.mark.parametrize(

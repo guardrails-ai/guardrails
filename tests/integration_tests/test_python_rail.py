@@ -372,7 +372,7 @@ ${ingredients}
     assert call.compiled_instructions == string.COMPILED_INSTRUCTIONS
     assert call.compiled_prompt == string.COMPILED_PROMPT
     assert call.iterations.first.raw_output == string.LLM_OUTPUT
-    assert call.iterations.first.validation_output == string.VALIDATED_OUTPUT_REASK
+    assert call.iterations.first.validation_response == string.VALIDATED_OUTPUT_REASK
 
     # For re-asked prompt and output
     assert call.iterations.last.inputs.prompt == gd.Prompt(string.COMPILED_PROMPT_REASK)

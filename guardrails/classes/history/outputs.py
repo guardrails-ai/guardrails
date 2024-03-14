@@ -1,6 +1,7 @@
 from typing import Dict, List, Optional, Sequence, Union
 
 from pydantic import Field
+from typing_extensions import deprecated
 
 from guardrails.constants import error_status, fail_status, not_run_status, pass_status
 from guardrails.utils.llm_response import LLMResponse
@@ -22,9 +23,12 @@ class Outputs(ArbitraryModel):
         "as it was passed into validation.",
         default=None,
     )
-    validation_output: Optional[Union[str, ReAsk, Dict]] = Field(
-        description="The output from the validation process.", default=None
+    validation_response: Optional[Union[str, ReAsk, Dict]] = Field(
+        description="The response from the validation process.", default=None
     )
+    # validation_output: Optional[Union[str, ReAsk, Dict]] = Field(
+    #     description="The output from the validation process.", default=None
+    # )
     validated_output: Optional[Union[str, Dict]] = Field(
         description="The valid output after validation."
         "Could be only a partial structure if field level reasks occur."
@@ -54,7 +58,7 @@ class Outputs(ArbitraryModel):
         return (
             self.llm_response_info is None
             and self.parsed_output is None
-            and self.validation_output is None
+            and self.validation_response is None
             and self.validated_output is None
             and len(self.reasks) == 0
             and len(self.validator_logs) == 0
@@ -94,7 +98,15 @@ class Outputs(ArbitraryModel):
         elif not all_reasks_have_fixes:
             return fail_status
         elif self.validated_output is None and isinstance(
-            self.validation_output, ReAsk
+            self.validation_response, ReAsk
         ):
             return fail_status
         return pass_status
+
+    @property
+    @deprecated(
+        """'Outputs.validation_output' is deprecated and will be removed in \
+versions 0.5.0 and beyond. Use 'validation_response' instead."""
+    )
+    def validation_output(self) -> Optional[Union[str, ReAsk, Dict]]:
+        return self.validation_response

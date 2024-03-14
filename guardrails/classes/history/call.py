@@ -4,6 +4,7 @@ from pydantic import Field, PrivateAttr
 from rich.panel import Panel
 from rich.pretty import pretty_repr
 from rich.tree import Tree
+from typing_extensions import deprecated
 
 from guardrails.classes.generic.stack import Stack
 from guardrails.classes.history.call_inputs import CallInputs
@@ -198,8 +199,17 @@ class Call(ArbitraryModel):
         return Stack(*[i.outputs.parsed_output for i in self.iterations])
 
     @property
+    @deprecated(
+        """'Call.validation_output' is deprecated and will be removed in \
+versions 0.5.0 and beyond. Use 'validation_response' instead."""
+    )
     def validation_output(self) -> Optional[Union[str, Dict, ReAsk]]:
-        """The cumulative validation output across all current iterations.
+        return self.validation_response
+
+    @property
+    def validation_response(self) -> Optional[Union[str, Dict, ReAsk]]:
+        """The aggregated responses from the validation process across all
+        iterations with the current call.
 
         Could contain ReAsks.
         """
@@ -240,9 +250,12 @@ class Call(ArbitraryModel):
 
     @property
     def fixed_output(self) -> Optional[Union[str, Dict]]:
-        """The cumulative validation output across all current iterations with
-        any automatic fixes applied."""
-        return sub_reasks_with_fixed_values(self.validation_output)
+        """The cumulative output from the validation process across all current
+        iterations with any automatic fixes applied.
+
+        Could still contain ReAsks if a fix was not available.
+        """
+        return sub_reasks_with_fixed_values(self.validation_response)
 
     @property
     def validated_output(self) -> Optional[Union[str, Dict]]:

@@ -14,7 +14,7 @@ def test_empty_initialization():
 
     assert empty_outputs.llm_response_info is None
     assert empty_outputs.parsed_output is None
-    assert empty_outputs.validation_output is None
+    assert empty_outputs.validation_response is None
     assert empty_outputs.validated_output is None
     assert empty_outputs.reasks == []
     assert empty_outputs.validator_logs == []
@@ -190,7 +190,7 @@ def test_status(outputs: Outputs, expected_status: str):
 )
 def test_status_reask():
     outputs = Outputs(
-        validation_output=ReAsk(
+        validation_response=ReAsk(
             incorrect_value="Hello there!",
             fail_results=[non_fixable_fail_result],
         ),

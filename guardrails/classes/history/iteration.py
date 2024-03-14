@@ -5,6 +5,7 @@ from rich.console import Group
 from rich.panel import Panel
 from rich.pretty import pretty_repr
 from rich.table import Table
+from typing_extensions import deprecated
 
 from guardrails.classes.generic.stack import Stack
 from guardrails.classes.history.inputs import Inputs
@@ -76,12 +77,24 @@ class Iteration(ArbitraryModel):
         return self.outputs.parsed_output
 
     @property
+    def validation_response(self) -> Optional[Union[ReAsk, str, Dict]]:
+        """The response from the validation process.
+
+        Could be a combination of valid output and ReAsks
+        """
+        return self.outputs.validation_response
+
+    @property
+    @deprecated(
+        """'Iteration.validation_output' is deprecated and will be removed in \
+versions 0.5.0 and beyond. Use 'validation_response' instead."""
+    )
     def validation_output(self) -> Optional[Union[ReAsk, str, Dict]]:
         """The output from the validation process.
 
         Could be a combination of valid output and ReAsks
         """
-        return self.outputs.validation_output
+        return self.validation_response
 
     @property
     def validated_output(self) -> Optional[Union[str, Dict]]:
@@ -167,7 +180,7 @@ class Iteration(ArbitraryModel):
                     self.raw_output or "", title="Raw LLM Output", style="on #F5F5DC"
                 ),
                 Panel(
-                    pretty_repr(self.validation_output),
+                    pretty_repr(self.validation_response),
                     title="Validated Output",
                     style="on #F0FFF0",
                 ),
@@ -184,7 +197,7 @@ class Iteration(ArbitraryModel):
                     self.raw_output or "", title="Raw LLM Output", style="on #F5F5DC"
                 ),
                 Panel(
-                    pretty_repr(self.validation_output),
+                    pretty_repr(self.validation_response),
                     title="Validated Output",
                     style="on #F0FFF0",
                 ),

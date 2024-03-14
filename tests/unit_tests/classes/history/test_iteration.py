@@ -23,7 +23,7 @@ def test_empty_initialization():
     assert iteration.completion_tokens_consumed is None
     assert iteration.raw_output is None
     assert iteration.parsed_output is None
-    assert iteration.validation_output is None
+    assert iteration.validation_response is None
     assert iteration.validated_output is None
     assert iteration.reasks == []
     assert iteration.validator_logs == []
@@ -88,7 +88,7 @@ def test_non_empty_initialization():
     outputs = Outputs(
         llm_response_info=llm_response_info,
         parsed_output=parsed_output,
-        validation_output=reask,
+        validation_response=reask,
         validated_output=validated_output,
         reasks=reasks,
         validator_logs=validator_logs,
@@ -105,7 +105,7 @@ def test_non_empty_initialization():
     assert iteration.completion_tokens_consumed == 3
     assert iteration.raw_output == "Hello there!"
     assert iteration.parsed_output == "Hello there!"
-    assert iteration.validation_output == reask
+    assert iteration.validation_response == reask
     assert iteration.validated_output == "Hello there"
     assert iteration.reasks == reasks
     assert iteration.validator_logs == validator_logs
