@@ -23,6 +23,7 @@
     "@mdx-js/react": "^3.0.0",
     "clsx": "^1.2.1",
     "create-react-class": "^15.7.0",
+    "docusaurus-plugin-image-zoom": "^2.0.0",
     "htmltojsx": "^0.3.0",
     "plugin-image-zoom": "^1.2.0",
     "posthog-docusaurus": "^2.0.0",

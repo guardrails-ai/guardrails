@@ -38,7 +38,7 @@ const config = {
     locales: ["en"],
   },
   plugins: [
-    'plugin-image-zoom'
+    'docusaurus-plugin-image-zoom'
   ],
   presets: [[
     "@docusaurus/preset-classic",
@@ -91,9 +91,9 @@ const config = {
       footer: {
         copyright: `Copyright © ${new Date().getFullYear()} Guardrails AI`,
       },
-      imageZoom: {
+      zoom: {
         // CSS selector to apply the plugin to, defaults to '.markdown img'
-        selector: '.markdown img',
+        // selector: '.markdown img',
         // Optional medium-zoom options
         // see: https://www.npmjs.com/package/medium-zoom#options
         options: {
