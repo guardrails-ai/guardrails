@@ -225,7 +225,8 @@ def test_use():
         py_guard.use(EndsWith("a"), OneLine(), LowerCase(), TwoWords(on_fail="reask"))
 
     # Use a combination of prompt, instructions, msg_history and output validators
-    # Should only have the output validators in the guard, everything else is in the schema
+    # Should only have the output validators in the guard,
+    # everything else is in the schema
     guard: Guard = (
         Guard()
         .use(LowerCase, on="prompt")
@@ -252,6 +253,7 @@ def test_use():
             .use(EndsWith("a"), on="response")  # invalid on parameter
             .use(OneLine, on="prompt")  # valid on parameter
         )
+
 
 def test_use_many_instances():
     guard: Guard = Guard().use_many(
@@ -375,11 +377,14 @@ def test_use_many_tuple():
             on="response",
         )
 
+
 def test_validate():
     guard: Guard = (
         Guard()
         .use(OneLine)
-        .use(LowerCase(on_fail="fix"), on="output")  # default on="output", still explicitly set
+        .use(
+            LowerCase(on_fail="fix"), on="output"
+        )  # default on="output", still explicitly set
         .use(TwoWords)
         .use(ValidLength, 0, 12, on_fail="refrain")
     )
@@ -423,6 +428,7 @@ def test_validate():
 
     assert response_2.validation_passed is False
     assert response_2.validated_output is None
+
 
 # def test_call():
 #     five_seconds = 5 / 60
