@@ -45,9 +45,6 @@ Docs are served via docusaurus. To serve docs locally, run the following
 # install dependencies
 pip install -e ".[dev]"
 
-# generate markdown files from jupyter notebook
-make docs-gen
-
 # install npm dependencies
 npm i
 
