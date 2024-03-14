@@ -23,6 +23,7 @@ from pydantic import BaseModel, Field
 from guardrails.classes import InputType
 from guardrails.constants import hub
 from guardrails.errors import ValidationError
+from guardrails.utils.dataclass import dataclass
 
 VALIDATOR_IMPORT_WARNING = """Accessing `{validator_name}` using
 `from guardrails.validators import {validator_name}` is deprecated and
@@ -372,10 +373,11 @@ class FailResult(ValidationResult):
     fix_value: Optional[Any] = None
 
 
+@dataclass  # type: ignore
 class Validator(Runnable):
     """Base class for validators."""
 
-    rail_alias: str
+    rail_alias: str = ""
 
     run_in_separate_process = False
     override_value_on_pass = False

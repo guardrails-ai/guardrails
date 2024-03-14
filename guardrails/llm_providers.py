@@ -1,5 +1,16 @@
 import asyncio
-from typing import Any, Awaitable, Callable, Dict, Iterable, List, Optional, Union, cast
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Type,
+    Union,
+    cast,
+)
 
 from guardrails_api_client.models.validate_payload_llm_api import ValidatePayloadLlmApi
 from pydantic import BaseModel
@@ -154,7 +165,9 @@ class OpenAIChatCallable(OpenAIModel):
         model: str = "gpt-3.5-turbo",
         instructions: Optional[str] = None,
         msg_history: Optional[List[Dict]] = None,
-        base_model: Optional[BaseModel] = None,
+        base_model: Optional[
+            Union[Type[BaseModel], Type[List[Type[BaseModel]]]]
+        ] = None,
         function_call: Optional[Any] = None,
         *args,
         **kwargs,
@@ -184,13 +197,15 @@ class OpenAIChatCallable(OpenAIModel):
             )
 
         # Configure function calling if applicable (only for non-streaming)
+        fn_kwargs = {}
         if base_model and not kwargs.get("stream", False):
-            function_params = [convert_pydantic_model_to_openai_fn(base_model)]
-            if function_call is None:
-                function_call = {"name": function_params[0]["name"]}
-            fn_kwargs = {"functions": function_params, "function_call": function_call}
-        else:
-            fn_kwargs = {}
+            function_params = convert_pydantic_model_to_openai_fn(base_model)
+            if function_call is None and function_params:
+                function_call = {"name": function_params["name"]}
+                fn_kwargs = {
+                    "functions": [function_params],
+                    "function_call": function_call,
+                }
 
         # Call OpenAI
         if "api_key" in kwargs:
@@ -688,7 +703,9 @@ class AsyncOpenAIChatCallable(AsyncOpenAIModel):
         model: str = "gpt-3.5-turbo",
         instructions: Optional[str] = None,
         msg_history: Optional[List[Dict]] = None,
-        base_model: Optional[BaseModel] = None,
+        base_model: Optional[
+            Union[Type[BaseModel], Type[List[Type[BaseModel]]]]
+        ] = None,
         function_call: Optional[Any] = None,
         *args,
         **kwargs,
@@ -718,13 +735,15 @@ class AsyncOpenAIChatCallable(AsyncOpenAIModel):
             )
 
         # Configure function calling if applicable
+        fn_kwargs = {}
         if base_model:
-            function_params = [convert_pydantic_model_to_openai_fn(base_model)]
-            if function_call is None:
-                function_call = {"name": function_params[0]["name"]}
-            fn_kwargs = {"functions": function_params, "function_call": function_call}
-        else:
-            fn_kwargs = {}
+            function_params = convert_pydantic_model_to_openai_fn(base_model)
+            if function_call is None and function_params:
+                function_call = {"name": function_params["name"]}
+                fn_kwargs = {
+                    "functions": [function_params],
+                    "function_call": function_call,
+                }
 
         # Call OpenAI
         if "api_key" in kwargs:
