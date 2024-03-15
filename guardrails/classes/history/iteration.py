@@ -78,9 +78,13 @@ class Iteration(ArbitraryModel):
 
     @property
     def validation_response(self) -> Optional[Union[ReAsk, str, Dict]]:
-        """The response from the validation process.
+        """The response from a single stage of validation.
 
-        Could be a combination of valid output and ReAsks.
+        Validation response is the output of a single stage of validation
+        and could be a combination of valid output and reasks.
+        Note that a Guard may run validation multiple times if reasks occur.
+        To access the final output after all steps of validation are completed,
+        check out `Call.guarded_output`."
         """
         return self.outputs.validation_response
 
