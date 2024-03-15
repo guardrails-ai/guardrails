@@ -11,9 +11,7 @@ from guardrails.cli.logger import LEVELS, logger
 from guardrails.cli.server.hub_client import AuthenticationError, get_auth
 
 
-def save_configuration_file(
-    token: str, no_metrics: bool
-) -> None:
+def save_configuration_file(token: str, no_metrics: bool) -> None:
     home = expanduser("~")
     guardrails_rc = os.path.join(home, ".guardrailsrc")
     with open(guardrails_rc, "w") as rc_file:

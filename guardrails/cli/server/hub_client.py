@@ -51,7 +51,7 @@ def fetch(url: str, token: Optional[str], anonymousUserId: Optional[str]):
 
 
 def fetch_module_manifest(
-    module_name: str, token: str, anonymousUserId: Optional[str] = None
+    module_name: str, token: Optional[str], anonymousUserId: Optional[str] = None
 ) -> Dict[str, Any]:
     namespace, validator_name = module_name.split("/", 1)
     manifest_path = validator_manifest_endpoint.safe_substitute(

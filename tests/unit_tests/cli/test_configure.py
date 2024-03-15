@@ -11,7 +11,7 @@ from tests.unit_tests.mocks.mock_file import MockFile
         # Note: typer defaults only work through the cli
         # ("mock_client_id", "mock_client_secret", None),
         ("mock_token", True),
-        ("mock_token", False)
+        ("mock_token", False),
     ],
 )
 def test_configure(mocker, token, no_metrics):
@@ -29,9 +29,7 @@ def test_configure(mocker, token, no_metrics):
     expected_calls = [call("Configuring..."), call("Validating credentials...")]
     mock_logger_info.assert_has_calls(expected_calls)
 
-    mock_save_configuration_file.assert_called_once_with(
-        token, no_metrics
-    )
+    mock_save_configuration_file.assert_called_once_with(token, no_metrics)
 
     assert mock_get_auth.call_count == 1
 
