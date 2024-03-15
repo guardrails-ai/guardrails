@@ -6,7 +6,6 @@ import requests
 
 from guardrails.classes.credentials import Credentials
 from guardrails.cli.logger import logger
-from guardrails.cli.server.auth import get_auth_token
 from guardrails.cli.server.module_manifest import ModuleManifest
 
 validator_hub_service = "https://so4sg4q4pb.execute-api.us-east-1.amazonaws.com"
@@ -64,7 +63,7 @@ def fetch_module_manifest(
 
 def fetch_module(module_name: str) -> ModuleManifest:
     creds = Credentials.from_rc_file(logger)
-    token = get_auth_token(creds)
+    token = creds.token
 
     module_manifest_json = fetch_module_manifest(module_name, token, creds.id)
     return ModuleManifest.from_dict(module_manifest_json)
@@ -90,7 +89,7 @@ def get_validator_manifest(module_name: str):
 def get_auth():
     try:
         creds = Credentials.from_rc_file(logger)
-        token = get_auth_token(creds)
+        token = creds.token
         auth_url = f"{validator_hub_service}/auth"
         response = fetch(auth_url, token, creds.id)
         if not response:
@@ -106,7 +105,7 @@ def get_auth():
 def post_validator_submit(package_name: str, content: str):
     try:
         creds = Credentials.from_rc_file(logger)
-        token = get_auth_token(creds)
+        token = creds.token
         submission_url = f"{validator_hub_service}/validator/submit"
 
         headers = {

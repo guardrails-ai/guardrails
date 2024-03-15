@@ -3,7 +3,7 @@ import json
 
 from guardrails.classes.credentials import Credentials
 
-
+# unused - for now
 def get_auth_token(creds: Credentials) -> str:
     if creds.client_id and creds.client_secret:
         audience = "https://validator-hub-service.guardrailsai.com"

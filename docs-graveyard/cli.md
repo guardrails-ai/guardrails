@@ -15,7 +15,7 @@ In addition to providing a command line interface for validation, the guardrails
 ### Configuration
 In order to access any Validators from the Hub that require authentication, you will need to set up your environment through the `guardrails configure` command.  Before running `guardrails configure`, go to the [Validator Hub]() to generate your access tokens.  [Add more detail on this process].
 
-Once you have your tokens, run `guardrails configure` and enter the client id and client secret you retrieved above.
+Once you have your tokens, run `guardrails configure` and enter the auth token you retrieved above.
 
 Also, if you want to opt out of anonymous metrics collection, you can do this now by specifying `--no-metrics=true`.
 
