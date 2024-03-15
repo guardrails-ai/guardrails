@@ -1070,7 +1070,7 @@ class Guard(Runnable, Generic[OT]):
         """The `with_prompt_validation` method is deprecated,
         and will be removed in 0.5.x. Instead, please use
         `Guard().use(YourValidator, on='prompt')`.""",
-        FutureWarning,
+        category=FutureWarning,
         stacklevel=2,
     )
     def with_prompt_validation(
@@ -1094,7 +1094,7 @@ class Guard(Runnable, Generic[OT]):
         """The `with_instructions_validation` method is deprecated,
         and will be removed in 0.5.x. Instead, please use
         `Guard().use(YourValidator, on='instructions')`.""",
-        FutureWarning,
+        category=FutureWarning,
         stacklevel=2,
     )
     def with_instructions_validation(
@@ -1118,7 +1118,7 @@ class Guard(Runnable, Generic[OT]):
         """The `with_msg_history_validation` method is deprecated,
         and will be removed in 0.5.x. Instead, please use
         `Guard().use(YourValidator, on='msg_history')`.""",
-        FutureWarning,
+        category=FutureWarning,
         stacklevel=2,
     )
     def with_msg_history_validation(
@@ -1185,7 +1185,7 @@ class Guard(Runnable, Generic[OT]):
             )
 
     @overload
-    def use(self, validator: Validator, on: str = "output") -> "Guard":
+    def use(self, validator: Validator, *, on: str = "output") -> "Guard":
         ...
 
     @overload
