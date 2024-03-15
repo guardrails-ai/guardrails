@@ -4,6 +4,7 @@ from pydantic import Field, PrivateAttr
 from rich.panel import Panel
 from rich.pretty import pretty_repr
 from rich.tree import Tree
+from typing_extensions import deprecated
 
 from guardrails.classes.generic.stack import Stack
 from guardrails.classes.history.call_inputs import CallInputs
@@ -198,10 +199,19 @@ class Call(ArbitraryModel):
         return Stack(*[i.outputs.parsed_output for i in self.iterations])
 
     @property
+    @deprecated(
+        """'Call.validation_output' is deprecated and will be removed in \
+versions 0.5.0 and beyond. Use 'validation_response' instead."""
+    )
     def validation_output(self) -> Optional[Union[str, Dict, ReAsk]]:
-        """The cumulative validation output across all current iterations.
+        return self.validation_response
 
-        Could contain ReAsks.
+    @property
+    def validation_response(self) -> Optional[Union[str, Dict, ReAsk]]:
+        """The aggregated responses from the validation process across all
+        iterations within the current call.
+
+        This value could contain ReAsks.
         """
         number_of_iterations = self.iterations.length
 
@@ -216,42 +226,65 @@ class Call(ArbitraryModel):
         if (
             self.inputs.full_schema_reask
             or number_of_iterations < 2
-            or isinstance(self.iterations.last.validation_output, ReAsk)  # type: ignore
-            or isinstance(self.iterations.last.validation_output, str)  # type: ignore
+            or isinstance(
+                self.iterations.last.validation_response, ReAsk  # type: ignore
+            )
+            or isinstance(self.iterations.last.validation_response, str)  # type: ignore
         ):
-            return self.iterations.last.validation_output  # type: ignore
+            return self.iterations.last.validation_response  # type: ignore
 
         current_index = 1
         # We've already established that there are iterations,
         #  hence the type ignores
-        merged_validation_output = (
-            self.iterations.first.validation_output  # type: ignore
+        merged_validation_responses = (
+            self.iterations.first.validation_response  # type: ignore
         )
         while current_index < number_of_iterations:
             current_validation_output = self.iterations.at(
                 current_index
-            ).validation_output  # type: ignore
-            merged_validation_output = merge_reask_output(
-                merged_validation_output, current_validation_output
+            ).validation_response  # type: ignore
+            merged_validation_responses = merge_reask_output(
+                merged_validation_responses, current_validation_output
             )
             current_index = current_index + 1
 
-        return merged_validation_output
+        return merged_validation_responses
 
     @property
     def fixed_output(self) -> Optional[Union[str, Dict]]:
-        """The cumulative validation output across all current iterations with
-        any automatic fixes applied."""
-        return sub_reasks_with_fixed_values(self.validation_output)
+        """The cumulative output from the validation process across all current
+        iterations with any automatic fixes applied.
+
+        Could still contain ReAsks if a fix was not available.
+        """
+        return sub_reasks_with_fixed_values(self.validation_response)
 
     @property
-    def validated_output(self) -> Optional[Union[str, Dict]]:
-        """The output from the LLM after undergoing validation.
+    def guarded_output(self) -> Optional[Union[str, Dict]]:
+        """The complete validated output after all stages of validation are
+        completed.
+
+        This property contains the aggregate validated output after all
+        validation stages have been completed. Some values in the
+        validated output may be "fixed" values that were corrected
+        during validation.
 
         This will only have a value if the Guard is in a passing state.
         """
         if self.status == pass_status:
             return self.fixed_output
+
+    @property
+    @deprecated(
+        """'Call.validated_output' is deprecated and will be removed in \
+versions 0.5.0 and beyond. Use 'guarded_output' instead."""
+    )
+    def validated_output(self) -> Optional[Union[str, Dict]]:
+        """The output from the LLM after undergoing validation.
+
+        This will only have a value if the Guard is in a passing state.
+        """
+        return self.guarded_output
 
     @property
     def reasks(self) -> Stack[ReAsk]:
@@ -355,7 +388,7 @@ class Call(ArbitraryModel):
                 :-1
             ]
             validated_outcome_panel = Panel(
-                pretty_repr(self.validated_output),
+                pretty_repr(self.guarded_output),
                 title="Validated Output",
                 style="on #F0FFF0",
             )

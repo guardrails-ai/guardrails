@@ -51,11 +51,11 @@ class ValidationOutcome(ArbitraryModel, Generic[OT]):
     def from_guard_history(cls, call: Call):
         """Create a ValidationOutcome from a history Call object."""
         last_iteration = call.iterations.last or Iteration()
-        last_output = last_iteration.validation_output or last_iteration.parsed_output
+        last_output = last_iteration.validation_response or last_iteration.parsed_output
         validation_passed = call.status == pass_status
         reask = last_output if isinstance(last_output, ReAsk) else None
         error = call.error
-        output = cast(OT, call.validated_output)
+        output = cast(OT, call.guarded_output)
         return cls(
             raw_llm_output=call.raw_outputs.last,
             validated_output=output,
