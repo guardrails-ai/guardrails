@@ -102,10 +102,11 @@ versions 0.5.0 and beyond. Use 'validation_response' instead."""
 
     @property
     def guarded_output(self) -> Optional[Union[str, Dict]]:
-        """Any valid output after undergoing validation.
+        """Any valid values after undergoing validation.
 
-        Could be a partial structure if field level reasks occur.
-        Could contain fixed values.
+        Some values in the validated output may be "fixed" values that
+        were corrected during validation. This property may be a partial
+        structure if field level reasks occur.
         """
         return self.outputs.guarded_output
 

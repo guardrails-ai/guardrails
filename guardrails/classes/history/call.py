@@ -211,7 +211,7 @@ versions 0.5.0 and beyond. Use 'validation_response' instead."""
         """The aggregated responses from the validation process across all
         iterations within the current call.
 
-        Could contain ReAsks.
+        This value could contain ReAsks.
         """
         number_of_iterations = self.iterations.length
 
@@ -261,7 +261,13 @@ versions 0.5.0 and beyond. Use 'validation_response' instead."""
 
     @property
     def guarded_output(self) -> Optional[Union[str, Dict]]:
-        """The final output after undergoing validation.
+        """The complete validated output after all stages of validation are
+        completed.
+
+        This property contains the aggregate validated output after all
+        validation stages have been completed. Some values in the
+        validated output may be "fixed" values that were corrected
+        during validation.
 
         This will only have a value if the Guard is in a passing state.
         """

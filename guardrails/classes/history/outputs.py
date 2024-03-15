@@ -27,9 +27,10 @@ class Outputs(ArbitraryModel):
         description="The response from the validation process.", default=None
     )
     guarded_output: Optional[Union[str, Dict]] = Field(
-        description="Any valid output after validation."
-        "Could be a partial structure if field level reasks occur."
-        "Could contain fixed values.",
+        description="""Any valid values after undergoing validation.
+
+        Some values may be "fixed" values that were corrected during validation.
+        This property may be a partial structure if field level reasks occur.""",
         default=None,
     )
     reasks: Sequence[ReAsk] = Field(
