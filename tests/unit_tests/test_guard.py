@@ -232,11 +232,28 @@ def test_use():
         .use(LowerCase, on="prompt")
         .use(OneLine, on="prompt")
         .use(UpperCase, on="instructions")
-        .use(EndsWith("a"), on="msg_history")
-        .use(EndsWith("a"), on="output")  # default on="output", still explicitly set
+        .use(LowerCase, on="msg_history")
+        .use(
+            EndsWith, end="a", on="output"
+        )  # default on="output", still explicitly set
         .use(TwoWords, on_fail="reask")  # default on="output", implicitly set
     )
 
+    # Check schemas for prompt, instructions and msg_history validators
+    prompt_validators = guard.rail.prompt_schema.root_datatype.validators
+    assert len(prompt_validators) == 2
+    assert prompt_validators[0].__class__.__name__ == "LowerCase"
+    assert prompt_validators[1].__class__.__name__ == "OneLine"
+
+    instructions_validators = guard.rail.instructions_schema.root_datatype.validators
+    assert len(instructions_validators) == 1
+    assert instructions_validators[0].__class__.__name__ == "UpperCase"
+
+    msg_history_validators = guard.rail.msg_history_schema.root_datatype.validators
+    assert len(msg_history_validators) == 1
+    assert msg_history_validators[0].__class__.__name__ == "LowerCase"
+
+    # Check guard for output validators
     assert len(guard._validators) == 2  # only 2 output validators, hence 2
 
     assert isinstance(guard._validators[0], EndsWith)
@@ -288,7 +305,7 @@ def test_use_many_instances():
             [EndsWith("a"), OneLine(), LowerCase(), TwoWords(on_fail="reask")]
         )
 
-    # Test with explicitly setting the "on" parameter
+    # Test with explicitly setting the "on" parameter = "output"
     guard: Guard = Guard().use_many(
         EndsWith("a"), OneLine(), LowerCase(), TwoWords(on_fail="reask"), on="output"
     )
@@ -308,6 +325,42 @@ def test_use_many_instances():
 
     assert isinstance(guard._validators[3], TwoWords)
     assert guard._validators[3].on_fail_descriptor == "reask"  # bc we set it
+
+    # Test with explicitly setting the "on" parameter = "prompt"
+    guard: Guard = Guard().use_many(
+        OneLine(), LowerCase(), TwoWords(on_fail="reask"), on="prompt"
+    )
+
+    prompt_validators = guard.rail.prompt_schema.root_datatype.validators
+    assert len(prompt_validators) == 3
+    assert prompt_validators[0].__class__.__name__ == "OneLine"
+    assert prompt_validators[1].__class__.__name__ == "LowerCase"
+    assert prompt_validators[2].__class__.__name__ == "TwoWords"
+    assert len(guard._validators) == 0  # no output validators, hence 0
+
+    # Test with explicitly setting the "on" parameter = "instructions"
+    guard: Guard = Guard().use_many(
+        OneLine(), LowerCase(), TwoWords(on_fail="reask"), on="instructions"
+    )
+
+    instructions_validators = guard.rail.instructions_schema.root_datatype.validators
+    assert len(instructions_validators) == 3
+    assert instructions_validators[0].__class__.__name__ == "OneLine"
+    assert instructions_validators[1].__class__.__name__ == "LowerCase"
+    assert instructions_validators[2].__class__.__name__ == "TwoWords"
+    assert len(guard._validators) == 0  # no output validators, hence 0
+
+    # Test with explicitly setting the "on" parameter = "msg_history"
+    guard: Guard = Guard().use_many(
+        OneLine(), LowerCase(), TwoWords(on_fail="reask"), on="msg_history"
+    )
+
+    msg_history_validators = guard.rail.msg_history_schema.root_datatype.validators
+    assert len(msg_history_validators) == 3
+    assert msg_history_validators[0].__class__.__name__ == "OneLine"
+    assert msg_history_validators[1].__class__.__name__ == "LowerCase"
+    assert msg_history_validators[2].__class__.__name__ == "TwoWords"
+    assert len(guard._validators) == 0  # no output validators, hence 0
 
     # Test with an invalid "on" parameter, should raise a ValueError
     with pytest.raises(ValueError):
@@ -428,6 +481,61 @@ def test_validate():
 
     assert response_2.validation_passed is False
     assert response_2.validated_output is None
+
+
+def test_use_and_use_many():
+    guard: Guard = (
+        Guard()
+        .use_many(OneLine(), LowerCase(), on="prompt")
+        .use(UpperCase, on="instructions")
+        .use(LowerCase, on="msg_history")
+        .use_many(
+            TwoWords(on_fail="reask"),
+            ValidLength(0, 12, on_fail="refrain"),
+            on="output",
+        )
+    )
+
+    # Check schemas for prompt, instructions and msg_history validators
+    prompt_validators = guard.rail.prompt_schema.root_datatype.validators
+    assert len(prompt_validators) == 2
+    assert prompt_validators[0].__class__.__name__ == "OneLine"
+    assert prompt_validators[1].__class__.__name__ == "LowerCase"
+
+    instructions_validators = guard.rail.instructions_schema.root_datatype.validators
+    assert len(instructions_validators) == 1
+    assert instructions_validators[0].__class__.__name__ == "UpperCase"
+
+    msg_history_validators = guard.rail.msg_history_schema.root_datatype.validators
+    assert len(msg_history_validators) == 1
+    assert msg_history_validators[0].__class__.__name__ == "LowerCase"
+
+    # Check guard for output validators
+    assert len(guard._validators) == 2  # only 2 output validators, hence 2
+
+    assert isinstance(guard._validators[0], TwoWords)
+    assert guard._validators[0].on_fail_descriptor == "reask"  # bc we set it
+
+    assert isinstance(guard._validators[1], ValidLength)
+    assert guard._validators[1]._min == 0
+    assert guard._validators[1]._kwargs["min"] == 0
+    assert guard._validators[1]._max == 12
+    assert guard._validators[1]._kwargs["max"] == 12
+    assert guard._validators[1].on_fail_descriptor == "refrain"  # bc we set it
+
+    # Test with an invalid "on" parameter, should raise a ValueError
+    with pytest.raises(ValueError):
+        guard: Guard = (
+            Guard()
+            .use_many(OneLine(), LowerCase(), on="prompt")
+            .use(UpperCase, on="instructions")
+            .use(LowerCase, on="msg_history")
+            .use_many(
+                TwoWords(on_fail="reask"),
+                ValidLength(0, 12, on_fail="refrain"),
+                on="response",  # invalid "on" parameter
+            )
+        )
 
 
 # def test_call():
