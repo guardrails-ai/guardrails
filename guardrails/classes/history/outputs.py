@@ -27,8 +27,8 @@ class Outputs(ArbitraryModel):
         description="The response from the validation process.", default=None
     )
     guarded_output: Optional[Union[str, Dict]] = Field(
-        description="The valid output after validation."
-        "Could be only a partial structure if field level reasks occur."
+        description="Any valid output after validation."
+        "Could be a partial structure if field level reasks occur."
         "Could contain fixed values.",
         default=None,
     )

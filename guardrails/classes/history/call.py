@@ -261,7 +261,7 @@ versions 0.5.0 and beyond. Use 'validation_response' instead."""
 
     @property
     def guarded_output(self) -> Optional[Union[str, Dict]]:
-        """The output from the LLM after undergoing validation.
+        """The final output after undergoing validation.
 
         This will only have a value if the Guard is in a passing state.
         """

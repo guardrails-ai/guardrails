@@ -80,7 +80,7 @@ class Iteration(ArbitraryModel):
     def validation_response(self) -> Optional[Union[ReAsk, str, Dict]]:
         """The response from the validation process.
 
-        Could be a combination of valid output and ReAsks
+        Could be a combination of valid output and ReAsks.
         """
         return self.outputs.validation_response
 
@@ -98,9 +98,9 @@ versions 0.5.0 and beyond. Use 'validation_response' instead."""
 
     @property
     def guarded_output(self) -> Optional[Union[str, Dict]]:
-        """The valid output from the LLM after undergoing validation.
+        """Any valid output after undergoing validation.
 
-        Could be only a partial structure if field level reasks occur.
+        Could be a partial structure if field level reasks occur.
         Could contain fixed values.
         """
         return self.outputs.guarded_output
