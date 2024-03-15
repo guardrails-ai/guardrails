@@ -841,7 +841,7 @@ def test_guard_as_runnable(output: str, throws: bool):
     model = MockModel()
     guard = (
         Guard()
-        .use(RegexMatch("Ice cream", match_type="search"))
+        .use(RegexMatch("Ice cream", match_type="search"), on="output")
         .use(ReadingTime(0.05))  # 3 seconds
     )
     output_parser = StrOutputParser()
