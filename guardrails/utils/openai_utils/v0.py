@@ -1,4 +1,5 @@
 from typing import Any, AsyncIterable, Dict, Iterable, List, cast
+from warnings import warn
 
 import openai
 import openai.error
@@ -15,19 +16,33 @@ from guardrails.utils.openai_utils.streaming_utils import (
 )
 
 
+def raise_v0_deprecation_warning():
+    """Raise a warning about support deprecation for OpenAI v0.x."""
+    warn(
+        """Support for OpenAI v0.x is deprecated and will be removed in
+        Guardrails 0.5.x. Please upgrade to the latest OpenAI v1.x to
+        continue receiving future updates and support.""",
+        FutureWarning,
+    )
+
+
 def get_static_openai_create_func():
+    raise_v0_deprecation_warning()
     return openai.Completion.create
 
 
 def get_static_openai_chat_create_func():
+    raise_v0_deprecation_warning()
     return openai.ChatCompletion.create
 
 
 def get_static_openai_acreate_func():
+    raise_v0_deprecation_warning()
     return openai.Completion.acreate
 
 
 def get_static_openai_chat_acreate_func():
+    raise_v0_deprecation_warning()
     return openai.ChatCompletion.acreate
 
 
