@@ -34,6 +34,7 @@ from guardrails_api_client.types import UNSET
 from langchain_core.messages import BaseMessage
 from langchain_core.runnables import Runnable, RunnableConfig
 from pydantic import BaseModel
+from typing_extensions import deprecated
 
 from guardrails.api_client import GuardrailsApiClient
 from guardrails.classes import OT, InputType, ValidationOutcome
@@ -1065,6 +1066,13 @@ class Guard(Runnable, Generic[OT]):
 
         return ValidationOutcome[OT].from_guard_history(call)
 
+    @deprecated(
+        """The `with_prompt_validation` method is deprecated,
+        and will be removed in 0.5.x. Instead, please use
+        `Guard().use(YourValidator, on='prompt')`.""",
+        FutureWarning,
+        stacklevel=2,
+    )
     def with_prompt_validation(
         self,
         validators: Sequence[Validator],
@@ -1074,12 +1082,6 @@ class Guard(Runnable, Generic[OT]):
         Args:
             validators: The validators to add to the prompt.
         """
-        warnings.warn(
-            """The `with_prompt_validation` method is deprecated,
-            and will be removed in 0.5.x. Instead, please use
-            `Guard().use(YourValidator, on='prompt')`.""",
-            FutureWarning,
-        )
         if self.rail.prompt_schema:
             warnings.warn("Overriding existing prompt validators.")
         schema = StringSchema.from_string(
@@ -1088,6 +1090,13 @@ class Guard(Runnable, Generic[OT]):
         self.rail.prompt_schema = schema
         return self
 
+    @deprecated(
+        """The `with_instructions_validation` method is deprecated,
+        and will be removed in 0.5.x. Instead, please use
+        `Guard().use(YourValidator, on='instructions')`.""",
+        FutureWarning,
+        stacklevel=2,
+    )
     def with_instructions_validation(
         self,
         validators: Sequence[Validator],
@@ -1097,12 +1106,6 @@ class Guard(Runnable, Generic[OT]):
         Args:
             validators: The validators to add to the instructions.
         """
-        warnings.warn(
-            """The `with_instructions_validation` method is deprecated,
-            and will be removed in 0.5.x. Instead, please use
-            `Guard().use(YourValidator, on='instructions')`.""",
-            FutureWarning,
-        )
         if self.rail.instructions_schema:
             warnings.warn("Overriding existing instructions validators.")
         schema = StringSchema.from_string(
@@ -1111,6 +1114,13 @@ class Guard(Runnable, Generic[OT]):
         self.rail.instructions_schema = schema
         return self
 
+    @deprecated(
+        """The `with_msg_history_validation` method is deprecated,
+        and will be removed in 0.5.x. Instead, please use
+        `Guard().use(YourValidator, on='msg_history')`.""",
+        FutureWarning,
+        stacklevel=2,
+    )
     def with_msg_history_validation(
         self,
         validators: Sequence[Validator],
@@ -1120,12 +1130,6 @@ class Guard(Runnable, Generic[OT]):
         Args:
             validators: The validators to add to the msg_history.
         """
-        warnings.warn(
-            """The `with_msg_history_validation` method is deprecated,
-            and will be removed in 0.5.x. Instead, please use
-            `Guard().use(YourValidator, on='msg_history')`.""",
-            FutureWarning,
-        )
         if self.rail.msg_history_schema:
             warnings.warn("Overriding existing msg_history validators.")
         schema = StringSchema.from_string(
