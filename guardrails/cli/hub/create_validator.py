@@ -186,7 +186,7 @@ def create_validator(
     )
 
     target = os.path.abspath(filepath)
-    with open(target, "w") as validator_file:
+    with open(target, "w", encoding="utf-8") as validator_file:
         validator_file.write(template)
         validator_file.close()
 

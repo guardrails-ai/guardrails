@@ -95,7 +95,7 @@ def add_to_hub_inits(manifest: ModuleManifest, site_packages: str):
     )
 
     hub_init_location = os.path.join(site_packages, "guardrails", "hub", "__init__.py")
-    with open(hub_init_location, "a+") as hub_init:
+    with open(hub_init_location, "a+", encoding="utf-8") as hub_init:
         hub_init.seek(0, 0)
         content = hub_init.read()
         if import_line in content:
@@ -112,7 +112,7 @@ def add_to_hub_inits(manifest: ModuleManifest, site_packages: str):
         site_packages, "guardrails", "hub", namespace, "__init__.py"
     )
     if os.path.isfile(namespace_init_location):
-        with open(namespace_init_location, "a+") as namespace_init:
+        with open(namespace_init_location, "a+", encoding="utf-8") as namespace_init:
             namespace_init.seek(0, 0)
             content = namespace_init.read()
             if import_line in content:
@@ -124,7 +124,7 @@ def add_to_hub_inits(manifest: ModuleManifest, site_packages: str):
                 namespace_init.write(import_line)
                 namespace_init.close()
     else:
-        with open(namespace_init_location, "w") as namespace_init:
+        with open(namespace_init_location, "w", encoding="utf-8") as namespace_init:
             namespace_init.write(import_line)
             namespace_init.close()
 

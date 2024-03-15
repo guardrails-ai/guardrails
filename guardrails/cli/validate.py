@@ -32,7 +32,7 @@ def validate(
     # Result is a dictionary, log it to a file
     print(result)
 
-    with open(out, "w") as f:
+    with open(out, "w", encoding="utf-8") as f:
         json.dump(result, f)
         f.write("\n")
 

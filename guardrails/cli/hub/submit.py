@@ -24,7 +24,7 @@ def submit(
             filepath = f"./{package_name}.py"
 
         target = os.path.abspath(filepath)
-        with open(target, "r") as validator_file:
+        with open(target, "r", encoding="utf-8") as validator_file:
             content = validator_file.read()
 
             post_validator_submit(package_name, content)
