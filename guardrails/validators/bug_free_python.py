@@ -1,5 +1,6 @@
 import ast
 from typing import Any, Dict
+from warnings import warn
 
 from guardrails.logger import logger
 from guardrails.validator_base import (
@@ -28,6 +29,13 @@ class BugFreePython(Validator):
     | Programmatic fix              | None                              |
     """
 
+    def __init__(self):
+        warn(
+            "Importing BugFreePython from `guardrails.validators` is deprecated. "
+            "Please install and import it from the Guardrails Hub instead. "
+            "BugFreePython will be removed from this module in the next major release."
+        )
+        
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         logger.debug(f"Validating {value} is not a bug...")
 

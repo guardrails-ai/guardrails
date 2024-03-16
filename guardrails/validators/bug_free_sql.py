@@ -1,4 +1,5 @@
 from typing import Any, Callable, Dict, Optional
+from warnings import warn
 
 from guardrails.utils.sql_utils import SQLDriver, create_sql_driver
 from guardrails.validator_base import (
@@ -35,6 +36,11 @@ class BugFreeSQL(Validator):
     ):
         super().__init__(on_fail, conn=conn, schema_file=schema_file)
         self._driver: SQLDriver = create_sql_driver(schema_file=schema_file, conn=conn)
+        warn(
+            "Importing BugFreeSQL from `guardrails.validators` is deprecated. "
+            "Please install and import it from the Guardrails Hub instead. "
+            "BugFreePython will be removed from this module in the next major release."
+        )
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
         errors = self._driver.validate_sql(value)
