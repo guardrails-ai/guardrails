@@ -44,7 +44,15 @@ const sidebars = {
       type: "category",
       label: "How-to Guides",
       collapsed: true,
-      items: ["how_to_guides/logs", "how_to_guides/streaming", "how_to_guides/llm_api_wrappers", "how_to_guides/rail", "how_to_guides/envvars", "how_to_guides/structured_data_with_guardrails" ],
+      items: [
+        "how_to_guides/logs",
+        "how_to_guides/streaming",
+        "how_to_guides/llm_api_wrappers",
+        "how_to_guides/rail",
+        "how_to_guides/envvars",
+        "how_to_guides/structured_data_with_guardrails",
+        "how_to_guides/telemetry",
+      ],
     },
     "the_guard",
     {

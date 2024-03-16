@@ -77,9 +77,7 @@ def trace_validator_result(
         "start_time",
         "end_time",
         "instance_id",
-    )(
-        validator_log
-    )
+    )(validator_log)
     result = (
         validation_result.outcome
         if hasattr(validation_result, "outcome")
@@ -260,9 +258,7 @@ def default_otel_collector_tracer(resource_name: str = "guardsrails"):
     resource = Resource(attributes={SERVICE_NAME: resource_name})
 
     traceProvider = TracerProvider(resource=resource)
-    processor = BatchSpanProcessor(
-        OTLPSpanExporter(endpoint="localhost:4317", insecure=True)
-    )
+    processor = BatchSpanProcessor(OTLPSpanExporter())
     traceProvider.add_span_processor(processor)
     trace.set_tracer_provider(traceProvider)
 
@@ -275,6 +271,7 @@ def default_otlp_tracer(resource_name: str = "guardsrails"):
 
     OTEL_EXPORTER_OTLP_PROTOCOL
     OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
+    OTEL_EXPORTER_OTLP_ENDPOINT
     OTEL_EXPORTER_OTLP_HEADERS
 
     We recommend using Grafana to collect your metrics. A full example of how to
@@ -292,8 +289,9 @@ def default_otlp_tracer(resource_name: str = "guardsrails"):
         SimpleSpanProcessor,
     )
 
-    envvars_exist = os.environ.get("OTEL_EXPORTER_OTLP_PROTOCOL") and os.environ.get(
-        "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"
+    envvars_exist = os.environ.get("OTEL_EXPORTER_OTLP_PROTOCOL") and (
+        os.environ.get("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT")
+        or os.environ.get("OTEL_EXPORTER_OTLP_ENDPOINT")
     )
 
     resource = Resource(attributes={SERVICE_NAME: resource_name})

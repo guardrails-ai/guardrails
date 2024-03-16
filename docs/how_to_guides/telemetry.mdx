@@ -1,0 +1,129 @@
+import Dashboard from './assets/dashboard.png';
+import ViewTraces from './assets/view_traces.mp4';
+import GrafanaOtelConfig from './assets/grafana_otel_config.mp4';
+
+# Capture Metrics for your Guards
+
+This package is instrumented using the OpenTelemetry Python SDK. By viewing the captured traces and derived metrics, we're able to get useful insights into how our Guards, and our LLM apps in general perform. Among other things, we're able to find:
+
+1. Latency of Guards
+2. Latency of LLMs
+3. Success rates of Guards
+4. The rate at which validators Pass and Fail, within a Guard and across Guards
+5. Deep dives into singular guard and validator calls
+
+Since we are using OpenTelemetry, traces and metrics can be written to any OpenTelemetry enabled service or OTLP endpoint. This includes all major metrics providers like Grafana, New Relic, Prometheus, and Splunk.
+
+This guide will show how to set up your python project to log traces to Grafana and an OTEL collector.
+
+
+## Setup with Grafana
+
+Grafana Cloud is a free offering by Grafana that's easy to setup and is our preferred location for storing metrics.
+
+### Get environment variables from Grafana
+
+<video autoPlay={true} style={{width: "100%"}}>
+ <source src={GrafanaOtelConfig} type="video/mp4"/>
+</video>
+
+1. Sign up with the Grafana cloud (it's free!) https://grafana.com/auth/sign-up/create-user. 
+2. Once your account is up, create a stack.
+3. Navigate away to https://grafana.com/ and click the "My Account" button on the top right of the screen
+4. Scroll down and click on the "Configure" button in the "Open Telemetry" section of the page
+5. Click "generate token"
+6. Compile the instance ID, token, and environment variables 
+GRAFANA_INSTANCE_ID
+TOKEN
+OTEL_EXPORTER_OTLP_PROTOCOL
+OTEL_EXPORTER_OTLP_ENDPOINT
+OTEL_EXPORTER_OTLP_HEADERS
+
+### Setup a Guard with Telemetry
+
+First, set up your Guard the default tracer provided in the guardrails library. You can still use your desired validators
+
+<h5 a><strong><code>main.py</code></strong></h5>
+```python
+from guardrails import Guard
+from guardrails.utils.telemetry_utils import default_otlp_tracer
+from guardrails.validators import ValidLength
+import openai
+
+guard = Guard.from_string(
+  validators=[ValidLength(min=1, max=10, on_fail="exception")],
+  # use a descriptive name that will differentiate where your metrics are stored
+  tracer=default_otlp_tracer("petname_guard")
+)
+
+guard(
+  llm_api=openai.chat.completions.create,
+  prompt="Suggest a name for my cat.",
+  model="gpt-4",
+  max_tokens=1024,
+  temperature=0.5,
+)
+```
+
+Before running the file, make sure to set the environment variables you got from Grafana
+
+```bash
+export GRAFANA_INSTANCE_ID=
+export TOKEN=
+
+# these come from the 'copy environment variables' button
+export OTEL_EXPORTER_OTLP_PROTOCOL=
+export OTEL_EXPORTER_OTLP_ENDPOINT=
+# IMPORTANT: Make sure to replace the space after "Basic" with "%20".
+export OTEL_EXPORTER_OTLP_HEADERS=
+```
+
+Finally, run the python script
+
+```bash
+
+python main.py
+
+```
+
+### Viewing traces
+
+The simplest way to do this is to go to your grafana stack and click on the "Explore" tab. You should see a list of traces that you can filter by service name, operation name, and more.
+
+<video style={{width: "100%"}} autoPlay={true}>
+ <source src={ViewTraces} type="video/mp4"/>
+</video>
+
+While this is easy to do, it's not the best way to get a big-picture view of how your guards are doing. For that, we should use the Guardrails Grafana dashboard template.
+
+The template can be found here https://grafana.com/grafana/dashboards/20600-standard-guardrails-dash/
+and instructions to use the template are found here https://grafana.com/docs/grafana/latest/dashboards/build-dashboards/import-dashboards/
+
+<img src={Dashboard}/>
+
+
+## OTEL Collector
+
+For advanced use cases (like if you have a metrics provider in a VPC), you can use a self-hosted OpenTelemetry Collector to receive traces and metrics from your Guard.
+Standard [open telemetry environment variables](https://opentelemetry-python.readthedocs.io/en/stable/getting-started.html#configure-the-exporter) are used to configure the collector. Use the default_otel_collector_tracer when configuring your guard.
+
+```python
+from guardrails import Guard
+from guardrails.utils.telemetry_utils import default_otel_collector_tracer
+from guardrails.validators import ValidLength
+import openai
+
+guard = Guard.from_string(
+  validators=[ValidLength(min=1, max=10, on_fail="exception")],
+  # use a descriptive name that will differentiate where your metrics are stored
+  tracer=default_otel_collector_tracer("petname_guard")
+)
+
+guard(
+  llm_api=openai.chat.completions.create,
+  prompt="Suggest a name for my cat.",
+  model="gpt-4",
+  max_tokens=1024,
+  temperature=0.5,
+)
+```
