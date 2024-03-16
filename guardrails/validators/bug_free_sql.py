@@ -33,11 +33,7 @@ class BugFreeSQL(Validator):
         schema_file: Optional[str] = None,
         on_fail: Optional[Callable] = None,
     ):
-        super().__init__(
-            on_fail,
-            conn=conn,
-            schema_file=schema_file,
-        )
+        super().__init__(on_fail, conn=conn, schema_file=schema_file)
         self._driver: SQLDriver = create_sql_driver(schema_file=schema_file, conn=conn)
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
