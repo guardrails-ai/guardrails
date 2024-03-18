@@ -77,7 +77,9 @@ def trace_validator_result(
         "start_time",
         "end_time",
         "instance_id",
-    )(validator_log)
+    )(
+        validator_log
+    )
     result = (
         validation_result.outcome
         if hasattr(validation_result, "outcome")
