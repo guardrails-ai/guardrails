@@ -34,135 +34,135 @@ For additional details, please visit: {hub_validator_url}.
 
 # Old names -> New names + hub URLs
 VALIDATOR_NAMING = {
-    "BugFreePython": [
+    "bug-free-python": [
         "ValidPython",
         "https://hub.guardrailsai.com/validator/reflex/valid_python",
     ],
-    "BugFreeSQL": [
+    "bug-free-sql": [
         "ValidSQL",
         "https://hub.guardrailsai.com/validator/guardrails/valid_sql",
     ],
-    "CompetitorCheck": [
+    "competitor-check": [
         "CompetitorCheck",
         "https://hub.guardrailsai.com/validator/guardrails/competitor_check",
     ],
-    "DetectSecrets": [
+    "detect-secrets": [
         "SecretsPresent",
         "https://hub.guardrailsai.com/validator/guardrails/secrets_present",
     ],
-    "EndpointIsReachable": [
+    "is-reachable": [
         "EndpointIsReachable",
         "https://hub.guardrailsai.com/validator/guardrails/endpoint_is_reachable",
     ],
-    "EndsWith": [
+    "ends-with": [
         "EndsWith",
         "https://hub.guardrailsai.com/validator/guardrails/ends_with",
     ],
-    "ExcludeSqlPredicates": [
+    "exclude-sql-predicates": [
         "ExcludeSqlPredicates",
         "https://hub.guardrailsai.com/validator/guardrails/exclude_sql_predicates",
     ],
-    "ExtractedSummarySentencesMatch": [
+    "extracted-summary-sentences-match": [
         "ExtractedSummarySentencesMatch",
         "https://hub.guardrailsai.com/validator/guardrails/extracted_summary_sentences_match",  # noqa: E501
     ],
-    "ExtractiveSummary": [
+    "extractive-summary": [
         "ExtractiveSummary",
         "https://hub.guardrailsai.com/validator/aryn/extractive_summary",
     ],
-    "IsHighQualityTranslation": [
+    "is-high-quality-translation": [
         "HighQualityTranslation",
         "https://hub.guardrailsai.com/validator/brainlogic/high_quality_translation",
     ],
-    "IsProfanityFree": [
+    "is-profanity-free": [
         "ProfanityFree",
         "https://hub.guardrailsai.com/validator/guardrails/profanity_free",
     ],
-    "LowerCase": [
+    "lower-case": [
         "LowerCase",
         "https://hub.guardrailsai.com/validator/guardrails/lowercase",
     ],
-    "OnTopic": [
+    "on_topic": [
         "RestrictToTopic",
         "https://hub.guardrailsai.com/validator/tryolabs/restricttotopic",
     ],
-    "OneLine": [
+    "one-line": [
         "OneLine",
         "https://hub.guardrailsai.com/validator/guardrails/one_line",
     ],
-    "PIIFilter": [
+    "pii": [
         "DetectPII",
         "https://hub.guardrailsai.com/validator/guardrails/detect_pii",
     ],
-    "ProvenanceV0": [
+    "provenance-v0": [
         "ProvenanceEmbeddings",
         "https://hub.guardrailsai.com/validator/guardrails/provenance_embeddings",
     ],
-    "ProvenanceV1": [
+    "provenance-v1": [
         "ProvenanceLLM",
         "https://hub.guardrailsai.com/validator/guardrails/provenance_llm",
     ],
-    "QARelevanceLLMEval": [
+    "qa-relevance-llm-eval": [
         "QARelevanceLLMEval",
         "https://hub.guardrailsai.com/validator/guardrails/qa_relevance_llm_eval",
     ],
-    "ReadingTime": [
+    "reading-time": [
         "ReadingTime",
         "https://hub.guardrailsai.com/validator/guardrails/reading_time",
     ],
-    "RegexMatch": [
+    "regex_match": [
         "RegexMatch",
         "https://hub.guardrailsai.com/validator/guardrails/regex_match",
     ],
-    "RemoveRedundantSentences": [
+    "remove-redundant-sentences": [
         "RedundantSentences",
         "https://hub.guardrailsai.com/validator/guardrails/redundant_sentences",
     ],
-    "SaliencyCheck": [
+    "saliency-check": [
         "SaliencyCheck",
         "https://hub.guardrailsai.com/validator/guardrails/saliency_check",
     ],
-    "SimilarToDocument": [
+    "similar-to-document": [
         "SimilarToDocument",
         "https://hub.guardrailsai.com/validator/guardrails/similar_to_document",
     ],
-    "SimilarToList": [
+    "similar-to-list": [
         "SimilarToPreviousValues",
         "https://hub.guardrailsai.com/validator/guardrails/similar_to_previous_values",
     ],
-    "SqlColumnPresence": [
+    "sql-column-presence": [
         "SqlColumnPresence",
         "https://hub.guardrailsai.com/validator/numbersstation/sql_column_presence",
     ],
-    "ToxicLanguage": [
+    "toxic-language": [
         "ToxicLanguage",
         "https://hub.guardrailsai.com/validator/guardrails/toxic_language",
     ],
-    "TwoWords": [
+    "two-words": [
         "TwoWords",
         "https://hub.guardrailsai.com/validator/guardrails/two_words",
     ],
-    "UpperCase": [
+    "upper-case": [
         "UpperCase",
         "https://hub.guardrailsai.com/validator/guardrails/uppercase",
     ],
-    "ValidChoices": [
+    "valid-choices": [
         "ValidChoices",
         "https://hub.guardrailsai.com/validator/guardrails/valid_choices",
     ],
-    "ValidLength": [
+    "length": [
         "ValidLength",
         "https://hub.guardrailsai.com/validator/guardrails/valid_length",
     ],
-    "ValidRange": [
+    "valid-range": [
         "ValidRange",
         "https://hub.guardrailsai.com/validator/guardrails/valid_range",
     ],
-    "ValidURL": [
+    "valid-url": [
         "ValidURL",
         "https://hub.guardrailsai.com/validator/guardrails/valid_url",
     ],
-    "PydanticFieldValidator": [],
+    "pydantic_field_validator": [],
 }
 
 
@@ -386,14 +386,19 @@ class Validator(Runnable):
 
     def __init__(self, on_fail: Optional[Union[Callable, str]] = None, **kwargs):
         # Raise a warning for deprecated validators
+
+        # Get class name and rail_alias
         child_class_name = str(type(self).__name__)
-        if child_class_name in VALIDATOR_NAMING:
-            if VALIDATOR_NAMING[child_class_name]:
+        validator_rail_alias = self.rail_alias
+
+        # Check if this rail_alias is deprecated
+        if validator_rail_alias in VALIDATOR_NAMING:
+            if VALIDATOR_NAMING[validator_rail_alias]:
                 warn(
                     VALIDATOR_IMPORT_WARNING.format(
                         validator_name=child_class_name,
-                        hub_validator_name=VALIDATOR_NAMING[child_class_name][0],
-                        hub_validator_url=VALIDATOR_NAMING[child_class_name][1],
+                        hub_validator_name=VALIDATOR_NAMING[validator_rail_alias][0],
+                        hub_validator_url=VALIDATOR_NAMING[validator_rail_alias][1],
                     ),
                     FutureWarning,
                 )
