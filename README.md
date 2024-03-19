@@ -64,43 +64,61 @@ pip install guardrails-ai
 3. Create a Guard from the installed guardrail.
 
     ```python
-    # Import Guard and Validator
-    from guardrails.hub import RegexMatch
     from guardrails import Guard
+    from guardrails.hub import RegexMatch
 
-    # Initialize the Guard with 
-    val = Guard().use(
-        RegexMatch(regex="^[A-Z][a-z]*$"),
-        on="output"  # default: "output", other options: "prompt", "instructions", "msg_history"
+    guard = Guard().use(
+        RegexMatch, regex="\(?\d{3}\)?-? *\d{3}-? *-?\d{4}", on_fail="exception"
     )
 
-    guard.parse("Caesar")  # Guardrail Passes
-    guard.parse("Caesar is a great leader")  # Guardrail Fails
+    guard.validate("123-456-7890")  # Guardrail passes
+
+    try:
+        guard.validate("1234-789-0000")  # Guardrail fails
+    except Exception as e:
+        print(e)
+    ```
+    Output:
+    ```console
+    Validation failed for field with errors: Result must match \(?\d{3}\)?-? *\d{3}-? *-?\d{4}
     ```
 4. Run multiple guardrails within a Guard.
     First, install the necessary guardrails from Guardrails Hub.
 
     ```bash
-    guardrails hub install hub://guardrails/regex_match
-    guardrails hub install hub://guardrails/valid_length
+    guardrails hub install hub://guardrails/competitor_check
+    guardrails hub install hub://guardrails/toxic_language
     ```
 
     Then, create a Guard from the installed guardrails.
     
     ```python
-    from guardrails.hub import RegexMatch, ValidLength
     from guardrails import Guard
+    from guardrails.hub import CompetitorCheck, ToxicLanguage
 
     guard = Guard().use_many(
-        RegexMatch(regex="^[A-Z][a-z]*$"),
-        ValidLength(min=1, max=32),
-        on="output"
+        CompetitorCheck(["Apple", "Microsoft", "Google"], on_fail="exception"),
+        ToxicLanguage(threshold=0.5, validation_method="sentence", on_fail="exception"),
     )
 
-    guard.parse("Caesar")  # Guardrail Passes
-    guard.parse("Caesar is a great leader")  # Guardrail Fails
-    ```
+    guard.validate(
+        """An apple a day keeps a doctor away.
+        This is good advice for keeping your health."""
+    )  # Both the guardrails pass
 
+    try:
+        guard.validate(
+            """Shut the hell up! Apple just released a new iPhone."""
+        )  # Both the guardrails fail
+    except Exception as e:
+        print(e)
+    ```
+    Output:
+    ```console
+    Validation failed for field with errors: Found the following competitors: [['Apple']]. Please avoid naming those competitors next time, The following sentences in your response were found to be toxic:
+
+    - Shut the hell up!
+    ```
 
 ### Use Guardrails to generate structured data from LLMs
 
