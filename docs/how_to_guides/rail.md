@@ -1,4 +1,4 @@
-# Use Guardrails with Markup
+# Use Guardrails via RAIL
 
 ## What is `RAIL`?
 
