@@ -34,6 +34,7 @@ from guardrails_api_client.types import UNSET
 from langchain_core.messages import BaseMessage
 from langchain_core.runnables import Runnable, RunnableConfig
 from pydantic import BaseModel
+from pydantic.version import VERSION as PYDANTIC_VERSION
 from typing_extensions import deprecated
 
 from guardrails.api_client import GuardrailsApiClient
@@ -369,6 +370,13 @@ class Guard(Runnable, Generic[OT]):
         description: Optional[str] = None,
     ):
         """Create a Guard instance from a Pydantic model and prompt."""
+        if PYDANTIC_VERSION.startswith("1"):
+            warnings.warn(
+                """Support for Pydantic v1.x is deprecated and will be removed in
+                Guardrails 0.5.x. Please upgrade to the latest Pydantic v2.x to
+                continue receiving future updates and support.""",
+                FutureWarning,
+            )
         # We have to set the tracer in the ContextStore before the Rail,
         #   and therefore the Validators, are initialized
         cls._set_tracer(cls, tracer)  # type: ignore

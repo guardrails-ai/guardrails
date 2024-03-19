@@ -27,14 +27,14 @@ def test_multi_reask(mocker):
     assert call.compiled_prompt == python_rail.VALIDATOR_PARALLELISM_PROMPT_1
     assert call.raw_outputs.first == python_rail.VALIDATOR_PARALLELISM_RESPONSE_1
     assert (
-        call.iterations.first.validation_output
+        call.iterations.first.validation_response
         == python_rail.VALIDATOR_PARALLELISM_REASK_1
     )
 
     assert call.reask_prompts.first == python_rail.VALIDATOR_PARALLELISM_PROMPT_2
     assert call.raw_outputs.at(1) == python_rail.VALIDATOR_PARALLELISM_RESPONSE_2
     assert (
-        call.iterations.at(1).validation_output
+        call.iterations.at(1).validation_response
         == python_rail.VALIDATOR_PARALLELISM_REASK_2
     )
 
@@ -42,6 +42,6 @@ def test_multi_reask(mocker):
     assert call.raw_outputs.last == python_rail.VALIDATOR_PARALLELISM_RESPONSE_3
     # The output here fails some validators but passes others.
     # Since those that it fails in the end are noop fixes, validation fails.
-    assert call.validation_output == python_rail.VALIDATOR_PARALLELISM_RESPONSE_3
-    assert call.validated_output is None
+    assert call.validation_response == python_rail.VALIDATOR_PARALLELISM_RESPONSE_3
+    assert call.guarded_output is None
     assert call.status == "fail"
