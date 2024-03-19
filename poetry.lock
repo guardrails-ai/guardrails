@@ -1029,39 +1029,51 @@ files = [
 ]
 
 [[package]]
-name = "databind-core"
-version = "4.4.0"
-description = "Databind is a library inspired by jackson-databind to de-/serialize Python dataclasses. Compatible with Python 3.7 and newer."
+name = "databind"
+version = "4.5.0"
+description = "Databind is a library inspired by jackson-databind to de-/serialize Python dataclasses. The `databind` package will install the full suite of databind packages. Compatible with Python 3.8 and newer."
 optional = false
-python-versions = ">=3.6.3,<4.0.0"
+python-versions = ">=3.8.0,<4.0.0"
 files = [
-    {file = "databind.core-4.4.0-py3-none-any.whl", hash = "sha256:3c8a4d9abc93e158af9931d8cec389ddfc0514e02aec03b397948d243db11881"},
-    {file = "databind.core-4.4.0.tar.gz", hash = "sha256:715d485e934c073f819f0250bbfcaf59c1319f83427365bc7cfd4c347f87576d"},
+    {file = "databind-4.5.0-py3-none-any.whl", hash = "sha256:68afe8df968a05f67fedf914b6a8ea9159c18a44a2d6d4fd716e2edd94d87f67"},
+    {file = "databind-4.5.0.tar.gz", hash = "sha256:75ddfed49f86a95101fee2712b10f17708fc4f60f0ac3a5d0409afce2bd7ecdf"},
 ]
 
 [package.dependencies]
 Deprecated = ">=1.2.12,<2.0.0"
 nr-date = ">=2.0.0,<3.0.0"
 nr-stream = ">=1.0.0,<2.0.0"
-typeapi = ">=2.0.1,<3.0.0"
-typing-extensions = ">=3.10.0"
+setuptools = {version = ">=40.8.0", markers = "python_version < \"3.10\""}
+typeapi = ">=2.0.1,<3"
+typing-extensions = ">=3.10.0,<5"
 
 [[package]]
-name = "databind-json"
-version = "4.4.0"
-description = "De-/serialize Python dataclasses to or from JSON payloads. Compatible with Python 3.7 and newer."
+name = "databind-core"
+version = "4.5.0"
+description = "Databind is a library inspired by jackson-databind to de-/serialize Python dataclasses. Compatible with Python 3.8 and newer. Deprecated, use `databind` package."
 optional = false
-python-versions = ">=3.6.3,<4.0.0"
+python-versions = ">=3.8.0,<4.0.0"
 files = [
-    {file = "databind.json-4.4.0-py3-none-any.whl", hash = "sha256:df8874118cfba6fd0e77ec3d41a87e04e26034bd545230cab0db1fe904bf1b09"},
-    {file = "databind.json-4.4.0.tar.gz", hash = "sha256:4356afdf0aeefcc053eda0888650c59cc558be2686f08a58324d675ccd023586"},
+    {file = "databind_core-4.5.0-py3-none-any.whl", hash = "sha256:dfd27630e3a9a4fb47705f89b9f53737dba585ddcfb88f4dd7415bb1683dd76f"},
+    {file = "databind_core-4.5.0.tar.gz", hash = "sha256:12121bef338ad8ea1f751b53d06dcb373b52898d435bc97d4d0459d80f06f949"},
 ]
 
 [package.dependencies]
-"databind.core" = ">=4.4.0,<5.0.0"
-nr-date = ">=2.0.0,<3.0.0"
-typeapi = ">=2.0.1,<3.0.0"
-typing-extensions = ">=3.10.0"
+databind = ">=4.5.0,<5.0.0"
+
+[[package]]
+name = "databind-json"
+version = "4.5.0"
+description = "De-/serialize Python dataclasses to or from JSON payloads. Compatible with Python 3.8 and newer. Deprecated, use `databind` module instead."
+optional = false
+python-versions = ">=3.8.0,<4.0.0"
+files = [
+    {file = "databind_json-4.5.0-py3-none-any.whl", hash = "sha256:121699bbc921710e0f413f9479c3e1a3163c1b3291d393c371df729119acd1f3"},
+    {file = "databind_json-4.5.0.tar.gz", hash = "sha256:663b0be83781bc4ba312cccb181590566406a3808f26edb52d347c1053f66bf2"},
+]
+
+[package.dependencies]
+databind = ">=4.5.0,<5.0.0"
 
 [[package]]
 name = "debugpy"
@@ -1763,20 +1775,15 @@ version = "0.1.0"
 description = "A client library for accessing Guardrails API"
 optional = false
 python-versions = ">=3.8, <4"
-files = []
-develop = false
+files = [
+    {file = "guardrails-api-client-0.1.0.tar.gz", hash = "sha256:89276b4c4f1d7bca280c04a18f9eafaaafa3fea73da90ce2061790ebbb2af475"},
+    {file = "guardrails_api_client-0.1.0-py3-none-any.whl", hash = "sha256:ec5f5abbd0adc72203ac1601e6aee562db2de65bd5ec509b45c26fd0eed7c733"},
+]
 
 [package.dependencies]
 attrs = ">=21.3.0"
 httpx = ">=0.20.0,<0.28.0"
 python-dateutil = ">=2.8.0,<3"
-
-[package.source]
-type = "git"
-url = "https://github.com/guardrails-ai/guardrails-api-client.git"
-reference = "v0.1.0"
-resolved_reference = "ecded7439e53c5020c61fefea9933539bfd75b0c"
-subdirectory = "guardrails-api-client"
 
 [[package]]
 name = "h11"
@@ -8107,4 +8114,4 @@ vectordb = ["faiss-cpu", "numpy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8.1"
-content-hash = "ad9b9490a3a3f2ebd0b36821dd569f4dde8039604ae845c374fdbe79740a1d2f"
+content-hash = "c9c2ca916d361f91595c3795f77c014b7af570a0ce053ed58c4dfba4c628f61e"
