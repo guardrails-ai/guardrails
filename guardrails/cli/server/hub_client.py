@@ -70,7 +70,7 @@ def fetch_module_manifest(
     return fetch(manifest_url, token, anonymousUserId)
 
 
-def get_jwt_token(creds: Credentials) -> str | None:
+def get_jwt_token(creds: Credentials) -> Optional[str]:
     token = creds.token
 
     # check for jwt expiration
