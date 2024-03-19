@@ -70,7 +70,8 @@ pip install guardrails-ai
 
     # Initialize the Guard with 
     val = Guard().use(
-        RegexMatch(regex="^[A-Z][a-z]*$")
+        RegexMatch(regex="^[A-Z][a-z]*$"),
+        on="output"  # default: "output", other options: "prompt", "instructions", "msg_history"
     )
 
     guard.parse("Caesar")  # Guardrail Passes
@@ -80,8 +81,8 @@ pip install guardrails-ai
     First, install the necessary guardrails from Guardrails Hub.
 
     ```bash
-    guardrails hub install hub://guardrails/competitor_check
-    guardrails hub install hub://guardrails/toxic_language
+    guardrails hub install hub://guardrails/regex_match
+    guardrails hub install hub://guardrails/valid_length
     ```
 
     Then, create a Guard from the installed guardrails.
@@ -90,9 +91,10 @@ pip install guardrails-ai
     from guardrails.hub import RegexMatch, ValidLength
     from guardrails import Guard
 
-    guard = Guard().use(
+    guard = Guard().use_many(
         RegexMatch(regex="^[A-Z][a-z]*$"),
-        ValidLength(min=1, max=32)
+        ValidLength(min=1, max=32),
+        on="output"
     )
 
     guard.parse("Caesar")  # Guardrail Passes
@@ -133,7 +135,7 @@ validated_output, *rest = guard(
     engine="gpt-3.5-turbo-instruct"
 )
 
-print(f"{validated_output}")
+print(validated_output)
 ```
 
 This prints: 
