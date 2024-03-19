@@ -11,16 +11,13 @@ from guardrails.cli.logger import LEVELS, logger
 from guardrails.cli.server.hub_client import AuthenticationError, get_auth
 
 
-def save_configuration_file(
-    client_id: str, client_secret: str, no_metrics: bool
-) -> None:
+def save_configuration_file(token: str, no_metrics: bool) -> None:
     home = expanduser("~")
     guardrails_rc = os.path.join(home, ".guardrailsrc")
     with open(guardrails_rc, "w") as rc_file:
         lines = [
             f"id={str(uuid.uuid4())}{os.linesep}",
-            f"client_id={client_id}{os.linesep}",
-            f"client_secret={client_secret}{os.linesep}",
+            f"token={token}{os.linesep}",
             f"no_metrics={str(no_metrics).lower()}",
         ]
         rc_file.writelines(lines)
@@ -29,11 +26,8 @@ def save_configuration_file(
 
 @guardrails.command()
 def configure(
-    client_id: Optional[str] = typer.Option(
-        help="Your Guardrails Hub client ID.", default=""
-    ),
-    client_secret: Optional[str] = typer.Option(
-        help="Your Guardrails Hub client secret.", hide_input=True, default=""
+    token: Optional[str] = typer.Option(
+        help="Your Guardrails Hub auth token.", hide_input=True, default=""
     ),
     no_metrics: Optional[str] = typer.Option(
         help="Opt out of anonymous metrics collection.", default=False
@@ -43,15 +37,13 @@ def configure(
     try:
         notice_message = """
 
-    You can find your tokens at https://hub.guardrailsai.com/tokens
+    You can find your token at https://hub.guardrailsai.com/tokens
     """
         logger.log(level=LEVELS.get("NOTICE"), msg=notice_message)  # type: ignore
-        if not client_id:
-            client_id = typer.prompt("Client ID")
-        if not client_secret:
-            client_secret = typer.prompt("Client secret", hide_input=True)
+        if not token:
+            token = typer.prompt("Token", hide_input=True)
         logger.info("Configuring...")
-        save_configuration_file(client_id, client_secret, no_metrics)  # type: ignore
+        save_configuration_file(token, no_metrics)  # type: ignore
 
         logger.info("Validating credentials...")
         get_auth()
@@ -72,7 +64,7 @@ def configure(
         logger.error(auth_error)
         logger.error(
             """
-            Check that your Client ID and Client secret are correct and try again.
+            Check that your token is correct and try again.
 
             If you don't have your token credentials you can find them here:
 

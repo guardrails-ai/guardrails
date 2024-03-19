@@ -10,8 +10,7 @@ from guardrails.classes.generic.serializeable import Serializeable
 @dataclass
 class Credentials(Serializeable):
     id: Optional[str] = None
-    client_id: Optional[str] = None
-    client_secret: Optional[str] = None
+    token: Optional[str] = None
     no_metrics: Optional[bool] = False
 
     @staticmethod
