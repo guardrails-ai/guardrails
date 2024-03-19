@@ -183,7 +183,7 @@ class Runner:
                     msg_history,
                 ) = self.prepare_to_loop(
                     iteration.reasks,
-                    call_log.validation_output,
+                    call_log.validation_response,
                     output_schema,
                     prompt_params=prompt_params,
                     include_instructions=include_instructions,
@@ -291,13 +291,13 @@ class Runner:
                 validated_output = self.validate(
                     iteration, index, parsed_output, output_schema
                 )
-                iteration.outputs.validation_output = validated_output
+                iteration.outputs.validation_response = validated_output
 
                 # Introspect: inspect validated output for reasks.
                 reasks, valid_output = self.introspect(
                     index, validated_output, output_schema
                 )
-                iteration.outputs.validated_output = valid_output
+                iteration.outputs.guarded_output = valid_output
 
             iteration.outputs.reasks = reasks
 
@@ -323,7 +323,7 @@ class Runner:
         validated_msg_history = msg_history_schema.validate(
             iteration, msg_str, self.metadata, disable_tracer=self._disable_tracer
         )
-        iteration.outputs.validation_output = validated_msg_history
+        iteration.outputs.validation_response = validated_msg_history
         if isinstance(validated_msg_history, ReAsk):
             raise ValidationError(
                 f"Message history validation failed: " f"{validated_msg_history}"
@@ -366,7 +366,7 @@ class Runner:
             self.metadata,
             disable_tracer=self._disable_tracer,
         )
-        iteration.outputs.validation_output = validated_prompt
+        iteration.outputs.validation_response = validated_prompt
         if validated_prompt is None:
             raise ValidationError("Prompt validation failed")
         if isinstance(validated_prompt, ReAsk):
@@ -390,7 +390,7 @@ class Runner:
             self.metadata,
             disable_tracer=self._disable_tracer,
         )
-        iteration.outputs.validation_output = validated_instructions
+        iteration.outputs.validation_response = validated_instructions
         if validated_instructions is None:
             raise ValidationError("Instructions validation failed")
         if isinstance(validated_instructions, ReAsk):
@@ -718,7 +718,7 @@ class AsyncRunner(Runner):
                     msg_history,
                 ) = self.prepare_to_loop(
                     iteration.reasks,
-                    call_log.validation_output,
+                    call_log.validation_response,
                     output_schema,
                     prompt_params=prompt_params,
                 )
@@ -816,13 +816,13 @@ class AsyncRunner(Runner):
                 validated_output = await self.async_validate(
                     iteration, index, parsed_output, output_schema
                 )
-                iteration.outputs.validation_output = validated_output
+                iteration.outputs.validation_response = validated_output
 
                 # Introspect: inspect validated output for reasks.
                 reasks, valid_output = self.introspect(
                     index, validated_output, output_schema
                 )
-                iteration.outputs.validated_output = valid_output
+                iteration.outputs.guarded_output = valid_output
 
             iteration.outputs.reasks = reasks
 
@@ -975,7 +975,7 @@ class AsyncRunner(Runner):
                 validated_prompt = await prompt_schema.async_validate(
                     iteration, prompt.source, self.metadata
                 )
-                iteration.outputs.validation_output = validated_prompt
+                iteration.outputs.validation_response = validated_prompt
                 if validated_prompt is None:
                     raise ValidationError("Prompt validation failed")
                 if isinstance(validated_prompt, ReAsk):
@@ -994,7 +994,7 @@ class AsyncRunner(Runner):
                 validated_instructions = await instructions_schema.async_validate(
                     iteration, instructions.source, self.metadata
                 )
-                iteration.outputs.validation_output = validated_instructions
+                iteration.outputs.validation_response = validated_instructions
                 if validated_instructions is None:
                     raise ValidationError("Instructions validation failed")
                 if isinstance(validated_instructions, ReAsk):
@@ -1194,8 +1194,8 @@ class StreamRunner(Runner):
         # Finally, add to logs
         iteration.outputs.raw_output = fragment
         iteration.outputs.parsed_output = parsed_fragment
-        iteration.outputs.validation_output = validated_fragment
-        iteration.outputs.validated_output = valid_op
+        iteration.outputs.validation_response = validated_fragment
+        iteration.outputs.guarded_output = valid_op
 
     def get_chunk_text(self, chunk: Any, api: Union[PromptCallableBase, None]) -> str:
         """Get the text from a chunk."""

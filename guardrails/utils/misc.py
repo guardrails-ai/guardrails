@@ -63,7 +63,7 @@ def generate_test_artifacts(
             f.write(llm_output or "")
 
         # Save the validated response.
-        validated_output = logs.validated_output
+        validated_output = logs.guarded_output
         with open(
             os.path.join(artifact_dir, f"validated_response_{on_fail_type}{ext}.py"),
             "w",

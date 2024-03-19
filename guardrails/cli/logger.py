@@ -17,4 +17,4 @@ for key in LEVELS:
 
 
 logger = logging.getLogger("guardrails-cli")
-coloredlogs.install(level="DEBUG", logger=logger)
+coloredlogs.install(level="INFO", logger=logger)

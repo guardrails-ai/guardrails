@@ -48,7 +48,10 @@ class SimilarToDocument(Validator):
         on_fail: Optional[Callable] = None,
     ):
         super().__init__(
-            on_fail=on_fail, document=document, threshold=threshold, model=model
+            on_fail=on_fail,
+            document=document,
+            threshold=threshold,
+            model=model,
         )
         if not _HAS_NUMPY:
             raise ImportError(

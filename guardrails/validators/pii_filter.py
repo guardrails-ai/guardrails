@@ -75,7 +75,11 @@ class PIIFilter(Validator):
                 "Refer to https://microsoft.github.io/presidio/installation/"
             )
 
-        super().__init__(on_fail, pii_entities=pii_entities, **kwargs)
+        super().__init__(
+            on_fail,
+            pii_entities=pii_entities,
+            **kwargs,
+        )
         self.pii_entities = pii_entities
         self.pii_analyzer = AnalyzerEngine()
         self.pii_anonymizer = AnonymizerEngine()

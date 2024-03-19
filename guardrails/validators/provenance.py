@@ -117,7 +117,10 @@ class ProvenanceV0(Validator):
         **kwargs,
     ):
         super().__init__(
-            on_fail, threshold=threshold, validation_method=validation_method, **kwargs
+            on_fail,
+            threshold=threshold,
+            validation_method=validation_method,
+            **kwargs,
         )
         self._threshold = float(threshold)
         if validation_method not in ["sentence", "full"]:
