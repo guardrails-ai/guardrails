@@ -1,4 +1,5 @@
 import datetime
+import math
 
 import pytest
 from jwt import JWT, jwk_from_dict
@@ -42,7 +43,7 @@ def test_get_auth():
 
 
 def test_get_jwt_token():
-    expiration = (datetime.datetime.now().timestamp() + 1000).__floor__()
+    expiration = math.floor(datetime.datetime.now().timestamp() + 1000)
 
     jwk = jwk_from_dict(
         {
@@ -64,7 +65,7 @@ def test_get_jwt_token():
     assert get_jwt_token(Credentials.from_dict(creds)) == valid_jwt
 
     with pytest.raises(Exception) as e:
-        expiration = (datetime.datetime.now().timestamp() - 1000).__floor__()
+        expiration = math.floor(datetime.datetime.now().timestamp() - 1000)
         expired_jwt = JWT().encode(
             {
                 "exp": expiration,
