@@ -6,6 +6,7 @@ from guardrails.utils.pydantic_utils import (
     add_pydantic_validators_as_guardrails_validators,
     add_validator,
 )
+from guardrails.validator_base import OnFailAction
 from guardrails.validators import FailResult, PassResult, ValidChoices, ValidLength
 
 
@@ -60,7 +61,7 @@ def test_add_pydantic_validators_as_guardrails_validators():
     assert isinstance(
         validators[1][0], ValidChoices
     ), "Second validator should be ValidChoices"
-    assert validators[1][1] == "reask"
+    assert validators[1][1] == OnFailAction.REASK
     assert isinstance(validators[1][0].validate("Alex", {}), PassResult)
     assert isinstance(validators[1][0].validate("Bob", {}), PassResult)
     assert isinstance(validators[1][0].validate("Candace", {}), FailResult)

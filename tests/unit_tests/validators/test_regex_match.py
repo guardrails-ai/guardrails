@@ -1,5 +1,6 @@
 import re
 
+from guardrails.validator_base import OnFailAction
 from guardrails.validators import FailResult, PassResult, RegexMatch
 
 
