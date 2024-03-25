@@ -33,7 +33,11 @@ class ValidRange(Validator):
         max: Optional[int] = None,
         on_fail: Optional[Callable] = None,
     ):
-        super().__init__(on_fail=on_fail, min=min, max=max)
+        super().__init__(
+            on_fail=on_fail,
+            min=min,
+            max=max,
+        )
 
         self._min = min
         self._max = max

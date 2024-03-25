@@ -3,11 +3,19 @@ from string import Template
 from typing import Any, Dict, Optional
 
 import requests
+from jwt import JWT
+from jwt.exceptions import JWTDecodeError
 
 from guardrails.classes.credentials import Credentials
 from guardrails.cli.logger import logger
-from guardrails.cli.server.auth import get_auth_token
 from guardrails.cli.server.module_manifest import ModuleManifest
+
+TOKEN_EXPIRED_MESSAGE = (
+    "Your token has expired. Please run `guardrails configure` to update your token."
+)
+TOKEN_INVALID_MESSAGE = (
+    "Your token is invalid. Please run `guardrails configure` to update your token."
+)
 
 validator_hub_service = "https://so4sg4q4pb.execute-api.us-east-1.amazonaws.com"
 validator_manifest_endpoint = Template(
@@ -52,7 +60,7 @@ def fetch(url: str, token: Optional[str], anonymousUserId: Optional[str]):
 
 
 def fetch_module_manifest(
-    module_name: str, token: str, anonymousUserId: Optional[str] = None
+    module_name: str, token: Optional[str], anonymousUserId: Optional[str] = None
 ) -> Dict[str, Any]:
     namespace, validator_name = module_name.split("/", 1)
     manifest_path = validator_manifest_endpoint.safe_substitute(
@@ -62,9 +70,25 @@ def fetch_module_manifest(
     return fetch(manifest_url, token, anonymousUserId)
 
 
+def get_jwt_token(creds: Credentials) -> Optional[str]:
+    token = creds.token
+
+    # check for jwt expiration
+    if token:
+        try:
+            JWT().decode(token, do_verify=False)
+        except JWTDecodeError as e:
+            # if the error message includes "Expired", then the token is expired
+            if "Expired" in str(e):
+                raise Exception(TOKEN_EXPIRED_MESSAGE)
+            else:
+                raise Exception(TOKEN_INVALID_MESSAGE)
+    return token
+
+
 def fetch_module(module_name: str) -> ModuleManifest:
-    creds = Credentials.from_rc_file()
-    token = get_auth_token(creds)
+    creds = Credentials.from_rc_file(logger)
+    token = get_jwt_token(creds)
 
     module_manifest_json = fetch_module_manifest(module_name, token, creds.id)
     return ModuleManifest.from_dict(module_manifest_json)
@@ -89,8 +113,8 @@ def get_validator_manifest(module_name: str):
 # GET /auth
 def get_auth():
     try:
-        creds = Credentials.from_rc_file()
-        token = get_auth_token(creds)
+        creds = Credentials.from_rc_file(logger)
+        token = get_jwt_token(creds)
         auth_url = f"{validator_hub_service}/auth"
         response = fetch(auth_url, token, creds.id)
         if not response:
@@ -105,8 +129,8 @@ def get_auth():
 
 def post_validator_submit(package_name: str, content: str):
     try:
-        creds = Credentials.from_rc_file()
-        token = get_auth_token(creds)
+        creds = Credentials.from_rc_file(logger)
+        token = get_jwt_token(creds)
         submission_url = f"{validator_hub_service}/validator/submit"
 
         headers = {

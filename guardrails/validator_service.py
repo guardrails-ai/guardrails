@@ -5,7 +5,6 @@ from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
-from guardrails.classes.credentials import Credentials
 from guardrails.classes.history import Iteration
 from guardrails.datatypes import FieldValidation
 from guardrails.errors import ValidationError
@@ -31,6 +30,9 @@ def key_not_empty(key: str) -> bool:
 
 class ValidatorServiceBase:
     """Base class for validator services."""
+
+    def __init__(self, disable_tracer: Optional[bool] = True):
+        self._disable_tracer = disable_tracer
 
     # NOTE: This is avoiding an issue with multiprocessing.
     #       If we wrap the validate methods at the class level or anytime before
@@ -135,10 +137,7 @@ class ValidatorServiceBase:
         #   this will have to change.
         validator_logs.instance_id = id(validator)
 
-        # Get metrics opt-out from credentials
-        disable_tracer = Credentials.from_rc_file().no_metrics
-
-        if not disable_tracer:
+        if not self._disable_tracer:
             # Get HubTelemetry singleton and create a new span to
             # log the validator usage
             _hub_telemetry = HubTelemetry()
@@ -296,7 +295,6 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
             # wait for the parallel tasks to finish
             if parallel_tasks:
                 parallel_results = await asyncio.gather(*parallel_tasks)
-                iteration.outputs.validator_logs.extend(parallel_results)
                 validators_logs.extend(parallel_results)
 
             # process the results, handle failures
@@ -406,7 +404,11 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
 
 
 def validate(
-    value: Any, metadata: dict, validator_setup: FieldValidation, iteration: Iteration
+    value: Any,
+    metadata: dict,
+    validator_setup: FieldValidation,
+    iteration: Iteration,
+    disable_tracer: Optional[bool] = True,
 ):
     process_count = int(os.environ.get("GUARDRAILS_PROCESS_COUNT", 10))
 
@@ -423,11 +425,11 @@ def validate(
             "To run asynchronously, specify a process count"
             "greater than 1 or unset this environment variable."
         )
-        validator_service = SequentialValidatorService()
+        validator_service = SequentialValidatorService(disable_tracer)
     elif loop is not None and not loop.is_running():
-        validator_service = AsyncValidatorService()
+        validator_service = AsyncValidatorService(disable_tracer)
     else:
-        validator_service = SequentialValidatorService()
+        validator_service = SequentialValidatorService(disable_tracer)
     return validator_service.validate(
         value,
         metadata,
@@ -441,8 +443,9 @@ async def async_validate(
     metadata: dict,
     validator_setup: FieldValidation,
     iteration: Iteration,
+    disable_tracer: Optional[bool] = True,
 ):
-    validator_service = AsyncValidatorService()
+    validator_service = AsyncValidatorService(disable_tracer)
     return await validator_service.async_validate(
         value,
         metadata,

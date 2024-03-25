@@ -17,6 +17,3 @@ notebook_names="${notebook_names%,}]"
 # find line that begins with "notebook:" and replace it with notebook: $notebook_names
 sed "s/notebook: \[.*\]/notebook: $notebook_names/" .github/workflows/examples_check.yml > .github/workflows/examples_check.yml.tmp
 mv .github/workflows/examples_check.yml.tmp .github/workflows/examples_check.yml
-
-sed "s/notebook: \[.*\]/notebook: $notebook_names/" .github/workflows/ci.yml > .github/workflows/ci.yml.tmp
-mv .github/workflows/ci.yml.tmp .github/workflows/ci.yml

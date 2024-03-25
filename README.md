@@ -59,7 +59,7 @@ pip install guardrails-ai
 2. Install a guardrail from Guardrails Hub.
 
     ```bash
-    gudardrails hub install hub://guardrails/regex_match
+    guardrails hub install hub://guardrails/regex_match
     ```
 3. Create a Guard from the installed guardrail.
 

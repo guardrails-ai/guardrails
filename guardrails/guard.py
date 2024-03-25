@@ -22,19 +22,20 @@ from typing import (
     overload,
 )
 
-from eliot import add_destinations, start_action
-from guard_rails_api_client.models import AnyObject
-from guard_rails_api_client.models import Guard as GuardModel
-from guard_rails_api_client.models import (
+from guardrails_api_client.models import AnyObject
+from guardrails_api_client.models import Guard as GuardModel
+from guardrails_api_client.models import (
     History,
     HistoryEvent,
     ValidatePayload,
     ValidationOutput,
 )
-from guard_rails_api_client.types import UNSET
+from guardrails_api_client.types import UNSET
 from langchain_core.messages import BaseMessage
 from langchain_core.runnables import Runnable, RunnableConfig
 from pydantic import BaseModel
+from pydantic.version import VERSION as PYDANTIC_VERSION
+from typing_extensions import deprecated
 
 from guardrails.api_client import GuardrailsApiClient
 from guardrails.classes import OT, InputType, ValidationOutcome
@@ -70,8 +71,6 @@ from guardrails.utils.llm_response import LLMResponse
 from guardrails.utils.reask_utils import FieldReAsk
 from guardrails.utils.validator_utils import get_validator
 from guardrails.validator_base import FailResult, Validator
-
-add_destinations(logger.debug)
 
 
 class Guard(Runnable, Generic[OT]):
@@ -126,11 +125,13 @@ class Guard(Runnable, Generic[OT]):
         self.base_model = base_model
         self._set_tracer(tracer)
 
+        credentials = Credentials.from_rc_file(logger)
+
         # Get unique id of user from credentials
-        self._user_id = Credentials.from_rc_file().id or ""
+        self._user_id = credentials.id or ""
 
         # Get metrics opt-out from credentials
-        self._disable_tracer = Credentials.from_rc_file().no_metrics
+        self._disable_tracer = credentials.no_metrics
 
         # Get id of guard object (that is unique)
         self._guard_id = id(self)  # id of guard object; not the class
@@ -369,6 +370,13 @@ class Guard(Runnable, Generic[OT]):
         description: Optional[str] = None,
     ):
         """Create a Guard instance from a Pydantic model and prompt."""
+        if PYDANTIC_VERSION.startswith("1"):
+            warnings.warn(
+                """Support for Pydantic v1.x is deprecated and will be removed in
+                Guardrails 0.5.x. Please upgrade to the latest Pydantic v2.x to
+                continue receiving future updates and support.""",
+                FutureWarning,
+            )
         # We have to set the tracer in the ContextStore before the Rail,
         #   and therefore the Validators, are initialized
         cls._set_tracer(cls, tracer)  # type: ignore
@@ -669,41 +677,41 @@ class Guard(Runnable, Generic[OT]):
         # Check whether stream is set
         if kwargs.get("stream", False):
             # If stream is True, use StreamRunner
-            with start_action(action_type="guard_call", prompt_params=prompt_params):
-                runner = StreamRunner(
-                    instructions=instructions_obj,
-                    prompt=prompt_obj,
-                    msg_history=msg_history_obj,
-                    api=get_llm_ask(llm_api, *args, **kwargs),
-                    prompt_schema=self.prompt_schema,
-                    instructions_schema=self.instructions_schema,
-                    msg_history_schema=self.msg_history_schema,
-                    output_schema=self.output_schema,
-                    num_reasks=num_reasks,
-                    metadata=metadata,
-                    base_model=self.base_model,
-                    full_schema_reask=full_schema_reask,
-                )
-                return runner(call_log=call_log, prompt_params=prompt_params)
+            runner = StreamRunner(
+                instructions=instructions_obj,
+                prompt=prompt_obj,
+                msg_history=msg_history_obj,
+                api=get_llm_ask(llm_api, *args, **kwargs),
+                prompt_schema=self.prompt_schema,
+                instructions_schema=self.instructions_schema,
+                msg_history_schema=self.msg_history_schema,
+                output_schema=self.output_schema,
+                num_reasks=num_reasks,
+                metadata=metadata,
+                base_model=self.base_model,
+                full_schema_reask=full_schema_reask,
+                disable_tracer=self._disable_tracer,
+            )
+            return runner(call_log=call_log, prompt_params=prompt_params)
         else:
             # Otherwise, use Runner
-            with start_action(action_type="guard_call", prompt_params=prompt_params):
-                runner = Runner(
-                    instructions=instructions_obj,
-                    prompt=prompt_obj,
-                    msg_history=msg_history_obj,
-                    api=get_llm_ask(llm_api, *args, **kwargs),
-                    prompt_schema=self.prompt_schema,
-                    instructions_schema=self.instructions_schema,
-                    msg_history_schema=self.msg_history_schema,
-                    output_schema=self.output_schema,
-                    num_reasks=num_reasks,
-                    metadata=metadata,
-                    base_model=self.base_model,
-                    full_schema_reask=full_schema_reask,
-                )
-                call = runner(call_log=call_log, prompt_params=prompt_params)
-                return ValidationOutcome[OT].from_guard_history(call)
+            runner = Runner(
+                instructions=instructions_obj,
+                prompt=prompt_obj,
+                msg_history=msg_history_obj,
+                api=get_llm_ask(llm_api, *args, **kwargs),
+                prompt_schema=self.prompt_schema,
+                instructions_schema=self.instructions_schema,
+                msg_history_schema=self.msg_history_schema,
+                output_schema=self.output_schema,
+                num_reasks=num_reasks,
+                metadata=metadata,
+                base_model=self.base_model,
+                full_schema_reask=full_schema_reask,
+                disable_tracer=self._disable_tracer,
+            )
+            call = runner(call_log=call_log, prompt_params=prompt_params)
+            return ValidationOutcome[OT].from_guard_history(call)
 
     async def _call_async(
         self,
@@ -746,25 +754,24 @@ class Guard(Runnable, Generic[OT]):
                     "You must provide a prompt if msg_history is empty. "
                     "Alternatively, you can provide a prompt in the RAIL spec."
                 )
-        with start_action(action_type="guard_call", prompt_params=prompt_params):
-            runner = AsyncRunner(
-                instructions=instructions_obj,
-                prompt=prompt_obj,
-                msg_history=msg_history_obj,
-                api=get_async_llm_ask(llm_api, *args, **kwargs),
-                prompt_schema=self.prompt_schema,
-                instructions_schema=self.instructions_schema,
-                msg_history_schema=self.msg_history_schema,
-                output_schema=self.output_schema,
-                num_reasks=num_reasks,
-                metadata=metadata,
-                base_model=self.base_model,
-                full_schema_reask=full_schema_reask,
-            )
-            call = await runner.async_run(
-                call_log=call_log, prompt_params=prompt_params
-            )
-            return ValidationOutcome[OT].from_guard_history(call)
+
+        runner = AsyncRunner(
+            instructions=instructions_obj,
+            prompt=prompt_obj,
+            msg_history=msg_history_obj,
+            api=get_async_llm_ask(llm_api, *args, **kwargs),
+            prompt_schema=self.prompt_schema,
+            instructions_schema=self.instructions_schema,
+            msg_history_schema=self.msg_history_schema,
+            output_schema=self.output_schema,
+            num_reasks=num_reasks,
+            metadata=metadata,
+            base_model=self.base_model,
+            full_schema_reask=full_schema_reask,
+            disable_tracer=self._disable_tracer,
+        )
+        call = await runner.async_run(call_log=call_log, prompt_params=prompt_params)
+        return ValidationOutcome[OT].from_guard_history(call)
 
     def __repr__(self):
         return f"Guard(RAIL={self.rail})"
@@ -1005,25 +1012,25 @@ class Guard(Runnable, Generic[OT]):
         Returns:
             The validated response.
         """
-        with start_action(action_type="guard_parse"):
-            runner = Runner(
-                instructions=kwargs.pop("instructions", None),
-                prompt=kwargs.pop("prompt", None),
-                msg_history=kwargs.pop("msg_history", None),
-                api=get_llm_ask(llm_api, *args, **kwargs) if llm_api else None,
-                prompt_schema=self.prompt_schema,
-                instructions_schema=self.instructions_schema,
-                msg_history_schema=self.msg_history_schema,
-                output_schema=self.output_schema,
-                num_reasks=num_reasks,
-                metadata=metadata,
-                output=llm_output,
-                base_model=self.base_model,
-                full_schema_reask=full_schema_reask,
-            )
-            call = runner(call_log=call_log, prompt_params=prompt_params)
+        runner = Runner(
+            instructions=kwargs.pop("instructions", None),
+            prompt=kwargs.pop("prompt", None),
+            msg_history=kwargs.pop("msg_history", None),
+            api=get_llm_ask(llm_api, *args, **kwargs) if llm_api else None,
+            prompt_schema=self.prompt_schema,
+            instructions_schema=self.instructions_schema,
+            msg_history_schema=self.msg_history_schema,
+            output_schema=self.output_schema,
+            num_reasks=num_reasks,
+            metadata=metadata,
+            output=llm_output,
+            base_model=self.base_model,
+            full_schema_reask=full_schema_reask,
+            disable_tracer=self._disable_tracer,
+        )
+        call = runner(call_log=call_log, prompt_params=prompt_params)
 
-            return ValidationOutcome[OT].from_guard_history(call)
+        return ValidationOutcome[OT].from_guard_history(call)
 
     async def _async_parse(
         self,
@@ -1047,28 +1054,33 @@ class Guard(Runnable, Generic[OT]):
         Returns:
             The validated response.
         """
-        with start_action(action_type="guard_parse"):
-            runner = AsyncRunner(
-                instructions=kwargs.pop("instructions", None),
-                prompt=kwargs.pop("prompt", None),
-                msg_history=kwargs.pop("msg_history", None),
-                api=get_async_llm_ask(llm_api, *args, **kwargs) if llm_api else None,
-                prompt_schema=self.prompt_schema,
-                instructions_schema=self.instructions_schema,
-                msg_history_schema=self.msg_history_schema,
-                output_schema=self.output_schema,
-                num_reasks=num_reasks,
-                metadata=metadata,
-                output=llm_output,
-                base_model=self.base_model,
-                full_schema_reask=full_schema_reask,
-            )
-            call = await runner.async_run(
-                call_log=call_log, prompt_params=prompt_params
-            )
+        runner = AsyncRunner(
+            instructions=kwargs.pop("instructions", None),
+            prompt=kwargs.pop("prompt", None),
+            msg_history=kwargs.pop("msg_history", None),
+            api=get_async_llm_ask(llm_api, *args, **kwargs) if llm_api else None,
+            prompt_schema=self.prompt_schema,
+            instructions_schema=self.instructions_schema,
+            msg_history_schema=self.msg_history_schema,
+            output_schema=self.output_schema,
+            num_reasks=num_reasks,
+            metadata=metadata,
+            output=llm_output,
+            base_model=self.base_model,
+            full_schema_reask=full_schema_reask,
+            disable_tracer=self._disable_tracer,
+        )
+        call = await runner.async_run(call_log=call_log, prompt_params=prompt_params)
 
-            return ValidationOutcome[OT].from_guard_history(call)
+        return ValidationOutcome[OT].from_guard_history(call)
 
+    @deprecated(
+        """The `with_prompt_validation` method is deprecated,
+        and will be removed in 0.5.x. Instead, please use
+        `Guard().use(YourValidator, on='prompt')`.""",
+        category=FutureWarning,
+        stacklevel=2,
+    )
     def with_prompt_validation(
         self,
         validators: Sequence[Validator],
@@ -1086,6 +1098,13 @@ class Guard(Runnable, Generic[OT]):
         self.rail.prompt_schema = schema
         return self
 
+    @deprecated(
+        """The `with_instructions_validation` method is deprecated,
+        and will be removed in 0.5.x. Instead, please use
+        `Guard().use(YourValidator, on='instructions')`.""",
+        category=FutureWarning,
+        stacklevel=2,
+    )
     def with_instructions_validation(
         self,
         validators: Sequence[Validator],
@@ -1103,6 +1122,13 @@ class Guard(Runnable, Generic[OT]):
         self.rail.instructions_schema = schema
         return self
 
+    @deprecated(
+        """The `with_msg_history_validation` method is deprecated,
+        and will be removed in 0.5.x. Instead, please use
+        `Guard().use(YourValidator, on='msg_history')`.""",
+        category=FutureWarning,
+        stacklevel=2,
+    )
     def with_msg_history_validation(
         self,
         validators: Sequence[Validator],
@@ -1120,24 +1146,87 @@ class Guard(Runnable, Generic[OT]):
         self.rail.msg_history_schema = schema
         return self
 
+    def __add_validator(self, validator: Validator, on: str = "output"):
+        # Only available for string output types
+        if self.rail.output_type != "str":
+            raise RuntimeError(
+                "The `use` method is only available for string output types."
+            )
+
+        if on == "prompt":
+            # If the prompt schema exists, add the validator to it
+            if self.rail.prompt_schema:
+                self.rail.prompt_schema.root_datatype.validators.append(validator)
+            else:
+                # Otherwise, create a new schema with the validator
+                schema = StringSchema.from_string(
+                    validators=[validator],
+                )
+                self.rail.prompt_schema = schema
+        elif on == "instructions":
+            # If the instructions schema exists, add the validator to it
+            if self.rail.instructions_schema:
+                self.rail.instructions_schema.root_datatype.validators.append(validator)
+            else:
+                # Otherwise, create a new schema with the validator
+                schema = StringSchema.from_string(
+                    validators=[validator],
+                )
+                self.rail.instructions_schema = schema
+        elif on == "msg_history":
+            # If the msg_history schema exists, add the validator to it
+            if self.rail.msg_history_schema:
+                self.rail.msg_history_schema.root_datatype.validators.append(validator)
+            else:
+                # Otherwise, create a new schema with the validator
+                schema = StringSchema.from_string(
+                    validators=[validator],
+                )
+                self.rail.msg_history_schema = schema
+        elif on == "output":
+            self._validators.append(validator)
+            self.rail.output_schema.root_datatype.validators.append(validator)
+        else:
+            raise ValueError(
+                """Invalid value for `on`. Must be one of the following:
+                'output', 'prompt', 'instructions', 'msg_history'."""
+            )
+
     @overload
-    def use(self, validator: Validator) -> "Guard":
+    def use(self, validator: Validator, *, on: str = "output") -> "Guard":
         ...
 
     @overload
-    def use(self, validator: Type[Validator], *args, **kwargs) -> "Guard":
+    def use(
+        self, validator: Type[Validator], *args, on: str = "output", **kwargs
+    ) -> "Guard":
         ...
 
     def use(
-        self, validator: Union[Validator, Type[Validator]], *args, **kwargs
+        self,
+        validator: Union[Validator, Type[Validator]],
+        *args,
+        on: str = "output",
+        **kwargs,
     ) -> "Guard":
-        if validator:
-            self._validators.append(get_validator(validator, *args, **kwargs))
+        """Use a validator to validate either of the following:
+        - The output of an LLM request
+        - The prompt
+        - The instructions
+        - The message history
 
+        *Note*: For on="output", `use` is only available for string output types.
+
+        Args:
+            validator: The validator to use. Either the class or an instance.
+            on: The part of the LLM request to validate. Defaults to "output".
+        """
+        hydrated_validator = get_validator(validator, *args, **kwargs)
+        self.__add_validator(hydrated_validator, on=on)
         return self
 
     @overload
-    def use_many(self, *validators: Validator) -> "Guard":
+    def use_many(self, *validators: Validator, on: str = "output") -> "Guard":
         ...
 
     @overload
@@ -1148,6 +1237,7 @@ class Guard(Runnable, Generic[OT]):
             Optional[Union[List[Any], Dict[str, Any]]],
             Optional[Dict[str, Any]],
         ],
+        on: str = "output",
     ) -> "Guard":
         ...
 
@@ -1161,10 +1251,21 @@ class Guard(Runnable, Generic[OT]):
                 Optional[Dict[str, Any]],
             ],
         ],
+        on: str = "output",
     ) -> "Guard":
-        for v in validators:
-            self._validators.append(get_validator(v))
+        """Use a validator to validate results of an LLM request.
 
+        *Note*: `use_many` is only available for string output types.
+        """
+        if self.rail.output_type != "str":
+            raise RuntimeError(
+                "The `use_many` method is only available for string output types."
+            )
+
+        # Loop through the validators
+        for v in validators:
+            hydrated_validator = get_validator(v)
+            self.__add_validator(hydrated_validator, on=on)
         return self
 
     def validate(self, llm_output: str, *args, **kwargs) -> ValidationOutcome[str]:

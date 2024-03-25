@@ -29,7 +29,10 @@ class ReadingTime(Validator):
     """
 
     def __init__(self, reading_time: int, on_fail: Optional[str] = None):
-        super().__init__(on_fail=on_fail, reading_time=reading_time)
+        super().__init__(
+            on_fail=on_fail,
+            reading_time=reading_time,
+        )
         self._max_time = reading_time
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:

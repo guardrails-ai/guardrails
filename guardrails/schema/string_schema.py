@@ -123,7 +123,9 @@ class StringSchema(Schema):
         return self, prompt, instructions
 
     def parse(self, output: str, **kwargs) -> Tuple[Any, Optional[Exception]]:
-        return output, None
+        # Return a ValueError if the output is empty, else None
+        error = ValueError("Empty response received.") if not output else None
+        return output, error
 
     def validate(
         self,
@@ -131,6 +133,7 @@ class StringSchema(Schema):
         data: Any,
         metadata: Dict,
         attempt_number: int = 0,
+        disable_tracer: Optional[bool] = True,
         **kwargs,
     ) -> Any:
         """Validate a dictionary of data against the schema.
@@ -163,6 +166,7 @@ class StringSchema(Schema):
             metadata=metadata,
             validator_setup=validation,
             iteration=iteration,
+            disable_tracer=disable_tracer,
         )
 
         validated_response = {dummy_key: validated_response}

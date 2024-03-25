@@ -1,42 +1,20 @@
 # Guardrails AI
 
-## 🛤️ What is Guardrails AI?
+## What is Guardrails?
 
-Guardrails AI is the leading open-source framework to define and enforce assurance for LLM applications. It offers
+Guardrails is a Python framework that helps build reliable AI applications by performing two key functions:
+1. Guardrails runs Input/Output Guards in your application that detect, quantify and mitigate the presence of specific types of risks. To look at the full suite of risks, check out [Guardrails Hub](https://hub.guardrailsai.com/).
+2. Guardrails help you generate structured data from LLMs.
 
-✅ Framework for creating custom validations at an application level
 
-✅ Orchestration of prompting → verification → re-prompting
+<div align="center">
+<img src="https://raw.githubusercontent.com/guardrails-ai/guardrails/main/docs/img/with_and_without_guardrails.svg" alt="Guardrails in your application" width="1500px" />
+</div>
 
-✅ Library of commonly used validators for multiple use cases
+### Guardrails Hub
 
-✅ Specification language for communicating requirements to LLM
+Guardrails Hub is a collection of pre-built measures of specific types of risks (called 'validators'). Multiple validators can be combined together into Input and Output Guards that intercept the inputs and outputs of LLMs. Visit [Guardrails Hub](https://hub.guardrailsai.com/) to see the full list of validators and their documentation.
 
-## 🚒 Under the hood
-
-Guardrails provides an object definition called a `Rail` for enforcing a specification on an LLM output, and a lightweight wrapper called a `Guard` around LLM API calls to implement this spec.
-
-1. `rail` (**R**eliable **AI** markup **L**anguage) files for specifying structure and type information, validators and corrective actions over LLM outputs. The concept of a Rail has evolved from markup - Rails can be defined in either <a href='/docs/defining_guards/pydantic'>Pydantic</a> or <a href='/docs/defining_guards/rail'>RAIL</a> for structured outputs, or directly in <a href='/docs/defining_guards/strings'>Python</a> for string outputs.
-2. `Guard` wraps around LLM API calls to structure, validate and correct the outputs.
-
-```mermaid
-graph LR
-    A[Create `RAIL` spec] --> B["Initialize `guard` from spec"];
-    B --> C["Wrap LLM API call with `guard`"];
-```
-
-Check out the [Getting Started](/docs/guardrails_ai/getting_started) guide to learn how to use Guardrails.
-
-## 📍 Roadmap
-
-- [ ] Javascript SDK
-- [ ] Wider variety of language support (TypeScript, Go, etc)
-- [ ] Informative logging
-- [ ] VSCode extension for `.rail` files
-- [ ] Next version of `.rail` format
-- [ ] Validator playground
-- [x] Input Validation
-- [x] Pydantic 2.0
-- [x] Improving reasking logic
-- [x] Integration with LangChain
-- [x] Add more LLM providers
+<div align="center">
+<img src="https://raw.githubusercontent.com/guardrails-ai/guardrails/main/docs/img/guardrails_hub.gif" alt="Guardrails Hub gif" width="600px" />
+</div>

@@ -14,6 +14,7 @@ from typing import (
     Union,
     cast,
 )
+from warnings import warn
 
 from langchain_core.messages import BaseMessage
 from langchain_core.runnables import Runnable, RunnableConfig
@@ -22,6 +23,147 @@ from pydantic import BaseModel, Field
 from guardrails.classes import InputType
 from guardrails.constants import hub
 from guardrails.errors import ValidationError
+from guardrails.utils.dataclass import dataclass
+
+VALIDATOR_IMPORT_WARNING = """Accessing `{validator_name}` using
+`from guardrails.validators import {validator_name}` is deprecated and
+support will be removed after version 0.5.x. Please switch to the Guardrails Hub syntax:
+`from guardrails.hub import {hub_validator_name}` for future updates and support.
+For additional details, please visit: {hub_validator_url}.
+"""
+
+# Old names -> New names + hub URLs
+VALIDATOR_NAMING = {
+    "bug-free-python": [
+        "ValidPython",
+        "https://hub.guardrailsai.com/validator/reflex/valid_python",
+    ],
+    "bug-free-sql": [
+        "ValidSQL",
+        "https://hub.guardrailsai.com/validator/guardrails/valid_sql",
+    ],
+    "competitor-check": [
+        "CompetitorCheck",
+        "https://hub.guardrailsai.com/validator/guardrails/competitor_check",
+    ],
+    "detect-secrets": [
+        "SecretsPresent",
+        "https://hub.guardrailsai.com/validator/guardrails/secrets_present",
+    ],
+    "is-reachable": [
+        "EndpointIsReachable",
+        "https://hub.guardrailsai.com/validator/guardrails/endpoint_is_reachable",
+    ],
+    "ends-with": [
+        "EndsWith",
+        "https://hub.guardrailsai.com/validator/guardrails/ends_with",
+    ],
+    "exclude-sql-predicates": [
+        "ExcludeSqlPredicates",
+        "https://hub.guardrailsai.com/validator/guardrails/exclude_sql_predicates",
+    ],
+    "extracted-summary-sentences-match": [
+        "ExtractedSummarySentencesMatch",
+        "https://hub.guardrailsai.com/validator/guardrails/extracted_summary_sentences_match",  # noqa: E501
+    ],
+    "extractive-summary": [
+        "ExtractiveSummary",
+        "https://hub.guardrailsai.com/validator/aryn/extractive_summary",
+    ],
+    "is-high-quality-translation": [
+        "HighQualityTranslation",
+        "https://hub.guardrailsai.com/validator/brainlogic/high_quality_translation",
+    ],
+    "is-profanity-free": [
+        "ProfanityFree",
+        "https://hub.guardrailsai.com/validator/guardrails/profanity_free",
+    ],
+    "lower-case": [
+        "LowerCase",
+        "https://hub.guardrailsai.com/validator/guardrails/lowercase",
+    ],
+    "on_topic": [
+        "RestrictToTopic",
+        "https://hub.guardrailsai.com/validator/tryolabs/restricttotopic",
+    ],
+    "one-line": [
+        "OneLine",
+        "https://hub.guardrailsai.com/validator/guardrails/one_line",
+    ],
+    "pii": [
+        "DetectPII",
+        "https://hub.guardrailsai.com/validator/guardrails/detect_pii",
+    ],
+    "provenance-v0": [
+        "ProvenanceEmbeddings",
+        "https://hub.guardrailsai.com/validator/guardrails/provenance_embeddings",
+    ],
+    "provenance-v1": [
+        "ProvenanceLLM",
+        "https://hub.guardrailsai.com/validator/guardrails/provenance_llm",
+    ],
+    "qa-relevance-llm-eval": [
+        "QARelevanceLLMEval",
+        "https://hub.guardrailsai.com/validator/guardrails/qa_relevance_llm_eval",
+    ],
+    "reading-time": [
+        "ReadingTime",
+        "https://hub.guardrailsai.com/validator/guardrails/reading_time",
+    ],
+    "regex_match": [
+        "RegexMatch",
+        "https://hub.guardrailsai.com/validator/guardrails/regex_match",
+    ],
+    "remove-redundant-sentences": [
+        "RedundantSentences",
+        "https://hub.guardrailsai.com/validator/guardrails/redundant_sentences",
+    ],
+    "saliency-check": [
+        "SaliencyCheck",
+        "https://hub.guardrailsai.com/validator/guardrails/saliency_check",
+    ],
+    "similar-to-document": [
+        "SimilarToDocument",
+        "https://hub.guardrailsai.com/validator/guardrails/similar_to_document",
+    ],
+    "similar-to-list": [
+        "SimilarToPreviousValues",
+        "https://hub.guardrailsai.com/validator/guardrails/similar_to_previous_values",
+    ],
+    "sql-column-presence": [
+        "SqlColumnPresence",
+        "https://hub.guardrailsai.com/validator/numbersstation/sql_column_presence",
+    ],
+    "toxic-language": [
+        "ToxicLanguage",
+        "https://hub.guardrailsai.com/validator/guardrails/toxic_language",
+    ],
+    "two-words": [
+        "TwoWords",
+        "https://hub.guardrailsai.com/validator/guardrails/two_words",
+    ],
+    "upper-case": [
+        "UpperCase",
+        "https://hub.guardrailsai.com/validator/guardrails/uppercase",
+    ],
+    "valid-choices": [
+        "ValidChoices",
+        "https://hub.guardrailsai.com/validator/guardrails/valid_choices",
+    ],
+    "length": [
+        "ValidLength",
+        "https://hub.guardrailsai.com/validator/guardrails/valid_length",
+    ],
+    "valid-range": [
+        "ValidRange",
+        "https://hub.guardrailsai.com/validator/guardrails/valid_range",
+    ],
+    "valid-url": [
+        "ValidURL",
+        "https://hub.guardrailsai.com/validator/guardrails/valid_url",
+    ],
+    "pydantic_field_validator": [],
+}
 
 
 class Filter:
@@ -231,10 +373,11 @@ class FailResult(ValidationResult):
     fix_value: Optional[Any] = None
 
 
+@dataclass  # type: ignore
 class Validator(Runnable):
     """Base class for validators."""
 
-    rail_alias: str
+    rail_alias: str = ""
 
     run_in_separate_process = False
     override_value_on_pass = False
@@ -242,6 +385,31 @@ class Validator(Runnable):
     _metadata = {}
 
     def __init__(self, on_fail: Optional[Union[Callable, str]] = None, **kwargs):
+        # Raise a warning for deprecated validators
+
+        # Get class name and rail_alias
+        child_class_name = str(type(self).__name__)
+        validator_rail_alias = self.rail_alias
+
+        # Check if this rail_alias is deprecated
+        if validator_rail_alias in VALIDATOR_NAMING:
+            if VALIDATOR_NAMING[validator_rail_alias]:
+                warn(
+                    VALIDATOR_IMPORT_WARNING.format(
+                        validator_name=child_class_name,
+                        hub_validator_name=VALIDATOR_NAMING[validator_rail_alias][0],
+                        hub_validator_url=VALIDATOR_NAMING[validator_rail_alias][1],
+                    ),
+                    FutureWarning,
+                )
+            else:
+                warn(
+                    f"""{child_class_name} is deprecated and
+                    will be removed after version 0.5.x.
+                    """,
+                    FutureWarning,
+                )
+
         if on_fail is None:
             on_fail = "noop"
         if isinstance(on_fail, str):

@@ -159,5 +159,5 @@ async def test_sync_async_step_equivalence(mocker):
         OUTPUT,
     )
 
-    assert sync_iteration.validated_output == async_iteration.validated_output
+    assert sync_iteration.guarded_output == async_iteration.guarded_output
     assert sync_iteration.reasks == async_iteration.reasks

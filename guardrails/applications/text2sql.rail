@@ -1,6 +1,6 @@
 <rail version="0.1">
 <output>
-    <sql
+    <string
         name="generated_sql"
         description="Generate SQL for the given natural language instruction."
         format="bug-free-sql: ${conn_str} ${schema_file}"
