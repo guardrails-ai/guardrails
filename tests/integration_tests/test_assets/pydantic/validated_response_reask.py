@@ -62,7 +62,9 @@ class Person(BaseModel):
 
     name: str
     if PYDANTIC_VERSION.startswith("1"):
-        age: int = Field(..., validators=[AgeMustBeBetween0And150(on_fail=OnFailAction.REASK)])
+        age: int = Field(
+            ..., validators=[AgeMustBeBetween0And150(on_fail=OnFailAction.REASK)]
+        )
         zip_code: str = Field(
             ...,
             validators=[

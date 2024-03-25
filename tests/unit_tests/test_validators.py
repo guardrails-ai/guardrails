@@ -238,7 +238,11 @@ def test_validator_as_tuple():
 
     class MyModel(BaseModel):
         a_field: str = Field(
-            ..., validators=[("two_words", OnFailAction.REASK), ("mycustomhellovalidator", OnFailAction.FIX)]
+            ...,
+            validators=[
+                ("two_words", OnFailAction.REASK),
+                ("mycustomhellovalidator", OnFailAction.FIX),
+            ],
         )
 
     guard = Guard.from_pydantic(MyModel)

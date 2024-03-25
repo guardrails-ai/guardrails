@@ -54,7 +54,11 @@ def test_similar_to_list():
     )
 
     guard = Guard.from_string(
-        validators=[SimilarToList(standard_deviations=2, threshold=0.2, on_fail=OnFailAction.FIX)],
+        validators=[
+            SimilarToList(
+                standard_deviations=2, threshold=0.2, on_fail=OnFailAction.FIX
+            )
+        ],
         description="testmeout",
     )
 
@@ -266,7 +270,9 @@ def test_pii_filter(mocker):
     # Also check whether all parameters are correctly initialised
     guard = Guard.from_string(
         validators=[
-            PIIFilter(pii_entities=["EMAIL_ADDRESS", "PHONE_NUMBER"], on_fail=OnFailAction.FIX)
+            PIIFilter(
+                pii_entities=["EMAIL_ADDRESS", "PHONE_NUMBER"], on_fail=OnFailAction.FIX
+            )
         ],
         description="testmeout",
     )
@@ -439,7 +445,9 @@ def test_toxic_language(mocker):
     # (with validation_method="sentence")
     # Should return a paragraph with toxic sentences removed
     guard = Guard.from_string(
-        validators=[ToxicLanguage(validation_method="sentence", on_fail=OnFailAction.FIX)],
+        validators=[
+            ToxicLanguage(validation_method="sentence", on_fail=OnFailAction.FIX)
+        ],
         description="testmeout",
     )
 
@@ -470,7 +478,9 @@ def test_toxic_language(mocker):
     # Should return the same paragraph
 
     guard = Guard.from_string(
-        validators=[ToxicLanguage(validation_method="sentence", on_fail=OnFailAction.FIX)],
+        validators=[
+            ToxicLanguage(validation_method="sentence", on_fail=OnFailAction.FIX)
+        ],
         description="testmeout",
     )
 
@@ -485,7 +495,9 @@ def test_toxic_language(mocker):
     # Should return a paragraph with toxic sentences removed
     guard = Guard.from_string(
         validators=[
-            ToxicLanguage(validation_method="sentence", threshold=0.1, on_fail=OnFailAction.FIX)
+            ToxicLanguage(
+                validation_method="sentence", threshold=0.1, on_fail=OnFailAction.FIX
+            )
         ],
         description="testmeout",
     )

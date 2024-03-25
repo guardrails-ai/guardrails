@@ -373,6 +373,7 @@ class FailResult(ValidationResult):
     error_message: str
     fix_value: Optional[Any] = None
 
+
 class OnFailAction(str, Enum):
     REASK = "reask"
     FIX = "fix"
@@ -381,6 +382,7 @@ class OnFailAction(str, Enum):
     NOOP = "noop"
     EXCEPTION = "exception"
     FIX_REASK = "fix_reask"
+
 
 @dataclass  # type: ignore
 class Validator(Runnable):
@@ -393,7 +395,9 @@ class Validator(Runnable):
     required_metadata_keys = []
     _metadata = {}
 
-    def __init__(self, on_fail: Optional[Union[Callable, OnFailAction]] = None, **kwargs):
+    def __init__(
+        self, on_fail: Optional[Union[Callable, OnFailAction]] = None, **kwargs
+    ):
         # Raise a warning for deprecated validators
 
         # Get class name and rail_alias

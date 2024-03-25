@@ -102,7 +102,9 @@ def test_python_rail(mocker):
         else:
             website: str = Field(
                 json_schema_extra={
-                    "validators": [ValidLength(min=9, max=100, on_fail=OnFailAction.REASK)]
+                    "validators": [
+                        ValidLength(min=9, max=100, on_fail=OnFailAction.REASK)
+                    ]
                 }
             )
             from pydantic import model_validator

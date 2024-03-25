@@ -198,13 +198,19 @@ def test_use():
 
     assert isinstance(guard._validators[0], EndsWith)
     assert guard._validators[0]._kwargs["end"] == "a"
-    assert guard._validators[0].on_fail_descriptor == OnFailAction.FIX  # bc this is the default
+    assert (
+        guard._validators[0].on_fail_descriptor == OnFailAction.FIX
+    )  # bc this is the default
 
     assert isinstance(guard._validators[1], OneLine)
-    assert guard._validators[1].on_fail_descriptor == OnFailAction.NOOP  # bc this is the default
+    assert (
+        guard._validators[1].on_fail_descriptor == OnFailAction.NOOP
+    )  # bc this is the default
 
     assert isinstance(guard._validators[2], LowerCase)
-    assert guard._validators[2].on_fail_descriptor == OnFailAction.NOOP  # bc this is the default
+    assert (
+        guard._validators[2].on_fail_descriptor == OnFailAction.NOOP
+    )  # bc this is the default
 
     assert isinstance(guard._validators[3], TwoWords)
     assert guard._validators[3].on_fail_descriptor == OnFailAction.REASK  # bc we set it
@@ -214,7 +220,9 @@ def test_use():
     assert guard._validators[4]._kwargs["min"] == 0
     assert guard._validators[4]._max == 12
     assert guard._validators[4]._kwargs["max"] == 12
-    assert guard._validators[4].on_fail_descriptor == OnFailAction.REFRAIN # bc we set it
+    assert (
+        guard._validators[4].on_fail_descriptor == OnFailAction.REFRAIN
+    )  # bc we set it
 
     # Raises error when trying to `use` a validator on a non-string
     with pytest.raises(RuntimeError):
@@ -259,7 +267,9 @@ def test_use():
 
     assert isinstance(guard._validators[0], EndsWith)
     assert guard._validators[0]._kwargs["end"] == "a"
-    assert guard._validators[0].on_fail_descriptor == OnFailAction.REASK  # bc this is the default
+    assert (
+        guard._validators[0].on_fail_descriptor == OnFailAction.REASK
+    )  # bc this is the default
 
     assert isinstance(guard._validators[1], TwoWords)
     assert guard._validators[1].on_fail_descriptor == OnFailAction.REASK  # bc we set it
@@ -284,16 +294,22 @@ def test_use_many_instances():
     assert isinstance(guard._validators[0], EndsWith)
     assert guard._validators[0]._end == "a"
     assert guard._validators[0]._kwargs["end"] == "a"
-    assert guard._validators[0].on_fail_descriptor == OnFailAction.FIX  # bc this is the default
+    assert (
+        guard._validators[0].on_fail_descriptor == OnFailAction.FIX
+    )  # bc this is the default
 
     assert isinstance(guard._validators[1], OneLine)
-    assert guard._validators[1].on_fail_descriptor == OnFailAction.NOOP  # bc this is the default
+    assert (
+        guard._validators[1].on_fail_descriptor == OnFailAction.NOOP
+    )  # bc this is the default
 
     assert isinstance(guard._validators[2], LowerCase)
-    assert guard._validators[2].on_fail_descriptor == OnFailAction.NOOP  # bc this is the default
+    assert (
+        guard._validators[2].on_fail_descriptor == OnFailAction.NOOP
+    )  # bc this is the default
 
     assert isinstance(guard._validators[3], TwoWords)
-    assert guard._validators[3].on_fail_descriptor == OnFailAction.REASK # bc we set it
+    assert guard._validators[3].on_fail_descriptor == OnFailAction.REASK  # bc we set it
 
     # Raises error when trying to `use_many` a validator on a non-string
     with pytest.raises(RuntimeError):
@@ -303,12 +319,21 @@ def test_use_many_instances():
 
         py_guard = Guard.from_pydantic(output_class=TestClass)
         py_guard.use_many(
-            [EndsWith("a"), OneLine(), LowerCase(), TwoWords(on_fail=OnFailAction.REASK)]
+            [
+                EndsWith("a"),
+                OneLine(),
+                LowerCase(),
+                TwoWords(on_fail=OnFailAction.REASK),
+            ]
         )
 
     # Test with explicitly setting the "on" parameter = "output"
     guard: Guard = Guard().use_many(
-        EndsWith("a"), OneLine(), LowerCase(), TwoWords(on_fail=OnFailAction.REASK), on="output"
+        EndsWith("a"),
+        OneLine(),
+        LowerCase(),
+        TwoWords(on_fail=OnFailAction.REASK),
+        on="output",
     )
 
     assert len(guard._validators) == 4  # still 4 output validators, hence 4
@@ -316,13 +341,19 @@ def test_use_many_instances():
     assert isinstance(guard._validators[0], EndsWith)
     assert guard._validators[0]._end == "a"
     assert guard._validators[0]._kwargs["end"] == "a"
-    assert guard._validators[0].on_fail_descriptor == OnFailAction.FIX  # bc this is the default
+    assert (
+        guard._validators[0].on_fail_descriptor == OnFailAction.FIX
+    )  # bc this is the default
 
     assert isinstance(guard._validators[1], OneLine)
-    assert guard._validators[1].on_fail_descriptor == OnFailAction.NOOP  # bc this is the default
+    assert (
+        guard._validators[1].on_fail_descriptor == OnFailAction.NOOP
+    )  # bc this is the default
 
     assert isinstance(guard._validators[2], LowerCase)
-    assert guard._validators[2].on_fail_descriptor == OnFailAction.NOOP  # bc this is the default
+    assert (
+        guard._validators[2].on_fail_descriptor == OnFailAction.NOOP
+    )  # bc this is the default
 
     assert isinstance(guard._validators[3], TwoWords)
     assert guard._validators[3].on_fail_descriptor == OnFailAction.REASK  # bc we set it
@@ -383,12 +414,16 @@ def test_use_many_tuple():
     assert len(guard._validators) == 5
 
     assert isinstance(guard._validators[0], OneLine)
-    assert guard._validators[0].on_fail_descriptor == OnFailAction.NOOP # bc this is the default
+    assert (
+        guard._validators[0].on_fail_descriptor == OnFailAction.NOOP
+    )  # bc this is the default
 
     assert isinstance(guard._validators[1], EndsWith)
     assert guard._validators[1]._end == "a"
     assert guard._validators[1]._kwargs["end"] == "a"
-    assert guard._validators[1].on_fail_descriptor == OnFailAction.EXCEPTION  # bc we set it
+    assert (
+        guard._validators[1].on_fail_descriptor == OnFailAction.EXCEPTION
+    )  # bc we set it
 
     assert isinstance(guard._validators[2], LowerCase)
     assert guard._validators[2]._kwargs["some_other_kwarg"] == "kwarg"
@@ -404,7 +439,9 @@ def test_use_many_tuple():
     assert guard._validators[4]._kwargs["min"] == 0
     assert guard._validators[4]._max == 12
     assert guard._validators[4]._kwargs["max"] == 12
-    assert guard._validators[4].on_fail_descriptor == OnFailAction.REFRAIN  # bc we set it
+    assert (
+        guard._validators[4].on_fail_descriptor == OnFailAction.REFRAIN
+    )  # bc we set it
 
     # Test with explicitly setting the "on" parameter
     guard: Guard = Guard().use_many(
@@ -418,10 +455,14 @@ def test_use_many_tuple():
     assert isinstance(guard._validators[0], EndsWith)
     assert guard._validators[0]._end == "a"
     assert guard._validators[0]._kwargs["end"] == "a"
-    assert guard._validators[0].on_fail_descriptor == OnFailAction.EXCEPTION  # bc we set it
+    assert (
+        guard._validators[0].on_fail_descriptor == OnFailAction.EXCEPTION
+    )  # bc we set it
 
     assert isinstance(guard._validators[1], OneLine)
-    assert guard._validators[1].on_fail_descriptor == OnFailAction.NOOP  # bc this is the default
+    assert (
+        guard._validators[1].on_fail_descriptor == OnFailAction.NOOP
+    )  # bc this is the default
 
     # Test with an invalid "on" parameter, should raise a ValueError
     with pytest.raises(ValueError):
@@ -522,7 +563,9 @@ def test_use_and_use_many():
     assert guard._validators[1]._kwargs["min"] == 0
     assert guard._validators[1]._max == 12
     assert guard._validators[1]._kwargs["max"] == 12
-    assert guard._validators[1].on_fail_descriptor == OnFailAction.REFRAIN  # bc we set it
+    assert (
+        guard._validators[1].on_fail_descriptor == OnFailAction.REFRAIN
+    )  # bc we set it
 
     # Test with an invalid "on" parameter, should raise a ValueError
     with pytest.raises(ValueError):

@@ -248,7 +248,9 @@ def add_pydantic_validators_as_guardrails_validators(
             )
             if "validators" not in fld.field_info.json_schema_extra:
                 fld.json_schema_extra["validators"] = []
-            fld.json_schema_extra["validators"].append((gd_validator, OnFailAction.REASK))
+            fld.json_schema_extra["validators"].append(
+                (gd_validator, OnFailAction.REASK)
+            )
 
     model_fields = {}
     for field_name, field in model.model_fields.items():

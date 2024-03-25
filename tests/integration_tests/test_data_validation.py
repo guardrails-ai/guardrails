@@ -103,11 +103,14 @@ def test_choice_validation_pydantic(llm_output, raises, has_error, fails):
         action: Literal["flight"]
         flight_direction: str = Field(
             validators=ValidChoices(
-                choices=["north", "south", "east", "west"], on_fail=OnFailAction.EXCEPTION
+                choices=["north", "south", "east", "west"],
+                on_fail=OnFailAction.EXCEPTION,
             )
         )
         flight_speed: int = Field(
-            validators=ValidChoices(choices=[1, 2, 3, 4], on_fail=OnFailAction.EXCEPTION)
+            validators=ValidChoices(
+                choices=[1, 2, 3, 4], on_fail=OnFailAction.EXCEPTION
+            )
         )
 
     class Choice(BaseModel):
