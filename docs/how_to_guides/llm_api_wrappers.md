@@ -19,16 +19,16 @@ Guardrails provides native support for a select few LLMs and Manifest. If you're
   <TabItem value="openai" label="OpenAI" default>
     ```python
     import openai
-    import guardrails as gd
+    from guardrails import Guard
+    from guardrails.hub import IsProfanityFree
 
     # Create a Guard class
-    guard = gd.Guard.from_rail(...)
+    guard = Guard().use(IsProfanityFree())
 
     # Wrap openai API call
     raw_llm_output, guardrail_output, *rest = guard(
-        openai.ChatCompletion.create,
-        prompt_params={"prompt_param_1": "value_1", "prompt_param_2": "value_2", ..},
-        system_prompt="You are a helpful assistant...",
+        openai.chat.completions.create,
+        prompt="Can you generate a list of 10 things that are not food?",
         model="gpt-3.5-turbo",
         max_tokens=100,
         temperature=0.0,
