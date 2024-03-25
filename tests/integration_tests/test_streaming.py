@@ -2,7 +2,6 @@
 # 1. Test streaming with OpenAICallable (mock openai.Completion.create)
 # 2. Test streaming with OpenAIChatCallable (mock openai.ChatCompletion.create)
 # Using the LowerCase Validator
-
 import json
 from typing import Iterable
 
@@ -14,14 +13,10 @@ import guardrails as gd
 from guardrails.utils.openai_utils import OPENAI_VERSION
 from guardrails.validators import LowerCase
 
-expected_raw_output = '{"statement": "I am DOING well, and I HOPE you aRe too."}'
-expected_fix_output = json.dumps(
-    {"statement": "i am doing well, and i hope you are too."}, indent=4
-)
-expected_noop_output = json.dumps(
-    {"statement": "I am DOING well, and I HOPE you aRe too."}, indent=4
-)
-expected_filter_refrain_output = json.dumps({}, indent=4)
+expected_raw_output = {"statement": "I am DOING well, and I HOPE you aRe too."}
+expected_fix_output = {"statement": "i am doing well, and i hope you are too."}
+expected_noop_output = {"statement": "I am DOING well, and I HOPE you aRe too."}
+expected_filter_refrain_output = {}
 
 
 class Delta:
@@ -206,15 +201,11 @@ def test_streaming_with_openai_callable(
 
     assert isinstance(generator, Iterable)
 
-    actual_output = ""
     for op in generator:
         actual_output = op
 
-    assert (
-        actual_output
-        == f"Raw LLM response:\n{expected_raw_output}\n"
-        + f"\nValidated response:\n{expected_validated_output}\n"
-    )
+    assert actual_output.raw_llm_output == json.dumps(expected_raw_output)
+    assert actual_output.validated_output == expected_validated_output
 
 
 @pytest.mark.parametrize(
@@ -271,8 +262,5 @@ def test_streaming_with_openai_chat_callable(
     for op in generator:
         actual_output = op
 
-    assert (
-        actual_output
-        == f"Raw LLM response:\n{expected_raw_output}\n"
-        + f"\nValidated response:\n{expected_validated_output}\n"
-    )
+    assert actual_output.raw_llm_output == json.dumps(expected_raw_output)
+    assert actual_output.validated_output == expected_validated_output
