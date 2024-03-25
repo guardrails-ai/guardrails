@@ -641,6 +641,7 @@ def test_get_llm_ask_cohere():
 def test_get_llm_ask_anthropic():
     if importlib.util.find_spec("anthropic"):
         from anthropic import Anthropic
+
         from guardrails.llm_providers import AnthropicCallable
 
         anthropic_client = Anthropic(api_key="my_api_key")
