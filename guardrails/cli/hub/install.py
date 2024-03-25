@@ -34,7 +34,7 @@ def pip_process(
     package: str = "",
     flags: List[str] = [],
     format: Union[Literal["string"], Literal["json"]] = string_format,
-):
+) -> Union[str, dict]:
     try:
         logger.debug(f"running pip {action} {' '.join(flags)} {package}")
         command = [sys.executable, "-m", "pip", action]
@@ -44,7 +44,11 @@ def pip_process(
         output = subprocess.check_output(command)
         logger.debug(f"decoding output from pip {action} {package}")
         if format == json_format:
-            return BytesHeaderParser().parsebytes(output)
+            parsed = BytesHeaderParser().parsebytes(output)
+            accumulator = {}
+            for key, value in parsed.items():
+                accumulator[key] = value
+            return accumulator
         return str(output.decode())
     except subprocess.CalledProcessError as exc:
         logger.error(
@@ -197,9 +201,9 @@ def install_hub_module(module_manifest: ModuleManifest, site_packages: str):
     inspect_output = pip_process(
         "inspect", flags=[f"--path={install_directory}"], format=json_format
     )
-    inspection: dict = json.loads(str(inspect_output))
+
     dependencies = (
-        Stack(*inspection.get("installed", []))
+        Stack(*inspect_output.get("installed", []))
         .at(0, {})
         .get("metadata", {})  # type: ignore
         .get("requires_dist", [])  # type: ignore
