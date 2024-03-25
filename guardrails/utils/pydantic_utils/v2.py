@@ -34,7 +34,7 @@ from guardrails.datatypes import Object as ObjectDataType
 from guardrails.datatypes import String as StringDataType
 from guardrails.datatypes import Time as TimeDataType
 from guardrails.utils.safe_get import safe_get
-from guardrails.validator_base import Validator, OnFailAction
+from guardrails.validator_base import OnFailAction, Validator
 from guardrails.validatorsattr import ValidatorsAttr
 
 DataTypeT = TypeVar("DataTypeT", bound=DataType)
