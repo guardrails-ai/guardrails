@@ -2,6 +2,7 @@ from typing import Dict, List
 
 from pydantic import BaseModel, Field
 
+from guardrails.validator_base import OnFailAction
 from guardrails.validators import LowerCase, OneLine, TwoWords
 
 

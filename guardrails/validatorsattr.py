@@ -7,7 +7,7 @@ import pydantic
 
 from guardrails.constants import hub
 from guardrails.utils.xml_utils import cast_xml_to_string
-from guardrails.validator_base import Validator, ValidatorSpec
+from guardrails.validator_base import OnFailAction, Validator, ValidatorSpec
 
 
 class ValidatorsAttr(pydantic.BaseModel):
@@ -176,7 +176,7 @@ class ValidatorsAttr(pydantic.BaseModel):
             key = cast_xml_to_string(key)
             if key.startswith("on-fail-"):
                 on_fail_handler_name = key[len("on-fail-") :]
-                on_fail_handler = value
+                on_fail_handler = OnFailAction(value)
                 on_fail_handlers[on_fail_handler_name] = on_fail_handler
 
         validators, unregistered_validators = cls.get_validators(
