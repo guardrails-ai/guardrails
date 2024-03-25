@@ -11,7 +11,7 @@ class TestRegexMatchValidator:
         regex=regex, match_type="fullmatch", on_fail=OnFailAction.REASK
     )
     search_val = RegexMatch(
-        regdidex=regex, match_type="search", on_fail=OnFailAction.REASK
+        regex=regex, match_type="search", on_fail=OnFailAction.REASK
     )
 
     def test_fullmatch_fail(self):
