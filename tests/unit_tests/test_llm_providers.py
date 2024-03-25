@@ -633,9 +633,10 @@ def test_get_llm_ask_cohere():
 
     assert isinstance(prompt_callable, CohereCallable)
 
+
 @pytest.mark.skipif(
-not importlib.util.find_spec("cohere"),
-reason="cohere is not installed",
+    not importlib.util.find_spec("cohere"),
+    reason="cohere is not installed",
 )
 def test_get_llm_ask_cohere_legacy():
     from cohere import Client

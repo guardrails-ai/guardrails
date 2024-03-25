@@ -1,4 +1,3 @@
-import json
 import os
 import subprocess
 import sys
@@ -201,6 +200,11 @@ def install_hub_module(module_manifest: ModuleManifest, site_packages: str):
     inspect_output = pip_process(
         "inspect", flags=[f"--path={install_directory}"], format=json_format
     )
+
+    # throw if inspect_output is a string. Mostly for pyright
+    if isinstance(inspect_output, str):
+        logger.error("Failed to inspect the installed package!")
+        sys.exit(1)
 
     dependencies = (
         Stack(*inspect_output.get("installed", []))
