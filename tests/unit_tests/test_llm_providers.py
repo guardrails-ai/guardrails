@@ -629,6 +629,21 @@ def test_get_llm_ask_cohere():
 
     cohere_client = Client(api_key="mock_api_key")
 
+    prompt_callable = get_llm_ask(cohere_client.chat)
+
+    assert isinstance(prompt_callable, CohereCallable)
+
+@pytest.mark.skipif(
+not importlib.util.find_spec("cohere"),
+reason="cohere is not installed",
+)
+def test_get_llm_ask_cohere_legacy():
+    from cohere import Client
+
+    from guardrails.llm_providers import CohereCallable
+
+    cohere_client = Client(api_key="mock_api_key")
+
     prompt_callable = get_llm_ask(cohere_client.generate)
 
     assert isinstance(prompt_callable, CohereCallable)
