@@ -918,7 +918,7 @@ This also is not two words
             "Instructions validation failed",
         ),
         (
-            OnFailAction.REFRAIN,
+            OnFailAction.EXCEPTION,
             "Validation failed for field with errors: must be exactly two words",
             "Validation failed for field with errors: must be exactly two words",
             "Validation failed for field with errors: must be exactly two words",
