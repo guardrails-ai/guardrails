@@ -5,6 +5,7 @@ import pytest
 from guardrails.classes.history.iteration import Iteration
 from guardrails.datatypes import FieldValidation
 from guardrails.utils.logs_utils import ValidatorLogs
+from guardrails.validator_base import OnFailAction
 from guardrails.validator_service import AsyncValidatorService
 from guardrails.validators import PassResult
 
@@ -173,7 +174,7 @@ async def test_validate_dependents(mocker):
 @pytest.mark.asyncio
 async def test_run_validators(mocker):
     group_validators_mock = mocker.patch.object(avs, "group_validators")
-    fix_validator_type = create_mock_validator("fix_validator", "fix")
+    fix_validator_type = create_mock_validator("fix_validator", OnFailAction.FIX)
     fix_validator = fix_validator_type()
     noop_validator_type = create_mock_validator("noop_validator")
     noop_validator_1 = noop_validator_type()
@@ -181,8 +182,8 @@ async def test_run_validators(mocker):
     noop_validator_2 = noop_validator_type()
     noop_validator_2.run_in_separate_process = True
     group_validators_mock.return_value = [
-        ("fix", [fix_validator]),
-        ("noop", [noop_validator_1, noop_validator_2]),
+        (OnFailAction.FIX, [fix_validator]),
+        (OnFailAction.NOOP, [noop_validator_1, noop_validator_2]),
     ]
 
     def mock_run_validator(iteration, validator, value, metadata, property_path):
