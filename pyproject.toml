@@ -105,13 +105,7 @@ cairosvg = "^2.7.1"
 mkdocs-glightbox = "^0.3.4"
 
 [[tool.poetry.source]]
-name = "torch"
-url = "https://download.pytorch.org/whl/cpu"
-priority = "explicit"
-
-[[tool.poetry.source]]
 name = "PyPI"
-priority = "primary"
 
 [build-system]
 requires = ["poetry-core"]
