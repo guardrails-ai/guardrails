@@ -418,15 +418,15 @@ def test_use_many_tuple():
     assert isinstance(guard._validators[0], EndsWith)
     assert guard._validators[0]._end == "a"
     assert guard._validators[0]._kwargs["end"] == "a"
-    assert guard._validators[0].on_fail_descriptor == "exception"  # bc we set it
+    assert guard._validators[0].on_fail_descriptor == OnFailAction.EXCEPTION  # bc we set it
 
     assert isinstance(guard._validators[1], OneLine)
-    assert guard._validators[1].on_fail_descriptor == "noop"  # bc this is the default
+    assert guard._validators[1].on_fail_descriptor == OnFailAction.NOOP  # bc this is the default
 
     # Test with an invalid "on" parameter, should raise a ValueError
     with pytest.raises(ValueError):
         guard: Guard = Guard().use_many(
-            (EndsWith, ["a"], {"on_fail": "exception"}),
+            (EndsWith, ["a"], {"on_fail": OnFailAction.EXCEPTION}),
             OneLine,
             on="response",
         )
@@ -440,7 +440,7 @@ def test_validate():
             LowerCase(on_fail="fix"), on="output"
         )  # default on="output", still explicitly set
         .use(TwoWords)
-        .use(ValidLength, 0, 12, on_fail="refrain")
+        .use(ValidLength, 0, 12, on_fail=OnFailAction.REFRAIN)
     )
 
     llm_output: str = "Oh Canada"  # bc it meets our criteria
@@ -464,7 +464,7 @@ def test_validate():
         .use(OneLine, on="prompt")
         .use(LowerCase, on="instructions")
         .use(UpperCase, on="msg_history")
-        .use(LowerCase, on="output", on_fail="fix")
+        .use(LowerCase, on="output", on_fail=OnFailAction.FIX)
         .use(TwoWords, on="output")
         .use(ValidLength, 0, 12, on="output")
     )
@@ -492,7 +492,7 @@ def test_use_and_use_many():
         .use(LowerCase, on="msg_history")
         .use_many(
             TwoWords(on_fail="reask"),
-            ValidLength(0, 12, on_fail="refrain"),
+            ValidLength(0, 12, on_fail=OnFailAction.REFRAIN),
             on="output",
         )
     )
