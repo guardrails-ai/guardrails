@@ -165,7 +165,7 @@ Validates whether the generated code snippet contains any secrets.
     ```py
 
     guard = Guard.from_string(validators=[
-        DetectSecrets(on_fail=OnFailAction.FIX)
+      DetectSecrets(on_fail=OnFailAction.FIX)
     ])
     guard.parse(
         llm_output=code_snippet,

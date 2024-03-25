@@ -374,8 +374,8 @@ def test_use_many_tuple():
     guard: Guard = Guard().use_many(
         OneLine,
         (EndsWith, ["a"], {"on_fail": OnFailAction.EXCEPTION}),
-        (LowerCase, kwargs(on_fail=OnFailAction.REASK, some_other_kwarg="kwarg")),
-        (TwoWords, on_fail("reask")),
+        (LowerCase, kwargs(on_fail="fix_reask", some_other_kwarg="kwarg")),
+        (TwoWords, on_fail(OnFailAction.REASK)),
         (ValidLength, args(0, 12), kwargs(on_fail=OnFailAction.REFRAIN)),
     )
 
