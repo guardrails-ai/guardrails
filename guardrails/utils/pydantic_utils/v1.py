@@ -22,7 +22,7 @@ from guardrails.datatypes import List as ListDataType
 from guardrails.datatypes import Object as ObjectDataType
 from guardrails.datatypes import String as StringDataType
 from guardrails.datatypes import Time as TimeDataType
-from guardrails.validator_base import OnFailAction, Validator
+from guardrails.validator_base import Validator
 from guardrails.validatorsattr import ValidatorsAttr
 
 
@@ -207,7 +207,7 @@ def add_pydantic_validators_as_guardrails_validators(
             )
             if "validators" not in fld.field_info.extra:
                 fld.field_info.extra["validators"] = []
-            fld.field_info.extra["validators"].append((gd_validator, OnFailAction.REASK))
+            fld.field_info.extra["validators"].append((gd_validator, "reask"))
 
     model_fields = {}
     for field_name, field in model.__fields__.items():

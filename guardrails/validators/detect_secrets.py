@@ -47,7 +47,7 @@ class DetectSecrets(Validator):
         ```py
 
         guard = Guard.from_string(validators=[
-            DetectSecrets(on_fail=OnFailAction.FIX)
+            DetectSecrets(on_fail="fix")
         ])
         guard.parse(
             llm_output=code_snippet,

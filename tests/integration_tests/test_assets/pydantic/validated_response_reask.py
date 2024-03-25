@@ -5,7 +5,6 @@ from pydantic import BaseModel, Field
 
 from guardrails.utils.pydantic_utils import PYDANTIC_VERSION
 from guardrails.utils.reask_utils import FieldReAsk
-from guardrails.validator_base import OnFailAction
 from guardrails.validators import (
     FailResult,
     PassResult,
@@ -62,28 +61,27 @@ class Person(BaseModel):
 
     name: str
     if PYDANTIC_VERSION.startswith("1"):
-        age: int = Field(
-            ..., validators=[AgeMustBeBetween0And150(on_fail=OnFailAction.REASK)])
+        age: int = Field(..., validators=[AgeMustBeBetween0And150(on_fail="reask")])
         zip_code: str = Field(
             ...,
             validators=[
-                ZipCodeMustBeNumeric(on_fail=OnFailAction.REASK),
-                ZipCodeInCalifornia(on_fail=OnFailAction.REASK),
+                ZipCodeMustBeNumeric(on_fail="reask"),
+                ZipCodeInCalifornia(on_fail="reask"),
             ],
         )
     else:
         age: int = Field(
             ...,
             json_schema_extra={
-                "validators": [AgeMustBeBetween0And150(on_fail=OnFailAction.REASK)]
+                "validators": [AgeMustBeBetween0And150(on_fail="reask")]
             },
         )
         zip_code: str = Field(
             ...,
             json_schema_extra={
                 "validators": [
-                    ZipCodeMustBeNumeric(on_fail=OnFailAction.REASK),
-                    ZipCodeInCalifornia(on_fail=OnFailAction.REASK),
+                    ZipCodeMustBeNumeric(on_fail="reask"),
+                    ZipCodeInCalifornia(on_fail="reask"),
                 ],
             },
         )

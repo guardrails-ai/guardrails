@@ -134,10 +134,10 @@ guard = Guard.from_string(
     validators=[
         ValidLength(
             min=48,
-            on_fail=OnFailAction.FIX
+            on_fail="fix"
         ),
         ToxicLanguage(
-            on_fail=OnFailAction.FIX
+            on_fail="fix"
         )
     ],
     prompt=prompt

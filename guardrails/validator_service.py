@@ -18,7 +18,6 @@ from guardrails.utils.telemetry_utils import trace_validator
 from guardrails.validator_base import (
     FailResult,
     Filter,
-    OnFailAction,
     PassResult,
     Refrain,
     ValidationResult,
@@ -60,11 +59,11 @@ class ValidatorServiceBase:
         validator: Validator,
         on_fail_descriptor: str,
     ):
-        if on_fail_descriptor == OnFailAction.FIX:
+        if on_fail_descriptor == "fix":
             # FIXME: Should we still return fix_value if it is None?
             # I think we should warn and return the original value.
             return results[0].fix_value
-        elif on_fail_descriptor == OnFailAction.REASK:
+        elif on_fail_descriptor == "fix_reask":
             # FIXME: Same thing here
             fixed_value = results[0].fix_value
             result = self.execute_validator(
@@ -78,25 +77,25 @@ class ValidatorServiceBase:
                 )
 
             return fixed_value
-        if on_fail_descriptor == OnFailAction.EXCEPTION:
+        if on_fail_descriptor == "custom":
             if validator.on_fail_method is None:
                 raise ValueError("on_fail is 'custom' but on_fail_method is None")
             return validator.on_fail_method(value, results)
-        if on_fail_descriptor == OnFailAction.REASK:
+        if on_fail_descriptor == "reask":
             return FieldReAsk(
                 incorrect_value=value,
                 fail_results=results,
             )
-        if on_fail_descriptor == OnFailAction.EXCEPTION:
+        if on_fail_descriptor == "exception":
             raise ValidationError(
                 "Validation failed for field with errors: "
                 + ", ".join([result.error_message for result in results])
             )
-        if on_fail_descriptor == OnFailAction.FILTER:
+        if on_fail_descriptor == "filter":
             return Filter()
-        if on_fail_descriptor == OnFailAction.REFRAIN:
+        if on_fail_descriptor == "refrain":
             return Refrain()
-        if on_fail_descriptor == OnFailAction.NOOP:
+        if on_fail_descriptor == "noop":
             return value
         else:
             raise ValueError(
