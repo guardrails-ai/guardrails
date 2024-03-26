@@ -272,7 +272,7 @@ def test_use():
     assert isinstance(guard._validators[0], EndsWith)
     assert guard._validators[0]._kwargs["end"] == "a"
     assert (
-        guard._validators[0].on_fail_descriptor == OnFailAction.REASK
+        guard._validators[0].on_fail_descriptor == OnFailAction.FIX
     )  # bc this is the default
 
     assert isinstance(guard._validators[1], TwoWords)

@@ -1199,7 +1199,7 @@ def test_input_validation_mismatch_raise():
 
     # instructions validation, msg_history argument
     guard = Guard.from_pydantic(output_class=Pet).with_instructions_validation(
-        validators=[TwoWords(on_fail="fix")]
+        validators=[TwoWords(on_fail=OnFailAction.FIX)]
     )
     with pytest.raises(ValueError):
         guard(
