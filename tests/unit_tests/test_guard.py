@@ -231,7 +231,9 @@ def test_use():
             another_field: str
 
         py_guard = Guard.from_pydantic(output_class=TestClass)
-        py_guard.use(EndsWith("a"), OneLine(), LowerCase(), TwoWords(on_fail=OnFailAction.REASK))
+        py_guard.use(
+            EndsWith("a"), OneLine(), LowerCase(), TwoWords(on_fail=OnFailAction.REASK)
+        )
 
     # Use a combination of prompt, instructions, msg_history and output validators
     # Should only have the output validators in the guard,
@@ -245,7 +247,9 @@ def test_use():
         .use(
             EndsWith, end="a", on="output"
         )  # default on="output", still explicitly set
-        .use(TwoWords, on_fail=OnFailAction.REASK)  # default on="output", implicitly set
+        .use(
+            TwoWords, on_fail=OnFailAction.REASK
+        )  # default on="output", implicitly set
     )
 
     # Check schemas for prompt, instructions and msg_history validators

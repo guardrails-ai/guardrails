@@ -66,7 +66,7 @@ class ValidatorServiceBase:
             # FIXME: Should we still return fix_value if it is None?
             # I think we should warn and return the original value.
             return results[0].fix_value
-        elif on_fail_descriptor == OnFailAction.REASK:
+        elif on_fail_descriptor == OnFailAction.FIX_REASK:
             # FIXME: Same thing here
             fixed_value = results[0].fix_value
             result = self.execute_validator(
@@ -252,7 +252,11 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
             validators, key=lambda v: (v.on_fail_descriptor, v.override_value_on_pass)
         )
         for (on_fail_descriptor, override_on_pass), group in groups:
-            if override_on_pass or on_fail_descriptor in [OnFailAction.FIX, OnFailAction.FIX_REASK, "custom"]:
+            if override_on_pass or on_fail_descriptor in [
+                OnFailAction.FIX,
+                OnFailAction.FIX_REASK,
+                "custom",
+            ]:
                 for validator in group:
                     yield on_fail_descriptor, [validator]
             else:
