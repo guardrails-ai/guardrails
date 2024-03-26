@@ -252,7 +252,7 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
             validators, key=lambda v: (v.on_fail_descriptor, v.override_value_on_pass)
         )
         for (on_fail_descriptor, override_on_pass), group in groups:
-            if override_on_pass or on_fail_descriptor in ["fix", "fix_reask", "custom"]:
+            if override_on_pass or on_fail_descriptor in [OnFailAction.FIX, OnFailAction.FIX_REASK, "custom"]:
                 for validator in group:
                     yield on_fail_descriptor, [validator]
             else:
