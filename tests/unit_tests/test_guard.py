@@ -482,7 +482,7 @@ def test_validate():
         Guard()
         .use(OneLine)
         .use(
-            LowerCase(on_fail="fix"), on="output"
+            LowerCase(on_fail=OnFailAction.FIX), on="output"
         )  # default on="output", still explicitly set
         .use(TwoWords)
         .use(ValidLength, 0, 12, on_fail=OnFailAction.REFRAIN)
