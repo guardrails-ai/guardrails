@@ -14,7 +14,7 @@ from guardrails.cli.server.hub_client import AuthenticationError, get_auth
 def save_configuration_file(token: str, no_metrics: bool) -> None:
     home = expanduser("~")
     guardrails_rc = os.path.join(home, ".guardrailsrc")
-    with open(guardrails_rc, "w") as rc_file:
+    with open(guardrails_rc, "w", encoding="utf-8") as rc_file:
         lines = [
             f"id={str(uuid.uuid4())}{os.linesep}",
             f"token={token}{os.linesep}",
