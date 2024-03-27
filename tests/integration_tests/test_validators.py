@@ -7,7 +7,7 @@ import pytest
 from guardrails import Guard, Validator, register_validator
 from guardrails.datatypes import DataType
 from guardrails.schema import StringSchema
-from guardrails.validator_base import PassResult, ValidationResult
+from guardrails.validator_base import OnFailAction, PassResult, ValidationResult
 from guardrails.validators import (
     DetectSecrets,
     IsHighQualityTranslation,
@@ -54,7 +54,11 @@ def test_similar_to_list():
     )
 
     guard = Guard.from_string(
-        validators=[SimilarToList(standard_deviations=2, threshold=0.2, on_fail="fix")],
+        validators=[
+            SimilarToList(
+                standard_deviations=2, threshold=0.2, on_fail=OnFailAction.FIX
+            )
+        ],
         description="testmeout",
     )
 
@@ -179,7 +183,7 @@ def test_detect_secrets(mocker):
 
     # Initialise Guard from string
     guard = Guard.from_string(
-        validators=[DetectSecrets(on_fail="fix")],
+        validators=[DetectSecrets(on_fail=OnFailAction.FIX)],
         description="testmeout",
     )
 
@@ -243,7 +247,7 @@ def test_pii_filter(mocker):
     # 1. Initialise Guard from string with setting pii_entities as a string
     # Also check whether all parameters are correctly initialised
     guard = Guard.from_string(
-        validators=[PIIFilter(pii_entities="pii", on_fail="fix")],
+        validators=[PIIFilter(pii_entities="pii", on_fail=OnFailAction.FIX)],
         description="testmeout",
     )
 
@@ -266,7 +270,9 @@ def test_pii_filter(mocker):
     # Also check whether all parameters are correctly initialised
     guard = Guard.from_string(
         validators=[
-            PIIFilter(pii_entities=["EMAIL_ADDRESS", "PHONE_NUMBER"], on_fail="fix")
+            PIIFilter(
+                pii_entities=["EMAIL_ADDRESS", "PHONE_NUMBER"], on_fail=OnFailAction.FIX
+            )
         ],
         description="testmeout",
     )
@@ -298,7 +304,7 @@ def test_pii_filter(mocker):
     # Also don't pass through metadata
     # Should raise ValueError
     guard = Guard.from_string(
-        validators=[PIIFilter(on_fail="fix")],
+        validators=[PIIFilter(on_fail=OnFailAction.FIX)],
         description="testmeout",
     )
 
@@ -317,7 +323,7 @@ def test_pii_filter(mocker):
     # ------------------
     # 4. Initialise Guard from string without setting pii_entities
     guard = Guard.from_string(
-        validators=[PIIFilter(on_fail="fix")],
+        validators=[PIIFilter(on_fail=OnFailAction.FIX)],
         description="testmeout",
     )
     text = "My email address is demo@lol.com, and my phone number is 1234567890"
@@ -358,7 +364,7 @@ def test_pii_filter(mocker):
     # metadata should override the pii_entities passed in the constructor,
     # and only mask in EMAIL_ADDRESS
     guard = Guard.from_string(
-        validators=[PIIFilter(pii_entities="pii", on_fail="fix")],
+        validators=[PIIFilter(pii_entities="pii", on_fail=OnFailAction.FIX)],
         description="testmeout",
     )
     text = "My email address is demo@lol.com, and my phone number is 1234567890"
@@ -379,7 +385,7 @@ def test_pii_filter(mocker):
     # 6. Initialise Guard from string setting an incorrect string of pii_entities
     # Should raise ValueError during validate
     guard = Guard.from_string(
-        validators=[PIIFilter(pii_entities="piii", on_fail="fix")],
+        validators=[PIIFilter(pii_entities="piii", on_fail=OnFailAction.FIX)],
         description="testmeout",
     )
     text = "My email address is demo@lol.com, and my phone number is 1234567890"
@@ -416,7 +422,7 @@ def test_toxic_language(mocker):
     # 1. Test default initialisation (should be validation_method="sentence"
     # and threshold=0.25)
     guard = Guard.from_string(
-        validators=[ToxicLanguage(on_fail="fix")],
+        validators=[ToxicLanguage(on_fail=OnFailAction.FIX)],
         description="testmeout",
     )
 
@@ -424,7 +430,7 @@ def test_toxic_language(mocker):
     # 2. Test with a toxic paragraph (with validation_method="full")
     # Should return empty string
     guard = Guard.from_string(
-        validators=[ToxicLanguage(validation_method="full", on_fail="fix")],
+        validators=[ToxicLanguage(validation_method="full", on_fail=OnFailAction.FIX)],
         description="testmeout",
     )
 
@@ -439,7 +445,9 @@ def test_toxic_language(mocker):
     # (with validation_method="sentence")
     # Should return a paragraph with toxic sentences removed
     guard = Guard.from_string(
-        validators=[ToxicLanguage(validation_method="sentence", on_fail="fix")],
+        validators=[
+            ToxicLanguage(validation_method="sentence", on_fail=OnFailAction.FIX)
+        ],
         description="testmeout",
     )
 
@@ -454,7 +462,7 @@ def test_toxic_language(mocker):
     # 4. Text with a non-toxic paragraph (with validation_method="full")
     # Should return the same paragraph
     guard = Guard.from_string(
-        validators=[ToxicLanguage(validation_method="full", on_fail="fix")],
+        validators=[ToxicLanguage(validation_method="full", on_fail=OnFailAction.FIX)],
         description="testmeout",
     )
 
@@ -470,7 +478,9 @@ def test_toxic_language(mocker):
     # Should return the same paragraph
 
     guard = Guard.from_string(
-        validators=[ToxicLanguage(validation_method="sentence", on_fail="fix")],
+        validators=[
+            ToxicLanguage(validation_method="sentence", on_fail=OnFailAction.FIX)
+        ],
         description="testmeout",
     )
 
@@ -485,7 +495,9 @@ def test_toxic_language(mocker):
     # Should return a paragraph with toxic sentences removed
     guard = Guard.from_string(
         validators=[
-            ToxicLanguage(validation_method="sentence", threshold=0.1, on_fail="fix")
+            ToxicLanguage(
+                validation_method="sentence", threshold=0.1, on_fail=OnFailAction.FIX
+            )
         ],
         description="testmeout",
     )
@@ -512,7 +524,7 @@ def test_translation_quality(mocker):
     # 1. Test with a good translation
     # Should return the same translation
     guard = Guard.from_string(
-        validators=[IsHighQualityTranslation(on_fail="fix")],
+        validators=[IsHighQualityTranslation(on_fail=OnFailAction.FIX)],
         description="testmeout",
     )
 
@@ -529,7 +541,7 @@ def test_translation_quality(mocker):
     # 2. Test with a bad translation
     # Should return None
     guard = Guard.from_string(
-        validators=[IsHighQualityTranslation(on_fail="fix")],
+        validators=[IsHighQualityTranslation(on_fail=OnFailAction.FIX)],
         description="testmeout",
     )
 

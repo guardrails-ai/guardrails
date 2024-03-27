@@ -20,6 +20,7 @@ from guardrails.utils.reask_utils import FieldReAsk
 from guardrails.validator_base import (
     FailResult,
     Filter,
+    OnFailAction,
     PassResult,
     Refrain,
     ValidationResult,
@@ -223,7 +224,7 @@ def hello_validator(value: Any, metadata: Dict[str, Any]) -> ValidationResult:
 def test_validator_as_tuple():
     # (Callable, on_fail) tuple fix
     class MyModel(BaseModel):
-        a_field: str = Field(..., validators=[(hello_validator, "fix")])
+        a_field: str = Field(..., validators=[(hello_validator, OnFailAction.FIX)])
 
     guard = Guard.from_pydantic(MyModel)
     output = guard.parse(
@@ -237,7 +238,11 @@ def test_validator_as_tuple():
 
     class MyModel(BaseModel):
         a_field: str = Field(
-            ..., validators=[("two_words", "reask"), ("mycustomhellovalidator", "fix")]
+            ...,
+            validators=[
+                ("two_words", OnFailAction.REASK),
+                ("mycustomhellovalidator", OnFailAction.FIX),
+            ],
         )
 
     guard = Guard.from_pydantic(MyModel)
@@ -251,7 +256,7 @@ def test_validator_as_tuple():
     # (Validator, on_fail) tuple fix
 
     class MyModel(BaseModel):
-        a_field: str = Field(..., validators=[(TwoWords(), "fix")])
+        a_field: str = Field(..., validators=[(TwoWords(), OnFailAction.FIX)])
 
     guard = Guard.from_pydantic(MyModel)
     output = guard.parse(
@@ -275,7 +280,7 @@ def test_validator_as_tuple():
     )
 
     class MyModel(BaseModel):
-        a_field: str = Field(..., validators=[(hello_validator, "reask")])
+        a_field: str = Field(..., validators=[(hello_validator, OnFailAction.REASK)])
 
     guard = Guard.from_pydantic(MyModel)
 
@@ -301,7 +306,7 @@ def test_validator_as_tuple():
     # (string, on_fail) tuple reask
 
     class MyModel(BaseModel):
-        a_field: str = Field(..., validators=[("two-words", "reask")])
+        a_field: str = Field(..., validators=[("two-words", OnFailAction.REASK)])
 
     guard = Guard.from_pydantic(MyModel)
 
@@ -316,7 +321,7 @@ def test_validator_as_tuple():
     # (Validator, on_fail) tuple reask
 
     class MyModel(BaseModel):
-        a_field: str = Field(..., validators=[(TwoWords(), "reask")])
+        a_field: str = Field(..., validators=[(TwoWords(), OnFailAction.REASK)])
 
     guard = Guard.from_pydantic(MyModel)
 
@@ -395,7 +400,7 @@ def test_provenance_v1(mocker):
                 llm_callable="gpt-3.5-turbo",
                 top_k=3,
                 max_tokens=100,
-                on_fail="fix",
+                on_fail=OnFailAction.FIX,
             )
         ],
         description="testmeout",
@@ -703,7 +708,7 @@ def test_input_validation_fix(mocker):
 
     # fix returns an amended value for prompt/instructions validation,
     guard = Guard.from_pydantic(output_class=Pet).with_prompt_validation(
-        validators=[TwoWords(on_fail="fix")]
+        validators=[TwoWords(on_fail=OnFailAction.FIX)]
     )
     guard(
         mock_llm_api,
@@ -713,7 +718,7 @@ def test_input_validation_fix(mocker):
         guard.history.first.iterations.first.outputs.validation_response == "What kind"
     )
     guard = Guard.from_pydantic(output_class=Pet).with_instructions_validation(
-        validators=[TwoWords(on_fail="fix")]
+        validators=[TwoWords(on_fail=OnFailAction.FIX)]
     )
     guard(
         mock_llm_api,
@@ -727,7 +732,7 @@ def test_input_validation_fix(mocker):
 
     # but raises for msg_history validation
     guard = Guard.from_pydantic(output_class=Pet).with_msg_history_validation(
-        validators=[TwoWords(on_fail="fix")]
+        validators=[TwoWords(on_fail=OnFailAction.FIX)]
     )
     with pytest.raises(ValidationError) as excinfo:
         guard(
@@ -797,7 +802,7 @@ async def test_async_input_validation_fix(mocker):
 
     # fix returns an amended value for prompt/instructions validation,
     guard = Guard.from_pydantic(output_class=Pet).with_prompt_validation(
-        validators=[TwoWords(on_fail="fix")]
+        validators=[TwoWords(on_fail=OnFailAction.FIX)]
     )
     await guard(
         mock_llm_api,
@@ -808,7 +813,7 @@ async def test_async_input_validation_fix(mocker):
     )
 
     guard = Guard.from_pydantic(output_class=Pet).with_instructions_validation(
-        validators=[TwoWords(on_fail="fix")]
+        validators=[TwoWords(on_fail=OnFailAction.FIX)]
     )
     await guard(
         mock_llm_api,
@@ -822,7 +827,7 @@ async def test_async_input_validation_fix(mocker):
 
     # but raises for msg_history validation
     guard = Guard.from_pydantic(output_class=Pet).with_msg_history_validation(
-        validators=[TwoWords(on_fail="fix")]
+        validators=[TwoWords(on_fail=OnFailAction.FIX)]
     )
     with pytest.raises(ValidationError) as excinfo:
         await guard(
@@ -893,7 +898,7 @@ This also is not two words
     "unstructured_instructions_error",
     [
         (
-            "reask",
+            OnFailAction.REASK,
             "Prompt validation failed: incorrect_value='What kind of pet should I get?\\n\\nJson Output:\\n\\n' fail_results=[FailResult(outcome='fail', metadata=None, error_message='must be exactly two words', fix_value='What kind')] path=None",  # noqa
             "Instructions validation failed: incorrect_value='What kind of pet should I get?' fail_results=[FailResult(outcome='fail', metadata=None, error_message='must be exactly two words', fix_value='What kind')] path=None",  # noqa
             "Message history validation failed: incorrect_value='What kind of pet should I get?' fail_results=[FailResult(outcome='fail', metadata=None, error_message='must be exactly two words', fix_value='What kind')] path=None",  # noqa
@@ -901,7 +906,7 @@ This also is not two words
             "Instructions validation failed: incorrect_value='\\nThis also is not two words\\n' fail_results=[FailResult(outcome='fail', metadata=None, error_message='must be exactly two words', fix_value='This also')] path=None",  # noqa
         ),
         (
-            "filter",
+            OnFailAction.FILTER,
             "Prompt validation failed",
             "Instructions validation failed",
             "Message history validation failed",
@@ -909,7 +914,7 @@ This also is not two words
             "Instructions validation failed",
         ),
         (
-            "refrain",
+            OnFailAction.REFRAIN,
             "Prompt validation failed",
             "Instructions validation failed",
             "Message history validation failed",
@@ -917,7 +922,7 @@ This also is not two words
             "Instructions validation failed",
         ),
         (
-            "exception",
+            OnFailAction.EXCEPTION,
             "Validation failed for field with errors: must be exactly two words",
             "Validation failed for field with errors: must be exactly two words",
             "Validation failed for field with errors: must be exactly two words",
@@ -985,7 +990,7 @@ def test_input_validation_fail(
 <rail version="0.1">
 <prompt
     validators="two-words"
-    on-fail-two-words="{on_fail}"
+    on-fail-two-words="{on_fail.value}"
 >
 This is not two words
 </prompt>
@@ -1011,7 +1016,7 @@ This is not two words
 </prompt>
 <instructions
     validators="two-words"
-    on-fail-two-words="{on_fail}"
+    on-fail-two-words="{on_fail.value}"
 >
 This also is not two words
 </instructions>
@@ -1038,7 +1043,7 @@ This also is not two words
     "unstructured_instructions_error",
     [
         (
-            "reask",
+            OnFailAction.REASK,
             "Prompt validation failed: incorrect_value='What kind of pet should I get?\\n\\nJson Output:\\n\\n' fail_results=[FailResult(outcome='fail', metadata=None, error_message='must be exactly two words', fix_value='What kind')] path=None",  # noqa
             "Instructions validation failed: incorrect_value='What kind of pet should I get?' fail_results=[FailResult(outcome='fail', metadata=None, error_message='must be exactly two words', fix_value='What kind')] path=None",  # noqa
             "Message history validation failed: incorrect_value='What kind of pet should I get?' fail_results=[FailResult(outcome='fail', metadata=None, error_message='must be exactly two words', fix_value='What kind')] path=None",  # noqa
@@ -1046,7 +1051,7 @@ This also is not two words
             "Instructions validation failed: incorrect_value='\\nThis also is not two words\\n' fail_results=[FailResult(outcome='fail', metadata=None, error_message='must be exactly two words', fix_value='This also')] path=None",  # noqa
         ),
         (
-            "filter",
+            OnFailAction.FILTER,
             "Prompt validation failed",
             "Instructions validation failed",
             "Message history validation failed",
@@ -1054,7 +1059,7 @@ This also is not two words
             "Instructions validation failed",
         ),
         (
-            "refrain",
+            OnFailAction.REFRAIN,
             "Prompt validation failed",
             "Instructions validation failed",
             "Message history validation failed",
@@ -1062,7 +1067,7 @@ This also is not two words
             "Instructions validation failed",
         ),
         (
-            "exception",
+            OnFailAction.EXCEPTION,
             "Validation failed for field with errors: must be exactly two words",
             "Validation failed for field with errors: must be exactly two words",
             "Validation failed for field with errors: must be exactly two words",
@@ -1132,7 +1137,7 @@ async def test_input_validation_fail_async(
 <rail version="0.1">
 <prompt
     validators="two-words"
-    on-fail-two-words="{on_fail}"
+    on-fail-two-words="{on_fail.value}"
 >
 This is not two words
 </prompt>
@@ -1158,7 +1163,7 @@ This is not two words
 </prompt>
 <instructions
     validators="two-words"
-    on-fail-two-words="{on_fail}"
+    on-fail-two-words="{on_fail.value}"
 >
 This also is not two words
 </instructions>
@@ -1179,7 +1184,7 @@ This also is not two words
 def test_input_validation_mismatch_raise():
     # prompt validation, msg_history argument
     guard = Guard.from_pydantic(output_class=Pet).with_prompt_validation(
-        validators=[TwoWords(on_fail="fix")]
+        validators=[TwoWords(on_fail=OnFailAction.FIX)]
     )
     with pytest.raises(ValueError):
         guard(
@@ -1194,7 +1199,7 @@ def test_input_validation_mismatch_raise():
 
     # instructions validation, msg_history argument
     guard = Guard.from_pydantic(output_class=Pet).with_instructions_validation(
-        validators=[TwoWords(on_fail="fix")]
+        validators=[TwoWords(on_fail=OnFailAction.FIX)]
     )
     with pytest.raises(ValueError):
         guard(
@@ -1209,7 +1214,7 @@ def test_input_validation_mismatch_raise():
 
     # msg_history validation, prompt argument
     guard = Guard.from_pydantic(output_class=Pet).with_msg_history_validation(
-        validators=[TwoWords(on_fail="fix")]
+        validators=[TwoWords(on_fail=OnFailAction.FIX)]
     )
     with pytest.raises(ValueError):
         guard(

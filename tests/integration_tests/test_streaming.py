@@ -11,6 +11,7 @@ from pydantic import BaseModel, Field
 
 import guardrails as gd
 from guardrails.utils.openai_utils import OPENAI_VERSION
+from guardrails.validator_base import OnFailAction
 from guardrails.validators import LowerCase
 
 expected_raw_output = {"statement": "I am DOING well, and I HOPE you aRe too."}
@@ -120,28 +121,28 @@ def mock_openai_chat_completion_create():
 class LowerCaseFix(BaseModel):
     statement: str = Field(
         description="Validates whether the text is in lower case.",
-        validators=[LowerCase(on_fail="fix")],
+        validators=[LowerCase(on_fail=OnFailAction.FIX)],
     )
 
 
 class LowerCaseNoop(BaseModel):
     statement: str = Field(
         description="Validates whether the text is in lower case.",
-        validators=[LowerCase(on_fail="noop")],
+        validators=[LowerCase(on_fail=OnFailAction.NOOP)],
     )
 
 
 class LowerCaseFilter(BaseModel):
     statement: str = Field(
         description="Validates whether the text is in lower case.",
-        validators=[LowerCase(on_fail="filter")],
+        validators=[LowerCase(on_fail=OnFailAction.FILTER)],
     )
 
 
 class LowerCaseRefrain(BaseModel):
     statement: str = Field(
         description="Validates whether the text is in lower case.",
-        validators=[LowerCase(on_fail="refrain")],
+        validators=[LowerCase(on_fail=OnFailAction.REFRAIN)],
     )
 
 

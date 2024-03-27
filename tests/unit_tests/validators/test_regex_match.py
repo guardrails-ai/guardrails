@@ -1,13 +1,18 @@
 import re
 
+from guardrails.validator_base import OnFailAction
 from guardrails.validators import FailResult, PassResult, RegexMatch
 
 
 class TestRegexMatchValidator:
     regex = "\\w+\\d\\w+"
     p = re.compile(regex)
-    fullmatch_val = RegexMatch(regex=regex, match_type="fullmatch", on_fail="reask")
-    search_val = RegexMatch(regex=regex, match_type="search", on_fail="reask")
+    fullmatch_val = RegexMatch(
+        regex=regex, match_type="fullmatch", on_fail=OnFailAction.REASK
+    )
+    search_val = RegexMatch(
+        regex=regex, match_type="search", on_fail=OnFailAction.REASK
+    )
 
     def test_fullmatch_fail(self):
         bad_str = "abcdef"
