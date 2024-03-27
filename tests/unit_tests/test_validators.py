@@ -990,7 +990,7 @@ def test_input_validation_fail(
 <rail version="0.1">
 <prompt
     validators="two-words"
-    on-fail-two-words="{on_fail}"
+    on-fail-two-words="{on_fail.value}"
 >
 This is not two words
 </prompt>
@@ -1016,7 +1016,7 @@ This is not two words
 </prompt>
 <instructions
     validators="two-words"
-    on-fail-two-words="{on_fail}"
+    on-fail-two-words="{on_fail.value}"
 >
 This also is not two words
 </instructions>
@@ -1137,7 +1137,7 @@ async def test_input_validation_fail_async(
 <rail version="0.1">
 <prompt
     validators="two-words"
-    on-fail-two-words="{on_fail}"
+    on-fail-two-words="{on_fail.value}"
 >
 This is not two words
 </prompt>
@@ -1163,7 +1163,7 @@ This is not two words
 </prompt>
 <instructions
     validators="two-words"
-    on-fail-two-words="{on_fail}"
+    on-fail-two-words="{on_fail.value}"
 >
 This also is not two words
 </instructions>
