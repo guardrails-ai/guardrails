@@ -1,4 +1,5 @@
 import copy
+from functools import partial
 from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
 from pydantic import BaseModel
@@ -259,37 +260,25 @@ class AsyncRunner(Runner):
         2. Convert the response string to a dict,
         3. Log the output
         """
+        # If the API supports a base model, pass it in.
+        api_fn = api
+        if api is not None:
+            supports_base_model = getattr(api, "supports_base_model", False)
+            if supports_base_model:
+                api_fn = partial(api, base_model=self.base_model)
+
         if output is not None:
             llm_response = LLMResponse(
                 output=output,
             )
-        elif api is None:
+        elif api_fn is None:
             raise ValueError("Either API or output must be provided.")
         elif msg_history:
-            try:
-                llm_response = await api(
-                    msg_history=msg_history_source(msg_history),
-                    base_model=self.base_model,
-                )
-            except Exception:
-                # If the API call fails, try calling again without the base model.
-                llm_response = await api(msg_history=msg_history_source(msg_history))
+            llm_response = await api_fn(msg_history=msg_history_source(msg_history))
         elif prompt and instructions:
-            try:
-                llm_response = await api(
-                    prompt.source,
-                    instructions=instructions.source,
-                    base_model=self.base_model,
-                )
-            except Exception:
-                llm_response = await api(
-                    prompt.source, instructions=instructions.source
-                )
+            llm_response = await api_fn(prompt.source, instructions=instructions.source)
         elif prompt:
-            try:
-                llm_response = await api(prompt.source, base_model=self.base_model)
-            except Exception:
-                llm_response = await api(prompt.source)
+            llm_response = await api_fn(prompt.source)
         else:
             raise ValueError("'output', 'prompt' or 'msg_history' must be provided.")
 
