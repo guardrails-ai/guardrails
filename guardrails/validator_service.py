@@ -3,7 +3,7 @@ import itertools
 import os
 from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from guardrails.classes.history import Iteration
 from guardrails.datatypes import FieldValidation
@@ -60,7 +60,7 @@ class ValidatorServiceBase:
         results: List[FailResult],
         value: Any,
         validator: Validator,
-        on_fail_descriptor: OnFailAction,
+        on_fail_descriptor: Union[OnFailAction, str],
     ):
         if on_fail_descriptor == OnFailAction.FIX:
             # FIXME: Should we still return fix_value if it is None?
