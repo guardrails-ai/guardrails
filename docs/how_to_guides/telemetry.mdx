@@ -114,7 +114,7 @@ Standard [open telemetry environment variables](https://opentelemetry-python.rea
 ```python
 from guardrails import Guard
 from guardrails.utils.telemetry_utils import default_otel_collector_tracer
-from guardrails.validators import ValidLength
+from guardrails.hub import ValidLength
 import openai
 
 guard = Guard.from_string(
