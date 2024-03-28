@@ -3,6 +3,7 @@ from typing import Any, Dict
 from guardrails.logger import logger
 from guardrails.validator_base import (
     FailResult,
+    OnFailAction,
     PassResult,
     ValidationResult,
     Validator,
@@ -26,7 +27,7 @@ class EndsWith(Validator):
         end: The required last element.
     """
 
-    def __init__(self, end: str, on_fail: str = "fix"):
+    def __init__(self, end: str, on_fail: OnFailAction = OnFailAction.FIX):
         super().__init__(
             on_fail=on_fail,
             end=end,

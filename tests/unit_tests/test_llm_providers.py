@@ -20,19 +20,6 @@ from guardrails.utils.safe_get import safe_get_with_brackets
 
 from .mocks import MockAsyncOpenAILlm, MockOpenAILlm
 
-# def test_openai_callable_retries_on_retryable_errors(mocker):
-#     llm = MockCustomLlm()
-#     fail_retryable_spy = mocker.spy(llm, "fail_retryable")
-#
-#     arbitrary_callable = ArbitraryCallable(llm.fail_retryable, prompt="Hello")
-#     response = arbitrary_callable()
-#
-#     assert fail_retryable_spy.call_count == 2
-#     assert isinstance(response, LLMResponse) is True
-#     assert response.output == "Hello world!"
-#     assert response.prompt_token_count is None
-#     assert response.response_token_count is None
-
 
 @pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="OpenAI v0 only")
 def test_openai_callable_does_not_retry_on_non_retryable_errors(mocker):
@@ -65,22 +52,6 @@ def test_openai_callable_does_not_retry_on_success(mocker):
     assert response.response_token_count is None
 
 
-# @pytest.mark.asyncio
-# async def test_async_openai_callable_retries_on_retryable_errors(mocker):
-#     llm = MockAsyncCustomLlm()
-#     fail_retryable_spy = mocker.spy(llm, "fail_retryable")
-#
-#     arbitrary_callable = AsyncArbitraryCallable(llm.fail_retryable, prompt="Hello")
-#     response = await arbitrary_callable()
-#
-#     assert fail_retryable_spy.call_count == 2
-#     assert isinstance(response, LLMResponse) is True
-#     assert response.output == "Hello world!"
-#     assert response.prompt_token_count is None
-#     assert response.response_token_count is None
-
-
-# Passing
 @pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="OpenAI v0 only")
 @pytest.mark.asyncio
 async def test_async_openai_callable_does_not_retry_on_non_retryable_errors(mocker):
@@ -658,25 +629,41 @@ def test_get_llm_ask_cohere():
 
     cohere_client = Client(api_key="mock_api_key")
 
+    prompt_callable = get_llm_ask(cohere_client.chat)
+
+    assert isinstance(prompt_callable, CohereCallable)
+
+
+@pytest.mark.skipif(
+    not importlib.util.find_spec("cohere"),
+    reason="cohere is not installed",
+)
+def test_get_llm_ask_cohere_legacy():
+    from cohere import Client
+
+    from guardrails.llm_providers import CohereCallable
+
+    cohere_client = Client(api_key="mock_api_key")
+
     prompt_callable = get_llm_ask(cohere_client.generate)
 
     assert isinstance(prompt_callable, CohereCallable)
 
 
 @pytest.mark.skipif(
-    not importlib.util.find_spec("anthropic.resources"),
-    reason="antrhopic is not installed",
+    not importlib.util.find_spec("anthropic"),
+    reason="anthropic is not installed",
 )
 def test_get_llm_ask_anthropic():
-    from anthropic import Anthropic
+    if importlib.util.find_spec("anthropic"):
+        from anthropic import Anthropic
 
-    from guardrails.llm_providers import AnthropicCallable
+        from guardrails.llm_providers import AnthropicCallable
 
-    anthropic_client = Anthropic(api_key="my_api_key")
+        anthropic_client = Anthropic(api_key="my_api_key")
+        prompt_callable = get_llm_ask(anthropic_client.completions.create)
 
-    prompt_callable = get_llm_ask(anthropic_client.completions.create)
-
-    assert isinstance(prompt_callable, AnthropicCallable)
+        assert isinstance(prompt_callable, AnthropicCallable)
 
 
 @pytest.mark.skipif(

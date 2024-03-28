@@ -3,7 +3,7 @@ import itertools
 import os
 from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from guardrails.classes.history import Iteration
 from guardrails.datatypes import FieldValidation
@@ -17,6 +17,7 @@ from guardrails.utils.telemetry_utils import trace_validator
 from guardrails.validator_base import (
     FailResult,
     Filter,
+    OnFailAction,
     PassResult,
     Refrain,
     ValidationResult,
@@ -59,13 +60,13 @@ class ValidatorServiceBase:
         results: List[FailResult],
         value: Any,
         validator: Validator,
-        on_fail_descriptor: str,
+        on_fail_descriptor: Union[OnFailAction, str],
     ):
-        if on_fail_descriptor == "fix":
+        if on_fail_descriptor == OnFailAction.FIX:
             # FIXME: Should we still return fix_value if it is None?
             # I think we should warn and return the original value.
             return results[0].fix_value
-        elif on_fail_descriptor == "fix_reask":
+        elif on_fail_descriptor == OnFailAction.FIX_REASK:
             # FIXME: Same thing here
             fixed_value = results[0].fix_value
             result = self.execute_validator(
@@ -83,21 +84,21 @@ class ValidatorServiceBase:
             if validator.on_fail_method is None:
                 raise ValueError("on_fail is 'custom' but on_fail_method is None")
             return validator.on_fail_method(value, results)
-        if on_fail_descriptor == "reask":
+        if on_fail_descriptor == OnFailAction.REASK:
             return FieldReAsk(
                 incorrect_value=value,
                 fail_results=results,
             )
-        if on_fail_descriptor == "exception":
+        if on_fail_descriptor == OnFailAction.EXCEPTION:
             raise ValidationError(
                 "Validation failed for field with errors: "
                 + ", ".join([result.error_message for result in results])
             )
-        if on_fail_descriptor == "filter":
+        if on_fail_descriptor == OnFailAction.FILTER:
             return Filter()
-        if on_fail_descriptor == "refrain":
+        if on_fail_descriptor == OnFailAction.REFRAIN:
             return Refrain()
-        if on_fail_descriptor == "noop":
+        if on_fail_descriptor == OnFailAction.NOOP:
             return value
         else:
             raise ValueError(
@@ -251,7 +252,11 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
             validators, key=lambda v: (v.on_fail_descriptor, v.override_value_on_pass)
         )
         for (on_fail_descriptor, override_on_pass), group in groups:
-            if override_on_pass or on_fail_descriptor in ["fix", "fix_reask", "custom"]:
+            if override_on_pass or on_fail_descriptor in [
+                OnFailAction.FIX,
+                OnFailAction.FIX_REASK,
+                "custom",
+            ]:
                 for validator in group:
                     yield on_fail_descriptor, [validator]
             else:

@@ -280,6 +280,25 @@ class CohereCallable(PromptCallableBase):
         if "instructions" in kwargs:
             prompt = kwargs.pop("instructions") + "\n\n" + prompt
 
+        def is_base_cohere_chat(func):
+            try:
+                return (
+                    func.__closure__[1].cell_contents.__func__.__qualname__
+                    == "BaseCohere.chat"
+                )
+            except (AttributeError, IndexError):
+                return False
+
+        # TODO: When cohere totally gets rid of `generate`,
+        #       remove this cond and the final return
+        if is_base_cohere_chat(client_callable):
+            cohere_response = client_callable(
+                message=prompt, model=model, *args, **kwargs
+            )
+            return LLMResponse(
+                output=cohere_response.text,
+            )
+
         cohere_response = client_callable(prompt=prompt, model=model, *args, **kwargs)
         return LLMResponse(
             output=cohere_response[0].text,
@@ -562,7 +581,7 @@ def get_llm_ask(llm_api: Callable, *args, **kwargs) -> PromptCallableBase:
         if (
             isinstance(getattr(llm_api, "__self__", None), cohere.Client)
             and getattr(llm_api, "__name__", None) == "generate"
-        ):
+        ) or getattr(llm_api, "__module__", None) == "cohere.client":
             return CohereCallable(*args, client_callable=llm_api, **kwargs)
     except ImportError:
         pass

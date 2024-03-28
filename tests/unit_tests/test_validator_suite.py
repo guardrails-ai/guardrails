@@ -5,6 +5,7 @@ import pytest
 
 from guardrails.guard import Guard
 from guardrails.utils.openai_utils import get_static_openai_create_func
+from guardrails.validator_base import OnFailAction
 from guardrails.validators import FailResult
 from tests.integration_tests.mock_llm_outputs import MockOpenAICallable
 from tests.unit_tests.validators.test_parameters import (
@@ -47,7 +48,7 @@ def test_validator_python_string(
         print("testing validator: ", validator_name)
         module = importlib.import_module("guardrails.validators")
         validator_class = getattr(module, validator_name)
-        validators = [validator_class(on_fail="reask")]
+        validators = [validator_class(on_fail=OnFailAction.REASK)]
         guard = Guard.from_string(
             validators,
             description=validator_test_data[validator_name]["description"],

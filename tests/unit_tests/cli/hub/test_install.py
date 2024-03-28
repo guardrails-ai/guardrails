@@ -1,4 +1,3 @@
-import json
 from unittest.mock import call
 
 import pytest
@@ -663,7 +662,7 @@ def test_install_hub_module(mocker):
     }
     mock_pip_process.side_effect = [
         "Sucessfully installed test-validator",
-        json.dumps(inspect_report),
+        inspect_report,
         "Sucessfully installed rstr",
         "Sucessfully installed openai<2",
         "Sucessfully installed pydash>=7.0.6,<8.0.0",
