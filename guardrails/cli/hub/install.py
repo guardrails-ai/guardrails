@@ -1,3 +1,4 @@
+import json
 import os
 import subprocess
 import sys
@@ -44,6 +45,13 @@ def pip_process(
         logger.debug(f"decoding output from pip {action} {package}")
         if format == json_format:
             parsed = BytesHeaderParser().parsebytes(output)
+            try:
+                return json.loads(str(parsed))
+            except Exception as e:
+                logger.debug(
+                    f"json parse exception in decoding output from pip {action} {package}. Falling back to accumulating the byte stream",  # noqa
+                    e,
+                )
             accumulator = {}
             for key, value in parsed.items():
                 accumulator[key] = value

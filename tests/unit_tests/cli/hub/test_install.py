@@ -134,7 +134,7 @@ class TestPipProcess:
 
         response = pip_process("show", "pip", format="json")
 
-        assert mock_logger_debug.call_count == 2
+        assert mock_logger_debug.call_count == 3
         debug_calls = [
             call("running pip show  pip"),
             call("decoding output from pip show pip"),
