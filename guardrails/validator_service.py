@@ -423,13 +423,6 @@ def validate(
         loop = None
 
     if process_count == 1:
-        logger.warning(
-            "Process count was set to 1 via the GUARDRAILS_PROCESS_COUNT"
-            "environment variable."
-            "This will cause all validations to run synchronously."
-            "To run asynchronously, specify a process count"
-            "greater than 1 or unset this environment variable."
-        )
         validator_service = SequentialValidatorService(disable_tracer)
     elif loop is not None and not loop.is_running():
         validator_service = AsyncValidatorService(disable_tracer)
