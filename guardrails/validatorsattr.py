@@ -328,7 +328,9 @@ class ValidatorsAttr(pydantic.BaseModel):
 
             # See if the formatter has an associated on_fail method.
             escaped_validator_name = validator_name.replace("/", "_")
-            on_fail = on_fail_handlers.get(validator_name, on_fail_handlers.get(escaped_validator_name))
+            on_fail = on_fail_handlers.get(
+                validator_name, on_fail_handlers.get(escaped_validator_name)
+            )
             # TODO(shreya): Load the on_fail method.
             # This method should be loaded from an optional script given at the
             # beginning of a rail file.
