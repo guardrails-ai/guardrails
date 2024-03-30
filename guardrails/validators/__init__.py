@@ -87,7 +87,7 @@ __all__ = [
     "RemoveRedundantSentences",
     "SaliencyCheck",
     "QARelevanceLLMEval",
-    "ProvenanceV0",
+    "LogicalFallacyCheck" "ProvenanceV0",
     "ProvenanceV1",
     "PIIFilter",
     "SimilarToList",
