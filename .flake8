@@ -2,5 +2,5 @@
 count = True
 statistics = True
 max-line-length = 88
-ignore = E731,W503,E203,E741
+ignore = E731,W503,E203,E741,E704
 exclude = setup.py
