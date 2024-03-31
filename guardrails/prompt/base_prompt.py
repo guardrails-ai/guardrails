@@ -1,4 +1,5 @@
 """Class for representing a prompt entry."""
+
 import re
 from string import Template
 from typing import Optional

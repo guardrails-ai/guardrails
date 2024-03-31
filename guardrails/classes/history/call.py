@@ -126,9 +126,11 @@ class Call(ArbitraryModel):
             reasks.remove(reasks.first)  # type: ignore
             return Stack(
                 *[
-                    r.inputs.instructions.source
-                    if r.inputs.instructions is not None
-                    else None
+                    (
+                        r.inputs.instructions.source
+                        if r.inputs.instructions is not None
+                        else None
+                    )
                     for r in reasks
                 ]
             )
@@ -185,9 +187,11 @@ class Call(ArbitraryModel):
         """The exact outputs from all LLM calls."""
         return Stack(
             *[
-                i.outputs.llm_response_info.output
-                if i.outputs.llm_response_info is not None
-                else None
+                (
+                    i.outputs.llm_response_info.output
+                    if i.outputs.llm_response_info is not None
+                    else None
+                )
                 for i in self.iterations
             ]
         )
@@ -392,11 +396,9 @@ versions 0.5.0 and beyond. Use 'guarded_output' instead."""
                 title="Validated Output",
                 style="on #F0FFF0",
             )
-            tree.children[
-                -1
-            ].label.renderable._renderables = previous_panels + (  # type: ignore
+            tree.children[-1].label.renderable._renderables = previous_panels + (
                 validated_outcome_panel,
-            )
+            )  # type: ignore
 
         return tree
 

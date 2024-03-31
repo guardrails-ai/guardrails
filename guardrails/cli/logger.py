@@ -3,9 +3,9 @@ import os
 
 import coloredlogs
 
-os.environ[
-    "COLOREDLOGS_LEVEL_STYLES"
-] = "spam=white,faint;success=green,bold;debug=magenta;verbose=blue;notice=cyan,bold;warning=yellow;error=red;critical=background=red"  # noqa
+os.environ["COLOREDLOGS_LEVEL_STYLES"] = (
+    "spam=white,faint;success=green,bold;debug=magenta;verbose=blue;notice=cyan,bold;warning=yellow;error=red;critical=background=red"  # noqa
+)
 LEVELS = {
     "SPAM": 5,
     "VERBOSE": 15,

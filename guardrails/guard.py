@@ -229,9 +229,7 @@ class Guard(Runnable, Generic[OT]):
         self.num_reasks = (
             num_reasks
             if num_reasks is not None
-            else self.num_reasks
-            if self.num_reasks is not None
-            else 1
+            else self.num_reasks if self.num_reasks is not None else 1
         )
 
     def _set_tracer(self, tracer: Optional[Tracer] = None) -> None:
@@ -467,8 +465,7 @@ class Guard(Runnable, Generic[OT]):
         stream: Optional[bool] = False,
         *args,
         **kwargs,
-    ) -> Union[ValidationOutcome[OT], Iterable[ValidationOutcome[OT]]]:
-        ...
+    ) -> Union[ValidationOutcome[OT], Iterable[ValidationOutcome[OT]]]: ...
 
     @overload
     def __call__(
@@ -483,8 +480,7 @@ class Guard(Runnable, Generic[OT]):
         full_schema_reask: Optional[bool] = None,
         *args,
         **kwargs,
-    ) -> Awaitable[ValidationOutcome[OT]]:
-        ...
+    ) -> Awaitable[ValidationOutcome[OT]]: ...
 
     def __call__(
         self,
@@ -811,8 +807,7 @@ class Guard(Runnable, Generic[OT]):
         full_schema_reask: Optional[bool] = None,
         *args,
         **kwargs,
-    ) -> ValidationOutcome[OT]:
-        ...
+    ) -> ValidationOutcome[OT]: ...
 
     @overload
     def parse(
@@ -825,8 +820,7 @@ class Guard(Runnable, Generic[OT]):
         full_schema_reask: Optional[bool] = None,
         *args,
         **kwargs,
-    ) -> Awaitable[ValidationOutcome[OT]]:
-        ...
+    ) -> Awaitable[ValidationOutcome[OT]]: ...
 
     @overload
     def parse(
@@ -839,8 +833,7 @@ class Guard(Runnable, Generic[OT]):
         full_schema_reask: Optional[bool] = None,
         *args,
         **kwargs,
-    ) -> ValidationOutcome[OT]:
-        ...
+    ) -> ValidationOutcome[OT]: ...
 
     def parse(
         self,
@@ -1194,14 +1187,12 @@ class Guard(Runnable, Generic[OT]):
             )
 
     @overload
-    def use(self, validator: Validator, *, on: str = "output") -> "Guard":
-        ...
+    def use(self, validator: Validator, *, on: str = "output") -> "Guard": ...
 
     @overload
     def use(
         self, validator: Type[Validator], *args, on: str = "output", **kwargs
-    ) -> "Guard":
-        ...
+    ) -> "Guard": ...
 
     def use(
         self,
@@ -1227,8 +1218,7 @@ class Guard(Runnable, Generic[OT]):
         return self
 
     @overload
-    def use_many(self, *validators: Validator, on: str = "output") -> "Guard":
-        ...
+    def use_many(self, *validators: Validator, on: str = "output") -> "Guard": ...
 
     @overload
     def use_many(
@@ -1239,8 +1229,7 @@ class Guard(Runnable, Generic[OT]):
             Optional[Dict[str, Any]],
         ],
         on: str = "output",
-    ) -> "Guard":
-        ...
+    ) -> "Guard": ...
 
     def use_many(
         self,
@@ -1279,9 +1268,9 @@ class Guard(Runnable, Generic[OT]):
                 prompt=self.prompt.source if self.prompt else None,
                 instructions=self.instructions.source if self.instructions else None,
                 reask_prompt=self.reask_prompt.source if self.reask_prompt else None,
-                reask_instructions=self.reask_instructions.source
-                if self.reask_instructions
-                else None,
+                reask_instructions=(
+                    self.reask_instructions.source if self.reask_instructions else None
+                ),
             )
 
         return self.parse(llm_output=llm_output, *args, **kwargs)

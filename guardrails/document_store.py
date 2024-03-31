@@ -52,8 +52,7 @@ class DocumentStoreBase(ABC):
     The store can be queried by text for similar documents.
     """
 
-    def __init__(self, vector_db: VectorDBBase, path: Optional[str] = None):
-        ...
+    def __init__(self, vector_db: VectorDBBase, path: Optional[str] = None): ...
 
     @abstractmethod
     def add_document(self, document: Document) -> None:

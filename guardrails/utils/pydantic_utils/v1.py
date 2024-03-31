@@ -1,4 +1,5 @@
 """Utilities for working with Pydantic models."""
+
 import typing
 import warnings
 from copy import deepcopy
@@ -459,14 +460,14 @@ def convert_pydantic_model_to_datatype(
                 assert typing.get_origin(case_discriminator_type) is typing.Literal
                 assert len(typing.get_args(case_discriminator_type)) == 1
                 discriminator_value = typing.get_args(case_discriminator_type)[0]
-                choice_children[
-                    discriminator_value
-                ] = convert_pydantic_model_to_datatype(
-                    case,
-                    datatype=CaseDataType,
-                    name=discriminator_value,
-                    strict=strict,
-                    excluded_fields=[discriminator],
+                choice_children[discriminator_value] = (
+                    convert_pydantic_model_to_datatype(
+                        case,
+                        datatype=CaseDataType,
+                        name=discriminator_value,
+                        strict=strict,
+                        excluded_fields=[discriminator],
+                    )
                 )
             children[field_name] = pydantic_field_to_datatype(
                 Choice,
