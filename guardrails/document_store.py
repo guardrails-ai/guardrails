@@ -241,21 +241,22 @@ try:
 except ImportError:
 
     class FallbackEphemeralDocumentStore:
-        def __init__(self):
+        def __init__(self, *args, **kwargs):
+            # Why don't we just raise this when the import error occurs instead of at runtime?
             raise ImportError(
                 "SQLAlchemy is required for EphemeralDocumentStore"
                 "Please install it using `poetry add SqlAlchemy`"
             )
 
     class FallbackSQLDocument:
-        def __init__(self):
+        def __init__(self, *args, **kwargs):
             raise ImportError(
                 "SQLAlchemy is required for SQLDocument"
                 "Please install it using `poetry add SqlAlchemy`"
             )
 
     class FallbackSQLMetadataStore:
-        def __init__(self):
+        def __init__(self, *args, **kwargs):
             raise ImportError(
                 "SQLAlchemy is required for SQLMetadataStore"
                 "Please install it using `poetry add SqlAlchemy`"
