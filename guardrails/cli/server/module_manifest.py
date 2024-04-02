@@ -26,6 +26,11 @@ class ModuleTags(Serializeable):
     content_type: Optional[List[str]] = field(default_factory=list)
     validation_category: Optional[List[str]] = field(default_factory=list)
     process_requirements: Optional[List[str]] = field(default_factory=list)
+    
+@dataclass
+class ModelAuth(Serializeable):
+    type: str
+    name: str
 
 
 @dataclass
@@ -43,6 +48,7 @@ class ModuleManifest(Serializeable):
     requires_auth: Optional[bool] = True
     post_install: Optional[str] = None
     index: Optional[str] = None
+    required_model_auth: Optional[List[ModelAuth]] = field(default_factory=list)
 
     # @override
     @classmethod
