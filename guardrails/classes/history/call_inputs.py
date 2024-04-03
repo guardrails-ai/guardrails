@@ -17,6 +17,7 @@ class CallInputs(Inputs):
     instructions: Optional[str] = Field(
         description="The instructions string as provided by the user.", default=None
     )
+
     args: List[Any] = Field(
         description="Additional arguments for the LLM as provided by the user.",
         default_factory=list,

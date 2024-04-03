@@ -15,6 +15,7 @@ from typing import (
 from guardrails_api_client.models.validate_payload_llm_api import ValidatePayloadLlmApi
 from pydantic import BaseModel
 
+from guardrails.run.llm_mapping import extract_text_from_output, extract_text_from_streaming_output
 from guardrails.utils.exception_utils import UserFacingException
 from guardrails.utils.llm_response import LLMResponse
 from guardrails.utils.openai_utils import (
@@ -546,22 +547,28 @@ class ArbitraryCallable(PromptCallableBase):
         if kwargs.get("stream", False):
             # If stream is defined and set to True,
             # the callable returns a generator object
-            llm_response = cast(Iterable[str], llm_response)
+            # check if type of llm_response is an iterable
+            if isinstance(llm_response, Iterable[str]):
+                llm_response = cast(Iterable[str], llm_response)
+                return LLMResponse(
+                    output="",
+                    stream_output=llm_response,
+                )
             return LLMResponse(
                 output="",
-                stream_output=llm_response,
+                stream_output=extract_text_from_streaming_output(llm_response)
             )
-
+    
         # Else, the callable returns a string
-        llm_response = cast(str, llm_response)
-        return LLMResponse(
-            output=llm_response,
-        )
+        if isinstance(llm_response, str):
+            llm_response = cast(str, llm_response)
+            return LLMResponse(
+                output=llm_response,
+            )
+        return LLMResponse(output=extract_text_from_output(llm_response))
 
 
 def get_llm_ask(llm_api: Callable, *args, **kwargs) -> PromptCallableBase:
-    if "temperature" not in kwargs:
-        kwargs.update({"temperature": 0})
     if llm_api == get_static_openai_create_func():
         return OpenAICallable(*args, **kwargs)
     if llm_api == get_static_openai_chat_create_func():
@@ -838,9 +845,13 @@ class AsyncArbitraryCallable(AsyncPromptCallableBase):
         ```
         """
         output = await self.llm_api(*args, **kwargs)
-        return LLMResponse(
-            output=output,
-        )
+        # check if output is a string
+        if isinstance(output, str):
+            return LLMResponse(
+                output=output,
+            )
+        
+        return LLMResponse(output=extract_text_from_output(output))
 
 
 def get_async_llm_ask(
