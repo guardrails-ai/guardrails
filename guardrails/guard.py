@@ -467,7 +467,7 @@ class Guard(Runnable, Generic[OT]):
         stream: Optional[bool] = False,
         *args,
         **kwargs,
-    ) -> Union[ValidationOutcome[OT], Iterable[str]]:
+    ) -> Union[ValidationOutcome[OT], Iterable[ValidationOutcome[OT]]]:
         ...
 
     @overload
@@ -499,7 +499,8 @@ class Guard(Runnable, Generic[OT]):
         *args,
         **kwargs,
     ) -> Union[
-        Union[ValidationOutcome[OT], Iterable[str]], Awaitable[ValidationOutcome[OT]]
+        Union[ValidationOutcome[OT], Iterable[ValidationOutcome[OT]]],
+        Awaitable[ValidationOutcome[OT]],
     ]:
         """Call the LLM and validate the output. Pass an async LLM API to
         return a coroutine.
@@ -663,7 +664,7 @@ class Guard(Runnable, Generic[OT]):
         call_log: Call,
         *args,
         **kwargs,
-    ) -> Union[ValidationOutcome[OT], Iterable[str]]:
+    ) -> Union[ValidationOutcome[OT], Iterable[ValidationOutcome[OT]]]:
         instructions_obj = instructions or self.instructions
         prompt_obj = prompt or self.prompt
         msg_history_obj = msg_history or []

@@ -215,7 +215,9 @@ versions 0.5.0 and beyond. Use 'guarded_output' instead."""
                     self.raw_output or "", title="Raw LLM Output", style="on #F5F5DC"
                 ),
                 Panel(
-                    pretty_repr(self.validation_response),
+                    self.validation_response
+                    if isinstance(self.validation_response, str)
+                    else pretty_repr(self.validation_response),
                     title="Validated Output",
                     style="on #F0FFF0",
                 ),

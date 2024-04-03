@@ -134,10 +134,10 @@ guard = Guard.from_string(
     validators=[
         ValidLength(
             min=48,
-            on_fail="fix"
+            on_fail=OnFailAction.FIX
         ),
         ToxicLanguage(
-            on_fail="fix"
+            on_fail=OnFailAction.FIX
         )
     ],
     prompt=prompt
@@ -179,10 +179,10 @@ guard = Guard.from_string(
     validators=[
         ValidLength(
             min=48,
-            on_fail="fix"
+            on_fail=OnFailAction.FIX
         ),
         ToxicLanguage(
-            on_fail="fix"
+            on_fail=OnFailAction.FIX
         )
     ],
     prompt=prompt

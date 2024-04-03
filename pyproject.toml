@@ -55,7 +55,7 @@ opentelemetry-exporter-otlp-proto-http = "1.20.0"
 langchain-core = "^0.1.18"
 coloredlogs = "^15.0.1"
 requests = "^2.31.0"
-guardrails-api-client = {git = "https://github.com/guardrails-ai/guardrails-api-client.git", rev = "v0.1.0", subdirectory = "guardrails-api-client"}
+guardrails-api-client = "^0.1.0"
 jwt = "^1.3.1"
 
 
@@ -105,13 +105,7 @@ cairosvg = "^2.7.1"
 mkdocs-glightbox = "^0.3.4"
 
 [[tool.poetry.source]]
-name = "torch"
-url = "https://download.pytorch.org/whl/cpu"
-priority = "explicit"
-
-[[tool.poetry.source]]
 name = "PyPI"
-priority = "primary"
 
 [build-system]
 requires = ["poetry-core"]

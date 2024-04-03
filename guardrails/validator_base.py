@@ -1,6 +1,7 @@
 import inspect
 from collections import defaultdict
 from copy import deepcopy
+from enum import Enum
 from string import Template
 from typing import (
     Any,
@@ -373,6 +374,16 @@ class FailResult(ValidationResult):
     fix_value: Optional[Any] = None
 
 
+class OnFailAction(str, Enum):
+    REASK = "reask"
+    FIX = "fix"
+    FILTER = "filter"
+    REFRAIN = "refrain"
+    NOOP = "noop"
+    EXCEPTION = "exception"
+    FIX_REASK = "fix_reask"
+
+
 @dataclass  # type: ignore
 class Validator(Runnable):
     """Base class for validators."""
@@ -384,7 +395,9 @@ class Validator(Runnable):
     required_metadata_keys = []
     _metadata = {}
 
-    def __init__(self, on_fail: Optional[Union[Callable, str]] = None, **kwargs):
+    def __init__(
+        self, on_fail: Optional[Union[Callable, OnFailAction]] = None, **kwargs
+    ):
         # Raise a warning for deprecated validators
 
         # Get class name and rail_alias
@@ -411,8 +424,8 @@ class Validator(Runnable):
                 )
 
         if on_fail is None:
-            on_fail = "noop"
-        if isinstance(on_fail, str):
+            on_fail = OnFailAction.NOOP
+        if isinstance(on_fail, OnFailAction):
             self.on_fail_descriptor = on_fail
             self.on_fail_method = None
         else:
