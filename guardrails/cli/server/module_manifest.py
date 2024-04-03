@@ -31,6 +31,7 @@ class ModuleTags(Serializeable):
 class ModelAuth(Serializeable):
     type: str
     name: str
+    displayName: Optional[str] = None
 
 
 @dataclass
