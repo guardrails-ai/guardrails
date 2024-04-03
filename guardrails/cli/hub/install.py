@@ -47,7 +47,7 @@ def pip_process(
             parsed = BytesHeaderParser().parsebytes(output)
             try:
                 return json.loads(str(parsed))
-            except Exception as e:
+            except Exception:
                 logger.debug(
                     f"json parse exception in decoding output from pip {action} {package}. Falling back to accumulating the byte stream",  # noqa
                 )

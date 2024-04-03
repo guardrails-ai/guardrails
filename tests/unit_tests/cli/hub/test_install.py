@@ -139,7 +139,7 @@ class TestPipProcess:
             call("running pip show  pip"),
             call("decoding output from pip show pip"),
             call(
-                "json parse exception in decoding output from pip show pip. Falling back to accumulating the byte stream"
+                "json parse exception in decoding output from pip show pip. Falling back to accumulating the byte stream"  # noqa
             ),
         ]
         mock_logger_debug.assert_has_calls(debug_calls)
