@@ -20,10 +20,10 @@ Guardrails provides native support for a select few LLMs and Manifest. If you're
     ```python
     import openai
     from guardrails import Guard
-    from guardrails.hub import IsProfanityFree
+    from guardrails.hub import ProfanityFree
 
-    # Create a Guard class
-    guard = Guard().use(IsProfanityFree())
+    # Create a Guard
+    guard = Guard().use(ProfanityFree())
 
     # Wrap openai API call
     raw_llm_output, guardrail_output, *rest = guard(
@@ -38,158 +38,22 @@ Guardrails provides native support for a select few LLMs and Manifest. If you're
   <TabItem value="cohere" label="Cohere">
     ```python
     import cohere
-    import guardrails as gd
+    from guardrails import Guard
+    from guardrails.hub import ProfanityFree
 
-    # Create a Guard class
-    guard = gd.Guard.from_rail(...)
+    # Create a Guard
+    guard = Guard().use(ProfanityFree())
 
     # Create a Cohere client
     cohere_client = cohere.Client(api_key="my_api_key")
 
     # Wrap cohere API call
     raw_llm_output, guardrail_output, *rest = guard(
-        cohere_client.generate,
-        prompt_params={"prompt_param_1": "value_1", "prompt_param_2": "value_2", ..},
-        model="command-nightly",
+        cohere_client.chat,
+        prompt="Can you try to generate a list of 10 things that are not food?",
+        model="command",
         max_tokens=100,
         ...
-    )
-    ```
-  </TabItem>
-  <TabItem value="anthropic" label="Anthropic">
-    ```python
-    from anthropic import Anthropic
-    import guardrails as gd
-
-    # Create a Guard class
-    guard = gd.Guard.from_rail(...)
-
-    # Create an Anthropic client
-    anthropic_client = Anthropic(api_key="my_api_key")
-
-    # Wrap Anthropic API call
-    raw_llm_output, guardrail_output, *rest = guard(
-        anthropic_client.completions.create,
-        prompt_params={
-            "prompt_param_1": "value_1", 
-            "prompt_param_2": "value_2",
-            ...
-        },
-        model="claude-2",
-        max_tokens_to_sample=100,
-        ...
-    )
-    ```
-  </TabItem>
-  <TabItem value="huggingface" label="🤗 Transformers">
-    ```python
-    import torch
-    from guardrails import Guard
-    from guardrails.validators import ValidLength, ToxicLanguage
-    from transformers import AutoModelForCausalLM, AutoTokenizer
-
-    torch_device = "cuda" if torch.cuda.is_available() else "cpu"
-
-    tokenizer = AutoTokenizer.from_pretrained("gpt2")
-    model = AutoModelForCausalLM.from_pretrained("gpt2", pad_token_id=tokenizer.eos_token_id).to(torch_device)
-
-    # Customize your model inputs if desired.
-    # If you don't pass and inputs (`input_ids`, `input_values`, `input_features`, or `pixel_values`)
-    # We'll try to do something similar to below using the tokenizer and the prompt.
-    # We strongly suggest passing in your own inputs.
-    model_inputs = tokenizer(prompt, return_tensors="pt").to(torch_device)
-
-    # Create your prompt or starting text
-    prompt = "Hello, I'm a language model,"
-
-    # Create the Guard
-    guard = Guard.from_string(
-        validators=[
-            ValidLength(min=48, on_fail="fix"),
-            ToxicLanguage(on_fail="fix")
-        ],
-        prompt=prompt
-    )
-
-    # Run the Guard
-    response = guard(
-        llm_api=model.generate,
-        max_new_tokens=40,
-        tokenizer=tokenizer,
-        **model_inputs,
-    )
-
-    # Check the output
-    if response.validation_passed:
-        print("validated_output: ", response.validated_output)
-    else:
-        print("error: ", response.error)
-    ```
-  </TabItem>
-  <TabItem value="huggingface_pipelines" label="🤗 Pipelines">
-    ```python
-    from guardrails import Guard
-    from guardrails.validators import ValidLength, ToxicLanguage
-    import torch
-    from transformers import pipeline
-
-
-    # Create your prompt or starting text
-    prompt = "What are we having for dinner?"
-
-    # Setup pipeline
-    generator = pipeline("text-generation", model="facebook/opt-350m")
-
-
-    # Create the Guard
-    guard = Guard.from_string(
-        validators=[
-            ValidLength(
-                min=48,
-                on_fail="fix"
-            ),
-            ToxicLanguage(
-                on_fail="fix"
-            )
-        ],
-        prompt=prompt
-    )
-
-    # Run the Guard
-    response = guard(
-        llm_api=generator,
-        max_new_tokens=40
-    )
-
-    if response.validation_passed:
-        print("validated_output: ", response.validated_output)
-    else:
-        print("error: ", response.error)
-    ```
-  </TabItem>
-  <TabItem value="manifest" label="Manifest">
-  ```python
-    import guardrails as gd
-    import manifest
-
-    # Create a Guard class
-    guard = gd.Guard.from_rail(...)
-
-    # Create a Manifest client - this one points to GPT-4
-    # and caches responses in SQLLite
-    manifest = manifest.Manifest(
-        client_name="openai",
-        engine="gpt-4",
-        cache_name="sqlite",
-        cache_connection="my_manifest_cache.db"
-    )
-
-    # Wrap openai API call
-    raw_llm_output, guardrail_output, *rest = guard(
-        manifest,
-        prompt_params={"prompt_param_1": "value_1", "prompt_param_2": "value_2", ..},
-        max_tokens=100,
-        temperature=0.0,
     )
     ```
   </TabItem>
