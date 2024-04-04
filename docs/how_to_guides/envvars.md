@@ -1,6 +1,6 @@
 # Set API Keys and other EnvVars
 
-Guardrails recognize a handful of environment variables that can be used at runtime.  Most of these correlate to envinronment variables used or expected by the various LLM clients.  Below you can find a list of these and their uses.
+Guardrails recognizes a handful of environment variables that can be used at runtime.  Most of these correlate to environment variables used or expected by the various LLM clients.  Below you can find a list of these and their uses.
 
 ### `OPENAI_API_KEY`
 This environment variable can be used to set your api key credentials for Open AI models.  It will be used wherever Open AI is called if an api_key kwarg is not passed to `__call__` or `parse`.
