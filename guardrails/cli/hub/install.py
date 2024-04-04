@@ -11,7 +11,7 @@ from pydash.strings import snake_case
 
 from guardrails.classes.generic import Stack
 from guardrails.cli.hub.hub import hub_command
-from guardrails.cli.logger import logger
+from guardrails.cli.logger import LEVELS, logger
 from guardrails.cli.server.hub_client import get_validator_manifest
 from guardrails.cli.server.module_manifest import ModuleManifest
 
@@ -244,6 +244,10 @@ def install(
         sys.exit(1)
 
     console.print(f"\nInstalling {package_uri}...\n")
+    logger.log(
+        level=LEVELS.get("SPAM"), msg=f"Installing {package_uri}..."  # type: ignore
+    )
+
 
     # Validation
     module_name = package_uri.replace("hub://", "")
@@ -262,8 +266,8 @@ def install(
         run_post_install(module_manifest, site_packages)
         add_to_hub_inits(module_manifest, site_packages)
 
-    success_message = Template(
-        """Successfully installed ${module_name}!
+    success_message_cli = Template(
+        """✅Successfully installed ${module_name}!
 
 [bold]Import validator:[/bold]
 from guardrails.hub import ${export}
@@ -276,4 +280,19 @@ https://hub.guardrailsai.com/validator/${id}
         id=module_manifest.id,
         export=module_manifest.exports[0],
     )
-    console.print(success_message)  # type: ignore
+    success_message_logger = Template(
+        """✅Successfully installed ${module_name}!
+
+Import validator:
+from guardrails.hub import ${export}
+
+Get more info:
+https://hub.guardrailsai.com/validator/${id}
+"""
+    ).safe_substitute(
+        module_name=package_uri,
+        id=module_manifest.id,
+        export=module_manifest.exports[0],
+    )
+    console.print(success_message_cli)  # type: ignore
+    logger.log(level=LEVELS.get("SPAM"), msg=success_message_logger)  # type: ignore
