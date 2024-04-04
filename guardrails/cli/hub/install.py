@@ -205,7 +205,7 @@ def install_hub_module(module_manifest: ModuleManifest, site_packages: str):
 
     # Install validator module's dependencies in normal site-packages directory
     inspect_output = pip_process(
-        "inspect", flags=[f"--path={os.path.join(install_directory, module_manifest.module_name)}"], format=json_format
+        "inspect", flags=[f"--path={install_directory}"], format=json_format
     )
 
     # throw if inspect_output is a string. Mostly for pyright
