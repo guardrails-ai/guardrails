@@ -26,7 +26,7 @@ Guardrails provides native support for a select few LLMs and Manifest. If you're
     guard = Guard().use(ProfanityFree())
 
     # Wrap openai API call
-    raw_llm_output, guardrail_output, *rest = guard(
+    validated_response = guard(
         openai.chat.completions.create,
         prompt="Can you generate a list of 10 things that are not food?",
         model="gpt-3.5-turbo",
@@ -48,7 +48,7 @@ Guardrails provides native support for a select few LLMs and Manifest. If you're
     cohere_client = cohere.Client(api_key="my_api_key")
 
     # Wrap cohere API call
-    raw_llm_output, guardrail_output, *rest = guard(
+    validated_response = guard(
         cohere_client.chat,
         prompt="Can you try to generate a list of 10 things that are not food?",
         model="command",
@@ -81,12 +81,12 @@ from guardrails.hub import ProfanityFree
 guard = Guard().use(ProfanityFree())
 
 # Call the Guard to wrap the LLM API call
-response = guard(
+validated_response = guard(
     litellm.completion,
     model="ollama/llama2",
     max_tokens=500,
     api_base="http://localhost:11434",
-    messages=[{"role": "user", "content": "hello"}]
+    msg_history=[{"role": "user", "content": "hello"}]
 )
 ```
 
@@ -99,15 +99,14 @@ import litellm
 from guardrails import Guard
 from guardrails.hub import ProfanityFree
 
-response = guard(
+validated_response = guard(
     litellm.completion,
     model="azure/<your deployment name>",
-    prompt="Please help me write a poem about Kubernetes in the style of Frost.",
     max_tokens=500,
     api_base=os.environ.get("AZURE_OPENAI_API_BASE"),
     api_version="2023-05-15",
     api_key=os.environ.get("AZURE_OPENAI_API_KEY"),
-    messages=[{"role": "user", "content": "hello"}]
+    msg_history=[{"role": "user", "content": "hello"}]
 )
 ```
 
@@ -140,7 +139,7 @@ def my_llm_api(prompt: str, **kwargs) -> str:
 
 
 # Wrap your LLM API call
-raw_llm_output, guardrail_output, *rest = guard(
+validated_response = guard(
     my_llm_api,
     prompt_params={"prompt_param_1": "value_1", "prompt_param_2": "value_2", ..},
     **kwargs,
