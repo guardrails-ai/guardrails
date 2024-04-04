@@ -82,7 +82,7 @@ def get_org_and_package_dirs(manifest: ModuleManifest) -> List[str]:
 
 def get_hub_directory(manifest: ModuleManifest, site_packages: str) -> str:
     org_package = get_org_and_package_dirs(manifest)
-    return os.path.join(site_packages, "guardrails", "hub", *org_package, manifest.module_name)
+    return os.path.join(site_packages, "guardrails", "hub", *org_package)
 
 
 # NOTE: I don't like this but don't see another way without
@@ -198,7 +198,7 @@ def install_hub_module(module_manifest: ModuleManifest, site_packages: str):
 
     # Install validator module's dependencies in normal site-packages directory
     inspect_output = pip_process(
-        "inspect", flags=[f"--path={install_directory}"], format=json_format
+        "inspect", flags=[f"--path={install_directory}/{module_manifest.module_name}"], format=json_format
     )
 
     # throw if inspect_output is a string. Mostly for pyright
