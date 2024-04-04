@@ -82,7 +82,7 @@ def get_org_and_package_dirs(manifest: ModuleManifest) -> List[str]:
 
 def get_hub_directory(manifest: ModuleManifest, site_packages: str) -> str:
     org_package = get_org_and_package_dirs(manifest)
-    return os.path.join(site_packages, "guardrails", "hub", *org_package)
+    return os.path.join(site_packages, "guardrails", "hub", *org_package, manifest.module_name)
 
 
 # NOTE: I don't like this but don't see another way without
