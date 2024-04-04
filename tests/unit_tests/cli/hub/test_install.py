@@ -134,10 +134,13 @@ class TestPipProcess:
 
         response = pip_process("show", "pip", format="json")
 
-        assert mock_logger_debug.call_count == 2
+        assert mock_logger_debug.call_count == 3
         debug_calls = [
             call("running pip show  pip"),
             call("decoding output from pip show pip"),
+            call(
+                "json parse exception in decoding output from pip show pip. Falling back to accumulating the byte stream"  # noqa
+            ),
         ]
         mock_logger_debug.assert_has_calls(debug_calls)
 
