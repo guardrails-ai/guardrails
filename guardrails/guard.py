@@ -1430,27 +1430,25 @@ class Guard(Runnable, Generic[OT]):
                                 if isinstance(h.validated_output, AnyObject)
                                 else h.validated_output
                             ),
-                            reasks=(
+                            reasks=list(
                                 [
-                                    (
-                                        FieldReAsk(
-                                            incorrect_value=r.to_dict().get(
-                                                "incorrect_value"
-                                            ),
-                                            path=r.to_dict().get("path"),
-                                            fail_results=[
-                                                FailResult(
-                                                    error_message=r.to_dict().get(
-                                                        "error_message"
-                                                    ),
-                                                    fix_value=r.to_dict().get(
-                                                        "fix_value"
-                                                    ),
-                                                )
-                                            ],
-                                        )
-                                        for r in h.reasks  # type: ignore
+                                    FieldReAsk(
+                                        incorrect_value=r.to_dict().get(
+                                            "incorrect_value"
+                                        ),
+                                        path=r.to_dict().get("path"),
+                                        fail_results=[
+                                            FailResult(
+                                                error_message=r.to_dict().get(
+                                                    "error_message"
+                                                ),
+                                                fix_value=r.to_dict().get(
+                                                    "fix_value"
+                                                ),
+                                            )
+                                        ],
                                     )
+                                    for r in h.reasks  # type: ignore
                                 ]
                                 if h.reasks != UNSET
                                 else []
