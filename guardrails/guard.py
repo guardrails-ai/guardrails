@@ -1430,27 +1430,23 @@ class Guard(Runnable, Generic[OT]):
                                 if isinstance(h.validated_output, AnyObject)
                                 else h.validated_output
                             ),
-                            reasks=(
+                            reasks=list(
                                 [
-                                    (
-                                        FieldReAsk(
-                                            incorrect_value=r.to_dict().get(
-                                                "incorrect_value"
-                                            ),
-                                            path=r.to_dict().get("path"),
-                                            fail_results=[
-                                                FailResult(
-                                                    error_message=r.to_dict().get(
-                                                        "error_message"
-                                                    ),
-                                                    fix_value=r.to_dict().get(
-                                                        "fix_value"
-                                                    ),
-                                                )
-                                            ],
-                                        )
-                                        for r in h.reasks  # type: ignore
+                                    FieldReAsk(
+                                        incorrect_value=r.to_dict().get(
+                                            "incorrect_value"
+                                        ),
+                                        path=r.to_dict().get("path"),
+                                        fail_results=[
+                                            FailResult(
+                                                error_message=r.to_dict().get(
+                                                    "error_message"
+                                                ),
+                                                fix_value=r.to_dict().get("fix_value"),
+                                            )
+                                        ],
                                     )
+                                    for r in h.reasks  # type: ignore
                                 ]
                                 if h.reasks != UNSET
                                 else []
@@ -1463,6 +1459,14 @@ class Guard(Runnable, Generic[OT]):
                 if self.history.length == 0:
                     self.history.push(call_log)
 
-            return ValidationOutcome[OT].from_guard_history(call_log)
+            # Our interfaces are too different for this to work right now.
+            # Once we move towards shared interfaces for both the open source
+            # and the api we can re-enable this.
+            # return ValidationOutcome[OT].from_guard_history(call_log)
+            return ValidationOutcome[OT](
+                raw_llm_output=validation_output.raw_llm_response,  # type: ignore
+                validated_output=cast(OT, validation_output.validated_output),
+                validation_passed=validation_output.result,
+            )
         else:
             raise ValueError("Guard does not have an api client!")
