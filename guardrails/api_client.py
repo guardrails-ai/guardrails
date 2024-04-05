@@ -23,10 +23,10 @@ class GuardrailsApiClient:
             api_key if api_key is not None else os.environ.get("GUARDRAILS_API_KEY", "")
         )
         self._client = AuthenticatedClient(
-            _base_url=self.base_url,
-            _follow_redirects=True,
+            base_url=self.base_url,  # type: ignore
+            follow_redirects=True,  # type: ignore
             token=self.api_key,
-            _timeout=Timeout(300),
+            timeout=Timeout(300),  # type: ignore
         )
 
     def upsert_guard(self, guard: Guard):
