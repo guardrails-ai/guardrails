@@ -1,18 +1,23 @@
 from copy import deepcopy
+from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from guardrails.utils.pydantic_utils import ArbitraryModel
 from guardrails.utils.reask_utils import FieldReAsk, ReAsk, prune_obj_for_reasking
-from guardrails.validators import ValidationResult
+from guardrails.validator_base import ValidationResult
 
 
 class ValidatorLogs(ArbitraryModel):
     """Logs for a single validator."""
 
     validator_name: str
+    registered_name: str
     value_before_validation: Any
     validation_result: Optional[ValidationResult] = None
     value_after_validation: Optional[Any] = None
+    start_time: Optional[datetime] = None
+    end_time: Optional[datetime] = None
+    instance_id: Optional[int] = None
     property_path: str
 
 

@@ -20,7 +20,8 @@ Follow these steps before committing your changes:
 
 1. Ensure tests pass: `make test`
 2. Format your code: `make autoformat`
-3. Update documentation if needed. Docs are located in the `docs` directory. You can serve docs using `mkdocs serve`.
+3. Run static analysis: `make type`
+4. Update documentation if needed. Docs are located in the `docs` directory. You can serve docs using `mkdocs serve`.
 
 ### Optional: Pre-Commit Hooks
 
@@ -38,13 +39,16 @@ Thank you for your contribution and happy coding!
 
 ## Documentation
 
-Docs are served via mkdocs using the mkdocstring plugin. To serve docs locally, run the following
+Docs are served via docusaurus. To serve docs locally, run the following
 
 ```bash
 # install dependencies
-pip install -e ".[dev]";
+pip install -e ".[dev]"
 
-# serve docs
-mkdocs serve;
+# install npm dependencies
+npm i
+
+# serve the docs
+npm run start
 ```
-then navigate to `localhost:8000` in your browser.
+then navigate to `localhost:3000` in your browser.

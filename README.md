@@ -1,178 +1,190 @@
-# 🛤️ Guardrails AI
-
 <div align="center">
 
-[![Discord](https://badgen.net/badge/icon/discord?icon=discord&label)](https://discord.gg/Jsey3mX98B) [![Twitter](https://badgen.net/badge/icon/twitter?icon=twitter&label)](https://twitter.com/guardrails_ai)
+<img src="https://raw.githubusercontent.com/guardrails-ai/guardrails/main/docs/img/Guardrails-ai-logo-for-dark-bg.svg#gh-dark-mode-only" alt="Guardrails AI Logo" width="600px">
+<img src="https://raw.githubusercontent.com/guardrails-ai/guardrails/main/docs/img/Guardrails-ai-logo-for-white-bg.svg#gh-light-mode-only" alt="Guardrails AI Logo" width="600px">
 
-Guardrails is an open-source Python package for specifying structure and type, validating and correcting the outputs of large language models (LLMs).
+<hr>
 
-[**Docs**](https://docs.guardrailsai.com)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/guardrails-ai)
+[![CI](https://github.com/guardrails-ai/guardrails/actions/workflows/ci.yml/badge.svg)](https://github.com/guardrails-ai/guardrails/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/guardrails-ai/guardrails/graph/badge.svg?token=CPkjw91Ngo)](https://codecov.io/gh/guardrails-ai/guardrails)
+[![Checked with pyright](https://microsoft.github.io/pyright/img/pyright_badge.svg)](https://microsoft.github.io/pyright/)
+[![X (formerly Twitter) Follow](https://img.shields.io/twitter/follow/guardrails_ai)](https://x.com/guardrails_ai)
+[![Discord](https://img.shields.io/discord/1085077079697150023?logo=discord&label=support&link=https%3A%2F%2Fdiscord.gg%2Fgw4cR9QvYE)](https://discord.gg/U9RKkZSBgx)
+[![Static Badge](https://img.shields.io/badge/Docs-blue?link=https%3A%2F%2Fwww.guardrailsai.com%2Fdocs)](https://www.guardrailsai.com/docs)
+[![Static Badge](https://img.shields.io/badge/Blog-blue?link=https%3A%2F%2Fwww.guardrailsai.com%2Fblog)](https://www.guardrailsai.com/blog)
+
 </div>
 
-_Note: Guardrails is an alpha release, so expect sharp edges and bugs._
+## What is Guardrails?
 
-## 🧩 What is Guardrails?
-
-Guardrails is a Python package that lets a user add structure, type and quality guarantees to the outputs of large language models (LLMs). Guardrails:
-
-- does pydantic-style validation of LLM outputs (including semantic validation such as checking for bias in generated text, checking for bugs in generated code, etc.)
-- takes corrective actions (e.g. reasking LLM) when validation fails,
-- enforces structure and type guarantees (e.g. JSON).
+Guardrails is a Python framework that helps build reliable AI applications by performing two key functions:
+1. Guardrails runs Input/Output Guards in your application that detect, quantify and mitigate the presence of specific types of risks. To look at the full suite of risks, check out [Guardrails Hub](https://hub.guardrailsai.com/).
+2. Guardrails help you generate structured data from LLMs.
 
 
-## 🚒 Under the hood
-
-Guardrails provides a file format (`.rail`) for enforcing a specification on an LLM output, and a lightweight wrapper around LLM API calls to implement this spec.
-
-1. `rail` (**R**eliable **AI** markup **L**anguage) files for specifying structure and type information, validators and corrective actions over LLM outputs.
-2. `gd.Guard` wraps around LLM API calls to structure, validate and correct the outputs.
-
-``` mermaid
-graph LR
-    A[Create `RAIL` spec] --> B["Initialize `guard` from spec"];
-    B --> C["Wrap LLM API call with `guard`"];
-```
-
-Check out the [Getting Started](https://docs.guardrailsai.com/guardrails_ai/getting_started/) guide to learn how to use Guardrails.
-
-### 📜 `RAIL` spec
-
-At the heart of Guardrails is the `rail` spec. `rail` is intended to be a language-agnostic, human-readable format for specifying structure and type information, validators and corrective actions over LLM outputs.
-
-`rail` is a flavor of XML that lets users specify:
-
-1. the expected structure and types of the LLM output (e.g. JSON)
-2. the quality criteria for the output to be considered valid (e.g. generated text should be bias-free, generated code should be bug-free)
-3. and corrective actions to be taken if the output is invalid (e.g. reask the LLM, filter out the invalid output, etc.)
+<div align="center">
+<img src="https://raw.githubusercontent.com/guardrails-ai/guardrails/main/docs/img/with_and_without_guardrails.svg" alt="Guardrails in your application" width="1500px">
+</div>
 
 
-To learn more about the `RAIL` spec and the design decisions behind it, check out the [docs](https://docs.guardrailsai.com/defining_guards/rail/). To learn how to write your own `RAIL` spec, check out [this link](https://docs.guardrailsai.com/api_reference/rail/).
+### Guardrails Hub
+
+Guardrails Hub is a collection of pre-built measures of specific types of risks (called 'validators'). Multiple validators can be combined together into Input and Output Guards that intercept the inputs and outputs of LLMs. Visit [Guardrails Hub](https://hub.guardrailsai.com/) to see the full list of validators and their documentation.
+
+<div align="center">
+<img src="https://raw.githubusercontent.com/guardrails-ai/guardrails/main/docs/img/guardrails_hub.gif" alt="Guardrails Hub gif" width="600px">
+</div>
 
 
-
-## 📦 Installation
+## Installation
 
 ```python
 pip install guardrails-ai
 ```
 
-## 📍 Roadmap
-- [ ] Adding more examples, new use cases and domains
-- [ ] Adding integrations with langchain, gpt-index, minichain, manifest
-- [ ] Expanding validators offering
-- [ ] More compilers from `.rail` -> LLM prompt (e.g. `.rail` -> TypeScript)
-- [ ] Informative logging
-- [ ] Improving reasking logic
-- [ ] A guardrails.js implementation
-- [ ] VSCode extension for `.rail` files
-- [ ] Next version of `.rail` format
-- [ ] Add more LLM providers
 
-## 🚀 Getting Started
-Let's go through an example where we ask an LLM to explain what a "bank run" is in a tweet, and generate URLs to relevant news articles. We'll generate a `.rail` spec for this and then use Guardrails to enforce it. You can see more examples in the docs.
-
-### 📝 Creating a `RAIL` spec
-
-We create a `RAIL` spec to describe the expected structure and types of the LLM output, the quality criteria for the output to be considered valid, and corrective actions to be taken if the output is invalid.
-
-Using `RAIL`, we:
-- Request the LLM to generate an object with two fields: `explanation` and `follow_up_url`.
-- For the `explanation` field, ensure the max length of the generated string should be between 200 and 280 characters.
-  - If the explanation is not of valid length, `reask` the LLM.
-- For the `follow_up_url` field, the URL should be reachable.
-  - If the URL is not reachable, we will `filter` it out of the response.
+## Getting Started
 
 
-```xml
-<rail version="0.1">
-<output>
-    <object name="bank_run" format="length: 2">
-        <string
-            name="explanation"
-            description="A paragraph about what a bank run is."
-            format="length: 200 280"
-            on-fail-length="reask"
-        />
-        <url
-            name="follow_up_url"
-            description="A web URL where I can read more about bank runs."
-            format="valid-url"
-            on-fail-valid-url="filter"
-        />
-    </object>
-</output>
+### Create Input and Output Guards for LLM Validation
 
-<prompt>
-Explain what a bank run is in a tweet.
+1. Download and configure the Guardrails Hub CLI.
+    
+    ```bash
+    pip install guardrails-ai
+    guardrails configure
+    ```
+2. Install a guardrail from Guardrails Hub.
 
-${gr.xml_prefix_prompt}
+    ```bash
+    guardrails hub install hub://guardrails/regex_match
+    ```
+3. Create a Guard from the installed guardrail.
 
-${output_schema}
+    ```python
+    from guardrails import Guard
+    from guardrails.hub import RegexMatch
 
-${gr.json_suffix_prompt_v2_wo_none}
-</prompt>
-</rail>
+    guard = Guard().use(
+        RegexMatch, regex="\(?\d{3}\)?-? *\d{3}-? *-?\d{4}", on_fail="exception"
+    )
+
+    guard.validate("123-456-7890")  # Guardrail passes
+
+    try:
+        guard.validate("1234-789-0000")  # Guardrail fails
+    except Exception as e:
+        print(e)
+    ```
+    Output:
+    ```console
+    Validation failed for field with errors: Result must match \(?\d{3}\)?-? *\d{3}-? *-?\d{4}
+    ```
+4. Run multiple guardrails within a Guard.
+    First, install the necessary guardrails from Guardrails Hub.
+
+    ```bash
+    guardrails hub install hub://guardrails/competitor_check
+    guardrails hub install hub://guardrails/toxic_language
+    ```
+
+    Then, create a Guard from the installed guardrails.
+    
+    ```python
+    from guardrails import Guard
+    from guardrails.hub import CompetitorCheck, ToxicLanguage
+
+    guard = Guard().use_many(
+        CompetitorCheck(["Apple", "Microsoft", "Google"], on_fail="exception"),
+        ToxicLanguage(threshold=0.5, validation_method="sentence", on_fail="exception"),
+    )
+
+    guard.validate(
+        """An apple a day keeps a doctor away.
+        This is good advice for keeping your health."""
+    )  # Both the guardrails pass
+
+    try:
+        guard.validate(
+            """Shut the hell up! Apple just released a new iPhone."""
+        )  # Both the guardrails fail
+    except Exception as e:
+        print(e)
+    ```
+    Output:
+    ```console
+    Validation failed for field with errors: Found the following competitors: [['Apple']]. Please avoid naming those competitors next time, The following sentences in your response were found to be toxic:
+
+    - Shut the hell up!
+    ```
+
+### Use Guardrails to generate structured data from LLMs
+
+
+Let's go through an example where we ask an LLM to generate fake pet names. To do this, we'll create a Pydantic [BaseModel](https://docs.pydantic.dev/latest/api/base_model/) that represents the structure of the output we want.
+
+```py
+from pydantic import BaseModel, Field
+
+class Pet(BaseModel):
+    pet_type: str = Field(description="Species of pet")
+    name: str = Field(description="a unique pet name")
 ```
 
-We specify our quality criteria (generated length, URL reachability) in the `format` fields of the `RAIL` spec below. We `reask` if `explanation` is not valid, and filter the `follow_up_url` if it is not valid.
+Now, create a Guard from the `Pet` class. The Guard can be used to call the LLM in a manner so that the output is formatted to the `Pet` class. Under the hood, this is done by either of two methods:
+1. Function calling: For LLMs that support function calling, we generate structured data using the function call syntax.
+2. Prompt optimization: For LLMs that don't support function calling, we add the schema of the expected output to the prompt so that the LLM can generate structured data.
 
-### 🛠️ Using Guardrails to enforce the `RAIL` spec
-
-Next, we'll use the `RAIL` spec to create a `Guard` object. The `Guard` object will wrap the LLM API call and enforce the `RAIL` spec on its output.
-
-```python
-import guardrails as gd
-
-guard = gd.Guard.from_rail(f.name)
-```
-
-The `Guard` object compiles the `RAIL` specification and adds it to the prompt. (Right now this is a passthrough operation, more compilers are planned to find the best way to express the spec in a prompt.)
-
-Here's what the prompt looks like after the `RAIL` spec is compiled and added to it.
-
-```xml
-Explain what a bank run is in a tweet.
-
-Given below is XML that describes the information to extract from this document and the tags to extract it into.
-
-<output>
-    <object name="bank_run" format="length: 2">
-        <string name="explanation" description="A paragraph about what a bank run is." format="length: 200 280" on-fail-length="reask" />
-        <url name="follow_up_url" description="A web URL where I can read more about bank runs." required="true" format="valid-url" on-fail-valid-url="filter" />
-    </object>
-</output>
-
-ONLY return a valid JSON object (no other text is necessary). The JSON MUST conform to the XML format, including any types and format requests e.g. requests for lists, objects and specific types. Be correct and concise.
-
-JSON Output:
-```
-
-Call the `Guard` object with the LLM API call as the first argument and add any additional arguments to the LLM API call as the remaining arguments.
-
-
-```python
+```py
+from guardrails import Guard
 import openai
 
-# Wrap the OpenAI API call with the `guard` object
-raw_llm_output, validated_output, *rest = guard(
-    openai.Completion.create,
-    engine="text-davinci-003",
-    max_tokens=1024,
-    temperature=0.3
+prompt = """
+    What kind of pet should I get and what should I name it?
+
+    ${gr.complete_json_suffix_v2}
+"""
+guard = Guard.from_pydantic(output_class=Pet, prompt=prompt)
+
+validated_output, *rest = guard(
+    llm_api=openai.completions.create,
+    engine="gpt-3.5-turbo-instruct"
 )
 
 print(validated_output)
 ```
-```python
-{
-    'bank_run': {
-        'explanation': 'A bank run is when a large number of people withdraw their deposits from a bank due to concerns about its solvency. This can cause a financial crisis if the bank is unable to meet the demand for withdrawals.',
-        'follow_up_url': 'https://www.investopedia.com/terms/b/bankrun.asp'
-    }
-}
 
+This prints: 
+```
+{
+    "pet_type": "dog",
+    "name": "Buddy
+}
 ```
 
-## 🛠️ Contributing
+## FAQ
 
-Get started by checking out Github issues and of course using Guardrails to familiarize yourself with the project. Guardrails is still actively under development and any support is gladly welcomed. Feel free to open an issue, or reach out if you would like to add to the project!
+#### I'm running into issues with Guardrails. Where can I get help?
+
+You can reach out to us on [Discord](https://discord.gg/gw4cR9QvYE) or [Twitter](https://twitter.com/guardrails_ai).
+
+#### Can I use Guardrails with any LLM?
+
+Yes, Guardrails can be used with proprietary and open-source LLMs. Check out this guide on [how to use Guardrails with any LLM](https://www.guardrailsai.com/docs/how_to_guides/llm_api_wrappers).
+
+#### Can I create my own validators?
+
+Yes, you can create your own validators and contribute them to Guardrails Hub. Check out this guide on [how to create your own validators](https://www.guardrailsai.com/docs/hub/how_to_guides/custom_validator).
+
+#### Does Guardrails support other languages?
+
+Guardrails can be used with Python and JavaScript. Check out the docs on how to use Guardrails from JavaScript. We are working on adding support for other languages. If you would like to contribute to Guardrails, please reach out to us on [Discord](https://discord.gg/gw4cR9QvYE) or [Twitter](https://twitter.com/guardrails_ai).
+
+
+## Contributing
+
+We welcome contributions to Guardrails!
+
+Get started by checking out Github issues and check out the [Contributing Guide](CONTRIBUTING.md). Feel free to open an issue, or reach out if you would like to add to the project!

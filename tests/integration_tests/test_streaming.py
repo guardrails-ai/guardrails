@@ -2,9 +2,7 @@
 # 1. Test streaming with OpenAICallable (mock openai.Completion.create)
 # 2. Test streaming with OpenAIChatCallable (mock openai.ChatCompletion.create)
 # Using the LowerCase Validator
-
 import json
-import os
 from typing import Iterable
 
 import openai
@@ -13,17 +11,13 @@ from pydantic import BaseModel, Field
 
 import guardrails as gd
 from guardrails.utils.openai_utils import OPENAI_VERSION
-from guardrails.utils.safe_get import safe_get_with_brackets
+from guardrails.validator_base import OnFailAction
 from guardrails.validators import LowerCase
 
-expected_raw_output = '{"statement": "I am DOING well, and I HOPE you aRe too."}'
-expected_fix_output = json.dumps(
-    {"statement": "i am doing well, and i hope you are too."}, indent=4
-)
-expected_noop_output = json.dumps(
-    {"statement": "I am DOING well, and I HOPE you aRe too."}, indent=4
-)
-expected_filter_refrain_output = json.dumps({}, indent=4)
+expected_raw_output = {"statement": "I am DOING well, and I HOPE you aRe too."}
+expected_fix_output = {"statement": "i am doing well, and i hope you are too."}
+expected_noop_output = {"statement": "I am DOING well, and I HOPE you aRe too."}
+expected_filter_refrain_output = {}
 
 
 class Delta:
@@ -127,28 +121,28 @@ def mock_openai_chat_completion_create():
 class LowerCaseFix(BaseModel):
     statement: str = Field(
         description="Validates whether the text is in lower case.",
-        validators=[LowerCase(on_fail="fix")],
+        validators=[LowerCase(on_fail=OnFailAction.FIX)],
     )
 
 
 class LowerCaseNoop(BaseModel):
     statement: str = Field(
         description="Validates whether the text is in lower case.",
-        validators=[LowerCase(on_fail="noop")],
+        validators=[LowerCase(on_fail=OnFailAction.NOOP)],
     )
 
 
 class LowerCaseFilter(BaseModel):
     statement: str = Field(
         description="Validates whether the text is in lower case.",
-        validators=[LowerCase(on_fail="filter")],
+        validators=[LowerCase(on_fail=OnFailAction.FILTER)],
     )
 
 
 class LowerCaseRefrain(BaseModel):
     statement: str = Field(
         description="Validates whether the text is in lower case.",
-        validators=[LowerCase(on_fail="refrain")],
+        validators=[LowerCase(on_fail=OnFailAction.REFRAIN)],
     )
 
 
@@ -177,14 +171,6 @@ def test_streaming_with_openai_callable(
 
     Mocks openai.Completion.create.
     """
-
-    def mock_os_environ_get(key, *args):
-        if key == "OPENAI_API_KEY":
-            return "sk-xxxxxxxxxxxxxx"
-        return safe_get_with_brackets(os.environ, key, *args)
-
-    mocker.patch("os.environ.get", side_effect=mock_os_environ_get)
-
     if OPENAI_VERSION.startswith("0"):
         mocker.patch(
             "openai.Completion.create", return_value=mock_openai_completion_create()
@@ -204,6 +190,8 @@ def test_streaming_with_openai_callable(
         else openai.completions.create
     )
 
+    method.__name__ = "mock_openai_completion_create"
+
     generator = guard(
         method,
         engine="text-davinci-003",
@@ -214,15 +202,11 @@ def test_streaming_with_openai_callable(
 
     assert isinstance(generator, Iterable)
 
-    actual_output = ""
     for op in generator:
         actual_output = op
 
-    assert (
-        actual_output
-        == f"Raw LLM response:\n{expected_raw_output}\n"
-        + f"\nValidated response:\n{expected_validated_output}\n"
-    )
+    assert actual_output.raw_llm_output == json.dumps(expected_raw_output)
+    assert actual_output.validated_output == expected_validated_output
 
 
 @pytest.mark.parametrize(
@@ -243,14 +227,6 @@ def test_streaming_with_openai_chat_callable(
 
     Mocks openai.ChatCompletion.create.
     """
-
-    def mock_os_environ_get(key, *args):
-        if key == "OPENAI_API_KEY":
-            return "sk-xxxxxxxxxxxxxx"
-        return safe_get_with_brackets(os.environ, key, *args)
-
-    mocker.patch("os.environ.get", side_effect=mock_os_environ_get)
-
     if OPENAI_VERSION.startswith("0"):
         mocker.patch(
             "openai.ChatCompletion.create",
@@ -271,6 +247,8 @@ def test_streaming_with_openai_chat_callable(
         else openai.chat.completions.create
     )
 
+    method.__name__ = "mock_openai_chat_completion_create"
+
     generator = guard(
         method,
         model="gpt-3.5-turbo",
@@ -285,8 +263,5 @@ def test_streaming_with_openai_chat_callable(
     for op in generator:
         actual_output = op
 
-    assert (
-        actual_output
-        == f"Raw LLM response:\n{expected_raw_output}\n"
-        + f"\nValidated response:\n{expected_validated_output}\n"
-    )
+    assert actual_output.raw_llm_output == json.dumps(expected_raw_output)
+    assert actual_output.validated_output == expected_validated_output

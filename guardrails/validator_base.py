@@ -1,12 +1,170 @@
 import inspect
 from collections import defaultdict
-from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Type, Union
+from copy import deepcopy
+from enum import Enum
+from string import Template
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+    cast,
+)
+from warnings import warn
 
+from langchain_core.messages import BaseMessage
+from langchain_core.runnables import Runnable, RunnableConfig
 from pydantic import BaseModel, Field
 
+from guardrails.classes import InputType
+from guardrails.constants import hub
+from guardrails.errors import ValidationError
+from guardrails.utils.dataclass import dataclass
 
-class ValidatorError(Exception):
-    """Base class for all validator errors."""
+VALIDATOR_IMPORT_WARNING = """Accessing `{validator_name}` using
+`from guardrails.validators import {validator_name}` is deprecated and
+support will be removed after version 0.5.x. Please switch to the Guardrails Hub syntax:
+`from guardrails.hub import {hub_validator_name}` for future updates and support.
+For additional details, please visit: {hub_validator_url}.
+"""
+
+# Old names -> New names + hub URLs
+VALIDATOR_NAMING = {
+    "bug-free-python": [
+        "ValidPython",
+        "https://hub.guardrailsai.com/validator/reflex/valid_python",
+    ],
+    "bug-free-sql": [
+        "ValidSQL",
+        "https://hub.guardrailsai.com/validator/guardrails/valid_sql",
+    ],
+    "competitor-check": [
+        "CompetitorCheck",
+        "https://hub.guardrailsai.com/validator/guardrails/competitor_check",
+    ],
+    "detect-secrets": [
+        "SecretsPresent",
+        "https://hub.guardrailsai.com/validator/guardrails/secrets_present",
+    ],
+    "is-reachable": [
+        "EndpointIsReachable",
+        "https://hub.guardrailsai.com/validator/guardrails/endpoint_is_reachable",
+    ],
+    "ends-with": [
+        "EndsWith",
+        "https://hub.guardrailsai.com/validator/guardrails/ends_with",
+    ],
+    "exclude-sql-predicates": [
+        "ExcludeSqlPredicates",
+        "https://hub.guardrailsai.com/validator/guardrails/exclude_sql_predicates",
+    ],
+    "extracted-summary-sentences-match": [
+        "ExtractedSummarySentencesMatch",
+        "https://hub.guardrailsai.com/validator/guardrails/extracted_summary_sentences_match",  # noqa: E501
+    ],
+    "extractive-summary": [
+        "ExtractiveSummary",
+        "https://hub.guardrailsai.com/validator/aryn/extractive_summary",
+    ],
+    "is-high-quality-translation": [
+        "HighQualityTranslation",
+        "https://hub.guardrailsai.com/validator/brainlogic/high_quality_translation",
+    ],
+    "is-profanity-free": [
+        "ProfanityFree",
+        "https://hub.guardrailsai.com/validator/guardrails/profanity_free",
+    ],
+    "lower-case": [
+        "LowerCase",
+        "https://hub.guardrailsai.com/validator/guardrails/lowercase",
+    ],
+    "on_topic": [
+        "RestrictToTopic",
+        "https://hub.guardrailsai.com/validator/tryolabs/restricttotopic",
+    ],
+    "one-line": [
+        "OneLine",
+        "https://hub.guardrailsai.com/validator/guardrails/one_line",
+    ],
+    "pii": [
+        "DetectPII",
+        "https://hub.guardrailsai.com/validator/guardrails/detect_pii",
+    ],
+    "provenance-v0": [
+        "ProvenanceEmbeddings",
+        "https://hub.guardrailsai.com/validator/guardrails/provenance_embeddings",
+    ],
+    "provenance-v1": [
+        "ProvenanceLLM",
+        "https://hub.guardrailsai.com/validator/guardrails/provenance_llm",
+    ],
+    "qa-relevance-llm-eval": [
+        "QARelevanceLLMEval",
+        "https://hub.guardrailsai.com/validator/guardrails/qa_relevance_llm_eval",
+    ],
+    "reading-time": [
+        "ReadingTime",
+        "https://hub.guardrailsai.com/validator/guardrails/reading_time",
+    ],
+    "regex_match": [
+        "RegexMatch",
+        "https://hub.guardrailsai.com/validator/guardrails/regex_match",
+    ],
+    "remove-redundant-sentences": [
+        "RedundantSentences",
+        "https://hub.guardrailsai.com/validator/guardrails/redundant_sentences",
+    ],
+    "saliency-check": [
+        "SaliencyCheck",
+        "https://hub.guardrailsai.com/validator/guardrails/saliency_check",
+    ],
+    "similar-to-document": [
+        "SimilarToDocument",
+        "https://hub.guardrailsai.com/validator/guardrails/similar_to_document",
+    ],
+    "similar-to-list": [
+        "SimilarToPreviousValues",
+        "https://hub.guardrailsai.com/validator/guardrails/similar_to_previous_values",
+    ],
+    "sql-column-presence": [
+        "SqlColumnPresence",
+        "https://hub.guardrailsai.com/validator/numbersstation/sql_column_presence",
+    ],
+    "toxic-language": [
+        "ToxicLanguage",
+        "https://hub.guardrailsai.com/validator/guardrails/toxic_language",
+    ],
+    "two-words": [
+        "TwoWords",
+        "https://hub.guardrailsai.com/validator/guardrails/two_words",
+    ],
+    "upper-case": [
+        "UpperCase",
+        "https://hub.guardrailsai.com/validator/guardrails/uppercase",
+    ],
+    "valid-choices": [
+        "ValidChoices",
+        "https://hub.guardrailsai.com/validator/guardrails/valid_choices",
+    ],
+    "length": [
+        "ValidLength",
+        "https://hub.guardrailsai.com/validator/guardrails/valid_length",
+    ],
+    "valid-range": [
+        "ValidRange",
+        "https://hub.guardrailsai.com/validator/guardrails/valid_range",
+    ],
+    "valid-url": [
+        "ValidURL",
+        "https://hub.guardrailsai.com/validator/guardrails/valid_url",
+    ],
+    "pydantic_field_validator": [],
+}
 
 
 class Filter:
@@ -59,6 +217,12 @@ def check_refrain_in_dict(schema: Dict) -> bool:
                 return True
 
     return False
+
+
+def check_refrain(schema: Union[List, Dict]) -> bool:
+    if isinstance(schema, List):
+        return check_refrain_in_list(schema)
+    return check_refrain_in_dict(schema)
 
 
 def filter_in_list(schema: List) -> List:
@@ -115,8 +279,26 @@ def filter_in_dict(schema: Dict) -> Dict:
     return filtered_dict
 
 
+def filter_in_schema(schema: Union[Dict, List]) -> Union[Dict, List]:
+    if isinstance(schema, List):
+        return filter_in_list(schema)
+    return filter_in_dict(schema)
+
+
 validators_registry = {}
 types_to_validators = defaultdict(list)
+
+
+def validator_factory(name: str, validate: Callable):
+    def validate_wrapper(self, *args, **kwargs):
+        return validate(*args, **kwargs)
+
+    validator = type(
+        name,
+        (Validator,),
+        {"validate": validate_wrapper, "rail_alias": name},
+    )
+    return validator
 
 
 def register_validator(name: str, data_type: Union[str, List[str]]):
@@ -146,11 +328,7 @@ def register_validator(name: str, data_type: Union[str, List[str]]):
                     f"Validator function {func.__name__} must take two arguments."
                 )
             # dynamically create Validator subclass with `validate` method as `func`
-            cls = type(
-                name,
-                (Validator,),
-                {"validate": staticmethod(func), "rail_alias": name},
-            )
+            cls = validator_factory(name, func)
         else:
             raise ValueError(
                 "Only functions and Validator subclasses "
@@ -160,6 +338,18 @@ def register_validator(name: str, data_type: Union[str, List[str]]):
         return cls
 
     return decorator
+
+
+def get_validator(name: str):
+    is_hub_validator = name.startswith(hub)
+    validator_key = name.replace(hub, "") if is_hub_validator else name
+    registration = validators_registry.get(validator_key)
+    if not registration and name.startswith(hub):
+        # This should import everything and trigger registration
+        import guardrails.hub  # noqa
+
+        return validators_registry.get(validator_key)
+    return registration
 
 
 class ValidationResult(BaseModel):
@@ -184,19 +374,58 @@ class FailResult(ValidationResult):
     fix_value: Optional[Any] = None
 
 
-class Validator:
+class OnFailAction(str, Enum):
+    REASK = "reask"
+    FIX = "fix"
+    FILTER = "filter"
+    REFRAIN = "refrain"
+    NOOP = "noop"
+    EXCEPTION = "exception"
+    FIX_REASK = "fix_reask"
+
+
+@dataclass  # type: ignore
+class Validator(Runnable):
     """Base class for validators."""
 
-    rail_alias: str
+    rail_alias: str = ""
 
     run_in_separate_process = False
     override_value_on_pass = False
     required_metadata_keys = []
+    _metadata = {}
 
-    def __init__(self, on_fail: Optional[Union[Callable, str]] = None, **kwargs):
+    def __init__(
+        self, on_fail: Optional[Union[Callable, OnFailAction]] = None, **kwargs
+    ):
+        # Raise a warning for deprecated validators
+
+        # Get class name and rail_alias
+        child_class_name = str(type(self).__name__)
+        validator_rail_alias = self.rail_alias
+
+        # Check if this rail_alias is deprecated
+        if validator_rail_alias in VALIDATOR_NAMING:
+            if VALIDATOR_NAMING[validator_rail_alias]:
+                warn(
+                    VALIDATOR_IMPORT_WARNING.format(
+                        validator_name=child_class_name,
+                        hub_validator_name=VALIDATOR_NAMING[validator_rail_alias][0],
+                        hub_validator_url=VALIDATOR_NAMING[validator_rail_alias][1],
+                    ),
+                    FutureWarning,
+                )
+            else:
+                warn(
+                    f"""{child_class_name} is deprecated and
+                    will be removed after version 0.5.x.
+                    """,
+                    FutureWarning,
+                )
+
         if on_fail is None:
-            on_fail = "noop"
-        if isinstance(on_fail, str):
+            on_fail = OnFailAction.NOOP
+        if isinstance(on_fail, OnFailAction):
             self.on_fail_descriptor = on_fail
             self.on_fail_method = None
         else:
@@ -277,6 +506,82 @@ class Validator:
         if not isinstance(other, Validator):
             return False
         return self.to_prompt() == other.to_prompt()
+
+    # TODO: Make this a generic method on an abstract class
+    def __stringify__(self):
+        template = Template(
+            """
+            ${class_name} {
+                rail_alias: ${rail_alias},
+                on_fail: ${on_fail_descriptor},
+                run_in_separate_process: ${run_in_separate_process},
+                override_value_on_pass: ${override_value_on_pass},
+                required_metadata_keys: ${required_metadata_keys},
+                kwargs: ${kwargs}
+            }"""
+        )
+        return template.safe_substitute(
+            {
+                "class_name": self.__class__.__name__,
+                "rail_alias": self.rail_alias,
+                "on_fail_descriptor": self.on_fail_descriptor,
+                "run_in_separate_process": self.run_in_separate_process,
+                "override_value_on_pass": self.override_value_on_pass,
+                "required_metadata_keys": self.required_metadata_keys,
+                "kwargs": self._kwargs,
+            }
+        )
+
+    def invoke(
+        self, input: InputType, config: Optional[RunnableConfig] = None
+    ) -> InputType:
+        output = BaseMessage(content="", type="")
+        str_input = None
+        input_is_chat_message = False
+        if isinstance(input, BaseMessage):
+            input_is_chat_message = True
+            str_input = str(input.content)
+            output = deepcopy(input)
+        else:
+            str_input = str(input)
+
+        response = self.validate(str_input, self._metadata)
+
+        if isinstance(response, FailResult):
+            raise ValidationError(
+                (
+                    "The response from the LLM failed validation!"
+                    f"{response.error_message}"
+                )
+            )
+
+        if input_is_chat_message:
+            output.content = str_input
+            return cast(InputType, output)
+        return cast(InputType, str_input)
+
+    """
+    This method allows the user to provide metadata to validators used in an LCEL chain.
+    This is necessary because they can't pass metadata directly to `validate` in a chain
+        because is called internally during `invoke`.
+
+    Usage
+    ---
+    my_validator = Validator(args).with_metadata({ "key": "value" })
+
+    chain = prompt | model | my_validator | output_parser
+    chain.invoke({...})
+
+    When called multiple times on the same validator instance,
+        the metadata value will be override.
+    This allows the user to change the metadata programmatically
+        for different chains or calls.
+    """
+
+    def with_metadata(self, metadata: Dict[str, Any]):
+        """Assigns metadata to this validator to use during validation."""
+        self._metadata = metadata
+        return self
 
 
 ValidatorSpec = Union[Validator, Tuple[Union[Validator, str, Callable], str]]

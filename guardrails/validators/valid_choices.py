@@ -27,7 +27,10 @@ class ValidChoices(Validator):
     """
 
     def __init__(self, choices: List[Any], on_fail: Optional[Callable] = None):
-        super().__init__(on_fail=on_fail, choices=choices)
+        super().__init__(
+            on_fail=on_fail,
+            choices=choices,
+        )
         self._choices = choices
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:

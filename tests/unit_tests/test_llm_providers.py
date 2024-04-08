@@ -1,6 +1,7 @@
 import importlib.util
 import os
-from typing import Any, Callable, Dict, Iterable
+from dataclasses import dataclass
+from typing import Any, Callable, Dict, Iterable, List
 from unittest.mock import MagicMock
 
 import pytest
@@ -19,25 +20,9 @@ from guardrails.utils.safe_get import safe_get_with_brackets
 
 from .mocks import MockAsyncOpenAILlm, MockOpenAILlm
 
-# def test_openai_callable_retries_on_retryable_errors(mocker):
-#     llm = MockCustomLlm()
-#     fail_retryable_spy = mocker.spy(llm, "fail_retryable")
-#
-#     arbitrary_callable = ArbitraryCallable(llm.fail_retryable, prompt="Hello")
-#     response = arbitrary_callable()
-#
-#     assert fail_retryable_spy.call_count == 2
-#     assert isinstance(response, LLMResponse) is True
-#     assert response.output == "Hello world!"
-#     assert response.prompt_token_count is None
-#     assert response.response_token_count is None
-
 
 @pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="OpenAI v0 only")
 def test_openai_callable_does_not_retry_on_non_retryable_errors(mocker):
-    mock_environ = mocker.patch("os.environ.get")
-    mock_environ.return_value = "sk-xxxxxxxxxxxxxx"
-
     with pytest.raises(Exception) as e:
         llm = MockOpenAILlm()
         fail_non_retryable_spy = mocker.spy(llm, "fail_non_retryable")
@@ -54,9 +39,6 @@ def test_openai_callable_does_not_retry_on_non_retryable_errors(mocker):
 
 
 def test_openai_callable_does_not_retry_on_success(mocker):
-    mock_environ = mocker.patch("os.environ.get")
-    mock_environ.return_value = "sk-xxxxxxxxxxxxxx"
-
     llm = MockOpenAILlm()
     succeed_spy = mocker.spy(llm, "succeed")
 
@@ -70,27 +52,9 @@ def test_openai_callable_does_not_retry_on_success(mocker):
     assert response.response_token_count is None
 
 
-# @pytest.mark.asyncio
-# async def test_async_openai_callable_retries_on_retryable_errors(mocker):
-#     llm = MockAsyncCustomLlm()
-#     fail_retryable_spy = mocker.spy(llm, "fail_retryable")
-#
-#     arbitrary_callable = AsyncArbitraryCallable(llm.fail_retryable, prompt="Hello")
-#     response = await arbitrary_callable()
-#
-#     assert fail_retryable_spy.call_count == 2
-#     assert isinstance(response, LLMResponse) is True
-#     assert response.output == "Hello world!"
-#     assert response.prompt_token_count is None
-#     assert response.response_token_count is None
-
-
-# Passing
 @pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="OpenAI v0 only")
 @pytest.mark.asyncio
 async def test_async_openai_callable_does_not_retry_on_non_retryable_errors(mocker):
-    mock_environ = mocker.patch("os.environ.get")
-    mock_environ.return_value = "sk-xxxxxxxxxxxxxx"
     with pytest.raises(Exception) as e:
         llm = MockAsyncOpenAILlm()
         fail_non_retryable_spy = mocker.spy(llm, "fail_non_retryable")
@@ -108,9 +72,6 @@ async def test_async_openai_callable_does_not_retry_on_non_retryable_errors(mock
 
 @pytest.mark.asyncio
 async def test_async_openai_callable_does_not_retry_on_success(mocker):
-    mock_environ = mocker.patch("os.environ.get")
-    mock_environ.return_value = "sk-xxxxxxxxxxxxxx"
-
     llm = MockAsyncOpenAILlm()
     succeed_spy = mocker.spy(llm, "succeed")
 
@@ -199,12 +160,33 @@ def openai_mock():
             },
         }
     else:
-        from openai.types import Completion, CompletionChoice, CompletionUsage
 
-        return Completion(
+        @dataclass
+        class MockCompletionUsage:
+            completion_tokens: int
+            prompt_tokens: int
+            total_tokens: int
+
+        @dataclass
+        class MockCompletionChoice:
+            finish_reason: str
+            index: int
+            logprobs: Any
+            text: str
+
+        @dataclass
+        class MockCompletion:
+            id: str
+            choices: List[MockCompletionChoice]
+            created: int
+            model: str
+            object: str
+            usage: MockCompletionUsage
+
+        return MockCompletion(
             id="",
             choices=[
-                CompletionChoice(
+                MockCompletionChoice(
                     finish_reason="stop",
                     index=0,
                     logprobs=None,
@@ -214,7 +196,7 @@ def openai_mock():
             created=0,
             model="",
             object="text_completion",
-            usage=CompletionUsage(
+            usage=MockCompletionUsage(
                 completion_tokens=20,
                 prompt_tokens=10,
                 total_tokens=30,
@@ -236,9 +218,6 @@ def openai_stream_mock():
 
 
 def test_openai_callable(mocker, openai_mock):
-    mock_environ = mocker.patch("os.environ.get")
-    mock_environ.return_value = "sk-xxxxxxxxxxxxxx"
-
     if OPENAI_VERSION.startswith("0"):
         mocker.patch("openai.Completion.create", return_value=openai_mock)
     else:
@@ -257,9 +236,6 @@ def test_openai_callable(mocker, openai_mock):
 
 
 def test_openai_stream_callable(mocker, openai_stream_mock):
-    mock_environ = mocker.patch("os.environ.get")
-    mock_environ.return_value = "sk-xxxxxxxxxxxxxx"
-
     if OPENAI_VERSION.startswith("0"):
         mocker.patch("openai.Completion.create", return_value=openai_stream_mock)
     else:
@@ -286,9 +262,6 @@ def test_openai_stream_callable(mocker, openai_stream_mock):
 @pytest.mark.asyncio
 @pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="OpenAI v0 only")
 async def test_async_openai_callable(mocker, openai_mock):
-    mock_environ = mocker.patch("os.environ.get")
-    mock_environ.return_value = "sk-xxxxxxxxxxxxxx"
-
     mocker.patch("openai.Completion.acreate", return_value=openai_mock)
 
     from guardrails.llm_providers import AsyncOpenAICallable
@@ -303,9 +276,6 @@ async def test_async_openai_callable(mocker, openai_mock):
 
 
 def test_openai_chat_callable(mocker, openai_chat_mock):
-    mock_environ = mocker.patch("os.environ.get")
-    mock_environ.return_value = "sk-xxxxxxxxxxxxxx"
-
     if OPENAI_VERSION.startswith("0"):
         mocker.patch("openai.ChatCompletion.create", return_value=openai_chat_mock)
     else:
@@ -326,9 +296,6 @@ def test_openai_chat_callable(mocker, openai_chat_mock):
 
 
 def test_openai_chat_stream_callable(mocker, openai_chat_stream_mock):
-    mock_environ = mocker.patch("os.environ.get")
-    mock_environ.return_value = "sk-xxxxxxxxxxxxxx"
-
     if OPENAI_VERSION.startswith("0"):
         mocker.patch(
             "openai.ChatCompletion.create", return_value=openai_chat_stream_mock
@@ -357,9 +324,6 @@ def test_openai_chat_stream_callable(mocker, openai_chat_stream_mock):
 @pytest.mark.asyncio
 @pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="OpenAI v0 only")
 async def test_async_openai_chat_callable(mocker, openai_chat_mock):
-    mock_environ = mocker.patch("os.environ.get")
-    mock_environ.return_value = "sk-xxxxxxxxxxxxxx"
-
     mocker.patch("openai.ChatCompletion.acreate", return_value=openai_chat_mock)
 
     from guardrails.llm_providers import AsyncOpenAIChatCallable
@@ -374,9 +338,6 @@ async def test_async_openai_chat_callable(mocker, openai_chat_mock):
 
 
 def test_openai_chat_model_callable(mocker, openai_chat_mock):
-    mock_environ = mocker.patch("os.environ.get")
-    mock_environ.return_value = "sk-xxxxxxxxxxxxxx"
-
     if OPENAI_VERSION.startswith("0"):
         mocker.patch("openai.ChatCompletion.create", return_value=openai_chat_mock)
     else:
@@ -405,9 +366,6 @@ def test_openai_chat_model_callable(mocker, openai_chat_mock):
 @pytest.mark.asyncio
 @pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="OpenAI v0 only")
 async def test_async_openai_chat_model_callable(mocker, openai_chat_mock):
-    mock_environ = mocker.patch("os.environ.get")
-    mock_environ.return_value = "sk-xxxxxxxxxxxxxx"
-
     mocker.patch("openai.ChatCompletion.acreate", return_value=openai_chat_mock)
 
     from guardrails.llm_providers import AsyncOpenAIChatCallable
@@ -533,6 +491,52 @@ def test_hugging_face_pipeline_callable():
     assert response.response_token_count is None
 
 
+@pytest.mark.skipif(
+    not importlib.util.find_spec("litellm"),
+    reason="`litellm` is not installed",
+)
+def test_litellm_callable(mocker):
+    # Mock the litellm.completion function and
+    # the classes it returns
+    @dataclass
+    class Message:
+        content: str
+
+    @dataclass
+    class Choice:
+        message: Message
+
+    @dataclass
+    class Usage:
+        prompt_tokens: int
+        completion_tokens: int
+
+    @dataclass
+    class MockResponse:
+        choices: list[Choice]
+        usage: Usage
+
+    class MockCompletion:
+        @staticmethod
+        def create() -> MockResponse:
+            return MockResponse(
+                choices=[Choice(message=Message(content="Hello there!"))],
+                usage=Usage(prompt_tokens=10, completion_tokens=20),
+            )
+
+    mocker.patch("litellm.completion", return_value=MockCompletion.create())
+
+    from guardrails.llm_providers import LiteLLMCallable
+
+    litellm_callable = LiteLLMCallable()
+    response = litellm_callable("Hello")
+
+    assert isinstance(response, LLMResponse) is True
+    assert response.output == "Hello there!"
+    assert response.prompt_token_count == 10
+    assert response.response_token_count == 20
+
+
 class ReturnTempCallable(Callable):
     def __call__(*args, **kwargs) -> Any:
         return ""
@@ -625,25 +629,41 @@ def test_get_llm_ask_cohere():
 
     cohere_client = Client(api_key="mock_api_key")
 
+    prompt_callable = get_llm_ask(cohere_client.chat)
+
+    assert isinstance(prompt_callable, CohereCallable)
+
+
+@pytest.mark.skipif(
+    not importlib.util.find_spec("cohere"),
+    reason="cohere is not installed",
+)
+def test_get_llm_ask_cohere_legacy():
+    from cohere import Client
+
+    from guardrails.llm_providers import CohereCallable
+
+    cohere_client = Client(api_key="mock_api_key")
+
     prompt_callable = get_llm_ask(cohere_client.generate)
 
     assert isinstance(prompt_callable, CohereCallable)
 
 
 @pytest.mark.skipif(
-    not importlib.util.find_spec("anthropic.resources"),
-    reason="antrhopic is not installed",
+    not importlib.util.find_spec("anthropic"),
+    reason="anthropic is not installed",
 )
 def test_get_llm_ask_anthropic():
-    from anthropic import Anthropic
+    if importlib.util.find_spec("anthropic"):
+        from anthropic import Anthropic
 
-    from guardrails.llm_providers import AnthropicCallable
+        from guardrails.llm_providers import AnthropicCallable
 
-    anthropic_client = Anthropic(api_key="my_api_key")
+        anthropic_client = Anthropic(api_key="my_api_key")
+        prompt_callable = get_llm_ask(anthropic_client.completions.create)
 
-    prompt_callable = get_llm_ask(anthropic_client.completions.create)
-
-    assert isinstance(prompt_callable, AnthropicCallable)
+        assert isinstance(prompt_callable, AnthropicCallable)
 
 
 @pytest.mark.skipif(
@@ -700,6 +720,20 @@ def test_get_llm_ask_hugging_face_pipeline():
     prompt_callable = get_llm_ask(mock_pipeline)
 
     assert isinstance(prompt_callable, HuggingFacePipelineCallable)
+
+
+@pytest.mark.skipif(
+    not importlib.util.find_spec("litellm"),
+    reason="`litellm` is not installed",
+)
+def test_get_llm_ask_litellm():
+    from litellm import completion
+
+    from guardrails.llm_providers import LiteLLMCallable
+
+    prompt_callable = get_llm_ask(completion)
+
+    assert isinstance(prompt_callable, LiteLLMCallable)
 
 
 def test_chat_prompt():

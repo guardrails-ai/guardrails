@@ -5,8 +5,9 @@ import pytest
 from pydantic import BaseModel, Field
 
 from guardrails import Guard
+from guardrails.errors import ValidationError
 from guardrails.utils.reask_utils import ReAsk
-from guardrails.validator_base import ValidatorError
+from guardrails.validator_base import OnFailAction
 from guardrails.validators import ValidChoices
 
 test_cases = [
@@ -68,9 +69,9 @@ Dummy prompt.
     guard = Guard.from_rail_string(rail_spec)
 
     # If raises is True, then the test should raise an exception.
-    # For our existing test cases this will always be a ValidatorError
+    # For our existing test cases this will always be a ValidationError
     if raises:
-        with pytest.raises(ValidatorError):
+        with pytest.raises(ValidationError):
             guard.parse(llm_output, num_reasks=0)
     else:
         result = guard.parse(llm_output, num_reasks=0)
@@ -94,7 +95,7 @@ def test_choice_validation_pydantic(llm_output, raises, has_error, fails):
         action: Literal["fight"]
         fight_move: str = Field(
             validators=ValidChoices(
-                choices=["punch", "kick", "headbutt"], on_fail="exception"
+                choices=["punch", "kick", "headbutt"], on_fail=OnFailAction.EXCEPTION
             )
         )
 
@@ -102,11 +103,14 @@ def test_choice_validation_pydantic(llm_output, raises, has_error, fails):
         action: Literal["flight"]
         flight_direction: str = Field(
             validators=ValidChoices(
-                choices=["north", "south", "east", "west"], on_fail="exception"
+                choices=["north", "south", "east", "west"],
+                on_fail=OnFailAction.EXCEPTION,
             )
         )
         flight_speed: int = Field(
-            validators=ValidChoices(choices=[1, 2, 3, 4], on_fail="exception")
+            validators=ValidChoices(
+                choices=[1, 2, 3, 4], on_fail=OnFailAction.EXCEPTION
+            )
         )
 
     class Choice(BaseModel):
@@ -115,9 +119,9 @@ def test_choice_validation_pydantic(llm_output, raises, has_error, fails):
     guard = Guard.from_pydantic(output_class=Choice, prompt="Dummy prompt.")
 
     # If raises is True, then the test should raise an exception.
-    # For our existing test cases this will always be a ValidatorError
+    # For our existing test cases this will always be a ValidationError
     if raises:
-        with pytest.raises(ValidatorError):
+        with pytest.raises(ValidationError):
             guard.parse(llm_output, num_reasks=0)
     else:
         result = guard.parse(llm_output, num_reasks=0)

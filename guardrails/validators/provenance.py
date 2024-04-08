@@ -117,7 +117,10 @@ class ProvenanceV0(Validator):
         **kwargs,
     ):
         super().__init__(
-            on_fail, threshold=threshold, validation_method=validation_method, **kwargs
+            on_fail,
+            threshold=threshold,
+            validation_method=validation_method,
+            **kwargs,
         )
         self._threshold = float(threshold)
         if validation_method not in ["sentence", "full"]:
@@ -593,6 +596,10 @@ class ProvenanceV1(Validator):
         return PassResult(metadata=metadata)
 
     def validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
+        if not metadata:
+            # default to value provided via Validator.with_metadata
+            metadata = self._metadata
+
         kwargs = {}
         context_copy = contextvars.copy_context()
         for key, context_var in context_copy.items():

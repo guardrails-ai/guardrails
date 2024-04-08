@@ -1,5 +1,18 @@
-from typing import Any, Awaitable, Callable, Dict, Iterable, List, Optional, cast
+import asyncio
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Type,
+    Union,
+    cast,
+)
 
+from guardrails_api_client.models.validate_payload_llm_api import ValidatePayloadLlmApi
 from pydantic import BaseModel
 
 from guardrails.utils.exception_utils import UserFacingException
@@ -31,6 +44,8 @@ class PromptCallableBase:
     Catches exceptions to let the user know clearly if the callable
     failed, and how to fix it.
     """
+
+    supports_base_model = False
 
     def __init__(self, *args, **kwargs):
         self.init_args = args
@@ -92,7 +107,30 @@ def chat_prompt(
     ]
 
 
-class OpenAICallable(PromptCallableBase):
+def litellm_messages(
+    prompt: Optional[str],
+    instructions: Optional[str] = None,
+    msg_history: Optional[List[Dict]] = None,
+) -> List[Dict[str, str]]:
+    """Prepare messages for LiteLLM."""
+    if msg_history:
+        return msg_history
+    if prompt is None:
+        raise PromptCallableException(
+            "Either `text` or `msg_history` required for `guard.__call__`."
+        )
+
+    if instructions:
+        prompt = "\n\n".join([instructions, prompt])
+
+    return [{"role": "user", "content": prompt}]
+
+
+class OpenAIModel(PromptCallableBase):
+    pass
+
+
+class OpenAICallable(OpenAIModel):
     def _invoke_llm(
         self,
         text: str,
@@ -118,14 +156,18 @@ class OpenAICallable(PromptCallableBase):
         )
 
 
-class OpenAIChatCallable(PromptCallableBase):
+class OpenAIChatCallable(OpenAIModel):
+    supports_base_model = True
+
     def _invoke_llm(
         self,
         text: Optional[str] = None,
         model: str = "gpt-3.5-turbo",
         instructions: Optional[str] = None,
         msg_history: Optional[List[Dict]] = None,
-        base_model: Optional[BaseModel] = None,
+        base_model: Optional[
+            Union[Type[BaseModel], Type[List[Type[BaseModel]]]]
+        ] = None,
         function_call: Optional[Any] = None,
         *args,
         **kwargs,
@@ -155,13 +197,15 @@ class OpenAIChatCallable(PromptCallableBase):
             )
 
         # Configure function calling if applicable (only for non-streaming)
+        fn_kwargs = {}
         if base_model and not kwargs.get("stream", False):
-            function_params = [convert_pydantic_model_to_openai_fn(base_model)]
-            if function_call is None:
-                function_call = {"name": function_params[0]["name"]}
-            fn_kwargs = {"functions": function_params, "function_call": function_call}
-        else:
-            fn_kwargs = {}
+            function_params = convert_pydantic_model_to_openai_fn(base_model)
+            if function_call is None and function_params:
+                function_call = {"name": function_params["name"]}
+                fn_kwargs = {
+                    "functions": [function_params],
+                    "function_call": function_call,
+                }
 
         # Call OpenAI
         if "api_key" in kwargs:
@@ -236,6 +280,25 @@ class CohereCallable(PromptCallableBase):
         if "instructions" in kwargs:
             prompt = kwargs.pop("instructions") + "\n\n" + prompt
 
+        def is_base_cohere_chat(func):
+            try:
+                return (
+                    func.__closure__[1].cell_contents.__func__.__qualname__
+                    == "BaseCohere.chat"
+                )
+            except (AttributeError, IndexError):
+                return False
+
+        # TODO: When cohere totally gets rid of `generate`,
+        #       remove this cond and the final return
+        if is_base_cohere_chat(client_callable):
+            cohere_response = client_callable(
+                message=prompt, model=model, *args, **kwargs
+            )
+            return LLMResponse(
+                output=cohere_response.text,
+            )
+
         cohere_response = client_callable(prompt=prompt, model=model, *args, **kwargs)
         return LLMResponse(
             output=cohere_response[0].text,
@@ -287,6 +350,56 @@ class AnthropicCallable(PromptCallableBase):
             **kwargs,
         )
         return LLMResponse(output=anthropic_response.completion)
+
+
+class LiteLLMCallable(PromptCallableBase):
+    def _invoke_llm(
+        self,
+        text: Optional[str] = None,
+        model: str = "gpt-3.5-turbo",
+        instructions: Optional[str] = None,
+        msg_history: Optional[List[Dict]] = None,
+        *args,
+        **kwargs,
+    ) -> LLMResponse:
+        """Wrapper for Lite LLM completions.
+
+        To use Lite LLM for guardrails, do
+        ```
+        from litellm import completion
+
+        raw_llm_response, validated_response = guard(
+            completion,
+            model="gpt-3.5-turbo",
+            prompt_params={...},
+            temperature=...,
+            ...
+        )
+        ```
+        """
+        try:
+            from litellm import completion  # type: ignore
+        except ImportError as e:
+            raise PromptCallableException(
+                "The `litellm` package is not installed. "
+                "Install with `pip install litellm`"
+            ) from e
+
+        response = completion(
+            model=model,
+            messages=litellm_messages(
+                prompt=text,
+                instructions=instructions,
+                msg_history=msg_history,
+            ),
+            *args,
+            **kwargs,
+        )
+        return LLMResponse(
+            output=response.choices[0].message.content,  # type: ignore
+            prompt_token_count=response.usage.prompt_tokens,  # type: ignore
+            response_token_count=response.usage.completion_tokens,  # type: ignore
+        )
 
 
 class HuggingFaceModelCallable(PromptCallableBase):
@@ -468,7 +581,7 @@ def get_llm_ask(llm_api: Callable, *args, **kwargs) -> PromptCallableBase:
         if (
             isinstance(getattr(llm_api, "__self__", None), cohere.Client)
             and getattr(llm_api, "__name__", None) == "generate"
-        ):
+        ) or getattr(llm_api, "__module__", None) == "cohere.client":
             return CohereCallable(*args, client_callable=llm_api, **kwargs)
     except ImportError:
         pass
@@ -507,6 +620,7 @@ def get_llm_ask(llm_api: Callable, *args, **kwargs) -> PromptCallableBase:
             raise ValueError("Only text generation models are supported at this time.")
     except ImportError:
         pass
+
     try:
         from transformers import Pipeline  # noqa: F401 # type: ignore
 
@@ -517,6 +631,14 @@ def get_llm_ask(llm_api: Callable, *args, **kwargs) -> PromptCallableBase:
             raise ValueError(
                 "Only text generation pipelines are supported at this time."
             )
+    except ImportError:
+        pass
+
+    try:
+        from litellm import completion  # noqa: F401 # type: ignore
+
+        if llm_api == completion:
+            return LiteLLMCallable(*args, **kwargs)
     except ImportError:
         pass
 
@@ -561,7 +683,11 @@ class AsyncPromptCallableBase(PromptCallableBase):
         return result
 
 
-class AsyncOpenAICallable(AsyncPromptCallableBase):
+class AsyncOpenAIModel(AsyncPromptCallableBase):
+    pass
+
+
+class AsyncOpenAICallable(AsyncOpenAIModel):
     async def invoke_llm(
         self,
         text: str,
@@ -587,14 +713,18 @@ class AsyncOpenAICallable(AsyncPromptCallableBase):
         )
 
 
-class AsyncOpenAIChatCallable(AsyncPromptCallableBase):
+class AsyncOpenAIChatCallable(AsyncOpenAIModel):
+    supports_base_model = True
+
     async def invoke_llm(
         self,
         text: Optional[str] = None,
         model: str = "gpt-3.5-turbo",
         instructions: Optional[str] = None,
         msg_history: Optional[List[Dict]] = None,
-        base_model: Optional[BaseModel] = None,
+        base_model: Optional[
+            Union[Type[BaseModel], Type[List[Type[BaseModel]]]]
+        ] = None,
         function_call: Optional[Any] = None,
         *args,
         **kwargs,
@@ -624,13 +754,15 @@ class AsyncOpenAIChatCallable(AsyncPromptCallableBase):
             )
 
         # Configure function calling if applicable
+        fn_kwargs = {}
         if base_model:
-            function_params = [convert_pydantic_model_to_openai_fn(base_model)]
-            if function_call is None:
-                function_call = {"name": function_params[0]["name"]}
-            fn_kwargs = {"functions": function_params, "function_call": function_call}
-        else:
-            fn_kwargs = {}
+            function_params = convert_pydantic_model_to_openai_fn(base_model)
+            if function_call is None and function_params:
+                function_call = {"name": function_params["name"]}
+                fn_kwargs = {
+                    "functions": [function_params],
+                    "function_call": function_call,
+                }
 
         # Call OpenAI
         if "api_key" in kwargs:
@@ -729,3 +861,36 @@ def get_async_llm_ask(
         pass
 
     return AsyncArbitraryCallable(*args, llm_api=llm_api, **kwargs)
+
+
+def model_is_supported_server_side(
+    llm_api: Optional[Union[Callable, Callable[[Any], Awaitable[Any]]]] = None,
+    *args,
+    **kwargs,
+) -> bool:
+    if not llm_api:
+        return True
+    # TODO: Support other models; requires server-side updates
+    model = get_llm_ask(llm_api, *args, **kwargs)
+    if asyncio.iscoroutinefunction(llm_api):
+        model = get_async_llm_ask(llm_api, *args, **kwargs)
+    return issubclass(type(model), OpenAIModel) or issubclass(
+        type(model), AsyncOpenAIModel
+    )
+
+
+# FIXME: Update with newly supported LLMs
+def get_llm_api_enum(
+    llm_api: Callable[[Any], Awaitable[Any]]
+) -> Optional[ValidatePayloadLlmApi]:
+    # TODO: Distinguish between v1 and v2
+    if llm_api == get_static_openai_create_func():
+        return ValidatePayloadLlmApi.OPENAI_COMPLETION_CREATE
+    elif llm_api == get_static_openai_chat_create_func():
+        return ValidatePayloadLlmApi.OPENAI_CHATCOMPLETION_CREATE
+    elif llm_api == get_static_openai_acreate_func():
+        return ValidatePayloadLlmApi.OPENAI_COMPLETION_ACREATE
+    elif llm_api == get_static_openai_chat_acreate_func():
+        return ValidatePayloadLlmApi.OPENAI_CHATCOMPLETION_ACREATE
+    else:
+        return None

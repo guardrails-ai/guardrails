@@ -32,9 +32,9 @@ def test_empty_initialization():
     assert call.completion_tokens_consumed is None
     assert call.raw_outputs == Stack()
     assert call.parsed_outputs == Stack()
-    assert call.validation_output is None
+    assert call.validation_response is None
     assert call.fixed_output is None
-    assert call.validated_output is None
+    assert call.guarded_output is None
     assert call.reasks == Stack()
     assert call.validator_logs == Stack()
     assert call.error is None
@@ -101,6 +101,7 @@ def test_non_empty_initialization():
         ReAsk(incorrect_value="Hello there!", fail_results=[first_validation_result])
     ]
     first_validator_log = ValidatorLogs(
+        registered_name="no-punctuation",
         validator_name="no-punctuation",
         value_before_validation="Hello there!",
         validation_result=first_validation_result,
@@ -137,6 +138,7 @@ def test_non_empty_initialization():
     second_validated_output = "Hello there"
     second_reasks = []
     second_validator_log = ValidatorLogs(
+        registered_name="no-punctuation",
         validator_name="no-punctuation",
         value_before_validation="Hello there",
         validation_result=PassResult(),
@@ -147,7 +149,7 @@ def test_non_empty_initialization():
     second_outputs = Outputs(
         llm_response_info=second_llm_response_info,
         parsed_output=second_parsed_output,
-        validation_output="Hello there",
+        validation_response="Hello there",
         validated_output=second_validated_output,
         reasks=second_reasks,
         validator_logs=second_validator_logs,
@@ -180,9 +182,9 @@ def test_non_empty_initialization():
 
     assert call.raw_outputs == Stack("Hello there!", "Hello there")
     assert call.parsed_outputs == Stack("Hello there!", "Hello there")
-    assert call.validation_output == "Hello there"
+    assert call.validation_response == "Hello there"
     assert call.fixed_output == "Hello there"
-    assert call.validated_output == "Hello there"
+    assert call.guarded_output == "Hello there"
     assert call.reasks == Stack()
     assert call.validator_logs == Stack(first_validator_log, second_validator_log)
     assert call.error is None

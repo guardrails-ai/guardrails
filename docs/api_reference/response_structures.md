@@ -6,4 +6,4 @@
             - "ValidationResult"
             - "PassResult"
             - "FailResult"
-            - "ValidatorError"
+            - "ValidationError"

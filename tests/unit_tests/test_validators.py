@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 
 from guardrails import Guard
 from guardrails.datatypes import DataType
+from guardrails.errors import ValidationError
 from guardrails.schema import StringSchema
 from guardrails.utils.openai_utils import (
     OPENAI_VERSION,
@@ -19,10 +20,10 @@ from guardrails.utils.reask_utils import FieldReAsk
 from guardrails.validator_base import (
     FailResult,
     Filter,
+    OnFailAction,
     PassResult,
     Refrain,
     ValidationResult,
-    ValidatorError,
     check_refrain_in_dict,
     filter_in_dict,
     register_validator,
@@ -69,7 +70,7 @@ from .mocks.mock_comet import BAD_TRANSLATION, GOOD_TRANSLATION, MockModel
         ({"a": 1}, False),
     ],
 )
-def test_check_refrain(input_dict, expected):
+def test_check_refrain_in_dict(input_dict, expected):
     assert check_refrain_in_dict(input_dict) == expected
 
 
@@ -223,7 +224,7 @@ def hello_validator(value: Any, metadata: Dict[str, Any]) -> ValidationResult:
 def test_validator_as_tuple():
     # (Callable, on_fail) tuple fix
     class MyModel(BaseModel):
-        a_field: str = Field(..., validators=[(hello_validator, "fix")])
+        a_field: str = Field(..., validators=[(hello_validator, OnFailAction.FIX)])
 
     guard = Guard.from_pydantic(MyModel)
     output = guard.parse(
@@ -237,7 +238,11 @@ def test_validator_as_tuple():
 
     class MyModel(BaseModel):
         a_field: str = Field(
-            ..., validators=[("two_words", "reask"), ("mycustomhellovalidator", "fix")]
+            ...,
+            validators=[
+                ("two_words", OnFailAction.REASK),
+                ("mycustomhellovalidator", OnFailAction.FIX),
+            ],
         )
 
     guard = Guard.from_pydantic(MyModel)
@@ -251,7 +256,7 @@ def test_validator_as_tuple():
     # (Validator, on_fail) tuple fix
 
     class MyModel(BaseModel):
-        a_field: str = Field(..., validators=[(TwoWords(), "fix")])
+        a_field: str = Field(..., validators=[(TwoWords(), OnFailAction.FIX)])
 
     guard = Guard.from_pydantic(MyModel)
     output = guard.parse(
@@ -275,7 +280,7 @@ def test_validator_as_tuple():
     )
 
     class MyModel(BaseModel):
-        a_field: str = Field(..., validators=[(hello_validator, "reask")])
+        a_field: str = Field(..., validators=[(hello_validator, OnFailAction.REASK)])
 
     guard = Guard.from_pydantic(MyModel)
 
@@ -301,7 +306,7 @@ def test_validator_as_tuple():
     # (string, on_fail) tuple reask
 
     class MyModel(BaseModel):
-        a_field: str = Field(..., validators=[("two-words", "reask")])
+        a_field: str = Field(..., validators=[("two-words", OnFailAction.REASK)])
 
     guard = Guard.from_pydantic(MyModel)
 
@@ -316,7 +321,7 @@ def test_validator_as_tuple():
     # (Validator, on_fail) tuple reask
 
     class MyModel(BaseModel):
-        a_field: str = Field(..., validators=[(TwoWords(), "reask")])
+        a_field: str = Field(..., validators=[(TwoWords(), OnFailAction.REASK)])
 
     guard = Guard.from_pydantic(MyModel)
 
@@ -395,7 +400,7 @@ def test_provenance_v1(mocker):
                 llm_callable="gpt-3.5-turbo",
                 top_k=3,
                 max_tokens=100,
-                on_fail="fix",
+                on_fail=OnFailAction.FIX,
             )
         ],
         description="testmeout",
@@ -604,7 +609,7 @@ def custom_reask_on_fail_handler(value: Any, fail_results: List[FailResult]):
 
 
 def custom_exception_on_fail_handler(value: Any, fail_results: List[FailResult]):
-    raise ValidatorError("Something went wrong!")
+    raise ValidationError("Something went wrong!")
 
 
 def custom_filter_on_fail_handler(value: Any, fail_results: List[FailResult]):
@@ -637,11 +642,11 @@ def custom_refrain_on_fail_handler(value: Any, fail_results: List[FailResult]):
         ),
         (
             custom_exception_on_fail_handler,
-            ValidatorError,
+            ValidationError,
         ),
         (
             custom_filter_on_fail_handler,
-            {"name": "Fido"},
+            None,
         ),
         (
             custom_refrain_on_fail_handler,
@@ -682,7 +687,7 @@ def test_custom_on_fail_handler(
 
     guard = Guard.from_pydantic(output_class=Pet, prompt=prompt)
     if isinstance(expected_result, type) and issubclass(expected_result, Exception):
-        with pytest.raises(ValidatorError) as excinfo:
+        with pytest.raises(ValidationError) as excinfo:
             guard.parse(output, num_reasks=0)
         assert str(excinfo.value) == "Something went wrong!"
     else:
@@ -698,70 +703,40 @@ class Pet(BaseModel):
 
 
 def test_input_validation_fix(mocker):
-    if OPENAI_VERSION.startswith("0"):
-        mock_openai = mocker.patch("openai.Completion.create")
-        mock_openai.return_value = {
-            "choices": [
-                {
-                    "text": json.dumps({"name": "Fluffy"}),
-                }
-            ],
-            "usage": {
-                "prompt_tokens": 10,
-                "completion_tokens": 20,
-            },
-        }
-    else:
-        from openai.types import Completion, CompletionChoice, CompletionUsage
-
-        return Completion(
-            id="",
-            choices=[
-                CompletionChoice(
-                    finish_reason="stop",
-                    index=0,
-                    logprobs=None,
-                    text=json.dumps({"name": "Fluffy"}),
-                ),
-            ],
-            created=0,
-            model="",
-            object="text_completion",
-            usage=CompletionUsage(
-                completion_tokens=20,
-                prompt_tokens=10,
-                total_tokens=30,
-            ),
-        )
+    def mock_llm_api(*args, **kwargs):
+        return json.dumps({"name": "Fluffy"})
 
     # fix returns an amended value for prompt/instructions validation,
     guard = Guard.from_pydantic(output_class=Pet).with_prompt_validation(
-        validators=[TwoWords(on_fail="fix")]
+        validators=[TwoWords(on_fail=OnFailAction.FIX)]
     )
     guard(
-        get_static_openai_create_func(),
+        mock_llm_api,
         prompt="What kind of pet should I get?",
     )
-    assert guard.history.first.iterations.first.outputs.validation_output == "What kind"
+    assert (
+        guard.history.first.iterations.first.outputs.validation_response == "What kind"
+    )
     guard = Guard.from_pydantic(output_class=Pet).with_instructions_validation(
-        validators=[TwoWords(on_fail="fix")]
+        validators=[TwoWords(on_fail=OnFailAction.FIX)]
     )
     guard(
-        get_static_openai_create_func(),
+        mock_llm_api,
         prompt="What kind of pet should I get and what should I name it?",
         instructions="But really, what kind of pet should I get?",
     )
     assert (
-        guard.history.first.iterations.first.outputs.validation_output == "But really,"
+        guard.history.first.iterations.first.outputs.validation_response
+        == "But really,"
     )
 
     # but raises for msg_history validation
     guard = Guard.from_pydantic(output_class=Pet).with_msg_history_validation(
-        validators=[TwoWords(on_fail="fix")]
+        validators=[TwoWords(on_fail=OnFailAction.FIX)]
     )
-    with pytest.raises(ValidatorError) as excinfo:
+    with pytest.raises(ValidationError) as excinfo:
         guard(
-            get_static_openai_create_func(),
+            mock_llm_api,
             msg_history=[
                 {
                     "role": "user",
@@ -770,7 +745,7 @@ def test_input_validation_fix(mocker):
             ],
         )
     assert str(excinfo.value) == "Message history validation failed"
-    assert isinstance(guard.history.first.exception, ValidatorError)
+    assert isinstance(guard.history.first.exception, ValidationError)
     assert guard.history.first.exception == excinfo.value
 
     # rail prompt validation
@@ -789,9 +764,9 @@ This is not two words
 """
     )
     guard(
-        get_static_openai_create_func(),
+        mock_llm_api,
     )
-    assert guard.history.first.iterations.first.outputs.validation_output == "This is"
+    assert guard.history.first.iterations.first.outputs.validation_response == "This is"
 
     # rail instructions validation
     guard = Guard.from_rail_string(
@@ -812,56 +787,51 @@ This also is not two words
 """
     )
     guard(
-        get_static_openai_create_func(),
+        mock_llm_api,
     )
-    assert guard.history.first.iterations.first.outputs.validation_output == "This also"
+    assert (
+        guard.history.first.iterations.first.outputs.validation_response == "This also"
+    )
 
 
 @pytest.mark.asyncio
 @pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="Not supported in v1")
 async def test_async_input_validation_fix(mocker):
-    mock_openai = mocker.patch("openai.Completion.acreate")
-    mock_openai.return_value = {
-        "choices": [
-            {
-                "text": json.dumps({"name": "Fluffy"}),
-            }
-        ],
-        "usage": {
-            "prompt_tokens": 10,
-            "completion_tokens": 20,
-        },
-    }
+    async def mock_llm_api(*args, **kwargs):
+        return json.dumps({"name": "Fluffy"})
 
     # fix returns an amended value for prompt/instructions validation,
     guard = Guard.from_pydantic(output_class=Pet).with_prompt_validation(
-        validators=[TwoWords(on_fail="fix")]
+        validators=[TwoWords(on_fail=OnFailAction.FIX)]
     )
     await guard(
-        get_static_openai_acreate_func(),
+        mock_llm_api,
         prompt="What kind of pet should I get?",
     )
-    assert guard.history.first.iterations.first.outputs.validation_output == "What kind"
+    assert (
+        guard.history.first.iterations.first.outputs.validation_response == "What kind"
+    )
 
     guard = Guard.from_pydantic(output_class=Pet).with_instructions_validation(
-        validators=[TwoWords(on_fail="fix")]
+        validators=[TwoWords(on_fail=OnFailAction.FIX)]
     )
     await guard(
-        get_static_openai_acreate_func(),
+        mock_llm_api,
         prompt="What kind of pet should I get and what should I name it?",
         instructions="But really, what kind of pet should I get?",
     )
     assert (
-        guard.history.first.iterations.first.outputs.validation_output == "But really,"
+        guard.history.first.iterations.first.outputs.validation_response
+        == "But really,"
     )
 
     # but raises for msg_history validation
     guard = Guard.from_pydantic(output_class=Pet).with_msg_history_validation(
-        validators=[TwoWords(on_fail="fix")]
+        validators=[TwoWords(on_fail=OnFailAction.FIX)]
     )
-    with pytest.raises(ValidatorError) as excinfo:
+    with pytest.raises(ValidationError) as excinfo:
         await guard(
-            get_static_openai_acreate_func(),
+            mock_llm_api,
             msg_history=[
                 {
                     "role": "user",
@@ -870,7 +840,7 @@ async def test_async_input_validation_fix(mocker):
             ],
         )
     assert str(excinfo.value) == "Message history validation failed"
-    assert isinstance(guard.history.first.exception, ValidatorError)
+    assert isinstance(guard.history.first.exception, ValidationError)
     assert guard.history.first.exception == excinfo.value
 
     # rail prompt validation
@@ -889,9 +859,9 @@ This is not two words
 """
     )
     await guard(
-        get_static_openai_acreate_func(),
+        mock_llm_api,
     )
-    assert guard.history.first.iterations.first.outputs.validation_output == "This is"
+    assert guard.history.first.iterations.first.outputs.validation_response == "This is"
 
     # rail instructions validation
     guard = Guard.from_rail_string(
@@ -912,9 +882,11 @@ This also is not two words
 """
     )
     await guard(
-        get_static_openai_acreate_func(),
+        mock_llm_api,
     )
-    assert guard.history.first.iterations.first.outputs.validation_output == "This also"
+    assert (
+        guard.history.first.iterations.first.outputs.validation_response == "This also"
+    )
 
 
 @pytest.mark.parametrize(
@@ -926,7 +898,7 @@ This also is not two words
     "unstructured_instructions_error",
     [
         (
-            "reask",
+            OnFailAction.REASK,
             "Prompt validation failed: incorrect_value='What kind of pet should I get?\\n\\nJson Output:\\n\\n' fail_results=[FailResult(outcome='fail', metadata=None, error_message='must be exactly two words', fix_value='What kind')] path=None",  # noqa
             "Instructions validation failed: incorrect_value='What kind of pet should I get?' fail_results=[FailResult(outcome='fail', metadata=None, error_message='must be exactly two words', fix_value='What kind')] path=None",  # noqa
             "Message history validation failed: incorrect_value='What kind of pet should I get?' fail_results=[FailResult(outcome='fail', metadata=None, error_message='must be exactly two words', fix_value='What kind')] path=None",  # noqa
@@ -934,7 +906,7 @@ This also is not two words
             "Instructions validation failed: incorrect_value='\\nThis also is not two words\\n' fail_results=[FailResult(outcome='fail', metadata=None, error_message='must be exactly two words', fix_value='This also')] path=None",  # noqa
         ),
         (
-            "filter",
+            OnFailAction.FILTER,
             "Prompt validation failed",
             "Instructions validation failed",
             "Message history validation failed",
@@ -942,7 +914,7 @@ This also is not two words
             "Instructions validation failed",
         ),
         (
-            "refrain",
+            OnFailAction.REFRAIN,
             "Prompt validation failed",
             "Instructions validation failed",
             "Message history validation failed",
@@ -950,7 +922,7 @@ This also is not two words
             "Instructions validation failed",
         ),
         (
-            "exception",
+            OnFailAction.EXCEPTION,
             "Validation failed for field with errors: must be exactly two words",
             "Validation failed for field with errors: must be exactly two words",
             "Validation failed for field with errors: must be exactly two words",
@@ -971,34 +943,34 @@ def test_input_validation_fail(
     guard = Guard.from_pydantic(output_class=Pet).with_prompt_validation(
         validators=[TwoWords(on_fail=on_fail)]
     )
-    with pytest.raises(ValidatorError) as excinfo:
+    with pytest.raises(ValidationError) as excinfo:
         guard(
             get_static_openai_create_func(),
             prompt="What kind of pet should I get?",
         )
     assert str(excinfo.value) == structured_prompt_error
-    assert isinstance(guard.history.last.exception, ValidatorError)
+    assert isinstance(guard.history.last.exception, ValidationError)
     assert guard.history.last.exception == excinfo.value
 
     # with_instructions_validation
     guard = Guard.from_pydantic(output_class=Pet).with_instructions_validation(
         validators=[TwoWords(on_fail=on_fail)]
     )
-    with pytest.raises(ValidatorError) as excinfo:
+    with pytest.raises(ValidationError) as excinfo:
         guard(
             get_static_openai_create_func(),
             prompt="What kind of pet should I get and what should I name it?",
             instructions="What kind of pet should I get?",
         )
     assert str(excinfo.value) == structured_instructions_error
-    assert isinstance(guard.history.last.exception, ValidatorError)
+    assert isinstance(guard.history.last.exception, ValidationError)
     assert guard.history.last.exception == excinfo.value
 
     # with_msg_history_validation
     guard = Guard.from_pydantic(output_class=Pet).with_msg_history_validation(
         validators=[TwoWords(on_fail=on_fail)]
     )
-    with pytest.raises(ValidatorError) as excinfo:
+    with pytest.raises(ValidationError) as excinfo:
         guard(
             get_static_openai_create_func(),
             msg_history=[
@@ -1009,7 +981,7 @@ def test_input_validation_fail(
             ],
         )
     assert str(excinfo.value) == structured_message_history_error
-    assert isinstance(guard.history.last.exception, ValidatorError)
+    assert isinstance(guard.history.last.exception, ValidationError)
     assert guard.history.last.exception == excinfo.value
 
     # rail prompt validation
@@ -1018,7 +990,7 @@ def test_input_validation_fail(
 <rail version="0.1">
 <prompt
     validators="two-words"
-    on-fail-two-words="{on_fail}"
+    on-fail-two-words="{on_fail.value}"
 >
 This is not two words
 </prompt>
@@ -1027,12 +999,12 @@ This is not two words
 </rail>
 """
     )
-    with pytest.raises(ValidatorError) as excinfo:
+    with pytest.raises(ValidationError) as excinfo:
         guard(
             get_static_openai_create_func(),
         )
     assert str(excinfo.value) == unstructured_prompt_error
-    assert isinstance(guard.history.last.exception, ValidatorError)
+    assert isinstance(guard.history.last.exception, ValidationError)
     assert guard.history.last.exception == excinfo.value
 
     # rail instructions validation
@@ -1044,7 +1016,7 @@ This is not two words
 </prompt>
 <instructions
     validators="two-words"
-    on-fail-two-words="{on_fail}"
+    on-fail-two-words="{on_fail.value}"
 >
 This also is not two words
 </instructions>
@@ -1053,12 +1025,12 @@ This also is not two words
 </rail>
 """
     )
-    with pytest.raises(ValidatorError) as excinfo:
+    with pytest.raises(ValidationError) as excinfo:
         guard(
             get_static_openai_create_func(),
         )
     assert str(excinfo.value) == unstructured_instructions_error
-    assert isinstance(guard.history.last.exception, ValidatorError)
+    assert isinstance(guard.history.last.exception, ValidationError)
     assert guard.history.last.exception == excinfo.value
 
 
@@ -1071,7 +1043,7 @@ This also is not two words
     "unstructured_instructions_error",
     [
         (
-            "reask",
+            OnFailAction.REASK,
             "Prompt validation failed: incorrect_value='What kind of pet should I get?\\n\\nJson Output:\\n\\n' fail_results=[FailResult(outcome='fail', metadata=None, error_message='must be exactly two words', fix_value='What kind')] path=None",  # noqa
             "Instructions validation failed: incorrect_value='What kind of pet should I get?' fail_results=[FailResult(outcome='fail', metadata=None, error_message='must be exactly two words', fix_value='What kind')] path=None",  # noqa
             "Message history validation failed: incorrect_value='What kind of pet should I get?' fail_results=[FailResult(outcome='fail', metadata=None, error_message='must be exactly two words', fix_value='What kind')] path=None",  # noqa
@@ -1079,7 +1051,7 @@ This also is not two words
             "Instructions validation failed: incorrect_value='\\nThis also is not two words\\n' fail_results=[FailResult(outcome='fail', metadata=None, error_message='must be exactly two words', fix_value='This also')] path=None",  # noqa
         ),
         (
-            "filter",
+            OnFailAction.FILTER,
             "Prompt validation failed",
             "Instructions validation failed",
             "Message history validation failed",
@@ -1087,7 +1059,7 @@ This also is not two words
             "Instructions validation failed",
         ),
         (
-            "refrain",
+            OnFailAction.REFRAIN,
             "Prompt validation failed",
             "Instructions validation failed",
             "Message history validation failed",
@@ -1095,7 +1067,7 @@ This also is not two words
             "Instructions validation failed",
         ),
         (
-            "exception",
+            OnFailAction.EXCEPTION,
             "Validation failed for field with errors: must be exactly two words",
             "Validation failed for field with errors: must be exactly two words",
             "Validation failed for field with errors: must be exactly two words",
@@ -1118,34 +1090,34 @@ async def test_input_validation_fail_async(
     guard = Guard.from_pydantic(output_class=Pet).with_prompt_validation(
         validators=[TwoWords(on_fail=on_fail)]
     )
-    with pytest.raises(ValidatorError) as excinfo:
+    with pytest.raises(ValidationError) as excinfo:
         await guard(
             get_static_openai_acreate_func(),
             prompt="What kind of pet should I get?",
         )
     assert str(excinfo.value) == structured_prompt_error
-    assert isinstance(guard.history.last.exception, ValidatorError)
+    assert isinstance(guard.history.last.exception, ValidationError)
     assert guard.history.last.exception == excinfo.value
 
     # with_instructions_validation
     guard = Guard.from_pydantic(output_class=Pet).with_instructions_validation(
         validators=[TwoWords(on_fail=on_fail)]
     )
-    with pytest.raises(ValidatorError) as excinfo:
+    with pytest.raises(ValidationError) as excinfo:
         await guard(
             get_static_openai_acreate_func(),
             prompt="What kind of pet should I get and what should I name it?",
             instructions="What kind of pet should I get?",
         )
     assert str(excinfo.value) == structured_instructions_error
-    assert isinstance(guard.history.last.exception, ValidatorError)
+    assert isinstance(guard.history.last.exception, ValidationError)
     assert guard.history.last.exception == excinfo.value
 
     # with_msg_history_validation
     guard = Guard.from_pydantic(output_class=Pet).with_msg_history_validation(
         validators=[TwoWords(on_fail=on_fail)]
     )
-    with pytest.raises(ValidatorError) as excinfo:
+    with pytest.raises(ValidationError) as excinfo:
         await guard(
             get_static_openai_acreate_func(),
             msg_history=[
@@ -1156,7 +1128,7 @@ async def test_input_validation_fail_async(
             ],
         )
     assert str(excinfo.value) == structured_message_history_error
-    assert isinstance(guard.history.last.exception, ValidatorError)
+    assert isinstance(guard.history.last.exception, ValidationError)
     assert guard.history.last.exception == excinfo.value
 
     # rail prompt validation
@@ -1165,7 +1137,7 @@ async def test_input_validation_fail_async(
 <rail version="0.1">
 <prompt
     validators="two-words"
-    on-fail-two-words="{on_fail}"
+    on-fail-two-words="{on_fail.value}"
 >
 This is not two words
 </prompt>
@@ -1174,12 +1146,12 @@ This is not two words
 </rail>
 """
     )
-    with pytest.raises(ValidatorError) as excinfo:
+    with pytest.raises(ValidationError) as excinfo:
         await guard(
             get_static_openai_acreate_func(),
         )
     assert str(excinfo.value) == unstructured_prompt_error
-    assert isinstance(guard.history.last.exception, ValidatorError)
+    assert isinstance(guard.history.last.exception, ValidationError)
     assert guard.history.last.exception == excinfo.value
 
     # rail instructions validation
@@ -1191,7 +1163,7 @@ This is not two words
 </prompt>
 <instructions
     validators="two-words"
-    on-fail-two-words="{on_fail}"
+    on-fail-two-words="{on_fail.value}"
 >
 This also is not two words
 </instructions>
@@ -1200,19 +1172,19 @@ This also is not two words
 </rail>
 """
     )
-    with pytest.raises(ValidatorError) as excinfo:
+    with pytest.raises(ValidationError) as excinfo:
         await guard(
             get_static_openai_acreate_func(),
         )
     assert str(excinfo.value) == unstructured_instructions_error
-    assert isinstance(guard.history.last.exception, ValidatorError)
+    assert isinstance(guard.history.last.exception, ValidationError)
     assert guard.history.last.exception == excinfo.value
 
 
 def test_input_validation_mismatch_raise():
     # prompt validation, msg_history argument
     guard = Guard.from_pydantic(output_class=Pet).with_prompt_validation(
-        validators=[TwoWords(on_fail="fix")]
+        validators=[TwoWords(on_fail=OnFailAction.FIX)]
     )
     with pytest.raises(ValueError):
         guard(
@@ -1227,7 +1199,7 @@ def test_input_validation_mismatch_raise():
 
     # instructions validation, msg_history argument
     guard = Guard.from_pydantic(output_class=Pet).with_instructions_validation(
-        validators=[TwoWords(on_fail="fix")]
+        validators=[TwoWords(on_fail=OnFailAction.FIX)]
     )
     with pytest.raises(ValueError):
         guard(
@@ -1242,7 +1214,7 @@ def test_input_validation_mismatch_raise():
 
     # msg_history validation, prompt argument
     guard = Guard.from_pydantic(output_class=Pet).with_msg_history_validation(
-        validators=[TwoWords(on_fail="fix")]
+        validators=[TwoWords(on_fail=OnFailAction.FIX)]
     )
     with pytest.raises(ValueError):
         guard(

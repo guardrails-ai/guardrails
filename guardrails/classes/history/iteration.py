@@ -5,6 +5,7 @@ from rich.console import Group
 from rich.panel import Panel
 from rich.pretty import pretty_repr
 from rich.table import Table
+from typing_extensions import deprecated
 
 from guardrails.classes.generic.stack import Stack
 from guardrails.classes.history.inputs import Inputs
@@ -76,21 +77,51 @@ class Iteration(ArbitraryModel):
         return self.outputs.parsed_output
 
     @property
+    def validation_response(self) -> Optional[Union[ReAsk, str, Dict]]:
+        """The response from a single stage of validation.
+
+        Validation response is the output of a single stage of validation
+        and could be a combination of valid output and reasks.
+        Note that a Guard may run validation multiple times if reasks occur.
+        To access the final output after all steps of validation are completed,
+        check out `Call.guarded_output`."
+        """
+        return self.outputs.validation_response
+
+    @property
+    @deprecated(
+        """'Iteration.validation_output' is deprecated and will be removed in \
+versions 0.5.0 and beyond. Use 'validation_response' instead."""
+    )
     def validation_output(self) -> Optional[Union[ReAsk, str, Dict]]:
         """The output from the validation process.
 
         Could be a combination of valid output and ReAsks
         """
-        return self.outputs.validation_output
+        return self.validation_response
 
     @property
+    def guarded_output(self) -> Optional[Union[str, Dict]]:
+        """Any valid values after undergoing validation.
+
+        Some values in the validated output may be "fixed" values that
+        were corrected during validation. This property may be a partial
+        structure if field level reasks occur.
+        """
+        return self.outputs.guarded_output
+
+    @property
+    @deprecated(
+        """'Iteration.validated_output' is deprecated and will be removed in \
+versions 0.5.0 and beyond. Use 'guarded_output' instead."""
+    )
     def validated_output(self) -> Optional[Union[str, Dict]]:
         """The valid output from the LLM after undergoing validation.
 
         Could be only a partial structure if field level reasks occur.
         Could contain fixed values.
         """
-        return self.outputs.validated_output
+        return self.outputs.guarded_output
 
     @property
     def reasks(self) -> Sequence[ReAsk]:
@@ -167,7 +198,7 @@ class Iteration(ArbitraryModel):
                     self.raw_output or "", title="Raw LLM Output", style="on #F5F5DC"
                 ),
                 Panel(
-                    pretty_repr(self.validation_output),
+                    pretty_repr(self.validation_response),
                     title="Validated Output",
                     style="on #F0FFF0",
                 ),
@@ -184,8 +215,13 @@ class Iteration(ArbitraryModel):
                     self.raw_output or "", title="Raw LLM Output", style="on #F5F5DC"
                 ),
                 Panel(
-                    pretty_repr(self.validation_output),
+                    self.validation_response
+                    if isinstance(self.validation_response, str)
+                    else pretty_repr(self.validation_response),
                     title="Validated Output",
                     style="on #F0FFF0",
                 ),
             )
+
+    def __str__(self) -> str:
+        return pretty_repr(self)

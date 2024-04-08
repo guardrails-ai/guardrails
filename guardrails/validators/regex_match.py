@@ -38,7 +38,6 @@ class RegexMatch(Validator):
     ):
         # todo -> something forces this to be passed as kwargs and therefore xml-ized.
         # match_types = ["fullmatch", "search"]
-
         if match_type is None:
             match_type = "fullmatch"
         assert match_type in [
@@ -46,7 +45,11 @@ class RegexMatch(Validator):
             "search",
         ], 'match_type must be in ["fullmatch", "search"]'
 
-        super().__init__(on_fail=on_fail, match_type=match_type, regex=regex)
+        super().__init__(
+            on_fail=on_fail,
+            match_type=match_type,
+            regex=regex,
+        )
         self._regex = regex
         self._match_type = match_type
 

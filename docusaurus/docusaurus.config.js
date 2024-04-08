@@ -37,6 +37,9 @@ const config = {
     defaultLocale: "en",
     locales: ["en"],
   },
+  plugins: [
+    'docusaurus-plugin-image-zoom'
+  ],
   presets: [[
     "@docusaurus/preset-classic",
     /** @type {import('@docusaurus/preset-classic').Options} */
@@ -73,15 +76,34 @@ const config = {
         },
         items: [
           {
+            type: "doc",
             position: "left",
             label: "Docs",
-            to: "/docs",
+            docId: "index",
+          }, {
+            type: 'docSidebar',
+            position: 'left',
+            sidebarId: 'hubSidebar',
+            label: 'Hub Docs',
           }
         ],
       },
       footer: {
         copyright: `Copyright © ${new Date().getFullYear()} Guardrails AI`,
       },
+      zoom: {
+        // CSS selector to apply the plugin to, defaults to '.markdown img'
+        // selector: '.markdown img',
+        // Optional medium-zoom options
+        // see: https://www.npmjs.com/package/medium-zoom#options
+        options: {
+          margin: 24,
+          background: '#BADA55',
+          scrollOffset: 0,
+          container: '#zoom-container',
+          template: '#zoom-template',
+        },
+      },  
     }),
 };
 
