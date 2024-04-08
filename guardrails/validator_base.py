@@ -422,14 +422,23 @@ class Validator(Runnable):
                     """,
                     FutureWarning,
                 )
+        self.on_fail_descriptor: str | OnFailAction = "custom"
 
         if on_fail is None:
             on_fail = OnFailAction.NOOP
         if isinstance(on_fail, OnFailAction):
             self.on_fail_descriptor = on_fail
             self.on_fail_method = None
+        elif (
+            isinstance(on_fail, str)
+            and OnFailAction.__members__.get(on_fail.upper()) is not None
+        ):
+            self.on_fail_descriptor = (
+                OnFailAction.__members__.get(on_fail.upper())
+                or ""  # this default isn't needed, it's just for pyright
+            )
+            self.on_fail_method = None
         else:
-            self.on_fail_descriptor = "custom"
             self.on_fail_method = on_fail
 
         # Store the kwargs for the validator.
