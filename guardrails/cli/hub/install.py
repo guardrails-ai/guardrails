@@ -248,7 +248,6 @@ def install(
         level=LEVELS.get("SPAM"), msg=f"Installing {package_uri}..."  # type: ignore
     )
 
-
     # Validation
     module_name = package_uri.replace("hub://", "")
 
