@@ -21,7 +21,7 @@ guardrails configure
 You can download a guardrail from the Hub using the `install` command. For example, to download the `regex_match` guardrail, you can run:
 
 ```bash
-gudardrails hub install hub://guardrails/regex_match
+guardrails hub install hub://guardrails/regex_match
 ```
 
 ## 4. Use the Guardrail
