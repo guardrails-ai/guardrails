@@ -26,6 +26,7 @@ def test_fix():
     assert res.validated_output == "FIXED"
     assert not res.validation_passed
 
+
 def test_default_noop():
     guard = Guard().use(FailureValidator, on_fail="noop")
     res = guard.parse("hi")

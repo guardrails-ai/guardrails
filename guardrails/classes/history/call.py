@@ -20,7 +20,7 @@ from guardrails.utils.reask_utils import (
     sub_reasks_with_fixed_values,
 )
 from guardrails.utils.safe_get import get_value_from_path
-from guardrails.validator_base import FailResult, Filter, Refrain
+from guardrails.validator_base import Filter, Refrain
 
 
 # We can't inherit from Iteration because python
@@ -226,9 +226,12 @@ versions 0.5.0 and beyond. Use 'validation_response' instead."""
         if (
             self.inputs.full_schema_reask
             or number_of_iterations < 2
-            or isinstance(
-                self.iterations.last.validation_response,
-                ReAsk,  # type: ignore
+            or (
+                self.iterations.last
+                and isinstance(
+                    self.iterations.last.validation_response,
+                    ReAsk,  # type: ignore
+                )
             )
             or isinstance(self.iterations.last.validation_response, str)  # type: ignore
         ):
@@ -274,10 +277,9 @@ versions 0.5.0 and beyond. Use 'validation_response' instead."""
         OR if the action is no-op.
         """
 
-
         if self.status == pass_status:
             return self.fixed_output
-        
+
         if not self.has_unresolved_failures() and self._has_resolved_failures():
             return self.fixed_output
 
@@ -387,7 +389,7 @@ versions 0.5.0 and beyond. Use 'guarded_output' instead."""
 
         # No ReAsks and no unresolved failed validations
         return False
-    
+
     def _has_resolved_failures(self) -> bool:
         # Check for unresolved ReAsks
         if len(self.reasks) > 0:
@@ -443,7 +445,7 @@ versions 0.5.0 and beyond. Use 'guarded_output' instead."""
                 title="Validated Output",
                 style="on #F0FFF0",
             )
-            tree.children[-1].label.renderable._renderables = previous_panels + (  # type: ignore
+            tree.children[-1].label.renderable._renderables = previous_panels + (  # type: ignore # noqa
                 validated_outcome_panel,
             )
 

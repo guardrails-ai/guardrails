@@ -91,13 +91,10 @@ async def test_entity_extraction_with_noop(mocker):
     )
 
     # Assertions are made on the guard state object.
-
-    # Old assertion which is wrong
-    # This should not pass validation and therefore will not have a validated output
-    # assert final_output.validated_output == entity_extraction.VALIDATED_OUTPUT_NOOP
-
     assert final_output.validation_passed is False
-    assert final_output.validated_output is None
+    assert final_output.validated_output is not None
+    assert final_output.validated_output["fees"]
+    assert final_output.validated_output["interest_rates"]
 
     call = guard.history.first
 
@@ -131,7 +128,9 @@ async def test_entity_extraction_with_noop_pydantic(mocker):
 
     # Assertions are made on the guard state object.
     assert final_output.validation_passed is False
-    assert final_output.validated_output is None
+    assert final_output.validated_output is not None
+    assert final_output.validated_output["fees"]
+    assert final_output.validated_output["interest_rates"]
 
     call = guard.history.first
 
@@ -199,7 +198,7 @@ async def test_entity_extraction_with_fix(mocker):
     )
 
     # Assertions are made on the guard state object.
-    assert final_output.validation_passed is True
+    assert final_output.validation_passed is False
     assert final_output.validated_output == entity_extraction.VALIDATED_OUTPUT_FIX
 
     call = guard.history.first

@@ -4,7 +4,7 @@ from guardrails.classes.history.call_inputs import CallInputs
 from guardrails.classes.history.inputs import Inputs
 from guardrails.classes.history.iteration import Iteration
 from guardrails.classes.history.outputs import Outputs
-from guardrails.constants import not_run_status, pass_status
+from guardrails.constants import not_run_status
 from guardrails.llm_providers import ArbitraryCallable
 from guardrails.prompt.instructions import Instructions
 from guardrails.prompt.prompt import Prompt
@@ -189,7 +189,7 @@ def test_non_empty_initialization():
     assert call.validator_logs == Stack(first_validator_log, second_validator_log)
     assert call.error is None
     assert call.failed_validations == Stack(first_validator_log)
-    assert call.status == 'fail'
+    assert call.status == "fail"
     # TODO: How to do shallow comparison
     # assert call.tree == "something"
     assert call.tree is not None
