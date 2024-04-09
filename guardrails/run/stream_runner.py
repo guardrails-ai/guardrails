@@ -5,6 +5,7 @@ from guardrails.classes.output_type import OT
 from guardrails.classes.validation_outcome import ValidationOutcome
 from guardrails.datatypes import verify_metadata_requirements
 from guardrails.llm_providers import (
+    LiteLLMCallable,
     OpenAICallable,
     OpenAIChatCallable,
     PromptCallableBase,
@@ -227,6 +228,11 @@ class StreamRunner(Runner):
                 content = chunk.choices[0].delta.content
                 if not finished and content:
                     chunk_text = content
+        elif isinstance(api, LiteLLMCallable):
+            finished = chunk.choices[0].finish_reason
+            content = chunk.choices[0].delta.content
+            if not finished and content:
+                chunk_text = content
         else:
             try:
                 chunk_text = chunk

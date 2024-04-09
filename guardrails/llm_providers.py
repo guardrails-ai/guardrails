@@ -395,6 +395,16 @@ class LiteLLMCallable(PromptCallableBase):
             *args,
             **kwargs,
         )
+
+        if kwargs.get("stream", False):
+            # If stream is defined and set to True,
+            # the callable returns a generator object
+            llm_response = cast(Iterable[str], response)
+            return LLMResponse(
+                output="",
+                stream_output=llm_response,
+            )
+
         return LLMResponse(
             output=response.choices[0].message.content,  # type: ignore
             prompt_token_count=response.usage.prompt_tokens,  # type: ignore
@@ -781,6 +791,51 @@ class AsyncOpenAIChatCallable(AsyncOpenAIModel):
             **kwargs,
         )
 
+class AsyncLiteLLMCallable(AsyncPromptCallableBase):
+    async def invoke_llm(
+        self,
+        text: str,
+        instructions: Optional[str] = None,
+        *args,
+        **kwargs,
+    ):
+        """Wrapper for Lite LLM completions.
+
+        To use Lite LLM for guardrails, do
+        ```
+        from litellm import completion
+
+        raw_llm_response, validated_response = guard(
+            completion,
+            model="gpt-3.5-turbo",
+            prompt_params={...},
+            temperature=...,
+            ...
+        )
+        ```
+        """
+        try:
+            from litellm import acompletion  # type: ignore
+        except ImportError as e:
+            raise PromptCallableException(
+                "The `litellm` package is not installed. "
+                "Install with `pip install litellm`"
+            ) from e
+
+        response = await acompletion(
+            messages=litellm_messages(
+                prompt=text,
+                instructions=instructions,
+            ),
+            *args,
+            **kwargs,
+        )
+
+        return LLMResponse(
+            output=response.choices[0].message.content,  # type: ignore
+            prompt_token_count=response.usage.prompt_tokens,  # type: ignore
+            response_token_count=response.usage.completion_tokens,  # type: ignore
+        )
 
 class AsyncManifestCallable(AsyncPromptCallableBase):
     async def invoke_llm(
@@ -857,6 +912,13 @@ def get_async_llm_ask(
 
         if isinstance(llm_api, manifest.Manifest):
             return AsyncManifestCallable(*args, client=llm_api, **kwargs)
+    except ImportError:
+        pass
+
+    try:
+        import litellm
+        if llm_api == litellm.acompletion:
+            return AsyncLiteLLMCallable(*args, **kwargs)
     except ImportError:
         pass
 
