@@ -269,10 +269,28 @@ versions 0.5.0 and beyond. Use 'validation_response' instead."""
         validated output may be "fixed" values that were corrected
         during validation.
 
-        This will only have a value if the Guard is in a passing state.
+        This will only have a value if the Guard is in a passing state
+        OR if the action is no-op.
         """
         if self.status == pass_status:
             return self.fixed_output
+        last_iteration = self.iterations.last
+        if (
+            not self.status == pass_status
+            and last_iteration
+            and last_iteration.failed_validations
+        ):
+            # check that all failed validations are noop or none
+            all_noop = True
+            for failed_validation in last_iteration.failed_validations:
+                if (
+                    failed_validation.value_after_validation
+                    is not failed_validation.value_before_validation
+                ):
+                    all_noop = False
+                    break
+            if all_noop:
+                return last_iteration.guarded_output
 
     @property
     @deprecated(

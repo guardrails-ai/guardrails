@@ -238,7 +238,11 @@ def test_entity_extraction_with_noop(mocker, rail, prompt):
 
     # Assertions are made on the guard state object.
     assert final_output.validation_passed is False
-    assert final_output.validated_output is None
+    assert (
+        final_output.validated_output is not None
+        and validated_output.__get__("fees")
+        and validated_output.__get__("interest_rates")
+    )
 
     call = guard.history.first
 
@@ -248,7 +252,11 @@ def test_entity_extraction_with_noop(mocker, rail, prompt):
     # For orginal prompt and output
     assert call.compiled_prompt == entity_extraction.COMPILED_PROMPT
     assert call.raw_outputs.last == entity_extraction.LLM_OUTPUT
-    assert call.guarded_output is None
+    assert (
+        call.guarded_output is not None
+        and call.guarded_output["fees"]
+        and call.guarded_output["interest_rates"]
+    )
     assert call.validation_response == entity_extraction.VALIDATED_OUTPUT_NOOP
 
 
@@ -843,8 +851,10 @@ def test_guard_as_runnable(output: str, throws: bool):
     model = MockModel()
     guard = (
         Guard()
-        .use(RegexMatch("Ice cream", match_type="search"), on="output")
-        .use(ReadingTime(0.05))  # 3 seconds
+        .use(
+            RegexMatch("Ice cream", match_type="search", on_fail="refrain"), on="output"
+        )
+        .use(ReadingTime(0.05, on_fail="refrain"))  # 3 seconds
     )
     output_parser = StrOutputParser()
 
