@@ -254,6 +254,10 @@ def test_litellm_openai():
     not importlib.util.find_spec("litellm"),
     reason="`litellm` is not installed",
 )
+@pytest.mark.skipif(
+    os.environ.get("OPENAI_API_KEY") in [None, "mocked"],
+    reason="openai api key not set",
+)
 def test_litellm_openai_streaming():
     from litellm import litellm
     guard = gd.Guard()
@@ -270,6 +274,10 @@ def test_litellm_openai_streaming():
 @pytest.mark.skipif(
     not importlib.util.find_spec("litellm"),
     reason="`litellm` is not installed",
+)
+@pytest.mark.skipif(
+    os.environ.get("OPENAI_API_KEY") in [None, "mocked"],
+    reason="openai api key not set",
 )
 def test_litellm_openai_async():
     from litellm import litellm
