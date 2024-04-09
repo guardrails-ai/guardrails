@@ -49,13 +49,13 @@ Then, set up your Guard the default tracer provided in the guardrails library. Y
 
 <h5 a><strong><code>main.py</code></strong></h5>
 ```python
-from guardrails import Guard
+from guardrails import Guard, OnFailAction
 from guardrails.utils.telemetry_utils import default_otlp_tracer
 from guardrails.hub import ValidLength
 import openai
 
 guard = Guard.from_string(
-  validators=[ValidLength(min=1, max=10, on_fail="exception")],
+  validators=[ValidLength(min=1, max=10, on_fail=OnFailAction.EXCEPTION)],
   # use a descriptive name that will differentiate where your metrics are stored
   tracer=default_otlp_tracer("petname_guard")
 )
@@ -112,13 +112,13 @@ For advanced use cases (like if you have a metrics provider in a VPC), you can u
 Standard [open telemetry environment variables](https://opentelemetry-python.readthedocs.io/en/stable/getting-started.html#configure-the-exporter) are used to configure the collector. Use the default_otel_collector_tracer when configuring your guard.
 
 ```python
-from guardrails import Guard
+from guardrails import Guard, OnFailAction
 from guardrails.utils.telemetry_utils import default_otel_collector_tracer
 from guardrails.hub import ValidLength
 import openai
 
 guard = Guard.from_string(
-  validators=[ValidLength(min=1, max=10, on_fail="exception")],
+  validators=[ValidLength(min=1, max=10, on_fail=OnFailAction.EXCEPTION)],
   # use a descriptive name that will differentiate where your metrics are stored
   tracer=default_otel_collector_tracer("petname_guard")
 )

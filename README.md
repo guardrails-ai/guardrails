@@ -64,11 +64,11 @@ pip install guardrails-ai
 3. Create a Guard from the installed guardrail.
 
     ```python
-    from guardrails import Guard
+    from guardrails import Guard, OnFailAction
     from guardrails.hub import RegexMatch
 
     guard = Guard().use(
-        RegexMatch, regex="\(?\d{3}\)?-? *\d{3}-? *-?\d{4}", on_fail="exception"
+        RegexMatch, regex="\(?\d{3}\)?-? *\d{3}-? *-?\d{4}", on_fail=OnFailAction.EXCEPTION
     )
 
     guard.validate("123-456-7890")  # Guardrail passes
@@ -93,12 +93,12 @@ pip install guardrails-ai
     Then, create a Guard from the installed guardrails.
     
     ```python
-    from guardrails import Guard
+    from guardrails import Guard, OnFailAction
     from guardrails.hub import CompetitorCheck, ToxicLanguage
 
     guard = Guard().use_many(
-        CompetitorCheck(["Apple", "Microsoft", "Google"], on_fail="exception"),
-        ToxicLanguage(threshold=0.5, validation_method="sentence", on_fail="exception"),
+        CompetitorCheck(["Apple", "Microsoft", "Google"], on_fail=OnFailAction.EXCEPTION),
+        ToxicLanguage(threshold=0.5, validation_method="sentence", on_fail=OnFailAction.EXCEPTION),),
     )
 
     guard.validate(
