@@ -18,8 +18,41 @@ class FailureValidator(Validator):
         )
 
 
-def test_failure_mode():
+# TODO: Add reask tests. Reask is fairly well covered through notebooks
+# but it's good to have it here too.
+def test_fix():
     guard = Guard().use(FailureValidator, on_fail="fix")
     res = guard.parse("hi")
     assert res.validated_output == "FIXED"
     assert res.validation_passed  # Should this even be true though?
+
+
+def test_default_noop():
+    guard = Guard().use(FailureValidator, on_fail="noop")
+    res = guard.parse("hi")
+    assert res.validated_output == "hi"
+    assert not res.validation_passed
+
+
+def test_filter():
+    guard = Guard().use(FailureValidator, on_fail="filter")
+    res = guard.parse("hi")
+    assert res.validated_output is None
+    assert not res.validation_passed
+
+
+def test_refrain():
+    guard = Guard().use(FailureValidator, on_fail="refrain")
+    res = guard.parse("hi")
+    assert res.validated_output is None
+    assert not res.validation_passed
+
+
+def test_exception():
+    guard = Guard().use(FailureValidator, on_fail="exception")
+    try:
+        guard.parse("hi")
+    except Exception as e:
+        assert "Failed cuz this is the failure validator" in str(e)
+    else:
+        assert False, "Expected an exception"

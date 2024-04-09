@@ -422,7 +422,7 @@ class Validator(Runnable):
                     """,
                     FutureWarning,
                 )
-        self.on_fail_descriptor: str | OnFailAction = "custom"
+        self.on_fail_descriptor: Union[str, OnFailAction] = "custom"
 
         if on_fail is None:
             on_fail = OnFailAction.NOOP
