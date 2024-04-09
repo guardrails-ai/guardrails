@@ -791,6 +791,7 @@ class AsyncOpenAIChatCallable(AsyncOpenAIModel):
             **kwargs,
         )
 
+
 class AsyncLiteLLMCallable(AsyncPromptCallableBase):
     async def invoke_llm(
         self,
@@ -836,6 +837,7 @@ class AsyncLiteLLMCallable(AsyncPromptCallableBase):
             prompt_token_count=response.usage.prompt_tokens,  # type: ignore
             response_token_count=response.usage.completion_tokens,  # type: ignore
         )
+
 
 class AsyncManifestCallable(AsyncPromptCallableBase):
     async def invoke_llm(
@@ -917,6 +919,7 @@ def get_async_llm_ask(
 
     try:
         import litellm
+
         if llm_api == litellm.acompletion:
             return AsyncLiteLLMCallable(*args, **kwargs)
     except ImportError:
