@@ -24,8 +24,7 @@ def test_fix():
     guard = Guard().use(FailureValidator, on_fail="fix")
     res = guard.parse("hi")
     assert res.validated_output == "FIXED"
-    assert res.validation_passed  # Should this even be true though?
-
+    assert not res.validation_passed
 
 def test_default_noop():
     guard = Guard().use(FailureValidator, on_fail="noop")

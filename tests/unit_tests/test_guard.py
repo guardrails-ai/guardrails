@@ -492,7 +492,7 @@ def test_validate():
 
     response = guard.validate(llm_output)
 
-    assert response.validation_passed is True
+    assert response.validation_passed is False
     assert response.validated_output == llm_output.lower()
 
     llm_output_2 = "Star Spangled Banner"  # to stick with the theme
@@ -518,7 +518,7 @@ def test_validate():
 
     response = guard.validate(llm_output)
 
-    assert response.validation_passed is True
+    assert response.validation_passed is False
     assert response.validated_output == llm_output.lower()
 
     llm_output_2 = "Star Spangled Banner"  # to stick with the theme

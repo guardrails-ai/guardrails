@@ -189,7 +189,7 @@ def test_non_empty_initialization():
     assert call.validator_logs == Stack(first_validator_log, second_validator_log)
     assert call.error is None
     assert call.failed_validations == Stack(first_validator_log)
-    assert call.status == pass_status
+    assert call.status == 'fail'
     # TODO: How to do shallow comparison
     # assert call.tree == "something"
     assert call.tree is not None
