@@ -50,7 +50,6 @@ jobs:
       matrix:
         python-version: ["3.8", "3.9", "3.10", "3.11"]
         pydantic-version: ["1.10.9", "2.4.2"]
-        openai-version: ["0.28.1", "1.2.4"]
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
@@ -72,7 +71,6 @@ jobs:
         run: |
           make full
           poetry run pip install pydantic==${{ matrix.pydantic-version }}
-          poetry run pip install openai==${{ matrix.openai-version }}
 
       - name: Static analysis with pyright
         run: |
@@ -87,7 +85,6 @@ jobs:
         # dependencies: ['dev', 'full']
         dependencies: ["full"]
         pydantic-version: ["1.10.9", "2.4.2"]
-        openai-version: ["0.28.1", "1.2.4"]
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
@@ -99,7 +96,7 @@ jobs:
       #   uses: actions/cache@v3
       #   with:
       #     path: ~/.cache/pypoetry
-      #     key: poetry-cache-${{ runner.os }}-${{ matrix.python-version }}-${{ env.POETRY_VERSION }}-${{ matrix.pydantic-version }}-${{ matrix.openai-version }}
+      #     key: poetry-cache-${{ runner.os }}-${{ matrix.python-version }}-${{ env.POETRY_VERSION }}-${{ matrix.pydantic-version }}
 
       - name: Install Poetry
         uses: snok/install-poetry@v1
@@ -108,7 +105,6 @@ jobs:
         run: |
           make ${{ matrix.dependencies }}
           poetry run pip install pydantic==${{ matrix.pydantic-version }}
-          poetry run pip install openai==${{ matrix.openai-version }}
 
       - name: Run Pytests
         run: |
