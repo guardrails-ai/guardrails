@@ -513,7 +513,7 @@ def test_litellm_callable(mocker):
 
     @dataclass
     class MockResponse:
-        choices: list[Choice]
+        choices: List[Choice]
         usage: Usage
 
     class MockCompletion:
