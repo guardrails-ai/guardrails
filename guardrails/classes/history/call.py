@@ -226,8 +226,12 @@ versions 0.5.0 and beyond. Use 'validation_response' instead."""
         if (
             self.inputs.full_schema_reask
             or number_of_iterations < 2
-            or isinstance(
-                self.iterations.last.validation_response, ReAsk  # type: ignore
+            or (
+                self.iterations.last
+                and isinstance(
+                    self.iterations.last.validation_response,
+                    ReAsk,  # type: ignore
+                )
             )
             or isinstance(self.iterations.last.validation_response, str)  # type: ignore
         ):
@@ -272,8 +276,14 @@ versions 0.5.0 and beyond. Use 'validation_response' instead."""
         This will only have a value if the Guard is in a passing state
         OR if the action is no-op.
         """
+
         if self.status == pass_status:
             return self.fixed_output
+
+        if not self.has_unresolved_failures() and self._has_resolved_failures():
+            return self.fixed_output
+
+        # all noop or fix
         last_iteration = self.iterations.last
         if (
             not self.status == pass_status
@@ -356,7 +366,7 @@ versions 0.5.0 and beyond. Use 'guarded_output' instead."""
             ]
         )
 
-    def _has_unresolved_failures(self) -> bool:
+    def has_unresolved_failures(self) -> bool:
         # Check for unresolved ReAsks
         if len(self.reasks) > 0:
             return True
@@ -369,10 +379,33 @@ versions 0.5.0 and beyond. Use 'guarded_output' instead."""
             if (
                 # NOTE: this means on_fail="fix" was applied
                 #       to a Validator without a programmatic fix.
+                # (value is None and failure.value_before_validation is not None)
                 (value is None and failure.value_before_validation is not None)
                 or value == failure.value_before_validation
                 or isinstance(failure.value_after_validation, Refrain)
                 or isinstance(failure.value_after_validation, Filter)
+            ):
+                return True
+
+        # No ReAsks and no unresolved failed validations
+        return False
+
+    def _has_resolved_failures(self) -> bool:
+        # Check for unresolved ReAsks
+        if len(self.reasks) > 0:
+            return True
+
+        # Check for scenario where no specified on-fail's produced an unfixed ReAsk,
+        #   but valdiation still failed (i.e. Refrain or NoOp).
+        output = self.fixed_output
+        for failure in self.failed_validations:
+            value = get_value_from_path(output, failure.property_path)
+            if (
+                # NOTE: this means on_fail="fix" was applied
+                value != failure.value_before_validation
+                and not isinstance(failure.value_after_validation, ReAsk)
+                and not isinstance(failure.value_after_validation, Refrain)
+                and not isinstance(failure.value_after_validation, Filter)
             ):
                 return True
 
@@ -387,7 +420,9 @@ versions 0.5.0 and beyond. Use 'guarded_output' instead."""
             return not_run_status
         elif self.error:
             return error_status
-        elif self._has_unresolved_failures():
+        elif self.has_unresolved_failures():
+            return fail_status
+        elif self._has_resolved_failures():
             return fail_status
         return pass_status
 
@@ -410,9 +445,7 @@ versions 0.5.0 and beyond. Use 'guarded_output' instead."""
                 title="Validated Output",
                 style="on #F0FFF0",
             )
-            tree.children[
-                -1
-            ].label.renderable._renderables = previous_panels + (  # type: ignore
+            tree.children[-1].label.renderable._renderables = previous_panels + (  # type: ignore # noqa
                 validated_outcome_panel,
             )
 
