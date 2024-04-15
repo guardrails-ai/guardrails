@@ -13,9 +13,7 @@ def test_extract_serializeable_metadata():
         "baz": baz,
         "non_meta": NonMeta(),
     }
-    
+
     extracted_metadata = extract_serializeable_metadata(metadata)
-    
-    assert extracted_metadata == {
-        "foo": "bar"
-    }
+
+    assert extracted_metadata == {"foo": "bar"}

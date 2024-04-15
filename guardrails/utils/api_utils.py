@@ -11,8 +11,6 @@ def try_to_json(value: Any):
     except TypeError:
         return False
 
+
 def extract_serializeable_metadata(metadata: Dict[str, Any]) -> Dict[str, Any]:
-    return {
-        k: metadata[k] for k in metadata if try_to_json(metadata[k])
-    }
-        
+    return {k: metadata[k] for k in metadata if try_to_json(metadata[k])}
