@@ -63,10 +63,10 @@ class TestInstall:
         install("hub://guardrails/test-validator")
 
         log_calls = [
-            call(level=25, msg="Installing hub://guardrails/test-validator..."),
+            call(level=5, msg="Installing hub://guardrails/test-validator..."),
             call(
-                level=35,
-                msg="\n\n    Successfully installed guardrails/test-validator!\n\n    See how to use it here: https://hub.guardrailsai.com/validator/id\n    ",  # noqa
+                level=5,
+                msg="✅Successfully installed hub://guardrails/test-validator!\n\nImport validator:\nfrom guardrails.hub import TestValidator\n\nGet more info:\nhttps://hub.guardrailsai.com/validator/id\n",  # noqa
             ),  # noqa
         ]
         assert mock_logger_log.call_count == 2
@@ -134,10 +134,13 @@ class TestPipProcess:
 
         response = pip_process("show", "pip", format="json")
 
-        assert mock_logger_debug.call_count == 2
+        assert mock_logger_debug.call_count == 3
         debug_calls = [
             call("running pip show  pip"),
             call("decoding output from pip show pip"),
+            call(
+                "json parse exception in decoding output from pip show pip. Falling back to accumulating the byte stream"  # noqa
+            ),
         ]
         mock_logger_debug.assert_has_calls(debug_calls)
 
@@ -695,7 +698,7 @@ def test_install_hub_module(mocker):
         call(
             "install",
             "mock-install-url",
-            ["--target=mock/install/directory", "--no-deps"],
+            ["--target=mock/install/directory", "--no-deps", "-q"],
         ),
         call("inspect", flags=["--path=mock/install/directory"], format="json"),
         call("install", "rstr"),

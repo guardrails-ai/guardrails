@@ -1,3 +1,4 @@
+import json
 import os
 import subprocess
 import sys
@@ -13,6 +14,8 @@ from guardrails.cli.hub.hub import hub_command
 from guardrails.cli.logger import LEVELS, logger
 from guardrails.cli.server.hub_client import get_validator_manifest
 from guardrails.cli.server.module_manifest import ModuleManifest
+
+from .console import console
 
 
 def removesuffix(string: str, suffix: str) -> str:
@@ -44,6 +47,12 @@ def pip_process(
         logger.debug(f"decoding output from pip {action} {package}")
         if format == json_format:
             parsed = BytesHeaderParser().parsebytes(output)
+            try:
+                return json.loads(str(parsed))
+            except Exception:
+                logger.debug(
+                    f"json parse exception in decoding output from pip {action} {package}. Falling back to accumulating the byte stream",  # noqa
+                )
             accumulator = {}
             for key, value in parsed.items():
                 accumulator[key] = value
@@ -192,7 +201,7 @@ def install_hub_module(module_manifest: ModuleManifest, site_packages: str):
 
     # Install validator module in namespaced directory under guardrails.hub
     download_output = pip_process(
-        "install", install_url, [f"--target={install_directory}", "--no-deps"]
+        "install", install_url, [f"--target={install_directory}", "--no-deps", "-q"]
     )
     logger.info(download_output)
 
@@ -233,28 +242,56 @@ def install(
     if not package_uri.startswith("hub://"):
         logger.error("Invalid URI!")
         sys.exit(1)
+
+    console.print(f"\nInstalling {package_uri}...\n")
     logger.log(
-        level=LEVELS.get("NOTICE"), msg=f"Installing {package_uri}..."  # type: ignore
+        level=LEVELS.get("SPAM"), msg=f"Installing {package_uri}..."  # type: ignore
     )
+
     # Validation
     module_name = package_uri.replace("hub://", "")
 
     # Prep
-    module_manifest = get_validator_manifest(module_name)
-    site_packages = get_site_packages_location()
+    with console.status("Fetching manifest", spinner="bouncingBar"):
+        module_manifest = get_validator_manifest(module_name)
+        site_packages = get_site_packages_location()
 
     # Install
-    install_hub_module(module_manifest, site_packages)
+    with console.status("Downloading dependencies", spinner="bouncingBar"):
+        install_hub_module(module_manifest, site_packages)
 
     # Post-install
-    run_post_install(module_manifest, site_packages)
-    add_to_hub_inits(module_manifest, site_packages)
-    success_message = Template(
-        """
+    with console.status("Running post-install setup", spinner="bouncingBar"):
+        run_post_install(module_manifest, site_packages)
+        add_to_hub_inits(module_manifest, site_packages)
 
-    Successfully installed ${module_name}!
+    success_message_cli = Template(
+        """✅Successfully installed ${module_name}!
 
-    See how to use it here: https://hub.guardrailsai.com/validator/${id}
-    """
-    ).safe_substitute(module_name=module_name, id=module_manifest.id)
-    logger.log(level=LEVELS.get("SUCCESS"), msg=success_message)  # type: ignore
+[bold]Import validator:[/bold]
+from guardrails.hub import ${export}
+
+[bold]Get more info:[/bold]
+https://hub.guardrailsai.com/validator/${id}
+"""
+    ).safe_substitute(
+        module_name=package_uri,
+        id=module_manifest.id,
+        export=module_manifest.exports[0],
+    )
+    success_message_logger = Template(
+        """✅Successfully installed ${module_name}!
+
+Import validator:
+from guardrails.hub import ${export}
+
+Get more info:
+https://hub.guardrailsai.com/validator/${id}
+"""
+    ).safe_substitute(
+        module_name=package_uri,
+        id=module_manifest.id,
+        export=module_manifest.exports[0],
+    )
+    console.print(success_message_cli)  # type: ignore
+    logger.log(level=LEVELS.get("SPAM"), msg=success_message_logger)  # type: ignore

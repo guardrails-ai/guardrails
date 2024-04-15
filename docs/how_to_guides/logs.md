@@ -1,4 +1,4 @@
-# Inspect Guard Run History and Logs
+# Inspect logs from a Guard
 
 All `Guard` calls are logged internally, and can be accessed via the guard history.
 
