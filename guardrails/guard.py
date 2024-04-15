@@ -66,6 +66,7 @@ from guardrails.stores.context import (
     set_tracer,
     set_tracer_context,
 )
+from guardrails.utils.api_utils import extract_serializeable_metadata
 from guardrails.utils.hub_telemetry_utils import HubTelemetry
 from guardrails.utils.llm_response import LLMResponse
 from guardrails.utils.reask_utils import FieldReAsk
@@ -601,6 +602,7 @@ class Guard(Runnable, Generic[OT]):
                     prompt_params=prompt_params,
                     full_schema_reask=full_schema_reask,
                     call_log=call_log,
+                    metadata=metadata,
                     *args,
                     **kwargs,
                 )
@@ -947,6 +949,7 @@ class Guard(Runnable, Generic[OT]):
                     prompt_params=prompt_params,
                     full_schema_reask=full_schema_reask,
                     call_log=call_log,
+                    metadata=metadata,
                     *args,
                     **kwargs,
                 )
@@ -1356,6 +1359,8 @@ class Guard(Runnable, Generic[OT]):
         if self._api_client:
             payload: Dict[str, Any] = {"args": list(args)}
             payload.update(**kwargs)
+            if metadata:
+                payload["metadata"] = extract_serializeable_metadata(metadata)
             if llm_output is not None:
                 payload["llmOutput"] = llm_output
             if num_reasks is not None:
