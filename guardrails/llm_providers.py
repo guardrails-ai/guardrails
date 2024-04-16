@@ -944,8 +944,8 @@ def model_is_supported_server_side(
         or issubclass(
             type(model), AsyncOpenAIModel
         )
-        or isinstance(LiteLLMCallable, model)
-        or isinstance(AsyncLiteLLMCallable, model)
+        or isinstance(model, LiteLLMCallable)
+        or isinstance(model, AsyncLiteLLMCallable)
     )
 
 
@@ -965,10 +965,10 @@ def get_llm_api_enum(
         return ValidatePayloadLlmApi.OPENAI_COMPLETION_ACREATE
     elif llm_api == get_static_openai_chat_acreate_func():
         return ValidatePayloadLlmApi.OPENAI_CHATCOMPLETION_ACREATE
-    elif isinstance(LiteLLMCallable, model):
+    elif isinstance(model, LiteLLMCallable):
         return ValidatePayloadLlmApi.LITELLM_COMPLETION
-    elif isinstance(LiteLLMCallable, model):
-        return ValidatePayloadLlmApi.LITELLM_COMPLETION
+    elif isinstance(model, AsyncLiteLLMCallable):
+        return ValidatePayloadLlmApi.LITELLM_ACOMPLETION
         
     else:
         return None
