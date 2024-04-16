@@ -46,3 +46,8 @@ class Inputs(ArbitraryModel):
         "or at the field level.",
         default=None,
     )
+
+    kwargs: Optional[Dict[str, Any]] = Field(
+        description="The kwargs provided by the user for the LLM call.",
+        default=None,
+    )

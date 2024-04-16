@@ -43,6 +43,7 @@ class Runner:
         prompt: Optional[Union[str, Prompt]] = None,
         instructions: Optional[Union[str, Instructions]] = None,
         msg_history: Optional[List[Dict]] = None,
+        messages: Optional[List[Dict]] = None,
         api: Optional[PromptCallableBase] = None,
         prompt_schema: Optional[StringSchema] = None,
         instructions_schema: Optional[StringSchema] = None,
@@ -54,35 +55,8 @@ class Runner:
         ] = None,
         full_schema_reask: bool = False,
         disable_tracer: Optional[bool] = True,
+        **kwargs,
     ):
-        if prompt:
-            assert api, "Must provide an API if a prompt is provided."
-            assert not output, "Cannot provide both a prompt and output."
-
-        if isinstance(prompt, str):
-            self.prompt = Prompt(prompt, output_schema=output_schema.transpile())
-        else:
-            self.prompt = prompt
-
-        if isinstance(instructions, str):
-            self.instructions = Instructions(
-                instructions, output_schema=output_schema.transpile()
-            )
-        else:
-            self.instructions = instructions
-
-        if msg_history:
-            msg_history = copy.deepcopy(msg_history)
-            msg_history_copy = []
-            for msg in msg_history:
-                msg["content"] = Prompt(
-                    msg["content"], output_schema=output_schema.transpile()
-                )
-                msg_history_copy.append(msg)
-            self.msg_history = msg_history_copy
-        else:
-            self.msg_history = None
-
         self.api = api
         self.prompt_schema = prompt_schema
         self.instructions_schema = instructions_schema
@@ -93,6 +67,7 @@ class Runner:
         self.output = output
         self.base_model = base_model
         self.full_schema_reask = full_schema_reask
+        self.kwargs = kwargs
 
         # Get metrics opt-out from credentials
         self._disable_tracer = disable_tracer
@@ -138,6 +113,7 @@ class Runner:
                 instructions_schema,
                 msg_history_schema,
                 output_schema,
+                kwargs
             ) = (
                 self.instructions,
                 self.prompt,
@@ -146,6 +122,7 @@ class Runner:
                 self.instructions_schema,
                 self.msg_history_schema,
                 self.output_schema,
+                self.kwargs
             )
             index = 0
             for index in range(self.num_reasks + 1):
@@ -163,6 +140,7 @@ class Runner:
                     output_schema=output_schema,
                     output=self.output if index == 0 else None,
                     call_log=call_log,
+                    **self.kwargs
                 )
 
                 # Loop again?
@@ -175,12 +153,14 @@ class Runner:
                     instructions,
                     output_schema,
                     msg_history,
+                    kwargs
                 ) = self.prepare_to_loop(
                     iteration.reasks,
                     call_log.validation_response,
                     output_schema,
                     prompt_params=prompt_params,
                     include_instructions=include_instructions,
+                    **self.kwargs
                 )
 
             # Log how many times we reasked
@@ -211,6 +191,7 @@ class Runner:
         instructions: Optional[Instructions],
         prompt: Optional[Prompt],
         msg_history: Optional[List[Dict]],
+        messages: Optional[List[Dict]],
         prompt_params: Dict,
         prompt_schema: Optional[StringSchema],
         instructions_schema: Optional[StringSchema],
@@ -218,6 +199,7 @@ class Runner:
         output_schema: Schema,
         call_log: Call,
         output: Optional[str] = None,
+        **kwargs,
     ) -> Iteration:
         """Run a full step."""
         inputs = Inputs(
@@ -230,6 +212,7 @@ class Runner:
             num_reasks=self.num_reasks,
             metadata=self.metadata,
             full_schema_reask=self.full_schema_reask,
+            kwargs=kwargs,
         )
         outputs = Outputs()
         iteration = Iteration(inputs=inputs, outputs=outputs)
@@ -255,6 +238,7 @@ class Runner:
                     instructions_schema,
                     msg_history_schema,
                     output_schema,
+                    # TODO: pass kwargs here whne it's time to do input validation
                 )
 
             iteration.inputs.instructions = instructions
@@ -263,7 +247,7 @@ class Runner:
 
             # Call: run the API.
             llm_response = self.call(
-                index, instructions, prompt, msg_history, api, output
+                index, instructions, prompt, msg_history, api, output, **kwargs
             )
 
             iteration.outputs.llm_response_info = llm_response
@@ -455,41 +439,41 @@ class Runner:
         if prompt_params is None:
             prompt_params = {}
 
-        if msg_history:
-            if prompt_schema is not None or instructions_schema is not None:
-                raise UserFacingException(
-                    ValueError(
-                        "Prompt and instructions validation are "
-                        "not supported when using message history."
-                    )
-                )
-            prompt, instructions = None, None
-            msg_history = self.prepare_msg_history(
-                call_log, msg_history, prompt_params, msg_history_schema
-            )
-        elif prompt is not None:
-            if msg_history_schema is not None:
-                raise UserFacingException(
-                    ValueError(
-                        "Message history validation is "
-                        "not supported when using prompt/instructions."
-                    )
-                )
-            msg_history = None
-            instructions, prompt = self.prepare_prompt(
-                call_log,
-                instructions,
-                prompt,
-                prompt_params,
-                api,
-                prompt_schema,
-                instructions_schema,
-                output_schema,
-            )
-        else:
-            raise UserFacingException(
-                ValueError("'prompt' or 'msg_history' must be provided.")
-            )
+        # if msg_history:
+        #     if prompt_schema is not None or instructions_schema is not None:
+        #         raise UserFacingException(
+        #             ValueError(
+        #                 "Prompt and instructions validation are "
+        #                 "not supported when using message history."
+        #             )
+        #         )
+        #     prompt, instructions = None, None
+        #     msg_history = self.prepare_msg_history(
+        #         call_log, msg_history, prompt_params, msg_history_schema
+        #     )
+        # elif prompt is not None:
+        #     if msg_history_schema is not None:
+        #         raise UserFacingException(
+        #             ValueError(
+        #                 "Message history validation is "
+        #                 "not supported when using prompt/instructions."
+        #             )
+        #         )
+        #     msg_history = None
+        #     instructions, prompt = self.prepare_prompt(
+        #         call_log,
+        #         instructions,
+        #         prompt,
+        #         prompt_params,
+        #         api,
+        #         prompt_schema,
+        #         instructions_schema,
+        #         output_schema,
+        #     )
+        # else:
+        #     raise UserFacingException(
+        #         ValueError("'prompt' or 'msg_history' must be provided.")
+        #     )
 
         return instructions, prompt, msg_history
 
@@ -502,6 +486,7 @@ class Runner:
         msg_history: Optional[List[Dict[str, str]]],
         api: Optional[PromptCallableBase],
         output: Optional[str] = None,
+        **kwargs
     ) -> LLMResponse:
         """Run a step.
 
@@ -528,7 +513,7 @@ class Runner:
         elif prompt:
             llm_response = api_fn(prompt.source)
         else:
-            raise ValueError("'prompt' or 'msg_history' must be provided.")
+            llm_response = api_fn(kwargs)
 
         return llm_response
 

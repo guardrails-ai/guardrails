@@ -465,6 +465,7 @@ class Guard(Runnable, Generic[OT]):
         metadata: Optional[Dict] = None,
         full_schema_reask: Optional[bool] = None,
         stream: Optional[bool] = False,
+        messages: Optional[List[Dict]] = None,
         *args,
         **kwargs,
     ) -> Union[ValidationOutcome[OT], Iterable[ValidationOutcome[OT]]]:
@@ -481,6 +482,7 @@ class Guard(Runnable, Generic[OT]):
         msg_history: Optional[List[Dict]] = None,
         metadata: Optional[Dict] = None,
         full_schema_reask: Optional[bool] = None,
+        messages: Optional[List[Dict]] = None,
         *args,
         **kwargs,
     ) -> Awaitable[ValidationOutcome[OT]]:
@@ -496,6 +498,7 @@ class Guard(Runnable, Generic[OT]):
         msg_history: Optional[List[Dict]] = None,
         metadata: Optional[Dict] = None,
         full_schema_reask: Optional[bool] = None,
+        messages: Optional[List[Dict]] = None,
         *args,
         **kwargs,
     ) -> Union[
@@ -533,6 +536,7 @@ class Guard(Runnable, Generic[OT]):
             msg_history: Optional[List[Dict]] = None,
             metadata: Optional[Dict] = None,
             full_schema_reask: Optional[bool] = None,
+            messages: Optional[List[Dict]] = None,
             *args,
             **kwargs,
         ):
@@ -659,6 +663,7 @@ class Guard(Runnable, Generic[OT]):
         prompt: Optional[str],
         instructions: Optional[str],
         msg_history: Optional[List[Dict]],
+        messages: Optional[List[Dict]],
         metadata: Dict,
         full_schema_reask: bool,
         call_log: Call,
@@ -668,12 +673,6 @@ class Guard(Runnable, Generic[OT]):
         instructions_obj = instructions or self.instructions
         prompt_obj = prompt or self.prompt
         msg_history_obj = msg_history or []
-        if prompt_obj is None:
-            if msg_history is not None and not len(msg_history_obj):
-                raise RuntimeError(
-                    "You must provide a prompt if msg_history is empty. "
-                    "Alternatively, you can provide a prompt in the Schema constructor."
-                )
 
         # Check whether stream is set
         if kwargs.get("stream", False):
@@ -683,6 +682,7 @@ class Guard(Runnable, Generic[OT]):
                 prompt=prompt_obj,
                 msg_history=msg_history_obj,
                 api=get_llm_ask(llm_api, *args, **kwargs),
+                # Remove prompt_schema, instructions_schema, msg_history_schema in 0.5.0
                 prompt_schema=self.prompt_schema,
                 instructions_schema=self.instructions_schema,
                 msg_history_schema=self.msg_history_schema,
@@ -697,10 +697,13 @@ class Guard(Runnable, Generic[OT]):
         else:
             # Otherwise, use Runner
             runner = Runner(
+                api=get_llm_ask(llm_api, *args, **kwargs),
                 instructions=instructions_obj,
                 prompt=prompt_obj,
                 msg_history=msg_history_obj,
-                api=get_llm_ask(llm_api, *args, **kwargs),
+                messages=messages,
+
+                # Remove prompt_schema, instructions_schema, msg_history_schema in 0.5.0
                 prompt_schema=self.prompt_schema,
                 instructions_schema=self.instructions_schema,
                 msg_history_schema=self.msg_history_schema,
