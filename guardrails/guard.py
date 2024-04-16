@@ -598,11 +598,14 @@ class Guard(Runnable, Generic[OT]):
             ):
                 return self._call_server(
                     llm_api=llm_api,
-                    num_reasks=self.num_reasks,
                     prompt_params=prompt_params,
+                    num_reasks=self.num_reasks,
+                    prompt=prompt,
+                    instructions=instructions,
+                    msg_history=msg_history,
+                    metadata=metadata,
                     full_schema_reask=full_schema_reask,
                     call_log=call_log,
-                    metadata=metadata,
                     *args,
                     **kwargs,
                 )
@@ -944,12 +947,12 @@ class Guard(Runnable, Generic[OT]):
             ):
                 return self._call_server(
                     llm_output=llm_output,
+                    metadata=metadata,
                     llm_api=llm_api,
                     num_reasks=self.num_reasks,
                     prompt_params=prompt_params,
                     full_schema_reask=full_schema_reask,
                     call_log=call_log,
-                    metadata=metadata,
                     *args,
                     **kwargs,
                 )
@@ -1351,9 +1354,6 @@ class Guard(Runnable, Generic[OT]):
         metadata: Optional[Dict] = {},
         full_schema_reask: Optional[bool] = True,
         call_log: Optional[Call],
-        # prompt: Optional[str],
-        # instructions: Optional[str],
-        # msg_history: Optional[List[Dict]],
         **kwargs,
     ):
         if self._api_client:
