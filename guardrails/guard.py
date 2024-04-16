@@ -1368,7 +1368,7 @@ class Guard(Runnable, Generic[OT]):
             if prompt_params is not None:
                 payload["promptParams"] = prompt_params
             if llm_api is not None:
-                payload["llmApi"] = get_llm_api_enum(llm_api)
+                payload["llmApi"] = get_llm_api_enum(llm_api, *args, **kwargs)
             # TODO: get enum for llm_api
             validation_output: Optional[ValidationOutput] = self._api_client.validate(
                 guard=self,  # type: ignore
