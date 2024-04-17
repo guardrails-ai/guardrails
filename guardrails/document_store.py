@@ -242,7 +242,8 @@ except ImportError:
 
     class FallbackEphemeralDocumentStore:
         def __init__(self, *args, **kwargs):
-            # Why don't we just raise this when the import error occurs instead of at runtime?
+            # Why don't we just raise this when the import
+            # error occurs instead of at runtime?
             raise ImportError(
                 "SQLAlchemy is required for EphemeralDocumentStore"
                 "Please install it using `poetry add SqlAlchemy`"
