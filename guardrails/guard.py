@@ -1348,7 +1348,7 @@ class Guard(Runnable, Generic[OT]):
     def _construct_history_from_server_response(
         self,
         *,
-        validation_output: ValidationOutput,
+        validation_output: Optional[ValidationOutput] = None,
         llm_api: Optional[Callable] = None,
         llm_output: Optional[str] = None,
         num_reasks: Optional[int] = None,
@@ -1452,31 +1452,33 @@ class Guard(Runnable, Generic[OT]):
         full_schema_reask: Optional[bool] = True,
         call_log: Optional[Call],
     ) -> ValidationOutcome[OT]:
-        # TODO: get enum for llm_api
-        validation_output: Optional[ValidationOutput] = self._api_client.validate(
-            guard=self,  # type: ignore
-            payload=ValidatePayload.from_dict(payload),
-            openai_api_key=get_call_kwarg("api_key"),
-        )
-        self._construct_history_from_server_response(
-            validation_output=validation_output,
-            llm_output=llm_output,
-            num_reasks=num_reasks,
-            prompt_params=prompt_params,
-            metadata=metadata,
-            full_schema_reask=full_schema_reask,
-            call_log=call_log,
-        )
+        if self._api_client:
+            validation_output: ValidationOutput = self._api_client.validate(
+                guard=self,  # type: ignore
+                payload=ValidatePayload.from_dict(payload),
+                openai_api_key=get_call_kwarg("api_key"),
+            )
+            self._construct_history_from_server_response(
+                validation_output=validation_output,
+                llm_output=llm_output,
+                num_reasks=num_reasks,
+                prompt_params=prompt_params,
+                metadata=metadata,
+                full_schema_reask=full_schema_reask,
+                call_log=call_log,
+            )
 
-        # Our interfaces are too different for this to work right now.
-        # Once we move towards shared interfaces for both the open source
-        # and the api we can re-enable this.
-        # return ValidationOutcome[OT].from_guard_history(call_log)
-        return ValidationOutcome[OT](
-            raw_llm_output=validation_output.raw_llm_response,  # type: ignore
-            validated_output=cast(OT, validation_output.validated_output),
-            validation_passed=validation_output.result,
-        )
+            # Our interfaces are too different for this to work right now.
+            # Once we move towards shared interfaces for both the open source
+            # and the api we can re-enable this.
+            # return ValidationOutcome[OT].from_guard_history(call_log)
+            return ValidationOutcome[OT](
+                raw_llm_output=validation_output.raw_llm_response,  # type: ignore
+                validated_output=cast(OT, validation_output.validated_output),
+                validation_passed=validation_output.result,
+            )
+        else:
+            raise ValueError("Guard does not have an api client!")
 
     def _stream_server_call(
         self,
@@ -1489,26 +1491,30 @@ class Guard(Runnable, Generic[OT]):
         full_schema_reask: Optional[bool] = True,
         call_log: Optional[Call],
     ) -> Generator[ValidationOutcome[OT], None, None]:
-        response = self._api_client.stream_validate(
-            payload=ValidatePayload.from_dict(payload),
-            openai_api_key=get_call_kwarg("api_key"),
-        )
-        for fragment in response:
-            validation_output: Optional[ValidationOutput] = fragment
-            yield ValidationOutcome[OT](
-                raw_llm_output=validation_output.raw_llm_response,  # type: ignore
-                validated_output=cast(OT, validation_output.validated_output),
-                validation_passed=validation_output.result,
+        if self._api_client:
+            validation_output: Optional[ValidationOutput] = None
+            response = self._api_client.stream_validate(
+                payload=ValidatePayload.from_dict(payload),
+                openai_api_key=get_call_kwarg("api_key"),
             )
-        self._construct_history_from_server_response(
-            validation_output=validation_output,
-            llm_output=llm_output,
-            num_reasks=num_reasks,
-            prompt_params=prompt_params,
-            metadata=metadata,
-            full_schema_reask=full_schema_reask,
-            call_log=call_log,
-        )
+            for fragment in response:
+                validation_output = fragment
+                yield ValidationOutcome[OT](
+                    raw_llm_output=validation_output.raw_llm_response,  # type: ignore
+                    validated_output=cast(OT, validation_output.validated_output),
+                    validation_passed=validation_output.result,
+                )
+            self._construct_history_from_server_response(
+                validation_output=validation_output,
+                llm_output=llm_output,
+                num_reasks=num_reasks,
+                prompt_params=prompt_params,
+                metadata=metadata,
+                full_schema_reask=full_schema_reask,
+                call_log=call_log,
+            )
+        else:
+            raise ValueError("Guard does not have an api client!")
 
     def _call_server(
         self,
