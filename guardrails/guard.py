@@ -148,18 +148,7 @@ class Guard(Runnable, Generic[OT]):
         self.description = description
         self.name = name
 
-        api_key = os.environ.get("GUARDRAILS_API_KEY")
-        if api_key is not None:
-            if self.name is None:
-                self.name = f"gr-{str(self._guard_id)}"
-                logger.warn("Warning: No name passed to guard!")
-                logger.warn(
-                    "Use this auto-generated name to re-use this guard: {name}".format(
-                        name=self.name
-                    )
-                )
-            self._api_client = GuardrailsApiClient(api_key=api_key)
-            self.upsert_guard()
+        self._save()
 
     @property
     def prompt_schema(self) -> Optional[StringSchema]:
@@ -1231,6 +1220,7 @@ class Guard(Runnable, Generic[OT]):
         """
         hydrated_validator = get_validator(validator, *args, **kwargs)
         self.__add_validator(hydrated_validator, on=on)
+        self._save()
         return self
 
     @overload
@@ -1274,6 +1264,7 @@ class Guard(Runnable, Generic[OT]):
         for v in validators:
             hydrated_validator = get_validator(v)
             self.__add_validator(hydrated_validator, on=on)
+        self._save()
         return self
 
     def validate(self, llm_output: str, *args, **kwargs) -> ValidationOutcome[str]:
@@ -1290,6 +1281,7 @@ class Guard(Runnable, Generic[OT]):
                 if self.reask_instructions
                 else None,
             )
+            self._save()
 
         return self.parse(llm_output=llm_output, *args, **kwargs)
 
@@ -1565,3 +1557,18 @@ class Guard(Runnable, Generic[OT]):
                 )
         else:
             raise ValueError("Guard does not have an api client!")
+
+    def _save(self):
+        api_key = os.environ.get("GUARDRAILS_API_KEY")
+        if api_key is not None:
+            if self.name is None:
+                self.name = f"gr-{str(self._guard_id)}"
+                logger.warn("Warning: No name passed to guard!")
+                logger.warn(
+                    "Use this auto-generated name to re-use this guard: {name}".format(
+                        name=self.name
+                    )
+                )
+            if not self._api_client:
+                self._api_client = GuardrailsApiClient(api_key=api_key)
+            self.upsert_guard()
