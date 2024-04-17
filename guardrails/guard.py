@@ -1402,9 +1402,7 @@ class Guard(Runnable, Generic[OT]):
                         full_schema_reask=full_schema_reask,
                     ),
                     outputs=Outputs(
-                        llm_response_info=LLMResponse(
-                            output=h.output  # type: ignore
-                        ),
+                        llm_response_info=LLMResponse(output=h.output),  # type: ignore
                         raw_output=h.output,
                         parsed_output=(
                             h.parsed_output.to_dict()
@@ -1419,9 +1417,7 @@ class Guard(Runnable, Generic[OT]):
                         reasks=list(
                             [
                                 FieldReAsk(
-                                    incorrect_value=r.to_dict().get(
-                                        "incorrect_value"
-                                    ),
+                                    incorrect_value=r.to_dict().get("incorrect_value"),
                                     path=r.to_dict().get("path"),
                                     fail_results=[
                                         FailResult(
@@ -1445,7 +1441,7 @@ class Guard(Runnable, Generic[OT]):
             if self.history.length == 0:
                 self.history.push(call_log)
 
-    def _single_server_call (
+    def _single_server_call(
         self,
         *,
         payload: Dict[str, Any],
@@ -1469,7 +1465,7 @@ class Guard(Runnable, Generic[OT]):
             prompt_params=prompt_params,
             metadata=metadata,
             full_schema_reask=full_schema_reask,
-            call_log=call_log
+            call_log=call_log,
         )
 
         # Our interfaces are too different for this to work right now.
@@ -1482,8 +1478,7 @@ class Guard(Runnable, Generic[OT]):
             validation_passed=validation_output.result,
         )
 
-
-    def _stream_server_call (
+    def _stream_server_call(
         self,
         *,
         payload: Dict[str, Any],
@@ -1512,7 +1507,7 @@ class Guard(Runnable, Generic[OT]):
             prompt_params=prompt_params,
             metadata=metadata,
             full_schema_reask=full_schema_reask,
-            call_log=call_log
+            call_log=call_log,
         )
 
     def _call_server(
@@ -1540,7 +1535,7 @@ class Guard(Runnable, Generic[OT]):
                 payload["promptParams"] = prompt_params
             if llm_api is not None:
                 payload["llmApi"] = get_llm_api_enum(llm_api, *args, **kwargs)
-            
+
             should_stream = kwargs.get("stream", False)
             if should_stream:
                 return self._stream_server_call(
@@ -1550,7 +1545,7 @@ class Guard(Runnable, Generic[OT]):
                     prompt_params=prompt_params,
                     metadata=metadata,
                     full_schema_reask=full_schema_reask,
-                    call_log=call_log
+                    call_log=call_log,
                 )
             else:
                 return self._single_server_call(
@@ -1560,7 +1555,7 @@ class Guard(Runnable, Generic[OT]):
                     prompt_params=prompt_params,
                     metadata=metadata,
                     full_schema_reask=full_schema_reask,
-                    call_log=call_log
+                    call_log=call_log,
                 )
         else:
             raise ValueError("Guard does not have an api client!")

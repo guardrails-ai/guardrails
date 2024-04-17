@@ -941,9 +941,7 @@ def model_is_supported_server_side(
         model = get_async_llm_ask(llm_api, *args, **kwargs)
     return (
         issubclass(type(model), OpenAIModel)
-        or issubclass(
-            type(model), AsyncOpenAIModel
-        )
+        or issubclass(type(model), AsyncOpenAIModel)
         or isinstance(model, LiteLLMCallable)
         or isinstance(model, AsyncLiteLLMCallable)
     )
@@ -951,9 +949,7 @@ def model_is_supported_server_side(
 
 # FIXME: Update with newly supported LLMs
 def get_llm_api_enum(
-    llm_api: Callable[[Any], Awaitable[Any]],
-    *args,
-    **kwargs
+    llm_api: Callable[[Any], Awaitable[Any]], *args, **kwargs
 ) -> Optional[ValidatePayloadLlmApi]:
     # TODO: Distinguish between v1 and v2
     model = get_llm_ask(llm_api, *args, **kwargs)
@@ -969,6 +965,6 @@ def get_llm_api_enum(
         return ValidatePayloadLlmApi.LITELLM_COMPLETION
     elif isinstance(model, AsyncLiteLLMCallable):
         return ValidatePayloadLlmApi.LITELLM_ACOMPLETION
-        
+
     else:
         return None

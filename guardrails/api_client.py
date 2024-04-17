@@ -1,13 +1,9 @@
 import json
 import os
-import requests
 from typing import Generator, Optional
 
+import requests
 from guardrails_api_client import AuthenticatedClient
-from guardrails_api_client.models import (
-    ValidatePayload,
-    ValidationOutput,
-)
 from guardrails_api_client.api.guard import update_guard, validate
 from guardrails_api_client.models import Guard, ValidatePayload, ValidationOutput
 from guardrails_api_client.types import UNSET
@@ -55,7 +51,7 @@ class GuardrailsApiClient:
             body=payload,
             x_openai_api_key=_openai_api_key,
         )
-        
+
     def stream_validate(
         self,
         payload: ValidatePayload,
@@ -66,21 +62,16 @@ class GuardrailsApiClient:
             if openai_api_key is not None
             else os.environ.get("OPENAI_API_KEY", UNSET)
         )
-        
+
         url = f"{self.base_url}/guards/api-streaming-demo/validate"
         headers = {
             "Content-Type": "application/json",
-            "x-openai-api-key": _openai_api_key
+            "x-openai-api-key": _openai_api_key,
         }
-        
+
         s = requests.Session()
 
-        with s.post(
-            url,
-            json=payload.to_dict(),
-            headers=headers,
-            stream=True
-        ) as resp:
+        with s.post(url, json=payload.to_dict(), headers=headers, stream=True) as resp:
             for line in resp.iter_lines():
                 if line:
                     json_output = json.loads(line)
