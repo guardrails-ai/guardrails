@@ -10,6 +10,7 @@ from typing import (
     Awaitable,
     Callable,
     Dict,
+    Generator,
     Generic,
     Iterable,
     List,
@@ -1344,6 +1345,176 @@ class Guard(Runnable, Generic[OT]):
         else:
             raise ValueError("Guard does not have an api client!")
 
+    def _construct_history_from_server_response(
+        self,
+        *,
+        validation_output: ValidationOutput,
+        llm_api: Optional[Callable] = None,
+        llm_output: Optional[str] = None,
+        num_reasks: Optional[int] = None,
+        prompt_params: Optional[Dict] = None,
+        metadata: Optional[Dict] = {},
+        full_schema_reask: Optional[bool] = True,
+        call_log: Optional[Call],
+    ):
+        if not validation_output:
+            return ValidationOutcome[OT](
+                raw_llm_output=None,
+                validated_output=None,
+                validation_passed=False,
+                error="The response from the server was empty!",
+            )
+
+        call_log = call_log or Call()
+        if llm_api is not None:
+            llm_api = get_llm_ask(llm_api)
+            if asyncio.iscoroutinefunction(llm_api):
+                llm_api = get_async_llm_ask(llm_api)
+        session_history = (
+            validation_output.session_history
+            if validation_output is not None and validation_output.session_history
+            else []
+        )
+        history: History
+        for history in session_history:
+            history_events: Optional[List[HistoryEvent]] = (  # type: ignore
+                history.history if history.history != UNSET else None
+            )
+            if history_events is None:
+                continue
+
+            iterations = [
+                Iteration(
+                    inputs=Inputs(
+                        llm_api=llm_api,
+                        llm_output=llm_output,
+                        instructions=(
+                            Instructions(h.instructions) if h.instructions else None
+                        ),
+                        prompt=(
+                            Prompt(h.prompt.source)  # type: ignore
+                            if h.prompt is not None and h.prompt != UNSET
+                            else None
+                        ),
+                        prompt_params=prompt_params,
+                        num_reasks=(num_reasks or 0),
+                        metadata=metadata,
+                        full_schema_reask=full_schema_reask,
+                    ),
+                    outputs=Outputs(
+                        llm_response_info=LLMResponse(
+                            output=h.output  # type: ignore
+                        ),
+                        raw_output=h.output,
+                        parsed_output=(
+                            h.parsed_output.to_dict()
+                            if isinstance(h.parsed_output, AnyObject)
+                            else h.parsed_output
+                        ),
+                        validation_output=(
+                            h.validated_output.to_dict()
+                            if isinstance(h.validated_output, AnyObject)
+                            else h.validated_output
+                        ),
+                        reasks=list(
+                            [
+                                FieldReAsk(
+                                    incorrect_value=r.to_dict().get(
+                                        "incorrect_value"
+                                    ),
+                                    path=r.to_dict().get("path"),
+                                    fail_results=[
+                                        FailResult(
+                                            error_message=r.to_dict().get(
+                                                "error_message"
+                                            ),
+                                            fix_value=r.to_dict().get("fix_value"),
+                                        )
+                                    ],
+                                )
+                                for r in h.reasks  # type: ignore
+                            ]
+                            if h.reasks != UNSET
+                            else []
+                        ),
+                    ),
+                )
+                for h in history_events
+            ]
+            call_log.iterations.extend(iterations)
+            if self.history.length == 0:
+                self.history.push(call_log)
+
+    def _single_server_call (
+        self,
+        *,
+        payload: Dict[str, Any],
+        llm_output: Optional[str] = None,
+        num_reasks: Optional[int] = None,
+        prompt_params: Optional[Dict] = None,
+        metadata: Optional[Dict] = {},
+        full_schema_reask: Optional[bool] = True,
+        call_log: Optional[Call],
+    ) -> ValidationOutcome[OT]:
+        # TODO: get enum for llm_api
+        validation_output: Optional[ValidationOutput] = self._api_client.validate(
+            guard=self,  # type: ignore
+            payload=ValidatePayload.from_dict(payload),
+            openai_api_key=get_call_kwarg("api_key"),
+        )
+        self._construct_history_from_server_response(
+            validation_output=validation_output,
+            llm_output=llm_output,
+            num_reasks=num_reasks,
+            prompt_params=prompt_params,
+            metadata=metadata,
+            full_schema_reask=full_schema_reask,
+            call_log=call_log
+        )
+
+        # Our interfaces are too different for this to work right now.
+        # Once we move towards shared interfaces for both the open source
+        # and the api we can re-enable this.
+        # return ValidationOutcome[OT].from_guard_history(call_log)
+        return ValidationOutcome[OT](
+            raw_llm_output=validation_output.raw_llm_response,  # type: ignore
+            validated_output=cast(OT, validation_output.validated_output),
+            validation_passed=validation_output.result,
+        )
+
+
+    def _stream_server_call (
+        self,
+        *,
+        payload: Dict[str, Any],
+        llm_output: Optional[str] = None,
+        num_reasks: Optional[int] = None,
+        prompt_params: Optional[Dict] = None,
+        metadata: Optional[Dict] = {},
+        full_schema_reask: Optional[bool] = True,
+        call_log: Optional[Call],
+    ) -> Generator[ValidationOutcome[OT], None, None]:
+        response = self._api_client.stream_validate(
+            payload=ValidatePayload.from_dict(payload),
+            openai_api_key=get_call_kwarg("api_key"),
+        )
+        for fragment in response:
+            validation_output: Optional[ValidationOutput] = fragment
+            yield ValidationOutcome[OT](
+                raw_llm_output=validation_output.raw_llm_response,  # type: ignore
+                validated_output=cast(OT, validation_output.validated_output),
+                validation_passed=validation_output.result,
+            )
+        self._construct_history_from_server_response(
+            validation_output=validation_output,
+            llm_output=llm_output,
+            num_reasks=num_reasks,
+            prompt_params=prompt_params,
+            metadata=metadata,
+            full_schema_reask=full_schema_reask,
+            call_log=call_log
+        )
+
     def _call_server(
         self,
         *args,
@@ -1355,7 +1526,7 @@ class Guard(Runnable, Generic[OT]):
         full_schema_reask: Optional[bool] = True,
         call_log: Optional[Call],
         **kwargs,
-    ):
+    ) -> Union[ValidationOutcome[OT], Generator[ValidationOutcome[OT], None, None]]:
         if self._api_client:
             payload: Dict[str, Any] = {"args": list(args)}
             payload.update(**kwargs)
@@ -1369,109 +1540,27 @@ class Guard(Runnable, Generic[OT]):
                 payload["promptParams"] = prompt_params
             if llm_api is not None:
                 payload["llmApi"] = get_llm_api_enum(llm_api, *args, **kwargs)
-            # TODO: get enum for llm_api
-            validation_output: Optional[ValidationOutput] = self._api_client.validate(
-                guard=self,  # type: ignore
-                payload=ValidatePayload.from_dict(payload),
-                openai_api_key=get_call_kwarg("api_key"),
-            )
-
-            if not validation_output:
-                return ValidationOutcome[OT](
-                    raw_llm_output=None,
-                    validated_output=None,
-                    validation_passed=False,
-                    error="The response from the server was empty!",
+            
+            should_stream = kwargs.get("stream", False)
+            if should_stream:
+                return self._stream_server_call(
+                    payload=payload,
+                    llm_output=llm_output,
+                    num_reasks=num_reasks,
+                    prompt_params=prompt_params,
+                    metadata=metadata,
+                    full_schema_reask=full_schema_reask,
+                    call_log=call_log
                 )
-
-            call_log = call_log or Call()
-            if llm_api is not None:
-                llm_api = get_llm_ask(llm_api)
-                if asyncio.iscoroutinefunction(llm_api):
-                    llm_api = get_async_llm_ask(llm_api)
-            session_history = (
-                validation_output.session_history
-                if validation_output is not None and validation_output.session_history
-                else []
-            )
-            history: History
-            for history in session_history:
-                history_events: Optional[List[HistoryEvent]] = (  # type: ignore
-                    history.history if history.history != UNSET else None
+            else:
+                return self._single_server_call(
+                    payload=payload,
+                    llm_output=llm_output,
+                    num_reasks=num_reasks,
+                    prompt_params=prompt_params,
+                    metadata=metadata,
+                    full_schema_reask=full_schema_reask,
+                    call_log=call_log
                 )
-                if history_events is None:
-                    continue
-
-                iterations = [
-                    Iteration(
-                        inputs=Inputs(
-                            llm_api=llm_api,
-                            llm_output=llm_output,
-                            instructions=(
-                                Instructions(h.instructions) if h.instructions else None
-                            ),
-                            prompt=(
-                                Prompt(h.prompt.source)  # type: ignore
-                                if h.prompt is not None and h.prompt != UNSET
-                                else None
-                            ),
-                            prompt_params=prompt_params,
-                            num_reasks=(num_reasks or 0),
-                            metadata=metadata,
-                            full_schema_reask=full_schema_reask,
-                        ),
-                        outputs=Outputs(
-                            llm_response_info=LLMResponse(
-                                output=h.output  # type: ignore
-                            ),
-                            raw_output=h.output,
-                            parsed_output=(
-                                h.parsed_output.to_dict()
-                                if isinstance(h.parsed_output, AnyObject)
-                                else h.parsed_output
-                            ),
-                            validation_output=(
-                                h.validated_output.to_dict()
-                                if isinstance(h.validated_output, AnyObject)
-                                else h.validated_output
-                            ),
-                            reasks=list(
-                                [
-                                    FieldReAsk(
-                                        incorrect_value=r.to_dict().get(
-                                            "incorrect_value"
-                                        ),
-                                        path=r.to_dict().get("path"),
-                                        fail_results=[
-                                            FailResult(
-                                                error_message=r.to_dict().get(
-                                                    "error_message"
-                                                ),
-                                                fix_value=r.to_dict().get("fix_value"),
-                                            )
-                                        ],
-                                    )
-                                    for r in h.reasks  # type: ignore
-                                ]
-                                if h.reasks != UNSET
-                                else []
-                            ),
-                        ),
-                    )
-                    for h in history_events
-                ]
-                call_log.iterations.extend(iterations)
-                if self.history.length == 0:
-                    self.history.push(call_log)
-
-            # Our interfaces are too different for this to work right now.
-            # Once we move towards shared interfaces for both the open source
-            # and the api we can re-enable this.
-            # return ValidationOutcome[OT].from_guard_history(call_log)
-            return ValidationOutcome[OT](
-                raw_llm_output=validation_output.raw_llm_response,  # type: ignore
-                validated_output=cast(OT, validation_output.validated_output),
-                validation_passed=validation_output.result,
-            )
         else:
             raise ValueError("Guard does not have an api client!")
