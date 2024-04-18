@@ -2,6 +2,7 @@ import os
 from typing import Any, AsyncIterable, Dict, Iterable, List, cast
 
 import openai
+from tenacity import retry, retry_if_exception_type, wait_exponential_jitter
 
 from guardrails.utils.llm_response import LLMResponse
 from guardrails.utils.openai_utils.base import BaseOpenAIClient
@@ -33,6 +34,14 @@ def get_static_openai_chat_acreate_func():
 
 OpenAIServiceUnavailableError = openai.APIError
 
+OPENAI_RETRYABLE_ERRORS = [
+    openai.APIConnectionError,
+    openai.APIError,
+    openai.Timeout,
+    openai.RateLimitError,
+]
+RETRYABLE_ERRORS = tuple(OPENAI_RETRYABLE_ERRORS)
+
 
 class OpenAIClientV1(BaseOpenAIClient):
     def __init__(self, *args, **kwargs):
@@ -53,6 +62,10 @@ class OpenAIClientV1(BaseOpenAIClient):
         )
         return [r.embedding for r in embeddings.data]
 
+    @retry(
+        wait=wait_exponential_jitter(max=60),
+        retry=retry_if_exception_type(RETRYABLE_ERRORS),
+    )
     def create_completion(
         self, engine: str, prompt: str, *args, **kwargs
     ) -> LLMResponse:
@@ -96,6 +109,10 @@ class OpenAIClientV1(BaseOpenAIClient):
             response_token_count=openai_response.usage.completion_tokens,  # noqa: E501 # type: ignore
         )
 
+    @retry(
+        wait=wait_exponential_jitter(max=60),
+        retry=retry_if_exception_type(RETRYABLE_ERRORS),
+    )
     def create_chat_completion(
         self, model: str, messages: List[Any], *args, **kwargs
     ) -> LLMResponse:
@@ -172,6 +189,10 @@ class AsyncOpenAIClientV1(BaseOpenAIClient):
         )
         return [r.embedding for r in embeddings.data]
 
+    @retry(
+        wait=wait_exponential_jitter(max=60),
+        retry=retry_if_exception_type(RETRYABLE_ERRORS),
+    )
     async def create_completion(
         self, engine: str, prompt: str, *args, **kwargs
     ) -> LLMResponse:
@@ -231,6 +252,10 @@ class AsyncOpenAIClientV1(BaseOpenAIClient):
             response_token_count=openai_response.usage.completion_tokens,  # noqa: E501 # type: ignore
         )
 
+    @retry(
+        wait=wait_exponential_jitter(max=60),
+        retry=retry_if_exception_type(RETRYABLE_ERRORS),
+    )
     async def create_chat_completion(
         self, model: str, messages: List[Any], *args, **kwargs
     ) -> LLMResponse:
