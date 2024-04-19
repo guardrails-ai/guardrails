@@ -54,6 +54,7 @@ class GuardrailsApiClient:
 
     def stream_validate(
         self,
+        guard: Guard,
         payload: ValidatePayload,
         openai_api_key: Optional[str] = None,
     ) -> Generator[ValidationOutput, None, None]:
@@ -63,7 +64,7 @@ class GuardrailsApiClient:
             else os.environ.get("OPENAI_API_KEY", UNSET)
         )
 
-        url = f"{self.base_url}/guards/api-streaming-demo/validate"
+        url = f"{self.base_url}/guards/{guard.name}/validate"
         headers = {
             "Content-Type": "application/json",
             "x-openai-api-key": _openai_api_key,
