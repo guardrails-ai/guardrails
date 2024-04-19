@@ -1349,14 +1349,6 @@ class Guard(Runnable, Generic[OT]):
         full_schema_reask: Optional[bool] = True,
         call_log: Optional[Call],
     ):
-        if not validation_output:
-            return ValidationOutcome[OT](
-                raw_llm_output=None,
-                validated_output=None,
-                validation_passed=False,
-                error="The response from the server was empty!",
-            )
-
         call_log = call_log or Call()
         if llm_api is not None:
             llm_api = get_llm_ask(llm_api)
@@ -1450,6 +1442,13 @@ class Guard(Runnable, Generic[OT]):
                 payload=ValidatePayload.from_dict(payload),
                 openai_api_key=get_call_kwarg("api_key"),
             )
+            if not validation_output:
+                return ValidationOutcome[OT](
+                    raw_llm_output=None,
+                    validated_output=None,
+                    validation_passed=False,
+                    error="The response from the server was empty!",
+                )
             self._construct_history_from_server_response(
                 validation_output=validation_output,
                 llm_output=llm_output,
@@ -1491,20 +1490,28 @@ class Guard(Runnable, Generic[OT]):
             )
             for fragment in response:
                 validation_output = fragment
+                if not validation_output:
+                    yield ValidationOutcome[OT](
+                        raw_llm_output=None,
+                        validated_output=None,
+                        validation_passed=False,
+                        error="The response from the server was empty!",
+                    )
                 yield ValidationOutcome[OT](
                     raw_llm_output=validation_output.raw_llm_response,  # type: ignore
                     validated_output=cast(OT, validation_output.validated_output),
                     validation_passed=validation_output.result,
                 )
-            self._construct_history_from_server_response(
-                validation_output=validation_output,
-                llm_output=llm_output,
-                num_reasks=num_reasks,
-                prompt_params=prompt_params,
-                metadata=metadata,
-                full_schema_reask=full_schema_reask,
-                call_log=call_log,
-            )
+            if validation_output:
+                self._construct_history_from_server_response(
+                    validation_output=validation_output,
+                    llm_output=llm_output,
+                    num_reasks=num_reasks,
+                    prompt_params=prompt_params,
+                    metadata=metadata,
+                    full_schema_reask=full_schema_reask,
+                    call_log=call_log,
+                )
         else:
             raise ValueError("Guard does not have an api client!")
 
