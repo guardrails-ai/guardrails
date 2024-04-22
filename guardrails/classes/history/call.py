@@ -227,7 +227,7 @@ versions 0.5.0 and beyond. Use 'validation_response' instead."""
             self.inputs.full_schema_reask
             or number_of_iterations < 2
             or isinstance(
-                self.iterations.last.validation_response,
+                self.iterations.last.validation_response,  # type: ignore
                 ReAsk,  # type: ignore
             )
             or isinstance(self.iterations.last.validation_response, str)  # type: ignore
