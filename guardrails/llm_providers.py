@@ -946,7 +946,7 @@ def model_is_supported_server_side(
 
 # FIXME: Update with newly supported LLMs
 def get_llm_api_enum(
-    llm_api: Callable[[Any], Awaitable[Any]]
+    llm_api: Callable[[Any], Awaitable[Any]],
 ) -> Optional[ValidatePayloadLlmApi]:
     # TODO: Distinguish between v1 and v2
     if llm_api == get_static_openai_create_func():

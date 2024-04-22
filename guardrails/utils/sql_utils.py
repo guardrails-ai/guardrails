@@ -18,12 +18,10 @@ class SQLDriver(ABC):
     """
 
     @abstractmethod
-    def validate_sql(self, query: str) -> List[str]:
-        ...
+    def validate_sql(self, query: str) -> List[str]: ...
 
     @abstractmethod
-    def get_schema(self) -> str:
-        ...
+    def get_schema(self) -> str: ...
 
 
 class SimpleSqlDriver(SQLDriver):

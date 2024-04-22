@@ -467,8 +467,7 @@ class Guard(Runnable, Generic[OT]):
         stream: Optional[bool] = False,
         *args,
         **kwargs,
-    ) -> Union[ValidationOutcome[OT], Iterable[ValidationOutcome[OT]]]:
-        ...
+    ) -> Union[ValidationOutcome[OT], Iterable[ValidationOutcome[OT]]]: ...
 
     @overload
     def __call__(
@@ -483,8 +482,7 @@ class Guard(Runnable, Generic[OT]):
         full_schema_reask: Optional[bool] = None,
         *args,
         **kwargs,
-    ) -> Awaitable[ValidationOutcome[OT]]:
-        ...
+    ) -> Awaitable[ValidationOutcome[OT]]: ...
 
     def __call__(
         self,
@@ -811,8 +809,7 @@ class Guard(Runnable, Generic[OT]):
         full_schema_reask: Optional[bool] = None,
         *args,
         **kwargs,
-    ) -> ValidationOutcome[OT]:
-        ...
+    ) -> ValidationOutcome[OT]: ...
 
     @overload
     def parse(
@@ -825,8 +822,7 @@ class Guard(Runnable, Generic[OT]):
         full_schema_reask: Optional[bool] = None,
         *args,
         **kwargs,
-    ) -> Awaitable[ValidationOutcome[OT]]:
-        ...
+    ) -> Awaitable[ValidationOutcome[OT]]: ...
 
     @overload
     def parse(
@@ -839,8 +835,7 @@ class Guard(Runnable, Generic[OT]):
         full_schema_reask: Optional[bool] = None,
         *args,
         **kwargs,
-    ) -> ValidationOutcome[OT]:
-        ...
+    ) -> ValidationOutcome[OT]: ...
 
     def parse(
         self,
@@ -1194,14 +1189,12 @@ class Guard(Runnable, Generic[OT]):
             )
 
     @overload
-    def use(self, validator: Validator, *, on: str = "output") -> "Guard":
-        ...
+    def use(self, validator: Validator, *, on: str = "output") -> "Guard": ...
 
     @overload
     def use(
         self, validator: Type[Validator], *args, on: str = "output", **kwargs
-    ) -> "Guard":
-        ...
+    ) -> "Guard": ...
 
     def use(
         self,
@@ -1227,8 +1220,7 @@ class Guard(Runnable, Generic[OT]):
         return self
 
     @overload
-    def use_many(self, *validators: Validator, on: str = "output") -> "Guard":
-        ...
+    def use_many(self, *validators: Validator, on: str = "output") -> "Guard": ...
 
     @overload
     def use_many(
@@ -1239,8 +1231,7 @@ class Guard(Runnable, Generic[OT]):
             Optional[Dict[str, Any]],
         ],
         on: str = "output",
-    ) -> "Guard":
-        ...
+    ) -> "Guard": ...
 
     def use_many(
         self,

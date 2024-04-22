@@ -245,7 +245,8 @@ def install(
 
     console.print(f"\nInstalling {package_uri}...\n")
     logger.log(
-        level=LEVELS.get("SPAM"), msg=f"Installing {package_uri}..."  # type: ignore
+        level=LEVELS.get("SPAM"),
+        msg=f"Installing {package_uri}...",  # type: ignore
     )
 
     # Validation

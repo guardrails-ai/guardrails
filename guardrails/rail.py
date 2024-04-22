@@ -1,4 +1,5 @@
 """Rail class."""
+
 import warnings
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Sequence, Type, Union

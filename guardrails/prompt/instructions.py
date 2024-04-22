@@ -1,4 +1,5 @@
 """Instructions to the LLM, to be passed in the prompt."""
+
 from string import Template
 
 from guardrails.utils.parsing_utils import get_template_variables
