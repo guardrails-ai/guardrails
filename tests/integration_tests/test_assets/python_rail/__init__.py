@@ -1,6 +1,9 @@
 # ruff: noqa: E501
 import os
 
+from .validator_parallelism_reask_1 import VALIDATOR_PARALLELISM_REASK_1
+from .validator_parallelism_reask_2 import VALIDATOR_PARALLELISM_REASK_2
+
 DATA_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)))
 reader = (
     lambda filename: open(os.path.join(DATA_DIR, filename)).read().replace("\r", "")
@@ -40,4 +43,6 @@ __all__ = [
     "LLM_OUTPUT_1_FAIL_GUARDRAILS_VALIDATION",
     "LLM_OUTPUT_2_SUCCEED_GUARDRAILS_BUT_FAIL_PYDANTIC_VALIDATION",
     "LLM_OUTPUT_3_SUCCEED_GUARDRAILS_AND_PYDANTIC",
+    "VALIDATOR_PARALLELISM_REASK_1",
+    "VALIDATOR_PARALLELISM_REASK_2",
 ]
