@@ -1,4 +1,4 @@
-# flake8: noqa: E501
+# ruff: noqa: E501
 import os
 
 DATA_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)))
@@ -26,11 +26,9 @@ LLM_OUTPUT_3_SUCCEED_GUARDRAILS_AND_PYDANTIC = reader(
 RAIL_SPEC_WITH_VALIDATOR_PARALLELISM = reader("validator_parallelism.rail")
 VALIDATOR_PARALLELISM_PROMPT_1 = reader("validator_parallelism_prompt_1.txt")
 VALIDATOR_PARALLELISM_RESPONSE_1 = reader("validator_parallelism_1.txt")
-from .validator_parallelism_reask_1 import VALIDATOR_PARALLELISM_REASK_1
 
 VALIDATOR_PARALLELISM_PROMPT_2 = reader("validator_parallelism_prompt_2.txt")
 VALIDATOR_PARALLELISM_RESPONSE_2 = reader("validator_parallelism_2.txt")
-from .validator_parallelism_reask_2 import VALIDATOR_PARALLELISM_REASK_2
 
 VALIDATOR_PARALLELISM_PROMPT_3 = reader("validator_parallelism_prompt_3.txt")
 VALIDATOR_PARALLELISM_RESPONSE_3 = reader("validator_parallelism_3.txt")

@@ -1,5 +1,5 @@
-# flake8: noqa: E501
-from typing import Literal, Optional, Union
+# ruff: noqa: E501
+from typing import Literal, Union
 
 import pytest
 from pydantic import BaseModel, Field

@@ -1,4 +1,4 @@
-# flake8: noqa: E501
+# ruff: noqa: E501
 VALIDATED_OUTPUT_SKELETON_REASK_2 = {
     "fees": [
         {"name": "annual membership", "explanation": "", "value": 0.0},

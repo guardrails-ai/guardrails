@@ -1,4 +1,4 @@
-# flake8: noqa: E501
+# ruff: noqa: E501
 from guardrails.utils.reask_utils import FieldReAsk
 from guardrails.validators import FailResult
 
