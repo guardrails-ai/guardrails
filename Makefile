@@ -65,7 +65,7 @@ docs-deploy:
 
 dev:
 	poetry install
-	pre-commit install
+	poetry run pre-commit install
 
 full:
 	poetry install --all-extras
