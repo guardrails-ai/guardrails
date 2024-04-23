@@ -22,14 +22,14 @@ from typing import (
     overload,
 )
 
-from guardrails_api_client.models import AnyObject
-from guardrails_api_client.models import Guard as GuardModel
 from guardrails_api_client.models import (
+    AnyObject,
     History,
     HistoryEvent,
     ValidatePayload,
     ValidationOutput,
 )
+from guardrails_api_client.models import Guard as GuardModel
 from guardrails_api_client.types import UNSET
 from langchain_core.messages import BaseMessage
 from langchain_core.runnables import Runnable, RunnableConfig
@@ -896,8 +896,6 @@ class Guard(Runnable, Generic[OT]):
                     is_parent=True,  # It will have children
                     has_parent=False,  # Has no parents
                 )
-
-            # this is a really really really really really really really really really really really really really really really really really really really really really really really really really really really  long comment
 
             self.configure(final_num_reasks)
             if self.num_reasks is None:
