@@ -64,7 +64,7 @@ class MockOpenAIChatCallable(OpenAIChatCallable):
         msg_history=None,
         base_model=None,
         *args,
-        **kwargs
+        **kwargs,
     ):
         """Mock the OpenAI API call to ChatCompletion.create."""
 

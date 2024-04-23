@@ -227,7 +227,8 @@ versions 0.5.0 and beyond. Use 'validation_response' instead."""
             self.inputs.full_schema_reask
             or number_of_iterations < 2
             or isinstance(
-                self.iterations.last.validation_response, ReAsk  # type: ignore
+                self.iterations.last.validation_response,  # type: ignore
+                ReAsk,  # type: ignore
             )
             or isinstance(self.iterations.last.validation_response, str)  # type: ignore
         ):
@@ -410,9 +411,7 @@ versions 0.5.0 and beyond. Use 'guarded_output' instead."""
                 title="Validated Output",
                 style="on #F0FFF0",
             )
-            tree.children[
-                -1
-            ].label.renderable._renderables = previous_panels + (  # type: ignore
+            tree.children[-1].label.renderable._renderables = previous_panels + (  # type: ignore
                 validated_outcome_panel,
             )
 

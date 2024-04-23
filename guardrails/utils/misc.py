@@ -68,7 +68,7 @@ def generate_test_artifacts(
             os.path.join(artifact_dir, f"validated_response_{on_fail_type}{ext}.py"),
             "w",
         ) as f:
-            f.write("# flake8: noqa: E501\n")
+            f.write("# ruff: noqa: E501\n")
 
             reasks, _ = gather_reasks(validated_output)
             if len(reasks):

@@ -166,7 +166,7 @@ versions 0.5.0 and beyond. Use 'guarded_output' instead."""
     @property
     def rich_group(self) -> Group:
         def create_msg_history_table(
-            msg_history: Optional[List[Dict[str, Prompt]]]
+            msg_history: Optional[List[Dict[str, Prompt]]],
         ) -> Union[str, Table]:
             if msg_history is None:
                 return "No message history."

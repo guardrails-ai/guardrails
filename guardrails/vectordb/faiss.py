@@ -87,9 +87,7 @@ class Faiss(VectorDBBase):
         # Call faiss range search and get all the vectors with a score >= threshold
         # FIXME is this correct usage of `range_search`?
         #  Arguments missing for parameters "radius", "result"
-        _, dist, indexes = self._index.range_search(
-            np.array([vector]), threshold
-        )  # type: ignore
+        _, dist, indexes = self._index.range_search(np.array([vector]), threshold)  # type: ignore
 
         if len(indexes) == 0:
             return []

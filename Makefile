@@ -8,8 +8,8 @@ PYDANTIC_VERSION_MAJOR := $(shell poetry run python -c 'import pydantic; print(p
 TYPING_CMD := type-pydantic-v$(PYDANTIC_VERSION_MAJOR)-openai-v$(OPENAI_VERSION_MAJOR)
 
 autoformat:
-	poetry run black guardrails/ tests/
-	poetry run isort --atomic guardrails/ tests/
+	poetry run ruff check guardrails/ tests/ --fix
+	poetry run ruff format guardrails/ tests/
 	poetry run docformatter --in-place --recursive guardrails tests
 
 .PHONY: type
@@ -37,9 +37,8 @@ type-pydantic-v2-openai-v1:
 	rm pyrightconfig.json
 
 lint:
-	poetry run isort -c guardrails/ tests/
-	poetry run black guardrails/ tests/ --check
-	poetry run flake8 guardrails/ tests/
+	poetry run ruff check guardrails/ tests/
+	poetry run ruff format guardrails/ tests/ --check
 
 test:
 	poetry run pytest tests/
@@ -66,6 +65,7 @@ docs-deploy:
 
 dev:
 	poetry install
+	poetry run pre-commit install
 
 full:
 	poetry install --all-extras
