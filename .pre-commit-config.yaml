@@ -1,0 +1,13 @@
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.4.1
+    hooks:
+      # Performs ruff check with safe fixes
+      - id: ruff
+        name: ruff
+        description: "Run 'ruff' for linting"
+        args: ["--fix"]
+      # Performs ruff format
+      - id: ruff-format
+        name: ruff-format
+        description: "Run 'ruff format' for formatting"
