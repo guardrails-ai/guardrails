@@ -59,6 +59,8 @@ requests = "^2.31.0"
 guardrails-api-client = "^0.1.1"
 jwt = "^1.3.1"
 
+
+
 [tool.poetry.extras]
 sql = ["sqlvalidator", "sqlalchemy", "sqlglot"]
 summary = ["thefuzz", "nltk"]
@@ -78,6 +80,9 @@ docs-build = ["nbdoc", "docspec_python", "pydoc-markdown"]
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.3"
 pytest-asyncio = "^0.21.1"
+black = "^23.0.0"
+isort = ">=5.12.0"
+flake8 = ">=3.8.4"
 docformatter = ">=1.4"
 pytest-cov = ">=2.10.1"
 pre-commit = ">=2.9.3"
@@ -86,7 +91,6 @@ pytest-mock = "^3.12.0"
 pypdfium2 = "^4.23.1"
 pyright = "1.1.334"
 lxml-stubs = "^0.4.0"
-ruff = ">=0.4.1"
 
 [tool.poetry.group.docs]
 optional = true
@@ -109,6 +113,10 @@ name = "PyPI"
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
-[tool.ruff.lint]
-select = ["E4", "E7", "E9", "F", "E501"]
-ignore = ["E731", "E203", "E741"]
+[tool.isort]
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+ensure_newline_before_comments = true
+line_length = 88
