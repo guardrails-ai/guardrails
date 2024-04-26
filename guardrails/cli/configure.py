@@ -24,42 +24,85 @@ def save_configuration_file(token: str, no_metrics: bool) -> None:
         rc_file.close()
 
 
+def get_existing_config() -> dict:
+    """Get the configuration from the file if it exists."""
+    home = expanduser("~")
+    guardrails_rc = os.path.join(home, ".guardrailsrc")
+    config = {}
+
+    # If the file exists
+    if os.path.exists(guardrails_rc):
+        with open(guardrails_rc, "r") as rc_file:
+            lines = rc_file.readlines()
+            for line in lines:
+                key, value = line.strip().split("=")
+                config[key] = value
+    return config
+
+
 @guardrails.command()
 def configure(
     token: Optional[str] = typer.Option(
         help="Your Guardrails Hub auth token.", hide_input=True, default=""
     ),
     no_metrics: Optional[str] = typer.Option(
-        help="Opt out of anonymous metrics collection.", default=False
+        help="Opt out of anonymous metrics collection.", default=""
     ),
 ):
     """Set the global configuration for the Guardrails CLI and Hub."""
+    # Get the existing configuration if present
+    existing_config = get_existing_config()
+
+    existing_token = existing_config.get("token", "")
+    existing_no_metrics = existing_config.get("no_metrics", "false")
     try:
         notice_message = """
 
     You can find your token at https://hub.guardrailsai.com/tokens
     """
         logger.log(level=LEVELS.get("NOTICE"), msg=notice_message)  # type: ignore
+
+        # Prompt for token if not provided
         if not token:
-            token = typer.prompt("Token", hide_input=True)
-        logger.info("Configuring...")
-        save_configuration_file(token, no_metrics)  # type: ignore
+            token = typer.prompt(
+                "> Token",
+                default=existing_token,
+                hide_input=True,
+            )
 
-        logger.info("Validating credentials...")
-        get_auth()
-        success_message = """
+        # Prompt for no_metrics if not provided
+        if not no_metrics:
+            no_metrics = typer.prompt(
+                "> Disable anonymous metrics reporting?",
+                default=existing_no_metrics,
+            )
 
-    Login successful.
+        # If token or no_metrics was updated, save the configuration
+        token_was_updated = token and token != existing_token
+        no_metrics_was_updated = no_metrics != existing_no_metrics
+        if token_was_updated or no_metrics_was_updated:
+            logger.info("Configuring...")
+            save_configuration_file(token, no_metrics)
 
-    Get started by installing our RegexMatch validator:
-    https://hub.guardrailsai.com/validator/guardrails_ai/regex_match
+        # Authenticate with the Hub if token was updated
+        if token_was_updated:
+            logger.info("Validating credentials...")
+            get_auth()
+            success_message = """
 
-    You can install it by running:
-    guardrails hub install hub://guardrails/regex_match
+        Login successful.
 
-    Find more validators at https://hub.guardrailsai.com
-    """
-        logger.log(level=LEVELS.get("SUCCESS"), msg=success_message)  # type: ignore
+        Get started by installing our RegexMatch validator:
+        https://hub.guardrailsai.com/validator/guardrails_ai/regex_match
+
+        You can install it by running:
+        guardrails hub install hub://guardrails/regex_match
+
+        Find more validators at https://hub.guardrailsai.com
+        """
+            logger.log(level=LEVELS.get("SUCCESS"), msg=success_message)  # type: ignore`
+        else:
+            print("No token provided/Existing token found. Skipping authentication.")
     except AuthenticationError as auth_error:
         logger.error(auth_error)
         logger.error(
