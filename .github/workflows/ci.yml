@@ -40,7 +40,7 @@ jobs:
         run: |
           make full
 
-      - name: Lint with isort, black, docformatter, flake8
+      - name: Lint with ruff
         run: |
           make lint
 

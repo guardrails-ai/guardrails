@@ -202,13 +202,11 @@ def test_entity_extraction_with_reask(
     if test_full_schema_reask:
         assert (
             # second.inputs.prompt.source # Also valid
-            call.reask_prompts.first
-            == entity_extraction.COMPILED_PROMPT_FULL_REASK
+            call.reask_prompts.first == entity_extraction.COMPILED_PROMPT_FULL_REASK
         )
         assert (
             # second.raw_output # Also valid
-            call.raw_outputs.at(1)
-            == entity_extraction.LLM_OUTPUT_FULL_REASK
+            call.raw_outputs.at(1) == entity_extraction.LLM_OUTPUT_FULL_REASK
         )
     else:
         # Second iteration is the first reask

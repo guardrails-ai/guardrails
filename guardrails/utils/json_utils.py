@@ -251,7 +251,7 @@ class ChoicePlaceholder(Placeholder):
 
 
 def generate_type_skeleton_from_schema(
-    schema: Union[Object, ListDataType]
+    schema: Union[Object, ListDataType],
 ) -> Placeholder:
     """Generate a JSON skeleton from an XML schema."""
 

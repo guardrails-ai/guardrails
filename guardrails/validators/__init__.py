@@ -3,6 +3,7 @@
 The name with which a validator is registered is the name that is used
 in the `RAIL` spec to specify formatters.
 """
+
 from warnings import warn
 
 from guardrails.validator_base import (

@@ -52,8 +52,7 @@ class DocumentStoreBase(ABC):
     The store can be queried by text for similar documents.
     """
 
-    def __init__(self, vector_db: VectorDBBase, path: Optional[str] = None):
-        ...
+    def __init__(self, vector_db: VectorDBBase, path: Optional[str] = None): ...
 
     @abstractmethod
     def add_document(self, document: Document) -> None:
@@ -182,9 +181,7 @@ try:
         __tablename__ = "documents"
 
         id: Mapped[int] = mapped_column(primary_key=True)  # type: ignore
-        page_num: Mapped[int] = mapped_column(
-            sqlalchemy.Integer, primary_key=True
-        )  # type: ignore
+        page_num: Mapped[int] = mapped_column(sqlalchemy.Integer, primary_key=True)  # type: ignore
         text: Mapped[str] = mapped_column(sqlalchemy.String)  # type: ignore
         meta: Mapped[dict] = mapped_column(sqlalchemy.PickleType)  # type: ignore
         vector_index: Mapped[int] = mapped_column(sqlalchemy.Integer)  # type: ignore

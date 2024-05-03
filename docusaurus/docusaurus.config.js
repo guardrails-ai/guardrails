@@ -53,7 +53,7 @@ const config = {
         // Remove this to remove the "edit this page" links.
         path: 'docs-build',
         editUrl:
-          "https://github.com/guardrails-ai/guardrails/tree/main/packages/create-docusaurus/templates/shared/",
+          "https://github.com/guardrails-ai/guardrails/tree/main/",
       },
     },
   ]],

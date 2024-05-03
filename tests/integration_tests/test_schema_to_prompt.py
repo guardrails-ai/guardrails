@@ -1,5 +1,4 @@
-# flake8: noqa: E501
-import pytest
+# ruff: noqa: E501
 
 from guardrails import Guard
 

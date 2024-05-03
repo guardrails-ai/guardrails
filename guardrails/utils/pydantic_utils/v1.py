@@ -1,4 +1,5 @@
 """Utilities for working with Pydantic models."""
+
 import typing
 import warnings
 from copy import deepcopy
@@ -113,7 +114,9 @@ def prepare_type_annotation(type_annotation: Union[ModelField, Type]) -> Type:
     # Strip a Union type annotation to the first non-None type
     if get_origin(type_annotation) == Union:
         non_none_type_annotation = [
-            t for t in get_args(type_annotation) if t != type(None)  # noqa E721
+            t
+            for t in get_args(type_annotation)
+            if t != type(None)  # noqa E721
         ]
         if len(non_none_type_annotation) == 1:
             return non_none_type_annotation[0]
@@ -311,7 +314,7 @@ def schema_to_bare_model(model: Type[BaseModel]) -> Type[BaseModel]:
 
 
 def convert_pydantic_model_to_openai_fn(
-    model: Union[Type[BaseModel], Type[List[Type[BaseModel]]]]
+    model: Union[Type[BaseModel], Type[List[Type[BaseModel]]]],
 ) -> Dict:
     """Convert a Pydantic BaseModel to an OpenAI function.
 
@@ -459,14 +462,14 @@ def convert_pydantic_model_to_datatype(
                 assert typing.get_origin(case_discriminator_type) is typing.Literal
                 assert len(typing.get_args(case_discriminator_type)) == 1
                 discriminator_value = typing.get_args(case_discriminator_type)[0]
-                choice_children[
-                    discriminator_value
-                ] = convert_pydantic_model_to_datatype(
-                    case,
-                    datatype=CaseDataType,
-                    name=discriminator_value,
-                    strict=strict,
-                    excluded_fields=[discriminator],
+                choice_children[discriminator_value] = (
+                    convert_pydantic_model_to_datatype(
+                        case,
+                        datatype=CaseDataType,
+                        name=discriminator_value,
+                        strict=strict,
+                        excluded_fields=[discriminator],
+                    )
                 )
             children[field_name] = pydantic_field_to_datatype(
                 Choice,

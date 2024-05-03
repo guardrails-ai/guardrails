@@ -1,3 +1,4 @@
+# ruff: noqa: E501
 import os
 from datetime import date
 from string import Template
