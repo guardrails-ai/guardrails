@@ -75,7 +75,10 @@ class GuardrailsApiClient:
         with s.post(url, json=payload.to_dict(), headers=headers, stream=True) as resp:
             for line in resp.iter_lines():
                 if not resp.ok:
-                    raise ValueError(f"status_code: {resp.status_code} reason: {resp.reason} text: {resp.text}")
+                    raise ValueError(
+                        f"status_code: {resp.status_code}"
+                        f" reason: {resp.reason} text: {resp.text}"
+                    )
                 if line:
                     json_output = json.loads(line)
                     yield ValidationOutput.from_dict(json_output)

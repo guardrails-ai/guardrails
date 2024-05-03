@@ -3,12 +3,12 @@ from string import Template
 from typing import Any, Dict, Optional
 
 import requests
+from guardrails_hub_types import Manifest
 from jwt import JWT
 from jwt.exceptions import JWTDecodeError
 
 from guardrails.classes.credentials import Credentials
 from guardrails.cli.logger import logger
-from guardrails.cli.server.module_manifest import ModuleManifest
 
 TOKEN_EXPIRED_MESSAGE = (
     "Your token has expired. Please run `guardrails configure` to update your token."
@@ -86,12 +86,12 @@ def get_jwt_token(creds: Credentials) -> Optional[str]:
     return token
 
 
-def fetch_module(module_name: str) -> ModuleManifest:
+def fetch_module(module_name: str) -> Manifest | None:
     creds = Credentials.from_rc_file(logger)
     token = get_jwt_token(creds)
 
     module_manifest_json = fetch_module_manifest(module_name, token, creds.id)
-    return ModuleManifest.from_dict(module_manifest_json)
+    return Manifest.from_dict(module_manifest_json)
 
 
 # GET /validator-manifests/{namespace}/{validatorName}
