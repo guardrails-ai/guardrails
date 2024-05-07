@@ -172,7 +172,7 @@ class StreamRunner(Runner):
             # split llm chunk down into validator-sized chunks
             # Question: How can I tell what the validator chunk size is?
 
-            # If validator chunk size is larger, pass to validator.
+            # If validator chunk size is larger, pass to validator. 
             # Validator will return None until it's accumulated enough
             # Don't forget to validate incomplete chunks at the end.
             validated_fragment = self.validate(

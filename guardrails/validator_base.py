@@ -7,6 +7,7 @@ from typing import (
     Any,
     Callable,
     Dict,
+    Iterable,
     List,
     Literal,
     Optional,
@@ -25,6 +26,8 @@ from guardrails.classes import InputType
 from guardrails.constants import hub
 from guardrails.errors import ValidationError
 from guardrails.utils.dataclass import dataclass
+
+VALIDATOR_CHUNKING_STRATEGIES = Enum('VALIDATOR_CHUNKING_STRATEGIES', ['WORD', 'SENTENCE', 'PARAGRAPH'])
 
 VALIDATOR_IMPORT_WARNING = """Accessing `{validator_name}` using
 `from guardrails.validators import {validator_name}` is deprecated and
@@ -174,6 +177,14 @@ class Filter:
 class Refrain:
     pass
 
+def is_word(chunk:str) -> bool:
+    return ' ' in chunk
+
+def is_sentence(chunk:str) -> bool:
+    return '.' in chunk
+
+def is_paragraph(chunk:str) -> bool:
+    return '\n' in chunk
 
 def check_refrain_in_list(schema: List) -> bool:
     """Checks if a Refrain object exists in a list.
@@ -390,6 +401,8 @@ class Validator(Runnable):
 
     rail_alias: str = ""
 
+    chunking_strategy=VALIDATOR_CHUNKING_STRATEGIES.SENTENCE
+    accumulated_chunks = []
     run_in_separate_process = False
     override_value_on_pass = False
     required_metadata_keys = []
@@ -451,6 +464,38 @@ class Validator(Runnable):
     def validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
         """Validates a value and return a validation result."""
         raise NotImplementedError
+
+    def validate_stream(self, chunk:Any, metadata: Dict[str, Any]) -> ValidationResult:
+        """Validates a chunk emitted by an LLM.
+        If the LLM chunk is smaller than the validator's chunking strategy, 
+        it will be accumulated until it reaches the desired size. In the meantime, 
+        the validator will return None.
+
+        Otherwise, the validator will validate the chunk and return the result.
+        """
+        # combine accumulated chunks and new chunk
+        self.accumulated_chunks.append(chunk)
+        # check if enough chunks have accumulated for validation
+        accumulated_enough = self.accumulated_enough_to_validate()
+        if not accumulated_enough:
+            return None
+        # if we've accumulated enough chunks, validate the accumulated chunks
+        accumulated_text = ''.join(self.accumulated_chunks)
+        # remove the accummulated chunks
+        self.accumulated_chunks = []
+        return self.validate(accumulated_text, metadata)
+
+    
+    def accumulated_enough_to_validate(self) -> bool:
+        accumulated_text = ''.join(self.accumulated_chunks)
+        """Check if the accumulated chunks are large enough to be validated."""
+        if(self.chunking_strategy == VALIDATOR_CHUNKING_STRATEGIES.WORD):
+            return is_word(accumulated_text)
+        if(self.chunking_strategy == VALIDATOR_CHUNKING_STRATEGIES.SENTENCE):
+            return is_sentence(accumulated_text)
+        if(self.chunking_strategy == VALIDATOR_CHUNKING_STRATEGIES.PARAGRAPH):
+            return is_paragraph(accumulated_text)
+
 
     def to_prompt(self, with_keywords: bool = True) -> str:
         """Convert the validator to a prompt.
