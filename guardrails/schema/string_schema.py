@@ -136,6 +136,9 @@ class StringSchema(Schema):
         disable_tracer: Optional[bool] = True,
         **kwargs,
     ) -> Any:
+        # TODO: add class field to track number of chunks accumulated
+        # If not enough chunks have been accumulated, emit None
+        # Once enough chunks have been accumulated, validate and emit the result
         """Validate a dictionary of data against the schema.
 
         Args:

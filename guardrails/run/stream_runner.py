@@ -158,19 +158,27 @@ class StreamRunner(Runner):
             chunk_text = self.get_chunk_text(chunk, api)
             fragment += chunk_text
 
-            # 2. Parse the fragment
-            parsed_fragment, move_to_next = self.parse(
-                index, fragment, output_schema, verified
+            # 2. Parse the chunk
+            # I assume we have to parse the chunk before validating it...
+            parsed_chunk, move_to_next = self.parse(
+                index, chunk, output_schema, verified
             )
             if move_to_next:
                 # Continue to next chunk
                 continue
 
             # 3. Run output validation
+            # If validator chunk size is smaller than LLM chunk size:
+            # split llm chunk down into validator-sized chunks
+            # Question: How can I tell what the validator chunk size is?
+
+            # If validator chunk size is larger, pass to validator.
+            # Validator will return None until it's accumulated enough
+            # Don't forget to validate incomplete chunks at the end.
             validated_fragment = self.validate(
                 iteration,
                 index,
-                parsed_fragment,
+                parsed_chunk,
                 output_schema,
                 validate_subschema=True,
             )
