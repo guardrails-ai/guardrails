@@ -90,6 +90,12 @@ jobs:
         openai-version: ["1.2.4"]
     steps:
       - uses: actions/checkout@v4
+
+      - name: Create .guardrailsrc
+        run: |
+          echo 'id="SYSTEM TESTING"' > ~/.guardrailsrc
+          echo 'no_metrics=false' >> ~/.guardrailsrc
+
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
