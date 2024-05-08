@@ -167,7 +167,7 @@ class StreamRunner(Runner):
                 # Continue to next chunk
                 continue
 
-             # TODO: change these to generators all the way down
+            # TODO: change these to generators all the way down
             validated_fragments = self.validate(
                 iteration,
                 index,
@@ -183,7 +183,9 @@ class StreamRunner(Runner):
                     )
 
                 # 4. Introspect: inspect the validated fragment for reasks
-                reasks, valid_op = self.introspect(index, validated_fragment, output_schema)
+                reasks, valid_op = self.introspect(
+                    index, validated_fragment, output_schema
+                )
                 if reasks:
                     raise ValueError(
                         "Reasks are not yet supported with streaming. Please "
