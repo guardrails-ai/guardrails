@@ -126,6 +126,8 @@ class ValidatorServiceBase:
         start_time = datetime.now()
         result = self.execute_validator(validator, value, metadata)
         end_time = datetime.now()
+        if result is None:
+            result = PassResult()
 
         validator_logs.validation_result = result
         validator_logs.start_time = start_time
