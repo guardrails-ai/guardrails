@@ -86,7 +86,7 @@ def get_jwt_token(creds: Credentials) -> Optional[str]:
     return token
 
 
-def fetch_module(module_name: str) -> Manifest | None:
+def fetch_module(module_name: str) -> Optional[Manifest]:
     creds = Credentials.from_rc_file(logger)
     token = get_jwt_token(creds)
 
