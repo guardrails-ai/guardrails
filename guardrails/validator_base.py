@@ -179,16 +179,18 @@ class Filter:
 class Refrain:
     pass
 
+
 # functions to get chunks
 def split_word(chunk: str) -> bool:
-    return list(map( lambda x: x + ' ',chunk.split(" ") ))[:-1]
+    return list(map(lambda x: x + " ", chunk.split(" ")))[:-1]
 
 
 def split_sentence(chunk: str) -> bool:
-    return list(map( lambda x: x + '.',chunk.split(".") ))[:-1]
+    return list(map(lambda x: x + ".", chunk.split(".")))[:-1]
+
 
 def split_paragraph(chunk: str) -> bool:
-    return list(map( lambda x: x + '\n',chunk.split("\n") ))[:-1]
+    return list(map(lambda x: x + "\n", chunk.split("\n")))[:-1]
 
 
 def check_refrain_in_list(schema: List) -> bool:
@@ -470,13 +472,15 @@ class Validator(Runnable):
         """Validates a value and return a validation result."""
         raise NotImplementedError
 
-    def validate_stream(self, stream: Iterable[Any], metadata: Dict[str, Any]) -> Iterable[ValidationResult]:
+    def validate_stream(
+        self, stream: Iterable[Any], metadata: Dict[str, Any]
+    ) -> Iterable[ValidationResult]:
         """Validates a chunk emitted by an LLM.
         If the LLM chunk is smaller than the validator's chunking strategy,
         it will be accumulated until it reaches the desired size. In the meantime,
         the validator will return None.
 
-        If the LLM chunk is larger than the validator's chunking strategy, 
+        If the LLM chunk is larger than the validator's chunking strategy,
         it will split it into validator-sized chunks and validate each one,
         returning an array of validation results.
 
@@ -484,6 +488,7 @@ class Validator(Runnable):
         """
         for chunk in stream:
             # combine accumulated chunks and new chunk
+            # TODO: Question: I'm assuming chunks are strings here. I'm not sure this is true
             self.accumulated_chunks.append(chunk)
             # check if enough chunks have accumulated for validation
             val_chunks_to_validate = self.get_validator_chunks()
@@ -495,22 +500,24 @@ class Validator(Runnable):
             # we now need to check if the last chunk is a complete chunk
             # if so, we process it
             # otherwise, we keep it around
-            # TODO: how to figure out if a word chunk is complete?
-            # is it gauranteed that the LLM emits complete words? 
+            # TODO: Question: how to figure out if a word chunk is complete?
+            # is it gauranteed that the LLM emits complete words?
             last_chunk = val_chunks_to_validate[-1]
             if self.chunking_strategy == VALIDATOR_CHUNKING_STRATEGIES.SENTENCE:
-               if '.' in last_chunk: 
-                   yield self.validate(last_chunk, metadata) 
-                   self.accumulated_chunks = []
-               else:
-                   self.accumulated_chunks = [last_chunk]
+                if "." in last_chunk:
+                    yield self.validate(last_chunk, metadata)
+                    self.accumulated_chunks = []
+                else:
+                    self.accumulated_chunks = [last_chunk]
             if self.chunking_strategy == VALIDATOR_CHUNKING_STRATEGIES.PARAGRAPH:
-               if '\n' in last_chunk: 
-                   yield self.validate(last_chunk, metadata) 
-                   self.accumulated_chunks = []
-               else:
-                   self.accumulated_chunks = [last_chunk]
-
+                if "\n" in last_chunk:
+                    yield self.validate(last_chunk, metadata)
+                    self.accumulated_chunks = []
+                else:
+                    self.accumulated_chunks = [last_chunk]
+        # after llm stream has been exhausted, we need to validate everything that's left
+        str_from_leftover_chunks = "".join(self.accumulated_chunks)
+        yield self.validate(str_from_leftover_chunks, metadata)
 
 
     def get_validator_chunks(self) -> list[str]:
