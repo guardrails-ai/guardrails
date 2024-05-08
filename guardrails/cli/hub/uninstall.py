@@ -11,14 +11,15 @@ from guardrails.cli.server.hub_client import get_validator_manifest
 from guardrails.cli.server.module_manifest import ModuleManifest
 
 from utils import (
-    get_site_packages_location, 
-    get_org_and_package_dirs, 
-    get_hub_directory
+    get_site_packages_location,
+    get_org_and_package_dirs,
+    get_hub_directory,
 )
 from .console import console
 
 json_format: Literal["json"] = "json"
 string_format: Literal["string"] = "string"
+
 
 def update_file(file_path: str, line_content: str, remove: bool = False):
     with open(file_path, "r+") as file:
@@ -28,6 +29,7 @@ def update_file(file_path: str, line_content: str, remove: bool = False):
             lines = [line for line in lines if line.strip() != line_content.strip()]
         file.writelines(lines)
         file.truncate()
+
 
 def remove_from_hub_inits(manifest: ModuleManifest, site_packages: str):
     org_package = get_org_and_package_dirs(manifest)
@@ -49,6 +51,7 @@ def remove_from_hub_inits(manifest: ModuleManifest, site_packages: str):
         site_packages, "guardrails", "hub", namespace, "__init__.py"
     )
     update_file(namespace_init_location, import_line, remove=True)
+
 
 def uninstall_hub_module(manifest: ModuleManifest, site_packages: str):
     uninstall_directory = get_hub_directory(manifest, site_packages)

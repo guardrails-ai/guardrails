@@ -13,6 +13,7 @@ from guardrails.cli.logger import logger
 json_format: Literal["json"] = "json"
 string_format: Literal["string"] = "string"
 
+
 def pip_process(
     action: str,
     package: str = "",
@@ -56,9 +57,11 @@ def pip_process(
         )
         sys.exit(1)
 
+
 def get_site_packages_location() -> str:
     output = pip_process("show", "pip", format=json_format)
     return output["Location"]
+
 
 def get_org_and_package_dirs(manifest: ModuleManifest) -> List[str]:
     org_name = manifest.namespace
@@ -67,8 +70,7 @@ def get_org_and_package_dirs(manifest: ModuleManifest) -> List[str]:
     package = snake_case(package_name if len(package_name) > 1 else package_name)
     return list(filter(None, [org, package]))
 
+
 def get_hub_directory(manifest: ModuleManifest, site_packages: str) -> str:
     org_package = get_org_and_package_dirs(manifest)
     return os.path.join(site_packages, "guardrails", "hub", *org_package)
-
-

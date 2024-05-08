@@ -13,10 +13,10 @@ from guardrails.cli.server.hub_client import get_validator_manifest
 from guardrails.cli.server.module_manifest import ModuleManifest
 
 from utils import (
-    pip_process, 
-    get_site_packages_location, 
-    get_org_and_package_dirs, 
-    get_hub_directory
+    pip_process,
+    get_site_packages_location,
+    get_org_and_package_dirs,
+    get_hub_directory,
 )
 from .console import console
 
@@ -32,6 +32,7 @@ def removesuffix(string: str, suffix: str) -> str:
 
 string_format: Literal["string"] = "string"
 json_format: Literal["json"] = "json"
+
 
 # NOTE: I don't like this but don't see another way without
 #  shimming the init file with all hub validators
