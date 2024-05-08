@@ -1819,6 +1819,20 @@ httpx = ">=0.20.0,<0.28.0"
 python-dateutil = ">=2.8.0,<3"
 
 [[package]]
+name = "guardrails-hub-types"
+version = "0.0.3"
+description = "Guardrails Hub Types."
+optional = false
+python-versions = "<4,>=3.8"
+files = [
+    {file = "guardrails_hub_types-0.0.3-py3-none-any.whl", hash = "sha256:6c720ae095d0e99f518654c4f3fa7abd39414387aa87189123ce5933d020bbcd"},
+    {file = "guardrails_hub_types-0.0.3.tar.gz", hash = "sha256:e5ecf4dd80b7ad8349772b9bbcce001acf3a82ee7c41d63924452b00f68202f7"},
+]
+
+[package.extras]
+dev = ["pyright", "pytest", "pytest-cov", "ruff"]
+
+[[package]]
 name = "h11"
 version = "0.14.0"
 description = "A pure-Python, bring-your-own-I/O implementation of HTTP/1.1"
@@ -8188,4 +8202,4 @@ vectordb = ["faiss-cpu", "numpy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8.1"
-content-hash = "26f41558dce359ec36fb10d3e71413a9a4392f9f47e54f9283a4c520e8246d7d"
+content-hash = "152a7c5615fed176429e111a6713acc69c6eeb6e55e3a7dd4721e060e45e0f8d"
