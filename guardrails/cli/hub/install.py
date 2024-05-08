@@ -19,7 +19,6 @@ from utils import get_site_packages_location, get_org_and_package_dirs, pip_proc
 
 from .console import console
 
-
 def removesuffix(string: str, suffix: str) -> str:
     if sys.version_info.minor >= 9:
         return string.removesuffix(suffix)  # type: ignore

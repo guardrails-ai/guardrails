@@ -15,9 +15,18 @@ from guardrails.cli.logger import LEVELS, logger
 from guardrails.cli.server.hub_client import get_validator_manifest
 from guardrails.cli.server.module_manifest import ModuleManifest
 
-from utils import get_site_packages_location, get_org_and_package_dirs, update_file, get_hub_directory
+from utils import get_site_packages_location, get_org_and_package_dirs, get_hub_directory
 
 from .console import console
+
+def update_file(file_path: str, line_content: str, remove: bool = False):
+    with open(file_path, "r+") as file:
+        lines = file.readlines()
+        file.seek(0)
+        if remove:
+            lines = [line for line in lines if line.strip() != line_content.strip()]
+        file.writelines(lines)
+        file.truncate()
 
 def remove_from_hub_inits(manifest: ModuleManifest, site_packages: str):
     org_package = get_org_and_package_dirs(manifest)

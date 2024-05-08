@@ -67,15 +67,6 @@ def get_org_and_package_dirs(manifest: ModuleManifest) -> List[str]:
     package = snake_case(package_name if len(package_name) > 1 else package_name)
     return list(filter(None, [org, package]))
 
-def update_file(file_path: str, line_content: str, remove: bool = False):
-    with open(file_path, "r+") as file:
-        lines = file.readlines()
-        file.seek(0)
-        if remove:
-            lines = [line for line in lines if line.strip() != line_content.strip()]
-        file.writelines(lines)
-        file.truncate()
-
 def get_hub_directory(manifest: ModuleManifest, site_packages: str) -> str:
     org_package = get_org_and_package_dirs(manifest)
     return os.path.join(site_packages, "guardrails", "hub", *org_package)
