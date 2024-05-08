@@ -167,14 +167,6 @@ class StreamRunner(Runner):
                 # Continue to next chunk
                 continue
 
-            # 3. Run output validation
-            # If validator chunk size is smaller than LLM chunk size:
-            # split llm chunk down into validator-sized chunks
-            # Question: How can I tell what the validator chunk size is?
-
-            # If validator chunk size is larger, pass to validator. 
-            # Validator will return None until it's accumulated enough
-            # Don't forget to validate incomplete chunks at the end.
             validated_fragment = self.validate(
                 iteration,
                 index,
@@ -198,7 +190,7 @@ class StreamRunner(Runner):
 
             # 5. Convert validated fragment to a pretty JSON string
             yield ValidationOutcome(
-                raw_llm_output=fragment,
+                raw_llm_output=chunk,
                 validated_output=validated_fragment,
                 validation_passed=validated_fragment is not None,
             )

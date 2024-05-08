@@ -175,7 +175,7 @@ class StringSchema(Schema):
         validated_response = {dummy_key: validated_response}
 
         if check_refrain_in_dict(validated_response):
-            # If the data contains a `Refain` value, we return an empty
+            # If the data contains a `Refrain` value, we return an empty
             # dictionary.
             logger.debug("Refrain detected.")
             validated_response = {}
