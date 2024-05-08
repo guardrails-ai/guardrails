@@ -519,7 +519,6 @@ class Validator(Runnable):
         str_from_leftover_chunks = "".join(self.accumulated_chunks)
         yield self.validate(str_from_leftover_chunks, metadata)
 
-
     def get_validator_chunks(self) -> list[str]:
         accumulated_text = "".join(self.accumulated_chunks)
         """Check if the accumulated chunks are large enough to be validated."""

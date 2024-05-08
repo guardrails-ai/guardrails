@@ -167,33 +167,37 @@ class StreamRunner(Runner):
                 # Continue to next chunk
                 continue
 
-            validated_fragment = self.validate(
+             # TODO: change these to generators all the way down
+            validated_fragments = self.validate(
                 iteration,
                 index,
                 parsed_chunk,
                 output_schema,
                 validate_subschema=True,
             )
-            if isinstance(validated_fragment, SkeletonReAsk):
-                raise ValueError(
-                    "Received fragment schema is an invalid sub-schema "
-                    "of the expected output JSON schema."
-                )
+            for validated_fragment in validated_fragments:
+                if isinstance(validated_fragment, SkeletonReAsk):
+                    raise ValueError(
+                        "Received fragment schema is an invalid sub-schema "
+                        "of the expected output JSON schema."
+                    )
 
-            # 4. Introspect: inspect the validated fragment for reasks
-            reasks, valid_op = self.introspect(index, validated_fragment, output_schema)
-            if reasks:
-                raise ValueError(
-                    "Reasks are not yet supported with streaming. Please "
-                    "remove reasks from schema or disable streaming."
-                )
+                # 4. Introspect: inspect the validated fragment for reasks
+                reasks, valid_op = self.introspect(index, validated_fragment, output_schema)
+                if reasks:
+                    raise ValueError(
+                        "Reasks are not yet supported with streaming. Please "
+                        "remove reasks from schema or disable streaming."
+                    )
 
-            # 5. Convert validated fragment to a pretty JSON string
-            yield ValidationOutcome(
-                raw_llm_output=chunk,
-                validated_output=validated_fragment,
-                validation_passed=validated_fragment is not None,
-            )
+                # 5. Convert validated fragment to a pretty JSON string
+                yield ValidationOutcome(
+                    # TODO: question: What do we want raw_llm_output to be here?
+                    #  The chunk or the whole output?
+                    raw_llm_output=chunk,
+                    validated_output=validated_fragment,
+                    validation_passed=validated_fragment is not None,
+                )
 
         # Finally, add to logs
         iteration.outputs.raw_output = fragment
