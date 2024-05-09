@@ -160,66 +160,116 @@ class Guard(Runnable, Generic[OT]):
             self.upsert_guard()
 
     @property
+    @deprecated(
+        """'Guard.prompt_schema' is deprecated and will be removed in \
+versions 0.5.x and beyond."""
+    )
     def prompt_schema(self) -> Optional[StringSchema]:
         """Return the input schema."""
         return self.rail.prompt_schema
 
     @property
+    @deprecated(
+        """'Guard.instructions_schema' is deprecated and will be removed in \
+versions 0.5.x and beyond."""
+    )
     def instructions_schema(self) -> Optional[StringSchema]:
         """Return the input schema."""
         return self.rail.instructions_schema
 
     @property
+    @deprecated(
+        """'Guard.msg_history_schema' is deprecated and will be removed in \
+versions 0.5.x and beyond."""
+    )
     def msg_history_schema(self) -> Optional[StringSchema]:
         """Return the input schema."""
         return self.rail.msg_history_schema
 
     @property
+    @deprecated(
+        """'Guard.output_schema' is deprecated and will be removed in \
+versions 0.5.x and beyond."""
+    )
     def output_schema(self) -> Schema:
         """Return the output schema."""
         return self.rail.output_schema
 
     @property
+    @deprecated(
+        """'Guard.instructions' is deprecated and will be removed in \
+versions 0.5.x and beyond. Use 'Guard.history.last.instructions' instead."""
+    )
     def instructions(self) -> Optional[Instructions]:
         """Return the instruction-prompt."""
         return self.rail.instructions
 
     @property
+    @deprecated(
+        """'Guard.prompt' is deprecated and will be removed in \
+versions 0.5.x and beyond. Use 'Guard.history.last.prompt' instead."""
+    )
     def prompt(self) -> Optional[Prompt]:
         """Return the prompt."""
         return self.rail.prompt
 
     @property
+    @deprecated(
+        """'Guard.raw_prompt' is deprecated and will be removed in \
+versions 0.5.x and beyond. Use 'Guard.history.last.prompt' instead."""
+    )
     def raw_prompt(self) -> Optional[Prompt]:
         """Return the prompt, alias for `prompt`."""
-        return self.prompt
+        return self.rail.prompt
 
     @property
+    @deprecated(
+        """'Guard.base_prompt' is deprecated and will be removed in \
+versions 0.5.x and beyond. Use 'Guard.history.last.prompt' instead."""
+    )
     def base_prompt(self) -> Optional[str]:
         """Return the base prompt i.e. prompt.source."""
-        if self.prompt is None:
+        if self.rail.prompt is None:
             return None
-        return self.prompt.source
+        return self.rail.prompt.source
 
     @property
+    @deprecated(
+        """'Guard.reask_prompt' is deprecated and will be removed in \
+versions 0.5.x and beyond. Use 'Guard.history.last.reask_prompts' instead."""
+    )
     def reask_prompt(self) -> Optional[Prompt]:
         """Return the reask prompt."""
-        return self.output_schema.reask_prompt_template
+        return self.rail.output_schema.reask_prompt_template
 
     @reask_prompt.setter
+    @deprecated(
+        """'Guard.reask_prompt' is deprecated and will be removed in \
+versions 0.5.x and beyond. Pass 'reask_prompt' in the initializer \
+    method instead: e.g. 'Guard.from_pydantic'."""
+    )
     def reask_prompt(self, reask_prompt: Optional[str]):
         """Set the reask prompt."""
-        self.output_schema.reask_prompt_template = reask_prompt
+        self.rail.output_schema.reask_prompt_template = reask_prompt
 
     @property
+    @deprecated(
+        """'Guard.reask_instructions' is deprecated and will be removed in \
+versions 0.5.x and beyond. Use 'Guard.history.last.reask_instructions' instead."""
+    )
     def reask_instructions(self) -> Optional[Instructions]:
         """Return the reask prompt."""
-        return self.output_schema.reask_instructions_template
+        return self.rail.output_schema.reask_instructions_template
 
     @reask_instructions.setter
+    @deprecated(
+        """'Guard.reask_instructions' is deprecated and will be removed in \
+versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
+    method instead: e.g. 'Guard.from_pydantic'."""
+    )
     def reask_instructions(self, reask_instructions: Optional[str]):
         """Set the reask prompt."""
-        self.output_schema.reask_instructions_template = reask_instructions
+        self.rail.output_schema.reask_instructions_template = reask_instructions
 
     def configure(
         self,
@@ -549,10 +599,14 @@ class Guard(Runnable, Generic[OT]):
                         ("guard_id", self._guard_id),
                         ("user_id", self._user_id),
                         ("llm_api", llm_api.__name__ if llm_api else "None"),
-                        ("custom_reask_prompt", self.reask_prompt is not None),
+                        (
+                            "custom_reask_prompt",
+                            self.rail.output_schema.reask_prompt_template is not None,
+                        ),
                         (
                             "custom_reask_instructions",
-                            self.reask_instructions is not None,
+                            self.rail.output_schema.reask_instructions_template
+                            is not None,
                         ),
                     ],
                     is_parent=True,  # It will have children
@@ -570,9 +624,11 @@ class Guard(Runnable, Generic[OT]):
                     "This should never happen."
                 )
 
-            input_prompt = prompt or (self.prompt._source if self.prompt else None)
+            input_prompt = prompt or (
+                self.rail.prompt._source if self.rail.prompt else None
+            )
             input_instructions = instructions or (
-                self.instructions._source if self.instructions else None
+                self.rail.instructions._source if self.rail.instructions else None
             )
             call_inputs = CallInputs(
                 llm_api=llm_api,
@@ -663,8 +719,8 @@ class Guard(Runnable, Generic[OT]):
         *args,
         **kwargs,
     ) -> Union[ValidationOutcome[OT], Iterable[ValidationOutcome[OT]]]:
-        instructions_obj = instructions or self.instructions
-        prompt_obj = prompt or self.prompt
+        instructions_obj = instructions or self.rail.instructions
+        prompt_obj = prompt or self.rail.prompt
         msg_history_obj = msg_history or []
         if prompt_obj is None:
             if msg_history is not None and not len(msg_history_obj):
@@ -681,10 +737,10 @@ class Guard(Runnable, Generic[OT]):
                 prompt=prompt_obj,
                 msg_history=msg_history_obj,
                 api=get_llm_ask(llm_api, *args, **kwargs),
-                prompt_schema=self.prompt_schema,
-                instructions_schema=self.instructions_schema,
-                msg_history_schema=self.msg_history_schema,
-                output_schema=self.output_schema,
+                prompt_schema=self.rail.prompt_schema,
+                instructions_schema=self.rail.instructions_schema,
+                msg_history_schema=self.rail.msg_history_schema,
+                output_schema=self.rail.output_schema,
                 num_reasks=num_reasks,
                 metadata=metadata,
                 base_model=self.base_model,
@@ -699,10 +755,10 @@ class Guard(Runnable, Generic[OT]):
                 prompt=prompt_obj,
                 msg_history=msg_history_obj,
                 api=get_llm_ask(llm_api, *args, **kwargs),
-                prompt_schema=self.prompt_schema,
-                instructions_schema=self.instructions_schema,
-                msg_history_schema=self.msg_history_schema,
-                output_schema=self.output_schema,
+                prompt_schema=self.rail.prompt_schema,
+                instructions_schema=self.rail.instructions_schema,
+                msg_history_schema=self.rail.msg_history_schema,
+                output_schema=self.rail.output_schema,
                 num_reasks=num_reasks,
                 metadata=metadata,
                 base_model=self.base_model,
@@ -744,8 +800,8 @@ class Guard(Runnable, Generic[OT]):
         Returns:
             The raw text output from the LLM and the validated output.
         """
-        instructions_obj = instructions or self.instructions
-        prompt_obj = prompt or self.prompt
+        instructions_obj = instructions or self.rail.instructions
+        prompt_obj = prompt or self.rail.prompt
         msg_history_obj = msg_history or []
         if prompt_obj is None:
             if msg_history_obj is not None and not len(msg_history_obj):
@@ -759,10 +815,10 @@ class Guard(Runnable, Generic[OT]):
             prompt=prompt_obj,
             msg_history=msg_history_obj,
             api=get_async_llm_ask(llm_api, *args, **kwargs),
-            prompt_schema=self.prompt_schema,
-            instructions_schema=self.instructions_schema,
-            msg_history_schema=self.msg_history_schema,
-            output_schema=self.output_schema,
+            prompt_schema=self.rail.prompt_schema,
+            instructions_schema=self.rail.instructions_schema,
+            msg_history_schema=self.rail.msg_history_schema,
+            output_schema=self.rail.output_schema,
             num_reasks=num_reasks,
             metadata=metadata,
             base_model=self.base_model,
@@ -887,10 +943,14 @@ class Guard(Runnable, Generic[OT]):
                         ("guard_id", self._guard_id),
                         ("user_id", self._user_id),
                         ("llm_api", llm_api.__name__ if llm_api else "None"),
-                        ("custom_reask_prompt", self.reask_prompt is not None),
+                        (
+                            "custom_reask_prompt",
+                            self.rail.output_schema.reask_prompt_template is not None,
+                        ),
                         (
                             "custom_reask_instructions",
-                            self.reask_instructions is not None,
+                            self.rail.output_schema.reask_instructions_template
+                            is not None,
                         ),
                     ],
                     is_parent=True,  # It will have children
@@ -912,9 +972,9 @@ class Guard(Runnable, Generic[OT]):
             set_tracer(self._tracer)
             set_tracer_context(self._tracer_context)
 
-            input_prompt = self.prompt._source if self.prompt else None
+            input_prompt = self.rail.prompt._source if self.rail.prompt else None
             input_instructions = (
-                self.instructions._source if self.instructions else None
+                self.rail.instructions._source if self.rail.instructions else None
             )
             call_inputs = CallInputs(
                 llm_api=llm_api,
@@ -1013,10 +1073,10 @@ class Guard(Runnable, Generic[OT]):
             prompt=kwargs.pop("prompt", None),
             msg_history=kwargs.pop("msg_history", None),
             api=get_llm_ask(llm_api, *args, **kwargs) if llm_api else None,
-            prompt_schema=self.prompt_schema,
-            instructions_schema=self.instructions_schema,
-            msg_history_schema=self.msg_history_schema,
-            output_schema=self.output_schema,
+            prompt_schema=self.rail.prompt_schema,
+            instructions_schema=self.rail.instructions_schema,
+            msg_history_schema=self.rail.msg_history_schema,
+            output_schema=self.rail.output_schema,
             num_reasks=num_reasks,
             metadata=metadata,
             output=llm_output,
@@ -1055,10 +1115,10 @@ class Guard(Runnable, Generic[OT]):
             prompt=kwargs.pop("prompt", None),
             msg_history=kwargs.pop("msg_history", None),
             api=get_async_llm_ask(llm_api, *args, **kwargs) if llm_api else None,
-            prompt_schema=self.prompt_schema,
-            instructions_schema=self.instructions_schema,
-            msg_history_schema=self.msg_history_schema,
-            output_schema=self.output_schema,
+            prompt_schema=self.rail.prompt_schema,
+            instructions_schema=self.rail.instructions_schema,
+            msg_history_schema=self.rail.msg_history_schema,
+            output_schema=self.rail.output_schema,
             num_reasks=num_reasks,
             metadata=metadata,
             output=llm_output,
@@ -1267,11 +1327,17 @@ class Guard(Runnable, Generic[OT]):
         ):
             self.rail = Rail.from_string_validators(
                 validators=self._validators,
-                prompt=self.prompt.source if self.prompt else None,
-                instructions=self.instructions.source if self.instructions else None,
-                reask_prompt=self.reask_prompt.source if self.reask_prompt else None,
-                reask_instructions=self.reask_instructions.source
-                if self.reask_instructions
+                prompt=self.rail.prompt.source if self.rail.prompt else None,
+                instructions=(
+                    self.rail.instructions.source if self.rail.instructions else None
+                ),
+                reask_prompt=(
+                    self.rail.output_schema.reask_prompt_template.source
+                    if self.rail.output_schema.reask_prompt_template
+                    else None
+                ),
+                reask_instructions=self.rail.output_schema.reask_instructions_template.source
+                if self.rail.output_schema.reask_instructions_template
                 else None,
             )
 
