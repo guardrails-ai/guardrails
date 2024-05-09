@@ -38,7 +38,7 @@ type-pydantic-v2-openai-v1:
 
 lint:
 	poetry run ruff check guardrails/ tests/
-	poetry run ruff format guardrails/ tests/ --check
+	poetry run ruff format guardrails/ tests/
 
 test:
 	poetry run pytest tests/
@@ -85,3 +85,11 @@ precommit:
 	pyright guardrails/
 	make lint
 	./github/workflows/scripts/update_notebook_matrix.sh
+
+refresh:
+	echo "Removing old virtual environment"
+	rm -rf ./.venv;
+	echo "Creating new virtual environment"
+	python3 -m venv ./.venv;
+	echo "Sourcing and installing"
+	source ./.venv/bin/activate && make full;
