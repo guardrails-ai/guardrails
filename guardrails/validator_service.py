@@ -128,10 +128,9 @@ class ValidatorServiceBase:
         if stream:  
             result = self.execute_validator(validator, value, metadata)
         else:
-            result = self.execute_validator(validator, value, metadata)
+            result = validator.validate_stream(value, metadata)
         end_time = datetime.now()
 
-        result = validator.validate(value, metadata)
         if result is None:
             result = PassResult()
 
@@ -175,9 +174,9 @@ class SequentialValidatorService(ValidatorServiceBase):
             validator_logs = self.run_validator(
                 iteration, validator, value, metadata, property_path, stream
             )
-            # if stream is true, validator_logs will be a list of 
             result = validator_logs.validation_result
-            if isinstance(result, FailResult):
+            # I assume we would want to wait until the end to do reasks for streams
+            if isinstance(result, FailResult) and not stream:
                 value = self.perform_correction(
                     [result], value, validator, validator.on_fail_descriptor
                 )

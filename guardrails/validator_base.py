@@ -495,6 +495,8 @@ class Validator(Runnable):
         self.accumulated_chunks = new_accumulated_chunks
         # exclude last chunk, because it may not be a complete chunk
         validation_result = self.validate(chunk_to_validate, metadata)
+        # include the chunk that we've validated in the metadata
+        validation_result.metadata['validated_chunk'] = chunk_to_validate
         return validation_result
 
         # TODO: the following logic needs to be moved up the chain to stream_runner
