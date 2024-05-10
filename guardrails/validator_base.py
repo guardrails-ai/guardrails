@@ -1,4 +1,5 @@
 import inspect
+import nltk
 from collections import defaultdict
 from copy import deepcopy
 from enum import Enum
