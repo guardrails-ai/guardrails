@@ -113,6 +113,7 @@ class ValidatorServiceBase:
         value: Any,
         metadata: Dict,
         property_path: str,
+        stream:bool = False
     ) -> ValidatorLogs:
         validator_class_name = validator.__class__.__name__
         validator_logs = ValidatorLogs(
@@ -124,7 +125,10 @@ class ValidatorServiceBase:
         iteration.outputs.validator_logs.append(validator_logs)
 
         start_time = datetime.now()
-        result = self.execute_validator(validator, value, metadata)
+        if stream:  
+            result = self.execute_validator(validator, value, metadata)
+        else:
+            result = self.execute_validator(validator, value, metadata)
         end_time = datetime.now()
 
         result = validator.validate(value, metadata)
@@ -164,13 +168,14 @@ class SequentialValidatorService(ValidatorServiceBase):
         value: Any,
         metadata: Dict[str, Any],
         property_path: str,
+        stream:bool = False
     ) -> Tuple[Any, Dict[str, Any]]:
         # Validate the field
         for validator in validator_setup.validators:
             validator_logs = self.run_validator(
-                iteration, validator, value, metadata, property_path
+                iteration, validator, value, metadata, property_path, stream
             )
-
+            # if stream is true, validator_logs will be a list of 
             result = validator_logs.validation_result
             if isinstance(result, FailResult):
                 value = self.perform_correction(
@@ -193,6 +198,7 @@ class SequentialValidatorService(ValidatorServiceBase):
                 return value, metadata
         return value, metadata
 
+    
     def validate_dependents(
         self,
         value: Any,
@@ -208,6 +214,7 @@ class SequentialValidatorService(ValidatorServiceBase):
             )
             value[child_setup.key] = child_schema
 
+    
     def validate(
         self,
         value: Any,
@@ -233,6 +240,30 @@ class SequentialValidatorService(ValidatorServiceBase):
         )
 
         return value, metadata
+
+    def validate_stream(
+        self,
+        value: Any,
+        metadata: dict,
+        validator_setup: FieldValidation,
+        iteration: Iteration,
+        path: str = "$",
+    ) -> Tuple[Any, dict]:
+        property_path = (
+            f"{path}.{validator_setup.key}"
+            if key_not_empty(validator_setup.key)
+            else path
+        )
+        # I assume validate stream doesn't need validate_dependents
+        # because right now we're only handling StringSchema
+
+        # Validate the field
+        value, metadata = self.run_validators(
+            iteration, validator_setup, value, metadata, property_path, True
+        )
+
+        return value, metadata
+
 
 
 class MultiprocMixin:
@@ -436,6 +467,36 @@ def validate(
     else:
         validator_service = SequentialValidatorService(disable_tracer)
     return validator_service.validate(
+        value,
+        metadata,
+        validator_setup,
+        iteration,
+    )
+
+def validate_stream(
+    value: Any,
+    metadata: dict,
+    validator_setup: FieldValidation,
+    iteration: Iteration,
+    disable_tracer: Optional[bool] = True,
+):
+    process_count = int(os.environ.get("GUARDRAILS_PROCESS_COUNT", 10))
+
+    # try:
+        # loop = asyncio.get_event_loop()
+    # except RuntimeError:
+        # loop = None
+
+    if process_count == 1:
+        logger.warning(
+            "Process count was set to 1 via the GUARDRAILS_PROCESS_COUNT"
+            "environment variable."
+            "This will cause all validations to run synchronously."
+            "To run asynchronously, specify a process count"
+            "greater than 1 or unset this environment variable."
+        )
+    sequential_validator_service = SequentialValidatorService(disable_tracer)
+    return sequential_validator_service.validate_stream(
         value,
         metadata,
         validator_setup,

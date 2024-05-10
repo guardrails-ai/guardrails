@@ -1,4 +1,4 @@
-from typing import Any, Dict, Generator, List, Optional, Union
+from typing import Any, Dict, Generator, Iterable, List, Optional, Union
 
 from guardrails.classes.history import Call, Inputs, Iteration, Outputs
 from guardrails.classes.output_type import OT
@@ -167,15 +167,15 @@ class StreamRunner(Runner):
                 # Continue to next chunk
                 continue
 
-            # TODO: change these to generators all the way down
-            validated_fragments = self.validate(
+            validated_fragments_iterable = self.validate(
                 iteration,
                 index,
                 parsed_chunk,
                 output_schema,
+                True,
                 validate_subschema=True,
             )
-            for validated_fragment in validated_fragments:
+            for validated_fragment in validated_fragments_iterable:
                 if isinstance(validated_fragment, SkeletonReAsk):
                     raise ValueError(
                         "Received fragment schema is an invalid sub-schema "
@@ -183,9 +183,7 @@ class StreamRunner(Runner):
                     )
 
                 # 4. Introspect: inspect the validated fragment for reasks
-                reasks, valid_op = self.introspect(
-                    index, validated_fragment, output_schema
-                )
+                reasks, valid_op = self.introspect(index, validated_fragment, output_schema)
                 if reasks:
                     raise ValueError(
                         "Reasks are not yet supported with streaming. Please "

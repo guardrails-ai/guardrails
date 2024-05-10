@@ -27,10 +27,6 @@ from guardrails.constants import hub
 from guardrails.errors import ValidationError
 from guardrails.utils.dataclass import dataclass
 
-VALIDATOR_CHUNKING_STRATEGIES = Enum(
-    "VALIDATOR_CHUNKING_STRATEGIES", ["WORD", "SENTENCE", "PARAGRAPH"]
-)
-
 VALIDATOR_IMPORT_WARNING = """Accessing `{validator_name}` using
 `from guardrails.validators import {validator_name}` is deprecated and
 support will be removed after version 0.5.x. Please switch to the Guardrails Hub syntax:
@@ -178,7 +174,6 @@ class Filter:
 
 class Refrain:
     pass
-
 
 # functions to get chunks
 def split_word(chunk: str) -> bool:
@@ -408,7 +403,10 @@ class Validator(Runnable):
 
     rail_alias: str = ""
 
-    chunking_strategy = VALIDATOR_CHUNKING_STRATEGIES.SENTENCE
+    # chunking function returns empty list or list of 2 chunks 
+    # first chunk is the chunk to validate
+    # second chunk is incomplete chunk that needs further accumulation 
+    chunking_function = split_sentence
     accumulated_chunks = []
     run_in_separate_process = False
     override_value_on_pass = False
@@ -473,8 +471,8 @@ class Validator(Runnable):
         raise NotImplementedError
 
     def validate_stream(
-        self, stream: Iterable[Any], metadata: Dict[str, Any]
-    ) -> Iterable[ValidationResult]:
+        self, chunk: Any, metadata: Dict[str, Any]
+    ) -> ValidationResult:
         """Validates a chunk emitted by an LLM.
         If the LLM chunk is smaller than the validator's chunking strategy,
         it will be accumulated until it reaches the desired size. In the meantime,
@@ -486,48 +484,24 @@ class Validator(Runnable):
 
         Otherwise, the validator will validate the chunk and return the result.
         """
-        for chunk in stream:
-            # combine accumulated chunks and new chunk
-            # TODO: Question: I'm assuming chunks are strings here. I'm not sure this is true
-            self.accumulated_chunks.append(chunk)
-            # check if enough chunks have accumulated for validation
-            val_chunks_to_validate = self.get_validator_chunks()
-            if len(val_chunks_to_validate) == 0:
-                yield None
-            # exclude last chunk, because it may not be a complete chunk
-            for val_chunk in val_chunks_to_validate[:-1]:
-                yield self.validate(val_chunk, metadata)
-            # we now need to check if the last chunk is a complete chunk
-            # if so, we process it
-            # otherwise, we keep it around
-            # TODO: Question: how to figure out if a word chunk is complete?
-            # is it gauranteed that the LLM emits complete words?
-            last_chunk = val_chunks_to_validate[-1]
-            if self.chunking_strategy == VALIDATOR_CHUNKING_STRATEGIES.SENTENCE:
-                if "." in last_chunk:
-                    yield self.validate(last_chunk, metadata)
-                    self.accumulated_chunks = []
-                else:
-                    self.accumulated_chunks = [last_chunk]
-            if self.chunking_strategy == VALIDATOR_CHUNKING_STRATEGIES.PARAGRAPH:
-                if "\n" in last_chunk:
-                    yield self.validate(last_chunk, metadata)
-                    self.accumulated_chunks = []
-                else:
-                    self.accumulated_chunks = [last_chunk]
-        # after llm stream has been exhausted, we need to validate everything that's left
-        str_from_leftover_chunks = "".join(self.accumulated_chunks)
-        yield self.validate(str_from_leftover_chunks, metadata)
-
-    def get_validator_chunks(self) -> list[str]:
+        # combine accumulated chunks and new chunk
+        # TODO: Question: I'm assuming chunks are strings here. I'm not sure this is true
+        self.accumulated_chunks.append(chunk)
         accumulated_text = "".join(self.accumulated_chunks)
-        """Check if the accumulated chunks are large enough to be validated."""
-        if self.chunking_strategy == VALIDATOR_CHUNKING_STRATEGIES.WORD:
-            return split_word(accumulated_text)
-        if self.chunking_strategy == VALIDATOR_CHUNKING_STRATEGIES.SENTENCE:
-            return split_sentence(accumulated_text)
-        if self.chunking_strategy == VALIDATOR_CHUNKING_STRATEGIES.PARAGRAPH:
-            return split_paragraph(accumulated_text)
+        # check if enough chunks have accumulated for validation
+        [chunk_to_validate, new_accumulated_chunks] = self.chunking_function(accumulated_text)
+        if len(chunk_to_validate) == 0:
+            return None
+        self.accumulated_chunks = new_accumulated_chunks
+        # exclude last chunk, because it may not be a complete chunk
+        validation_result = self.validate(chunk_to_validate, metadata)
+        return validation_result
+
+        # TODO: the following logic needs to be moved up the chain to stream_runner
+        # TODO: maybe implement a function validateRemainder that validates remaining chunks
+        # after llm stream has been exhausted, we need to validate everything that's left
+        # str_from_leftover_chunks = "".join(self.accumulated_chunks)
+        # yield self.validate(str_from_leftover_chunks, metadata)
 
     def to_prompt(self, with_keywords: bool = True) -> str:
         """Convert the validator to a prompt.

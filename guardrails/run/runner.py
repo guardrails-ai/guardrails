@@ -547,6 +547,7 @@ class Runner:
         index: int,
         parsed_output: Any,
         output_schema: Schema,
+        stream: Optional[bool] = False,
         **kwargs,
     ):
         """Validate the output."""
@@ -554,6 +555,7 @@ class Runner:
             iteration,
             parsed_output,
             self.metadata,
+            stream,
             attempt_number=index,
             disable_tracer=self._disable_tracer,
             **kwargs,

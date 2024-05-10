@@ -134,6 +134,7 @@ class StringSchema(Schema):
         metadata: Dict,
         attempt_number: int = 0,
         disable_tracer: Optional[bool] = True,
+        stream: Optional[bool] = False,
         **kwargs,
     ) -> Any:
         # TODO: add class field to track number of chunks accumulated
@@ -163,14 +164,22 @@ class StringSchema(Schema):
                 dummy_key: data,
             },
         )
-
-        validated_response, metadata = validator_service.validate(
-            value=data,
-            metadata=metadata,
-            validator_setup=validation,
-            iteration=iteration,
-            disable_tracer=disable_tracer,
-        )
+        if(stream):
+            validated_response, metadata = validator_service.validate_stream(
+                value=data,
+                metadata=metadata,
+                validator_setup=validation,
+                iteration=iteration,
+                disable_tracer=disable_tracer,
+            )
+        else:
+            validated_response, metadata = validator_service.validate(
+                value=data,
+                metadata=metadata,
+                validator_setup=validation,
+                iteration=iteration,
+                disable_tracer=disable_tracer,
+            )
 
         validated_response = {dummy_key: validated_response}
 
