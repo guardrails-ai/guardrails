@@ -42,8 +42,9 @@ class ValidatorServiceBase:
     #       Using `fork` instead of `spawn` may alleviate the symptom for POSIX systems,
     #       but is relatively unsupported on Windows.
     def execute_validator(
-        self, validator: Validator, value: Any, metadata: Optional[Dict]
+        self, validator: Validator, value: Any, metadata: Optional[Dict], stream:Optional[bool] = False
     ) -> ValidationResult:
+        validate_func = validator.validate_stream if stream else validator.validate
         traced_validator = trace_validator(
             validator_name=validator.rail_alias,
             obj_id=id(validator),
@@ -51,7 +52,7 @@ class ValidatorServiceBase:
             # namespace=validator.namespace,
             on_fail_descriptor=validator.on_fail_descriptor,
             **validator._kwargs,
-        )(validator.validate)
+        )(validate_func)
         result = traced_validator(value, metadata)
         return result
 
@@ -113,7 +114,7 @@ class ValidatorServiceBase:
         value: Any,
         metadata: Dict,
         property_path: str,
-        stream:bool = False
+        stream:Optional[bool] = False
     ) -> ValidatorLogs:
         validator_class_name = validator.__class__.__name__
         validator_logs = ValidatorLogs(
@@ -125,10 +126,10 @@ class ValidatorServiceBase:
         iteration.outputs.validator_logs.append(validator_logs)
 
         start_time = datetime.now()
-        if stream:  
-            result = self.execute_validator(validator, value, metadata)
-        else:
+        if stream:
             result = validator.validate_stream(value, metadata)
+        else:
+            result = self.execute_validator(validator, value, metadata)
         end_time = datetime.now()
 
         if result is None:
@@ -167,7 +168,7 @@ class SequentialValidatorService(ValidatorServiceBase):
         value: Any,
         metadata: Dict[str, Any],
         property_path: str,
-        stream:bool = False
+        stream:Optional[bool] = False
     ) -> Tuple[Any, Dict[str, Any]]:
         # Validate the field
         for validator in validator_setup.validators:
