@@ -1,6 +1,7 @@
 # Set up __init__.py so that users can do from guardrails import Response, Schema, etc.
 
 from guardrails.guard import Guard
+from guardrails.async_guard import AsyncGuard
 from guardrails.llm_providers import PromptCallableBase
 from guardrails.logging_utils import configure_logging
 from guardrails.prompt import Instructions, Prompt

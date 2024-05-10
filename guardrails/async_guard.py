@@ -2,6 +2,7 @@ import asyncio
 import contextvars
 import json
 import os
+import time
 import warnings
 from copy import deepcopy
 from string import Template
@@ -47,10 +48,10 @@ from guardrails.utils.validator_utils import get_validator
 from guardrails.validator_base import FailResult, Validator
 
 
-class Guard(Runnable, Generic[OT]):
+class AsyncGuard(Runnable, Generic[OT]):
     """The Guard class.
 
-    This class is the main entry point for using Guardrails. It is
+    This class one of the main entry point for using Guardrails. It is
     initialized from one of the following class methods:
 
     - `from_rail`
@@ -59,9 +60,9 @@ class Guard(Runnable, Generic[OT]):
     - `from_string`
 
     The `__call__`
-    method functions as a wrapper around LLM APIs. It takes in an LLM
-    API, and optional prompt parameters, and returns the raw output from
-    the LLM and the validated output.
+    method functions as a wrapper around LLM APIs. It takes in an Async LLM
+    API, and optional prompt parameters, and returns the raw output stream from
+    the LLM and the validated output stream.
     """
 
     _tracer = None
@@ -241,7 +242,7 @@ class Guard(Runnable, Generic[OT]):
         rail = Rail.from_file(rail_file)
         if rail.output_type == "str":
             return cast(
-                Guard[str],
+                AsyncGuard[str],
                 cls(
                     rail=rail,
                     num_reasks=num_reasks,
@@ -252,7 +253,7 @@ class Guard(Runnable, Generic[OT]):
             )
         elif rail.output_type == "list":
             return cast(
-                Guard[List],
+                AsyncGuard[List],
                 cls(
                     rail=rail,
                     num_reasks=num_reasks,
@@ -262,7 +263,7 @@ class Guard(Runnable, Generic[OT]):
                 ),
             )
         return cast(
-            Guard[Dict],
+            AsyncGuard[Dict],
             cls(
                 rail=rail,
                 num_reasks=num_reasks,
@@ -298,7 +299,7 @@ class Guard(Runnable, Generic[OT]):
         rail = Rail.from_string(rail_string)
         if rail.output_type == "str":
             return cast(
-                Guard[str],
+                AsyncGuard[str],
                 cls(
                     rail=rail,
                     num_reasks=num_reasks,
@@ -309,7 +310,7 @@ class Guard(Runnable, Generic[OT]):
             )
         elif rail.output_type == "list":
             return cast(
-                Guard[List],
+                AsyncGuard[List],
                 cls(
                     rail=rail,
                     num_reasks=num_reasks,
@@ -319,7 +320,7 @@ class Guard(Runnable, Generic[OT]):
                 ),
             )
         return cast(
-            Guard[Dict],
+            AsyncGuard[Dict],
             cls(
                 rail=rail,
                 num_reasks=num_reasks,
@@ -364,10 +365,11 @@ class Guard(Runnable, Generic[OT]):
         )
         if rail.output_type == "list":
             return cast(
-                Guard[List], cls(rail, num_reasks=num_reasks, base_model=output_class)
+                AsyncGuard[List],
+                cls(rail, num_reasks=num_reasks, base_model=output_class),
             )
         return cast(
-            Guard[Dict],
+            AsyncGuard[Dict],
             cls(
                 rail,
                 num_reasks=num_reasks,
@@ -417,7 +419,7 @@ class Guard(Runnable, Generic[OT]):
             reask_instructions=reask_instructions,
         )
         return cast(
-            Guard[str],
+            AsyncGuard[str],
             cls(
                 rail,
                 num_reasks=num_reasks,
@@ -458,7 +460,7 @@ class Guard(Runnable, Generic[OT]):
         **kwargs,
     ) -> Awaitable[ValidationOutcome[OT]]: ...
 
-    def __call__(
+    async def __call__(
         self,
         llm_api: Union[Callable, Callable[[Any], Awaitable[Any]]],
         prompt_params: Optional[Dict] = None,
@@ -474,7 +476,8 @@ class Guard(Runnable, Generic[OT]):
         Union[ValidationOutcome[OT], Iterable[ValidationOutcome[OT]]],
         Awaitable[ValidationOutcome[OT]],
     ]:
-        """Call the LLM and validate the output.
+        """Call the LLM and validate the output. Pass an async LLM API to
+        return a coroutine.
 
         Args:
             llm_api: The LLM API to call
@@ -494,7 +497,7 @@ class Guard(Runnable, Generic[OT]):
             The raw text output from the LLM and the validated output.
         """
 
-        def __call(
+        async def __call(
             self,
             llm_api: Union[Callable, Callable[[Any], Awaitable[Any]]],
             prompt_params: Optional[Dict] = None,
@@ -576,24 +579,14 @@ class Guard(Runnable, Generic[OT]):
                     **kwargs,
                 )
 
-            # If the LLM API is async, return a coroutine. This will be deprecated soon.
-
-            if asyncio.iscoroutinefunction(llm_api):
-                return self._call_async(
-                    llm_api,
-                    prompt_params=prompt_params,
-                    num_reasks=self.num_reasks,
-                    prompt=prompt,
-                    instructions=instructions,
-                    msg_history=msg_history,
-                    metadata=metadata,
-                    full_schema_reask=full_schema_reask,
-                    call_log=call_log,
-                    *args,
-                    **kwargs,
+            # If the LLM API is not async, fail
+            if not asyncio.iscoroutinefunction(llm_api):
+                raise RuntimeError(
+                    f"The LLM API `{llm_api.__name__}` is not a coroutine. "
+                    "Please use an async LLM API."
                 )
-            # Otherwise, call the LLM synchronously
-            return self._call_sync(
+            # Otherwise, call the LLM
+            return await self._call_async(
                 llm_api,
                 prompt_params=prompt_params,
                 num_reasks=self.num_reasks,
@@ -622,70 +615,6 @@ class Guard(Runnable, Generic[OT]):
             *args,
             **kwargs,
         )
-
-    def _call_sync(
-        self,
-        llm_api: Callable,
-        prompt_params: Dict,
-        num_reasks: int,
-        prompt: Optional[str],
-        instructions: Optional[str],
-        msg_history: Optional[List[Dict]],
-        metadata: Dict,
-        full_schema_reask: bool,
-        call_log: Call,
-        *args,
-        **kwargs,
-    ) -> Union[ValidationOutcome[OT], Iterable[ValidationOutcome[OT]]]:
-        instructions_obj = instructions or self.instructions
-        prompt_obj = prompt or self.prompt
-        msg_history_obj = msg_history or []
-        if prompt_obj is None:
-            if msg_history is not None and not len(msg_history_obj):
-                raise RuntimeError(
-                    "You must provide a prompt if msg_history is empty. "
-                    "Alternatively, you can provide a prompt in the Schema constructor."
-                )
-
-        # Check whether stream is set
-        if kwargs.get("stream", False):
-            # If stream is True, use StreamRunner
-            runner = StreamRunner(
-                instructions=instructions_obj,
-                prompt=prompt_obj,
-                msg_history=msg_history_obj,
-                api=get_llm_ask(llm_api, *args, **kwargs),
-                prompt_schema=self.prompt_schema,
-                instructions_schema=self.instructions_schema,
-                msg_history_schema=self.msg_history_schema,
-                output_schema=self.output_schema,
-                num_reasks=num_reasks,
-                metadata=metadata,
-                base_model=self.base_model,
-                full_schema_reask=full_schema_reask,
-                disable_tracer=self._disable_tracer,
-            )
-            return runner(call_log=call_log, prompt_params=prompt_params)
-        else:
-            # Otherwise, use Runner
-            runner = Runner(
-                instructions=instructions_obj,
-                prompt=prompt_obj,
-                msg_history=msg_history_obj,
-                api=get_llm_ask(llm_api, *args, **kwargs),
-                prompt_schema=self.prompt_schema,
-                instructions_schema=self.instructions_schema,
-                msg_history_schema=self.msg_history_schema,
-                output_schema=self.output_schema,
-                num_reasks=num_reasks,
-                metadata=metadata,
-                base_model=self.base_model,
-                full_schema_reask=full_schema_reask,
-                disable_tracer=self._disable_tracer,
-            )
-            call = runner(call_log=call_log, prompt_params=prompt_params)
-            return ValidationOutcome[OT].from_guard_history(call)
-
 
     async def _call_async(
         self,
@@ -719,12 +648,6 @@ class Guard(Runnable, Generic[OT]):
         Returns:
             The raw text output from the LLM and the validated output.
         """
-        warnings.warn(
-            "Using an async LLM client is deprecated in Guard and will "
-            "be removed in a future release. "
-            "Please use `AsyncGuard` or a non async llm client instead.",
-            DeprecationWarning,
-        )
         instructions_obj = instructions or self.instructions
         prompt_obj = prompt or self.prompt
         msg_history_obj = msg_history or []
@@ -940,18 +863,11 @@ class Guard(Runnable, Generic[OT]):
                     *args,
                     **kwargs,
                 )
-            # Otherwise, call the LLM synchronously
-            return self._sync_parse(
-                llm_output,
-                metadata,
-                llm_api=llm_api,
-                num_reasks=self.num_reasks,
-                prompt_params=prompt_params,
-                full_schema_reask=full_schema_reask,
-                call_log=call_log,
-                *args,
-                **kwargs,
-            )
+            else:
+                raise NotImplementedError(
+                    "AsyncGuard does not support non-async LLM APIs. "
+                    "Please use the sync API Guard or supply an async LLM API."
+                )
 
         guard_context = contextvars.Context()
         return guard_context.run(
@@ -966,48 +882,6 @@ class Guard(Runnable, Generic[OT]):
             *args,
             **kwargs,
         )
-
-    def _sync_parse(
-        self,
-        llm_output: str,
-        metadata: Dict,
-        llm_api: Optional[Callable],
-        num_reasks: int,
-        prompt_params: Dict,
-        full_schema_reask: bool,
-        call_log: Call,
-        *args,
-        **kwargs,
-    ) -> ValidationOutcome[OT]:
-        """Alternate flow to using Guard where the llm_output is known.
-
-        Args:
-            llm_output: The output from the LLM.
-            llm_api: The LLM API to use to re-ask the LLM.
-            num_reasks: The max times to re-ask the LLM for invalid output.
-
-        Returns:
-            The validated response.
-        """
-        runner = Runner(
-            instructions=kwargs.pop("instructions", None),
-            prompt=kwargs.pop("prompt", None),
-            msg_history=kwargs.pop("msg_history", None),
-            api=get_llm_ask(llm_api, *args, **kwargs) if llm_api else None,
-            prompt_schema=self.prompt_schema,
-            instructions_schema=self.instructions_schema,
-            msg_history_schema=self.msg_history_schema,
-            output_schema=self.output_schema,
-            num_reasks=num_reasks,
-            metadata=metadata,
-            output=llm_output,
-            base_model=self.base_model,
-            full_schema_reask=full_schema_reask,
-            disable_tracer=self._disable_tracer,
-        )
-        call = runner(call_log=call_log, prompt_params=prompt_params)
-
-        return ValidationOutcome[OT].from_guard_history(call)
 
     async def _async_parse(
         self,
@@ -1170,12 +1044,12 @@ class Guard(Runnable, Generic[OT]):
             )
 
     @overload
-    def use(self, validator: Validator, *, on: str = "output") -> "Guard": ...
+    def use(self, validator: Validator, *, on: str = "output") -> "AsyncGuard": ...
 
     @overload
     def use(
         self, validator: Type[Validator], *args, on: str = "output", **kwargs
-    ) -> "Guard": ...
+    ) -> "AsyncGuard": ...
 
     def use(
         self,
@@ -1183,7 +1057,7 @@ class Guard(Runnable, Generic[OT]):
         *args,
         on: str = "output",
         **kwargs,
-    ) -> "Guard":
+    ) -> "AsyncGuard":
         """Use a validator to validate either of the following:
         - The output of an LLM request
         - The prompt
@@ -1201,7 +1075,7 @@ class Guard(Runnable, Generic[OT]):
         return self
 
     @overload
-    def use_many(self, *validators: Validator, on: str = "output") -> "Guard": ...
+    def use_many(self, *validators: Validator, on: str = "output") -> "Async": ...
 
     @overload
     def use_many(
@@ -1212,7 +1086,7 @@ class Guard(Runnable, Generic[OT]):
             Optional[Dict[str, Any]],
         ],
         on: str = "output",
-    ) -> "Guard": ...
+    ) -> "AsyncGuard": ...
 
     def use_many(
         self,
@@ -1225,7 +1099,7 @@ class Guard(Runnable, Generic[OT]):
             ],
         ],
         on: str = "output",
-    ) -> "Guard":
+    ) -> "AsyncGuard":
         """Use a validator to validate results of an LLM request.
 
         *Note*: `use_many` is only available for string output types.
