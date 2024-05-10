@@ -7,7 +7,6 @@ from typing import (
     Any,
     Callable,
     Dict,
-    Iterable,
     List,
     Literal,
     Optional,
@@ -175,16 +174,26 @@ class Filter:
 class Refrain:
     pass
 
+
 # functions to get chunks
-def split_word(chunk: str) -> bool:
+def split_word(chunk: str):
     return list(map(lambda x: x + " ", chunk.split(" ")))[:-1]
 
 
-def split_sentence(chunk: str) -> bool:
-    return list(map(lambda x: x + ".", chunk.split(".")))[:-1]
+def split_sentence(chunk: str):
+    # using the sentence tokenizer is expensive
+    # we check for a . to avoid wastefully calling the tokenizer
+    if "." not in chunk:
+        return []
+    sentences = nltk.sent_tokenize(chunk)
+    if len(sentences) == 0:
+        return []
+    # return the sentence
+    # then the remaining chunks that aren't finished accumulating
+    return [sentences[0], "".join(sentences[1:])]
 
 
-def split_paragraph(chunk: str) -> bool:
+def split_paragraph(chunk: str):
     return list(map(lambda x: x + "\n", chunk.split("\n")))[:-1]
 
 
@@ -403,9 +412,9 @@ class Validator(Runnable):
 
     rail_alias: str = ""
 
-    # chunking function returns empty list or list of 2 chunks 
+    # chunking function returns empty list or list of 2 chunks
     # first chunk is the chunk to validate
-    # second chunk is incomplete chunk that needs further accumulation 
+    # second chunk is incomplete chunk that needs further accumulation
     chunking_function = split_sentence
     accumulated_chunks = []
     run_in_separate_process = False
@@ -470,9 +479,7 @@ class Validator(Runnable):
         """Validates a value and return a validation result."""
         raise NotImplementedError
 
-    def validate_stream(
-        self, chunk: Any, metadata: Dict[str, Any]
-    ) -> ValidationResult:
+    def validate_stream(self, chunk: Any, metadata: Dict[str, Any]) -> ValidationResult:
         """Validates a chunk emitted by an LLM.
         If the LLM chunk is smaller than the validator's chunking strategy,
         it will be accumulated until it reaches the desired size. In the meantime,
@@ -489,14 +496,16 @@ class Validator(Runnable):
         self.accumulated_chunks.append(chunk)
         accumulated_text = "".join(self.accumulated_chunks)
         # check if enough chunks have accumulated for validation
-        [chunk_to_validate, new_accumulated_chunks] = self.chunking_function(accumulated_text)
+        [chunk_to_validate, new_accumulated_chunks] = self.chunking_function(
+            accumulated_text
+        )
         if len(chunk_to_validate) == 0:
             return None
         self.accumulated_chunks = new_accumulated_chunks
         # exclude last chunk, because it may not be a complete chunk
         validation_result = self.validate(chunk_to_validate, metadata)
         # include the chunk that we've validated in the metadata
-        validation_result.metadata['validated_chunk'] = chunk_to_validate
+        validation_result.metadata["validated_chunk"] = chunk_to_validate
         return validation_result
 
         # TODO: the following logic needs to be moved up the chain to stream_runner
