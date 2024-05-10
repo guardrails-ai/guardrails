@@ -445,14 +445,9 @@ def validate(
     validator_setup: FieldValidation,
     iteration: Iteration,
     disable_tracer: Optional[bool] = True,
+    stream: Optional[bool] = False,
 ):
     process_count = int(os.environ.get("GUARDRAILS_PROCESS_COUNT", 10))
-
-    try:
-        loop = asyncio.get_event_loop()
-    except RuntimeError:
-        loop = None
-
     if process_count == 1:
         logger.warning(
             "Process count was set to 1 via the GUARDRAILS_PROCESS_COUNT"
@@ -461,6 +456,20 @@ def validate(
             "To run asynchronously, specify a process count"
             "greater than 1 or unset this environment variable."
         )
+    if stream: 
+        sequential_validator_service = SequentialValidatorService(disable_tracer)
+        return sequential_validator_service.validate_stream(
+            value,
+            metadata,
+            validator_setup,
+            iteration
+        )
+    try:
+        loop = asyncio.get_event_loop()
+    except RuntimeError:
+        loop = None
+
+    if process_count == 1:
         validator_service = SequentialValidatorService(disable_tracer)
     elif loop is not None and not loop.is_running():
         validator_service = AsyncValidatorService(disable_tracer)
@@ -472,37 +481,6 @@ def validate(
         validator_setup,
         iteration,
     )
-
-def validate_stream(
-    value: Any,
-    metadata: dict,
-    validator_setup: FieldValidation,
-    iteration: Iteration,
-    disable_tracer: Optional[bool] = True,
-):
-    process_count = int(os.environ.get("GUARDRAILS_PROCESS_COUNT", 10))
-
-    # try:
-        # loop = asyncio.get_event_loop()
-    # except RuntimeError:
-        # loop = None
-
-    if process_count == 1:
-        logger.warning(
-            "Process count was set to 1 via the GUARDRAILS_PROCESS_COUNT"
-            "environment variable."
-            "This will cause all validations to run synchronously."
-            "To run asynchronously, specify a process count"
-            "greater than 1 or unset this environment variable."
-        )
-    sequential_validator_service = SequentialValidatorService(disable_tracer)
-    return sequential_validator_service.validate_stream(
-        value,
-        metadata,
-        validator_setup,
-        iteration,
-    )
-
 
 async def async_validate(
     value: Any,
