@@ -43,40 +43,49 @@ def get_existing_config() -> dict:
 @guardrails.command()
 def configure(
     token: Optional[str] = typer.Option(
-        help="Your Guardrails Hub auth token.", hide_input=True, default=""
+        None,
+        help="Your Guardrails Hub auth token.", 
+        hide_input=True, 
+        prompt="Token (optional) [None]",
     ),
     no_metrics: Optional[str] = typer.Option(
-        help="Opt out of anonymous metrics collection.", default=""
+        None,
+        help="Opt out of anonymous metrics collection.",
+        prompt="Disable anonymous metrics reporting? [Yes/No]",
     ),
 ):
     """Set the global configuration for the Guardrails CLI and Hub."""
     # Get the existing configuration if present
+
+    headless = token is not None or no_metrics is not None
     existing_config = get_existing_config()
 
     existing_token = existing_config.get("token", "")
     existing_no_metrics = existing_config.get("no_metrics", "false")
-    try:
+
+    if not headless: 
         notice_message = """
 
     You can find your token at https://hub.guardrailsai.com/tokens
     """
         logger.log(level=LEVELS.get("NOTICE"), msg=notice_message)  # type: ignore
 
-        # Prompt for token if not provided
-        if not token:
-            token = typer.prompt(
-                "> Token",
+    # Prompt for token if not provided
+    if not token and not headless: 
+        token = typer.prompt(
+                "> Token (optional) [None]",
                 default=existing_token,
                 hide_input=True,
             )
 
-        # Prompt for no_metrics if not provided
-        if not no_metrics:
-            no_metrics = typer.prompt(
-                "> Disable anonymous metrics reporting?",
-                default=existing_no_metrics,
-            )
+    # Prompt for no_metrics if not provided and not running headless
+    if no_metrics is None and not headless:
+        no_metrics = typer.prompt(
+            "> Disable anonymous metrics reporting?",
+            default=existing_no_metrics,
+        )        
 
+    try:
         # If token or no_metrics was updated, save the configuration
         token_was_updated = token and token != existing_token
         no_metrics_was_updated = no_metrics != existing_no_metrics
@@ -84,25 +93,28 @@ def configure(
             logger.info("Configuring...")
             save_configuration_file(token, no_metrics)
 
-        # Authenticate with the Hub if token was updated
+            # Authenticate with the Hub if token was updated
         if token_was_updated:
             logger.info("Validating credentials...")
             get_auth()
             success_message = """
 
-        Login successful.
+            Login successful.
 
-        Get started by installing our RegexMatch validator:
-        https://hub.guardrailsai.com/validator/guardrails_ai/regex_match
+            Get started by installing our RegexMatch validator:
+            https://hub.guardrailsai.com/validator/guardrails_ai/regex_match
 
-        You can install it by running:
-        guardrails hub install hub://guardrails/regex_match
+            You can install it by running:
+            guardrails hub install hub://guardrails/regex_match
 
-        Find more validators at https://hub.guardrailsai.com
-        """
+            Find more validators at https://hub.guardrailsai.com
+            """
             logger.log(level=LEVELS.get("SUCCESS"), msg=success_message)  # type: ignore`
-        else:
-            print("No token provided/Existing token found. Skipping authentication.")
+        elif not token:
+                print("No token provided. Skipping authentication.")
+        
+        if not headless and not token_was_updated: 
+            print("Existing token found. Skipping re-authentication.")
     except AuthenticationError as auth_error:
         logger.error(auth_error)
         logger.error(
