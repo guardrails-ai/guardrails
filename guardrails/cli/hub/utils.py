@@ -6,7 +6,7 @@ from email.parser import BytesHeaderParser
 from typing import List, Literal, Union
 from pydash.strings import snake_case
 
-from guardrails.classes.generic import ModuleManifest
+from guardrails.cli.server.module_manifest import ModuleManifest
 from guardrails.cli.logger import logger
 
 

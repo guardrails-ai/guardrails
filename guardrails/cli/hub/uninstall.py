@@ -94,4 +94,3 @@ def uninstall(
 
     console.print("✅ Successfully uninstalled!")  # type: ignore
     logger.log(level=LEVELS.get("SPAM"), msg="✅ Successfully uninstalled!")  # type: ignore
-

@@ -2,7 +2,7 @@ import os
 import subprocess
 import sys
 from string import Template
-from typing import List, Literal, Union
+from typing import List, Literal
 
 import typer
 
@@ -16,7 +16,7 @@ from .utils import (
     pip_process,
     get_site_packages_location,
     get_org_and_package_dirs,
-    get_hub_directory, 
+    get_hub_directory,
 )
 from .console import console
 
