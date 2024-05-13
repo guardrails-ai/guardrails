@@ -44,8 +44,8 @@ def get_existing_config() -> dict:
 def configure(
     token: Optional[str] = typer.Option(
         None,
-        help="Your Guardrails Hub auth token.", 
-        hide_input=True, 
+        help="Your Guardrails Hub auth token.",
+        hide_input=True,
         prompt="Token (optional) [None]",
     ),
     no_metrics: Optional[str] = typer.Option(
@@ -63,7 +63,7 @@ def configure(
     existing_token = existing_config.get("token", "")
     existing_no_metrics = existing_config.get("no_metrics", "false")
 
-    if not headless: 
+    if not headless:
         notice_message = """
 
     You can find your token at https://hub.guardrailsai.com/tokens
@@ -71,19 +71,19 @@ def configure(
         logger.log(level=LEVELS.get("NOTICE"), msg=notice_message)  # type: ignore
 
     # Prompt for token if not provided
-    if not token and not headless: 
+    if not token and not headless:
         token = typer.prompt(
-                "> Token (optional) [None]",
-                default=existing_token,
-                hide_input=True,
-            )
+            "> Token (optional) [None]",
+            default=existing_token,
+            hide_input=True,
+        )
 
     # Prompt for no_metrics if not provided and not running headless
     if no_metrics is None and not headless:
         no_metrics = typer.prompt(
             "> Disable anonymous metrics reporting?",
             default=existing_no_metrics,
-        )        
+        )
 
     try:
         # If token or no_metrics was updated, save the configuration
@@ -111,9 +111,9 @@ def configure(
             """
             logger.log(level=LEVELS.get("SUCCESS"), msg=success_message)  # type: ignore`
         elif not token:
-                print("No token provided. Skipping authentication.")
-        
-        if not headless and not token_was_updated: 
+            print("No token provided. Skipping authentication.")
+
+        if not headless and not token_was_updated:
             print("Existing token found. Skipping re-authentication.")
     except AuthenticationError as auth_error:
         logger.error(auth_error)
