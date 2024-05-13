@@ -3,7 +3,7 @@ import os
 import subprocess
 import sys
 from email.parser import BytesHeaderParser
-from typing import List, Literal, Union
+from typing import List, Literal, Union, Dict
 from pydash.strings import snake_case
 
 from guardrails.cli.server.module_manifest import ModuleManifest
@@ -19,7 +19,7 @@ def pip_process(
     package: str = "",
     flags: List[str] = [],
     format: Union[Literal["string"], Literal["json"]] = string_format,
-) -> Union[str, dict]:
+) -> Union[str, Dict[str, str]]:
     try:
         logger.debug(f"running pip {action} {' '.join(flags)} {package}")
         command = [sys.executable, "-m", "pip", action]
