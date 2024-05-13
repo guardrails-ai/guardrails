@@ -250,7 +250,6 @@ def install(
 
     if not quiet:
         console.print(f"\nInstalling {package_uri}...\n")
-
         logger.log(
             level=LEVELS.get("SPAM"),  # type: ignore
             msg=f"Installing {package_uri}...",
@@ -281,28 +280,14 @@ def install(
 
     if not quiet:
         success_message_cli = Template(
-            """✅Successfully installed ${module_name}!
-
-    [bold]Import validator:[/bold]
-    from guardrails.hub import ${export}
-
-    [bold]Get more info:[/bold]
-    https://hub.guardrailsai.com/validator/${id}
-    """
+            """✅Successfully installed ${module_name}!\n\n[bold]Import validator:[/bold]\nfrom guardrails.hub import ${export}\n\n[bold]Get more info:[/bold]\nhttps://hub.guardrailsai.com/validator/${id}"""
         ).safe_substitute(
             module_name=package_uri,
             id=module_manifest.id,
             export=module_manifest.exports[0],
         )
         success_message_logger = Template(
-            """✅Successfully installed ${module_name}!
-
-    Import validator:
-    from guardrails.hub import ${export}
-
-    Get more info:
-    https://hub.guardrailsai.com/validator/${id}
-    """
+            """✅Successfully installed ${module_name}!\n\nImport validator:\nfrom guardrails.hub import ${export}\n\nGet more info:\nhttps://hub.guardrailsai.com/validator/${id}"""
         ).safe_substitute(
             module_name=package_uri,
             id=module_manifest.id,
