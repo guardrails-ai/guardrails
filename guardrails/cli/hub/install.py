@@ -251,10 +251,10 @@ def install(
     if not quiet:
         console.print(f"\nInstalling {package_uri}...\n")
 
-    logger.log(
-        level=LEVELS.get("SPAM"),  # type: ignore
-        msg=f"Installing {package_uri}...",
-    )
+        logger.log(
+            level=LEVELS.get("SPAM"),  # type: ignore
+            msg=f"Installing {package_uri}...",
+        )
 
     # Validation
     module_name = package_uri.replace("hub://", "")
