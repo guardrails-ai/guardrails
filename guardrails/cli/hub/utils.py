@@ -19,35 +19,49 @@ def pip_process(
     package: str = "",
     flags: List[str] = [],
     format: Union[Literal["string"], Literal["json"]] = string_format,
-) -> Union[str, Dict[str, str]]:
+) -> Union[str, dict]:
     try:
         logger.debug(f"running pip {action} {' '.join(flags)} {package}")
-        command = [sys.executable, "-m", "pip", action] + flags + ([package] if package else [])
+        command = [sys.executable, "-m", "pip", action]
+        command.extend(flags)
+        if package:
+            command.append(package)
         output = subprocess.check_output(command)
-
         logger.debug(f"decoding output from pip {action} {package}")
         if format == json_format:
             parsed = BytesHeaderParser().parsebytes(output)
-            parsed_dict = dict(parsed.items())  # Convert email.message.Message to dict
             try:
-                # Assuming the JSON data is within a single value of the parsed dictionary
-                return json.loads(parsed_dict.get("content", "{}"))
-            except Exception as e:
-                logger.debug(f"JSON parsing exception: {str(e)}")
-                return parsed_dict  # return as a dict if JSON parsing fails
-        else:
-            return output.decode()
+                return json.loads(str(parsed))
+            except Exception:
+                logger.debug(
+                    f"json parse exception in decoding output from pip {action} {package}. Falling back to accumulating the byte stream",  # noqa
+                )
+            accumulator = {}
+            for key, value in parsed.items():
+                accumulator[key] = value
+            return accumulator
+        return str(output.decode())
     except subprocess.CalledProcessError as exc:
-        logger.error(f"Failed to {action} {package}\nExit code: {exc.returncode}\nstdout: {exc.output}")
+        logger.error(
+            (
+                f"Failed to {action} {package}\n"
+                f"Exit code: {exc.returncode}\n"
+                f"stdout: {exc.output}"
+            )
+        )
         sys.exit(1)
     except Exception as e:
-        logger.error(f"An unexpected exception occurred while trying to {action} {package}!", e)
+        logger.error(
+            f"An unexpected exception occurred while try to {action} {package}!",
+            e,
+        )
         sys.exit(1)
+
 
 
 def get_site_packages_location() -> str:
     output = pip_process("show", "pip", format=json_format)
-    return output.get("Location", "")
+    return output["Location"]
 
 
 def get_org_and_package_dirs(manifest: ModuleManifest) -> List[str]:
