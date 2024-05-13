@@ -280,14 +280,22 @@ def install(
 
     if not quiet:
         success_message_cli = Template(
-            """✅Successfully installed ${module_name}!\n\n[bold]Import validator:[/bold]\nfrom guardrails.hub import ${export}\n\n[bold]Get more info:[/bold]\nhttps://hub.guardrailsai.com/validator/${id}"""
+            "✅Successfully installed ${module_name}!\n\n"
+            "[bold]Import validator:[/bold]\n"
+            "from guardrails.hub import ${export}\n\n"
+            "[bold]Get more info:[/bold]\n"
+            "https://hub.guardrailsai.com/validator/${id}"
         ).safe_substitute(
             module_name=package_uri,
             id=module_manifest.id,
             export=module_manifest.exports[0],
-        )
+            )
         success_message_logger = Template(
-            """✅Successfully installed ${module_name}!\n\nImport validator:\nfrom guardrails.hub import ${export}\n\nGet more info:\nhttps://hub.guardrailsai.com/validator/${id}"""
+            "✅Successfully installed ${module_name}!\n\n"
+            "Import validator:\n"
+            "from guardrails.hub import ${export}\n\n"
+            "Get more info:\n"
+            "https://hub.guardrailsai.com/validator/${id}"
         ).safe_substitute(
             module_name=package_uri,
             id=module_manifest.id,
