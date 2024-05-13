@@ -5,13 +5,31 @@ import os
 import warnings
 from copy import deepcopy
 from string import Template
-from typing import (Any, Awaitable, Callable, Dict, Generic, Iterable, List,
-                    Optional, Sequence, Tuple, Type, Union, cast, overload)
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Dict,
+    Generic,
+    Iterable,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    Union,
+    cast,
+    overload,
+)
 
 from guardrails_api_client.models import AnyObject
 from guardrails_api_client.models import Guard as GuardModel
-from guardrails_api_client.models import (History, HistoryEvent,
-                                          ValidatePayload, ValidationOutput)
+from guardrails_api_client.models import (
+    History,
+    HistoryEvent,
+    ValidatePayload,
+    ValidationOutput,
+)
 from guardrails_api_client.types import UNSET
 from langchain_core.messages import BaseMessage
 from langchain_core.runnables import Runnable, RunnableConfig
@@ -29,17 +47,25 @@ from guardrails.classes.history.inputs import Inputs
 from guardrails.classes.history.iteration import Iteration
 from guardrails.classes.history.outputs import Outputs
 from guardrails.errors import ValidationError
-from guardrails.llm_providers import (get_async_llm_ask, get_llm_api_enum,
-                                      get_llm_ask,
-                                      model_is_supported_server_side)
+from guardrails.llm_providers import (
+    get_async_llm_ask,
+    get_llm_api_enum,
+    get_llm_ask,
+    model_is_supported_server_side,
+)
 from guardrails.logger import logger, set_scope
 from guardrails.prompt import Instructions, Prompt
 from guardrails.rail import Rail
 from guardrails.run import AsyncRunner, Runner, StreamRunner
 from guardrails.schema import Schema, StringSchema
-from guardrails.stores.context import (Tracer, get_call_kwarg,
-                                       get_tracer_context, set_call_kwargs,
-                                       set_tracer, set_tracer_context)
+from guardrails.stores.context import (
+    Tracer,
+    get_call_kwarg,
+    get_tracer_context,
+    set_call_kwargs,
+    set_tracer,
+    set_tracer_context,
+)
 from guardrails.utils.hub_telemetry_utils import HubTelemetry
 from guardrails.utils.llm_response import LLMResponse
 from guardrails.utils.reask_utils import FieldReAsk
@@ -686,7 +712,18 @@ class Guard(Runnable, Generic[OT]):
             call = runner(call_log=call_log, prompt_params=prompt_params)
             return ValidationOutcome[OT].from_guard_history(call)
 
-
+    @deprecated(
+        """Async methods within Guard are deprecated and will be removed in 0.5.x.
+        Instead, please use `AsyncGuard() or pass in a sequential llm api.""",
+        category=FutureWarning,
+        stacklevel=2,
+    )
+    @deprecated(
+        """Async methods within Guard are deprecated and will be removed in 0.5.x.
+        Instead, please use `AsyncGuard() or pass in a sequential llm api.""",
+        category=FutureWarning,
+        stacklevel=2,
+    )
     async def _call_async(
         self,
         llm_api: Callable[[Any], Awaitable[Any]],
@@ -719,12 +756,6 @@ class Guard(Runnable, Generic[OT]):
         Returns:
             The raw text output from the LLM and the validated output.
         """
-        warnings.warn(
-            "Using an async LLM client is deprecated in Guard and will "
-            "be removed in a future release. "
-            "Please use `AsyncGuard` or a non async llm client instead.",
-            DeprecationWarning,
-        )
         instructions_obj = instructions or self.instructions
         prompt_obj = prompt or self.prompt
         msg_history_obj = msg_history or []
@@ -1009,6 +1040,12 @@ class Guard(Runnable, Generic[OT]):
 
         return ValidationOutcome[OT].from_guard_history(call)
 
+    @deprecated(
+        """Async methods within Guard are deprecated and will be removed in 0.5.x.
+        Instead, please use `AsyncGuard() or pass in a sequential llm api.""",
+        category=FutureWarning,
+        stacklevel=2,
+    )
     async def _async_parse(
         self,
         llm_output: str,

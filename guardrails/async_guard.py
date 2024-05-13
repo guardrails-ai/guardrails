@@ -1,18 +1,36 @@
 import asyncio
 import contextvars
+import inspect
 import json
 import os
-import time
 import warnings
 from copy import deepcopy
 from string import Template
-from typing import (Any, Awaitable, Callable, Dict, Generic, Iterable, List,
-                    Optional, Sequence, Tuple, Type, Union, cast, overload)
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Dict,
+    Generic,
+    Iterable,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    Union,
+    cast,
+    overload,
+)
 
 from guardrails_api_client.models import AnyObject
 from guardrails_api_client.models import Guard as GuardModel
-from guardrails_api_client.models import (History, HistoryEvent,
-                                          ValidatePayload, ValidationOutput)
+from guardrails_api_client.models import (
+    History,
+    HistoryEvent,
+    ValidatePayload,
+    ValidationOutput,
+)
 from guardrails_api_client.types import UNSET
 from langchain_core.messages import BaseMessage
 from langchain_core.runnables import Runnable, RunnableConfig
@@ -30,17 +48,25 @@ from guardrails.classes.history.inputs import Inputs
 from guardrails.classes.history.iteration import Iteration
 from guardrails.classes.history.outputs import Outputs
 from guardrails.errors import ValidationError
-from guardrails.llm_providers import (get_async_llm_ask, get_llm_api_enum,
-                                      get_llm_ask,
-                                      model_is_supported_server_side)
+from guardrails.llm_providers import (
+    get_async_llm_ask,
+    get_llm_api_enum,
+    get_llm_ask,
+    model_is_supported_server_side,
+)
 from guardrails.logger import logger, set_scope
 from guardrails.prompt import Instructions, Prompt
 from guardrails.rail import Rail
-from guardrails.run import AsyncRunner, Runner, StreamRunner
+from guardrails.run import AsyncRunner
 from guardrails.schema import Schema, StringSchema
-from guardrails.stores.context import (Tracer, get_call_kwarg,
-                                       get_tracer_context, set_call_kwargs,
-                                       set_tracer, set_tracer_context)
+from guardrails.stores.context import (
+    Tracer,
+    get_call_kwarg,
+    get_tracer_context,
+    set_call_kwargs,
+    set_tracer,
+    set_tracer_context,
+)
 from guardrails.utils.hub_telemetry_utils import HubTelemetry
 from guardrails.utils.llm_response import LLMResponse
 from guardrails.utils.reask_utils import FieldReAsk
@@ -460,7 +486,7 @@ class AsyncGuard(Runnable, Generic[OT]):
         **kwargs,
     ) -> Awaitable[ValidationOutcome[OT]]: ...
 
-    async def __call__(
+    def __call__(
         self,
         llm_api: Union[Callable, Callable[[Any], Awaitable[Any]]],
         prompt_params: Optional[Dict] = None,
@@ -497,7 +523,7 @@ class AsyncGuard(Runnable, Generic[OT]):
             The raw text output from the LLM and the validated output.
         """
 
-        async def __call(
+        def __call(
             self,
             llm_api: Union[Callable, Callable[[Any], Awaitable[Any]]],
             prompt_params: Optional[Dict] = None,
@@ -580,13 +606,16 @@ class AsyncGuard(Runnable, Generic[OT]):
                 )
 
             # If the LLM API is not async, fail
-            if not asyncio.iscoroutinefunction(llm_api):
+            # FIXME: it seems like this check isn't actually working?
+            if not inspect.isawaitable(llm_api) and not inspect.iscoroutinefunction(
+                llm_api
+            ):
                 raise RuntimeError(
                     f"The LLM API `{llm_api.__name__}` is not a coroutine. "
                     "Please use an async LLM API."
                 )
             # Otherwise, call the LLM
-            return await self._call_async(
+            return self._call_async(
                 llm_api,
                 prompt_params=prompt_params,
                 num_reasks=self.num_reasks,
@@ -616,7 +645,7 @@ class AsyncGuard(Runnable, Generic[OT]):
             **kwargs,
         )
 
-    async def _call_async(
+    def _call_async(
         self,
         llm_api: Callable[[Any], Awaitable[Any]],
         prompt_params: Dict,
@@ -673,7 +702,9 @@ class AsyncGuard(Runnable, Generic[OT]):
             full_schema_reask=full_schema_reask,
             disable_tracer=self._disable_tracer,
         )
-        call = await runner.async_run(call_log=call_log, prompt_params=prompt_params)
+        call = asyncio.run(
+            runner.async_run(call_log=call_log, prompt_params=prompt_params)
+        )
         return ValidationOutcome[OT].from_guard_history(call)
 
     def __repr__(self):
@@ -851,17 +882,21 @@ class AsyncGuard(Runnable, Generic[OT]):
                 )
 
             # If the LLM API is async, return a coroutine
-            if asyncio.iscoroutinefunction(llm_api):
-                return self._async_parse(
-                    llm_output,
-                    metadata,
-                    llm_api=llm_api,
-                    num_reasks=self.num_reasks,
-                    prompt_params=prompt_params,
-                    full_schema_reask=full_schema_reask,
-                    call_log=call_log,
-                    *args,
-                    **kwargs,
+            # FIXME: Add null llm_api support becuase we want to be able to call on
+            # static text (e.g. validate("foobar")). Is there a better way to do this?
+            if not llm_api or inspect.iscoroutinefunction(llm_api):
+                return asyncio.run(
+                    self._async_parse(
+                        llm_output,
+                        metadata,
+                        llm_api=llm_api,
+                        num_reasks=self.num_reasks,
+                        prompt_params=prompt_params,
+                        full_schema_reask=full_schema_reask,
+                        call_log=call_log,
+                        *args,
+                        **kwargs,
+                    )
                 )
             else:
                 raise NotImplementedError(
@@ -1075,7 +1110,7 @@ class AsyncGuard(Runnable, Generic[OT]):
         return self
 
     @overload
-    def use_many(self, *validators: Validator, on: str = "output") -> "Async": ...
+    def use_many(self, *validators: Validator, on: str = "output") -> "AsyncGuard": ...
 
     @overload
     def use_many(
