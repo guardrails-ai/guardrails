@@ -718,12 +718,6 @@ class Guard(Runnable, Generic[OT]):
         category=FutureWarning,
         stacklevel=2,
     )
-    @deprecated(
-        """Async methods within Guard are deprecated and will be removed in 0.5.x.
-        Instead, please use `AsyncGuard() or pass in a sequential llm api.""",
-        category=FutureWarning,
-        stacklevel=2,
-    )
     async def _call_async(
         self,
         llm_api: Callable[[Any], Awaitable[Any]],
