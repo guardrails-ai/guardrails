@@ -58,71 +58,43 @@ def configure(
     existing_config = get_existing_config()
 
     # Normalize no_metrics to bool
-    input_no_metrics = no_metrics.lower() if no_metrics else None
-    if input_no_metrics == 'yes':
-        no_metrics_bool = True
-    elif input_no_metrics == 'no':
-        no_metrics_bool = False
+    if no_metrics is not None:
+        no_metrics_bool = no_metrics.lower() == 'yes'
     else:
-        no_metrics_bool = bool(existing_config.get("no_metrics", "false") == "true")
+        no_metrics_bool = existing_config.get("no_metrics", "false") == "true"
 
-    # Default token to existing token if None provided
+    # Fetch existing token if None provided
     if token is None:
         token = existing_config.get("token", "")
 
-    # Provide default logging level for NOTICE if not in LEVELS
-    notice_level = LEVELS.get("NOTICE", 20)  # Assuming 20 is a reasonable default
+    # Only save configuration if both token and no_metrics are valid
+    if token and no_metrics is not None:
+        save_configuration_file(token, no_metrics_bool)
+        logger.info("Configuration saved.")
 
-    if not token and not no_metrics:
-        notice_message = """
-        You can find your token at https://hub.guardrailsai.com/tokens
-        """
-        logger.log(level=notice_level, msg=notice_message)
+        # Authenticate with the Hub if token was updated
+        if token != existing_config.get("token", ""):
+            logger.info("Validating credentials...")
+            get_auth()
+            success_message = """
+            Login successful.
 
-    try:
-        # If token or no_metrics was updated, save the configuration
-        token_was_updated = token and token != existing_config.get("token", "")
-        no_metrics_was_updated = no_metrics_bool != (existing_config.get("no_metrics", "false") == "true")
+            Get started by installing our RegexMatch validator:
+            https://hub.guardrailsai.com/validator/guardrails_ai/regex_match
 
-        if token_was_updated or no_metrics_was_updated:
-            logger.info("Configuring...")
-            save_configuration_file(token, no_metrics_bool)
+            You can install it by running:
+            guardrails hub install hub://guardrails/regex_match
 
-            # Authenticate with the Hub if token was updated
-            if token_was_updated:
-                logger.info("Validating credentials...")
-                get_auth()
-                success_message = """
-                Login successful.
+            Find more validators at https://hub.guardrailsai.com
+            """
+            logger.log(level=LEVELS.get("SUCCESS", 25), msg=success_message)  # Assuming 25 is the SUCCESS level
 
-                Get started by installing our RegexMatch validator:
-                https://hub.guardrailsai.com/validator/guardrails_ai/regex_match
-
-                You can install it by running:
-                guardrails hub install hub://guardrails/regex_match
-
-                Find more validators at https://hub.guardrailsai.com
-                """
-                logger.log(level=LEVELS.get("SUCCESS", 25), msg=success_message)  # Assuming 25 is the SUCCESS level
-        elif not token:
+    else:
+        if not token:
             print("No token provided. Skipping authentication.")
+        if no_metrics is None:
+            print("No metrics preference provided. Skipping configuration update.")
 
-        if not (token_was_updated or no_metrics_was_updated) and not (token and no_metrics):
-            print("Existing configuration found. Skipping re-authentication.")
-
-    except AuthenticationError as auth_error:
-        logger.error(auth_error)
-        logger.error(
-            """
-            Check that your token is correct and try again.
-
-            If you don't have your token credentials you can find them here:
-
-            https://hub.guardrailsai.com/tokens
-            """
-        )
-        sys.exit(1)
-    except Exception as e:
-        logger.error("An unexpected error occurred!")
-        logger.error(e)
-        sys.exit(1)
+    # Log an information message if neither token nor no_metrics provided
+    if not token and no_metrics is None:
+        logger.info("No updates to configuration required.")
