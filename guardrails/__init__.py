@@ -11,6 +11,7 @@ from guardrails.validator_base import OnFailAction, Validator, register_validato
 
 __all__ = [
     "Guard",
+    "AsyncGuard",
     "PromptCallableBase",
     "Rail",
     "Validator",
