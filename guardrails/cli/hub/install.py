@@ -2,7 +2,7 @@ import os
 import subprocess
 import sys
 from string import Template
-from typing import List, Literal
+from typing import List, Literal, Union
 
 import typer
 
