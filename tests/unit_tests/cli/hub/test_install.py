@@ -126,7 +126,7 @@ class TestPipProcess:
             def parsebytes(self, *args):
                 return {"output": "json"}
 
-        mock_bytes_parser = mocker.patch("guardrails.cli.hub.install.BytesHeaderParser")
+        mock_bytes_parser = mocker.patch("guardrails.cli.hub.utils.BytesHeaderParser")
         mock_bytes_header_parser = MockBytesHeaderParser()
         mock_bytes_parser.return_value = mock_bytes_header_parser
 
