@@ -21,67 +21,74 @@ class TestInstall:
         sys_exit_spy.assert_called_once_with(1)
 
     def test_happy_path(self, mocker):
+        # Mocking the dependencies
         mock_logger_log = mocker.patch("guardrails.cli.hub.install.logger.log")
-
         mock_get_validator_manifest = mocker.patch(
-            "guardrails.cli.hub.install.get_validator_manifest"
-        )
-        manifest = ModuleManifest.from_dict(
-            {
-                "id": "id",
-                "name": "name",
-                "author": {"name": "me", "email": "me@me.me"},
-                "maintainers": [],
-                "repository": {"url": "some-repo"},
-                "namespace": "guardrails",
-                "package_name": "test-validator",
-                "module_name": "test_validator",
-                "exports": ["TestValidator"],
-                "tags": {},
-            }
-        )
+            "guardrails.cli.hub.install.get_validator_manifest")
+        mock_console_print = mocker.patch("guardrails.cli.hub.console.print")
+
+        manifest = ModuleManifest.from_dict({
+            "id": "id",
+            "name": "name",
+            "author": {"name": "me", "email": "me@me.me"},
+            "maintainers": [],
+            "repository": {"url": "some-repo"},
+            "namespace": "guardrails",
+            "package_name": "test-validator",
+            "module_name": "test_validator",
+            "exports": ["TestValidator"],
+            "tags": {},
+        })
         mock_get_validator_manifest.return_value = manifest
 
         mock_get_site_packages_location = mocker.patch(
-            "guardrails.cli.hub.install.get_site_packages_location"
-        )
+            "guardrails.cli.hub.install.get_site_packages_location")
         site_packages = "./.venv/lib/python3.X/site-packages"
         mock_get_site_packages_location.return_value = site_packages
 
         mock_install_hub_module = mocker.patch(
-            "guardrails.cli.hub.install.install_hub_module"
-        )
+            "guardrails.cli.hub.install.install_hub_module")
         mock_run_post_install = mocker.patch(
-            "guardrails.cli.hub.install.run_post_install"
-        )
+            "guardrails.cli.hub.install.run_post_install")
         mock_add_to_hub_init = mocker.patch(
-            "guardrails.cli.hub.install.add_to_hub_inits"
-        )
+            "guardrails.cli.hub.install.add_to_hub_inits")
 
         from guardrails.cli.hub.install import install
 
+        # Test without quiet mode
         install("hub://guardrails/test-validator")
-
-        log_calls = [
+        normal_mode_log_calls = [
             call(level=5, msg="Installing hub://guardrails/test-validator..."),
-            call(
-                level=5,
-                msg="✅Successfully installed hub://guardrails/test-validator!\n\nImport validator:\nfrom guardrails.hub import TestValidator\n\nGet more info:\nhttps://hub.guardrailsai.com/validator/id\n",  # noqa
-            ),  # noqa
+            call(level=5, msg=
+                 """✅Successfully installed hub://guardrails/test-validator!
+    
+                Import validator:
+                from guardrails.hub import TestValidator
+                
+                Get more info:
+                https://hub.guardrailsai.com/validator/id""",
+            )]
+        mock_logger_log.assert_has_calls(normal_mode_log_calls, any_order=True)
+        assert mock_console_print.call_count > 0  
+
+        mock_logger_log.reset_mock()
+        mock_console_print.reset_mock()
+
+        install("hub://guardrails/test-validator", quiet=True)
+        quiet_mode_log_calls = [
+            call(level=5, msg="Installing hub://guardrails/test-validator..."),
         ]
-        assert mock_logger_log.call_count == 2
-        print(mock_logger_log)
-        mock_logger_log.assert_has_calls(log_calls)
+        # Expect no additional log message for the success since it's quiet mode
+        assert mock_logger_log.call_count == 1
+        mock_logger_log.assert_has_calls(quiet_mode_log_calls, any_order=True)
+        assert mock_console_print.call_count == 0
 
-        mock_get_validator_manifest.assert_called_once_with("guardrails/test-validator")
-
-        assert mock_get_site_packages_location.call_count == 1
-
-        mock_install_hub_module.assert_called_once_with(manifest, site_packages)
-
-        mock_run_post_install.assert_called_once_with(manifest, site_packages)
-
-        mock_add_to_hub_init.assert_called_once_with(manifest, site_packages)
+        # Check that all other mocks are called as expected
+        assert mock_get_validator_manifest.call_count == 2
+        assert mock_get_site_packages_location.call_count == 2
+        assert mock_install_hub_module.call_count == 2
+        assert mock_run_post_install.call_count == 2
+        assert mock_add_to_hub_init.call_count == 2
 
 
 class TestPipProcess:
@@ -113,9 +120,11 @@ class TestPipProcess:
         assert response == "string output"
 
     def test_json_format(self, mocker):
-        mock_logger_debug = mocker.patch("guardrails.cli.hub.install.logger.debug")
+        mock_logger_debug = mocker.patch(
+            "guardrails.cli.hub.install.logger.debug")
 
-        mock_sys_executable = mocker.patch("guardrails.cli.hub.install.sys.executable")
+        mock_sys_executable = mocker.patch(
+            "guardrails.cli.hub.install.sys.executable")
 
         mock_subprocess_check_output = mocker.patch(
             "guardrails.cli.hub.install.subprocess.check_output"

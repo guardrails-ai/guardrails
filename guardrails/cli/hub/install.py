@@ -237,7 +237,8 @@ def install(
     package_uri: str = typer.Argument(
         help="URI to the package to install. Example: hub://guardrails/regex_match."
     ),
-    quiet: bool = typer.Option(False, "--quiet", help="Run the command in quiet mode to reduce output verbosity.")
+    quiet: bool = typer.Option(False, "--quiet", 
+        help="Run the command in quiet mode to reduce output verbosity.")
 ):
     """Install a validator from the Hub."""
     if not package_uri.startswith("hub://"):
