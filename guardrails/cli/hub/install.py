@@ -289,7 +289,7 @@ def install(
             module_name=package_uri,
             id=module_manifest.id,
             export=module_manifest.exports[0],
-            )
+        )
         success_message_logger = Template(
             "✅Successfully installed ${module_name}!\n\n"
             "Import validator:\n"
