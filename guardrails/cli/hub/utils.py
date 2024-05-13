@@ -58,11 +58,10 @@ def pip_process(
         sys.exit(1)
 
 
-
 def get_site_packages_location() -> str:
     output = pip_process("show", "pip", format=json_format)
     print(type(output), output)
-    return output.get("Location", "")
+    return output["Location"]
 
 
 def get_org_and_package_dirs(manifest: ModuleManifest) -> List[str]:
