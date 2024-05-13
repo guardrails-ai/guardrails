@@ -61,6 +61,7 @@ def pip_process(
 
 def get_site_packages_location() -> str:
     output = pip_process("show", "pip", format=json_format)
+    print(type(output), output)
     return output["Location"]
 
 
