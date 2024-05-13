@@ -237,17 +237,20 @@ def install(
     package_uri: str = typer.Argument(
         help="URI to the package to install. Example: hub://guardrails/regex_match."
     ),
-    quiet: bool = typer.Option(False, "--quiet", 
-        help="Run the command in quiet mode to reduce output verbosity.")
+    quiet: bool = typer.Option(
+        False,
+        "--quiet",
+        help="Run the command in quiet mode to reduce output verbosity.",
+    ),
 ):
     """Install a validator from the Hub."""
     if not package_uri.startswith("hub://"):
         logger.error("Invalid URI!")
         sys.exit(1)
 
-    if not quiet: 
+    if not quiet:
         console.print(f"\nInstalling {package_uri}...\n")
-    
+
     logger.log(
         level=LEVELS.get("SPAM"),  # type: ignore
         msg=f"Installing {package_uri}...",
@@ -258,7 +261,7 @@ def install(
 
     # Prep
     with console.status("Fetching manifest", spinner="bouncingBar") as status:
-        if not quiet: 
+        if not quiet:
             status.update("Fetching manifest")
         module_manifest = get_validator_manifest(module_name)
         site_packages = get_site_packages_location()
@@ -276,7 +279,7 @@ def install(
         run_post_install(module_manifest, site_packages)
         add_to_hub_inits(module_manifest, site_packages)
 
-    if not quiet: 
+    if not quiet:
         success_message_cli = Template(
             """✅Successfully installed ${module_name}!
 
