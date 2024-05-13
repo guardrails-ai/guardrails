@@ -205,7 +205,7 @@ class TestPipProcess:
 
 
 def test_get_site_packages_location(mocker):
-    mock_pip_process = mocker.patch("guardrails.cli.hub.install.pip_process")
+    mock_pip_process = mocker.patch("guardrails.cli.hub.utils.pip_process")
     mock_pip_process.return_value = {"Location": "/site-pacakges"}
 
     from guardrails.cli.hub.install import get_site_packages_location
@@ -286,7 +286,7 @@ def test_get_hub_directory():
 
     assert hub_dir == "./site-packages/guardrails/hub/guardrails_ai/test_validator"
 
- 
+
 class TestAddToHubInits:
     def test_closes_early_if_already_added(self, mocker):
         manifest = ModuleManifest.from_dict(
