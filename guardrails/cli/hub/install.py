@@ -12,12 +12,11 @@ from guardrails.cli.logger import LEVELS, logger
 from guardrails.cli.server.hub_client import get_validator_manifest
 from guardrails.cli.server.module_manifest import ModuleManifest
 
-from .utils import (
-    pip_process,
-    get_site_packages_location,
-    get_org_and_package_dirs,
-    get_hub_directory,
-)
+from guardrails.cli.hub.utils import pip_process
+from guardrails.cli.hub.utils import get_site_packages_location
+from guardrails.cli.hub.utils import get_org_and_package_dirs
+from guardrails.cli.hub.utils import get_hub_directory
+
 from .console import console
 
 
