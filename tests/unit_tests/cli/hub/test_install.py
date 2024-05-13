@@ -706,3 +706,4 @@ def test_install_hub_module(mocker):
         call("install", "pydash>=7.0.6,<8.0.0"),
     ]
     mock_pip_process.assert_has_calls(pip_calls)
+    
