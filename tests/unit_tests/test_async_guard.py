@@ -584,18 +584,3 @@ def test_use_and_use_many():
                 on="response",  # invalid "on" parameter
             )
         )
-
-
-# def test_call():
-#     five_seconds = 5 / 60
-#     response = AsyncGuard().use_many(
-#         ReadingTime(five_seconds, on_fail=OnFailAction.EXCEPTION),
-#         OneLine,
-#         (EndsWith, ["a"], {"on_fail": OnFailAction.EXCEPTION}),
-#         (LowerCase, kwargs(on_fail=OnFailAction.FIX_REASK, some_other_kwarg="kwarg")),
-#         (TwoWords, on_fail(OnFailAction.REASK)),
-#         (ValidLength, args(0, 12), kwargs(on_fail=OnFailAction.REFRAIN)),
-#     )("Oh Canada")
-
-#     assert response.validation_passed is True
-#     assert response.validated_output == "oh canada"
