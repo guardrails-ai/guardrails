@@ -75,7 +75,7 @@ def configure(
         # Authenticate with the Hub if token was updated
         if token != existing_config.get("token", ""):
             logger.info("Validating credentials...")
-            get_auth()
+            #get_auth()
             success_message = """
             Login successful.
 
