@@ -72,7 +72,7 @@ def uninstall(
 
     console.print(f"\nUninstalling {package_uri}...\n")
     logger.log(
-        level=LEVELS.get("SPAM"),
+        level=LEVELS.get("SPAM", 0),
         msg=f"Uninstalling {package_uri}...",
     )
 
