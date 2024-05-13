@@ -3,7 +3,7 @@ import os
 import subprocess
 import sys
 from email.parser import BytesHeaderParser
-from typing import List, Literal, Union, Dict
+from typing import List, Literal, Union
 from pydash.strings import snake_case
 
 from guardrails.cli.server.module_manifest import ModuleManifest
@@ -62,7 +62,7 @@ def pip_process(
 def get_site_packages_location() -> str:
     output = pip_process("show", "pip", format=json_format)
     print(type(output), output)
-    return output["Location"]
+    return output.get("Location", "")
 
 
 def get_org_and_package_dirs(manifest: ModuleManifest) -> List[str]:
