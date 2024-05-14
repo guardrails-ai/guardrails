@@ -42,7 +42,11 @@ class ValidatorServiceBase:
     #       Using `fork` instead of `spawn` may alleviate the symptom for POSIX systems,
     #       but is relatively unsupported on Windows.
     def execute_validator(
-        self, validator: Validator, value: Any, metadata: Optional[Dict], stream:Optional[bool] = False
+        self,
+        validator: Validator,
+        value: Any,
+        metadata: Optional[Dict],
+        stream: Optional[bool] = False,
     ) -> ValidationResult:
         validate_func = validator.validate_stream if stream else validator.validate
         traced_validator = trace_validator(
@@ -114,7 +118,7 @@ class ValidatorServiceBase:
         value: Any,
         metadata: Dict,
         property_path: str,
-        stream:Optional[bool] = False
+        stream: Optional[bool] = False,
     ) -> ValidatorLogs:
         validator_class_name = validator.__class__.__name__
         validator_logs = ValidatorLogs(
@@ -165,7 +169,7 @@ class SequentialValidatorService(ValidatorServiceBase):
         value: Any,
         metadata: Dict[str, Any],
         property_path: str,
-        stream:Optional[bool] = False
+        stream: Optional[bool] = False,
     ) -> Tuple[Any, Dict[str, Any]]:
         # Validate the field
         for validator in validator_setup.validators:
@@ -195,7 +199,6 @@ class SequentialValidatorService(ValidatorServiceBase):
                 return value, metadata
         return value, metadata
 
-    
     def validate_dependents(
         self,
         value: Any,
@@ -211,7 +214,6 @@ class SequentialValidatorService(ValidatorServiceBase):
             )
             value[child_setup.key] = child_schema
 
-    
     def validate(
         self,
         value: Any,
@@ -260,7 +262,6 @@ class SequentialValidatorService(ValidatorServiceBase):
         )
 
         return value, metadata
-
 
 
 class MultiprocMixin:
@@ -453,13 +454,10 @@ def validate(
             "To run asynchronously, specify a process count"
             "greater than 1 or unset this environment variable."
         )
-    if stream: 
+    if stream:
         sequential_validator_service = SequentialValidatorService(disable_tracer)
         return sequential_validator_service.validate_stream(
-            value,
-            metadata,
-            validator_setup,
-            iteration
+            value, metadata, validator_setup, iteration
         )
     try:
         loop = asyncio.get_event_loop()
@@ -478,6 +476,7 @@ def validate(
         validator_setup,
         iteration,
     )
+
 
 async def async_validate(
     value: Any,
