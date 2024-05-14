@@ -126,10 +126,7 @@ class ValidatorServiceBase:
         iteration.outputs.validator_logs.append(validator_logs)
 
         start_time = datetime.now()
-        if stream:
-            result = validator.validate_stream(value, metadata)
-        else:
-            result = self.execute_validator(validator, value, metadata)
+        result = self.execute_validator(validator, value, metadata, stream)
         end_time = datetime.now()
 
         if result is None:
