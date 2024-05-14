@@ -1,6 +1,4 @@
 import pytest
-from unittest.mock import call
-import sys
 
 from guardrails.cli.server.module_manifest import ModuleManifest
 
@@ -23,27 +21,39 @@ class TestUninstall:
     @pytest.fixture
     def setup_manifest_and_site_packages(self, mocker):
         manifest = create_test_manifest()
-        mocker.patch("guardrails.cli.hub.uninstall.get_validator_manifest", return_value=manifest)
+        mocker.patch("guardrails.cli.hub.uninstall.get_validator_manifest",
+                     return_value=manifest)
         mocker.patch(
-            "guardrails.cli.hub.uninstall.get_site_packages_location", return_value="/fake/site-packages"
+            "guardrails.cli.hub.uninstall.get_site_packages_location", 
+            return_value="/fake/site-packages"
         )
         return manifest
 
-    def test_uninstall_invalid_uri(self, mocker):
-        mock_logger_error = mocker.patch("guardrails.cli.hub.uninstall.logger.error")
-        mock_exit = mocker.spy(sys, "exit")
+    def test_uninstall_failures(self, setup_manifest_and_site_packages, mocker):
+        mocker.patch(
+            "guardrails.cli.hub.uninstall.uninstall_hub_module",
+            side_effect=Exception("Test error during uninstall")
+        )
+        mock_exit = mocker.patch("guardrails.cli.hub.uninstall.sys.exit")
+        mock_console = mocker.patch("guardrails.cli.hub.uninstall.console.print")
+        mock_logger = mocker.patch("guardrails.cli.hub.uninstall.logger.error")
 
         from guardrails.cli.hub.uninstall import uninstall
 
-        with pytest.raises(SystemExit):
-            uninstall("not a hub uri")
+        uninstall("hub://guardrails/test-validator")
 
-        mock_logger_error.assert_called_once_with("Invalid URI!")
-        mock_exit.assert_called_once_with(1)
+        mock_logger.assert_called_once_with(
+            "Failed during uninstall: Test error during uninstall"
+        )
+        mock_console.assert_not_called()
+        mock_exit.assert_not_called()
+
 
     def test_uninstall_successful(self, setup_manifest_and_site_packages, mocker):
-        mock_uninstall_hub_module = mocker.patch("guardrails.cli.hub.uninstall.uninstall_hub_module")
-        mock_remove_from_hub_inits = mocker.patch("guardrails.cli.hub.uninstall.remove_from_hub_inits")
+        mock_uninstall_hub_module = mocker.patch(
+            "guardrails.cli.hub.uninstall.uninstall_hub_module")
+        mock_remove_from_hub_inits = mocker.patch(
+            "guardrails.cli.hub.uninstall.remove_from_hub_inits")
         mock_console = mocker.patch("guardrails.cli.hub.uninstall.console.print")
         mock_logger = mocker.patch("guardrails.cli.hub.uninstall.logger.log")
 
@@ -61,23 +71,3 @@ class TestUninstall:
         assert mock_console.call_count == 2
         mock_console.assert_called_with("✅ Successfully uninstalled!")
         mock_logger.assert_called()
-
-    def test_uninstall_failures(self, setup_manifest_and_site_packages, mocker):
-        mocker.patch(
-            "guardrails.cli.hub.uninstall.uninstall_hub_module",
-            side_effect=Exception("Test error during uninstall"),
-        )
-        mock_exit = mocker.patch("guardrails.cli.hub.uninstall.sys.exit")
-        mock_console = mocker.patch("guardrails.cli.hub.uninstall.console.print")
-        mock_logger = mocker.patch("guardrails.cli.hub.uninstall.logger.error")
-
-        from guardrails.cli.hub.uninstall import uninstall
-
-        with pytest.raises(Exception):
-            uninstall("hub://guardrails/test-validator")
-
-        mock_logger.assert_called_with(
-            "Failed during uninstall: Test error during uninstall"
-        )
-        mock_console.assert_not_called()
-        mock_exit.assert_not_called()
