@@ -34,7 +34,7 @@ class TestUninstall:
         mock_exit = mocker.patch("uninstall.sys.exit")
         mock_logger = mocker.patch("uninstall.logger.error")
 
-        from guardrails.cli.hub import uninstall
+        from guardrails.cli.hub.uninstall import uninstall
 
         uninstall("not a hub uri")
 
@@ -48,7 +48,7 @@ class TestUninstall:
         mock_console = mocker.patch("uninstall.console.print")
         mock_logger = mocker.patch("uninstall.logger.log")
 
-        from guardrails.cli.hub import uninstall
+        from guardrails.cli.hub.uninstall import uninstall
 
         uninstall("hub://guardrails/test-validator")
 
@@ -73,7 +73,7 @@ class TestUninstall:
         mock_console = mocker.patch("uninstall.console.print")
         mock_logger = mocker.patch("uninstall.logger.error")
 
-        from guardrails.cli.hub import uninstall
+        from guardrails.cli.hub.uninstall import uninstall
 
         with pytest.raises(Exception):
             uninstall("hub://guardrails/test-validator")
