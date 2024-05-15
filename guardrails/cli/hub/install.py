@@ -7,13 +7,13 @@ from string import Template
 from typing import List, Literal, Union
 
 import typer
+from guardrails_hub_types import Manifest
 from pydash.strings import snake_case
 
 from guardrails.classes.generic import Stack
 from guardrails.cli.hub.hub import hub_command
 from guardrails.cli.logger import LEVELS, logger
 from guardrails.cli.server.hub_client import get_validator_manifest
-from guardrails.cli.server.module_manifest import ModuleManifest
 
 from .console import console
 
@@ -81,7 +81,7 @@ def get_site_packages_location():
     return pip_location
 
 
-def get_org_and_package_dirs(manifest: ModuleManifest) -> List[str]:
+def get_org_and_package_dirs(manifest: Manifest) -> List[str]:
     org_name = manifest.namespace
     package_name = manifest.package_name
     org = snake_case(org_name if len(org_name) > 1 else "")
@@ -89,14 +89,14 @@ def get_org_and_package_dirs(manifest: ModuleManifest) -> List[str]:
     return list(filter(None, [org, package]))
 
 
-def get_hub_directory(manifest: ModuleManifest, site_packages: str) -> str:
+def get_hub_directory(manifest: Manifest, site_packages: str) -> str:
     org_package = get_org_and_package_dirs(manifest)
     return os.path.join(site_packages, "guardrails", "hub", *org_package)
 
 
 # NOTE: I don't like this but don't see another way without
 #  shimming the init file with all hub validators
-def add_to_hub_inits(manifest: ModuleManifest, site_packages: str):
+def add_to_hub_inits(manifest: Manifest, site_packages: str):
     org_package = get_org_and_package_dirs(manifest)
     exports: List[str] = manifest.exports or []
     sorted_exports = sorted(exports, reverse=True)
@@ -141,7 +141,7 @@ def add_to_hub_inits(manifest: ModuleManifest, site_packages: str):
             namespace_init.close()
 
 
-def run_post_install(manifest: ModuleManifest, site_packages: str):
+def run_post_install(manifest: Manifest, site_packages: str):
     org_package = get_org_and_package_dirs(manifest)
     post_install_script = manifest.post_install
 
@@ -180,7 +180,7 @@ def run_post_install(manifest: ModuleManifest, site_packages: str):
             sys.exit(1)
 
 
-def get_install_url(manifest: ModuleManifest) -> str:
+def get_install_url(manifest: Manifest) -> str:
     repo = manifest.repository
     repo_url = repo.url
     branch = repo.branch
@@ -195,7 +195,7 @@ def get_install_url(manifest: ModuleManifest) -> str:
     return git_url
 
 
-def install_hub_module(module_manifest: ModuleManifest, site_packages: str):
+def install_hub_module(module_manifest: Manifest, site_packages: str):
     install_url = get_install_url(module_manifest)
     install_directory = get_hub_directory(module_manifest, site_packages)
 
