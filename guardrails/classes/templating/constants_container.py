@@ -9,13 +9,10 @@ class ConstantsContainer:
 
     def fill_constants(self) -> None:
         self_file_path = os.path.dirname(__file__)
-        print("self_file_path: ", self_file_path)
         self_dirname = os.path.dirname(self_file_path)
-        print("self_dirname: ", self_dirname)
         constants_file = os.path.abspath(
             os.path.join(self_dirname, "..", "constants.xml")
         )
-        print("constants_file: ", constants_file)
 
         with open(constants_file, "r") as f:
             xml = f.read()
