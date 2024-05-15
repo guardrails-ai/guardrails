@@ -3,7 +3,7 @@ from typing import Any, Dict, List
 from guardrails_api_client import ValidatorReference
 from guardrails.classes.execution.guard_execution_options import GuardExecutionOptions
 from guardrails.classes.output_type import OutputTypes
-from guardrails.validator_base import Validator
+from guardrails.types.validator import ValidatorMap
 
 
 @dataclass
@@ -16,6 +16,6 @@ class ProcessedSchema:
 
     output_type: OutputTypes = None
     validators: List[ValidatorReference] = field(default_factory=list)
-    validator_map: Dict[str, List[Validator]] = field(default_factory=dict)
+    validator_map: ValidatorMap = field(default_factory=dict)
     json_schema: Dict[str, Any] = field(default_factory=dict)
     exec_opts: GuardExecutionOptions = field(default_factory=GuardExecutionOptions)

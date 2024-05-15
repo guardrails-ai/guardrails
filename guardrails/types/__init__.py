@@ -11,6 +11,7 @@ from guardrails.types.validator import (
     UseValidatorSpec,
     UseManyValidatorTuple,
     UseManyValidatorSpec,
+    ValidatorMap,
 )
 
 __all__ = [
@@ -24,4 +25,5 @@ __all__ = [
     "UseValidatorSpec",
     "UseManyValidatorTuple",
     "UseManyValidatorSpec",
+    "ValidatorMap",
 ]

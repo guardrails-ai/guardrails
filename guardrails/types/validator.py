@@ -14,3 +14,5 @@ UseManyValidatorTuple = Tuple[
     Optional[Dict[str, Any]],
 ]
 UseManyValidatorSpec = Union[Validator, UseManyValidatorTuple]
+
+ValidatorMap = Dict[str, List[Validator]]
