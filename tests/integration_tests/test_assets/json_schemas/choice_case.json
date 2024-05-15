@@ -1,0 +1,50 @@
+{
+  "type": "object",
+  "properties": {
+    "action": {
+      "type": "object",
+      "properties": {
+        "chosen_action": {
+          "type": "string",
+          "enum": [
+            "fight",
+            "flight"
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "chosen_action": { "const": "fight" }
+            }
+          },
+          "then": {
+            "properties": {
+              "weapon": { 
+                "type": "string"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "chosen_action": { "const": "flight" }
+            }
+          },
+          "then": {
+            "properties": {
+              "flight_direction": { 
+                "type": "string"
+              },
+              "distance": { 
+                "type": "integer"
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

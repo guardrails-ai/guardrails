@@ -291,13 +291,13 @@ class ValidatorsAttr(pydantic.BaseModel):
         Returns:
             A list of validators.
         """
-        from guardrails.validator_base import get_validator, types_to_validators
+        from guardrails.validator_base import get_validator_class, types_to_validators
 
         _validators = []
         _unregistered_validators = []
         for validator_ref, args in validator_args.items():
             # Get or fetch validator
-            validator = get_validator(validator_ref)
+            validator = get_validator_class(validator_ref)
             validator_name = validator_ref.replace(hub, "")
 
             if not validator:

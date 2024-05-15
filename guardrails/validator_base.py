@@ -285,11 +285,11 @@ def filter_in_schema(schema: Union[Dict, List]) -> Union[Dict, List]:
     return filter_in_dict(schema)
 
 
-validators_registry = {}
+validators_registry: Dict[str, Type["Validator"]] = {}
 types_to_validators = defaultdict(list)
 
 
-def validator_factory(name: str, validate: Callable):
+def validator_factory(name: str, validate: Callable) -> Type["Validator"]:
     def validate_wrapper(self, *args, **kwargs):
         return validate(*args, **kwargs)
 
@@ -340,12 +340,14 @@ def register_validator(name: str, data_type: Union[str, List[str]]):
     return decorator
 
 
-def get_validator(name: str):
+def get_validator_class(name: str) -> Type["Validator"]:
     is_hub_validator = name.startswith(hub)
     validator_key = name.replace(hub, "") if is_hub_validator else name
     registration = validators_registry.get(validator_key)
     if not registration and name.startswith(hub):
         # This should import everything and trigger registration
+        # So it should only have to happen once
+        # in lieu of completely unregistered validators
         import guardrails.hub  # noqa
 
         return validators_registry.get(validator_key)

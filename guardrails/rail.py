@@ -125,7 +125,7 @@ class Rail:
         # Load <output /> schema
         raw_output_schema = xml.find("output")
         if raw_output_schema is None:
-            raise ValueError("RAIL file must contain a output-schema element.")
+            raise ValueError("RAIL file must contain an <output /> element.")
         raw_output_schema = ET.tostring(raw_output_schema, encoding="utf-8")
         raw_output_schema = ET.fromstring(raw_output_schema, parser=XMLPARSER)
         # If reasking prompt and instructions are provided, add them to the schema.

@@ -12,7 +12,7 @@ from typing import (
     cast,
 )
 
-from guardrails_api_client.models.validate_payload_llm_api import ValidatePayloadLlmApi
+from guardrails_api_client.models import LLMResource
 from pydantic import BaseModel
 
 from guardrails.utils.exception_utils import UserFacingException
@@ -947,15 +947,15 @@ def model_is_supported_server_side(
 # FIXME: Update with newly supported LLMs
 def get_llm_api_enum(
     llm_api: Callable[[Any], Awaitable[Any]],
-) -> Optional[ValidatePayloadLlmApi]:
+) -> Optional[LLMResource]:
     # TODO: Distinguish between v1 and v2
     if llm_api == get_static_openai_create_func():
-        return ValidatePayloadLlmApi.OPENAI_COMPLETION_CREATE
+        return LLMResource.OPENAI_DOT_COMPLETION_DOT_CREATE
     elif llm_api == get_static_openai_chat_create_func():
-        return ValidatePayloadLlmApi.OPENAI_CHATCOMPLETION_CREATE
+        return LLMResource.OPENAI_DOT_CHAT_COMPLETION_DOT_CREATE
     elif llm_api == get_static_openai_acreate_func():
-        return ValidatePayloadLlmApi.OPENAI_COMPLETION_ACREATE
+        return LLMResource.OPENAI_DOT_COMPLETION_DOT_ACREATE
     elif llm_api == get_static_openai_chat_acreate_func():
-        return ValidatePayloadLlmApi.OPENAI_CHATCOMPLETION_ACREATE
+        return LLMResource.OPENAI_DOT_CHAT_COMPLETION_DOT_ACREATE
     else:
         return None

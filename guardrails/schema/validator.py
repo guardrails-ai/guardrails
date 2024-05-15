@@ -8,7 +8,7 @@ class SchemaValidationError(Exception):
 
     def __init__(self, *args: object, fields: Dict[str, List[str]]):
         self.fields = fields
-        super(*args)
+        super().__init__(*args)
 
 
 def validate_against_schema(payload: Any, validator: Draft202012Validator):

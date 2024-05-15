@@ -1,13 +1,14 @@
 from typing import Optional
-from pydantic import Field, BaseModel
+from dataclasses import dataclass
 
 
-class GuardExecutionOptions(BaseModel):
-    prompt: Optional[str] = Field(defualt=None)
-    instructions: Optional[str] = Field(defualt=None)
-    reask_prompt: Optional[str] = Field(defualt=None)
-    reask_instructions: Optional[str] = Field(defualt=None)
-    num_reasks: Optional[int] = Field(defualt=None)
-    prompt_schema: Optional[str] = Field(defualt=None)
-    instructions_schema: Optional[str] = Field(defualt=None)
-    msg_history_schema: Optional[str] = Field(defualt=None)
+@dataclass
+class GuardExecutionOptions:
+    prompt: Optional[str] = None
+    instructions: Optional[str] = None
+    reask_prompt: Optional[str] = None
+    reask_instructions: Optional[str] = None
+    num_reasks: Optional[int] = None
+    prompt_schema: Optional[str] = None
+    instructions_schema: Optional[str] = None
+    msg_history_schema: Optional[str] = None
