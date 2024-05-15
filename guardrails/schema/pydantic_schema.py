@@ -134,24 +134,6 @@ def try_get_base_model(
         return (None, None, None)
 
 
-def pydantic_model_to_schema(
-    pydantic_class: ModelOrListOfModels,
-) -> ProcessedSchema:
-    processed_schema = ProcessedSchema(validators=[], validator_map={})
-
-    schema_model, type_origin, _key_type_origin = get_base_model(pydantic_class)
-
-    processed_schema.output_type = (
-        OutputTypes.LIST if type_origin == list else OutputTypes.DICT
-    )
-
-    model = extract_validators(schema_model, processed_schema, "$")
-    json_schema = pydantic_to_json_schema(model, type_origin)
-    processed_schema.json_schema = json_schema
-
-    return processed_schema
-
-
 def safe_get_validator(v: PydanticValidatorSpec) -> Union[Validator, None]:
     try:
         validator = get_validator(v)
@@ -315,3 +297,21 @@ def pydantic_to_json_schema(
         }
 
     return json_schema
+
+
+def pydantic_model_to_schema(
+    pydantic_class: ModelOrListOfModels,
+) -> ProcessedSchema:
+    processed_schema = ProcessedSchema(validators=[], validator_map={})
+
+    schema_model, type_origin, _key_type_origin = get_base_model(pydantic_class)
+
+    processed_schema.output_type = (
+        OutputTypes.LIST if type_origin == list else OutputTypes.DICT
+    )
+
+    model = extract_validators(schema_model, processed_schema, "$")
+    json_schema = pydantic_to_json_schema(model, type_origin)
+    processed_schema.json_schema = json_schema
+
+    return processed_schema

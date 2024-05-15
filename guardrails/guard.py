@@ -61,6 +61,7 @@ from guardrails.prompt import Instructions, Prompt
 from guardrails.rail import Rail
 from guardrails.run import AsyncRunner, Runner, StreamRunner
 from guardrails.schema import StringSchema
+from guardrails.schema.primitive_schema import primitive_to_schema
 from guardrails.schema.pydantic_schema import pydantic_model_to_schema
 from guardrails.schema.rail_schema import rail_file_to_schema, rail_string_to_schema
 from guardrails.schema.validator import SchemaValidationError, validate_json_schema
@@ -228,7 +229,7 @@ class Guard(IGuard, Runnable, Generic[OT]):
     @classmethod
     def _from_rail_schema(
         cls,
-        rail_schema: ProcessedSchema,
+        schema: ProcessedSchema,
         rail: str,
         *,
         num_reasks: Optional[int] = None,
@@ -239,17 +240,18 @@ class Guard(IGuard, Runnable, Generic[OT]):
         guard = cls(
             name=name,
             description=description,
-            schema=rail_schema.json_schema,
-            validators=rail_schema.validators,
-            _exec_opts=rail_schema.exec_opts,
+            schema=schema.json_schema,
+            validators=schema.validators,
+            _exec_opts=schema.exec_opts,
         )
-        if rail_schema.output_type == OutputTypes.STRING:
+        if schema.output_type == OutputTypes.STRING:
             guard = cast(Guard[str], guard)
-        elif rail_schema.output_type == OutputTypes.LIST:
+        elif schema.output_type == OutputTypes.LIST:
             guard = cast(Guard[List], guard)
         else:
             guard = cast(Guard[Dict], guard)
         guard.configure(num_reasks=num_reasks, tracer=tracer)
+        guard._validator_map = schema.validator_map
         guard._rail = rail
         return guard
 
@@ -290,9 +292,9 @@ class Guard(IGuard, Runnable, Generic[OT]):
         #   and therefore the Validators, are initialized
         cls._set_tracer(cls, tracer)  # type: ignore
 
-        rail_schema = rail_file_to_schema(rail_file)
+        schema = rail_file_to_schema(rail_file)
         return cls._from_rail_schema(
-            rail_schema,
+            schema,
             rail=rail_file,
             num_reasks=num_reasks,
             tracer=tracer,
@@ -336,9 +338,9 @@ class Guard(IGuard, Runnable, Generic[OT]):
         #   and therefore the Validators, are initialized
         cls._set_tracer(cls, tracer)  # type: ignore
 
-        rail_schema = rail_string_to_schema(rail_string)
+        schema = rail_string_to_schema(rail_string)
         return cls._from_rail_schema(
-            rail_schema,
+            schema,
             rail=rail_string,
             num_reasks=num_reasks,
             tracer=tracer,
@@ -388,7 +390,7 @@ class Guard(IGuard, Runnable, Generic[OT]):
         #   and therefore the Validators, are initialized
         cls._set_tracer(cls, tracer)  # type: ignore
 
-        pydantic_schema = pydantic_model_to_schema(output_class)
+        schema = pydantic_model_to_schema(output_class)
         exec_opts = GuardExecutionOptions(
             prompt=prompt,
             instructions=instructions,
@@ -398,17 +400,17 @@ class Guard(IGuard, Runnable, Generic[OT]):
         guard = cls(
             name=name,
             description=description,
-            schema=pydantic_schema.json_schema,
-            validators=pydantic_schema.validators,
+            schema=schema.json_schema,
+            validators=schema.validators,
             _exec_opts=exec_opts,
         )
-        if pydantic_schema.output_type == OutputTypes.LIST:
+        if schema.output_type == OutputTypes.LIST:
             guard = cast(Guard[List], guard)
         else:
             guard = cast(Guard[Dict], guard)
         guard.configure(num_reasks=num_reasks, tracer=tracer)
+        guard._validator_map = schema.validator_map
         guard._base_model = output_class
-        guard._validator_map = pydantic_schema.validator_map
         return guard
 
     @classmethod
@@ -444,19 +446,8 @@ class Guard(IGuard, Runnable, Generic[OT]):
         # This might not be necessary anymore
         cls._set_tracer(cls, tracer)  # type: ignore
 
-        validator_references = [
-            ValidatorReference(
-                id=v.rail_alias,
-                on="$",
-                on_fail=v.on_fail_descriptor,
-                args=[],
-                kwargs=v.get_args(),
-            )
-            for v in validators
-        ]
-        validator_map = {"$": validators}
-        string_schema = ModelSchema(
-            type=SimpleTypes.STRING, description=string_description
+        schema = primitive_to_schema(
+            validators, type=SimpleTypes.STRING, description=string_description
         )
         exec_opts = GuardExecutionOptions(
             prompt=prompt,
@@ -469,13 +460,13 @@ class Guard(IGuard, Runnable, Generic[OT]):
             cls(
                 name=name,
                 description=description,
-                schema=string_schema.to_dict(),
-                validators=validator_references,
+                schema=schema.json_schema,
+                validators=schema.validators,
                 _exec_opts=exec_opts,
             ),
         )
         guard.configure(num_reasks=num_reasks, tracer=tracer)
-        guard._validator_map = validator_map
+        guard._validator_map = schema.validator_map
         return guard
 
     @overload
