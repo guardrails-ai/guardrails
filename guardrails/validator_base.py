@@ -397,6 +397,8 @@ class PassResult(ValidationResult):
 class ErrorSpan:
     start: int
     end: int
+    # reason validation failed, specific to this chunk
+    reason: str
 
 
 class FailResult(ValidationResult):
