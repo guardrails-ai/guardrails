@@ -69,7 +69,7 @@ class TestInstall:
                 msg="✅Successfully installed hub://guardrails/test-validator!\n\nImport validator:\nfrom guardrails.hub import TestValidator\n\nGet more info:\nhttps://hub.guardrailsai.com/validator/id\n",  # noqa
             ),  # noqa
         ]
-        assert mock_logger_log.call_count == 2
+        assert mock_logger_log.call_count == 1
         print(mock_logger_log)
         mock_logger_log.assert_has_calls(log_calls)
 
@@ -706,3 +706,16 @@ def test_install_hub_module(mocker):
         call("install", "pydash>=7.0.6,<8.0.0"),
     ]
     mock_pip_process.assert_has_calls(pip_calls)
+    
+    def test_quiet_install(self, mocker):
+        mock_console_print = mocker.patch("guardrails.cli.hub.install.console.print")
+
+        from guardrails.cli.hub.install import install
+        install("hub://guardrails/test-validator", quiet=True)
+
+        # Expect no output other than the mandatory lines
+        mock_console_print.assert_has_calls([
+            call("Installing validator..."),
+            call("Installation complete"),
+        ])
+        assert mock_console_print.call_count == 2

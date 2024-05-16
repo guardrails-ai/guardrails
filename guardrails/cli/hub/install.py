@@ -272,7 +272,7 @@ def install(
             status.update("Running post-install setup")
         run_post_install(module_manifest, site_packages)
         add_to_hub_inits(module_manifest, site_packages)
-    
+
     console.print("Installation complete")
 
     if not quiet:
