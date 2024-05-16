@@ -1,6 +1,4 @@
-import json
-from string import Template
-from typing import Any, Dict, List
+from typing import Dict, List
 from guardrails_api_client.models.validation_type import ValidationType
 from lxml import etree as ET
 from lxml.etree import _Element, XMLParser
@@ -10,7 +8,6 @@ from guardrails.classes.output_type import OutputTypes
 from guardrails.classes.schema.processed_schema import ProcessedSchema
 from guardrails.logger import logger
 from guardrails.types import RailTypes
-from guardrails.utils.constants import substitute_constants
 from guardrails.utils.regex_utils import split_on
 from guardrails.utils.validator_utils import get_validator
 from guardrails.utils.xml_utils import xml_to_string
@@ -259,23 +256,28 @@ def parse_element(
         )
 
 
-def load_input(input: str, output_schema: Dict[str, Any]) -> str:
-    """Legacy behaviour to substitute constants in on init."""
-    const_subbed_input = substitute_constants(input)
-    return Template(const_subbed_input).safe_substitute(
-        output_schema=json.dumps(output_schema)
-    )
+# def load_input(input: str, output_schema: Dict[str, Any]) -> str:
+#     """Legacy behaviour to substitute constants in on init."""
+#     const_subbed_input = substitute_constants(input)
+#     return Template(const_subbed_input).safe_substitute(
+#         output_schema=json.dumps(output_schema)
+#     )
 
 
-def parse_input(
-    input_tag: _Element,
-    output_schema: Dict[str, Any],
-    processed_schema: ProcessedSchema,
-    meta_property: str,
-) -> str:
-    parse_element(input_tag, processed_schema, json_path=meta_property)
-    input = load_input(input_tag.text, output_schema)
-    return input
+# def parse_input(
+#     input_tag: _Element,
+#     output_schema: Dict[str, Any],
+#     processed_schema: ProcessedSchema,
+#     meta_property: str,
+# ) -> str:
+#     parse_element(input_tag, processed_schema, json_path=meta_property)
+#     # NOTE: Don't do this here.
+#     # This used to happen during RAIL init,
+#     #     but it's cleaner if we just keep it as a string.
+#     # This way the Runner has a strict contract for inputs being strings
+#     #   and it can format/process them however it needs to.
+#     # input = load_input(input_tag.text, output_schema)
+#     return input
 
 
 def rail_string_to_schema(rail_string: str) -> ProcessedSchema:
@@ -316,15 +318,15 @@ def rail_string_to_schema(rail_string: str) -> ProcessedSchema:
     # prepended to the prompt.
     instructions_tag = rail_xml.find("instructions")
     if instructions_tag:
-        processed_schema.exec_opts.instructions = parse_input(
-            instructions_tag, output_schema, processed_schema, "instructions"
+        processed_schema.exec_opts.instructions = parse_element(
+            instructions_tag, processed_schema, "instructions"
         )
 
     # Load <prompt />
     prompt_tag = rail_xml.find("prompt")
     if prompt_tag:
-        processed_schema.exec_opts.prompt = parse_input(
-            prompt_tag, output_schema, processed_schema, "prompt"
+        processed_schema.exec_opts.prompt = parse_element(
+            prompt_tag, processed_schema, "prompt"
         )
 
     # If reasking prompt and instructions are provided, add them to the schema.
