@@ -47,6 +47,7 @@ class ValidatorServiceBase:
         value: Any,
         metadata: Optional[Dict],
         stream: Optional[bool] = False,
+        **kwargs,
     ) -> ValidationResult:
         validate_func = validator.validate_stream if stream else validator.validate
         traced_validator = trace_validator(
@@ -57,7 +58,7 @@ class ValidatorServiceBase:
             on_fail_descriptor=validator.on_fail_descriptor,
             **validator._kwargs,
         )(validate_func)
-        result = traced_validator(value, metadata)
+        result = traced_validator(value, metadata, **kwargs)
         return result
 
     def perform_correction(
@@ -119,6 +120,7 @@ class ValidatorServiceBase:
         metadata: Dict,
         property_path: str,
         stream: Optional[bool] = False,
+        **kwargs,
     ) -> ValidatorLogs:
         validator_class_name = validator.__class__.__name__
         validator_logs = ValidatorLogs(
@@ -130,7 +132,7 @@ class ValidatorServiceBase:
         iteration.outputs.validator_logs.append(validator_logs)
 
         start_time = datetime.now()
-        result = self.execute_validator(validator, value, metadata, stream)
+        result = self.execute_validator(validator, value, metadata, stream, **kwargs)
         end_time = datetime.now()
 
         if result is None:
@@ -170,11 +172,12 @@ class SequentialValidatorService(ValidatorServiceBase):
         metadata: Dict[str, Any],
         property_path: str,
         stream: Optional[bool] = False,
+        **kwargs,
     ) -> Tuple[Any, Dict[str, Any]]:
         # Validate the field
         for validator in validator_setup.validators:
             validator_logs = self.run_validator(
-                iteration, validator, value, metadata, property_path, stream
+                iteration, validator, value, metadata, property_path, stream, **kwargs
             )
             result = validator_logs.validation_result
             # I assume we would want to wait until the end to do reasks for streams
@@ -247,6 +250,7 @@ class SequentialValidatorService(ValidatorServiceBase):
         validator_setup: FieldValidation,
         iteration: Iteration,
         path: str = "$",
+        **kwargs,
     ) -> Tuple[Any, dict]:
         property_path = (
             f"{path}.{validator_setup.key}"
@@ -258,7 +262,7 @@ class SequentialValidatorService(ValidatorServiceBase):
 
         # Validate the field
         value, metadata = self.run_validators(
-            iteration, validator_setup, value, metadata, property_path, True
+            iteration, validator_setup, value, metadata, property_path, True, **kwargs
         )
 
         return value, metadata
@@ -444,6 +448,7 @@ def validate(
     iteration: Iteration,
     disable_tracer: Optional[bool] = True,
     stream: Optional[bool] = False,
+    **kwargs,
 ):
     process_count = int(os.environ.get("GUARDRAILS_PROCESS_COUNT", 10))
     if process_count == 1:
@@ -457,7 +462,7 @@ def validate(
     if stream:
         sequential_validator_service = SequentialValidatorService(disable_tracer)
         return sequential_validator_service.validate_stream(
-            value, metadata, validator_setup, iteration
+            value, metadata, validator_setup, iteration, **kwargs
         )
     try:
         loop = asyncio.get_event_loop()

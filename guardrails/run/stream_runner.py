@@ -168,7 +168,7 @@ class StreamRunner(Runner):
                 if move_to_next:
                     # Continue to next chunk
                     continue
-                validated_fragments_iterable = self.validate(
+                validated_result = self.validate(
                     iteration,
                     index,
                     parsed_chunk,
@@ -176,30 +176,63 @@ class StreamRunner(Runner):
                     True,
                     validate_subschema=True,
                 )
-                for validated_fragment in validated_fragments_iterable:
-                    if isinstance(validated_fragment, SkeletonReAsk):
-                        raise ValueError(
-                            "Received fragment schema is an invalid sub-schema "
-                            "of the expected output JSON schema."
-                        )
-
-                    # 4. Introspect: inspect the validated fragment for reasks
-                    reasks, valid_op = self.introspect(
-                        index, validated_fragment, output_schema
+                if isinstance(validated_result, SkeletonReAsk):
+                    raise ValueError(
+                        "Received fragment schema is an invalid sub-schema "
+                        "of the expected output JSON schema."
                     )
-                    if reasks:
-                        raise ValueError(
-                            "Reasks are not yet supported with streaming. Please "
-                            "remove reasks from schema or disable streaming."
-                        )
 
-                    # 5. Convert validated fragment to a pretty JSON string
-                    yield ValidationOutcome(
-                        #  The chunk or the whole output?
-                        raw_llm_output=chunk,
-                        validated_output=validated_fragment,
-                        validation_passed=validated_fragment is not None,
+                # 4. Introspect: inspect the validated fragment for reasks
+                reasks, valid_op = self.introspect(
+                    index, validated_result, output_schema
+                )
+                if reasks:
+                    raise ValueError(
+                        "Reasks are not yet supported with streaming. Please "
+                        "remove reasks from schema or disable streaming."
                     )
+                # 5. Convert validated fragment to a pretty JSON string
+                yield ValidationOutcome(
+                    #  The chunk or the whole output?
+                    raw_llm_output=chunk,
+                    validated_output=validated_result,
+                    validation_passed=validated_fragment is not None,
+                )
+            ######################################
+            # need to validate remainder of chunks
+            ######################################
+            remainder_validation = self.validate(
+                iteration,
+                index,
+                "",
+                output_schema,
+                True,
+                validate_subschema=True,
+                remainder=True,
+            )
+            if isinstance(remainder_validation, SkeletonReAsk):
+                raise ValueError(
+                    "Received fragment schema is an invalid sub-schema "
+                    "of the expected output JSON schema."
+                )
+
+            # 4. Introspect: inspect the validated fragment for reasks
+            reasks, valid_op = self.introspect(
+                index, remainder_validation, output_schema
+            )
+            if reasks:
+                raise ValueError(
+                    "Reasks are not yet supported with streaming. Please "
+                    "remove reasks from schema or disable streaming."
+                )
+            # 5. Convert validated fragment to a pretty JSON string
+            yield ValidationOutcome(
+                #  The chunk or the whole output?
+                raw_llm_output=chunk,
+                validated_output=remainder_validation,
+                validation_passed=remainder_validation is not None,
+            )
+        # handle non string schema
         else:
             for chunk in stream:
                 # 1. Get the text from the chunk and append to fragment

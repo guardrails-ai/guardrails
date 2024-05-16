@@ -161,22 +161,15 @@ class StringSchema(Schema):
                 dummy_key: data,
             },
         )
-        if(stream):
-            validated_response, metadata = validator_service.validate_stream(
-                value=data,
-                metadata=metadata,
-                validator_setup=validation,
-                iteration=iteration,
-                disable_tracer=disable_tracer,
-            )
-        else:
-            validated_response, metadata = validator_service.validate(
-                value=data,
-                metadata=metadata,
-                validator_setup=validation,
-                iteration=iteration,
-                disable_tracer=disable_tracer,
-            )
+        validated_response, metadata = validator_service.validate(
+            value=data,
+            metadata=metadata,
+            validator_setup=validation,
+            iteration=iteration,
+            disable_tracer=disable_tracer,
+            stream=stream,
+            **kwargs,
+        )
 
         validated_response = {dummy_key: validated_response}
 

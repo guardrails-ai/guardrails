@@ -480,7 +480,9 @@ class Validator(Runnable):
         """Validates a value and return a validation result."""
         raise NotImplementedError
 
-    def validate_stream(self, chunk: Any, metadata: Dict[str, Any]) -> ValidationResult:
+    def validate_stream(
+        self, chunk: Any, metadata: Dict[str, Any], **kwargs
+    ) -> ValidationResult:
         """Validates a chunk emitted by an LLM.
         If the LLM chunk is smaller than the validator's chunking strategy,
         it will be accumulated until it reaches the desired size. In the meantime,
@@ -493,27 +495,24 @@ class Validator(Runnable):
         Otherwise, the validator will validate the chunk and return the result.
         """
         # combine accumulated chunks and new chunk
-        # TODO: Question: I'm assuming chunks are strings here. I'm not sure this is true
         self.accumulated_chunks.append(chunk)
         accumulated_text = "".join(self.accumulated_chunks)
         # check if enough chunks have accumulated for validation
-        [chunk_to_validate, new_accumulated_chunks] = self.chunking_function(
-            accumulated_text
-        )
-        if len(chunk_to_validate) == 0:
+        splitcontents = self.chunking_function(accumulated_text)
+
+        # if remainder kwargs is passed, validate remainder regardless
+        remainder = kwargs.get("remainder", False)
+        if remainder:
+            splitcontents = [accumulated_text, []]
+        if len(splitcontents) == 0:
             return None
+        [chunk_to_validate, new_accumulated_chunks] = splitcontents
         self.accumulated_chunks = new_accumulated_chunks
         # exclude last chunk, because it may not be a complete chunk
         validation_result = self.validate(chunk_to_validate, metadata)
         # include the chunk that we've validated in the metadata
         validation_result.metadata["validated_chunk"] = chunk_to_validate
         return validation_result
-
-        # TODO: the following logic needs to be moved up the chain to stream_runner
-        # TODO: maybe implement a function validateRemainder that validates remaining chunks
-        # after llm stream has been exhausted, we need to validate everything that's left
-        # str_from_leftover_chunks = "".join(self.accumulated_chunks)
-        # yield self.validate(str_from_leftover_chunks, metadata)
 
     def to_prompt(self, with_keywords: bool = True) -> str:
         """Convert the validator to a prompt.
