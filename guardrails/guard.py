@@ -714,7 +714,7 @@ class Guard(Runnable, Generic[OT]):
 
     @deprecated(
         """Async methods within Guard are deprecated and will be removed in 0.5.x.
-        Instead, please use `AsyncGuard() or pass in a sequential llm api.""",
+        Instead, please use `AsyncGuard() or pass in a synchronous llm api.""",
         category=FutureWarning,
         stacklevel=2,
     )
@@ -1036,7 +1036,7 @@ class Guard(Runnable, Generic[OT]):
 
     @deprecated(
         """Async methods within Guard are deprecated and will be removed in 0.5.x.
-        Instead, please use `AsyncGuard() or pass in a sequential llm api.""",
+        Instead, please use `AsyncGuard() or pass in a synchronous llm api.""",
         category=FutureWarning,
         stacklevel=2,
     )
@@ -1472,4 +1472,5 @@ class Guard(Runnable, Generic[OT]):
                 validation_passed=validation_output.result,
             )
         else:
+            raise ValueError("Guard does not have an api client!")
             raise ValueError("Guard does not have an api client!")
