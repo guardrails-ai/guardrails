@@ -248,7 +248,7 @@ def install(
         logger.error("Invalid URI!")
         sys.exit(1)
 
-    logger.log(level=5, msg=f"Installing {package_uri}...")  
+    logger.log(level=5, msg=f"Installing {package_uri}...")
     logger.info(f"\nInstalling {package_uri}...\n")
 
     # Validation
