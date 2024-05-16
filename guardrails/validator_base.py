@@ -378,6 +378,9 @@ def get_validator(name: str):
 class ValidationResult(BaseModel):
     outcome: str
     metadata: Optional[Dict[str, Any]] = None
+    # value argument passed to validator.validate
+    # or validator.validate_stream
+    validated_chunk: Any
 
 
 class PassResult(ValidationResult):
@@ -390,11 +393,19 @@ class PassResult(ValidationResult):
     value_override: Optional[Any] = Field(default=ValueOverrideSentinel)
 
 
+# specifies the start and end of segment of validate_chunk
+class ErrorSpan:
+    start: int
+    end: int
+
+
 class FailResult(ValidationResult):
     outcome: Literal["fail"] = "fail"
 
     error_message: str
     fix_value: Optional[Any] = None
+    # segments that caused validation to fail
+    error_spans: List[ErrorSpan]
 
 
 class OnFailAction(str, Enum):
