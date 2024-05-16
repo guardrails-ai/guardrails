@@ -20,12 +20,11 @@ json_format: Literal["json"] = "json"
 string_format: Literal["string"] = "string"
 
 
-def update_file(file_path: str, line_content: str, remove: bool = False):
+def remove_line(file_path: str, line_content: str):
     with open(file_path, "r+") as file:
         lines = file.readlines()
         file.seek(0)
-        if remove:
-            lines = [line for line in lines if line.strip() != line_content.strip()]
+        lines = [line for line in lines if line.strip() != line_content.strip()]
         file.writelines(lines)
         file.truncate()
 
@@ -42,14 +41,14 @@ def remove_from_hub_inits(manifest: ModuleManifest, site_packages: str):
 
     # Remove import line from main __init__.py
     hub_init_location = os.path.join(site_packages, "guardrails", "hub", "__init__.py")
-    update_file(hub_init_location, import_line, remove=True)
+    remove_line(hub_init_location, import_line)
 
     # Remove import line from namespace __init__.py
     namespace = org_package[0]
     namespace_init_location = os.path.join(
         site_packages, "guardrails", "hub", namespace, "__init__.py"
     )
-    update_file(namespace_init_location, import_line, remove=True)
+    remove_line(namespace_init_location, import_line)
 
 
 def uninstall_hub_module(manifest: ModuleManifest, site_packages: str):
