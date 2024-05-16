@@ -1,4 +1,3 @@
-import asyncio
 import contextvars
 import inspect
 from typing import (
@@ -10,25 +9,16 @@ from typing import (
     List,
     Optional,
     Union,
-    overload,
 )
-
 
 from guardrails import Guard
 from guardrails.classes import OT, ValidationOutcome
 from guardrails.classes.history import Call
 from guardrails.classes.history.call_inputs import CallInputs
-from guardrails.llm_providers import (
-    get_async_llm_ask,
-    model_is_supported_server_side,
-)
+from guardrails.llm_providers import get_async_llm_ask, model_is_supported_server_side
 from guardrails.logger import set_scope
 from guardrails.run import AsyncRunner
-from guardrails.stores.context import (
-    set_call_kwargs,
-    set_tracer,
-    set_tracer_context,
-)
+from guardrails.stores.context import set_call_kwargs, set_tracer, set_tracer_context
 
 
 class AsyncGuard(Guard):
@@ -48,38 +38,7 @@ class AsyncGuard(Guard):
     the LLM and the validated output stream.
     """
 
-    @overload
-    def __call__(
-        self,
-        llm_api: Callable,
-        prompt_params: Optional[Dict] = None,
-        num_reasks: Optional[int] = None,
-        prompt: Optional[str] = None,
-        instructions: Optional[str] = None,
-        msg_history: Optional[List[Dict]] = None,
-        metadata: Optional[Dict] = None,
-        full_schema_reask: Optional[bool] = None,
-        stream: Optional[bool] = False,
-        *args,
-        **kwargs,
-    ) -> Union[ValidationOutcome[OT], Iterable[ValidationOutcome[OT]]]: ...
-
-    @overload
-    def __call__(
-        self,
-        llm_api: Callable[[Any], Awaitable[Any]],
-        prompt_params: Optional[Dict] = None,
-        num_reasks: Optional[int] = None,
-        prompt: Optional[str] = None,
-        instructions: Optional[str] = None,
-        msg_history: Optional[List[Dict]] = None,
-        metadata: Optional[Dict] = None,
-        full_schema_reask: Optional[bool] = None,
-        *args,
-        **kwargs,
-    ) -> Awaitable[ValidationOutcome[OT]]: ...
-
-    def __call__(
+    async def __call__(
         self,
         llm_api: Union[Callable, Callable[[Any], Awaitable[Any]]],
         prompt_params: Optional[Dict] = None,
@@ -116,7 +75,7 @@ class AsyncGuard(Guard):
             The raw text output from the LLM and the validated output.
         """
 
-        def __call(
+        async def __call(
             self,
             llm_api: Union[Callable, Callable[[Any], Awaitable[Any]]],
             prompt_params: Optional[Dict] = None,
@@ -208,7 +167,7 @@ class AsyncGuard(Guard):
                     "Please use an async LLM API."
                 )
             # Otherwise, call the LLM
-            return self._call_async(
+            return await self._call_async(
                 llm_api,
                 prompt_params=prompt_params,
                 num_reasks=self.num_reasks,
@@ -223,7 +182,7 @@ class AsyncGuard(Guard):
             )
 
         guard_context = contextvars.Context()
-        return guard_context.run(
+        return await guard_context.run(
             __call,
             self,
             llm_api,
@@ -238,7 +197,7 @@ class AsyncGuard(Guard):
             **kwargs,
         )
 
-    def _call_async(
+    async def _call_async(
         self,
         llm_api: Callable[[Any], Awaitable[Any]],
         prompt_params: Dict,
@@ -295,12 +254,10 @@ class AsyncGuard(Guard):
             full_schema_reask=full_schema_reask,
             disable_tracer=self._disable_tracer,
         )
-        call = asyncio.run(
-            runner.async_run(call_log=call_log, prompt_params=prompt_params)
-        )
+        call = await runner.async_run(call_log=call_log, prompt_params=prompt_params)
         return ValidationOutcome[OT].from_guard_history(call)
 
-    def parse(
+    async def parse(
         self,
         llm_output: str,
         metadata: Optional[Dict] = None,
@@ -328,7 +285,7 @@ class AsyncGuard(Guard):
                 determined by the object schema defined in the RAILspec.
         """
 
-        def __parse(
+        async def __parse(
             self,
             llm_output: str,
             metadata: Optional[Dict] = None,
@@ -416,19 +373,18 @@ class AsyncGuard(Guard):
                 or inspect.iscoroutinefunction(llm_api)
                 or inspect.isasyncgenfunction(llm_api)
             ):
-                return asyncio.run(
-                    self._async_parse(
-                        llm_output,
-                        metadata,
-                        llm_api=llm_api,
-                        num_reasks=self.num_reasks,
-                        prompt_params=prompt_params,
-                        full_schema_reask=full_schema_reask,
-                        call_log=call_log,
-                        *args,
-                        **kwargs,
-                    )
+                return await self._async_parse(
+                    llm_output,
+                    metadata,
+                    llm_api=llm_api,
+                    num_reasks=self.num_reasks,
+                    prompt_params=prompt_params,
+                    full_schema_reask=full_schema_reask,
+                    call_log=call_log,
+                    *args,
+                    **kwargs,
                 )
+
             else:
                 raise NotImplementedError(
                     "AsyncGuard does not support non-async LLM APIs. "
@@ -437,7 +393,7 @@ class AsyncGuard(Guard):
                 )
 
         guard_context = contextvars.Context()
-        return guard_context.run(
+        return await guard_context.run(
             __parse,
             self,
             llm_output,

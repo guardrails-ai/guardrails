@@ -477,7 +477,8 @@ def test_use_many_tuple():
         )
 
 
-def test_validate():
+@pytest.mark.asyncio
+async def test_validate():
     guard: AsyncGuard = (
         AsyncGuard()
         .use(OneLine)
@@ -489,15 +490,13 @@ def test_validate():
     )
 
     llm_output: str = "Oh Canada"  # bc it meets our criteria
-
-    response = guard.validate(llm_output)
+    response = await guard.validate(llm_output)
 
     assert response.validation_passed is True
     assert response.validated_output == llm_output.lower()
-
     llm_output_2 = "Star Spangled Banner"  # to stick with the theme
 
-    response_2 = guard.validate(llm_output_2)
+    response_2 = await guard.validate(llm_output_2)
 
     assert response_2.validation_passed is False
     assert response_2.validated_output is None
@@ -516,14 +515,14 @@ def test_validate():
 
     llm_output: str = "Oh Canada"  # bc it meets our criteria
 
-    response = guard.validate(llm_output)
+    response = await guard.validate(llm_output)
 
     assert response.validation_passed is True
     assert response.validated_output == llm_output.lower()
 
     llm_output_2 = "Star Spangled Banner"  # to stick with the theme
 
-    response_2 = guard.validate(llm_output_2)
+    response_2 = await guard.validate(llm_output_2)
 
     assert response_2.validation_passed is False
     assert response_2.validated_output is None
