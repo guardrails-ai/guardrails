@@ -248,7 +248,7 @@ def install(
         logger.error("Invalid URI!")
         sys.exit(1)
 
-    console.print(f"\nInstalling {package_uri}...\n")
+    logger.info(f"\nInstalling {package_uri}...\n")
 
     # Validation
     module_name = package_uri.replace("hub://", "")
@@ -273,7 +273,7 @@ def install(
         run_post_install(module_manifest, site_packages)
         add_to_hub_inits(module_manifest, site_packages)
 
-    console.print("Installation complete")
+    logger.info("Installation complete")
 
     if not quiet:
         success_message_cli = Template(
