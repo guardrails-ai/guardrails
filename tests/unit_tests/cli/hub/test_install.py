@@ -69,7 +69,7 @@ class TestInstall:
                 msg="✅Successfully installed hub://guardrails/test-validator!\n\nImport validator:\nfrom guardrails.hub import TestValidator\n\nGet more info:\nhttps://hub.guardrailsai.com/validator/id\n",  # noqa
             ),  # noqa
         ]
-        assert mock_logger_log.call_count == 1
+        assert mock_logger_log.call_count == 2
         print(mock_logger_log)
         mock_logger_log.assert_has_calls(log_calls)
 
