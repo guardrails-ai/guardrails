@@ -1,4 +1,4 @@
-from typing import Any, Dict, Generator, Iterable, List, Optional, Union
+from typing import Any, Dict, Generator, List, Optional, Union
 
 from guardrails.classes.history import Call, Inputs, Iteration, Outputs
 from guardrails.classes.output_type import OT
@@ -153,29 +153,72 @@ class StreamRunner(Runner):
         verified = set()
         # Loop over the stream
         # and construct "fragments" of concatenated chunks
-        for chunk in stream:
-            # 1. Get the text from the chunk and append to fragment
-            chunk_text = self.get_chunk_text(chunk, api)
-            fragment += chunk_text
+        # for now, handle string and json schema differently
 
-            # 2. Parse the chunk
-            # I assume we have to parse the chunk before validating it...
-            parsed_chunk, move_to_next = self.parse(
-                index, chunk, output_schema, verified
-            )
-            if move_to_next:
-                # Continue to next chunk
-                continue
+        if isinstance(output_schema, StringSchema):
+            for chunk in stream:
+                # 1. Get the text from the chunk and append to fragment
+                chunk_text = self.get_chunk_text(chunk, api)
+                fragment += chunk_text
 
-            validated_fragments_iterable = self.validate(
-                iteration,
-                index,
-                parsed_chunk,
-                output_schema,
-                True,
-                validate_subschema=True,
-            )
-            for validated_fragment in validated_fragments_iterable:
+                # 2. Parse the chunk
+                parsed_chunk, move_to_next = self.parse(
+                    index, chunk_text, output_schema, verified
+                )
+                if move_to_next:
+                    # Continue to next chunk
+                    continue
+                validated_fragments_iterable = self.validate(
+                    iteration,
+                    index,
+                    parsed_chunk,
+                    output_schema,
+                    True,
+                    validate_subschema=True,
+                )
+                for validated_fragment in validated_fragments_iterable:
+                    if isinstance(validated_fragment, SkeletonReAsk):
+                        raise ValueError(
+                            "Received fragment schema is an invalid sub-schema "
+                            "of the expected output JSON schema."
+                        )
+
+                    # 4. Introspect: inspect the validated fragment for reasks
+                    reasks, valid_op = self.introspect(
+                        index, validated_fragment, output_schema
+                    )
+                    if reasks:
+                        raise ValueError(
+                            "Reasks are not yet supported with streaming. Please "
+                            "remove reasks from schema or disable streaming."
+                        )
+
+                    # 5. Convert validated fragment to a pretty JSON string
+                    yield ValidationOutcome(
+                        #  The chunk or the whole output?
+                        raw_llm_output=chunk,
+                        validated_output=validated_fragment,
+                        validation_passed=validated_fragment is not None,
+                    )
+        else:
+            for chunk in stream:
+                # 1. Get the text from the chunk and append to fragment
+                chunk_text = self.get_chunk_text(chunk, api)
+                fragment += chunk_text
+
+                parsed_fragment, move_to_next = self.parse(
+                    index, fragment, output_schema, verified
+                )
+                if move_to_next:
+                    # Continue to next chunk
+                    continue
+                validated_fragment = self.validate(
+                    iteration,
+                    index,
+                    parsed_fragment,
+                    output_schema,
+                    validate_subschema=True,
+                )
                 if isinstance(validated_fragment, SkeletonReAsk):
                     raise ValueError(
                         "Received fragment schema is an invalid sub-schema "
@@ -183,7 +226,9 @@ class StreamRunner(Runner):
                     )
 
                 # 4. Introspect: inspect the validated fragment for reasks
-                reasks, valid_op = self.introspect(index, validated_fragment, output_schema)
+                reasks, valid_op = self.introspect(
+                    index, validated_fragment, output_schema
+                )
                 if reasks:
                     raise ValueError(
                         "Reasks are not yet supported with streaming. Please "
@@ -192,9 +237,7 @@ class StreamRunner(Runner):
 
                 # 5. Convert validated fragment to a pretty JSON string
                 yield ValidationOutcome(
-                    # TODO: question: What do we want raw_llm_output to be here?
-                    #  The chunk or the whole output?
-                    raw_llm_output=chunk,
+                    raw_llm_output=fragment,
                     validated_output=validated_fragment,
                     validation_passed=validated_fragment is not None,
                 )
