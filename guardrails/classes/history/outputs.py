@@ -75,6 +75,7 @@ class Outputs(ArbitraryModel):
             ]
         )
 
+    # TODO: Is it possible the user wants the entire ValidationResult here too?
     @property
     def error_spans_in_output(self) -> List[ErrorSpan]:
         """The error spans from the LLM response.
