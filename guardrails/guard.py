@@ -22,14 +22,14 @@ from typing import (
     overload,
 )
 
+from guardrails_api_client.models import AnyObject
+from guardrails_api_client.models import Guard as GuardModel
 from guardrails_api_client.models import (
-    AnyObject,
     History,
     HistoryEvent,
     ValidatePayload,
     ValidationOutput,
 )
-from guardrails_api_client.models import Guard as GuardModel
 from guardrails_api_client.types import UNSET
 from langchain_core.messages import BaseMessage
 from langchain_core.runnables import Runnable, RunnableConfig
@@ -500,8 +500,7 @@ class Guard(Runnable, Generic[OT]):
         Union[ValidationOutcome[OT], Iterable[ValidationOutcome[OT]]],
         Awaitable[ValidationOutcome[OT]],
     ]:
-        """Call the LLM and validate the output. Pass an async LLM API to
-        return a coroutine.
+        """Call the LLM and validate the output.
 
         Args:
             llm_api: The LLM API to call
@@ -603,7 +602,8 @@ class Guard(Runnable, Generic[OT]):
                     **kwargs,
                 )
 
-            # If the LLM API is async, return a coroutine
+            # If the LLM API is async, return a coroutine. This will be deprecated soon.
+
             if asyncio.iscoroutinefunction(llm_api):
                 return self._call_async(
                     llm_api,
@@ -712,6 +712,12 @@ class Guard(Runnable, Generic[OT]):
             call = runner(call_log=call_log, prompt_params=prompt_params)
             return ValidationOutcome[OT].from_guard_history(call)
 
+    @deprecated(
+        """Async methods within Guard are deprecated and will be removed in 0.5.x.
+        Instead, please use `AsyncGuard() or pass in a synchronous llm api.""",
+        category=FutureWarning,
+        stacklevel=2,
+    )
     async def _call_async(
         self,
         llm_api: Callable[[Any], Awaitable[Any]],
@@ -1028,6 +1034,12 @@ class Guard(Runnable, Generic[OT]):
 
         return ValidationOutcome[OT].from_guard_history(call)
 
+    @deprecated(
+        """Async methods within Guard are deprecated and will be removed in 0.5.x.
+        Instead, please use `AsyncGuard() or pass in a synchronous llm api.""",
+        category=FutureWarning,
+        stacklevel=2,
+    )
     async def _async_parse(
         self,
         llm_output: str,
