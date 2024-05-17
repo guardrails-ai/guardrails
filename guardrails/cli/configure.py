@@ -24,77 +24,55 @@ def save_configuration_file(token: str, no_metrics: bool) -> None:
         rc_file.close()
 
 
-def get_existing_config() -> dict:
-    """Get the configuration from the file if it exists."""
-    home = expanduser("~")
-    guardrails_rc = os.path.join(home, ".guardrailsrc")
-    config = {}
-
-    # If the file exists
-    if os.path.exists(guardrails_rc):
-        with open(guardrails_rc, "r") as rc_file:
-            lines = rc_file.readlines()
-            for line in lines:
-                key, value = line.strip().split("=")
-                config[key] = value
-    return config
-
-
 @guardrails.command()
 def configure(
     token: Optional[str] = typer.Option(
-        None,
-        help="Your Guardrails Hub auth token.",
-        hide_input=True,
-        prompt="Token (optional) [None]",
+        help="Your Guardrails Hub auth token.", hide_input=True, default=""
     ),
     no_metrics: Optional[str] = typer.Option(
-        None,
-        help="Opt out of anonymous metrics collection.",
-        prompt="Disable anonymous metrics reporting? [Yes/No]",
+        help="Opt out of anonymous metrics collection.", default=False
     ),
 ):
     """Set the global configuration for the Guardrails CLI and Hub."""
-    existing_config = get_existing_config()
+    try:
+        notice_message = """
 
-    # Normalize no_metrics to bool
-    if no_metrics is not None:
-        no_metrics_bool = no_metrics.lower() == 'yes'
-    else:
-        no_metrics_bool = existing_config.get("no_metrics", "false") == "true"
-
-    # Fetch existing token if None provided
-    if token is None:
-        token = existing_config.get("token", "")
-
-    # Only save configuration if both token and no_metrics are valid
-    if token and no_metrics is not None:
-        save_configuration_file(token, no_metrics_bool)
-        logger.info("Configuration saved.")
-
-        # Authenticate with the Hub if token was updated
-        if token != existing_config.get("token", ""):
-            logger.info("Validating credentials...")
-            #get_auth()
-            success_message = """
-            Login successful.
-
-            Get started by installing our RegexMatch validator:
-            https://hub.guardrailsai.com/validator/guardrails_ai/regex_match
-
-            You can install it by running:
-            guardrails hub install hub://guardrails/regex_match
-
-            Find more validators at https://hub.guardrailsai.com
-            """
-            logger.log(level=LEVELS.get("SUCCESS", 25), msg=success_message)  # Assuming 25 is the SUCCESS level
-
-    else:
+    You can find your token at https://hub.guardrailsai.com/tokens
+    """
+        logger.log(level=LEVELS.get("NOTICE"), msg=notice_message)  # type: ignore
         if not token:
-            print("No token provided. Skipping authentication.")
-        if no_metrics is None:
-            print("No metrics preference provided. Skipping configuration update.")
+            token = typer.prompt("Token", hide_input=True)
+        logger.info("Configuring...")
+        save_configuration_file(token, no_metrics)  # type: ignore
 
-    # Log an information message if neither token nor no_metrics provided
-    if not token and no_metrics is None:
-        logger.info("No updates to configuration required.")
+        logger.info("Validating credentials...")
+        get_auth()
+        success_message = """
+
+    Login successful.
+
+    Get started by installing our RegexMatch validator:
+    https://hub.guardrailsai.com/validator/guardrails_ai/regex_match
+
+    You can install it by running:
+    guardrails hub install hub://guardrails/regex_match
+
+    Find more validators at https://hub.guardrailsai.com
+    """
+        logger.log(level=LEVELS.get("SUCCESS"), msg=success_message)  # type: ignore
+    except AuthenticationError as auth_error:
+        logger.error(auth_error)
+        logger.error(
+            """
+            Check that your token is correct and try again.
+
+            If you don't have your token credentials you can find them here:
+
+            https://hub.guardrailsai.com/tokens
+            """
+        )
+        sys.exit(1)
+    except Exception as e:
+        logger.error("An unexpected error occurred!")
+        logger.error(e)
+        sys.exit(1)
