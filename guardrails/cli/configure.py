@@ -1,5 +1,4 @@
 import os
-import sys
 import uuid
 from os.path import expanduser
 from typing import Optional
@@ -8,7 +7,6 @@ import typer
 
 from guardrails.cli.guardrails import guardrails
 from guardrails.cli.logger import LEVELS, logger
-from guardrails.cli.server.hub_client import AuthenticationError, get_auth
 
 
 def save_configuration_file(token: str, no_metrics: bool) -> None:
@@ -59,7 +57,7 @@ def configure(
 
     # Normalize no_metrics to bool
     if no_metrics is not None:
-        no_metrics_bool = no_metrics.lower() == 'yes'
+        no_metrics_bool = no_metrics.lower() == "yes"
     else:
         no_metrics_bool = existing_config.get("no_metrics", "false") == "true"
 
@@ -75,7 +73,7 @@ def configure(
         # Authenticate with the Hub if token was updated
         if token != existing_config.get("token", ""):
             logger.info("Validating credentials...")
-            #get_auth()
+            # get_auth()
             success_message = """
             Login successful.
 
@@ -87,7 +85,7 @@ def configure(
 
             Find more validators at https://hub.guardrailsai.com
             """
-            logger.log(level=LEVELS.get("SUCCESS", 25), msg=success_message)  # Assuming 25 is the SUCCESS level
+            logger.log(level=LEVELS.get("SUCCESS", 25), msg=success_message)
 
     else:
         if not token:
