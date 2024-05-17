@@ -524,7 +524,8 @@ class Validator(Runnable):
         # exclude last chunk, because it may not be a complete chunk
         validation_result = self.validate(chunk_to_validate, metadata)
         # include the chunk that we've validated in the metadata
-        validation_result.metadata["validated_chunk"] = chunk_to_validate
+        # TODO: Can I count on the validator to do this?
+        validation_result.validated_chunk = chunk_to_validate
         return validation_result
 
     def to_prompt(self, with_keywords: bool = True) -> str:
