@@ -3,6 +3,7 @@ import uuid
 from os.path import expanduser
 from typing import Optional
 
+from guardrails.cli.server.hub_client import get_auth
 import typer
 
 from guardrails.cli.guardrails import guardrails
@@ -38,61 +39,53 @@ def get_existing_config() -> dict:
     return config
 
 
+def _get_default_token() -> str:
+    """Get the default token from the configuration file."""
+    return get_existing_config().get("token", "")
+
+
 @guardrails.command()
 def configure(
     token: Optional[str] = typer.Option(
-        None,
+        default_factory=_get_default_token,
         help="Your Guardrails Hub auth token.",
         hide_input=True,
-        prompt="Token (optional) [None]",
+        prompt="Token (optional)",
     ),
-    no_metrics: Optional[str] = typer.Option(
-        None,
+    no_metrics: Optional[bool] = typer.Option(
+        False,
+        "--no-metrics/--metrics",
         help="Opt out of anonymous metrics collection.",
-        prompt="Disable anonymous metrics reporting? [Yes/No]",
+        prompt="Disable anonymous metrics reporting?",
+    ),
+    clear_token: Optional[bool] = typer.Option(
+        False,
+        "--clear-token",
+        help="Clear the existing token from the configuration file.",
     ),
 ):
-    """Set the global configuration for the Guardrails CLI and Hub."""
-    existing_config = get_existing_config()
+    if clear_token is True:
+        token = ""
 
-    # Normalize no_metrics to bool
-    if no_metrics is not None:
-        no_metrics_bool = no_metrics.lower() == "yes"
-    else:
-        no_metrics_bool = existing_config.get("no_metrics", "false") == "true"
+    # Authenticate with the Hub if token is not empty
+    if token != "" and token is not None:
+        logger.info("Validating credentials...")
+        get_auth()
+        success_message = """
+        Login successful.
 
-    # Fetch existing token if None provided
-    if token is None:
-        token = existing_config.get("token", "")
+        Get started by installing our RegexMatch validator:
+        https://hub.guardrailsai.com/validator/guardrails_ai/regex_match
 
-    # Only save configuration if both token and no_metrics are valid
-    if token and no_metrics is not None:
-        save_configuration_file(token, no_metrics_bool)
-        logger.info("Configuration saved.")
+        You can install it by running:
+        guardrails hub install hub://guardrails/regex_match
 
-        # Authenticate with the Hub if token was updated
-        if token != existing_config.get("token", ""):
-            logger.info("Validating credentials...")
-            # get_auth()
-            success_message = """
-            Login successful.
+        Find more validators at https://hub.guardrailsai.com
+        """
+        logger.log(level=LEVELS.get("SUCCESS", 25), msg=success_message)
 
-            Get started by installing our RegexMatch validator:
-            https://hub.guardrailsai.com/validator/guardrails_ai/regex_match
+    save_configuration_file(token, no_metrics)
+    logger.info("Configuration saved.")
 
-            You can install it by running:
-            guardrails hub install hub://guardrails/regex_match
-
-            Find more validators at https://hub.guardrailsai.com
-            """
-            logger.log(level=LEVELS.get("SUCCESS", 25), msg=success_message)
-
-    else:
-        if not token:
-            print("No token provided. Skipping authentication.")
-        if no_metrics is None:
-            print("No metrics preference provided. Skipping configuration update.")
-
-    # Log an information message if neither token nor no_metrics provided
-    if not token and no_metrics is None:
-        logger.info("No updates to configuration required.")
+    if not token:
+        print("No token provided. Skipping authentication.")
