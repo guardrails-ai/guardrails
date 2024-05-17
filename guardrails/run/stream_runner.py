@@ -157,6 +157,7 @@ class StreamRunner(Runner):
 
         if isinstance(output_schema, StringSchema):
             for chunk in stream:
+                print('chunk', chunk)
                 # 1. Get the text from the chunk and append to fragment
                 chunk_text = self.get_chunk_text(chunk, api)
                 fragment += chunk_text
