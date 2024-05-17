@@ -229,8 +229,8 @@ class AsyncGuard(Guard):
         Returns:
             The raw text output from the LLM and the validated output.
         """
-        instructions_obj = instructions or self.instructions
-        prompt_obj = prompt or self.prompt
+        instructions_obj = instructions or self.rail.instructions
+        prompt_obj = prompt or self.rail.prompt
         msg_history_obj = msg_history or []
         if prompt_obj is None:
             if msg_history_obj is not None and not len(msg_history_obj):
@@ -244,10 +244,10 @@ class AsyncGuard(Guard):
             prompt=prompt_obj,
             msg_history=msg_history_obj,
             api=get_async_llm_ask(llm_api, *args, **kwargs),
-            prompt_schema=self.prompt_schema,
-            instructions_schema=self.instructions_schema,
-            msg_history_schema=self.msg_history_schema,
-            output_schema=self.output_schema,
+            prompt_schema=self.rail.prompt_schema,
+            instructions_schema=self.rail.instructions_schema,
+            msg_history_schema=self.rail.msg_history_schema,
+            output_schema=self.rail.output_schema,
             num_reasks=num_reasks,
             metadata=metadata,
             base_model=self.base_model,
@@ -433,10 +433,10 @@ class AsyncGuard(Guard):
             prompt=kwargs.pop("prompt", None),
             msg_history=kwargs.pop("msg_history", None),
             api=get_async_llm_ask(llm_api, *args, **kwargs) if llm_api else None,
-            prompt_schema=self.prompt_schema,
-            instructions_schema=self.instructions_schema,
-            msg_history_schema=self.msg_history_schema,
-            output_schema=self.output_schema,
+            prompt_schema=self.rail.prompt_schema,
+            instructions_schema=self.rail.instructions_schema,
+            msg_history_schema=self.rail.msg_history_schema,
+            output_schema=self.rail.output_schema,
             num_reasks=num_reasks,
             metadata=metadata,
             output=llm_output,
