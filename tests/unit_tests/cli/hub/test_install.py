@@ -126,7 +126,7 @@ class TestPipProcess:
             def parsebytes(self, *args):
                 return {"output": "json"}
 
-        mock_bytes_parser = mocker.patch("guardrails.cli.hub.install.BytesHeaderParser")
+        mock_bytes_parser = mocker.patch("guardrails.cli.hub.utils.BytesHeaderParser")
         mock_bytes_header_parser = MockBytesHeaderParser()
         mock_bytes_parser.return_value = mock_bytes_header_parser
 
@@ -205,7 +205,7 @@ class TestPipProcess:
 
 
 def test_get_site_packages_location(mocker):
-    mock_pip_process = mocker.patch("guardrails.cli.hub.install.pip_process")
+    mock_pip_process = mocker.patch("guardrails.cli.hub.utils.pip_process")
     mock_pip_process.return_value = {"Location": "/site-pacakges"}
 
     from guardrails.cli.hub.install import get_site_packages_location
