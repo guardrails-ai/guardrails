@@ -1473,4 +1473,3 @@ class Guard(Runnable, Generic[OT]):
             )
         else:
             raise ValueError("Guard does not have an api client!")
-            raise ValueError("Guard does not have an api client!")
