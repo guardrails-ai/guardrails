@@ -583,7 +583,9 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
             *args,
             **kwargs,
         ):
-            llm_api_str = f"{llm_api.__module__}.{llm_api.__name__}" if llm_api else "None"
+            llm_api_str = (
+                f"{llm_api.__module__}.{llm_api.__name__}" if llm_api else "None"
+            )
             if metadata is None:
                 metadata = {}
             if full_schema_reask is None:
@@ -939,7 +941,9 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
             *args,
             **kwargs,
         ):
-            llm_api_str = f"{llm_api.__module__}.{llm_api.__name__}" if llm_api else "None"
+            llm_api_str = (
+                f"{llm_api.__module__}.{llm_api.__name__}" if llm_api else "None"
+            )
             final_num_reasks = (
                 num_reasks if num_reasks is not None else 0 if llm_api is None else None
             )
