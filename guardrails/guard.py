@@ -583,6 +583,7 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
             *args,
             **kwargs,
         ):
+            llm_api_str = f"{llm_api.__module__}.{llm_api.__name__}" if llm_api else "None"
             if metadata is None:
                 metadata = {}
             if full_schema_reask is None:
@@ -597,7 +598,7 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
                     attributes=[
                         ("guard_id", self._guard_id),
                         ("user_id", self._user_id),
-                        ("llm_api", llm_api.__name__ if llm_api else "None"),
+                        ("llm_api", llm_api_str),
                         (
                             "custom_reask_prompt",
                             self.rail.output_schema.reask_prompt_template is not None,
@@ -938,6 +939,7 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
             *args,
             **kwargs,
         ):
+            llm_api_str = f"{llm_api.__module__}.{llm_api.__name__}" if llm_api else "None"
             final_num_reasks = (
                 num_reasks if num_reasks is not None else 0 if llm_api is None else None
             )
@@ -948,7 +950,7 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
                     attributes=[
                         ("guard_id", self._guard_id),
                         ("user_id", self._user_id),
-                        ("llm_api", llm_api.__name__ if llm_api else "None"),
+                        ("llm_api", llm_api_str),
                         (
                             "custom_reask_prompt",
                             self.rail.output_schema.reask_prompt_template is not None,
