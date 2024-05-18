@@ -10,7 +10,16 @@ from guardrails.cli.guardrails import guardrails
 from guardrails.cli.logger import LEVELS, logger
 
 
-def save_configuration_file(token: str, no_metrics: bool) -> None:
+DEFAULT_TOKEN = ""
+DEFAULT_NO_METRICS = False
+
+
+def save_configuration_file(token: Optional[str], no_metrics: Optional[bool]) -> None:
+    if token is None:
+        token = DEFAULT_TOKEN
+    if no_metrics is None:
+        no_metrics = DEFAULT_NO_METRICS
+
     home = expanduser("~")
     guardrails_rc = os.path.join(home, ".guardrailsrc")
     with open(guardrails_rc, "w") as rc_file:
@@ -41,7 +50,7 @@ def get_existing_config() -> dict:
 
 def _get_default_token() -> str:
     """Get the default token from the configuration file."""
-    return get_existing_config().get("token", "")
+    return get_existing_config().get("token", DEFAULT_TOKEN)
 
 
 @guardrails.command()
@@ -53,7 +62,7 @@ def configure(
         prompt="Token (optional)",
     ),
     no_metrics: Optional[bool] = typer.Option(
-        False,
+        DEFAULT_NO_METRICS,
         "--no-metrics/--metrics",
         help="Opt out of anonymous metrics collection.",
         prompt="Disable anonymous metrics reporting?",
@@ -65,7 +74,7 @@ def configure(
     ),
 ):
     if clear_token is True:
-        token = ""
+        token = DEFAULT_TOKEN
 
     # Authenticate with the Hub if token is not empty
     if token != "" and token is not None:
