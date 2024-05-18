@@ -4349,8 +4349,8 @@ files = [
 [package.dependencies]
 numpy = [
     {version = ">=1.20.3", markers = "python_version < \"3.10\""},
-    {version = ">=1.21.0", markers = "python_version >= \"3.10\" and python_version < \"3.11\""},
     {version = ">=1.23.2", markers = "python_version >= \"3.11\""},
+    {version = ">=1.21.0", markers = "python_version >= \"3.10\" and python_version < \"3.11\""},
 ]
 python-dateutil = ">=2.8.2"
 pytz = ">=2020.1"
@@ -8321,4 +8321,4 @@ vectordb = ["faiss-cpu", "numpy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8.1"
-content-hash = "f2b5d8c8952379c9bfc7045ff81085427940dcd5c3b17b69d82c2edf70ce3f21"
+content-hash = "ebae16aa66c7e7789668d5f7ec3779ee60055f427df9b4ede98596a3a6bc5d2f"
