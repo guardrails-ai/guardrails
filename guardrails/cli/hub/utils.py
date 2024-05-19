@@ -19,6 +19,7 @@ def pip_process(
     package: str = "",
     flags: List[str] = [],
     format: Union[Literal["string"], Literal["json"]] = string_format,
+    quiet: bool = False,
 ) -> Union[str, dict]:
     try:
         logger.debug(f"running pip {action} {' '.join(flags)} {package}")
@@ -27,33 +28,37 @@ def pip_process(
         if package:
             command.append(package)
         output = subprocess.check_output(command)
-        logger.debug(f"decoding output from pip {action} {package}")
+        if not quiet:
+            logger.debug(f"decoding output from pip {action} {package}")
         if format == json_format:
             parsed = BytesHeaderParser().parsebytes(output)
             try:
                 return json.loads(str(parsed))
             except Exception:
-                logger.debug(
-                    f"json parse exception in decoding output from pip {action} {package}. Falling back to accumulating the byte stream",  # noqa
-                )
+                if not quiet: 
+                    logger.debug(
+                        f"json parse exception in decoding output from pip {action} {package}. Falling back to accumulating the byte stream",  # noqa
+                    )
             accumulator = {}
             for key, value in parsed.items():
                 accumulator[key] = value
             return accumulator
         return str(output.decode())
     except subprocess.CalledProcessError as exc:
-        logger.error(
-            (
-                f"Failed to {action} {package}\n"
-                f"Exit code: {exc.returncode}\n"
-                f"stdout: {exc.output}"
+        if not quiet:
+            logger.error(
+                (
+                    f"Failed to {action} {package}\n"
+                    f"Exit code: {exc.returncode}\n"
+                    f"stdout: {exc.output}"
+                )
             )
-        )
         sys.exit(1)
     except Exception as e:
-        logger.error(
-            f"An unexpected exception occurred while try to {action} {package}!",
-            e,
+        if not quiet:
+            logger.error(
+                f"An unexpected exception occurred while try to {action} {package}!",
+                e,
         )
         sys.exit(1)
 
