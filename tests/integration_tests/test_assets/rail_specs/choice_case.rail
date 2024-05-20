@@ -1,13 +1,13 @@
 <rail version="0.1">
 
 <output>
-    <choice name="action" on-fail-choice="reask" discriminator="chosen_action">
+    <choice name="action" on-fail-choice="reask" discriminator="chosen_action" required="true">
         <case name="fight">
-            <string name="weapon" validators="valid-choices: {['crossbow', 'machine gun']}" on-fail-valid-choices="reask" />
+            <string name="weapon" validators="valid-choices: {['crossbow', 'machine gun']}" on-fail-valid-choices="reask" required="true" />
         </case>
         <case name="flight">
             <string name="flight_direction" validators="valid-choices: {['north','south','east','west']}" on-fail-valid-choices="exception" />
-            <integer name="distance" validators="valid-choices: {[1,2,3,4]}" on-fail-valid-choices="exception" />
+            <integer name="distance" validators="valid-choices: {[1,2,3,4]}" on-fail-valid-choices="exception" required="true" />
         </case>
     </choice>
 </output>

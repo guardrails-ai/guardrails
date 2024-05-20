@@ -88,3 +88,26 @@ class TestValidatePayload:
                 "[{'chosen_action': 'flight', 'flight_direction': 'north', 'distance': '2'}] is not of type 'object'"  # noqa
             ]
         }
+
+    def test_failure_missing_required_properties(self):
+        payload = {"action": {"chosen_action": "flight"}}
+
+        with pytest.raises(Exception) as excinfo:
+            validate_payload(payload, schema)
+
+        assert isinstance(excinfo.value, SchemaValidationError) is True
+        schema_error: SchemaValidationError = excinfo.value
+        assert (
+            str(schema_error)
+            == "The provided payload is not compliant with the provided schema!"
+        )
+
+        assert schema_error.fields == {
+            "$.action": ["'distance' is a required property"]
+        }
+
+    def test_subschema_validation(self):
+        # Missing required properites, but that's allowed with validate_subschema
+        payload = {"action": {"chosen_action": "flight"}}
+
+        validate_payload(payload, schema, validate_subschema=True)

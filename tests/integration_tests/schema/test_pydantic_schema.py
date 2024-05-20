@@ -22,9 +22,6 @@ class TestPydanticSchema:
 
         processed_schema: ProcessedSchema = pydantic_model_to_schema(FightOrFlight)
 
-        # from rich import print
-        # print(processed_schema.json_schema)
-
         assert processed_schema.json_schema == expected_schema
         assert processed_schema.output_type == OutputTypes.DICT
         assert processed_schema.output_type == "dict"

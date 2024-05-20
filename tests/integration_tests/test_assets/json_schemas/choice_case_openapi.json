@@ -33,8 +33,15 @@
           "type": "string"
         },
         "flight_direction": {
-          "title": "Flight Direction",
-          "type": "string"
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Flight Direction"
         },
         "distance": {
           "title": "Distance",

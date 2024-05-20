@@ -24,7 +24,10 @@
               "weapon": { 
                 "type": "string"
               }
-            }
+            },
+            "required": [
+              "weapon"
+            ]
           }
         },
         {
@@ -41,10 +44,19 @@
               "distance": { 
                 "type": "integer"
               }
-            }
+            },
+            "required": [
+              "distance"
+            ]
           }
         }
+      ],
+      "required": [
+        "chosen_action"
       ]
     }
-  }
+  },
+  "required": [
+    "action"
+  ]
 }

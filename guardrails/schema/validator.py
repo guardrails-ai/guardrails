@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 from jsonschema import Draft202012Validator, ValidationError
 from referencing import Registry, jsonschema as jsonschema_ref
 
@@ -15,10 +15,19 @@ class SchemaValidationError(Exception):
         super().__init__(*args)
 
 
-def validate_against_schema(payload: Any, validator: Draft202012Validator):
+def validate_against_schema(
+    payload: Any,
+    validator: Draft202012Validator,
+    *,
+    validate_subschema: Optional[bool] = False,
+):
     fields: Dict[str, List[str]] = {}
     error: ValidationError
     for error in validator.iter_errors(payload):
+        if validate_subschema is True and error.message.endswith(
+            "is a required property"
+        ):
+            continue
         fields[error.json_path] = fields.get(error.json_path, [])
         fields[error.json_path].append(error.message)
 
@@ -49,7 +58,12 @@ def validate_json_schema(json_schema: Dict[str, Any]):
         raise SchemaValidationError(error_message, fields=e.fields)
 
 
-def validate_payload(payload: Any, json_schema: Dict[str, Any]):
+def validate_payload(
+    payload: Any,
+    json_schema: Dict[str, Any],
+    *,
+    validate_subschema: Optional[bool] = False,
+):
     """
     Validates a payload, against the provided JSON Schema.
     Raises a SchemaValidationError if invalid.
@@ -69,29 +83,29 @@ def validate_payload(payload: Any, json_schema: Dict[str, Any]):
         },
         registry=registry,
     )
-    validate_against_schema(payload, validator)
+    validate_against_schema(payload, validator, validate_subschema=validate_subschema)
 
 
 def schema_validation(llm_output: Any, output_schema: Dict[str, Any], **kwargs):
-    # FIXME: How to validate subschemas with thrid party tools?
     validate_subschema = kwargs.get("validate_subschema", False)
-    if not validate_subschema:
-        response_matches_schema = True
-        schema_error = None
-        try:
-            validate_payload(llm_output, output_schema)
-        except SchemaValidationError as sve:
-            formatted_error_fields = json.dumps(sve.fields, indent=2)
-            schema_error = f"JSON does not match schema:\n{formatted_error_fields}"
-            schema_error = "JSON does not match schema"
 
-        if not response_matches_schema:
-            return SkeletonReAsk(
-                incorrect_value=llm_output,
-                fail_results=[
-                    FailResult(
-                        fix_value=None,
-                        error_message=schema_error,
-                    )
-                ],
-            )
+    schema_error = None
+    try:
+        validate_payload(
+            llm_output, output_schema, validate_subschema=validate_subschema
+        )
+    except SchemaValidationError as sve:
+        formatted_error_fields = json.dumps(sve.fields, indent=2)
+        schema_error = f"JSON does not match schema:\n{formatted_error_fields}"
+        schema_error = "JSON does not match schema"
+
+    if schema_error:
+        return SkeletonReAsk(
+            incorrect_value=llm_output,
+            fail_results=[
+                FailResult(
+                    fix_value=None,
+                    error_message=schema_error,
+                )
+            ],
+        )

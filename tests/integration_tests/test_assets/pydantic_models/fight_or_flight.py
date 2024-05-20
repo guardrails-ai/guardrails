@@ -1,6 +1,6 @@
 from tests.integration_tests.test_assets.validators.valid_choices import ValidChoices
 from pydantic import BaseModel, Field
-from typing import Literal, Union
+from typing import Literal, Optional, Union
 
 prompt = """
 You are a human in an enchanted forest.
@@ -21,7 +21,7 @@ class Fight(BaseModel):
 
 class Flight(BaseModel):
     chosen_action: Literal["flight"]
-    flight_direction: str = Field(
+    flight_direction: Optional[str] = Field(
         validators=[
             ValidChoices(["north", "south", "east", "west"], on_fail="exception")
         ]

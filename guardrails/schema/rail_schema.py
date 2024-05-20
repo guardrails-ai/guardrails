@@ -167,12 +167,16 @@ def parse_element(
         )
     elif schema_type == RailTypes.OBJECT:
         properties = {}
+        required: List[str] = []
         for child in element:
             name = child.get("name")
+            child_required = child.get("required") == "true"
             if not name:
                 output_path = json_path.replace("$.", "output.")
                 logger.warn(f"{output_path} has a nameless child which is not allowed!")
                 continue
+            if child_required:
+                required.append(name)
             child_schema = parse_element(child, processed_schema, f"{json_path}.{name}")
             properties[name] = child_schema.to_dict()
 
@@ -180,6 +184,7 @@ def parse_element(
             type=ValidationType(SimpleTypes.OBJECT),
             properties=properties,
             description=description,
+            required=required,
         )
     elif schema_type == RailTypes.CHOICE:
         """
@@ -216,8 +221,10 @@ def parse_element(
             case_if_then_properties = {}
 
             case_properties = {}
+            required: List[str] = []
             for case_child in choice_case:
                 case_child_name = case_child.get("name")
+                child_required = case_child.get("required") == "true"
                 if not case_child_name:
                     output_path = json_path.replace("$.", "output.")
                     logger.warn(
@@ -225,6 +232,8 @@ def parse_element(
                         " which is not allowed!"
                     )
                     continue
+                if child_required:
+                    required.append(case_child_name)
                 case_child_schema = parse_element(
                     case_child, processed_schema, f"{json_path}.{case_child_name}"
                 )
@@ -236,7 +245,9 @@ def parse_element(
             case_if_then_model.var_if = ModelSchema(
                 properties=case_if_then_properties
             ).to_dict()
-            case_if_then_model.then = ModelSchema(properties=case_properties).to_dict()
+            case_if_then_model.then = ModelSchema(
+                properties=case_properties, required=required
+            ).to_dict()
             allOf.append(case_if_then_model)
 
         properties = {}
@@ -244,6 +255,7 @@ def parse_element(
         return ModelSchema(
             type=ValidationType(SimpleTypes.OBJECT),
             properties=properties,
+            required=[discriminator],
             allOf=allOf,
             description=description,
         )
