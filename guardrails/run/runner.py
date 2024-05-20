@@ -171,7 +171,7 @@ class Runner:
                     prompt=prompt,
                     msg_history=msg_history,
                     prompt_params=prompt_params,
-                    output_schema=self.output_schema,
+                    output_schema=output_schema,
                     output=self.output if index == 0 else None,
                     call_log=call_log,
                 )
@@ -541,10 +541,7 @@ class Runner:
 
         return llm_response
 
-    def parse(
-        self,
-        output: str,
-    ):
+    def parse(self, output: str):
         parsed_output, error = parse_llm_output(output)
         # TODO: perform type coercion and key pruning here
         return parsed_output, error

@@ -711,15 +711,12 @@ class Guard(IGuard, Runnable, Generic[OT]):
         # Check whether stream is set
         if kwargs.get("stream", False):
             # If stream is True, use StreamRunner
-            # !!!!!!!!!!!! FIXME LAST !!!!!!!!!!!!
             runner = StreamRunner(
                 instructions=instructions,
                 prompt=prompt,
                 msg_history=msg_history,
                 api=api,
-                prompt_schema=self.rail.prompt_schema,
-                instructions_schema=self.rail.instructions_schema,
-                msg_history_schema=self.rail.msg_history_schema,
+                output=llm_output,
                 output_schema=self.output_schema,
                 num_reasks=num_reasks,
                 metadata=metadata,
@@ -784,16 +781,12 @@ class Guard(IGuard, Runnable, Generic[OT]):
         api = (
             get_async_llm_ask(llm_api, *args, **kwargs) if llm_api is not None else None
         )
-        # !!!!!!!!!!!! FIXME NEXT !!!!!!!!!!!!
         runner = AsyncRunner(
             instructions=instructions,
             prompt=prompt,
             msg_history=msg_history,
             api=api,
             output=llm_output,
-            prompt_schema=self.rail.prompt_schema,
-            instructions_schema=self.rail.instructions_schema,
-            msg_history_schema=self.rail.msg_history_schema,
             output_schema=self.output_schema,
             num_reasks=num_reasks,
             metadata=metadata,
@@ -802,6 +795,7 @@ class Guard(IGuard, Runnable, Generic[OT]):
             disable_tracer=(not self._allow_metrics_collection),
             output_type=self._output_type,
         )
+        # Why are we using a different method here instead of just overriding?
         call = await runner.async_run(call_log=call_log, prompt_params=prompt_params)
         return ValidationOutcome[OT].from_guard_history(call)
 

@@ -3,7 +3,6 @@ from typing import Any, Dict, Generator, List, Optional, Union
 from guardrails.classes.history import Call, Inputs, Iteration, Outputs
 from guardrails.classes.output_type import OT
 from guardrails.classes.validation_outcome import ValidationOutcome
-from guardrails.datatypes import verify_metadata_requirements
 from guardrails.llm_providers import (
     LiteLLMCallable,
     OpenAICallable,
@@ -15,6 +14,7 @@ from guardrails.run.runner import Runner
 from guardrails.schema.schema import Schema
 from guardrails.schema.string_schema import StringSchema
 from guardrails.utils.openai_utils import OPENAI_VERSION
+from guardrails.utils.parsing_utils import parse_llm_output
 from guardrails.utils.reask_utils import SkeletonReAsk
 
 
@@ -27,7 +27,7 @@ class StreamRunner(Runner):
     """
 
     def __call__(
-        self, call_log: Call, prompt_params: Optional[Dict] = None
+        self, call_log: Call, prompt_params: Optional[Dict] = {}
     ) -> Generator[ValidationOutcome[OT], None, None]:
         """Execute the StreamRunner.
 
@@ -38,33 +38,22 @@ class StreamRunner(Runner):
         Returns:
             The Call log for this run.
         """
-        if prompt_params is None:
-            prompt_params = {}
-
-        # check if validator requirements are fulfilled
-        missing_keys = verify_metadata_requirements(
-            self.metadata, self.output_schema.root_datatype
-        )
-        if missing_keys:
-            raise ValueError(
-                f"Missing required metadata keys: {', '.join(missing_keys)}"
-            )
+        # This is only used during ReAsks and ReAsks
+        #   are not yet supported for streaming.
+        # Figure out if we need to include instructions in the prompt.
+        # include_instructions = not (
+        #     self.instructions is None and self.msg_history is None
+        # )
 
         (
             instructions,
             prompt,
             msg_history,
-            prompt_schema,
-            instructions_schema,
-            msg_history_schema,
             output_schema,
         ) = (
             self.instructions,
             self.prompt,
             self.msg_history,
-            self.prompt_schema,
-            self.instructions_schema,
-            self.msg_history_schema,
             self.output_schema,
         )
 
@@ -75,9 +64,6 @@ class StreamRunner(Runner):
             prompt=prompt,
             msg_history=msg_history,
             prompt_params=prompt_params,
-            prompt_schema=prompt_schema,
-            instructions_schema=instructions_schema,
-            msg_history_schema=msg_history_schema,
             output_schema=output_schema,
             output=self.output,
             call_log=call_log,
@@ -139,7 +125,7 @@ class StreamRunner(Runner):
         iteration.inputs.msg_history = msg_history
 
         # Call: run the API that returns a generator wrapped in LLMResponse
-        llm_response = self.call(index, instructions, prompt, msg_history, api, output)
+        llm_response = self.call(instructions, prompt, msg_history, api, output)
 
         # Get the stream (generator) from the LLMResponse
         stream = llm_response.stream_output
@@ -160,9 +146,7 @@ class StreamRunner(Runner):
             fragment += chunk_text
 
             # 2. Parse the fragment
-            parsed_fragment, move_to_next = self.parse(
-                index, fragment, output_schema, verified
-            )
+            parsed_fragment, move_to_next = self.parse(fragment, verified=verified)
             if move_to_next:
                 # Continue to next chunk
                 continue
@@ -247,15 +231,11 @@ class StreamRunner(Runner):
 
     def parse(
         self,
-        index: int,
         output: str,
-        output_schema: Schema,
-        verified: set,
+        *verified: set,
     ):
         """Parse the output."""
-        parsed_output, error = output_schema.parse(
-            output, stream=True, verified=verified
-        )
+        parsed_output, error = parse_llm_output(output, stream=True, verified=verified)
 
         # Error can be either of
         # (True/False/None/ValueError/string representing error)
