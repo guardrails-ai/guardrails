@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 import os
 import subprocess
 import sys
@@ -134,7 +135,9 @@ def get_install_url(manifest: ModuleManifest) -> str:
     return git_url
 
 
-def install_hub_module(module_manifest: ModuleManifest, site_packages: str, quiet: bool):
+def install_hub_module(
+    module_manifest: ModuleManifest, site_packages: str, quiet: bool = False
+):
     install_url = get_install_url(module_manifest)
     install_directory = get_hub_directory(module_manifest, site_packages)
 
@@ -143,15 +146,16 @@ def install_hub_module(module_manifest: ModuleManifest, site_packages: str, quie
         pip_flags.append("-q")
 
     # Install validator module in namespaced directory under guardrails.hub
-    download_output = pip_process(
-        "install", install_url, pip_flags, quiet=quiet
-    )
+    download_output = pip_process("install", install_url, pip_flags, quiet=quiet)
     if not quiet:
         logger.info(download_output)
 
     # Install validator module's dependencies in normal site-packages directory
     inspect_output = pip_process(
-        "inspect", flags=[f"--path={install_directory}"], format=json_format, quiet=quiet
+        "inspect",
+        flags=[f"--path={install_directory}"],
+        format=json_format,
+        quiet=quiet,
     )
 
     # throw if inspect_output is a string. Mostly for pyright
@@ -180,7 +184,8 @@ def install_hub_module(module_manifest: ModuleManifest, site_packages: str, quie
 @hub_command.command()
 def install(
     package_uri: str = typer.Argument(
-        help="URI to the package to install. Example: hub://guardrails/regex_match."
+        help="URI to the package to install.\
+Example: hub://guardrails/regex_match."
     ),
     quiet: bool = typer.Option(
         False,
@@ -188,61 +193,74 @@ def install(
         help="Run the command in quiet mode to reduce output verbosity.",
     ),
 ):
+    verbose_printer = console.print
+    quiet_printer = console.print if not quiet else lambda x: None
+
     """Install a validator from the Hub."""
     if not package_uri.startswith("hub://"):
         logger.error("Invalid URI!")
         sys.exit(1)
 
-    logger.log(level=5, msg=f"Installing {package_uri}...")
-    logger.info(f"\nInstalling {package_uri}...\n")
+    installing_msg = f"Installing {package_uri}..."
+    logger.log(
+        level=LEVELS.get("SPAM"),  # type: ignore
+        msg=installing_msg,
+    )
+    verbose_printer(installing_msg)
 
     # Validation
     module_name = package_uri.replace("hub://", "")
 
+    @contextmanager
+    def do_nothing_context(*args, **kwargs):
+        try:
+            yield
+        finally:
+            pass
+
+    loader = console.status if not quiet else do_nothing_context
+
     # Prep
-    with console.status("Fetching manifest", spinner="bouncingBar") as status:
-        if not quiet:
-            status.update("Fetching manifest")
+    fetch_manifest_msg = "Fetching manifest"
+    with loader(fetch_manifest_msg, spinner="bouncingBar"):
         module_manifest = get_validator_manifest(module_name)
         site_packages = get_site_packages_location()
 
     # Install
-    with console.status("Downloading dependencies", spinner="bouncingBar") as status:
-        if not quiet:
-            status.update("Downloading dependencies")
+    dl_deps_msg = "Downloading dependencies"
+    with loader(dl_deps_msg, spinner="bouncingBar"):
         install_hub_module(module_manifest, site_packages, quiet=quiet)
 
     # Post-install
-    with console.status("Running post-install setup", spinner="bouncingBar") as status:
-        if not quiet:
-            status.update("Running post-install setup")
+    post_msg = "Running post-install setup"
+    with loader(post_msg, spinner="bouncingBar"):
         run_post_install(module_manifest, site_packages)
         add_to_hub_inits(module_manifest, site_packages)
 
     logger.info("Installation complete")
 
-    if not quiet:
-        success_message_cli = Template(
-            "✅Successfully installed ${module_name}!\n\n"
-            "[bold]Import validator:[/bold]\n"
-            "from guardrails.hub import ${export}\n\n"
-            "[bold]Get more info:[/bold]\n"
-            "https://hub.guardrailsai.com/validator/${id}\n"
-        ).safe_substitute(
-            module_name=package_uri,
-            id=module_manifest.id,
-            export=module_manifest.exports[0],
-        )
-        success_message_logger = Template(
-            "✅Successfully installed ${module_name}!\n\n"
-            "Import validator:\n"
-            "from guardrails.hub import ${export}\n\n"
-            "Get more info:\n"
-            "https://hub.guardrailsai.com/validator/${id}\n"
-        ).safe_substitute(
-            module_name=package_uri,
-            id=module_manifest.id,
-            export=module_manifest.exports[0],
-        )
-        console.print(success_message_cli)  # type: ignore
-        logger.log(level=LEVELS.get("SPAM"), msg=success_message_logger)  # type: ignore
+        
+    verbose_printer(f"✅Successfully installed {module_name}!\n\n")
+    success_message_cli = Template(
+        "[bold]Import validator:[/bold]\n"
+        "from guardrails.hub import ${export}\n\n"
+        "[bold]Get more info:[/bold]\n"
+        "https://hub.guardrailsai.com/validator/${id}\n"
+    ).safe_substitute(
+        module_name=package_uri,
+        id=module_manifest.id,
+        export=module_manifest.exports[0],
+    )
+    success_message_logger = Template(
+        "✅Successfully installed ${module_name}!\n\n"
+        "Import validator:\n"
+        "from guardrails.hub import ${export}\n\n"
+        "Get more info:\n"
+        "https://hub.guardrailsai.com/validator/${id}\n"
+    ).safe_substitute(
+        module_name=package_uri,
+        id=module_manifest.id,
+        export=module_manifest.exports[0],
+    )
+    quiet_printer(success_message_cli)  # type: ignore
+    logger.log(level=LEVELS.get("SPAM"), msg=success_message_logger)  # type: ignore
