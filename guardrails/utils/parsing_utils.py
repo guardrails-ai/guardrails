@@ -1,6 +1,6 @@
 import json
 import regex
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Dict, Optional, Tuple, Union
 
 from guardrails.actions.reask import NonParseableReAsk
 from guardrails.classes.output_type import OutputTypes
@@ -160,7 +160,7 @@ def parse_fragment(fragment: str):
 
 ### LLM Output Parsing ###
 def parse_json_llm_output(
-    output: str, kwargs: Dict[str, Any]
+    output: str, **kwargs
 ) -> Tuple[
     Union[Optional[Dict], NonParseableReAsk, str],
     Union[Optional[Exception], str, bool, None],
@@ -202,7 +202,7 @@ def parse_string_llm_output(output: str) -> Tuple[str, Optional[Exception]]:
     return output, error
 
 
-def parse_llm_output(output: str, output_type: OutputTypes, kwargs: Dict[str, Any]):
+def parse_llm_output(output: str, output_type: OutputTypes, **kwargs):
     if output_type == OutputTypes.STRING:
         return parse_string_llm_output(output)
-    return parse_json_llm_output(output, kwargs)
+    return parse_json_llm_output(output, **kwargs)

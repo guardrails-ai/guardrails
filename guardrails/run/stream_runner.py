@@ -235,7 +235,9 @@ class StreamRunner(Runner):
         *verified: set,
     ):
         """Parse the output."""
-        parsed_output, error = parse_llm_output(output, stream=True, verified=verified)
+        parsed_output, error = parse_llm_output(
+            output, self.output_type, stream=True, verified=verified
+        )
 
         # Error can be either of
         # (True/False/None/ValueError/string representing error)

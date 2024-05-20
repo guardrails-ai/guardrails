@@ -18,7 +18,7 @@ from guardrails.schema.validator import schema_validation
 from guardrails.types.pydantic import ModelOrListOfModels
 from guardrails.types.validator import ValidatorMap
 from guardrails.utils.exception_utils import UserFacingException
-from guardrails.utils.llm_response import LLMResponse
+from guardrails.classes.llm.llm_response import LLMResponse
 from guardrails.utils.prompt_utils import preprocess_prompt
 from guardrails.utils.reask_utils import NonParseableReAsk, ReAsk
 from guardrails.utils.telemetry_utils import async_trace
@@ -306,7 +306,7 @@ class AsyncRunner(Runner):
             path="$",
         )
         validated_output = validator_service.post_process_validation(
-            validated_output, attempt_number, iteration
+            validated_output, attempt_number, iteration, self.output_type
         )
 
         return validated_output
@@ -373,7 +373,7 @@ class AsyncRunner(Runner):
                     path="msg_history",
                 )
                 value = validator_service.post_process_validation(
-                    value, attempt_number, iteration
+                    value, attempt_number, iteration, OutputTypes.STRING
                 )
                 value = cast(str, value)
                 validated_msg_history = value
@@ -428,7 +428,7 @@ class AsyncRunner(Runner):
                     path="prompt",
                 )
                 value = validator_service.post_process_validation(
-                    value, attempt_number, iteration
+                    value, attempt_number, iteration, OutputTypes.STRING
                 )
 
                 value = cast(str, value)
@@ -460,7 +460,7 @@ class AsyncRunner(Runner):
                     path="instructions",
                 )
                 value = validator_service.post_process_validation(
-                    value, attempt_number, iteration
+                    value, attempt_number, iteration, OutputTypes.STRING
                 )
 
                 value = cast(str, value)

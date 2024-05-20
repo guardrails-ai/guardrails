@@ -4,7 +4,7 @@ from pydantic import Field
 from typing_extensions import deprecated
 
 from guardrails.constants import error_status, fail_status, not_run_status, pass_status
-from guardrails.utils.llm_response import LLMResponse
+from guardrails.classes.llm.llm_response import LLMResponse
 from guardrails.classes.validation.validator_logs import ValidatorLogs
 from guardrails.utils.pydantic_utils import ArbitraryModel
 from guardrails.utils.reask_utils import ReAsk

@@ -473,3 +473,5 @@ def post_process_validation(
     trace_validation_result(
         validation_logs=iteration.validator_logs, attempt_number=attempt_number
     )
+
+    return validated_response

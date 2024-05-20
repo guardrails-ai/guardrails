@@ -2,6 +2,7 @@ import asyncio
 import contextvars
 import json
 import os
+from builtins import id as object_id
 from copy import deepcopy
 from string import Template
 from typing import (
@@ -22,13 +23,10 @@ from typing import (
 
 from guardrails_api_client import (
     Guard as IGuard,
+    GuardHistory,
     ValidatorReference,
     ModelSchema,
-    # AnyObject,
-    # History,
-    # HistoryEvent,
     ValidatePayload,
-    # ValidationOutput,
     SimpleTypes,
 )
 from langchain_core.messages import BaseMessage
@@ -74,9 +72,10 @@ from guardrails.stores.context import (
     set_tracer_context,
 )
 from guardrails.types.pydantic import ModelOrListOfModels
+from guardrails.utils.naming_utils import random_id
 from guardrails.utils.safe_get import safe_get
 from guardrails.utils.hub_telemetry_utils import HubTelemetry
-from guardrails.utils.llm_response import LLMResponse
+from guardrails.classes.llm.llm_response import LLMResponse
 from guardrails.utils.reask_utils import FieldReAsk
 from guardrails.utils.validator_utils import get_validator, verify_metadata_requirements
 from guardrails.validator_base import Validator
@@ -139,36 +138,45 @@ class Guard(IGuard, Runnable, Generic[OT]):
         name: Optional[str] = None,
         description: Optional[str] = None,
         validators: Optional[List[ValidatorReference]] = [],
-        schema: Optional[Dict[str, Any]] = None,
+        schema: Optional[Dict[str, Any]] = {},
     ):
         """Initialize the Guard with optional Rail instance, num_reasks, and
         base_model."""
 
         # Shared Interface Properties
-        self.id = id or str(id(self))
-        self.name = name or f"gr-{self.id}"
-        self.description = description
-        self.schema = schema or {}
-        self._validator_map = {}
-        self._validators = []
+        id = id or random_id()
+        name = name or f"gr-{id}"
         super().__init__(
-            id=self.id,
-            name=self.name,
-            description=self.description,
+            id=id,
+            name=name,
+            description=description,
             validators=validators,
             var_schema=ModelSchema.from_dict(schema),
+            history=GuardHistory([]),
         )
+        self._validator_map = {}
+        self._validators = []
         self._fill_validator_map()
         self._fill_validators()
 
         # TODO: Support a sink for history so that it is not solely held in memory
-        self.history: Stack[Call] = Stack()
+        self._history: Stack[Call] = Stack()
 
         # Gaurdrails As A Service Initialization
         api_key = os.environ.get("GUARDRAILS_API_KEY")
         if api_key is not None:
             self._api_client = GuardrailsApiClient(api_key=api_key)
             self.upsert_guard()
+
+    # FIXME
+    @property
+    def history(self):
+        return self._history
+
+    # FIXME
+    @history.setter
+    def history(self, h: Stack[Call]):
+        self._history = h
 
     @field_validator("schema")
     @classmethod
@@ -223,6 +231,8 @@ class Guard(IGuard, Runnable, Generic[OT]):
     def _fill_validator_map(self):
         for ref in self.validators:
             entry: List[Validator] = self._validator_map.get(ref.on, [])
+            # Check if the validator from the reference
+            #   has an instance in the validator_map
             v = safe_get(
                 list(
                     filter(
@@ -243,15 +253,21 @@ class Guard(IGuard, Runnable, Generic[OT]):
                         ref.kwargs.values(),
                     )
                 )
-                string_syntax = Template("${id}: ${args}").safe_substitute(
-                    id=ref.id, args=" ".join(serialized_args)
+                string_syntax = (
+                    Template("${id}: ${args}").safe_substitute(
+                        id=ref.id, args=" ".join(serialized_args)
+                    )
+                    if len(serialized_args) > 0
+                    else ref.id
                 )
                 entry.append(get_validator((string_syntax, ref.on_fail)))
                 self._validator_map[ref.on] = entry
 
     def _fill_validators(self):
         self._validators = [
-            v for v in (self._validator_map[k] for k in self._validator_map)
+            v
+            for v_list in [self._validator_map[k] for k in self._validator_map]
+            for v in v_list
         ]
 
     # FIXME: What do we have this to look like now?
@@ -459,7 +475,6 @@ class Guard(IGuard, Runnable, Generic[OT]):
             description=description,
             schema=schema.json_schema,
             validators=schema.validators,
-            _exec_opts=exec_opts,
         )
         if schema.output_type == OutputTypes.LIST:
             guard = cast(Guard[List], guard)
@@ -521,7 +536,6 @@ class Guard(IGuard, Runnable, Generic[OT]):
                 description=description,
                 schema=schema.json_schema,
                 validators=schema.validators,
-                _exec_opts=exec_opts,
             ),
         )
         guard.configure(num_reasks=num_reasks, tracer=tracer)
@@ -625,8 +639,8 @@ class Guard(IGuard, Runnable, Generic[OT]):
                 kwargs=kwargs,
             )
             call_log = Call(inputs=call_inputs)
-            set_scope(str(id(call_log)))
-            self.history.push(call_log)
+            set_scope(str(object_id(call_log)))
+            self._history.push(call_log)
 
             if self._api_client is not None and model_is_supported_server_side(
                 llm_api, *args, **kwargs
@@ -712,35 +726,37 @@ class Guard(IGuard, Runnable, Generic[OT]):
         if kwargs.get("stream", False):
             # If stream is True, use StreamRunner
             runner = StreamRunner(
-                instructions=instructions,
+                output_type=self._output_type,
+                output_schema=self.schema,
+                num_reasks=num_reasks,
+                validation_map=self._validator_map,
                 prompt=prompt,
+                instructions=instructions,
                 msg_history=msg_history,
                 api=api,
-                output=llm_output,
-                output_schema=self.output_schema,
-                num_reasks=num_reasks,
                 metadata=metadata,
+                output=llm_output,
                 base_model=self._base_model,
                 full_schema_reask=full_schema_reask,
                 disable_tracer=(not self._allow_metrics_collection),
-                output_type=self._output_type,
             )
             return runner(call_log=call_log, prompt_params=prompt_params)
         else:
             # Otherwise, use Runner
             runner = Runner(
-                instructions=instructions,
+                output_type=self._output_type,
+                output_schema=self.schema,
+                num_reasks=num_reasks,
+                validation_map=self._validator_map,
                 prompt=prompt,
+                instructions=instructions,
                 msg_history=msg_history,
                 api=api,
-                output=llm_output,
-                output_schema=self.output_schema,
-                num_reasks=num_reasks,
                 metadata=metadata,
+                output=llm_output,
                 base_model=self._base_model,
                 full_schema_reask=full_schema_reask,
                 disable_tracer=(not self._allow_metrics_collection),
-                output_type=self._output_type,
             )
             call = runner(call_log=call_log, prompt_params=prompt_params)
             return ValidationOutcome[OT].from_guard_history(call)
@@ -782,18 +798,19 @@ class Guard(IGuard, Runnable, Generic[OT]):
             get_async_llm_ask(llm_api, *args, **kwargs) if llm_api is not None else None
         )
         runner = AsyncRunner(
-            instructions=instructions,
+            output_type=self._output_type,
+            output_schema=self.schema,
+            num_reasks=num_reasks,
+            validation_map=self._validator_map,
             prompt=prompt,
+            instructions=instructions,
             msg_history=msg_history,
             api=api,
-            output=llm_output,
-            output_schema=self.output_schema,
-            num_reasks=num_reasks,
             metadata=metadata,
+            output=llm_output,
             base_model=self._base_model,
             full_schema_reask=full_schema_reask,
             disable_tracer=(not self._allow_metrics_collection),
-            output_type=self._output_type,
         )
         # Why are we using a different method here instead of just overriding?
         call = await runner.async_run(call_log=call_log, prompt_params=prompt_params)
@@ -835,7 +852,7 @@ class Guard(IGuard, Runnable, Generic[OT]):
         llm_api: Union[Callable, Callable[[Any], Awaitable[Any]]],
         *args,
         prompt_params: Optional[Dict] = None,
-        num_reasks: Optional[int] = None,
+        num_reasks: Optional[int] = 1,
         prompt: Optional[str] = None,
         instructions: Optional[str] = None,
         msg_history: Optional[List[Dict]] = None,
@@ -876,7 +893,7 @@ class Guard(IGuard, Runnable, Generic[OT]):
                     "Alternatively, you can provide a prompt in the Schema constructor."
                 )
 
-        self._execute(
+        return self._execute(
             *args,
             llm_api=llm_api,
             prompt_params=prompt_params,
@@ -956,7 +973,13 @@ class Guard(IGuard, Runnable, Generic[OT]):
                 determined by the object schema defined in the RAILspec.
         """
         final_num_reasks = (
-            num_reasks if num_reasks is not None else 0 if llm_api is None else None
+            num_reasks
+            if num_reasks is not None
+            else self._num_reasks
+            if self._num_reasks is not None
+            else 0
+            if llm_api is None
+            else 1
         )
         prompt = kwargs.pop("prompt", self._exec_opts.prompt)
         instructions = kwargs.pop("instructions", self._exec_opts.instructions)
@@ -1225,8 +1248,8 @@ class Guard(IGuard, Runnable, Generic[OT]):
                     for h in history_events
                 ]
                 call_log.iterations.extend(iterations)
-                if self.history.length == 0:
-                    self.history.push(call_log)
+                if self._history.length == 0:
+                    self._history.push(call_log)
 
             # Our interfaces are too different for this to work right now.
             # Once we move towards shared interfaces for both the open source

@@ -15,7 +15,7 @@ from guardrails.schema.validator import schema_validation
 from guardrails.types import ModelOrListOfModels, ValidatorMap, MessageHistory
 from guardrails.utils.exception_utils import UserFacingException
 from guardrails.utils.hub_telemetry_utils import HubTelemetry
-from guardrails.utils.llm_response import LLMResponse
+from guardrails.classes.llm.llm_response import LLMResponse
 from guardrails.utils.parsing_utils import parse_llm_output
 from guardrails.utils.prompt_utils import preprocess_prompt, prompt_content_for_schema
 from guardrails.utils.reask_utils import NonParseableReAsk, ReAsk, introspect
@@ -322,7 +322,7 @@ class Runner:
             path="msg_history",
         )
         value = validator_service.post_process_validation(
-            value, attempt_number, iteration
+            value, attempt_number, iteration, OutputTypes.STRING
         )
         value = cast(str, value)
         validated_msg_history = value
@@ -370,7 +370,7 @@ class Runner:
             path="prompt",
         )
         value = validator_service.post_process_validation(
-            value, attempt_number, iteration
+            value, attempt_number, iteration, OutputTypes.STRING
         )
 
         value = cast(str, value)
@@ -393,14 +393,14 @@ class Runner:
         call_log.iterations.insert(0, iteration)
         value, _metadata = validator_service.validate(
             value=instructions.source,
-            metadta=self.metadata,
+            metadata=self.metadata,
             validator_map=self.validation_map,
             iteration=iteration,
             disable_tracer=self._disable_tracer,
             path="instructions",
         )
         value = validator_service.post_process_validation(
-            value, attempt_number, iteration
+            value, attempt_number, iteration, OutputTypes.STRING
         )
 
         value = cast(str, value)
@@ -541,8 +541,8 @@ class Runner:
 
         return llm_response
 
-    def parse(self, output: str):
-        parsed_output, error = parse_llm_output(output)
+    def parse(self, output: str, **kwargs):
+        parsed_output, error = parse_llm_output(output, self.output_type, **kwargs)
         # TODO: perform type coercion and key pruning here
         return parsed_output, error
 
@@ -563,16 +563,17 @@ class Runner:
         if skeleton_reask:
             return skeleton_reask
 
-        validated_output, _metadata = validator_service.validate(
+        validated_output, metadata = validator_service.validate(
             value=parsed_output,
-            metadta=self.metadata,
+            metadata=self.metadata,
             validator_map=self.validation_map,
             iteration=iteration,
             disable_tracer=self._disable_tracer,
             path="$",
         )
+        self.metadata.update(metadata)
         validated_output = validator_service.post_process_validation(
-            validated_output, attempt_number, iteration
+            validated_output, attempt_number, iteration, self.output_type
         )
 
         return validated_output
