@@ -179,11 +179,14 @@ class SequentialValidatorService(ValidatorServiceBase):
                 iteration, validator, value, metadata, property_path, stream, **kwargs
             )
             result = validator_logs.validation_result
+            print("result log", validator_logs)
             if isinstance(result, FailResult):
                 if not stream:
                     value = self.perform_correction(
                         [result], value, validator, validator.on_fail_descriptor
                     )
+                else:
+                    return None, None
             elif isinstance(result, PassResult):
                 if (
                     validator.override_value_on_pass
@@ -239,7 +242,6 @@ class SequentialValidatorService(ValidatorServiceBase):
         value, metadata = self.run_validators(
             iteration, validator_setup, value, metadata, property_path
         )
-
         return value, metadata
 
     def validate_stream(

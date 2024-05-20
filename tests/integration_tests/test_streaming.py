@@ -1,7 +1,8 @@
-# 2 tests
+# 3 tests
 # 1. Test streaming with OpenAICallable (mock openai.Completion.create)
 # 2. Test streaming with OpenAIChatCallable (mock openai.ChatCompletion.create)
-# Using the LowerCase Validator
+# 3. Test string schema streaming
+# Using the LowerCase Validator, and a custom validator to show new streaming behavior
 import json
 from typing import Any, Callable, Dict, Iterable, List, Optional, Union
 
@@ -56,6 +57,7 @@ class MinSentenceLengthValidator(Validator):
     def validate(self, value: Union[str, List], metadata: Dict) -> ValidationResult:
         # return PassResult()
         sentences = self.sentence_split(value)
+        print("validating sentence:", sentences)
         for sentence in sentences:
             if len(sentence) < self._min:
                 return FailResult(
@@ -72,7 +74,6 @@ class MinSentenceLengthValidator(Validator):
         return PassResult()
 
     def validate_stream(self, chunk: Any, metadata: Dict, **kwargs) -> ValidationResult:
-        print(chunk, "here!!!!")
         return super().validate_stream(chunk, metadata, **kwargs)
 
 
@@ -105,16 +106,8 @@ class MockOpenAIV1ChunkResponse:
         self.model = model
 
 
-def mock_openai_completion_create():
+def mock_openai_completion_create(chunks):
     # Returns a generator
-    chunks = [
-        '{"statement":',
-        ' "I am DOING',
-        " well, and I",
-        " HOPE you aRe",
-        ' too."}',
-    ]
-
     def gen():
         for chunk in chunks:
             if OPENAI_VERSION.startswith("0"):
@@ -137,16 +130,8 @@ def mock_openai_completion_create():
     return gen()
 
 
-def mock_openai_chat_completion_create():
+def mock_openai_chat_completion_create(chunks):
     # Returns a generator
-    chunks = [
-        '{"statement":',
-        ' "I am DOING',
-        " well, and I",
-        " HOPE you aRe",
-        ' too."}',
-    ]
-
     def gen():
         for chunk in chunks:
             if OPENAI_VERSION.startswith("0"):
@@ -220,6 +205,14 @@ Say something nice to me.
 ${gr.complete_json_suffix}
 """
 
+JSON_LLM_CHUNKS = [
+    '{"statement":',
+    ' "I am DOING',
+    " well, and I",
+    " HOPE you aRe",
+    ' too."}',
+]
+
 
 @pytest.mark.parametrize(
     "guard, expected_validated_output",
@@ -240,12 +233,6 @@ ${gr.complete_json_suffix}
             gd.Guard.from_pydantic(output_class=LowerCaseRefrain, prompt=PROMPT),
             expected_filter_refrain_output,
         ),
-        (
-            gd.Guard.from_string(
-                validators=[MinSentenceLengthValidator(5, 10)], prompt=STR_PROMPT
-            ),
-            "",
-        ),
     ],
 )
 def test_streaming_with_openai_callable(
@@ -259,12 +246,13 @@ def test_streaming_with_openai_callable(
     """
     if OPENAI_VERSION.startswith("0"):
         mocker.patch(
-            "openai.Completion.create", return_value=mock_openai_completion_create()
+            "openai.Completion.create",
+            return_value=mock_openai_completion_create(JSON_LLM_CHUNKS),
         )
     else:
         mocker.patch(
             "openai.resources.Completions.create",
-            return_value=mock_openai_completion_create(),
+            return_value=mock_openai_completion_create(JSON_LLM_CHUNKS),
         )
 
     method = (
@@ -311,12 +299,6 @@ def test_streaming_with_openai_callable(
             gd.Guard.from_pydantic(output_class=LowerCaseRefrain, prompt=PROMPT),
             expected_filter_refrain_output,
         ),
-        (
-            gd.Guard.from_string(
-                validators=[MinSentenceLengthValidator(5, 10)], prompt=STR_PROMPT
-            ),
-            "",
-        ),
     ],
 )
 def test_streaming_with_openai_chat_callable(
@@ -331,12 +313,12 @@ def test_streaming_with_openai_chat_callable(
     if OPENAI_VERSION.startswith("0"):
         mocker.patch(
             "openai.ChatCompletion.create",
-            return_value=mock_openai_chat_completion_create(),
+            return_value=mock_openai_chat_completion_create(JSON_LLM_CHUNKS),
         )
     else:
         mocker.patch(
             "openai.resources.chat.completions.Completions.create",
-            return_value=mock_openai_chat_completion_create(),
+            return_value=mock_openai_chat_completion_create(JSON_LLM_CHUNKS),
         )
 
     method = (
@@ -363,3 +345,76 @@ def test_streaming_with_openai_chat_callable(
 
     assert actual_output.raw_llm_output == json.dumps(expected_raw_output)
     assert actual_output.validated_output == expected_validated_output
+
+
+STR_LLM_CHUNKS = [
+    # 38 characters
+    "This sentence is simply just ",
+    "too long."
+    # 25 characters long
+    "This ",
+    "sentence ",
+    "is 2 ",
+    "short."
+    # 29 characters long
+    "This sentence is just ",
+    "right.",
+]
+
+
+@pytest.mark.parametrize(
+    "guard, expected_validated_output",
+    [
+        (
+            gd.Guard.from_string(
+                # only the middle sentence should pass
+                validators=[
+                    MinSentenceLengthValidator(26, 30, on_fail=OnFailAction.NOOP)
+                ],
+                prompt=STR_PROMPT,
+            ),
+            # For now these should be correct.
+            # This will be different pending validation outcome
+            # schema changes.
+            [True, False, True, True, False, False],
+        )
+    ],
+)
+def test_string_schema_streaming_with_openai_chat(
+    mocker, guard, expected_validated_output
+):
+    """Test string schema streaming with OpenAIChatCallable.
+
+    Mocks openai.ChatCompletion.create.
+    """
+    if OPENAI_VERSION.startswith("0"):
+        mocker.patch(
+            "openai.ChatCompletion.create",
+            return_value=mock_openai_chat_completion_create(STR_LLM_CHUNKS),
+        )
+    else:
+        mocker.patch(
+            "openai.resources.chat.completions.Completions.create",
+            return_value=mock_openai_chat_completion_create(STR_LLM_CHUNKS),
+        )
+
+    method = (
+        openai.ChatCompletion.create
+        if OPENAI_VERSION.startswith("0")
+        else openai.chat.completions.create
+    )
+
+    method.__name__ = "mock_openai_chat_completion_create"
+    generator = guard(
+        method,
+        model="gpt-3.5-turbo",
+        max_tokens=10,
+        temperature=0,
+        stream=True,
+    )
+
+    assert isinstance(generator, Iterable)
+
+    for op, desired_result in zip(generator, expected_validated_output):
+        assert op.validation_passed == desired_result
+        print("op", op)

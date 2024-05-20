@@ -497,7 +497,6 @@ class Validator(Runnable):
         Otherwise, the validator will validate the chunk and return the result.
         """
         # combine accumulated chunks and new chunk
-        print("acc chunk", self.accumulated_chunks)
         self.accumulated_chunks.append(chunk)
         accumulated_text = "".join(self.accumulated_chunks)
         # check if enough chunks have accumulated for validation
@@ -505,6 +504,7 @@ class Validator(Runnable):
 
         # if remainder kwargs is passed, validate remainder regardless
         remainder = kwargs.get("remainder", False)
+        print("split contents:", splitcontents)
         if remainder:
             splitcontents = [accumulated_text, []]
         if len(splitcontents) == 0:
