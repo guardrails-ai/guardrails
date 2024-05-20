@@ -5,10 +5,10 @@ from typing_extensions import deprecated
 
 from guardrails.constants import error_status, fail_status, not_run_status, pass_status
 from guardrails.utils.llm_response import LLMResponse
-from guardrails.utils.logs_utils import ValidatorLogs
+from guardrails.classes.validation.validator_logs import ValidatorLogs
 from guardrails.utils.pydantic_utils import ArbitraryModel
 from guardrails.utils.reask_utils import ReAsk
-from guardrails.validator_base import FailResult
+from guardrails.classes.validation.validation_result import FailResult
 
 
 class Outputs(ArbitraryModel):

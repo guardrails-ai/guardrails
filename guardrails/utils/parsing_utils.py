@@ -1,8 +1,13 @@
-import collections
-from string import Template
-from typing import List, Optional, Tuple
+import json
+import regex
+from typing import Any, Dict, Optional, Tuple, Union
+
+from guardrails.actions.reask import NonParseableReAsk
+from guardrails.classes.output_type import OutputTypes
+from guardrails.classes.validation.validation_result import FailResult
 
 
+### String to Dictionary Parsing ###
 def has_code_block(
     string_value: str, code_type: str = ""
 ) -> Tuple[bool, Optional[int], Optional[int]]:
@@ -63,10 +68,141 @@ def get_code_block(
     return trimmed_output
 
 
-def get_template_variables(template: str) -> List[str]:
-    if hasattr(Template, "get_identifiers"):
-        return Template(template).get_identifiers()  # type: ignore
+def extract_json_from_ouput(output: str) -> Tuple[Optional[Dict], Optional[Exception]]:
+    # Find and extract json from code blocks
+    extracted_code_block = output
+    has_json_block, json_start, json_end = has_code_block(output, "json")
+    if has_json_block and json_start is not None and json_end is not None:
+        extracted_code_block = get_code_block(output, json_start, json_end, "json")
     else:
-        d = collections.defaultdict(str)
-        Template(template).safe_substitute(d)
-        return list(d.keys())
+        has_block, block_start, block_end = has_code_block(output)
+        if has_block and block_start is not None and block_end is not None:
+            extracted_code_block = get_code_block(output, block_start, block_end)
+        else:
+            json_pattern = regex.compile(r"\{(?:[^{}]+|\{(?:(?R)|[^{}]+)*\})*\}")
+            json_groups = json_pattern.findall(output)
+            json_start, json_end = output.find("{"), output.rfind("}")
+            if len(json_groups) > 0 and len(json_groups[0]) == (
+                json_end - json_start + 1
+            ):
+                extracted_code_block = json_groups[0]
+
+    # Treat the output as a JSON string, and load it into a dict.
+    error = None
+    try:
+        output_as_dict = json.loads(extracted_code_block, strict=False)
+    except json.decoder.JSONDecodeError as e:
+        output_as_dict = None
+        error = e
+    return output_as_dict, error
+
+
+### Streaming Fragment Parsing ###
+def is_valid_fragment(fragment: str, verified: set) -> bool:
+    """Check if the fragment is a somewhat valid JSON."""
+
+    # Strip fragment of whitespaces and newlines
+    # to avoid duplicate checks
+    text = fragment.strip(" \n")
+
+    # Check if text is already verified
+    if text in verified:
+        return False
+
+    # Check if text is valid JSON
+    try:
+        json.loads(text)
+        verified.add(text)
+        return True
+    except ValueError as e:
+        error_msg = str(e)
+        # Check if error is due to missing comma
+        if "Expecting ',' delimiter" in error_msg:
+            verified.add(text)
+            return True
+        return False
+
+
+def parse_fragment(fragment: str):
+    """Parse the fragment into a dict."""
+
+    # Complete the JSON fragment to handle missing brackets
+    # Stack to keep track of opening brackets
+    stack = []
+
+    # Process each character in the string
+    for char in fragment:
+        if char in "{[":
+            # Push opening brackets onto the stack
+            stack.append(char)
+        elif char in "}]":
+            # Pop from stack if matching opening bracket is found
+            if stack and (
+                (char == "}" and stack[-1] == "{") or (char == "]" and stack[-1] == "[")
+            ):
+                stack.pop()
+
+    # Add the necessary closing brackets in reverse order
+    while stack:
+        opening_bracket = stack.pop()
+        if opening_bracket == "{":
+            fragment += "}"
+        elif opening_bracket == "[":
+            fragment += "]"
+
+    # Parse the fragment
+    try:
+        parsed_fragment = json.loads(fragment)
+        return parsed_fragment, None
+    except ValueError as e:
+        return fragment, str(e)
+
+
+### LLM Output Parsing ###
+def parse_json_llm_output(
+    output: str, kwargs: Dict[str, Any]
+) -> Tuple[
+    Union[Optional[Dict], NonParseableReAsk, str],
+    Union[Optional[Exception], str, bool, None],
+]:
+    if kwargs.get("stream", False):
+        # Do expected behavior for StreamRunner
+        # 1. Check if the fragment is valid JSON
+        verified = kwargs.get("verified", set())
+        fragment_is_valid = is_valid_fragment(output, verified)
+        if not fragment_is_valid:
+            return output, True
+
+        # 2. Parse the fragment
+        parsed_fragment, parsing_error = parse_fragment(output)
+        return parsed_fragment, parsing_error
+
+    # Else do expected behavior for Runner
+    # Try to get json code block from output.
+    # Return error and reask if it is not parseable.
+    parsed_output, error = extract_json_from_ouput(output)
+
+    if error:
+        reask = NonParseableReAsk(
+            incorrect_value=output,
+            fail_results=[
+                FailResult(
+                    fix_value=None,
+                    error_message="Output is not parseable as JSON",
+                )
+            ],
+        )
+        return reask, error
+    return parsed_output, None
+
+
+def parse_string_llm_output(output: str) -> Tuple[str, Optional[Exception]]:
+    # Return a ValueError if the output is empty, else None
+    error = ValueError("Empty response received.") if not output else None
+    return output, error
+
+
+def parse_llm_output(output: str, output_type: OutputTypes, kwargs: Dict[str, Any]):
+    if output_type == OutputTypes.STRING:
+        return parse_string_llm_output(output)
+    return parse_json_llm_output(output, kwargs)

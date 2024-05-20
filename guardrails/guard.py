@@ -33,10 +33,13 @@ from guardrails_api_client import (
 )
 from langchain_core.messages import BaseMessage
 from langchain_core.runnables import Runnable, RunnableConfig
-from pydantic import BaseModel, Field, field_validator
+from pydantic import Field, field_validator
 
 from guardrails.api_client import GuardrailsApiClient
-from guardrails.classes import OT, InputType, ValidationOutcome
+from guardrails.classes.output_type import OT
+from guardrails.classes.input_type import InputType
+from guardrails.classes.validation_outcome import ValidationOutcome
+from guardrails.classes.validation.validation_result import FailResult
 from guardrails.classes.credentials import Credentials
 from guardrails.classes.execution import GuardExecutionOptions
 from guardrails.classes.generic import Stack
@@ -70,12 +73,13 @@ from guardrails.stores.context import (
     set_tracer,
     set_tracer_context,
 )
+from guardrails.types.pydantic import ModelOrListOfModels
 from guardrails.utils.safe_get import safe_get
 from guardrails.utils.hub_telemetry_utils import HubTelemetry
 from guardrails.utils.llm_response import LLMResponse
 from guardrails.utils.reask_utils import FieldReAsk
-from guardrails.utils.validator_utils import get_validator
-from guardrails.validator_base import FailResult, Validator
+from guardrails.utils.validator_utils import get_validator, verify_metadata_requirements
+from guardrails.validator_base import Validator
 from guardrails.types import (
     UseManyValidatorTuple,
     UseManyValidatorSpec,
@@ -109,12 +113,12 @@ class Guard(IGuard, Runnable, Generic[OT]):
     name: Optional[str] = None
     description: Optional[str] = None
     validators: Optional[List[ValidatorReference]] = []
-    schema: Optional[Dict[str, Any]] = None
+    schema: Dict[str, Any] = {}
 
     # Legacy
     _num_reasks = None
     _rail: Optional[Rail] = None
-    _base_model: Optional[Union[Type[BaseModel], Type[List[Type[BaseModel]]]]]
+    _base_model: Optional[ModelOrListOfModels]
 
     # Private
     _tracer = None
@@ -144,9 +148,9 @@ class Guard(IGuard, Runnable, Generic[OT]):
         self.id = id or str(id(self))
         self.name = name or f"gr-{self.id}"
         self.description = description
-        self.schema = schema
+        self.schema = schema or {}
         self._validator_map = {}
-        self._validators = {}
+        self._validators = []
         super().__init__(
             id=self.id,
             name=self.name,
@@ -404,7 +408,7 @@ class Guard(IGuard, Runnable, Generic[OT]):
     @classmethod
     def from_pydantic(
         cls,
-        output_class: Union[Type[BaseModel], Type[List[Type[BaseModel]]]],
+        output_class: ModelOrListOfModels,
         *,
         prompt: Optional[str] = None,
         instructions: Optional[str] = None,
@@ -536,7 +540,7 @@ class Guard(IGuard, Runnable, Generic[OT]):
         prompt: Optional[str] = None,
         instructions: Optional[str] = None,
         msg_history: Optional[List[Dict]] = None,
-        metadata: Optional[Dict] = None,
+        metadata: Optional[Dict] = {},
         full_schema_reask: Optional[bool] = None,
         **kwargs,
     ) -> Union[
@@ -548,6 +552,13 @@ class Guard(IGuard, Runnable, Generic[OT]):
         if not llm_output and llm_api and not (prompt or msg_history):
             raise RuntimeError(
                 "'prompt' or 'msg_history' must be provided in order to call an LLM!"
+            )
+
+        # check if validator requirements are fulfilled
+        missing_keys = verify_metadata_requirements(metadata, self._validators)
+        if missing_keys:
+            raise ValueError(
+                f"Missing required metadata keys: {', '.join(missing_keys)}"
             )
 
         def __exec(
@@ -700,6 +711,7 @@ class Guard(IGuard, Runnable, Generic[OT]):
         # Check whether stream is set
         if kwargs.get("stream", False):
             # If stream is True, use StreamRunner
+            # !!!!!!!!!!!! FIXME LAST !!!!!!!!!!!!
             runner = StreamRunner(
                 instructions=instructions,
                 prompt=prompt,
@@ -714,6 +726,7 @@ class Guard(IGuard, Runnable, Generic[OT]):
                 base_model=self._base_model,
                 full_schema_reask=full_schema_reask,
                 disable_tracer=(not self._allow_metrics_collection),
+                output_type=self._output_type,
             )
             return runner(call_log=call_log, prompt_params=prompt_params)
         else:
@@ -724,15 +737,13 @@ class Guard(IGuard, Runnable, Generic[OT]):
                 msg_history=msg_history,
                 api=api,
                 output=llm_output,
-                prompt_schema=self.rail.prompt_schema,
-                instructions_schema=self.rail.instructions_schema,
-                msg_history_schema=self.rail.msg_history_schema,
                 output_schema=self.output_schema,
                 num_reasks=num_reasks,
                 metadata=metadata,
                 base_model=self._base_model,
                 full_schema_reask=full_schema_reask,
                 disable_tracer=(not self._allow_metrics_collection),
+                output_type=self._output_type,
             )
             call = runner(call_log=call_log, prompt_params=prompt_params)
             return ValidationOutcome[OT].from_guard_history(call)
@@ -773,6 +784,7 @@ class Guard(IGuard, Runnable, Generic[OT]):
         api = (
             get_async_llm_ask(llm_api, *args, **kwargs) if llm_api is not None else None
         )
+        # !!!!!!!!!!!! FIXME NEXT !!!!!!!!!!!!
         runner = AsyncRunner(
             instructions=instructions,
             prompt=prompt,
@@ -788,6 +800,7 @@ class Guard(IGuard, Runnable, Generic[OT]):
             base_model=self._base_model,
             full_schema_reask=full_schema_reask,
             disable_tracer=(not self._allow_metrics_collection),
+            output_type=self._output_type,
         )
         call = await runner.async_run(call_log=call_log, prompt_params=prompt_params)
         return ValidationOutcome[OT].from_guard_history(call)
@@ -957,6 +970,7 @@ class Guard(IGuard, Runnable, Generic[OT]):
 
         return self._execute(
             *args,
+            llm_output=llm_output,
             llm_api=llm_api,
             prompt_params=prompt_params,
             num_reasks=final_num_reasks,

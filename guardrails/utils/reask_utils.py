@@ -1,33 +1,26 @@
 from copy import deepcopy
 from typing import Any, Dict, List, Optional, Tuple, Union
 
-import pydantic
-
+from guardrails.actions.reask import ReAsk, FieldReAsk, SkeletonReAsk, NonParseableReAsk  # noqa
 from guardrails.datatypes import List as ListType
 from guardrails.datatypes import Object as ObjectType
-from guardrails.validator_base import FailResult
 
 
-class ReAsk(pydantic.BaseModel):
-    incorrect_value: Any
-    fail_results: List[FailResult]
-
-
-class FieldReAsk(ReAsk):
-    path: Optional[List[Any]] = None
-
-
-class SkeletonReAsk(ReAsk):
-    pass
-
-
-class NonParseableReAsk(ReAsk):
-    pass
+def introspect(
+    data: Optional[Union[ReAsk, str, Dict, List]],
+) -> Tuple[List[ReAsk], Optional[Union[str, Dict, List]]]:
+    if isinstance(data, FieldReAsk):
+        return [data], None
+    elif isinstance(data, SkeletonReAsk):
+        return [data], None
+    elif isinstance(data, NonParseableReAsk):
+        return [data], None
+    return gather_reasks(data)
 
 
 def gather_reasks(
-    validated_output: Optional[Union[str, Dict, List, ReAsk]],
-) -> Tuple[List[ReAsk], Union[Dict, List, None]]:
+    validated_output: Optional[Union[ReAsk, str, Dict, List]],
+) -> Tuple[List[ReAsk], Optional[Union[str, Dict, List]]]:
     """Traverse output and gather all ReAsk objects.
 
     Args:
@@ -41,6 +34,8 @@ def gather_reasks(
         return [], None
     if isinstance(validated_output, ReAsk):
         return [validated_output], None
+    if isinstance(validated_output, str):
+        return [], validated_output
 
     reasks = []
 

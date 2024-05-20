@@ -12,7 +12,7 @@ from guardrails.classes.history.inputs import Inputs
 from guardrails.classes.history.outputs import Outputs
 from guardrails.logger import get_scope_handler
 from guardrails.prompt.prompt import Prompt
-from guardrails.utils.logs_utils import ValidatorLogs
+from guardrails.classes.validation.validator_logs import ValidatorLogs
 from guardrails.utils.pydantic_utils import ArbitraryModel
 from guardrails.utils.reask_utils import ReAsk
 

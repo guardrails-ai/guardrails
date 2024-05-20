@@ -15,8 +15,8 @@ from typing import (
 from guardrails_api_client.models import LLMResource
 from pydantic import BaseModel
 
-from guardrails.utils.exception_utils import UserFacingException
-from guardrails.utils.llm_response import LLMResponse
+from guardrails.errors import UserFacingException
+from guardrails.classes.llm.llm_response import LLMResponse
 from guardrails.utils.openai_utils import (
     AsyncOpenAIClient,
     OpenAIClient,

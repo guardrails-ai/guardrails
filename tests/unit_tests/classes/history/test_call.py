@@ -9,7 +9,7 @@ from guardrails.llm_providers import ArbitraryCallable
 from guardrails.prompt.instructions import Instructions
 from guardrails.prompt.prompt import Prompt
 from guardrails.utils.llm_response import LLMResponse
-from guardrails.utils.logs_utils import ValidatorLogs
+from guardrails.classes.validation.validator_logs import ValidatorLogs
 from guardrails.utils.reask_utils import ReAsk
 from guardrails.validator_base import FailResult, PassResult
 

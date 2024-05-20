@@ -1,8 +1,8 @@
 from datetime import datetime
 from typing import Any, Optional
 
-from guardrails.utils.pydantic_utils import ArbitraryModel
-from guardrails.validator_base import ValidationResult
+from guardrails.classes.schema.arbitrary_model import ArbitraryModel
+from guardrails.classes.validation.validation_result import ValidationResult
 
 
 class ValidatorLogs(ArbitraryModel):

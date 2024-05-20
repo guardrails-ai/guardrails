@@ -9,7 +9,9 @@ from pydantic import BaseModel
 
 from guardrails.datatypes import List as ListDataType
 from guardrails.prompt import Instructions, Prompt
-from guardrails.schema import JsonSchema, Schema, StringSchema
+from guardrails.schema.schema import Schema
+from guardrails.schema.string_schema import StringSchema
+from guardrails.schema.json_schema import JsonSchema
 from guardrails.utils.xml_utils import cast_xml_to_string
 from guardrails.validator_base import ValidatorSpec
 

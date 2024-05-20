@@ -147,3 +147,16 @@ def get_validator(
             return v
     else:
         raise invalid_error
+
+
+def verify_metadata_requirements(
+    metadata: dict, validators: List[Validator]
+) -> List[str]:
+    missing_keys = set()
+    for validator in validators:
+        for requirement in validator.required_metadata_keys:
+            if requirement not in metadata:
+                missing_keys.add(requirement)
+    missing_keys = list(missing_keys)
+    missing_keys.sort()
+    return missing_keys

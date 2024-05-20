@@ -11,7 +11,8 @@ from guardrails.llm_providers import AsyncPromptCallableBase, PromptCallableBase
 from guardrails.prompt import Instructions, Prompt
 from guardrails.run.runner import Runner
 from guardrails.run.utils import msg_history_source, msg_history_string
-from guardrails.schema import Schema, StringSchema
+from guardrails.schema.schema import Schema
+from guardrails.schema.string_schema import StringSchema
 from guardrails.utils.exception_utils import UserFacingException
 from guardrails.utils.llm_response import LLMResponse
 from guardrails.utils.reask_utils import NonParseableReAsk, ReAsk

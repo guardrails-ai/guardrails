@@ -3,11 +3,11 @@ from typing import Generic, Iterator, Optional, Tuple, Union, cast
 from pydantic import Field
 from rich.pretty import pretty_repr
 
+from guardrails.actions.reask import ReAsk
 from guardrails.classes.history import Call, Iteration
 from guardrails.classes.output_type import OT
+from guardrails.classes.schema.arbitrary_model import ArbitraryModel
 from guardrails.constants import pass_status
-from guardrails.utils.logs_utils import ArbitraryModel
-from guardrails.utils.reask_utils import ReAsk
 
 
 class ValidationOutcome(ArbitraryModel, Generic[OT]):

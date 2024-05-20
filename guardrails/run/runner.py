@@ -1,21 +1,24 @@
 import copy
 from functools import partial
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
 
-from pydantic import BaseModel
-
+from guardrails import validator_service
+from guardrails.actions.reask import get_reask_setup
 from guardrails.classes.history import Call, Inputs, Iteration, Outputs
-from guardrails.datatypes import verify_metadata_requirements
+from guardrails.classes.output_type import OutputTypes
 from guardrails.errors import ValidationError
 from guardrails.llm_providers import AsyncPromptCallableBase, PromptCallableBase
 from guardrails.logger import set_scope
 from guardrails.prompt import Instructions, Prompt
 from guardrails.run.utils import msg_history_source, msg_history_string
-from guardrails.schema import Schema, StringSchema
+from guardrails.schema.validator import schema_validation
+from guardrails.types import ModelOrListOfModels, ValidatorMap, MessageHistory
 from guardrails.utils.exception_utils import UserFacingException
 from guardrails.utils.hub_telemetry_utils import HubTelemetry
 from guardrails.utils.llm_response import LLMResponse
-from guardrails.utils.reask_utils import NonParseableReAsk, ReAsk
+from guardrails.utils.parsing_utils import parse_llm_output
+from guardrails.utils.prompt_utils import preprocess_prompt, prompt_content_for_schema
+from guardrails.utils.reask_utils import NonParseableReAsk, ReAsk, introspect
 from guardrails.utils.telemetry_utils import trace
 
 
@@ -36,64 +39,89 @@ class Runner:
             where the output is already known.
     """
 
+    # Validation Inputs
+    output_schema: Dict[str, Any]
+    output_type: OutputTypes
+    validation_map: ValidatorMap = {}
+    metadata: Optional[Dict[str, Any]] = None
+
+    # LLM Inputs
+    prompt: Optional[Prompt] = None
+    instructions: Optional[Instructions] = None
+    msg_history: Optional[List[Dict[str, Union[Prompt, str]]]] = None
+    base_model: Optional[ModelOrListOfModels]
+
+    # LLM Calling Details
+    api: Optional[PromptCallableBase] = None
+    output: Optional[str] = None
+    num_reasks: int
+    full_schema_reask: bool = False
+
+    # Internal Metrics Collection
+    disable_tracer: Optional[bool] = True
+
+    # QUESTION: Are any of these init args actually necessary for initialization?
+    # ANSWER: _Maybe_ prompt, instructions, and msg_history for Prompt initialization
+    #   but even that can happen at execution time.
+    # TODO: In versions >=0.6.x, remove this class and just execute a Guard functionally
     def __init__(
         self,
-        output_schema: Schema,
+        output_type: OutputTypes,
+        output_schema: Dict[str, Any],
         num_reasks: int,
-        prompt: Optional[Union[str, Prompt]] = None,
-        instructions: Optional[Union[str, Instructions]] = None,
+        validation_map: ValidatorMap = {},
+        *,
+        prompt: Optional[str] = None,
+        instructions: Optional[str] = None,
         msg_history: Optional[List[Dict]] = None,
         api: Optional[PromptCallableBase] = None,
-        prompt_schema: Optional[StringSchema] = None,
-        instructions_schema: Optional[StringSchema] = None,
-        msg_history_schema: Optional[StringSchema] = None,
         metadata: Optional[Dict[str, Any]] = None,
         output: Optional[str] = None,
-        base_model: Optional[
-            Union[Type[BaseModel], Type[List[Type[BaseModel]]]]
-        ] = None,
+        base_model: Optional[ModelOrListOfModels] = None,
         full_schema_reask: bool = False,
         disable_tracer: Optional[bool] = True,
     ):
+        # Validation Inputs
+        self.output_type = output_type
+        self.output_schema = output_schema
+        self.validation_map = validation_map
+        self.metadata = metadata or {}
+
+        # LLM Inputs
         if prompt:
             assert api, "Must provide an API if a prompt is provided."
             assert not output, "Cannot provide both a prompt and output."
 
-        if isinstance(prompt, str):
-            self.prompt = Prompt(prompt, output_schema=output_schema.transpile())
-        else:
-            self.prompt = prompt
+        stringified_output_schema = prompt_content_for_schema(
+            output_type, output_schema, validation_map
+        )
+        if prompt:
+            self.prompt = Prompt(prompt, output_schema=stringified_output_schema)
 
-        if isinstance(instructions, str):
+        if instructions:
             self.instructions = Instructions(
-                instructions, output_schema=output_schema.transpile()
+                instructions, output_schema=stringified_output_schema
             )
-        else:
-            self.instructions = instructions
 
         if msg_history:
-            msg_history = copy.deepcopy(msg_history)
             msg_history_copy = []
             for msg in msg_history:
-                msg["content"] = Prompt(
-                    msg["content"], output_schema=output_schema.transpile()
+                msg_copy = copy.deepcopy(msg)
+                msg_copy["content"] = Prompt(
+                    msg_copy["content"], output_schema=stringified_output_schema
                 )
-                msg_history_copy.append(msg)
+                msg_history_copy.append(msg_copy)
             self.msg_history = msg_history_copy
-        else:
-            self.msg_history = None
 
-        self.api = api
-        self.prompt_schema = prompt_schema
-        self.instructions_schema = instructions_schema
-        self.msg_history_schema = msg_history_schema
-        self.output_schema = output_schema
-        self.num_reasks = num_reasks
-        self.metadata = metadata or {}
-        self.output = output
         self.base_model = base_model
+
+        # LLM Calling Details
+        self.api = api
+        self.output = output
+        self.num_reasks = num_reasks
         self.full_schema_reask = full_schema_reask
 
+        # Internal Metrics Collection
         # Get metrics opt-out from credentials
         self._disable_tracer = disable_tracer
 
@@ -101,7 +129,7 @@ class Runner:
             # Get the HubTelemetry singleton
             self._hub_telemetry = HubTelemetry()
 
-    def __call__(self, call_log: Call, prompt_params: Optional[Dict] = None) -> Call:
+    def __call__(self, call_log: Call, prompt_params: Optional[Dict] = {}) -> Call:
         """Execute the runner by repeatedly calling step until the reask budget
         is exhausted.
 
@@ -113,40 +141,26 @@ class Runner:
             The Call log for this run.
         """
         try:
-            if prompt_params is None:
-                prompt_params = {}
-
-            # check if validator requirements are fulfilled
-            missing_keys = verify_metadata_requirements(
-                self.metadata, self.output_schema.root_datatype
-            )
-            if missing_keys:
-                raise ValueError(
-                    f"Missing required metadata keys: {', '.join(missing_keys)}"
-                )
-
             # Figure out if we need to include instructions in the prompt.
             include_instructions = not (
                 self.instructions is None and self.msg_history is None
             )
 
+            # NOTE: At first glance this seems gratuitous,
+            #   but these local variables are reassigned after
+            #   calling self.prepare_to_loop
             (
                 instructions,
                 prompt,
                 msg_history,
-                prompt_schema,
-                instructions_schema,
-                msg_history_schema,
                 output_schema,
             ) = (
                 self.instructions,
                 self.prompt,
                 self.msg_history,
-                self.prompt_schema,
-                self.instructions_schema,
-                self.msg_history_schema,
                 self.output_schema,
             )
+
             index = 0
             for index in range(self.num_reasks + 1):
                 # Run a single step.
@@ -157,10 +171,7 @@ class Runner:
                     prompt=prompt,
                     msg_history=msg_history,
                     prompt_params=prompt_params,
-                    prompt_schema=prompt_schema,
-                    instructions_schema=instructions_schema,
-                    msg_history_schema=msg_history_schema,
-                    output_schema=output_schema,
+                    output_schema=self.output_schema,
                     output=self.output if index == 0 else None,
                     call_log=call_log,
                 )
@@ -177,8 +188,9 @@ class Runner:
                     msg_history,
                 ) = self.prepare_to_loop(
                     iteration.reasks,
-                    call_log.validation_response,
                     output_schema,
+                    parsed_output=iteration.outputs.parsed_output,
+                    validated_output=call_log.validation_response,
                     prompt_params=prompt_params,
                     include_instructions=include_instructions,
                 )
@@ -207,16 +219,14 @@ class Runner:
     def step(
         self,
         index: int,
+        output_schema: Dict[str, Any],
+        call_log: Call,
+        *,
         api: Optional[PromptCallableBase],
         instructions: Optional[Instructions],
         prompt: Optional[Prompt],
         msg_history: Optional[List[Dict]],
-        prompt_params: Dict,
-        prompt_schema: Optional[StringSchema],
-        instructions_schema: Optional[StringSchema],
-        msg_history_schema: Optional[StringSchema],
-        output_schema: Schema,
-        call_log: Call,
+        prompt_params: Optional[Dict] = {},
         output: Optional[str] = None,
     ) -> Iteration:
         """Run a full step."""
@@ -245,16 +255,12 @@ class Runner:
             else:
                 instructions, prompt, msg_history = self.prepare(
                     call_log,
-                    index,
-                    instructions,
-                    prompt,
-                    msg_history,
-                    prompt_params,
-                    api,
-                    prompt_schema,
-                    instructions_schema,
-                    msg_history_schema,
-                    output_schema,
+                    instructions=instructions,
+                    prompt=prompt,
+                    msg_history=msg_history,
+                    prompt_params=prompt_params,
+                    api=api,
+                    attempt_number=index,
                 )
 
             iteration.inputs.instructions = instructions
@@ -262,15 +268,13 @@ class Runner:
             iteration.inputs.msg_history = msg_history
 
             # Call: run the API.
-            llm_response = self.call(
-                index, instructions, prompt, msg_history, api, output
-            )
+            llm_response = self.call(instructions, prompt, msg_history, api, output)
 
             iteration.outputs.llm_response_info = llm_response
             raw_output = llm_response.output
 
             # Parse: parse the output.
-            parsed_output, parsing_error = self.parse(index, raw_output, output_schema)
+            parsed_output, parsing_error = self.parse(raw_output)
             if parsing_error:
                 iteration.outputs.exception = parsing_error
                 iteration.outputs.error = str(parsing_error)
@@ -279,7 +283,7 @@ class Runner:
 
             # Validate: run output validation.
             if parsing_error and isinstance(parsed_output, NonParseableReAsk):
-                reasks, _ = self.introspect(index, parsed_output, output_schema)
+                reasks, _ = self.introspect(parsed_output)
             else:
                 # Validate: run output validation.
                 validated_output = self.validate(
@@ -288,9 +292,7 @@ class Runner:
                 iteration.outputs.validation_response = validated_output
 
                 # Introspect: inspect validated output for reasks.
-                reasks, valid_output = self.introspect(
-                    index, validated_output, output_schema
-                )
+                reasks, valid_output = self.introspect(validated_output)
                 iteration.outputs.guarded_output = valid_output
 
             iteration.outputs.reasks = reasks
@@ -303,20 +305,28 @@ class Runner:
         return iteration
 
     def validate_msg_history(
-        self,
-        call_log: Call,
-        msg_history: List[Dict],
-        msg_history_schema: StringSchema,
-    ):
+        self, call_log: Call, msg_history: MessageHistory, attempt_number: int
+    ) -> None:
         msg_str = msg_history_string(msg_history)
         inputs = Inputs(
             llm_output=msg_str,
         )
         iteration = Iteration(inputs=inputs)
         call_log.iterations.insert(0, iteration)
-        validated_msg_history = msg_history_schema.validate(
-            iteration, msg_str, self.metadata, disable_tracer=self._disable_tracer
+        value, _metadata = validator_service.validate(
+            value=msg_str,
+            metadata=self.metadata,
+            validator_map=self.validation_map,
+            iteration=iteration,
+            disable_tracer=self._disable_tracer,
+            path="msg_history",
         )
+        value = validator_service.post_process_validation(
+            value, attempt_number, iteration
+        )
+        value = cast(str, value)
+        validated_msg_history = value
+
         iteration.outputs.validation_response = validated_msg_history
         if isinstance(validated_msg_history, ReAsk):
             raise ValidationError(
@@ -328,38 +338,44 @@ class Runner:
     def prepare_msg_history(
         self,
         call_log: Call,
-        msg_history: List[Dict],
+        msg_history: MessageHistory,
         prompt_params: Dict,
-        msg_history_schema: Optional[StringSchema],
-    ):
-        msg_history = copy.deepcopy(msg_history)
+        attempt_number: int,
+    ) -> List[Dict[str, str]]:
+        formatted_msg_history = []
         # Format any variables in the message history with the prompt params.
         for msg in msg_history:
-            msg["content"] = msg["content"].format(**prompt_params)
+            msg_copy = copy.deepcopy(msg)
+            msg_copy["content"] = msg_copy["content"].format(**prompt_params)
+            formatted_msg_history.append(msg_copy)
 
         # validate msg_history
-        if msg_history_schema is not None:
-            self.validate_msg_history(call_log, msg_history, msg_history_schema)
+        if "msg_history" in self.validation_map:
+            self.validate_msg_history(call_log, formatted_msg_history, attempt_number)
 
-        return msg_history
+        return formatted_msg_history
 
-    def validate_prompt(
-        self,
-        call_log: Call,
-        prompt_schema: StringSchema,
-        prompt: Prompt,
-    ):
+    def validate_prompt(self, call_log: Call, prompt: Prompt, attempt_number: int):
         inputs = Inputs(
             llm_output=prompt.source,
         )
         iteration = Iteration(inputs=inputs)
         call_log.iterations.insert(0, iteration)
-        validated_prompt = prompt_schema.validate(
-            iteration,
-            prompt.source,
-            self.metadata,
+        value, _metadata = validator_service.validate(
+            value=prompt.source,
+            metadata=self.metadata,
+            validator_map=self.validation_map,
+            iteration=iteration,
             disable_tracer=self._disable_tracer,
+            path="prompt",
         )
+        value = validator_service.post_process_validation(
+            value, attempt_number, iteration
+        )
+
+        value = cast(str, value)
+        validated_prompt = value
+
         iteration.outputs.validation_response = validated_prompt
         if validated_prompt is None:
             raise ValidationError("Prompt validation failed")
@@ -368,22 +384,28 @@ class Runner:
         return Prompt(validated_prompt)
 
     def validate_instructions(
-        self,
-        call_log: Call,
-        instructions_schema: StringSchema,
-        instructions: Instructions,
+        self, call_log: Call, instructions: Instructions, attempt_number: int
     ):
         inputs = Inputs(
             llm_output=instructions.source,
         )
         iteration = Iteration(inputs=inputs)
         call_log.iterations.insert(0, iteration)
-        validated_instructions = instructions_schema.validate(
-            iteration,
-            instructions.source,
-            self.metadata,
+        value, _metadata = validator_service.validate(
+            value=instructions.source,
+            metadta=self.metadata,
+            validator_map=self.validation_map,
+            iteration=iteration,
             disable_tracer=self._disable_tracer,
+            path="instructions",
         )
+        value = validator_service.post_process_validation(
+            value, attempt_number, iteration
+        )
+
+        value = cast(str, value)
+        validated_instructions = value
+
         iteration.outputs.validation_response = validated_instructions
         if validated_instructions is None:
             raise ValidationError("Instructions validation failed")
@@ -400,13 +422,8 @@ class Runner:
         prompt: Prompt,
         prompt_params: Dict,
         api: Union[PromptCallableBase, AsyncPromptCallableBase],
-        prompt_schema: Optional[StringSchema],
-        instructions_schema: Optional[StringSchema],
-        output_schema: Schema,
+        attempt_number: int,
     ):
-        if isinstance(prompt, str):
-            prompt = Prompt(prompt)
-
         prompt = prompt.format(**prompt_params)
 
         # TODO(shreya): should there be any difference
@@ -414,18 +431,21 @@ class Runner:
         if instructions is not None and isinstance(instructions, Instructions):
             instructions = instructions.format(**prompt_params)
 
-        instructions, prompt = output_schema.preprocess_prompt(
-            api, instructions, prompt
+        instructions, prompt = preprocess_prompt(
+            prompt_callable=api,
+            instructions=instructions,
+            prompt=prompt,
+            output_type=self.output_type,
         )
 
         # validate prompt
-        if prompt_schema is not None and prompt is not None:
-            prompt = self.validate_prompt(call_log, prompt_schema, prompt)
+        if "prompt" in self.validation_map and prompt is not None:
+            prompt = self.validate_prompt(call_log, prompt, attempt_number)
 
         # validate instructions
-        if instructions_schema is not None and instructions is not None:
+        if "instructions" in self.validation_map and instructions is not None:
             instructions = self.validate_instructions(
-                call_log, instructions_schema, instructions
+                call_log, instructions, attempt_number
             )
 
         return instructions, prompt
@@ -433,16 +453,13 @@ class Runner:
     def prepare(
         self,
         call_log: Call,
-        index: int,
+        attempt_number: int,
+        *,
         instructions: Optional[Instructions],
         prompt: Optional[Prompt],
         msg_history: Optional[List[Dict]],
-        prompt_params: Dict,
+        prompt_params: Optional[Dict] = {},
         api: Optional[Union[PromptCallableBase, AsyncPromptCallableBase]],
-        prompt_schema: Optional[StringSchema],
-        instructions_schema: Optional[StringSchema],
-        msg_history_schema: Optional[StringSchema],
-        output_schema: Schema,
     ) -> Tuple[Optional[Instructions], Optional[Prompt], Optional[List[Dict]]]:
         """Prepare by running pre-processing and input validation.
 
@@ -452,11 +469,11 @@ class Runner:
         if api is None:
             raise UserFacingException(ValueError("API must be provided."))
 
-        if prompt_params is None:
-            prompt_params = {}
-
+        has_prompt_validation = "prompt" in self.validation_map
+        has_instructions_validation = "instructions" in self.validation_map
+        has_msg_history_validation = "msg_history" in self.validation_map
         if msg_history:
-            if prompt_schema is not None or instructions_schema is not None:
+            if has_prompt_validation or has_instructions_validation:
                 raise UserFacingException(
                     ValueError(
                         "Prompt and instructions validation are "
@@ -465,10 +482,10 @@ class Runner:
                 )
             prompt, instructions = None, None
             msg_history = self.prepare_msg_history(
-                call_log, msg_history, prompt_params, msg_history_schema
+                call_log, msg_history, prompt_params, attempt_number
             )
         elif prompt is not None:
-            if msg_history_schema is not None:
+            if has_msg_history_validation:
                 raise UserFacingException(
                     ValueError(
                         "Message history validation is "
@@ -477,14 +494,7 @@ class Runner:
                 )
             msg_history = None
             instructions, prompt = self.prepare_prompt(
-                call_log,
-                instructions,
-                prompt,
-                prompt_params,
-                api,
-                prompt_schema,
-                instructions_schema,
-                output_schema,
+                call_log, instructions, prompt, prompt_params, api, attempt_number
             )
         else:
             raise UserFacingException(
@@ -496,7 +506,6 @@ class Runner:
     @trace(name="call")
     def call(
         self,
-        index: int,
         instructions: Optional[Instructions],
         prompt: Optional[Prompt],
         msg_history: Optional[List[Dict[str, str]]],
@@ -534,64 +543,78 @@ class Runner:
 
     def parse(
         self,
-        index: int,
         output: str,
-        output_schema: Schema,
     ):
-        parsed_output, error = output_schema.parse(output)
+        parsed_output, error = parse_llm_output(output)
+        # TODO: perform type coercion and key pruning here
         return parsed_output, error
 
     def validate(
         self,
         iteration: Iteration,
-        index: int,
+        attempt_number: int,
         parsed_output: Any,
-        output_schema: Schema,
+        output_schema: Dict[str, Any],
         **kwargs,
     ):
         """Validate the output."""
-        validated_output = output_schema.validate(
-            iteration,
-            parsed_output,
-            self.metadata,
-            attempt_number=index,
+        # Break early if empty
+        if parsed_output is None:
+            return None
+
+        skeleton_reask = schema_validation(parsed_output, output_schema, **kwargs)
+        if skeleton_reask:
+            return skeleton_reask
+
+        validated_output, _metadata = validator_service.validate(
+            value=parsed_output,
+            metadta=self.metadata,
+            validator_map=self.validation_map,
+            iteration=iteration,
             disable_tracer=self._disable_tracer,
-            **kwargs,
+            path="$",
+        )
+        validated_output = validator_service.post_process_validation(
+            validated_output, attempt_number, iteration
         )
 
         return validated_output
 
     def introspect(
         self,
-        index: int,
         validated_output: Any,
-        output_schema: Schema,
     ) -> Tuple[Sequence[ReAsk], Optional[Union[str, Dict]]]:
         """Introspect the validated output."""
         if validated_output is None:
             return [], None
-        reasks, valid_output = output_schema.introspect(validated_output)
+        reasks, valid_output = introspect(validated_output)
 
         return reasks, valid_output
 
-    def do_loop(self, index: int, reasks: Sequence[ReAsk]) -> bool:
+    def do_loop(self, attempt_number: int, reasks: Sequence[ReAsk]) -> bool:
         """Determine if we should loop again."""
-        if reasks and index < self.num_reasks:
+        if reasks and attempt_number < self.num_reasks:
             return True
         return False
 
     def prepare_to_loop(
         self,
         reasks: Sequence[ReAsk],
-        validated_output: Optional[Union[str, Dict, ReAsk]],
-        output_schema: Schema,
-        prompt_params: Dict,
+        output_schema: Dict[str, Any],
+        *,
+        parsed_output: Optional[Union[str, Dict, ReAsk]] = None,
+        validated_output: Optional[Union[str, Dict, ReAsk]] = None,
+        prompt_params: Optional[Dict] = {},
         include_instructions: bool = False,
-    ) -> Tuple[Prompt, Optional[Instructions], Schema, Optional[List[Dict]]]:
+    ) -> Tuple[Prompt, Optional[Instructions], Dict[str, Any], Optional[List[Dict]]]:
         """Prepare to loop again."""
-        output_schema, prompt, instructions = output_schema.get_reask_setup(
+        output_schema, prompt, instructions = get_reask_setup(
+            output_type=self.output_type,
+            output_schema=output_schema,
+            validation_map=self.validation_map,
             reasks=reasks,
-            original_response=validated_output,
+            parsing_response=parsed_output,
+            validation_response=validated_output,
             use_full_schema=self.full_schema_reask,
             prompt_params=prompt_params,
         )

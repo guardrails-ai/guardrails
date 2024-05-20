@@ -1,6 +1,10 @@
+import json
 from typing import Any, Dict, List
 from jsonschema import Draft202012Validator, ValidationError
 from referencing import Registry, jsonschema as jsonschema_ref
+
+from guardrails.actions.reask import SkeletonReAsk
+from guardrails.classes.validation.validation_result import FailResult
 
 
 class SchemaValidationError(Exception):
@@ -66,3 +70,28 @@ def validate_payload(payload: Any, json_schema: Dict[str, Any]):
         registry=registry,
     )
     validate_against_schema(payload, validator)
+
+
+def schema_validation(llm_output: Any, output_schema: Dict[str, Any], **kwargs):
+    # FIXME: How to validate subschemas with thrid party tools?
+    validate_subschema = kwargs.get("validate_subschema", False)
+    if not validate_subschema:
+        response_matches_schema = True
+        schema_error = None
+        try:
+            validate_payload(llm_output, output_schema)
+        except SchemaValidationError as sve:
+            formatted_error_fields = json.dumps(sve.fields, indent=2)
+            schema_error = f"JSON does not match schema:\n{formatted_error_fields}"
+            schema_error = "JSON does not match schema"
+
+        if not response_matches_schema:
+            return SkeletonReAsk(
+                incorrect_value=llm_output,
+                fail_results=[
+                    FailResult(
+                        fix_value=None,
+                        error_message=schema_error,
+                    )
+                ],
+            )

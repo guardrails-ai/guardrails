@@ -1,14 +1,12 @@
 import inspect
 from collections import defaultdict
 from copy import deepcopy
-from enum import Enum
 from string import Template
 from typing import (
     Any,
     Callable,
     Dict,
     List,
-    Literal,
     Optional,
     Tuple,
     Type,
@@ -19,11 +17,18 @@ from warnings import warn
 
 from langchain_core.messages import BaseMessage
 from langchain_core.runnables import Runnable, RunnableConfig
-from pydantic import BaseModel, Field
 
-from guardrails.classes import InputType
+from guardrails.actions.filter import Filter
+from guardrails.actions.refrain import Refrain
+from guardrails.classes import (
+    InputType,
+    ValidationResult,
+    PassResult,  # noqa
+    FailResult,
+)
 from guardrails.constants import hub
 from guardrails.errors import ValidationError
+from guardrails.types.on_fail import OnFailAction
 from guardrails.utils.dataclass import dataclass
 
 VALIDATOR_IMPORT_WARNING = """Accessing `{validator_name}` using
@@ -165,14 +170,6 @@ VALIDATOR_NAMING = {
     ],
     "pydantic_field_validator": [],
 }
-
-
-class Filter:
-    pass
-
-
-class Refrain:
-    pass
 
 
 def check_refrain_in_list(schema: List) -> bool:
@@ -352,38 +349,6 @@ def get_validator_class(name: str) -> Type["Validator"]:
 
         return validators_registry.get(validator_key)
     return registration
-
-
-class ValidationResult(BaseModel):
-    outcome: str
-    metadata: Optional[Dict[str, Any]] = None
-
-
-class PassResult(ValidationResult):
-    outcome: Literal["pass"] = "pass"
-
-    class ValueOverrideSentinel:
-        pass
-
-    # should only be used if Validator.override_value_on_pass is True
-    value_override: Optional[Any] = Field(default=ValueOverrideSentinel)
-
-
-class FailResult(ValidationResult):
-    outcome: Literal["fail"] = "fail"
-
-    error_message: str
-    fix_value: Optional[Any] = None
-
-
-class OnFailAction(str, Enum):
-    REASK = "reask"
-    FIX = "fix"
-    FILTER = "filter"
-    REFRAIN = "refrain"
-    NOOP = "noop"
-    EXCEPTION = "exception"
-    FIX_REASK = "fix_reask"
 
 
 @dataclass  # type: ignore
@@ -595,4 +560,5 @@ class Validator(Runnable):
         return self
 
 
+# Superseded by guardrails/types/validator.py::PydanticValidatorSpec
 ValidatorSpec = Union[Validator, Tuple[Union[Validator, str, Callable], str]]

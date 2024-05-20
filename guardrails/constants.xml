@@ -2,8 +2,12 @@
 
 
 <json_suffix_prompt>
-Return a valid JSON object that respects this XML format and extracts only the information requested in this document. Respect the types indicated in the XML -- the information you extract should be converted into the correct 'type'. Try to be as correct and concise as possible. Find all relevant information in the document. If you are unsure of the answer, enter 'None'. If you answer incorrectly, you will be asked again until you get it right which is expensive.
+Return a valid JSON object that respects this JSON Schema and extracts only the information requested in this document. Respect the types indicated in the JSON Schema -- the information you extract should be converted into the correct 'type'. Try to be as correct and concise as possible. Find all relevant information in the document. If you are unsure of the answer, enter 'None'. If you answer incorrectly, you will be asked again until you get it right which is expensive.
 </json_suffix_prompt>
+
+<xml_suffix_prompt>
+Return a valid JSON object that respects this XML format and extracts only the information requested in this document. Respect the types indicated in the XML -- the information you extract should be converted into the correct 'type'. Try to be as correct and concise as possible. Find all relevant information in the document. If you are unsure of the answer, enter 'None'. If you answer incorrectly, you will be asked again until you get it right which is expensive.
+</xml_suffix_prompt>
 
 
 <xml_prefix_prompt>
@@ -12,13 +16,21 @@ Given below is XML that describes the information to extract from this document 
 
 
 <json_suffix_prompt_v2>
-ONLY return a valid JSON object (no other text is necessary). The JSON MUST conform to the XML format, including any types and format requests e.g. requests for lists, objects and specific types. Be correct and concise. If you are unsure anywhere, enter "None".
+ONLY return a valid JSON object (no other text is necessary). The JSON MUST conform to the JSON Schema, including any types and format requests e.g. requests for lists, objects and specific types. Be correct and concise. If you are unsure anywhere, enter "None".
 </json_suffix_prompt_v2>
+
+<xml_suffix_prompt_v2>
+ONLY return a valid JSON object (no other text is necessary). The JSON MUST conform to the XML format, including any types and format requests e.g. requests for lists, objects and specific types. Be correct and concise. If you are unsure anywhere, enter "None".
+</xml_suffix_prompt_v2>
 
 
 <json_suffix_prompt_v2_wo_none>
-ONLY return a valid JSON object (no other text is necessary). The JSON MUST conform to the XML format, including any types and format requests e.g. requests for lists, objects and specific types. Be correct and concise.
+ONLY return a valid JSON object (no other text is necessary). The JSON MUST conform to the JSON Schema, including any types and format requests e.g. requests for lists, objects and specific types. Be correct and concise.
 </json_suffix_prompt_v2_wo_none>
+
+<xml_suffix_prompt_v2_wo_none>
+ONLY return a valid JSON object (no other text is necessary). The JSON MUST conform to the XML format, including any types and format requests e.g. requests for lists, objects and specific types. Be correct and concise.
+</xml_suffix_prompt_v2_wo_none>
 
 <high_level_json_reask_prompt>
 I was given the following JSON response, which had problems due to incorrect values.
@@ -45,12 +57,21 @@ Help me correct this by making it valid JSON.
 </high_level_json_parsing_reask_prompt>
 
 <json_suffix_without_examples>
+Given below is a JSON Schema that describes the output structure you should return.
+
+JSON Schema:
+${output_schema}
+
+ONLY return a valid JSON object (no other text is necessary). The JSON MUST conform to the JSON Schema provided, including any types and format requests e.g. requests for lists, objects and specific types. Be correct and concise. If you are unsure anywhere, enter `null`.
+</json_suffix_without_examples>
+
+<xml_suffix_without_examples>
 Given below is XML that describes the information to extract from this document and the tags to extract it into.
 
 ${output_schema}
 
 ONLY return a valid JSON object (no other text is necessary), where the key of the field in JSON is the `name` attribute of the corresponding XML, and the value is of the type specified by the corresponding XML's tag. The JSON MUST conform to the XML format, including any types and format requests e.g. requests for lists, objects and specific types. Be correct and concise. If you are unsure anywhere, enter `null`.
-</json_suffix_without_examples>
+</xml_suffix_without_examples>
 
 <json_suffix_with_structure_example>
 ${gr.json_suffix_without_examples}
@@ -59,6 +80,15 @@ ${json_example}
 </json_suffix_with_structure_example>
 
 <complete_json_suffix>
+Given below is a JSON Schema that describes the information to extract from this document and the tags to extract it into.
+
+JSON Schema:
+${output_schema}
+
+ONLY return a valid JSON object (no other text is necessary). The JSON MUST conform to the JSON Schema, including any types and format requests e.g. requests for lists, objects and specific types. Be correct and concise. If you are unsure anywhere, enter `null`.
+</complete_json_suffix>
+
+<complete_xml_suffix>
 Given below is XML that describes the information to extract from this document and the tags to extract it into.
 
 ${output_schema}
@@ -69,9 +99,18 @@ Here are examples of simple (XML, JSON) pairs that show the expected behavior:
 - `<![CDATA[<string name='foo' format='two-words lower-case' />`]]> => `{'foo': 'example one'}`
 - `<![CDATA[<list name='bar'><string format='upper-case' /></list>]]>` => `{"bar": ['STRING ONE', 'STRING TWO', etc.]}`
 - `<![CDATA[<object name='baz'><string name="foo" format="capitalize two-words" /><integer name="index" format="1-indexed" /></object>]]>` => `{'baz': {'foo': 'Some String', 'index': 1}}`
-</complete_json_suffix>
+</complete_xml_suffix>
 
 <complete_json_suffix_v2>
+Given below is a JSON Schema that describes the information to extract from this document and the tags to extract it into.
+
+JSON Schema:
+${output_schema}
+
+ONLY return a valid JSON object (no other text is necessary). The JSON MUST conform to the JSON Schema, including any types and format requests e.g. requests for lists, objects and specific types. Be correct and concise.
+</complete_json_suffix_v2>
+
+<complete_xml_suffix_v2>
 Given below is XML that describes the information to extract from this document and the tags to extract it into.
 
 ${output_schema}
@@ -82,10 +121,19 @@ Here are examples of simple (XML, JSON) pairs that show the expected behavior:
 - `<![CDATA[<string name='foo' format='two-words lower-case' />`]]> => `{'foo': 'example one'}`
 - `<![CDATA[<list name='bar'><string format='upper-case' /></list>]]>` => `{"bar": ['STRING ONE', 'STRING TWO', etc.]}`
 - `<![CDATA[<object name='baz'><string name="foo" format="capitalize two-words" /><integer name="index" format="1-indexed" /></object>]]>` => `{'baz': {'foo': 'Some String', 'index': 1}}`
-</complete_json_suffix_v2>
+</complete_xml_suffix_v2>
 
 
 <complete_json_suffix_v3>
+Given below is JSON Schema that describes the information to extract from this document and the tags to extract it into.
+
+JSON Schema:
+${output_schema}
+
+ONLY return a valid JSON object (no other text is necessary). The JSON MUST conform to the JSON Schema, including any types and format requests e.g. requests for lists, objects and specific types. Be correct and concise. If you are unsure anywhere, try your best guess.
+</complete_json_suffix_v3>
+
+<complete_xml_suffix_v3>
 Given below is XML that describes the information to extract from this document and the tags to extract it into.
 
 ${output_schema}
@@ -96,17 +144,21 @@ Here are examples of simple (XML, JSON) pairs that show the expected behavior:
 - `<![CDATA[<string name='foo' format='two-words lower-case' />`]]> => `{'foo': 'example one'}`
 - `<![CDATA[<list name='bar'><string format='upper-case' /></list>]]>` => `{"bar": ['STRING ONE', 'STRING TWO', etc.]}`
 - `<![CDATA[<object name='baz'><string name="foo" format="capitalize two-words" /><integer name="index" format="1-indexed" /></object>]]>` => `{'baz': {'foo': 'Some String', 'index': 1}}`
-</complete_json_suffix_v3>
+</complete_xml_suffix_v3>
 
 
 <json_suffix_prompt_examples>
+ONLY return a valid JSON object (no other text is necessary). The JSON MUST conform to the JSON Schema, including any types and format requests e.g. requests for lists, objects and specific types. Be correct and concise. If you are unsure anywhere, enter `null`.
+</json_suffix_prompt_examples>
+
+<xml_suffix_prompt_examples>
 ONLY return a valid JSON object (no other text is necessary), where the key of the field in JSON is the `name` attribute of the corresponding XML, and the value is of the type specified by the corresponding XML's tag. The JSON MUST conform to the XML format, including any types and format requests e.g. requests for lists, objects and specific types. Be correct and concise. If you are unsure anywhere, enter `null`.
 
 Here are examples of simple (XML, JSON) pairs that show the expected behavior:
 - `<![CDATA[<string name='foo' format='two-words lower-case' />`]]> => `{'foo': 'example one'}`
 - `<![CDATA[<list name='bar'><string format='upper-case' /></list>]]>` => `{"bar": ['STRING ONE', 'STRING TWO', etc.]}`
 - `<![CDATA[<object name='baz'><string name="foo" format="capitalize two-words" /><integer name="index" format="1-indexed" /></object>]]>` => `{'baz': {'foo': 'Some String', 'index': 1}}`
-</json_suffix_prompt_examples>
+</xml_suffix_prompt_examples>
 
 <high_level_string_reask_prompt>This was a previous response you generated:
 
@@ -125,12 +177,25 @@ ${output_schema}
 <high_level_json_instructions>
 You are a helpful assistant only capable of communicating with valid JSON, and no other text.
 
+ONLY return a valid JSON object (no other text is necessary). The JSON MUST conform to the JSON Schema provided, including any types and format requests e.g. requests for lists, objects and specific types. Be correct and concise. If you are unsure anywhere, enter `null`.
+</high_level_json_instructions>
+
+<high_level_xml_instructions>
+You are a helpful assistant only capable of communicating with valid JSON, and no other text.
+
 ONLY return a valid JSON object (no other text is necessary), where the key of the field in JSON is the `name` attribute of the corresponding XML, and the value is of the type specified by the corresponding XML's tag. The JSON MUST conform to the XML format, including any types and format requests e.g. requests for lists, objects and specific types. Be correct and concise. If you are unsure anywhere, enter `null`.
 
 Here are examples of simple (XML, JSON) pairs that show the expected behavior:
 - `<![CDATA[<string name='foo' format='two-words lower-case' />`]]> => `{'foo': 'example one'}`
 - `<![CDATA[<list name='bar'><string format='upper-case' /></list>]]>` => `{"bar": ['STRING ONE', 'STRING TWO', etc.]}`
 - `<![CDATA[<object name='baz'><string name="foo" format="capitalize two-words" /><integer name="index" format="1-indexed" /></object>]]>` => `{'baz': {'foo': 'Some String', 'index': 1}}`
-</high_level_json_instructions>
+</high_level_xml_instructions>
+
+<error_messages>
+
+Error Messages:
+${error_messages}
+
+</error_messages>
 
 </constants>

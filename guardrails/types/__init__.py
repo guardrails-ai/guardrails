@@ -1,3 +1,5 @@
+from guardrails.types.inputs import MessageHistory
+from guardrails.types.on_fail import OnFailAction
 from guardrails.types.primitives import PrimitiveTypes
 from guardrails.types.pydantic import (
     ModelOrListOfModels,
@@ -15,6 +17,8 @@ from guardrails.types.validator import (
 )
 
 __all__ = [
+    "MessageHistory",
+    "OnFailAction",
     "PrimitiveTypes",
     "ModelOrListOfModels",
     "ModelOrListOrDict",

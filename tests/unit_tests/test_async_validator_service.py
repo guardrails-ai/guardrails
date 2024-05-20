@@ -4,7 +4,7 @@ import pytest
 
 from guardrails.classes.history.iteration import Iteration
 from guardrails.datatypes import FieldValidation
-from guardrails.utils.logs_utils import ValidatorLogs
+from guardrails.classes.validation.validator_logs import ValidatorLogs
 from guardrails.validator_base import OnFailAction
 from guardrails.validator_service import AsyncValidatorService
 from guardrails.validators import PassResult
