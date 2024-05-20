@@ -179,11 +179,11 @@ class SequentialValidatorService(ValidatorServiceBase):
                 iteration, validator, value, metadata, property_path, stream, **kwargs
             )
             result = validator_logs.validation_result
-            # I assume we would want to wait until the end to do reasks for streams
-            if isinstance(result, FailResult) and not stream:
-                value = self.perform_correction(
-                    [result], value, validator, validator.on_fail_descriptor
-                )
+            if isinstance(result, FailResult):
+                if not stream:
+                    value = self.perform_correction(
+                        [result], value, validator, validator.on_fail_descriptor
+                    )
             elif isinstance(result, PassResult):
                 if (
                     validator.override_value_on_pass

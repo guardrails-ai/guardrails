@@ -497,6 +497,7 @@ class Validator(Runnable):
         Otherwise, the validator will validate the chunk and return the result.
         """
         # combine accumulated chunks and new chunk
+        print("acc chunk", self.accumulated_chunks)
         self.accumulated_chunks.append(chunk)
         accumulated_text = "".join(self.accumulated_chunks)
         # check if enough chunks have accumulated for validation
@@ -509,11 +510,10 @@ class Validator(Runnable):
         if len(splitcontents) == 0:
             return None
         [chunk_to_validate, new_accumulated_chunks] = splitcontents
-        self.accumulated_chunks = new_accumulated_chunks
+        self.accumulated_chunks = [new_accumulated_chunks]
         # exclude last chunk, because it may not be a complete chunk
         validation_result = self.validate(chunk_to_validate, metadata)
         # include the chunk that we've validated in the metadata
-        validation_result.metadata["validated_chunk"] = chunk_to_validate
         return validation_result
 
     def to_prompt(self, with_keywords: bool = True) -> str:

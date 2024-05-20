@@ -191,10 +191,14 @@ class StreamRunner(Runner):
                         "Reasks are not yet supported with streaming. Please "
                         "remove reasks from schema or disable streaming."
                     )
+                print("valoutcome args")
+                print(chunk_text)
+                print(validated_result)
+                print(validated_fragment)
                 # 5. Convert validated fragment to a pretty JSON string
                 yield ValidationOutcome(
                     #  The chunk or the whole output?
-                    raw_llm_output=chunk,
+                    raw_llm_output=chunk_text,
                     validated_output=validated_result,
                     validation_passed=validated_fragment is not None,
                 )
@@ -228,7 +232,7 @@ class StreamRunner(Runner):
             # 5. Convert validated fragment to a pretty JSON string
             yield ValidationOutcome(
                 #  The chunk or the whole output?
-                raw_llm_output=chunk,
+                raw_llm_output=chunk_text,
                 validated_output=remainder_validation,
                 validation_passed=remainder_validation is not None,
             )
