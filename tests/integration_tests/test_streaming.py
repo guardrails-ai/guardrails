@@ -13,7 +13,14 @@ from pydantic import BaseModel, Field
 import guardrails as gd
 from guardrails.utils.casting_utils import to_int
 from guardrails.utils.openai_utils import OPENAI_VERSION
-from guardrails.validator_base import FailResult, OnFailAction, PassResult, ValidationResult, Validator, register_validator
+from guardrails.validator_base import (
+    FailResult,
+    OnFailAction,
+    PassResult,
+    ValidationResult,
+    Validator,
+    register_validator,
+)
 from guardrails.validators import LowerCase
 
 expected_raw_output = {"statement": "I am DOING well, and I HOPE you aRe too."}
@@ -21,7 +28,8 @@ expected_fix_output = {"statement": "i am doing well, and i hope you are too."}
 expected_noop_output = {"statement": "I am DOING well, and I HOPE you aRe too."}
 expected_filter_refrain_output = {}
 
-@register_validator(name="minsentencelength", data_type=["string","list"])
+
+@register_validator(name="minsentencelength", data_type=["string", "list"])
 class MinSentenceLengthValidator(Validator):
     def __init__(
         self,
@@ -36,15 +44,14 @@ class MinSentenceLengthValidator(Validator):
         )
         self._min = to_int(min)
         self._max = to_int(max)
-    
+
     def sentence_split(self, value):
-        if '.' not in value:
+        if "." not in value:
             return [value]
         sentences = nltk.sent_tokenize(value)
         if len(sentences) == 0:
             return [value]
         return sentences
-        
 
     def validate(self, value: Union[str, List], metadata: Dict) -> ValidationResult:
         # return PassResult()
@@ -63,9 +70,9 @@ class MinSentenceLengthValidator(Validator):
                     f"that is shorter than {self._max} characters.",
                 )
         return PassResult()
-    
+
     def validate_stream(self, chunk: Any, metadata: Dict, **kwargs) -> ValidationResult:
-        print(chunk, 'here!!!!')
+        print(chunk, "here!!!!")
         return super().validate_stream(chunk, metadata, **kwargs)
 
 
@@ -194,7 +201,10 @@ class LowerCaseRefrain(BaseModel):
         validators=[LowerCase(on_fail=OnFailAction.REFRAIN)],
     )
 
-expected_minsentence_noop_output = ''
+
+expected_minsentence_noop_output = ""
+
+
 class MinSentenceLengthNoOp(BaseModel):
     statement: str = Field(
         description="Validates whether the text is in lower case.",
@@ -202,7 +212,7 @@ class MinSentenceLengthNoOp(BaseModel):
     )
 
 
-STR_PROMPT = 'Say something nice to me.'
+STR_PROMPT = "Say something nice to me."
 
 PROMPT = """
 Say something nice to me.
@@ -214,11 +224,28 @@ ${gr.complete_json_suffix}
 @pytest.mark.parametrize(
     "guard, expected_validated_output",
     [
-        (gd.Guard.from_pydantic(output_class=LowerCaseNoop, prompt=PROMPT), expected_noop_output, ),
-        (gd.Guard.from_pydantic(output_class=LowerCaseFix, prompt=PROMPT), expected_fix_output, ),
-        (gd.Guard.from_pydantic(output_class=LowerCaseFilter, prompt=PROMPT), expected_filter_refrain_output, ),
-        (gd.Guard.from_pydantic(output_class=LowerCaseRefrain, prompt=PROMPT), expected_filter_refrain_output, ),
-        (gd.Guard.from_string(validators=[MinSentenceLengthValidator(5, 10)], prompt=STR_PROMPT), '' , ),
+        (
+            gd.Guard.from_pydantic(output_class=LowerCaseNoop, prompt=PROMPT),
+            expected_noop_output,
+        ),
+        (
+            gd.Guard.from_pydantic(output_class=LowerCaseFix, prompt=PROMPT),
+            expected_fix_output,
+        ),
+        (
+            gd.Guard.from_pydantic(output_class=LowerCaseFilter, prompt=PROMPT),
+            expected_filter_refrain_output,
+        ),
+        (
+            gd.Guard.from_pydantic(output_class=LowerCaseRefrain, prompt=PROMPT),
+            expected_filter_refrain_output,
+        ),
+        (
+            gd.Guard.from_string(
+                validators=[MinSentenceLengthValidator(5, 10)], prompt=STR_PROMPT
+            ),
+            "",
+        ),
     ],
 )
 def test_streaming_with_openai_callable(
@@ -268,11 +295,28 @@ def test_streaming_with_openai_callable(
 @pytest.mark.parametrize(
     "guard, expected_validated_output",
     [
-        (gd.Guard.from_pydantic(output_class=LowerCaseNoop, prompt=PROMPT), expected_noop_output, ),
-        (gd.Guard.from_pydantic(output_class=LowerCaseFix, prompt=PROMPT), expected_fix_output, ),
-        (gd.Guard.from_pydantic(output_class=LowerCaseFilter, prompt=PROMPT), expected_filter_refrain_output, ),
-        (gd.Guard.from_pydantic(output_class=LowerCaseRefrain, prompt=PROMPT), expected_filter_refrain_output, ),
-        (gd.Guard.from_string(validators=[MinSentenceLengthValidator(5, 10)], prompt=STR_PROMPT), '' , ),
+        (
+            gd.Guard.from_pydantic(output_class=LowerCaseNoop, prompt=PROMPT),
+            expected_noop_output,
+        ),
+        (
+            gd.Guard.from_pydantic(output_class=LowerCaseFix, prompt=PROMPT),
+            expected_fix_output,
+        ),
+        (
+            gd.Guard.from_pydantic(output_class=LowerCaseFilter, prompt=PROMPT),
+            expected_filter_refrain_output,
+        ),
+        (
+            gd.Guard.from_pydantic(output_class=LowerCaseRefrain, prompt=PROMPT),
+            expected_filter_refrain_output,
+        ),
+        (
+            gd.Guard.from_string(
+                validators=[MinSentenceLengthValidator(5, 10)], prompt=STR_PROMPT
+            ),
+            "",
+        ),
     ],
 )
 def test_streaming_with_openai_chat_callable(
