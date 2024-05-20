@@ -134,19 +134,24 @@ def get_install_url(manifest: ModuleManifest) -> str:
     return git_url
 
 
-def install_hub_module(module_manifest: ModuleManifest, site_packages: str):
+def install_hub_module(module_manifest: ModuleManifest, site_packages: str, quiet: bool):
     install_url = get_install_url(module_manifest)
     install_directory = get_hub_directory(module_manifest, site_packages)
 
+    pip_flags = [f"--target={install_directory}", "--no-deps"]
+    if quiet:
+        pip_flags.append("-q")
+
     # Install validator module in namespaced directory under guardrails.hub
     download_output = pip_process(
-        "install", install_url, [f"--target={install_directory}", "--no-deps", "-q"]
+        "install", install_url, pip_flags, quiet=quiet
     )
-    logger.info(download_output)
+    if not quiet:
+        logger.info(download_output)
 
     # Install validator module's dependencies in normal site-packages directory
     inspect_output = pip_process(
-        "inspect", flags=[f"--path={install_directory}"], format=json_format
+        "inspect", flags=[f"--path={install_directory}"], format=json_format, quiet=quiet
     )
 
     # throw if inspect_output is a string. Mostly for pyright
@@ -167,8 +172,9 @@ def install_hub_module(module_manifest: ModuleManifest, site_packages: str):
         versions = req_info.at(1, "").strip("()")  # type: ignore
         if name:
             install_spec = name if not versions else f"{name}{versions}"
-            dep_install_output = pip_process("install", install_spec)
-            logger.info(dep_install_output)
+            dep_install_output = pip_process("install", install_spec, quiet=quiet)
+            if not quiet:
+                logger.info(dep_install_output)
 
 
 @hub_command.command()
@@ -204,7 +210,7 @@ def install(
     with console.status("Downloading dependencies", spinner="bouncingBar") as status:
         if not quiet:
             status.update("Downloading dependencies")
-        install_hub_module(module_manifest, site_packages)
+        install_hub_module(module_manifest, site_packages, quiet=quiet)
 
     # Post-install
     with console.status("Running post-install setup", spinner="bouncingBar") as status:
