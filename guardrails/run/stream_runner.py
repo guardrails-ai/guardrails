@@ -194,9 +194,9 @@ class StreamRunner(Runner):
                 # 5. Convert validated fragment to a pretty JSON string
                 yield ValidationOutcome(
                     #  The chunk or the whole output?
-                    raw_llm_output=chunk,
+                    raw_llm_output=chunk_text,
                     validated_output=validated_result,
-                    validation_passed=validated_fragment is not None,
+                    validation_passed=validated_result is not None,
                 )
             ######################################
             # need to validate remainder of chunks
@@ -228,7 +228,7 @@ class StreamRunner(Runner):
             # 5. Convert validated fragment to a pretty JSON string
             yield ValidationOutcome(
                 #  The chunk or the whole output?
-                raw_llm_output=chunk,
+                raw_llm_output=chunk_text,
                 validated_output=remainder_validation,
                 validation_passed=remainder_validation is not None,
             )

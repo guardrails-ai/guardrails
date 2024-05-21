@@ -429,7 +429,6 @@ class Validator(Runnable):
     # chunking function returns empty list or list of 2 chunks
     # first chunk is the chunk to validate
     # second chunk is incomplete chunk that needs further accumulation
-    chunking_function = split_sentence
     accumulated_chunks = []
     run_in_separate_process = False
     override_value_on_pass = False
@@ -489,6 +488,9 @@ class Validator(Runnable):
             self.rail_alias in validators_registry
         ), f"Validator {self.__class__.__name__} is not registered. "
 
+    def chunking_function(self, chunk: str):
+        return split_sentence(chunk)
+
     def validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
         """Validates a value and return a validation result."""
         raise NotImplementedError
@@ -515,12 +517,13 @@ class Validator(Runnable):
 
         # if remainder kwargs is passed, validate remainder regardless
         remainder = kwargs.get("remainder", False)
+        print("split contents:", splitcontents)
         if remainder:
             splitcontents = [accumulated_text, []]
         if len(splitcontents) == 0:
             return None
         [chunk_to_validate, new_accumulated_chunks] = splitcontents
-        self.accumulated_chunks = new_accumulated_chunks
+        self.accumulated_chunks = [new_accumulated_chunks]
         # exclude last chunk, because it may not be a complete chunk
         validation_result = self.validate(chunk_to_validate, metadata)
         # include the chunk that we've validated in the metadata
