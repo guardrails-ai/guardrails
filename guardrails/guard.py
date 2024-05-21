@@ -27,6 +27,7 @@ from guardrails_api_client import (
     ValidatorReference,
     ModelSchema,
     ValidatePayload,
+    ValidationType,
     SimpleTypes,
 )
 from langchain_core.messages import BaseMessage
@@ -112,7 +113,7 @@ class Guard(IGuard, Runnable, Generic[OT]):
     name: Optional[str] = None
     description: Optional[str] = None
     validators: Optional[List[ValidatorReference]] = []
-    schema: Dict[str, Any] = {}
+    output_schema: Optional[ModelSchema] = None
 
     # Legacy
     _num_reasks = None
@@ -138,7 +139,7 @@ class Guard(IGuard, Runnable, Generic[OT]):
         name: Optional[str] = None,
         description: Optional[str] = None,
         validators: Optional[List[ValidatorReference]] = [],
-        schema: Optional[Dict[str, Any]] = {},
+        output_schema: Optional[Dict[str, Any]] = {},
     ):
         """Initialize the Guard with optional Rail instance, num_reasks, and
         base_model."""
@@ -146,14 +147,25 @@ class Guard(IGuard, Runnable, Generic[OT]):
         # Shared Interface Properties
         id = id or random_id()
         name = name or f"gr-{id}"
+
+        # Init ModelSchema class
+        schema_with_type = {**output_schema}
+        output_schema_type = output_schema.get("type")
+        if output_schema_type:
+            schema_with_type["type"] = ValidationType.from_dict(output_schema_type)
+        model_schema = ModelSchema(**schema_with_type)
+
+        # Super Init
         super().__init__(
             id=id,
             name=name,
             description=description,
             validators=validators,
-            var_schema=ModelSchema.from_dict(schema),
+            output_schema=model_schema,
             history=GuardHistory([]),
         )
+
+        # Assign private properties and backfill
         self._validator_map = {}
         self._validators = []
         self._fill_validator_map()
@@ -178,17 +190,17 @@ class Guard(IGuard, Runnable, Generic[OT]):
     def history(self, h: Stack[Call]):
         self._history = h
 
-    @field_validator("schema")
+    @field_validator("output_schema")
     @classmethod
     def must_be_valid_json_schema(
-        cls, schema: Optional[Dict[str, Any]] = None
-    ) -> Optional[Dict[str, Any]]:
-        if schema:
+        cls, output_schema: Optional[ModelSchema] = None
+    ) -> Optional[ModelSchema]:
+        if output_schema:
             try:
-                validate_json_schema(schema)
+                validate_json_schema(output_schema.to_dict())
             except SchemaValidationError as e:
                 raise ValueError(f"{str(e)}\n{json.dumps(e.fields, indent=2)}")
-        return schema
+        return output_schema
 
     def configure(
         self,
@@ -312,7 +324,7 @@ class Guard(IGuard, Runnable, Generic[OT]):
         guard = cls(
             name=name,
             description=description,
-            schema=schema.json_schema,
+            output_schema=schema.json_schema,
             validators=schema.validators,
         )
         if schema.output_type == OutputTypes.STRING:
@@ -473,7 +485,7 @@ class Guard(IGuard, Runnable, Generic[OT]):
         guard = cls(
             name=name,
             description=description,
-            schema=schema.json_schema,
+            output_schema=schema.json_schema,
             validators=schema.validators,
         )
         if schema.output_type == OutputTypes.LIST:
@@ -534,7 +546,7 @@ class Guard(IGuard, Runnable, Generic[OT]):
             cls(
                 name=name,
                 description=description,
-                schema=schema.json_schema,
+                output_schema=schema.json_schema,
                 validators=schema.validators,
             ),
         )
@@ -727,7 +739,7 @@ class Guard(IGuard, Runnable, Generic[OT]):
             # If stream is True, use StreamRunner
             runner = StreamRunner(
                 output_type=self._output_type,
-                output_schema=self.schema,
+                output_schema=self.output_schema.to_dict(),
                 num_reasks=num_reasks,
                 validation_map=self._validator_map,
                 prompt=prompt,
@@ -745,7 +757,7 @@ class Guard(IGuard, Runnable, Generic[OT]):
             # Otherwise, use Runner
             runner = Runner(
                 output_type=self._output_type,
-                output_schema=self.schema,
+                output_schema=self.output_schema.to_dict(),
                 num_reasks=num_reasks,
                 validation_map=self._validator_map,
                 prompt=prompt,
@@ -799,7 +811,7 @@ class Guard(IGuard, Runnable, Generic[OT]):
         )
         runner = AsyncRunner(
             output_type=self._output_type,
-            output_schema=self.schema,
+            output_schema=self.output_schema.to_dict(),
             num_reasks=num_reasks,
             validation_map=self._validator_map,
             prompt=prompt,

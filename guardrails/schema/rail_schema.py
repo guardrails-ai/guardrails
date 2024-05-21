@@ -81,6 +81,8 @@ def parse_element(
     # Extract validators from RAIL and assign into ProcessedSchema
     extract_validators(element, processed_schema, json_path)
 
+    json_path = json_path.replace(".*", "")
+
     if schema_type == RailTypes.STRING:
         format = xml_to_string(element.attrib.get("format"))
         return ModelSchema(
@@ -153,15 +155,8 @@ def parse_element(
                 "<list /> RAIL elements must have precisely 1 child element!"
             )
         first_child = children[0]
-        name = first_child.get("name")
-        if not name:
-            output_path = json_path.replace("$.", "output.")
-            logger.warn(f"{output_path} has a nameless child which is not allowed!")
-        else:
-            child_schema = parse_element(
-                first_child, processed_schema, f"{json_path}.{name}"
-            )
-            items = child_schema.to_dict()
+        child_schema = parse_element(first_child, processed_schema, f"{json_path}.*")
+        items = child_schema.to_dict()
         return ModelSchema(
             type=ValidationType(SimpleTypes.ARRAY), items=items, description=description
         )
@@ -329,25 +324,25 @@ def rail_string_to_schema(rail_string: str) -> ProcessedSchema:
     # LLMs can use them to improve their output. Commonly these are
     # prepended to the prompt.
     instructions_tag = rail_xml.find("instructions")
-    if instructions_tag:
+    if instructions_tag is not None:
         processed_schema.exec_opts.instructions = parse_element(
             instructions_tag, processed_schema, "instructions"
         )
 
     # Load <prompt />
     prompt_tag = rail_xml.find("prompt")
-    if prompt_tag:
+    if prompt_tag is not None:
         processed_schema.exec_opts.prompt = parse_element(
             prompt_tag, processed_schema, "prompt"
         )
 
     # If reasking prompt and instructions are provided, add them to the schema.
     reask_prompt = rail_xml.find("reask_prompt")
-    if reask_prompt:
+    if reask_prompt is not None:
         processed_schema.exec_opts.reask_prompt = reask_prompt.text
 
     reask_instructions = rail_xml.find("reask_instructions")
-    if reask_instructions:
+    if reask_instructions is not None:
         processed_schema.exec_opts.reask_instructions = reask_instructions.text
 
     return processed_schema
