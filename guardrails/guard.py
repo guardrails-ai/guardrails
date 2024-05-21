@@ -1348,6 +1348,10 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
     # def __call__(self, llm_output: str, *args, **kwargs) -> ValidationOutcome[str]:
     #     return self.validate(llm_output, *args, **kwargs)
 
+    @deprecated(
+        """'Guard.invoke' is deprecated and will be removed in \
+versions 0.5.x and beyond. Use Guard.to_runnable() instead."""
+    )
     def invoke(
         self, input: InputType, config: Optional[RunnableConfig] = None
     ) -> InputType:
@@ -1527,3 +1531,8 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
             )
         else:
             raise ValueError("Guard does not have an api client!")
+
+    def to_runnable(self):
+        from guardrails.integrations.langchain.guard_runnable import GuardRunnable
+
+        return GuardRunnable(self)
