@@ -15,6 +15,7 @@ import guardrails as gd
 from guardrails.utils.casting_utils import to_int
 from guardrails.utils.openai_utils import OPENAI_VERSION
 from guardrails.validator_base import (
+    ErrorSpan,
     FailResult,
     OnFailAction,
     PassResult,
@@ -55,22 +56,38 @@ class MinSentenceLengthValidator(Validator):
         return sentences
 
     def validate(self, value: Union[str, List], metadata: Dict) -> ValidationResult:
-        # return PassResult()
         sentences = self.sentence_split(value)
-        print("validating sentence:", sentences)
+        error_spans = []
+        index = 0
         for sentence in sentences:
             if len(sentence) < self._min:
-                return FailResult(
-                    error_message=f"Sentence has length less than {self._min}. "
-                    f"Please return a longer output, "
-                    f"that is shorter than {self._max} characters.",
+                error_spans.append(
+                    ErrorSpan(
+                        start=index,
+                        end=index + len(sentence),
+                        reason=f"Sentence has length less than {self._min}. "
+                        f"Please return a longer output, "
+                        f"that is shorter than {self._max} characters.",
+                    )
                 )
             if len(sentence) > self._max:
-                return FailResult(
-                    error_message=f"Sentence has length greater than {self._max}. "
-                    f"Please return a shorter output, "
-                    f"that is shorter than {self._max} characters.",
+                error_spans.append(
+                    ErrorSpan(
+                        start=index,
+                        end=index + len(sentence),
+                        reason=f"Sentence has length greater than {self._max}. "
+                        f"Please return a shorter output, "
+                        f"that is shorter than {self._max} characters.",
+                    )
                 )
+        if len(error_spans) > 0:
+            return FailResult(
+                validated_chunk="".join(self.accumulated_chunks),
+                error_spans=error_spans,
+                error_message=f"Sentence has length less than {self._min}. "
+                f"Please return a longer output, "
+                f"that is shorter than {self._max} characters.",
+            )
         return PassResult()
 
     def validate_stream(self, chunk: Any, metadata: Dict, **kwargs) -> ValidationResult:

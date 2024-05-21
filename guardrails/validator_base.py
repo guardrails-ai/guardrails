@@ -380,7 +380,7 @@ class ValidationResult(BaseModel):
     metadata: Optional[Dict[str, Any]] = None
     # value argument passed to validator.validate
     # or validator.validate_stream
-    validated_chunk: Any
+    validated_chunk: Optional[Any] = None
 
 
 class PassResult(ValidationResult):
@@ -407,7 +407,7 @@ class FailResult(ValidationResult):
     error_message: str
     fix_value: Optional[Any] = None
     # segments that caused validation to fail
-    error_spans: List[ErrorSpan]
+    error_spans: Optional[List[ErrorSpan]] = []
 
 
 class OnFailAction(str, Enum):
