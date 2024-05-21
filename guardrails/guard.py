@@ -131,7 +131,7 @@ class Guard(Runnable, Generic[OT]):
         self._user_id = credentials.id or ""
 
         # Get metrics opt-out from credentials
-        self._disable_tracer = credentials.no_metrics
+        self._disable_tracer = not credentials.enable_metrics
 
         # Get id of guard object (that is unique)
         self._guard_id = id(self)  # id of guard object; not the class

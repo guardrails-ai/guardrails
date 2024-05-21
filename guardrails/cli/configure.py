@@ -3,6 +3,7 @@ import uuid
 from os.path import expanduser
 from typing import Optional
 
+from guardrails.classes.credentials import Credentials
 from guardrails.cli.server.hub_client import get_auth
 import typer
 
@@ -11,14 +12,16 @@ from guardrails.cli.logger import LEVELS, logger
 
 
 DEFAULT_TOKEN = ""
-DEFAULT_NO_METRICS = False
+DEFAULT_ENABLE_METRICS = True
 
 
-def save_configuration_file(token: Optional[str], no_metrics: Optional[bool]) -> None:
+def save_configuration_file(
+    token: Optional[str], enable_metrics: Optional[bool]
+) -> None:
     if token is None:
         token = DEFAULT_TOKEN
-    if no_metrics is None:
-        no_metrics = DEFAULT_NO_METRICS
+    if enable_metrics is None:
+        enable_metrics = DEFAULT_ENABLE_METRICS
 
     home = expanduser("~")
     guardrails_rc = os.path.join(home, ".guardrailsrc")
@@ -26,31 +29,15 @@ def save_configuration_file(token: Optional[str], no_metrics: Optional[bool]) ->
         lines = [
             f"id={str(uuid.uuid4())}{os.linesep}",
             f"token={token}{os.linesep}",
-            f"no_metrics={str(no_metrics).lower()}",
+            f"enable_metrics={str(enable_metrics).lower()}",
         ]
         rc_file.writelines(lines)
         rc_file.close()
 
 
-def get_existing_config() -> dict:
-    """Get the configuration from the file if it exists."""
-    home = expanduser("~")
-    guardrails_rc = os.path.join(home, ".guardrailsrc")
-    config = {}
-
-    # If the file exists
-    if os.path.exists(guardrails_rc):
-        with open(guardrails_rc, "r") as rc_file:
-            lines = rc_file.readlines()
-            for line in lines:
-                key, value = line.strip().split("=")
-                config[key] = value
-    return config
-
-
-def _get_default_token() -> str:
+def _get_default_token() -> Optional[str]:
     """Get the default token from the configuration file."""
-    return get_existing_config().get("token", DEFAULT_TOKEN)
+    return Credentials.from_rc_file(logger).token
 
 
 @guardrails.command()
@@ -61,9 +48,9 @@ def configure(
         hide_input=True,
         prompt="Token (optional)",
     ),
-    no_metrics: Optional[bool] = typer.Option(
-        DEFAULT_NO_METRICS,
-        "--no-metrics/--metrics",
+    enable_metrics: Optional[bool] = typer.Option(
+        DEFAULT_ENABLE_METRICS,
+        "--enable-metrics/--disable-metrics",
         help="Opt out of anonymous metrics collection.",
         prompt="Disable anonymous metrics reporting?",
     ),
@@ -93,7 +80,7 @@ def configure(
         """
         logger.log(level=LEVELS.get("SUCCESS", 25), msg=success_message)
 
-    save_configuration_file(token, no_metrics)
+    save_configuration_file(token, enable_metrics)
     logger.info("Configuration saved.")
 
     if not token:
