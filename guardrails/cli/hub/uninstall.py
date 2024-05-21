@@ -1,5 +1,4 @@
 import os
-import subprocess
 import sys
 from typing import List, Literal
 
@@ -27,6 +26,7 @@ def remove_line(file_path: str, line_content: str):
         lines = [line for line in lines if line.strip() != line_content.strip()]
         file.writelines(lines)
         file.truncate()
+        return lines
 
 
 def remove_from_hub_inits(manifest: ModuleManifest, site_packages: str):
@@ -48,13 +48,28 @@ def remove_from_hub_inits(manifest: ModuleManifest, site_packages: str):
     namespace_init_location = os.path.join(
         site_packages, "guardrails", "hub", namespace, "__init__.py"
     )
-    remove_line(namespace_init_location, import_line)
+    lines = remove_line(namespace_init_location, import_line)
+
+    # remove namespace pkg if namespace __init__.py is empty
+    if (len(lines) == 0) and (namespace != "hub"):
+        logger.info(f"Removing namespace package {namespace} as it is now empty")
+        try:
+            os.removedirs(os.path.join(site_packages, "guardrails", "hub", namespace))
+        except Exception as e:
+            logger.error(f"Error removing namespace package {namespace}")
+            logger.error(e)
+            sys.exit(1)
 
 
 def uninstall_hub_module(manifest: ModuleManifest, site_packages: str):
     uninstall_directory = get_hub_directory(manifest, site_packages)
     logger.info(f"Removing directory {uninstall_directory}")
-    subprocess.check_call(["rm", "-rf", uninstall_directory])
+    try:
+        os.removedirs(uninstall_directory)
+    except Exception as e:
+        logger.error("Error removing directory")
+        logger.error(e)
+        sys.exit(1)
 
 
 @hub_command.command()

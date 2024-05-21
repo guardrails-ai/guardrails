@@ -1,4 +1,5 @@
 import os
+import sys
 import uuid
 from os.path import expanduser
 from typing import Optional
@@ -79,9 +80,13 @@ def configure(
         Find more validators at https://hub.guardrailsai.com
         """
         logger.log(level=LEVELS.get("SUCCESS", 25), msg=success_message)
+    try:
+        save_configuration_file(token, enable_metrics)
+        logger.info("Configuration saved.")
 
-    save_configuration_file(token, enable_metrics)
-    logger.info("Configuration saved.")
-
-    if not token:
-        print("No token provided. Skipping authentication.")
+        if not token:
+            logger.info("No token provided. Skipping authentication.")
+    except Exception as e:
+        logger.error("An unexpected error occured!")
+        logger.error(e)
+        sys.exit(1)

@@ -22,9 +22,9 @@ from typing import (
     overload,
 )
 
-from guardrails_api_client.models import AnyObject
-from guardrails_api_client.models import Guard as GuardModel
 from guardrails_api_client.models import (
+    AnyObject,
+    Guard as GuardModel,
     History,
     HistoryEvent,
     ValidatePayload,
@@ -35,7 +35,7 @@ from langchain_core.messages import BaseMessage
 from langchain_core.runnables import Runnable, RunnableConfig
 from pydantic import BaseModel
 from pydantic.version import VERSION as PYDANTIC_VERSION
-from typing_extensions import deprecated
+from typing_extensions import deprecated  # type: ignore
 
 from guardrails.api_client import GuardrailsApiClient
 from guardrails.classes import OT, InputType, ValidationOutcome
