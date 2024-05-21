@@ -517,18 +517,17 @@ class Validator(Runnable):
 
         # if remainder kwargs is passed, validate remainder regardless
         remainder = kwargs.get("remainder", False)
-        print("split contents:", splitcontents)
         if remainder:
-            splitcontents = [accumulated_text, []]
+            splitcontents = [accumulated_text, ""]
         if len(splitcontents) == 0:
             return None
         [chunk_to_validate, new_accumulated_chunks] = splitcontents
         self.accumulated_chunks = [new_accumulated_chunks]
         # exclude last chunk, because it may not be a complete chunk
         validation_result = self.validate(chunk_to_validate, metadata)
-        # include the chunk that we've validated in the metadata
-        # TODO: Can I count on the validator to do this?
-        validation_result.validated_chunk = chunk_to_validate
+        # if validate doesn't set validated chunk, we set it
+        if validation_result.validated_chunk is None:
+            validation_result.validated_chunk = chunk_to_validate
         return validation_result
 
     def to_prompt(self, with_keywords: bool = True) -> str:

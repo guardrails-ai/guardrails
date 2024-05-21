@@ -90,7 +90,7 @@ class Outputs(ArbitraryModel):
                         ErrorSpan(
                             start=error_span.start + total_len,
                             end=error_span.end + total_len,
-                            message=error_span.message,
+                            reason=error_span.reason,
                         )
                     )
             total_len += len(log.value_before_validation)
