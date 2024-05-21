@@ -394,7 +394,7 @@ class PassResult(ValidationResult):
 
 
 # specifies the start and end of segment of validate_chunk
-class ErrorSpan:
+class ErrorSpan(BaseModel):
     start: int
     end: int
     # reason validation failed, specific to this chunk
