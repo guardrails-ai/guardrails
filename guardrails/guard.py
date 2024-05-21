@@ -3,7 +3,6 @@ import contextvars
 import json
 import os
 from builtins import id as object_id
-from copy import deepcopy
 from string import Template
 from typing import (
     Any,
@@ -30,13 +29,10 @@ from guardrails_api_client import (
     ValidationType,
     SimpleTypes,
 )
-from langchain_core.messages import BaseMessage
-from langchain_core.runnables import Runnable, RunnableConfig
 from pydantic import Field, field_validator
 
 from guardrails.api_client import GuardrailsApiClient
 from guardrails.classes.output_type import OT
-from guardrails.classes.input_type import InputType
 from guardrails.classes.validation_outcome import ValidationOutcome
 from guardrails.classes.validation.validation_result import FailResult
 from guardrails.classes.credentials import Credentials
@@ -49,7 +45,6 @@ from guardrails.classes.history.iteration import Iteration
 from guardrails.classes.history.outputs import Outputs
 from guardrails.classes.output_type import OutputTypes
 from guardrails.classes.schema.processed_schema import ProcessedSchema
-from guardrails.errors import ValidationError
 from guardrails.llm_providers import (
     get_async_llm_ask,
     get_llm_api_enum,
@@ -88,7 +83,7 @@ from guardrails.types import (
 )
 
 
-class Guard(IGuard, Runnable, Generic[OT]):
+class Guard(IGuard, Generic[OT]):
     """The Guard class.
 
     This class is the main entry point for using Guardrails. It can be
@@ -1102,38 +1097,6 @@ class Guard(IGuard, Runnable, Generic[OT]):
     # https://github.com/guardrails-ai/guardrails/pull/525 is merged
     # def __call__(self, llm_output: str, *args, **kwargs) -> ValidationOutcome[str]:
     #     return self.validate(llm_output, *args, **kwargs)
-
-    def invoke(
-        self, input: InputType, config: Optional[RunnableConfig] = None
-    ) -> InputType:
-        output = BaseMessage(content="", type="")
-        str_input = None
-        input_is_chat_message = False
-        if isinstance(input, BaseMessage):
-            input_is_chat_message = True
-            str_input = str(input.content)
-            output = deepcopy(input)
-        else:
-            str_input = str(input)
-
-        response = self.validate(str_input)
-
-        validated_output = response.validated_output
-        if not validated_output:
-            raise ValidationError(
-                (
-                    "The response from the LLM failed validation!"
-                    "See `guard.history` for more details."
-                )
-            )
-
-        if isinstance(validated_output, Dict):
-            validated_output = json.dumps(validated_output)
-
-        if input_is_chat_message:
-            output.content = validated_output
-            return cast(InputType, output)
-        return cast(InputType, validated_output)
 
     def upsert_guard(self):
         if self._api_client:
