@@ -40,7 +40,8 @@ def pip_process(
                 return json.loads(str(parsed))
             except Exception:
                 logger.debug(
-                    f"JSON parse exception in decoding output from pip {action} {package}. Falling back to accumulating the byte stream",
+                    f"JSON parse exception in decoding output from pip \
+{action} {package}. Falling back to accumulating the byte stream",
                 )
                 accumulator = {}
                 for key, value in parsed.items():

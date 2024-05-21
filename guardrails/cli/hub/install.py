@@ -195,7 +195,6 @@ Example: hub://guardrails/regex_match."
 ):
     verbose_printer = console.print
     quiet_printer = console.print if not quiet else lambda x: None
-
     """Install a validator from the Hub."""
     if not package_uri.startswith("hub://"):
         logger.error("Invalid URI!")
@@ -239,7 +238,6 @@ Example: hub://guardrails/regex_match."
 
     logger.info("Installation complete")
 
-        
     verbose_printer(f"✅Successfully installed {module_name}!\n\n")
     success_message_cli = Template(
         "[bold]Import validator:[/bold]\n"
