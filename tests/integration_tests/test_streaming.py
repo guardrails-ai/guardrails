@@ -131,6 +131,7 @@ def mock_openai_completion_create(chunks):
             print("FINISH REASON", finish_reason)
             if OPENAI_VERSION.startswith("0"):
                 yield {
+                    # TODO: for some reason using finish_reason here breaks everything
                     "choices": [{"text": chunk, "finish_reason": None}],
                     "model": "OpenAI model name",
                 }
@@ -140,6 +141,7 @@ def mock_openai_completion_create(chunks):
                         Choice(
                             text=chunk,
                             delta=Delta(content=""),
+                            # TODO: for some reason using finish_reason here breaks everything
                             finish_reason=None,
                         )
                     ],
@@ -164,6 +166,7 @@ def mock_openai_chat_completion_create(chunks):
                         {
                             "index": 0,
                             "delta": {"content": chunk},
+                            # TODO: for some reason using finish_reason here breaks everything
                             "finish_reason": None,
                         }
                     ]
@@ -174,6 +177,7 @@ def mock_openai_chat_completion_create(chunks):
                         Choice(
                             text="",
                             delta=Delta(content=chunk),
+                            # TODO: for some reason using finish_reason here breaks everything
                             finish_reason=None,
                         )
                     ],

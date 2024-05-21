@@ -156,13 +156,10 @@ class StreamRunner(Runner):
         # for now, handle string and json schema differently
 
         if isinstance(output_schema, StringSchema):
-            print("stream l, stre", stream)
             for chunk in stream:
-                print("ccc l", chunk)
                 # 1. Get the text from the chunk and append to fragment
                 chunk_text = self.get_chunk_text(chunk, api)
                 finished = self.is_last_chunk(chunk, api)
-                print("finished", finished)
                 fragment += chunk_text
 
                 # 2. Parse the chunk
