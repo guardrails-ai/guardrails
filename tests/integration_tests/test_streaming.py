@@ -8,7 +8,6 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Union
 
 import openai
 import pytest
-import nltk
 from pydantic import BaseModel, Field
 
 import guardrails as gd
@@ -48,19 +47,16 @@ class MinSentenceLengthValidator(Validator):
         self._max = to_int(max)
 
     def sentence_split(self, value):
-        if "." not in value:
-            return [value]
-        sentences = nltk.sent_tokenize(value)
-        if len(sentences) == 0:
-            return [value]
-        return sentences
+        return list(map(lambda x: x + ".", value.split(".")))
 
     def validate(self, value: Union[str, List], metadata: Dict) -> ValidationResult:
         sentences = self.sentence_split(value)
         error_spans = []
         index = 0
+        print("sentences", sentences)
         for sentence in sentences:
             if len(sentence) < self._min:
+                print("error in:", sentence)
                 error_spans.append(
                     ErrorSpan(
                         start=index,
@@ -71,6 +67,7 @@ class MinSentenceLengthValidator(Validator):
                     )
                 )
             if len(sentence) > self._max:
+                print("error in:", sentence)
                 error_spans.append(
                     ErrorSpan(
                         start=index,
@@ -126,7 +123,12 @@ class MockOpenAIV1ChunkResponse:
 def mock_openai_completion_create(chunks):
     # Returns a generator
     def gen():
+        index = 0
         for chunk in chunks:
+            index = index + 1
+            finished = index == len(chunks)
+            finish_reason = "stop" if finished else None
+            print("FINISH REASON", finish_reason)
             if OPENAI_VERSION.startswith("0"):
                 yield {
                     "choices": [{"text": chunk, "finish_reason": None}],
@@ -150,7 +152,12 @@ def mock_openai_completion_create(chunks):
 def mock_openai_chat_completion_create(chunks):
     # Returns a generator
     def gen():
+        index = 0
         for chunk in chunks:
+            index = index + 1
+            finished = index == len(chunks)
+            finish_reason = "stop" if finished else None
+            print("FINISH REASON", finish_reason)
             if OPENAI_VERSION.startswith("0"):
                 yield {
                     "choices": [
@@ -358,8 +365,10 @@ def test_streaming_with_openai_chat_callable(
 
     actual_output = ""
     for op in generator:
+        print("op", op)
         actual_output = op
 
+    print("actual_output", actual_output)
     assert actual_output.raw_llm_output == json.dumps(expected_raw_output)
     assert actual_output.validated_output == expected_validated_output
 
@@ -432,8 +441,15 @@ def test_string_schema_streaming_with_openai_chat(
 
     assert isinstance(generator, Iterable)
 
-    final_outcome = None
-    for op, desired_result in zip(generator, expected_validated_output):
-        final_outcome = op
+    accumulated_output = ""
+    for op in generator:
+        accumulated_output += op.raw_llm_output
     error_spans = guard.error_spans_in_output()
+    # print spans
+    print("llmoutput", accumulated_output)
+    for error_span in error_spans:
+        print("-------span--------")
+        print("content: ", accumulated_output[error_span.start : error_span.end])
+        print("reason: ", error_span.reason)
+        print("-------span--------")
     # TODO assert something about these error spans

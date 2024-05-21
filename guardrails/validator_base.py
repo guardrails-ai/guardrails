@@ -178,10 +178,21 @@ class Refrain:
 
 # functions to get chunks
 def split_word(chunk: str):
-    return list(map(lambda x: x + " ", chunk.split(" ")))[:-1]
+    fragments = list(map(lambda x: x + " ", chunk.split(" ")))[:-1]
+    if len(fragments) == 0:
+        return []
+    return [fragments[0], "".join(fragments[1:])]
 
 
-def split_sentence(chunk: str):
+def split_sentence_str(chunk: str):
+    fragments = list(map(lambda x: x + " ", chunk.split(".")))[:-1]
+    print("frags", fragments)
+    if len(fragments) == 0:
+        return []
+    return [fragments[0], "".join(fragments[1:])]
+
+
+def split_sentence_nltk(chunk: str):
     # using the sentence tokenizer is expensive
     # we check for a . to avoid wastefully calling the tokenizer
     if "." not in chunk:
@@ -195,7 +206,10 @@ def split_sentence(chunk: str):
 
 
 def split_paragraph(chunk: str):
-    return list(map(lambda x: x + "\n", chunk.split("\n")))[:-1]
+    fragments = list(map(lambda x: x + "\n", chunk.split("\n")))[:-1]
+    if len(fragments) == 0:
+        return []
+    return [fragments[0], "".join(fragments[1:])]
 
 
 def check_refrain_in_list(schema: List) -> bool:
@@ -489,7 +503,7 @@ class Validator(Runnable):
         ), f"Validator {self.__class__.__name__} is not registered. "
 
     def chunking_function(self, chunk: str):
-        return split_sentence(chunk)
+        return split_sentence_str(chunk)
 
     def validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
         """Validates a value and return a validation result."""

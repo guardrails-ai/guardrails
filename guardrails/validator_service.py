@@ -179,7 +179,6 @@ class SequentialValidatorService(ValidatorServiceBase):
                 iteration, validator, value, metadata, property_path, stream, **kwargs
             )
             result = validator_logs.validation_result
-            print("result log", validator_logs)
             if isinstance(result, FailResult):
                 if not stream:
                     value = self.perform_correction(

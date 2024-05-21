@@ -156,9 +156,13 @@ class StreamRunner(Runner):
         # for now, handle string and json schema differently
 
         if isinstance(output_schema, StringSchema):
+            print("stream l, stre", stream)
             for chunk in stream:
+                print("ccc l", chunk)
                 # 1. Get the text from the chunk and append to fragment
                 chunk_text = self.get_chunk_text(chunk, api)
+                finished = self.is_last_chunk(chunk, api)
+                print("finished", finished)
                 fragment += chunk_text
 
                 # 2. Parse the chunk
@@ -175,6 +179,8 @@ class StreamRunner(Runner):
                     output_schema,
                     True,
                     validate_subschema=True,
+                    # if it is the last chunk, validate everything that's left
+                    remainder=finished,
                 )
                 if isinstance(validated_result, SkeletonReAsk):
                     raise ValueError(
@@ -198,40 +204,6 @@ class StreamRunner(Runner):
                     validated_output=validated_result,
                     validation_passed=validated_result is not None,
                 )
-            ######################################
-            # need to validate remainder of chunks
-            ######################################
-            remainder_validation = self.validate(
-                iteration,
-                index,
-                "",
-                output_schema,
-                True,
-                validate_subschema=True,
-                remainder=True,
-            )
-            if isinstance(remainder_validation, SkeletonReAsk):
-                raise ValueError(
-                    "Received fragment schema is an invalid sub-schema "
-                    "of the expected output JSON schema."
-                )
-
-            # 4. Introspect: inspect the validated fragment for reasks
-            reasks, valid_op = self.introspect(
-                index, remainder_validation, output_schema
-            )
-            if reasks:
-                raise ValueError(
-                    "Reasks are not yet supported with streaming. Please "
-                    "remove reasks from schema or disable streaming."
-                )
-            # 5. Convert validated fragment to a pretty JSON string
-            yield ValidationOutcome(
-                #  The chunk or the whole output?
-                raw_llm_output=chunk_text,
-                validated_output=remainder_validation,
-                validation_passed=remainder_validation is not None,
-            )
         # handle non string schema
         else:
             for chunk in stream:
@@ -280,6 +252,32 @@ class StreamRunner(Runner):
         iteration.outputs.parsed_output = parsed_fragment
         iteration.outputs.validation_response = validated_fragment
         iteration.outputs.guarded_output = valid_op
+
+    def is_last_chunk(self, chunk: Any, api: Union[PromptCallableBase, None]) -> bool:
+        """Detect if chunk is final chunk"""
+        if isinstance(api, OpenAICallable):
+            if OPENAI_VERSION.startswith("0"):
+                finished = chunk["choices"][0]["finish_reason"]
+                return finished is not None
+            else:
+                finished = chunk.choices[0].finish_reason
+                return finished is not None
+        elif isinstance(api, OpenAIChatCallable):
+            if OPENAI_VERSION.startswith("0"):
+                finished = chunk["choices"][0]["finish_reason"]
+                return finished is not None
+            else:
+                finished = chunk.choices[0].finish_reason
+                return finished is not None
+        elif isinstance(api, LiteLLMCallable):
+            finished = chunk.choices[0].finish_reason
+            return finished is not None
+        else:
+            try:
+                finished = chunk.choices[0].finish_reason
+                return finished is not None
+            except (AttributeError, TypeError):
+                return False
 
     def get_chunk_text(self, chunk: Any, api: Union[PromptCallableBase, None]) -> str:
         """Get the text from a chunk."""
