@@ -69,23 +69,23 @@ def configure(
         logger.info("Validating credentials...")
         try:
             get_auth()
+            success_message = """
+            Login successful.
+
+            Get started by installing our RegexMatch validator:
+            https://hub.guardrailsai.com/validator/guardrails_ai/regex_match
+
+            You can install it by running:
+            guardrails hub install hub://guardrails/regex_match
+
+            Find more validators at https://hub.guardrailsai.com
+            """
+            logger.log(level=LEVELS.get("SUCCESS", 25), msg=success_message)
         except AuthenticationError as e:
-            logger.error("Failed to authenticate.")
-            logger.error(e)
-            sys.exit(1)
-
-        success_message = """
-        Login successful.
-
-        Get started by installing our RegexMatch validator:
-        https://hub.guardrailsai.com/validator/guardrails_ai/regex_match
-
-        You can install it by running:
-        guardrails hub install hub://guardrails/regex_match
-
-        Find more validators at https://hub.guardrailsai.com
-        """
-        logger.log(level=LEVELS.get("SUCCESS", 25), msg=success_message)
+            logger.warn("Failed to authenticate.")
+            logger.warn(e)
+            # We do not want to exit the program if the user fails to authenticate
+            # instead, save the token and other configuration options
     try:
         save_configuration_file(token, enable_metrics)
         logger.info("Configuration saved.")
