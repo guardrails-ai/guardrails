@@ -25,7 +25,7 @@ def test_remove_from_hub_inits(mocker):
         return_value=["guardrails", "test_package"],
     )
     mock_remove_line = mocker.patch("guardrails.cli.hub.uninstall.remove_line")
-    mock_remove_dirs = mocker.patch("os.removedirs")
+    mock_remove_dirs = mocker.patch("shutil.rmtree")
 
     remove_from_hub_inits(manifest_mock, "/site-packages")
 

@@ -36,9 +36,12 @@ def save_configuration_file(
         rc_file.close()
 
 
-def _get_default_token() -> Optional[str]:
+def _get_default_token() -> str:
     """Get the default token from the configuration file."""
-    return Credentials.from_rc_file(logger).token
+    file_token = Credentials.from_rc_file(logger).token
+    if file_token is None:
+        return ""
+    return file_token
 
 
 @guardrails.command()
