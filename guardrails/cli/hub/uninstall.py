@@ -1,4 +1,5 @@
 import os
+import shutil
 import sys
 from typing import List, Literal
 
@@ -54,7 +55,7 @@ def remove_from_hub_inits(manifest: ModuleManifest, site_packages: str):
     if (len(lines) == 0) and (namespace != "hub"):
         logger.info(f"Removing namespace package {namespace} as it is now empty")
         try:
-            os.removedirs(os.path.join(site_packages, "guardrails", "hub", namespace))
+            shutil.rmtree(os.path.join(site_packages, "guardrails", "hub", namespace))
         except Exception as e:
             logger.error(f"Error removing namespace package {namespace}")
             logger.error(e)
@@ -65,7 +66,7 @@ def uninstall_hub_module(manifest: ModuleManifest, site_packages: str):
     uninstall_directory = get_hub_directory(manifest, site_packages)
     logger.info(f"Removing directory {uninstall_directory}")
     try:
-        os.removedirs(uninstall_directory)
+        shutil.rmtree(uninstall_directory)
     except Exception as e:
         logger.error("Error removing directory")
         logger.error(e)
