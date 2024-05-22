@@ -327,6 +327,7 @@ class JsonSchema(Schema):
         metadata: Dict,
         attempt_number: int = 0,
         disable_tracer: Optional[bool] = True,
+        stream: Optional[bool] = False,
         **kwargs,
     ) -> Any:
         """Validate a dictionary of data against the schema.
@@ -371,6 +372,8 @@ class JsonSchema(Schema):
             validator_setup=validation,
             iteration=iteration,
             disable_tracer=disable_tracer,
+            stream=stream,
+            **kwargs,
         )
 
         if check_refrain(validated_response):
