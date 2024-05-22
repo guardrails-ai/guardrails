@@ -1,7 +1,13 @@
+import json
+import jsonref
 from typing import Any
 import pytest
 
-from guardrails.schema.parser import get_value_from_path, write_value_to_path
+from guardrails.schema.parser import (
+    get_all_paths,
+    get_value_from_path,
+    write_value_to_path,
+)
 
 
 reader_object = {
@@ -76,3 +82,77 @@ def test_write_value_to_path(
 ):
     actual_value = write_value_to_path(existing_value, path, write_value)
     assert actual_value == expected_value
+
+
+with open(
+    "tests/integration_tests/test_assets/json_schemas/choice_case_openapi.json", "r"
+) as choice_case_openapi_file:
+    choice_case_openapi_schema = json.loads(choice_case_openapi_file.read())
+
+with open(
+    "tests/integration_tests/test_assets/json_schemas/choice_case.json", "r"
+) as choice_case_file:
+    choice_case_schema = json.loads(choice_case_file.read())
+
+with open(
+    "tests/integration_tests/test_assets/json_schemas/credit_card_agreement.json", "r"
+) as credit_card_agreement_file:
+    credit_card_agreement_schema = json.loads(credit_card_agreement_file.read())
+
+with open(
+    "tests/integration_tests/test_assets/json_schemas/string.json", "r"
+) as string_file:
+    string_schema = json.loads(string_file.read())
+
+
+@pytest.mark.parametrize(
+    "schema,expected_keys",
+    [
+        (
+            choice_case_openapi_schema,
+            set(
+                [
+                    "$",
+                    "$.action",
+                    "$.action.chosen_action",
+                    "$.action.weapon",
+                    "$.action.flight_direction",
+                    "$.action.distance",
+                ]
+            ),
+        ),
+        (
+            choice_case_schema,
+            set(
+                [
+                    "$",
+                    "$.action",
+                    "$.action.chosen_action",
+                    "$.action.weapon",
+                    "$.action.flight_direction",
+                    "$.action.distance",
+                ]
+            ),
+        ),
+        (
+            credit_card_agreement_schema,
+            set(
+                [
+                    "$",
+                    "$.fees",
+                    "$.fees.index",
+                    "$.fees.name",
+                    "$.fees.explanation",
+                    "$.fees.value",
+                    "$.interest_rates",
+                    "$.interest_rates.*",
+                ]
+            ),
+        ),
+        (string_schema, set(["$"])),
+    ],
+)
+def test_get_all_paths(schema, expected_keys):
+    dereferenced_schema = jsonref.replace_refs(schema)
+    actual_keys = get_all_paths(dereferenced_schema)
+    assert actual_keys == expected_keys

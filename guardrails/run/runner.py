@@ -16,7 +16,11 @@ from guardrails.types import ModelOrListOfModels, ValidatorMap, MessageHistory
 from guardrails.utils.exception_utils import UserFacingException
 from guardrails.utils.hub_telemetry_utils import HubTelemetry
 from guardrails.classes.llm.llm_response import LLMResponse
-from guardrails.utils.parsing_utils import parse_llm_output
+from guardrails.utils.parsing_utils import (
+    coerce_types,
+    parse_llm_output,
+    prune_extra_keys,
+)
 from guardrails.utils.prompt_utils import preprocess_prompt, prompt_content_for_schema
 from guardrails.utils.reask_utils import NonParseableReAsk, ReAsk, introspect
 from guardrails.utils.telemetry_utils import trace
@@ -274,7 +278,7 @@ class Runner:
             raw_output = llm_response.output
 
             # Parse: parse the output.
-            parsed_output, parsing_error = self.parse(raw_output)
+            parsed_output, parsing_error = self.parse(raw_output, output_schema)
             if parsing_error:
                 iteration.outputs.exception = parsing_error
                 iteration.outputs.error = str(parsing_error)
@@ -541,9 +545,11 @@ class Runner:
 
         return llm_response
 
-    def parse(self, output: str, **kwargs):
+    def parse(self, output: str, output_schema: Dict[str, Any], **kwargs):
         parsed_output, error = parse_llm_output(output, self.output_type, **kwargs)
-        # TODO: perform type coercion and key pruning here
+        if not error:
+            parsed_output = prune_extra_keys(parsed_output, output_schema)
+            parsed_output = coerce_types(parsed_output, output_schema)
         return parsed_output, error
 
     def validate(

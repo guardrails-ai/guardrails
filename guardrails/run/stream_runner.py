@@ -14,7 +14,11 @@ from guardrails.run.runner import Runner
 from guardrails.schema.schema import Schema
 from guardrails.schema.string_schema import StringSchema
 from guardrails.utils.openai_utils import OPENAI_VERSION
-from guardrails.utils.parsing_utils import parse_llm_output
+from guardrails.utils.parsing_utils import (
+    coerce_types,
+    parse_llm_output,
+    prune_extra_keys,
+)
 from guardrails.utils.reask_utils import SkeletonReAsk
 
 
@@ -146,7 +150,9 @@ class StreamRunner(Runner):
             fragment += chunk_text
 
             # 2. Parse the fragment
-            parsed_fragment, move_to_next = self.parse(fragment, verified=verified)
+            parsed_fragment, move_to_next = self.parse(
+                fragment, output_schema, verified=verified
+            )
             if move_to_next:
                 # Continue to next chunk
                 continue
@@ -232,12 +238,17 @@ class StreamRunner(Runner):
     def parse(
         self,
         output: str,
+        output_schema: Dict[str, Any],
         *verified: set,
     ):
         """Parse the output."""
         parsed_output, error = parse_llm_output(
             output, self.output_type, stream=True, verified=verified
         )
+
+        if not error:
+            parsed_output = prune_extra_keys(parsed_output, output_schema)
+            parsed_output = coerce_types(parsed_output, output_schema)
 
         # Error can be either of
         # (True/False/None/ValueError/string representing error)

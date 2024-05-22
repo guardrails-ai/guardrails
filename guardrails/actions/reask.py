@@ -1,5 +1,6 @@
 from copy import deepcopy
 import json
+import jsonref
 from typing import Any, Dict, List, Optional, Tuple, Union
 from pydantic import BaseModel
 
@@ -300,8 +301,9 @@ def get_reask_setup_for_json(
         output_type, reask_schema, validation_map
     )
 
+    dereferenced_reask_schema = jsonref.replace_refs(reask_schema)
     json_example = json.dumps(
-        generate_example(reask_schema),
+        generate_example(dereferenced_reask_schema),
         indent=2,
     )
 

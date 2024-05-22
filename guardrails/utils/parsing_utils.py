@@ -1,10 +1,14 @@
 import json
+from guardrails_api_client import SimpleTypes
+import jsonref
 import regex
-from typing import Dict, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from guardrails.actions.reask import NonParseableReAsk
 from guardrails.classes.output_type import OutputTypes
 from guardrails.classes.validation.validation_result import FailResult
+from guardrails.schema.parser import get_all_paths
+from guardrails.utils.safe_get import safe_get
 
 
 ### String to Dictionary Parsing ###
@@ -206,3 +210,205 @@ def parse_llm_output(output: str, output_type: OutputTypes, **kwargs):
     if output_type == OutputTypes.STRING:
         return parse_string_llm_output(output)
     return parse_json_llm_output(output, **kwargs)
+
+
+def prune_extra_keys(
+    payload: Union[str, List[Any], Dict[str, Any]],
+    schema: Dict[str, Any],
+    *,
+    json_path: Optional[str] = "$",
+    all_json_paths: Optional[List[str]] = None,
+) -> Union[str, List[Any], Dict[str, Any]]:
+    if not all_json_paths:
+        all_json_paths = get_all_paths(schema)
+
+    if isinstance(payload, dict):
+        wildcard_path = f"{json_path}.*"
+        parent_is_wildcard = wildcard_path in all_json_paths
+        actual_keys = list(payload.keys())
+        for key in actual_keys:
+            child_path = f"{json_path}.{key}"
+            if child_path not in all_json_paths and not parent_is_wildcard:
+                del payload[key]
+            else:
+                prune_extra_keys(
+                    payload=payload.get(key),
+                    schema=schema,
+                    json_path=child_path,
+                    all_json_paths=all_json_paths,
+                )
+    elif isinstance(payload, list):
+        for item in payload:
+            prune_extra_keys(
+                payload=item,
+                schema=schema,
+                json_path=json_path,
+                all_json_paths=all_json_paths,
+            )
+
+    return payload
+
+
+def coerce(value: Any, desired_type: Callable) -> Any:
+    try:
+        coerced_value = desired_type(value)
+        return coerced_value
+    except (ValueError, TypeError):
+        return value
+
+
+def try_json_parse(value: str) -> Any:
+    try:
+        return json.loads(value)
+    except Exception:
+        return value
+
+
+def coerce_to_type(
+    payload: Union[str, List[Any], Dict[str, Any], Any], schema_type: SimpleTypes
+) -> Any:
+    if schema_type == SimpleTypes.ARRAY:
+        if isinstance(payload, str):
+            payload = try_json_parse(payload)
+        if not isinstance(payload, list):
+            return coerce(payload, list)
+        return payload
+    elif schema_type == SimpleTypes.BOOLEAN:
+        if not isinstance(payload, bool):
+            return coerce(payload, bool)
+        return payload
+    elif schema_type == SimpleTypes.INTEGER:
+        if not isinstance(payload, int):
+            val = coerce(payload, int)
+            return val
+        return payload
+    elif schema_type == SimpleTypes.NULL:
+        return None
+    elif schema_type == SimpleTypes.NUMBER:
+        if not isinstance(payload, float):
+            return coerce(payload, float)
+        return payload
+    elif schema_type == SimpleTypes.OBJECT:
+        if isinstance(payload, str):
+            payload = try_json_parse(payload)
+        if not isinstance(payload, dict):
+            return coerce(payload, dict)
+        return payload
+    elif schema_type == SimpleTypes.STRING:
+        if not isinstance(payload, str) and not isinstance(payload, (list, dict)):
+            return coerce(payload, str)
+        return payload
+
+
+def coerce_property(
+    payload: Union[str, List[Any], Dict[str, Any], Any], schema: Dict[str, Any]
+) -> Union[str, List[Any], Dict[str, Any]]:
+    schema_type = schema.get("type")
+    if schema_type:
+        payload = coerce_to_type(payload, schema_type)
+
+    ### Schema Composition ###
+    one_of = schema.get("oneOf")
+    if one_of:
+        possible_values = []
+        for sub_schema in one_of:
+            possible_values.append(coerce_property(payload, sub_schema))
+            payload = safe_get(list(filter(None, possible_values)), 0, payload)
+
+    any_of = schema.get("anyOf")
+    if any_of:
+        possible_values = []
+        for sub_schema in any_of:
+            possible_values.append(coerce_property(payload, sub_schema))
+            payload = safe_get(list(filter(None, possible_values)), 0, payload)
+
+    all_of: List[Dict[str, Any]] = schema.get("allOf")
+    if all_of:
+        if_blocks = [sub for sub in all_of if sub.get("if")]
+        if if_blocks:
+            for if_block in if_blocks:
+                factored_schema = {**schema, **if_block}
+                factored_schema.pop("allOf", {})
+                payload = coerce_property(payload, factored_schema)
+
+            other_blocks = [sub for sub in all_of if not sub.get("if")]
+            for sub_schema in other_blocks:
+                payload = coerce_property(payload, sub_schema)
+
+        else:
+            factored_schema = {**schema}
+            factored_schema.pop("allOf")
+            for sub_schema in all_of:
+                factored_schema = {**schema, **sub_schema}
+            payload = coerce_property(payload, factored_schema)
+
+    ### Object Schema ###
+    properties: Dict[str, Any] = schema.get("properties", {})
+    if properties and isinstance(payload, dict):
+        for k, v in properties.items():
+            payload_value = payload.get(k)
+            if payload_value:
+                payload[k] = coerce_property(payload_value, v)
+
+    ### Object Additional Properties ###
+    additional_properties_schema: Dict[str, Any] = schema.get(
+        "additionalProperties", {}
+    )
+    if additional_properties_schema and isinstance(payload, dict):
+        declared_properties = properties.keys()
+        additional_properties = [
+            key for key in payload.keys() if key not in declared_properties
+        ]
+        for prop in additional_properties:
+            payload_value = payload.get(prop)
+            if payload_value:
+                payload[prop] = coerce_property(
+                    payload_value, additional_properties_schema
+                )
+
+    ### Conditional SubSchema ###
+    if_block: Dict[str, Any] = schema.get("if", {})
+    if if_block and isinstance(payload, dict):
+        if_properties: Dict[str, Any] = if_block.get("properties", {})
+
+        then_block: Dict[str, Any] = schema.get("then", {})
+        then_properties: Dict[str, Any] = then_block.get("properties", {})
+
+        else_block: Dict[str, Any] = schema.get("else", {})
+        else_properties: Dict[str, Any] = else_block.get("properties", {})
+
+        conditional_schema = else_properties
+
+        condition_satisfied = True
+        for k, v in if_properties.items():
+            actual_value = safe_get(payload, k)
+            condition_value = safe_get(v, "const")
+            condition_satisfied = (
+                condition_satisfied and actual_value == condition_value
+            )
+
+        if condition_satisfied:
+            conditional_schema = then_properties
+
+        factored_schema = {**schema, "properties": {**properties, **conditional_schema}}
+        factored_schema.pop("if", {})
+        factored_schema.pop("then", {})
+        factored_schema.pop("else", {})
+        payload = coerce_property(payload, factored_schema)
+
+    ### Array Schema ###
+    item_schema: Dict[str, Any] = schema.get("items")
+    if isinstance(payload, list) and item_schema:
+        coerced_items = []
+        for item in payload:
+            coerced_items.append(coerce_property(item, item_schema))
+        payload = coerced_items
+
+    return payload
+
+
+def coerce_types(
+    payload: Union[str, List[Any], Dict[str, Any], Any], schema: Dict[str, Any]
+) -> Union[str, List[Any], Dict[str, Any]]:
+    dereferenced_schema = jsonref.replace_refs(schema)
+    return coerce_property(payload, dereferenced_schema)

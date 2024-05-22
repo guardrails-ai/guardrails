@@ -97,7 +97,6 @@ def schema_validation(llm_output: Any, output_schema: Dict[str, Any], **kwargs):
     except SchemaValidationError as sve:
         formatted_error_fields = json.dumps(sve.fields, indent=2)
         schema_error = f"JSON does not match schema:\n{formatted_error_fields}"
-        schema_error = "JSON does not match schema"
 
     if schema_error:
         return SkeletonReAsk(
