@@ -60,7 +60,7 @@ class TestInstall:
 
         from guardrails.cli.hub.install import install
 
-        install("hub://guardrails/test-validator")
+        install("hub://guardrails/test-validator", quiet=False)
 
         log_calls = [
             call(level=5, msg="Installing hub://guardrails/test-validator..."),
@@ -77,7 +77,9 @@ class TestInstall:
 
         assert mock_get_site_packages_location.call_count == 1
 
-        mock_install_hub_module.assert_called_once_with(manifest, site_packages)
+        mock_install_hub_module.assert_called_once_with(
+            manifest, site_packages, quiet=False
+        )
 
         mock_run_post_install.assert_called_once_with(manifest, site_packages)
 
@@ -86,7 +88,7 @@ class TestInstall:
 
 class TestPipProcess:
     def test_no_package_string_format(self, mocker):
-        mock_logger_debug = mocker.patch("guardrails.cli.hub.install.logger.debug")
+        mock_logger_debug = mocker.patch("guardrails.cli.hub.utils.logger.debug")
 
         mock_sys_executable = mocker.patch("guardrails.cli.hub.install.sys.executable")
 
@@ -126,7 +128,7 @@ class TestPipProcess:
             def parsebytes(self, *args):
                 return {"output": "json"}
 
-        mock_bytes_parser = mocker.patch("guardrails.cli.hub.install.BytesHeaderParser")
+        mock_bytes_parser = mocker.patch("guardrails.cli.hub.utils.BytesHeaderParser")
         mock_bytes_header_parser = MockBytesHeaderParser()
         mock_bytes_parser.return_value = mock_bytes_header_parser
 
@@ -139,7 +141,7 @@ class TestPipProcess:
             call("running pip show  pip"),
             call("decoding output from pip show pip"),
             call(
-                "json parse exception in decoding output from pip show pip. Falling back to accumulating the byte stream"  # noqa
+                "JSON parse exception in decoding output from pip show pip. Falling back to accumulating the byte stream"  # noqa
             ),
         ]
         mock_logger_debug.assert_has_calls(debug_calls)
@@ -205,7 +207,7 @@ class TestPipProcess:
 
 
 def test_get_site_packages_location(mocker):
-    mock_pip_process = mocker.patch("guardrails.cli.hub.install.pip_process")
+    mock_pip_process = mocker.patch("guardrails.cli.hub.utils.pip_process")
     mock_pip_process.return_value = {"Location": "/site-pacakges"}
 
     from guardrails.cli.hub.install import get_site_packages_location
@@ -698,11 +700,92 @@ def test_install_hub_module(mocker):
         call(
             "install",
             "mock-install-url",
-            ["--target=mock/install/directory", "--no-deps", "-q"],
+            ["--target=mock/install/directory", "--no-deps"],
+            quiet=False,
         ),
-        call("inspect", flags=["--path=mock/install/directory"], format="json"),
-        call("install", "rstr"),
-        call("install", "openai<2"),
-        call("install", "pydash>=7.0.6,<8.0.0"),
+        call(
+            "inspect",
+            flags=["--path=mock/install/directory"],
+            format="json",
+            quiet=False,
+        ),
+        call("install", "rstr", quiet=False),
+        call("install", "openai<2", quiet=False),
+        call("install", "pydash>=7.0.6,<8.0.0", quiet=False),
+    ]
+    mock_pip_process.assert_has_calls(pip_calls)
+
+
+def test_quiet_install(mocker):
+    mock_get_install_url = mocker.patch("guardrails.cli.hub.install.get_install_url")
+    mock_get_install_url.return_value = "mock-install-url"
+
+    mock_get_hub_directory = mocker.patch(
+        "guardrails.cli.hub.install.get_hub_directory"
+    )
+    mock_get_hub_directory.return_value = "mock/install/directory"
+
+    mock_pip_process = mocker.patch("guardrails.cli.hub.install.pip_process")
+    inspect_report = {
+        "installed": [
+            {
+                "metadata": {
+                    "requires_dist": [
+                        "rstr",
+                        "openai <2",
+                        "pydash (>=7.0.6,<8.0.0)",
+                        'faiss-cpu (>=1.7.4,<2.0.0) ; extra == "vectordb"',
+                    ]
+                }
+            }
+        ]
+    }
+    mock_pip_process.side_effect = [
+        "Sucessfully installed test-validator",
+        inspect_report,
+        "Sucessfully installed rstr",
+        "Sucessfully installed openai<2",
+        "Sucessfully installed pydash>=7.0.6,<8.0.0",
+    ]
+
+    from guardrails.cli.hub.install import install_hub_module
+
+    manifest = ModuleManifest.from_dict(
+        {
+            "id": "id",
+            "name": "name",
+            "author": {"name": "me", "email": "me@me.me"},
+            "maintainers": [],
+            "repository": {"url": "some-repo"},
+            "namespace": "guardrails-ai",
+            "package_name": "test-validator",
+            "module_name": "validator",
+            "exports": ["TestValidator"],
+            "tags": {},
+        }
+    )
+    site_packages = "./site-packages"
+    install_hub_module(manifest, site_packages, quiet=True)
+
+    mock_get_install_url.assert_called_once_with(manifest)
+    mock_get_hub_directory.assert_called_once_with(manifest, site_packages)
+
+    assert mock_pip_process.call_count == 5
+    pip_calls = [
+        call(
+            "install",
+            "mock-install-url",
+            ["--target=mock/install/directory", "--no-deps", "-q"],
+            quiet=True,
+        ),
+        call(
+            "inspect",
+            flags=["--path=mock/install/directory"],
+            format="json",
+            quiet=True,
+        ),
+        call("install", "rstr", quiet=True),
+        call("install", "openai<2", quiet=True),
+        call("install", "pydash>=7.0.6,<8.0.0", quiet=True),
     ]
     mock_pip_process.assert_has_calls(pip_calls)
