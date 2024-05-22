@@ -24,18 +24,18 @@ from typing import (
 
 from guardrails_api_client.models import (
     AnyObject,
+    Guard as GuardModel,
     History,
     HistoryEvent,
     ValidatePayload,
     ValidationOutput,
 )
-from guardrails_api_client.models import Guard as GuardModel
 from guardrails_api_client.types import UNSET
 from langchain_core.messages import BaseMessage
 from langchain_core.runnables import Runnable, RunnableConfig
 from pydantic import BaseModel
 from pydantic.version import VERSION as PYDANTIC_VERSION
-from typing_extensions import deprecated
+from typing_extensions import deprecated  # type: ignore
 
 from guardrails.api_client import GuardrailsApiClient
 from guardrails.classes import OT, InputType, ValidationOutcome
@@ -131,7 +131,7 @@ class Guard(Runnable, Generic[OT]):
         self._user_id = credentials.id or ""
 
         # Get metrics opt-out from credentials
-        self._disable_tracer = credentials.no_metrics
+        self._disable_tracer = not credentials.enable_metrics
 
         # Get id of guard object (that is unique)
         self._guard_id = id(self)  # id of guard object; not the class
@@ -550,8 +550,7 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
         Union[ValidationOutcome[OT], Iterable[ValidationOutcome[OT]]],
         Awaitable[ValidationOutcome[OT]],
     ]:
-        """Call the LLM and validate the output. Pass an async LLM API to
-        return a coroutine.
+        """Call the LLM and validate the output.
 
         Args:
             llm_api: The LLM API to call
@@ -584,6 +583,9 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
             *args,
             **kwargs,
         ):
+            llm_api_str = (
+                f"{llm_api.__module__}.{llm_api.__name__}" if llm_api else "None"
+            )
             if metadata is None:
                 metadata = {}
             if full_schema_reask is None:
@@ -598,7 +600,7 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
                     attributes=[
                         ("guard_id", self._guard_id),
                         ("user_id", self._user_id),
-                        ("llm_api", llm_api.__name__ if llm_api else "None"),
+                        ("llm_api", llm_api_str),
                         (
                             "custom_reask_prompt",
                             self.rail.output_schema.reask_prompt_template is not None,
@@ -659,7 +661,8 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
                     **kwargs,
                 )
 
-            # If the LLM API is async, return a coroutine
+            # If the LLM API is async, return a coroutine. This will be deprecated soon.
+
             if asyncio.iscoroutinefunction(llm_api):
                 return self._call_async(
                     llm_api,
@@ -768,6 +771,12 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
             call = runner(call_log=call_log, prompt_params=prompt_params)
             return ValidationOutcome[OT].from_guard_history(call)
 
+    @deprecated(
+        """Async methods within Guard are deprecated and will be removed in 0.5.x.
+        Instead, please use `AsyncGuard() or pass in a synchronous llm api.""",
+        category=FutureWarning,
+        stacklevel=2,
+    )
     async def _call_async(
         self,
         llm_api: Callable[[Any], Awaitable[Any]],
@@ -932,6 +941,9 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
             *args,
             **kwargs,
         ):
+            llm_api_str = (
+                f"{llm_api.__module__}.{llm_api.__name__}" if llm_api else "None"
+            )
             final_num_reasks = (
                 num_reasks if num_reasks is not None else 0 if llm_api is None else None
             )
@@ -942,7 +954,7 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
                     attributes=[
                         ("guard_id", self._guard_id),
                         ("user_id", self._user_id),
-                        ("llm_api", llm_api.__name__ if llm_api else "None"),
+                        ("llm_api", llm_api_str),
                         (
                             "custom_reask_prompt",
                             self.rail.output_schema.reask_prompt_template is not None,
@@ -1088,6 +1100,12 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
 
         return ValidationOutcome[OT].from_guard_history(call)
 
+    @deprecated(
+        """Async methods within Guard are deprecated and will be removed in 0.5.x.
+        Instead, please use `AsyncGuard() or pass in a synchronous llm api.""",
+        category=FutureWarning,
+        stacklevel=2,
+    )
     async def _async_parse(
         self,
         llm_output: str,
