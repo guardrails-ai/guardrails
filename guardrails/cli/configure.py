@@ -85,7 +85,6 @@ def configure(
             """
             logger.log(level=LEVELS.get("SUCCESS", 25), msg=success_message)
         except AuthenticationError as e:
-            logger.warn("Failed to authenticate.")
             logger.warn(e)
             # We do not want to exit the program if the user fails to authenticate
             # instead, save the token and other configuration options
