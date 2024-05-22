@@ -5,7 +5,7 @@ from os.path import expanduser
 from typing import Optional
 
 from guardrails.classes.credentials import Credentials
-from guardrails.cli.server.hub_client import get_auth
+from guardrails.cli.server.hub_client import AuthenticationError, get_auth
 import typer
 
 from guardrails.cli.guardrails import guardrails
@@ -67,7 +67,13 @@ def configure(
     # Authenticate with the Hub if token is not empty
     if token != "" and token is not None:
         logger.info("Validating credentials...")
-        get_auth()
+        try:
+            get_auth()
+        except AuthenticationError as e:
+            logger.error("Failed to authenticate.")
+            logger.error(e)
+            sys.exit(1)
+
         success_message = """
         Login successful.
 
