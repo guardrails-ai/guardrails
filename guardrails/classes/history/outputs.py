@@ -1,5 +1,4 @@
 from typing import Dict, List, Optional, Sequence, Union
-
 from pydantic import Field
 from typing_extensions import deprecated
 
@@ -92,7 +91,8 @@ class Outputs(ArbitraryModel):
                             reason=error_span.reason,
                         )
                     )
-            total_len += len(log.value_before_validation)
+            if result.validated_chunk is not None:
+                total_len += len(result.validated_chunk)
         return spans_in_output
 
     @property

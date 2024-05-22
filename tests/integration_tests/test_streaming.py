@@ -47,16 +47,14 @@ class MinSentenceLengthValidator(Validator):
         self._max = to_int(max)
 
     def sentence_split(self, value):
-        return list(map(lambda x: x + ".", value.split(".")))
+        return list(map(lambda x: x + ".", value.split(".")[:-1]))
 
     def validate(self, value: Union[str, List], metadata: Dict) -> ValidationResult:
         sentences = self.sentence_split(value)
         error_spans = []
         index = 0
-        print("sentences", sentences)
         for sentence in sentences:
             if len(sentence) < self._min:
-                print("error in:", sentence)
                 error_spans.append(
                     ErrorSpan(
                         start=index,
@@ -67,7 +65,6 @@ class MinSentenceLengthValidator(Validator):
                     )
                 )
             if len(sentence) > self._max:
-                print("error in:", sentence)
                 error_spans.append(
                     ErrorSpan(
                         start=index,
@@ -77,9 +74,10 @@ class MinSentenceLengthValidator(Validator):
                         f"that is shorter than {self._max} characters.",
                     )
                 )
+            index = index + len(sentence)
         if len(error_spans) > 0:
             return FailResult(
-                validated_chunk="".join(self.accumulated_chunks),
+                validated_chunk=value,
                 error_spans=error_spans,
                 error_message=f"Sentence has length less than {self._min}. "
                 f"Please return a longer output, "
@@ -128,7 +126,7 @@ def mock_openai_completion_create(chunks):
             index = index + 1
             finished = index == len(chunks)
             finish_reason = "stop" if finished else None
-            print("FINISH REASON", finish_reason)
+            # print("FINISH REASON", finish_reason)
             if OPENAI_VERSION.startswith("0"):
                 yield {
                     # TODO: for some reason using finish_reason here breaks everything
@@ -159,7 +157,7 @@ def mock_openai_chat_completion_create(chunks):
             index = index + 1
             finished = index == len(chunks)
             finish_reason = "stop" if finished else None
-            print("FINISH REASON", finish_reason)
+            # print("FINISH REASON", finish_reason)
             if OPENAI_VERSION.startswith("0"):
                 yield {
                     "choices": [
@@ -369,10 +367,8 @@ def test_streaming_with_openai_chat_callable(
 
     actual_output = ""
     for op in generator:
-        print("op", op)
         actual_output = op
 
-    print("actual_output", actual_output)
     assert actual_output.raw_llm_output == json.dumps(expected_raw_output)
     assert actual_output.validated_output == expected_validated_output
 
@@ -393,7 +389,7 @@ STR_LLM_CHUNKS = [
 
 
 @pytest.mark.parametrize(
-    "guard, expected_validated_output",
+    "guard, expected_error_spans",
     [
         (
             gd.Guard.from_string(
@@ -403,16 +399,23 @@ STR_LLM_CHUNKS = [
                 ],
                 prompt=STR_PROMPT,
             ),
-            # For now these should be correct.
-            # This will be different pending validation outcome
-            # schema changes.
-            [True, False, True, True, False, False],
+            # each value is a tuple
+            # first is expected text inside span
+            # second is the reason for failure
+            [
+                [
+                    "This sentence is simply just too long.",
+                    "Sentence has length greater than 30. Please return a shorter output, that is shorter than 30 characters.",
+                ],
+                [
+                    "This sentence is 2 short.",
+                    "Sentence has length less than 26. Please return a longer output, that is shorter than 30 characters.",
+                ],
+            ],
         )
     ],
 )
-def test_string_schema_streaming_with_openai_chat(
-    mocker, guard, expected_validated_output
-):
+def test_string_schema_streaming_with_openai_chat(mocker, guard, expected_error_spans):
     """Test string schema streaming with OpenAIChatCallable.
 
     Mocks openai.ChatCompletion.create.
@@ -449,11 +452,10 @@ def test_string_schema_streaming_with_openai_chat(
     for op in generator:
         accumulated_output += op.raw_llm_output
     error_spans = guard.error_spans_in_output()
+
     # print spans
-    print("llmoutput", accumulated_output)
-    for error_span in error_spans:
-        print("-------span--------")
-        print("content: ", accumulated_output[error_span.start : error_span.end])
-        print("reason: ", error_span.reason)
-        print("-------span--------")
+    assert len(error_spans) == len(expected_error_spans)
+    for error_span, expected in zip(error_spans, expected_error_spans):
+        assert accumulated_output[error_span.start : error_span.end] == expected[0]
+        assert error_span.reason == expected[1]
     # TODO assert something about these error spans

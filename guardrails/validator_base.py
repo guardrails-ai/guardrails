@@ -177,19 +177,13 @@ class Refrain:
 
 
 # functions to get chunks
-def split_word(chunk: str):
-    fragments = list(map(lambda x: x + " ", chunk.split(" ")))[:-1]
-    if len(fragments) == 0:
-        return []
-    return [fragments[0], "".join(fragments[1:])]
 
 
 def split_sentence_str(chunk: str):
-    fragments = list(map(lambda x: x + " ", chunk.split(".")))[:-1]
-    print("frags", fragments)
-    if len(fragments) == 0:
+    if "." not in chunk:
         return []
-    return [fragments[0], "".join(fragments[1:])]
+    fragments = chunk.split(".")
+    return [fragments[0] + ".", ".".join(fragments[1:])]
 
 
 def split_sentence_nltk(chunk: str):
@@ -203,13 +197,6 @@ def split_sentence_nltk(chunk: str):
     # return the sentence
     # then the remaining chunks that aren't finished accumulating
     return [sentences[0], "".join(sentences[1:])]
-
-
-def split_paragraph(chunk: str):
-    fragments = list(map(lambda x: x + "\n", chunk.split("\n")))[:-1]
-    if len(fragments) == 0:
-        return []
-    return [fragments[0], "".join(fragments[1:])]
 
 
 def check_refrain_in_list(schema: List) -> bool:
@@ -523,7 +510,7 @@ class Validator(Runnable):
 
         Otherwise, the validator will validate the chunk and return the result.
         """
-        # combine accumulated chunks and new chunk
+        # combine accumulated chunks and new [:-1]chunk
         self.accumulated_chunks.append(chunk)
         accumulated_text = "".join(self.accumulated_chunks)
         # check if enough chunks have accumulated for validation
