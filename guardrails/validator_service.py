@@ -119,7 +119,7 @@ class ValidatorServiceBase:
             validator_name=validator_class_name,
             value_before_validation=value,
             registered_name=validator.rail_alias,
-            absolute_property_path=absolute_property_path,
+            property_path=absolute_property_path,
         )
         iteration.outputs.validator_logs.append(validator_logs)
 
