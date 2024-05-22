@@ -53,7 +53,7 @@ def configure(
         DEFAULT_ENABLE_METRICS,
         "--enable-metrics/--disable-metrics",
         help="Opt out of anonymous metrics collection.",
-        prompt="Disable anonymous metrics reporting?",
+        prompt="Enable anonymous metrics reporting?",
     ),
     clear_token: Optional[bool] = typer.Option(
         False,
