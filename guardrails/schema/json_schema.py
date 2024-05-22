@@ -55,6 +55,7 @@ from guardrails.validatorsattr import ValidatorsAttr
 
 class JsonSchema(Schema):
     reask_prompt_vars = {"previous_response", "output_schema", "json_example"}
+    accumulated_chunks = []
 
     def __init__(
         self,
@@ -231,13 +232,23 @@ class JsonSchema(Schema):
         Union[Optional[Dict], NonParseableReAsk, str],
         Union[Optional[Exception], str, bool, None],
     ]:
-        if kwargs.get("stream", False):
+        stream = kwargs.get("stream", False)
+        if stream:
             # Do expected behavior for StreamRunner
             # 1. Check if the fragment is valid JSON
+            breakpoint()
             verified = kwargs.get("verified", set())
-            is_valid_fragment = self.is_valid_fragment(output, verified)
+            finished = kwargs.get("finished", False)
+            # if not last chunk, accumulate the chunks
+            if not finished:
+                self.accumulated_chunks.append(output)
+                return output, False
+            # if last chunk, parse complete output
+            complete = "".join(self.accumulated_chunks)
+
+            is_valid_fragment = self.is_valid_fragment(complete, verified)
             if not is_valid_fragment:
-                return output, True
+                return complete, True
 
             # 2. Parse the fragment
             parsed_fragment, parsing_error = self.parse_fragment(output)
@@ -264,6 +275,7 @@ class JsonSchema(Schema):
     def is_valid_fragment(self, fragment: str, verified: set) -> bool:
         """Check if the fragment is a somewhat valid JSON."""
 
+        breakpoint()
         # Strip fragment of whitespaces and newlines
         # to avoid duplicate checks
         text = fragment.strip(" \n")
@@ -338,11 +350,14 @@ class JsonSchema(Schema):
         Returns:
             The validated data.
         """
+        finished = kwargs.get("finished", False)
         if data is None:
             return None
-
+        # wait until all chunks have accumulated before validating if streaming
+        if not finished and stream:
+            pass
         validated_response = deepcopy(data)
-
+        breakpoint()
         if not verify_schema_against_json(
             self.root_datatype,
             validated_response,
@@ -359,7 +374,6 @@ class JsonSchema(Schema):
                     )
                 ],
             )
-
         validation = self.root_datatype.collect_validation(
             key="",
             value=validated_response,

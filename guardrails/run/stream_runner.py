@@ -1,5 +1,5 @@
 from typing import Any, Dict, Generator, List, Optional, Union
-
+from rich import print
 from guardrails.classes.history import Call, Inputs, Iteration, Outputs
 from guardrails.classes.output_type import OT
 from guardrails.classes.validation_outcome import ValidationOutcome
@@ -163,7 +163,7 @@ class StreamRunner(Runner):
 
             # 2. Parse the chunk
             parsed_chunk, move_to_next = self.parse(
-                index, chunk_text, output_schema, verified
+                index, chunk_text, output_schema, verified, finished=finished
             )
             if move_to_next:
                 # Continue to next chunk
@@ -187,6 +187,7 @@ class StreamRunner(Runner):
             # 4. Introspect: inspect the validated fragment for reasks
             reasks, valid_op = self.introspect(index, validated_result, output_schema)
             if reasks:
+                print("raising an error right? why is nothing crashing?")
                 raise ValueError(
                     "Reasks are not yet supported with streaming. Please "
                     "remove reasks from schema or disable streaming."
@@ -280,10 +281,11 @@ class StreamRunner(Runner):
         output: str,
         output_schema: Schema,
         verified: set,
+        **kwargs,
     ):
         """Parse the output."""
         parsed_output, error = output_schema.parse(
-            output, stream=True, verified=verified
+            output, stream=True, verified=verified, **kwargs
         )
 
         # Error can be either of
