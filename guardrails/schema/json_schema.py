@@ -238,7 +238,7 @@ class JsonSchema(Schema):
             # 1. Check if the fragment is valid JSON
             breakpoint()
             verified = kwargs.get("verified", set())
-            finished = kwargs.get("finished", False)
+            finished = kwargs.get('finished', False)
             # if not last chunk, accumulate the chunks
             if not finished:
                 self.accumulated_chunks.append(output)
@@ -350,12 +350,21 @@ class JsonSchema(Schema):
         Returns:
             The validated data.
         """
-        finished = kwargs.get("finished", False)
+        finished = kwargs.get('finished', False)
         if data is None:
             return None
         # wait until all chunks have accumulated before validating if streaming
         if not finished and stream:
-            pass
+            validation = self.root_datatype._con
+            validated_response, metadata = validator_service.validate(
+                value=data,
+                metadata=metadata,
+                validator_setup=validation,
+                iteration=iteration,
+                disable_tracer=disable_tracer,
+                stream=stream,
+                **kwargs,
+            )
         validated_response = deepcopy(data)
         breakpoint()
         if not verify_schema_against_json(
