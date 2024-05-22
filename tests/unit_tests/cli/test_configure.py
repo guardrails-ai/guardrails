@@ -26,7 +26,7 @@ def test_configure(mocker, token, no_metrics):
     configure(token, no_metrics)
 
     assert mock_logger_info.call_count == 2
-    expected_calls = [call("Validating credentials..."), call("Configuration saved.")]
+    expected_calls = [call("Configuration saved."), call("Validating credentials...")]
     mock_logger_info.assert_has_calls(expected_calls)
 
     mock_save_configuration_file.assert_called_once_with(token, no_metrics)

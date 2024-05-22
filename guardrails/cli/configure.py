@@ -66,8 +66,18 @@ def configure(
 ):
     if clear_token is True:
         token = DEFAULT_TOKEN
+    try:
+        save_configuration_file(token, enable_metrics)
+        logger.info("Configuration saved.")
 
-    # Authenticate with the Hub if token is not empty
+        if not token:
+            logger.info("No token provided. Skipping authentication.")
+    except Exception as e:
+        logger.error("An unexpected error occured!")
+        logger.error(e)
+        sys.exit(1)
+
+        # Authenticate with the Hub if token is not empty
     if token != "" and token is not None:
         logger.info("Validating credentials...")
         try:
@@ -85,16 +95,6 @@ def configure(
             """
             logger.log(level=LEVELS.get("SUCCESS", 25), msg=success_message)
         except AuthenticationError as e:
-            logger.warn(e)
+            logger.error(e)
             # We do not want to exit the program if the user fails to authenticate
             # instead, save the token and other configuration options
-    try:
-        save_configuration_file(token, enable_metrics)
-        logger.info("Configuration saved.")
-
-        if not token:
-            logger.info("No token provided. Skipping authentication.")
-    except Exception as e:
-        logger.error("An unexpected error occured!")
-        logger.error(e)
-        sys.exit(1)
