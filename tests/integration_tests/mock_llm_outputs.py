@@ -5,7 +5,7 @@ from guardrails.llm_providers import (
     OpenAICallable,
     OpenAIChatCallable,
 )
-from guardrails.utils.llm_response import LLMResponse
+from guardrails.classes.llm.llm_response import LLMResponse
 
 from .test_assets import entity_extraction, lists_object, pydantic, python_rail, string
 

@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 from guardrails import Guard
 from guardrails.datatypes import DataType
 from guardrails.errors import ValidationError
-from guardrails.schema import StringSchema
+from guardrails.schema.string_schema import StringSchema
 from guardrails.utils.openai_utils import (
     OPENAI_VERSION,
     get_static_openai_acreate_func,

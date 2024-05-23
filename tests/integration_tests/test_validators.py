@@ -6,7 +6,7 @@ import pytest
 
 from guardrails import Guard, Validator, register_validator
 from guardrails.datatypes import DataType
-from guardrails.schema import StringSchema
+from guardrails.schema.string_schema import StringSchema
 from guardrails.validator_base import OnFailAction, PassResult, ValidationResult
 from guardrails.validators import (
     DetectSecrets,

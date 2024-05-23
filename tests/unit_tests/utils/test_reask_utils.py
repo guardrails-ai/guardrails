@@ -5,7 +5,7 @@ from lxml import etree as ET
 
 from guardrails.classes.history.iteration import Iteration
 from guardrails.datatypes import Object
-from guardrails.schema import JsonSchema
+from guardrails.schema.json_schema import JsonSchema
 from guardrails.utils import reask_utils
 from guardrails.utils.reask_utils import (
     FieldReAsk,
