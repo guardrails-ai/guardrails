@@ -53,7 +53,6 @@ from guardrails.llm_providers import (
 )
 from guardrails.logger import logger, set_scope
 from guardrails.prompt import Instructions, Prompt
-from guardrails.rail import Rail
 from guardrails.run import AsyncRunner, Runner, StreamRunner
 from guardrails.schema.primitive_schema import primitive_to_schema
 from guardrails.schema.pydantic_schema import pydantic_model_to_schema
@@ -112,7 +111,7 @@ class Guard(IGuard, Generic[OT]):
 
     # Legacy
     _num_reasks = None
-    _rail: Optional[Rail] = None
+    _rail: Optional[str] = None
     _base_model: Optional[ModelOrListOfModels] = None
 
     # Private
@@ -136,8 +135,7 @@ class Guard(IGuard, Generic[OT]):
         validators: Optional[List[ValidatorReference]] = [],
         output_schema: Optional[Dict[str, Any]] = {"type": "string"},
     ):
-        """Initialize the Guard with optional Rail instance, num_reasks, and
-        base_model."""
+        """Initialize the Guard with validators and an output schema."""
 
         # Shared Interface Properties
         id = id or random_id()
@@ -284,13 +282,13 @@ class Guard(IGuard, Generic[OT]):
             for v in v_list
         ]
 
-    # FIXME: What do we have this to look like now?
+    # FIXME: What do we want this to look like now?
     def __repr__(self):
-        return f"Guard(RAIL={self.rail})"
+        return f"Guard(RAIL={self._rail})"
 
-    # FIXME: What do we have this to look like now?
+    # FIXME: What do we want this to look like now?
     def __rich_repr__(self):
-        yield "RAIL", self.rail
+        yield "RAIL", self._rail
 
     def __stringify__(self):
         if self._output_type == OutputTypes.STRING:
