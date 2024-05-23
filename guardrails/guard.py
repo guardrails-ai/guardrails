@@ -19,6 +19,7 @@ from typing import (
     cast,
     overload,
 )
+import warnings
 
 from guardrails_api_client import (
     Guard as IGuard,
@@ -29,7 +30,7 @@ from guardrails_api_client import (
     ValidationType,
     SimpleTypes,
 )
-from pydantic import Field, field_validator
+from pydantic import field_validator
 
 from guardrails.api_client import GuardrailsApiClient
 from guardrails.classes.output_type import OT
@@ -345,17 +346,7 @@ class Guard(IGuard, Generic[OT]):
         cls,
         rail_file: str,
         *,
-        num_reasks: Optional[int] = Field(
-            default=None,
-            deprecated=(
-                "Setting num_reasks during initialization is deprecated"
-                " and will be removed in 0.6.x!"
-                "We recommend setting num_reasks when calling guard()"
-                " or guard.parse() instead."
-                "If you insist on setting it at the Guard level,"
-                " use 'Guard.configure()'."
-            ),
-        ),
+        num_reasks: Optional[int] = None,
         tracer: Optional[Tracer] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
@@ -364,7 +355,7 @@ class Guard(IGuard, Generic[OT]):
 
         Args:
             rail_file: The path to the `.rail` file.
-            num_reasks (int, optional): The max times to re-ask the LLM if validation fails.
+            num_reasks (int, optional): The max times to re-ask the LLM if validation fails. Deprecated
             tracer (Tracer, optional): An OpenTelemetry tracer to use for metrics and traces. Defaults to None.
             name (str, optional): A unique name for this Guard. Defaults to `gr-` + the object id.
             description (str, optional): A description for this Guard. Defaults to None.
@@ -372,6 +363,17 @@ class Guard(IGuard, Generic[OT]):
         Returns:
             An instance of the `Guard` class.
         """  # noqa
+
+        if num_reasks:
+            warnings.warn(
+                "Setting num_reasks during initialization is deprecated"
+                " and will be removed in 0.6.x!"
+                "We recommend setting num_reasks when calling guard()"
+                " or guard.parse() instead."
+                "If you insist on setting it at the Guard level,"
+                " use 'Guard.configure()'.",
+                DeprecationWarning,
+            )
 
         # We have to set the tracer in the ContextStore before the Rail,
         #   and therefore the Validators, are initialized
@@ -392,17 +394,7 @@ class Guard(IGuard, Generic[OT]):
         cls,
         rail_string: str,
         *,
-        num_reasks: Optional[int] = Field(
-            default=None,
-            deprecated=(
-                "Setting num_reasks during initialization is deprecated"
-                " and will be removed in 0.6.x!"
-                "We recommend setting num_reasks when calling guard()"
-                " or guard.parse() instead."
-                "If you insist on setting it at the Guard level,"
-                " use 'Guard.configure()'."
-            ),
-        ),
+        num_reasks: Optional[int] = None,
         tracer: Optional[Tracer] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
@@ -411,7 +403,7 @@ class Guard(IGuard, Generic[OT]):
 
         Args:
             rail_string: The `.rail` string.
-            num_reasks (int, optional): The max times to re-ask the LLM if validation fails.
+            num_reasks (int, optional): The max times to re-ask the LLM if validation fails. Deprecated
             tracer (Tracer, optional): An OpenTelemetry tracer to use for metrics and traces. Defaults to None.
             name (str, optional): A unique name for this Guard. Defaults to `gr-` + the object id.
             description (str, optional): A description for this Guard. Defaults to None.
@@ -419,6 +411,18 @@ class Guard(IGuard, Generic[OT]):
         Returns:
             An instance of the `Guard` class.
         """  # noqa
+
+        if num_reasks:
+            warnings.warn(
+                "Setting num_reasks during initialization is deprecated"
+                " and will be removed in 0.6.x!"
+                "We recommend setting num_reasks when calling guard()"
+                " or guard.parse() instead."
+                "If you insist on setting it at the Guard level,"
+                " use 'Guard.configure()'.",
+                DeprecationWarning,
+            )
+
         # We have to set the tracer in the ContextStore before the Rail,
         #   and therefore the Validators, are initialized
         cls._set_tracer(cls, tracer)  # type: ignore
@@ -438,21 +442,11 @@ class Guard(IGuard, Generic[OT]):
         cls,
         output_class: ModelOrListOfModels,
         *,
-        prompt: Optional[str] = None,
-        instructions: Optional[str] = None,
-        num_reasks: Optional[int] = Field(
-            default=None,
-            deprecated=(
-                "Setting num_reasks during initialization is deprecated"
-                " and will be removed in 0.6.x!"
-                "We recommend setting num_reasks when calling guard()"
-                " or guard.parse() instead."
-                "If you insist on setting it at the Guard level,"
-                " use 'Guard.configure()'."
-            ),
-        ),
-        reask_prompt: Optional[str] = None,
-        reask_instructions: Optional[str] = None,
+        prompt: Optional[str] = None,  # deprecate this too
+        instructions: Optional[str] = None,  # deprecate this too
+        num_reasks: Optional[int] = None,
+        reask_prompt: Optional[str] = None,  # deprecate this too
+        reask_instructions: Optional[str] = None,  # deprecate this too
         tracer: Optional[Tracer] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
@@ -471,6 +465,18 @@ class Guard(IGuard, Generic[OT]):
             name (str, optional): A unique name for this Guard. Defaults to `gr-` + the object id.
             description (str, optional): A description for this Guard. Defaults to None.
         """  # noqa
+
+        if num_reasks:
+            warnings.warn(
+                "Setting num_reasks during initialization is deprecated"
+                " and will be removed in 0.6.x!"
+                "We recommend setting num_reasks when calling guard()"
+                " or guard.parse() instead."
+                "If you insist on setting it at the Guard level,"
+                " use 'Guard.configure()'.",
+                DeprecationWarning,
+            )
+
         # We have to set the tracer in the ContextStore before the Rail,
         #   and therefore the Validators, are initialized
         cls._set_tracer(cls, tracer)  # type: ignore
@@ -505,10 +511,10 @@ class Guard(IGuard, Generic[OT]):
         validators: Sequence[Validator],
         *,
         string_description: Optional[str] = None,
-        prompt: Optional[str] = None,
-        instructions: Optional[str] = None,
-        reask_prompt: Optional[str] = None,
-        reask_instructions: Optional[str] = None,
+        prompt: Optional[str] = None,  # deprecate this too
+        instructions: Optional[str] = None,  # deprecate this too
+        reask_prompt: Optional[str] = None,  # deprecate this too
+        reask_instructions: Optional[str] = None,  # deprecate this too
         num_reasks: Optional[int] = None,
         tracer: Optional[Tracer] = None,
         name: Optional[str] = None,
@@ -523,11 +529,22 @@ class Guard(IGuard, Generic[OT]):
             instructions (str, optional): Instructions for chat models. Defaults to None.
             reask_prompt (str, optional): An alternative prompt to use during reasks. Defaults to None.
             reask_instructions (str, optional): Alternative instructions to use during reasks. Defaults to None.
-            num_reasks (int, optional): The max times to re-ask the LLM if validation fails.
+            num_reasks (int, optional): The max times to re-ask the LLM if validation fails. Deprecated
             tracer (Tracer, optional): An OpenTelemetry tracer to use for metrics and traces. Defaults to None.
             name (str, optional): A unique name for this Guard. Defaults to `gr-` + the object id.
             description (str, optional): A description for this Guard. Defaults to None.
         """  # noqa
+
+        if num_reasks:
+            warnings.warn(
+                "Setting num_reasks during initialization is deprecated"
+                " and will be removed in 0.6.x!"
+                "We recommend setting num_reasks when calling guard()"
+                " or guard.parse() instead."
+                "If you insist on setting it at the Guard level,"
+                " use 'Guard.configure()'.",
+                DeprecationWarning,
+            )
 
         # This might not be necessary anymore
         cls._set_tracer(cls, tracer)  # type: ignore

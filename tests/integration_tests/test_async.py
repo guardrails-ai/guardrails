@@ -15,6 +15,10 @@ from tests.integration_tests.test_assets.fixtures import (  # noqa
 from .mock_llm_outputs import MockAsyncOpenAICallable, entity_extraction
 
 
+# FIXME: None of these tests were ever updated to work with OpenAI 1.x
+#   making them useless once we drop support for 0.x
+
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize("multiprocessing_validators", (True, False))
 @pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="Only for OpenAI v0")

@@ -325,16 +325,14 @@ def rail_string_to_schema(rail_string: str) -> ProcessedSchema:
     # prepended to the prompt.
     instructions_tag = rail_xml.find("instructions")
     if instructions_tag is not None:
-        processed_schema.exec_opts.instructions = parse_element(
-            instructions_tag, processed_schema, "instructions"
-        )
+        parse_element(instructions_tag, processed_schema, "instructions")
+        processed_schema.exec_opts.instructions = instructions_tag.text
 
     # Load <prompt />
     prompt_tag = rail_xml.find("prompt")
     if prompt_tag is not None:
-        processed_schema.exec_opts.prompt = parse_element(
-            prompt_tag, processed_schema, "prompt"
-        )
+        parse_element(prompt_tag, processed_schema, "prompt")
+        processed_schema.exec_opts.prompt = prompt_tag.text
 
     # If reasking prompt and instructions are provided, add them to the schema.
     reask_prompt = rail_xml.find("reask_prompt")
