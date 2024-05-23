@@ -1,9 +1,10 @@
 from typing import Iterable, Optional
 
-from guardrails.classes.schema import ArbitraryModel
+from guardrails_api_client import LLMResponse as ILLMResponse
 
 
-class LLMResponse(ArbitraryModel):
+# TODO: We might be able to delete this
+class LLMResponse(ILLMResponse):
     prompt_token_count: Optional[int] = None
     response_token_count: Optional[int] = None
     output: str

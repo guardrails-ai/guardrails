@@ -6,6 +6,7 @@ from rich.pretty import pretty_repr
 from rich.tree import Tree
 from typing_extensions import deprecated
 
+from guardrails_api_client import Call as ICall
 from guardrails.actions.filter import Filter
 from guardrails.actions.refrain import Refrain
 from guardrails.actions.reask import merge_reask_output
@@ -16,7 +17,6 @@ from guardrails.constants import error_status, fail_status, not_run_status, pass
 from guardrails.prompt.instructions import Instructions
 from guardrails.prompt.prompt import Prompt
 from guardrails.classes.validation.validator_logs import ValidatorLogs
-from guardrails.utils.pydantic_utils import ArbitraryModel
 from guardrails.utils.reask_utils import (
     ReAsk,
     gather_reasks,
@@ -27,7 +27,7 @@ from guardrails.schema.parser import get_value_from_path
 
 # We can't inherit from Iteration because python
 # won't let you override a class attribute with a managed attribute
-class Call(ArbitraryModel):
+class Call(ICall):
     iterations: Stack[Iteration] = Field(
         description="A stack of iterations for each"
         "step/reask that occurred during this call."

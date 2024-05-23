@@ -1,13 +1,13 @@
-from typing import Any, Dict, Literal, Optional
-from pydantic import BaseModel, Field
+from typing import Any, Literal, Optional
+from pydantic import Field
+from guardrails_api_client import (
+    ValidationResult,  # noqa
+    PassResult as IPassResult,
+    FailResult as IFailResult,
+)
 
 
-class ValidationResult(BaseModel):
-    outcome: str
-    metadata: Optional[Dict[str, Any]] = None
-
-
-class PassResult(ValidationResult):
+class PassResult(IPassResult):
     outcome: Literal["pass"] = "pass"
 
     class ValueOverrideSentinel:
@@ -17,7 +17,7 @@ class PassResult(ValidationResult):
     value_override: Optional[Any] = Field(default=ValueOverrideSentinel)
 
 
-class FailResult(ValidationResult):
+class FailResult(IFailResult):
     outcome: Literal["fail"] = "fail"
 
     error_message: str

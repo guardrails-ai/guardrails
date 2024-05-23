@@ -2,10 +2,11 @@ from typing import Any, Awaitable, Callable, Dict, List, Optional
 
 from pydantic import Field
 
+from guardrails_api_client import CallInputs as ICallInputs
 from guardrails.classes.history.inputs import Inputs
 
 
-class CallInputs(Inputs):
+class CallInputs(ICallInputs, Inputs):
     llm_api: Optional[Callable[[Any], Awaitable[Any]]] = Field(
         description="The LLM function provided by the user"
         "during Guard.__call__ or Guard.parse.",

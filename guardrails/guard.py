@@ -113,7 +113,7 @@ class Guard(IGuard, Generic[OT]):
     # Legacy
     _num_reasks = None
     _rail: Optional[Rail] = None
-    _base_model: Optional[ModelOrListOfModels]
+    _base_model: Optional[ModelOrListOfModels] = None
 
     # Private
     _tracer = None
@@ -134,7 +134,7 @@ class Guard(IGuard, Generic[OT]):
         name: Optional[str] = None,
         description: Optional[str] = None,
         validators: Optional[List[ValidatorReference]] = [],
-        output_schema: Optional[Dict[str, Any]] = {},
+        output_schema: Optional[Dict[str, Any]] = {"type": "string"},
     ):
         """Initialize the Guard with optional Rail instance, num_reasks, and
         base_model."""
@@ -157,7 +157,7 @@ class Guard(IGuard, Generic[OT]):
             description=description,
             validators=validators,
             output_schema=model_schema,
-            history=GuardHistory([]),
+            i_history=GuardHistory([]),
         )
 
         # Assign private properties and backfill
@@ -165,6 +165,8 @@ class Guard(IGuard, Generic[OT]):
         self._validators = []
         self._fill_validator_map()
         self._fill_validators()
+        self._output_type = OutputTypes.__from_json_schema__(output_schema)
+        self._exec_opts = GuardExecutionOptions()
 
         # TODO: Support a sink for history so that it is not solely held in memory
         self._history: Stack[Call] = Stack()
@@ -184,6 +186,11 @@ class Guard(IGuard, Generic[OT]):
     @history.setter
     def history(self, h: Stack[Call]):
         self._history = h
+        self.i_history = GuardHistory(h)
+
+    def _history_push(self, c: Call):
+        self._history.push(c)
+        self.history = self._history
 
     @field_validator("output_schema")
     @classmethod
@@ -647,7 +654,7 @@ class Guard(IGuard, Generic[OT]):
             )
             call_log = Call(inputs=call_inputs)
             set_scope(str(object_id(call_log)))
-            self._history.push(call_log)
+            self._history_push(call_log)
 
             if self._api_client is not None and model_is_supported_server_side(
                 llm_api, *args, **kwargs
@@ -990,7 +997,7 @@ class Guard(IGuard, Generic[OT]):
         )
         prompt = kwargs.pop("prompt", self._exec_opts.prompt)
         instructions = kwargs.pop("instructions", self._exec_opts.instructions)
-        msg_history = kwargs.pop("msg_history")
+        msg_history = kwargs.pop("msg_history", self._exec_opts.msg_history)
 
         return self._execute(
             *args,
@@ -1079,7 +1086,7 @@ class Guard(IGuard, Generic[OT]):
 
         *Note*: `use_many` is only available for string output types.
         """
-        if self.rail.output_type != "str":
+        if self._output_type != OutputTypes.STRING:
             raise RuntimeError(
                 "The `use_many` method is only available for string output types."
             )
@@ -1097,6 +1104,10 @@ class Guard(IGuard, Generic[OT]):
     # https://github.com/guardrails-ai/guardrails/pull/525 is merged
     # def __call__(self, llm_output: str, *args, **kwargs) -> ValidationOutcome[str]:
     #     return self.validate(llm_output, *args, **kwargs)
+
+    # TODO: Test generated history and override to_dict if necessary
+    # def to_dict(self) -> Dict[str, Any]:
+    #     pass
 
     def upsert_guard(self):
         if self._api_client:
@@ -1224,7 +1235,7 @@ class Guard(IGuard, Generic[OT]):
                 ]
                 call_log.iterations.extend(iterations)
                 if self._history.length == 0:
-                    self._history.push(call_log)
+                    self._history_push(call_log)
 
             # Our interfaces are too different for this to work right now.
             # Once we move towards shared interfaces for both the open source

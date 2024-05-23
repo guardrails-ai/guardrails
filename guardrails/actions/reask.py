@@ -2,8 +2,8 @@ from copy import deepcopy
 import json
 import jsonref
 from typing import Any, Dict, List, Optional, Tuple, Union
-from pydantic import BaseModel
 
+from guardrails_api_client import Reask as IReask
 from guardrails.classes.execution.guard_execution_options import GuardExecutionOptions
 from guardrails.classes.output_type import OutputTypes
 from guardrails.classes.validation.validation_result import FailResult
@@ -16,7 +16,7 @@ from guardrails.utils.prompt_utils import prompt_content_for_schema
 
 
 ### Classes/Types ###
-class ReAsk(BaseModel):
+class ReAsk(IReask):
     incorrect_value: Any
     fail_results: List[FailResult]
 

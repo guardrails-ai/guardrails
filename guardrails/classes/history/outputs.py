@@ -3,15 +3,15 @@ from typing import Dict, List, Optional, Sequence, Union
 from pydantic import Field
 from typing_extensions import deprecated
 
+from guardrails_api_client import Outputs as IOutputs
 from guardrails.constants import error_status, fail_status, not_run_status, pass_status
 from guardrails.classes.llm.llm_response import LLMResponse
 from guardrails.classes.validation.validator_logs import ValidatorLogs
-from guardrails.utils.pydantic_utils import ArbitraryModel
 from guardrails.utils.reask_utils import ReAsk
 from guardrails.classes.validation.validation_result import FailResult
 
 
-class Outputs(ArbitraryModel):
+class Outputs(IOutputs):
     llm_response_info: Optional[LLMResponse] = Field(
         description="Information from the LLM response.", default=None
     )
