@@ -88,6 +88,7 @@ class AsyncGuard(Guard):
             *args,
             **kwargs,
         ):
+            llm_api_str = f"{llm_api.__module__}.{llm_api.__name__}" if llm_api else "None"
             if metadata is None:
                 metadata = {}
             if full_schema_reask is None:
@@ -102,7 +103,7 @@ class AsyncGuard(Guard):
                     attributes=[
                         ("guard_id", self._guard_id),
                         ("user_id", self._user_id),
-                        ("llm_api", llm_api.__name__ if llm_api else "None"),
+                        ("llm_api", llm_api_str),
                         ("custom_reask_prompt", self.reask_prompt is not None),
                         (
                             "custom_reask_instructions",
@@ -296,6 +297,7 @@ class AsyncGuard(Guard):
             *args,
             **kwargs,
         ):
+            llm_api_str = f"{llm_api.__module__}.{llm_api.__name__}" if llm_api else "None"
             final_num_reasks = (
                 num_reasks if num_reasks is not None else 0 if llm_api is None else None
             )
@@ -306,7 +308,7 @@ class AsyncGuard(Guard):
                     attributes=[
                         ("guard_id", self._guard_id),
                         ("user_id", self._user_id),
-                        ("llm_api", llm_api.__name__ if llm_api else "None"),
+                        ("llm_api", llm_api_str),
                         ("custom_reask_prompt", self.reask_prompt is not None),
                         (
                             "custom_reask_instructions",
