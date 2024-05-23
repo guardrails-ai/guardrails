@@ -6,7 +6,7 @@ from rich.pretty import pretty_repr
 from rich.tree import Tree
 from typing_extensions import deprecated
 
-from guardrails_api_client import Call as ICall
+from guardrails_api_client import Call as ICall, CallException
 from guardrails.actions.filter import Filter
 from guardrails.actions.refrain import Refrain
 from guardrails.actions.reask import merge_reask_output
@@ -51,7 +51,7 @@ class Call(ICall, ArbitraryModel):
         super().__init__(
             iterations=iterations,  # type: ignore
             inputs=inputs,  # type: ignore
-            _exception=exception,  # type: ignore
+            exception=CallException(str(exception)),  # type: ignore
         )
         self.iterations = iterations
         self.inputs = inputs

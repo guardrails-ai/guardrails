@@ -8,7 +8,7 @@ from guardrails_api_client import (
 from guardrails.classes.generic.arbitrary_model import ArbitraryModel
 
 
-class PassResult(IPassResult, ArbitraryModel):
+class PassResult(ValidationResult, IPassResult, ArbitraryModel):
     outcome: Literal["pass"] = "pass"
 
     class ValueOverrideSentinel:
@@ -18,7 +18,7 @@ class PassResult(IPassResult, ArbitraryModel):
     value_override: Optional[Any] = Field(default=ValueOverrideSentinel)
 
 
-class FailResult(IFailResult, ArbitraryModel):
+class FailResult(ValidationResult, IFailResult, ArbitraryModel):
     outcome: Literal["fail"] = "fail"
 
     error_message: str
