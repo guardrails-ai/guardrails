@@ -1,11 +1,12 @@
 from datetime import datetime
 from typing import Any, Optional
 
-from guardrails.classes.schema.arbitrary_model import ArbitraryModel
+from guardrails_api_client import ValidatorLog
+from guardrails.classes.generic.arbitrary_model import ArbitraryModel
 from guardrails.classes.validation.validation_result import ValidationResult
 
 
-class ValidatorLogs(ArbitraryModel):
+class ValidatorLogs(ValidatorLog, ArbitraryModel):
     """Logs for a single validator."""
 
     validator_name: str

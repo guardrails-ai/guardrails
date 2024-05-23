@@ -11,13 +11,14 @@ from guardrails_api_client import Iteration as IIteration
 from guardrails.classes.generic.stack import Stack
 from guardrails.classes.history.inputs import Inputs
 from guardrails.classes.history.outputs import Outputs
+from guardrails.classes.generic.arbitrary_model import ArbitraryModel
 from guardrails.logger import get_scope_handler
 from guardrails.prompt.prompt import Prompt
 from guardrails.classes.validation.validator_logs import ValidatorLogs
 from guardrails.utils.reask_utils import ReAsk
 
 
-class Iteration(IIteration):
+class Iteration(IIteration, ArbitraryModel):
     # I think these should be containered since their names slightly overlap with
     #  outputs, but could be convinced otherwise
     inputs: Inputs = Field(

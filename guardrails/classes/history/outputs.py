@@ -6,12 +6,13 @@ from typing_extensions import deprecated
 from guardrails_api_client import Outputs as IOutputs
 from guardrails.constants import error_status, fail_status, not_run_status, pass_status
 from guardrails.classes.llm.llm_response import LLMResponse
+from guardrails.classes.generic.arbitrary_model import ArbitraryModel
 from guardrails.classes.validation.validator_logs import ValidatorLogs
 from guardrails.utils.reask_utils import ReAsk
 from guardrails.classes.validation.validation_result import FailResult
 
 
-class Outputs(IOutputs):
+class Outputs(IOutputs, ArbitraryModel):
     llm_response_info: Optional[LLMResponse] = Field(
         description="Information from the LLM response.", default=None
     )

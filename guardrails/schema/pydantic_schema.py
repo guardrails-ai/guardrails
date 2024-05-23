@@ -17,7 +17,7 @@ from pydantic import AliasChoices, AliasGenerator, AliasPath, BaseModel
 from pydantic.fields import FieldInfo
 from guardrails_api_client import ValidatorReference
 from guardrails.classes.output_type import OutputTypes
-from guardrails.classes.schema import ProcessedSchema
+from guardrails.classes.schema.processed_schema import ProcessedSchema
 from guardrails.logger import logger
 from guardrails.types import (
     PydanticValidatorSpec,

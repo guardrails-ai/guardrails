@@ -4,9 +4,10 @@ from pydantic import Field
 
 from guardrails_api_client import CallInputs as ICallInputs
 from guardrails.classes.history.inputs import Inputs
+from guardrails.classes.generic.arbitrary_model import ArbitraryModel
 
 
-class CallInputs(ICallInputs, Inputs):
+class CallInputs(ICallInputs, Inputs, ArbitraryModel):
     llm_api: Optional[Callable[[Any], Awaitable[Any]]] = Field(
         description="The LLM function provided by the user"
         "during Guard.__call__ or Guard.parse.",
