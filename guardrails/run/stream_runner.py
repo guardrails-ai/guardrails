@@ -12,7 +12,6 @@ from guardrails.llm_providers import (
 from guardrails.prompt import Instructions, Prompt
 from guardrails.run.runner import Runner
 from guardrails.schema.schema import Schema
-from guardrails.schema.string_schema import StringSchema
 from guardrails.utils.openai_utils import OPENAI_VERSION
 from guardrails.utils.parsing_utils import (
     coerce_types,
@@ -81,9 +80,6 @@ class StreamRunner(Runner):
         prompt: Optional[Prompt],
         msg_history: Optional[List[Dict]],
         prompt_params: Dict,
-        prompt_schema: Optional[StringSchema],
-        instructions_schema: Optional[StringSchema],
-        msg_history_schema: Optional[StringSchema],
         output_schema: Schema,
         call_log: Call,
         output: Optional[str] = None,
@@ -118,9 +114,6 @@ class StreamRunner(Runner):
                 msg_history,
                 prompt_params,
                 api,
-                prompt_schema,
-                instructions_schema,
-                msg_history_schema,
                 output_schema,
             )
 
