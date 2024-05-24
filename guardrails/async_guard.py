@@ -19,6 +19,7 @@ from guardrails.llm_providers import get_async_llm_ask, model_is_supported_serve
 from guardrails.logger import set_scope
 from guardrails.run import AsyncRunner, AsyncStreamRunner
 from guardrails.stores.context import set_call_kwargs, set_tracer, set_tracer_context
+import inspect
 
 
 class AsyncGuard(Guard):
@@ -167,7 +168,7 @@ class AsyncGuard(Guard):
             #         "Please use an async LLM API."
             #     )
             # Otherwise, call the LLM
-            return await self._call_async(
+            result = self._call_async(
                 llm_api,
                 prompt_params=prompt_params,
                 num_reasks=self.num_reasks,
@@ -180,6 +181,10 @@ class AsyncGuard(Guard):
                 *args,
                 **kwargs,
             )
+
+            if inspect.isawaitable(result):
+                result = await result
+            return result
 
         guard_context = contextvars.Context()
         return await guard_context.run(

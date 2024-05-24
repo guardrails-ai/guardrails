@@ -9,17 +9,25 @@ from guardrails.classes.output_type import OT
 from guardrails.classes.validation_outcome import ValidationOutcome
 from guardrails.datatypes import verify_metadata_requirements
 from guardrails.errors import ValidationError
-from guardrails.llm_providers import AsyncPromptCallableBase, PromptCallableBase
+from guardrails.llm_providers import (
+    AsyncLiteLLMCallable,
+    AsyncPromptCallableBase,
+    LiteLLMCallable,
+    OpenAICallable,
+    OpenAIChatCallable,
+    PromptCallableBase,
+)
 from guardrails.prompt import Instructions, Prompt
-from guardrails.run.runner import Runner
+from guardrails.run import StreamRunner
 from guardrails.run.utils import msg_history_source, msg_history_string
 from guardrails.schema import Schema, StringSchema
 from guardrails.utils.llm_response import LLMResponse
+from guardrails.utils.openai_utils import OPENAI_VERSION
 from guardrails.utils.reask_utils import ReAsk, SkeletonReAsk
 from guardrails.utils.telemetry_utils import async_trace
 
 
-class AsyncStreamRunner(Runner):
+class AsyncStreamRunner(StreamRunner):
     def __init__(
         self,
         output_schema: Schema,
@@ -164,9 +172,13 @@ class AsyncStreamRunner(Runner):
             index, instructions, prompt, msg_history, api, output
         )
         try:
-            stream = llm_response.completion_stream
+            stream = llm_response.async_stream_output
         except AttributeError:
-            stream = llm_response.stream_output
+            try:
+                stream = llm_response.stream_output
+
+            except AttributeError:
+                stream = llm_response.stream_output
         if stream is None:
             raise ValueError(
                 "No stream was returned from the API. Please check that "
@@ -193,10 +205,9 @@ class AsyncStreamRunner(Runner):
                     index,
                     parsed_chunk,
                     output_schema,
-                    True,
                     validate_subschema=True,
-                    remainder=finished,
                 )
+
                 if isinstance(validated_result, SkeletonReAsk):
                     raise ValueError(
                         "Received fragment schema is an invalid sub-schema "
@@ -299,14 +310,15 @@ class AsyncStreamRunner(Runner):
         output_schema: Schema,
         validate_subschema: bool = False,
     ):
-        if validate_subschema:
-            validated_output = await output_schema.async_validate_subschema(
-                iteration, parsed_output, self.metadata, attempt_number=index
-            )
-        else:
-            validated_output = await output_schema.async_validate(
-                iteration, parsed_output, self.metadata, attempt_number=index
-            )
+        # if validate_subschema:
+        #     validated_output = await output_schema.async_validate_subschema(
+        #         iteration, parsed_output, self.metadata, attempt_number=index
+        #     )
+        # else:
+        # TODO: What is supposed to happen here with subschema?
+        validated_output = await output_schema.async_validate(
+            iteration, parsed_output, self.metadata, attempt_number=index
+        )
 
         return validated_output
 
@@ -317,9 +329,10 @@ class AsyncStreamRunner(Runner):
         output_schema: Schema,
     ) -> Tuple[List[ReAsk], Any]:
         # Introspect: inspect validated output for reasks.
-        reasks, valid_output = await output_schema.async_introspect(
-            validated_output, self.metadata, attempt_number=index + 1
-        )
+        if validated_output is None:
+            return [], None
+        reasks, valid_output = output_schema.introspect(validated_output)
+
         return reasks, valid_output
 
     async def async_prepare(
@@ -418,3 +431,77 @@ class AsyncStreamRunner(Runner):
             raise ValueError("Prompt or message history must be provided.")
 
         return instructions, prompt, msg_history
+
+    def get_chunk_text(self, chunk: Any, api: Union[PromptCallableBase, None]) -> str:
+        """Get the text from a chunk."""
+        chunk_text = ""
+        if isinstance(api, OpenAICallable):
+            if OPENAI_VERSION.startswith("0"):
+                finished = chunk["choices"][0]["finish_reason"]
+                if "text" in chunk["choices"][0]:
+                    content = chunk["choices"][0]["text"]
+                    if not finished and content:
+                        chunk_text = content
+            else:
+                finished = chunk.choices[0].finish_reason
+                content = chunk.choices[0].text
+                if not finished and content:
+                    chunk_text = content
+        elif isinstance(api, OpenAIChatCallable):
+            if OPENAI_VERSION.startswith("0"):
+                finished = chunk["choices"][0]["finish_reason"]
+                if "content" in chunk["choices"][0]["delta"]:
+                    content = chunk["choices"][0]["delta"]["content"]
+                    if not finished and content:
+                        chunk_text = content
+            else:
+                finished = chunk.choices[0].finish_reason
+                content = chunk.choices[0].delta.content
+                if not finished and content:
+                    chunk_text = content
+        elif isinstance(api, LiteLLMCallable):
+            finished = chunk.choices[0].finish_reason
+            content = chunk.choices[0].delta.content
+            if not finished and content:
+                chunk_text = content
+        elif isinstance(api, AsyncLiteLLMCallable):
+            finished = chunk.choices[0].finish_reason
+            content = chunk.choices[0].delta.content
+            if not finished and content:
+                chunk_text = content
+        else:
+            try:
+                chunk_text = chunk
+            except Exception as e:
+                raise ValueError(
+                    f"Error getting chunk from stream: {e}. "
+                    "Non-OpenAI API callables expected to return "
+                    "a generator of strings."
+                ) from e
+        return chunk_text
+
+    def is_last_chunk(self, chunk: Any, api: Union[PromptCallableBase, None]) -> bool:
+        """Detect if chunk is final chunk"""
+        if isinstance(api, OpenAICallable):
+            if OPENAI_VERSION.startswith("0"):
+                finished = chunk["choices"][0]["finish_reason"]
+                return finished is not None
+            else:
+                finished = chunk.choices[0].finish_reason
+                return finished is not None
+        elif isinstance(api, OpenAIChatCallable):
+            if OPENAI_VERSION.startswith("0"):
+                finished = chunk["choices"][0]["finish_reason"]
+                return finished is not None
+            else:
+                finished = chunk.choices[0].finish_reason
+                return finished is not None
+        elif isinstance(api, LiteLLMCallable):
+            finished = chunk.choices[0].finish_reason
+            return finished is not None
+        else:
+            try:
+                finished = chunk.choices[0].finish_reason
+                return finished is not None
+            except (AttributeError, TypeError):
+                return False

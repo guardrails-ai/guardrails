@@ -5,7 +5,6 @@ from typing import (
     Callable,
     Dict,
     Iterable,
-    AsyncIterable,
     List,
     Optional,
     Type,
@@ -835,10 +834,10 @@ class AsyncLiteLLMCallable(AsyncPromptCallableBase):
         if kwargs.get("stream", False):
             # If stream is defined and set to True,
             # the callable returns a generator object
-            llm_response = cast(AsyncIterable[str], response)
+            # response = cast(AsyncIterable[str], response)
             return LLMResponse(
                 output="",
-                stream_output=llm_response,
+                async_stream_output=response.completion_stream,
             )
 
         return LLMResponse(
