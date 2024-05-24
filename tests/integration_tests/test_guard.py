@@ -8,6 +8,8 @@ from pydantic import BaseModel
 
 import guardrails as gd
 from guardrails.actions.reask import SkeletonReAsk
+from guardrails.classes.llm.llm_response import LLMResponse
+from guardrails.classes.validation_outcome import ValidationOutcome
 from guardrails.guard import Guard
 from guardrails.utils.openai_utils import (
     get_static_openai_chat_create_func,
@@ -116,17 +118,17 @@ def guard_initializer(
     "rail,prompt,test_full_schema_reask",
     [
         (entity_extraction.RAIL_SPEC_WITH_REASK, None, False),
-        # (entity_extraction.RAIL_SPEC_WITH_REASK, None, True),
-        # (
-        #     entity_extraction.PYDANTIC_RAIL_WITH_REASK,
-        #     entity_extraction.PYDANTIC_PROMPT,
-        #     False,
-        # ),
-        # (
-        #     entity_extraction.PYDANTIC_RAIL_WITH_REASK,
-        #     entity_extraction.PYDANTIC_PROMPT,
-        #     True,
-        # ),
+        (entity_extraction.RAIL_SPEC_WITH_REASK, None, True),
+        (
+            entity_extraction.PYDANTIC_RAIL_WITH_REASK,
+            entity_extraction.PYDANTIC_PROMPT,
+            False,
+        ),
+        (
+            entity_extraction.PYDANTIC_RAIL_WITH_REASK,
+            entity_extraction.PYDANTIC_PROMPT,
+            True,
+        ),
     ],
 )
 @pytest.mark.parametrize("multiprocessing_validators", (False,))  # (True, False))
@@ -139,7 +141,28 @@ def test_entity_extraction_with_reask(
     performs a single call to the LLM and then re-asks the LLM for a
     second time.
     """
-    mocker.patch("guardrails.llm_providers.OpenAICallable", new=MockOpenAICallable)
+    mock_invoke_llm = mocker.patch(
+        "guardrails.llm_providers.OpenAICallable._invoke_llm"
+    )
+    second_response = (
+        entity_extraction.LLM_OUTPUT_FULL_REASK
+        if test_full_schema_reask
+        else json.dumps(entity_extraction.VALIDATED_OUTPUT_REASK_2)
+        # FIXME: Use this once field level reask schemas are implemented
+        # else entity_extraction.LLM_OUTPUT_REASK
+    )
+    mock_invoke_llm.side_effect = [
+        LLMResponse(
+            output=entity_extraction.LLM_OUTPUT,
+            prompt_token_count=123,
+            response_token_count=1234,
+        ),
+        LLMResponse(
+            output=second_response,
+            prompt_token_count=123,
+            response_token_count=1234,
+        ),
+    ]
     mocker.patch(
         "guardrails.validators.Validator.run_in_separate_process",
         new=multiprocessing_validators,
@@ -148,7 +171,7 @@ def test_entity_extraction_with_reask(
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
     guard = guard_initializer(rail, prompt)
 
-    final_output = guard(
+    final_output: ValidationOutcome = guard(
         llm_api=get_static_openai_create_func(),
         prompt_params={"document": content[:6000]},
         num_reasks=1,
@@ -157,8 +180,6 @@ def test_entity_extraction_with_reask(
     )
 
     # Assertions are made on the guard state object.
-    print("\n actual: ", final_output.validated_output)
-    print("\n expected: ", entity_extraction.VALIDATED_OUTPUT_REASK_2)
     assert final_output.validated_output == entity_extraction.VALIDATED_OUTPUT_REASK_2
 
     call = guard.history.first
@@ -214,7 +235,11 @@ def test_entity_extraction_with_reask(
     else:
         # Second iteration is the first reask
         assert call.reask_prompts.first == entity_extraction.COMPILED_PROMPT_REASK
-        assert call.raw_outputs.at(1) == entity_extraction.LLM_OUTPUT_REASK
+        # FIXME: Switch back to this once field level reask schema pruning is implemented  # noqa
+        # assert call.raw_outputs.at(1) == entity_extraction.LLM_OUTPUT_REASK
+        assert call.raw_outputs.at(1) == json.dumps(
+            entity_extraction.VALIDATED_OUTPUT_REASK_2
+        )
     assert call.guarded_output == entity_extraction.VALIDATED_OUTPUT_REASK_2
 
 

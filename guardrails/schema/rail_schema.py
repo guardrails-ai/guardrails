@@ -491,14 +491,14 @@ def build_choice_case(
         case_required_list: List[str] = case_schema.get("required", [])
         for ck, cv in case_properties.items():
             required = ck in case_required_list
-            required_attr = str(required).lower()
             build_element(
                 cv,
                 validator_map,
                 json_path=f"{json_path}.{ck}",
                 parent=case_elem,
                 required=str(required).lower(),
-                attributes={"name": ck, "required": required_attr},
+                attributes={"name": ck},
+                # attributes={"name": ck, "required": required_attr},
             )
 
 
@@ -731,7 +731,8 @@ def build_object_element(
             json_path=child_path,
             parent=element,
             required=required_attr,
-            attributes={"name": k, "required": required_attr},
+            # attributes={"name": k, "required": required_attr},
+            attributes={"name": k},
         )
     return element
 
@@ -808,8 +809,10 @@ def build_element(
     if description:
         attributes["description"] = description
 
-    if required and not tag_override:
+    if required:
         attributes["required"] = required
+    if tag_override:
+        attributes.pop("required", "")
 
     format: Format = extract_internal_format(json_schema.get("format", ""))
 

@@ -1,4 +1,3 @@
-from copy import deepcopy
 from typing import (
     Any,
     Callable,
@@ -162,7 +161,7 @@ def extract_union_member(
 
     else:
         extracted_field_model = extract_validators(
-            pydantic_class=field_model,
+            model=field_model,
             processed_schema=processed_schema,
             json_path=json_path,
             aliases=aliases,
@@ -175,15 +174,11 @@ def extract_union_member(
 
 
 def extract_validators(
-    pydantic_class: Type[BaseModel],
+    model: Type[BaseModel],
     processed_schema: ProcessedSchema,
     json_path: str,
     aliases: List[str] = [],
 ) -> Type[BaseModel]:
-    model = deepcopy(pydantic_class)
-
-    # TODO: Track JSONPath
-    # TODO: Dig recursively for nested models
     for field_name in model.model_fields:
         alias_paths = []
         field_path = f"{json_path}.{field_name}"
@@ -199,7 +194,11 @@ def extract_validators(
         if field.json_schema_extra is not None and isinstance(
             field.json_schema_extra, dict
         ):
-            validators = field.json_schema_extra.pop("validators", [])
+            # NOTE: It's impossible to copy a class type so using
+            #   'pop' here mutates the original Pydantic Model.
+            # Using 'get' adds a pointless 'validators' field to the
+            #   json schema but that doesn't break anything.
+            validators = field.json_schema_extra.get("validators", [])
 
             if not isinstance(validators, list) and not isinstance(
                 validators, Validator
@@ -256,7 +255,7 @@ def extract_validators(
                 ]
             else:
                 extracted_field_model = extract_validators(
-                    pydantic_class=field_model,
+                    model=field_model,
                     processed_schema=processed_schema,
                     json_path=field_path,
                     aliases=alias_paths,

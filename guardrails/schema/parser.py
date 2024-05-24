@@ -1,3 +1,4 @@
+from guardrails_api_client.models.simple_types import SimpleTypes
 import jsonref
 from typing import Any, Dict, List, Optional, Set, Union
 
@@ -89,7 +90,13 @@ def _get_all_paths(
     additional_properties: Dict[str, Any] = json_schema.get(
         "additionalProperties", False
     )
-    if additional_properties:
+    schema_type = json_schema.get("type")
+    # NOTE: Technically we should check for schema compositions
+    #   that would yield an object as well,
+    #   but the case below is a known fault of Pydantic.
+    if additional_properties or (
+        not json_schema.get("properties") and schema_type == SimpleTypes.OBJECT
+    ):
         wildcard_path = f"{json_path}.*"
         paths.add(wildcard_path)
 

@@ -26,7 +26,7 @@ Help me correct the incorrect values based on the given error messages.
 
 Given below is XML that describes the information to extract from this document and the tags to extract it into.
 
-<output required="true">
+<output>
   <list description="What fees and charges are associated with my account?" name="fees" required="true">
     <object required="true">
       <integer format="1-indexed" name="index" required="true"></integer>

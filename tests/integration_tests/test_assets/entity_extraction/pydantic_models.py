@@ -73,7 +73,7 @@ class ContractDetailsNoop(BaseModel):
 
 
 class FeeDetailsReask(BaseModel):
-    index: int = Field(validators=("1-indexed", OnFailAction.NOOP))
+    index: int = Field(format="1-indexed")
     name: str = Field(
         validators=[
             LowerCase(on_fail=OnFailAction.NOOP),
@@ -81,7 +81,7 @@ class FeeDetailsReask(BaseModel):
         ]
     )
     explanation: str = Field(validators=OneLine(on_fail=OnFailAction.NOOP))
-    value: float = Field(validators=("percentage", OnFailAction.NOOP))
+    value: float = Field(format="percentage")
 
 
 class ContractDetailsReask(BaseModel):
