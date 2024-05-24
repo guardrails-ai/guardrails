@@ -19,15 +19,15 @@ class Outputs(IOutputs, ArbitraryModel):
     raw_output: Optional[str] = Field(
         description="The exact output from the LLM.", default=None
     )
-    parsed_output: Optional[Union[str, Dict]] = Field(
+    parsed_output: Optional[Union[str, List, Dict]] = Field(
         description="The output parsed from the LLM response"
         "as it was passed into validation.",
         default=None,
     )
-    validation_response: Optional[Union[str, ReAsk, Dict]] = Field(
+    validation_response: Optional[Union[str, ReAsk, List, Dict]] = Field(
         description="The response from the validation process.", default=None
     )
-    guarded_output: Optional[Union[str, Dict]] = Field(
+    guarded_output: Optional[Union[str, List, Dict]] = Field(
         description="""Any valid values after undergoing validation.
 
         Some values may be "fixed" values that were corrected during validation.

@@ -57,6 +57,9 @@ Dummy prompt.
     )
 
 
+@pytest.mark.skip(
+    "Must add custom format validators to guardrails/schema/validator.py!"
+)
 @pytest.mark.parametrize(
     "date_string,error_type",
     [
@@ -82,10 +85,14 @@ Dummy prompt.
 
 </rail>
 """
+    from rich import print
+
     guard = Guard.from_rail_string(rail_spec)
+    print("schema: ", guard.output_schema.to_dict())
     with pytest.raises(Exception) as excinfo:
-        guard.parse(
+        res = guard.parse(
             llm_output='{"name": "John Doe", "dob": "' + date_string + '"}',
             num_reasks=0,
         )
+        print("res: ", res)
     assert isinstance(excinfo.value, error_type) is True

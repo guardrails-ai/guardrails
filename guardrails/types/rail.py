@@ -9,9 +9,15 @@ class RailTypes(str, Enum):
     DATE = "date"
     TIME = "time"
     DATETIME = "date-time"
-    PERCENTAGE = "percentage"
     ENUM = "enum"
     LIST = "list"
     OBJECT = "object"
     CHOICE = "choice"
     CASE = "case"
+
+    @classmethod
+    def get(cls, key: str) -> "RailTypes":
+        try:
+            return cls(key)
+        except Exception:
+            return None

@@ -1,5 +1,4 @@
 import json
-import jsonref
 import re
 
 import pytest
@@ -35,8 +34,7 @@ with open(
     ],
 )
 def test_generate_example(schema):
-    dereferenced_schema = jsonref.replace_refs(schema)
-    sample = generate_example(dereferenced_schema)
+    sample = generate_example(schema)
     try:
         validate_payload(sample, schema)
     except SchemaValidationError as sve:
@@ -65,8 +63,7 @@ def test_generate_example(schema):
     ],
 )
 def test_gen_string(schema, property_name, pattern):
-    dereferenced_schema = jsonref.replace_refs(schema)
-    sample = gen_string(dereferenced_schema, property_name=property_name)
+    sample = gen_string(schema, property_name=property_name)
     try:
         validate_payload(sample, schema)
     except Exception as e:

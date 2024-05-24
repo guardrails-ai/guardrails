@@ -1,3 +1,4 @@
+import jsonref
 import re
 import rstr
 from builtins import max as get_max
@@ -165,7 +166,7 @@ def gen_array(
 
     array_items = []
     while len(array_items) < gen_amount:
-        item = generate_example(item_schema, property_name=property_name)
+        item = _generate_example(item_schema, property_name=property_name)
         array_items.append(item)
         if unique_items:
             array_items = uniq_with(array_items, is_equal)
@@ -177,11 +178,11 @@ def gen_object(schema: Dict[str, Any]) -> Dict[str, Any]:
     """
     What we do support:
         - properties
-        - schema compositions: Addressed in generate_example
+        - schema compositions: Addressed in _generate_example
             - oneOf
             - anyOf
             - allOf
-        - conditional sub-schemas: Addressed in generate_example
+        - conditional sub-schemas: Addressed in _generate_example
             - if/then/else
             - allOf[if/then/else]
 
@@ -198,7 +199,7 @@ def gen_object(schema: Dict[str, Any]) -> Dict[str, Any]:
     value = {}
     properties: Dict[str, Any] = schema.get("properties", {})
     for k, v in properties.items():
-        value[k] = generate_example(v, property_name=k)
+        value[k] = _generate_example(v, property_name=k)
 
     return value
 
@@ -250,7 +251,7 @@ def evaluate_if_block(schema: Dict[str, Any], value: Any) -> Any:
         sub_schema = then_properties
 
     for k, v in sub_schema.items():
-        sub_schema_value = generate_example(v, property_name=k)
+        sub_schema_value = _generate_example(v, property_name=k)
         value[k] = sub_schema_value
 
     return value
@@ -266,7 +267,7 @@ def pick_sub_schema(
 
     # Factor
     factored_schema = {**schema, **chosen_sub_schema}
-    return generate_example(factored_schema, property_name=property_name)
+    return _generate_example(factored_schema, property_name=property_name)
 
 
 def evaluate_all_of(
@@ -286,17 +287,19 @@ def evaluate_all_of(
 
         other_blocks = [sub for sub in all_of if not sub.get("if")]
         for sub_schema in other_blocks:
-            sub_schema_value = generate_example(sub_schema, property_name=property_name)
+            sub_schema_value = _generate_example(
+                sub_schema, property_name=property_name
+            )
             value = {**value, **sub_schema_value}
         return value
     else:
         compressed_schema = {**schema}
         for sub_schema in all_of:
             compressed_schema.update(sub_schema)
-        return generate_example(compressed_schema, property_name=property_name)
+        return _generate_example(compressed_schema, property_name=property_name)
 
 
-def generate_example(
+def _generate_example(
     json_schema: Dict[str, Any], *, property_name: Optional[str] = None
 ) -> Any:
     # Apply base schema
@@ -333,3 +336,11 @@ def generate_example(
         value = evaluate_all_of(json_schema, value, property_name=property_name)
 
     return value
+
+
+def generate_example(
+    json_schema: Dict[str, Any], *, property_name: Optional[str] = None
+) -> Any:
+    """Takes a json schema and generates a sample object."""
+    dereferenced_schema = jsonref.replace_refs(json_schema)
+    return _generate_example(dereferenced_schema, property_name=property_name)

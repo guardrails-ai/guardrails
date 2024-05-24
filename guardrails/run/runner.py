@@ -11,6 +11,7 @@ from guardrails.llm_providers import AsyncPromptCallableBase, PromptCallableBase
 from guardrails.logger import set_scope
 from guardrails.prompt import Instructions, Prompt
 from guardrails.run.utils import msg_history_source, msg_history_string
+from guardrails.schema.rail_schema import json_schema_to_rail_output
 from guardrails.schema.validator import schema_validation
 from guardrails.types import ModelOrListOfModels, ValidatorMap, MessageHistory
 from guardrails.utils.exception_utils import UserFacingException
@@ -99,12 +100,21 @@ class Runner:
         stringified_output_schema = prompt_content_for_schema(
             output_type, output_schema, validation_map
         )
+        xml_output_schema = json_schema_to_rail_output(
+            json_schema=output_schema, validator_map=validation_map
+        )
         if prompt:
-            self.prompt = Prompt(prompt, output_schema=stringified_output_schema)
+            self.prompt = Prompt(
+                prompt,
+                output_schema=stringified_output_schema,
+                xml_output_schema=xml_output_schema,
+            )
 
         if instructions:
             self.instructions = Instructions(
-                instructions, output_schema=stringified_output_schema
+                instructions,
+                output_schema=stringified_output_schema,
+                xml_output_schema=xml_output_schema,
             )
 
         if msg_history:
@@ -144,6 +154,7 @@ class Runner:
         Returns:
             The Call log for this run.
         """
+        prompt_params = prompt_params or {}
         try:
             # Figure out if we need to include instructions in the prompt.
             include_instructions = not (
@@ -282,8 +293,9 @@ class Runner:
             if parsing_error:
                 iteration.outputs.exception = parsing_error
                 iteration.outputs.error = str(parsing_error)
-
-            iteration.outputs.parsed_output = parsed_output
+                iteration.outputs.reasks.append(parsed_output)
+            else:
+                iteration.outputs.parsed_output = parsed_output
 
             # Validate: run output validation.
             if parsing_error and isinstance(parsed_output, NonParseableReAsk):

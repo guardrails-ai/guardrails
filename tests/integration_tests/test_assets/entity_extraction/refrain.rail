@@ -21,8 +21,8 @@ ${document}
 
 ${gr.xml_prefix_prompt}
 
-${output_schema}
+${xml_output_schema}
 
-${gr.json_suffix_prompt_v2_wo_none}</prompt>
+${gr.xml_suffix_prompt_v2_wo_none}</prompt>
 
 </rail>

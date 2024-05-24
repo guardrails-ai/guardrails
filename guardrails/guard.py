@@ -1010,9 +1010,14 @@ class Guard(IGuard, Generic[OT]):
             if llm_api is None
             else 1
         )
-        prompt = kwargs.pop("prompt", self._exec_opts.prompt)
-        instructions = kwargs.pop("instructions", self._exec_opts.instructions)
-        msg_history = kwargs.pop("msg_history", self._exec_opts.msg_history)
+        default_prompt = self._exec_opts.prompt if llm_api else None
+        prompt = kwargs.pop("prompt", default_prompt)
+
+        default_instructions = self._exec_opts.instructions if llm_api else None
+        instructions = kwargs.pop("instructions", default_instructions)
+
+        default_msg_history = self._exec_opts.msg_history if llm_api else None
+        msg_history = kwargs.pop("msg_history", default_msg_history)
 
         return self._execute(
             *args,

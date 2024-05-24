@@ -1,5 +1,4 @@
 import json
-import jsonref
 from typing import Any
 import pytest
 
@@ -153,6 +152,5 @@ with open(
     ],
 )
 def test_get_all_paths(schema, expected_keys):
-    dereferenced_schema = jsonref.replace_refs(schema)
-    actual_keys = get_all_paths(dereferenced_schema)
+    actual_keys = get_all_paths(schema)
     assert actual_keys == expected_keys

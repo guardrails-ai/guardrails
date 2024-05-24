@@ -9,6 +9,7 @@ from guardrails.classes.history import Call, Iteration
 from guardrails.classes.output_type import OT
 from guardrails.classes.generic.arbitrary_model import ArbitraryModel
 from guardrails.constants import pass_status
+from guardrails.utils.safe_get import safe_get
 
 
 class ValidationOutcome(IValidationOutcome, ArbitraryModel, Generic[OT]):
@@ -52,7 +53,9 @@ class ValidationOutcome(IValidationOutcome, ArbitraryModel, Generic[OT]):
     def from_guard_history(cls, call: Call):
         """Create a ValidationOutcome from a history Call object."""
         last_iteration = call.iterations.last or Iteration()
-        last_output = last_iteration.validation_response or last_iteration.parsed_output
+        last_output = last_iteration.validation_response or safe_get(
+            last_iteration.reasks, 0
+        )
         validation_passed = call.status == pass_status
         reask = last_output if isinstance(last_output, ReAsk) else None
         error = call.error

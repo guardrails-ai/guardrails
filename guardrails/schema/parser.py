@@ -1,3 +1,4 @@
+import jsonref
 from typing import Any, Dict, List, Optional, Set, Union
 
 from guardrails.utils.safe_get import safe_get
@@ -67,15 +68,12 @@ def write_value_to_path(
 
 
 ### Reading and Manipulating JSON Schemas ###
-def get_all_paths(
+def _get_all_paths(
     json_schema: Dict[str, Any],
     *,
     paths: Optional[Set[str]] = None,
     json_path: Optional[str] = "$",
 ) -> Dict[str, Dict[str, Any]]:
-    """
-    Takes a JSON Schema and returns all possible JSONPaths within that schema
-    """
     if not paths:
         paths = set()
     # Append the parent path for this iteration
@@ -85,7 +83,7 @@ def get_all_paths(
     schema_properties: Dict[str, Any] = json_schema.get("properties", {})
     for k, v in schema_properties.items():
         child_path = f"{json_path}.{k}"
-        get_all_paths(v, paths=paths, json_path=child_path)
+        _get_all_paths(v, paths=paths, json_path=child_path)
 
     ## Object Schema allows anonymous properties
     additional_properties: Dict[str, Any] = json_schema.get(
@@ -98,32 +96,45 @@ def get_all_paths(
     # Array Schema
     schema_items = json_schema.get("items")
     if schema_items:
-        get_all_paths(schema_items, paths=paths, json_path=json_path)
+        _get_all_paths(schema_items, paths=paths, json_path=json_path)
 
     # Conditional SubSchema
     if_block: Dict[str, Any] = json_schema.get("if")
     if if_block:
-        get_all_paths(if_block, paths=paths, json_path=json_path)
+        _get_all_paths(if_block, paths=paths, json_path=json_path)
 
     then_block: Dict[str, Any] = json_schema.get("then")
     if then_block:
-        get_all_paths(then_block, paths=paths, json_path=json_path)
+        _get_all_paths(then_block, paths=paths, json_path=json_path)
 
     else_block: Dict[str, Any] = json_schema.get("else")
     if else_block:
-        get_all_paths(else_block, paths=paths, json_path=json_path)
+        _get_all_paths(else_block, paths=paths, json_path=json_path)
 
     # Schema Composition
     oneOf: List[Dict[str, Any]] = json_schema.get("oneOf", [])
     for sub_schema in oneOf:
-        get_all_paths(sub_schema, paths=paths, json_path=json_path)
+        _get_all_paths(sub_schema, paths=paths, json_path=json_path)
 
     anyOf: List[Dict[str, Any]] = json_schema.get("anyOf", [])
     for sub_schema in anyOf:
-        get_all_paths(sub_schema, paths=paths, json_path=json_path)
+        _get_all_paths(sub_schema, paths=paths, json_path=json_path)
 
     allOf: List[Dict[str, Any]] = json_schema.get("allOf", [])
     for sub_schema in allOf:
-        get_all_paths(sub_schema, paths=paths, json_path=json_path)
+        _get_all_paths(sub_schema, paths=paths, json_path=json_path)
 
     return paths
+
+
+def get_all_paths(
+    json_schema: Dict[str, Any],
+    *,
+    paths: Optional[Set[str]] = None,
+    json_path: Optional[str] = "$",
+) -> Dict[str, Dict[str, Any]]:
+    """
+    Takes a JSON Schema and returns all possible JSONPaths within that schema
+    """
+    dereferenced_schema = jsonref.replace_refs(json_schema)
+    return _get_all_paths(dereferenced_schema, paths=paths, json_path=json_path)

@@ -8,7 +8,6 @@ from typing import (
     Tuple,
     Type,
     Union,
-    cast,
     get_args,
     get_origin,
 )
@@ -139,7 +138,7 @@ def safe_get_validator(v: PydanticValidatorSpec) -> Union[Validator, None]:
         validator = get_validator(v)
         return validator
     except ValueError as e:
-        logger.warn(e)
+        logger.warning(e)
         return None
 
 
@@ -202,17 +201,22 @@ def extract_validators(
         ):
             validators = field.json_schema_extra.pop("validators", [])
 
-            if not isinstance(validators, list):
-                logger.warn(
+            if not isinstance(validators, list) and not isinstance(
+                validators, Validator
+            ):
+                logger.warning(
                     f"Invalid value assigned to {field_name}.validators! {validators}"
                 )
                 continue
+            validator_instances: List[Validator] = []
 
-            validator_instances: List[Validator] = list(
-                filter(
-                    lambda v: v is not None, [safe_get_validator(v) for v in validators]
+            # Only for backwards compatibility
+            if isinstance(validators, Validator):
+                validator_instances.append(validators)
+            else:
+                validator_instances.extend(
+                    [safe_get_validator(v) for v in validators if v is not None]
                 )
-            )
             all_paths = [field_path]
             all_paths.extend(alias_paths)
             for path in all_paths:
@@ -271,23 +275,11 @@ def extract_validators(
 
 
 def pydantic_to_json_schema(
-    pydantic_class: ModelOrListOfModels, type_origin: Optional[Any] = None
+    pydantic_class: Type[BaseModel], type_origin: Optional[Any] = None
 ) -> Dict[str, Any]:
-    schema_model = pydantic_class
-
-    type_origin = type_origin if type_origin is not None else get_origin(pydantic_class)
-    if type_origin == list:
-        item_types = get_args(pydantic_class)
-        if len(item_types) > 1:
-            raise ValueError("List data type must have exactly one child.")
-        # No List[List] support; we've already declared that in our types
-        schema_model = safe_get(item_types, 0)
-
-    schema_model = cast(Type[BaseModel], schema_model)
-
     # Convert Pydantic model to JSON schema
-    json_schema = schema_model.model_json_schema()
-    json_schema["title"] = schema_model.__name__
+    json_schema = pydantic_class.model_json_schema()
+    json_schema["title"] = pydantic_class.__name__
 
     if type_origin == list:
         json_schema = {

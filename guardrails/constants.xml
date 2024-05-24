@@ -82,7 +82,7 @@ If you are unsure anywhere, enter `null`.
 <xml_suffix_without_examples>
 Given below is XML that describes the information to extract from this document and the tags to extract it into.
 
-${output_schema}
+${xml_output_schema}
 
 ONLY return a valid JSON object (no other text is necessary), where the key of the field in JSON is the `name` attribute of the corresponding XML, and the value is of the type specified by the corresponding XML's tag. The JSON MUST conform to the XML format, including any types and format requests e.g. requests for lists, objects and specific types. Be correct and concise. If you are unsure anywhere, enter `null`.
 </xml_suffix_without_examples>
@@ -114,7 +114,7 @@ Here are examples of simple (JSON Schema, JSON) pairs that show the expected beh
 <complete_xml_suffix>
 Given below is XML that describes the information to extract from this document and the tags to extract it into.
 
-${output_schema}
+${xml_output_schema}
 
 ONLY return a valid JSON object (no other text is necessary), where the key of the field in JSON is the `name` attribute of the corresponding XML, and the value is of the type specified by the corresponding XML's tag. The JSON MUST conform to the XML format, including any types and format requests e.g. requests for lists, objects and specific types. Be correct and concise. If you are unsure anywhere, enter `null`.
 
@@ -141,7 +141,7 @@ Here are examples of simple (JSON Schema, JSON) pairs that show the expected beh
 <complete_xml_suffix_v2>
 Given below is XML that describes the information to extract from this document and the tags to extract it into.
 
-${output_schema}
+${xml_output_schema}
 
 ONLY return a valid JSON object (no other text is necessary), where the key of the field in JSON is the `name` attribute of the corresponding XML, and the value is of the type specified by the corresponding XML's tag. The JSON MUST conform to the XML format, including any types and format requests e.g. requests for lists, objects and specific types. Be correct and concise.
 
@@ -169,7 +169,7 @@ Here are examples of simple (JSON Schema, JSON) pairs that show the expected beh
 <complete_xml_suffix_v3>
 Given below is XML that describes the information to extract from this document and the tags to extract it into.
 
-${output_schema}
+${xml_output_schema}
 
 ONLY return a valid JSON object (no other text is necessary), where the key of the field in JSON is the `name` attribute of the corresponding XML, and the value is of the type specified by the corresponding XML's tag. The JSON MUST conform to the XML format, including any types and format requests e.g. requests for lists, objects and specific types. Be correct and concise. If you are unsure anywhere, try your best guess.
 

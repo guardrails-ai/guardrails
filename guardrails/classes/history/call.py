@@ -51,7 +51,7 @@ class Call(ICall, ArbitraryModel):
         super().__init__(
             iterations=iterations,  # type: ignore
             inputs=inputs,  # type: ignore
-            exception=CallException(str(exception)),  # type: ignore
+            exception=CallException(exception),  # type: ignore
         )
         self.iterations = iterations
         self.inputs = inputs

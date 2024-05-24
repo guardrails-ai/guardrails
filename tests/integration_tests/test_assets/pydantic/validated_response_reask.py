@@ -18,7 +18,7 @@ prompt = """Generate data for possible users in accordance with the specificatio
 
 ${gr.xml_prefix_prompt}
 
-${output_schema}
+${xml_output_schema}
 
 ${gr.complete_json_suffix_v2}"""
 

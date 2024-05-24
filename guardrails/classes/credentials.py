@@ -27,7 +27,7 @@ class Credentials(Serializeable):
                 for line in filtered_lines:
                     line_content = line.split("=", 1)
                     if len(line_content) != 2:
-                        logger.warn(
+                        logger.warning(
                             """
                             Invalid line found in .guardrailsrc file!
                             All lines in this file should follow the format: key=value

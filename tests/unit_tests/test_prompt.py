@@ -16,7 +16,7 @@ PROMPT = "Extract a string from the text"
 
 REASK_PROMPT = """
 Please try that again, extract a string from the text
-${output_schema}
+${xml_output_schema}
 ${previous_response}
 """
 
@@ -115,7 +115,7 @@ ${gr.complete_json_suffix_v2}
 </prompt>
 <reask_prompt>
 Please try that again, extract a string from the text
-${output_schema}
+${xml_output_schema}
 ${previous_response}
 </reask_prompt>
 </rail>
@@ -140,7 +140,7 @@ ${gr.complete_json_suffix_v2}
 </prompt>
 <reask_prompt>
 Please try that again, extract a string from the text
-${output_schema}
+${xml_output_schema}
 ${previous_response}
 </reask_prompt>
 <reask_instructions>

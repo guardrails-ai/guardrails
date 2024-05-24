@@ -123,15 +123,15 @@ ${document}
 
 ${gr.xml_prefix_prompt}
 
-${output_schema}
+${xml_output_schema}
 
-${gr.json_suffix_prompt_v2_wo_none}"""  # noqa: E501
+${gr.xml_suffix_prompt_v2_wo_none}"""  # noqa: E501
 
 
 INSTRUCTIONS_CHAT_MODEL = """
 You are a helpful assistant only capable of communicating with valid JSON, and no other text.
 
-${gr.json_suffix_prompt_examples}
+${gr.xml_suffix_prompt_examples}
 """  # noqa: E501
 
 
@@ -144,5 +144,5 @@ Extract information from this document and return a JSON that follows the correc
 
 ${gr.xml_prefix_prompt}
 
-${output_schema}
+${xml_output_schema}
 """  # noqa: E501

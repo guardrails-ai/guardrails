@@ -82,6 +82,9 @@ def validate_payload(
             "$ref": f"urn:{schema_id}",
         },
         registry=registry,
+        # TODO: Add custom checks for date: format,
+        #   time: format, date-time: format, etc.
+        # format_checker=draft202012_format_checker
     )
     validate_against_schema(payload, validator, validate_subschema=validate_subschema)
 

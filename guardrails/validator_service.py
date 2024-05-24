@@ -368,7 +368,7 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
         ref_parent_path: str,
     ):
         async def validate_child(
-            child_value: Any, *, key: Optional[str], index: Optional[int]
+            child_value: Any, *, key: Optional[str] = None, index: Optional[int] = None
         ):
             child_key = key or index
             abs_child_path = f"{abs_parent_path}.{child_key}"
@@ -385,7 +385,7 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
                 abs_child_path,
                 ref_child_path,
             )
-            return key, new_child_value, new_metadata
+            return child_key, new_child_value, new_metadata
 
         tasks = []
         if isinstance(value, List):
@@ -417,7 +417,7 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
         child_ref_path = reference_path.replace(".*", "")
         # Validate children first
         if isinstance(value, List) or isinstance(value, Dict):
-            self.validate_children(
+            await self.validate_children(
                 value, metadata, validator_map, iteration, absolute_path, child_ref_path
             )
 

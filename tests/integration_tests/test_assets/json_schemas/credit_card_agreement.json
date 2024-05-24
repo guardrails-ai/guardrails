@@ -2,10 +2,10 @@
   "$defs": {
       "Fee": {
           "properties": {
-              "index": {"title": "Index", "type": "integer"},
+              "index": {"title": "Index", "type": "integer", "format": "1-indexed"},
               "name": {"title": "Name", "type": "string"},
               "explanation": {"title": "Explanation", "type": "string"},
-              "value": {"title": "Value", "type": "number"}
+              "value": {"title": "Value", "type": "number", "format": "percentage"}
           },
           "required": ["index", "name", "explanation", "value"],
           "title": "Fee",

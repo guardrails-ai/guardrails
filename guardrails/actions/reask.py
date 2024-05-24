@@ -1,6 +1,5 @@
 from copy import deepcopy
 import json
-import jsonref
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from guardrails_api_client import Reask as IReask
@@ -10,6 +9,7 @@ from guardrails.classes.validation.validation_result import FailResult
 from guardrails.prompt.instructions import Instructions
 from guardrails.prompt.prompt import Prompt
 from guardrails.schema.generator import generate_example
+from guardrails.schema.rail_schema import json_schema_to_rail_output
 from guardrails.types.validator import ValidatorMap
 from guardrails.utils.constants import constants
 from guardrails.utils.prompt_utils import prompt_content_for_schema
@@ -183,6 +183,9 @@ def get_reask_setup_for_string(
     schema_prompt_content = prompt_content_for_schema(
         output_type, output_schema, validation_map
     )
+    xml_output_schema = json_schema_to_rail_output(
+        json_schema=output_schema, validator_map=validation_map
+    )
 
     reask_prompt_template = None
     if exec_options.reask_prompt:
@@ -205,6 +208,7 @@ def get_reask_setup_for_string(
         previous_response=validation_response.incorrect_value,
         error_messages=error_messages,
         output_schema=schema_prompt_content,
+        xml_output_schema=xml_output_schema,
         **prompt_params,
     )
 
@@ -214,7 +218,9 @@ def get_reask_setup_for_string(
     if instructions is None:
         instructions = Instructions("You are a helpful assistant.")
     instructions = instructions.format(
-        output_schema=schema_prompt_content, **prompt_params
+        output_schema=schema_prompt_content,
+        xml_output_schema=xml_output_schema,
+        **prompt_params,
     )
 
     return output_schema, prompt, instructions
@@ -300,10 +306,12 @@ def get_reask_setup_for_json(
     stringified_schema = prompt_content_for_schema(
         output_type, reask_schema, validation_map
     )
+    xml_output_schema = json_schema_to_rail_output(
+        json_schema=output_schema, validator_map=validation_map
+    )
 
-    dereferenced_reask_schema = jsonref.replace_refs(reask_schema)
     json_example = json.dumps(
-        generate_example(dereferenced_reask_schema),
+        generate_example(reask_schema),
         indent=2,
     )
 
@@ -323,6 +331,7 @@ def get_reask_setup_for_json(
             reask_value, indent=2, default=reask_decoder, ensure_ascii=False
         ),
         output_schema=stringified_schema,
+        xml_output_schema=xml_output_schema,
         json_example=json_example,
         error_messages=json.dumps(error_messages),
         **prompt_params,

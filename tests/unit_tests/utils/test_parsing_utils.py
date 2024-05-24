@@ -1,5 +1,4 @@
 import json
-import jsonref
 import pytest
 
 from guardrails.utils.parsing_utils import (
@@ -190,6 +189,5 @@ with open(
     ],
 )
 def test_prune_extra_keys(schema, payload, pruned_payload):
-    dereferenced_schema = jsonref.replace_refs(schema)
-    actual = prune_extra_keys(payload, dereferenced_schema)
+    actual = prune_extra_keys(payload, schema)
     assert actual == pruned_payload

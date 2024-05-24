@@ -223,12 +223,13 @@ def prune_extra_keys(
         all_json_paths = get_all_paths(schema)
 
     if isinstance(payload, dict):
-        wildcard_path = f"{json_path}.*"
-        parent_is_wildcard = wildcard_path in all_json_paths
+        # Do full lookbehind
+        wildcards = [path.split(".*")[0] for path in all_json_paths if ".*" in path]
+        ancestor_is_wildcard = any(w in json_path for w in wildcards)
         actual_keys = list(payload.keys())
         for key in actual_keys:
             child_path = f"{json_path}.{key}"
-            if child_path not in all_json_paths and not parent_is_wildcard:
+            if child_path not in all_json_paths and not ancestor_is_wildcard:
                 del payload[key]
             else:
                 prune_extra_keys(
@@ -354,6 +355,8 @@ def coerce_property(
     additional_properties_schema: Dict[str, Any] = schema.get(
         "additionalProperties", {}
     )
+    if isinstance(additional_properties_schema, bool):
+        additional_properties_schema = {}
     if additional_properties_schema and isinstance(payload, dict):
         declared_properties = properties.keys()
         additional_properties = [

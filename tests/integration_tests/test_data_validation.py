@@ -8,8 +8,9 @@ from guardrails import Guard
 from guardrails.errors import ValidationError
 from guardrails.utils.reask_utils import ReAsk
 from guardrails.validator_base import OnFailAction
-from guardrails.validators import ValidChoices
+from tests.integration_tests.test_assets.validators import ValidChoices
 
+###   llm_output,                                             raises, fails, has_error ###
 test_cases = [
     ('{"choice": {"action": "fight", "fight_move": "kick"}}', False, False, False),
     (
