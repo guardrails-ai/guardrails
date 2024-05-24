@@ -3,8 +3,8 @@
 
     <list name="fees" description="What fees and charges are associated with my account?">
         <object>
-            <string name="name" format="lower-case; two-words" on-fail-lower-case="noop" on-fail-two-words="reask"/>
-            <string name="explanation" format="one-line" on-fail-one-line="noop" />
+            <string name="name" validators="lower-case; two-words" on-fail-lower-case="noop" on-fail-two-words="reask"/>
+            <string name="explanation" validators="one-line" on-fail-one-line="noop" />
             <float name="value" format="percentage"/>
         </object>
     </list>

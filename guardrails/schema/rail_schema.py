@@ -817,14 +817,6 @@ def build_element(
     validators.extend(validator_map.get(json_path, []))
     validators.extend(validator_map.get(f"{json_path}.*", []))
 
-    on_fails = {
-        Template("on-fail-${rail_alias}").safe_substitute(
-            rail_alias=v.rail_alias.replace("/", "_")
-        ): v.on_fail_descriptor
-        for v in validators
-    }
-    attributes.update(on_fails)
-
     # While we now require validators to be specified in rail
     #   using the 'validators' attribute,
     # Schema2Prompt still assigned these to 'format' for prompting

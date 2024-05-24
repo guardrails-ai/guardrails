@@ -2,7 +2,7 @@
 <output
     type="string"
     name="greeting"
-    format="two-words; lower-case; one-line; valid-url; valid-choices: a; length: 1 10"
+    validators="two-words; lower-case; one-line; valid-url; valid-choices: a; length: 1 10"
     on-fail-two-words="reask"
     on-fail-lower-case="reask"
     on-fail-one-line="fix"

@@ -768,6 +768,7 @@ class Guard(IGuard, Generic[OT]):
                 base_model=self._base_model,
                 full_schema_reask=full_schema_reask,
                 disable_tracer=(not self._allow_metrics_collection),
+                exec_options=self._exec_opts,
             )
             return runner(call_log=call_log, prompt_params=prompt_params)
         else:
@@ -786,6 +787,7 @@ class Guard(IGuard, Generic[OT]):
                 base_model=self._base_model,
                 full_schema_reask=full_schema_reask,
                 disable_tracer=(not self._allow_metrics_collection),
+                exec_options=self._exec_opts,
             )
             call = runner(call_log=call_log, prompt_params=prompt_params)
             return ValidationOutcome[OT].from_guard_history(call)
@@ -840,6 +842,7 @@ class Guard(IGuard, Generic[OT]):
             base_model=self._base_model,
             full_schema_reask=full_schema_reask,
             disable_tracer=(not self._allow_metrics_collection),
+            exec_options=self._exec_opts,
         )
         # Why are we using a different method here instead of just overriding?
         call = await runner.async_run(call_log=call_log, prompt_params=prompt_params)

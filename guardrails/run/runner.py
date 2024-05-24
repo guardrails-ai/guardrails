@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
 
 from guardrails import validator_service
 from guardrails.actions.reask import get_reask_setup
+from guardrails.classes.execution.guard_execution_options import GuardExecutionOptions
 from guardrails.classes.history import Call, Inputs, Iteration, Outputs
 from guardrails.classes.output_type import OutputTypes
 from guardrails.errors import ValidationError
@@ -55,6 +56,7 @@ class Runner:
     instructions: Optional[Instructions] = None
     msg_history: Optional[List[Dict[str, Union[Prompt, str]]]] = None
     base_model: Optional[ModelOrListOfModels]
+    exec_options: Optional[GuardExecutionOptions]
 
     # LLM Calling Details
     api: Optional[PromptCallableBase] = None
@@ -85,6 +87,7 @@ class Runner:
         base_model: Optional[ModelOrListOfModels] = None,
         full_schema_reask: bool = False,
         disable_tracer: Optional[bool] = True,
+        exec_options: Optional[GuardExecutionOptions] = None,
     ):
         # Validation Inputs
         self.output_type = output_type
@@ -128,6 +131,9 @@ class Runner:
             self.msg_history = msg_history_copy
 
         self.base_model = base_model
+        self.exec_options = exec_options or GuardExecutionOptions(
+            prompt=prompt, instructions=instructions, msg_history=msg_history
+        )
 
         # LLM Calling Details
         self.api = api
@@ -633,6 +639,7 @@ class Runner:
             validation_response=validated_output,
             use_full_schema=self.full_schema_reask,
             prompt_params=prompt_params,
+            exec_options=self.exec_options,
         )
         if not include_instructions:
             instructions = None

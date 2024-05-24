@@ -178,8 +178,11 @@ def get_reask_setup_for_string(
     *,
     validation_response: Optional[Union[str, Dict, ReAsk]] = None,
     prompt_params: Optional[Dict[str, Any]] = {},
-    exec_options: Optional[GuardExecutionOptions] = GuardExecutionOptions(),
+    exec_options: Optional[GuardExecutionOptions] = None,
 ) -> Tuple[Dict[str, Any], Prompt, Instructions]:
+    prompt_params = prompt_params or {}
+    exec_options = exec_options or GuardExecutionOptions()
+
     schema_prompt_content = prompt_content_for_schema(
         output_type, output_schema, validation_map
     )
@@ -236,7 +239,7 @@ def get_reask_setup_for_json(
     validation_response: Optional[Union[str, Dict, ReAsk]] = None,
     use_full_schema: Optional[bool] = False,
     prompt_params: Optional[Dict[str, Any]] = {},
-    exec_options: Optional[GuardExecutionOptions] = GuardExecutionOptions(),
+    exec_options: Optional[GuardExecutionOptions] = None,
 ) -> Tuple[Dict[str, Any], Prompt, Instructions]:
     reask_schema = output_schema
     is_skeleton_reask = not any(isinstance(reask, FieldReAsk) for reask in reasks)
@@ -244,6 +247,8 @@ def get_reask_setup_for_json(
         isinstance(reask, NonParseableReAsk) for reask in reasks
     )
     error_messages = {}
+    prompt_params = prompt_params or {}
+    exec_options = exec_options or GuardExecutionOptions()
 
     reask_prompt_template = None
     if exec_options.reask_prompt:
@@ -292,13 +297,19 @@ def get_reask_setup_for_json(
             reask_schema = get_reask_subschema(output_schema, field_reasks)
 
         if reask_prompt_template is None:
+            suffix = (
+                constants["xml_suffix_without_examples"]
+                if "xml_output_schema" in (exec_options.prompt or "")
+                else constants["json_suffix_without_examples"]
+            )
             reask_prompt_template = Prompt(
-                constants["high_level_json_reask_prompt"]
-                + constants["json_suffix_without_examples"]
+                constants["high_level_json_reask_prompt"] + suffix
             )
 
         error_messages = {
-            r.path: "; ".join(f.error_message for f in r.fail_results)
+            ".".join(str(p) for p in r.path): "; ".join(
+                f.error_message for f in r.fail_results
+            )
             for r in reasks
             if isinstance(r, FieldReAsk)
         }
@@ -357,8 +368,11 @@ def get_reask_setup(
     validation_response: Optional[Union[str, Dict, ReAsk]] = None,
     use_full_schema: Optional[bool] = False,
     prompt_params: Optional[Dict[str, Any]] = None,
-    exec_options: Optional[GuardExecutionOptions] = GuardExecutionOptions(),
+    exec_options: Optional[GuardExecutionOptions] = None,
 ) -> Tuple[Dict[str, Any], Prompt, Instructions]:
+    prompt_params = prompt_params or {}
+    exec_options = exec_options or GuardExecutionOptions()
+
     if output_type == OutputTypes.STRING:
         return get_reask_setup_for_string(
             output_type=output_type,
@@ -485,11 +499,15 @@ def merge_reask_output(previous_response, reask_response) -> Dict:
     Returns:
         The merged output.
     """
-
     if isinstance(previous_response, ReAsk):
         return reask_response
 
-    pruned_reask_json = prune_obj_for_reasking(previous_response)
+    # FIXME: Uncommenet when field level reask is fixed
+    # This used to be necessary for field level reask because
+    #   the schema was pruned to only the properties that failed.
+    #  This caused previous keys that were correct to be pruned during schemafication.
+    # pruned_reask_json = prune_obj_for_reasking(previous_response)
+    pruned_reask_json = previous_response
 
     # Reask output and reask json have the same structure, except that values
     # of the reask json are ReAsk objects. We want to replace the ReAsk objects
