@@ -8,11 +8,9 @@ from guardrails.types.validator import ValidatorMap
 
 @dataclass
 class ProcessedSchema:
-    """
-    This class is just a container for the various pieces
-    of information we extract from the various schema wrappers
-    a user can pass in; i.e. RAIL or Pydantic.
-    """
+    """This class is just a container for the various pieces of information we
+    extract from the various schema wrappers a user can pass in; i.e. RAIL or
+    Pydantic."""
 
     output_type: OutputTypes = None
     validators: List[ValidatorReference] = field(default_factory=list)

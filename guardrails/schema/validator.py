@@ -39,8 +39,8 @@ def validate_against_schema(
 
 
 def validate_json_schema(json_schema: Dict[str, Any]):
-    """
-    Validates a json_schema, against the JSON Meta Schema Draft 2020-12.
+    """Validates a json_schema, against the JSON Meta Schema Draft 2020-12.
+
     Raises a SchemaValidationError if invalid.
     """
     json_schema_validator = Draft202012Validator(
@@ -64,8 +64,8 @@ def validate_payload(
     *,
     validate_subschema: Optional[bool] = False,
 ):
-    """
-    Validates a payload, against the provided JSON Schema.
+    """Validates a payload, against the provided JSON Schema.
+
     Raises a SchemaValidationError if invalid.
     """
     schema_id = json_schema.get("$id", "temp-schema")

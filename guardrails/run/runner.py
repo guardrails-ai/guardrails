@@ -94,6 +94,7 @@ class Runner:
         self.output_schema = output_schema
         self.validation_map = validation_map
         self.metadata = metadata or {}
+        self.exec_options = copy.deepcopy(exec_options) or GuardExecutionOptions()
 
         # LLM Inputs
         if prompt:
@@ -107,6 +108,7 @@ class Runner:
             json_schema=output_schema, validator_map=validation_map
         )
         if prompt:
+            self.exec_options.prompt = prompt
             self.prompt = Prompt(
                 prompt,
                 output_schema=stringified_output_schema,
@@ -114,6 +116,7 @@ class Runner:
             )
 
         if instructions:
+            self.exec_options.instructions = instructions
             self.instructions = Instructions(
                 instructions,
                 output_schema=stringified_output_schema,
@@ -121,19 +124,19 @@ class Runner:
             )
 
         if msg_history:
+            self.exec_options.msg_history = msg_history
             msg_history_copy = []
             for msg in msg_history:
                 msg_copy = copy.deepcopy(msg)
                 msg_copy["content"] = Prompt(
-                    msg_copy["content"], output_schema=stringified_output_schema
+                    msg_copy["content"],
+                    output_schema=stringified_output_schema,
+                    xml_output_schema=xml_output_schema,
                 )
                 msg_history_copy.append(msg_copy)
             self.msg_history = msg_history_copy
 
         self.base_model = base_model
-        self.exec_options = exec_options or GuardExecutionOptions(
-            prompt=prompt, instructions=instructions, msg_history=msg_history
-        )
 
         # LLM Calling Details
         self.api = api

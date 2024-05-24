@@ -93,6 +93,12 @@ Here's an example of the structure:
 ${json_example}
 </json_suffix_with_structure_example>
 
+<xml_suffix_with_structure_example>
+${gr.xml_suffix_without_examples}
+Here's an example of the structure:
+${json_example}
+</xml_suffix_with_structure_example>
+
 <complete_json_suffix>
 Given below is a JSON Schema that describes the information to extract from this document and the tags to extract it into.
 

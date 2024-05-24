@@ -75,8 +75,8 @@ def extract_format(
     internal_type: RailTypes,
     internal_format_attr: str,
 ) -> str:
-    """
-    Prioritizes information retention over custom formats.
+    """Prioritizes information retention over custom formats.
+
     Example:
         RAIL - <date format="foo" date-format="%Y-%M-%D" />
         JSON Schema - { "type": "string", "format": "date: %Y-%M-%D; foo" }
@@ -101,11 +101,8 @@ def extract_format(
 def parse_element(
     element: _Element, processed_schema: ProcessedSchema, json_path: str = "$"
 ) -> ModelSchema:
-    """
-    Takes an XML element
-    Extracts validators to add to the 'validators' list and validator_map
-    Returns a ModelSchema
-    """
+    """Takes an XML element Extracts validators to add to the 'validators' list
+    and validator_map Returns a ModelSchema."""
     schema_type = element.tag
     if element.tag in STRING_TAGS:
         schema_type = RailTypes.STRING
@@ -228,19 +225,17 @@ def parse_element(
             object_schema.additional_properties = True
         return object_schema
     elif schema_type == RailTypes.CHOICE:
-        """
-        Since our ModelSchema class reflects the pure JSON Schema structure
-        this implementation of choice-case strays from the
-        Discriminated Unions specification as defined 
-        by OpenAPI that Pydantic uses.
-        
-        We should verify that LLM's understand this syntax properly.
-        If they do not, we can manually add the 'discriminator' property to
+        """Since our ModelSchema class reflects the pure JSON Schema structure
+        this implementation of choice-case strays from the Discriminated Unions
+        specification as defined by OpenAPI that Pydantic uses.
+
+        We should verify that LLM's understand this syntax properly. If
+        they do not, we can manually add the 'discriminator' property to
         the schema after calling 'ModelSchema.to_dict()'.
-        
+
         JSON Schema Conditional Subschemas
         https://json-schema.org/understanding-json-schema/reference/conditionals#applying-subschemas-conditionally
-        
+
         VS OpenAPI Specification's Discriminated Unions
         https://swagger.io/docs/specification/data-models/inheritance-and-polymorphism/
         """
@@ -597,8 +592,8 @@ def build_choice_case_element_from_discriminator(
     json_path: str = "$",
     parent: _Element = None,
 ) -> _Element:
-    """
-    Takes an OpenAPI Spec flavored JSON Schema with a discriminated union.
+    """Takes an OpenAPI Spec flavored JSON Schema with a discriminated union.
+
     Returns a choice-case RAIL element.
     """
     one_of: List[Dict[str, Any]] = json_schema.get("oneOf", [])
@@ -798,11 +793,8 @@ def build_element(
     required: Optional[str] = "true",
     attributes: Optional[Dict[str, Any]] = {},
 ) -> _Element:
-    """
-    Takes an XML element
-    Extracts validators to add to the 'validators' list and validator_map
-    Returns a ModelSchema
-    """
+    """Takes an XML element Extracts validators to add to the 'validators' list
+    and validator_map Returns a ModelSchema."""
     schema_type = json_schema.get("type", "object")
 
     description = json_schema.get("description")
@@ -848,7 +840,7 @@ def build_element(
     elif schema_type == SimpleTypes.NUMBER:
         rail_type = RailTypes.FLOAT
     elif schema_type == SimpleTypes.OBJECT:
-        """Checks for objects and choice-case"""
+        """Checks for objects and choice-case."""
         return build_object_element(
             json_schema,
             validator_map,
@@ -859,7 +851,7 @@ def build_element(
             parent=parent,
         )
     elif schema_type == SimpleTypes.STRING:
-        """Checks for string, date, time, datetime, enum"""
+        """Checks for string, date, time, datetime, enum."""
         return build_string_element(
             json_schema,
             attributes,
@@ -882,11 +874,10 @@ def build_element(
 def json_schema_to_rail_output(
     json_schema: Dict[str, Any], validator_map: ValidatorMap
 ) -> str:
-    """
-    Takes a JSON Schema and converts it to the RAIL output specification.
+    """Takes a JSON Schema and converts it to the RAIL output specification.
 
-    Limited support.
-    Only guaranteed to work for JSON Schemas that were derived from RAIL.
+    Limited support. Only guaranteed to work for JSON Schemas that were
+    derived from RAIL.
     """
     dereferenced_json_schema = jsonref.replace_refs(json_schema)
     output_element = build_element(

@@ -38,8 +38,10 @@ VALIDATED_OUTPUT_SKELETON_REASK_1 = SkeletonReAsk(
     },
     fail_results=[
         FailResult(
-            error_message="JSON does not match schema",
+            outcome="fail",
+            error_message='JSON does not match schema:\n{\n  "$.fees[0]": [\n    "\'explanation\' is a required property"\n  ],\n  "$.fees[1]": [\n    "\'explanation\' is a required property"\n  ],\n  "$.fees[2]": [\n    "\'explanation\' is a required property"\n  ],\n  "$.fees[3]": [\n    "\'explanation\' is a required property"\n  ],\n  "$.fees[4]": [\n    "\'explanation\' is a required property"\n  ],\n  "$.fees[5]": [\n    "\'explanation\' is a required property"\n  ],\n  "$.fees[6]": [\n    "\'explanation\' is a required property"\n  ],\n  "$.fees[7]": [\n    "\'explanation\' is a required property"\n  ],\n  "$.fees[8]": [\n    "\'explanation\' is a required property"\n  ]\n}',
             fix_value=None,
+            metadata=None,
         )
     ],
 )

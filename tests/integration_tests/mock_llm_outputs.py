@@ -17,7 +17,7 @@ class MockOpenAICallable(OpenAICallable):
     def _invoke_llm(self, prompt, *args, **kwargs):
         """Mock the OpenAI API call to Completion.create."""
 
-        _prompt_to_compiled_prompt = {  # noqa
+        _rail_to_compiled_prompt = {  # noqa
             entity_extraction.RAIL_SPEC_WITH_REASK: entity_extraction.COMPILED_PROMPT,
         }
 
@@ -75,6 +75,13 @@ class MockOpenAIChatCallable(OpenAIChatCallable):
         **kwargs,
     ):
         """Mock the OpenAI API call to ChatCompletion.create."""
+
+        _rail_to_prompt = {
+            entity_extraction.RAIL_SPEC_WITH_FIX_CHAT_MODEL: (
+                entity_extraction.COMPILED_PROMPT_WITHOUT_INSTRUCTIONS,
+                entity_extraction.COMPILED_INSTRUCTIONS,
+            )
+        }
 
         mock_llm_responses = {
             (
@@ -148,6 +155,10 @@ class MockOpenAIChatCallable(OpenAIChatCallable):
                 response_token_count=1234,
             )
         except KeyError:
+            print("Unrecognized prompt!")
+            print("\n prompt: \n", prompt)
+            print("\n instructions: \n", instructions)
+            print("\n msg_history: \n", msg_history)
             raise ValueError("Compiled prompt not found")
 
 

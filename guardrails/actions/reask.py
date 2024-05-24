@@ -229,6 +229,21 @@ def get_reask_setup_for_string(
     return output_schema, prompt, instructions
 
 
+def get_original_prompt(exec_options: Optional[GuardExecutionOptions] = None) -> str:
+    exec_options = exec_options or GuardExecutionOptions()
+    original_msg_history = exec_options.msg_history or []
+    msg_history_prompt = next(
+        (
+            h.get("content")
+            for h in original_msg_history
+            if isinstance(h, dict) and h.get("role") == "user"
+        ),
+        "",
+    )
+    original_prompt = exec_options.prompt or msg_history_prompt or ""
+    return original_prompt
+
+
 def get_reask_setup_for_json(
     output_type: OutputTypes,
     output_schema: Dict[str, Any],
@@ -249,6 +264,8 @@ def get_reask_setup_for_json(
     error_messages = {}
     prompt_params = prompt_params or {}
     exec_options = exec_options or GuardExecutionOptions()
+    original_prompt = get_original_prompt(exec_options)
+    use_xml = "xml_output_schema" in original_prompt
 
     reask_prompt_template = None
     if exec_options.reask_prompt:
@@ -267,16 +284,25 @@ def get_reask_setup_for_json(
         reask_value = np_reask.incorrect_value
     elif is_skeleton_reask:
         if reask_prompt_template is None:
-            reask_prompt_template = Prompt(
-                constants["high_level_skeleton_reask_prompt"]
-                + constants["error_messages"]
-                + constants["json_suffix_with_structure_example"]
-            )
+            reask_prompt = constants["high_level_skeleton_reask_prompt"]
+
+            if use_xml:
+                reask_prompt = (
+                    reask_prompt + constants["xml_suffix_with_structure_example"]
+                )
+            else:
+                reask_prompt = (
+                    reask_prompt
+                    + constants["error_messages"]
+                    + constants["json_suffix_with_structure_example"]
+                )
+
+            reask_prompt_template = Prompt(reask_prompt)
 
         # Validation hasn't happend yet
         #   and the problem is with the json the LLM gave us.
         # Give it this same json and tell it to fix it.
-        reask_value = parsing_response
+        reask_value = validation_response if use_xml else parsing_response
         skeleton_reask: SkeletonReAsk = next(
             r for r in reasks if isinstance(r, SkeletonReAsk)
         )
@@ -284,7 +310,7 @@ def get_reask_setup_for_json(
     else:
         if use_full_schema:
             # Give the LLM the full JSON that failed validation
-            reask_value = parsing_response
+            reask_value = validation_response if use_xml else parsing_response
             # Don't prune the tree if we're reasking with pydantic model
             # (and openai function calling)
         else:
@@ -299,7 +325,7 @@ def get_reask_setup_for_json(
         if reask_prompt_template is None:
             suffix = (
                 constants["xml_suffix_without_examples"]
-                if "xml_output_schema" in (exec_options.prompt or "")
+                if use_xml
                 else constants["json_suffix_without_examples"]
             )
             reask_prompt_template = Prompt(
@@ -352,7 +378,12 @@ def get_reask_setup_for_json(
     if exec_options.reask_instructions:
         instructions = Instructions(exec_options.reask_instructions)
     else:
-        instructions = Instructions(constants["high_level_json_instructions"])
+        instructions_const = (
+            constants["high_level_xml_instructions"]
+            if use_xml
+            else constants["high_level_json_instructions"]
+        )
+        instructions = Instructions(instructions_const)
     instructions = instructions.format(**prompt_params)
 
     return reask_schema, prompt, instructions

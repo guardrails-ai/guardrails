@@ -24,8 +24,9 @@ Response:"""
 
 
 def parse_rail_arguments(arg_tokens: List[str]) -> List[Any]:
-    """
-    Legacy parsing logic for the Validator aruguments specified in a RAIL spec.
+    """Legacy parsing logic for the Validator aruguments specified in a RAIL
+    spec.
+
     Originally from ValidatorsAttr.
     """
     validator_args = []

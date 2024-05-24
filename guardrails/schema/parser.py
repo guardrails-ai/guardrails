@@ -140,8 +140,7 @@ def get_all_paths(
     paths: Optional[Set[str]] = None,
     json_path: Optional[str] = "$",
 ) -> Dict[str, Dict[str, Any]]:
-    """
-    Takes a JSON Schema and returns all possible JSONPaths within that schema
-    """
+    """Takes a JSON Schema and returns all possible JSONPaths within that
+    schema."""
     dereferenced_schema = jsonref.replace_refs(json_schema)
     return _get_all_paths(dereferenced_schema, paths=paths, json_path=json_path)
