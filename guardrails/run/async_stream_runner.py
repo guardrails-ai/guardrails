@@ -1,10 +1,12 @@
 import copy
 from functools import partial
-from typing import Any, Dict, List, Optional, Tuple, Type, Union
+from typing import Any, AsyncGenerator, Dict, List, Optional, Tuple, Type, Union
 
 from pydantic import BaseModel
 
 from guardrails.classes.history import Call, Inputs, Iteration, Outputs
+from guardrails.classes.output_type import OT
+from guardrails.classes.validation_outcome import ValidationOutcome
 from guardrails.datatypes import verify_metadata_requirements
 from guardrails.errors import ValidationError
 from guardrails.llm_providers import AsyncPromptCallableBase, PromptCallableBase
@@ -12,13 +14,12 @@ from guardrails.prompt import Instructions, Prompt
 from guardrails.run.runner import Runner
 from guardrails.run.utils import msg_history_source, msg_history_string
 from guardrails.schema import Schema, StringSchema
-from guardrails.utils.exception_utils import UserFacingException
 from guardrails.utils.llm_response import LLMResponse
-from guardrails.utils.reask_utils import NonParseableReAsk, ReAsk
+from guardrails.utils.reask_utils import ReAsk, SkeletonReAsk
 from guardrails.utils.telemetry_utils import async_trace
 
 
-class AsyncRunner(Runner):
+class AsyncStreamRunner(Runner):
     def __init__(
         self,
         output_schema: Schema,
@@ -59,92 +60,54 @@ class AsyncRunner(Runner):
     async def async_run(
         self, call_log: Call, prompt_params: Optional[Dict] = None
     ) -> Call:
-        """Execute the runner by repeatedly calling step until the reask budget
-        is exhausted.
+        if prompt_params is None:
+            prompt_params = {}
 
-        Args:
-            prompt_params: Parameters to pass to the prompt in order to
-                generate the prompt string.
+        missing_keys = verify_metadata_requirements(
+            self.metadata, self.output_schema.root_datatype
+        )
 
-        Returns:
-            The Call log for this run.
-        """
-        try:
-            if prompt_params is None:
-                prompt_params = {}
-
-            # check if validator requirements are fulfilled
-            missing_keys = verify_metadata_requirements(
-                self.metadata, self.output_schema.root_datatype
+        if missing_keys:
+            raise ValueError(
+                f"Missing required metadata keys: {', '.join(missing_keys)}"
             )
 
-            if missing_keys:
-                raise ValueError(
-                    f"Missing required metadata keys: {', '.join(missing_keys)}"
-                )
+        (
+            instructions,
+            prompt,
+            msg_history,
+            prompt_schema,
+            instructions_schema,
+            msg_history_schema,
+            output_schema,
+        ) = (
+            self.instructions,
+            self.prompt,
+            self.msg_history,
+            self.prompt_schema,
+            self.instructions_schema,
+            self.msg_history_schema,
+            self.output_schema,
+        )
 
-            (
-                instructions,
-                prompt,
-                msg_history,
-                prompt_schema,
-                instructions_schema,
-                msg_history_schema,
-                output_schema,
-            ) = (
-                self.instructions,
-                self.prompt,
-                self.msg_history,
-                self.prompt_schema,
-                self.instructions_schema,
-                self.msg_history_schema,
-                self.output_schema,
-            )
-            for index in range(self.num_reasks + 1):
-                # Run a single step.
-                iteration = await self.async_step(
-                    index=index,
-                    api=self.api,
-                    instructions=instructions,
-                    prompt=prompt,
-                    msg_history=msg_history,
-                    prompt_params=prompt_params,
-                    prompt_schema=prompt_schema,
-                    instructions_schema=instructions_schema,
-                    msg_history_schema=msg_history_schema,
-                    output_schema=output_schema,
-                    output=self.output if index == 0 else None,
-                    call_log=call_log,
-                )
+        result = self.async_step(
+            index=0,
+            api=self.api,
+            instructions=instructions,
+            prompt=prompt,
+            msg_history=msg_history,
+            prompt_params=prompt_params,
+            prompt_schema=prompt_schema,
+            instructions_schema=instructions_schema,
+            msg_history_schema=msg_history_schema,
+            output_schema=output_schema,
+            output=self.output,
+            call_log=call_log,
+        )
+        async for call in result:
+            yield ValidationOutcome[OT].from_guard_history(call)
 
-                # Loop again?
-                if not self.do_loop(index, iteration.reasks):
-                    break
-
-                # Get new prompt and output schema.
-                (
-                    prompt,
-                    instructions,
-                    output_schema,
-                    msg_history,
-                ) = self.prepare_to_loop(
-                    iteration.reasks,
-                    call_log.validation_response,
-                    output_schema,
-                    prompt_params=prompt_params,
-                )
-        except UserFacingException as e:
-            # Because Pydantic v1 doesn't respect property setters
-            call_log._exception = e.original_exception
-            raise e.original_exception
-        except Exception as e:
-            # Because Pydantic v1 doesn't respect property setters
-            call_log._exception = e
-            raise e
-
-        return call_log
-
-    @async_trace(name="step")
+    # @async_trace(name="step")
     async def async_step(
         self,
         index: int,
@@ -159,8 +122,7 @@ class AsyncRunner(Runner):
         output_schema: Schema,
         call_log: Call,
         output: Optional[str] = None,
-    ) -> Iteration:
-        """Run a full step."""
+    ) -> AsyncGenerator[ValidationOutcome[OT], None]:
         inputs = Inputs(
             llm_api=api,
             llm_output=output,
@@ -175,74 +137,128 @@ class AsyncRunner(Runner):
         outputs = Outputs()
         iteration = Iteration(inputs=inputs, outputs=outputs)
         call_log.iterations.push(iteration)
-
-        try:
-            # Prepare: run pre-processing, and input validation.
-            if output:
-                instructions = None
-                prompt = None
-                msg_history = None
-            else:
-                instructions, prompt, msg_history = await self.async_prepare(
-                    call_log,
-                    index,
-                    instructions,
-                    prompt,
-                    msg_history,
-                    prompt_params,
-                    api,
-                    prompt_schema,
-                    instructions_schema,
-                    msg_history_schema,
-                    output_schema,
-                )
-
-            iteration.inputs.instructions = instructions
-            iteration.inputs.prompt = prompt
-            iteration.inputs.msg_history = msg_history
-
-            # Call: run the API.
-            llm_response = await self.async_call(
-                index, instructions, prompt, msg_history, api, output
+        if output:
+            instructions = None
+            prompt = None
+            msg_history = None
+        else:
+            instructions, prompt, msg_history = await self.async_prepare(
+                call_log,
+                index,
+                instructions,
+                prompt,
+                msg_history,
+                prompt_params,
+                api,
+                prompt_schema,
+                instructions_schema,
+                msg_history_schema,
+                output_schema,
             )
 
-            iteration.outputs.llm_response_info = llm_response
-            output = llm_response.output
+        iteration.inputs.prompt = prompt
+        iteration.inputs.instructions = instructions
+        iteration.inputs.msg_history = msg_history
 
-            # Parse: parse the output.
-            parsed_output, parsing_error = self.parse(index, output, output_schema)
-            if parsing_error:
-                # Parsing errors are captured and not raised
-                #   because they are recoverable
-                #   i.e. result in a reask
-                iteration.outputs.exception = parsing_error
-                iteration.outputs.error = str(parsing_error)
+        llm_response = await self.async_call(
+            index, instructions, prompt, msg_history, api, output
+        )
+        try:
+            stream = llm_response.completion_stream
+        except AttributeError:
+            stream = llm_response.stream_output
+        if stream is None:
+            raise ValueError(
+                "No stream was returned from the API. Please check that "
+                "the API is returning an async generator."
+            )
 
-            iteration.outputs.parsed_output = parsed_output
+        fragment = ""
+        parsed_fragment, validated_fragment, valid_op = None, None, None
+        verified = set()
 
-            if parsing_error and isinstance(parsed_output, NonParseableReAsk):
-                reasks, _ = self.introspect(index, parsed_output, output_schema)
-            else:
-                # Validate: run output validation.
-                validated_output = await self.async_validate(
-                    iteration, index, parsed_output, output_schema
+        if isinstance(output_schema, StringSchema):
+            async for chunk in stream:
+                chunk_text = self.get_chunk_text(chunk, api)
+                finished = self.is_last_chunk(chunk, api)
+                fragment += chunk_text
+
+                parsed_chunk, move_to_next = self.parse(
+                    index, chunk_text, output_schema, verified
                 )
-                iteration.outputs.validation_response = validated_output
-
-                # Introspect: inspect validated output for reasks.
-                reasks, valid_output = self.introspect(
-                    index, validated_output, output_schema
+                if move_to_next:
+                    continue
+                validated_result = await self.async_validate(
+                    iteration,
+                    index,
+                    parsed_chunk,
+                    output_schema,
+                    True,
+                    validate_subschema=True,
+                    remainder=finished,
                 )
-                iteration.outputs.guarded_output = valid_output
+                if isinstance(validated_result, SkeletonReAsk):
+                    raise ValueError(
+                        "Received fragment schema is an invalid sub-schema "
+                        "of the expected output JSON schema."
+                    )
 
-            iteration.outputs.reasks = reasks
+                reasks, valid_op = await self.introspect(
+                    index, validated_result, output_schema
+                )
+                if reasks:
+                    raise ValueError(
+                        "Reasks are not yet supported with streaming. Please "
+                        "remove reasks from schema or disable streaming."
+                    )
 
-        except Exception as e:
-            error_message = str(e)
-            iteration.outputs.error = error_message
-            iteration.outputs.exception = e
-            raise e
-        return iteration
+                yield ValidationOutcome(
+                    raw_llm_output=chunk_text,
+                    validated_output=validated_result,
+                    validation_passed=validated_result is not None,
+                )
+        else:
+            async for chunk in stream:
+                chunk_text = self.get_chunk_text(chunk, api)
+                fragment += chunk_text
+
+                parsed_fragment, move_to_next = self.parse(
+                    index, fragment, output_schema, verified
+                )
+                if move_to_next:
+                    continue
+                validated_fragment = await self.async_validate(
+                    iteration,
+                    index,
+                    parsed_fragment,
+                    output_schema,
+                    validate_subschema=True,
+                )
+                if isinstance(validated_fragment, SkeletonReAsk):
+                    raise ValueError(
+                        "Received fragment schema is an invalid sub-schema "
+                        "of the expected output JSON schema."
+                    )
+
+                reasks, valid_op = await self.introspect(
+                    index, validated_fragment, output_schema
+                )
+                if reasks:
+                    raise ValueError(
+                        "Reasks are not yet supported with streaming. Please "
+                        "remove reasks from schema or disable streaming."
+                    )
+
+                yield ValidationOutcome(
+                    raw_llm_output=fragment,
+                    validated_output=validated_fragment,
+                    validation_passed=validated_fragment is not None,
+                )
+
+        iteration.outputs.raw_output = fragment
+        iteration.outputs.parsed_output = parsed_fragment
+        iteration.outputs.validation_response = validated_fragment
+        iteration.outputs.guarded_output = valid_op
 
     @async_trace(name="call")
     async def async_call(
@@ -254,19 +270,11 @@ class AsyncRunner(Runner):
         api: Optional[AsyncPromptCallableBase],
         output: Optional[str] = None,
     ) -> LLMResponse:
-        """Run a step.
-
-        1. Query the LLM API,
-        2. Convert the response string to a dict,
-        3. Log the output
-        """
-        # If the API supports a base model, pass it in.
         api_fn = api
         if api is not None:
             supports_base_model = getattr(api, "supports_base_model", False)
             if supports_base_model:
                 api_fn = partial(api, base_model=self.base_model)
-
         if output is not None:
             llm_response = LLMResponse(
                 output=output,
@@ -289,13 +297,30 @@ class AsyncRunner(Runner):
         index: int,
         parsed_output: Any,
         output_schema: Schema,
+        validate_subschema: bool = False,
     ):
-        """Validate the output."""
-        validated_output = await output_schema.async_validate(
-            iteration, parsed_output, self.metadata, attempt_number=index
-        )
+        if validate_subschema:
+            validated_output = await output_schema.async_validate_subschema(
+                iteration, parsed_output, self.metadata, attempt_number=index
+            )
+        else:
+            validated_output = await output_schema.async_validate(
+                iteration, parsed_output, self.metadata, attempt_number=index
+            )
 
         return validated_output
+
+    async def introspect(
+        self,
+        index: int,
+        validated_output: Any,
+        output_schema: Schema,
+    ) -> Tuple[List[ReAsk], Any]:
+        # Introspect: inspect validated output for reasks.
+        reasks, valid_output = await output_schema.async_introspect(
+            validated_output, self.metadata, attempt_number=index + 1
+        )
+        return reasks, valid_output
 
     async def async_prepare(
         self,
@@ -311,11 +336,6 @@ class AsyncRunner(Runner):
         msg_history_schema: Optional[StringSchema],
         output_schema: Schema,
     ) -> Tuple[Optional[Instructions], Optional[Prompt], Optional[List[Dict]]]:
-        """Prepare by running pre-processing and input validation.
-
-        Returns:
-            The instructions, prompt, and message history.
-        """
         if api is None:
             raise ValueError("API must be provided.")
 
@@ -324,13 +344,11 @@ class AsyncRunner(Runner):
 
         if msg_history:
             msg_history = copy.deepcopy(msg_history)
-            # Format any variables in the message history with the prompt params.
             for msg in msg_history:
                 msg["content"] = msg["content"].format(**prompt_params)
 
             prompt, instructions = None, None
 
-            # validate msg_history
             if msg_history_schema is not None:
                 msg_str = msg_history_string(msg_history)
                 inputs = Inputs(
@@ -354,8 +372,6 @@ class AsyncRunner(Runner):
 
             prompt = prompt.format(**prompt_params)
 
-            # TODO(shreya): should there be any difference
-            #  to parsing params for prompt?
             if instructions is not None and isinstance(instructions, Instructions):
                 instructions = instructions.format(**prompt_params)
 
@@ -363,7 +379,6 @@ class AsyncRunner(Runner):
                 api, instructions, prompt
             )
 
-            # validate prompt
             if prompt_schema is not None and prompt is not None:
                 inputs = Inputs(
                     llm_output=prompt.source,
@@ -382,7 +397,6 @@ class AsyncRunner(Runner):
                     )
                 prompt = Prompt(validated_prompt)
 
-            # validate instructions
             if instructions_schema is not None and instructions is not None:
                 inputs = Inputs(
                     llm_output=instructions.source,
