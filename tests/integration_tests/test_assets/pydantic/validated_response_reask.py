@@ -61,33 +61,22 @@ class Person(BaseModel):
     """
 
     name: str
-    if PYDANTIC_VERSION.startswith("1"):
-        age: int = Field(
-            ..., validators=[AgeMustBeBetween0And150(on_fail=OnFailAction.REASK)]
-        )
-        zip_code: str = Field(
-            ...,
-            validators=[
+    
+    age: int = Field(
+        ...,
+        json_schema_extra={
+            "validators": [AgeMustBeBetween0And150(on_fail=OnFailAction.REASK)]
+        },
+    )
+    zip_code: str = Field(
+        ...,
+        json_schema_extra={
+            "validators": [
                 ZipCodeMustBeNumeric(on_fail=OnFailAction.REASK),
                 ZipCodeInCalifornia(on_fail=OnFailAction.REASK),
             ],
-        )
-    else:
-        age: int = Field(
-            ...,
-            json_schema_extra={
-                "validators": [AgeMustBeBetween0And150(on_fail=OnFailAction.REASK)]
-            },
-        )
-        zip_code: str = Field(
-            ...,
-            json_schema_extra={
-                "validators": [
-                    ZipCodeMustBeNumeric(on_fail=OnFailAction.REASK),
-                    ZipCodeInCalifornia(on_fail=OnFailAction.REASK),
-                ],
-            },
-        )
+        },
+    )
 
 
 class ListOfPeople(BaseModel):

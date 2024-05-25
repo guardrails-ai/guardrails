@@ -420,13 +420,6 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
         description: Optional[str] = None,
     ):
         """Create a Guard instance from a Pydantic model and prompt."""
-        if PYDANTIC_VERSION.startswith("1"):
-            warnings.warn(
-                """Support for Pydantic v1.x is deprecated and will be removed in
-                Guardrails 0.5.x. Please upgrade to the latest Pydantic v2.x to
-                continue receiving future updates and support.""",
-                FutureWarning,
-            )
         # We have to set the tracer in the ContextStore before the Rail,
         #   and therefore the Validators, are initialized
         cls._set_tracer(cls, tracer)  # type: ignore
