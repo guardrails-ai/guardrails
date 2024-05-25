@@ -22,24 +22,22 @@ def mock_create_embedding(*args, input, **kwargs):
         except KeyError:
             print(input)
             raise ValueError("Text not found in mocked embeddings")
-    if OPENAI_VERSION.startswith("0"):
-        return {"data": returns}
-    else:
-        from openai.types import CreateEmbeddingResponse, Embedding
-        from openai.types.create_embedding_response import Usage
+    
+    from openai.types import CreateEmbeddingResponse, Embedding
+    from openai.types.create_embedding_response import Usage
 
-        return CreateEmbeddingResponse(
-            data=[
-                Embedding(embedding=r["embedding"], index=i, object="embedding")
-                for i, r in enumerate(returns)
-            ],
-            model="",
-            object="list",
-            usage=Usage(
-                prompt_tokens=10,
-                total_tokens=10,
-            ),
-        )
+    return CreateEmbeddingResponse(
+        data=[
+            Embedding(embedding=r["embedding"], index=i, object="embedding")
+            for i, r in enumerate(returns)
+        ],
+        model="",
+        object="list",
+        usage=Usage(
+        prompt_tokens=10,
+        total_tokens=10,
+        ),
+    )
 
 
 MOCK_EMBEDDINGS = {

@@ -87,44 +87,31 @@ async def test_async_openai_callable_does_not_retry_on_success(mocker):
 
 @pytest.fixture(scope="module")
 def openai_chat_mock():
-    if OPENAI_VERSION.startswith("0"):
-        return {
-            "choices": [
-                {
-                    "message": {"content": "Mocked LLM output"},
-                }
-            ],
-            "usage": {
-                "prompt_tokens": 10,
-                "completion_tokens": 20,
-            },
-        }
-    else:
-        from openai.types import CompletionUsage
-        from openai.types.chat import ChatCompletion, ChatCompletionMessage
-        from openai.types.chat.chat_completion import Choice
+    from openai.types import CompletionUsage
+    from openai.types.chat import ChatCompletion, ChatCompletionMessage
+    from openai.types.chat.chat_completion import Choice
 
-        return ChatCompletion(
-            id="",
-            choices=[
-                Choice(
-                    finish_reason="stop",
-                    index=0,
-                    message=ChatCompletionMessage(
-                        content="Mocked LLM output",
-                        role="assistant",
-                    ),
+    return ChatCompletion(
+        id="",
+        choices=[
+            Choice(
+                finish_reason="stop",
+                index=0,
+                message=ChatCompletionMessage(
+                    content="Mocked LLM output",
+                    role="assistant",
                 ),
-            ],
-            created=0,
-            model="",
-            object="chat.completion",
-            usage=CompletionUsage(
-                completion_tokens=20,
-                prompt_tokens=10,
-                total_tokens=30,
             ),
-        )
+        ],
+        created=0,
+        model="",
+        object="chat.completion",
+        usage=CompletionUsage(
+            completion_tokens=20,
+            prompt_tokens=10,
+            total_tokens=30,
+        ),
+    )
 
 
 @pytest.fixture(scope="module")
@@ -147,61 +134,48 @@ def openai_chat_stream_mock():
 
 @pytest.fixture(scope="module")
 def openai_mock():
-    if OPENAI_VERSION.startswith("0"):
-        return {
-            "choices": [
-                {
-                    "text": "Mocked LLM output",
-                }
-            ],
-            "usage": {
-                "prompt_tokens": 10,
-                "completion_tokens": 20,
-            },
-        }
-    else:
+    
+    @dataclass
+    class MockCompletionUsage:
+        completion_tokens: int
+        prompt_tokens: int
+        total_tokens: int
 
-        @dataclass
-        class MockCompletionUsage:
-            completion_tokens: int
-            prompt_tokens: int
-            total_tokens: int
+    @dataclass
+    class MockCompletionChoice:
+        finish_reason: str
+        index: int
+        logprobs: Any
+        text: str
 
-        @dataclass
-        class MockCompletionChoice:
-            finish_reason: str
-            index: int
-            logprobs: Any
-            text: str
+    @dataclass
+    class MockCompletion:
+        id: str
+        choices: List[MockCompletionChoice]
+        created: int
+        model: str
+        object: str
+        usage: MockCompletionUsage
 
-        @dataclass
-        class MockCompletion:
-            id: str
-            choices: List[MockCompletionChoice]
-            created: int
-            model: str
-            object: str
-            usage: MockCompletionUsage
-
-        return MockCompletion(
-            id="",
-            choices=[
-                MockCompletionChoice(
-                    finish_reason="stop",
-                    index=0,
-                    logprobs=None,
-                    text="Mocked LLM output",
-                ),
-            ],
-            created=0,
-            model="",
-            object="text_completion",
-            usage=MockCompletionUsage(
-                completion_tokens=20,
-                prompt_tokens=10,
-                total_tokens=30,
+    return MockCompletion(
+        id="",
+        choices=[
+            MockCompletionChoice(
+                finish_reason="stop",
+                index=0,
+                logprobs=None,
+                text="Mocked LLM output",
             ),
-        )
+        ],
+        created=0,
+        model="",
+        object="text_completion",
+        usage=MockCompletionUsage(
+        completion_tokens=20,
+        prompt_tokens=10,
+        total_tokens=30,
+        ),
+    )
 
 
 @pytest.fixture(scope="module")
@@ -218,10 +192,8 @@ def openai_stream_mock():
 
 
 def test_openai_callable(mocker, openai_mock):
-    if OPENAI_VERSION.startswith("0"):
-        mocker.patch("openai.Completion.create", return_value=openai_mock)
-    else:
-        mocker.patch("openai.resources.Completions.create", return_value=openai_mock)
+    
+    mocker.patch("openai.resources.Completions.create", return_value=openai_mock)
 
     from guardrails.llm_providers import OpenAICallable
 
@@ -236,12 +208,10 @@ def test_openai_callable(mocker, openai_mock):
 
 
 def test_openai_stream_callable(mocker, openai_stream_mock):
-    if OPENAI_VERSION.startswith("0"):
-        mocker.patch("openai.Completion.create", return_value=openai_stream_mock)
-    else:
-        mocker.patch(
-            "openai.resources.Completions.create", return_value=openai_stream_mock
-        )
+    
+    mocker.patch(
+        "openai.resources.Completions.create", return_value=openai_stream_mock
+    )
 
     from guardrails.llm_providers import OpenAICallable
 
@@ -276,13 +246,11 @@ async def test_async_openai_callable(mocker, openai_mock):
 
 
 def test_openai_chat_callable(mocker, openai_chat_mock):
-    if OPENAI_VERSION.startswith("0"):
-        mocker.patch("openai.ChatCompletion.create", return_value=openai_chat_mock)
-    else:
-        mocker.patch(
-            "openai.resources.chat.completions.Completions.create",
-            return_value=openai_chat_mock,
-        )
+    
+    mocker.patch(
+        "openai.resources.chat.completions.Completions.create",
+        return_value=openai_chat_mock,
+    )
 
     from guardrails.llm_providers import OpenAIChatCallable
 
@@ -296,15 +264,11 @@ def test_openai_chat_callable(mocker, openai_chat_mock):
 
 
 def test_openai_chat_stream_callable(mocker, openai_chat_stream_mock):
-    if OPENAI_VERSION.startswith("0"):
-        mocker.patch(
-            "openai.ChatCompletion.create", return_value=openai_chat_stream_mock
-        )
-    else:
-        mocker.patch(
-            "openai.resources.chat.completions.Completions.create",
-            return_value=openai_chat_stream_mock,
-        )
+    
+    mocker.patch(
+        "openai.resources.chat.completions.Completions.create",
+        return_value=openai_chat_stream_mock,
+    )
     from guardrails.llm_providers import OpenAIChatCallable
 
     openai_chat_callable = OpenAIChatCallable()
@@ -338,13 +302,11 @@ async def test_async_openai_chat_callable(mocker, openai_chat_mock):
 
 
 def test_openai_chat_model_callable(mocker, openai_chat_mock):
-    if OPENAI_VERSION.startswith("0"):
-        mocker.patch("openai.ChatCompletion.create", return_value=openai_chat_mock)
-    else:
-        mocker.patch(
-            "openai.resources.chat.completions.Completions.create",
-            return_value=openai_chat_mock,
-        )
+    
+    mocker.patch(
+        "openai.resources.chat.completions.Completions.create",
+        return_value=openai_chat_mock,
+    )
 
     from guardrails.llm_providers import OpenAIChatCallable
 
@@ -565,10 +527,7 @@ def test_get_llm_ask_openai_completion():
     from guardrails.llm_providers import OpenAICallable
 
     completion_create = None
-    if OPENAI_VERSION.startswith("0"):
-        completion_create = openai.Completion.create
-    else:
-        completion_create = openai.completions.create
+    completion_create = openai.completions.create
 
     prompt_callable = get_llm_ask(completion_create)
 
@@ -585,10 +544,7 @@ def test_get_llm_ask_openai_chat():
     from guardrails.llm_providers import OpenAIChatCallable
 
     chat_completion_create = None
-    if OPENAI_VERSION.startswith("0"):
-        chat_completion_create = openai.ChatCompletion.create
-    else:
-        chat_completion_create = openai.chat.completions.create
+    chat_completion_create = openai.chat.completions.create
 
     prompt_callable = get_llm_ask(chat_completion_create)
 

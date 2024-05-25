@@ -162,13 +162,10 @@ def test_summary_validators(mocker):
     pytest.importorskip("nltk", reason="nltk is not installed")
     pytest.importorskip("thefuzz", reason="thefuzz is not installed")
 
-    if OPENAI_VERSION.startswith("0"):
-        mocker.patch("openai.Embedding.create", new=mock_create_embedding)
-    else:
-        mocker.patch(
-            "openai.resources.embeddings.Embeddings.create",
-            new=mock_create_embedding,
-        )
+    mocker.patch(
+        "openai.resources.embeddings.Embeddings.create",
+        new=mock_create_embedding,
+    )
 
     mocker.patch("guardrails.embedding.OpenAIEmbedding.output_dim", new=2)
 
@@ -381,13 +378,11 @@ def test_bad_validator():
 
 def test_provenance_v1(mocker):
     """Test initialisation of ProvenanceV1."""
-    if OPENAI_VERSION.startswith("0"):
-        mocker.patch("openai.ChatCompletion.create", new=mock_chat_completion)
-    else:
-        mocker.patch(
-            "openai.resources.chat.completions.Completions.create",
-            new=mock_chat_completion,
-        )
+    
+    mocker.patch(
+        "openai.resources.chat.completions.Completions.create",
+        new=mock_chat_completion,
+    )
 
     API_KEY = "<YOUR_KEY>"
     LLM_RESPONSE = "This is a sentence."
@@ -419,9 +414,6 @@ def test_provenance_v1(mocker):
     # Test guard.parse() with 3 different ways of setting the OpenAI API key API key
 
     # 1. Setting the API key directly
-    if OPENAI_VERSION.startswith("0"):  # not supported in v1 anymore
-        openai.api_key = API_KEY
-
     output = string_guard.parse(
         llm_output=LLM_RESPONSE,
         metadata={"query_function": mock_chromadb_query_function},
