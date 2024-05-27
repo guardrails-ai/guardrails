@@ -1,4 +1,3 @@
-from guardrails.utils.openai_utils import OPENAI_VERSION
 
 
 def mock_create_embedding(*args, input, **kwargs):

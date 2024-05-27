@@ -3,7 +3,6 @@ import json
 import os
 from typing import Any, Dict, List
 
-import openai
 import pytest
 from pydantic import BaseModel, Field
 

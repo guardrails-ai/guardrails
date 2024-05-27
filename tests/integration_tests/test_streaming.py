@@ -10,7 +10,6 @@ import pytest
 from pydantic import BaseModel, Field
 
 import guardrails as gd
-from guardrails.utils.openai_utils import OPENAI_VERSION
 from guardrails.validator_base import OnFailAction
 from guardrails.validators import LowerCase
 
