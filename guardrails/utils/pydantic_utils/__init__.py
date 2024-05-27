@@ -1,8 +1,4 @@
 import pydantic.version
-
-PYDANTIC_VERSION = pydantic.version.VERSION
-
-
 from .v2 import (
     ArbitraryModel,
     add_pydantic_validators_as_guardrails_validators,
@@ -11,6 +7,7 @@ from .v2 import (
     convert_pydantic_model_to_openai_fn,
 )
 
+PYDANTIC_VERSION = pydantic.version.VERSION
 
 __all__ = [
     "add_validator",
