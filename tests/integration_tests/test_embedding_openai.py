@@ -67,7 +67,7 @@ class TestOpenAIEmbedding:
         mock_environ.return_value = "test_api_key"
 
         mock_create = None
-        
+
         mock_create = mocker.patch("openai.resources.Embeddings.create")
         mock_create.return_value = MockResponse(data=[[1.0, 2.0, 3.0]])
 

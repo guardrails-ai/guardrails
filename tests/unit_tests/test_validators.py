@@ -377,7 +377,7 @@ def test_bad_validator():
 
 def test_provenance_v1(mocker):
     """Test initialisation of ProvenanceV1."""
-    
+
     mocker.patch(
         "openai.resources.chat.completions.Completions.create",
         new=mock_chat_completion,

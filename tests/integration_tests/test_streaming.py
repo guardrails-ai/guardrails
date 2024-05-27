@@ -96,7 +96,7 @@ def mock_openai_chat_completion_create():
                 ],
                 model="OpenAI model name",
             )
-            
+
     return gen()
 
 
@@ -153,7 +153,7 @@ def test_streaming_with_openai_callable(
 
     Mocks openai.Completion.create.
     """
-   
+
     mocker.patch(
         "openai.resources.Completions.create",
         return_value=mock_openai_completion_create(),
@@ -162,9 +162,7 @@ def test_streaming_with_openai_callable(
     # Create a guard object
     guard = gd.Guard.from_pydantic(output_class=op_class, prompt=PROMPT)
 
-    method = (
-        openai.completions.create
-    )
+    method = openai.completions.create
 
     method.__name__ = "mock_openai_completion_create"
 
@@ -203,7 +201,7 @@ def test_streaming_with_openai_chat_callable(
 
     Mocks openai.ChatCompletion.create.
     """
-    
+
     mocker.patch(
         "openai.resources.chat.completions.Completions.create",
         return_value=mock_openai_chat_completion_create(),
@@ -212,9 +210,7 @@ def test_streaming_with_openai_chat_callable(
     # Create a guard object
     guard = gd.Guard.from_pydantic(output_class=op_class, prompt=PROMPT)
 
-    method = (
-        openai.chat.completions.create
-    )
+    method = openai.chat.completions.create
 
     method.__name__ = "mock_openai_chat_completion_create"
 

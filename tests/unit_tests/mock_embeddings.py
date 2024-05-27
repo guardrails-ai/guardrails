@@ -1,5 +1,3 @@
-
-
 def mock_create_embedding(*args, input, **kwargs):
     mocked_embeddings = {
         "It was a beautiful day. " "In the afternoon, we drank tea.": [0, 0.5],
@@ -21,7 +19,7 @@ def mock_create_embedding(*args, input, **kwargs):
         except KeyError:
             print(input)
             raise ValueError("Text not found in mocked embeddings")
-    
+
     from openai.types import CreateEmbeddingResponse, Embedding
     from openai.types.create_embedding_response import Usage
 
@@ -33,8 +31,8 @@ def mock_create_embedding(*args, input, **kwargs):
         model="",
         object="list",
         usage=Usage(
-        prompt_tokens=10,
-        total_tokens=10,
+            prompt_tokens=10,
+            total_tokens=10,
         ),
     )
 

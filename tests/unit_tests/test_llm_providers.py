@@ -134,7 +134,6 @@ def openai_chat_stream_mock():
 
 @pytest.fixture(scope="module")
 def openai_mock():
-    
     @dataclass
     class MockCompletionUsage:
         completion_tokens: int
@@ -171,9 +170,9 @@ def openai_mock():
         model="",
         object="text_completion",
         usage=MockCompletionUsage(
-        completion_tokens=20,
-        prompt_tokens=10,
-        total_tokens=30,
+            completion_tokens=20,
+            prompt_tokens=10,
+            total_tokens=30,
         ),
     )
 
@@ -192,7 +191,6 @@ def openai_stream_mock():
 
 
 def test_openai_callable(mocker, openai_mock):
-    
     mocker.patch("openai.resources.Completions.create", return_value=openai_mock)
 
     from guardrails.llm_providers import OpenAICallable
@@ -208,10 +206,7 @@ def test_openai_callable(mocker, openai_mock):
 
 
 def test_openai_stream_callable(mocker, openai_stream_mock):
-    
-    mocker.patch(
-        "openai.resources.Completions.create", return_value=openai_stream_mock
-    )
+    mocker.patch("openai.resources.Completions.create", return_value=openai_stream_mock)
 
     from guardrails.llm_providers import OpenAICallable
 
@@ -246,7 +241,6 @@ async def test_async_openai_callable(mocker, openai_mock):
 
 
 def test_openai_chat_callable(mocker, openai_chat_mock):
-    
     mocker.patch(
         "openai.resources.chat.completions.Completions.create",
         return_value=openai_chat_mock,
@@ -264,7 +258,6 @@ def test_openai_chat_callable(mocker, openai_chat_mock):
 
 
 def test_openai_chat_stream_callable(mocker, openai_chat_stream_mock):
-    
     mocker.patch(
         "openai.resources.chat.completions.Completions.create",
         return_value=openai_chat_stream_mock,
@@ -302,7 +295,6 @@ async def test_async_openai_chat_callable(mocker, openai_chat_mock):
 
 
 def test_openai_chat_model_callable(mocker, openai_chat_mock):
-    
     mocker.patch(
         "openai.resources.chat.completions.Completions.create",
         return_value=openai_chat_mock,

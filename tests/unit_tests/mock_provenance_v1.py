@@ -1,8 +1,6 @@
-
-
 def mock_chat_completion(*args, **kwargs):
     """Mocks the OpenAI chat completion function for ProvenanceV1."""
-    
+
     from openai.types import CompletionUsage
     from openai.types.chat import ChatCompletion, ChatCompletionMessage
     from openai.types.chat.chat_completion import Choice
