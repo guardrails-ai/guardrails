@@ -60,7 +60,7 @@ class Person(BaseModel):
     """
 
     name: str
-    
+
     age: int = Field(
         ...,
         json_schema_extra={

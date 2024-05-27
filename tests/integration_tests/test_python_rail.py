@@ -57,6 +57,7 @@ def test_python_rail(mocker):
 
         # Field-level validation using Pydantic (not Guardrails)
         from pydantic import field_validator
+
         decorator = field_validator("gross")
 
         @decorator
@@ -77,12 +78,10 @@ def test_python_rail(mocker):
         is_sequel: bool = Field(default=False)
 
         # Root-level validation using Pydantic (Not in Guardrails)
-        
+
         website: str = Field(
             json_schema_extra={
-                "validators": [
-                    ValidLength(min=9, max=100, on_fail=OnFailAction.REASK)
-                ]
+                "validators": [ValidLength(min=9, max=100, on_fail=OnFailAction.REASK)]
             }
         )
         from pydantic import model_validator
@@ -160,7 +159,7 @@ def test_python_rail(mocker):
         call.raw_outputs.last
         == python_rail.LLM_OUTPUT_2_SUCCEED_GUARDRAILS_BUT_FAIL_PYDANTIC_VALIDATION
     )
-    
+
     with pytest.raises(ValueError):
         Director.model_validate_json(
             python_rail.LLM_OUTPUT_2_SUCCEED_GUARDRAILS_BUT_FAIL_PYDANTIC_VALIDATION
