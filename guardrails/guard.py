@@ -1560,7 +1560,7 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
         if self._api_client:
             validation_output: Optional[ValidationOutput] = None
             response = self._api_client.stream_validate(
-                guard=self,
+                guard=self,  # type: ignore
                 payload=ValidatePayload.from_dict(payload),
                 openai_api_key=get_call_kwarg("api_key"),
             )
