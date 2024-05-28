@@ -81,5 +81,5 @@ jobs:
       # run: bash ./.github/workflows/scripts/run_notebooks.sh ${{ matrix.notebook }}
       run: |
         source .venv/bin/activate
-        bash ./.github/workflows/scripts/run_notebooks.sh ${{ matrix.notebook }} || exit 1
+        bash ./.github/workflows/scripts/run_notebooks.sh ${{ matrix.notebook }}
 
