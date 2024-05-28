@@ -59,11 +59,11 @@ jobs:
         # Install extra stuff for notebook runs
         pip install jupyter nbconvert cohere==5.3.2
     - name: Huggingface Hub Login
-      run: poetry run huggingface-cli login --token $HUGGINGFACE_API_KEY
+      run: huggingface-cli login --token $HUGGINGFACE_API_KEY
     - name: download nltk data
       run: |
         mkdir /tmp/nltk_data;
-        poetry run python -m nltk.downloader -d /tmp/nltk_data punkt;
+        python -m nltk.downloader -d /tmp/nltk_data punkt;
     # - name: Use venv
     #   run: source .venv/bin/activate
     - name: Execute notebooks and check for errors
