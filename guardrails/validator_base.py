@@ -177,11 +177,16 @@ class Refrain:
 
 
 # functions to get chunks
-def split_word(chunk: str):
-    return list(map(lambda x: x + " ", chunk.split(" ")))[:-1]
 
 
-def split_sentence(chunk: str):
+def split_sentence_str(chunk: str):
+    if "." not in chunk:
+        return []
+    fragments = chunk.split(".")
+    return [fragments[0] + ".", ".".join(fragments[1:])]
+
+
+def split_sentence_nltk(chunk: str):
     # using the sentence tokenizer is expensive
     # we check for a . to avoid wastefully calling the tokenizer
     if "." not in chunk:
@@ -192,10 +197,6 @@ def split_sentence(chunk: str):
     # return the sentence
     # then the remaining chunks that aren't finished accumulating
     return [sentences[0], "".join(sentences[1:])]
-
-
-def split_paragraph(chunk: str):
-    return list(map(lambda x: x + "\n", chunk.split("\n")))[:-1]
 
 
 def check_refrain_in_list(schema: List) -> bool:
@@ -378,6 +379,9 @@ def get_validator(name: str):
 class ValidationResult(BaseModel):
     outcome: str
     metadata: Optional[Dict[str, Any]] = None
+    # value argument passed to validator.validate
+    # or validator.validate_stream
+    validated_chunk: Optional[Any] = None
 
 
 class PassResult(ValidationResult):
@@ -390,11 +394,21 @@ class PassResult(ValidationResult):
     value_override: Optional[Any] = Field(default=ValueOverrideSentinel)
 
 
+# specifies the start and end of segment of validate_chunk
+class ErrorSpan(BaseModel):
+    start: int
+    end: int
+    # reason validation failed, specific to this chunk
+    reason: str
+
+
 class FailResult(ValidationResult):
     outcome: Literal["fail"] = "fail"
 
     error_message: str
     fix_value: Optional[Any] = None
+    # segments that caused validation to fail
+    error_spans: Optional[List[ErrorSpan]] = None
 
 
 class OnFailAction(str, Enum):
@@ -476,7 +490,7 @@ class Validator(Runnable):
         ), f"Validator {self.__class__.__name__} is not registered. "
 
     def chunking_function(self, chunk: str):
-        return split_sentence(chunk)
+        return split_sentence_str(chunk)
 
     def validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
         """Validates a value and return a validation result."""
@@ -496,7 +510,7 @@ class Validator(Runnable):
 
         Otherwise, the validator will validate the chunk and return the result.
         """
-        # combine accumulated chunks and new chunk
+        # combine accumulated chunks and new [:-1]chunk
         self.accumulated_chunks.append(chunk)
         accumulated_text = "".join(self.accumulated_chunks)
         # check if enough chunks have accumulated for validation
@@ -504,16 +518,17 @@ class Validator(Runnable):
 
         # if remainder kwargs is passed, validate remainder regardless
         remainder = kwargs.get("remainder", False)
-        print("split contents:", splitcontents)
         if remainder:
-            splitcontents = [accumulated_text, []]
+            splitcontents = [accumulated_text, ""]
         if len(splitcontents) == 0:
             return None
         [chunk_to_validate, new_accumulated_chunks] = splitcontents
         self.accumulated_chunks = [new_accumulated_chunks]
         # exclude last chunk, because it may not be a complete chunk
         validation_result = self.validate(chunk_to_validate, metadata)
-        # include the chunk that we've validated in the metadata
+        # if validate doesn't set validated chunk, we set it
+        if validation_result.validated_chunk is None:
+            validation_result.validated_chunk = chunk_to_validate
         return validation_result
 
     def to_prompt(self, with_keywords: bool = True) -> str:
