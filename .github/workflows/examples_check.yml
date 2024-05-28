@@ -37,26 +37,35 @@ jobs:
     #   with:
     #     path: ~/.cache/pypoetry
     #     key: poetry-cache-${{ runner.os }}-${{ steps.setup_python.outputs.python-version }}-${{ env.POETRY_VERSION }}
-    - name: Install Poetry
-      uses: snok/install-poetry@v1
-      with:
-        virtualenvs-create: true
-        virtualenvs-in-project: true
-        installer-parallel: true
+    # - name: Install Poetry
+    #   uses: snok/install-poetry@v1
+    #   with:
+    #     virtualenvs-create: true
+    #     virtualenvs-in-project: true
+    #     installer-parallel: true
     - name: Install dependencies
       run: |
-        make full;
-        poetry add "openai>=1.2.4" jupyter nbconvert cohere==5.3.2;
-    - name: Check for pypdfium2
-      run: poetry run pip show pypdfium2
+        # Legacy run script
+        # make full;
+        # poetry add "openai>=1.2.4" jupyter nbconvert cohere==5.3.2;
+        
+        # Setup Virtual Environment
+        python3 -m venv ./.venv
+        source .venv/bin/activate
+
+        # Install the current branch
+        pip install .
+
+        # Install extra stuff for notebook runs
+        pip install jupyter nbconvert cohere==5.3.2
     - name: Huggingface Hub Login
       run: poetry run huggingface-cli login --token $HUGGINGFACE_API_KEY
     - name: download nltk data
       run: |
         mkdir /tmp/nltk_data;
         poetry run python -m nltk.downloader -d /tmp/nltk_data punkt;
-    - name: Use venv
-      run: source .venv/bin/activate
+    # - name: Use venv
+    #   run: source .venv/bin/activate
     - name: Execute notebooks and check for errors
       run: bash ./.github/workflows/scripts/run_notebooks.sh ${{ matrix.notebook }}
 

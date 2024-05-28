@@ -1,6 +1,10 @@
 #!/bin/bash
 export NLTK_DATA=/tmp/nltk_data;
 
+# Remove the local guardrails directory and use the installed version
+rm -rf ./guardrails
+
+# Navigate to notebooks
 cd docs/examples
 
 # Get the notebook name from the matrix variable
