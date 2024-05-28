@@ -19,6 +19,7 @@ if [[ ! " ${invalid_notebooks[@]} " =~ " ${notebook} " ]]; then
   if [ $? -ne 0 ]; then
     echo "Error found in $notebook"
     echo "Error in $notebook. See logs for details." >> errors.txt
+    exit 1
   fi
 fi
 
