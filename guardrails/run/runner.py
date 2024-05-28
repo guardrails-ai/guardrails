@@ -551,25 +551,15 @@ class Runner:
         **kwargs,
     ):
         """Validate the output."""
-        if isinstance(output_schema, StringSchema):
-            validated_output = output_schema.validate(
-                iteration,
-                parsed_output,
-                self.metadata,
-                index,
-                self._disable_tracer,
-                stream,
-                **kwargs,
-            )
-        else:
-            validated_output = output_schema.validate(
-                iteration,
-                parsed_output,
-                self.metadata,
-                attempt_number=index,
-                disable_tracer=self._disable_tracer,
-                **kwargs,
-            )
+        validated_output = output_schema.validate(
+            iteration,
+            parsed_output,
+            self.metadata,
+            index,
+            self._disable_tracer,
+            stream,
+            **kwargs,
+        )
 
         return validated_output
 

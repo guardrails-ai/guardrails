@@ -396,7 +396,11 @@ class PassResult(ValidationResult):
 
 # specifies the start and end of segment of validate_chunk
 class ErrorSpan(BaseModel):
+    # character position of start of span
+    # relative to validated_chunk of ValidationResult
     start: int
+    # character position of end of span
+    # relative to validated_chunk of ValidationResult
     end: int
     # reason validation failed, specific to this chunk
     reason: str
@@ -408,7 +412,7 @@ class FailResult(ValidationResult):
     error_message: str
     fix_value: Optional[Any] = None
     # segments that caused validation to fail
-    error_spans: Optional[List[ErrorSpan]] = []
+    error_spans: Optional[List[ErrorSpan]] = None
 
 
 class OnFailAction(str, Enum):

@@ -300,6 +300,7 @@ def test_streaming_with_openai_callable(
     assert isinstance(generator, Iterable)
 
     for op in generator:
+        print("op", op)
         actual_output = op
 
     assert actual_output.raw_llm_output == json.dumps(expected_raw_output)
@@ -367,6 +368,7 @@ def test_streaming_with_openai_chat_callable(
 
     actual_output = ""
     for op in generator:
+        print("op", op)
         actual_output = op
 
     assert actual_output.raw_llm_output == json.dumps(expected_raw_output)
