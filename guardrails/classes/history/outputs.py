@@ -83,14 +83,15 @@ class Outputs(ArbitraryModel):
         for log in self.validator_logs:
             result = log.validation_result
             if isinstance(result, FailResult):
-                for error_span in result.error_spans:
-                    spans_in_output.append(
-                        ErrorSpan(
-                            start=error_span.start + total_len,
-                            end=error_span.end + total_len,
-                            reason=error_span.reason,
+                if result.error_spans is not None:
+                    for error_span in result.error_spans:
+                        spans_in_output.append(
+                            ErrorSpan(
+                                start=error_span.start + total_len,
+                                end=error_span.end + total_len,
+                                reason=error_span.reason,
+                            )
                         )
-                    )
             if result.validated_chunk is not None:
                 total_len += len(result.validated_chunk)
         return spans_in_output
