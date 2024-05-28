@@ -60,8 +60,9 @@ jobs:
         # Install extra stuff for notebook runs
         pip install "huggingface_hub[cli]" jupyter nbconvert cohere==5.3.2
         pip install nltk
-        echo "pip show nltk: $(pip show nltk)"
+        echo "which python $(which python)"
         echo "which pip $(which pip)"
+        echo "pip show nltk: $(pip show nltk)"
     - name: Huggingface Hub Login
       run: |
         echo "which python: $(which python)"
