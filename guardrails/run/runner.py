@@ -76,7 +76,7 @@ class Runner:
         output_type: OutputTypes,
         output_schema: Dict[str, Any],
         num_reasks: int,
-        validation_map: ValidatorMap = {},
+        validation_map: ValidatorMap,
         *,
         prompt: Optional[str] = None,
         instructions: Optional[str] = None,
@@ -152,7 +152,7 @@ class Runner:
             # Get the HubTelemetry singleton
             self._hub_telemetry = HubTelemetry()
 
-    def __call__(self, call_log: Call, prompt_params: Optional[Dict] = {}) -> Call:
+    def __call__(self, call_log: Call, prompt_params: Optional[Dict] = None) -> Call:
         """Execute the runner by repeatedly calling step until the reask budget
         is exhausted.
 
@@ -250,10 +250,11 @@ class Runner:
         instructions: Optional[Instructions],
         prompt: Optional[Prompt],
         msg_history: Optional[List[Dict]],
-        prompt_params: Optional[Dict] = {},
+        prompt_params: Optional[Dict] = None,
         output: Optional[str] = None,
     ) -> Iteration:
         """Run a full step."""
+        prompt_params = prompt_params or {}
         inputs = Inputs(
             llm_api=api,
             llm_output=output,
@@ -483,7 +484,7 @@ class Runner:
         instructions: Optional[Instructions],
         prompt: Optional[Prompt],
         msg_history: Optional[List[Dict]],
-        prompt_params: Optional[Dict] = {},
+        prompt_params: Optional[Dict] = None,
         api: Optional[Union[PromptCallableBase, AsyncPromptCallableBase]],
     ) -> Tuple[Optional[Instructions], Optional[Prompt], Optional[List[Dict]]]:
         """Prepare by running pre-processing and input validation.
@@ -491,6 +492,7 @@ class Runner:
         Returns:
             The instructions, prompt, and message history.
         """
+        prompt_params = prompt_params or {}
         if api is None:
             raise UserFacingException(ValueError("API must be provided."))
 
@@ -629,10 +631,11 @@ class Runner:
         *,
         parsed_output: Optional[Union[str, Dict, ReAsk]] = None,
         validated_output: Optional[Union[str, Dict, ReAsk]] = None,
-        prompt_params: Optional[Dict] = {},
+        prompt_params: Optional[Dict] = None,
         include_instructions: bool = False,
     ) -> Tuple[Prompt, Optional[Instructions], Dict[str, Any], Optional[List[Dict]]]:
         """Prepare to loop again."""
+        prompt_params = prompt_params or {}
         output_schema, prompt, instructions = get_reask_setup(
             output_type=self.output_type,
             output_schema=output_schema,

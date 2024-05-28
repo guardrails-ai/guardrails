@@ -30,7 +30,7 @@ class AsyncRunner(Runner):
         output_type: OutputTypes,
         output_schema: Dict[str, Any],
         num_reasks: int,
-        validation_map: ValidatorMap = {},
+        validation_map: ValidatorMap,
         *,
         prompt: Optional[str] = None,
         instructions: Optional[str] = None,
@@ -62,7 +62,7 @@ class AsyncRunner(Runner):
     # TODO: Refactor this to use inheritance and overrides
     # Why are we using a different method here instead of just overriding?
     async def async_run(
-        self, call_log: Call, prompt_params: Optional[Dict] = {}
+        self, call_log: Call, prompt_params: Optional[Dict] = None
     ) -> Call:
         """Execute the runner by repeatedly calling step until the reask budget
         is exhausted.
@@ -74,6 +74,7 @@ class AsyncRunner(Runner):
         Returns:
             The Call log for this run.
         """
+        prompt_params = prompt_params or {}
         try:
             # Figure out if we need to include instructions in the prompt.
             include_instructions = not (
@@ -157,10 +158,11 @@ class AsyncRunner(Runner):
         instructions: Optional[Instructions],
         prompt: Optional[Prompt],
         msg_history: Optional[List[Dict]],
-        prompt_params: Optional[Dict] = {},
+        prompt_params: Optional[Dict] = None,
         output: Optional[str] = None,
     ) -> Iteration:
         """Run a full step."""
+        prompt_params = prompt_params or {}
         inputs = Inputs(
             llm_api=api,
             llm_output=output,
@@ -320,7 +322,7 @@ class AsyncRunner(Runner):
         instructions: Optional[Instructions],
         prompt: Optional[Prompt],
         msg_history: Optional[List[Dict]],
-        prompt_params: Optional[Dict] = {},
+        prompt_params: Optional[Dict] = None,
         api: Optional[Union[PromptCallableBase, AsyncPromptCallableBase]],
     ) -> Awaitable[
         Tuple[Optional[Instructions], Optional[Prompt], Optional[List[Dict]]]
@@ -330,6 +332,7 @@ class AsyncRunner(Runner):
         Returns:
             The instructions, prompt, and message history.
         """
+        prompt_params = prompt_params or {}
         if api is None:
             raise UserFacingException(ValueError("API must be provided."))
 

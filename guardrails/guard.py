@@ -133,14 +133,18 @@ class Guard(IGuard, Generic[OT]):
         id: Optional[str] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
-        validators: Optional[List[ValidatorReference]] = [],
-        output_schema: Optional[Dict[str, Any]] = {"type": "string"},
+        validators: Optional[List[ValidatorReference]] = None,
+        output_schema: Optional[Dict[str, Any]] = None,
     ):
         """Initialize the Guard with validators and an output schema."""
 
         # Shared Interface Properties
         id = id or random_id()
         name = name or f"gr-{id}"
+
+        # Defaults
+        validators = validators or []
+        output_schema = output_schema or {"type": "string"}
 
         # Init ModelSchema class
         schema_with_type = {**output_schema}
@@ -583,13 +587,14 @@ class Guard(IGuard, Generic[OT]):
         prompt: Optional[str] = None,
         instructions: Optional[str] = None,
         msg_history: Optional[List[Dict]] = None,
-        metadata: Optional[Dict] = {},
+        metadata: Optional[Dict],
         full_schema_reask: Optional[bool] = None,
         **kwargs,
     ) -> Union[
         Union[ValidationOutcome[OT], Iterable[ValidationOutcome[OT]]],
         Awaitable[ValidationOutcome[OT]],
     ]:
+        metadata = metadata or {}
         if not llm_api and not llm_output:
             raise RuntimeError("'llm_api' or 'llm_output' must be provided!")
         if not llm_output and llm_api and not (prompt or msg_history):
@@ -609,15 +614,17 @@ class Guard(IGuard, Generic[OT]):
             *args,
             llm_api: Union[Callable, Callable[[Any], Awaitable[Any]]],
             llm_output: Optional[str] = None,
-            prompt_params: Optional[Dict] = {},
+            prompt_params: Optional[Dict] = None,
             num_reasks: Optional[int] = None,
             prompt: Optional[str] = None,
             instructions: Optional[str] = None,
             msg_history: Optional[List[Dict]] = None,
-            metadata: Optional[Dict] = {},
+            metadata: Optional[Dict] = None,
             full_schema_reask: Optional[bool] = None,
             **kwargs,
         ):
+            prompt_params = prompt_params or {}
+            metadata = metadata or {}
             if full_schema_reask is None:
                 full_schema_reask = self._base_model is not None
 
@@ -740,9 +747,9 @@ class Guard(IGuard, Generic[OT]):
         llm_api: Optional[Callable] = None,
         llm_output: Optional[str] = None,
         call_log: Call,  # Not optional, but internal
-        prompt_params: Dict = {},  # Should be defined at this point
+        prompt_params: Dict,  # Should be defined at this point
         num_reasks: int = 0,  # Should be defined at this point
-        metadata: Dict = {},  # Should be defined at this point
+        metadata: Dict,  # Should be defined at this point
         full_schema_reask: bool = False,  # Should be defined at this point
         prompt: Optional[str] = None,
         instructions: Optional[str] = None,
@@ -798,9 +805,9 @@ class Guard(IGuard, Generic[OT]):
         llm_api: Callable[[Any], Awaitable[Any]],
         llm_output: Optional[str] = None,
         call_log: Call,
-        prompt_params: Dict = {},  # Should be defined at this point
+        prompt_params: Dict,  # Should be defined at this point
         num_reasks: int = 0,  # Should be defined at this point
-        metadata: Dict = {},  # Should be defined at this point
+        metadata: Dict,  # Should be defined at this point
         full_schema_reask: bool = False,  # Should be defined at this point
         prompt: Optional[str],
         instructions: Optional[str],
@@ -1145,7 +1152,7 @@ class Guard(IGuard, Generic[OT]):
         llm_api: Optional[Callable] = None,
         num_reasks: Optional[int] = None,
         prompt_params: Optional[Dict] = None,
-        metadata: Optional[Dict] = {},
+        metadata: Optional[Dict] = None,
         full_schema_reask: Optional[bool] = True,
         call_log: Optional[Call],
         # prompt: Optional[str],
@@ -1153,6 +1160,7 @@ class Guard(IGuard, Generic[OT]):
         # msg_history: Optional[List[Dict]],
         **kwargs,
     ):
+        metadata = metadata or None
         if self._api_client:
             payload: Dict[str, Any] = {"args": list(args)}
             payload.update(**kwargs)

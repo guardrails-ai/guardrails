@@ -92,16 +92,16 @@ class TestRailToJsonSchema:
         ]
 
 
-### ReConstructed RAIL Specs ###
+### ReConstructed RAIL Specs for Prompting ###
 case_choice_rail = """
 <output>
   <choice name="action" discriminator="chosen_action" required="true">
     <case name="fight">
-      <string name="weapon" format="valid-choices: ['crossbow', 'machine gun']" on-fail-valid-choices="reask" required="true" />
+      <string name="weapon" format="valid-choices: ['crossbow', 'machine gun']" required="true" />
     </case>
     <case name="flight">
-      <string name="flight_direction" format="valid-choices: ['north', 'south', 'east', 'west']" on-fail-valid-choices="exception" required="false" />
-      <integer name="distance" format="valid-choices: [1, 2, 3, 4]" on-fail-valid-choices="exception" required="true" />
+      <string name="flight_direction" format="valid-choices: ['north', 'south', 'east', 'west']" required="false" />
+      <integer name="distance" format="valid-choices: [1, 2, 3, 4]" required="true" />
     </case>
   </choice>
 </output>
@@ -113,11 +113,11 @@ case_choice_openapi_rail = """
 <output>
   <choice name="action" discriminator="chosen_action" required="true">
     <case name="fight">
-      <string name="weapon" format="valid-choices: ['crossbow', 'machine gun']" on-fail-valid-choices="reask" required="true" />
+      <string name="weapon" format="valid-choices: ['crossbow', 'machine gun']" required="true" />
     </case>
     <case name="flight">
-      <string name="flight_direction" format="valid-choices: ['north', 'south', 'east', 'west']" on-fail-valid-choices="exception" required="true" />
-      <integer name="distance" format="valid-choices: [1, 2, 3, 4]" on-fail-valid-choices="exception" required="true" />
+      <string name="flight_direction" format="valid-choices: ['north', 'south', 'east', 'west']" required="true" />
+      <integer name="distance" format="valid-choices: [1, 2, 3, 4]" required="true" />
     </case>
   </choice>
 </output>
@@ -128,8 +128,8 @@ credit_card_agreement_rail = """
   <list name="fees" description="What fees and charges are associated with my account?" required="true">
     <object required="true" >
       <integer name="index" format="1-indexed" required="true" />
-      <string name="name" format="lower-case; two-words" on-fail-lower-case="noop" on-fail-two-words="noop" required="true" />
-      <string name="explanation" format="one-line" on-fail-one-line="noop" required="true" />
+      <string name="name" format="lower-case; two-words" required="true" />
+      <string name="explanation" format="one-line" required="true" />
       <float name="value" format="percentage" required="true" />
     </object>
   </list>
@@ -138,7 +138,7 @@ credit_card_agreement_rail = """
 """.strip()  # noqa
 
 string_schema_rail = """
-<output type="string" description="Some string..." format="lower-case; two-words" on-fail-lower-case="noop" on-fail-two-words="noop" />
+<output type="string" description="Some string..." format="lower-case; two-words" />
 """.strip()  # noqa
 
 ### Validator Maps ###
@@ -176,6 +176,4 @@ def test_json_schema_to_rail_output(json_schema, validator_map, rail_output):
     actual_rail_output = json_schema_to_rail_output(json_schema, validator_map)
     actual_rail_xml = canonicalize(actual_rail_output)
     expected_rail_xml = canonicalize(rail_output)
-    # print("actual rail output:\n", actual_rail_xml)
-    # print("expected rail output:\n", expected_rail_xml)
     assert actual_rail_xml == expected_rail_xml

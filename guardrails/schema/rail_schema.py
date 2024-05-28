@@ -493,7 +493,6 @@ def build_choice_case(
                 parent=case_elem,
                 required=str(required).lower(),
                 attributes={"name": ck},
-                # attributes={"name": ck, "required": required_attr},
             )
 
 
@@ -726,7 +725,6 @@ def build_object_element(
             json_path=child_path,
             parent=element,
             required=required_attr,
-            # attributes={"name": k, "required": required_attr},
             attributes={"name": k},
         )
     return element
@@ -791,10 +789,11 @@ def build_element(
     tag_override: Optional[str] = None,
     parent: _Element = None,
     required: Optional[str] = "true",
-    attributes: Optional[Dict[str, Any]] = {},
+    attributes: Optional[Dict[str, Any]] = None,
 ) -> _Element:
     """Takes an XML element Extracts validators to add to the 'validators' list
     and validator_map Returns a ModelSchema."""
+    attributes = attributes or {}
     schema_type = json_schema.get("type", "object")
 
     description = json_schema.get("description")

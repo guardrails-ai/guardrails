@@ -177,7 +177,7 @@ def get_reask_setup_for_string(
     reasks: List[FieldReAsk],
     *,
     validation_response: Optional[Union[str, Dict, ReAsk]] = None,
-    prompt_params: Optional[Dict[str, Any]] = {},
+    prompt_params: Optional[Dict[str, Any]] = None,
     exec_options: Optional[GuardExecutionOptions] = None,
 ) -> Tuple[Dict[str, Any], Prompt, Instructions]:
     prompt_params = prompt_params or {}
@@ -253,7 +253,7 @@ def get_reask_setup_for_json(
     parsing_response: Optional[Union[str, Dict, ReAsk]] = None,
     validation_response: Optional[Union[str, Dict, ReAsk]] = None,
     use_full_schema: Optional[bool] = False,
-    prompt_params: Optional[Dict[str, Any]] = {},
+    prompt_params: Optional[Dict[str, Any]] = None,
     exec_options: Optional[GuardExecutionOptions] = None,
 ) -> Tuple[Dict[str, Any], Prompt, Instructions]:
     reask_schema = output_schema

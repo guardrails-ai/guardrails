@@ -145,8 +145,9 @@ def extract_union_member(
     member: Type,
     processed_schema: ProcessedSchema,
     json_path: str,
-    aliases: List[str] = [],
+    aliases: List[str],
 ) -> Type:
+    aliases = aliases or []
     field_model, field_type_origin, key_type_origin = try_get_base_model(member)
     if not field_model:
         return member
@@ -177,8 +178,9 @@ def extract_validators(
     model: Type[BaseModel],
     processed_schema: ProcessedSchema,
     json_path: str,
-    aliases: List[str] = [],
+    aliases: Optional[List[str]] = None,
 ) -> Type[BaseModel]:
+    aliases = aliases or []
     for field_name in model.model_fields:
         alias_paths = []
         field_path = f"{json_path}.{field_name}"

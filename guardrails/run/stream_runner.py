@@ -109,12 +109,11 @@ class StreamRunner(Runner):
             instructions, prompt, msg_history = self.prepare(
                 call_log,
                 index,
-                instructions,
-                prompt,
-                msg_history,
-                prompt_params,
-                api,
-                output_schema,
+                instructions=instructions,
+                prompt=prompt,
+                msg_history=msg_history,
+                prompt_params=prompt_params,
+                api=api,
             )
 
         iteration.inputs.prompt = prompt
