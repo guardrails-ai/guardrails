@@ -1,4 +1,4 @@
-name: Notebook Execution and Error Check
+name: Install from Hub
 
 on:
   push:
