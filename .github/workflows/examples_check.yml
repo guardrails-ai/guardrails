@@ -81,5 +81,5 @@ jobs:
       # run: bash ./.github/workflows/scripts/run_notebooks.sh ${{ matrix.notebook }}
       run: |
         source .venv/bin/activate
-        bash ./.github/workflows/scripts/run_notebooks.sh bug_free_python_code.ipynb
+        bash ./.github/workflows/scripts/run_notebooks.sh bug_free_python_code.ipynb || exit 1
 
