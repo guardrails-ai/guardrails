@@ -10,12 +10,14 @@ from guardrails.classes.credentials import Credentials
 from guardrails.cli.logger import logger
 from guardrails.cli.server.module_manifest import ModuleManifest
 
-TOKEN_EXPIRED_MESSAGE = (
-    "Your token has expired. Please run `guardrails configure` to update your token."
-)
-TOKEN_INVALID_MESSAGE = (
-    "Your token is invalid. Please run `guardrails configure` to update your token."
-)
+FIND_NEW_TOKEN = "You can find a new token at https://hub.guardrailsai.com/tokens"
+
+TOKEN_EXPIRED_MESSAGE = f"""Your token has expired. Please run `guardrails configure`\
+to update your token.
+{FIND_NEW_TOKEN}"""
+TOKEN_INVALID_MESSAGE = f"""Your token is invalid. Please run `guardrails configure`\
+to update your token.
+{FIND_NEW_TOKEN}"""
 
 validator_hub_service = "https://so4sg4q4pb.execute-api.us-east-1.amazonaws.com"
 validator_manifest_endpoint = Template(
@@ -24,6 +26,14 @@ validator_manifest_endpoint = Template(
 
 
 class AuthenticationError(Exception):
+    pass
+
+
+class ExpiredTokenError(Exception):
+    pass
+
+
+class InvalidTokenError(Exception):
     pass
 
 
@@ -80,9 +90,9 @@ def get_jwt_token(creds: Credentials) -> Optional[str]:
         except JWTDecodeError as e:
             # if the error message includes "Expired", then the token is expired
             if "Expired" in str(e):
-                raise Exception(TOKEN_EXPIRED_MESSAGE)
+                raise ExpiredTokenError(TOKEN_EXPIRED_MESSAGE)
             else:
-                raise Exception(TOKEN_INVALID_MESSAGE)
+                raise InvalidTokenError(TOKEN_INVALID_MESSAGE)
     return token
 
 
@@ -105,6 +115,9 @@ def get_validator_manifest(module_name: str):
     except HttpError:
         logger.error(f"Failed to install hub://{module_name}")
         sys.exit(1)
+    except (ExpiredTokenError, InvalidTokenError) as e:
+        logger.error(AuthenticationError(e))
+        sys.exit(1)
     except Exception as e:
         logger.error("An unexpected error occurred!", e)
         sys.exit(1)
@@ -122,6 +135,8 @@ def get_auth():
     except HttpError as http_error:
         logger.error(http_error)
         raise AuthenticationError("Failed to authenticate!")
+    except (ExpiredTokenError, InvalidTokenError) as e:
+        raise AuthenticationError(e)
     except Exception as e:
         logger.error("An unexpected error occurred!", e)
         raise AuthenticationError("Failed to authenticate!")

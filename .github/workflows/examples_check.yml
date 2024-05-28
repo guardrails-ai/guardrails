@@ -23,7 +23,11 @@ jobs:
       NLTK_DATA: /tmp/nltk_data
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4   
+      uses: actions/checkout@v4
+    - name: Create .guardrailsrc
+      run: |
+        echo 'id="SYSTEM TESTING"' > ~/.guardrailsrc
+        echo 'no_metrics=false' >> ~/.guardrailsrc   
     - name: Set up Python
       uses: actions/setup-python@v5
       with: 
