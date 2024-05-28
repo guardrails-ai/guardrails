@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 
 from guardrails import validator_service
+from guardrails.classes.execution.guard_execution_options import GuardExecutionOptions
 from guardrails.classes.history import Call, Inputs, Iteration, Outputs
 from guardrails.classes.output_type import OutputTypes
 from guardrails.errors import ValidationError
@@ -19,7 +20,7 @@ from guardrails.types.pydantic import ModelOrListOfModels
 from guardrails.types.validator import ValidatorMap
 from guardrails.utils.exception_utils import UserFacingException
 from guardrails.classes.llm.llm_response import LLMResponse
-from guardrails.utils.prompt_utils import preprocess_prompt
+from guardrails.utils.prompt_utils import preprocess_prompt, prompt_uses_xml
 from guardrails.utils.reask_utils import NonParseableReAsk, ReAsk
 from guardrails.utils.telemetry_utils import async_trace
 
@@ -41,6 +42,7 @@ class AsyncRunner(Runner):
         base_model: Optional[ModelOrListOfModels] = None,
         full_schema_reask: bool = False,
         disable_tracer: Optional[bool] = True,
+        exec_options: Optional[GuardExecutionOptions] = None,
     ):
         super().__init__(
             output_type=output_type,
@@ -56,6 +58,7 @@ class AsyncRunner(Runner):
             base_model=base_model,
             full_schema_reask=full_schema_reask,
             disable_tracer=disable_tracer,
+            exec_options=exec_options,
         )
         self.api: Optional[AsyncPromptCallableBase] = api
 
@@ -157,7 +160,7 @@ class AsyncRunner(Runner):
         api: Optional[AsyncPromptCallableBase],
         instructions: Optional[Instructions],
         prompt: Optional[Prompt],
-        msg_history: Optional[List[Dict]],
+        msg_history: Optional[List[Dict]] = None,
         prompt_params: Optional[Dict] = None,
         output: Optional[str] = None,
     ) -> Iteration:
@@ -209,7 +212,7 @@ class AsyncRunner(Runner):
             output = llm_response.output
 
             # Parse: parse the output.
-            parsed_output, parsing_error = self.parse(output)
+            parsed_output, parsing_error = self.parse(output, output_schema)
             if parsing_error:
                 # Parsing errors are captured and not raised
                 #   because they are recoverable
@@ -220,7 +223,7 @@ class AsyncRunner(Runner):
             iteration.outputs.parsed_output = parsed_output
 
             if parsing_error and isinstance(parsed_output, NonParseableReAsk):
-                reasks, _ = self.introspect(index, parsed_output, output_schema)
+                reasks, _ = self.introspect(parsed_output)
             else:
                 # Validate: run output validation.
                 validated_output = await self.async_validate(
@@ -301,7 +304,7 @@ class AsyncRunner(Runner):
 
         validated_output, _metadata = await validator_service.async_validate(
             value=parsed_output,
-            metadta=self.metadata,
+            metadata=self.metadata,
             validator_map=self.validation_map,
             iteration=iteration,
             disable_tracer=self._disable_tracer,
@@ -399,6 +402,7 @@ class AsyncRunner(Runner):
                 )
             msg_history = None
 
+            use_xml = prompt_uses_xml(prompt._source)
             # Runner.prepare_prompt
             prompt = prompt.format(**prompt_params)
 
@@ -412,6 +416,7 @@ class AsyncRunner(Runner):
                 instructions=instructions,
                 prompt=prompt,
                 output_type=self.output_type,
+                use_xml=use_xml,
             )
 
             # validate prompt
@@ -456,7 +461,7 @@ class AsyncRunner(Runner):
                 call_log.iterations.insert(0, iteration)
                 value, _metadata = await validator_service.async_validate(
                     value=instructions.source,
-                    metadta=self.metadata,
+                    metadata=self.metadata,
                     validator_map=self.validation_map,
                     iteration=iteration,
                     disable_tracer=self._disable_tracer,

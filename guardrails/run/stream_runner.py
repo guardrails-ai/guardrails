@@ -164,7 +164,7 @@ class StreamRunner(Runner):
                 )
 
             # 4. Introspect: inspect the validated fragment for reasks
-            reasks, valid_op = self.introspect(index, validated_fragment, output_schema)
+            reasks, valid_op = self.introspect(validated_fragment)
             if reasks:
                 raise ValueError(
                     "Reasks are not yet supported with streaming. Please "
@@ -231,7 +231,8 @@ class StreamRunner(Runner):
         self,
         output: str,
         output_schema: Dict[str, Any],
-        *verified: set,
+        *,
+        verified: set,
     ):
         """Parse the output."""
         parsed_output, error = parse_llm_output(

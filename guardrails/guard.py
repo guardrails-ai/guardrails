@@ -166,8 +166,6 @@ class Guard(IGuard, Generic[OT]):
         # Assign private properties and backfill
         self._validator_map = {}
         self._validators = []
-        self._fill_validator_map()
-        self._fill_validators()
         self._output_type = OutputTypes.__from_json_schema__(output_schema)
         self._exec_opts = GuardExecutionOptions()
 
@@ -251,16 +249,15 @@ class Guard(IGuard, Generic[OT]):
             # Check if the validator from the reference
             #   has an instance in the validator_map
             v = safe_get(
-                list(
-                    filter(
-                        lambda v: (
-                            v.rail_alias == ref.id
-                            and v.on_fail_descriptor == ref.on_fail
-                            and v.get_args() == ref.kwargs
-                        ),
-                        entry,
+                [
+                    v
+                    for v in entry
+                    if (
+                        v.rail_alias == ref.id
+                        and v.on_fail_descriptor == ref.on_fail
+                        and v.get_args() == ref.kwargs
                     )
-                ),
+                ],
                 0,
             )
             if not v:
@@ -343,6 +340,7 @@ class Guard(IGuard, Generic[OT]):
         guard._exec_opts = schema.exec_opts
         guard._output_type = schema.output_type
         guard._rail = rail
+        guard._fill_validators()
         return guard
 
     @classmethod
@@ -507,6 +505,7 @@ class Guard(IGuard, Generic[OT]):
         guard._exec_opts = exec_opts
         guard._output_type = schema.output_type
         guard._base_model = output_class
+        guard._fill_validators()
         return guard
 
     @classmethod
@@ -575,6 +574,7 @@ class Guard(IGuard, Generic[OT]):
         guard._validator_map = schema.validator_map
         guard._exec_opts = exec_opts
         guard._output_type = schema.output_type
+        guard._fill_validators()
         return guard
 
     def _execute(
@@ -594,6 +594,8 @@ class Guard(IGuard, Generic[OT]):
         Union[ValidationOutcome[OT], Iterable[ValidationOutcome[OT]]],
         Awaitable[ValidationOutcome[OT]],
     ]:
+        self._fill_validator_map()
+        self._fill_validators()
         metadata = metadata or {}
         if not llm_api and not llm_output:
             raise RuntimeError("'llm_api' or 'llm_output' must be provided!")

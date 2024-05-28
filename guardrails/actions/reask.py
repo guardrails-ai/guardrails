@@ -12,7 +12,7 @@ from guardrails.schema.generator import generate_example
 from guardrails.schema.rail_schema import json_schema_to_rail_output
 from guardrails.types.validator import ValidatorMap
 from guardrails.utils.constants import constants
-from guardrails.utils.prompt_utils import prompt_content_for_schema
+from guardrails.utils.prompt_utils import prompt_content_for_schema, prompt_uses_xml
 
 
 ### Classes/Types ###
@@ -265,7 +265,7 @@ def get_reask_setup_for_json(
     prompt_params = prompt_params or {}
     exec_options = exec_options or GuardExecutionOptions()
     original_prompt = get_original_prompt(exec_options)
-    use_xml = "xml_output_schema" in original_prompt
+    use_xml = prompt_uses_xml(original_prompt)
 
     reask_prompt_template = None
     if exec_options.reask_prompt:
@@ -273,9 +273,13 @@ def get_reask_setup_for_json(
 
     if is_nonparseable_reask:
         if reask_prompt_template is None:
+            suffix = (
+                constants["xml_suffix_without_examples"]
+                if use_xml
+                else constants["json_suffix_without_examples"]
+            )
             reask_prompt_template = Prompt(
-                constants["high_level_json_parsing_reask_prompt"]
-                + constants["json_suffix_without_examples"]
+                constants["high_level_json_parsing_reask_prompt"] + suffix
             )
         np_reask: NonParseableReAsk = next(
             r for r in reasks if isinstance(r, NonParseableReAsk)

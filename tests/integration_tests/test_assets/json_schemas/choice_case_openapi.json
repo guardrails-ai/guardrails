@@ -12,7 +12,12 @@
         },
         "weapon": {
           "title": "Weapon",
-          "type": "string"
+          "type": "string",
+          "validators": [
+            {
+              "rail_alias": "valid-choices"
+            }
+          ]
         }
       },
       "required": [
@@ -41,11 +46,21 @@
               "type": "null"
             }
           ],
-          "title": "Flight Direction"
+          "title": "Flight Direction",
+          "validators": [
+            {
+              "rail_alias": "valid-choices"
+            }
+          ]
         },
         "distance": {
           "title": "Distance",
-          "type": "integer"
+          "type": "integer",
+          "validators": [
+            {
+              "rail_alias": "valid-choices"
+            }
+          ]
         }
       },
       "required": [

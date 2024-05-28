@@ -20,7 +20,7 @@ ${gr.xml_prefix_prompt}
 
 ${xml_output_schema}
 
-${gr.complete_json_suffix_v2}"""
+${gr.complete_xml_suffix_v2}"""
 
 
 @register_validator(name="zip_code_must_be_numeric", data_type="string")

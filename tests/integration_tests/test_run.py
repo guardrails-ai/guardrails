@@ -1,35 +1,27 @@
-import os
-
 import pytest
-from lxml import etree as ET
 
-import guardrails as gd
 from guardrails.classes.history.call import Call
 from guardrails.classes.history.iteration import Iteration
+from guardrails.classes.llm.llm_response import LLMResponse
+from guardrails.classes.output_type import OutputTypes
 from guardrails.llm_providers import AsyncOpenAICallable, OpenAICallable
+from guardrails.prompt.instructions import Instructions
+from guardrails.prompt.prompt import Prompt
 from guardrails.run import AsyncRunner, Runner
-from guardrails.schema.string_schema import StringSchema
-from guardrails.utils.openai_utils import OPENAI_VERSION
+from guardrails.types.on_fail import OnFailAction
 
-from .mock_llm_outputs import MockAsyncOpenAICallable, MockOpenAICallable
 from .test_assets import string
+from tests.integration_tests.test_assets.validators.two_words import TwoWords
 
-PROMPT = gd.Prompt(source=string.COMPILED_PROMPT)
-INSTRUCTIONS = gd.Instructions(
-    """ You are a helpful assistant, and you are helping me
+PROMPT = string.COMPILED_PROMPT
+INSTRUCTIONS = """You are a helpful assistant, and you are helping me
      come up with a name for a pizza. ${gr.complete_string_suffix}"""
-)
 
 
-OUTPUT_SCHEMA = StringSchema.from_xml(
-    ET.fromstring(
-        """<output
-    type="string"
-    description="Name for the pizza"
-    format="two-words"
-    on-fail-two-words="reask" />"""
-    )
-)
+OUTPUT_SCHEMA = {"type": "string", "description": "Name for the pizza"}
+two_words = TwoWords(on_fail=OnFailAction.REASK)
+validation_map = {"$": [two_words]}
+
 
 OUTPUT = "Tomato Cheese Pizza"
 
@@ -37,73 +29,44 @@ OUTPUT = "Tomato Cheese Pizza"
 def runner_instance(is_sync: bool):
     if is_sync:
         return Runner(
-            instructions=INSTRUCTIONS,
-            prompt=PROMPT,
-            msg_history=None,
-            api=OpenAICallable,
-            prompt_schema=None,
-            instructions_schema=None,
+            OutputTypes.STRING,
             output_schema=OUTPUT_SCHEMA,
             num_reasks=0,
+            validation_map=validation_map,
+            prompt=PROMPT,
+            instructions=INSTRUCTIONS,
+            msg_history=None,
+            api=OpenAICallable,
         )
     else:
         return AsyncRunner(
-            instructions=INSTRUCTIONS,
-            prompt=PROMPT,
-            msg_history=None,
-            api=AsyncOpenAICallable,
-            prompt_schema=None,
-            instructions_schema=None,
+            OutputTypes.STRING,
             output_schema=OUTPUT_SCHEMA,
             num_reasks=0,
+            validation_map=validation_map,
+            prompt=PROMPT,
+            instructions=INSTRUCTIONS,
+            msg_history=None,
+            api=AsyncOpenAICallable,
         )
-
-
-@pytest.mark.skipif(
-    os.environ.get("OPENAI_API_KEY") is None, reason="openai api key not set"
-)
-@pytest.mark.asyncio
-@pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="Only for OpenAI v0")
-async def test_sync_async_call_equivalence(mocker):
-    mocker.patch(
-        "guardrails.llm_providers.AsyncOpenAICallable",
-        new=MockAsyncOpenAICallable,
-    )
-    mocker.patch("guardrails.llm_providers.OpenAICallable", new=MockOpenAICallable)
-
-    # Call the 'call' method synchronously
-    result_sync = runner_instance(True).call(
-        1,
-        INSTRUCTIONS,
-        PROMPT,
-        None,
-        OpenAICallable(**{"temperature": 0}),
-        "Tomato Cheese Pizza",
-    )
-
-    # Call the 'async_call' method asynchronously
-    result_async = await runner_instance(False).async_call(
-        index=1,
-        instructions=INSTRUCTIONS,
-        prompt=PROMPT,
-        msg_history=None,
-        api=AsyncOpenAICallable(**{"temperature": 0}),
-        output="Tomato Cheese Pizza",
-    )
-
-    assert result_sync.output == result_async.output
 
 
 @pytest.mark.asyncio
 async def test_sync_async_validate_equivalence(mocker):
-    mocker.patch(
-        "guardrails.llm_providers.AsyncOpenAICallable",
-        new=MockAsyncOpenAICallable,
+    mock_invoke_llm = mocker.patch(
+        "guardrails.llm_providers.AsyncOpenAICallable.invoke_llm",
     )
-    mocker.patch("guardrails.llm_providers.OpenAICallable", new=MockOpenAICallable)
+    mock_invoke_llm.side_effect = [
+        LLMResponse(
+            output=string.LLM_OUTPUT,
+            prompt_token_count=123,
+            response_token_count=1234,
+        )
+    ]
+
     iteration = Iteration()
 
-    parsed_output, _ = runner_instance(True).parse(1, OUTPUT, OUTPUT_SCHEMA)
+    parsed_output, _ = runner_instance(True).parse(OUTPUT, OUTPUT_SCHEMA)
 
     # Call the 'validate' method synchronously
     result_sync = runner_instance(True).validate(
@@ -119,44 +82,41 @@ async def test_sync_async_validate_equivalence(mocker):
 
 @pytest.mark.asyncio
 async def test_sync_async_step_equivalence(mocker):
-    mocker.patch(
-        "guardrails.llm_providers.AsyncOpenAICallable",
-        new=MockAsyncOpenAICallable,
+    mock_invoke_llm = mocker.patch(
+        "guardrails.llm_providers.AsyncOpenAICallable.invoke_llm",
     )
-    mocker.patch("guardrails.llm_providers.OpenAICallable", new=MockOpenAICallable)
+    mock_invoke_llm.side_effect = [
+        LLMResponse(
+            output=string.LLM_OUTPUT,
+            prompt_token_count=123,
+            response_token_count=1234,
+        )
+    ]
 
     call_log = Call()
 
     # Call the 'step' method synchronously
     sync_iteration = runner_instance(True).step(
         1,
-        OpenAICallable(**{"temperature": 0}),
-        INSTRUCTIONS,
-        PROMPT,
-        None,
-        {},
-        None,
-        None,
-        None,
         OUTPUT_SCHEMA,
         call_log,
-        OUTPUT,
+        api=OpenAICallable(**{"temperature": 0}),
+        instructions=Instructions(INSTRUCTIONS),
+        prompt=Prompt(PROMPT),
+        prompt_params={},
+        output=OUTPUT,
     )
 
     # Call the 'async_step' method asynchronously
     async_iteration = await runner_instance(False).async_step(
         1,
-        AsyncOpenAICallable(**{"temperature": 0}),
-        INSTRUCTIONS,
-        PROMPT,
-        None,
-        {},
-        None,
-        None,
-        None,
         OUTPUT_SCHEMA,
         call_log,
-        OUTPUT,
+        api=AsyncOpenAICallable(**{"temperature": 0}),
+        instructions=Instructions(INSTRUCTIONS),
+        prompt=Prompt(PROMPT),
+        prompt_params={},
+        output=OUTPUT,
     )
 
     assert sync_iteration.guarded_output == async_iteration.guarded_output

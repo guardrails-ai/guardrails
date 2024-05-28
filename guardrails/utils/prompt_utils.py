@@ -1,4 +1,6 @@
 import json
+import re
+from string import Template
 from typing import Any, Dict, Optional, Tuple
 
 from guardrails.classes.output_type import OutputTypes
@@ -12,6 +14,13 @@ from guardrails.llm_providers import (
 from guardrails.prompt.prompt import Prompt
 from guardrails.prompt.instructions import Instructions
 from guardrails.types.validator import ValidatorMap
+
+
+def prompt_uses_xml(prompt: str) -> bool:
+    xml_const_regx = re.compile(r"gr\..*xml_.*")
+    contains_xml_const = xml_const_regx.search(prompt) is not None
+    contains_xml_output = "xml_output_schema" in prompt
+    return contains_xml_output or contains_xml_const
 
 
 def preprocess_prompt_for_string_output(
@@ -38,6 +47,7 @@ def preprocess_prompt_for_json_output(
     prompt_callable: PromptCallableBase,
     instructions: Optional[Instructions],
     prompt: Prompt,
+    use_xml: bool,
 ) -> Tuple[Instructions, Prompt]:
     if isinstance(prompt_callable, OpenAICallable) or isinstance(
         prompt_callable, AsyncOpenAICallable
@@ -47,10 +57,13 @@ def preprocess_prompt_for_json_output(
         isinstance(prompt_callable, OpenAIChatCallable)
         or isinstance(prompt_callable, AsyncOpenAIChatCallable)
     ) and not instructions:
+        schema_type = "XML schemas" if use_xml else "JSON schema"
         instructions = Instructions(
-            "You are a helpful assistant, "
-            "able to express yourself purely through JSON, "
-            "strictly and precisely adhering to the provided JSON schema."
+            Template(
+                "You are a helpful assistant, "
+                "able to express yourself purely through JSON, "
+                "strictly and precisely adhering to the provided ${schema_type}."
+            ).safe_substitute(schema_type=schema_type)
         )
 
     return instructions, prompt
@@ -61,12 +74,15 @@ def preprocess_prompt(
     instructions: Optional[Instructions],
     prompt: Prompt,
     output_type: OutputTypes,
+    use_xml: bool,
 ) -> Tuple[Instructions, Prompt]:
     if output_type == OutputTypes.STRING:
         return preprocess_prompt_for_string_output(
             prompt_callable, instructions, prompt
         )
-    return preprocess_prompt_for_json_output(prompt_callable, instructions, prompt)
+    return preprocess_prompt_for_json_output(
+        prompt_callable, instructions, prompt, use_xml
+    )
 
 
 def prompt_content_for_string_schema(

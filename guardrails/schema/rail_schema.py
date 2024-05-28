@@ -886,4 +886,6 @@ def json_schema_to_rail_output(
         elem=Element,
         tag_override="output",
     )
-    return canonicalize(ET.tostring(output_element, pretty_print=True))
+    return canonicalize(ET.tostring(output_element, pretty_print=True)).replace(
+        "&#xA;", ""
+    )

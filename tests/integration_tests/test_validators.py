@@ -5,8 +5,6 @@ from typing import Any, Callable, Dict, Optional, Union
 import pytest
 
 from guardrails import Guard, Validator, register_validator
-from guardrails.datatypes import DataType
-from guardrails.schema.string_schema import StringSchema
 from guardrails.validator_base import OnFailAction, PassResult, ValidationResult
 from guardrails.validators import (
     DetectSecrets,
@@ -63,10 +61,7 @@ def test_similar_to_list():
     )
 
     # Check types remain intact
-    output_schema: StringSchema = guard.rail.output_schema
-    data_type: DataType = output_schema.root_datatype
-    validators = data_type.validators_attr.validators
-    validator: SimilarToList = validators[0]
+    validator: SimilarToList = guard._validators[0]
 
     assert isinstance(validator._standard_deviations, int)
     assert isinstance(validator._threshold, float)
@@ -588,10 +583,7 @@ def test_validator_instance_attr_equality(mocker, instance_attr):
         prompt="",
     )
 
-    assert (
-        guard.rail.output_schema.root_datatype.validators[0].an_instance_attr
-        == instance_attr
-    )
+    assert guard._validators[0].an_instance_attr == instance_attr
 
 
 @pytest.mark.parametrize(

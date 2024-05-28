@@ -23,7 +23,11 @@ from guardrails.utils.parsing_utils import (
     parse_llm_output,
     prune_extra_keys,
 )
-from guardrails.utils.prompt_utils import preprocess_prompt, prompt_content_for_schema
+from guardrails.utils.prompt_utils import (
+    preprocess_prompt,
+    prompt_content_for_schema,
+    prompt_uses_xml,
+)
 from guardrails.utils.reask_utils import NonParseableReAsk, ReAsk, introspect
 from guardrails.utils.telemetry_utils import trace
 
@@ -249,7 +253,7 @@ class Runner:
         api: Optional[PromptCallableBase],
         instructions: Optional[Instructions],
         prompt: Optional[Prompt],
-        msg_history: Optional[List[Dict]],
+        msg_history: Optional[List[Dict]] = None,
         prompt_params: Optional[Dict] = None,
         output: Optional[str] = None,
     ) -> Iteration:
@@ -450,6 +454,7 @@ class Runner:
         api: Union[PromptCallableBase, AsyncPromptCallableBase],
         attempt_number: int,
     ):
+        use_xml = prompt_uses_xml(self.prompt._source) if self.prompt else False
         prompt = prompt.format(**prompt_params)
 
         # TODO(shreya): should there be any difference
@@ -462,6 +467,7 @@ class Runner:
             instructions=instructions,
             prompt=prompt,
             output_type=self.output_type,
+            use_xml=use_xml,
         )
 
         # validate prompt
