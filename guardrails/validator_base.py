@@ -408,7 +408,7 @@ class FailResult(ValidationResult):
     error_message: str
     fix_value: Optional[Any] = None
     # segments that caused validation to fail
-    error_spans: Optional[List[ErrorSpan]] = []
+    error_spans: Optional[List[ErrorSpan]] = None
 
 
 class OnFailAction(str, Enum):
