@@ -57,12 +57,15 @@ jobs:
         pip install .
 
         # Install extra stuff for notebook runs
-        pip install "huggingface_hub[cli]" nltk jupyter nbconvert cohere==5.3.2
+        pip install "huggingface_hub[cli]" jupyter nbconvert cohere==5.3.2
+        pip install nltk
         pip show nltk
+        which pip
     - name: Huggingface Hub Login
       run: ./.venv/bin/huggingface-cli login --token $HUGGINGFACE_API_KEY
     - name: download nltk data
       run: |
+        which pip
         pip show nltk
         mkdir /tmp/nltk_data;
         python -m nltk.downloader -d /tmp/nltk_data punkt;
