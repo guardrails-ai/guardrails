@@ -16,9 +16,8 @@ from typing import (
     get_args,
     get_origin,
 )
- 
-from pydantic import BaseModel, ConfigDict
-from pydantic.functional_validators import field_validator
+
+from pydantic import BaseModel, ConfigDict, field_validator
 from pydantic.fields import FieldInfo
 
 from guardrails.datatypes import Boolean as BooleanDataType
