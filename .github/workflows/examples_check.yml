@@ -51,8 +51,7 @@ jobs:
         
         # Setup Virtual Environment
         python3 -m venv ./.venv
-        . .venv/bin/activate
-        echo PATH=$PATH >> $GITHUB_ENV
+        source .venv/bin/activate
 
         # Install the current branch
         pip install .
@@ -65,11 +64,13 @@ jobs:
         echo "pip show nltk: $(pip show nltk)"
     - name: Huggingface Hub Login
       run: |
+        source .venv/bin/activate
         echo "which python: $(which python)"
         echo "which pip $(which pip)"
         huggingface-cli login --token $HUGGINGFACE_API_KEY
     - name: download nltk data
       run: |
+        source .venv/bin/activate
         echo "which pip $(which pip)"
         echo "pip show nltk: $(pip show nltk)"
         mkdir /tmp/nltk_data;
@@ -78,5 +79,7 @@ jobs:
     #   run: source .venv/bin/activate
     - name: Execute notebooks and check for errors
       # run: bash ./.github/workflows/scripts/run_notebooks.sh ${{ matrix.notebook }}
-      run: bash ./.github/workflows/scripts/run_notebooks.sh bug_free_python_code.ipynb
+      run: |
+        source .venv/bin/activate
+        bash ./.github/workflows/scripts/run_notebooks.sh bug_free_python_code.ipynb
 
