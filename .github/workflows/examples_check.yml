@@ -51,7 +51,8 @@ jobs:
         
         # Setup Virtual Environment
         python3 -m venv ./.venv
-        source .venv/bin/activate
+        . .venv/bin/activate
+        echo PATH=$PATH >> $GITHUB_ENV
 
         # Install the current branch
         pip install .
@@ -59,14 +60,17 @@ jobs:
         # Install extra stuff for notebook runs
         pip install "huggingface_hub[cli]" jupyter nbconvert cohere==5.3.2
         pip install nltk
-        pip show nltk
-        which pip
+        echo "pip show nltk: $(pip show nltk)"
+        echo "which pip $(which pip)"
     - name: Huggingface Hub Login
-      run: ./.venv/bin/huggingface-cli login --token $HUGGINGFACE_API_KEY
+      run: |
+        echo "which python: $(which python)"
+        echo "which pip $(which pip)"
+        huggingface-cli login --token $HUGGINGFACE_API_KEY
     - name: download nltk data
       run: |
-        which pip
-        pip show nltk
+        echo "which pip $(which pip)"
+        echo "pip show nltk: $(pip show nltk)"
         mkdir /tmp/nltk_data;
         python -m nltk.downloader -d /tmp/nltk_data punkt;
     # - name: Use venv
