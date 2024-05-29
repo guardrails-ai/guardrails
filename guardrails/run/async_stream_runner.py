@@ -65,6 +65,63 @@ class AsyncStreamRunner(StreamRunner):
         )
         self.api: Optional[AsyncPromptCallableBase] = api
 
+    def __call__(
+        self, call_log: Call, prompt_params: Optional[Dict] = None
+    ) -> AsyncGenerator[ValidationOutcome[OT], None]:
+        """Execute the StreamRunner.
+
+        Args:
+            prompt_params: Parameters to pass to the prompt in order to
+                generate the prompt string.
+
+        Returns:
+            The Call log for this run.
+        """
+        if prompt_params is None:
+            prompt_params = {}
+
+        # check if validator requirements are fulfilled
+        missing_keys = verify_metadata_requirements(
+            self.metadata, self.output_schema.root_datatype
+        )
+        if missing_keys:
+            raise ValueError(
+                f"Missing required metadata keys: {', '.join(missing_keys)}"
+            )
+
+        (
+            instructions,
+            prompt,
+            msg_history,
+            prompt_schema,
+            instructions_schema,
+            msg_history_schema,
+            output_schema,
+        ) = (
+            self.instructions,
+            self.prompt,
+            self.msg_history,
+            self.prompt_schema,
+            self.instructions_schema,
+            self.msg_history_schema,
+            self.output_schema,
+        )
+
+        return self.async_step(
+            index=0,
+            api=self.api,
+            instructions=instructions,
+            prompt=prompt,
+            msg_history=msg_history,
+            prompt_params=prompt_params,
+            prompt_schema=prompt_schema,
+            instructions_schema=instructions_schema,
+            msg_history_schema=msg_history_schema,
+            output_schema=output_schema,
+            output=self.output,
+            call_log=call_log,
+        )
+
     async def async_run(
         self, call_log: Call, prompt_params: Optional[Dict] = None
     ) -> Call:
@@ -113,7 +170,8 @@ class AsyncStreamRunner(StreamRunner):
             call_log=call_log,
         )
         async for call in result:
-            yield ValidationOutcome[OT].from_guard_history(call)
+            # yield ValidationOutcome[OT].from_guard_history(call)
+            yield call
 
     # @async_trace(name="step")
     async def async_step(
@@ -172,14 +230,14 @@ class AsyncStreamRunner(StreamRunner):
             index, instructions, prompt, msg_history, api, output
         )
         try:
-            stream = llm_response.async_stream_output
+            stream_output = llm_response.async_stream_output
         except AttributeError:
             try:
-                stream = llm_response.stream_output
+                stream_output = llm_response.stream_output
 
             except AttributeError:
-                stream = llm_response.stream_output
-        if stream is None:
+                stream_output = llm_response.stream_output
+        if stream_output is None:
             raise ValueError(
                 "No stream was returned from the API. Please check that "
                 "the API is returning an async generator."
@@ -190,7 +248,7 @@ class AsyncStreamRunner(StreamRunner):
         verified = set()
 
         if isinstance(output_schema, StringSchema):
-            async for chunk in stream:
+            async for chunk in stream_output:
                 chunk_text = self.get_chunk_text(chunk, api)
                 finished = self.is_last_chunk(chunk, api)
                 fragment += chunk_text
@@ -206,6 +264,7 @@ class AsyncStreamRunner(StreamRunner):
                     parsed_chunk,
                     output_schema,
                     validate_subschema=True,
+                    stream=True
                 )
 
                 if isinstance(validated_result, SkeletonReAsk):
@@ -229,7 +288,7 @@ class AsyncStreamRunner(StreamRunner):
                     validation_passed=validated_result is not None,
                 )
         else:
-            async for chunk in stream:
+            async for chunk in stream_output:
                 chunk_text = self.get_chunk_text(chunk, api)
                 fragment += chunk_text
 
@@ -309,6 +368,7 @@ class AsyncStreamRunner(StreamRunner):
         parsed_output: Any,
         output_schema: Schema,
         validate_subschema: bool = False,
+        stream: bool = False,
     ):
         # if validate_subschema:
         #     validated_output = await output_schema.async_validate_subschema(
@@ -317,7 +377,7 @@ class AsyncStreamRunner(StreamRunner):
         # else:
         # TODO: What is supposed to happen here with subschema?
         validated_output = await output_schema.async_validate(
-            iteration, parsed_output, self.metadata, attempt_number=index
+            iteration, parsed_output, self.metadata, attempt_number=index, stream=stream
         )
 
         return validated_output

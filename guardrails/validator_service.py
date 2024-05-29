@@ -4,7 +4,7 @@ import os
 from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple, Union
-
+import inspect 
 from guardrails.classes.history import Iteration
 from guardrails.datatypes import FieldValidation
 from guardrails.errors import ValidationError
@@ -302,6 +302,7 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
         value: Any,
         metadata: Dict,
         property_path: str,
+        stream: bool = False,
     ):
         loop = asyncio.get_running_loop()
         for on_fail, validator_group in self.group_validators(
@@ -321,12 +322,13 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
                             value,
                             metadata,
                             property_path,
+                            stream=stream
                         )
                     )
                 else:
                     # run the validators in the current process
                     result = self.run_validator(
-                        iteration, validator, value, metadata, property_path
+                        iteration, validator, value, metadata, property_path, stream=stream
                     )
                     validators_logs.append(result)
 
@@ -398,6 +400,7 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
         validator_setup: FieldValidation,
         iteration: Iteration,
         path: str = "$",
+        stream: bool = False,
     ) -> Tuple[Any, dict]:
         property_path = (
             f"{path}.{validator_setup.key}"
@@ -412,7 +415,7 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
 
         # Validate the field
         value, metadata = await self.run_validators(
-            iteration, validator_setup, value, metadata, property_path
+            iteration, validator_setup, value, metadata, property_path, stream=stream
         )
 
         return value, metadata
@@ -431,7 +434,7 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
                 "Async event loop found, please call `validate_async` instead."
             )
         value, metadata = loop.run_until_complete(
-            self.async_validate(
+            self.x(
                 value,
                 metadata,
                 validator_setup,
@@ -459,11 +462,6 @@ def validate(
             "To run asynchronously, specify a process count"
             "greater than 1 or unset this environment variable."
         )
-    if stream:
-        sequential_validator_service = SequentialValidatorService(disable_tracer)
-        return sequential_validator_service.validate_stream(
-            value, metadata, validator_setup, iteration, **kwargs
-        )
     try:
         loop = asyncio.get_event_loop()
     except RuntimeError:
@@ -475,6 +473,11 @@ def validate(
         validator_service = AsyncValidatorService(disable_tracer)
     else:
         validator_service = SequentialValidatorService(disable_tracer)
+
+    if stream:
+        return validator_service.validate_stream(
+            value, metadata, validator_setup, iteration, **kwargs
+        )
     return validator_service.validate(
         value,
         metadata,
@@ -489,6 +492,7 @@ async def async_validate(
     validator_setup: FieldValidation,
     iteration: Iteration,
     disable_tracer: Optional[bool] = True,
+    stream: Optional[bool] = False,
 ):
     validator_service = AsyncValidatorService(disable_tracer)
     return await validator_service.async_validate(
@@ -496,4 +500,5 @@ async def async_validate(
         metadata,
         validator_setup,
         iteration,
+        stream=stream
     )
