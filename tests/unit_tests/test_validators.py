@@ -786,7 +786,7 @@ This also is not two words
 
 
 @pytest.mark.asyncio
-#@pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="Not supported in v1")
+#@pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="Not supported in v1") 
 async def test_async_input_validation_fix(mocker):
     async def mock_llm_api(*args, **kwargs):
         return json.dumps({"name": "Fluffy"})
