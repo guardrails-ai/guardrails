@@ -13,7 +13,6 @@ from guardrails.llm_providers import (
 from guardrails.prompt import Instructions, Prompt
 from guardrails.run.runner import Runner
 from guardrails.schema import Schema, StringSchema
-from guardrails.utils.openai_utils import OPENAI_VERSION
 from guardrails.utils.reask_utils import SkeletonReAsk
 
 
