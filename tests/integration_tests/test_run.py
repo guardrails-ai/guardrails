@@ -63,7 +63,7 @@ def runner_instance(is_sync: bool):
     os.environ.get("OPENAI_API_KEY") is None, reason="openai api key not set"
 )
 @pytest.mark.asyncio
-#@pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="Only for OpenAI v0")
+@pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="Only for OpenAI v0")
 async def test_sync_async_call_equivalence(mocker):
     mocker.patch(
         "guardrails.llm_providers.AsyncOpenAICallable",

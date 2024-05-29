@@ -90,7 +90,7 @@ class RequiringValidator2(Validator):
     ],
 )
 @pytest.mark.asyncio
-#@pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="Only for OpenAI v0")
+@pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="Only for OpenAI v0")
 async def test_required_metadata(spec, metadata, error_message):
     guard = AsyncGuard.from_rail_string(spec)
 
