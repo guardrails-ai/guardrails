@@ -175,7 +175,7 @@ def install_hub_module(
             install_spec = req.replace(" ", "")
             dep_install_output = pip_process("install", install_spec)
             if not quiet:
-              logger.info(dep_install_output)
+                logger.info(dep_install_output)
         else:
             req_info = Stack(*req.split(" "))
             name = req_info.at(0, "").strip()  # type: ignore
@@ -184,7 +184,7 @@ def install_hub_module(
                 install_spec = name if not versions else f"{name}{versions}"
                 dep_install_output = pip_process("install", install_spec)
                 if not quiet:
-                  logger.info(dep_install_output)
+                    logger.info(dep_install_output)
 
 
 @hub_command.command()
