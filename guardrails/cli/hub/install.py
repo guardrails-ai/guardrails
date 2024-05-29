@@ -173,7 +173,7 @@ def install_hub_module(
     for req in requirements:
         if "git+" in req:
             install_spec = req.replace(" ", "")
-            dep_install_output = pip_process("install", install_spec)
+            dep_install_output = pip_process("install", install_spec, quiet=quiet)
             if not quiet:
                 logger.info(dep_install_output)
         else:
@@ -182,7 +182,7 @@ def install_hub_module(
             versions = req_info.at(1, "").strip("()")  # type: ignore
             if name:
                 install_spec = name if not versions else f"{name}{versions}"
-                dep_install_output = pip_process("install", install_spec)
+                dep_install_output = pip_process("install", install_spec, quiet=quiet)
                 if not quiet:
                     logger.info(dep_install_output)
 
