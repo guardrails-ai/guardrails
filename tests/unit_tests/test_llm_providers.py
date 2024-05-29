@@ -21,7 +21,7 @@ from guardrails.utils.safe_get import safe_get_with_brackets
 from .mocks import MockAsyncOpenAILlm, MockOpenAILlm
 
 
-@pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="OpenAI v0 only")
+#@pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="OpenAI v0 only")
 def test_openai_callable_does_not_retry_on_non_retryable_errors(mocker):
     with pytest.raises(Exception) as e:
         llm = MockOpenAILlm()
@@ -52,7 +52,7 @@ def test_openai_callable_does_not_retry_on_success(mocker):
     assert response.response_token_count is None
 
 
-@pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="OpenAI v0 only")
+#@pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="OpenAI v0 only")
 @pytest.mark.asyncio
 async def test_async_openai_callable_does_not_retry_on_non_retryable_errors(mocker):
     with pytest.raises(Exception) as e:
@@ -225,7 +225,7 @@ def test_openai_stream_callable(mocker, openai_stream_mock):
 
 
 @pytest.mark.asyncio
-@pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="OpenAI v0 only")
+#@pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="OpenAI v0 only")
 async def test_async_openai_callable(mocker, openai_mock):
     mocker.patch("openai.Completion.acreate", return_value=openai_mock)
 
@@ -279,7 +279,7 @@ def test_openai_chat_stream_callable(mocker, openai_chat_stream_mock):
 
 
 @pytest.mark.asyncio
-@pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="OpenAI v0 only")
+#@pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="OpenAI v0 only")
 async def test_async_openai_chat_callable(mocker, openai_chat_mock):
     mocker.patch("openai.ChatCompletion.acreate", return_value=openai_chat_mock)
 
@@ -318,7 +318,7 @@ def test_openai_chat_model_callable(mocker, openai_chat_mock):
 
 
 @pytest.mark.asyncio
-@pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="OpenAI v0 only")
+#@pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="OpenAI v0 only")
 async def test_async_openai_chat_model_callable(mocker, openai_chat_mock):
     mocker.patch("openai.ChatCompletion.acreate", return_value=openai_chat_mock)
 

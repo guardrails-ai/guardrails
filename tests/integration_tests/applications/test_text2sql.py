@@ -39,7 +39,7 @@ def test_text2sql_with_examples(conn_str: str, schema_path: str, examples: str, 
     Text2Sql(conn_str, schema_file=schema_path, examples=examples)
 
 
-@pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="Only for OpenAI v0")
+#@pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="Only for OpenAI v0")
 def test_text2sql_with_coro():
     s = Text2Sql("sqlite://", llm_api=openai.Completion.acreate)
     with pytest.raises(ValueError):
