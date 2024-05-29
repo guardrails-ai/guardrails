@@ -62,7 +62,7 @@ def add_validator(
 ) -> Callable:
     if kwargs:
         warnings.warn(
-            "The following kwargs are not   by pydantic v2 "
+            "The following kwargs are not supported by pydantic v2 "
             "and will be ignored: "
             f"{kwargs}"
         )
