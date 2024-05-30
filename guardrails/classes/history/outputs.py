@@ -77,7 +77,9 @@ class Outputs(ArbitraryModel):
     @property
     def error_spans_in_output(self) -> List[ErrorSpan]:
         """The error spans from the LLM response.
-        These indices are relative to the complete LLM output."""
+
+        These indices are relative to the complete LLM output.
+        """
         total_len = 0
         spans_in_output = []
         for log in self.validator_logs:
@@ -92,7 +94,7 @@ class Outputs(ArbitraryModel):
                                 reason=error_span.reason,
                             )
                         )
-            if result.validated_chunk is not None:
+            if result and result.validated_chunk is not None:
                 total_len += len(result.validated_chunk)
         return spans_in_output
 

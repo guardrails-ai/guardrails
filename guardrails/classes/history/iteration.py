@@ -159,7 +159,9 @@ versions 0.5.0 and beyond. Use 'guarded_output' instead."""
     @property
     def error_spans_in_output(self) -> List[ErrorSpan]:
         """The error spans from the LLM response.
-        These indices are relative to the complete LLM output."""
+
+        These indices are relative to the complete LLM output.
+        """
         return self.outputs.error_spans_in_output
 
     @property
