@@ -947,16 +947,20 @@ def model_is_supported_server_side(
     model = get_llm_ask(llm_api, *args, **kwargs)
     if asyncio.iscoroutinefunction(llm_api):
         model = get_async_llm_ask(llm_api, *args, **kwargs)
-    return issubclass(type(model), OpenAIModel) or issubclass(
-        type(model), AsyncOpenAIModel
+    return (
+        issubclass(type(model), OpenAIModel)
+        or issubclass(type(model), AsyncOpenAIModel)
+        or isinstance(model, LiteLLMCallable)
+        or isinstance(model, AsyncLiteLLMCallable)
     )
 
 
 # FIXME: Update with newly supported LLMs
 def get_llm_api_enum(
-    llm_api: Callable[[Any], Awaitable[Any]],
+    llm_api: Callable[[Any], Awaitable[Any]], *args, **kwargs
 ) -> Optional[ValidatePayloadLlmApi]:
     # TODO: Distinguish between v1 and v2
+    model = get_llm_ask(llm_api, *args, **kwargs)
     if llm_api == get_static_openai_create_func():
         return ValidatePayloadLlmApi.OPENAI_COMPLETION_CREATE
     elif llm_api == get_static_openai_chat_create_func():
@@ -965,5 +969,10 @@ def get_llm_api_enum(
         return ValidatePayloadLlmApi.OPENAI_COMPLETION_ACREATE
     elif llm_api == get_static_openai_chat_acreate_func():
         return ValidatePayloadLlmApi.OPENAI_CHATCOMPLETION_ACREATE
+    elif isinstance(model, LiteLLMCallable):
+        return ValidatePayloadLlmApi.LITELLM_COMPLETION
+    elif isinstance(model, AsyncLiteLLMCallable):
+        return ValidatePayloadLlmApi.LITELLM_ACOMPLETION
+
     else:
         return None

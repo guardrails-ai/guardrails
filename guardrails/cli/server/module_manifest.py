@@ -29,6 +29,13 @@ class ModuleTags(Serializeable):
 
 
 @dataclass
+class ModelAuth(Serializeable):
+    type: str
+    name: str
+    displayName: Optional[str] = None
+
+
+@dataclass
 class ModuleManifest(Serializeable):
     id: str
     name: str
@@ -43,6 +50,7 @@ class ModuleManifest(Serializeable):
     requires_auth: Optional[bool] = True
     post_install: Optional[str] = None
     index: Optional[str] = None
+    required_model_auth: Optional[List[ModelAuth]] = field(default_factory=list)
 
     # @override
     @classmethod
