@@ -17,22 +17,22 @@ type:
 	@make $(TYPING_CMD)
 
 type-pydantic-v1-openai-v0:
-	echo '{"reportDeprecated": true, "exclude": ["guardrails/utils/pydantic_utils/v2.py", "guardrails/utils/openai_utils/v1.py"]}' > pyrightconfig.json
+	echo '{"reportDeprecated": true, "exclude": ["guardrails/utils/pydantic_utils/v1.py", "guardrails/utils/openai_utils/v0.py"]}' > pyrightconfig.json
 	poetry run pyright guardrails/
 	rm pyrightconfig.json
 
 type-pydantic-v1-openai-v1:
-	echo '{"reportDeprecated": true, "exclude": ["guardrails/utils/pydantic_utils/v2.py", "guardrails/utils/openai_utils/v0.py"]}' > pyrightconfig.json
-	poetry run pyright guardrails/
-	rm pyrightconfig.json
-
-type-pydantic-v2-openai-v0:
 	echo '{"reportDeprecated": true, "exclude": ["guardrails/utils/pydantic_utils/v1.py", "guardrails/utils/openai_utils/v1.py"]}' > pyrightconfig.json
 	poetry run pyright guardrails/
 	rm pyrightconfig.json
 
+type-pydantic-v2-openai-v0:
+	echo '{"reportDeprecated": true, "exclude": ["guardrails/utils/pydantic_utils/v2.py", "guardrails/utils/openai_utils/v0.py"]}' > pyrightconfig.json
+	poetry run pyright guardrails/
+	rm pyrightconfig.json
+
 type-pydantic-v2-openai-v1:
-	echo '{"reportDeprecated": true, "exclude": ["guardrails/utils/pydantic_utils/v1.py", "guardrails/utils/openai_utils/v0.py"]}' > pyrightconfig.json
+	echo '{"reportDeprecated": true, "exclude": ["guardrails/utils/pydantic_utils/v2.py", "guardrails/utils/openai_utils/v1.py"]}' > pyrightconfig.json
 	poetry run pyright guardrails/
 	rm pyrightconfig.json
 
