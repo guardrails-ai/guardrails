@@ -99,8 +99,8 @@ class Call(ArbitraryModel):
 
     @property
     def instructions(self) -> Optional[str]:
-        """The instructions as provided by the user when initializing or calling
-        the Guard."""
+        """The instructions as provided by the user when initializing or
+        calling the Guard."""
         return self.inputs.instructions
 
     @property
