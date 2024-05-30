@@ -10,6 +10,7 @@ from typing import (
     Awaitable,
     Callable,
     Dict,
+    Generator,
     Generic,
     Iterable,
     List,
@@ -24,18 +25,18 @@ from typing import (
 
 from guardrails_api_client.models import (
     AnyObject,
+    Guard as GuardModel,
     History,
     HistoryEvent,
     ValidatePayload,
     ValidationOutput,
 )
-from guardrails_api_client.models import Guard as GuardModel
 from guardrails_api_client.types import UNSET
 from langchain_core.messages import BaseMessage
 from langchain_core.runnables import Runnable, RunnableConfig
 from pydantic import BaseModel
 from pydantic.version import VERSION as PYDANTIC_VERSION
-from typing_extensions import deprecated
+from typing_extensions import deprecated  # type: ignore
 
 from guardrails.api_client import GuardrailsApiClient
 from guardrails.classes import OT, InputType, ValidationOutcome
@@ -66,6 +67,7 @@ from guardrails.stores.context import (
     set_tracer,
     set_tracer_context,
 )
+from guardrails.utils.api_utils import extract_serializeable_metadata
 from guardrails.utils.hub_telemetry_utils import HubTelemetry
 from guardrails.utils.llm_response import LLMResponse
 from guardrails.utils.reask_utils import FieldReAsk
@@ -131,7 +133,7 @@ class Guard(Runnable, Generic[OT]):
         self._user_id = credentials.id or ""
 
         # Get metrics opt-out from credentials
-        self._disable_tracer = credentials.no_metrics
+        self._disable_tracer = not credentials.enable_metrics
 
         # Get id of guard object (that is unique)
         self._guard_id = id(self)  # id of guard object; not the class
@@ -146,18 +148,7 @@ class Guard(Runnable, Generic[OT]):
         self.description = description
         self.name = name
 
-        api_key = os.environ.get("GUARDRAILS_API_KEY")
-        if api_key is not None:
-            if self.name is None:
-                self.name = f"gr-{str(self._guard_id)}"
-                logger.warn("Warning: No name passed to guard!")
-                logger.warn(
-                    "Use this auto-generated name to re-use this guard: {name}".format(
-                        name=self.name
-                    )
-                )
-            self._api_client = GuardrailsApiClient(api_key=api_key)
-            self.upsert_guard()
+        self._save()
 
     @property
     @deprecated(
@@ -550,8 +541,7 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
         Union[ValidationOutcome[OT], Iterable[ValidationOutcome[OT]]],
         Awaitable[ValidationOutcome[OT]],
     ]:
-        """Call the LLM and validate the output. Pass an async LLM API to
-        return a coroutine.
+        """Call the LLM and validate the output.
 
         Args:
             llm_api: The LLM API to call
@@ -584,6 +574,9 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
             *args,
             **kwargs,
         ):
+            llm_api_str = (
+                f"{llm_api.__module__}.{llm_api.__name__}" if llm_api else "None"
+            )
             if metadata is None:
                 metadata = {}
             if full_schema_reask is None:
@@ -598,7 +591,7 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
                     attributes=[
                         ("guard_id", self._guard_id),
                         ("user_id", self._user_id),
-                        ("llm_api", llm_api.__name__ if llm_api else "None"),
+                        ("llm_api", llm_api_str),
                         (
                             "custom_reask_prompt",
                             self.rail.output_schema.reask_prompt_template is not None,
@@ -651,15 +644,20 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
             ):
                 return self._call_server(
                     llm_api=llm_api,
-                    num_reasks=self.num_reasks,
                     prompt_params=prompt_params,
+                    num_reasks=self.num_reasks,
+                    prompt=prompt,
+                    instructions=instructions,
+                    msg_history=msg_history,
+                    metadata=metadata,
                     full_schema_reask=full_schema_reask,
                     call_log=call_log,
                     *args,
                     **kwargs,
                 )
 
-            # If the LLM API is async, return a coroutine
+            # If the LLM API is async, return a coroutine. This will be deprecated soon.
+
             if asyncio.iscoroutinefunction(llm_api):
                 return self._call_async(
                     llm_api,
@@ -768,6 +766,12 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
             call = runner(call_log=call_log, prompt_params=prompt_params)
             return ValidationOutcome[OT].from_guard_history(call)
 
+    @deprecated(
+        """Async methods within Guard are deprecated and will be removed in 0.5.x.
+        Instead, please use `AsyncGuard() or pass in a synchronous llm api.""",
+        category=FutureWarning,
+        stacklevel=2,
+    )
     async def _call_async(
         self,
         llm_api: Callable[[Any], Awaitable[Any]],
@@ -932,6 +936,9 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
             *args,
             **kwargs,
         ):
+            llm_api_str = (
+                f"{llm_api.__module__}.{llm_api.__name__}" if llm_api else "None"
+            )
             final_num_reasks = (
                 num_reasks if num_reasks is not None else 0 if llm_api is None else None
             )
@@ -942,7 +949,7 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
                     attributes=[
                         ("guard_id", self._guard_id),
                         ("user_id", self._user_id),
-                        ("llm_api", llm_api.__name__ if llm_api else "None"),
+                        ("llm_api", llm_api_str),
                         (
                             "custom_reask_prompt",
                             self.rail.output_schema.reask_prompt_template is not None,
@@ -997,6 +1004,7 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
             ):
                 return self._call_server(
                     llm_output=llm_output,
+                    metadata=metadata,
                     llm_api=llm_api,
                     num_reasks=self.num_reasks,
                     prompt_params=prompt_params,
@@ -1088,6 +1096,12 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
 
         return ValidationOutcome[OT].from_guard_history(call)
 
+    @deprecated(
+        """Async methods within Guard are deprecated and will be removed in 0.5.x.
+        Instead, please use `AsyncGuard() or pass in a synchronous llm api.""",
+        category=FutureWarning,
+        stacklevel=2,
+    )
     async def _async_parse(
         self,
         llm_output: str,
@@ -1286,6 +1300,7 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
         """
         hydrated_validator = get_validator(validator, *args, **kwargs)
         self.__add_validator(hydrated_validator, on=on)
+        self._save()
         return self
 
     @overload
@@ -1327,6 +1342,7 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
         for v in validators:
             hydrated_validator = get_validator(v)
             self.__add_validator(hydrated_validator, on=on)
+        self._save()
         return self
 
     def validate(self, llm_output: str, *args, **kwargs) -> ValidationOutcome[str]:
@@ -1349,6 +1365,7 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
                 if self.rail.output_schema.reask_instructions_template
                 else None,
             )
+            self._save()
 
         return self.parse(llm_output=llm_output, *args, **kwargs)
 
@@ -1404,39 +1421,111 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
         else:
             raise ValueError("Guard does not have an api client!")
 
-    def _call_server(
+    def _construct_history_from_server_response(
         self,
-        *args,
-        llm_output: Optional[str] = None,
+        *,
+        validation_output: Optional[ValidationOutput] = None,
         llm_api: Optional[Callable] = None,
+        llm_output: Optional[str] = None,
         num_reasks: Optional[int] = None,
         prompt_params: Optional[Dict] = None,
         metadata: Optional[Dict] = {},
         full_schema_reask: Optional[bool] = True,
         call_log: Optional[Call],
-        # prompt: Optional[str],
-        # instructions: Optional[str],
-        # msg_history: Optional[List[Dict]],
-        **kwargs,
     ):
+        call_log = call_log or Call()
+        if llm_api is not None:
+            llm_api = get_llm_ask(llm_api)
+            if asyncio.iscoroutinefunction(llm_api):
+                llm_api = get_async_llm_ask(llm_api)
+        session_history = (
+            validation_output.session_history
+            if validation_output is not None and validation_output.session_history
+            else []
+        )
+        history: History
+        for history in session_history:
+            history_events: Optional[List[HistoryEvent]] = (  # type: ignore
+                history.history if history.history != UNSET else None
+            )
+            if history_events is None:
+                continue
+
+            iterations = [
+                Iteration(
+                    inputs=Inputs(
+                        llm_api=llm_api,
+                        llm_output=llm_output,
+                        instructions=(
+                            Instructions(h.instructions) if h.instructions else None
+                        ),
+                        prompt=(
+                            Prompt(h.prompt.source)  # type: ignore
+                            if h.prompt is not None and h.prompt != UNSET
+                            else None
+                        ),
+                        prompt_params=prompt_params,
+                        num_reasks=(num_reasks or 0),
+                        metadata=metadata,
+                        full_schema_reask=full_schema_reask,
+                    ),
+                    outputs=Outputs(
+                        llm_response_info=LLMResponse(output=h.output),  # type: ignore
+                        raw_output=h.output,
+                        parsed_output=(
+                            h.parsed_output.to_dict()
+                            if isinstance(h.parsed_output, AnyObject)
+                            else h.parsed_output
+                        ),
+                        validation_output=(
+                            h.validated_output.to_dict()
+                            if isinstance(h.validated_output, AnyObject)
+                            else h.validated_output
+                        ),
+                        reasks=list(
+                            [
+                                FieldReAsk(
+                                    incorrect_value=r.to_dict().get("incorrect_value"),
+                                    path=r.to_dict().get("path"),
+                                    fail_results=[
+                                        FailResult(
+                                            error_message=r.to_dict().get(
+                                                "error_message"
+                                            ),
+                                            fix_value=r.to_dict().get("fix_value"),
+                                        )
+                                    ],
+                                )
+                                for r in h.reasks  # type: ignore
+                            ]
+                            if h.reasks != UNSET
+                            else []
+                        ),
+                    ),
+                )
+                for h in history_events
+            ]
+            call_log.iterations.extend(iterations)
+            if self.history.length == 0:
+                self.history.push(call_log)
+
+    def _single_server_call(
+        self,
+        *,
+        payload: Dict[str, Any],
+        llm_output: Optional[str] = None,
+        num_reasks: Optional[int] = None,
+        prompt_params: Optional[Dict] = None,
+        metadata: Optional[Dict] = {},
+        full_schema_reask: Optional[bool] = True,
+        call_log: Optional[Call],
+    ) -> ValidationOutcome[OT]:
         if self._api_client:
-            payload: Dict[str, Any] = {"args": list(args)}
-            payload.update(**kwargs)
-            if llm_output is not None:
-                payload["llmOutput"] = llm_output
-            if num_reasks is not None:
-                payload["numReasks"] = num_reasks
-            if prompt_params is not None:
-                payload["promptParams"] = prompt_params
-            if llm_api is not None:
-                payload["llmApi"] = get_llm_api_enum(llm_api)
-            # TODO: get enum for llm_api
-            validation_output: Optional[ValidationOutput] = self._api_client.validate(
+            validation_output: ValidationOutput = self._api_client.validate(
                 guard=self,  # type: ignore
                 payload=ValidatePayload.from_dict(payload),
                 openai_api_key=get_call_kwarg("api_key"),
             )
-
             if not validation_output:
                 return ValidationOutcome[OT](
                     raw_llm_output=None,
@@ -1444,86 +1533,15 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
                     validation_passed=False,
                     error="The response from the server was empty!",
                 )
-
-            call_log = call_log or Call()
-            if llm_api is not None:
-                llm_api = get_llm_ask(llm_api)
-                if asyncio.iscoroutinefunction(llm_api):
-                    llm_api = get_async_llm_ask(llm_api)
-            session_history = (
-                validation_output.session_history
-                if validation_output is not None and validation_output.session_history
-                else []
+            self._construct_history_from_server_response(
+                validation_output=validation_output,
+                llm_output=llm_output,
+                num_reasks=num_reasks,
+                prompt_params=prompt_params,
+                metadata=metadata,
+                full_schema_reask=full_schema_reask,
+                call_log=call_log,
             )
-            history: History
-            for history in session_history:
-                history_events: Optional[List[HistoryEvent]] = (  # type: ignore
-                    history.history if history.history != UNSET else None
-                )
-                if history_events is None:
-                    continue
-
-                iterations = [
-                    Iteration(
-                        inputs=Inputs(
-                            llm_api=llm_api,
-                            llm_output=llm_output,
-                            instructions=(
-                                Instructions(h.instructions) if h.instructions else None
-                            ),
-                            prompt=(
-                                Prompt(h.prompt.source)  # type: ignore
-                                if h.prompt is not None and h.prompt != UNSET
-                                else None
-                            ),
-                            prompt_params=prompt_params,
-                            num_reasks=(num_reasks or 0),
-                            metadata=metadata,
-                            full_schema_reask=full_schema_reask,
-                        ),
-                        outputs=Outputs(
-                            llm_response_info=LLMResponse(
-                                output=h.output  # type: ignore
-                            ),
-                            raw_output=h.output,
-                            parsed_output=(
-                                h.parsed_output.to_dict()
-                                if isinstance(h.parsed_output, AnyObject)
-                                else h.parsed_output
-                            ),
-                            validation_output=(
-                                h.validated_output.to_dict()
-                                if isinstance(h.validated_output, AnyObject)
-                                else h.validated_output
-                            ),
-                            reasks=list(
-                                [
-                                    FieldReAsk(
-                                        incorrect_value=r.to_dict().get(
-                                            "incorrect_value"
-                                        ),
-                                        path=r.to_dict().get("path"),
-                                        fail_results=[
-                                            FailResult(
-                                                error_message=r.to_dict().get(
-                                                    "error_message"
-                                                ),
-                                                fix_value=r.to_dict().get("fix_value"),
-                                            )
-                                        ],
-                                    )
-                                    for r in h.reasks  # type: ignore
-                                ]
-                                if h.reasks != UNSET
-                                else []
-                            ),
-                        ),
-                    )
-                    for h in history_events
-                ]
-                call_log.iterations.extend(iterations)
-                if self.history.length == 0:
-                    self.history.push(call_log)
 
             # Our interfaces are too different for this to work right now.
             # Once we move towards shared interfaces for both the open source
@@ -1536,3 +1554,113 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
             )
         else:
             raise ValueError("Guard does not have an api client!")
+
+    def _stream_server_call(
+        self,
+        *,
+        payload: Dict[str, Any],
+        llm_output: Optional[str] = None,
+        num_reasks: Optional[int] = None,
+        prompt_params: Optional[Dict] = None,
+        metadata: Optional[Dict] = {},
+        full_schema_reask: Optional[bool] = True,
+        call_log: Optional[Call],
+    ) -> Generator[ValidationOutcome[OT], None, None]:
+        if self._api_client:
+            validation_output: Optional[ValidationOutput] = None
+            response = self._api_client.stream_validate(
+                guard=self,  # type: ignore
+                payload=ValidatePayload.from_dict(payload),
+                openai_api_key=get_call_kwarg("api_key"),
+            )
+            for fragment in response:
+                validation_output = fragment
+                if not validation_output:
+                    yield ValidationOutcome[OT](
+                        raw_llm_output=None,
+                        validated_output=None,
+                        validation_passed=False,
+                        error="The response from the server was empty!",
+                    )
+                yield ValidationOutcome[OT](
+                    raw_llm_output=validation_output.raw_llm_response,  # type: ignore
+                    validated_output=cast(OT, validation_output.validated_output),
+                    validation_passed=validation_output.result,
+                )
+            if validation_output:
+                self._construct_history_from_server_response(
+                    validation_output=validation_output,
+                    llm_output=llm_output,
+                    num_reasks=num_reasks,
+                    prompt_params=prompt_params,
+                    metadata=metadata,
+                    full_schema_reask=full_schema_reask,
+                    call_log=call_log,
+                )
+        else:
+            raise ValueError("Guard does not have an api client!")
+
+    def _call_server(
+        self,
+        *args,
+        llm_output: Optional[str] = None,
+        llm_api: Optional[Callable] = None,
+        num_reasks: Optional[int] = None,
+        prompt_params: Optional[Dict] = None,
+        metadata: Optional[Dict] = {},
+        full_schema_reask: Optional[bool] = True,
+        call_log: Optional[Call],
+        **kwargs,
+    ) -> Union[ValidationOutcome[OT], Generator[ValidationOutcome[OT], None, None]]:
+        if self._api_client:
+            payload: Dict[str, Any] = {"args": list(args)}
+            payload.update(**kwargs)
+            if metadata:
+                payload["metadata"] = extract_serializeable_metadata(metadata)
+            if llm_output is not None:
+                payload["llmOutput"] = llm_output
+            if num_reasks is not None:
+                payload["numReasks"] = num_reasks
+            if prompt_params is not None:
+                payload["promptParams"] = prompt_params
+            if llm_api is not None:
+                payload["llmApi"] = get_llm_api_enum(llm_api, *args, **kwargs)
+
+            should_stream = kwargs.get("stream", False)
+            if should_stream:
+                return self._stream_server_call(
+                    payload=payload,
+                    llm_output=llm_output,
+                    num_reasks=num_reasks,
+                    prompt_params=prompt_params,
+                    metadata=metadata,
+                    full_schema_reask=full_schema_reask,
+                    call_log=call_log,
+                )
+            else:
+                return self._single_server_call(
+                    payload=payload,
+                    llm_output=llm_output,
+                    num_reasks=num_reasks,
+                    prompt_params=prompt_params,
+                    metadata=metadata,
+                    full_schema_reask=full_schema_reask,
+                    call_log=call_log,
+                )
+        else:
+            raise ValueError("Guard does not have an api client!")
+
+    def _save(self):
+        api_key = os.environ.get("GUARDRAILS_API_KEY")
+        if api_key is not None:
+            if self.name is None:
+                self.name = f"gr-{str(self._guard_id)}"
+                logger.warn("Warning: No name passed to guard!")
+                logger.warn(
+                    "Use this auto-generated name to re-use this guard: {name}".format(
+                        name=self.name
+                    )
+                )
+            if not self._api_client:
+                self._api_client = GuardrailsApiClient(api_key=api_key)
+            self.upsert_guard()
