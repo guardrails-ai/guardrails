@@ -4,6 +4,7 @@ import os
 from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple, Union
+
 from guardrails.classes.history import Iteration
 from guardrails.datatypes import FieldValidation
 from guardrails.errors import ValidationError
@@ -480,10 +481,6 @@ def validate(
     else:
         validator_service = SequentialValidatorService(disable_tracer)
 
-    if stream:
-        return validator_service.validate_stream(
-            value, metadata, validator_setup, iteration, **kwargs
-        )
     return validator_service.validate(
         value,
         metadata,
