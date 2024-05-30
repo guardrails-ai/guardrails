@@ -8,7 +8,6 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 from guardrails.classes.history import Iteration
 from guardrails.datatypes import FieldValidation
 from guardrails.errors import ValidationError
-from guardrails.logger import logger
 from guardrails.utils.hub_telemetry_utils import HubTelemetry
 from guardrails.utils.logs_utils import ValidatorLogs
 from guardrails.utils.reask_utils import FieldReAsk, ReAsk
@@ -451,14 +450,6 @@ def validate(
     **kwargs,
 ):
     process_count = int(os.environ.get("GUARDRAILS_PROCESS_COUNT", 10))
-    if process_count == 1:
-        logger.warning(
-            "Process count was set to 1 via the GUARDRAILS_PROCESS_COUNT"
-            "environment variable."
-            "This will cause all validations to run synchronously."
-            "To run asynchronously, specify a process count"
-            "greater than 1 or unset this environment variable."
-        )
     if stream:
         sequential_validator_service = SequentialValidatorService(disable_tracer)
         return sequential_validator_service.validate_stream(
