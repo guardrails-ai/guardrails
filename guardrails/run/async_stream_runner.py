@@ -264,7 +264,7 @@ class AsyncStreamRunner(StreamRunner):
                     parsed_chunk,
                     output_schema,
                     validate_subschema=True,
-                    stream=True
+                    stream=True,
                 )
 
                 if isinstance(validated_result, SkeletonReAsk):
@@ -380,7 +380,7 @@ class AsyncStreamRunner(StreamRunner):
             iteration, parsed_output, self.metadata, attempt_number=index, stream=stream
         )
 
-        return validated_output
+        return iteration.validator_logs[-1].validation_result
 
     async def introspect(
         self,

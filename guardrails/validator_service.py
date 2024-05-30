@@ -4,7 +4,6 @@ import os
 from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple, Union
-import inspect 
 from guardrails.classes.history import Iteration
 from guardrails.datatypes import FieldValidation
 from guardrails.errors import ValidationError
@@ -133,6 +132,7 @@ class ValidatorServiceBase:
 
         start_time = datetime.now()
         result = self.execute_validator(validator, value, metadata, stream, **kwargs)
+
         end_time = datetime.now()
         if result is None:
             result = PassResult()
@@ -322,16 +322,26 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
                             value,
                             metadata,
                             property_path,
-                            stream=stream
+                            stream=stream,
                         )
                     )
                 else:
                     # run the validators in the current process
                     result = self.run_validator(
-                        iteration, validator, value, metadata, property_path, stream=stream
+                        iteration,
+                        validator,
+                        value,
+                        metadata,
+                        property_path,
+                        stream=stream,
                     )
+                    try:
+                        result.validation_result = await result.validation_result
+                    except TypeError:
+                        pass
                     validators_logs.append(result)
 
+            # TODO iterate over async generator in result?
             # wait for the parallel tasks to finish
             if parallel_tasks:
                 parallel_results = await asyncio.gather(*parallel_tasks)
@@ -434,7 +444,7 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
                 "Async event loop found, please call `validate_async` instead."
             )
         value, metadata = loop.run_until_complete(
-            self.x(
+            self.async_validate(
                 value,
                 metadata,
                 validator_setup,
@@ -496,9 +506,5 @@ async def async_validate(
 ):
     validator_service = AsyncValidatorService(disable_tracer)
     return await validator_service.async_validate(
-        value,
-        metadata,
-        validator_setup,
-        iteration,
-        stream=stream
+        value, metadata, validator_setup, iteration, stream=stream
     )
