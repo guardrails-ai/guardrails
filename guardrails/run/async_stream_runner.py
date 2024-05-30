@@ -169,8 +169,9 @@ class AsyncStreamRunner(StreamRunner):
             output=self.output,
             call_log=call_log,
         )
+        # FIXME: Where can this be moved to be less verbose? This is an await call on
+        # the async generator.
         async for call in result:
-            # yield ValidationOutcome[OT].from_guard_history(call)
             yield call
 
     # @async_trace(name="step")
@@ -250,7 +251,7 @@ class AsyncStreamRunner(StreamRunner):
         if isinstance(output_schema, StringSchema):
             async for chunk in stream_output:
                 chunk_text = self.get_chunk_text(chunk, api)
-                finished = self.is_last_chunk(chunk, api)
+                _ = self.is_last_chunk(chunk, api)
                 fragment += chunk_text
 
                 parsed_chunk, move_to_next = self.parse(
@@ -370,13 +371,10 @@ class AsyncStreamRunner(StreamRunner):
         validate_subschema: bool = False,
         stream: bool = False,
     ):
-        # if validate_subschema:
-        #     validated_output = await output_schema.async_validate_subschema(
-        #         iteration, parsed_output, self.metadata, attempt_number=index
-        #     )
-        # else:
-        # TODO: What is supposed to happen here with subschema?
-        validated_output = await output_schema.async_validate(
+        # FIXME: Subschema is currently broken, it always returns a string from async
+        # streaming.
+        # Should return None/empty if fail result?
+        _ = await output_schema.async_validate(
             iteration, parsed_output, self.metadata, attempt_number=index, stream=stream
         )
 

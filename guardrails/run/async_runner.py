@@ -144,7 +144,7 @@ class AsyncRunner(Runner):
 
         return call_log
 
-    @async_trace(name="step")
+    @async_trace(name="async_step")
     async def async_step(
         self,
         index: int,
@@ -244,7 +244,7 @@ class AsyncRunner(Runner):
             raise e
         return iteration
 
-    @async_trace(name="call")
+    @async_trace(name="async_call")
     async def async_call(
         self,
         index: int,

@@ -781,6 +781,7 @@ class AsyncOpenAIChatCallable(AsyncOpenAIModel):
             api_key = None
 
         aclient = AsyncOpenAIClient(api_key=api_key)
+        # FIXME: OpenAI async streaming seems to be broken
         return await aclient.create_chat_completion(
             model=model,
             messages=chat_prompt(
@@ -880,6 +881,14 @@ class AsyncManifestCallable(AsyncPromptCallableBase):
             *args,
             **kwargs,
         )
+        # TODO: Check if async streaming is working here
+        if kwargs.get("stream", False):
+            # If stream is defined and set to True,
+            # the callable returns a generator object
+            return LLMResponse(
+                output="",
+                async_stream_output=manifest_response.completion_stream,
+            )
         return LLMResponse(
             output=manifest_response[0],
         )
@@ -903,6 +912,13 @@ class AsyncArbitraryCallable(AsyncPromptCallableBase):
         ```
         """
         output = await self.llm_api(*args, **kwargs)
+        if kwargs.get("stream", False):
+            # If stream is defined and set to True,
+            # the callable returns a generator object
+            return LLMResponse(
+                output="",
+                async_stream_output=output.completion_stream,
+            )
         return LLMResponse(
             output=output,
         )
