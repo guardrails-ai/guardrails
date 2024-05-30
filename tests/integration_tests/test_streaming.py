@@ -124,8 +124,8 @@ def mock_openai_completion_create(chunks):
         index = 0
         for chunk in chunks:
             index = index + 1
-            finished = index == len(chunks)
-            finish_reason = "stop" if finished else None
+            # finished = index == len(chunks)
+            # finish_reason = "stop" if finished else None
             # print("FINISH REASON", finish_reason)
             if OPENAI_VERSION.startswith("0"):
                 yield {
@@ -139,7 +139,7 @@ def mock_openai_completion_create(chunks):
                         Choice(
                             text=chunk,
                             delta=Delta(content=""),
-                            # TODO: for some reason using finish_reason here breaks everything
+                            # TODO: for some reason using finish_reason here breaks everything  # noqa
                             finish_reason=None,
                         )
                     ],
@@ -155,8 +155,8 @@ def mock_openai_chat_completion_create(chunks):
         index = 0
         for chunk in chunks:
             index = index + 1
-            finished = index == len(chunks)
-            finish_reason = "stop" if finished else None
+            # finished = index == len(chunks)
+            # finish_reason = "stop" if finished else None
             # print("FINISH REASON", finish_reason)
             if OPENAI_VERSION.startswith("0"):
                 yield {
@@ -164,7 +164,7 @@ def mock_openai_chat_completion_create(chunks):
                         {
                             "index": 0,
                             "delta": {"content": chunk},
-                            # TODO: for some reason using finish_reason here breaks everything
+                            # TODO: for some reason using finish_reason here breaks everything  # noqa
                             "finish_reason": None,
                         }
                     ]
@@ -175,7 +175,7 @@ def mock_openai_chat_completion_create(chunks):
                         Choice(
                             text="",
                             delta=Delta(content=chunk),
-                            # TODO: for some reason using finish_reason here breaks everything
+                            # TODO: for some reason using finish_reason here breaks everything  # noqa
                             finish_reason=None,
                         )
                     ],
@@ -405,11 +405,19 @@ STR_LLM_CHUNKS = [
             [
                 [
                     "This sentence is simply just too long.",
-                    "Sentence has length greater than 30. Please return a shorter output, that is shorter than 30 characters.",
+                    (
+                        "Sentence has length greater than 30. "
+                        "Please return a shorter output, "
+                        "that is shorter than 30 characters."
+                    ),
                 ],
                 [
                     "This sentence is 2 short.",
-                    "Sentence has length less than 26. Please return a longer output, that is shorter than 30 characters.",
+                    (
+                        "Sentence has length less than 26. "
+                        "Please return a longer output, "
+                        "that is shorter than 30 characters."
+                    ),
                 ],
             ],
         )

@@ -15,6 +15,7 @@ from guardrails.run.runner import Runner
 from guardrails.schema import Schema, StringSchema
 from guardrails.utils.openai_utils import OPENAI_VERSION
 from guardrails.utils.reask_utils import SkeletonReAsk
+from guardrails.constants import pass_status
 
 
 class StreamRunner(Runner):
@@ -156,10 +157,15 @@ class StreamRunner(Runner):
         # for now, handle string and json schema differently
 
         if isinstance(output_schema, StringSchema):
+            stream_finished = False
+            last_chunk_text = ""
             for chunk in stream:
                 # 1. Get the text from the chunk and append to fragment
                 chunk_text = self.get_chunk_text(chunk, api)
+                last_chunk_text = chunk_text
                 finished = self.is_last_chunk(chunk, api)
+                if finished:
+                    stream_finished = True
                 fragment += chunk_text
 
                 # 2. Parse the chunk
@@ -169,7 +175,7 @@ class StreamRunner(Runner):
                 if move_to_next:
                     # Continue to next chunk
                     continue
-                validated_result = self.validate(
+                validated_text = self.validate(
                     iteration,
                     index,
                     parsed_chunk,
@@ -179,28 +185,45 @@ class StreamRunner(Runner):
                     # if it is the last chunk, validate everything that's left
                     remainder=finished,
                 )
-                if isinstance(validated_result, SkeletonReAsk):
+                if isinstance(validated_text, SkeletonReAsk):
                     raise ValueError(
                         "Received fragment schema is an invalid sub-schema "
                         "of the expected output JSON schema."
                     )
 
                 # 4. Introspect: inspect the validated fragment for reasks
-                reasks, valid_op = self.introspect(
-                    index, validated_result, output_schema
-                )
+                reasks, valid_op = self.introspect(index, validated_text, output_schema)
                 if reasks:
                     raise ValueError(
                         "Reasks are not yet supported with streaming. Please "
                         "remove reasks from schema or disable streaming."
                     )
                 # 5. Convert validated fragment to a pretty JSON string
+                passed = call_log.status == pass_status
                 yield ValidationOutcome(
                     #  The chunk or the whole output?
                     raw_llm_output=chunk_text,
-                    validated_output=validated_result,
-                    validation_passed=validated_result is not None,
+                    validated_output=validated_text,
+                    validation_passed=passed,
                 )
+            # handle case where generator doesn't give finished status
+            if not stream_finished:
+                last_result = self.validate(
+                    iteration,
+                    index,
+                    "",
+                    output_schema,
+                    True,
+                    validate_subschema=True,
+                    remainder=True,
+                )
+                if len(last_result) > 0:
+                    passed = call_log.status == pass_status
+                    yield ValidationOutcome(
+                        raw_llm_output=last_chunk_text,
+                        validated_output=last_result,
+                        validation_passed=passed,
+                    )
         # handle non string schema
         else:
             for chunk in stream:
@@ -251,7 +274,7 @@ class StreamRunner(Runner):
         iteration.outputs.guarded_output = valid_op
 
     def is_last_chunk(self, chunk: Any, api: Union[PromptCallableBase, None]) -> bool:
-        """Detect if chunk is final chunk"""
+        """Detect if chunk is final chunk."""
         if isinstance(api, OpenAICallable):
             if OPENAI_VERSION.startswith("0"):
                 finished = chunk["choices"][0]["finish_reason"]

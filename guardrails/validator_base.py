@@ -408,7 +408,7 @@ class FailResult(ValidationResult):
     error_message: str
     fix_value: Optional[Any] = None
     # segments that caused validation to fail
-    error_spans: Optional[List[ErrorSpan]] = []
+    error_spans: Optional[List[ErrorSpan]] = None
 
 
 class OnFailAction(str, Enum):
@@ -498,17 +498,18 @@ class Validator(Runnable):
 
     def validate_stream(
         self, chunk: Any, metadata: Dict[str, Any], **kwargs
-    ) -> ValidationResult:
-        """Validates a chunk emitted by an LLM.
-        If the LLM chunk is smaller than the validator's chunking strategy,
-        it will be accumulated until it reaches the desired size. In the meantime,
-        the validator will return None.
+    ) -> Optional[ValidationResult]:
+        """Validates a chunk emitted by an LLM. If the LLM chunk is smaller
+        than the validator's chunking strategy, it will be accumulated until it
+        reaches the desired size. In the meantime, the validator will return
+        None.
 
-        If the LLM chunk is larger than the validator's chunking strategy,
-        it will split it into validator-sized chunks and validate each one,
-        returning an array of validation results.
+        If the LLM chunk is larger than the validator's chunking
+        strategy, it will split it into validator-sized chunks and
+        validate each one, returning an array of validation results.
 
-        Otherwise, the validator will validate the chunk and return the result.
+        Otherwise, the validator will validate the chunk and return the
+        result.
         """
         # combine accumulated chunks and new [:-1]chunk
         self.accumulated_chunks.append(chunk)
