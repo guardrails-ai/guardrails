@@ -25,6 +25,7 @@ from guardrails.utils.llm_response import LLMResponse
 from guardrails.utils.openai_utils import OPENAI_VERSION
 from guardrails.utils.reask_utils import ReAsk, SkeletonReAsk
 from guardrails.utils.telemetry_utils import async_trace
+from guardrails.constants import pass_status
 
 
 class AsyncStreamRunner(StreamRunner):
@@ -282,11 +283,11 @@ class AsyncStreamRunner(StreamRunner):
                         "Reasks are not yet supported with streaming. Please "
                         "remove reasks from schema or disable streaming."
                     )
-
+                passed = call_log.status == pass_status
                 yield ValidationOutcome(
                     raw_llm_output=chunk_text,
                     validated_output=validated_result,
-                    validation_passed=validated_result is not None,
+                    validation_passed=passed,
                 )
         else:
             async for chunk in stream_output:
