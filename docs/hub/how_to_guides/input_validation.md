@@ -5,7 +5,7 @@ Validators that are tagged as input validators can be used to validate the input
 In order to use an input validator, first make sure that the validator is installed. You can install the validator using the `guardrails hub install` command. For example, to install the `two-words` validator, you can run:
 
 ```bash
-gudardrails hub install hub://guardrails/detect_pii
+guardrails hub install hub://guardrails/detect_pii
 ```
 
 Then, add the input validator to the `Guard` object using the `with_prompt_validation` method. For example, to use the `detect_pii` validator with OpenAI's GPT-3, you can run:
