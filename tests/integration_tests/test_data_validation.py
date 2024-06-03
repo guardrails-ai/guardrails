@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 
 from guardrails import Guard
 from guardrails.errors import ValidationError
-from guardrails.utils.reask_utils import ReAsk
+from guardrails.actions.reask import ReAsk
 from guardrails.validator_base import OnFailAction
 from tests.integration_tests.test_assets.validators import ValidChoices
 

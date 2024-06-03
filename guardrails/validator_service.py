@@ -14,13 +14,12 @@ from guardrails.classes.validation.validation_result import (
     PassResult,
     ValidationResult,
 )
-from guardrails.datatypes import FieldValidation
 from guardrails.errors import ValidationError
 from guardrails.logger import logger
 from guardrails.types import ValidatorMap, OnFailAction
 from guardrails.utils.hub_telemetry_utils import HubTelemetry
 from guardrails.classes.validation.validator_logs import ValidatorLogs
-from guardrails.utils.reask_utils import FieldReAsk, ReAsk
+from guardrails.actions.reask import FieldReAsk, ReAsk
 from guardrails.utils.telemetry_utils import trace_validation_result, trace_validator
 from guardrails.validator_base import Validator
 
@@ -432,9 +431,10 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
         self,
         value: Any,
         metadata: dict,
-        validator_setup: FieldValidation,
+        validator_map: ValidatorMap,
         iteration: Iteration,
-        path: Optional[str] = None,
+        absolute_path: str = "$",
+        reference_path: str = "$",
     ) -> Tuple[Any, dict]:
         # Run validate_async in an async loop
         loop = asyncio.get_event_loop()
@@ -443,7 +443,9 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
                 "Async event loop found, please call `validate_async` instead."
             )
         value, metadata = loop.run_until_complete(
-            self.async_validate(value, metadata, validator_setup, iteration, path)
+            self.async_validate(
+                value, metadata, validator_map, iteration, absolute_path, reference_path
+            )
         )
         return value, metadata
 
@@ -476,7 +478,9 @@ def validate(
         validator_service = AsyncValidatorService(disable_tracer)
     else:
         validator_service = SequentialValidatorService(disable_tracer)
-    return validator_service.validate(value, metadata, validator_map, iteration, path)
+    return validator_service.validate(
+        value, metadata, validator_map, iteration, path, path
+    )
 
 
 async def async_validate(
@@ -489,7 +493,7 @@ async def async_validate(
 ):
     validator_service = AsyncValidatorService(disable_tracer)
     return await validator_service.async_validate(
-        value, metadata, validator_map, iteration, path
+        value, metadata, validator_map, iteration, path, path
     )
 
 

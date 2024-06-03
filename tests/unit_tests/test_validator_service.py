@@ -21,7 +21,7 @@ async def test_async_validate(mocker):
     validated_value, validated_metadata = await vs.async_validate(
         value=True,
         metadata={},
-        validator_setup=empty_field_validation,
+        validator_map={},
         iteration=iteration,
     )
 
@@ -44,7 +44,7 @@ def test_validate_with_running_loop(mocker):
     validated_value, validated_metadata = vs.validate(
         value=True,
         metadata={},
-        validator_setup=empty_field_validation,
+        validator_map={},
         iteration=iteration,
     )
 
@@ -66,7 +66,7 @@ def test_validate_without_running_loop(mocker):
     validated_value, validated_metadata = vs.validate(
         value=True,
         metadata={},
-        validator_setup=empty_field_validation,
+        validator_map={},
         iteration=iteration,
     )
 
@@ -89,7 +89,7 @@ def test_validate_loop_runtime_error(mocker):
     validated_value, validated_metadata = vs.validate(
         value=True,
         metadata={},
-        validator_setup=empty_field_validation,
+        validator_map={},
         iteration=iteration,
     )
 

@@ -8,7 +8,7 @@ from guardrails.prompt.instructions import Instructions
 from guardrails.prompt.prompt import Prompt
 from guardrails.classes.llm.llm_response import LLMResponse
 from guardrails.classes.validation.validator_logs import ValidatorLogs
-from guardrails.utils.reask_utils import FieldReAsk
+from guardrails.actions.reask import FieldReAsk
 from guardrails.validator_base import FailResult
 
 

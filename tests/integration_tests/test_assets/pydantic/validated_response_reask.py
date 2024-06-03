@@ -4,7 +4,7 @@ from typing import Any, Dict, List
 from pydantic import BaseModel, Field
 
 from guardrails.utils.pydantic_utils import PYDANTIC_VERSION
-from guardrails.utils.reask_utils import FieldReAsk
+from guardrails.actions.reask import FieldReAsk
 from guardrails.validator_base import OnFailAction
 from guardrails.validators import (
     FailResult,

@@ -7,7 +7,7 @@ from rich.pretty import pretty_repr
 
 from guardrails import datatypes as dt
 from guardrails.classes.history.call import Call
-from guardrails.utils.reask_utils import gather_reasks
+from guardrails.actions.reask import gather_reasks
 
 
 def generate_test_artifacts(
@@ -72,7 +72,7 @@ def generate_test_artifacts(
 
             reasks, _ = gather_reasks(validated_output)
             if len(reasks):
-                f.write("from guardrails.utils.reask_utils import ReAsk\n")
+                f.write("from guardrails.actions.reask import ReAsk\n")
 
             validated_output_repr = pretty_repr(validated_output, max_string=None)
             f.write(f"\nVALIDATED_OUTPUT = {validated_output_repr}")

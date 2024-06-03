@@ -11,7 +11,6 @@ class TestSplitOn:
     def ignore_test_quoted(self):
         string = "valid-length: 0 1; ends-with: {\"some text;\"}; other: 'don't escape; this';"  # noqa
         tokens = split_on(string, ";", exceptions=ESCAPED_OR_QUOTED)
-        print("actual tokens: ", tokens)
         assert len(tokens) == 3
         assert tokens == [
             "valid-length: 0 1",

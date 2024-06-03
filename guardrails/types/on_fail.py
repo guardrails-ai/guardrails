@@ -9,3 +9,4 @@ class OnFailAction(str, Enum):
     NOOP = "noop"
     EXCEPTION = "exception"
     FIX_REASK = "fix_reask"
+    CUSTOM = "custom"

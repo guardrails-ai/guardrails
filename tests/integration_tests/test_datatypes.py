@@ -85,14 +85,11 @@ Dummy prompt.
 
 </rail>
 """
-    from rich import print
 
     guard = Guard.from_rail_string(rail_spec)
-    print("schema: ", guard.output_schema.to_dict())
     with pytest.raises(Exception) as excinfo:
-        res = guard.parse(
+        guard.parse(
             llm_output='{"name": "John Doe", "dob": "' + date_string + '"}',
             num_reasks=0,
         )
-        print("res: ", res)
     assert isinstance(excinfo.value, error_type) is True

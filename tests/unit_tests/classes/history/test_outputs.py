@@ -5,7 +5,7 @@ from guardrails.classes.history.outputs import Outputs
 from guardrails.constants import error_status, fail_status, not_run_status, pass_status
 from guardrails.classes.llm.llm_response import LLMResponse
 from guardrails.classes.validation.validator_logs import ValidatorLogs
-from guardrails.utils.reask_utils import ReAsk
+from guardrails.actions.reask import ReAsk
 from guardrails.validator_base import FailResult, PassResult
 
 

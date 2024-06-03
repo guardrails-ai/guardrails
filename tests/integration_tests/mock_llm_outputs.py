@@ -44,9 +44,7 @@ class MockOpenAICallable(OpenAICallable):
         }
 
         try:
-            # print("MockOpenAICallable called with prompt:\n", prompt)
             output = mock_llm_responses[prompt]
-            # print("returning output:\n", output)
             return LLMResponse(
                 output=output,
                 prompt_token_count=123,

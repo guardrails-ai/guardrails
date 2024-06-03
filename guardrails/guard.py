@@ -31,6 +31,7 @@ from guardrails_api_client import (
     SimpleTypes,
 )
 from pydantic import field_validator
+from pydantic.config import ConfigDict
 
 from guardrails.api_client import GuardrailsApiClient
 from guardrails.classes.output_type import OT
@@ -61,6 +62,7 @@ from guardrails.schema.rail_schema import rail_file_to_schema, rail_string_to_sc
 from guardrails.schema.validator import SchemaValidationError, validate_json_schema
 from guardrails.stores.context import (
     Tracer,
+    Context,
     get_call_kwarg,
     get_tracer_context,
     set_call_kwargs,
@@ -72,7 +74,7 @@ from guardrails.utils.naming_utils import random_id
 from guardrails.utils.safe_get import safe_get
 from guardrails.utils.hub_telemetry_utils import HubTelemetry
 from guardrails.classes.llm.llm_response import LLMResponse
-from guardrails.utils.reask_utils import FieldReAsk
+from guardrails.actions.reask import FieldReAsk
 from guardrails.utils.validator_utils import get_validator, verify_metadata_requirements
 from guardrails.validator_base import Validator
 from guardrails.types import (
@@ -103,29 +105,8 @@ class Guard(IGuard, Generic[OT]):
     the LLM, the validated output, as well as other helpful information.
     """
 
-    # Public
-    id: Optional[str] = None
-    name: Optional[str] = None
-    description: Optional[str] = None
-    validators: Optional[List[ValidatorReference]] = []
-    output_schema: Optional[ModelSchema] = None
-
-    # Legacy
-    _num_reasks = None
-    _rail: Optional[str] = None
-    _base_model: Optional[ModelOrListOfModels] = None
-
-    # Private
-    _tracer = None
-    _tracer_context = None
-    _hub_telemetry = None
-    _user_id = None
-    _validator_map: ValidatorMap = {}
-    _validators: List[Validator] = []
-    _api_client: Optional[GuardrailsApiClient] = None
-    _allow_metrics_collection: Optional[bool] = None
-    _exec_opts: GuardExecutionOptions
-    _output_type: OutputTypes
+    # Pydantic Config
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def __init__(
         self,
@@ -163,11 +144,30 @@ class Guard(IGuard, Generic[OT]):
             i_history=GuardHistory([]),
         )
 
-        # Assign private properties and backfill
-        self._validator_map = {}
-        self._validators = []
-        self._output_type = OutputTypes.__from_json_schema__(output_schema)
-        self._exec_opts = GuardExecutionOptions()
+        ### Public ###
+        ## Assigned in super ##
+        # self.id: Optional[str] = None
+        # self.name: Optional[str] = None
+        # self.description: Optional[str] = None
+        # self.validators: Optional[List[ValidatorReference]] = []
+        # self.output_schema: Optional[ModelSchema] = None
+
+        ### Legacy ##
+        self._num_reasks = None
+        self._rail: Optional[str] = None
+        self._base_model: Optional[ModelOrListOfModels] = None
+
+        ### Private ###
+        self._validator_map: ValidatorMap = {}
+        self._validators: List[Validator] = []
+        self._output_type: OutputTypes = OutputTypes.__from_json_schema__(output_schema)
+        self._exec_opts: GuardExecutionOptions = GuardExecutionOptions()
+        self._tracer: Optional[Tracer] = None
+        self._tracer_context: Optional[Context] = None
+        self._hub_telemetry: Optional[HubTelemetry] = None
+        self._user_id: Optional[str] = None
+        self._api_client: Optional[GuardrailsApiClient] = None
+        self._allow_metrics_collection: Optional[bool] = None
 
         # TODO: Support a sink for history so that it is not solely held in memory
         self._history: Stack[Call] = Stack()
@@ -233,6 +233,7 @@ class Guard(IGuard, Generic[OT]):
     ) -> None:
         if allow_metrics_collection is None:
             credentials = Credentials.from_rc_file(logger)
+            # TODO: Check credentials.enable_metrics after merge from main
             allow_metrics_collection = credentials.no_metrics is False
 
         self._allow_metrics_collection = allow_metrics_collection
@@ -1046,12 +1047,18 @@ class Guard(IGuard, Generic[OT]):
         )
 
     def __add_validator(self, validator: Validator, on: str = "output"):
-        # TODO: This isn't the case anymore; should we remove this restriction?
-        # e.g. User could rightfully do:
-        # Guard.from_pydantic().use(Validator, on="$.some.prop")
-        if self._output_type != OutputTypes.STRING:
-            raise RuntimeError(
-                "The `use` method is only available for string output types."
+        if on not in [
+            "output",
+            "prompt",
+            "instructions",
+            "msg_history",
+        ] and not on.startswith("$"):
+            warnings.warn(
+                f"Unusual 'on' value: {on}!"
+                "This value is typically one of "
+                "'output', 'prompt', 'instructions', 'msg_history') "
+                "or a JSON path starting with '$.'",
+                UserWarning,
             )
 
         if on == "output":
@@ -1114,15 +1121,7 @@ class Guard(IGuard, Generic[OT]):
         *validators: UseManyValidatorSpec,
         on: str = "output",
     ) -> "Guard":
-        """Use a validator to validate results of an LLM request.
-
-        *Note*: `use_many` is only available for string output types.
-        """
-        if self._output_type != OutputTypes.STRING:
-            raise RuntimeError(
-                "The `use_many` method is only available for string output types."
-            )
-
+        """Use a validator to validate results of an LLM request."""
         # Loop through the validators
         for v in validators:
             hydrated_validator = get_validator(v)

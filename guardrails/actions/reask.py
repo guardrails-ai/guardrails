@@ -356,7 +356,7 @@ def get_reask_setup_for_json(
         indent=2,
     )
 
-    def reask_decoder(obj):
+    def reask_decoder(obj: ReAsk):
         decoded = {}
         for k, v in obj.__dict__.items():
             if k in ["path"]:

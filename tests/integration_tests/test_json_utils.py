@@ -118,9 +118,7 @@ def test_choice_placeholder_verify_raises(
     with pytest.raises(ValueError) as error:
         ph = ChoicePlaceholder(optional, "discriminator", cases)
 
-        return_value = ph.verify(value, False, coerce_types)
-
-        print("return_value: ", return_value)
+        ph.verify(value, False, coerce_types)
 
         import traceback
 

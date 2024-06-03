@@ -91,6 +91,8 @@ def parse_use_many_validator(
     if isinstance(args, Dict):
         kwargs = args
         args = []
+    elif not isinstance(args, List):
+        args = [args]
     kwargs = safe_get(use_tuple, 2, kwargs)
     if validator_cls:
         validator_inst = validator_cls(*args, **kwargs)

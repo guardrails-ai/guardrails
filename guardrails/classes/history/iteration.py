@@ -15,7 +15,7 @@ from guardrails.classes.generic.arbitrary_model import ArbitraryModel
 from guardrails.logger import get_scope_handler
 from guardrails.prompt.prompt import Prompt
 from guardrails.classes.validation.validator_logs import ValidatorLogs
-from guardrails.utils.reask_utils import ReAsk
+from guardrails.actions.reask import ReAsk
 
 
 class Iteration(IIteration, ArbitraryModel):

@@ -1,5 +1,5 @@
 # ruff: noqa: E501
-from guardrails.utils.reask_utils import SkeletonReAsk
+from guardrails.actions.reask import SkeletonReAsk
 from guardrails.validators import FailResult
 
 VALIDATED_OUTPUT_SKELETON_REASK_1 = SkeletonReAsk(

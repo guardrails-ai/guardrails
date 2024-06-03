@@ -4,7 +4,6 @@ import openai
 import pytest
 
 import guardrails as gd
-from guardrails.schema.json_schema import JsonSchema
 from guardrails.utils.openai_utils import OPENAI_VERSION
 from tests.integration_tests.test_assets.fixtures import (  # noqa
     fixture_llm_output,
@@ -36,8 +35,8 @@ async def test_entity_extraction_with_reask(mocker, multiprocessing_validators: 
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
     guard = gd.Guard.from_rail_string(entity_extraction.RAIL_SPEC_WITH_REASK)
 
-    with patch.object(
-        JsonSchema, "preprocess_prompt", wraps=guard.output_schema.preprocess_prompt
+    with patch(
+        "guardrails.run.async_runner.preprocess_prompt"
     ) as mock_preprocess_prompt:
         final_output = await guard(
             llm_api=openai.Completion.acreate,

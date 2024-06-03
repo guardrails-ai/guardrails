@@ -15,7 +15,7 @@ from guardrails.utils.openai_utils import (
     get_static_openai_chat_create_func,
     get_static_openai_create_func,
 )
-from guardrails.utils.reask_utils import FieldReAsk
+from guardrails.actions.reask import FieldReAsk
 from guardrails.validators import FailResult, OneLine
 
 from .mock_llm_outputs import (
@@ -617,7 +617,6 @@ def test_entity_extraction_with_reask_with_optional_prompts(
     )
 
     assert call.guarded_output == entity_extraction.VALIDATED_OUTPUT_REASK_2
-    print("\n actual: \n", call.reask_instructions.last)
     if expected_reask_instructions:
         assert call.reask_instructions.last == expected_reask_instructions
 

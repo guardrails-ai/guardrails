@@ -7,6 +7,7 @@ from guardrails.actions.reask import get_reask_setup
 from guardrails.classes.execution.guard_execution_options import GuardExecutionOptions
 from guardrails.classes.history import Call, Inputs, Iteration, Outputs
 from guardrails.classes.output_type import OutputTypes
+from guardrails.constants import fail_status
 from guardrails.errors import ValidationError
 from guardrails.llm_providers import AsyncPromptCallableBase, PromptCallableBase
 from guardrails.logger import set_scope
@@ -28,7 +29,7 @@ from guardrails.utils.prompt_utils import (
     prompt_content_for_schema,
     prompt_uses_xml,
 )
-from guardrails.utils.reask_utils import NonParseableReAsk, ReAsk, introspect
+from guardrails.actions.reask import NonParseableReAsk, ReAsk, introspect
 from guardrails.utils.telemetry_utils import trace
 
 
@@ -351,11 +352,9 @@ class Runner:
             disable_tracer=self._disable_tracer,
             path="msg_history",
         )
-        value = validator_service.post_process_validation(
+        validated_msg_history = validator_service.post_process_validation(
             value, attempt_number, iteration, OutputTypes.STRING
         )
-        value = cast(str, value)
-        validated_msg_history = value
 
         iteration.outputs.validation_response = validated_msg_history
         if isinstance(validated_msg_history, ReAsk):
@@ -399,19 +398,18 @@ class Runner:
             disable_tracer=self._disable_tracer,
             path="prompt",
         )
-        value = validator_service.post_process_validation(
+
+        validated_prompt = validator_service.post_process_validation(
             value, attempt_number, iteration, OutputTypes.STRING
         )
 
-        value = cast(str, value)
-        validated_prompt = value
-
         iteration.outputs.validation_response = validated_prompt
-        if validated_prompt is None:
-            raise ValidationError("Prompt validation failed")
+
         if isinstance(validated_prompt, ReAsk):
             raise ValidationError(f"Prompt validation failed: {validated_prompt}")
-        return Prompt(validated_prompt)
+        elif not validated_prompt or iteration.status == fail_status:
+            raise ValidationError("Prompt validation failed")
+        return Prompt(cast(str, validated_prompt))
 
     def validate_instructions(
         self, call_log: Call, instructions: Instructions, attempt_number: int
@@ -429,21 +427,18 @@ class Runner:
             disable_tracer=self._disable_tracer,
             path="instructions",
         )
-        value = validator_service.post_process_validation(
+        validated_instructions = validator_service.post_process_validation(
             value, attempt_number, iteration, OutputTypes.STRING
         )
 
-        value = cast(str, value)
-        validated_instructions = value
-
         iteration.outputs.validation_response = validated_instructions
-        if validated_instructions is None:
-            raise ValidationError("Instructions validation failed")
         if isinstance(validated_instructions, ReAsk):
             raise ValidationError(
                 f"Instructions validation failed: {validated_instructions}"
             )
-        return Instructions(validated_instructions)
+        elif not validated_instructions or iteration.status == fail_status:
+            raise ValidationError("Instructions validation failed")
+        return Instructions(cast(str, validated_instructions))
 
     def prepare_prompt(
         self,

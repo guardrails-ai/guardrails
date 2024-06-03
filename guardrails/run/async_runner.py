@@ -8,20 +8,20 @@ from guardrails import validator_service
 from guardrails.classes.execution.guard_execution_options import GuardExecutionOptions
 from guardrails.classes.history import Call, Inputs, Iteration, Outputs
 from guardrails.classes.output_type import OutputTypes
+from guardrails.constants import fail_status
 from guardrails.errors import ValidationError
 from guardrails.llm_providers import AsyncPromptCallableBase, PromptCallableBase
 from guardrails.logger import set_scope
 from guardrails.prompt import Instructions, Prompt
 from guardrails.run.runner import Runner
 from guardrails.run.utils import msg_history_source, msg_history_string
-from guardrails.schema.schema import Schema
 from guardrails.schema.validator import schema_validation
 from guardrails.types.pydantic import ModelOrListOfModels
 from guardrails.types.validator import ValidatorMap
 from guardrails.utils.exception_utils import UserFacingException
 from guardrails.classes.llm.llm_response import LLMResponse
 from guardrails.utils.prompt_utils import preprocess_prompt, prompt_uses_xml
-from guardrails.utils.reask_utils import NonParseableReAsk, ReAsk
+from guardrails.actions.reask import NonParseableReAsk, ReAsk
 from guardrails.utils.telemetry_utils import async_trace
 
 
@@ -290,7 +290,7 @@ class AsyncRunner(Runner):
         iteration: Iteration,
         attempt_number: int,
         parsed_output: Any,
-        output_schema: Schema,
+        output_schema: Dict[str, Any],
         **kwargs,
     ):
         """Validate the output."""
@@ -378,11 +378,10 @@ class AsyncRunner(Runner):
                     disable_tracer=self._disable_tracer,
                     path="msg_history",
                 )
-                value = validator_service.post_process_validation(
+                validated_msg_history = validator_service.post_process_validation(
                     value, attempt_number, iteration, OutputTypes.STRING
                 )
-                value = cast(str, value)
-                validated_msg_history = value
+                validated_msg_history = cast(str, validated_msg_history)
 
                 iteration.outputs.validation_response = validated_msg_history
                 if isinstance(validated_msg_history, ReAsk):
@@ -435,21 +434,18 @@ class AsyncRunner(Runner):
                     disable_tracer=self._disable_tracer,
                     path="prompt",
                 )
-                value = validator_service.post_process_validation(
+                validated_prompt = validator_service.post_process_validation(
                     value, attempt_number, iteration, OutputTypes.STRING
                 )
 
-                value = cast(str, value)
-                validated_prompt = value
-
                 iteration.outputs.validation_response = validated_prompt
-                if validated_prompt is None:
-                    raise ValidationError("Prompt validation failed")
                 if isinstance(validated_prompt, ReAsk):
                     raise ValidationError(
                         f"Prompt validation failed: {validated_prompt}"
                     )
-                prompt = Prompt(validated_prompt)
+                elif not validated_prompt or iteration.status == fail_status:
+                    raise ValidationError("Prompt validation failed")
+                prompt = Prompt(cast(str, validated_prompt))
 
             # validate instructions
             if "instructions" in self.validation_map and instructions is not None:
@@ -467,21 +463,18 @@ class AsyncRunner(Runner):
                     disable_tracer=self._disable_tracer,
                     path="instructions",
                 )
-                value = validator_service.post_process_validation(
+                validated_instructions = validator_service.post_process_validation(
                     value, attempt_number, iteration, OutputTypes.STRING
                 )
 
-                value = cast(str, value)
-                validated_instructions = value
-
                 iteration.outputs.validation_response = validated_instructions
-                if validated_instructions is None:
-                    raise ValidationError("Instructions validation failed")
                 if isinstance(validated_instructions, ReAsk):
                     raise ValidationError(
                         f"Instructions validation failed: {validated_instructions}"
                     )
-                instructions = Instructions(validated_instructions)
+                elif not validated_instructions or iteration.status == fail_status:
+                    raise ValidationError("Instructions validation failed")
+                instructions = Instructions(cast(str, validated_instructions))
         else:
             raise UserFacingException(
                 ValueError("'prompt' or 'msg_history' must be provided.")

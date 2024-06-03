@@ -11,14 +11,13 @@ from guardrails.llm_providers import (
 )
 from guardrails.prompt import Instructions, Prompt
 from guardrails.run.runner import Runner
-from guardrails.schema.schema import Schema
 from guardrails.utils.openai_utils import OPENAI_VERSION
 from guardrails.utils.parsing_utils import (
     coerce_types,
     parse_llm_output,
     prune_extra_keys,
 )
-from guardrails.utils.reask_utils import SkeletonReAsk
+from guardrails.actions.reask import SkeletonReAsk
 
 
 class StreamRunner(Runner):
@@ -80,7 +79,7 @@ class StreamRunner(Runner):
         prompt: Optional[Prompt],
         msg_history: Optional[List[Dict]],
         prompt_params: Dict,
-        output_schema: Schema,
+        output_schema: Dict[str, Any],
         call_log: Call,
         output: Optional[str] = None,
     ) -> Generator[ValidationOutcome[OT], None, None]:

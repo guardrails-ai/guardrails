@@ -216,7 +216,11 @@ def extract_validators(
                 validator_instances.append(validators)
             else:
                 validator_instances.extend(
-                    [safe_get_validator(v) for v in validators if v is not None]
+                    [
+                        safe_get_validator(v)
+                        for v in validators
+                        if safe_get_validator(v) is not None
+                    ]
                 )
             all_paths = [field_path]
             all_paths.extend(alias_paths)

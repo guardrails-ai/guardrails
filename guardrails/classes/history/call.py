@@ -18,7 +18,7 @@ from guardrails.constants import error_status, fail_status, not_run_status, pass
 from guardrails.prompt.instructions import Instructions
 from guardrails.prompt.prompt import Prompt
 from guardrails.classes.validation.validator_logs import ValidatorLogs
-from guardrails.utils.reask_utils import (
+from guardrails.actions.reask import (
     ReAsk,
     gather_reasks,
     sub_reasks_with_fixed_values,
@@ -51,7 +51,7 @@ class Call(ICall, ArbitraryModel):
         super().__init__(
             iterations=iterations,  # type: ignore
             inputs=inputs,  # type: ignore
-            exception=CallException(exception),  # type: ignore
+            i_exception=CallException(exception),  # type: ignore
         )
         self.iterations = iterations
         self.inputs = inputs
