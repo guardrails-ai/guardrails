@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from guardrails.classes.history import Call, Inputs, Iteration, Outputs
 from guardrails.classes.output_type import OT
 from guardrails.classes.validation_outcome import ValidationOutcome
+from guardrails.constants import pass_status
 from guardrails.datatypes import verify_metadata_requirements
 from guardrails.errors import ValidationError
 from guardrails.llm_providers import (
@@ -25,7 +26,6 @@ from guardrails.utils.llm_response import LLMResponse
 from guardrails.utils.openai_utils import OPENAI_VERSION
 from guardrails.utils.reask_utils import ReAsk, SkeletonReAsk
 from guardrails.utils.telemetry_utils import async_trace
-from guardrails.constants import pass_status
 
 
 class AsyncStreamRunner(StreamRunner):
@@ -65,63 +65,6 @@ class AsyncStreamRunner(StreamRunner):
             disable_tracer=disable_tracer,
         )
         self.api: Optional[AsyncPromptCallableBase] = api
-
-    def __call__(
-        self, call_log: Call, prompt_params: Optional[Dict] = None
-    ) -> AsyncGenerator[ValidationOutcome[OT], None]:
-        """Execute the StreamRunner.
-
-        Args:
-            prompt_params: Parameters to pass to the prompt in order to
-                generate the prompt string.
-
-        Returns:
-            The Call log for this run.
-        """
-        if prompt_params is None:
-            prompt_params = {}
-
-        # check if validator requirements are fulfilled
-        missing_keys = verify_metadata_requirements(
-            self.metadata, self.output_schema.root_datatype
-        )
-        if missing_keys:
-            raise ValueError(
-                f"Missing required metadata keys: {', '.join(missing_keys)}"
-            )
-
-        (
-            instructions,
-            prompt,
-            msg_history,
-            prompt_schema,
-            instructions_schema,
-            msg_history_schema,
-            output_schema,
-        ) = (
-            self.instructions,
-            self.prompt,
-            self.msg_history,
-            self.prompt_schema,
-            self.instructions_schema,
-            self.msg_history_schema,
-            self.output_schema,
-        )
-
-        return self.async_step(
-            index=0,
-            api=self.api,
-            instructions=instructions,
-            prompt=prompt,
-            msg_history=msg_history,
-            prompt_params=prompt_params,
-            prompt_schema=prompt_schema,
-            instructions_schema=instructions_schema,
-            msg_history_schema=msg_history_schema,
-            output_schema=output_schema,
-            output=self.output,
-            call_log=call_log,
-        )
 
     async def async_run(
         self, call_log: Call, prompt_params: Optional[Dict] = None
