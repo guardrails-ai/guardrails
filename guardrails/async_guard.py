@@ -1,11 +1,12 @@
 import contextvars
+import inspect
 from typing import (
     Any,
+    AsyncIterable,
     Awaitable,
     Callable,
     Dict,
     Iterable,
-    AsyncIterable,
     List,
     Optional,
     Union,
@@ -19,7 +20,6 @@ from guardrails.llm_providers import get_async_llm_ask, model_is_supported_serve
 from guardrails.logger import set_scope
 from guardrails.run import AsyncRunner, AsyncStreamRunner
 from guardrails.stores.context import set_call_kwargs, set_tracer, set_tracer_context
-import inspect
 
 
 class AsyncGuard(Guard):
@@ -395,14 +395,6 @@ class AsyncGuard(Guard):
                     **kwargs,
                 )
 
-            # FIXME: checking not llm_api because it can still fall back on defaults and
-            # function as expected. We should handle this better.
-            # if (
-            #     not llm_api
-            #     or inspect.iscoroutinefunction(llm_api)
-            #     or inspect.isasyncgenfunction(llm_api)
-            # ):
-            print("calling async parse...\n\n\n")
             return await self._async_parse(
                 llm_output,
                 metadata,
@@ -458,43 +450,22 @@ class AsyncGuard(Guard):
         Returns:
             The validated response.
         """
-        print("\n\n\n\n\n\n")
-        print(kwargs)
-        print("\n\n\n\n\n\n")
-        if kwargs["stream"]:
-            runner = AsyncStreamRunner(
-                instructions=kwargs.pop("instructions", None),
-                prompt=kwargs.pop("prompt", None),
-                msg_history=kwargs.pop("msg_history", None),
-                api=get_async_llm_ask(llm_api, *args, **kwargs) if llm_api else None,
-                prompt_schema=self.rail.prompt_schema,
-                instructions_schema=self.rail.instructions_schema,
-                msg_history_schema=self.rail.msg_history_schema,
-                output_schema=self.rail.output_schema,
-                num_reasks=num_reasks,
-                metadata=metadata,
-                output=llm_output,
-                base_model=self.base_model,
-                full_schema_reask=full_schema_reask,
-                disable_tracer=self._disable_tracer,
-            )
-        else:
-            runner = AsyncRunner(
-                instructions=kwargs.pop("instructions", None),
-                prompt=kwargs.pop("prompt", None),
-                msg_history=kwargs.pop("msg_history", None),
-                api=get_async_llm_ask(llm_api, *args, **kwargs) if llm_api else None,
-                prompt_schema=self.rail.prompt_schema,
-                instructions_schema=self.rail.instructions_schema,
-                msg_history_schema=self.rail.msg_history_schema,
-                output_schema=self.rail.output_schema,
-                num_reasks=num_reasks,
-                metadata=metadata,
-                output=llm_output,
-                base_model=self.base_model,
-                full_schema_reask=full_schema_reask,
-                disable_tracer=self._disable_tracer,
-            )
+        runner = AsyncRunner(
+            instructions=kwargs.pop("instructions", None),
+            prompt=kwargs.pop("prompt", None),
+            msg_history=kwargs.pop("msg_history", None),
+            api=get_async_llm_ask(llm_api, *args, **kwargs) if llm_api else None,
+            prompt_schema=self.rail.prompt_schema,
+            instructions_schema=self.rail.instructions_schema,
+            msg_history_schema=self.rail.msg_history_schema,
+            output_schema=self.rail.output_schema,
+            num_reasks=num_reasks,
+            metadata=metadata,
+            output=llm_output,
+            base_model=self.base_model,
+            full_schema_reask=full_schema_reask,
+            disable_tracer=self._disable_tracer,
+        )
         call = await runner.async_run(call_log=call_log, prompt_params=prompt_params)
 
         return ValidationOutcome[OT].from_guard_history(call)
