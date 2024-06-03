@@ -179,19 +179,18 @@ class SequentialValidatorService(ValidatorServiceBase):
                 iteration, validator, value, metadata, property_path, stream, **kwargs
             )
             result = validator_logs.validation_result
-            if not stream:
-                if isinstance(result, FailResult):
-                    value = self.perform_correction(
-                        [result], value, validator, validator.on_fail_descriptor
-                    )
-                elif isinstance(result, PassResult):
-                    if (
-                        validator.override_value_on_pass
-                        and result.value_override is not result.ValueOverrideSentinel
-                    ):
-                        value = result.value_override
-                else:
-                    raise RuntimeError(f"Unexpected result type {type(result)}")
+            if isinstance(result, FailResult):
+                value = self.perform_correction(
+                    [result], value, validator, validator.on_fail_descriptor
+                )
+            elif isinstance(result, PassResult):
+                if (
+                    validator.override_value_on_pass
+                    and result.value_override is not result.ValueOverrideSentinel
+                ):
+                    value = result.value_override
+            elif not stream:
+                raise RuntimeError(f"Unexpected result type {type(result)}")
 
             validator_logs.value_after_validation = value
             if result and result.metadata is not None:

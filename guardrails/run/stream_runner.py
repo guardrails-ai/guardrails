@@ -15,6 +15,7 @@ from guardrails.run.runner import Runner
 from guardrails.schema import Schema, StringSchema
 from guardrails.utils.openai_utils import OPENAI_VERSION
 from guardrails.utils.reask_utils import SkeletonReAsk
+from guardrails.constants import pass_status
 
 
 class StreamRunner(Runner):
@@ -198,11 +199,12 @@ class StreamRunner(Runner):
                         "remove reasks from schema or disable streaming."
                     )
                 # 5. Convert validated fragment to a pretty JSON string
+                passed = call_log.status == pass_status
                 yield ValidationOutcome(
                     #  The chunk or the whole output?
                     raw_llm_output=chunk_text,
                     validated_output=validated_text,
-                    validation_passed=validated_text is not None,
+                    validation_passed=passed,
                 )
             # handle case where generator doesn't give finished status
             if not stream_finished:
@@ -216,10 +218,11 @@ class StreamRunner(Runner):
                     remainder=True,
                 )
                 if len(last_result) > 0:
+                    passed = call_log.status == pass_status
                     yield ValidationOutcome(
                         raw_llm_output=last_chunk_text,
                         validated_output=last_result,
-                        validation_passed=last_result is not None,
+                        validation_passed=passed,
                     )
         # handle non string schema
         else:
