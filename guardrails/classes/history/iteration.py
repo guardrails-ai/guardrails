@@ -15,6 +15,7 @@ from guardrails.prompt.prompt import Prompt
 from guardrails.utils.logs_utils import ValidatorLogs
 from guardrails.utils.pydantic_utils import ArbitraryModel
 from guardrails.utils.reask_utils import ReAsk
+from guardrails.validator_base import ErrorSpan
 
 
 class Iteration(ArbitraryModel):
@@ -154,6 +155,14 @@ versions 0.5.0 and beyond. Use 'guarded_output' instead."""
         """The validator logs for any validations that failed during this
         iteration."""
         return self.outputs.failed_validations
+
+    @property
+    def error_spans_in_output(self) -> List[ErrorSpan]:
+        """The error spans from the LLM response.
+
+        These indices are relative to the complete LLM output.
+        """
+        return self.outputs.error_spans_in_output
 
     @property
     def status(self) -> str:
