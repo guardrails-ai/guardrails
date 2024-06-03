@@ -1,11 +1,8 @@
-import openai
 import pytest
 from pydantic import BaseModel
 
 from guardrails import AsyncGuard, Rail, Validator
-from guardrails.datatypes import verify_metadata_requirements
 from guardrails.utils import args, kwargs, on_fail
-from guardrails.utils.openai_utils import OPENAI_VERSION
 from guardrails.validator_base import OnFailAction
 from guardrails.validators import (  # ReadingTime,
     EndsWith,
@@ -33,6 +30,7 @@ class RequiringValidator2(Validator):
 
     def validate(self, value, metadata):
         return PassResult()
+
 
 rail = Rail.from_string_validators([], "empty railspec")
 empty_rail_string = """<rail version="0.1">

@@ -1,4 +1,3 @@
-
 import pytest
 
 from tests.integration_tests.test_assets.fixtures import (  # noqa
@@ -22,6 +21,7 @@ Hi please make me a string
 </prompt>
 </rail>
 """
+
 
 @pytest.fixture
 def string_llm_output():

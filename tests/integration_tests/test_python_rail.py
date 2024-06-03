@@ -210,7 +210,7 @@ def test_python_rail(mocker):
             python_rail.LLM_OUTPUT_3_SUCCEED_GUARDRAILS_AND_PYDANTIC
         )
 
- 
+
 @pytest.mark.skipif(not PYDANTIC_VERSION.startswith("1"), reason="Pydantic 1.x only")
 def test_python_rail_add_validator(mocker):
     from pydantic import root_validator, validator

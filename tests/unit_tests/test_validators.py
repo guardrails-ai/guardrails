@@ -11,8 +11,6 @@ from guardrails.datatypes import DataType
 from guardrails.errors import ValidationError
 from guardrails.schema import StringSchema
 from guardrails.utils.openai_utils import (
-    OPENAI_VERSION,
-    get_static_openai_acreate_func,
     get_static_openai_create_func,
 )
 from guardrails.utils.reask_utils import FieldReAsk
@@ -784,6 +782,7 @@ This also is not two words
         guard.history.first.iterations.first.outputs.validation_response == "This also"
     )
 
+
 @pytest.mark.parametrize(
     "on_fail,"
     "structured_prompt_error,"
@@ -971,7 +970,6 @@ This also is not two words
         ),
     ],
 )
-
 def test_input_validation_mismatch_raise():
     # prompt validation, msg_history argument
     guard = Guard.from_pydantic(output_class=Pet).with_prompt_validation(
