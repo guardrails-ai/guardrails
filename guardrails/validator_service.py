@@ -333,12 +333,12 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
                         stream=stream,
                     )
                     try:
+                        # If the result from the validator is a future, await it
                         result.validation_result = await result.validation_result
                     except TypeError:
                         pass
                     validators_logs.append(result)
 
-            # TODO iterate over async generator in result?
             # wait for the parallel tasks to finish
             if parallel_tasks:
                 parallel_results = await asyncio.gather(*parallel_tasks)
