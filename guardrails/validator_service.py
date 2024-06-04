@@ -3,7 +3,7 @@ import itertools
 import os
 from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime
-from typing import Any, Awaitable, Dict, List, Optional, Tuple, Union, cast
+from typing import Any, Awaitable, Dict, List, Optional, Tuple, Union
 
 from guardrails.classes.history import Iteration
 from guardrails.datatypes import FieldValidation
@@ -47,7 +47,7 @@ class ValidatorServiceBase:
         metadata: Optional[Dict],
         stream: Optional[bool] = False,
         **kwargs,
-    ) -> Optional[ValidationResult]:
+    ) -> Optional[Union[ValidationResult, Awaitable[ValidationResult]]]:
         validate_func = validator.validate_stream if stream else validator.validate
         traced_validator = trace_validator(
             validator_name=validator.rail_alias,
@@ -120,7 +120,7 @@ class ValidatorServiceBase:
         property_path: str,
         stream: Optional[bool] = False,
         **kwargs,
-    ) -> ValidatorLogs:
+    ) -> Union[Awaitable, ValidatorLogs]:
         validator_class_name = validator.__class__.__name__
         validator_logs = ValidatorLogs(
             validator_name=validator_class_name,
@@ -335,9 +335,6 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
                     try:
                         # If the result from the validator is a future, await it
                         if result and result.validation_result:
-                            result.validation_result = cast(
-                                Awaitable, result.validation_result
-                            )
                             result.validation_result = await result.validation_result
                     except TypeError:
                         pass
