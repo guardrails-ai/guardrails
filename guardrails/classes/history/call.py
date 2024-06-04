@@ -349,7 +349,7 @@ versions 0.5.0 and beyond. Use 'guarded_output' instead."""
 
     def _set_exception(self, exception: Optional[Exception]):
         self._exception = exception
-        self.i_exception = CallException(exception)
+        self.i_exception = CallException(str(exception))
 
     @property
     def failed_validations(self) -> Stack[ValidatorLogs]:
