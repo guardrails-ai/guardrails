@@ -226,7 +226,7 @@ class StringSchema(Schema):
             metadata=metadata,
             validator_setup=validation,
             iteration=iteration,
-            stream=stream
+            stream=stream,
         )
 
         validated_response = {dummy_key: validated_response}
