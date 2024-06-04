@@ -15,7 +15,6 @@ from guardrails.llm_providers import (
     chat_prompt,
     get_llm_ask,
 )
-from guardrails.utils.openai_utils import OPENAI_VERSION
 from guardrails.utils.safe_get import safe_get_with_brackets
 
 from .mocks import MockAsyncOpenAILlm, MockOpenAILlm
@@ -33,6 +32,7 @@ def test_openai_callable_does_not_retry_on_success(mocker):
     assert response.output == "Hello world!"
     assert response.prompt_token_count is None
     assert response.response_token_count is None
+
 
 @pytest.mark.asyncio
 async def test_async_openai_callable_does_not_retry_on_success(mocker):
@@ -140,6 +140,7 @@ def openai_mock():
         ),
     )
 
+
 @pytest.fixture(scope="module")
 def openai_stream_mock():
     def gen():
@@ -154,7 +155,6 @@ def openai_stream_mock():
 
 
 def test_openai_callable(mocker, openai_mock):
-    
     mocker.patch("openai.resources.Completions.create", return_value=openai_mock)
 
     from guardrails.llm_providers import OpenAICallable
@@ -170,9 +170,7 @@ def test_openai_callable(mocker, openai_mock):
 
 
 def test_openai_stream_callable(mocker, openai_stream_mock):
-    mocker.patch(
-        "openai.resources.Completions.create", return_value=openai_stream_mock
-    )
+    mocker.patch("openai.resources.Completions.create", return_value=openai_stream_mock)
 
     from guardrails.llm_providers import OpenAICallable
 
@@ -188,6 +186,7 @@ def test_openai_stream_callable(mocker, openai_stream_mock):
         actual_op = fragment["choices"][0]["text"]
         assert actual_op == f"{i},"
         i += 1
+
 
 def test_openai_chat_callable(mocker, openai_chat_mock):
     mocker.patch(
@@ -225,6 +224,7 @@ def test_openai_chat_stream_callable(mocker, openai_chat_stream_mock):
         assert actual_op == f"{i},"
         i += 1
 
+
 def test_openai_chat_model_callable(mocker, openai_chat_mock):
     mocker.patch(
         "openai.resources.chat.completions.Completions.create",
@@ -246,6 +246,7 @@ def test_openai_chat_model_callable(mocker, openai_chat_mock):
     assert response.output == "Mocked LLM output"
     assert response.prompt_token_count == 10
     assert response.response_token_count == 20
+
 
 @pytest.mark.skipif(
     not importlib.util.find_spec("manifest"),
