@@ -2,13 +2,10 @@ import pytest
 
 import guardrails.validator_service as vs
 from guardrails.classes.history.iteration import Iteration
-from guardrails.datatypes import FieldValidation
 
 from .mocks import MockAsyncValidatorService, MockLoop, MockSequentialValidatorService
 
-empty_field_validation = FieldValidation(
-    key="mock-key", value="mock-value", validators=[], children=[]
-)
+
 iteration = Iteration()
 
 

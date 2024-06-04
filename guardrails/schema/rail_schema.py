@@ -174,6 +174,17 @@ def parse_element(
             description=description,
             format=format,
         )
+    elif schema_type == RailTypes.PERCENTAGE:
+        format = extract_format(
+            element=element,
+            internal_type=RailTypes.PERCENTAGE,
+            internal_format_attr="",
+        )
+        return ModelSchema(
+            type=ValidationType(SimpleTypes.STRING),
+            description=description,
+            format=format,
+        )
     elif schema_type == RailTypes.ENUM:
         format = xml_to_string(element.attrib.get("format"))
         csv = xml_to_string(element.attrib.get("values", ""))
@@ -774,6 +785,9 @@ def build_string_element(
         datetime_format = format.internal_format_attr
         if datetime_format:
             attributes["datetime-format"] = datetime_format
+    elif format.internal_type == RailTypes.PERCENTAGE:
+        type = RailTypes.PERCENTAGE
+        tag = tag_override or RailTypes.PERCENTAGE
 
     if tag_override:
         attributes["type"] = type
@@ -817,9 +831,9 @@ def build_element(
     rail_format: List[str] = [v.to_prompt(False) for v in validators]
     if format.custom_format:
         rail_format.insert(0, format.custom_format)
-    rail_format = "; ".join(rail_format)
-    if rail_format:
-        attributes["format"] = rail_format
+    rail_format_str = "; ".join(rail_format)
+    if rail_format_str:
+        attributes["format"] = rail_format_str
 
     rail_type = None
     if schema_type == SimpleTypes.ARRAY:
@@ -837,6 +851,10 @@ def build_element(
     elif schema_type == SimpleTypes.INTEGER:
         rail_type = RailTypes.INTEGER
     elif schema_type == SimpleTypes.NUMBER:
+        # Special Case for Doc Examples
+        if format.internal_type == RailTypes.PERCENTAGE:
+            rail_format_str = "; ".join([RailTypes.PERCENTAGE, *rail_format])
+            attributes["format"] = rail_format_str
         rail_type = RailTypes.FLOAT
     elif schema_type == SimpleTypes.OBJECT:
         """Checks for objects and choice-case."""

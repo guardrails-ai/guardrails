@@ -300,10 +300,10 @@ def validator_factory(name: str, validate: Callable) -> Type["Validator"]:
 
 def register_validator(name: str, data_type: Union[str, List[str]]):
     """Register a validator for a data type."""
-    from guardrails.datatypes import registry as types_registry
+    from guardrails.datatypes import types_registry
 
     if isinstance(data_type, str):
-        data_type = list(types_registry.keys()) if data_type == "all" else [data_type]
+        data_type = types_registry if data_type == "all" else [data_type]
     # Make sure that the data type string exists in the data types registry.
     for dt in data_type:
         if dt not in types_registry:

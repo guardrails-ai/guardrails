@@ -3,7 +3,7 @@ import pytest
 from pydantic import BaseModel
 
 from guardrails import Guard, Validator
-from guardrails.datatypes import verify_metadata_requirements
+from guardrails.utils.validator_utils import verify_metadata_requirements
 from guardrails.utils import args, kwargs, on_fail
 from guardrails.utils.openai_utils import OPENAI_VERSION
 from guardrails.validator_base import OnFailAction

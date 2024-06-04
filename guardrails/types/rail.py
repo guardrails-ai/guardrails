@@ -9,6 +9,7 @@ class RailTypes(str, Enum):
     DATE = "date"
     TIME = "time"
     DATETIME = "date-time"
+    PERCENTAGE = "percentage"
     ENUM = "enum"
     LIST = "list"
     OBJECT = "object"
