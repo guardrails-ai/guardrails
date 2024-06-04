@@ -319,7 +319,7 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
                             value,
                             metadata,
                             property_path,
-                            stream=stream,
+                            stream,
                         )
                     )
                 else:
@@ -334,7 +334,8 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
                     )
                     try:
                         # If the result from the validator is a future, await it
-                        result.validation_result = await result.validation_result
+                        if result and result.validation_result:
+                            result.validation_result = await result.validation_result
                     except TypeError:
                         pass
                     validators_logs.append(result)
@@ -493,7 +494,7 @@ async def async_validate(
     iteration: Iteration,
     disable_tracer: Optional[bool] = True,
     stream: Optional[bool] = False,
-):
+) -> Tuple[Any, dict]:
     validator_service = AsyncValidatorService(disable_tracer)
     return await validator_service.async_validate(
         value, metadata, validator_setup, iteration, stream=stream

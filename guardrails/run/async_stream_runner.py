@@ -1,6 +1,16 @@
 import copy
 from functools import partial
-from typing import Any, AsyncGenerator, Dict, List, Optional, Tuple, Type, Union
+from typing import (
+    Any,
+    AsyncGenerator,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    Union,
+)
 
 from pydantic import BaseModel
 
@@ -68,7 +78,7 @@ class AsyncStreamRunner(StreamRunner):
 
     async def async_run(
         self, call_log: Call, prompt_params: Optional[Dict] = None
-    ) -> Call:
+    ) -> AsyncGenerator[ValidationOutcome]:
         if prompt_params is None:
             prompt_params = {}
 
@@ -329,7 +339,7 @@ class AsyncStreamRunner(StreamRunner):
         index: int,
         validated_output: Any,
         output_schema: Schema,
-    ) -> Tuple[List[ReAsk], Any]:
+    ) -> Tuple[Sequence[ReAsk], Any]:
         # Introspect: inspect validated output for reasks.
         if validated_output is None:
             return [], None
