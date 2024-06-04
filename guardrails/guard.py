@@ -1550,7 +1550,7 @@ versions 0.5.x and beyond. Use Guard.to_runnable() instead."""
         else:
             raise ValueError("Guard does not have an api client!")
 
-    def to_runnable(self):
+    def to_runnable(self) -> Runnable:
         from guardrails.integrations.langchain.guard_runnable import GuardRunnable
 
         return GuardRunnable(self)
