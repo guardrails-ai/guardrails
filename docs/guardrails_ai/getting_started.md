@@ -27,7 +27,7 @@ pip install guardrails-ai
     from guardrails import Guard
 
     # Initialize the Guard with 
-    val = Guard().use(
+    guard = Guard().use(
         RegexMatch(regex="^[A-Z][a-z]*$")
     )
 

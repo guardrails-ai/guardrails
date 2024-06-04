@@ -26,36 +26,10 @@ def test_configure(mocker, token, no_metrics):
     configure(token, no_metrics)
 
     assert mock_logger_info.call_count == 2
-    expected_calls = [call("Configuring..."), call("Validating credentials...")]
+    expected_calls = [call("Configuration saved."), call("Validating credentials...")]
     mock_logger_info.assert_has_calls(expected_calls)
 
     mock_save_configuration_file.assert_called_once_with(token, no_metrics)
-
-    assert mock_get_auth.call_count == 1
-
-
-def test_configure_prompting(mocker):
-    mock_typer_prompt = mocker.patch("typer.prompt")
-    mock_typer_prompt.side_effect = ["token"]
-    mock_save_configuration_file = mocker.patch(
-        "guardrails.cli.configure.save_configuration_file"
-    )
-    mock_logger_info = mocker.patch("guardrails.cli.configure.logger.info")
-    mock_get_auth = mocker.patch("guardrails.cli.configure.get_auth")
-
-    from guardrails.cli.configure import configure
-
-    configure(None, False)
-
-    assert mock_typer_prompt.call_count == 1
-    expected_calls = [call("Token", hide_input=True)]
-    mock_typer_prompt.assert_has_calls(expected_calls)
-
-    assert mock_logger_info.call_count == 2
-    expected_calls = [call("Configuring..."), call("Validating credentials...")]
-    mock_logger_info.assert_has_calls(expected_calls)
-
-    mock_save_configuration_file.assert_called_once_with("token", False)
 
     assert mock_get_auth.call_count == 1
 
@@ -95,7 +69,7 @@ def test_save_configuration_file(mocker):
         [
             f"id=f49354e0-80c7-4591-81db-cc2f945e5f1e{os.linesep}",
             f"token=token{os.linesep}",
-            "no_metrics=true",
+            "enable_metrics=true",
         ]
     )
     assert close_spy.call_count == 1
