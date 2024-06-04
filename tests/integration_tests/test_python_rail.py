@@ -10,7 +10,6 @@ from guardrails.utils.openai_utils import (
     get_static_openai_chat_create_func,
     get_static_openai_create_func,
 )
-from guardrails.utils.pydantic_utils import PYDANTIC_VERSION, add_validator
 from guardrails.validator_base import OnFailAction
 from guardrails.validators import (
     FailResult,
