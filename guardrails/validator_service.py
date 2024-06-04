@@ -299,7 +299,7 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
         value: Any,
         metadata: Dict,
         property_path: str,
-        stream: bool = False,
+        stream: Optional[bool] = False,
     ):
         loop = asyncio.get_running_loop()
         for on_fail, validator_group in self.group_validators(
@@ -408,7 +408,7 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
         validator_setup: FieldValidation,
         iteration: Iteration,
         path: str = "$",
-        stream: bool = False,
+        stream: Optional[bool] = False,
     ) -> Tuple[Any, dict]:
         property_path = (
             f"{path}.{validator_setup.key}"

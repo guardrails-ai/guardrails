@@ -187,14 +187,8 @@ class AsyncStreamRunner(StreamRunner):
         try:
             stream_output = llm_response.async_stream_output
         except AttributeError:
-            try:
-                stream_output = llm_response.stream_output
-
-            except AttributeError:
-                stream_output = llm_response.stream_output
-        if stream_output is None:
             raise ValueError(
-                "No stream was returned from the API. Please check that "
+                "No async stream was returned from the API. Please check that "
                 "the API is returning an async generator."
             )
 
@@ -323,7 +317,7 @@ class AsyncStreamRunner(StreamRunner):
         parsed_output: Any,
         output_schema: Schema,
         validate_subschema: bool = False,
-        stream: bool = False,
+        stream: Optional[bool] = False,
     ):
         # FIXME: Subschema is currently broken, it always returns a string from async
         # streaming.
