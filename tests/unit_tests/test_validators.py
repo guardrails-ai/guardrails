@@ -11,6 +11,8 @@ from guardrails.datatypes import DataType
 from guardrails.errors import ValidationError
 from guardrails.schema import StringSchema
 from guardrails.utils.openai_utils import (
+    OPENAI_VERSION,
+    get_static_openai_acreate_func,
     get_static_openai_create_func,
 )
 from guardrails.utils.reask_utils import FieldReAsk
@@ -782,7 +784,6 @@ This also is not two words
         guard.history.first.iterations.first.outputs.validation_response == "This also"
     )
 
-
 @pytest.mark.parametrize(
     "on_fail,"
     "structured_prompt_error,"
@@ -927,49 +928,6 @@ This also is not two words
     assert isinstance(guard.history.last.exception, ValidationError)
     assert guard.history.last.exception == excinfo.value
 
-
-@pytest.mark.parametrize(
-    "on_fail,"
-    "structured_prompt_error,"
-    "structured_instructions_error,"
-    "structured_message_history_error,"
-    "unstructured_prompt_error,"
-    "unstructured_instructions_error",
-    [
-        (
-            OnFailAction.REASK,
-            "Prompt validation failed: incorrect_value='What kind of pet should I get?\\n\\nJson Output:\\n\\n' fail_results=[FailResult(outcome='fail', metadata=None, error_message='must be exactly two words', fix_value='What kind')] path=None",  # noqa
-            "Instructions validation failed: incorrect_value='What kind of pet should I get?' fail_results=[FailResult(outcome='fail', metadata=None, error_message='must be exactly two words', fix_value='What kind')] path=None",  # noqa
-            "Message history validation failed: incorrect_value='What kind of pet should I get?' fail_results=[FailResult(outcome='fail', metadata=None, error_message='must be exactly two words', fix_value='What kind')] path=None",  # noqa
-            "Prompt validation failed: incorrect_value='\\nThis is not two words\\n\\n\\nString Output:\\n\\n' fail_results=[FailResult(outcome='fail', metadata=None, error_message='must be exactly two words', fix_value='This is')] path=None",  # noqa
-            "Instructions validation failed: incorrect_value='\\nThis also is not two words\\n' fail_results=[FailResult(outcome='fail', metadata=None, error_message='must be exactly two words', fix_value='This also')] path=None",  # noqa
-        ),
-        (
-            OnFailAction.FILTER,
-            "Prompt validation failed",
-            "Instructions validation failed",
-            "Message history validation failed",
-            "Prompt validation failed",
-            "Instructions validation failed",
-        ),
-        (
-            OnFailAction.REFRAIN,
-            "Prompt validation failed",
-            "Instructions validation failed",
-            "Message history validation failed",
-            "Prompt validation failed",
-            "Instructions validation failed",
-        ),
-        (
-            OnFailAction.EXCEPTION,
-            "Validation failed for field with errors: must be exactly two words",
-            "Validation failed for field with errors: must be exactly two words",
-            "Validation failed for field with errors: must be exactly two words",
-            "Validation failed for field with errors: must be exactly two words",
-            "Validation failed for field with errors: must be exactly two words",
-        ),
-    ],
-)
 def test_input_validation_mismatch_raise():
     # prompt validation, msg_history argument
     guard = Guard.from_pydantic(output_class=Pet).with_prompt_validation(
