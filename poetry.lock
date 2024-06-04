@@ -2219,7 +2219,7 @@ i18n = ["Babel (>=2.7)"]
 name = "joblib"
 version = "1.4.2"
 description = "Lightweight pipelining with Python functions"
-optional = true
+optional = false
 python-versions = ">=3.8"
 files = [
     {file = "joblib-1.4.2-py3-none-any.whl", hash = "sha256:06d478d5674cbc267e7496a410ee875abd68e4340feff4490bcb7afb88060ae6"},
@@ -3797,7 +3797,7 @@ files = [
 name = "nltk"
 version = "3.8.1"
 description = "Natural Language Toolkit"
-optional = true
+optional = false
 python-versions = ">=3.7"
 files = [
     {file = "nltk-3.8.1-py3-none-any.whl", hash = "sha256:fd5c9109f976fa86bcadba8f91e47f5e9293bd034474752e92a520f81c93dda5"},
@@ -8332,11 +8332,11 @@ manifest = ["manifest-ml"]
 pii = ["presidio_analyzer", "presidio_anonymizer"]
 profanity = ["alt-profanity-check"]
 sql = ["sqlalchemy", "sqlglot", "sqlvalidator"]
-summary = ["nltk", "thefuzz"]
+summary = ["thefuzz"]
 toxic-language = ["torch", "transformers"]
 vectordb = ["faiss-cpu", "numpy"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8.1"
-content-hash = "6e5bf0528e7e0cb74b8bf8b9c544e162c09bd85aaad2add60c3395f1118d7196"
+content-hash = "e6ecb1b00ae6f7a00ecd840f41f4652cc54b446e3fbf36a77b3d614f7e8b0014"
