@@ -3,7 +3,7 @@ import itertools
 import os
 from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Awaitable, Dict, List, Optional, Tuple, Union, cast
 
 from guardrails.classes.history import Iteration
 from guardrails.datatypes import FieldValidation
@@ -335,6 +335,9 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
                     try:
                         # If the result from the validator is a future, await it
                         if result and result.validation_result:
+                            result.validation_result = cast(
+                                Awaitable, result.validation_result
+                            )
                             result.validation_result = await result.validation_result
                     except TypeError:
                         pass

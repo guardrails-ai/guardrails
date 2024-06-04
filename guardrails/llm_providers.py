@@ -838,7 +838,7 @@ class AsyncLiteLLMCallable(AsyncPromptCallableBase):
             # response = cast(AsyncIterable[str], response)
             return LLMResponse(
                 output="",
-                async_stream_output=response.completion_stream,
+                async_stream_output=response.completion_stream,  # pyright: ignore[reportGeneralTypeIssues]
             )
 
         return LLMResponse(

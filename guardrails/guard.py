@@ -1147,9 +1147,12 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
     def error_spans_in_output(self):
         try:
             call = self.history.last
-            iter = call.iterations.last
-            llm_spans = iter.error_spans_in_output
-            return llm_spans
+            if call:
+                iter = call.iterations.last
+                llm_spans = iter.error_spans_in_output
+                return llm_spans
+            else:
+                return []
         except (AttributeError, TypeError):
             return []
 
