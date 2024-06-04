@@ -2,7 +2,7 @@ import copy
 from functools import partial
 from typing import (
     Any,
-    AsyncGenerator,
+    AsyncIterable,
     Dict,
     List,
     Optional,
@@ -78,7 +78,7 @@ class AsyncStreamRunner(StreamRunner):
 
     async def async_run(
         self, call_log: Call, prompt_params: Optional[Dict] = None
-    ) -> AsyncGenerator[ValidationOutcome]:
+    ) -> AsyncIterable[ValidationOutcome]:
         if prompt_params is None:
             prompt_params = {}
 
@@ -143,7 +143,7 @@ class AsyncStreamRunner(StreamRunner):
         output_schema: Schema,
         call_log: Call,
         output: Optional[str] = None,
-    ) -> AsyncGenerator[ValidationOutcome[OT], None]:
+    ) -> AsyncIterable[ValidationOutcome[OT]]:
         inputs = Inputs(
             llm_api=api,
             llm_output=output,

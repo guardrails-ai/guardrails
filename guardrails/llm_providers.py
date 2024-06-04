@@ -881,13 +881,9 @@ class AsyncManifestCallable(AsyncPromptCallableBase):
             *args,
             **kwargs,
         )
-        # TODO: Check if async streaming is working here
         if kwargs.get("stream", False):
-            # If stream is defined and set to True,
-            # the callable returns a generator object
-            return LLMResponse(
-                output="",
-                async_stream_output=manifest_response.completion_stream,
+            raise NotImplementedError(
+                "Manifest async streaming is not yet supported by manifest."
             )
         return LLMResponse(
             output=manifest_response[0],
