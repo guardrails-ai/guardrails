@@ -178,12 +178,10 @@ class Guard(IGuard, Generic[OT]):
             self._api_client = GuardrailsApiClient(api_key=api_key)
             self.upsert_guard()
 
-    # FIXME
     @property
     def history(self):
         return self._history
 
-    # FIXME
     @history.setter
     def history(self, h: Stack[Call]):
         self._history = h

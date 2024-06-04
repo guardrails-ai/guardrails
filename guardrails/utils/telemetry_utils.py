@@ -106,8 +106,6 @@ def trace_validator_result(
     )
 
 
-# FIXME: It's creating two of every event
-# Might be duplicate validator_logs?
 def trace_validation_result(
     validation_logs: List[ValidatorLogs],
     attempt_number: int,

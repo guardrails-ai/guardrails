@@ -108,7 +108,6 @@ def parse_pydantic_validator(
         validator_instance.on_fail_descriptor = on_fail
         return validator_instance
     elif isinstance(validator_cls, str):
-        # FIXME: Haven't looked through all of this yet
         validator_string = validator_cls
         on_fail = safe_get(pydantic_tuple, 1, OnFailAction.NOOP)
         return parse_rail_validator(validator_string, on_fail=on_fail)
