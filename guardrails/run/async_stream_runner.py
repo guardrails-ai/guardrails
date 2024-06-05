@@ -15,7 +15,6 @@ from typing import (
 from pydantic import BaseModel
 
 from guardrails.classes.history import Call, Inputs, Iteration, Outputs
-from guardrails.classes.output_type import OT
 from guardrails.classes.validation_outcome import ValidationOutcome
 from guardrails.constants import pass_status
 from guardrails.datatypes import verify_metadata_requirements
@@ -143,7 +142,7 @@ class AsyncStreamRunner(StreamRunner):
         output_schema: Schema,
         call_log: Call,
         output: Optional[str] = None,
-    ) -> AsyncIterable[ValidationOutcome[OT]]:
+    ) -> AsyncIterable[ValidationOutcome]:
         inputs = Inputs(
             llm_api=api,
             llm_output=output,
@@ -214,7 +213,6 @@ class AsyncStreamRunner(StreamRunner):
                     validate_subschema=True,
                     stream=True,
                 )
-
                 if isinstance(validated_result, SkeletonReAsk):
                     raise ValueError(
                         "Received fragment schema is an invalid sub-schema "
@@ -269,7 +267,7 @@ class AsyncStreamRunner(StreamRunner):
 
                 yield ValidationOutcome(
                     raw_llm_output=fragment,
-                    validated_output=validated_fragment,
+                    validated_output=chunk_text,
                     validation_passed=validated_fragment is not None,
                 )
 
@@ -317,7 +315,7 @@ class AsyncStreamRunner(StreamRunner):
         output_schema: Schema,
         validate_subschema: bool = False,
         stream: Optional[bool] = False,
-    ) -> ValidationOutcome[OT]:
+    ) -> ValidationOutcome:
         # FIXME: Subschema is currently broken, it always returns a string from async
         # streaming.
         # Should return None/empty if fail result?
