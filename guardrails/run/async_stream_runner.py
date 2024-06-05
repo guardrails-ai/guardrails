@@ -330,7 +330,7 @@ class AsyncStreamRunner(StreamRunner):
         try:
             return iteration.outputs.validator_logs[-1].validation_result
         except IndexError:
-            pass
+            return None
 
     async def introspect(
         self,
