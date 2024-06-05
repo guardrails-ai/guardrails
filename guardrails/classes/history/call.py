@@ -56,13 +56,13 @@ class Call(ArbitraryModel):
 
     @property
     def prompt(self) -> Optional[str]:
-        """The prompt as provided by the user when intializing or calling the
+        """The prompt as provided by the user when initializing or calling the
         Guard."""
         return self.inputs.prompt
 
     @property
     def prompt_params(self) -> Optional[Dict]:
-        """The prompt parameters as provided by the user when intializing or
+        """The prompt parameters as provided by the user when initializing or
         calling the Guard."""
         return self.inputs.prompt_params
 
@@ -99,8 +99,8 @@ class Call(ArbitraryModel):
 
     @property
     def instructions(self) -> Optional[str]:
-        """The instructions as provided by the user when intializing or calling
-        the Guard."""
+        """The instructions as provided by the user when initializing or
+        calling the Guard."""
         return self.inputs.instructions
 
     @property
