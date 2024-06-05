@@ -327,8 +327,16 @@ class AsyncStreamRunner(StreamRunner):
         _ = await output_schema.async_validate(
             iteration, parsed_output, self.metadata, attempt_number=index, stream=stream
         )
+        try:
+            return iteration.validator_logs[-1].validation_result
+        except IndexError:
+            pass
 
-        return iteration.validator_logs[-1].validation_result
+        try:
+            return iteration.failed_validations[-1].validation_result
+        except IndexError:
+            pass
+        return None
 
     async def introspect(
         self,
