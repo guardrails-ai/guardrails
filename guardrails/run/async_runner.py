@@ -244,7 +244,7 @@ class AsyncRunner(Runner):
             raise e
         return iteration
 
-    @async_trace(name="async_call")
+    @async_trace(name="call")
     async def async_call(
         self,
         index: int,
