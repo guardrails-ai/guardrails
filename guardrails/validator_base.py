@@ -180,6 +180,9 @@ class Refrain:
 
 
 def split_sentence_str(chunk: str):
+    """
+    A naive sentence splitter that splits on periods.
+    """
     if "." not in chunk:
         return []
     fragments = chunk.split(".")
@@ -187,6 +190,13 @@ def split_sentence_str(chunk: str):
 
 
 def split_sentence_nltk(chunk: str):
+    """
+    NOTE: this approach currently does not work
+    Use a sentence tokenizer to split the chunk into sentences.
+
+    Because using the tokenizer is expensive, we only use it if there
+    is a period present in the chunk.
+    """
     # using the sentence tokenizer is expensive
     # we check for a . to avoid wastefully calling the tokenizer
     if "." not in chunk:
