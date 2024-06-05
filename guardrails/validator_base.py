@@ -180,9 +180,7 @@ class Refrain:
 
 
 def split_sentence_str(chunk: str):
-    """
-    A naive sentence splitter that splits on periods.
-    """
+    """A naive sentence splitter that splits on periods."""
     if "." not in chunk:
         return []
     fragments = chunk.split(".")

@@ -8,6 +8,7 @@ from typing import Any, Awaitable, Dict, List, Optional, Tuple, Union, cast
 from guardrails.classes.history import Iteration
 from guardrails.datatypes import FieldValidation
 from guardrails.errors import ValidationError
+from guardrails.utils.exception_utils import UserFacingException
 from guardrails.utils.hub_telemetry_utils import HubTelemetry
 from guardrails.utils.logs_utils import ValidatorLogs
 from guardrails.utils.reask_utils import FieldReAsk, ReAsk
@@ -22,6 +23,8 @@ from guardrails.validator_base import (
     ValidationResult,
     Validator,
 )
+
+ValidatorResult = Optional[Union[ValidationResult, Awaitable[ValidationResult]]]
 
 
 def key_not_empty(key: str) -> bool:
@@ -47,7 +50,7 @@ class ValidatorServiceBase:
         metadata: Optional[Dict],
         stream: Optional[bool] = False,
         **kwargs,
-    ) -> Optional[Union[ValidationResult, Awaitable[ValidationResult]]]:
+    ) -> ValidatorResult:
         validate_func = validator.validate_stream if stream else validator.validate
         traced_validator = trace_validator(
             validator_name=validator.rail_alias,
@@ -66,6 +69,7 @@ class ValidatorServiceBase:
         value: Any,
         validator: Validator,
         on_fail_descriptor: Union[OnFailAction, str],
+        rechecked_value: Optional[ValidationResult] = None,
     ):
         if on_fail_descriptor == OnFailAction.FIX:
             # FIXME: Should we still return fix_value if it is None?
@@ -74,11 +78,11 @@ class ValidatorServiceBase:
         elif on_fail_descriptor == OnFailAction.FIX_REASK:
             # FIXME: Same thing here
             fixed_value = results[0].fix_value
-            result = self.execute_validator(
-                validator, fixed_value, results[0].metadata or {}
-            )
+            # result = self.execute_validator(
+            #     validator, fixed_value, results[0].metadata or {}
+            # )
 
-            if isinstance(result, FailResult):
+            if isinstance(rechecked_value, FailResult):
                 return FieldReAsk(
                     incorrect_value=fixed_value,
                     fail_results=results,
@@ -111,15 +115,12 @@ class ValidatorServiceBase:
                 f"expected 'fix' or 'exception'."
             )
 
-    def run_validator(
+    def before_run_validator(
         self,
         iteration: Iteration,
         validator: Validator,
         value: Any,
-        metadata: Dict,
         property_path: str,
-        stream: Optional[bool] = False,
-        **kwargs,
     ) -> ValidatorLogs:
         validator_class_name = validator.__class__.__name__
         validator_logs = ValidatorLogs(
@@ -127,22 +128,26 @@ class ValidatorServiceBase:
             value_before_validation=value,
             registered_name=validator.rail_alias,
             property_path=property_path,
+            # If we ever re-use validator instances across multiple properties,
+            #   this will have to change.
+            instance_id=id(validator),
         )
         iteration.outputs.validator_logs.append(validator_logs)
 
         start_time = datetime.now()
-        result = self.execute_validator(validator, value, metadata, stream, **kwargs)
-
-        end_time = datetime.now()
-        if result is None:
-            result = PassResult()
-
-        validator_logs.validation_result = result
         validator_logs.start_time = start_time
+
+        return validator_logs
+
+    def after_run_validator(
+        self,
+        validator: Validator,
+        validator_logs: ValidatorLogs,
+        result: ValidationResult,
+    ):
+        end_time = datetime.now()
+        validator_logs.validation_result = result
         validator_logs.end_time = end_time
-        # If we ever re-use validator instances across multiple properties,
-        #   this will have to change.
-        validator_logs.instance_id = id(validator)
 
         if not self._disable_tracer:
             # Get HubTelemetry singleton and create a new span to
@@ -166,8 +171,61 @@ class ValidatorServiceBase:
 
         return validator_logs
 
+    def run_validator(
+        self,
+        iteration: Iteration,
+        validator: Validator,
+        value: Any,
+        metadata: Dict,
+        property_path: str,
+        stream: Optional[bool] = False,
+        **kwargs,
+    ) -> ValidatorLogs:
+        raise NotImplementedError
+
 
 class SequentialValidatorService(ValidatorServiceBase):
+    def run_validator_sync(
+        self,
+        validator: Validator,
+        value: Any,
+        metadata: Dict,
+        validator_logs: ValidatorLogs,
+        stream: Optional[bool] = False,
+        **kwargs,
+    ) -> ValidationResult:
+        result = self.execute_validator(validator, value, metadata, stream, **kwargs)
+        if asyncio.iscoroutine(result):
+            raise UserFacingException(
+                ValueError(
+                    "Cannot use async validators with a synchronous Guard! "
+                    f"Either use AsyncGuard or remove {validator_logs.validator_name}."
+                )
+            )
+        elif result is None:
+            result = PassResult()
+        return cast(ValidationResult, result)
+
+    def run_validator(
+        self,
+        iteration: Iteration,
+        validator: Validator,
+        value: Any,
+        metadata: Dict,
+        property_path: str,
+        stream: Optional[bool] = False,
+        **kwargs,
+    ) -> ValidatorLogs:
+        validator_logs = self.before_run_validator(
+            iteration, validator, value, property_path
+        )
+
+        result = self.run_validator_sync(
+            validator, value, metadata, validator_logs, stream, **kwargs
+        )
+
+        return self.after_run_validator(validator, validator_logs, result)
+
     def run_validators(
         self,
         iteration: Iteration,
@@ -186,8 +244,23 @@ class SequentialValidatorService(ValidatorServiceBase):
             result = validator_logs.validation_result
             result = cast(ValidationResult, result)
             if isinstance(result, FailResult):
+                rechecked_value = None
+                if validator.on_fail_descriptor == OnFailAction.FIX_REASK:
+                    fixed_value = result.fix_value
+                    rechecked_value = self.run_validator_sync(
+                        validator,
+                        fixed_value,
+                        metadata,
+                        validator_logs,
+                        stream,
+                        **kwargs,
+                    )
                 value = self.perform_correction(
-                    [result], value, validator, validator.on_fail_descriptor
+                    [result],
+                    value,
+                    validator,
+                    validator.on_fail_descriptor,
+                    rechecked_value=rechecked_value,
                 )
             elif isinstance(result, PassResult):
                 if (
@@ -283,6 +356,46 @@ class MultiprocMixin:
 
 
 class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
+    async def run_validator_async(
+        self,
+        validator: Validator,
+        value: Any,
+        metadata: Dict,
+        stream: Optional[bool] = False,
+        **kwargs,
+    ) -> ValidationResult:
+        result: ValidatorResult = self.execute_validator(
+            validator, value, metadata, stream, **kwargs
+        )
+        if asyncio.iscoroutine(result):
+            result = await result
+
+        if result is None:
+            result = PassResult()
+        else:
+            result = cast(ValidationResult, result)
+        return result
+
+    async def run_validator(
+        self,
+        iteration: Iteration,
+        validator: Validator,
+        value: Any,
+        metadata: Dict,
+        property_path: str,
+        stream: Optional[bool] = False,
+        **kwargs,
+    ) -> ValidatorLogs:
+        validator_logs = self.before_run_validator(
+            iteration, validator, value, property_path
+        )
+
+        result = await self.run_validator_async(
+            validator, value, metadata, stream, **kwargs
+        )
+
+        return self.after_run_validator(validator, validator_logs, result)
+
     def group_validators(self, validators):
         groups = itertools.groupby(
             validators, key=lambda v: (v.on_fail_descriptor, v.override_value_on_pass)
@@ -330,7 +443,7 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
                     )
                 else:
                     # run the validators in the current process
-                    result = self.run_validator(
+                    result = await self.run_validator(
                         iteration,
                         validator,
                         value,
@@ -338,21 +451,17 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
                         property_path,
                         stream=stream,
                     )
-                    try:
-                        # If the result from the validator is a future, await it
-                        if result and result.validation_result:
-                            result.validation_result = cast(
-                                Awaitable[ValidationResult], result.validation_result
-                            )
-                            result.validation_result = await result.validation_result
-                    except TypeError:
-                        pass
                     validators_logs.append(result)
 
             # wait for the parallel tasks to finish
             if parallel_tasks:
                 parallel_results = await asyncio.gather(*parallel_tasks)
-                validators_logs.extend(parallel_results)
+                awaited_results = []
+                for res in parallel_results:
+                    if asyncio.iscoroutine(res):
+                        res = await res
+                    awaited_results.append(res)
+                validators_logs.extend(awaited_results)
 
             # process the results, handle failures
             fails = [
@@ -362,8 +471,19 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
             ]
             if fails:
                 fail_results = [logs.validation_result for logs in fails]
+                rechecked_value = None
+                validator: Validator = validator_group[0]
+                if validator.on_fail_descriptor == OnFailAction.FIX_REASK:
+                    fixed_value = fail_results[0].fix_value
+                    rechecked_value = await self.run_validator_async(
+                        validator, fixed_value, fail_results[0].metadata or {}, stream
+                    )
                 value = self.perform_correction(
-                    fail_results, value, validator_group[0], on_fail
+                    fail_results,
+                    value,
+                    validator_group[0],
+                    on_fail,
+                    rechecked_value=rechecked_value,
                 )
 
             # handle overrides

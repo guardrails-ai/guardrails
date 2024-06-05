@@ -489,7 +489,7 @@ class AsyncStreamRunner(StreamRunner):
         return chunk_text
 
     def is_last_chunk(self, chunk: Any, api: Union[PromptCallableBase, None]) -> bool:
-        """Detect if chunk is final chunk"""
+        """Detect if chunk is final chunk."""
         if isinstance(api, OpenAICallable):
             if OPENAI_VERSION.startswith("0"):
                 finished = chunk["choices"][0]["finish_reason"]

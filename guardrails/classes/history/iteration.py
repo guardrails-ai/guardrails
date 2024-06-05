@@ -140,7 +140,7 @@ versions 0.5.0 and beyond. Use 'guarded_output' instead."""
         filtered_logs = [
             log
             for log in self.outputs.validator_logs
-            if log.validation_result.validated_chunk
+            if log.validation_result and log.validation_result.validated_chunk
         ]
         return filtered_logs
 

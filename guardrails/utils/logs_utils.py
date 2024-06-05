@@ -1,6 +1,6 @@
 from copy import deepcopy
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Union, Awaitable
+from typing import Any, Dict, List, Optional
 
 from guardrails.utils.pydantic_utils import ArbitraryModel
 from guardrails.utils.reask_utils import FieldReAsk, ReAsk, prune_obj_for_reasking
@@ -13,9 +13,7 @@ class ValidatorLogs(ArbitraryModel):
     validator_name: str
     registered_name: str
     value_before_validation: Any
-    validation_result: Optional[
-        Union[Awaitable[ValidationResult], ValidationResult]
-    ] = None
+    validation_result: Optional[ValidationResult] = None
     value_after_validation: Optional[Any] = None
     start_time: Optional[datetime] = None
     end_time: Optional[datetime] = None
