@@ -522,7 +522,7 @@ class Validator(Runnable):
         if remainder:
             splitcontents = [accumulated_text, ""]
         if len(splitcontents) == 0:
-            return None
+            return PassResult()
         [chunk_to_validate, new_accumulated_chunks] = splitcontents
         self.accumulated_chunks = [new_accumulated_chunks]
         # exclude last chunk, because it may not be a complete chunk
