@@ -11,6 +11,7 @@ from typing import (
     Type,
     Union,
     cast,
+    Awaitable,
 )
 
 from pydantic import BaseModel
@@ -319,7 +320,7 @@ class AsyncStreamRunner(StreamRunner):
         output_schema: Schema,
         validate_subschema: bool = False,
         stream: Optional[bool] = False,
-    ) -> Optional[ValidationResult]:
+    ) -> Optional[Union[Awaitable[ValidationResult], ValidationResult]]:
         # FIXME: Subschema is currently broken, it always returns a string from async
         # streaming.
         # Should return None/empty if fail result?
