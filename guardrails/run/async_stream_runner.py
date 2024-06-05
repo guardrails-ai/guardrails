@@ -328,15 +328,9 @@ class AsyncStreamRunner(StreamRunner):
             iteration, parsed_output, self.metadata, attempt_number=index, stream=stream
         )
         try:
-            return iteration.validator_logs[-1].validation_result
+            return iteration.outputs.validator_logs[-1].validation_result
         except IndexError:
             pass
-
-        try:
-            return iteration.failed_validations[-1].validation_result
-        except IndexError:
-            pass
-        return None
 
     async def introspect(
         self,
