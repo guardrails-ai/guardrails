@@ -2,14 +2,12 @@ import pytest
 from pydantic import BaseModel, Field
 import pydantic.version
 
-PYDANTIC_VERSION = pydantic.version.VERSION
-
-
 from guardrails.utils.pydantic_utils import (
-    PYDANTIC_VERSION,
     add_pydantic_validators_as_guardrails_validators,
 )
 from guardrails.validators import FailResult, PassResult, ValidLength
+
+PYDANTIC_VERSION = pydantic.version.VERSION
 
 
 @pytest.mark.skipif(
