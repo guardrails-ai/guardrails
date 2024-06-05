@@ -55,6 +55,7 @@ def test_python_rail(mocker):
         opening_weekend: float
 
         # Field-level validation using Pydantic (not Guardrails)
+
         from pydantic import field_validator
 
         decorator = field_validator("gross")
@@ -139,6 +140,7 @@ def test_python_rail(mocker):
 
     # Check that the guard state object has the correct number of re-asks.
     assert call.iterations.length == 2
+
     assert (
         call.compiled_prompt
         == python_rail.COMPILED_PROMPT_1_PYDANTIC_2_WITHOUT_INSTRUCTIONS
@@ -166,6 +168,7 @@ def test_python_rail(mocker):
     Director.model_validate_json(
         python_rail.LLM_OUTPUT_3_SUCCEED_GUARDRAILS_AND_PYDANTIC
     )
+
 
 def test_python_string(mocker):
     """Test single string (non-JSON) generation via pydantic with re-asking."""

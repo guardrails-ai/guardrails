@@ -5,7 +5,7 @@ import pydantic.version
 import pytest
 from pydantic import BaseModel, Field
 
-from guardrails.utils.pydantic_utils.v2 import convert_pydantic_model_to_openai_fn
+from guardrails.utils.pydantic_utils import convert_pydantic_model_to_openai_fn
 
 PYDANTIC_VERSION = pydantic.version.VERSION
 
