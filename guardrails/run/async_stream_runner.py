@@ -10,12 +10,13 @@ from typing import (
     Tuple,
     Type,
     Union,
+    cast,
 )
 
 from pydantic import BaseModel
 
+from guardrails.classes import ValidationOutcome
 from guardrails.classes.history import Call, Inputs, Iteration, Outputs
-from guardrails.classes.validation_outcome import ValidationOutcome
 from guardrails.constants import pass_status
 from guardrails.datatypes import verify_metadata_requirements
 from guardrails.errors import ValidationError
@@ -35,6 +36,7 @@ from guardrails.utils.llm_response import LLMResponse
 from guardrails.utils.openai_utils import OPENAI_VERSION
 from guardrails.utils.reask_utils import ReAsk, SkeletonReAsk
 from guardrails.utils.telemetry_utils import async_trace
+from guardrails.validator_base import ValidationResult
 
 
 class AsyncStreamRunner(StreamRunner):
@@ -205,7 +207,7 @@ class AsyncStreamRunner(StreamRunner):
                 )
                 if move_to_next:
                     continue
-                validated_result = await self.async_validate(
+                validated_fragment = await self.async_validate(
                     iteration,
                     index,
                     parsed_chunk,
@@ -213,14 +215,14 @@ class AsyncStreamRunner(StreamRunner):
                     validate_subschema=True,
                     stream=True,
                 )
-                if isinstance(validated_result, SkeletonReAsk):
+                if isinstance(validated_fragment, SkeletonReAsk):
                     raise ValueError(
                         "Received fragment schema is an invalid sub-schema "
                         "of the expected output JSON schema."
                     )
 
                 reasks, valid_op = await self.introspect(
-                    index, validated_result, output_schema
+                    index, validated_fragment, output_schema
                 )
                 if reasks:
                     raise ValueError(
@@ -230,7 +232,7 @@ class AsyncStreamRunner(StreamRunner):
                 passed = call_log.status == pass_status
                 yield ValidationOutcome(
                     raw_llm_output=chunk_text,
-                    validated_output=validated_result,
+                    validated_output=validated_fragment,
                     validation_passed=passed,
                 )
         else:
@@ -273,8 +275,10 @@ class AsyncStreamRunner(StreamRunner):
 
         iteration.outputs.raw_output = fragment
         iteration.outputs.parsed_output = parsed_fragment
-        iteration.outputs.validation_response = validated_fragment
         iteration.outputs.guarded_output = valid_op
+        iteration.outputs.validation_response = (
+            cast(str, validated_fragment) if validated_fragment else None
+        )
 
     @async_trace(name="call")
     async def async_call(
@@ -315,7 +319,7 @@ class AsyncStreamRunner(StreamRunner):
         output_schema: Schema,
         validate_subschema: bool = False,
         stream: Optional[bool] = False,
-    ) -> ValidationOutcome:
+    ) -> Optional[ValidationResult]:
         # FIXME: Subschema is currently broken, it always returns a string from async
         # streaming.
         # Should return None/empty if fail result?

@@ -3,7 +3,7 @@ import itertools
 import os
 from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime
-from typing import Any, Awaitable, Dict, List, Optional, Tuple, Union
+from typing import Any, Awaitable, Dict, List, Optional, Tuple, Union, cast
 
 from guardrails.classes.history import Iteration
 from guardrails.datatypes import FieldValidation
@@ -120,7 +120,7 @@ class ValidatorServiceBase:
         property_path: str,
         stream: Optional[bool] = False,
         **kwargs,
-    ) -> Union[Awaitable, ValidatorLogs]:
+    ) -> ValidatorLogs:
         validator_class_name = validator.__class__.__name__
         validator_logs = ValidatorLogs(
             validator_name=validator_class_name,
@@ -153,7 +153,12 @@ class ValidatorServiceBase:
                 attributes=[
                     ("validator_name", validator.rail_alias),
                     ("validator_on_fail", validator.on_fail_descriptor),
-                    ("validator_result", result.outcome),
+                    (
+                        "validator_result",
+                        result.outcome
+                        if isinstance(result, ValidationResult)
+                        else None,
+                    ),
                 ],
                 is_parent=False,  # This span will have no children
                 has_parent=True,  # This span has a parent
@@ -179,6 +184,7 @@ class SequentialValidatorService(ValidatorServiceBase):
                 iteration, validator, value, metadata, property_path, stream, **kwargs
             )
             result = validator_logs.validation_result
+            result = cast(ValidationResult, result)
             if isinstance(result, FailResult):
                 value = self.perform_correction(
                     [result], value, validator, validator.on_fail_descriptor
@@ -335,6 +341,9 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
                     try:
                         # If the result from the validator is a future, await it
                         if result and result.validation_result:
+                            result.validation_result = cast(
+                                Awaitable[ValidationResult], result.validation_result
+                            )
                             result.validation_result = await result.validation_result
                     except TypeError:
                         pass
