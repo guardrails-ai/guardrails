@@ -78,9 +78,6 @@ class ValidatorServiceBase:
         elif on_fail_descriptor == OnFailAction.FIX_REASK:
             # FIXME: Same thing here
             fixed_value = results[0].fix_value
-            # result = self.execute_validator(
-            #     validator, fixed_value, results[0].metadata or {}
-            # )
 
             if isinstance(rechecked_value, FailResult):
                 return FieldReAsk(
