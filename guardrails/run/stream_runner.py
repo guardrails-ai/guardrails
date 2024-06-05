@@ -203,14 +203,9 @@ class StreamRunner(Runner):
     def get_chunk_text(self, chunk: Any, api: Union[PromptCallableBase, None]) -> str:
         """Get the text from a chunk."""
         chunk_text = ""
-        if isinstance(api, OpenAICallable):
+        if isinstance(api, OpenAICallable) or isinstance(api, OpenAIChatCallable):
             finished = chunk.choices[0].finish_reason
             content = chunk.choices[0].text
-            if not finished and content:
-                chunk_text = content
-        elif isinstance(api, OpenAIChatCallable):
-            finished = chunk.choices[0].finish_reason
-            content = chunk.choices[0].delta.content
             if not finished and content:
                 chunk_text = content
         elif isinstance(api, LiteLLMCallable):
