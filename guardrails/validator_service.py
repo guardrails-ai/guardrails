@@ -416,8 +416,8 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
         metadata: dict,
         validator_setup: FieldValidation,
         iteration: Iteration,
-        path: str = "$",
         stream: Optional[bool] = False,
+        path: str = "$",
     ) -> Tuple[Any, dict]:
         property_path = (
             f"{path}.{validator_setup.key}"
@@ -506,5 +506,5 @@ async def async_validate(
 ) -> Tuple[Any, dict]:
     validator_service = AsyncValidatorService(disable_tracer)
     return await validator_service.async_validate(
-        value, metadata, validator_setup, iteration, None, stream
+        value, metadata, validator_setup, iteration, stream
     )
