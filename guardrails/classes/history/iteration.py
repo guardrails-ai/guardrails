@@ -137,7 +137,12 @@ versions 0.5.0 and beyond. Use 'guarded_output' instead."""
     def validator_logs(self) -> List[ValidatorLogs]:
         """The results of each individual validation performed on the LLM
         response during this iteration."""
-        return self.outputs.validator_logs
+        filtered_logs = [
+            log
+            for log in self.outputs.validator_logs
+            if log.validation_result.validated_chunk
+        ]
+        return filtered_logs
 
     @property
     def error(self) -> Optional[str]:
