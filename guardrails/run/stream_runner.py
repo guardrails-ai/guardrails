@@ -109,6 +109,7 @@ class StreamRunner(Runner):
             num_reasks=self.num_reasks,
             metadata=self.metadata,
             full_schema_reask=self.full_schema_reask,
+            stream=True,
         )
         outputs = Outputs()
         iteration = Iteration(inputs=inputs, outputs=outputs)

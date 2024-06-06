@@ -148,6 +148,7 @@ class AsyncGuard(Guard):
                 full_schema_reask=full_schema_reask,
                 args=list(args),
                 kwargs=kwargs,
+                stream=kwargs.get("stream"),
             )
             call_log = Call(inputs=call_inputs)
             set_scope(str(id(call_log)))
@@ -374,6 +375,7 @@ class AsyncGuard(Guard):
                 full_schema_reask=full_schema_reask,
                 args=list(args),
                 kwargs=kwargs,
+                stream=kwargs.get("stream"),
             )
             call_log = Call(inputs=call_inputs)
             set_scope(str(id(call_log)))

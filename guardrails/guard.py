@@ -634,6 +634,7 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
                 full_schema_reask=full_schema_reask,
                 args=list(args),
                 kwargs=kwargs,
+                stream=kwargs.get("stream"),
             )
             call_log = Call(inputs=call_inputs)
             set_scope(str(id(call_log)))
@@ -994,6 +995,7 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
                 full_schema_reask=full_schema_reask,
                 args=list(args),
                 kwargs=kwargs,
+                stream=kwargs.get("stream"),
             )
             call_log = Call(inputs=call_inputs)
             set_scope(str(id(call_log)))
@@ -1435,6 +1437,7 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
         metadata: Optional[Dict] = {},
         full_schema_reask: Optional[bool] = True,
         call_log: Optional[Call],
+        stream: Optional[bool] = False,
     ):
         call_log = call_log or Call()
         if llm_api is not None:
@@ -1471,6 +1474,7 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
                         num_reasks=(num_reasks or 0),
                         metadata=metadata,
                         full_schema_reask=full_schema_reask,
+                        stream=stream,
                     ),
                     outputs=Outputs(
                         llm_response_info=LLMResponse(output=h.output),  # type: ignore
@@ -1522,6 +1526,7 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
         metadata: Optional[Dict] = {},
         full_schema_reask: Optional[bool] = True,
         call_log: Optional[Call],
+        stream: Optional[bool] = False,
     ) -> ValidationOutcome[OT]:
         if self._api_client:
             validation_output: ValidationOutput = self._api_client.validate(
@@ -1544,6 +1549,7 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
                 metadata=metadata,
                 full_schema_reask=full_schema_reask,
                 call_log=call_log,
+                stream=stream,
             )
 
             # Our interfaces are too different for this to work right now.
@@ -1568,6 +1574,7 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
         metadata: Optional[Dict] = {},
         full_schema_reask: Optional[bool] = True,
         call_log: Optional[Call],
+        stream: Optional[bool] = False,
     ) -> Generator[ValidationOutcome[OT], None, None]:
         if self._api_client:
             validation_output: Optional[ValidationOutput] = None
@@ -1599,6 +1606,7 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
                     metadata=metadata,
                     full_schema_reask=full_schema_reask,
                     call_log=call_log,
+                    stream=stream,
                 )
         else:
             raise ValueError("Guard does not have an api client!")
@@ -1639,6 +1647,7 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
                     metadata=metadata,
                     full_schema_reask=full_schema_reask,
                     call_log=call_log,
+                    stream=should_stream,
                 )
             else:
                 return self._single_server_call(
@@ -1649,6 +1658,7 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
                     metadata=metadata,
                     full_schema_reask=full_schema_reask,
                     call_log=call_log,
+                    stream=should_stream,
                 )
         else:
             raise ValueError("Guard does not have an api client!")
