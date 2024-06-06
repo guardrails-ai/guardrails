@@ -134,6 +134,7 @@ class StringSchema(Schema):
         metadata: Dict,
         attempt_number: int = 0,
         disable_tracer: Optional[bool] = True,
+        stream: Optional[bool] = False,
         **kwargs,
     ) -> Any:
         """Validate a dictionary of data against the schema.
@@ -160,19 +161,20 @@ class StringSchema(Schema):
                 dummy_key: data,
             },
         )
-
         validated_response, metadata = validator_service.validate(
             value=data,
             metadata=metadata,
             validator_setup=validation,
             iteration=iteration,
             disable_tracer=disable_tracer,
+            stream=stream,
+            **kwargs,
         )
 
         validated_response = {dummy_key: validated_response}
 
         if check_refrain_in_dict(validated_response):
-            # If the data contains a `Refain` value, we return an empty
+            # If the data contains a `Refrain` value, we return an empty
             # dictionary.
             logger.debug("Refrain detected.")
             validated_response = {}
@@ -194,6 +196,7 @@ class StringSchema(Schema):
         data: Any,
         metadata: Dict,
         attempt_number: int = 0,
+        stream: Optional[bool] = False,
     ) -> Any:
         """Validate a dictionary of data against the schema.
 
@@ -223,6 +226,7 @@ class StringSchema(Schema):
             metadata=metadata,
             validator_setup=validation,
             iteration=iteration,
+            stream=stream,
         )
 
         validated_response = {dummy_key: validated_response}

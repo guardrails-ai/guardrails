@@ -156,6 +156,7 @@ def install_hub_module(
         flags=[f"--path={install_directory}"],
         format=json_format,
         quiet=quiet,
+        no_color=True,
     )
 
     # throw if inspect_output is a string. Mostly for pyright
@@ -169,7 +170,7 @@ def install_hub_module(
         .get("metadata", {})  # type: ignore
         .get("requires_dist", [])  # type: ignore
     )
-    requirements = filter(lambda dep: "extra" not in dep, dependencies)
+    requirements = list(filter(lambda dep: "extra" not in dep, dependencies))
     for req in requirements:
         if "git+" in req:
             install_spec = req.replace(" ", "")
