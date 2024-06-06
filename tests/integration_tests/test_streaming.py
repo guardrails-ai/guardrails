@@ -83,7 +83,7 @@ class MinSentenceLengthValidator(Validator):
                 f"Please return a longer output, "
                 f"that is shorter than {self._max} characters.",
             )
-        return PassResult()
+        return PassResult(validated_chunk=value)
 
     def validate_stream(self, chunk: Any, metadata: Dict, **kwargs) -> ValidationResult:
         return super().validate_stream(chunk, metadata, **kwargs)

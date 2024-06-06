@@ -196,6 +196,7 @@ class StringSchema(Schema):
         data: Any,
         metadata: Dict,
         attempt_number: int = 0,
+        stream: Optional[bool] = False,
     ) -> Any:
         """Validate a dictionary of data against the schema.
 
@@ -225,6 +226,7 @@ class StringSchema(Schema):
             metadata=metadata,
             validator_setup=validation,
             iteration=iteration,
+            stream=stream,
         )
 
         validated_response = {dummy_key: validated_response}

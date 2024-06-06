@@ -1,4 +1,5 @@
 from typing import Dict, List, Optional, Sequence, Union
+
 from pydantic import Field
 from typing_extensions import deprecated
 
@@ -7,7 +8,7 @@ from guardrails.utils.llm_response import LLMResponse
 from guardrails.utils.logs_utils import ValidatorLogs
 from guardrails.utils.pydantic_utils import ArbitraryModel
 from guardrails.utils.reask_utils import ReAsk
-from guardrails.validator_base import ErrorSpan, FailResult
+from guardrails.validator_base import ErrorSpan, FailResult, ValidationResult
 
 
 class Outputs(ArbitraryModel):
@@ -70,6 +71,7 @@ class Outputs(ArbitraryModel):
                 log
                 for log in self.validator_logs
                 if log.validation_result is not None
+                and isinstance(log.validation_result, ValidationResult)
                 and log.validation_result.outcome == "fail"
             ]
         )
@@ -94,8 +96,9 @@ class Outputs(ArbitraryModel):
                                 reason=error_span.reason,
                             )
                         )
-            if result and result.validated_chunk is not None:
-                total_len += len(result.validated_chunk)
+            if isinstance(result, ValidationResult):
+                if result and result.validated_chunk is not None:
+                    total_len += len(result.validated_chunk)
         return spans_in_output
 
     @property
