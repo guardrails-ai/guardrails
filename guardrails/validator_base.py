@@ -16,6 +16,7 @@ from typing import (
     Union,
     cast,
 )
+from typing_extensions import deprecated
 from warnings import warn
 
 from langchain_core.messages import BaseMessage
@@ -629,6 +630,10 @@ class Validator(Runnable):
             }
         )
 
+    @deprecated(
+        """'Validator.invoke' is deprecated and will be removed in \
+    versions 0.5.x and beyond. Use Validator.to_runnable() instead."""
+    )
     def invoke(
         self, input: InputType, config: Optional[RunnableConfig] = None
     ) -> InputType:
@@ -679,6 +684,13 @@ class Validator(Runnable):
         """Assigns metadata to this validator to use during validation."""
         self._metadata = metadata
         return self
+
+    def to_runnable(self) -> Runnable:
+        from guardrails.integrations.langchain.validator_runnable import (
+            ValidatorRunnable,
+        )
+
+        return ValidatorRunnable(self)
 
 
 ValidatorSpec = Union[Validator, Tuple[Union[Validator, str, Callable], str]]
