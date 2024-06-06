@@ -899,11 +899,11 @@ This also is not two words
     [
         (
             OnFailAction.REASK,
-            "Prompt validation failed: incorrect_value='What kind of pet should I get?\\n\\nJson Output:\\n\\n' fail_results=[FailResult(outcome='fail', metadata=None, error_message='must be exactly two words', fix_value='What kind')] path=None",  # noqa
-            "Instructions validation failed: incorrect_value='What kind of pet should I get?' fail_results=[FailResult(outcome='fail', metadata=None, error_message='must be exactly two words', fix_value='What kind')] path=None",  # noqa
-            "Message history validation failed: incorrect_value='What kind of pet should I get?' fail_results=[FailResult(outcome='fail', metadata=None, error_message='must be exactly two words', fix_value='What kind')] path=None",  # noqa
-            "Prompt validation failed: incorrect_value='\\nThis is not two words\\n\\n\\nString Output:\\n\\n' fail_results=[FailResult(outcome='fail', metadata=None, error_message='must be exactly two words', fix_value='This is')] path=None",  # noqa
-            "Instructions validation failed: incorrect_value='\\nThis also is not two words\\n' fail_results=[FailResult(outcome='fail', metadata=None, error_message='must be exactly two words', fix_value='This also')] path=None",  # noqa
+            "Prompt validation failed: incorrect_value='What kind of pet should I get?\\n\\nJson Output:\\n\\n' fail_results=[FailResult(outcome='fail', metadata=None, validated_chunk=None, error_message='must be exactly two words', fix_value='What kind', error_spans=None)] path=None",  # noqa
+            "Instructions validation failed: incorrect_value='What kind of pet should I get?' fail_results=[FailResult(outcome='fail', metadata=None, validated_chunk=None, error_message='must be exactly two words', fix_value='What kind', error_spans=None)] path=None",  # noqa
+            "Message history validation failed: incorrect_value='What kind of pet should I get?' fail_results=[FailResult(outcome='fail', metadata=None, validated_chunk=None, error_message='must be exactly two words', fix_value='What kind', error_spans=None)] path=None",  # noqa
+            "Prompt validation failed: incorrect_value='\\nThis is not two words\\n\\n\\nString Output:\\n\\n' fail_results=[FailResult(outcome='fail', metadata=None, validated_chunk=None, error_message='must be exactly two words', fix_value='This is', error_spans=None)] path=None",  # noqa
+            "Instructions validation failed: incorrect_value='\\nThis also is not two words\\n' fail_results=[FailResult(outcome='fail', metadata=None, validated_chunk=None, error_message='must be exactly two words', fix_value='This also', error_spans=None)] path=None",  # noqa
         ),
         (
             OnFailAction.FILTER,
@@ -1044,11 +1044,11 @@ This also is not two words
     [
         (
             OnFailAction.REASK,
-            "Prompt validation failed: incorrect_value='What kind of pet should I get?\\n\\nJson Output:\\n\\n' fail_results=[FailResult(outcome='fail', metadata=None, error_message='must be exactly two words', fix_value='What kind')] path=None",  # noqa
-            "Instructions validation failed: incorrect_value='What kind of pet should I get?' fail_results=[FailResult(outcome='fail', metadata=None, error_message='must be exactly two words', fix_value='What kind')] path=None",  # noqa
-            "Message history validation failed: incorrect_value='What kind of pet should I get?' fail_results=[FailResult(outcome='fail', metadata=None, error_message='must be exactly two words', fix_value='What kind')] path=None",  # noqa
-            "Prompt validation failed: incorrect_value='\\nThis is not two words\\n\\n\\nString Output:\\n\\n' fail_results=[FailResult(outcome='fail', metadata=None, error_message='must be exactly two words', fix_value='This is')] path=None",  # noqa
-            "Instructions validation failed: incorrect_value='\\nThis also is not two words\\n' fail_results=[FailResult(outcome='fail', metadata=None, error_message='must be exactly two words', fix_value='This also')] path=None",  # noqa
+            "Prompt validation failed: incorrect_value='What kind of pet should I get?\\n\\nJson Output:\\n\\n' fail_results=[FailResult(outcome='fail', metadata=None, validated_chunk=None, error_message='must be exactly two words', fix_value='What kind', error_spans=None)] path=None",  # noqa
+            "Instructions validation failed: incorrect_value='What kind of pet should I get?' fail_results=[FailResult(outcome='fail', metadata=None, validated_chunk=None, error_message='must be exactly two words', fix_value='What kind', error_spans=None)] path=None",  # noqa
+            "Message history validation failed: incorrect_value='What kind of pet should I get?' fail_results=[FailResult(outcome='fail', metadata=None, validated_chunk=None, error_message='must be exactly two words', fix_value='What kind', error_spans=None)] path=None",  # noqa
+            "Prompt validation failed: incorrect_value='\\nThis is not two words\\n\\n\\nString Output:\\n\\n' fail_results=[FailResult(outcome='fail', metadata=None, validated_chunk=None, error_message='must be exactly two words', fix_value='This is', error_spans=None)] path=None",  # noqa
+            "Instructions validation failed: incorrect_value='\\nThis also is not two words\\n' fail_results=[FailResult(outcome='fail', metadata=None, validated_chunk=None, error_message='must be exactly two words', fix_value='This also', error_spans=None)] path=None",  # noqa
         ),
         (
             OnFailAction.FILTER,

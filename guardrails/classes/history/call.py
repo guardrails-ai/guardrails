@@ -20,7 +20,7 @@ from guardrails.utils.reask_utils import (
     sub_reasks_with_fixed_values,
 )
 from guardrails.utils.safe_get import get_value_from_path
-from guardrails.validator_base import Filter, Refrain
+from guardrails.validator_base import Filter, Refrain, ValidationResult
 
 
 # We can't inherit from Iteration because python
@@ -353,6 +353,7 @@ versions 0.5.0 and beyond. Use 'guarded_output' instead."""
                 log
                 for log in self.validator_logs
                 if log.validation_result is not None
+                and isinstance(log.validation_result, ValidationResult)
                 and log.validation_result.outcome == "fail"
             ]
         )

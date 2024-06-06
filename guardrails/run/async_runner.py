@@ -144,7 +144,8 @@ class AsyncRunner(Runner):
 
         return call_log
 
-    @async_trace(name="step")
+    # TODO: Do we want to revert this name to step?
+    @async_trace(name="async_step")
     async def async_step(
         self,
         index: int,
@@ -281,7 +282,6 @@ class AsyncRunner(Runner):
             llm_response = await api_fn(prompt.source)
         else:
             raise ValueError("'output', 'prompt' or 'msg_history' must be provided.")
-
         return llm_response
 
     async def async_validate(
