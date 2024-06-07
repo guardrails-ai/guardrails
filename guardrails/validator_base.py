@@ -573,8 +573,7 @@ class Validator(Runnable):
             submission_url = f"{validator_hub_service}/validator/hosted_endpoint"
 
             headers = {
-                "Hub_Authorization": f"Bearer {token}",
-                "Authorization": "",
+                "Authorization": f"Bearer {token}",
                 "Content-Type": "application/json",
                 "validator": self.rail_alias,
             }
