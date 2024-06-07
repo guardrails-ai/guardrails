@@ -387,11 +387,6 @@ class LiteLLMCallable(PromptCallableBase):
 
         response = completion(
             model=model,
-            messages=litellm_messages(
-                prompt=text,
-                instructions=instructions,
-                msg_history=msg_history,
-            ),
             *args,
             **kwargs,
         )
@@ -647,7 +642,7 @@ def get_llm_ask(llm_api: Callable, *args, **kwargs) -> PromptCallableBase:
     try:
         from litellm import completion  # noqa: F401 # type: ignore
 
-        if llm_api == completion:
+        if llm_api == completion or llm_api == None and kwargs.get("model"):
             return LiteLLMCallable(*args, **kwargs)
     except ImportError:
         pass

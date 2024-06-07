@@ -486,10 +486,6 @@ class Runner:
                 instructions_schema,
                 output_schema,
             )
-        else:
-            raise UserFacingException(
-                ValueError("'prompt' or 'msg_history' must be provided.")
-            )
 
         return instructions, prompt, msg_history
 
@@ -521,14 +517,8 @@ class Runner:
             llm_response = LLMResponse(output=output)
         elif api_fn is None:
             raise ValueError("API or output must be provided.")
-        elif msg_history:
-            llm_response = api_fn(msg_history=msg_history_source(msg_history))
-        elif prompt and instructions:
-            llm_response = api_fn(prompt.source, instructions=instructions.source)
-        elif prompt:
-            llm_response = api_fn(prompt.source)
         else:
-            raise ValueError("'prompt' or 'msg_history' must be provided.")
+            llm_response = api_fn()
 
         return llm_response
 

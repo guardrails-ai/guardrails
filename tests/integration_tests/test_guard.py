@@ -16,6 +16,7 @@ from guardrails.utils.reask_utils import FieldReAsk
 from guardrails.validators import FailResult, OneLine
 
 from .mock_llm_outputs import (
+    MockLiteLLMChatCallable,
     MockOpenAICallable,
     MockOpenAIChatCallable,
     entity_extraction,
@@ -903,3 +904,42 @@ def test_guard_with_top_level_list_return_type(mocker, rail, prompt):
         {"name": "banana", "price": 0.5},
         {"name": "orange", "price": 1.5},
     ]
+
+
+def test_pydantic_with_lite_llm(mocker):
+    """Test JSON generation with message history re-asking."""
+    mocker.patch(
+        "guardrails.llm_providers.LiteLLMCallable",
+        new=MockLiteLLMChatCallable,
+    )
+
+    guard = gd.Guard.from_pydantic(output_class=pydantic.WITH_MSG_HISTORY)
+    final_output = guard(
+        llm_api=None,
+        messages=string.MOVIE_MSG_HISTORY,
+        model="gpt-3.5-turbo",
+        max_tokens=10
+    )
+
+    assert final_output.raw_llm_output == pydantic.MSG_HISTORY_LLM_OUTPUT_CORRECT
+    assert final_output.validated_output == json.loads(
+        pydantic.MSG_HISTORY_LLM_OUTPUT_CORRECT
+    )
+
+    call = guard.history.first
+
+    # Check that the guard state object has the correct number of re-asks.
+    assert call.iterations.length == 1
+
+    assert call.compiled_instructions is None
+    assert call.compiled_prompt is None
+    assert call.iterations.first.raw_output == pydantic.MSG_HISTORY_LLM_OUTPUT_INCORRECT
+    assert (
+        call.iterations.first.validation_response == pydantic.MSG_VALIDATED_OUTPUT_REASK
+    )
+
+    # For re-asked prompt and output
+    assert call.reask_prompts.last == pydantic.MSG_COMPILED_PROMPT_REASK
+    assert call.reask_instructions.last == pydantic.MSG_COMPILED_INSTRUCTIONS_REASK
+    assert call.raw_outputs.last == pydantic.MSG_HISTORY_LLM_OUTPUT_CORRECT
+    assert call.guarded_output == json.loads(pydantic.MSG_HISTORY_LLM_OUTPUT_CORRECT)
