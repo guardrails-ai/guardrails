@@ -47,3 +47,7 @@ class Inputs(IInputs, ArbitraryModel):
         "or at the field level.",
         default=None,
     )
+    stream: Optional[bool] = Field(
+        description="Whether to use streaming.",
+        default=False,
+    )

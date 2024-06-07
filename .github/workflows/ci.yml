@@ -9,6 +9,7 @@ on:
     branches:
       - main
       - dev
+      - feat/*
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -49,8 +50,8 @@ jobs:
     strategy:
       matrix:
         python-version: ["3.8", "3.9", "3.10", "3.11"]
-        pydantic-version: ["1.10.9", "2.4.2"]
-        openai-version: ["1.2.4"]
+        pydantic-version: ["==1.10.9", ">=2.x"]
+        openai-version: [">=1.x"]
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
@@ -71,8 +72,8 @@ jobs:
         # TODO: fix errors so that we can run `make dev` instead
         run: |
           make full
-          poetry run pip install pydantic==${{ matrix.pydantic-version }}
-          poetry run pip install openai==${{ matrix.openai-version }}
+          poetry run pip install "pydantic${{ matrix.pydantic-version }}"
+          poetry run pip install "openai${{ matrix.openai-version }}"
 
       - name: Static analysis with pyright
         run: |
@@ -86,10 +87,16 @@ jobs:
         # TODO: fix errors so that we can run both `make dev` and `make full`
         # dependencies: ['dev', 'full']
         dependencies: ["full"]
-        pydantic-version: ["1.10.9", "2.4.2"]
-        openai-version: ["1.2.4"]
+        pydantic-version: ["==1.10.9", ">=2.x"]
+        openai-version: [">=1.x"]
     steps:
       - uses: actions/checkout@v4
+
+      - name: Create .guardrailsrc
+        run: |
+          echo 'id="SYSTEM TESTING"' > ~/.guardrailsrc
+          echo 'no_metrics=false' >> ~/.guardrailsrc
+
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
@@ -107,8 +114,8 @@ jobs:
       - name: Install Dependencies
         run: |
           make ${{ matrix.dependencies }}
-          poetry run pip install pydantic==${{ matrix.pydantic-version }}
-          poetry run pip install openai==${{ matrix.openai-version }}
+          poetry run pip install "pydantic${{ matrix.pydantic-version }}"
+          poetry run pip install "openai${{ matrix.openai-version }}"
 
       - name: Run Pytests
         run: |

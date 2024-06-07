@@ -3,7 +3,7 @@ import itertools
 import os
 from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Awaitable, Dict, List, Optional, Tuple, Union, cast
 
 from guardrails.actions.filter import Filter, apply_filters
 from guardrails.actions.refrain import Refrain, apply_refrain
@@ -15,13 +15,15 @@ from guardrails.classes.validation.validation_result import (
     ValidationResult,
 )
 from guardrails.errors import ValidationError
-from guardrails.logger import logger
 from guardrails.types import ValidatorMap, OnFailAction
+from guardrails.utils.exception_utils import UserFacingException
 from guardrails.utils.hub_telemetry_utils import HubTelemetry
 from guardrails.classes.validation.validator_logs import ValidatorLogs
 from guardrails.actions.reask import FieldReAsk, ReAsk
 from guardrails.utils.telemetry_utils import trace_validation_result, trace_validator
 from guardrails.validator_base import Validator
+
+ValidatorResult = Optional[Union[ValidationResult, Awaitable[ValidationResult]]]
 
 
 def key_not_empty(key: str) -> bool:
@@ -41,8 +43,14 @@ class ValidatorServiceBase:
     #       Using `fork` instead of `spawn` may alleviate the symptom for POSIX systems,
     #       but is relatively unsupported on Windows.
     def execute_validator(
-        self, validator: Validator, value: Any, metadata: Optional[Dict]
-    ) -> ValidationResult:
+        self,
+        validator: Validator,
+        value: Any,
+        metadata: Optional[Dict],
+        stream: Optional[bool] = False,
+        **kwargs,
+    ) -> ValidatorResult:
+        validate_func = validator.validate_stream if stream else validator.validate
         traced_validator = trace_validator(
             validator_name=validator.rail_alias,
             obj_id=id(validator),
@@ -50,8 +58,8 @@ class ValidatorServiceBase:
             # namespace=validator.namespace,
             on_fail_descriptor=validator.on_fail_descriptor,
             **validator._kwargs,
-        )(validator.validate)
-        result = traced_validator(value, metadata)
+        )(validate_func)
+        result = traced_validator(value, metadata, **kwargs)
         return result
 
     def perform_correction(
@@ -60,6 +68,7 @@ class ValidatorServiceBase:
         value: Any,
         validator: Validator,
         on_fail_descriptor: Union[OnFailAction, str],
+        rechecked_value: Optional[ValidationResult] = None,
     ):
         if on_fail_descriptor == OnFailAction.FIX:
             # FIXME: Should we still return fix_value if it is None?
@@ -68,11 +77,8 @@ class ValidatorServiceBase:
         elif on_fail_descriptor == OnFailAction.FIX_REASK:
             # FIXME: Same thing here
             fixed_value = results[0].fix_value
-            result = self.execute_validator(
-                validator, fixed_value, results[0].metadata or {}
-            )
 
-            if isinstance(result, FailResult):
+            if isinstance(rechecked_value, FailResult):
                 return FieldReAsk(
                     incorrect_value=fixed_value,
                     fail_results=results,
@@ -105,12 +111,11 @@ class ValidatorServiceBase:
                 f"expected 'fix' or 'exception'."
             )
 
-    def run_validator(
+    def before_run_validator(
         self,
         iteration: Iteration,
         validator: Validator,
         value: Any,
-        metadata: Dict,
         absolute_property_path: str,
     ) -> ValidatorLogs:
         validator_class_name = validator.__class__.__name__
@@ -119,23 +124,26 @@ class ValidatorServiceBase:
             value_before_validation=value,
             registered_name=validator.rail_alias,
             property_path=absolute_property_path,
+            # If we ever re-use validator instances across multiple properties,
+            #   this will have to change.
+            instance_id=id(validator),
         )
         iteration.outputs.validator_logs.append(validator_logs)
 
         start_time = datetime.now()
-        result = self.execute_validator(validator, value, metadata)
-        end_time = datetime.now()
-
-        result = validator.validate(value, metadata)
-        if result is None:
-            result = PassResult()
-
-        validator_logs.validation_result = result
         validator_logs.start_time = start_time
+
+        return validator_logs
+
+    def after_run_validator(
+        self,
+        validator: Validator,
+        validator_logs: ValidatorLogs,
+        result: ValidationResult,
+    ):
+        end_time = datetime.now()
+        validator_logs.validation_result = result
         validator_logs.end_time = end_time
-        # If we ever re-use validator instances across multiple properties,
-        #   this will have to change.
-        validator_logs.instance_id = id(validator)
 
         if not self._disable_tracer:
             # Get HubTelemetry singleton and create a new span to
@@ -146,7 +154,12 @@ class ValidatorServiceBase:
                 attributes=[
                     ("validator_name", validator.rail_alias),
                     ("validator_on_fail", validator.on_fail_descriptor),
-                    ("validator_result", result.outcome),
+                    (
+                        "validator_result",
+                        result.outcome
+                        if isinstance(result, ValidationResult)
+                        else None,
+                    ),
                 ],
                 is_parent=False,  # This span will have no children
                 has_parent=True,  # This span has a parent
@@ -154,8 +167,61 @@ class ValidatorServiceBase:
 
         return validator_logs
 
+    def run_validator(
+        self,
+        iteration: Iteration,
+        validator: Validator,
+        value: Any,
+        metadata: Dict,
+        absolute_property_path: str,
+        stream: Optional[bool] = False,
+        **kwargs,
+    ) -> ValidatorLogs:
+        raise NotImplementedError
+
 
 class SequentialValidatorService(ValidatorServiceBase):
+    def run_validator_sync(
+        self,
+        validator: Validator,
+        value: Any,
+        metadata: Dict,
+        validator_logs: ValidatorLogs,
+        stream: Optional[bool] = False,
+        **kwargs,
+    ) -> ValidationResult:
+        result = self.execute_validator(validator, value, metadata, stream, **kwargs)
+        if asyncio.iscoroutine(result):
+            raise UserFacingException(
+                ValueError(
+                    "Cannot use async validators with a synchronous Guard! "
+                    f"Either use AsyncGuard or remove {validator_logs.validator_name}."
+                )
+            )
+        elif result is None:
+            result = PassResult()
+        return cast(ValidationResult, result)
+
+    def run_validator(
+        self,
+        iteration: Iteration,
+        validator: Validator,
+        value: Any,
+        metadata: Dict,
+        property_path: str,
+        stream: Optional[bool] = False,
+        **kwargs,
+    ) -> ValidatorLogs:
+        validator_logs = self.before_run_validator(
+            iteration, validator, value, property_path
+        )
+
+        result = self.run_validator_sync(
+            validator, value, metadata, validator_logs, stream, **kwargs
+        )
+
+        return self.after_run_validator(validator, validator_logs, result)
+
     def run_validators(
         self,
         iteration: Iteration,
@@ -164,18 +230,41 @@ class SequentialValidatorService(ValidatorServiceBase):
         metadata: Dict[str, Any],
         absolute_property_path: str,
         reference_property_path: str,
+        stream: Optional[bool] = False,
+        **kwargs,
     ) -> Tuple[Any, Dict[str, Any]]:
         # Validate the field
         validators = validator_map.get(reference_property_path, [])
         for validator in validators:
             validator_logs = self.run_validator(
-                iteration, validator, value, metadata, absolute_property_path
+                iteration,
+                validator,
+                value,
+                metadata,
+                absolute_property_path,
+                stream,
+                **kwargs,
             )
-
             result = validator_logs.validation_result
+            result = cast(ValidationResult, result)
             if isinstance(result, FailResult):
+                rechecked_value = None
+                if validator.on_fail_descriptor == OnFailAction.FIX_REASK:
+                    fixed_value = result.fix_value
+                    rechecked_value = self.run_validator_sync(
+                        validator,
+                        fixed_value,
+                        metadata,
+                        validator_logs,
+                        stream,
+                        **kwargs,
+                    )
                 value = self.perform_correction(
-                    [result], value, validator, validator.on_fail_descriptor
+                    [result],
+                    value,
+                    validator,
+                    validator.on_fail_descriptor,
+                    rechecked_value=rechecked_value,
                 )
             elif isinstance(result, PassResult):
                 if (
@@ -183,11 +272,11 @@ class SequentialValidatorService(ValidatorServiceBase):
                     and result.value_override is not result.ValueOverrideSentinel
                 ):
                     value = result.value_override
-            else:
+            elif not stream:
                 raise RuntimeError(f"Unexpected result type {type(result)}")
 
             validator_logs.value_after_validation = value
-            if result.metadata is not None:
+            if result and result.metadata is not None:
                 metadata = result.metadata
 
             if isinstance(value, (Refrain, Filter, ReAsk)):
@@ -252,6 +341,32 @@ class SequentialValidatorService(ValidatorServiceBase):
         value, metadata = self.run_validators(
             iteration, validator_map, value, metadata, absolute_path, reference_path
         )
+        return value, metadata
+
+    def validate_stream(
+        self,
+        value: Any,
+        metadata: dict,
+        validator_map: ValidatorMap,
+        iteration: Iteration,
+        absolute_path: str = "$",
+        reference_path: str = "$",
+        **kwargs,
+    ) -> Tuple[Any, dict]:
+        # I assume validate stream doesn't need validate_dependents
+        # because right now we're only handling StringSchema
+
+        # Validate the field
+        value, metadata = self.run_validators(
+            iteration,
+            validator_map,
+            value,
+            metadata,
+            absolute_path,
+            reference_path,
+            True,
+            **kwargs,
+        )
 
         return value, metadata
 
@@ -268,6 +383,46 @@ class MultiprocMixin:
 
 
 class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
+    async def run_validator_async(
+        self,
+        validator: Validator,
+        value: Any,
+        metadata: Dict,
+        stream: Optional[bool] = False,
+        **kwargs,
+    ) -> ValidationResult:
+        result: ValidatorResult = self.execute_validator(
+            validator, value, metadata, stream, **kwargs
+        )
+        if asyncio.iscoroutine(result):
+            result = await result
+
+        if result is None:
+            result = PassResult()
+        else:
+            result = cast(ValidationResult, result)
+        return result
+
+    async def run_validator(
+        self,
+        iteration: Iteration,
+        validator: Validator,
+        value: Any,
+        metadata: Dict,
+        absolute_property_path: str,
+        stream: Optional[bool] = False,
+        **kwargs,
+    ) -> ValidatorLogs:
+        validator_logs = self.before_run_validator(
+            iteration, validator, value, absolute_property_path
+        )
+
+        result = await self.run_validator_async(
+            validator, value, metadata, stream, **kwargs
+        )
+
+        return self.after_run_validator(validator, validator_logs, result)
+
     def group_validators(self, validators: List[Validator]):
         groups = itertools.groupby(
             validators, key=lambda v: (v.on_fail_descriptor, v.override_value_on_pass)
@@ -294,6 +449,7 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
         metadata: Dict,
         absolute_property_path: str,
         reference_property_path: str,
+        stream: Optional[bool] = False,
     ):
         loop = asyncio.get_running_loop()
         validators = validator_map.get(reference_property_path, [])
@@ -312,19 +468,30 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
                             value,
                             metadata,
                             absolute_property_path,
+                            stream,
                         )
                     )
                 else:
                     # run the validators in the current process
-                    result = self.run_validator(
-                        iteration, validator, value, metadata, absolute_property_path
+                    result = await self.run_validator(
+                        iteration,
+                        validator,
+                        value,
+                        metadata,
+                        absolute_property_path,
+                        stream=stream,
                     )
                     validators_logs.append(result)
 
             # wait for the parallel tasks to finish
             if parallel_tasks:
                 parallel_results = await asyncio.gather(*parallel_tasks)
-                validators_logs.extend(parallel_results)
+                awaited_results = []
+                for res in parallel_results:
+                    if asyncio.iscoroutine(res):
+                        res = await res
+                    awaited_results.append(res)
+                validators_logs.extend(awaited_results)
 
             # process the results, handle failures
             fails = [
@@ -334,8 +501,19 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
             ]
             if fails:
                 fail_results = [logs.validation_result for logs in fails]
+                rechecked_value = None
+                validator: Validator = validator_group[0]
+                if validator.on_fail_descriptor == OnFailAction.FIX_REASK:
+                    fixed_value = fail_results[0].fix_value
+                    rechecked_value = await self.run_validator_async(
+                        validator, fixed_value, fail_results[0].metadata or {}, stream
+                    )
                 value = self.perform_correction(
-                    fail_results, value, validator_group[0], on_fail
+                    fail_results,
+                    value,
+                    validator_group[0],
+                    on_fail,
+                    rechecked_value=rechecked_value,
                 )
 
             # handle overrides
@@ -412,6 +590,7 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
         iteration: Iteration,
         absolute_path: str = "$",
         reference_path: str = "$",
+        stream: Optional[bool] = False,
     ) -> Tuple[Any, dict]:
         child_ref_path = reference_path.replace(".*", "")
         # Validate children first
@@ -422,7 +601,13 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
 
         # Then validate the parent value
         value, metadata = await self.run_validators(
-            iteration, validator_map, value, metadata, absolute_path, reference_path
+            iteration,
+            validator_map,
+            value,
+            metadata,
+            absolute_path,
+            reference_path,
+            stream=stream,
         )
 
         return value, metadata
@@ -457,27 +642,27 @@ def validate(
     iteration: Iteration,
     disable_tracer: Optional[bool] = True,
     path: Optional[str] = None,
+    stream: Optional[bool] = False,
+    **kwargs,
 ):
     process_count = int(os.environ.get("GUARDRAILS_PROCESS_COUNT", 10))
-
+    if stream:
+        sequential_validator_service = SequentialValidatorService(disable_tracer)
+        return sequential_validator_service.validate_stream(
+            value, metadata, validator_map, iteration, path, path, **kwargs
+        )
     try:
         loop = asyncio.get_event_loop()
     except RuntimeError:
         loop = None
 
     if process_count == 1:
-        logger.warning(
-            "Process count was set to 1 via the GUARDRAILS_PROCESS_COUNT"
-            "environment variable."
-            "This will cause all validations to run synchronously."
-            "To run asynchronously, specify a process count"
-            "greater than 1 or unset this environment variable."
-        )
         validator_service = SequentialValidatorService(disable_tracer)
     elif loop is not None and not loop.is_running():
         validator_service = AsyncValidatorService(disable_tracer)
     else:
         validator_service = SequentialValidatorService(disable_tracer)
+
     return validator_service.validate(
         value, metadata, validator_map, iteration, path, path
     )
@@ -490,10 +675,11 @@ async def async_validate(
     iteration: Iteration,
     disable_tracer: Optional[bool] = True,
     path: Optional[str] = None,
-):
+    stream: Optional[bool] = False,
+) -> Tuple[Any, dict]:
     validator_service = AsyncValidatorService(disable_tracer)
     return await validator_service.async_validate(
-        value, metadata, validator_map, iteration, path, path
+        value, metadata, validator_map, iteration, path, path, stream
     )
 
 

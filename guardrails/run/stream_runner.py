@@ -1,7 +1,7 @@
 from typing import Any, Dict, Generator, List, Optional, Union
 
 from guardrails.classes.history import Call, Inputs, Iteration, Outputs
-from guardrails.classes.output_type import OT
+from guardrails.classes.output_type import OT, OutputTypes
 from guardrails.classes.validation_outcome import ValidationOutcome
 from guardrails.llm_providers import (
     LiteLLMCallable,
@@ -18,6 +18,7 @@ from guardrails.utils.parsing_utils import (
     prune_extra_keys,
 )
 from guardrails.actions.reask import SkeletonReAsk
+from guardrails.constants import pass_status
 
 
 class StreamRunner(Runner):
@@ -94,6 +95,7 @@ class StreamRunner(Runner):
             num_reasks=self.num_reasks,
             metadata=self.metadata,
             full_schema_reask=self.full_schema_reask,
+            stream=True,
         )
         outputs = Outputs()
         iteration = Iteration(inputs=inputs, outputs=outputs)
@@ -135,53 +137,151 @@ class StreamRunner(Runner):
         verified = set()
         # Loop over the stream
         # and construct "fragments" of concatenated chunks
-        for chunk in stream:
-            # 1. Get the text from the chunk and append to fragment
-            chunk_text = self.get_chunk_text(chunk, api)
-            fragment += chunk_text
+        # for now, handle string and json schema differently
 
-            # 2. Parse the fragment
-            parsed_fragment, move_to_next = self.parse(
-                fragment, output_schema, verified=verified
-            )
-            if move_to_next:
-                # Continue to next chunk
-                continue
+        if self.output_type == OutputTypes.STRING:
+            stream_finished = False
+            last_chunk_text = ""
+            for chunk in stream:
+                # 1. Get the text from the chunk and append to fragment
+                chunk_text = self.get_chunk_text(chunk, api)
+                last_chunk_text = chunk_text
+                finished = self.is_last_chunk(chunk, api)
+                if finished:
+                    stream_finished = True
+                fragment += chunk_text
 
-            # 3. Run output validation
-            validated_fragment = self.validate(
-                iteration,
-                index,
-                parsed_fragment,
-                output_schema,
-                validate_subschema=True,
-            )
-            if isinstance(validated_fragment, SkeletonReAsk):
-                raise ValueError(
-                    "Received fragment schema is an invalid sub-schema "
-                    "of the expected output JSON schema."
+                # 2. Parse the chunk
+                parsed_chunk, move_to_next = self.parse(
+                    chunk_text, output_schema, verified=verified
                 )
-
-            # 4. Introspect: inspect the validated fragment for reasks
-            reasks, valid_op = self.introspect(validated_fragment)
-            if reasks:
-                raise ValueError(
-                    "Reasks are not yet supported with streaming. Please "
-                    "remove reasks from schema or disable streaming."
+                if move_to_next:
+                    # Continue to next chunk
+                    continue
+                validated_text = self.validate(
+                    iteration,
+                    index,
+                    parsed_chunk,
+                    output_schema,
+                    True,
+                    validate_subschema=True,
+                    # if it is the last chunk, validate everything that's left
+                    remainder=finished,
                 )
+                if isinstance(validated_text, SkeletonReAsk):
+                    raise ValueError(
+                        "Received fragment schema is an invalid sub-schema "
+                        "of the expected output JSON schema."
+                    )
 
-            # 5. Convert validated fragment to a pretty JSON string
-            yield ValidationOutcome(
-                raw_llm_output=fragment,
-                validated_output=validated_fragment,
-                validation_passed=validated_fragment is not None,
-            )
+                # 4. Introspect: inspect the validated fragment for reasks
+                reasks, valid_op = self.introspect(validated_text)
+                if reasks:
+                    raise ValueError(
+                        "Reasks are not yet supported with streaming. Please "
+                        "remove reasks from schema or disable streaming."
+                    )
+                # 5. Convert validated fragment to a pretty JSON string
+                passed = call_log.status == pass_status
+                yield ValidationOutcome(
+                    #  The chunk or the whole output?
+                    raw_llm_output=chunk_text,
+                    validated_output=validated_text,
+                    validation_passed=passed,
+                )
+            # handle case where generator doesn't give finished status
+            if not stream_finished:
+                last_result = self.validate(
+                    iteration,
+                    index,
+                    "",
+                    output_schema,
+                    True,
+                    validate_subschema=True,
+                    remainder=True,
+                )
+                if len(last_result) > 0:
+                    passed = call_log.status == pass_status
+                    yield ValidationOutcome(
+                        raw_llm_output=last_chunk_text,
+                        validated_output=last_result,
+                        validation_passed=passed,
+                    )
+        # handle non string schema
+        else:
+            for chunk in stream:
+                # 1. Get the text from the chunk and append to fragment
+                chunk_text = self.get_chunk_text(chunk, api)
+                fragment += chunk_text
+
+                # 2. Parse the fragment
+                parsed_fragment, move_to_next = self.parse(
+                    fragment, output_schema, verified=verified
+                )
+                if move_to_next:
+                    # Continue to next chunk
+                    continue
+
+                # 3. Run output validation
+                validated_fragment = self.validate(
+                    iteration,
+                    index,
+                    parsed_fragment,
+                    output_schema,
+                    validate_subschema=True,
+                )
+                if isinstance(validated_fragment, SkeletonReAsk):
+                    raise ValueError(
+                        "Received fragment schema is an invalid sub-schema "
+                        "of the expected output JSON schema."
+                    )
+
+                # 4. Introspect: inspect the validated fragment for reasks
+                reasks, valid_op = self.introspect(validated_fragment)
+                if reasks:
+                    raise ValueError(
+                        "Reasks are not yet supported with streaming. Please "
+                        "remove reasks from schema or disable streaming."
+                    )
+
+                # 5. Convert validated fragment to a pretty JSON string
+                yield ValidationOutcome(
+                    raw_llm_output=fragment,
+                    validated_output=validated_fragment,
+                    validation_passed=validated_fragment is not None,
+                )
 
         # Finally, add to logs
         iteration.outputs.raw_output = fragment
         iteration.outputs.parsed_output = parsed_fragment
         iteration.outputs.validation_response = validated_fragment
         iteration.outputs.guarded_output = valid_op
+
+    def is_last_chunk(self, chunk: Any, api: Union[PromptCallableBase, None]) -> bool:
+        """Detect if chunk is final chunk."""
+        if isinstance(api, OpenAICallable):
+            if OPENAI_VERSION.startswith("0"):
+                finished = chunk["choices"][0]["finish_reason"]
+                return finished is not None
+            else:
+                finished = chunk.choices[0].finish_reason
+                return finished is not None
+        elif isinstance(api, OpenAIChatCallable):
+            if OPENAI_VERSION.startswith("0"):
+                finished = chunk["choices"][0]["finish_reason"]
+                return finished is not None
+            else:
+                finished = chunk.choices[0].finish_reason
+                return finished is not None
+        elif isinstance(api, LiteLLMCallable):
+            finished = chunk.choices[0].finish_reason
+            return finished is not None
+        else:
+            try:
+                finished = chunk.choices[0].finish_reason
+                return finished is not None
+            except (AttributeError, TypeError):
+                return False
 
     def get_chunk_text(self, chunk: Any, api: Union[PromptCallableBase, None]) -> str:
         """Get the text from a chunk."""

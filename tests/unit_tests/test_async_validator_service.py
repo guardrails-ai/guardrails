@@ -78,7 +78,9 @@ async def test_async_validate_with_children(mocker):
     validate_children_mock.assert_called_once_with(value, {}, {}, iteration, "$", "$")
 
     assert run_validators_mock.call_count == 1
-    run_validators_mock.assert_called_once_with(iteration, {}, value, {}, "$", "$")
+    run_validators_mock.assert_called_once_with(
+        iteration, {}, value, {}, "$", "$", stream=False
+    )
 
     assert validated_value == "run_validators_mock"
     assert validated_metadata == {"async": True}
@@ -104,7 +106,7 @@ async def test_async_validate_without_children(mocker):
 
     assert run_validators_mock.call_count == 1
     run_validators_mock.assert_called_once_with(
-        iteration, {}, "Hello world!", {}, "$", "$"
+        iteration, {}, "Hello world!", {}, "$", "$", stream=False
     )
 
     assert validated_value == "run_validators_mock"
@@ -188,7 +190,9 @@ async def test_run_validators(mocker):
         (OnFailAction.NOOP, [noop_validator_1, noop_validator_2]),
     ]
 
-    def mock_run_validator(iteration, validator, value, metadata, property_path):
+    def mock_run_validator(
+        iteration, validator, value, metadata, property_path, stream
+    ):
         return ValidatorLogs(
             registered_name=validator.name,
             validator_name=validator.name,
@@ -237,6 +241,7 @@ async def test_run_validators(mocker):
         True,
         {},
         "$",
+        False,
     )
 
     assert run_validator_mock.call_count == 3

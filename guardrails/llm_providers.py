@@ -781,6 +781,7 @@ class AsyncOpenAIChatCallable(AsyncOpenAIModel):
             api_key = None
 
         aclient = AsyncOpenAIClient(api_key=api_key)
+        # FIXME: OpenAI async streaming seems to be broken
         return await aclient.create_chat_completion(
             model=model,
             messages=chat_prompt(
@@ -831,6 +832,14 @@ class AsyncLiteLLMCallable(AsyncPromptCallableBase):
             *args,
             **kwargs,
         )
+        if kwargs.get("stream", False):
+            # If stream is defined and set to True,
+            # the callable returns a generator object
+            # response = cast(AsyncIterable[str], response)
+            return LLMResponse(
+                output="",
+                async_stream_output=response.completion_stream,  # pyright: ignore[reportGeneralTypeIssues]
+            )
 
         return LLMResponse(
             output=response.choices[0].message.content,  # type: ignore
@@ -872,6 +881,10 @@ class AsyncManifestCallable(AsyncPromptCallableBase):
             *args,
             **kwargs,
         )
+        if kwargs.get("stream", False):
+            raise NotImplementedError(
+                "Manifest async streaming is not yet supported by manifest."
+            )
         return LLMResponse(
             output=manifest_response[0],
         )
@@ -895,6 +908,13 @@ class AsyncArbitraryCallable(AsyncPromptCallableBase):
         ```
         """
         output = await self.llm_api(*args, **kwargs)
+        if kwargs.get("stream", False):
+            # If stream is defined and set to True,
+            # the callable returns a generator object
+            return LLMResponse(
+                output="",
+                async_stream_output=output.completion_stream,
+            )
         return LLMResponse(
             output=output,
         )
@@ -939,16 +959,20 @@ def model_is_supported_server_side(
     model = get_llm_ask(llm_api, *args, **kwargs)
     if asyncio.iscoroutinefunction(llm_api):
         model = get_async_llm_ask(llm_api, *args, **kwargs)
-    return issubclass(type(model), OpenAIModel) or issubclass(
-        type(model), AsyncOpenAIModel
+    return (
+        issubclass(type(model), OpenAIModel)
+        or issubclass(type(model), AsyncOpenAIModel)
+        or isinstance(model, LiteLLMCallable)
+        or isinstance(model, AsyncLiteLLMCallable)
     )
 
 
 # CONTINUOUS FIXME: Update with newly supported LLMs
 def get_llm_api_enum(
-    llm_api: Callable[[Any], Awaitable[Any]],
+    llm_api: Callable[[Any], Awaitable[Any]], *args, **kwargs
 ) -> Optional[LLMResource]:
     # TODO: Distinguish between v1 and v2
+    model = get_llm_ask(llm_api, *args, **kwargs)
     if llm_api == get_static_openai_create_func():
         return LLMResource.OPENAI_DOT_COMPLETION_DOT_CREATE
     elif llm_api == get_static_openai_chat_create_func():
@@ -957,5 +981,10 @@ def get_llm_api_enum(
         return LLMResource.OPENAI_DOT_COMPLETION_DOT_ACREATE
     elif llm_api == get_static_openai_chat_acreate_func():
         return LLMResource.OPENAI_DOT_CHAT_COMPLETION_DOT_ACREATE
+    elif isinstance(model, LiteLLMCallable):
+        return LLMResource.LITELLM_DOT_COMPLETION
+    elif isinstance(model, AsyncLiteLLMCallable):
+        return LLMResource.LITELLM_DOT_ACOMPLETION
+
     else:
         return None

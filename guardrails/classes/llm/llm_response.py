@@ -1,4 +1,4 @@
-from typing import Iterable, Optional
+from typing import Iterable, Optional, AsyncIterable
 
 from guardrails_api_client import LLMResponse as ILLMResponse
 
@@ -9,3 +9,4 @@ class LLMResponse(ILLMResponse):
     response_token_count: Optional[int] = None
     output: str
     stream_output: Optional[Iterable] = None
+    async_stream_output: Optional[AsyncIterable] = None

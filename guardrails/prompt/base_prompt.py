@@ -6,6 +6,7 @@ from typing import Optional
 
 import regex
 
+from warnings import warn
 from guardrails.classes.templating.namespace_template import NamespaceTemplate
 from guardrails.utils.constants import constants
 from guardrails.utils.templating_utils import get_template_variables
@@ -63,6 +64,21 @@ class BasePrompt:
 
         # Substitute all occurrences of ${gr.<constant_name>}
         #   with the value of the constant.
+        json_constants = [m for m in matches if "json_" in m]
+        if len(json_constants) > 0:
+            first_const: str = json_constants[0]
+            warn(
+                Template(
+                    "Prompt Primitives are moving! "
+                    "To keep the same behaviour, "
+                    "switch from `json` constants to `xml` constants. "
+                    "Example: ${gr.${first_const}} -> ${gr.${xml_const}}",
+                ).safe_substitute(
+                    first_const=first_const,
+                    xml_const=first_const.replace("json_", "xml_"),
+                ),
+                FutureWarning,
+            )
         for match in matches:
             template = NamespaceTemplate(text)
             mapping = {f"gr.{match}": constants[match]}

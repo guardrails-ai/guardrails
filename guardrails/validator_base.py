@@ -1,4 +1,5 @@
 import inspect
+import nltk
 from collections import defaultdict
 from copy import deepcopy
 from string import Template
@@ -13,6 +14,7 @@ from typing import (
     Union,
     cast,
 )
+from typing_extensions import deprecated
 from warnings import warn
 
 from langchain_core.messages import BaseMessage
@@ -170,6 +172,37 @@ VALIDATOR_NAMING = {
     ],
     "pydantic_field_validator": [],
 }
+
+
+# functions to get chunks
+
+
+def split_sentence_str(chunk: str):
+    """A naive sentence splitter that splits on periods."""
+    if "." not in chunk:
+        return []
+    fragments = chunk.split(".")
+    return [fragments[0] + ".", ".".join(fragments[1:])]
+
+
+def split_sentence_nltk(chunk: str):
+    """
+    NOTE: this approach currently does not work
+    Use a sentence tokenizer to split the chunk into sentences.
+
+    Because using the tokenizer is expensive, we only use it if there
+    is a period present in the chunk.
+    """
+    # using the sentence tokenizer is expensive
+    # we check for a . to avoid wastefully calling the tokenizer
+    if "." not in chunk:
+        return []
+    sentences = nltk.sent_tokenize(chunk)
+    if len(sentences) == 0:
+        return []
+    # return the sentence
+    # then the remaining chunks that aren't finished accumulating
+    return [sentences[0], "".join(sentences[1:])]
 
 
 def check_refrain_in_list(schema: List) -> bool:
@@ -357,6 +390,10 @@ class Validator(Runnable):
 
     rail_alias: str = ""
 
+    # chunking function returns empty list or list of 2 chunks
+    # first chunk is the chunk to validate
+    # second chunk is incomplete chunk that needs further accumulation
+    accumulated_chunks = []
     run_in_separate_process = False
     override_value_on_pass = False
     required_metadata_keys = []
@@ -415,9 +452,48 @@ class Validator(Runnable):
             self.rail_alias in validators_registry
         ), f"Validator {self.__class__.__name__} is not registered. "
 
+    def chunking_function(self, chunk: str):
+        return split_sentence_str(chunk)
+
     def validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
         """Validates a value and return a validation result."""
         raise NotImplementedError
+
+    def validate_stream(
+        self, chunk: Any, metadata: Dict[str, Any], **kwargs
+    ) -> Optional[ValidationResult]:
+        """Validates a chunk emitted by an LLM. If the LLM chunk is smaller
+        than the validator's chunking strategy, it will be accumulated until it
+        reaches the desired size. In the meantime, the validator will return
+        None.
+
+        If the LLM chunk is larger than the validator's chunking
+        strategy, it will split it into validator-sized chunks and
+        validate each one, returning an array of validation results.
+
+        Otherwise, the validator will validate the chunk and return the
+        result.
+        """
+        # combine accumulated chunks and new [:-1]chunk
+        self.accumulated_chunks.append(chunk)
+        accumulated_text = "".join(self.accumulated_chunks)
+        # check if enough chunks have accumulated for validation
+        splitcontents = self.chunking_function(accumulated_text)
+
+        # if remainder kwargs is passed, validate remainder regardless
+        remainder = kwargs.get("remainder", False)
+        if remainder:
+            splitcontents = [accumulated_text, ""]
+        if len(splitcontents) == 0:
+            return PassResult()
+        [chunk_to_validate, new_accumulated_chunks] = splitcontents
+        self.accumulated_chunks = [new_accumulated_chunks]
+        # exclude last chunk, because it may not be a complete chunk
+        validation_result = self.validate(chunk_to_validate, metadata)
+        # if validate doesn't set validated chunk, we set it
+        if validation_result.validated_chunk is None:
+            validation_result.validated_chunk = chunk_to_validate
+        return validation_result
 
     def to_prompt(self, with_keywords: bool = True) -> str:
         """Convert the validator to a prompt.
@@ -508,6 +584,10 @@ class Validator(Runnable):
             }
         )
 
+    @deprecated(
+        """'Validator.invoke' is deprecated and will be removed in \
+    versions 0.5.x and beyond. Use Validator.to_runnable() instead."""
+    )
     def invoke(
         self, input: InputType, config: Optional[RunnableConfig] = None
     ) -> InputType:
@@ -558,6 +638,13 @@ class Validator(Runnable):
         """Assigns metadata to this validator to use during validation."""
         self._metadata = metadata
         return self
+
+    def to_runnable(self) -> Runnable:
+        from guardrails.integrations.langchain.validator_runnable import (
+            ValidatorRunnable,
+        )
+
+        return ValidatorRunnable(self)
 
 
 # Superseded by guardrails/types/validator.py::PydanticValidatorSpec

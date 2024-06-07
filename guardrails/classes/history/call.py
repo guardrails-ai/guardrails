@@ -14,6 +14,7 @@ from guardrails.classes.generic.stack import Stack
 from guardrails.classes.history.call_inputs import CallInputs
 from guardrails.classes.history.iteration import Iteration
 from guardrails.classes.generic.arbitrary_model import ArbitraryModel
+from guardrails.classes.validation.validation_result import ValidationResult
 from guardrails.constants import error_status, fail_status, not_run_status, pass_status
 from guardrails.prompt.instructions import Instructions
 from guardrails.prompt.prompt import Prompt
@@ -59,13 +60,13 @@ class Call(ICall, ArbitraryModel):
 
     @property
     def prompt(self) -> Optional[str]:
-        """The prompt as provided by the user when intializing or calling the
+        """The prompt as provided by the user when initializing or calling the
         Guard."""
         return self.inputs.prompt
 
     @property
     def prompt_params(self) -> Optional[Dict]:
-        """The prompt parameters as provided by the user when intializing or
+        """The prompt parameters as provided by the user when initializing or
         calling the Guard."""
         return self.inputs.prompt_params
 
@@ -102,8 +103,8 @@ class Call(ICall, ArbitraryModel):
 
     @property
     def instructions(self) -> Optional[str]:
-        """The instructions as provided by the user when intializing or calling
-        the Guard."""
+        """The instructions as provided by the user when initializing or
+        calling the Guard."""
         return self.inputs.instructions
 
     @property
@@ -360,6 +361,7 @@ versions 0.5.0 and beyond. Use 'guarded_output' instead."""
                 log
                 for log in self.validator_logs
                 if log.validation_result is not None
+                and isinstance(log.validation_result, ValidationResult)
                 and log.validation_result.outcome == "fail"
             ]
         )

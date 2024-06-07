@@ -9,6 +9,7 @@ from typing import (
     Awaitable,
     Callable,
     Dict,
+    Generator,
     Generic,
     Iterable,
     List,
@@ -20,6 +21,7 @@ from typing import (
     overload,
 )
 import warnings
+from langchain_core.runnables import Runnable
 
 from guardrails_api_client import (
     Guard as IGuard,
@@ -72,6 +74,7 @@ from guardrails.stores.context import (
 from guardrails.types.pydantic import ModelOrListOfModels
 from guardrails.utils.naming_utils import random_id
 from guardrails.utils.safe_get import safe_get
+from guardrails.utils.api_utils import extract_serializeable_metadata
 from guardrails.utils.hub_telemetry_utils import HubTelemetry
 from guardrails.classes.llm.llm_response import LLMResponse
 from guardrails.actions.reask import FieldReAsk
@@ -687,6 +690,7 @@ class Guard(IGuard, Generic[OT]):
                     llm_api=llm_api,
                     num_reasks=self._num_reasks,
                     prompt_params=prompt_params,
+                    metadata=metadata,
                     full_schema_reask=full_schema_reask,
                     call_log=call_log,
                     *args,
@@ -903,8 +907,7 @@ class Guard(IGuard, Generic[OT]):
         Union[ValidationOutcome[OT], Iterable[ValidationOutcome[OT]]],
         Awaitable[ValidationOutcome[OT]],
     ]:
-        """Call the LLM and validate the output. Pass an async LLM API to
-        return a coroutine.
+        """Call the LLM and validate the output.
 
         Args:
             llm_api: The LLM API to call
@@ -1102,6 +1105,7 @@ class Guard(IGuard, Generic[OT]):
         """
         hydrated_validator = get_validator(validator, *args, **kwargs)
         self.__add_validator(hydrated_validator, on=on)
+        self._save()
         return self
 
     @overload
@@ -1124,6 +1128,7 @@ class Guard(IGuard, Generic[OT]):
         for v in validators:
             hydrated_validator = get_validator(v)
             self.__add_validator(hydrated_validator, on=on)
+        self._save()
         return self
 
     def validate(self, llm_output: str, *args, **kwargs) -> ValidationOutcome[str]:
@@ -1144,40 +1149,116 @@ class Guard(IGuard, Generic[OT]):
         else:
             raise ValueError("Guard does not have an api client!")
 
-    def _call_server(
+    def _construct_history_from_server_response(
         self,
-        *args,
-        llm_output: Optional[str] = None,
+        *,
+        validation_output: Optional[Any] = None,
         llm_api: Optional[Callable] = None,
+        llm_output: Optional[str] = None,
         num_reasks: Optional[int] = None,
         prompt_params: Optional[Dict] = None,
         metadata: Optional[Dict] = None,
         full_schema_reask: Optional[bool] = True,
         call_log: Optional[Call],
-        # prompt: Optional[str],
-        # instructions: Optional[str],
-        # msg_history: Optional[List[Dict]],
-        **kwargs,
+        stream: Optional[bool] = False,
     ):
-        metadata = metadata or None
+        # TODO: GET /guard/{guard-name}/history
+        call_log = call_log or Call()
+        if llm_api is not None:
+            llm_api = get_llm_ask(llm_api)
+            if asyncio.iscoroutinefunction(llm_api):
+                llm_api = get_async_llm_ask(llm_api)
+        session_history = (
+            validation_output.session_history
+            if validation_output is not None and validation_output.session_history
+            else []
+        )
+        history: List[Call]
+        for history in session_history:
+            history_events: Optional[List[Any]] = (  # type: ignore
+                history.history
+            )
+            if history_events is None:
+                continue
+
+            iterations = [
+                Iteration(
+                    inputs=Inputs(
+                        llm_api=llm_api,
+                        llm_output=llm_output,
+                        instructions=(
+                            Instructions(h.instructions) if h.instructions else None
+                        ),
+                        prompt=(
+                            Prompt(h.prompt.source)  # type: ignore
+                            if h.prompt
+                            else None
+                        ),
+                        prompt_params=prompt_params,
+                        num_reasks=(num_reasks or 0),
+                        metadata=metadata,
+                        full_schema_reask=full_schema_reask,
+                    ),
+                    outputs=Outputs(
+                        llm_response_info=LLMResponse(
+                            output=h.output  # type: ignore
+                        ),
+                        raw_output=h.output,
+                        parsed_output=(
+                            h.parsed_output.to_dict()
+                            if isinstance(h.parsed_output, Any)
+                            else h.parsed_output
+                        ),
+                        validation_output=(
+                            h.validated_output.to_dict()
+                            if isinstance(h.validated_output, Any)
+                            else h.validated_output
+                        ),
+                        reasks=list(
+                            [
+                                FieldReAsk(
+                                    incorrect_value=r.to_dict().get("incorrect_value"),
+                                    path=r.to_dict().get("path"),
+                                    fail_results=[
+                                        FailResult(
+                                            error_message=r.to_dict().get(
+                                                "error_message"
+                                            ),
+                                            fix_value=r.to_dict().get("fix_value"),
+                                        )
+                                    ],
+                                )
+                                for r in h.reasks  # type: ignore
+                            ]
+                            if h.reasks is not None
+                            else []
+                        ),
+                    ),
+                )
+                for h in history_events
+            ]
+            call_log.iterations.extend(iterations)
+            if self._history.length == 0:
+                self._history_push(call_log)
+
+    def _single_server_call(
+        self,
+        *,
+        payload: Dict[str, Any],
+        llm_output: Optional[str] = None,
+        num_reasks: Optional[int] = None,
+        prompt_params: Optional[Dict] = None,
+        metadata: Optional[Dict] = {},
+        full_schema_reask: Optional[bool] = True,
+        call_log: Optional[Call],
+        stream: Optional[bool] = False,
+    ) -> ValidationOutcome[OT]:
         if self._api_client:
-            payload: Dict[str, Any] = {"args": list(args)}
-            payload.update(**kwargs)
-            if llm_output is not None:
-                payload["llmOutput"] = llm_output
-            if num_reasks is not None:
-                payload["numReasks"] = num_reasks
-            if prompt_params is not None:
-                payload["promptParams"] = prompt_params
-            if llm_api is not None:
-                payload["llmApi"] = get_llm_api_enum(llm_api)
-            # TODO: get enum for llm_api
-            validation_output: Optional[Any] = self._api_client.validate(
+            validation_output: ValidationOutcome = self._api_client.validate(
                 guard=self,  # type: ignore
                 payload=ValidatePayload.from_dict(payload),
                 openai_api_key=get_call_kwarg("api_key"),
             )
-
             if not validation_output:
                 return ValidationOutcome[OT](
                     raw_llm_output=None,
@@ -1185,87 +1266,17 @@ class Guard(IGuard, Generic[OT]):
                     validation_passed=False,
                     error="The response from the server was empty!",
                 )
-
-            # TODO: GET /guard/{guard-name}/history
-            call_log = call_log or Call()
-            if llm_api is not None:
-                llm_api = get_llm_ask(llm_api)
-                if asyncio.iscoroutinefunction(llm_api):
-                    llm_api = get_async_llm_ask(llm_api)
-            session_history = (
-                validation_output.session_history
-                if validation_output is not None and validation_output.session_history
-                else []
+            # TODO: Replace this with GET /guard/{guard_name}/history
+            self._construct_history_from_server_response(
+                validation_output=validation_output,
+                llm_output=llm_output,
+                num_reasks=num_reasks,
+                prompt_params=prompt_params,
+                metadata=metadata,
+                full_schema_reask=full_schema_reask,
+                call_log=call_log,
+                stream=stream,
             )
-            history: List[Call]
-            for history in session_history:
-                history_events: Optional[List[Any]] = (  # type: ignore
-                    history.history
-                )
-                if history_events is None:
-                    continue
-
-                iterations = [
-                    Iteration(
-                        inputs=Inputs(
-                            llm_api=llm_api,
-                            llm_output=llm_output,
-                            instructions=(
-                                Instructions(h.instructions) if h.instructions else None
-                            ),
-                            prompt=(
-                                Prompt(h.prompt.source)  # type: ignore
-                                if h.prompt
-                                else None
-                            ),
-                            prompt_params=prompt_params,
-                            num_reasks=(num_reasks or 0),
-                            metadata=metadata,
-                            full_schema_reask=full_schema_reask,
-                        ),
-                        outputs=Outputs(
-                            llm_response_info=LLMResponse(
-                                output=h.output  # type: ignore
-                            ),
-                            raw_output=h.output,
-                            parsed_output=(
-                                h.parsed_output.to_dict()
-                                if isinstance(h.parsed_output, Any)
-                                else h.parsed_output
-                            ),
-                            validation_output=(
-                                h.validated_output.to_dict()
-                                if isinstance(h.validated_output, Any)
-                                else h.validated_output
-                            ),
-                            reasks=list(
-                                [
-                                    FieldReAsk(
-                                        incorrect_value=r.to_dict().get(
-                                            "incorrect_value"
-                                        ),
-                                        path=r.to_dict().get("path"),
-                                        fail_results=[
-                                            FailResult(
-                                                error_message=r.to_dict().get(
-                                                    "error_message"
-                                                ),
-                                                fix_value=r.to_dict().get("fix_value"),
-                                            )
-                                        ],
-                                    )
-                                    for r in h.reasks  # type: ignore
-                                ]
-                                if h.reasks is not None
-                                else []
-                            ),
-                        ),
-                    )
-                    for h in history_events
-                ]
-                call_log.iterations.extend(iterations)
-                if self._history.length == 0:
-                    self._history_push(call_log)
 
             # Our interfaces are too different for this to work right now.
             # Once we move towards shared interfaces for both the open source
@@ -1278,3 +1289,123 @@ class Guard(IGuard, Generic[OT]):
             )
         else:
             raise ValueError("Guard does not have an api client!")
+
+    def _stream_server_call(
+        self,
+        *,
+        payload: Dict[str, Any],
+        llm_output: Optional[str] = None,
+        num_reasks: Optional[int] = None,
+        prompt_params: Optional[Dict] = None,
+        metadata: Optional[Dict] = {},
+        full_schema_reask: Optional[bool] = True,
+        call_log: Optional[Call],
+        stream: Optional[bool] = False,
+    ) -> Generator[ValidationOutcome[OT], None, None]:
+        if self._api_client:
+            validation_output: Optional[ValidationOutcome] = None
+            response = self._api_client.stream_validate(
+                guard=self,  # type: ignore
+                payload=ValidatePayload.from_dict(payload),
+                openai_api_key=get_call_kwarg("api_key"),
+            )
+            for fragment in response:
+                validation_output = fragment
+                if not validation_output:
+                    yield ValidationOutcome[OT](
+                        raw_llm_output=None,
+                        validated_output=None,
+                        validation_passed=False,
+                        error="The response from the server was empty!",
+                    )
+                yield ValidationOutcome[OT](
+                    raw_llm_output=validation_output.raw_llm_response,  # type: ignore
+                    validated_output=cast(OT, validation_output.validated_output),
+                    validation_passed=validation_output.result,
+                )
+            if validation_output:
+                # TODO: Replace this with GET /guard/{guard_name}/history
+                self._construct_history_from_server_response(
+                    validation_output=validation_output,
+                    llm_output=llm_output,
+                    num_reasks=num_reasks,
+                    prompt_params=prompt_params,
+                    metadata=metadata,
+                    full_schema_reask=full_schema_reask,
+                    call_log=call_log,
+                    stream=stream,
+                )
+        else:
+            raise ValueError("Guard does not have an api client!")
+
+    def _call_server(
+        self,
+        *args,
+        llm_output: Optional[str] = None,
+        llm_api: Optional[Callable] = None,
+        num_reasks: Optional[int] = None,
+        prompt_params: Optional[Dict] = None,
+        metadata: Optional[Dict] = {},
+        full_schema_reask: Optional[bool] = True,
+        call_log: Optional[Call],
+        **kwargs,
+    ) -> Union[ValidationOutcome[OT], Generator[ValidationOutcome[OT], None, None]]:
+        if self._api_client:
+            payload: Dict[str, Any] = {"args": list(args)}
+            payload.update(**kwargs)
+            if metadata:
+                payload["metadata"] = extract_serializeable_metadata(metadata)
+            if llm_output is not None:
+                payload["llmOutput"] = llm_output
+            if num_reasks is not None:
+                payload["numReasks"] = num_reasks
+            if prompt_params is not None:
+                payload["promptParams"] = prompt_params
+            if llm_api is not None:
+                payload["llmApi"] = get_llm_api_enum(llm_api, *args, **kwargs)
+
+            should_stream = kwargs.get("stream", False)
+            if should_stream:
+                return self._stream_server_call(
+                    payload=payload,
+                    llm_output=llm_output,
+                    num_reasks=num_reasks,
+                    prompt_params=prompt_params,
+                    metadata=metadata,
+                    full_schema_reask=full_schema_reask,
+                    call_log=call_log,
+                    stream=should_stream,
+                )
+            else:
+                return self._single_server_call(
+                    payload=payload,
+                    llm_output=llm_output,
+                    num_reasks=num_reasks,
+                    prompt_params=prompt_params,
+                    metadata=metadata,
+                    full_schema_reask=full_schema_reask,
+                    call_log=call_log,
+                    stream=should_stream,
+                )
+        else:
+            raise ValueError("Guard does not have an api client!")
+
+    def _save(self):
+        api_key = os.environ.get("GUARDRAILS_API_KEY")
+        if api_key is not None:
+            if self.name is None:
+                self.name = f"gr-{str(self._guard_id)}"
+                logger.warn("Warning: No name passed to guard!")
+                logger.warn(
+                    "Use this auto-generated name to re-use this guard: {name}".format(
+                        name=self.name
+                    )
+                )
+            if not self._api_client:
+                self._api_client = GuardrailsApiClient(api_key=api_key)
+            self.upsert_guard()
+
+    def to_runnable(self) -> Runnable:
+        from guardrails.integrations.langchain.guard_runnable import GuardRunnable
+
+        return GuardRunnable(self)

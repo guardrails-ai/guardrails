@@ -9,7 +9,11 @@ from guardrails.classes.llm.llm_response import LLMResponse
 from guardrails.classes.generic.arbitrary_model import ArbitraryModel
 from guardrails.classes.validation.validator_logs import ValidatorLogs
 from guardrails.actions.reask import ReAsk
-from guardrails.classes.validation.validation_result import FailResult
+from guardrails.classes.validation.validation_result import (
+    ErrorSpan,
+    FailResult,
+    ValidationResult,
+)
 
 
 class Outputs(IOutputs, ArbitraryModel):
@@ -72,9 +76,35 @@ class Outputs(IOutputs, ArbitraryModel):
                 log
                 for log in self.validator_logs
                 if log.validation_result is not None
+                and isinstance(log.validation_result, ValidationResult)
                 and log.validation_result.outcome == "fail"
             ]
         )
+
+    @property
+    def error_spans_in_output(self) -> List[ErrorSpan]:
+        """The error spans from the LLM response.
+
+        These indices are relative to the complete LLM output.
+        """
+        total_len = 0
+        spans_in_output = []
+        for log in self.validator_logs:
+            result = log.validation_result
+            if isinstance(result, FailResult):
+                if result.error_spans is not None:
+                    for error_span in result.error_spans:
+                        spans_in_output.append(
+                            ErrorSpan(
+                                start=error_span.start + total_len,
+                                end=error_span.end + total_len,
+                                reason=error_span.reason,
+                            )
+                        )
+            if isinstance(result, ValidationResult):
+                if result and result.validated_chunk is not None:
+                    total_len += len(result.validated_chunk)
+        return spans_in_output
 
     @property
     def status(self) -> str:

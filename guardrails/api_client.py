@@ -1,11 +1,13 @@
+import json
 import os
-from typing import Optional
+from typing import Generator, Optional
 
+import requests
 from guardrails_api_client.configuration import Configuration
 from guardrails_api_client.api_client import ApiClient
 from guardrails_api_client.api.guard_api import GuardApi
 from guardrails_api_client.api.validate_api import ValidateApi
-from guardrails_api_client.models import Guard, ValidatePayload
+from guardrails_api_client.models import Guard, ValidatePayload, ValidationOutput
 
 
 class GuardrailsApiClient:
@@ -53,3 +55,34 @@ class GuardrailsApiClient:
             validate_payload=payload,
             x_openai_api_key=_openai_api_key,
         )
+
+    def stream_validate(
+        self,
+        guard: Guard,
+        payload: ValidatePayload,
+        openai_api_key: Optional[str] = None,
+    ) -> Generator[ValidationOutput, None, None]:
+        _openai_api_key = (
+            openai_api_key
+            if openai_api_key is not None
+            else os.environ.get("OPENAI_API_KEY")
+        )
+
+        url = f"{self.base_url}/guards/{guard.name}/validate"
+        headers = {
+            "Content-Type": "application/json",
+            "x-openai-api-key": _openai_api_key,
+        }
+
+        s = requests.Session()
+
+        with s.post(url, json=payload.to_dict(), headers=headers, stream=True) as resp:
+            for line in resp.iter_lines():
+                if not resp.ok:
+                    raise ValueError(
+                        f"status_code: {resp.status_code}"
+                        " reason: {resp.reason} text: {resp.text}"
+                    )
+                if line:
+                    json_output = json.loads(line)
+                    yield ValidationOutput.from_dict(json_output)

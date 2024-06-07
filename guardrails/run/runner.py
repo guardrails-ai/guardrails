@@ -582,6 +582,7 @@ class Runner:
         attempt_number: int,
         parsed_output: Any,
         output_schema: Dict[str, Any],
+        stream: Optional[bool] = False,
         **kwargs,
     ):
         """Validate the output."""
@@ -593,6 +594,9 @@ class Runner:
         if skeleton_reask:
             return skeleton_reask
 
+        if self.output_type != OutputTypes.STRING:
+            stream = None
+
         validated_output, metadata = validator_service.validate(
             value=parsed_output,
             metadata=self.metadata,
@@ -600,6 +604,8 @@ class Runner:
             iteration=iteration,
             disable_tracer=self._disable_tracer,
             path="$",
+            stream=stream,
+            **kwargs,
         )
         self.metadata.update(metadata)
         validated_output = validator_service.post_process_validation(

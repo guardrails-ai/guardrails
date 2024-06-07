@@ -16,6 +16,7 @@ from guardrails.logger import get_scope_handler
 from guardrails.prompt.prompt import Prompt
 from guardrails.classes.validation.validator_logs import ValidatorLogs
 from guardrails.actions.reask import ReAsk
+from guardrails.classes.validation.validation_result import ErrorSpan
 
 
 class Iteration(IIteration, ArbitraryModel):
@@ -137,6 +138,13 @@ versions 0.5.0 and beyond. Use 'guarded_output' instead."""
     def validator_logs(self) -> List[ValidatorLogs]:
         """The results of each individual validation performed on the LLM
         response during this iteration."""
+        if self.inputs.stream:
+            filtered_logs = [
+                log
+                for log in self.outputs.validator_logs
+                if log.validation_result and log.validation_result.validated_chunk
+            ]
+            return filtered_logs
         return self.outputs.validator_logs
 
     @property
@@ -155,6 +163,14 @@ versions 0.5.0 and beyond. Use 'guarded_output' instead."""
         """The validator logs for any validations that failed during this
         iteration."""
         return self.outputs.failed_validations
+
+    @property
+    def error_spans_in_output(self) -> List[ErrorSpan]:
+        """The error spans from the LLM response.
+
+        These indices are relative to the complete LLM output.
+        """
+        return self.outputs.error_spans_in_output
 
     @property
     def status(self) -> str:
