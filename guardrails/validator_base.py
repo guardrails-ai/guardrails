@@ -16,9 +16,13 @@ from typing import (
     Union,
     cast,
 )
+import sys
+
+import requests
 from typing_extensions import deprecated
 from warnings import warn
-
+from guardrails.classes.credentials import Credentials
+from guardrails.cli.logger import logger
 from langchain_core.messages import BaseMessage
 from langchain_core.runnables import Runnable, RunnableConfig
 from pydantic import BaseModel, Field
@@ -27,6 +31,11 @@ from guardrails.classes import InputType
 from guardrails.constants import hub
 from guardrails.errors import ValidationError
 from guardrails.utils.dataclass import dataclass
+from guardrails.cli.server.hub_client import (
+    get_jwt_token,
+    HttpError,
+    validator_hub_service,
+)
 
 VALIDATOR_IMPORT_WARNING = """Accessing `{validator_name}` using
 `from guardrails.validators import {validator_name}` is deprecated and
@@ -540,6 +549,51 @@ class Validator(Runnable):
         if validation_result.validated_chunk is None:
             validation_result.validated_chunk = chunk_to_validate
         return validation_result
+
+    def _post_hosted_endpoint(self, request_body: dict) -> Any:
+        """Makes a request to the Validator Hub to run a ML based validation model. This
+        request is authed through the hub and rerouted to a hosted ML model. The reply
+        from the hosted endpoint is returned and sent to this validator.
+
+
+        Args:
+            request_body (dict): A dictionary containing the required info for the final
+            inference endpoint to run.
+
+        Raises:
+            HttpError: If the recieved reply was not ok.
+
+        Returns:
+            Any: Post request response from the ML based validation model.
+        """
+
+        try:
+            creds = Credentials.from_rc_file(logger)
+            token = get_jwt_token(creds)
+            submission_url = f"{validator_hub_service}/validator/hosted_endpoint"
+
+            headers = {
+                "Hub_Authorization": f"Bearer {token}",
+                "Authorization": "",
+                "Content-Type": "application/json",
+            }
+            req = requests.post(submission_url, data=request_body, headers=headers)
+
+            body = req.json()
+            if not req.ok:
+                logger.error(req.status_code)
+                logger.error(body.get("message"))
+                http_error = HttpError()
+                http_error.status = req.status_code
+                http_error.message = body.get("message")
+                raise http_error
+
+            return body
+        except HttpError as http_e:
+            raise http_e
+        except Exception as e:
+            logger.error("An unexpected error occurred!", e)
+            sys.exit(1)
 
     def to_prompt(self, with_keywords: bool = True) -> str:
         """Convert the validator to a prompt.
