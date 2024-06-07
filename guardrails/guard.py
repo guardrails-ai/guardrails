@@ -587,14 +587,17 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
                     FutureWarning,
                 )
                 messages = kwargs.get("messages", None)
-                # TODO MOVE THE PREPARE STEP HERE we dont want to have deprecated params downstream at all
                 if messages is None:
                     if msg_history:
                         messages = msg_history
                     if instructions:
                         prompt = "\n\n".join([instructions, prompt])
-                    messages = [{"role": "user", "content": prompt}]
-                    kwargs["messages"] = messages
+                        messages = [{"role": "user", "content": prompt}]
+
+                # Format any variables in the messages with the prompt params.
+                for message in messages:
+                    message["content"] = message["content"].format(**prompt_params)
+                kwargs["messages"] = messages
 
             if metadata is None:
                 metadata = {}

@@ -133,13 +133,6 @@ class OpenAIModel(PromptCallableBase):
 
 
 class OpenAICallable(OpenAIModel):
-    def __init__(self, *args, **kwargs):
-        warnings.warn(
-            """Support for this callable is depcreated please migrate to model='TODO get right version' and the messages parameter. """,
-            FutureWarning,
-        )
-        return super().__call__(*args, **kwargs)
-
     def _invoke_llm(
         self,
         text: str,
@@ -148,6 +141,10 @@ class OpenAICallable(OpenAIModel):
         *args,
         **kwargs,
     ) -> LLMResponse:
+        warnings.warn(
+            """Support for this callable is depcreated please migrate to model='TODO get right version' and the messages parameter. """,
+            FutureWarning,
+        )
         if "api_key" in kwargs:
             api_key = kwargs.pop("api_key")
         else:
@@ -167,13 +164,6 @@ class OpenAICallable(OpenAIModel):
 
 class OpenAIChatCallable(OpenAIModel):
     supports_base_model = True
-
-    def __init__(self, *args, **kwargs):
-        warnings.warn(
-            """Support for this callable is depcreated please migrate to model='TODO get right version' and the messages parameter. """,
-            FutureWarning,
-        )
-        return super().__call__(*args, **kwargs)
 
     def _invoke_llm(
         self,
@@ -206,7 +196,10 @@ class OpenAIChatCallable(OpenAIModel):
         If `base_model` is passed, the chat engine will be used as a function
         on the base model.
         """
-
+        warnings.warn(
+            """Support for this callable is depcreated please migrate to model='TODO get right version' and the messages parameter. """,
+            FutureWarning,
+        )
         if msg_history is None and text is None:
             raise PromptCallableException(
                 "You must pass in either `text` or `msg_history` to `guard.__call__`."
@@ -278,12 +271,6 @@ class ManifestCallable(PromptCallableBase):
 
 
 class CohereCallable(PromptCallableBase):
-    def __init__(self, *args, **kwargs):
-        warnings.warn(
-            """Support for this callable is depcreated please migrate to model='TODO get right version' and the messages parameter. """,
-            FutureWarning,
-        )
-        return super().__call__(*args, **kwargs)
     def _invoke_llm(
         self, prompt: str, client_callable: Any, model: str, *args, **kwargs
     ) -> LLMResponse:
@@ -298,6 +285,11 @@ class CohereCallable(PromptCallableBase):
         )
         ```
         """  # noqa
+
+        warnings.warn(
+            """Support for this callable is depcreated please migrate to model='TODO get right version' and the messages parameter. """,
+            FutureWarning,
+        )
 
         if "instructions" in kwargs:
             prompt = kwargs.pop("instructions") + "\n\n" + prompt
@@ -328,12 +320,6 @@ class CohereCallable(PromptCallableBase):
 
 
 class AnthropicCallable(PromptCallableBase):
-    def __init__(self, *args, **kwargs):
-        warnings.warn(
-            """Support for this callable is depcreated please migrate to model='TODO get right version' and the messages parameter. """,
-            FutureWarning,
-        )
-        return super().__call__(*args, **kwargs)
     def _invoke_llm(
         self,
         prompt: str,
@@ -357,6 +343,10 @@ class AnthropicCallable(PromptCallableBase):
             ...
         ```
         """
+        warnings.warn(
+            """Support for this callable is depcreated please migrate to model='TODO get right version' and the messages parameter. """,
+            FutureWarning,
+        )
         try:
             import anthropic
         except ImportError:
@@ -816,8 +806,6 @@ class AsyncOpenAIChatCallable(AsyncOpenAIModel):
 class AsyncLiteLLMCallable(AsyncPromptCallableBase):
     async def invoke_llm(
         self,
-        text: str,
-        instructions: Optional[str] = None,
         *args,
         **kwargs,
     ):
@@ -845,10 +833,6 @@ class AsyncLiteLLMCallable(AsyncPromptCallableBase):
             ) from e
 
         response = await acompletion(
-            messages=litellm_messages(
-                prompt=text,
-                instructions=instructions,
-            ),
             *args,
             **kwargs,
         )
