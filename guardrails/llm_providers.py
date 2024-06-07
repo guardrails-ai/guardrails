@@ -1,4 +1,6 @@
 import asyncio
+import warnings
+
 from typing import (
     Any,
     Awaitable,
@@ -131,6 +133,13 @@ class OpenAIModel(PromptCallableBase):
 
 
 class OpenAICallable(OpenAIModel):
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            """Support for this callable is depcreated please migrate to model='TODO get right version' and the messages parameter. """,
+            FutureWarning,
+        )
+        return super().__call__(*args, **kwargs)
+
     def _invoke_llm(
         self,
         text: str,
@@ -158,6 +167,13 @@ class OpenAICallable(OpenAIModel):
 
 class OpenAIChatCallable(OpenAIModel):
     supports_base_model = True
+
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            """Support for this callable is depcreated please migrate to model='TODO get right version' and the messages parameter. """,
+            FutureWarning,
+        )
+        return super().__call__(*args, **kwargs)
 
     def _invoke_llm(
         self,
@@ -262,6 +278,12 @@ class ManifestCallable(PromptCallableBase):
 
 
 class CohereCallable(PromptCallableBase):
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            """Support for this callable is depcreated please migrate to model='TODO get right version' and the messages parameter. """,
+            FutureWarning,
+        )
+        return super().__call__(*args, **kwargs)
     def _invoke_llm(
         self, prompt: str, client_callable: Any, model: str, *args, **kwargs
     ) -> LLMResponse:
@@ -306,6 +328,12 @@ class CohereCallable(PromptCallableBase):
 
 
 class AnthropicCallable(PromptCallableBase):
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            """Support for this callable is depcreated please migrate to model='TODO get right version' and the messages parameter. """,
+            FutureWarning,
+        )
+        return super().__call__(*args, **kwargs)
     def _invoke_llm(
         self,
         prompt: str,
@@ -355,10 +383,7 @@ class AnthropicCallable(PromptCallableBase):
 class LiteLLMCallable(PromptCallableBase):
     def _invoke_llm(
         self,
-        text: Optional[str] = None,
         model: str = "gpt-3.5-turbo",
-        instructions: Optional[str] = None,
-        msg_history: Optional[List[Dict]] = None,
         *args,
         **kwargs,
     ) -> LLMResponse:
