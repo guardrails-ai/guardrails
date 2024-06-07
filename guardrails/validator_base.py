@@ -1,5 +1,5 @@
 import inspect
-import nltk
+import sys
 from collections import defaultdict
 from copy import deepcopy
 from enum import Enum
@@ -16,26 +16,26 @@ from typing import (
     Union,
     cast,
 )
-import sys
-
-import requests
-from typing_extensions import deprecated
 from warnings import warn
-from guardrails.classes.credentials import Credentials
-from guardrails.cli.logger import logger
+
+import nltk
+import requests
 from langchain_core.messages import BaseMessage
 from langchain_core.runnables import Runnable, RunnableConfig
 from pydantic import BaseModel, Field
+from typing_extensions import deprecated
 
 from guardrails.classes import InputType
+from guardrails.classes.credentials import Credentials
+from guardrails.cli.logger import logger
+from guardrails.cli.server.hub_client import (
+    HttpError,
+    get_jwt_token,
+    validator_hub_service,
+)
 from guardrails.constants import hub
 from guardrails.errors import ValidationError
 from guardrails.utils.dataclass import dataclass
-from guardrails.cli.server.hub_client import (
-    get_jwt_token,
-    HttpError,
-    validator_hub_service,
-)
 
 VALIDATOR_IMPORT_WARNING = """Accessing `{validator_name}` using
 `from guardrails.validators import {validator_name}` is deprecated and
@@ -576,6 +576,7 @@ class Validator(Runnable):
                 "Hub_Authorization": f"Bearer {token}",
                 "Authorization": "",
                 "Content-Type": "application/json",
+                "validator": self.rail_alias,
             }
             req = requests.post(submission_url, data=request_body, headers=headers)
 
