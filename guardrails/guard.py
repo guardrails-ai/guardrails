@@ -497,7 +497,7 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
     @overload
     def __call__(
         self,
-        llm_api: Optional[Callable],
+        llm_api: Optional[Callable] = None,
         prompt_params: Optional[Dict] = None,
         num_reasks: Optional[int] = None,
         prompt: Optional[str] = None,
@@ -513,7 +513,7 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
     @overload
     def __call__(
         self,
-        llm_api: Optional[Callable[[Any], Awaitable[Any]]],
+        llm_api: Optional[Callable[[Any], Awaitable[Any]]] = None,
         prompt_params: Optional[Dict] = None,
         num_reasks: Optional[int] = None,
         prompt: Optional[str] = None,
@@ -527,7 +527,7 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
 
     def __call__(
         self,
-        llm_api: Optional[Union[Callable, Callable[[Any], Awaitable[Any]]]],
+        llm_api: Optional[Union[Callable, Callable[[Any], Awaitable[Any]]]] = None,
         prompt_params: Optional[Dict] = None,
         num_reasks: Optional[int] = None,
         prompt: Optional[str] = None,
@@ -563,7 +563,7 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
 
         def __call(
             self,
-            llm_api: Optional[Union[Callable, Callable[[Any], Awaitable[Any]]]],
+            llm_api: Optional[Union[Callable, Callable[[Any], Awaitable[Any]]]] = None,
             prompt_params: Optional[Dict] = None,
             num_reasks: Optional[int] = None,
             prompt: Optional[str] = None,
@@ -577,7 +577,7 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
             llm_api_str = (
                 f"{llm_api.__module__}.{llm_api.__name__}" if llm_api else "None"
             )
-            if prompt_params is not None or prompt is not None or instructions is not None or prompt is not None:
+            if prompt_params is not None or prompt is not None or instructions is not None or prompt is not None or msg_history is not None:
                 warnings.warn(
                     "The `prompt_params`, `prompt`, `instructions`, and `msg_history` arguments are deprecated. "
                     "Please use the messages argument to set these values. For for example:"
@@ -586,13 +586,12 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
                     "See https://docs.guardrails.io/guardrails/guard#TODOMakeTheseDocs for more information.",
                     FutureWarning,
                 )
-                messages = kwargs.get("messages", None)
-                if messages is None:
-                    if msg_history:
-                        messages = msg_history
-                    if instructions:
-                        prompt = "\n\n".join([instructions, prompt])
-                        messages = [{"role": "user", "content": prompt}]
+                messages = []
+                if msg_history:
+                    messages = msg_history
+                if instructions:
+                    prompt = "\n\n".join([instructions, prompt])
+                    messages = [{"role": "user", "content": prompt}]
 
                 # Format any variables in the messages with the prompt params.
                 for message in messages:
@@ -703,7 +702,11 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
             __call,
             self,
             llm_api,
+            prompt_params,
             num_reasks,
+            prompt,
+            instructions,
+            msg_history,
             metadata,
             full_schema_reask,
             *args,
