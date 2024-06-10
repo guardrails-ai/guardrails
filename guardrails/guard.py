@@ -577,26 +577,17 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
             llm_api_str = (
                 f"{llm_api.__module__}.{llm_api.__name__}" if llm_api else "None"
             )
-            if prompt_params is not None or prompt is not None or instructions is not None or prompt is not None or msg_history is not None:
+
+            if prompt_params is not None or prompt is not None or instructions is not None or msg_history is not None:
                 warnings.warn(
                     "The `prompt_params`, `prompt`, `instructions`, and `msg_history` arguments are deprecated. "
-                    "Please use the messages argument to set these values. For for example:"
-                    "messages=[{ \"content\": \"Hello, how are you?\",\"role\": \"user\"}]"
                     "This will be removed in 0.6.x."
+                    "Please use the messages and model interface without an llm_api unless using a custom callable."
+                    "For for example:"
+                    "messages=[{ \"content\": \"Hello, how are you?\",\"role\": \"user\"}], \"model\"=\"gpt4.o\""
                     "See https://docs.guardrails.io/guardrails/guard#TODOMakeTheseDocs for more information.",
                     FutureWarning,
                 )
-                messages = kwargs.get('messages', [])
-                if msg_history:
-                    messages = msg_history
-                if instructions:
-                    prompt = "\n\n".join([instructions, prompt])
-                messages = [{"role": "user", "content": prompt}]
-
-                # Format any variables in the messages with the prompt params.
-                for message in messages:
-                    message["content"] = message["content"].format(**prompt_params)
-                kwargs["messages"] = messages
 
             if metadata is None:
                 metadata = {}
