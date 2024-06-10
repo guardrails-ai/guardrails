@@ -181,63 +181,35 @@ versions 0.5.0 and beyond. Use 'guarded_output' instead."""
 
     @property
     def rich_group(self) -> Group:
-        def create_msg_history_table(
-            msg_history: Optional[List[Dict[str, Prompt]]],
+        def create_messages_table(
+            messages: Optional[List[Dict[str, Prompt]]],
         ) -> Union[str, Table]:
-            if msg_history is None:
+            if messages is None:
                 return "No message history."
             table = Table(show_lines=True)
             table.add_column("Role", justify="right", no_wrap=True)
             table.add_column("Content")
 
-            for msg in msg_history:
+            for msg in messages:
                 table.add_row(str(msg["role"]), msg["content"].source)
 
             return table
 
-        table = create_msg_history_table(self.inputs.msg_history)
+        table = create_messages_table(self.inputs.messages)
 
-        if self.inputs.instructions is not None:
-            return Group(
-                Panel(
-                    self.inputs.prompt.source if self.inputs.prompt else "No prompt",
-                    title="Prompt",
-                    style="on #F0F8FF",
-                ),
-                Panel(
-                    self.inputs.instructions.source,
-                    title="Instructions",
-                    style="on #FFF0F2",
-                ),
-                Panel(table, title="Message History", style="on #E7DFEB"),
-                Panel(
-                    self.raw_output or "", title="Raw LLM Output", style="on #F5F5DC"
-                ),
-                Panel(
-                    pretty_repr(self.validation_response),
-                    title="Validated Output",
-                    style="on #F0FFF0",
-                ),
-            )
-        else:
-            return Group(
-                Panel(
-                    self.inputs.prompt.source if self.inputs.prompt else "No prompt",
-                    title="Prompt",
-                    style="on #F0F8FF",
-                ),
-                Panel(table, title="Message History", style="on #E7DFEB"),
-                Panel(
-                    self.raw_output or "", title="Raw LLM Output", style="on #F5F5DC"
-                ),
-                Panel(
-                    self.validation_response
-                    if isinstance(self.validation_response, str)
-                    else pretty_repr(self.validation_response),
-                    title="Validated Output",
-                    style="on #F0FFF0",
-                ),
-            )
+        return Group(
+            Panel(table, title="Messages", style="on #E7DFEB"),
+            Panel(
+                self.raw_output or "", title="Raw LLM Output", style="on #F5F5DC"
+            ),
+            Panel(
+                self.validation_response
+                if isinstance(self.validation_response, str)
+                else pretty_repr(self.validation_response),
+                title="Validated Output",
+                style="on #F0FFF0",
+            ),
+        )
 
     def __str__(self) -> str:
         return pretty_repr(self)

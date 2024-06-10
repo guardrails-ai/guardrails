@@ -23,13 +23,9 @@ class AsyncRunner(Runner):
         self,
         output_schema: Schema,
         num_reasks: int,
-        prompt: Optional[Union[str, Prompt]] = None,
-        instructions: Optional[Union[str, Instructions]] = None,
-        msg_history: Optional[List[Dict]] = None,
+        messages: Optional[List[Dict]] = None,
         api: Optional[AsyncPromptCallableBase] = None,
-        prompt_schema: Optional[StringSchema] = None,
-        instructions_schema: Optional[StringSchema] = None,
-        msg_history_schema: Optional[StringSchema] = None,
+        messages_schema: Optional[StringSchema] = None,
         metadata: Optional[Dict[str, Any]] = None,
         output: Optional[str] = None,
         base_model: Optional[
@@ -41,13 +37,9 @@ class AsyncRunner(Runner):
         super().__init__(
             output_schema=output_schema,
             num_reasks=num_reasks,
-            prompt=prompt,
-            instructions=instructions,
-            msg_history=msg_history,
+            messages=messages,
             api=api,
-            prompt_schema=prompt_schema,
-            instructions_schema=instructions_schema,
-            msg_history_schema=msg_history_schema,
+            messages_schema=messages_schema,
             metadata=metadata,
             output=output,
             base_model=base_model,
@@ -84,20 +76,12 @@ class AsyncRunner(Runner):
                 )
 
             (
-                instructions,
-                prompt,
-                msg_history,
-                prompt_schema,
-                instructions_schema,
-                msg_history_schema,
+                messages,
+                messages_schema,
                 output_schema,
             ) = (
-                self.instructions,
-                self.prompt,
-                self.msg_history,
-                self.prompt_schema,
-                self.instructions_schema,
-                self.msg_history_schema,
+                self.messages,
+                self.messages_schema,
                 self.output_schema,
             )
             for index in range(self.num_reasks + 1):
@@ -105,13 +89,10 @@ class AsyncRunner(Runner):
                 iteration = await self.async_step(
                     index=index,
                     api=self.api,
-                    instructions=instructions,
                     prompt=prompt,
-                    msg_history=msg_history,
+                    messages=messages,
                     prompt_params=prompt_params,
-                    prompt_schema=prompt_schema,
-                    instructions_schema=instructions_schema,
-                    msg_history_schema=msg_history_schema,
+                    messages_schema=messages_schema,
                     output_schema=output_schema,
                     output=self.output if index == 0 else None,
                     call_log=call_log,
@@ -123,10 +104,8 @@ class AsyncRunner(Runner):
 
                 # Get new prompt and output schema.
                 (
-                    prompt,
-                    instructions,
                     output_schema,
-                    msg_history,
+                    messages,
                 ) = self.prepare_to_loop(
                     iteration.reasks,
                     call_log.validation_response,
@@ -150,13 +129,9 @@ class AsyncRunner(Runner):
         self,
         index: int,
         api: Optional[AsyncPromptCallableBase],
-        instructions: Optional[Instructions],
-        prompt: Optional[Prompt],
-        msg_history: Optional[List[Dict]],
+        messages: Optional[List[Dict]],
         prompt_params: Dict,
-        prompt_schema: Optional[StringSchema],
-        instructions_schema: Optional[StringSchema],
-        msg_history_schema: Optional[StringSchema],
+        messages_schema: Optional[StringSchema],
         output_schema: Schema,
         call_log: Call,
         output: Optional[str] = None,
@@ -165,9 +140,7 @@ class AsyncRunner(Runner):
         inputs = Inputs(
             llm_api=api,
             llm_output=output,
-            instructions=instructions,
-            prompt=prompt,
-            msg_history=msg_history,
+            messages=messages,
             prompt_params=prompt_params,
             num_reasks=self.num_reasks,
             metadata=self.metadata,
@@ -180,31 +153,23 @@ class AsyncRunner(Runner):
         try:
             # Prepare: run pre-processing, and input validation.
             if output:
-                instructions = None
-                prompt = None
-                msg_history = None
+                messages = None
             else:
-                instructions, prompt, msg_history = await self.async_prepare(
+                messages = await self.async_prepare(
                     call_log,
                     index,
-                    instructions,
-                    prompt,
-                    msg_history,
+                    messages,
                     prompt_params,
                     api,
-                    prompt_schema,
-                    instructions_schema,
-                    msg_history_schema,
+                    messages_schema,
                     output_schema,
                 )
 
-            iteration.inputs.instructions = instructions
-            iteration.inputs.prompt = prompt
-            iteration.inputs.msg_history = msg_history
+            iteration.inputs.messages = messages
 
             # Call: run the API.
             llm_response = await self.async_call(
-                index, instructions, prompt, msg_history, api, output
+                index, messages, api, output
             )
 
             iteration.outputs.llm_response_info = llm_response
@@ -249,9 +214,7 @@ class AsyncRunner(Runner):
     async def async_call(
         self,
         index: int,
-        instructions: Optional[Instructions],
-        prompt: Optional[Prompt],
-        msg_history: Optional[List[Dict]],
+        messages: Optional[List[Dict]],
         api: Optional[AsyncPromptCallableBase],
         output: Optional[str] = None,
     ) -> LLMResponse:
@@ -274,12 +237,8 @@ class AsyncRunner(Runner):
             )
         elif api_fn is None:
             raise ValueError("Either API or output must be provided.")
-        elif msg_history:
-            llm_response = await api_fn(msg_history=msg_history_source(msg_history))
-        elif prompt and instructions:
-            llm_response = await api_fn(prompt.source, instructions=instructions.source)
-        elif prompt:
-            llm_response = await api_fn(prompt.source)
+        elif messages:
+            llm_response = await api_fn(messages=msg_history_source(messages))
         else:
             llm_response = await api_fn()
         return llm_response
@@ -302,14 +261,10 @@ class AsyncRunner(Runner):
         self,
         call_log: Call,
         index: int,
-        instructions: Optional[Instructions],
-        prompt: Optional[Prompt],
-        msg_history: Optional[List[Dict]],
+        messages: Optional[List[Dict]],
         prompt_params: Dict,
         api: Optional[Union[PromptCallableBase, AsyncPromptCallableBase]],
-        prompt_schema: Optional[StringSchema],
-        instructions_schema: Optional[StringSchema],
-        msg_history_schema: Optional[StringSchema],
+        messages_schema: Optional[StringSchema],
         output_schema: Schema,
     ) -> Tuple[Optional[Instructions], Optional[Prompt], Optional[List[Dict]]]:
         """Prepare by running pre-processing and input validation.
@@ -323,85 +278,31 @@ class AsyncRunner(Runner):
         if prompt_params is None:
             prompt_params = {}
 
-        if msg_history:
-            msg_history = copy.deepcopy(msg_history)
+        if messages:
+            messages = copy.deepcopy(messages)
             # Format any variables in the message history with the prompt params.
-            for msg in msg_history:
+            for msg in messages:
                 msg["content"] = msg["content"].format(**prompt_params)
 
-            prompt, instructions = None, None
-
             # validate msg_history
-            if msg_history_schema is not None:
-                msg_str = msg_history_string(msg_history)
+            if messages_schema is not None:
+                msg_str = msg_history_string(messages)
                 inputs = Inputs(
                     llm_output=msg_str,
                 )
                 iteration = Iteration(inputs=inputs)
                 call_log.iterations.insert(0, iteration)
-                validated_msg_history = await msg_history_schema.async_validate(
+                validated_messages = await messages_schema.async_validate(
                     iteration, msg_str, self.metadata
                 )
-                if isinstance(validated_msg_history, ReAsk):
+                if isinstance(validated_messages, ReAsk):
                     raise ValidationError(
-                        f"Message history validation failed: "
-                        f"{validated_msg_history}"
+                        f"Messages validation failed: "
+                        f"{validated_messages}"
                     )
-                if validated_msg_history != msg_str:
-                    raise ValidationError("Message history validation failed")
-        elif prompt is not None:
-            if isinstance(prompt, str):
-                prompt = Prompt(prompt)
-
-            prompt = prompt.format(**prompt_params)
-
-            # TODO(shreya): should there be any difference
-            #  to parsing params for prompt?
-            if instructions is not None and isinstance(instructions, Instructions):
-                instructions = instructions.format(**prompt_params)
-
-            instructions, prompt = output_schema.preprocess_prompt(
-                api, instructions, prompt
-            )
-
-            # validate prompt
-            if prompt_schema is not None and prompt is not None:
-                inputs = Inputs(
-                    llm_output=prompt.source,
-                )
-                iteration = Iteration(inputs=inputs)
-                call_log.iterations.insert(0, iteration)
-                validated_prompt = await prompt_schema.async_validate(
-                    iteration, prompt.source, self.metadata
-                )
-                iteration.outputs.validation_response = validated_prompt
-                if validated_prompt is None:
-                    raise ValidationError("Prompt validation failed")
-                if isinstance(validated_prompt, ReAsk):
-                    raise ValidationError(
-                        f"Prompt validation failed: {validated_prompt}"
-                    )
-                prompt = Prompt(validated_prompt)
-
-            # validate instructions
-            if instructions_schema is not None and instructions is not None:
-                inputs = Inputs(
-                    llm_output=instructions.source,
-                )
-                iteration = Iteration(inputs=inputs)
-                call_log.iterations.insert(0, iteration)
-                validated_instructions = await instructions_schema.async_validate(
-                    iteration, instructions.source, self.metadata
-                )
-                iteration.outputs.validation_response = validated_instructions
-                if validated_instructions is None:
-                    raise ValidationError("Instructions validation failed")
-                if isinstance(validated_instructions, ReAsk):
-                    raise ValidationError(
-                        f"Instructions validation failed: {validated_instructions}"
-                    )
-                instructions = Instructions(validated_instructions)
+                if validated_messages != msg_str:
+                    raise ValidationError("Messages validation failed")
         else:
-            raise ValueError("Prompt or message history must be provided.")
+            raise ValueError("messages must be provided.")
 
-        return instructions, prompt, msg_history
+        return messages
