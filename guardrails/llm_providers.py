@@ -373,7 +373,10 @@ class AnthropicCallable(PromptCallableBase):
 class LiteLLMCallable(PromptCallableBase):
     def _invoke_llm(
         self,
+        text: Optional[str] = None,
         model: str = "gpt-3.5-turbo",
+        instructions: Optional[str] = None,
+        msg_history: Optional[List[Dict]] = None,
         *args,
         **kwargs,
     ) -> LLMResponse:
@@ -399,7 +402,12 @@ class LiteLLMCallable(PromptCallableBase):
                 "The `litellm` package is not installed. "
                 "Install with `pip install litellm`"
             ) from e
-
+        if text is not None or instructions is not None or msg_history is not None:
+            messages = litellm_messages(
+                prompt=text, instructions=instructions, msg_history=msg_history
+            ) 
+            kwargs["messages"] = messages
+        
         response = completion(
             model=model,
             *args,
@@ -806,6 +814,8 @@ class AsyncOpenAIChatCallable(AsyncOpenAIModel):
 class AsyncLiteLLMCallable(AsyncPromptCallableBase):
     async def invoke_llm(
         self,
+        text: str,
+        instructions: Optional[str] = None,
         *args,
         **kwargs,
     ):
@@ -831,6 +841,13 @@ class AsyncLiteLLMCallable(AsyncPromptCallableBase):
                 "The `litellm` package is not installed. "
                 "Install with `pip install litellm`"
             ) from e
+
+
+        if text is not None or instructions is not None:
+            messages = litellm_messages(
+                prompt=text, instructions=instructions
+            ) 
+            kwargs["messages"] = messages
 
         response = await acompletion(
             *args,
