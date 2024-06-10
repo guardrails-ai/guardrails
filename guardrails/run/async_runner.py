@@ -265,12 +265,12 @@ class AsyncRunner(Runner):
         prompt_params: Dict,
         api: Optional[Union[PromptCallableBase, AsyncPromptCallableBase]],
         messages_schema: Optional[StringSchema],
-        output_schema: Schema,
-    ) -> Tuple[Optional[Instructions], Optional[Prompt], Optional[List[Dict]]]:
+        output_schema: Schema, #TODO is this ok to be unused?
+    ) -> Tuple[ Optional[List[Dict]]]:
         """Prepare by running pre-processing and input validation.
 
         Returns:
-            The instructions, prompt, and message history.
+            messages
         """
         if api is None:
             raise ValueError("API must be provided.")
@@ -284,7 +284,7 @@ class AsyncRunner(Runner):
             for msg in messages:
                 msg["content"] = msg["content"].format(**prompt_params)
 
-            # validate msg_history
+            # validate messages
             if messages_schema is not None:
                 msg_str = msg_history_string(messages)
                 inputs = Inputs(
