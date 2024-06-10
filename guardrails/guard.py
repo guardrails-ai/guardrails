@@ -666,7 +666,11 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
             ):
                 return self._call_server(
                     llm_api=llm_api,
+                    prompt_params=prompt_params,
                     num_reasks=self.num_reasks,
+                    prompt=prompt,
+                    instructions=instructions,
+                    msg_history=msg_history,
                     metadata=metadata,
                     full_schema_reask=full_schema_reask,
                     call_log=call_log,
@@ -679,7 +683,11 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
             if asyncio.iscoroutinefunction(llm_api):
                 return self._call_async(
                     llm_api,
+                    prompt_params=prompt_params,
                     num_reasks=self.num_reasks,
+                    prompt=prompt,
+                    instructions=instructions,
+                    msg_history=msg_history,
                     metadata=metadata,
                     full_schema_reask=full_schema_reask,
                     call_log=call_log,
@@ -689,7 +697,11 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
             # Otherwise, call the LLM synchronously
             return self._call_sync(
                 llm_api,
+                prompt_params=prompt_params,
                 num_reasks=self.num_reasks,
+                prompt=prompt,
+                instructions=instructions,
+                msg_history=msg_history,
                 metadata=metadata,
                 full_schema_reask=full_schema_reask,
                 call_log=call_log,
@@ -717,17 +729,26 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
         self,
         llm_api: Optional[Callable],
         num_reasks: int,
+        prompt: Optional[str],
+        prompt_params: Dict,
+        instructions: Optional[str],
+        msg_history: Optional[List[Dict]],
         metadata: Dict,
         full_schema_reask: bool,
         call_log: Call,
         *args,
         **kwargs,
     ) -> Union[ValidationOutcome[OT], Iterable[ValidationOutcome[OT]]]:
-
+        instructions_obj = instructions or self.rail.instructions
+        prompt_obj = prompt or self.rail.prompt
+        msg_history_obj = msg_history or []
         # Check whether stream is set
         if kwargs.get("stream", False):
             # If stream is True, use StreamRunner
             runner = StreamRunner(
+                instructions=instructions_obj,
+                prompt=prompt_obj,
+                msg_history=msg_history_obj,
                 api=get_llm_ask(llm_api, *args, **kwargs),
                 prompt_schema=self.rail.prompt_schema,
                 instructions_schema=self.rail.instructions_schema,
@@ -739,10 +760,13 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
                 full_schema_reask=full_schema_reask,
                 disable_tracer=self._disable_tracer,
             )
-            return runner(call_log=call_log)
+            return runner(call_log=call_log, prompt_params=prompt_params)
         else:
             # Otherwise, use Runner
             runner = Runner(
+                instructions=instructions_obj,
+                prompt=prompt_obj,
+                msg_history=msg_history_obj,
                 api=get_llm_ask(llm_api, *args, **kwargs),
                 prompt_schema=self.rail.prompt_schema,
                 instructions_schema=self.rail.instructions_schema,
@@ -754,7 +778,7 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
                 full_schema_reask=full_schema_reask,
                 disable_tracer=self._disable_tracer,
             )
-            call = runner(call_log=call_log)
+            call = runner(call_log=call_log, prompt_params=prompt_params)
             return ValidationOutcome[OT].from_guard_history(call)
 
     @deprecated(
@@ -768,6 +792,9 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
         llm_api: Optional[Callable[[Any], Awaitable[Any]]],
         prompt_params: Dict,
         num_reasks: int,
+        prompt: Optional[str],
+        instructions: Optional[str],
+        msg_history: Optional[List[Dict]],
         metadata: Dict,
         full_schema_reask: bool,
         call_log: Call,
@@ -792,8 +819,13 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
         Returns:
             The raw text output from the LLM and the validated output.
         """
-
+        instructions_obj = instructions or self.rail.instructions
+        prompt_obj = prompt or self.rail.prompt
+        msg_history_obj = msg_history or []
         runner = AsyncRunner(
+            instructions=instructions_obj,
+            prompt=prompt_obj,
+            msg_history=msg_history_obj,
             api=get_async_llm_ask(llm_api, *args, **kwargs),
             prompt_schema=self.rail.prompt_schema,
             instructions_schema=self.rail.instructions_schema,
