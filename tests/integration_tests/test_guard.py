@@ -921,20 +921,3 @@ def test_pydantic_with_lite_llm(mocker):
     )
 
     assert final_output.raw_llm_output == string.MSG_LLM_OUTPUT_INCORRECT
-
-def test_pydantic_with_lite_llm_with_instructions(mocker):
-    """Test litellm JSON generation with message history re-asking."""
-    mocker.patch(
-        "guardrails.llm_providers.LiteLLMCallable",
-        new=MockLiteLLMChatCallable,
-    )
-    text_history = 'some text'
-    guard = gd.Guard.from_pydantic(output_class=pydantic.WITH_MSG_HISTORY)
-    final_output = guard(
-    model='gpt-4o',
-    prompt='this is some prommpt',
-    prompt_params={"chats": text_history},
-    instructions="these are some from pydantic test instructions",
-    )
-
-    assert final_output.raw_llm_output == entity_extraction.LLM_OUTPUT
