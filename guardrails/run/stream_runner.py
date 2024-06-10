@@ -51,33 +51,21 @@ class StreamRunner(Runner):
             )
 
         (
-            instructions,
-            prompt,
-            msg_history,
-            prompt_schema,
-            instructions_schema,
-            msg_history_schema,
+            messages,
+            messages_schema,
             output_schema,
         ) = (
-            self.instructions,
-            self.prompt,
-            self.msg_history,
-            self.prompt_schema,
-            self.instructions_schema,
-            self.msg_history_schema,
+            self.messages,
+            self.messages_schema,
             self.output_schema,
         )
 
         return self.step(
             index=0,
             api=self.api,
-            instructions=instructions,
-            prompt=prompt,
-            msg_history=msg_history,
+            messages=messages,
             prompt_params=prompt_params,
-            prompt_schema=prompt_schema,
-            instructions_schema=instructions_schema,
-            msg_history_schema=msg_history_schema,
+            messages_schema=messages_schema,
             output_schema=output_schema,
             output=self.output,
             call_log=call_log,
@@ -87,13 +75,9 @@ class StreamRunner(Runner):
         self,
         index: int,
         api: Optional[PromptCallableBase],
-        instructions: Optional[Instructions],
-        prompt: Optional[Prompt],
-        msg_history: Optional[List[Dict]],
+        messages: Optional[List[Dict]],
         prompt_params: Dict,
-        prompt_schema: Optional[StringSchema],
-        instructions_schema: Optional[StringSchema],
-        msg_history_schema: Optional[StringSchema],
+        messages_schema: Optional[StringSchema],
         output_schema: Schema,
         call_log: Call,
         output: Optional[str] = None,
@@ -102,9 +86,7 @@ class StreamRunner(Runner):
         inputs = Inputs(
             llm_api=api,
             llm_output=output,
-            instructions=instructions,
-            prompt=prompt,
-            msg_history=msg_history,
+            messages=messages,
             prompt_params=prompt_params,
             num_reasks=self.num_reasks,
             metadata=self.metadata,
@@ -119,28 +101,24 @@ class StreamRunner(Runner):
         if output:
             instructions = None
             prompt = None
-            msg_history = None
+            messages = None
         else:
-            instructions, prompt, msg_history = self.prepare(
+            messages = self.prepare(
                 call_log,
                 index,
                 instructions,
                 prompt,
-                msg_history,
+                messages,
                 prompt_params,
                 api,
-                prompt_schema,
-                instructions_schema,
-                msg_history_schema,
+                messages_schema,
                 output_schema,
             )
 
-        iteration.inputs.prompt = prompt
-        iteration.inputs.instructions = instructions
-        iteration.inputs.msg_history = msg_history
+        iteration.inputs.messages = messages
 
         # Call: run the API that returns a generator wrapped in LLMResponse
-        llm_response = self.call(index, instructions, prompt, msg_history, api, output)
+        llm_response = self.call(index, messages, api, output)
 
         # Get the stream (generator) from the LLMResponse
         stream = llm_response.stream_output

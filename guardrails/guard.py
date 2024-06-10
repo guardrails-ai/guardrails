@@ -500,9 +500,6 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
         llm_api: Optional[Callable] = None,
         prompt_params: Optional[Dict] = None,
         num_reasks: Optional[int] = None,
-        prompt: Optional[str] = None,
-        instructions: Optional[str] = None,
-        msg_history: Optional[List[Dict]] = None,
         metadata: Optional[Dict] = None,
         full_schema_reask: Optional[bool] = None,
         stream: Optional[bool] = False,
@@ -516,9 +513,6 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
         llm_api: Optional[Callable[[Any], Awaitable[Any]]] = None,
         prompt_params: Optional[Dict] = None,
         num_reasks: Optional[int] = None,
-        prompt: Optional[str] = None,
-        instructions: Optional[str] = None,
-        msg_history: Optional[List[Dict]] = None,
         metadata: Optional[Dict] = None,
         full_schema_reask: Optional[bool] = None,
         *args,
@@ -530,9 +524,6 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
         llm_api: Optional[Union[Callable, Callable[[Any], Awaitable[Any]]]] = None,
         prompt_params: Optional[Dict] = None,
         num_reasks: Optional[int] = None,
-        prompt: Optional[str] = None,
-        instructions: Optional[str] = None,
-        msg_history: Optional[List[Dict]] = None,
         metadata: Optional[Dict] = None,
         full_schema_reask: Optional[bool] = None,
         *args,
@@ -548,9 +539,7 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
                      (e.g. openai.Completion.create or openai.Completion.acreate)
             prompt_params: The parameters to pass to the prompt.format() method.
             num_reasks: The max times to re-ask the LLM for invalid output.
-            prompt: The prompt to use for the LLM.
-            instructions: Instructions for chat models.
-            msg_history: The message history to pass to the LLM.
+            messages: The message history to pass to the LLM.
             metadata: Metadata to pass to the validators.
             full_schema_reask: When reasking, whether to regenerate the full schema
                                or just the incorrect values.
@@ -566,9 +555,6 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
             llm_api: Optional[Union[Callable, Callable[[Any], Awaitable[Any]]]] = None,
             prompt_params: Optional[Dict] = None,
             num_reasks: Optional[int] = None,
-            prompt: Optional[str] = None,
-            instructions: Optional[str] = None,
-            msg_history: Optional[List[Dict]] = None,
             metadata: Optional[Dict] = None,
             full_schema_reask: Optional[bool] = None,
             *args,
@@ -577,17 +563,6 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
             llm_api_str = (
                 f"{llm_api.__module__}.{llm_api.__name__}" if llm_api else "None"
             )
-
-            if prompt_params is not None or prompt is not None or instructions is not None or msg_history is not None:
-                warnings.warn(
-                    "The `prompt_params`, `prompt`, `instructions`, and `msg_history` arguments are deprecated. "
-                    "This will be removed in 0.6.x."
-                    "Please use the messages and model interface without an llm_api unless using a custom callable."
-                    "For for example:"
-                    "messages=[{ \"content\": \"Hello, how are you?\",\"role\": \"user\"}], \"model\"=\"gpt4.o\""
-                    "See https://docs.guardrails.io/guardrails/guard#TODOMakeTheseDocs for more information.",
-                    FutureWarning,
-                )
 
             if metadata is None:
                 metadata = {}
@@ -628,18 +603,11 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
                     "`num_reasks` is `None` after calling `configure()`. "
                     "This should never happen."
                 )
+            messages = kwargs.get("msg_history", None)
 
-            input_prompt = prompt or (
-                self.rail.prompt._source if self.rail.prompt else None
-            )
-            input_instructions = instructions or (
-                self.rail.instructions._source if self.rail.instructions else None
-            )
             call_inputs = CallInputs(
                 llm_api=llm_api,
-                prompt=input_prompt,
-                instructions=input_instructions,
-                msg_history=msg_history,
+                messages=messages,
                 prompt_params=prompt_params,
                 num_reasks=self.num_reasks,
                 metadata=metadata,
@@ -659,9 +627,6 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
                     llm_api=llm_api,
                     prompt_params=prompt_params,
                     num_reasks=self.num_reasks,
-                    prompt=prompt,
-                    instructions=instructions,
-                    msg_history=msg_history,
                     metadata=metadata,
                     full_schema_reask=full_schema_reask,
                     call_log=call_log,
@@ -676,9 +641,6 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
                     llm_api,
                     prompt_params=prompt_params,
                     num_reasks=self.num_reasks,
-                    prompt=prompt,
-                    instructions=instructions,
-                    msg_history=msg_history,
                     metadata=metadata,
                     full_schema_reask=full_schema_reask,
                     call_log=call_log,
@@ -690,9 +652,6 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
                 llm_api,
                 prompt_params=prompt_params,
                 num_reasks=self.num_reasks,
-                prompt=prompt,
-                instructions=instructions,
-                msg_history=msg_history,
                 metadata=metadata,
                 full_schema_reask=full_schema_reask,
                 call_log=call_log,
@@ -707,9 +666,6 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
             llm_api,
             prompt_params,
             num_reasks,
-            prompt,
-            instructions,
-            msg_history,
             metadata,
             full_schema_reask,
             *args,
@@ -720,26 +676,19 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
         self,
         llm_api: Optional[Callable],
         num_reasks: int,
-        prompt: Optional[str],
         prompt_params: Dict,
-        instructions: Optional[str],
-        msg_history: Optional[List[Dict]],
         metadata: Dict,
         full_schema_reask: bool,
         call_log: Call,
         *args,
         **kwargs,
     ) -> Union[ValidationOutcome[OT], Iterable[ValidationOutcome[OT]]]:
-        instructions_obj = instructions or self.rail.instructions
-        prompt_obj = prompt or self.rail.prompt
-        msg_history_obj = msg_history or []
+        messages = kwargs.get("messages", [])
         # Check whether stream is set
         if kwargs.get("stream", False):
             # If stream is True, use StreamRunner
             runner = StreamRunner(
-                instructions=instructions_obj,
-                prompt=prompt_obj,
-                msg_history=msg_history_obj,
+                messages=messages,
                 api=get_llm_ask(llm_api, *args, **kwargs),
                 prompt_schema=self.rail.prompt_schema,
                 instructions_schema=self.rail.instructions_schema,
@@ -755,9 +704,7 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
         else:
             # Otherwise, use Runner
             runner = Runner(
-                instructions=instructions_obj,
-                prompt=prompt_obj,
-                msg_history=msg_history_obj,
+                messages=messages,
                 api=get_llm_ask(llm_api, *args, **kwargs),
                 prompt_schema=self.rail.prompt_schema,
                 instructions_schema=self.rail.instructions_schema,

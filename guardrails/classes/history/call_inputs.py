@@ -11,10 +11,7 @@ class CallInputs(Inputs):
         "during Guard.__call__ or Guard.parse.",
         default=None,
     )
-    prompt: Optional[str] = Field(
-        description="The prompt string as provided by the user.", default=None
-    )
-    instructions: Optional[str] = Field(
+    messages: Optional[list[dict]] = Field(
         description="The instructions string as provided by the user.", default=None
     )
     args: List[Any] = Field(
