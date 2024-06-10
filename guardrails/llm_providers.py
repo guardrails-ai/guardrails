@@ -142,7 +142,7 @@ class OpenAICallable(OpenAIModel):
         **kwargs,
     ) -> LLMResponse:
         warnings.warn(
-            """Support for this callable is depcreated please migrate to model='TODO get right version' and the messages parameter. """,
+            """Support for this callable is depcreated please migrate to model="gpt-3.5-turbo-instruct" and the messages parameter. """,
             FutureWarning,
         )
         if "api_key" in kwargs:
@@ -197,7 +197,7 @@ class OpenAIChatCallable(OpenAIModel):
         on the base model.
         """
         warnings.warn(
-            """Support for this callable is depcreated please migrate to model='TODO get right version' and the messages parameter. """,
+            """Support for this callable is depcreated please migrate to model='gpt-4o' and the messages parameter. """,
             FutureWarning,
         )
         if msg_history is None and text is None:
@@ -287,7 +287,7 @@ class CohereCallable(PromptCallableBase):
         """  # noqa
 
         warnings.warn(
-            """Support for this callable is depcreated please migrate to model='TODO get right version' and the messages parameter. """,
+            """Support for this callable is depcreated please migrate to model="command-r" and the messages parameter. """,
             FutureWarning,
         )
 
@@ -344,7 +344,7 @@ class AnthropicCallable(PromptCallableBase):
         ```
         """
         warnings.warn(
-            """Support for this callable is depcreated please migrate to model='TODO get right version' and the messages parameter. """,
+            """Support for this callable is depcreated please migrate to model="claude-3-opus-20240229" and the messages parameter. """,
             FutureWarning,
         )
         try:
