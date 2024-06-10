@@ -303,6 +303,12 @@ class AsyncStreamRunner(StreamRunner):
             )
         elif api_fn is None:
             raise ValueError("Either API or output must be provided.")
+        elif msg_history:
+            llm_response = await api_fn(msg_history=msg_history_source(msg_history))
+        elif prompt and instructions:
+            llm_response = await api_fn(prompt.source, instructions=instructions.source)
+        elif prompt:
+            llm_response = await api_fn(prompt.source)
         else:
             llm_response = await api_fn()
         return llm_response

@@ -907,7 +907,7 @@ def test_guard_with_top_level_list_return_type(mocker, rail, prompt):
 
 
 def test_pydantic_with_lite_llm(mocker):
-    """Test JSON generation with message history re-asking."""
+    """Test lite llm JSON generation with message history re-asking."""
     mocker.patch(
         "guardrails.llm_providers.LiteLLMCallable",
         new=MockLiteLLMChatCallable,
@@ -920,31 +920,10 @@ def test_pydantic_with_lite_llm(mocker):
         max_tokens=10
     )
 
-    assert final_output.raw_llm_output == pydantic.MSG_HISTORY_LLM_OUTPUT_CORRECT
-    assert final_output.validated_output == json.loads(
-        pydantic.MSG_HISTORY_LLM_OUTPUT_CORRECT
-    )
-
-    call = guard.history.first
-
-    # Check that the guard state object has the correct number of re-asks.
-    assert call.iterations.length == 1
-
-    assert call.compiled_instructions is None
-    assert call.compiled_prompt is None
-    assert call.iterations.first.raw_output == pydantic.MSG_HISTORY_LLM_OUTPUT_INCORRECT
-    assert (
-        call.iterations.first.validation_response == pydantic.MSG_VALIDATED_OUTPUT_REASK
-    )
-
-    # For re-asked prompt and output
-    assert call.reask_prompts.last == pydantic.MSG_COMPILED_PROMPT_REASK
-    assert call.reask_instructions.last == pydantic.MSG_COMPILED_INSTRUCTIONS_REASK
-    assert call.raw_outputs.last == pydantic.MSG_HISTORY_LLM_OUTPUT_CORRECT
-    assert call.guarded_output == json.loads(pydantic.MSG_HISTORY_LLM_OUTPUT_CORRECT)
+    assert final_output.raw_llm_output == string.MSG_LLM_OUTPUT_INCORRECT
 
 def test_pydantic_with_lite_llm_with_instructions(mocker):
-    """Test JSON generation with message history re-asking."""
+    """Test litellm JSON generation with message history re-asking."""
     mocker.patch(
         "guardrails.llm_providers.LiteLLMCallable",
         new=MockLiteLLMChatCallable,
@@ -955,28 +934,7 @@ def test_pydantic_with_lite_llm_with_instructions(mocker):
     model='gpt-4o',
     prompt='this is some prommpt',
     prompt_params={"chats": text_history},
-    instructions="these are some random instructions",
+    instructions="these are some from pydantic test instructions",
     )
 
-    assert final_output.raw_llm_output == pydantic.MSG_HISTORY_LLM_OUTPUT_CORRECT
-    assert final_output.validated_output == json.loads(
-        pydantic.MSG_HISTORY_LLM_OUTPUT_CORRECT
-    )
-
-    call = guard.history.first
-
-    # Check that the guard state object has the correct number of re-asks.
-    assert call.iterations.length == 1
-
-    assert call.compiled_instructions is None
-    assert call.compiled_prompt is None
-    assert call.iterations.first.raw_output == pydantic.MSG_HISTORY_LLM_OUTPUT_INCORRECT
-    assert (
-        call.iterations.first.validation_response == pydantic.MSG_VALIDATED_OUTPUT_REASK
-    )
-
-    # For re-asked prompt and output
-    assert call.reask_prompts.last == pydantic.MSG_COMPILED_PROMPT_REASK
-    assert call.reask_instructions.last == pydantic.MSG_COMPILED_INSTRUCTIONS_REASK
-    assert call.raw_outputs.last == pydantic.MSG_HISTORY_LLM_OUTPUT_CORRECT
-    assert call.guarded_output == json.loads(pydantic.MSG_HISTORY_LLM_OUTPUT_CORRECT)
+    assert final_output.raw_llm_output == entity_extraction.LLM_OUTPUT

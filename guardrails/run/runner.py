@@ -517,6 +517,12 @@ class Runner:
             llm_response = LLMResponse(output=output)
         elif api_fn is None:
             raise ValueError("API or output must be provided.")
+        elif msg_history:
+            llm_response = api_fn(msg_history=msg_history_source(msg_history))
+        elif prompt and instructions:
+            llm_response = api_fn(prompt.source, instructions=instructions.source)
+        elif prompt:
+            llm_response = api_fn(prompt.source)
         else:
             llm_response = api_fn()
 

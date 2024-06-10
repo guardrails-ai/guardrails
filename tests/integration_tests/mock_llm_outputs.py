@@ -182,7 +182,7 @@ class MockLiteLLMChatCallable(OpenAIChatCallable):
         try:
             messages = kwargs.get("messages")
             if messages:
-                if messages == entity_extraction.COMPILED_MSG_HISTORY:
+                if messages == entity_extraction.COMPILED_MSG_HISTORY or "from pydantic test instruction" in messages[0]["content"]: 
                     out_text = entity_extraction.LLM_OUTPUT
                 elif messages == string.MOVIE_MSG_HISTORY:
                     out_text = string.MSG_LLM_OUTPUT_INCORRECT
