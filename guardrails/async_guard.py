@@ -1,5 +1,6 @@
 import contextvars
 import inspect
+import warnings
 from typing import (
     Any,
     AsyncIterable,
@@ -97,6 +98,16 @@ class AsyncGuard(Guard):
             *args,
             **kwargs,
         ):
+            if prompt_params is not None or prompt is not None or instructions is not None or msg_history is not None:
+                warnings.warn(
+                    "The `prompt_params`, `prompt`, `instructions`, and `msg_history` arguments are deprecated. "
+                    "This will be removed in 0.6.x."
+                    "Please use the messages and model interface without an llm_api unless using a custom callable."
+                    "For for example:"
+                    "messages=[{ \"content\": \"Hello, how are you?\",\"role\": \"user\"}], \"model\"=\"gpt4.o\""
+                    "See https://docs.guardrails.io/guardrails/guard#TODOMakeTheseDocs for more information.",
+                    FutureWarning,
+                )
             if metadata is None:
                 metadata = {}
             if full_schema_reask is None:
