@@ -11,8 +11,11 @@ class CallInputs(Inputs):
         "during Guard.__call__ or Guard.parse.",
         default=None,
     )
-    messages: Optional[List[Dict]] = Field(
+    prompt: Optional[str] = Field(
         description="The prompt string as provided by the user.", default=None
+    )
+    instructions: Optional[str] = Field(
+        description="The instructions string as provided by the user.", default=None
     )
     args: List[Any] = Field(
         description="Additional arguments for the LLM as provided by the user.",
