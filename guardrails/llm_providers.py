@@ -87,151 +87,8 @@ def nonchat_prompt(prompt: str, instructions: Optional[str] = None) -> str:
     return prompt
 
 
-def chat_prompt(
-    prompt: Optional[str],
-    instructions: Optional[str] = None,
-    msg_history: Optional[List[Dict]] = None,
-) -> List[Dict[str, str]]:
-    """Prepare final prompt for chat engine."""
-    if msg_history:
-        return msg_history
-    if prompt is None:
-        raise PromptCallableException(
-            "You must pass in either `text` or `msg_history` to `guard.__call__`."
-        )
-
-    if not instructions:
-        instructions = "You are a helpful assistant."
-
-    return [
-        {"role": "system", "content": instructions},
-        {"role": "user", "content": prompt},
-    ]
-
-
-def litellm_messages(
-    prompt: Optional[str],
-    instructions: Optional[str] = None,
-    msg_history: Optional[List[Dict]] = None,
-) -> List[Dict[str, str]]:
-    """Prepare messages for LiteLLM."""
-    if msg_history:
-        return msg_history
-    if prompt is None:
-        raise PromptCallableException(
-            "Either `text` or `msg_history` required for `guard.__call__`."
-        )
-
-    if instructions:
-        prompt = "\n\n".join([instructions, prompt])
-
-    return [{"role": "user", "content": prompt}]
-
-
 class OpenAIModel(PromptCallableBase):
     pass
-
-
-class OpenAICallable(OpenAIModel):
-    def _invoke_llm(
-        self,
-        text: str,
-        engine: str = "text-davinci-003",
-        instructions: Optional[str] = None,
-        *args,
-        **kwargs,
-    ) -> LLMResponse:
-        warnings.warn(
-            """Support for this callable is depcreated please migrate to model="gpt-3.5-turbo-instruct" and the messages parameter. """,
-            FutureWarning,
-        )
-        if "api_key" in kwargs:
-            api_key = kwargs.pop("api_key")
-        else:
-            api_key = None
-
-        if "model" in kwargs:
-            engine = kwargs.pop("model")
-
-        client = OpenAIClient(api_key=api_key)
-        return client.create_completion(
-            engine=engine,
-            prompt=nonchat_prompt(prompt=text, instructions=instructions),
-            *args,
-            **kwargs,
-        )
-
-
-class OpenAIChatCallable(OpenAIModel):
-    supports_base_model = True
-
-    def _invoke_llm(
-        self,
-        text: Optional[str] = None,
-        model: str = "gpt-3.5-turbo",
-        instructions: Optional[str] = None,
-        msg_history: Optional[List[Dict]] = None,
-        base_model: Optional[
-            Union[Type[BaseModel], Type[List[Type[BaseModel]]]]
-        ] = None,
-        function_call: Optional[Any] = None,
-        *args,
-        **kwargs,
-    ) -> LLMResponse:
-        """Wrapper for OpenAI chat engines.
-
-        Use Guardrails with OpenAI chat engines by doing
-        ```
-        raw_llm_response, validated_response, *rest = guard(
-            openai.ChatCompletion.create,
-            prompt_params={...},
-            text=...,
-            instructions=...,
-            msg_history=...,
-            temperature=...,
-            ...
-        )
-        ```
-
-        If `base_model` is passed, the chat engine will be used as a function
-        on the base model.
-        """
-        warnings.warn(
-            """Support for this callable is depcreated please migrate to model='gpt-4o' and the messages parameter. """,
-            FutureWarning,
-        )
-        if msg_history is None and text is None:
-            raise PromptCallableException(
-                "You must pass in either `text` or `msg_history` to `guard.__call__`."
-            )
-
-        # Configure function calling if applicable (only for non-streaming)
-        fn_kwargs = {}
-        if base_model and not kwargs.get("stream", False):
-            function_params = convert_pydantic_model_to_openai_fn(base_model)
-            if function_call is None and function_params:
-                function_call = {"name": function_params["name"]}
-                fn_kwargs = {
-                    "functions": [function_params],
-                    "function_call": function_call,
-                }
-
-        # Call OpenAI
-        if "api_key" in kwargs:
-            api_key = kwargs.pop("api_key")
-        else:
-            api_key = None
-
-        client = OpenAIClient(api_key=api_key)
-        return client.create_chat_completion(
-            model=model,
-            messages=chat_prompt(
-                prompt=text, instructions=instructions, msg_history=msg_history
-            ),
-            *args,
-            **fn_kwargs,
-            **kwargs,
-        )
 
 
 class ManifestCallable(PromptCallableBase):
@@ -270,113 +127,12 @@ class ManifestCallable(PromptCallableBase):
         )
 
 
-class CohereCallable(PromptCallableBase):
-    def _invoke_llm(
-        self, prompt: str, client_callable: Any, model: str, *args, **kwargs
-    ) -> LLMResponse:
-        """To use cohere for guardrails, do ``` client =
-        cohere.Client(api_key=...)
-
-        raw_llm_response, validated_response, *rest = guard(
-            client.generate,
-            prompt_params={...},
-            model="command-nightly",
-            ...
-        )
-        ```
-        """  # noqa
-
-        warnings.warn(
-            """Support for this callable is depcreated please migrate to model="command-r" and the messages parameter. """,
-            FutureWarning,
-        )
-
-        if "instructions" in kwargs:
-            prompt = kwargs.pop("instructions") + "\n\n" + prompt
-
-        def is_base_cohere_chat(func):
-            try:
-                return (
-                    func.__closure__[1].cell_contents.__func__.__qualname__
-                    == "BaseCohere.chat"
-                )
-            except (AttributeError, IndexError):
-                return False
-
-        # TODO: When cohere totally gets rid of `generate`,
-        #       remove this cond and the final return
-        if is_base_cohere_chat(client_callable):
-            cohere_response = client_callable(
-                message=prompt, model=model, *args, **kwargs
-            )
-            return LLMResponse(
-                output=cohere_response.text,
-            )
-
-        cohere_response = client_callable(prompt=prompt, model=model, *args, **kwargs)
-        return LLMResponse(
-            output=cohere_response[0].text,
-        )
-
-
-class AnthropicCallable(PromptCallableBase):
-    def _invoke_llm(
-        self,
-        prompt: str,
-        client_callable: Any,
-        model: str = "claude-instant-1",
-        max_tokens_to_sample: int = 100,
-        *args,
-        **kwargs,
-    ) -> LLMResponse:
-        """Wrapper for Anthropic Completions.
-
-        To use Anthropic for guardrails, do
-        ```
-        client = anthropic.Anthropic(api_key=...)
-
-        raw_llm_response, validated_response = guard(
-            client,
-            model="claude-2",
-            max_tokens_to_sample=200,
-            prompt_params={...},
-            ...
-        ```
-        """
-        warnings.warn(
-            """Support for this callable is depcreated please migrate to model="claude-3-opus-20240229" and the messages parameter. """,
-            FutureWarning,
-        )
-        try:
-            import anthropic
-        except ImportError:
-            raise PromptCallableException(
-                "The `anthropic` package is not installed. "
-                "Install with `pip install anthropic`"
-            )
-
-        if "instructions" in kwargs:
-            prompt = kwargs.pop("instructions") + "\n\n" + prompt
-
-        anthropic_prompt = f"{anthropic.HUMAN_PROMPT} {prompt} {anthropic.AI_PROMPT}"
-
-        anthropic_response = client_callable(
-            model=model,
-            prompt=anthropic_prompt,
-            max_tokens_to_sample=max_tokens_to_sample,
-            *args,
-            **kwargs,
-        )
-        return LLMResponse(output=anthropic_response.completion)
-
 
 class LiteLLMCallable(PromptCallableBase):
     def _invoke_llm(
         self,
-        text: Optional[str] = None,
         model: str = "gpt-3.5-turbo",
-        instructions: Optional[str] = None,
-        msg_history: Optional[List[Dict]] = None,
+        messages: Optional[List[Dict]] = None,
         *args,
         **kwargs,
     ) -> LLMResponse:
@@ -402,14 +158,10 @@ class LiteLLMCallable(PromptCallableBase):
                 "The `litellm` package is not installed. "
                 "Install with `pip install litellm`"
             ) from e
-        if text is not None or instructions is not None or msg_history is not None:
-            messages = litellm_messages(
-                prompt=text, instructions=instructions, msg_history=msg_history
-            ) 
-            kwargs["messages"] = messages
         
         response = completion(
             model=model,
+            messages=messages,
             *args,
             **kwargs,
         )
@@ -741,81 +493,10 @@ class AsyncOpenAICallable(AsyncOpenAIModel):
         )
 
 
-class AsyncOpenAIChatCallable(AsyncOpenAIModel):
-    supports_base_model = True
-
-    async def invoke_llm(
-        self,
-        text: Optional[str] = None,
-        model: str = "gpt-3.5-turbo",
-        instructions: Optional[str] = None,
-        msg_history: Optional[List[Dict]] = None,
-        base_model: Optional[
-            Union[Type[BaseModel], Type[List[Type[BaseModel]]]]
-        ] = None,
-        function_call: Optional[Any] = None,
-        *args,
-        **kwargs,
-    ) -> LLMResponse:
-        """Wrapper for OpenAI chat engines.
-
-        Use Guardrails with OpenAI chat engines by doing
-        ```
-        raw_llm_response, validated_response, *rest = guard(
-            openai.ChatCompletion.create,
-            prompt_params={...},
-            text=...,
-            instructions=...,
-            msg_history=...,
-            temperature=...,
-            ...
-        )
-        ```
-
-        If `base_model` is passed, the chat engine will be used as a function
-        on the base model.
-        """
-
-        if msg_history is None and text is None:
-            raise PromptCallableException(
-                "You must pass in either `text` or `msg_history` to `guard.__call__`."
-            )
-
-        # Configure function calling if applicable
-        fn_kwargs = {}
-        if base_model:
-            function_params = convert_pydantic_model_to_openai_fn(base_model)
-            if function_call is None and function_params:
-                function_call = {"name": function_params["name"]}
-                fn_kwargs = {
-                    "functions": [function_params],
-                    "function_call": function_call,
-                }
-
-        # Call OpenAI
-        if "api_key" in kwargs:
-            api_key = kwargs.pop("api_key")
-        else:
-            api_key = None
-
-        aclient = AsyncOpenAIClient(api_key=api_key)
-        # FIXME: OpenAI async streaming seems to be broken
-        return await aclient.create_chat_completion(
-            model=model,
-            messages=chat_prompt(
-                prompt=text, instructions=instructions, msg_history=msg_history
-            ),
-            *args,
-            **fn_kwargs,
-            **kwargs,
-        )
-
-
 class AsyncLiteLLMCallable(AsyncPromptCallableBase):
     async def invoke_llm(
         self,
-        text: str,
-        instructions: Optional[str] = None,
+        messages,
         *args,
         **kwargs,
     ):
@@ -823,10 +504,7 @@ class AsyncLiteLLMCallable(AsyncPromptCallableBase):
 
         To use Lite LLM for guardrails, do
         ```
-        from litellm import completion
-
         raw_llm_response, validated_response = guard(
-            completion,
             model="gpt-3.5-turbo",
             prompt_params={...},
             temperature=...,
@@ -843,13 +521,8 @@ class AsyncLiteLLMCallable(AsyncPromptCallableBase):
             ) from e
 
 
-        if text is not None or instructions is not None:
-            messages = litellm_messages(
-                prompt=text, instructions=instructions
-            ) 
-            kwargs["messages"] = messages
-
         response = await acompletion(
+            messages=messages,
             *args,
             **kwargs,
         )
