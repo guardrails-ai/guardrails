@@ -586,12 +586,12 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
                     "See https://docs.guardrails.io/guardrails/guard#TODOMakeTheseDocs for more information.",
                     FutureWarning,
                 )
-                messages = []
+                messages = kwargs.get('messages', [])
                 if msg_history:
                     messages = msg_history
                 if instructions:
                     prompt = "\n\n".join([instructions, prompt])
-                    messages = [{"role": "user", "content": prompt}]
+                messages = [{"role": "user", "content": prompt}]
 
                 # Format any variables in the messages with the prompt params.
                 for message in messages:
