@@ -603,7 +603,7 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
                     "`num_reasks` is `None` after calling `configure()`. "
                     "This should never happen."
                 )
-            messages = kwargs.get("msg_history", None)
+            messages = kwargs.get("messages", None)
 
             call_inputs = CallInputs(
                 llm_api=llm_api,
@@ -690,9 +690,7 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
             runner = StreamRunner(
                 messages=messages,
                 api=get_llm_ask(llm_api, *args, **kwargs),
-                prompt_schema=self.rail.prompt_schema,
-                instructions_schema=self.rail.instructions_schema,
-                msg_history_schema=self.rail.msg_history_schema,
+                messages_schema=self.rail.messages_schema,
                 output_schema=self.rail.output_schema,
                 num_reasks=num_reasks,
                 metadata=metadata,
@@ -706,9 +704,7 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
             runner = Runner(
                 messages=messages,
                 api=get_llm_ask(llm_api, *args, **kwargs),
-                prompt_schema=self.rail.prompt_schema,
-                instructions_schema=self.rail.instructions_schema,
-                msg_history_schema=self.rail.msg_history_schema,
+                messages_schema=self.rail.messages_schema,
                 output_schema=self.rail.output_schema,
                 num_reasks=num_reasks,
                 metadata=metadata,
@@ -730,9 +726,7 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
         llm_api: Optional[Callable[[Any], Awaitable[Any]]],
         prompt_params: Dict,
         num_reasks: int,
-        prompt: Optional[str],
-        instructions: Optional[str],
-        msg_history: Optional[List[Dict]],
+        messages: Optional[List[Dict]],
         metadata: Dict,
         full_schema_reask: bool,
         call_log: Call,
@@ -745,9 +739,7 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
             llm_api: The LLM API to call asynchronously (e.g. openai.Completion.acreate)
             prompt_params: The parameters to pass to the prompt.format() method.
             num_reasks: The max times to re-ask the LLM for invalid output.
-            prompt: The prompt to use for the LLM.
-            instructions: Instructions for chat models.
-            msg_history: The message history to pass to the LLM.
+            messages: The message history to pass to the LLM.
             metadata: Metadata to pass to the validators.
             full_schema_reask: When reasking, whether to regenerate the full schema
                                or just the incorrect values.
@@ -757,17 +749,11 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
         Returns:
             The raw text output from the LLM and the validated output.
         """
-        instructions_obj = instructions or self.rail.instructions
-        prompt_obj = prompt or self.rail.prompt
-        msg_history_obj = msg_history or []
+        messages_obj = messages or []
         runner = AsyncRunner(
-            instructions=instructions_obj,
-            prompt=prompt_obj,
-            msg_history=msg_history_obj,
+            messages=messages_obj,
             api=get_async_llm_ask(llm_api, *args, **kwargs),
-            prompt_schema=self.rail.prompt_schema,
-            instructions_schema=self.rail.instructions_schema,
-            msg_history_schema=self.rail.msg_history_schema,
+            messages_schema=self.rail.messages_schema,
             output_schema=self.rail.output_schema,
             num_reasks=num_reasks,
             metadata=metadata,
@@ -1024,13 +1010,9 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
             The validated response.
         """
         runner = Runner(
-            instructions=kwargs.pop("instructions", None),
-            prompt=kwargs.pop("prompt", None),
-            msg_history=kwargs.pop("msg_history", None),
+            messages=kwargs.pop("messages", None),
             api=get_llm_ask(llm_api, *args, **kwargs) if llm_api else None,
-            prompt_schema=self.rail.prompt_schema,
-            instructions_schema=self.rail.instructions_schema,
-            msg_history_schema=self.rail.msg_history_schema,
+            messages_schema=self.rail.messages_schema,
             output_schema=self.rail.output_schema,
             num_reasks=num_reasks,
             metadata=metadata,
@@ -1072,13 +1054,10 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
             The validated response.
         """
         runner = AsyncRunner(
-            instructions=kwargs.pop("instructions", None),
             prompt=kwargs.pop("prompt", None),
-            msg_history=kwargs.pop("msg_history", None),
+            messages=kwargs.pop("messages", None),
             api=get_async_llm_ask(llm_api, *args, **kwargs) if llm_api else None,
-            prompt_schema=self.rail.prompt_schema,
-            instructions_schema=self.rail.instructions_schema,
-            msg_history_schema=self.rail.msg_history_schema,
+            messages_schema=self.rail.messages_schema,
             output_schema=self.rail.output_schema,
             num_reasks=num_reasks,
             metadata=metadata,
@@ -1182,43 +1161,23 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
                 "The `use` method is only available for string output types."
             )
 
-        if on == "prompt":
-            # If the prompt schema exists, add the validator to it
-            if self.rail.prompt_schema:
-                self.rail.prompt_schema.root_datatype.validators.append(validator)
-            else:
-                # Otherwise, create a new schema with the validator
-                schema = StringSchema.from_string(
-                    validators=[validator],
-                )
-                self.rail.prompt_schema = schema
-        elif on == "instructions":
-            # If the instructions schema exists, add the validator to it
-            if self.rail.instructions_schema:
-                self.rail.instructions_schema.root_datatype.validators.append(validator)
-            else:
-                # Otherwise, create a new schema with the validator
-                schema = StringSchema.from_string(
-                    validators=[validator],
-                )
-                self.rail.instructions_schema = schema
-        elif on == "msg_history":
+        if on == "messages":
             # If the msg_history schema exists, add the validator to it
-            if self.rail.msg_history_schema:
-                self.rail.msg_history_schema.root_datatype.validators.append(validator)
+            if self.rail.messages_schema:
+                self.rail.messages_schema.root_datatype.validators.append(validator)
             else:
                 # Otherwise, create a new schema with the validator
                 schema = StringSchema.from_string(
                     validators=[validator],
                 )
-                self.rail.msg_history_schema = schema
+                self.rail.messages_schema = schema
         elif on == "output":
             self._validators.append(validator)
             self.rail.output_schema.root_datatype.validators.append(validator)
         else:
             raise ValueError(
                 """Invalid value for `on`. Must be one of the following:
-                'output', 'prompt', 'instructions', 'msg_history'."""
+                'output', 'messages'."""
             )
 
     @overload
@@ -1238,9 +1197,7 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
     ) -> "Guard":
         """Use a validator to validate either of the following:
         - The output of an LLM request
-        - The prompt
-        - The instructions
-        - The message history
+        - The messages
 
         *Note*: For on="output", `use` is only available for string output types.
 
@@ -1302,10 +1259,6 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
         ):
             self.rail = Rail.from_string_validators(
                 validators=self._validators,
-                prompt=self.rail.prompt.source if self.rail.prompt else None,
-                instructions=(
-                    self.rail.instructions.source if self.rail.instructions else None
-                ),
                 reask_prompt=(
                     self.rail.output_schema.reask_prompt_template.source
                     if self.rail.output_schema.reask_prompt_template

@@ -17,14 +17,7 @@ class Inputs(ArbitraryModel):
         "provided by the user via Guard.parse.",
         default=None,
     )
-    instructions: Optional[Instructions] = Field(
-        description="The constructed Instructions class for chat model calls.",
-        default=None,
-    )
-    prompt: Optional[Prompt] = Field(
-        description="The constructed Prompt class.", default=None
-    )
-    msg_history: Optional[List[Dict]] = Field(
+    messages: Optional[List[Dict]] = Field(
         description="The message history provided by the user for chat model calls.",
         default=None,
     )
