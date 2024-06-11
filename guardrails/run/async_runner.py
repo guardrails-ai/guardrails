@@ -290,6 +290,7 @@ class AsyncRunner(Runner):
         attempt_number: int,
         parsed_output: Any,
         output_schema: Dict[str, Any],
+        stream: Optional[bool] = False,
         **kwargs,
     ):
         """Validate the output."""
@@ -301,6 +302,9 @@ class AsyncRunner(Runner):
         if skeleton_reask:
             return skeleton_reask
 
+        if self.output_type != OutputTypes.STRING:
+            stream = None
+
         validated_output, _metadata = await validator_service.async_validate(
             value=parsed_output,
             metadata=self.metadata,
@@ -308,6 +312,8 @@ class AsyncRunner(Runner):
             iteration=iteration,
             disable_tracer=self._disable_tracer,
             path="$",
+            stream=stream,
+            **kwargs,
         )
         validated_output = validator_service.post_process_validation(
             validated_output, attempt_number, iteration, self.output_type

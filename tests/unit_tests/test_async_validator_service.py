@@ -51,7 +51,9 @@ def test_validate_without_running_loop(mocker):
     )
 
     assert loop_spy.call_count == 1
-    async_validate_mock.assert_called_once_with(True, {}, {}, iteration, "$", "$")
+    async_validate_mock.assert_called_once_with(
+        True, {}, {}, iteration, "$", "$", stream=False
+    )
     assert validated_value == "async_validate_mock"
     assert validated_metadata == {"async": True}
 
@@ -75,7 +77,9 @@ async def test_async_validate_with_children(mocker):
     )
 
     assert validate_children_mock.call_count == 1
-    validate_children_mock.assert_called_once_with(value, {}, {}, iteration, "$", "$")
+    validate_children_mock.assert_called_once_with(
+        value, {}, {}, iteration, "$", "$", stream=False
+    )
 
     assert run_validators_mock.call_count == 1
     run_validators_mock.assert_called_once_with(
@@ -115,7 +119,7 @@ async def test_async_validate_without_children(mocker):
 
 @pytest.mark.asyncio
 async def test_validate_children(mocker):
-    async def mock_async_validate(v, md, *args):
+    async def mock_async_validate(v, md, *args, **kwargs):
         return (f"new-{v}", md)
 
     async_validate_mock = mocker.patch.object(
@@ -158,6 +162,7 @@ async def test_validate_children(mocker):
         iteration,
         "$.mock-parent-key.child-one-key",
         "$.mock-parent-key.child-one-key",
+        stream=False,
     )
     async_validate_mock.assert_any_call(
         "child-two-value",
@@ -166,6 +171,7 @@ async def test_validate_children(mocker):
         iteration,
         "$.mock-parent-key.child-two-key",
         "$.mock-parent-key.child-two-key",
+        stream=False,
     )
 
     assert validated_value == {

@@ -27,6 +27,7 @@ from guardrails.classes import (
     ValidationResult,
     PassResult,  # noqa
     FailResult,
+    ErrorSpan,  # noqa
 )
 from guardrails.constants import hub
 from guardrails.errors import ValidationError
