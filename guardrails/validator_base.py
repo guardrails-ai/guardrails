@@ -505,6 +505,25 @@ class Validator(Runnable):
             self.rail_alias in validators_registry
         ), f"Validator {self.__class__.__name__} is not registered. "
 
+    def _inference_local(self, value: str, metadata: dict = {}) -> Any:
+        """This function should act as a callable for a model being used for validation.
+        It should be implemented for actions you wish to perform locally.
+
+        This function will be used by the validate() function to perform validation."""
+        raise NotImplementedError
+
+    def _validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
+        """Validates a value and return a validation result. This method should call
+        inference_callable() in the validation step.
+        """
+        raise NotImplementedError
+
+    def validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
+        """External facing validate function. This function acts as a wrapper for
+        _validate() and is intended to apply any meta-validation requirements, logic,
+        or pre/post processing."""
+        return self._validate(value, metadata)
+
     def _chunking_function(self, chunk: str) -> list[str]:
         """The strategy used for chunking accumulated text input into validation sets.
 
@@ -515,16 +534,6 @@ class Validator(Runnable):
             list[str]: The text chunked into some subset.
         """
         return split_sentence_str(chunk)
-
-    def validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
-        """External facing validate function. This function acts as a wrapper for
-        _validate() and is intended to apply any meta-validation requirements, logic,
-        or pre/post processing."""
-        return self._validate(value, metadata)
-
-    def _validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
-        """Validates a value and return a validation result."""
-        raise NotImplementedError
 
     def validate_stream(
         self, chunk: Any, metadata: Dict[str, Any], **kwargs
@@ -561,13 +570,6 @@ class Validator(Runnable):
         if validation_result.validated_chunk is None:
             validation_result.validated_chunk = chunk_to_validate
         return validation_result
-
-    def _inference_local(self, value: str, metadata: dict = {}) -> Any:
-        """This function should act as a callable for a model being used for validation.
-        It should be implemented for actions you wish to perform locally.
-
-        This function will be used by the validate() function to perform validation."""
-        raise NotImplementedError
 
     def _inference_remote(self, request_body: dict) -> Any:
         """Makes a request to the Validator Hub to run a ML based validation model. This
