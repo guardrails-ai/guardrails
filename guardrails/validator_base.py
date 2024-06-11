@@ -563,9 +563,8 @@ class Validator(Runnable):
         return validation_result
 
     def _inference_local(self, value: str, metadata: dict = {}) -> Any:
-        """This function should act as a callable for any inference model you may have.
-        It should perform local operations only, not talk to a remote host. It receives
-        the input that your validator expects, and outputs a result from the ML model.
+        """This function should act as a callable for a model being used for validation.
+        It should be implemented for actions you wish to perform locally.
 
         This function will be used by the validate() function to perform validation."""
         raise NotImplementedError
