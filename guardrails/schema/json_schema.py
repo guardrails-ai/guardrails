@@ -23,10 +23,8 @@ from guardrails.datatypes import Choice, DataType
 from guardrails.datatypes import List as ListDataType
 from guardrails.datatypes import Object
 from guardrails.llm_providers import (
-    AsyncOpenAICallable,
-    AsyncOpenAIChatCallable,
-    OpenAICallable,
-    OpenAIChatCallable,
+    LiteLLMCallable,
+    AsyncLiteLLMCallable,
     PromptCallableBase,
 )
 from guardrails.logger import logger
@@ -468,13 +466,13 @@ class JsonSchema(Schema):
         instructions: Optional[Instructions],
         prompt: Prompt,
     ):
-        if isinstance(prompt_callable, OpenAICallable) or isinstance(
-            prompt_callable, AsyncOpenAICallable
+        if isinstance(prompt_callable, LiteLLMCallable) or isinstance(
+            prompt_callable, AsyncLiteLLMCallable
         ):
             prompt.source += "\n\nJson Output:\n\n"
         if (
-            isinstance(prompt_callable, OpenAIChatCallable)
-            or isinstance(prompt_callable, AsyncOpenAIChatCallable)
+            isinstance(prompt_callable, LiteLLMCallable)
+            or isinstance(prompt_callable, AsyncLiteLLMCallable)
         ) and not instructions:
             instructions = Instructions(
                 "You are a helpful assistant, "

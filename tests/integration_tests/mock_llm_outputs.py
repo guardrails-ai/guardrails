@@ -1,17 +1,16 @@
 from guardrails.llm_providers import (
     ArbitraryCallable,
     AsyncArbitraryCallable,
-    AsyncOpenAICallable,
-    OpenAICallable,
-    OpenAIChatCallable,
+    AsyncLiteLLMCallable,
+    LiteLLMCallable,
 )
 from guardrails.utils.llm_response import LLMResponse
 
 from .test_assets import entity_extraction, lists_object, pydantic, python_rail, string
 
 
-class MockOpenAICallable(OpenAICallable):
-    # NOTE: this class normally overrides `llm_providers.OpenAICallable`,
+class MockLiteLLMCallable(LiteLLMCallable):
+    # NOTE: this class normally overrides `llm_providers.LiteLLMCallable`,
     # which compiles instructions and prompt into a single prompt;
     # here the instructions are passed into kwargs and ignored
     def _invoke_llm(self, prompt, *args, **kwargs):
@@ -50,13 +49,13 @@ class MockOpenAICallable(OpenAICallable):
             raise ValueError("Compiled prompt not found")
 
 
-class MockAsyncOpenAICallable(AsyncOpenAICallable):
+class MockAsyncLiteLLMCallable(AsyncLiteLLMCallable):
     async def invoke_llm(self, prompt, *args, **kwargs):
-        sync_mock = MockOpenAICallable()
+        sync_mock = MockLiteLLMCallable()
         return sync_mock._invoke_llm(prompt, *args, **kwargs)
 
 
-class MockOpenAIChatCallable(OpenAIChatCallable):
+class MockOpenAIChatCallable(LiteLLMCallable):
     def _invoke_llm(
         self,
         prompt=None,
@@ -171,7 +170,7 @@ class MockAsyncArbitraryCallable(AsyncArbitraryCallable):
         sync_mock = MockArbitraryCallable(kwargs.get("llm_api"))
         return sync_mock._invoke_llm(prompt, *args, **kwargs)
 
-class MockLiteLLMChatCallable(OpenAIChatCallable):
+class MockLiteLLMChatCallable(LiteLLMCallable):
     def _invoke_llm(
         self,
         *args,

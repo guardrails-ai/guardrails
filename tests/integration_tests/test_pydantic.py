@@ -12,13 +12,13 @@ from guardrails.utils.openai_utils import (
     get_static_openai_create_func,
 )
 
-from .mock_llm_outputs import MockOpenAICallable, MockOpenAIChatCallable, pydantic
+from .mock_llm_outputs import MockLiteLLMCallable, MockOpenAIChatCallable, pydantic
 from .test_assets.pydantic import VALIDATED_RESPONSE_REASK_PROMPT, ListOfPeople
 
 
 def test_pydantic_with_reask(mocker):
     """Test that the entity extraction works with re-asking."""
-    mocker.patch("guardrails.llm_providers.OpenAICallable", new=MockOpenAICallable)
+    mocker.patch("guardrails.llm_providers.LiteLLMCallable", new=MockLiteLLMCallable)
 
     guard = gd.Guard.from_pydantic(ListOfPeople, prompt=VALIDATED_RESPONSE_REASK_PROMPT)
     final_output = guard(

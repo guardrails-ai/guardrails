@@ -7,10 +7,8 @@ from guardrails import validator_service
 from guardrails.classes.history import Iteration
 from guardrails.datatypes import String
 from guardrails.llm_providers import (
-    AsyncOpenAICallable,
-    AsyncOpenAIChatCallable,
-    OpenAICallable,
-    OpenAIChatCallable,
+    AsyncLiteLLMCallable,
+    LiteLLMCallable,
     PromptCallableBase,
 )
 from guardrails.logger import logger
@@ -261,13 +259,13 @@ class StringSchema(Schema):
         instructions: Optional[Instructions],
         prompt: Prompt,
     ):
-        if isinstance(prompt_callable, OpenAICallable) or isinstance(
-            prompt_callable, AsyncOpenAICallable
+        if isinstance(prompt_callable, LiteLLMCallable) or isinstance(
+            prompt_callable, AsyncLiteLLMCallable
         ):
             prompt.source += "\n\nString Output:\n\n"
         if (
-            isinstance(prompt_callable, OpenAIChatCallable)
-            or isinstance(prompt_callable, AsyncOpenAIChatCallable)
+            isinstance(prompt_callable, LiteLLMCallable)
+            or isinstance(prompt_callable, AsyncLiteLLMCallable)
         ) and not instructions:
             instructions = Instructions(
                 "You are a helpful assistant, expressing yourself through a string."

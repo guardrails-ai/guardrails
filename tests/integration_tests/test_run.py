@@ -6,12 +6,12 @@ from lxml import etree as ET
 import guardrails as gd
 from guardrails.classes.history.call import Call
 from guardrails.classes.history.iteration import Iteration
-from guardrails.llm_providers import AsyncOpenAICallable, OpenAICallable
+from guardrails.llm_providers import AsyncLiteLLMCallable, LiteLLMCallable
 from guardrails.run import AsyncRunner, Runner
 from guardrails.schema import StringSchema
 from guardrails.utils.openai_utils import OPENAI_VERSION
 
-from .mock_llm_outputs import MockAsyncOpenAICallable, MockOpenAICallable
+from .mock_llm_outputs import MockAsyncLiteLLMCallable, MockLiteLLMCallable
 from .test_assets import string
 
 PROMPT = gd.Prompt(source=string.COMPILED_PROMPT)
@@ -40,7 +40,7 @@ def runner_instance(is_sync: bool):
             instructions=INSTRUCTIONS,
             prompt=PROMPT,
             msg_history=None,
-            api=OpenAICallable,
+            api=LiteLLMCallable,
             prompt_schema=None,
             instructions_schema=None,
             output_schema=OUTPUT_SCHEMA,
@@ -51,7 +51,7 @@ def runner_instance(is_sync: bool):
             instructions=INSTRUCTIONS,
             prompt=PROMPT,
             msg_history=None,
-            api=AsyncOpenAICallable,
+            api=AsyncLiteLLMCallable,
             prompt_schema=None,
             instructions_schema=None,
             output_schema=OUTPUT_SCHEMA,
@@ -66,10 +66,10 @@ def runner_instance(is_sync: bool):
 @pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="Only for OpenAI v0")
 async def test_sync_async_call_equivalence(mocker):
     mocker.patch(
-        "guardrails.llm_providers.AsyncOpenAICallable",
-        new=MockAsyncOpenAICallable,
+        "guardrails.llm_providers.AsyncLiteLLMCallable",
+        new=MockAsyncLiteLLMCallable,
     )
-    mocker.patch("guardrails.llm_providers.OpenAICallable", new=MockOpenAICallable)
+    mocker.patch("guardrails.llm_providers.LiteLLMCallable", new=MockLiteLLMCallable)
 
     # Call the 'call' method synchronously
     result_sync = runner_instance(True).call(
@@ -77,7 +77,7 @@ async def test_sync_async_call_equivalence(mocker):
         INSTRUCTIONS,
         PROMPT,
         None,
-        OpenAICallable(**{"temperature": 0}),
+        LiteLLMCallable(**{"temperature": 0}),
         "Tomato Cheese Pizza",
     )
 
@@ -87,7 +87,7 @@ async def test_sync_async_call_equivalence(mocker):
         instructions=INSTRUCTIONS,
         prompt=PROMPT,
         msg_history=None,
-        api=AsyncOpenAICallable(**{"temperature": 0}),
+        api=AsyncLiteLLMCallable(**{"temperature": 0}),
         output="Tomato Cheese Pizza",
     )
 
@@ -97,10 +97,10 @@ async def test_sync_async_call_equivalence(mocker):
 @pytest.mark.asyncio
 async def test_sync_async_validate_equivalence(mocker):
     mocker.patch(
-        "guardrails.llm_providers.AsyncOpenAICallable",
-        new=MockAsyncOpenAICallable,
+        "guardrails.llm_providers.AsyncLiteLLMCallable",
+        new=MockAsyncLiteLLMCallable,
     )
-    mocker.patch("guardrails.llm_providers.OpenAICallable", new=MockOpenAICallable)
+    mocker.patch("guardrails.llm_providers.LiteLLMCallable", new=MockLiteLLMCallable)
     iteration = Iteration()
 
     parsed_output, _ = runner_instance(True).parse(1, OUTPUT, OUTPUT_SCHEMA)
@@ -120,17 +120,17 @@ async def test_sync_async_validate_equivalence(mocker):
 @pytest.mark.asyncio
 async def test_sync_async_step_equivalence(mocker):
     mocker.patch(
-        "guardrails.llm_providers.AsyncOpenAICallable",
-        new=MockAsyncOpenAICallable,
+        "guardrails.llm_providers.AsyncLiteLLMCallable",
+        new=MockAsyncLiteLLMCallable,
     )
-    mocker.patch("guardrails.llm_providers.OpenAICallable", new=MockOpenAICallable)
+    mocker.patch("guardrails.llm_providers.LiteLLMCallable", new=MockLiteLLMCallable)
 
     call_log = Call()
 
     # Call the 'step' method synchronously
     sync_iteration = runner_instance(True).step(
         1,
-        OpenAICallable(**{"temperature": 0}),
+        LiteLLMCallable(**{"temperature": 0}),
         INSTRUCTIONS,
         PROMPT,
         None,
@@ -146,7 +146,7 @@ async def test_sync_async_step_equivalence(mocker):
     # Call the 'async_step' method asynchronously
     async_iteration = await runner_instance(False).async_step(
         1,
-        AsyncOpenAICallable(**{"temperature": 0}),
+        AsyncLiteLLMCallable(**{"temperature": 0}),
         INSTRUCTIONS,
         PROMPT,
         None,

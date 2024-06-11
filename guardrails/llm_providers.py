@@ -79,6 +79,26 @@ class PromptCallableBase:
             )
         return result
 
+def chat_prompt(
+    prompt: Optional[str],
+    instructions: Optional[str] = None,
+    msg_history: Optional[List[Dict]] = None,
+) -> List[Dict[str, str]]:
+    """Prepare final prompt for chat engine."""
+    if msg_history:
+        return msg_history
+    if prompt is None:
+        raise PromptCallableException(
+            "You must pass in either `text` or `msg_history` to `guard.__call__`."
+        )
+
+    if not instructions:
+        instructions = "You are a helpful assistant."
+
+    return [
+        {"role": "system", "content": instructions},
+        {"role": "user", "content": prompt},
+    ]
 
 def nonchat_prompt(prompt: str, instructions: Optional[str] = None) -> str:
     """Prepare final prompt for nonchat engine."""
@@ -342,38 +362,12 @@ class ArbitraryCallable(PromptCallableBase):
 def get_llm_ask(llm_api: Callable, *args, **kwargs) -> PromptCallableBase:
     if "temperature" not in kwargs:
         kwargs.update({"temperature": 0})
-    if llm_api == get_static_openai_create_func():
-        return OpenAICallable(*args, **kwargs)
-    if llm_api == get_static_openai_chat_create_func():
-        return OpenAIChatCallable(*args, **kwargs)
 
     try:
         import manifest  # noqa: F401 # type: ignore
 
         if isinstance(llm_api, manifest.Manifest):
             return ManifestCallable(*args, client=llm_api, **kwargs)
-    except ImportError:
-        pass
-
-    try:
-        import cohere  # noqa: F401 # type: ignore
-
-        if (
-            isinstance(getattr(llm_api, "__self__", None), cohere.Client)
-            and getattr(llm_api, "__name__", None) == "generate"
-        ) or getattr(llm_api, "__module__", None) == "cohere.client":
-            return CohereCallable(*args, client_callable=llm_api, **kwargs)
-    except ImportError:
-        pass
-
-    try:
-        import anthropic.resources  # noqa: F401 # type: ignore
-
-        if isinstance(
-            getattr(llm_api, "__self__", None),
-            anthropic.resources.completions.Completions,
-        ):
-            return AnthropicCallable(*args, client_callable=llm_api, **kwargs)
     except ImportError:
         pass
 
@@ -617,12 +611,6 @@ class AsyncArbitraryCallable(AsyncPromptCallableBase):
 def get_async_llm_ask(
     llm_api: Callable[[Any], Awaitable[Any]], *args, **kwargs
 ) -> AsyncPromptCallableBase:
-    # these only work with openai v0 (None otherwise)
-    if llm_api == get_static_openai_acreate_func():
-        return AsyncOpenAICallable(*args, **kwargs)
-    if llm_api == get_static_openai_chat_acreate_func():
-        return AsyncOpenAIChatCallable(*args, **kwargs)
-
     try:
         import manifest  # noqa: F401 # type: ignore
 

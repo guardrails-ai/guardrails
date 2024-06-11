@@ -12,7 +12,7 @@ from tests.integration_tests.test_assets.fixtures import (  # noqa
     fixture_validated_output,
 )
 
-from .mock_llm_outputs import MockAsyncOpenAICallable, entity_extraction
+from .mock_llm_outputs import MockAsyncLiteLLMCallable, entity_extraction
 
 
 @pytest.mark.asyncio
@@ -21,8 +21,8 @@ from .mock_llm_outputs import MockAsyncOpenAICallable, entity_extraction
 async def test_entity_extraction_with_reask(mocker, multiprocessing_validators: bool):
     """Test that the entity extraction works with re-asking."""
     mocker.patch(
-        "guardrails.llm_providers.AsyncOpenAICallable",
-        new=MockAsyncOpenAICallable,
+        "guardrails.llm_providers.AsyncLiteLLMCallable",
+        new=MockAsyncLiteLLMCallable,
     )
     mocker.patch(
         "guardrails.validators.Validator.run_in_separate_process",
@@ -79,8 +79,8 @@ async def test_entity_extraction_with_reask(mocker, multiprocessing_validators: 
 @pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="Only for OpenAI v0")
 async def test_entity_extraction_with_noop(mocker):
     mocker.patch(
-        "guardrails.llm_providers.AsyncOpenAICallable",
-        new=MockAsyncOpenAICallable,
+        "guardrails.llm_providers.AsyncLiteLLMCallable",
+        new=MockAsyncLiteLLMCallable,
     )
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
     guard = gd.Guard.from_rail_string(entity_extraction.RAIL_SPEC_WITH_NOOP)
@@ -118,8 +118,8 @@ async def test_entity_extraction_with_noop(mocker):
 @pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="Only for OpenAI v0")
 async def test_entity_extraction_with_noop_pydantic(mocker):
     mocker.patch(
-        "guardrails.llm_providers.AsyncOpenAICallable",
-        new=MockAsyncOpenAICallable,
+        "guardrails.llm_providers.AsyncLiteLLMCallable",
+        new=MockAsyncLiteLLMCallable,
     )
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
     guard = gd.Guard.from_pydantic(
@@ -155,8 +155,8 @@ async def test_entity_extraction_with_noop_pydantic(mocker):
 async def test_entity_extraction_with_filter(mocker):
     """Test that the entity extraction works with re-asking."""
     mocker.patch(
-        "guardrails.llm_providers.AsyncOpenAICallable",
-        new=MockAsyncOpenAICallable,
+        "guardrails.llm_providers.AsyncLiteLLMCallable",
+        new=MockAsyncLiteLLMCallable,
     )
 
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
@@ -190,8 +190,8 @@ async def test_entity_extraction_with_filter(mocker):
 async def test_entity_extraction_with_fix(mocker):
     """Test that the entity extraction works with re-asking."""
     mocker.patch(
-        "guardrails.llm_providers.AsyncOpenAICallable",
-        new=MockAsyncOpenAICallable,
+        "guardrails.llm_providers.AsyncLiteLLMCallable",
+        new=MockAsyncLiteLLMCallable,
     )
 
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
@@ -222,8 +222,8 @@ async def test_entity_extraction_with_fix(mocker):
 async def test_entity_extraction_with_refrain(mocker):
     """Test that the entity extraction works with re-asking."""
     mocker.patch(
-        "guardrails.llm_providers.AsyncOpenAICallable",
-        new=MockAsyncOpenAICallable,
+        "guardrails.llm_providers.AsyncLiteLLMCallable",
+        new=MockAsyncLiteLLMCallable,
     )
 
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")

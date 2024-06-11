@@ -1,5 +1,5 @@
 from guardrails.classes.history.inputs import Inputs
-from guardrails.llm_providers import OpenAICallable
+from guardrails.llm_providers import LiteLLMCallable
 from guardrails.prompt.instructions import Instructions
 from guardrails.prompt.prompt import Prompt
 
@@ -20,7 +20,7 @@ def test_empty_initialization():
 
 
 def test_non_empty_initialization():
-    llm_api = OpenAICallable(text="Respond with a greeting.")
+    llm_api = LiteLLMCallable(text="Respond with a greeting.")
     llm_output = "Hello there!"
     instructions = Instructions(source="You are a greeting bot.")
     prompt = Prompt(source="Respond with a ${greeting_type} greeting.")

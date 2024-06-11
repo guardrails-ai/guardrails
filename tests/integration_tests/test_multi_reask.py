@@ -1,13 +1,13 @@
 import guardrails as gd
 from guardrails.utils.openai_utils import get_static_openai_create_func
 
-from .mock_llm_outputs import MockOpenAICallable
+from .mock_llm_outputs import MockLiteLLMCallable
 from .test_assets import python_rail
 
 
 def test_multi_reask(mocker):
     """Test that parallel reasking works."""
-    mocker.patch("guardrails.llm_providers.OpenAICallable", new=MockOpenAICallable)
+    mocker.patch("guardrails.llm_providers.LiteLLMCallable", new=MockLiteLLMCallable)
 
     guard = gd.Guard.from_rail_string(python_rail.RAIL_SPEC_WITH_VALIDATOR_PARALLELISM)
 

@@ -18,7 +18,7 @@ from guardrails.validators import (
 
 from ..unit_tests.mocks.mock_comet import BAD_TRANSLATION, GOOD_TRANSLATION, MockModel
 from .mock_embeddings import MOCK_EMBEDDINGS
-from .mock_llm_outputs import MockOpenAICallable
+from .mock_llm_outputs import MockLiteLLMCallable
 from .mock_presidio import MockAnalyzerEngine, MockAnonymizerEngine, mock_anonymize
 from .mock_secrets import (
     EXPECTED_SECRETS_CODE_SNIPPET,
@@ -577,7 +577,7 @@ class MyValidator(Validator):
     ],
 )
 def test_validator_instance_attr_equality(mocker, instance_attr):
-    mocker.patch("guardrails.llm_providers.OpenAICallable", new=MockOpenAICallable)
+    mocker.patch("guardrails.llm_providers.LiteLLMCallable", new=MockLiteLLMCallable)
 
     validator = MyValidator(an_instance_attr=instance_attr)
 

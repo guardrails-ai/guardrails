@@ -7,7 +7,7 @@ from guardrails.guard import Guard
 from guardrails.utils.openai_utils import get_static_openai_create_func
 from guardrails.validator_base import OnFailAction
 from guardrails.validators import FailResult
-from tests.integration_tests.mock_llm_outputs import MockOpenAICallable
+from tests.integration_tests.mock_llm_outputs import MockLiteLLMCallable
 from tests.unit_tests.validators.test_parameters import (
     validator_test_pass_fail,
     validator_test_prompt,
@@ -42,7 +42,7 @@ def test_validator_validate(validator_test_data: Dict[str, Dict[str, str]]):
 def test_validator_python_string(
     mocker, validator_test_data: Dict[str, Dict[str, str]]
 ):
-    mocker.patch("guardrails.llm_providers.OpenAICallable", new=MockOpenAICallable)
+    mocker.patch("guardrails.llm_providers.LiteLLMCallable", new=MockLiteLLMCallable)
 
     for validator_name in validator_test_data:
         print("testing validator: ", validator_name)

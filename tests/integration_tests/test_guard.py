@@ -17,7 +17,7 @@ from guardrails.validators import FailResult, OneLine
 
 from .mock_llm_outputs import (
     MockLiteLLMChatCallable,
-    MockOpenAICallable,
+    MockLiteLLMCallable,
     MockOpenAIChatCallable,
     entity_extraction,
     lists_object,
@@ -139,7 +139,7 @@ def test_entity_extraction_with_reask(
     performs a single call to the LLM and then re-asks the LLM for a
     second time.
     """
-    mocker.patch("guardrails.llm_providers.OpenAICallable", new=MockOpenAICallable)
+    mocker.patch("guardrails.llm_providers.LiteLLMCallable", new=MockLiteLLMCallable)
     mocker.patch(
         "guardrails.validators.Validator.run_in_separate_process",
         new=multiprocessing_validators,
@@ -225,7 +225,7 @@ def test_entity_extraction_with_reask(
 )
 def test_entity_extraction_with_noop(mocker, rail, prompt):
     """Test that the entity extraction works with re-asking."""
-    mocker.patch("guardrails.llm_providers.OpenAICallable", new=MockOpenAICallable)
+    mocker.patch("guardrails.llm_providers.LiteLLMCallable", new=MockLiteLLMCallable)
 
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
     guard = guard_initializer(rail, prompt)
@@ -271,7 +271,7 @@ def test_entity_extraction_with_noop(mocker, rail, prompt):
 )
 def test_entity_extraction_with_filter(mocker, rail, prompt):
     """Test that the entity extraction works with re-asking."""
-    mocker.patch("guardrails.llm_providers.OpenAICallable", new=MockOpenAICallable)
+    mocker.patch("guardrails.llm_providers.LiteLLMCallable", new=MockLiteLLMCallable)
 
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
     guard = guard_initializer(rail, prompt)
@@ -306,7 +306,7 @@ def test_entity_extraction_with_filter(mocker, rail, prompt):
 )
 def test_entity_extraction_with_fix(mocker, rail, prompt):
     """Test that the entity extraction works with re-asking."""
-    mocker.patch("guardrails.llm_providers.OpenAICallable", new=MockOpenAICallable)
+    mocker.patch("guardrails.llm_providers.LiteLLMCallable", new=MockLiteLLMCallable)
 
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
     guard = guard_initializer(rail, prompt)
@@ -342,7 +342,7 @@ def test_entity_extraction_with_fix(mocker, rail, prompt):
 )
 def test_entity_extraction_with_refrain(mocker, rail, prompt):
     """Test that the entity extraction works with re-asking."""
-    mocker.patch("guardrails.llm_providers.OpenAICallable", new=MockOpenAICallable)
+    mocker.patch("guardrails.llm_providers.LiteLLMCallable", new=MockLiteLLMCallable)
 
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
     guard = guard_initializer(rail, prompt)
@@ -412,7 +412,7 @@ def test_entity_extraction_with_fix_chat_models(mocker, rail, prompt, instructio
 
 def test_string_output(mocker):
     """Test single string (non-JSON) generation."""
-    mocker.patch("guardrails.llm_providers.OpenAICallable", new=MockOpenAICallable)
+    mocker.patch("guardrails.llm_providers.LiteLLMCallable", new=MockLiteLLMCallable)
 
     guard = gd.Guard.from_rail_string(string.RAIL_SPEC_FOR_STRING)
     final_output = guard(
@@ -435,7 +435,7 @@ def test_string_output(mocker):
 
 def test_string_reask(mocker):
     """Test single string (non-JSON) generation with re-asking."""
-    mocker.patch("guardrails.llm_providers.OpenAICallable", new=MockOpenAICallable)
+    mocker.patch("guardrails.llm_providers.LiteLLMCallable", new=MockLiteLLMCallable)
 
     guard = gd.Guard.from_rail_string(string.RAIL_SPEC_FOR_STRING_REASK)
     final_output = guard(
@@ -468,7 +468,7 @@ def test_string_reask(mocker):
 
 
 def test_skeleton_reask(mocker):
-    mocker.patch("guardrails.llm_providers.OpenAICallable", new=MockOpenAICallable)
+    mocker.patch("guardrails.llm_providers.LiteLLMCallable", new=MockLiteLLMCallable)
 
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
     guard = gd.Guard.from_rail_string(entity_extraction.RAIL_SPEC_WITH_SKELETON_REASK)
@@ -585,7 +585,7 @@ def test_entity_extraction_with_reask_with_optional_prompts(
 ):
     """Test that the entity extraction works with re-asking."""
     if llm_api == get_static_openai_create_func():
-        mocker.patch("guardrails.llm_providers.OpenAICallable", new=MockOpenAICallable)
+        mocker.patch("guardrails.llm_providers.LiteLLMCallable", new=MockLiteLLMCallable)
     else:
         mocker.patch(
             "guardrails.llm_providers.OpenAIChatCallable",
@@ -728,7 +728,7 @@ def test_pydantic_with_message_history_reask(mocker):
 
 
 def test_sequential_validator_log_is_not_duplicated(mocker):
-    mocker.patch("guardrails.llm_providers.OpenAICallable", new=MockOpenAICallable)
+    mocker.patch("guardrails.llm_providers.LiteLLMCallable", new=MockLiteLLMCallable)
 
     proc_count_bak = os.environ.get("GUARDRAILS_PROCESS_COUNT")
     os.environ["GUARDRAILS_PROCESS_COUNT"] = "1"
@@ -764,7 +764,7 @@ def test_sequential_validator_log_is_not_duplicated(mocker):
 
 
 def test_in_memory_validator_log_is_not_duplicated(mocker):
-    mocker.patch("guardrails.llm_providers.OpenAICallable", new=MockOpenAICallable)
+    mocker.patch("guardrails.llm_providers.LiteLLMCallable", new=MockLiteLLMCallable)
 
     separate_proc_bak = OneLine.run_in_separate_process
     OneLine.run_in_separate_process = False
@@ -795,7 +795,7 @@ def test_in_memory_validator_log_is_not_duplicated(mocker):
 
 
 def test_enum_datatype(mocker):
-    mocker.patch("guardrails.llm_providers.OpenAICallable", new=MockOpenAICallable)
+    mocker.patch("guardrails.llm_providers.LiteLLMCallable", new=MockLiteLLMCallable)
 
     class TaskStatus(enum.Enum):
         not_started = "not started"
@@ -892,7 +892,7 @@ def test_guard_with_top_level_list_return_type(mocker, rail, prompt):
     # Create a Guard with a top level list return type
 
     # Mock the LLM
-    mocker.patch("guardrails.llm_providers.OpenAICallable", new=MockOpenAICallable)
+    mocker.patch("guardrails.llm_providers.LiteLLMCallable", new=MockLiteLLMCallable)
 
     guard = guard_initializer(rail, prompt=prompt)
 

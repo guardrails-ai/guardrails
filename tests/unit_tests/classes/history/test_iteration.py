@@ -3,7 +3,7 @@ from guardrails.classes.history.inputs import Inputs
 from guardrails.classes.history.iteration import Iteration
 from guardrails.classes.history.outputs import Outputs
 from guardrails.constants import error_status, not_run_status
-from guardrails.llm_providers import OpenAICallable
+from guardrails.llm_providers import LiteLLMCallable
 from guardrails.prompt.instructions import Instructions
 from guardrails.prompt.prompt import Prompt
 from guardrails.utils.llm_response import LLMResponse
@@ -35,7 +35,7 @@ def test_empty_initialization():
 
 def test_non_empty_initialization():
     # Inputs
-    llm_api = OpenAICallable(text="Respond with a greeting.")
+    llm_api = LiteLLMCallable(text="Respond with a greeting.")
     llm_output = "Hello there!"
     instructions = Instructions(source="You are a greeting bot.")
     prompt = Prompt(source="Respond with a ${greeting_type} greeting.")

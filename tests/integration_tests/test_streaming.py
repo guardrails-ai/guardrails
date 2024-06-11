@@ -1,5 +1,5 @@
 # 3 tests
-# 1. Test streaming with OpenAICallable (mock openai.Completion.create)
+# 1. Test streaming with LiteLLMCallable (mock openai.Completion.create)
 # 2. Test streaming with OpenAIChatCallable (mock openai.ChatCompletion.create)
 # 3. Test string schema streaming
 # Using the LowerCase Validator, and a custom validator to show new streaming behavior
@@ -266,7 +266,7 @@ def test_streaming_with_openai_callable(
     guard,
     expected_validated_output,
 ):
-    """Test streaming with OpenAICallable.
+    """Test streaming with LiteLLMCallable.
 
     Mocks openai.Completion.create.
     """

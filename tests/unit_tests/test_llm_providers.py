@@ -223,9 +223,9 @@ def test_openai_callable(mocker, openai_mock):
     else:
         mocker.patch("openai.resources.Completions.create", return_value=openai_mock)
 
-    from guardrails.llm_providers import OpenAICallable
+    from guardrails.llm_providers import LiteLLMCallable
 
-    openai_callable = OpenAICallable()
+    openai_callable = LiteLLMCallable()
 
     response = openai_callable(text="Hello")
 
@@ -243,9 +243,9 @@ def test_openai_stream_callable(mocker, openai_stream_mock):
             "openai.resources.Completions.create", return_value=openai_stream_mock
         )
 
-    from guardrails.llm_providers import OpenAICallable
+    from guardrails.llm_providers import LiteLLMCallable
 
-    openai_callable = OpenAICallable()
+    openai_callable = LiteLLMCallable()
     response = openai_callable(text="1,2,3,", stream=True)
 
     assert isinstance(response, LLMResponse) is True
@@ -264,9 +264,9 @@ def test_openai_stream_callable(mocker, openai_stream_mock):
 async def test_async_openai_callable(mocker, openai_mock):
     mocker.patch("openai.Completion.acreate", return_value=openai_mock)
 
-    from guardrails.llm_providers import AsyncOpenAICallable
+    from guardrails.llm_providers import AsyncLiteLLMCallable
 
-    openai_callable = AsyncOpenAICallable()
+    openai_callable = AsyncLiteLLMCallable()
     response = await openai_callable(text="Hello")
 
     assert isinstance(response, LLMResponse) is True
@@ -562,7 +562,7 @@ def test_get_llm_ask_temperature(llm_api, args, kwargs, expected_temperature):
 def test_get_llm_ask_openai_completion():
     import openai
 
-    from guardrails.llm_providers import OpenAICallable
+    from guardrails.llm_providers import LiteLLMCallable
 
     completion_create = None
     if OPENAI_VERSION.startswith("0"):
@@ -572,7 +572,7 @@ def test_get_llm_ask_openai_completion():
 
     prompt_callable = get_llm_ask(completion_create)
 
-    assert isinstance(prompt_callable, OpenAICallable)
+    assert isinstance(prompt_callable, LiteLLMCallable)
 
 
 @pytest.mark.skipif(
