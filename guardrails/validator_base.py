@@ -567,7 +567,7 @@ class Validator(Runnable):
                 f"{self.rail_alias} has found a Validator Hub Service token."
                 " Using a remote inference engine."
             )
-            return self._inference_request(model_input)
+            return self._inference_remote(model_input)
 
         logger.debug(
             f"{self.rail_alias} either has no hub authentication token or has not "
