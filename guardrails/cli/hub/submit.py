@@ -7,8 +7,7 @@ from pydash import snake_case
 
 from guardrails.cli.hub.hub import hub_command
 from guardrails.cli.logger import LEVELS, logger
-from guardrails.cli.server.hub_client import post_validator_submit
-from guardrails.hub_token.token import HttpError
+from guardrails.cli.server.hub_client import HttpError, post_validator_submit
 
 
 @hub_command.command(name="submit")

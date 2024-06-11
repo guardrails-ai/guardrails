@@ -3,16 +3,43 @@ from string import Template
 from typing import Any, Dict, Optional
 
 import requests
+from jwt import JWT
+from jwt.exceptions import JWTDecodeError
 
 from guardrails.classes.credentials import Credentials
 from guardrails.cli.logger import logger
 from guardrails.cli.server.module_manifest import ModuleManifest
-from guardrails.hub_token.token import AuthenticationError
-import guardrails.hub_token.token as hub_tokens
 
+FIND_NEW_TOKEN = "You can find a new token at https://hub.guardrailsai.com/tokens"
+
+TOKEN_EXPIRED_MESSAGE = f"""Your token has expired. Please run `guardrails configure`\
+to update your token.
+{FIND_NEW_TOKEN}"""
+TOKEN_INVALID_MESSAGE = f"""Your token is invalid. Please run `guardrails configure`\
+to update your token.
+{FIND_NEW_TOKEN}"""
+
+validator_hub_service = "https://so4sg4q4pb.execute-api.us-east-1.amazonaws.com"
 validator_manifest_endpoint = Template(
     "validator-manifests/${namespace}/${validator_name}"
 )
+
+
+class AuthenticationError(Exception):
+    pass
+
+
+class ExpiredTokenError(Exception):
+    pass
+
+
+class InvalidTokenError(Exception):
+    pass
+
+
+class HttpError(Exception):
+    status: int
+    message: str
 
 
 def fetch(url: str, token: Optional[str], anonymousUserId: Optional[str]):
@@ -29,13 +56,13 @@ def fetch(url: str, token: Optional[str], anonymousUserId: Optional[str]):
         if not req.ok:
             logger.error(req.status_code)
             logger.error(body.get("message"))
-            http_error = hub_tokens.HttpError()
+            http_error = HttpError()
             http_error.status = req.status_code
             http_error.message = body.get("message")
             raise http_error
 
         return body
-    except hub_tokens.HttpError as http_e:
+    except HttpError as http_e:
         raise http_e
     except Exception as e:
         logger.error("An unexpected error occurred!", e)
@@ -49,13 +76,29 @@ def fetch_module_manifest(
     manifest_path = validator_manifest_endpoint.safe_substitute(
         namespace=namespace, validator_name=validator_name
     )
-    manifest_url = f"{hub_tokens.validator_hub_service}/{manifest_path}"
+    manifest_url = f"{validator_hub_service}/{manifest_path}"
     return fetch(manifest_url, token, anonymousUserId)
+
+
+def get_jwt_token(creds: Credentials) -> Optional[str]:
+    token = creds.token
+
+    # check for jwt expiration
+    if token:
+        try:
+            JWT().decode(token, do_verify=False)
+        except JWTDecodeError as e:
+            # if the error message includes "Expired", then the token is expired
+            if "Expired" in str(e):
+                raise ExpiredTokenError(TOKEN_EXPIRED_MESSAGE)
+            else:
+                raise InvalidTokenError(TOKEN_INVALID_MESSAGE)
+    return token
 
 
 def fetch_module(module_name: str) -> ModuleManifest:
     creds = Credentials.from_rc_file(logger)
-    token = hub_tokens.get_jwt_token(creds)
+    token = get_jwt_token(creds)
 
     module_manifest_json = fetch_module_manifest(module_name, token, creds.id)
     return ModuleManifest.from_dict(module_manifest_json)
@@ -69,11 +112,11 @@ def get_validator_manifest(module_name: str):
             logger.error(f"Failed to install hub://{module_name}")
             sys.exit(1)
         return module_manifest
-    except hub_tokens.HttpError:
+    except HttpError:
         logger.error(f"Failed to install hub://{module_name}")
         sys.exit(1)
-    except (hub_tokens.ExpiredTokenError, hub_tokens.InvalidTokenError) as e:
-        logger.error(hub_tokens.AuthenticationError(e))
+    except (ExpiredTokenError, InvalidTokenError) as e:
+        logger.error(AuthenticationError(e))
         sys.exit(1)
     except Exception as e:
         logger.error("An unexpected error occurred!", e)
@@ -84,26 +127,26 @@ def get_validator_manifest(module_name: str):
 def get_auth():
     try:
         creds = Credentials.from_rc_file(logger)
-        token = hub_tokens.get_jwt_token(creds)
-        auth_url = f"{hub_tokens.validator_hub_service}/auth"
+        token = get_jwt_token(creds)
+        auth_url = f"{validator_hub_service}/auth"
         response = fetch(auth_url, token, creds.id)
         if not response:
-            raise hub_tokens.AuthenticationError("Failed to authenticate!")
-    except hub_tokens.HttpError as http_error:
+            raise AuthenticationError("Failed to authenticate!")
+    except HttpError as http_error:
         logger.error(http_error)
         raise AuthenticationError("Failed to authenticate!")
-    except (hub_tokens.ExpiredTokenError, hub_tokens.InvalidTokenError) as e:
-        raise hub_tokens.AuthenticationError(e)
+    except (ExpiredTokenError, InvalidTokenError) as e:
+        raise AuthenticationError(e)
     except Exception as e:
         logger.error("An unexpected error occurred!", e)
-        raise hub_tokens.AuthenticationError("Failed to authenticate!")
+        raise AuthenticationError("Failed to authenticate!")
 
 
 def post_validator_submit(package_name: str, content: str):
     try:
         creds = Credentials.from_rc_file(logger)
-        token = hub_tokens.get_jwt_token(creds)
-        submission_url = f"{hub_tokens.validator_hub_service}/validator/submit"
+        token = get_jwt_token(creds)
+        submission_url = f"{validator_hub_service}/validator/submit"
 
         headers = {
             "Authorization": f"Bearer {token}",
@@ -115,13 +158,13 @@ def post_validator_submit(package_name: str, content: str):
         if not req.ok:
             logger.error(req.status_code)
             logger.error(body.get("message"))
-            http_error = hub_tokens.HttpError()
+            http_error = HttpError()
             http_error.status = req.status_code
             http_error.message = body.get("message")
             raise http_error
 
         return body
-    except hub_tokens.HttpError as http_e:
+    except HttpError as http_e:
         raise http_e
     except Exception as e:
         logger.error("An unexpected error occurred!", e)
