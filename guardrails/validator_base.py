@@ -27,11 +27,11 @@ from pydantic import BaseModel, Field
 from typing_extensions import deprecated
 
 import guardrails.hub_token.token as hub_tokens
-from guardrails.logger import logger
 from guardrails.classes import InputType
 from guardrails.classes.credentials import Credentials
 from guardrails.constants import hub
 from guardrails.errors import ValidationError
+from guardrails.logger import logger
 from guardrails.utils.dataclass import dataclass
 
 VALIDATOR_IMPORT_WARNING = """Accessing `{validator_name}` using
@@ -496,8 +496,9 @@ class Validator(Runnable):
         else:
             self.on_fail_method = on_fail
 
-        self.inference_callable = self._get_inference_method()
-
+        self.remote_inference_engine = (
+            os.environ.get("REMOTE_INFERENCE_ENGINE", default="").lower() == "true"
+        )
         # Store the kwargs for the validator.
         self._kwargs = kwargs
 
@@ -505,16 +506,15 @@ class Validator(Runnable):
             self.rail_alias in validators_registry
         ), f"Validator {self.__class__.__name__} is not registered. "
 
-    def _inference_local(self, value: str, metadata: dict = {}) -> Any:
-        """This function should act as a callable for a model being used for validation.
-        It should be implemented for actions you wish to perform locally.
-
-        This function will be used by the validate() function to perform validation."""
+    def _build_request(self, input: Any) -> Any:
+        """Builds a request from a model input to produce a request that can be sent to
+        the remote inference engine."""
         raise NotImplementedError
 
     def _validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
         """Validates a value and return a validation result. This method should call
-        inference_callable() in the validation step.
+        inference() in the validator implementation to perform inference on some input
+        value.
         """
         raise NotImplementedError
 
@@ -523,6 +523,25 @@ class Validator(Runnable):
         _validate() and is intended to apply any meta-validation requirements, logic,
         or pre/post processing."""
         return self._validate(value, metadata)
+
+    def inference(self, input: Any) -> Any:
+        # Determine if credentials have been established with the validator hub service
+        hub_jwt_token = hub_tokens.get_jwt_token(Credentials.from_rc_file(logger))
+
+        # Only use if both are set, otherwise fall back to local inference
+        if hub_jwt_token and self.remote_inference_engine:
+            logger.debug(
+                f"{self.rail_alias} has found a Validator Hub Service token."
+                " Using a remote inference engine."
+            )
+            return self._inference_request(self._build_request(input))
+
+        logger.debug(
+            f"{self.rail_alias} either has no hub authentication token or has not "
+            "enabled remote inference execution. This validator will use a local "
+            "inference engine."
+        )
+        return self._inference_local(input)
 
     def _chunking_function(self, chunk: str) -> list[str]:
         """The strategy used for chunking accumulated text input into validation sets.
@@ -571,7 +590,7 @@ class Validator(Runnable):
             validation_result.validated_chunk = chunk_to_validate
         return validation_result
 
-    def _inference_remote(self, request_body: dict) -> Any:
+    def _inference_request(self, request_body: dict) -> Any:
         """Makes a request to the Validator Hub to run a ML based validation model. This
         request is authed through the hub and rerouted to a hosted ML model. The reply
         from the hosted endpoint is returned and sent to this client.
@@ -659,30 +678,6 @@ class Validator(Runnable):
     def get_args(self):
         """Get the arguments for the validator."""
         return self._kwargs
-
-    def _get_inference_method(self):
-        # Find if env var is set to enable remote inference of this validator
-        remote_inference_engine = (
-            os.environ.get("REMOTE_INFERENCE_ENGINE", default="").lower() == "true"
-        )
-
-        # Determine if credentials have been established with the validator hub service
-        hub_jwt_token = hub_tokens.get_jwt_token(Credentials.from_rc_file(logger))
-
-        # Only use if both are set, otherwise fall back to local inference
-        if hub_jwt_token and remote_inference_engine:
-            logger.debug(
-                f"{self.rail_alias} has found a Validator Hub Service token."
-                " Using a remote inference engine."
-            )
-            return self._inference_remote
-
-        logger.debug(
-            f"{self.rail_alias} either has no hub authentication token or has not "
-            "enabled remote inference execution. This validator will use a local "
-            "inference engine."
-        )
-        return self._inference_local
 
     def __call__(self, value):
         result = self.validate(value, {})
