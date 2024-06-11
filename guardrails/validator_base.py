@@ -576,7 +576,7 @@ class Validator(Runnable):
         )
         return self._inference_local(model_input)
 
-    def _chunking_function(self, chunk: str) -> list[str]:
+    def _chunking_function(self, chunk: str) -> List[str]:
         """The strategy used for chunking accumulated text input into validation sets.
 
         Args:
