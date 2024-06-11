@@ -511,10 +511,10 @@ class Validator(Runnable):
             self.rail_alias in validators_registry
         ), f"Validator {self.__class__.__name__} is not registered. "
 
-    def _build_request(self, input: Any) -> Any:
+    def _build_request(self, input: Any) -> dict:
         """User implementable function.
 
-        Builds a request from a model input to produce a request that can be sent to
+        Builds a dict from a model input to produce a request that can be sent to
         the remote inference engine. This function should build a json request
         conforming to the format needed by the ML model. It will be forwarded as a POST
         to the endpoint."""
