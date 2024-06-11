@@ -1,21 +1,36 @@
 import copy
 from functools import partial
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
 
-from pydantic import BaseModel
-
+from guardrails import validator_service
+from guardrails.actions.reask import get_reask_setup
+from guardrails.classes.execution.guard_execution_options import GuardExecutionOptions
 from guardrails.classes.history import Call, Inputs, Iteration, Outputs
-from guardrails.datatypes import verify_metadata_requirements
+from guardrails.classes.output_type import OutputTypes
+from guardrails.constants import fail_status
 from guardrails.errors import ValidationError
 from guardrails.llm_providers import AsyncPromptCallableBase, PromptCallableBase
 from guardrails.logger import set_scope
-from guardrails.prompt import Instructions, Prompt
-from guardrails.run.utils import msg_history_source, msg_history_string
-from guardrails.schema import Schema, StringSchema
+from guardrails.prompt import Prompt
+from guardrails.messages.messages import Messages
+from guardrails.run.utils import messages_source, messages_string
+from guardrails.schema.rail_schema import json_schema_to_rail_output
+from guardrails.schema.validator import schema_validation
+from guardrails.types import ModelOrListOfModels, ValidatorMap, MessageHistory
 from guardrails.utils.exception_utils import UserFacingException
 from guardrails.utils.hub_telemetry_utils import HubTelemetry
-from guardrails.utils.llm_response import LLMResponse
-from guardrails.utils.reask_utils import NonParseableReAsk, ReAsk
+from guardrails.classes.llm.llm_response import LLMResponse
+from guardrails.utils.parsing_utils import (
+    coerce_types,
+    parse_llm_output,
+    prune_extra_keys,
+)
+from guardrails.utils.prompt_utils import (
+    preprocess_prompt,
+    prompt_content_for_schema,
+    prompt_uses_xml,
+)
+from guardrails.actions.reask import NonParseableReAsk, ReAsk, introspect
 from guardrails.utils.telemetry_utils import trace
 
 
@@ -36,43 +51,82 @@ class Runner:
             where the output is already known.
     """
 
+    # Validation Inputs
+    output_schema: Dict[str, Any]
+    output_type: OutputTypes
+    validation_map: ValidatorMap = {}
+    metadata: Optional[Dict[str, Any]] = None
+
+    # LLM Inputs
+    messages: Optional[List[Dict[str, str]]] = None
+    base_model: Optional[ModelOrListOfModels]
+    exec_options: Optional[GuardExecutionOptions]
+
+    # LLM Calling Details
+    api: Optional[PromptCallableBase] = None
+    output: Optional[str] = None
+    num_reasks: int
+    full_schema_reask: bool = False
+
+    # Internal Metrics Collection
+    disable_tracer: Optional[bool] = True
+
+    # QUESTION: Are any of these init args actually necessary for initialization?
+    # ANSWER: messages for Prompt initialization
+    #   but even that can happen at execution time.
+    # TODO: In versions >=0.6.x, remove this class and just execute a Guard functionally
     def __init__(
         self,
-        output_schema: Schema,
+        output_type: OutputTypes,
+        output_schema: Dict[str, Any],
         num_reasks: int,
+        validation_map: ValidatorMap,
+        *,
         messages: Optional[List[Dict]] = None,
         api: Optional[PromptCallableBase] = None,
-        messages_schema: Optional[StringSchema] = None,
         metadata: Optional[Dict[str, Any]] = None,
         output: Optional[str] = None,
-        base_model: Optional[
-            Union[Type[BaseModel], Type[List[Type[BaseModel]]]]
-        ] = None,
+        base_model: Optional[ModelOrListOfModels] = None,
         full_schema_reask: bool = False,
         disable_tracer: Optional[bool] = True,
+        exec_options: Optional[GuardExecutionOptions] = None,
     ):
+        # Validation Inputs
+        self.output_type = output_type
+        self.output_schema = output_schema
+        self.validation_map = validation_map
+        self.metadata = metadata or {}
+        self.exec_options = copy.deepcopy(exec_options) or GuardExecutionOptions()
+
+        stringified_output_schema = prompt_content_for_schema(
+            output_type, output_schema, validation_map
+        )
+        xml_output_schema = json_schema_to_rail_output(
+            json_schema=output_schema, validator_map=validation_map
+        )
 
         if messages:
-            messages = copy.deepcopy(messages)
+            self.exec_options.messages = messages
             messages_copy = []
             for msg in messages:
-                msg["content"] = Prompt(
-                    msg["content"], output_schema=output_schema.transpile()
+                msg_copy = copy.deepcopy(msg)
+                msg_copy["content"] = Prompt(
+                    msg_copy["content"],
+                    output_schema=stringified_output_schema,
+                    xml_output_schema=xml_output_schema,
                 )
-                messages_copy.append(msg)
+                messages_copy.append(msg_copy)
             self.messages = messages_copy
-        else:
-            self.messages = None
 
-        self.api = api
-        self.messages_schema = messages_schema
-        self.output_schema = output_schema
-        self.num_reasks = num_reasks
-        self.metadata = metadata or {}
-        self.output = output
         self.base_model = base_model
+
+        # LLM Calling Details
+        self.api = api
+        self.output = output
+        self.num_reasks = num_reasks
         self.full_schema_reask = full_schema_reask
 
+        # Internal Metrics Collection
         # Get metrics opt-out from credentials
         self._disable_tracer = disable_tracer
 
@@ -91,39 +145,29 @@ class Runner:
         Returns:
             The Call log for this run.
         """
+        prompt_params = prompt_params or {}
         try:
-            if prompt_params is None:
-                prompt_params = {}
 
-            # check if validator requirements are fulfilled
-            missing_keys = verify_metadata_requirements(
-                self.metadata, self.output_schema.root_datatype
-            )
-            if missing_keys:
-                raise ValueError(
-                    f"Missing required metadata keys: {', '.join(missing_keys)}"
-                )
-
+            # NOTE: At first glance this seems gratuitous,
+            #   but these local variables are reassigned after
+            #   calling self.prepare_to_loop
             (
                 messages,
-                messages_schema,
                 output_schema,
             ) = (
+
                 self.messages,
-                self.messages_schema,
                 self.output_schema,
             )
+
             index = 0
             for index in range(self.num_reasks + 1):
                 # Run a single step.
                 iteration = self.step(
                     index=index,
                     api=self.api,
-                    instructions=instructions,
-                    prompt=prompt,
                     messages=messages,
                     prompt_params=prompt_params,
-                    messages_schema=messages_schema,
                     output_schema=output_schema,
                     output=self.output if index == 0 else None,
                     call_log=call_log,
@@ -139,8 +183,9 @@ class Runner:
                     messages,
                 ) = self.prepare_to_loop(
                     iteration.reasks,
-                    call_log.validation_response,
                     output_schema,
+                    parsed_output=iteration.outputs.parsed_output,
+                    validated_output=call_log.validation_response,
                     prompt_params=prompt_params,
                 )
 
@@ -156,11 +201,11 @@ class Runner:
 
         except UserFacingException as e:
             # Because Pydantic v1 doesn't respect property setters
-            call_log._exception = e.original_exception
+            call_log._set_exception(e.original_exception)
             raise e.original_exception
         except Exception as e:
             # Because Pydantic v1 doesn't respect property setters
-            call_log._exception = e
+            call_log._set_exception(e)
             raise e
         return call_log
 
@@ -168,15 +213,16 @@ class Runner:
     def step(
         self,
         index: int,
-        api: Optional[PromptCallableBase],
-        messages: Optional[List[Dict]],
-        prompt_params: Dict,
-        messages_schema: Optional[StringSchema],
-        output_schema: Schema,
+        output_schema: Dict[str, Any],
         call_log: Call,
+        *,
+        api: Optional[PromptCallableBase],
+        messages: Optional[List[Dict]] = None,
+        prompt_params: Optional[Dict] = None,
         output: Optional[str] = None,
     ) -> Iteration:
         """Run a full step."""
+        prompt_params = prompt_params or {}
         inputs = Inputs(
             llm_api=api,
             llm_output=output,
@@ -196,37 +242,34 @@ class Runner:
             if output:
                 messages = None
             else:
-                instructions, prompt, messages = self.prepare(
+                messages = self.prepare(
                     call_log,
-                    index,
-                    messages,
-                    prompt_params,
-                    api,
-                    messages_schema,
-                    output_schema,
+                    messages=messages,
+                    prompt_params=prompt_params,
+                    api=api,
+                    attempt_number=index,
                 )
 
             iteration.inputs.messages = messages
 
             # Call: run the API.
-            llm_response = self.call(
-                index, messages, api, output
-            )
+            llm_response = self.call(messages, api, output)
 
             iteration.outputs.llm_response_info = llm_response
             raw_output = llm_response.output
 
             # Parse: parse the output.
-            parsed_output, parsing_error = self.parse(index, raw_output, output_schema)
+            parsed_output, parsing_error = self.parse(raw_output, output_schema)
             if parsing_error:
                 iteration.outputs.exception = parsing_error
                 iteration.outputs.error = str(parsing_error)
-
-            iteration.outputs.parsed_output = parsed_output
+                iteration.outputs.reasks.append(parsed_output)
+            else:
+                iteration.outputs.parsed_output = parsed_output
 
             # Validate: run output validation.
             if parsing_error and isinstance(parsed_output, NonParseableReAsk):
-                reasks, _ = self.introspect(index, parsed_output, output_schema)
+                reasks, _ = self.introspect(parsed_output)
             else:
                 # Validate: run output validation.
                 validated_output = self.validate(
@@ -235,9 +278,7 @@ class Runner:
                 iteration.outputs.validation_response = validated_output
 
                 # Introspect: inspect validated output for reasks.
-                reasks, valid_output = self.introspect(
-                    index, validated_output, output_schema
-                )
+                reasks, valid_output = self.introspect(validated_output)
                 iteration.outputs.guarded_output = valid_output
 
             iteration.outputs.reasks = reasks
@@ -250,20 +291,26 @@ class Runner:
         return iteration
 
     def validate_messages(
-        self,
-        call_log: Call,
-        messages: List[Dict],
-        messages_schema: StringSchema,
-    ):
-        msg_str = msg_history_string(messages)
+        self, call_log: Call, messages: Messages, attempt_number: int
+    ) -> None:
+        msg_str = messages_string(messages)
         inputs = Inputs(
             llm_output=msg_str,
         )
         iteration = Iteration(inputs=inputs)
         call_log.iterations.insert(0, iteration)
-        validated_messages = messages_schema.validate(
-            iteration, msg_str, self.metadata, disable_tracer=self._disable_tracer
+        value, _metadata = validator_service.validate(
+            value=msg_str,
+            metadata=self.metadata,
+            validator_map=self.validation_map,
+            iteration=iteration,
+            disable_tracer=self._disable_tracer,
+            path="messages",
         )
+        validated_messages = validator_service.post_process_validation(
+            value, attempt_number, iteration, OutputTypes.STRING
+        )
+
         iteration.outputs.validation_response = validated_messages
         if isinstance(validated_messages, ReAsk):
             raise ValidationError(
@@ -275,45 +322,75 @@ class Runner:
     def prepare_messages(
         self,
         call_log: Call,
-        messages: List[Dict],
+        messages: Messages,
         prompt_params: Dict,
-        messages_schema: Optional[StringSchema],
-    ):
-        messages = copy.deepcopy(messages)
+        attempt_number: int,
+    ) -> List[Dict[str, str]]:
+        formatted_messages = []
         # Format any variables in the message history with the prompt params.
         for msg in messages:
-            msg["content"] = msg["content"].format(**prompt_params)
+            msg_copy = copy.deepcopy(msg)
+            msg_copy["content"] = msg_copy["content"].format(**prompt_params)
+            formatted_messages.append(msg_copy)
 
         # validate messages
-        if messages_schema is not None:
-            self.validate_messages(call_log, messages, messages_schema)
+        if "messages" in self.validation_map:
+            self.validate_messages(call_log, formatted_messages, attempt_number)
 
-        return messages
+        return formatted_messages
+
+    def validate_prompt(self, call_log: Call, prompt: Prompt, attempt_number: int):
+        inputs = Inputs(
+            llm_output=prompt.source,
+        )
+        iteration = Iteration(inputs=inputs)
+        call_log.iterations.insert(0, iteration)
+        value, _metadata = validator_service.validate(
+            value=prompt.source,
+            metadata=self.metadata,
+            validator_map=self.validation_map,
+            iteration=iteration,
+            disable_tracer=self._disable_tracer,
+            path="prompt",
+        )
+
+        validated_prompt = validator_service.post_process_validation(
+            value, attempt_number, iteration, OutputTypes.STRING
+        )
+
+        iteration.outputs.validation_response = validated_prompt
+
+        if isinstance(validated_prompt, ReAsk):
+            raise ValidationError(f"Prompt validation failed: {validated_prompt}")
+        elif not validated_prompt or iteration.status == fail_status:
+            raise ValidationError("Prompt validation failed")
+        return Prompt(cast(str, validated_prompt))
 
     def prepare(
         self,
         call_log: Call,
-        index: int,
+        attempt_number: int,
+        *,
         messages: Optional[List[Dict]],
-        prompt_params: Dict,
+        prompt_params: Optional[Dict] = None,
         api: Optional[Union[PromptCallableBase, AsyncPromptCallableBase]],
-        messages_schema: Optional[StringSchema],
-        output_schema: Schema, #TODO figure out why this is unused in the messages context
-    ) -> Tuple[Optional[Instructions], Optional[Prompt], Optional[List[Dict]]]:
+    ) -> Tuple[ Optional[List[Dict]]]:
         """Prepare by running pre-processing and input validation.
 
         Returns:
-            The instructions, prompt, and message history.
+            The messages.
         """
+        prompt_params = prompt_params or {}
         if api is None:
             raise UserFacingException(ValueError("API must be provided."))
 
-        if prompt_params is None:
-            prompt_params = {}
-
         if messages:
             messages = self.prepare_messages(
-                call_log, messages, prompt_params, messages_schema
+                call_log, messages, prompt_params, attempt_number
+            )
+        else:
+            raise UserFacingException(
+                ValueError("'messages' must be provided.")
             )
 
         return messages
@@ -321,7 +398,6 @@ class Runner:
     @trace(name="call")
     def call(
         self,
-        index: int,
         messages: Optional[List[Dict[str, str]]],
         api: Optional[PromptCallableBase],
         output: Optional[str] = None,
@@ -343,85 +419,95 @@ class Runner:
         if output is not None:
             llm_response = LLMResponse(output=output)
         elif messages:
-            llm_response = api_fn(messages=msg_history_source(messages))
+            llm_response = api_fn(messages=messages_source(messages))
         else:
             llm_response = api_fn()
 
         return llm_response
 
-    def parse(
-        self,
-        index: int,
-        output: str,
-        output_schema: Schema,
-    ):
-        parsed_output, error = output_schema.parse(output)
+    def parse(self, output: str, output_schema: Dict[str, Any], **kwargs):
+        parsed_output, error = parse_llm_output(output, self.output_type, **kwargs)
+        if not error:
+            parsed_output = prune_extra_keys(parsed_output, output_schema)
+            parsed_output = coerce_types(parsed_output, output_schema)
         return parsed_output, error
 
     def validate(
         self,
         iteration: Iteration,
-        index: int,
+        attempt_number: int,
         parsed_output: Any,
-        output_schema: Schema,
+        output_schema: Dict[str, Any],
         stream: Optional[bool] = False,
         **kwargs,
     ):
         """Validate the output."""
-        if isinstance(output_schema, StringSchema):
-            validated_output = output_schema.validate(
-                iteration,
-                parsed_output,
-                self.metadata,
-                index,
-                self._disable_tracer,
-                stream,
-                **kwargs,
-            )
-        else:
-            validated_output = output_schema.validate(
-                iteration,
-                parsed_output,
-                self.metadata,
-                attempt_number=index,
-                disable_tracer=self._disable_tracer,
-                **kwargs,
-            )
+        # Break early if empty
+        if parsed_output is None:
+            return None
+
+        skeleton_reask = schema_validation(parsed_output, output_schema, **kwargs)
+        if skeleton_reask:
+            return skeleton_reask
+
+        if self.output_type != OutputTypes.STRING:
+            stream = None
+
+        validated_output, metadata = validator_service.validate(
+            value=parsed_output,
+            metadata=self.metadata,
+            validator_map=self.validation_map,
+            iteration=iteration,
+            disable_tracer=self._disable_tracer,
+            path="$",
+            stream=stream,
+            **kwargs,
+        )
+        self.metadata.update(metadata)
+        validated_output = validator_service.post_process_validation(
+            validated_output, attempt_number, iteration, self.output_type
+        )
 
         return validated_output
 
     def introspect(
         self,
-        index: int,
         validated_output: Any,
-        output_schema: Schema,
     ) -> Tuple[Sequence[ReAsk], Optional[Union[str, Dict]]]:
         """Introspect the validated output."""
         if validated_output is None:
             return [], None
-        reasks, valid_output = output_schema.introspect(validated_output)
+        reasks, valid_output = introspect(validated_output)
 
         return reasks, valid_output
 
-    def do_loop(self, index: int, reasks: Sequence[ReAsk]) -> bool:
+    def do_loop(self, attempt_number: int, reasks: Sequence[ReAsk]) -> bool:
         """Determine if we should loop again."""
-        if reasks and index < self.num_reasks:
+        if reasks and attempt_number < self.num_reasks:
             return True
         return False
 
     def prepare_to_loop(
         self,
         reasks: Sequence[ReAsk],
-        validated_output: Optional[Union[str, Dict, ReAsk]],
-        output_schema: Schema,
-        prompt_params: Dict,
-    ) -> Tuple[Prompt, Optional[Instructions], Schema, Optional[List[Dict]]]:
+        output_schema: Dict[str, Any],
+        *,
+        parsed_output: Optional[Union[str, Dict, ReAsk]] = None,
+        validated_output: Optional[Union[str, Dict, ReAsk]] = None,
+        prompt_params: Optional[Dict] = None,
+    ) -> Tuple[Dict[str, Any], Optional[List[Dict]]]:
         """Prepare to loop again."""
-        output_schema = output_schema.get_reask_setup(
+        prompt_params = prompt_params or {}
+        output_schema, messages = get_reask_setup(
+            output_type=self.output_type,
+            output_schema=output_schema,
+            validation_map=self.validation_map,
             reasks=reasks,
-            original_response=validated_output,
+            parsing_response=parsed_output,
+            validation_response=validated_output,
             use_full_schema=self.full_schema_reask,
             prompt_params=prompt_params,
+            exec_options=self.exec_options,
         )
 
         messages = None  # clear msg history for reasking

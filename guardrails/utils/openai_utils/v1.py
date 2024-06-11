@@ -3,7 +3,7 @@ from typing import Any, AsyncIterable, Dict, Iterable, List, cast
 
 import openai
 
-from guardrails.utils.llm_response import LLMResponse
+from guardrails.classes.llm.llm_response import LLMResponse
 from guardrails.utils.openai_utils.base import BaseOpenAIClient
 from guardrails.utils.openai_utils.streaming_utils import (
     num_tokens_from_messages,

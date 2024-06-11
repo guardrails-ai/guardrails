@@ -4,7 +4,6 @@ import openai
 import pytest
 
 import guardrails as gd
-from guardrails.schema import JsonSchema
 from guardrails.utils.openai_utils import OPENAI_VERSION
 from tests.integration_tests.test_assets.fixtures import (  # noqa
     fixture_llm_output,
@@ -13,6 +12,10 @@ from tests.integration_tests.test_assets.fixtures import (  # noqa
 )
 
 from .mock_llm_outputs import MockAsyncLiteLLMCallable, entity_extraction
+
+
+# FIXME: None of these tests were ever updated to work with OpenAI 1.x
+#   making them useless once we drop support for 0.x
 
 
 @pytest.mark.asyncio
@@ -32,8 +35,8 @@ async def test_entity_extraction_with_reask(mocker, multiprocessing_validators: 
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
     guard = gd.Guard.from_rail_string(entity_extraction.RAIL_SPEC_WITH_REASK)
 
-    with patch.object(
-        JsonSchema, "preprocess_prompt", wraps=guard.output_schema.preprocess_prompt
+    with patch(
+        "guardrails.run.async_runner.preprocess_prompt"
     ) as mock_preprocess_prompt:
         final_output = await guard(
             llm_api=openai.Completion.acreate,

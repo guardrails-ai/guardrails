@@ -1,18 +1,21 @@
 from typing import Any, Dict, Generator, List, Optional, Union
 
 from guardrails.classes.history import Call, Inputs, Iteration, Outputs
-from guardrails.classes.output_type import OT
+from guardrails.classes.output_type import OT, OutputTypes
 from guardrails.classes.validation_outcome import ValidationOutcome
-from guardrails.datatypes import verify_metadata_requirements
 from guardrails.llm_providers import (
     LiteLLMCallable,
     PromptCallableBase,
 )
 from guardrails.prompt import Instructions, Prompt
 from guardrails.run.runner import Runner
-from guardrails.schema import Schema, StringSchema
 from guardrails.utils.openai_utils import OPENAI_VERSION
-from guardrails.utils.reask_utils import SkeletonReAsk
+from guardrails.utils.parsing_utils import (
+    coerce_types,
+    parse_llm_output,
+    prune_extra_keys,
+)
+from guardrails.actions.reask import SkeletonReAsk
 from guardrails.constants import pass_status
 
 
@@ -25,7 +28,7 @@ class StreamRunner(Runner):
     """
 
     def __call__(
-        self, call_log: Call, prompt_params: Optional[Dict] = None
+        self, call_log: Call, prompt_params: Optional[Dict] = {}
     ) -> Generator[ValidationOutcome[OT], None, None]:
         """Execute the StreamRunner.
 
@@ -36,25 +39,11 @@ class StreamRunner(Runner):
         Returns:
             The Call log for this run.
         """
-        if prompt_params is None:
-            prompt_params = {}
-
-        # check if validator requirements are fulfilled
-        missing_keys = verify_metadata_requirements(
-            self.metadata, self.output_schema.root_datatype
-        )
-        if missing_keys:
-            raise ValueError(
-                f"Missing required metadata keys: {', '.join(missing_keys)}"
-            )
-
         (
             messages,
-            messages_schema,
             output_schema,
         ) = (
-            self.messages,
-            self.messages_schema,
+            messages,
             self.output_schema,
         )
 
@@ -63,7 +52,6 @@ class StreamRunner(Runner):
             api=self.api,
             messages=messages,
             prompt_params=prompt_params,
-            messages_schema=messages_schema,
             output_schema=output_schema,
             output=self.output,
             call_log=call_log,
@@ -75,8 +63,7 @@ class StreamRunner(Runner):
         api: Optional[PromptCallableBase],
         messages: Optional[List[Dict]],
         prompt_params: Dict,
-        messages_schema: Optional[StringSchema],
-        output_schema: Schema,
+        output_schema: Dict[str, Any],
         call_log: Call,
         output: Optional[str] = None,
     ) -> Generator[ValidationOutcome[OT], None, None]:
@@ -102,17 +89,15 @@ class StreamRunner(Runner):
             messages = self.prepare(
                 call_log,
                 index,
-                messages,
-                prompt_params,
-                api,
-                messages_schema,
-                output_schema,
+                messages=messages,
+                prompt_params=prompt_params,
+                api=api,
             )
 
         iteration.inputs.messages = messages
 
         # Call: run the API that returns a generator wrapped in LLMResponse
-        llm_response = self.call(index, messages, api, output)
+        llm_response = self.call(messages, api, output)
 
         # Get the stream (generator) from the LLMResponse
         stream = llm_response.stream_output
@@ -129,7 +114,7 @@ class StreamRunner(Runner):
         # and construct "fragments" of concatenated chunks
         # for now, handle string and json schema differently
 
-        if isinstance(output_schema, StringSchema):
+        if self.output_type == OutputTypes.STRING:
             stream_finished = False
             last_chunk_text = ""
             for chunk in stream:
@@ -143,7 +128,7 @@ class StreamRunner(Runner):
 
                 # 2. Parse the chunk
                 parsed_chunk, move_to_next = self.parse(
-                    index, chunk_text, output_schema, verified
+                    chunk_text, output_schema, verified=verified
                 )
                 if move_to_next:
                     # Continue to next chunk
@@ -165,7 +150,7 @@ class StreamRunner(Runner):
                     )
 
                 # 4. Introspect: inspect the validated fragment for reasks
-                reasks, valid_op = self.introspect(index, validated_text, output_schema)
+                reasks, valid_op = self.introspect(validated_text)
                 if reasks:
                     raise ValueError(
                         "Reasks are not yet supported with streaming. Please "
@@ -204,12 +189,15 @@ class StreamRunner(Runner):
                 chunk_text = self.get_chunk_text(chunk, api)
                 fragment += chunk_text
 
+                # 2. Parse the fragment
                 parsed_fragment, move_to_next = self.parse(
-                    index, fragment, output_schema, verified
+                    fragment, output_schema, verified=verified
                 )
                 if move_to_next:
                     # Continue to next chunk
                     continue
+
+                # 3. Run output validation
                 validated_fragment = self.validate(
                     iteration,
                     index,
@@ -224,9 +212,7 @@ class StreamRunner(Runner):
                     )
 
                 # 4. Introspect: inspect the validated fragment for reasks
-                reasks, valid_op = self.introspect(
-                    index, validated_fragment, output_schema
-                )
+                reasks, valid_op = self.introspect(validated_fragment)
                 if reasks:
                     raise ValueError(
                         "Reasks are not yet supported with streaming. Please "
@@ -279,15 +265,19 @@ class StreamRunner(Runner):
 
     def parse(
         self,
-        index: int,
         output: str,
-        output_schema: Schema,
+        output_schema: Dict[str, Any],
+        *,
         verified: set,
     ):
         """Parse the output."""
-        parsed_output, error = output_schema.parse(
-            output, stream=True, verified=verified
+        parsed_output, error = parse_llm_output(
+            output, self.output_type, stream=True, verified=verified
         )
+
+        if not error:
+            parsed_output = prune_extra_keys(parsed_output, output_schema)
+            parsed_output = coerce_types(parsed_output, output_schema)
 
         # Error can be either of
         # (True/False/None/ValueError/string representing error)

@@ -7,18 +7,19 @@ from rich.pretty import pretty_repr
 from rich.table import Table
 from typing_extensions import deprecated
 
+from guardrails_api_client import Iteration as IIteration
 from guardrails.classes.generic.stack import Stack
 from guardrails.classes.history.inputs import Inputs
 from guardrails.classes.history.outputs import Outputs
+from guardrails.classes.generic.arbitrary_model import ArbitraryModel
 from guardrails.logger import get_scope_handler
 from guardrails.prompt.prompt import Prompt
-from guardrails.utils.logs_utils import ValidatorLogs
-from guardrails.utils.pydantic_utils import ArbitraryModel
-from guardrails.utils.reask_utils import ReAsk
-from guardrails.validator_base import ErrorSpan
+from guardrails.classes.validation.validator_logs import ValidatorLogs
+from guardrails.actions.reask import ReAsk
+from guardrails.classes.validation.validation_result import ErrorSpan
 
 
-class Iteration(ArbitraryModel):
+class Iteration(IIteration, ArbitraryModel):
     # I think these should be containered since their names slightly overlap with
     #  outputs, but could be convinced otherwise
     inputs: Inputs = Field(

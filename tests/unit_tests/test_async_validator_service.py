@@ -3,8 +3,7 @@ import asyncio
 import pytest
 
 from guardrails.classes.history.iteration import Iteration
-from guardrails.datatypes import FieldValidation
-from guardrails.utils.logs_utils import ValidatorLogs
+from guardrails.classes.validation.validator_logs import ValidatorLogs
 from guardrails.validator_base import OnFailAction
 from guardrails.validator_service import AsyncValidatorService
 from guardrails.validators import PassResult
@@ -12,9 +11,6 @@ from guardrails.validators import PassResult
 from .mocks import MockLoop
 from .mocks.mock_validator import create_mock_validator
 
-empty_field_validation = FieldValidation(
-    key="mock-key", value="mock-value", validators=[], children=[]
-)
 avs = AsyncValidatorService()
 
 
@@ -26,7 +22,7 @@ def test_validate_with_running_loop(mocker):
         avs.validate(
             value=True,
             metadata={},
-            validator_setup=empty_field_validation,
+            validator_map={},
             iteration=iteration,
         )
 
@@ -50,48 +46,40 @@ def test_validate_without_running_loop(mocker):
     validated_value, validated_metadata = avs.validate(
         value=True,
         metadata={},
-        validator_setup=empty_field_validation,
+        validator_map={},
         iteration=iteration,
     )
 
     assert loop_spy.call_count == 1
-    async_validate_mock.assert_called_once_with(
-        True, {}, empty_field_validation, iteration
-    )
+    async_validate_mock.assert_called_once_with(True, {}, {}, iteration, "$", "$")
     assert validated_value == "async_validate_mock"
     assert validated_metadata == {"async": True}
 
 
 @pytest.mark.asyncio
 async def test_async_validate_with_children(mocker):
-    validate_dependents_mock = mocker.patch.object(avs, "validate_dependents")
+    validate_children_mock = mocker.patch.object(avs, "validate_children")
 
     run_validators_mock = mocker.patch.object(avs, "run_validators")
     run_validators_mock.return_value = ("run_validators_mock", {"async": True})
 
-    field_validation = FieldValidation(
-        key="mock-parent-key",
-        value="mock-parent-value",
-        validators=[],
-        children=[empty_field_validation],
-    )
+    value = {"a": 1}
+
     iteration = Iteration()
 
     validated_value, validated_metadata = await avs.async_validate(
-        value=True,
+        value=value,
         metadata={},
-        validator_setup=field_validation,
+        validator_map={},
         iteration=iteration,
     )
 
-    assert validate_dependents_mock.call_count == 1
-    validate_dependents_mock.assert_called_once_with(
-        True, {}, field_validation, iteration, "$.mock-parent-key"
-    )
+    assert validate_children_mock.call_count == 1
+    validate_children_mock.assert_called_once_with(value, {}, {}, iteration, "$", "$")
 
     assert run_validators_mock.call_count == 1
     run_validators_mock.assert_called_once_with(
-        iteration, field_validation, True, {}, "$.mock-parent-key", stream=False
+        iteration, {}, value, {}, "$", "$", stream=False
     )
 
     assert validated_value == "run_validators_mock"
@@ -100,7 +88,7 @@ async def test_async_validate_with_children(mocker):
 
 @pytest.mark.asyncio
 async def test_async_validate_without_children(mocker):
-    validate_dependents_mock = mocker.patch.object(avs, "validate_dependents")
+    validate_children_mock = mocker.patch.object(avs, "validate_children")
 
     run_validators_mock = mocker.patch.object(avs, "run_validators")
     run_validators_mock.return_value = ("run_validators_mock", {"async": True})
@@ -108,17 +96,17 @@ async def test_async_validate_without_children(mocker):
     iteration = Iteration()
 
     validated_value, validated_metadata = await avs.async_validate(
-        value=True,
+        value="Hello world!",
         metadata={},
-        validator_setup=empty_field_validation,
+        validator_map={},
         iteration=iteration,
     )
 
-    assert validate_dependents_mock.call_count == 0
+    assert validate_children_mock.call_count == 0
 
     assert run_validators_mock.call_count == 1
     run_validators_mock.assert_called_once_with(
-        iteration, empty_field_validation, True, {}, "$.mock-key", stream=False
+        iteration, {}, "Hello world!", {}, "$", "$", stream=False
     )
 
     assert validated_value == "run_validators_mock"
@@ -126,7 +114,7 @@ async def test_async_validate_without_children(mocker):
 
 
 @pytest.mark.asyncio
-async def test_validate_dependents(mocker):
+async def test_validate_children(mocker):
     async def mock_async_validate(v, md, *args):
         return (f"new-{v}", md)
 
@@ -136,33 +124,49 @@ async def test_validate_dependents(mocker):
 
     gather_spy = mocker.spy(asyncio, "gather")
 
-    child_one = FieldValidation(
-        key="child-one-key", value="child-one-value", validators=[], children=[]
-    )
-    child_two = FieldValidation(
-        key="child-two-key", value="child-two-value", validators=[], children=[]
-    )
-    field_validation = FieldValidation(
-        key="mock-parent-key",
-        value={"child-one-key": "child-one-value", "child-two-key": "child-two-value"},
-        validators=[],
-        children=[child_one, child_two],
-    )
+    validator_map = {
+        "$.mock-parent-key": [],
+        "$.mock-parent-key.child-one-key": [],
+        "$.mock-parent-key.child-two-key": [],
+    }
+
+    value = {
+        "mock-parent-key": {
+            "child-one-key": "child-one-value",
+            "child-two-key": "child-two-value",
+        }
+    }
+
     iteration = Iteration()
 
-    validated_value, validated_metadata = await avs.validate_dependents(
-        value=field_validation.value,
+    validated_value, validated_metadata = await avs.validate_children(
+        value=value.get("mock-parent-key"),
         metadata={},
-        validator_setup=field_validation,
+        validator_map=validator_map,
         iteration=iteration,
-        parent_path="$",
+        abs_parent_path="$.mock-parent-key",
+        ref_parent_path="$.mock-parent-key",
     )
 
     assert gather_spy.call_count == 1
 
     assert async_validate_mock.call_count == 2
-    async_validate_mock.assert_any_call(child_one.value, {}, child_one, iteration, "$")
-    async_validate_mock.assert_any_call(child_two.value, {}, child_two, iteration, "$")
+    async_validate_mock.assert_any_call(
+        "child-one-value",
+        {},
+        validator_map,
+        iteration,
+        "$.mock-parent-key.child-one-key",
+        "$.mock-parent-key.child-one-key",
+    )
+    async_validate_mock.assert_any_call(
+        "child-two-value",
+        {},
+        validator_map,
+        iteration,
+        "$.mock-parent-key.child-two-key",
+        "$.mock-parent-key.child-two-key",
+    )
 
     assert validated_value == {
         "child-one-key": "new-child-one-value",
@@ -215,17 +219,18 @@ async def test_run_validators(mocker):
     iteration = Iteration()
 
     value, metadata = await avs.run_validators(
-        value=empty_field_validation.value,
-        metadata={},
-        validator_setup=empty_field_validation,
         iteration=iteration,
-        property_path="$",
+        validator_map={},
+        value=True,
+        metadata={},
+        absolute_property_path="$",
+        reference_property_path="$",
     )
 
     assert get_running_loop_mock.call_count == 1
 
     assert group_validators_mock.call_count == 1
-    group_validators_mock.assert_called_once_with(empty_field_validation.validators)
+    group_validators_mock.assert_called_once_with([])
 
     assert run_in_executor_spy.call_count == 1
     run_in_executor_spy.assert_called_once_with(
@@ -233,7 +238,7 @@ async def test_run_validators(mocker):
         run_validator_mock,
         iteration,
         noop_validator_2,
-        empty_field_validation.value,
+        True,
         {},
         "$",
         False,
@@ -243,7 +248,7 @@ async def test_run_validators(mocker):
 
     assert asyancio_gather_mock.call_count == 1
 
-    assert value == empty_field_validation.value
+    assert value is True
     assert metadata == {}
 
 
@@ -276,17 +281,18 @@ async def test_run_validators_with_override(mocker):
     iteration = Iteration()
 
     value, metadata = await avs.run_validators(
-        value=empty_field_validation.value,
-        metadata={},
-        validator_setup=empty_field_validation,
         iteration=iteration,
-        property_path="$",
+        validator_map={},
+        value=True,
+        metadata={},
+        absolute_property_path="$",
+        reference_property_path="$",
     )
 
     assert get_running_loop_mock.call_count == 1
 
     assert group_validators_mock.call_count == 1
-    group_validators_mock.assert_called_once_with(empty_field_validation.validators)
+    group_validators_mock.assert_called_once_with([])
 
     assert run_in_executor_spy.call_count == 0
 

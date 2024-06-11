@@ -14,11 +14,11 @@ from typing import (
     cast,
 )
 
-from guardrails_api_client.models.validate_payload_llm_api import ValidatePayloadLlmApi
+from guardrails_api_client.models import LLMResource
 from pydantic import BaseModel
 
-from guardrails.utils.exception_utils import UserFacingException
-from guardrails.utils.llm_response import LLMResponse
+from guardrails.errors import UserFacingException
+from guardrails.classes.llm.llm_response import LLMResponse
 from guardrails.utils.openai_utils import (
     AsyncOpenAIClient,
     OpenAIClient,
@@ -649,24 +649,24 @@ def model_is_supported_server_side(
     )
 
 
-# FIXME: Update with newly supported LLMs
+# CONTINUOUS FIXME: Update with newly supported LLMs
 def get_llm_api_enum(
     llm_api: Callable[[Any], Awaitable[Any]], *args, **kwargs
-) -> Optional[ValidatePayloadLlmApi]:
+) -> Optional[LLMResource]:
     # TODO: Distinguish between v1 and v2
     model = get_llm_ask(llm_api, *args, **kwargs)
     if llm_api == get_static_openai_create_func():
-        return ValidatePayloadLlmApi.OPENAI_COMPLETION_CREATE
+        return LLMResource.OPENAI_DOT_COMPLETION_DOT_CREATE
     elif llm_api == get_static_openai_chat_create_func():
-        return ValidatePayloadLlmApi.OPENAI_CHATCOMPLETION_CREATE
+        return LLMResource.OPENAI_DOT_CHAT_COMPLETION_DOT_CREATE
     elif llm_api == get_static_openai_acreate_func():
-        return ValidatePayloadLlmApi.OPENAI_COMPLETION_ACREATE
+        return LLMResource.OPENAI_DOT_COMPLETION_DOT_ACREATE
     elif llm_api == get_static_openai_chat_acreate_func():
-        return ValidatePayloadLlmApi.OPENAI_CHATCOMPLETION_ACREATE
+        return LLMResource.OPENAI_DOT_CHAT_COMPLETION_DOT_ACREATE
     elif isinstance(model, LiteLLMCallable):
-        return ValidatePayloadLlmApi.LITELLM_COMPLETION
+        return LLMResource.LITELLM_DOT_COMPLETION
     elif isinstance(model, AsyncLiteLLMCallable):
-        return ValidatePayloadLlmApi.LITELLM_ACOMPLETION
+        return LLMResource.LITELLM_DOT_ACOMPLETION
 
     else:
         return None

@@ -7,18 +7,38 @@ from pydantic import BaseModel
 import guardrails as gd
 from guardrails.classes.generic.stack import Stack
 from guardrails.classes.history.call import Call
+from guardrails.classes.llm.llm_response import LLMResponse
 from guardrails.utils.openai_utils import (
     get_static_openai_chat_create_func,
     get_static_openai_create_func,
 )
 
-from .mock_llm_outputs import MockLiteLLMCallable, MockOpenAIChatCallable, pydantic
+from .mock_llm_outputs import pydantic
 from .test_assets.pydantic import VALIDATED_RESPONSE_REASK_PROMPT, ListOfPeople
 
 
 def test_pydantic_with_reask(mocker):
     """Test that the entity extraction works with re-asking."""
-    mocker.patch("guardrails.llm_providers.LiteLLMCallable", new=MockLiteLLMCallable)
+    mock_invoke_llm = mocker.patch(
+        "guardrails.llm_providers.LiteLLMCallable._invoke_llm"
+    )
+    mock_invoke_llm.side_effect = [
+        LLMResponse(
+            output=pydantic.LLM_OUTPUT,
+            prompt_token_count=123,
+            response_token_count=1234,
+        ),
+        LLMResponse(
+            output=pydantic.LLM_OUTPUT_REASK_1,
+            prompt_token_count=123,
+            response_token_count=1234,
+        ),
+        LLMResponse(
+            output=pydantic.LLM_OUTPUT_REASK_2,
+            prompt_token_count=123,
+            response_token_count=1234,
+        ),
+    ]
 
     guard = gd.Guard.from_pydantic(ListOfPeople, prompt=VALIDATED_RESPONSE_REASK_PROMPT)
     final_output = guard(
@@ -85,9 +105,26 @@ def test_pydantic_with_reask(mocker):
 
 def test_pydantic_with_full_schema_reask(mocker):
     """Test that the entity extraction works with re-asking."""
-    mocker.patch(
-        "guardrails.llm_providers.OpenAIChatCallable", new=MockOpenAIChatCallable
+    mock_invoke_llm = mocker.patch(
+        "guardrails.llm_providers.OpenAIChatCallable._invoke_llm"
     )
+    mock_invoke_llm.side_effect = [
+        LLMResponse(
+            output=pydantic.LLM_OUTPUT,
+            prompt_token_count=123,
+            response_token_count=1234,
+        ),
+        LLMResponse(
+            output=pydantic.LLM_OUTPUT_FULL_REASK_1,
+            prompt_token_count=123,
+            response_token_count=1234,
+        ),
+        LLMResponse(
+            output=pydantic.LLM_OUTPUT_FULL_REASK_2,
+            prompt_token_count=123,
+            response_token_count=1234,
+        ),
+    ]
 
     guard = gd.Guard.from_pydantic(ListOfPeople, prompt=VALIDATED_RESPONSE_REASK_PROMPT)
     final_output = guard(

@@ -3,30 +3,35 @@ from typing import Dict, List, Optional, Sequence, Union
 from pydantic import Field
 from typing_extensions import deprecated
 
+from guardrails_api_client import Outputs as IOutputs
 from guardrails.constants import error_status, fail_status, not_run_status, pass_status
-from guardrails.utils.llm_response import LLMResponse
-from guardrails.utils.logs_utils import ValidatorLogs
-from guardrails.utils.pydantic_utils import ArbitraryModel
-from guardrails.utils.reask_utils import ReAsk
-from guardrails.validator_base import ErrorSpan, FailResult, ValidationResult
+from guardrails.classes.llm.llm_response import LLMResponse
+from guardrails.classes.generic.arbitrary_model import ArbitraryModel
+from guardrails.classes.validation.validator_logs import ValidatorLogs
+from guardrails.actions.reask import ReAsk
+from guardrails.classes.validation.validation_result import (
+    ErrorSpan,
+    FailResult,
+    ValidationResult,
+)
 
 
-class Outputs(ArbitraryModel):
+class Outputs(IOutputs, ArbitraryModel):
     llm_response_info: Optional[LLMResponse] = Field(
         description="Information from the LLM response.", default=None
     )
     raw_output: Optional[str] = Field(
         description="The exact output from the LLM.", default=None
     )
-    parsed_output: Optional[Union[str, Dict]] = Field(
+    parsed_output: Optional[Union[str, List, Dict]] = Field(
         description="The output parsed from the LLM response"
         "as it was passed into validation.",
         default=None,
     )
-    validation_response: Optional[Union[str, ReAsk, Dict]] = Field(
+    validation_response: Optional[Union[str, ReAsk, List, Dict]] = Field(
         description="The response from the validation process.", default=None
     )
-    guarded_output: Optional[Union[str, Dict]] = Field(
+    guarded_output: Optional[Union[str, List, Dict]] = Field(
         description="""Any valid values after undergoing validation.
 
         Some values may be "fixed" values that were corrected during validation.

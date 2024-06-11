@@ -5,24 +5,23 @@ from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime
 from typing import Any, Awaitable, Dict, List, Optional, Tuple, Union, cast
 
+from guardrails.actions.filter import Filter, apply_filters
+from guardrails.actions.refrain import Refrain, apply_refrain
 from guardrails.classes.history import Iteration
-from guardrails.datatypes import FieldValidation
+from guardrails.classes.output_type import OutputTypes
+from guardrails.classes.validation.validation_result import (
+    FailResult,
+    PassResult,
+    ValidationResult,
+)
 from guardrails.errors import ValidationError
+from guardrails.types import ValidatorMap, OnFailAction
 from guardrails.utils.exception_utils import UserFacingException
 from guardrails.utils.hub_telemetry_utils import HubTelemetry
-from guardrails.utils.logs_utils import ValidatorLogs
-from guardrails.utils.reask_utils import FieldReAsk, ReAsk
-from guardrails.utils.safe_get import safe_get
-from guardrails.utils.telemetry_utils import trace_validator
-from guardrails.validator_base import (
-    FailResult,
-    Filter,
-    OnFailAction,
-    PassResult,
-    Refrain,
-    ValidationResult,
-    Validator,
-)
+from guardrails.classes.validation.validator_logs import ValidatorLogs
+from guardrails.actions.reask import FieldReAsk, ReAsk
+from guardrails.utils.telemetry_utils import trace_validation_result, trace_validator
+from guardrails.validator_base import Validator
 
 ValidatorResult = Optional[Union[ValidationResult, Awaitable[ValidationResult]]]
 
@@ -117,14 +116,14 @@ class ValidatorServiceBase:
         iteration: Iteration,
         validator: Validator,
         value: Any,
-        property_path: str,
+        absolute_property_path: str,
     ) -> ValidatorLogs:
         validator_class_name = validator.__class__.__name__
         validator_logs = ValidatorLogs(
             validator_name=validator_class_name,
             value_before_validation=value,
             registered_name=validator.rail_alias,
-            property_path=property_path,
+            property_path=absolute_property_path,
             # If we ever re-use validator instances across multiple properties,
             #   this will have to change.
             instance_id=id(validator),
@@ -174,7 +173,7 @@ class ValidatorServiceBase:
         validator: Validator,
         value: Any,
         metadata: Dict,
-        property_path: str,
+        absolute_property_path: str,
         stream: Optional[bool] = False,
         **kwargs,
     ) -> ValidatorLogs:
@@ -226,17 +225,25 @@ class SequentialValidatorService(ValidatorServiceBase):
     def run_validators(
         self,
         iteration: Iteration,
-        validator_setup: FieldValidation,
+        validator_map: ValidatorMap,
         value: Any,
         metadata: Dict[str, Any],
-        property_path: str,
+        absolute_property_path: str,
+        reference_property_path: str,
         stream: Optional[bool] = False,
         **kwargs,
     ) -> Tuple[Any, Dict[str, Any]]:
         # Validate the field
-        for validator in validator_setup.validators:
+        validators = validator_map.get(reference_property_path, [])
+        for validator in validators:
             validator_logs = self.run_validator(
-                iteration, validator, value, metadata, property_path, stream, **kwargs
+                iteration,
+                validator,
+                value,
+                metadata,
+                absolute_property_path,
+                stream,
+                **kwargs,
             )
             result = validator_logs.validation_result
             result = cast(ValidationResult, result)
@@ -276,43 +283,63 @@ class SequentialValidatorService(ValidatorServiceBase):
                 return value, metadata
         return value, metadata
 
-    def validate_dependents(
-        self,
-        value: Any,
-        metadata: Dict,
-        validator_setup: FieldValidation,
-        iteration: Iteration,
-        parent_path: str,
-    ):
-        for child_setup in validator_setup.children:
-            child_schema = safe_get(value, child_setup.key)
-            child_schema, metadata = self.validate(
-                child_schema, metadata, child_setup, iteration, parent_path
-            )
-            value[child_setup.key] = child_schema
-
     def validate(
         self,
         value: Any,
         metadata: dict,
-        validator_setup: FieldValidation,
+        validator_map: ValidatorMap,
         iteration: Iteration,
-        path: str = "$",
+        absolute_path: str = "$",
+        reference_path: str = "$",
     ) -> Tuple[Any, dict]:
-        property_path = (
-            f"{path}.{validator_setup.key}"
-            if key_not_empty(validator_setup.key)
-            else path
-        )
-        # Validate children first
-        if validator_setup.children:
-            self.validate_dependents(
-                value, metadata, validator_setup, iteration, property_path
-            )
+        ###
+        # NOTE: The way validation can be executed now is fundamentally wide open.
+        #   Since validators are tracked against the JSONPaths for the
+        #       properties they should be applied to, we have the following options:
+        #       1. Keep performing a Deep-First-Search
+        #           - This is useful for backwards compatibility.
+        #           - Is there something we gain by validating inside out?
+        #       2. Swith to a Breadth-First-Search
+        #           - Possible, no obvious advantages
+        #       3. Run un-ordered
+        #           - This would allow for true parallelism
+        #           - Also means we're not unnecessarily iterating down through
+        #               the object if there aren't any validations applied there.
+        ###
 
-        # Validate the field
+        child_ref_path = reference_path.replace(".*", "")
+        # Validate children first
+        if isinstance(value, List):
+            for index, child in enumerate(value):
+                abs_child_path = f"{absolute_path}.{index}"
+                ref_child_path = f"{child_ref_path}.*"
+                child_value, metadata = self.validate(
+                    child,
+                    metadata,
+                    validator_map,
+                    iteration,
+                    abs_child_path,
+                    ref_child_path,
+                )
+                value[index] = child_value
+        elif isinstance(value, Dict):
+            for key in value:
+                child = value.get(key)
+                abs_child_path = f"{absolute_path}.{key}"
+                ref_child_path = f"{child_ref_path}.{key}"
+                child_value, metadata = self.validate(
+                    child,
+                    metadata,
+                    validator_map,
+                    iteration,
+                    abs_child_path,
+                    ref_child_path,
+                )
+                value[key] = child_value
+
+        # Then validate the parent value
         value, metadata = self.run_validators(
-            iteration, validator_setup, value, metadata, property_path
+            iteration, validator_map, value, metadata, absolute_path, reference_path
         )
         return value, metadata
 
@@ -320,22 +347,25 @@ class SequentialValidatorService(ValidatorServiceBase):
         self,
         value: Any,
         metadata: dict,
-        validator_setup: FieldValidation,
+        validator_map: ValidatorMap,
         iteration: Iteration,
-        path: str = "$",
+        absolute_path: str = "$",
+        reference_path: str = "$",
         **kwargs,
     ) -> Tuple[Any, dict]:
-        property_path = (
-            f"{path}.{validator_setup.key}"
-            if key_not_empty(validator_setup.key)
-            else path
-        )
         # I assume validate stream doesn't need validate_dependents
         # because right now we're only handling StringSchema
 
         # Validate the field
         value, metadata = self.run_validators(
-            iteration, validator_setup, value, metadata, property_path, True, **kwargs
+            iteration,
+            validator_map,
+            value,
+            metadata,
+            absolute_path,
+            reference_path,
+            True,
+            **kwargs,
         )
 
         return value, metadata
@@ -379,12 +409,12 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
         validator: Validator,
         value: Any,
         metadata: Dict,
-        property_path: str,
+        absolute_property_path: str,
         stream: Optional[bool] = False,
         **kwargs,
     ) -> ValidatorLogs:
         validator_logs = self.before_run_validator(
-            iteration, validator, value, property_path
+            iteration, validator, value, absolute_property_path
         )
 
         result = await self.run_validator_async(
@@ -393,10 +423,13 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
 
         return self.after_run_validator(validator, validator_logs, result)
 
-    def group_validators(self, validators):
+    def group_validators(self, validators: List[Validator]):
         groups = itertools.groupby(
             validators, key=lambda v: (v.on_fail_descriptor, v.override_value_on_pass)
         )
+        # NOTE: This isn't ordering anything.
+        #   If we want to yield fix-like valiators first,
+        #       then we need to extract them outside of the loop.
         for (on_fail_descriptor, override_on_pass), group in groups:
             if override_on_pass or on_fail_descriptor in [
                 OnFailAction.FIX,
@@ -411,18 +444,18 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
     async def run_validators(
         self,
         iteration: Iteration,
-        validator_setup: FieldValidation,
+        validator_map: ValidatorMap,
         value: Any,
         metadata: Dict,
-        property_path: str,
+        absolute_property_path: str,
+        reference_property_path: str,
         stream: Optional[bool] = False,
     ):
         loop = asyncio.get_running_loop()
-        for on_fail, validator_group in self.group_validators(
-            validator_setup.validators
-        ):
+        validators = validator_map.get(reference_property_path, [])
+        for on_fail, validator_group in self.group_validators(validators):
             parallel_tasks = []
-            validators_logs = []
+            validators_logs: List[ValidatorLogs] = []
             for validator in validator_group:
                 if validator.run_in_separate_process:
                     # queue the validators to run in a separate process
@@ -434,7 +467,7 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
                             validator,
                             value,
                             metadata,
-                            property_path,
+                            absolute_property_path,
                             stream,
                         )
                     )
@@ -445,7 +478,7 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
                         validator,
                         value,
                         metadata,
-                        property_path,
+                        absolute_property_path,
                         stream=stream,
                     )
                     validators_logs.append(result)
@@ -502,22 +535,44 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
 
         return value, metadata
 
-    async def validate_dependents(
+    async def validate_children(
         self,
         value: Any,
         metadata: Dict,
-        validator_setup: FieldValidation,
+        validator_map: ValidatorMap,
         iteration: Iteration,
-        parent_path: str,
+        abs_parent_path: str,
+        ref_parent_path: str,
     ):
-        async def process_child(child_setup):
-            child_value = safe_get(value, child_setup.key)
+        async def validate_child(
+            child_value: Any, *, key: Optional[str] = None, index: Optional[int] = None
+        ):
+            child_key = key or index
+            abs_child_path = f"{abs_parent_path}.{child_key}"
+            ref_child_path = ref_parent_path
+            if key is not None:
+                ref_child_path = f"{ref_child_path}.{key}"
+            elif index is not None:
+                ref_child_path = f"{ref_child_path}.*"
             new_child_value, new_metadata = await self.async_validate(
-                child_value, metadata, child_setup, iteration, parent_path
+                child_value,
+                metadata,
+                validator_map,
+                iteration,
+                abs_child_path,
+                ref_child_path,
             )
-            return child_setup.key, new_child_value, new_metadata
+            return child_key, new_child_value, new_metadata
 
-        tasks = [process_child(child_setup) for child_setup in validator_setup.children]
+        tasks = []
+        if isinstance(value, List):
+            for index, child in enumerate(value):
+                tasks.append(validate_child(child, index=index))
+        elif isinstance(value, Dict):
+            for key in value:
+                child = value.get(key)
+                tasks.append(validate_child(child, key=key))
+
         results = await asyncio.gather(*tasks)
 
         for key, child_value, child_metadata in results:
@@ -531,25 +586,28 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
         self,
         value: Any,
         metadata: dict,
-        validator_setup: FieldValidation,
+        validator_map: ValidatorMap,
         iteration: Iteration,
-        path: str = "$",
+        absolute_path: str = "$",
+        reference_path: str = "$",
         stream: Optional[bool] = False,
     ) -> Tuple[Any, dict]:
-        property_path = (
-            f"{path}.{validator_setup.key}"
-            if key_not_empty(validator_setup.key)
-            else path
-        )
+        child_ref_path = reference_path.replace(".*", "")
         # Validate children first
-        if validator_setup.children:
-            await self.validate_dependents(
-                value, metadata, validator_setup, iteration, property_path
+        if isinstance(value, List) or isinstance(value, Dict):
+            await self.validate_children(
+                value, metadata, validator_map, iteration, absolute_path, child_ref_path
             )
 
-        # Validate the field
+        # Then validate the parent value
         value, metadata = await self.run_validators(
-            iteration, validator_setup, value, metadata, property_path, stream=stream
+            iteration,
+            validator_map,
+            value,
+            metadata,
+            absolute_path,
+            reference_path,
+            stream=stream,
         )
 
         return value, metadata
@@ -558,8 +616,10 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
         self,
         value: Any,
         metadata: dict,
-        validator_setup: FieldValidation,
+        validator_map: ValidatorMap,
         iteration: Iteration,
+        absolute_path: str = "$",
+        reference_path: str = "$",
     ) -> Tuple[Any, dict]:
         # Run validate_async in an async loop
         loop = asyncio.get_event_loop()
@@ -569,10 +629,7 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
             )
         value, metadata = loop.run_until_complete(
             self.async_validate(
-                value,
-                metadata,
-                validator_setup,
-                iteration,
+                value, metadata, validator_map, iteration, absolute_path, reference_path
             )
         )
         return value, metadata
@@ -581,9 +638,10 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
 def validate(
     value: Any,
     metadata: dict,
-    validator_setup: FieldValidation,
+    validator_map: ValidatorMap,
     iteration: Iteration,
     disable_tracer: Optional[bool] = True,
+    path: Optional[str] = None,
     stream: Optional[bool] = False,
     **kwargs,
 ):
@@ -591,7 +649,7 @@ def validate(
     if stream:
         sequential_validator_service = SequentialValidatorService(disable_tracer)
         return sequential_validator_service.validate_stream(
-            value, metadata, validator_setup, iteration, **kwargs
+            value, metadata, validator_map, iteration, path, path, **kwargs
         )
     try:
         loop = asyncio.get_event_loop()
@@ -606,22 +664,38 @@ def validate(
         validator_service = SequentialValidatorService(disable_tracer)
 
     return validator_service.validate(
-        value,
-        metadata,
-        validator_setup,
-        iteration,
+        value, metadata, validator_map, iteration, path, path
     )
 
 
 async def async_validate(
     value: Any,
     metadata: dict,
-    validator_setup: FieldValidation,
+    validator_map: ValidatorMap,
     iteration: Iteration,
     disable_tracer: Optional[bool] = True,
+    path: Optional[str] = None,
     stream: Optional[bool] = False,
 ) -> Tuple[Any, dict]:
     validator_service = AsyncValidatorService(disable_tracer)
     return await validator_service.async_validate(
-        value, metadata, validator_setup, iteration, "$", stream
+        value, metadata, validator_map, iteration, path, path, stream
     )
+
+
+def post_process_validation(
+    validation_response: Any,
+    attempt_number: int,
+    iteration: Iteration,
+    output_type: OutputTypes,
+) -> Any:
+    validated_response = apply_refrain(validation_response, output_type)
+
+    # Remove all keys that have `Filter` values.
+    validated_response = apply_filters(validated_response)
+
+    trace_validation_result(
+        validation_logs=iteration.validator_logs, attempt_number=attempt_number
+    )
+
+    return validated_response

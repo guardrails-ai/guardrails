@@ -6,26 +6,30 @@ from rich.pretty import pretty_repr
 from rich.tree import Tree
 from typing_extensions import deprecated
 
+from guardrails_api_client import Call as ICall, CallException
+from guardrails.actions.filter import Filter
+from guardrails.actions.refrain import Refrain
+from guardrails.actions.reask import merge_reask_output
 from guardrails.classes.generic.stack import Stack
 from guardrails.classes.history.call_inputs import CallInputs
 from guardrails.classes.history.iteration import Iteration
+from guardrails.classes.generic.arbitrary_model import ArbitraryModel
+from guardrails.classes.validation.validation_result import ValidationResult
 from guardrails.constants import error_status, fail_status, not_run_status, pass_status
 from guardrails.prompt.instructions import Instructions
 from guardrails.prompt.prompt import Prompt
-from guardrails.utils.logs_utils import ValidatorLogs, merge_reask_output
-from guardrails.utils.pydantic_utils import ArbitraryModel
-from guardrails.utils.reask_utils import (
+from guardrails.classes.validation.validator_logs import ValidatorLogs
+from guardrails.actions.reask import (
     ReAsk,
     gather_reasks,
     sub_reasks_with_fixed_values,
 )
-from guardrails.utils.safe_get import get_value_from_path
-from guardrails.validator_base import Filter, Refrain, ValidationResult
+from guardrails.schema.parser import get_value_from_path
 
 
 # We can't inherit from Iteration because python
 # won't let you override a class attribute with a managed attribute
-class Call(ArbitraryModel):
+class Call(ICall, ArbitraryModel):
     iterations: Stack[Iteration] = Field(
         description="A stack of iterations for each"
         "step/reask that occurred during this call."
@@ -48,7 +52,7 @@ class Call(ArbitraryModel):
         super().__init__(
             iterations=iterations,  # type: ignore
             inputs=inputs,  # type: ignore
-            _exception=exception,  # type: ignore
+            i_exception=CallException(exception),  # type: ignore
         )
         self.iterations = iterations
         self.inputs = inputs
@@ -345,6 +349,10 @@ versions 0.5.0 and beyond. Use 'guarded_output' instead."""
         elif self.iterations.empty():
             return None
         return self.iterations.last.exception  # type: ignore
+
+    def _set_exception(self, exception: Optional[Exception]):
+        self._exception = exception
+        self.i_exception = CallException(str(exception))
 
     @property
     def failed_validations(self) -> Stack[ValidatorLogs]:

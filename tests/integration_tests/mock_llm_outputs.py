@@ -4,7 +4,7 @@ from guardrails.llm_providers import (
     AsyncLiteLLMCallable,
     LiteLLMCallable,
 )
-from guardrails.utils.llm_response import LLMResponse
+from guardrails.classes.llm.llm_response import LLMResponse
 
 from .test_assets import entity_extraction, lists_object, pydantic, python_rail, string
 
@@ -15,6 +15,10 @@ class MockLiteLLMCallable(LiteLLMCallable):
     # here the instructions are passed into kwargs and ignored
     def _invoke_llm(self, prompt, *args, **kwargs):
         """Mock the OpenAI API call to Completion.create."""
+
+        _rail_to_compiled_prompt = {  # noqa
+            entity_extraction.RAIL_SPEC_WITH_REASK: entity_extraction.COMPILED_PROMPT,
+        }
 
         mock_llm_responses = {
             entity_extraction.COMPILED_PROMPT: entity_extraction.LLM_OUTPUT,
@@ -39,12 +43,14 @@ class MockLiteLLMCallable(LiteLLMCallable):
         }
 
         try:
+            output = mock_llm_responses[prompt]
             return LLMResponse(
-                output=mock_llm_responses[prompt],
+                output=output,
                 prompt_token_count=123,
                 response_token_count=1234,
             )
         except KeyError:
+            print("Unrecognized prompt!")
             print(prompt)
             raise ValueError("Compiled prompt not found")
 
@@ -66,6 +72,13 @@ class MockOpenAIChatCallable(LiteLLMCallable):
         **kwargs,
     ):
         """Mock the OpenAI API call to ChatCompletion.create."""
+
+        _rail_to_prompt = {
+            entity_extraction.RAIL_SPEC_WITH_FIX_CHAT_MODEL: (
+                entity_extraction.COMPILED_PROMPT_WITHOUT_INSTRUCTIONS,
+                entity_extraction.COMPILED_INSTRUCTIONS,
+            )
+        }
 
         mock_llm_responses = {
             (
@@ -139,6 +152,10 @@ class MockOpenAIChatCallable(LiteLLMCallable):
                 response_token_count=1234,
             )
         except KeyError:
+            print("Unrecognized prompt!")
+            print("\n prompt: \n", prompt)
+            print("\n instructions: \n", instructions)
+            print("\n msg_history: \n", msg_history)
             raise ValueError("Compiled prompt not found")
 
 
