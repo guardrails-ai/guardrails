@@ -97,15 +97,11 @@ class StreamRunner(Runner):
 
         # Prepare: run pre-processing, and input validation.
         if output:
-            instructions = None
-            prompt = None
             messages = None
         else:
             messages = self.prepare(
                 call_log,
                 index,
-                instructions,
-                prompt,
                 messages,
                 prompt_params,
                 api,

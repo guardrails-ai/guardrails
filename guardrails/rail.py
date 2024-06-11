@@ -9,6 +9,7 @@ from pydantic import BaseModel
 
 from guardrails.datatypes import List as ListDataType
 from guardrails.prompt import Instructions, Prompt
+from guardrails.messages.messages import Messages
 from guardrails.schema import JsonSchema, Schema, StringSchema
 from guardrails.utils.xml_utils import cast_xml_to_string
 from guardrails.validator_base import ValidatorSpec
@@ -31,32 +32,14 @@ class Rail:
         4. `<instructions>`, which contains the instructions to be passed to the LLM
     """
 
-    prompt_schema: Optional[StringSchema]
-    """The schema for the prompt.
+    messages_schema: Optional[StringSchema]
+    """The schema for the messages.
 
-    If None, the prompt is not validated.
-    """
-
-    instructions_schema: Optional[StringSchema]
-    """The schema for the instructions.
-
-    If None, the instructions are not validated.
-    """
-
-    msg_history_schema: Optional[StringSchema]
-    """The schema for the message history.
-
-    If None, the message history is not validated.
+    If None, the messages are not validated.
     """
 
     output_schema: Schema
     """The schema for the output."""
-
-    instructions: Optional[Instructions]
-    """The instructions to be passed to the LLM."""
-
-    prompt: Optional[Prompt]
-    """The prompt to be passed to the LLM."""
 
     version: str = "0.1"
     """The version of the RAIL file."""
@@ -77,25 +60,19 @@ class Rail:
     def from_pydantic(
         cls,
         output_class: Union[Type[BaseModel], Type[List[Type[BaseModel]]]],
-        prompt: Optional[str] = None,
-        instructions: Optional[str] = None,
-        reask_prompt: Optional[str] = None,
-        reask_instructions: Optional[str] = None,
+        messages: Optional[list[dict]] = None,
+        reask_messages: Optional[list[dict]] = None,
     ):
         """Initializes a RAIL from a Pydantic model."""
         output_schema = cls.load_json_schema_from_pydantic(
             output_class,
-            reask_prompt_template=reask_prompt,
-            reask_instructions_template=reask_instructions,
+            reask_messages_template=reask_messages,
         )
 
         return cls(
-            prompt_schema=None,
-            instructions_schema=None,
-            msg_history_schema=None,
+            messages_schema=None,
             output_schema=output_schema,
-            instructions=cls.load_instructions(instructions, output_schema),
-            prompt=cls.load_prompt(prompt, output_schema),
+            # messages=cls.load_messages(messages, output_schema),
         )
 
     @classmethod
@@ -269,15 +246,13 @@ class Rail:
     @staticmethod
     def load_json_schema_from_pydantic(
         output_class: Union[Type[BaseModel], Type[List[Type[BaseModel]]]],
-        reask_prompt_template: Optional[str] = None,
-        reask_instructions_template: Optional[str] = None,
+        reask_messages_template: Optional[list[dict]] = None,
     ):
         """Initializes a JsonSchema using a Pydantic model."""
 
         return JsonSchema.from_pydantic(
             output_class,
-            reask_prompt_template=reask_prompt_template,
-            reask_instructions_template=reask_instructions_template,
+            reask_messages_template=reask_messages_template,
         )
 
     @staticmethod
@@ -302,6 +277,16 @@ class Rail:
             output_schema=output_schema.transpile(),
         )
 
+    @staticmethod
+    def load_messages(messages: Optional[list[dict]], output_schema: Schema) -> Optional[Prompt]:
+        """Given the RAIL <prompt> element, create a Prompt object."""
+        if messages is None:
+            return None
+        return Messages(
+            source=messages or [],
+            output_schema=output_schema.transpile(),
+        )
+    
     def _to_request(self) -> Dict:
         rail: Dict[str, Any] = {"version": self.version}
 

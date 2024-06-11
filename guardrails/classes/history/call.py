@@ -1,4 +1,4 @@
-from typing import Dict, Optional, Union
+from typing import Dict, List, Optional, Union
 
 from pydantic import Field, PrivateAttr
 from rich.panel import Panel
@@ -53,12 +53,12 @@ class Call(ArbitraryModel):
         self.iterations = iterations
         self.inputs = inputs
         self._exception = exception
-
+    
     @property
-    def prompt(self) -> Optional[str]:
-        """The prompt as provided by the user when initializing or calling the
+    def messages(self) -> List[Dict]:
+        """The messages as provided by the user when initializing or calling the
         Guard."""
-        return self.inputs.prompt
+        return self.inputs.messages
 
     @property
     def prompt_params(self) -> Optional[Dict]:
@@ -67,16 +67,18 @@ class Call(ArbitraryModel):
         return self.inputs.prompt_params
 
     @property
-    def compiled_prompt(self) -> Optional[str]:
+    def compiled_messages(self) -> List[Dict]:
         """The initial compiled prompt that was passed to the LLM on the first
         call."""
         if self.iterations.empty():
             return None
         initial_inputs = self.iterations.first.inputs  # type: ignore
-        prompt: Prompt = initial_inputs.prompt  # type: ignore
+        messages: Messages = initial_inputs.messages  # type: ignore
         prompt_params = initial_inputs.prompt_params or {}
-        if initial_inputs.prompt is not None:
-            return prompt.format(**prompt_params).source
+
+        if initial_inputs.messages is not None:
+            return messages.format(**prompt_params).source
+
 
     @property
     def reask_prompts(self) -> Stack[Optional[str]]:
@@ -86,11 +88,11 @@ class Call(ArbitraryModel):
         """
         if self.iterations.length > 0:
             reasks = self.iterations.copy()
-            initial_prompt = reasks.first
-            reasks.remove(initial_prompt)  # type: ignore
+            initial_messages = reasks.first
+            reasks.remove(initial_messages)  # type: ignore
             return Stack(
                 *[
-                    r.inputs.prompt.source if r.inputs.prompt is not None else None
+                    r.inputs.messages.source if r.inputs.messages is not None else None
                     for r in reasks
                 ]
             )
@@ -116,8 +118,8 @@ class Call(ArbitraryModel):
             return instructions.format(**prompt_params).source
 
     @property
-    def reask_instructions(self) -> Stack[str]:
-        """The compiled instructions used during reasks.
+    def reask_messages(self) -> Stack[str]:
+        """The compiled messages used during reasks.
 
         Does not include the initial instructions.
         """
@@ -126,8 +128,8 @@ class Call(ArbitraryModel):
             reasks.remove(reasks.first)  # type: ignore
             return Stack(
                 *[
-                    r.inputs.instructions.source
-                    if r.inputs.instructions is not None
+                    r.inputs.messages.source
+                    if r.inputs.messages is not None
                     else None
                     for r in reasks
                 ]

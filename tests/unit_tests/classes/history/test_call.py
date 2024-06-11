@@ -6,8 +6,7 @@ from guardrails.classes.history.iteration import Iteration
 from guardrails.classes.history.outputs import Outputs
 from guardrails.constants import not_run_status, pass_status
 from guardrails.llm_providers import ArbitraryCallable
-from guardrails.prompt.instructions import Instructions
-from guardrails.prompt.prompt import Prompt
+from guardrails.messages.messages import Messages
 from guardrails.utils.llm_response import LLMResponse
 from guardrails.utils.logs_utils import ValidatorLogs
 from guardrails.utils.reask_utils import ReAsk
@@ -19,13 +18,9 @@ def test_empty_initialization():
 
     assert call.iterations == Stack()
     assert call.inputs == CallInputs()
-    assert call.prompt is None
     assert call.prompt_params is None
-    assert call.compiled_prompt is None
-    assert call.reask_prompts == Stack()
-    assert call.instructions is None
-    assert call.compiled_instructions is None
-    assert call.reask_instructions == Stack()
+    assert call.compiled_messages is None
+    assert call.reask_messages == Stack()
     assert call.logs == Stack()
     assert call.tokens_consumed is None
     assert call.prompt_tokens_consumed is None
@@ -51,16 +46,16 @@ def test_non_empty_initialization():
         return "Hello there!"
 
     llm_api = custom_llm
-    prompt = "Respond with a ${greeting_type} greeting."
-    instructions = "You are a greeting bot."
+    messages = [
+        {"role":"system", "content":"You are a greeting bot"}, 
+        {"role": "user", "content": "Respond with a ${greeting_type} greeting."}]
     args = ["arg1"]
     kwargs = {"kwarg1": 1}
     prompt_params = {"greeting_type": "friendly"}
 
     call_inputs = CallInputs(
         llm_api=llm_api,
-        prompt=prompt,
-        instructions=instructions,
+        messages=messages, 
         prompt_params=prompt_params,
         args=args,
         kwargs=kwargs,
@@ -69,17 +64,15 @@ def test_non_empty_initialization():
     # First Iteration Inputs
     iter_llm_api = ArbitraryCallable(llm_api=llm_api)
     llm_output = "Hello there!"
-    instructions = Instructions(source=instructions)
-    iter_prompt = Prompt(source=prompt)
     num_reasks = 0
+    iter_messages = Messages(messages)
     metadata = {"some_meta_data": "doesn't actually matter"}
     full_schema_reask = False
 
     inputs = Inputs(
         llm_api=iter_llm_api,
         llm_output=llm_output,
-        instructions=instructions,
-        prompt=iter_prompt,
+        messages=iter_messages,
         prompt_params=prompt_params,
         num_reasks=num_reasks,
         metadata=metadata,
@@ -119,13 +112,12 @@ def test_non_empty_initialization():
 
     first_iteration = Iteration(inputs=inputs, outputs=first_outputs)
 
-    second_iter_prompt = Prompt(source="That wasn't quite right. Try again.")
+    second_iter_messages = Messages(source=[{"role":"system","content":"That wasn't quite right. Try again."}])
 
     second_inputs = Inputs(
         llm_api=iter_llm_api,
         llm_output=llm_output,
-        instructions=instructions,
-        prompt=second_iter_prompt,
+        messages=second_iter_messages,
         num_reasks=num_reasks,
         metadata=metadata,
         full_schema_reask=full_schema_reask,
@@ -165,13 +157,10 @@ def test_non_empty_initialization():
     assert isinstance(call.iterations, Stack) is True
     assert call.inputs == call_inputs
 
-    assert call.prompt == prompt
+    assert call.messages == messages
     assert call.prompt_params == prompt_params
-    assert call.compiled_prompt == "Respond with a friendly greeting."
-    assert call.reask_prompts == Stack(second_iter_prompt.source)
-    assert call.instructions == instructions.source
-    assert call.compiled_instructions == instructions.source
-    assert call.reask_instructions == Stack(instructions.source)
+    assert call.reask_messages == Stack(second_iter_messages.source)
+    assert call.compiled_messages == messages
 
     # TODO: Test this in the integration tests
     assert call.logs == []

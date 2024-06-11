@@ -22,14 +22,12 @@ class Schema:
     def __init__(
         self,
         schema: DataType,
-        reask_prompt_template: Optional[str] = None,
-        reask_instructions_template: Optional[str] = None,
+        reask_messages_template: Optional[list[dict]] = None,
     ) -> None:
         self.root_datatype = schema
 
         # Setup reask templates
-        self.reask_prompt_template = reask_prompt_template
-        self.reask_instructions_template = reask_instructions_template
+        self.reask_messages_template = reask_messages_template
 
     @classmethod
     def from_xml(

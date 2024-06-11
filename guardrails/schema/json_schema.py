@@ -57,13 +57,11 @@ class JsonSchema(Schema):
     def __init__(
         self,
         schema: Union[Object, ListDataType],
-        reask_prompt_template: Optional[str] = None,
-        reask_instructions_template: Optional[str] = None,
+        reask_messages_template: Optional[list[dict]] = None,
     ) -> None:
         super().__init__(
             schema,
-            reask_prompt_template=reask_prompt_template,
-            reask_instructions_template=reask_instructions_template,
+            reask_messages_template=reask_messages_template,
         )
         self.root_datatype = schema
 
@@ -193,8 +191,7 @@ class JsonSchema(Schema):
     def from_pydantic(
         cls,
         model: Union[Type[BaseModel], Type[List[Type[BaseModel]]]],
-        reask_prompt_template: Optional[str] = None,
-        reask_instructions_template: Optional[str] = None,
+        reask_messages_template: Optional[list[dict]] = None,
     ) -> Self:
         strict = False
 
@@ -219,8 +216,7 @@ class JsonSchema(Schema):
 
         return cls(
             schema,
-            reask_prompt_template=reask_prompt_template,
-            reask_instructions_template=reask_instructions_template,
+            reask_messages_template=reask_messages_template,
         )
 
     def parse(

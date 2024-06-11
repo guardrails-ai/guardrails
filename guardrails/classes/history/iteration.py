@@ -191,7 +191,7 @@ versions 0.5.0 and beyond. Use 'guarded_output' instead."""
             table.add_column("Content")
 
             for msg in messages:
-                table.add_row(str(msg["role"]), msg["content"].source)
+                table.add_row(str(msg["role"]), msg["content"])
 
             return table
 
