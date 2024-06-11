@@ -1,5 +1,6 @@
 import inspect
-import sys
+import logging
+import os
 from collections import defaultdict
 from copy import deepcopy
 from enum import Enum
@@ -25,14 +26,10 @@ from langchain_core.runnables import Runnable, RunnableConfig
 from pydantic import BaseModel, Field
 from typing_extensions import deprecated
 
+import guardrails.hub_token.token as hub_tokens
+from guardrails.logger import logger
 from guardrails.classes import InputType
 from guardrails.classes.credentials import Credentials
-from guardrails.cli.logger import logger
-from guardrails.cli.server.hub_client import (
-    HttpError,
-    get_jwt_token,
-    validator_hub_service,
-)
 from guardrails.constants import hub
 from guardrails.errors import ValidationError
 from guardrails.utils.dataclass import dataclass
@@ -444,7 +441,6 @@ class Validator(Runnable):
     """Base class for validators."""
 
     rail_alias: str = ""
-
     # chunking function returns empty list or list of 2 chunks
     # first chunk is the chunk to validate
     # second chunk is incomplete chunk that needs further accumulation
@@ -500,6 +496,8 @@ class Validator(Runnable):
         else:
             self.on_fail_method = on_fail
 
+        self.inference_callable = self._get_inference_method()
+
         # Store the kwargs for the validator.
         self._kwargs = kwargs
 
@@ -507,10 +505,24 @@ class Validator(Runnable):
             self.rail_alias in validators_registry
         ), f"Validator {self.__class__.__name__} is not registered. "
 
-    def chunking_function(self, chunk: str):
+    def _chunking_function(self, chunk: str) -> list[str]:
+        """The strategy used for chunking accumulated text input into validation sets.
+
+        Args:
+            chunk (str): The text to chunk into some subset.
+
+        Returns:
+            list[str]: The text chunked into some subset.
+        """
         return split_sentence_str(chunk)
 
     def validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
+        """External facing validate function. This function acts as a wrapper for
+        _validate() and is intended to apply any meta-validation requirements, logic,
+        or pre/post processing."""
+        return self._validate(value, metadata)
+
+    def _validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
         """Validates a value and return a validation result."""
         raise NotImplementedError
 
@@ -533,15 +545,15 @@ class Validator(Runnable):
         self.accumulated_chunks.append(chunk)
         accumulated_text = "".join(self.accumulated_chunks)
         # check if enough chunks have accumulated for validation
-        splitcontents = self.chunking_function(accumulated_text)
+        split_contents = self._chunking_function(accumulated_text)
 
         # if remainder kwargs is passed, validate remainder regardless
         remainder = kwargs.get("remainder", False)
         if remainder:
-            splitcontents = [accumulated_text, ""]
-        if len(splitcontents) == 0:
+            split_contents = [accumulated_text, ""]
+        if len(split_contents) == 0:
             return PassResult()
-        [chunk_to_validate, new_accumulated_chunks] = splitcontents
+        [chunk_to_validate, new_accumulated_chunks] = split_contents
         self.accumulated_chunks = [new_accumulated_chunks]
         # exclude last chunk, because it may not be a complete chunk
         validation_result = self.validate(chunk_to_validate, metadata)
@@ -550,10 +562,18 @@ class Validator(Runnable):
             validation_result.validated_chunk = chunk_to_validate
         return validation_result
 
-    def _post_hosted_endpoint(self, request_body: dict) -> Any:
+    def _inference_local(self, value: str, metadata: dict = {}) -> Any:
+        """This function should act as a callable for any inference model you may have.
+        It should perform local operations only, not talk to a remote host. It receives
+        the input that your validator expects, and outputs a result from the ML model.
+
+        This function will be used by the validate() function to perform validation."""
+        raise NotImplementedError
+
+    def _inference_remote(self, request_body: dict) -> Any:
         """Makes a request to the Validator Hub to run a ML based validation model. This
         request is authed through the hub and rerouted to a hosted ML model. The reply
-        from the hosted endpoint is returned and sent to this validator.
+        from the hosted endpoint is returned and sent to this client.
 
 
         Args:
@@ -568,12 +588,12 @@ class Validator(Runnable):
         """
 
         try:
-            creds = Credentials.from_rc_file(logger)
-            token = get_jwt_token(creds)
-            submission_url = f"{validator_hub_service}/validator/hosted_endpoint"
+            submission_url = (
+                f"{hub_tokens.validator_hub_service}/validator/hosted_endpoint"
+            )
 
             headers = {
-                "Authorization": f"Bearer {token}",
+                "Authorization": f"Bearer {self.token}",
                 "Content-Type": "application/json",
                 "validator": self.rail_alias,
             }
@@ -581,19 +601,15 @@ class Validator(Runnable):
 
             body = req.json()
             if not req.ok:
-                logger.error(req.status_code)
-                logger.error(body.get("message"))
-                http_error = HttpError()
-                http_error.status = req.status_code
-                http_error.message = body.get("message")
-                raise http_error
+                logging.error(req.status_code)
+                logging.error(body.get("message"))
 
             return body
-        except HttpError as http_e:
-            raise http_e
+
         except Exception as e:
-            logger.error("An unexpected error occurred!", e)
-            sys.exit(1)
+            logging.error(
+                "An unexpected validation error occurred" f" in {self.rail_alias}: ", e
+            )
 
     def to_prompt(self, with_keywords: bool = True) -> str:
         """Convert the validator to a prompt.
@@ -642,6 +658,30 @@ class Validator(Runnable):
     def get_args(self):
         """Get the arguments for the validator."""
         return self._kwargs
+
+    def _get_inference_method(self):
+        # Find if env var is set to enable remote inference of this validator
+        remote_inference_engine = (
+            os.environ.get("REMOTE_INFERENCE_ENGINE", default="").lower() == "true"
+        )
+
+        # Determine if credentials have been established with the validator hub service
+        hub_jwt_token = hub_tokens.get_jwt_token(Credentials.from_rc_file(logger))
+
+        # Only use if both are set, otherwise fall back to local inference
+        if hub_jwt_token and remote_inference_engine:
+            logger.debug(
+                f"{self.rail_alias} has found a Validator Hub Service token."
+                " Using a remote inference engine."
+            )
+            return self._inference_remote
+
+        logger.debug(
+            f"{self.rail_alias} either has no hub authentication token or has not "
+            "enabled remote inference execution. This validator will use a local "
+            "inference engine."
+        )
+        return self._inference_local
 
     def __call__(self, value):
         result = self.validate(value, {})

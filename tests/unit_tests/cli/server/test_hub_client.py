@@ -5,7 +5,7 @@ import pytest
 from jwt import JWT, jwk_from_dict
 
 from guardrails.classes.credentials import Credentials
-from guardrails.cli.server.hub_client import (
+from guardrails.hub_token.token import (
     TOKEN_EXPIRED_MESSAGE,
     TOKEN_INVALID_MESSAGE,
     get_jwt_token,
