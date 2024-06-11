@@ -525,7 +525,7 @@ class Validator(Runnable):
         """
         raise NotImplementedError
 
-    def _inference_local(self, model_input: Any, metadata: Dict[str, Any]) -> Any:
+    def _inference_local(self, model_input: Any) -> Any:
         """User implementable function.
 
         Runs a machine learning pipeline on some input on the local machine. This
@@ -533,7 +533,7 @@ class Validator(Runnable):
         results from the ml model."""
         raise NotImplementedError
 
-    def _inference_remote(self, model_input: Any, metadata: Dict[str, Any]) -> Any:
+    def _inference_remote(self, model_input: Any) -> Any:
         """User implementable function.
 
         Runs a machine learning pipeline on some input on a remote machine. This
