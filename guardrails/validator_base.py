@@ -496,9 +496,14 @@ class Validator(Runnable):
         else:
             self.on_fail_method = on_fail
 
+        # Determines if validator is configured to use a remote ML model
         self.remote_inference_engine = (
             os.environ.get("REMOTE_INFERENCE_ENGINE", default="").lower() == "true"
         )
+
+        # Determine if credentials have been established with the validator hub service
+        self.hub_jwt_token = hub_tokens.get_jwt_token(Credentials.from_rc_file(logger))
+
         # Store the kwargs for the validator.
         self._kwargs = kwargs
 
@@ -507,29 +512,41 @@ class Validator(Runnable):
         ), f"Validator {self.__class__.__name__} is not registered. "
 
     def _build_request(self, input: Any) -> Any:
-        """Builds a request from a model input to produce a request that can be sent to
+        """User implementable function.
+
+        Builds a request from a model input to produce a request that can be sent to
         the remote inference engine."""
         raise NotImplementedError
 
     def _validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
-        """Validates a value and return a validation result. This method should call
+        """User implementable function.
+
+        Validates a value and return a validation result. This method should call
         inference() in the validator implementation to perform inference on some input
         value.
         """
         raise NotImplementedError
 
     def validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
-        """External facing validate function. This function acts as a wrapper for
+        """Do not override this function, instead implement _validate().
+
+        External facing validate function. This function acts as a wrapper for
         _validate() and is intended to apply any meta-validation requirements, logic,
         or pre/post processing."""
         return self._validate(value, metadata)
 
     def inference(self, input: Any) -> Any:
-        # Determine if credentials have been established with the validator hub service
-        hub_jwt_token = hub_tokens.get_jwt_token(Credentials.from_rc_file(logger))
+        """Calls either a local or remote inference engine for use in the validation
+        call.
 
+        Args:
+            input (Any): Receives the input to be passed to your ML model.
+
+        Returns:
+            Any: Returns the output from the ML model inference.
+        """
         # Only use if both are set, otherwise fall back to local inference
-        if hub_jwt_token and self.remote_inference_engine:
+        if self.hub_jwt_token and self.remote_inference_engine:
             logger.debug(
                 f"{self.rail_alias} has found a Validator Hub Service token."
                 " Using a remote inference engine."
