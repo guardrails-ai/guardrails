@@ -26,11 +26,11 @@ from langchain_core.runnables import Runnable, RunnableConfig
 from pydantic import BaseModel, Field
 from typing_extensions import deprecated
 
-import guardrails.hub_token.token as hub_tokens
 from guardrails.classes import InputType
 from guardrails.classes.credentials import Credentials
 from guardrails.constants import hub
 from guardrails.errors import ValidationError
+from guardrails.hub_token.token import get_jwt_token, validator_hub_service
 from guardrails.logger import logger
 from guardrails.utils.dataclass import dataclass
 
@@ -502,7 +502,7 @@ class Validator(Runnable):
         )
 
         # Determine if credentials have been established with the validator hub service
-        self.hub_jwt_token = hub_tokens.get_jwt_token(Credentials.from_rc_file(logger))
+        self.hub_jwt_token = get_jwt_token(Credentials.from_rc_file(logger))
 
         # Store the kwargs for the validator.
         self._kwargs = kwargs
@@ -511,22 +511,36 @@ class Validator(Runnable):
             self.rail_alias in validators_registry
         ), f"Validator {self.__class__.__name__} is not registered. "
 
-    def _build_request(self, input: Any) -> dict:
-        """User implementable function.
-
-        Builds a dict from a model input to produce a request that can be sent to
-        the remote inference engine. This function should build a json request
-        conforming to the format needed by the ML model. It will be forwarded as a POST
-        to the endpoint."""
+    @staticmethod
+    def _post_install(self):
+        """Hook for post-install operations. Install local models, cache data, etc."""
         raise NotImplementedError
 
     def _validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
         """User implementable function.
 
         Validates a value and return a validation result. This method should call
-        inference() in the validator implementation to perform inference on some input
+        _inference() in the implementation to perform inference on some input
         value.
         """
+        raise NotImplementedError
+
+    def _inference_local(self, model_input: Any, metadata: Dict[str, Any]) -> Any:
+        """User implementable function.
+
+        Runs a machine learning pipeline on some input on the local machine. This
+        function should receive the expected input to the ML model, and output the
+        results from the ml model."""
+        raise NotImplementedError
+
+    def _inference_remote(self, model_input: Any, metadata: Dict[str, Any]) -> Any:
+        """User implementable function.
+
+        Runs a machine learning pipeline on some input on a remote machine. This
+        function should receive the expected input to the ML model, and output the
+        results from the ml model.
+
+        Can call _hub_inference_request() if request is routed through the hub."""
         raise NotImplementedError
 
     def validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
@@ -537,12 +551,12 @@ class Validator(Runnable):
         or pre/post processing."""
         return self._validate(value, metadata)
 
-    def inference(self, input: Any) -> Any:
+    def _inference(self, model_input: Any) -> Any:
         """Calls either a local or remote inference engine for use in the validation
         call.
 
         Args:
-            input (Any): Receives the input to be passed to your ML model.
+            model_input (Any): Receives the input to be passed to your ML model.
 
         Returns:
             Any: Returns the output from the ML model inference.
@@ -553,14 +567,14 @@ class Validator(Runnable):
                 f"{self.rail_alias} has found a Validator Hub Service token."
                 " Using a remote inference engine."
             )
-            return self._inference_request(self._build_request(input))
+            return self._inference_request(model_input)
 
         logger.debug(
             f"{self.rail_alias} either has no hub authentication token or has not "
             "enabled remote inference execution. This validator will use a local "
             "inference engine."
         )
-        return self._inference_local(input)
+        return self._inference_local(model_input)
 
     def _chunking_function(self, chunk: str) -> list[str]:
         """The strategy used for chunking accumulated text input into validation sets.
@@ -609,7 +623,7 @@ class Validator(Runnable):
             validation_result.validated_chunk = chunk_to_validate
         return validation_result
 
-    def _inference_request(self, request_body: dict) -> Any:
+    def _hub_inference_request(self, request_body: dict) -> Any:
         """Makes a request to the Validator Hub to run a ML based validation model. This
         request is authed through the hub and rerouted to a hosted ML model. The reply
         from the hosted endpoint is returned and sent to this client.
@@ -627,9 +641,7 @@ class Validator(Runnable):
         """
 
         try:
-            submission_url = (
-                f"{hub_tokens.validator_hub_service}/validator/hosted_endpoint"
-            )
+            submission_url = f"{validator_hub_service}/validator/hosted_endpoint"
 
             headers = {
                 "Authorization": f"Bearer {self.token}",
