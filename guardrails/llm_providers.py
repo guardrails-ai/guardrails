@@ -529,15 +529,13 @@ class HuggingFacePipelineCallable(PromptCallableBase):
         # generated, or even that the token will be generated next.  Example: if we
         # force the next token to be "]", the model may generate "asdf]" or "],".
         constraint_generator = kwargs.pop("constraint_generator", None)
-        constraints = None
         if constraint_generator:
             # The constraint generator may not have any constraints for us.
             valid_tokens = constraint_generator.get_valid_tokens()
             if valid_tokens:
                 kwargs["force_words_ids"] = list()
                 for token in valid_tokens:
-                    constraints.append(token)
-                    kwargs["force_word_ids"].append(
+                    kwargs["force_words_ids"].append(
                         pipeline.tokenizer(token, add_special_tokens=False).input_ids
                     )
 
