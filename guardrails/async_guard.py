@@ -1,5 +1,6 @@
 import contextvars
 import inspect
+import warnings
 from typing import (
     Any,
     AsyncIterable,
@@ -81,7 +82,7 @@ class AsyncGuard(Guard):
 
         async def __call(
             self,
-            llm_api: Union[Callable, Callable[[Any], Awaitable[Any]]],
+            llm_api: Optional[Union[Callable, Callable[[Any], Awaitable[Any]]]],
             prompt_params: Optional[Dict] = None,
             num_reasks: Optional[int] = None,
             metadata: Optional[Dict] = None,
@@ -187,7 +188,7 @@ class AsyncGuard(Guard):
 
     async def _call_async(
         self,
-        llm_api: Callable[[Any], Awaitable[Any]],
+        llm_api: Optional[Callable[[Any], Awaitable[Any]]],
         prompt_params: Dict,
         num_reasks: int,
         messages: Optional[List[Dict]],
