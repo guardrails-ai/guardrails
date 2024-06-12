@@ -30,17 +30,33 @@ class JSONValueConstraint(ConstraintGenerator):
         self.constraint_chain = [
             QuotedStringConstraintGenerator(),
             KeywordConstraintGenerator(":"),
-            UnionConstraintGenerator(),
+            UnionConstraintGenerator(
+                QuotedStringConstraintGenerator(),
+                NumberConstraintGenerator(is_integer=False),
+                UnionConstraintGenerator(
+                    KeywordConstraintGenerator("true"),
+                    KeywordConstraintGenerator("false"),
+                    KeywordConstraintGenerator("null"),
+                ),
+            ),
         ]
 
     def get_valid_tokens(self) -> Optional[Set[str]]:
-        pass
+        if len(self.constraint_chain) == 0:
+            return set()
+        else:
+            return self.constraint_chain[0].get_valid_tokens()
 
     def update_valid_tokens(self, token: str):
-        pass
+        self.accumulator += token
+        for t in token:
+            if len(self.constraint_chain) > 0:
+                self.constraint_chain[0].update_valid_tokens(t)
+                if self.constraint_chain[0].is_complete():
+                    self.constraint_chain = self.constraint_chain[1:]
 
     def is_complete(self) -> bool:
-        pass
+        return len(self.constraint_chain) == 0
 
 
 class QuotedStringConstraintGenerator(ConstraintGenerator):
@@ -49,18 +65,28 @@ class QuotedStringConstraintGenerator(ConstraintGenerator):
     def __init__(self):
         self.accumulator = ""
         self.escape_active = False
+        self.quote_active = False
 
     def get_valid_tokens(self) -> Optional[Set[str]]:
-        if not self.accumulator:  # Empty
+        if not self.accumulator:
             return {'"'}
+        elif self.escape_active:
+            return {'"', "\\", "b", "n", "t"}
         else:
-            pass
+            return None  # No constraints
 
     def update_valid_tokens(self, token: str):
-        pass
+        for t in token:
+            self.accumulator += t
+            if self.escape_active:
+                self.escape_active = False
+            elif t == "\\":
+                self.escape_active = True
+            elif t == '"':
+                self.quote_active = not self.quote_active
 
     def is_complete(self) -> bool:
-        return False
+        return not self.quote_active and len(self.accumulator) > 2
 
 
 class ArrayConstraintGenerator(JSONConstraintGenerator):
@@ -78,19 +104,27 @@ class ArrayConstraintGenerator(JSONConstraintGenerator):
 
 
 class UnionConstraintGenerator(ConstraintGenerator):
-    def __init__(self, a: ConstraintGenerator, b: ConstraintGenerator):
-        self.a = a
-        self.b = b
+    def __init__(self, *args):
+        self.sub_constraints = list()
+        for arg in args:
+            assert isinstance(arg, ConstraintGenerator)
+            self.sub_constraints.append(arg)
 
     def get_valid_tokens(self) -> Optional[Set[str]]:
-        return self.a.get_valid_tokens() | self.b.get_valid_tokens()
+        valid_tokens = set()
+        for c in self.sub_constraints:
+            new_valid_tokens = c.get_valid_tokens()
+            if new_valid_tokens is None:
+                return None  # No constraints!
+            valid_tokens |= new_valid_tokens
+        return valid_tokens
 
     def update_valid_tokens(self, token: str):
-        self.a.update_valid_tokens(token)
-        self.b.update_valid_tokens(token)
+        for c in self.sub_constraints:
+            c.update_valid_tokens(token)
 
     def is_complete(self) -> bool:
-        return self.a.is_complete() or self.b.is_complete()
+        return any([c.is_complete() for c in self.sub_constraints])
 
 
 class KeywordConstraintGenerator(ConstraintGenerator):
@@ -142,6 +176,7 @@ class NumberConstraintGenerator(ConstraintGenerator):
                 int(self.accumulator, 10)  # Force base-10.
             else:
                 float(self.accumulator)
+            return True
         except ValueError:
             return False
 
