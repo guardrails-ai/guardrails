@@ -1801,6 +1801,20 @@ files = [
 protobuf = ["grpcio-tools (>=1.64.0)"]
 
 [[package]]
+name = "guardrails-api-client"
+version = "0.3.1"
+description = "Guardrails API Client."
+optional = false
+python-versions = "<4,>=3.8"
+files = [
+    {file = "guardrails_api_client-0.3.1-py3-none-any.whl", hash = "sha256:1fecc219b683cacccbf62d8dae9290561df5cbb878cb2dc92e36bd3920e370d7"},
+    {file = "guardrails_api_client-0.3.1.tar.gz", hash = "sha256:2f2e7f0662f4b43db5f9e697de6d8b4873d87e6697bcd897c9e6bc05d9b1a4fe"},
+]
+
+[package.extras]
+dev = ["pyright", "pytest", "pytest-cov", "ruff"]
+
+[[package]]
 name = "h11"
 version = "0.14.0"
 description = "A pure-Python, bring-your-own-I/O implementation of HTTP/1.1"
@@ -8360,4 +8374,4 @@ vectordb = ["faiss-cpu", "numpy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8.1"
-content-hash = "a2b6111bdcd0d990483d166c90bf8913ebefc7b6677f74fbf890b822c10bdb8e"
+content-hash = "04ae7d7ea8794b74fbc9573acb6aca9d3bcdc4558943c85af95b83947283076b"
