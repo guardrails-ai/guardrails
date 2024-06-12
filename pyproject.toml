@@ -4,6 +4,8 @@ version = "0.4.5"
 description = "Adding guardrails to large language models."
 authors = ["Guardrails AI <contact@guardrailsai.com>"]
 license = "Apache License 2.0"
+homepage = "https://www.guardrailsai.com/"
+documentation = "https://www.guardrailsai.com/docs"
 readme = "README.md"
 packages = [
     { include = "guardrails", from = "." }
