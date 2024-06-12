@@ -107,7 +107,8 @@ def guard_initializer(
         messages.append({"role": "user", "content": prompt})
     if instructions:
         messages.append({"role": "system", "content": instructions})
-    print('MESSAGES', messages)
+    print("RAIL", rail)
+    print("initializer MESSAGES", messages)
     if isinstance(rail, str):
         return Guard.from_rail_string(rail)
     else:

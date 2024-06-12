@@ -580,7 +580,7 @@ def test_validator_instance_attr_equality(mocker, instance_attr):
 
     guard = Guard.from_string(
         validators=[validator],
-        prompt="",
+        messages=[],
     )
 
     assert guard._validators[0].an_instance_attr == instance_attr

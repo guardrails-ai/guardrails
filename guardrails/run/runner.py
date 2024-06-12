@@ -311,6 +311,8 @@ class Runner:
             raise ValidationError(
                 f"Message history validation failed: " f"{validated_messages}"
             )
+        print("messages", validated_messages)
+        print("msg_str", msg_str)
         if validated_messages != msg_str:
             raise ValidationError("Message history validation failed")
 

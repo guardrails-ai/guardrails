@@ -875,7 +875,9 @@ class Guard(IGuard, Generic[OT]):
             The raw text output from the LLM and the validated output.
         """
         messages = kwargs.get("messages") or self._exec_opts.messages or []
-
+        print("kwargs", kwargs)
+        print("exec_opts", self._exec_opts)
+        print("arg messages", messages)
         if messages is not None and not len(messages):
             raise RuntimeError(
                 "You must provide messages. "
@@ -888,7 +890,6 @@ class Guard(IGuard, Generic[OT]):
             prompt_params=prompt_params,
             num_reasks=num_reasks,
             metadata=metadata,
-            messages=messages,
             full_schema_reask=full_schema_reask,
             **kwargs,
         )
