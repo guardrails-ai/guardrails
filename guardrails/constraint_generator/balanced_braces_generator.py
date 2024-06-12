@@ -8,6 +8,9 @@ class BalancedBracesGenerator(ConstraintGenerator):
         self.max_depth = max_depth
         self.current_depth = 0
 
+    def is_complete(self) -> bool:
+        return self.current_depth == 0
+
     def get_valid_tokens(self) -> Optional[Set[str]]:
         if self.current_depth < 0:
             return set()  # We have closed more than we opened.
