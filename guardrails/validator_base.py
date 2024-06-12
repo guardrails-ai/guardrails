@@ -502,7 +502,7 @@ class Validator(Runnable):
         )
 
         # Determine if credentials have been established with the validator hub service
-        self.hub_jwt_token = get_jwt_token(Credentials.from_rc_file(logger))
+        self.hub_jwt_token = get_jwt_token(Credentials.from_rc_file())
 
         # Store the kwargs for the validator.
         self._kwargs = kwargs
@@ -646,9 +646,9 @@ class Validator(Runnable):
             headers = {
                 "Authorization": f"Bearer {self.token}",
                 "Content-Type": "application/json",
-                "validator": self.rail_alias,
+                "validator": self.rail_alias.split("/")[-1],
             }
-            req = requests.post(submission_url, data=request_body, headers=headers)
+            req = requests.post(submission_url, json=request_body, headers=headers)
 
             body = req.json()
             if not req.ok:
