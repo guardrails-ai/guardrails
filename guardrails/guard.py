@@ -445,7 +445,7 @@ class Guard(IGuard, Generic[OT]):
     def from_pydantic(
         cls,
         output_class: ModelOrListOfModels,
-        *
+        *,
         messages: Optional[List[Dict]],
         num_reasks: Optional[int] = None,
         reask_messages: Optional[List[Dict]] = None,  # deprecate this too

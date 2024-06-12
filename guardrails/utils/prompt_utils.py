@@ -5,10 +5,8 @@ from typing import Any, Dict, Optional, Tuple
 
 from guardrails.classes.output_type import OutputTypes
 from guardrails.llm_providers import (
-    AsyncOpenAICallable,
-    AsyncOpenAIChatCallable,
-    OpenAICallable,
-    OpenAIChatCallable,
+    AsyncLiteLLMCallable,
+    LiteLLMCallable,
     PromptCallableBase,
 )
 from guardrails.prompt.prompt import Prompt
@@ -28,13 +26,13 @@ def preprocess_prompt_for_string_output(
     instructions: Optional[Instructions],
     prompt: Prompt,
 ) -> Tuple[Instructions, Prompt]:
-    if isinstance(prompt_callable, OpenAICallable) or isinstance(
-        prompt_callable, AsyncOpenAICallable
+    if isinstance(prompt_callable, LiteLLMCallable) or isinstance(
+        prompt_callable, AsyncLiteLLMCallable
     ):
         prompt.source += "\n\nString Output:\n\n"
     if (
-        isinstance(prompt_callable, OpenAIChatCallable)
-        or isinstance(prompt_callable, AsyncOpenAIChatCallable)
+        isinstance(prompt_callable, LiteLLMCallable)
+        or isinstance(prompt_callable, AsyncLiteLLMCallable)
     ) and not instructions:
         instructions = Instructions(
             "You are a helpful assistant, expressing yourself through a string."
@@ -49,13 +47,13 @@ def preprocess_prompt_for_json_output(
     prompt: Prompt,
     use_xml: bool,
 ) -> Tuple[Instructions, Prompt]:
-    if isinstance(prompt_callable, OpenAICallable) or isinstance(
-        prompt_callable, AsyncOpenAICallable
+    if isinstance(prompt_callable, LiteLLMCallable) or isinstance(
+        prompt_callable, AsyncLiteLLMCallable
     ):
         prompt.source += "\n\nJson Output:\n\n"
     if (
-        isinstance(prompt_callable, OpenAIChatCallable)
-        or isinstance(prompt_callable, AsyncOpenAIChatCallable)
+        isinstance(prompt_callable, LiteLLMCallable)
+        or isinstance(prompt_callable, AsyncLiteLLMCallable)
     ) and not instructions:
         schema_type = "XML schemas" if use_xml else "JSON schema"
         instructions = Instructions(

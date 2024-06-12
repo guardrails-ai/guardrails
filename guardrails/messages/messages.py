@@ -2,7 +2,7 @@
 
 from string import Template
 
-from guardrails.utils.parsing_utils import get_template_variables
+from guardrails.utils.templating_utils import get_template_variables
 
 
 from .base_messages import BaseMessages

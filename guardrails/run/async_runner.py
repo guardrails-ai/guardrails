@@ -165,7 +165,7 @@ class AsyncRunner(Runner):
                 messages = None
             else:
                 messages = await self.async_prepare(
-                    call_log
+                    call_log,
                     messages=messages,
                     prompt_params=prompt_params,
                     api=api,

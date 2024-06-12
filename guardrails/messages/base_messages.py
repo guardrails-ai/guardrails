@@ -6,9 +6,9 @@ from typing import Optional
 
 import regex
 from warnings import warn
-from guardrails.namespace_template import NamespaceTemplate
+from guardrails.classes.templating.namespace_template import NamespaceTemplate
 from guardrails.utils.constants import constants
-from guardrails.utils.parsing_utils import get_template_variables
+from guardrails.utils.templating_utils import get_template_variables
 
 
 class BaseMessages:
