@@ -1,13 +1,13 @@
 import json
 import os
-from typing import Generator, Optional
+from typing import Any, Generator, Optional
 
 import requests
 from guardrails_api_client.configuration import Configuration
 from guardrails_api_client.api_client import ApiClient
 from guardrails_api_client.api.guard_api import GuardApi
 from guardrails_api_client.api.validate_api import ValidateApi
-from guardrails_api_client.models import Guard, ValidatePayload, ValidationOutput
+from guardrails_api_client.models import Guard, ValidatePayload
 
 
 class GuardrailsApiClient:
@@ -61,7 +61,7 @@ class GuardrailsApiClient:
         guard: Guard,
         payload: ValidatePayload,
         openai_api_key: Optional[str] = None,
-    ) -> Generator[ValidationOutput, None, None]:
+    ) -> Generator[Any, None, None]:
         _openai_api_key = (
             openai_api_key
             if openai_api_key is not None
@@ -85,4 +85,4 @@ class GuardrailsApiClient:
                     )
                 if line:
                     json_output = json.loads(line)
-                    yield ValidationOutput.from_dict(json_output)
+                    yield Any.from_dict(json_output)

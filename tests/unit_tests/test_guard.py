@@ -288,7 +288,7 @@ def test_use():
     assert isinstance(guard._validators[5], TwoWords)
     assert guard._validators[5].on_fail_descriptor == OnFailAction.REASK  # bc we set it
 
-    # Test with an invalid "on" parameter, should raise a ValueError
+    # Test with an unrecognized "on" parameter, should warn with a UserWarning
     with pytest.warns(UserWarning):
         guard: Guard = (
             Guard()
@@ -414,7 +414,7 @@ def test_use_many_instances():
     assert msg_history_validators[2].__class__.__name__ == "TwoWords"
     assert len(guard._validators) == 3
 
-    # Test with an invalid "on" parameter, should raise a ValueError
+    # Test with an unrecognized "on" parameter, should warn with a UserWarning
     with pytest.warns(UserWarning):
         guard: Guard = Guard().use_many(
             EndsWith("a", on_fail=OnFailAction.EXCEPTION), OneLine(), on="response"
@@ -484,7 +484,7 @@ def test_use_many_tuple():
         guard._validators[1].on_fail_descriptor == OnFailAction.NOOP
     )  # bc this is the default
 
-    # Test with an invalid "on" parameter, should raise a ValueError
+    # Test with an unrecognized "on" parameter, should warn with a UserWarning
     with pytest.warns(UserWarning):
         guard: Guard = Guard().use_many(
             (EndsWith, ["a"], {"on_fail": OnFailAction.EXCEPTION}),
@@ -587,7 +587,7 @@ def test_use_and_use_many():
         guard._validators[5].on_fail_descriptor == OnFailAction.REFRAIN
     )  # bc we set it
 
-    # Test with an invalid "on" parameter, should raise a ValueError
+    # Test with an unrecognized "on" parameter, should warn with a UserWarning
     with pytest.warns(UserWarning):
         guard: Guard = (
             Guard()

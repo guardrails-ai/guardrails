@@ -1,3 +1,4 @@
+from builtins import id as object_id
 import contextvars
 import inspect
 import warnings
@@ -14,7 +15,7 @@ from typing import (
     cast,
 )
 
-from guardrails_api_client.models import ValidatePayload, ValidationOutput
+from guardrails_api_client.models import ValidatePayload
 
 from guardrails import Guard
 from guardrails.classes import OT, ValidationOutcome
@@ -29,10 +30,11 @@ from guardrails.stores.context import (
     set_tracer,
     set_tracer_context,
 )
+from guardrails.utils.validator_utils import verify_metadata_requirements
 
 
 class AsyncGuard(Guard):
-    """The Guard class.
+    """The AsyncGuard class.
 
     This class one of the main entry point for using Guardrails. It is
     initialized from one of the following class methods:
@@ -48,14 +50,230 @@ class AsyncGuard(Guard):
     the LLM and the validated output stream.
     """
 
-    async def __call__(
+    async def _execute(  # FIXME: Is this override necessary?
         self,
-        llm_api: Optional[Union[Callable, Callable[[Any], Awaitable[Any]]]],
+        *args,
+        llm_api: Optional[Union[Callable, Callable[[Any], Awaitable[Any]]]] = None,
+        llm_output: Optional[str] = None,
         prompt_params: Optional[Dict] = None,
         num_reasks: Optional[int] = None,
+        messages: Optional[List[Dict]] = None,
+        metadata: Optional[Dict],
+        full_schema_reask: Optional[bool] = None,
+        **kwargs,
+    ) -> Union[
+        Union[ValidationOutcome[OT], Iterable[ValidationOutcome[OT]]],
+        Awaitable[ValidationOutcome[OT]],
+    ]:
+        self._fill_validator_map()
+        self._fill_validators()
+        metadata = metadata or {}
+        if not llm_api and not llm_output:
+            raise RuntimeError("'llm_api' or 'llm_output' must be provided!")
+        if not llm_output and llm_api and not (messages):
+            raise RuntimeError(
+                "'messages' must be provided in order to call an LLM!"
+            )
+
+        # check if validator requirements are fulfilled
+        missing_keys = verify_metadata_requirements(metadata, self._validators)
+        if missing_keys:
+            raise ValueError(
+                f"Missing required metadata keys: {', '.join(missing_keys)}"
+            )
+
+        async def __exec(
+            self: AsyncGuard,
+            *args,
+            llm_api: Union[Callable, Callable[[Any], Awaitable[Any]]],
+            llm_output: Optional[str] = None,
+            prompt_params: Optional[Dict] = None,
+            num_reasks: Optional[int] = None,
+            messages: Optional[List[Dict]] = None,
+            metadata: Optional[Dict] = None,
+            full_schema_reask: Optional[bool] = None,
+            **kwargs,
+        ):
+            prompt_params = prompt_params or {}
+            metadata = metadata or {}
+            if full_schema_reask is None:
+                full_schema_reask = self._base_model is not None
+
+            if self._allow_metrics_collection:
+                # Create a new span for this guard call
+                self._hub_telemetry.create_new_span(
+                    span_name="/guard_call",
+                    attributes=[
+                        ("guard_id", self.id),
+                        ("user_id", self._user_id),
+                        ("llm_api", llm_api.__name__ if llm_api else "None"),
+                        (
+                            "custom_reask_messages",
+                            self._exec_opts.reask_messages is not None,
+                        ),
+                    ],
+                    is_parent=True,  # It will have children
+                    has_parent=False,  # Has no parents
+                )
+
+            set_call_kwargs(kwargs)
+            set_tracer(self._tracer)
+            set_tracer_context(self._tracer_context)
+
+            self._set_num_reasks(num_reasks=num_reasks)
+            if self._num_reasks is None:
+                raise RuntimeError(
+                    "`num_reasks` is `None` after calling `configure()`. "
+                    "This should never happen."
+                )
+
+            input_messages = messages or self._exec_opts.messages
+            call_inputs = CallInputs(
+                llm_api=llm_api,
+                messages=input_messages,
+                prompt_params=prompt_params,
+                num_reasks=self._num_reasks,
+                metadata=metadata,
+                full_schema_reask=full_schema_reask,
+                args=list(args),
+                kwargs=kwargs,
+            )
+            call_log = Call(inputs=call_inputs)
+            set_scope(str(object_id(call_log)))
+            self._history_push(call_log)
+
+            if self._api_client is not None and model_is_supported_server_side(
+                llm_api, *args, **kwargs
+            ):
+                result = self._call_server(
+                    llm_output=llm_output,
+                    llm_api=llm_api,
+                    num_reasks=self._num_reasks,
+                    prompt_params=prompt_params,
+                    metadata=metadata,
+                    full_schema_reask=full_schema_reask,
+                    call_log=call_log,
+                    *args,
+                    **kwargs,
+                )
+
+            # If the LLM API is async, return a coroutine
+            else:
+                result = self._exec_async(
+                    llm_api=llm_api,
+                    llm_output=llm_output,
+                    prompt_params=prompt_params,
+                    num_reasks=self._num_reasks,
+                    messages=messages,
+                    metadata=metadata,
+                    full_schema_reask=full_schema_reask,
+                    call_log=call_log,
+                    *args,
+                    **kwargs,
+                )
+
+            if inspect.isawaitable(result):
+                return await result
+
+        guard_context = contextvars.Context()
+        return await guard_context.run(
+            __exec,
+            self,
+            llm_api=llm_api,
+            llm_output=llm_output,
+            prompt_params=prompt_params,
+            num_reasks=num_reasks,
+            messages=messages,
+            metadata=metadata,
+            full_schema_reask=full_schema_reask,
+            *args,
+            **kwargs,
+        )
+
+    async def _exec_async(
+        self,
+        *args,
+        llm_api: Callable[[Any], Awaitable[Any]],
+        llm_output: Optional[str] = None,
+        call_log: Call,
+        prompt_params: Dict,  # Should be defined at this point
+        num_reasks: int = 0,  # Should be defined at this point
+        metadata: Dict,  # Should be defined at this point
+        full_schema_reask: bool = False,  # Should be defined at this point
+        messages: Optional[List[Dict]],
+        **kwargs,
+    ) -> Union[Awaitable[ValidationOutcome[OT]], AsyncIterable[ValidationOutcome[OT]]]:
+        """Call the LLM asynchronously and validate the output.
+
+        Args:
+            llm_api: The LLM API to call asynchronously (e.g. openai.Completion.acreate)
+            prompt_params: The parameters to pass to the prompt.format() method.
+            num_reasks: The max times to re-ask the LLM for invalid output.
+            prompt: The prompt to use for the LLM.
+            messages: The message history to pass to the LLM.
+            metadata: Metadata to pass to the validators.
+            full_schema_reask: When reasking, whether to regenerate the full schema
+                               or just the incorrect values.
+                               Defaults to `True` if a base model is provided,
+                               `False` otherwise.
+
+        Returns:
+            The raw text output from the LLM and the validated output.
+        """
+        api = (
+            get_async_llm_ask(llm_api, *args, **kwargs) if llm_api is not None else None
+        )
+        if kwargs.get("stream", False):
+            # FIXME
+            runner = AsyncStreamRunner(
+                output_type=self._output_type,
+                output_schema=self.output_schema.to_dict(),
+                num_reasks=num_reasks,
+                validation_map=self._validator_map,
+                messages=messages,
+                api=api,
+                metadata=metadata,
+                output=llm_output,
+                base_model=self._base_model,
+                full_schema_reask=full_schema_reask,
+                disable_tracer=(not self._allow_metrics_collection),
+                exec_options=self._exec_opts,
+            )
+            # Here we have an async generator
+            async_generator = runner.async_run(
+                call_log=call_log, prompt_params=prompt_params
+            )
+            return async_generator
+        else:
+            runner = AsyncRunner(
+                output_type=self._output_type,
+                output_schema=self.output_schema.to_dict(),
+                num_reasks=num_reasks,
+                validation_map=self._validator_map,
+                messages=messages,
+                api=api,
+                metadata=metadata,
+                output=llm_output,
+                base_model=self._base_model,
+                full_schema_reask=full_schema_reask,
+                disable_tracer=(not self._allow_metrics_collection),
+                exec_options=self._exec_opts,
+            )
+            # Why are we using a different method here instead of just overriding?
+            call = await runner.async_run(
+                call_log=call_log, prompt_params=prompt_params
+            )
+            return ValidationOutcome[OT].from_guard_history(call)
+
+    async def __call__(
+        self,
+        llm_api: Union[Callable, Callable[[Any], Awaitable[Any]]],
+        *args,
+        prompt_params: Optional[Dict] = None,
+        num_reasks: Optional[int] = 1,
+        messages: Optional[List[Dict]] = None,
         metadata: Optional[Dict] = None,
         full_schema_reask: Optional[bool] = None,
-        *args,
         **kwargs,
     ) -> Union[
         Union[ValidationOutcome[OT], Iterable[ValidationOutcome[OT]]],
@@ -79,189 +297,36 @@ class AsyncGuard(Guard):
         Returns:
             The raw text output from the LLM and the validated output.
         """
-
-        async def __call(
-            self,
-            llm_api: Optional[Union[Callable, Callable[[Any], Awaitable[Any]]]],
-            prompt_params: Optional[Dict] = None,
-            num_reasks: Optional[int] = None,
-            metadata: Optional[Dict] = None,
-            full_schema_reask: Optional[bool] = None,
-            *args,
-            **kwargs,
-        ):
-
-            messages = kwargs.get("messages")
-
-            if metadata is None:
-                metadata = {}
-            if full_schema_reask is None:
-                full_schema_reask = self.base_model is not None
-            if prompt_params is None:
-                prompt_params = {}
-
-            if not self._disable_tracer:
-                # Create a new span for this guard call
-                self._hub_telemetry.create_new_span(
-                    span_name="/guard_call",
-                    attributes=[
-                        ("guard_id", self._guard_id),
-                        ("user_id", self._user_id),
-                        ("llm_api", llm_api.__name__ if llm_api else "None"),
-                        ("custom_reask_prompt", self.reask_prompt is not None),
-                        (
-                            "custom_reask_instructions",
-                            self.reask_instructions is not None,
-                        ),
-                    ],
-                    is_parent=True,  # It will have children
-                    has_parent=False,  # Has no parents
-                )
-
-            set_call_kwargs(kwargs)
-            set_tracer(self._tracer)
-            set_tracer_context(self._tracer_context)
-
-            self.configure(num_reasks)
-            if self.num_reasks is None:
-                raise RuntimeError(
-                    "`num_reasks` is `None` after calling `configure()`. "
-                    "This should never happen."
-                )
-
-            call_inputs = CallInputs(
-                llm_api=llm_api,
-                messages=messages,
-                prompt_params=prompt_params,
-                num_reasks=self.num_reasks,
-                metadata=metadata,
-                full_schema_reask=full_schema_reask,
-                args=list(args),
-                kwargs=kwargs,
-                stream=kwargs.get("stream"),
+        messages = messages or []
+        if messages is not None and not len(messages):
+            raise RuntimeError(
+                "You must provide messages. "
+                "Alternatively, you can provide a prompt in the Schema constructor."
             )
-            call_log = Call(inputs=call_inputs)
-            set_scope(str(id(call_log)))
-            self.history.push(call_log)
 
-            if self._api_client is not None and model_is_supported_server_side(
-                llm_api, *args, **kwargs
-            ):
-                result = self._call_server(
-                    llm_api=llm_api,
-                    num_reasks=self.num_reasks,
-                    prompt_params=prompt_params,
-                    full_schema_reask=full_schema_reask,
-                    call_log=call_log,
-                    *args,
-                    **kwargs,
-                )
-            else:
-                result = self._call_async(
-                    llm_api,
-                    prompt_params=prompt_params,
-                    num_reasks=self.num_reasks,
-                    messages=messages,
-                    metadata=metadata,
-                    full_schema_reask=full_schema_reask,
-                    call_log=call_log,
-                    *args,
-                    **kwargs,
-                )
-
-            if inspect.isawaitable(result):
-                return await result
-            return result
-
-        guard_context = contextvars.Context()
-        return await guard_context.run(
-            __call,
-            self,
-            llm_api,
-            prompt_params,
-            num_reasks,
-            metadata,
-            full_schema_reask,
+        return await self._execute(
             *args,
+            llm_api=llm_api,
+            prompt_params=prompt_params,
+            num_reasks=num_reasks,
+            messages=messages,
+            metadata=metadata,
+            full_schema_reask=full_schema_reask,
             **kwargs,
         )
-
-    async def _call_async(
-        self,
-        llm_api: Optional[Callable[[Any], Awaitable[Any]]],
-        prompt_params: Dict,
-        num_reasks: int,
-        messages: Optional[List[Dict]],
-        metadata: Dict,
-        full_schema_reask: bool,
-        call_log: Call,
-        *args,
-        **kwargs,
-    ) -> Union[ValidationOutcome[OT], AsyncIterable[ValidationOutcome[OT]]]:
-        """Call the LLM asynchronously and validate the output.
-
-        Args:
-            llm_api: The LLM API to call asynchronously (e.g. openai.Completion.acreate)
-            prompt_params: The parameters to pass to the prompt.format() method.
-            num_reasks: The max times to re-ask the LLM for invalid output.
-            messages: The message history to pass to the LLM.
-            metadata: Metadata to pass to the validators.
-            full_schema_reask: When reasking, whether to regenerate the full schema
-                               or just the incorrect values.
-                               Defaults to `True` if a base model is provided,
-                               `False` otherwise.
-
-        Returns:
-            The raw text output from the LLM and the validated output.
-        """
-        messages_obj = messages or []
-        if kwargs.get("stream", False):
-            runner = AsyncStreamRunner(
-                messages=messages_obj,
-                api=get_async_llm_ask(llm_api, *args, **kwargs),
-                messages_schema=self.rail.messages_schema,
-                output_schema=self.rail.output_schema,
-                num_reasks=num_reasks,
-                metadata=metadata,
-                base_model=self.base_model,
-                full_schema_reask=full_schema_reask,
-                disable_tracer=self._disable_tracer,
-            )
-            # Here we have an async generator
-            async_generator = runner.async_run(
-                call_log=call_log, prompt_params=prompt_params
-            )
-            return async_generator
-
-        else:
-            runner = AsyncRunner(
-                messages=messages_obj,
-                api=get_async_llm_ask(llm_api, *args, **kwargs),
-                messages_schema=self.rail.messages_schema,
-                output_schema=self.rail.output_schema,
-                num_reasks=num_reasks,
-                metadata=metadata,
-                base_model=self.base_model,
-                full_schema_reask=full_schema_reask,
-                disable_tracer=self._disable_tracer,
-            )
-            call = await runner.async_run(
-                call_log=call_log, prompt_params=prompt_params
-            )
-            return ValidationOutcome[OT].from_guard_history(call)
 
     async def parse(
         self,
         llm_output: str,
+        *args,
         metadata: Optional[Dict] = None,
         llm_api: Optional[Callable] = None,
         num_reasks: Optional[int] = None,
         prompt_params: Optional[Dict] = None,
         full_schema_reask: Optional[bool] = None,
-        *args,
         **kwargs,
     ) -> Union[ValidationOutcome[OT], Awaitable[ValidationOutcome[OT]]]:
-        """Alternate flow to using Guard where the llm_output is known.
+        """Alternate flow to using AsyncGuard where the llm_output is known.
 
         Args:
             llm_output: The output being parsed and validated.
@@ -278,145 +343,30 @@ class AsyncGuard(Guard):
                 determined by the object schema defined in the RAILspec.
         """
 
-        async def __parse(
-            self,
-            llm_output: str,
-            metadata: Optional[Dict] = None,
-            llm_api: Optional[Callable] = None,
-            num_reasks: Optional[int] = None,
-            prompt_params: Optional[Dict] = None,
-            full_schema_reask: Optional[bool] = None,
-            *args,
-            **kwargs,
-        ):
-            final_num_reasks = (
-                num_reasks if num_reasks is not None else 0 if llm_api is None else None
-            )
-
-            if not self._disable_tracer:
-                self._hub_telemetry.create_new_span(
-                    span_name="/guard_parse",
-                    attributes=[
-                        ("guard_id", self._guard_id),
-                        ("user_id", self._user_id),
-                        ("llm_api", llm_api.__name__ if llm_api else "None"),
-                        ("custom_reask_prompt", self.reask_prompt is not None),
-                        (
-                            "custom_reask_instructions",
-                            self.reask_instructions is not None,
-                        ),
-                    ],
-                    is_parent=True,  # It will have children
-                    has_parent=False,  # Has no parents
-                )
-
-            self.configure(final_num_reasks)
-            if self.num_reasks is None:
-                raise RuntimeError(
-                    "`num_reasks` is `None` after calling `configure()`. "
-                    "This should never happen."
-                )
-            if full_schema_reask is None:
-                full_schema_reask = self.base_model is not None
-            metadata = metadata or {}
-            prompt_params = prompt_params or {}
-
-            set_call_kwargs(kwargs)
-            set_tracer(self._tracer)
-            set_tracer_context(self._tracer_context)
-
-            call_inputs = CallInputs(
-                llm_api=llm_api,
-                llm_output=llm_output,
-                prompt_params=prompt_params,
-                num_reasks=self.num_reasks,
-                metadata=metadata,
-                full_schema_reask=full_schema_reask,
-                args=list(args),
-                kwargs=kwargs,
-                stream=kwargs.get("stream"),
-            )
-            call_log = Call(inputs=call_inputs)
-            set_scope(str(id(call_log)))
-            self.history.push(call_log)
-
-            if self._api_client is not None and model_is_supported_server_side(
-                llm_api, *args, **kwargs
-            ):
-                return self._call_server(
-                    llm_output=llm_output,
-                    llm_api=llm_api,
-                    num_reasks=self.num_reasks,
-                    prompt_params=prompt_params,
-                    full_schema_reask=full_schema_reask,
-                    call_log=call_log,
-                    *args,
-                    **kwargs,
-                )
-
-            return await self._async_parse(
-                llm_output,
-                metadata,
-                llm_api=llm_api,
-                num_reasks=self.num_reasks,
-                prompt_params=prompt_params,
-                full_schema_reask=full_schema_reask,
-                call_log=call_log,
-                *args,
-                **kwargs,
-            )
-
-        guard_context = contextvars.Context()
-        return await guard_context.run(
-            __parse,
-            self,
-            llm_output,
-            metadata,
-            llm_api,
-            num_reasks,
-            prompt_params,
-            full_schema_reask,
-            *args,
-            **kwargs,
+        final_num_reasks = (
+            num_reasks
+            if num_reasks is not None
+            else self._num_reasks
+            if self._num_reasks is not None
+            else 0
+            if llm_api is None
+            else 1
         )
 
-    async def _async_parse(
-        self,
-        llm_output: str,
-        metadata: Dict,
-        llm_api: Optional[Callable[[Any], Awaitable[Any]]],
-        num_reasks: int,
-        prompt_params: Dict,
-        full_schema_reask: bool,
-        call_log: Call,
-        *args,
-        **kwargs,
-    ) -> ValidationOutcome[OT]:
-        """Alternate flow to using Guard where the llm_output is known.
+        default_messages = self._exec_opts.messages if llm_api else None
+        messages = kwargs.pop("messages", default_messages)
 
-        Args:
-            llm_output: The output from the LLM.
-            llm_api: The LLM API to use to re-ask the LLM.
-            num_reasks: The max times to re-ask the LLM for invalid output.
-
-        Returns:
-            The validated response.
-        """
-        runner = AsyncRunner(
-            messages=kwargs.pop("messages", None),
-            api=get_async_llm_ask(llm_api, *args, **kwargs) if llm_api else None,
-            messages_schema=self.rail.messages_schema,
-            output_schema=self.rail.output_schema,
-            num_reasks=num_reasks,
+        return await self._execute(
+            *args,
+            llm_output=llm_output,
+            llm_api=llm_api,
+            prompt_params=prompt_params,
+            num_reasks=final_num_reasks,
+            messages=messages,
             metadata=metadata,
-            output=llm_output,
-            base_model=self.base_model,
             full_schema_reask=full_schema_reask,
-            disable_tracer=self._disable_tracer,
+            **kwargs,
         )
-        call = await runner.async_run(call_log=call_log, prompt_params=prompt_params)
-
-        return ValidationOutcome[OT].from_guard_history(call)
 
     async def _stream_server_call(
         self,
@@ -432,7 +382,7 @@ class AsyncGuard(Guard):
         # TODO: Once server side supports async streaming, this function will need to
         # yield async generators, not generators
         if self._api_client:
-            validation_output: Optional[ValidationOutput] = None
+            validation_output: Optional[Any] = None
             response = self._api_client.stream_validate(
                 guard=self,  # type: ignore
                 payload=ValidatePayload.from_dict(payload),
@@ -463,4 +413,9 @@ class AsyncGuard(Guard):
                     call_log=call_log,
                 )
         else:
-            raise ValueError("Guard does not have an api client!")
+            raise ValueError("AsyncGuard does not have an api client!")
+
+    async def validate(
+        self, llm_output: str, *args, **kwargs
+    ) -> Awaitable[ValidationOutcome[OT]]:
+        return await self.parse(llm_output=llm_output, *args, **kwargs)

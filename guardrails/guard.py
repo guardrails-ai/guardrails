@@ -982,6 +982,18 @@ class Guard(IGuard, Generic[OT]):
             **kwargs,
         )
 
+    def error_spans_in_output(self):
+        try:
+            call = self.history.last
+            if call:
+                iter = call.iterations.last
+                if iter:
+                    llm_spans = iter.error_spans_in_output
+                    return llm_spans
+            return []
+        except (AttributeError, TypeError):
+            return []
+
     def __add_validator(self, validator: Validator, on: str = "output"):
         if on not in [
             "output",
@@ -1062,7 +1074,7 @@ class Guard(IGuard, Generic[OT]):
         self._save()
         return self
 
-    def validate(self, llm_output: str, *args, **kwargs) -> ValidationOutcome[str]:
+    def validate(self, llm_output: str, *args, **kwargs) -> ValidationOutcome[OT]:
         return self.parse(llm_output=llm_output, *args, **kwargs)
 
     # No call support for this until

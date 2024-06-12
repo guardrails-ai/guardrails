@@ -3,7 +3,10 @@ from typing import Generic, Iterator, Optional, Tuple, Union, cast
 from pydantic import Field
 from rich.pretty import pretty_repr
 
-from guardrails_api_client import ValidationOutcome as IValidationOutcome
+from guardrails_api_client import (
+    ValidationOutcome as IValidationOutcome,
+    ValidationOutcomeValidatedOutput,
+)
 from guardrails.actions.reask import ReAsk
 from guardrails.classes.history import Call, Iteration
 from guardrails.classes.output_type import OT
@@ -91,3 +94,14 @@ class ValidationOutcome(IValidationOutcome, ArbitraryModel, Generic[OT]):
 
     def __str__(self) -> str:
         return pretty_repr(self)
+
+    def to_dict(self):
+        i_validation_outcome = IValidationOutcome(
+            raw_llm_output=self.raw_llm_output,
+            validated_output=ValidationOutcomeValidatedOutput(self.validated_output),
+            reask=self.reask,
+            validation_passed=self.validation_passed,
+            error=self.error,
+        )
+
+        return i_validation_outcome.to_dict()

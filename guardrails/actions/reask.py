@@ -266,6 +266,7 @@ def get_reask_setup_for_json(
     exec_options = exec_options or GuardExecutionOptions()
     original_prompt = get_original_prompt(exec_options)
     use_xml = prompt_uses_xml(original_prompt)
+    print("use_xml: ", use_xml)
 
     reask_prompt_template = None
     if exec_options.reask_prompt:

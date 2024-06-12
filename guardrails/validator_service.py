@@ -543,6 +543,8 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
         iteration: Iteration,
         abs_parent_path: str,
         ref_parent_path: str,
+        stream: Optional[bool] = False,
+        **kwargs,
     ):
         async def validate_child(
             child_value: Any, *, key: Optional[str] = None, index: Optional[int] = None
@@ -561,6 +563,8 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
                 iteration,
                 abs_child_path,
                 ref_child_path,
+                stream=stream,
+                **kwargs,
             )
             return child_key, new_child_value, new_metadata
 
@@ -591,12 +595,20 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
         absolute_path: str = "$",
         reference_path: str = "$",
         stream: Optional[bool] = False,
+        **kwargs,
     ) -> Tuple[Any, dict]:
         child_ref_path = reference_path.replace(".*", "")
         # Validate children first
         if isinstance(value, List) or isinstance(value, Dict):
             await self.validate_children(
-                value, metadata, validator_map, iteration, absolute_path, child_ref_path
+                value,
+                metadata,
+                validator_map,
+                iteration,
+                absolute_path,
+                child_ref_path,
+                stream=stream,
+                **kwargs,
             )
 
         # Then validate the parent value
@@ -608,6 +620,7 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
             absolute_path,
             reference_path,
             stream=stream,
+            **kwargs,
         )
 
         return value, metadata
@@ -620,6 +633,8 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
         iteration: Iteration,
         absolute_path: str = "$",
         reference_path: str = "$",
+        stream: Optional[bool] = False,
+        **kwargs,
     ) -> Tuple[Any, dict]:
         # Run validate_async in an async loop
         loop = asyncio.get_event_loop()
@@ -629,7 +644,14 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
             )
         value, metadata = loop.run_until_complete(
             self.async_validate(
-                value, metadata, validator_map, iteration, absolute_path, reference_path
+                value,
+                metadata,
+                validator_map,
+                iteration,
+                absolute_path,
+                reference_path,
+                stream=stream,
+                **kwargs,
             )
         )
         return value, metadata
@@ -676,10 +698,11 @@ async def async_validate(
     disable_tracer: Optional[bool] = True,
     path: Optional[str] = None,
     stream: Optional[bool] = False,
+    **kwargs,
 ) -> Tuple[Any, dict]:
     validator_service = AsyncValidatorService(disable_tracer)
     return await validator_service.async_validate(
-        value, metadata, validator_map, iteration, path, path, stream
+        value, metadata, validator_map, iteration, path, path, stream, **kwargs
     )
 
 
