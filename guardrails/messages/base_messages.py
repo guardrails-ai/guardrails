@@ -13,8 +13,8 @@ from guardrails.utils.templating_utils import get_template_variables
 
 class BaseMessages:
     """Base class for representing an LLM messages."""
-
-    def __init__(self, source: list[dict], output_schema: Optional[str] = None):
+    #TODO dont know if this should be source 
+    def __init__(self, source: list[dict], output_schema: Optional[str] = None, xml_output_schema: Optional[str] = None):
         self._source = source
 
 
@@ -31,6 +31,9 @@ class BaseMessages:
         # If an output schema is provided, substitute it in the prompt.
         if output_schema:
             self.source.append({"role":"system", "content": output_schema})
+        # If an xml output schema is provided, substitute it in the prompt.
+        if xml_output_schema:
+            self.source.append({"role":"system", "content": xml_output_schema})
 
 
     def __repr__(self) -> str:
@@ -57,7 +60,10 @@ class BaseMessages:
     
     @property
     def variable_names(self):
-        return get_template_variables(self.source)
+        variables = []
+        for msg in self.source:
+            variables.extend(get_template_variables(msg["content"]))
+        return variables
 
     @property
     def format_instructions(self):

@@ -57,18 +57,18 @@ class PromptCallableBase:
         raise NotImplementedError
 
     def __call__(self, *args, **kwargs) -> LLMResponse:
-        try:
-            result = self._invoke_llm(
-                *self.init_args, *args, **self.init_kwargs, **kwargs
-            )
-        except Exception as e:
-            raise PromptCallableException(
-                "The callable `fn` passed to `Guard(fn, ...)` failed"
-                f" with the following error: `{e}`. "
-                "Make sure that `fn` can be called as a function that"
-                " takes in a single prompt string "
-                "and returns a string."
-            )
+        # try:
+        result = self._invoke_llm(
+            *self.init_args, *args, **self.init_kwargs, **kwargs
+        )
+        # except Exception as e:
+        #     raise PromptCallableException(
+        #         "The callable `fn` passed to `Guard(fn, ...)` failed"
+        #         f" with the following error: `{e}`. "
+        #         "Make sure that `fn` can be called as a function that"
+        #         " takes in a single prompt string "
+        #         "and returns a string."
+        #     )
         if not isinstance(result, LLMResponse):
             raise PromptCallableException(
                 "The callable `fn` passed to `Guard(fn, ...)` returned"

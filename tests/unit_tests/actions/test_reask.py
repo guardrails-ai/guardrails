@@ -542,13 +542,12 @@ Here are examples of simple (XML, JSON) pairs that show the expected behavior:
     output_schema = processed_schema.json_schema
     exec_options = GuardExecutionOptions(
         # Use an XML constant to make existing test cases pass
-        prompt="${gr.complete_xml_suffix_v3}"
+        messages=[{"role": "system", "content": "${gr.complete_xml_suffix_v3}"},]
     )
 
     (
         reask_schema,
-        reask_prompt,
-        reask_instructions,
+        reask_messages,
     ) = get_reask_setup(
         output_type,
         output_schema,
@@ -569,9 +568,7 @@ Here are examples of simple (XML, JSON) pairs that show the expected behavior:
         # json.dumps(json_example, indent=2),
     )
 
-    assert reask_prompt.source == expected_prompt
-
-    assert reask_instructions.source == expected_instructions
+    assert reask_messages.source == expected_prompt
 
 
 ### FIXME: Implement once Field Level ReAsk is implemented w/ JSON schema ###

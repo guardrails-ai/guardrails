@@ -6,8 +6,7 @@ from guardrails.classes.history.iteration import Iteration
 from guardrails.classes.history.outputs import Outputs
 from guardrails.constants import not_run_status, pass_status
 from guardrails.llm_providers import ArbitraryCallable
-from guardrails.prompt.instructions import Instructions
-from guardrails.prompt.prompt import Prompt
+from guardrails.messages.messages import Messages
 from guardrails.classes.llm.llm_response import LLMResponse
 from guardrails.classes.validation.validator_logs import ValidatorLogs
 from guardrails.actions.reask import ReAsk

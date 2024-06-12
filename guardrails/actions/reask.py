@@ -231,16 +231,16 @@ def get_reask_setup_for_string(
 
 def get_original_prompt(exec_options: Optional[GuardExecutionOptions] = None) -> str:
     exec_options = exec_options or GuardExecutionOptions()
-    original_msg_history = exec_options.msg_history or []
-    msg_history_prompt = next(
+    original_messages = exec_options.messages or []
+    messages_prompt = next(
         (
             h.get("content")
-            for h in original_msg_history
+            for h in original_messages
             if isinstance(h, dict) and h.get("role") == "user"
         ),
         "",
     )
-    original_prompt = exec_options.prompt or msg_history_prompt or ""
+    original_prompt = messages_prompt or ""
     return original_prompt
 
 
@@ -269,8 +269,8 @@ def get_reask_setup_for_json(
     print("use_xml: ", use_xml)
 
     reask_prompt_template = None
-    if exec_options.reask_prompt:
-        reask_prompt_template = Prompt(exec_options.reask_prompt)
+    if exec_options.reask_messages:
+        reask_prompt_template = Prompt(exec_options.reask_messages)
 
     if is_nonparseable_reask:
         if reask_prompt_template is None:

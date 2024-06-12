@@ -297,6 +297,7 @@ class AsyncGuard(Guard):
         Returns:
             The raw text output from the LLM and the validated output.
         """
+
         messages = messages or []
         if messages is not None and not len(messages):
             raise RuntimeError(

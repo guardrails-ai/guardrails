@@ -446,7 +446,7 @@ class Guard(IGuard, Generic[OT]):
         cls,
         output_class: ModelOrListOfModels,
         *,
-        messages: Optional[List[Dict]],
+        messages: Optional[List[Dict]] = None,
         num_reasks: Optional[int] = None,
         reask_messages: Optional[List[Dict]] = None,  # deprecate this too
         tracer: Optional[Tracer] = None,
@@ -510,7 +510,7 @@ class Guard(IGuard, Generic[OT]):
         *,
         string_description: Optional[str] = None,
         messages: Optional[List[Dict]] = None,
-        messages_reask: Optional[List[Dict]] = None,
+        reask_messages: Optional[List[Dict]] = None,
         num_reasks: Optional[int] = None,
         tracer: Optional[Tracer] = None,
         name: Optional[str] = None,
@@ -548,7 +548,7 @@ class Guard(IGuard, Generic[OT]):
         )
         exec_opts = GuardExecutionOptions(
             messages=messages,
-            messages_reask=messages_reask,
+            reask_messages=reask_messages,
         )
         guard = cast(
             Guard[str],
@@ -850,7 +850,6 @@ class Guard(IGuard, Generic[OT]):
         *args,
         prompt_params: Optional[Dict] = None,
         num_reasks: Optional[int] = 1,
-        prompt: Optional[str] = None,
         metadata: Optional[Dict] = None,
         full_schema_reask: Optional[bool] = None,
         **kwargs,
@@ -875,11 +874,12 @@ class Guard(IGuard, Generic[OT]):
         Returns:
             The raw text output from the LLM and the validated output.
         """
-        messages = kwargs.get('messages') or []
+        messages = kwargs.get("messages") or self._exec_opts.messages or []
+
         if messages is not None and not len(messages):
             raise RuntimeError(
                 "You must provide messages. "
-                "Alternatively, you can provide a prompt in the Schema constructor."
+                "Alternatively, you can provide messages in the Schema constructor."
             )
 
         return self._execute(
@@ -888,6 +888,7 @@ class Guard(IGuard, Generic[OT]):
             prompt_params=prompt_params,
             num_reasks=num_reasks,
             metadata=metadata,
+            messages=messages,
             full_schema_reask=full_schema_reask,
             **kwargs,
         )

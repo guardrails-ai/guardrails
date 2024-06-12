@@ -117,7 +117,7 @@ def test_choice_validation_pydantic(llm_output, raises, has_error, fails):
     class Choice(BaseModel):
         choice: Union[Fight, Flight] = Field(..., discriminator="action")
 
-    guard = Guard.from_pydantic(output_class=Choice, prompt="Dummy prompt.")
+    guard = Guard.from_pydantic(output_class=Choice, messages=[{"role":"system", "content":"Dummy prompt."}])
 
     # If raises is True, then the test should raise an exception.
     # For our existing test cases this will always be a ValidationError

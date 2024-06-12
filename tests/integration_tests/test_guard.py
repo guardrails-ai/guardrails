@@ -102,11 +102,16 @@ def guard_initializer(
     rail: Union[str, BaseModel], prompt: str, instructions: Optional[str] = None
 ) -> Guard:
     """Helper function to initialize a Guard using the correct method."""
-
+    messages = []
+    if prompt:
+        messages.append({"role": "user", "content": prompt})
+    if instructions:
+        messages.append({"role": "system", "content": instructions})
+    print('MESSAGES', messages)
     if isinstance(rail, str):
         return Guard.from_rail_string(rail)
     else:
-        return Guard.from_pydantic(rail, prompt=prompt, instructions=instructions)
+        return Guard.from_pydantic(rail, messages=messages)
 
 
 '''def test_rail_spec_output_parse(rail_spec, llm_output, validated_output):

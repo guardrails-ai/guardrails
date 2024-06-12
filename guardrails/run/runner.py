@@ -58,7 +58,7 @@ class Runner:
     metadata: Optional[Dict[str, Any]] = None
 
     # LLM Inputs
-    messages: Optional[List[Dict[str, str]]] = None
+    messages: Optional[Messages] = None
     base_model: Optional[ModelOrListOfModels]
     exec_options: Optional[GuardExecutionOptions]
 
@@ -110,13 +110,8 @@ class Runner:
             messages_copy = []
             for msg in messages:
                 msg_copy = copy.deepcopy(msg)
-                msg_copy["content"] = Prompt(
-                    msg_copy["content"],
-                    output_schema=stringified_output_schema,
-                    xml_output_schema=xml_output_schema,
-                )
                 messages_copy.append(msg_copy)
-            self.messages = messages_copy
+            self.messages = Messages(source=messages_copy, output_schema=stringified_output_schema, xml_output_schema=xml_output_schema,)
 
         self.base_model = base_model
 
@@ -326,12 +321,7 @@ class Runner:
         prompt_params: Dict,
         attempt_number: int,
     ) -> List[Dict[str, str]]:
-        formatted_messages = []
-        # Format any variables in the message history with the prompt params.
-        for msg in messages:
-            msg_copy = copy.deepcopy(msg)
-            msg_copy["content"] = msg_copy["content"].format(**prompt_params)
-            formatted_messages.append(msg_copy)
+        formatted_messages = messages.format(**prompt_params)
 
         # validate messages
         if "messages" in self.validation_map:

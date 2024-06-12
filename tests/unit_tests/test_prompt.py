@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 import guardrails as gd
 from guardrails.prompt.instructions import Instructions
 from guardrails.prompt.prompt import Prompt
+from guardrails.messages.messages import Messages
 from guardrails.utils.constants import constants
 from guardrails.utils.prompt_utils import prompt_content_for_schema
 
@@ -247,10 +248,10 @@ class TestResponse(BaseModel):
 def test_gr_prefixed_prompt_item_passes():
     # From pydantic:
     prompt = """Give me a response to ${grade}"""
-
-    guard = gd.Guard.from_pydantic(output_class=TestResponse, prompt=prompt)
-    prompt = Prompt(guard._exec_opts.prompt)
-    assert len(prompt.variable_names) == 1
+    messages = [{"role": "user", "content": prompt}]
+    guard = gd.Guard.from_pydantic(output_class=TestResponse, messages=messages)
+    messages = Messages(guard._exec_opts.messages)
+    assert len(messages.variable_names) == 1
 
 
 def test_gr_dot_prefixed_prompt_item_fails():

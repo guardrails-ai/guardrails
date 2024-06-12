@@ -404,7 +404,8 @@ STR_LLM_CHUNKS = [
                 validators=[
                     MinSentenceLengthValidator(26, 30, on_fail=OnFailAction.NOOP)
                 ],
-                prompt=STR_PROMPT,
+                # TODO does this even make sense?
+                messages=MESSAGES,
             ),
             # each value is a tuple
             # first is expected text inside span

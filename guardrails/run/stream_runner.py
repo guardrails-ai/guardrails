@@ -8,6 +8,7 @@ from guardrails.llm_providers import (
     PromptCallableBase,
 )
 from guardrails.prompt import Instructions, Prompt
+from guardrails.messages.messages import Messages
 from guardrails.run.runner import Runner
 from guardrails.utils.openai_utils import OPENAI_VERSION
 from guardrails.utils.parsing_utils import (
@@ -43,7 +44,7 @@ class StreamRunner(Runner):
             messages,
             output_schema,
         ) = (
-            messages,
+            self.messages,
             self.output_schema,
         )
 
@@ -61,7 +62,7 @@ class StreamRunner(Runner):
         self,
         index: int,
         api: Optional[PromptCallableBase],
-        messages: Optional[List[Dict]],
+        messages: Optional[Messages],
         prompt_params: Dict,
         output_schema: Dict[str, Any],
         call_log: Call,
