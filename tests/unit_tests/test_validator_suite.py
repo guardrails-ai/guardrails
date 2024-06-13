@@ -60,11 +60,10 @@ def test_validator_python_string(
         guard = Guard.from_string(
             validators,
             description=validator_test_data[validator_name]["description"],
-            prompt=validator_test_data[validator_name]["prompt"],
-            instructions=validator_test_data[validator_name]["instructions"],
+            messages=validator_test_data[validator_name]["messages"],
         )
         _, final_output, *rest = guard(
-            llm_api=get_static_openai_create_func(),
+            model="3.0-turbo",
             prompt_params=validator_test_data[validator_name]["prompt_params"],
             num_reasks=1,
             max_tokens=100,

@@ -11,9 +11,10 @@
     <object name="interest_rates" description="What are the interest rates offered by the bank on savings and checking accounts, loans, and credit products?" />
 </output>
 
-
-<prompt>
-Given the following document, answer the following questions. If the answer doesn't exist in the document, enter
+<messages>
+    <message role="user">
+        <content>
+        Given the following document, answer the following questions. If the answer doesn't exist in the document, enter
 'None'.
 
 ${document}
@@ -22,6 +23,8 @@ ${gr.xml_prefix_prompt}
 
 ${xml_output_schema}
 
-${gr.xml_suffix_prompt_v2_wo_none}</prompt>
+${gr.xml_suffix_prompt_v2_wo_none}</content>
+    </message>
+</messages>
 
 </rail>

@@ -276,16 +276,20 @@ validator_test_pass_fail = {
 validator_test_python_str = {
     "TwoWords": {
         "description": "Name for the pizza",
-        "instructions": """
+        "messages": [
+            {
+                "role":"user",
+                "content": """
 You are a helpful assistant, and you are helping me come up with a name for a pizza.
 
 ${gr.complete_string_suffix}
-""",
-        "prompt": """
+
 Given the following ingredients, what would you call this pizza?
 
 ${ingredients}
-""",
+"""
+            }
+        ],
         "prompt_params": {"ingredients": "tomato, cheese, sour cream"},
         "output": "Cheese Pizza",
     }

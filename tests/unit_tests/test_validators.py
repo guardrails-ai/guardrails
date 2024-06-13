@@ -664,12 +664,16 @@ def test_custom_on_fail_handler(
     custom_reask_func,
     expected_result,
 ):
-    prompt = """
+    messages = [
+        {
+            "role": "user",
+            "content": """
         What kind of pet should I get and what should I name it?
 
         ${gr.complete_json_suffix_v2}
-    """
-
+    """,
+        }
+    ]
     output = """
     {
        "pet_type": "dog",
@@ -683,7 +687,7 @@ def test_custom_on_fail_handler(
         pet_type: str = Field(description="Species of pet", validators=[validator])
         name: str = Field(description="a unique pet name")
 
-    guard = Guard.from_pydantic(output_class=Pet, prompt=prompt)
+    guard = Guard.from_pydantic(output_class=Pet, messages=messages)
     if isinstance(expected_result, type) and issubclass(expected_result, Exception):
         with pytest.raises(ValidationError) as excinfo:
             guard.parse(output, num_reasks=0)
@@ -719,7 +723,7 @@ def test_input_validation_fix(mocker):
                 }
             ],
         )
-    assert str(excinfo.value) == "Message history validation failed"
+    assert str(excinfo.value) == "Messages validation failed"
     assert isinstance(guard.history.first.exception, ValidationError)
     assert guard.history.first.exception == excinfo.value
 
@@ -826,7 +830,7 @@ This also is not two words
     [
         (
             OnFailAction.REASK,
-            "Messages validation failed: incorrect_value='What kind of pet should I get?' fail_results=[FailResult(outcome='fail', error_message='must be exactly two words', fix_value='What kind', metadata=None, validated_chunk=None, error_spans=None)] path=None",  # noqa
+            "Messages validation failed: incorrect_value='What kind of pet should I get?{\"properties\": {\"name\": {\"description\": \"a unique pet name\", \"title\": \"Name\", \"type\": \"string\"}}, \"required\": [\"name\"], \"type\": \"object\", \"title\": \"Pet\"}<output>\\n  <string description=\"a unique pet name\" name=\"name\" required=\"true\"></string>\\n</output>' fail_results=[FailResult(outcome='fail', error_message='must be exactly two words', fix_value='What kind', metadata=None, validated_chunk=None, error_spans=None)] path=None",  # noqa
         ),
         (
             OnFailAction.FILTER,

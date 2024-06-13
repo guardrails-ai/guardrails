@@ -11,6 +11,7 @@ from guardrails.llm_providers import (
 )
 from guardrails.prompt.prompt import Prompt
 from guardrails.prompt.instructions import Instructions
+from guardrails.types.inputs import Messages
 from guardrails.types.validator import ValidatorMap
 
 

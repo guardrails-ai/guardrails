@@ -547,6 +547,7 @@ Here are examples of simple (XML, JSON) pairs that show the expected behavior:
 
     (
         reask_schema,
+        reask_prompt,
         reask_messages,
     ) = get_reask_setup(
         output_type,
@@ -567,8 +568,15 @@ Here are examples of simple (XML, JSON) pairs that show the expected behavior:
         # Examples are only included for SkeletonReAsk's
         # json.dumps(json_example, indent=2),
     )
+    for msg in reask_messages.source:
+            print("MESSAGE", msg["content"])
 
-    assert reask_messages.source == expected_prompt
+    print("EXPECTED PROMPT", expected_prompt)
+    for msg in reask_messages.source:
+        if msg["role"] == "system":
+            assert msg["content"] == expected_instructions
+        if msg["role"] == "user":
+            assert msg["content"] == expected_prompt
 
 
 ### FIXME: Implement once Field Level ReAsk is implemented w/ JSON schema ###

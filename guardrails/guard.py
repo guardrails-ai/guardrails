@@ -590,12 +590,6 @@ class Guard(IGuard, Generic[OT]):
         self._fill_validator_map()
         self._fill_validators()
         metadata = metadata or {}
-        if not llm_output:
-            raise RuntimeError("'llm_output' must be provided!")
-        if not llm_output and not (messages):
-            raise RuntimeError(
-                "'messages' must be provided in order to call an LLM!"
-            )
 
         # check if validator requirements are fulfilled
         missing_keys = verify_metadata_requirements(metadata, self._validators)
@@ -736,7 +730,7 @@ class Guard(IGuard, Generic[OT]):
         messages: Optional[List[Dict]] = None,
         **kwargs,
     ) -> Union[ValidationOutcome[OT], Iterable[ValidationOutcome[OT]]]:
-        api = get_llm_ask(llm_api, *args, **kwargs) if llm_api is not None else None
+        api = get_llm_ask(llm_api, *args, **kwargs)
 
         # Check whether stream is set
         if kwargs.get("stream", False):
@@ -881,9 +875,12 @@ class Guard(IGuard, Generic[OT]):
             The raw text output from the LLM and the validated output.
         """
         messages = kwargs.pop("messages", None) or self._exec_opts.messages or []
+        print("========IN CALL ======")
         print("kwargs", kwargs)
         print("exec_opts", self._exec_opts)
         print("arg messages", messages)
+        print("llm_api", llm_api)
+        
         if messages is not None and not len(messages):
             raise RuntimeError(
                 "You must provide messages. "

@@ -8,6 +8,7 @@ from guardrails.classes.output_type import OutputTypes
 from guardrails.classes.validation.validation_result import FailResult
 from guardrails.prompt.instructions import Instructions
 from guardrails.prompt.prompt import Prompt
+from guardrails.types.inputs import Messages
 from guardrails.schema.generator import generate_example
 from guardrails.schema.rail_schema import json_schema_to_rail_output
 from guardrails.types.validator import ValidatorMap
@@ -192,14 +193,11 @@ def get_reask_setup_for_string(
         json_schema=output_schema, validator_map=validation_map
     )
 
-    reask_prompt_template = None
-    if exec_options.reask_prompt:
-        reask_prompt_template = Prompt(exec_options.reask_prompt)
-    else:
-        reask_prompt_template = Prompt(
-            constants["high_level_string_reask_prompt"]
-            + constants["complete_string_suffix"]
-        )
+
+    reask_prompt_template = Prompt(
+        constants["high_level_string_reask_prompt"]
+        + constants["complete_string_suffix"]
+    )
 
     error_messages = "\n".join(
         [
@@ -240,7 +238,7 @@ def get_original_prompt(exec_options: Optional[GuardExecutionOptions] = None) ->
         (
             h.get("content")
             for h in original_messages
-            if isinstance(h, dict) and h.get("role") == "user"
+            if isinstance(h, dict)
         ),
         "",
     )
@@ -259,7 +257,7 @@ def get_reask_setup_for_json(
     use_full_schema: Optional[bool] = False,
     prompt_params: Optional[Dict[str, Any]] = None,
     exec_options: Optional[GuardExecutionOptions] = None,
-) -> Tuple[Dict[str, Any], Prompt, Instructions]:
+) -> Tuple[Dict[str, Any], Prompt, Messages]:
     reask_schema = output_schema
     is_skeleton_reask = not any(isinstance(reask, FieldReAsk) for reask in reasks)
     is_nonparseable_reask = any(
@@ -269,12 +267,10 @@ def get_reask_setup_for_json(
     prompt_params = prompt_params or {}
     exec_options = exec_options or GuardExecutionOptions()
     original_prompt = get_original_prompt(exec_options)
+    print("ORIGNIAL PROMPT", original_prompt)
     use_xml = prompt_uses_xml(original_prompt)
 
     reask_prompt_template = None
-    if exec_options.reask_messages:
-        reask_prompt_template = Prompt(exec_options.reask_messages)
-
     if is_nonparseable_reask:
         if reask_prompt_template is None:
             suffix = (
@@ -382,19 +378,22 @@ def get_reask_setup_for_json(
         **prompt_params,
     )
 
-    instructions = None
-    if exec_options.reask_instructions:
-        instructions = Instructions(exec_options.reask_instructions)
+
+
+    if exec_options.reask_messages:
+        messages = Messages(source=exec_options.reask_messages)
     else:
         instructions_const = (
             constants["high_level_xml_instructions"]
             if use_xml
             else constants["high_level_json_instructions"]
         )
-        instructions = Instructions(instructions_const)
-    instructions = instructions.format(**prompt_params)
-
-    return reask_schema, prompt, instructions
+        messages = Messages(source=[
+            {"role": "system", "content": instructions_const},
+            {"role": "user", "content": prompt}
+        ])
+    messages = messages.format(**prompt_params)
+    return reask_schema, prompt, messages
 
 
 def get_reask_setup(

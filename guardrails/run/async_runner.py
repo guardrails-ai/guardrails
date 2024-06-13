@@ -18,7 +18,6 @@ from guardrails.types.pydantic import ModelOrListOfModels
 from guardrails.types.validator import ValidatorMap
 from guardrails.utils.exception_utils import UserFacingException
 from guardrails.classes.llm.llm_response import LLMResponse
-from guardrails.utils.prompt_utils import preprocess_prompt, prompt_uses_xml
 from guardrails.actions.reask import NonParseableReAsk, ReAsk
 from guardrails.utils.telemetry_utils import async_trace
 
@@ -307,15 +306,15 @@ class AsyncRunner(Runner):
         has_messages_validation = "msg_history" in self.validation_map
         if messages:
             # Runner.prepare_msg_history
-            formatted_messages = []
-
-            # Format any variables in the message history with the prompt params.
-            for msg in messages:
-                msg_copy = copy.deepcopy(msg)
-                msg_copy["content"] = msg_copy["content"].format(**prompt_params)
-                formatted_messages.append(msg_copy)
-
+            formatted_messages = messages.format(**prompt_params)
+            use_xml = messages_uses_xml(messages._source)
             if "messages" in self.validation_map:
+                messages = preprocess_messages(
+                prompt_callable=api,
+                messages=formatted_messages,
+                output_type=self.output_type,
+                use_xml=use_xml,
+                )   
                 # Runner.validate_msg_history
                 messages_str = messages_string(formatted_messages)
                 inputs = Inputs(

@@ -13,8 +13,10 @@ class MockLiteLLMCallable(LiteLLMCallable):
     # NOTE: this class normally overrides `llm_providers.LiteLLMCallable`,
     # which compiles instructions and prompt into a single prompt;
     # here the instructions are passed into kwargs and ignored
-    def _invoke_llm(self, prompt, *args, **kwargs):
+    def _invoke_llm(self,  *args, **kwargs):
         """Mock the OpenAI API call to Completion.create."""
+
+        messages = kwargs.get("messages")
 
         _rail_to_compiled_prompt = {  # noqa
             entity_extraction.RAIL_SPEC_WITH_REASK: entity_extraction.COMPILED_PROMPT,
@@ -43,7 +45,7 @@ class MockLiteLLMCallable(LiteLLMCallable):
         }
 
         try:
-            output = mock_llm_responses[prompt]
+            output = mock_llm_responses[messages[0]["content"]]
             return LLMResponse(
                 output=output,
                 prompt_token_count=123,
@@ -51,7 +53,7 @@ class MockLiteLLMCallable(LiteLLMCallable):
             )
         except KeyError:
             print("Unrecognized prompt!")
-            print(prompt)
+            print(messages[0]["content"])
             raise ValueError("Compiled prompt not found")
 
 

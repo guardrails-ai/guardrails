@@ -103,10 +103,11 @@ def guard_initializer(
 ) -> Guard:
     """Helper function to initialize a Guard using the correct method."""
     messages = []
-    if prompt:
-        messages.append({"role": "user", "content": prompt})
     if instructions:
         messages.append({"role": "system", "content": instructions})
+    if prompt:
+        messages.append({"role": "user", "content": prompt})
+
     print("RAIL", rail)
     print("initializer MESSAGES", messages)
     if isinstance(rail, str):
@@ -666,7 +667,7 @@ def test_skeleton_reask(mocker):
             entity_extraction.RAIL_SPEC_WITH_SKELETON_REASK
         )
         final_output = guard(
-            llm_api=get_static_openai_create_func(),
+            model="gpt-3.5-turbo",
             prompt_params={"document": content[:6000]},
             max_tokens=1000,
             num_reasks=1,
@@ -1012,7 +1013,7 @@ def test_string_output(mocker):
 
     guard = gd.Guard.from_rail_string(string.RAIL_SPEC_FOR_STRING)
     final_output = guard(
-        llm_api=get_static_openai_create_func(),
+        model="gpt-3.5-turbo",
         prompt_params={"ingredients": "tomato, cheese, sour cream"},
         num_reasks=1,
     )
@@ -1025,7 +1026,7 @@ def test_string_output(mocker):
     assert call.iterations.length == 1
 
     # For original prompt and output
-    assert call.compiled_prompt == string.COMPILED_PROMPT
+    assert call.compiled_messages[1]["content"] == string.COMPILED_PROMPT
     assert call.raw_outputs.last == string.LLM_OUTPUT
     assert mock_invoke_llm.call_count == 1
     mock_invoke_llm = None
