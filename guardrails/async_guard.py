@@ -154,7 +154,7 @@ class AsyncGuard(Guard):
             )
             call_log = Call(inputs=call_inputs)
             set_scope(str(object_id(call_log)))
-            self._history_push(call_log)
+            self._history.push(call_log)
 
             if self._api_client is not None and model_is_supported_server_side(
                 llm_api, *args, **kwargs

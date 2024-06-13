@@ -26,7 +26,6 @@ from guardrails_api_client import (
     Guard as IGuard,
     GuardHistory,
     ValidatorReference,
-    ModelSchema,
     ValidatePayload,
     ValidationType,
     SimpleTypes,
@@ -48,6 +47,7 @@ from guardrails.classes.history.iteration import Iteration
 from guardrails.classes.history.outputs import Outputs
 from guardrails.classes.output_type import OutputTypes
 from guardrails.classes.schema.processed_schema import ProcessedSchema
+from guardrails.classes.schema.model_schema import ModelSchema
 from guardrails.llm_providers import (
     get_async_llm_ask,
     get_llm_api_enum,
@@ -1428,6 +1428,31 @@ class Guard(IGuard, Generic[OT]):
             description=self.description,
             validators=self.validators,
             output_schema=self.output_schema,
-            i_history=GuardHistory(list(self.history)),
+            i_history=GuardHistory(list(self.history)),  # type: ignore
         )
         return i_guard.to_dict()
+
+    # override IGuard.from_dict
+    @classmethod
+    def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional["Guard"]:
+        i_guard = IGuard.from_dict(obj)
+        if not i_guard:
+            return i_guard
+        output_schema = (
+            i_guard.output_schema.to_dict() if i_guard.output_schema else None
+        )
+
+        guard = cls(
+            id=i_guard.id,
+            name=i_guard.name,
+            description=i_guard.description,
+            validators=i_guard.validators,
+            output_schema=output_schema,
+        )
+        i_history = (
+            i_guard.i_history.actual_instance
+            if i_guard.i_history and i_guard.i_history.actual_instance
+            else []
+        )
+        guard._history = Stack(*i_history)
+        return guard

@@ -1,7 +1,7 @@
 import openai
 import pytest
 from pydantic import BaseModel
-
+from guardrails_api_client import Guard as IGuard, GuardHistory
 from guardrails import Guard, Validator
 from guardrails.utils.validator_utils import verify_metadata_requirements
 from guardrails.utils import args, kwargs, on_fail
@@ -17,6 +17,7 @@ from guardrails.validators import (  # ReadingTime,
     ValidLength,
     register_validator,
 )
+from tests.integration_tests.test_assets.validators.regex_match import RegexMatch
 
 
 @register_validator("myrequiringvalidator", data_type="string")
@@ -600,6 +601,43 @@ def test_use_and_use_many():
                 on="response",  # invalid "on" parameter
             )
         )
+
+
+class TestSerizlizationAndDeserialization:
+    def test_guard_i_guard(self):
+        guard = Guard(
+            name="name-case", description="Checks that a string is in Name Case format."
+        ).use(RegexMatch(regex="^[A-Z][a-z\\s]*$"))
+
+        i_guard = IGuard(
+            id=guard.id,
+            name=guard.name,
+            description=guard.description,
+            validators=guard.validators,
+            output_schema=guard.output_schema,
+            history=GuardHistory(guard.history),
+        )
+
+        cls_guard = Guard(
+            id=i_guard.id,
+            name=i_guard.name,
+            description=i_guard.description,
+            output_schema=i_guard.output_schema.to_dict(),
+            validators=i_guard.validators,
+        )
+
+        assert cls_guard == guard
+
+    def test_ser_deser(self):
+        guard = Guard(
+            name="name-case", description="Checks that a string is in Name Case format."
+        ).use(RegexMatch(regex="^[A-Z][a-z\\s]*$"))
+
+        ser_guard = guard.to_dict()
+
+        deser_guard = Guard.from_dict(ser_guard)
+
+        assert deser_guard == guard
 
 
 # def test_call():
