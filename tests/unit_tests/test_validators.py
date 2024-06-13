@@ -822,11 +822,7 @@ This also is not two words
 
 @pytest.mark.parametrize(
     "on_fail,"
-    "structured_prompt_error,"
-    "structured_instructions_error,"
-    "structured_message_history_error,"
-    "unstructured_prompt_error,"
-    "unstructured_instructions_error",
+    "structured_message_history_error,",
     [
         (
             OnFailAction.REASK,

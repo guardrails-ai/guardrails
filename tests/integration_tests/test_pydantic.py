@@ -16,7 +16,7 @@ from guardrails.utils.openai_utils import (
 from .mock_llm_outputs import pydantic
 from .test_assets.pydantic import VALIDATED_RESPONSE_REASK_PROMPT, ListOfPeople
 
-
+VALIDATED_RESPONSE_REASK_MESSAGES = [{"role":"user", "content":VALIDATED_RESPONSE_REASK_PROMPT}]
 def test_pydantic_with_reask(mocker):
     """Test that the entity extraction works with re-asking."""
     mock_invoke_llm = mocker.patch(
@@ -40,7 +40,7 @@ def test_pydantic_with_reask(mocker):
         ),
     ]
 
-    guard = gd.Guard.from_pydantic(ListOfPeople, prompt=VALIDATED_RESPONSE_REASK_PROMPT)
+    guard = gd.Guard.from_pydantic(ListOfPeople, messages=VALIDATED_RESPONSE_REASK_MESSAGES)
     final_output = guard(
         get_static_openai_create_func(),
         engine="text-davinci-003",

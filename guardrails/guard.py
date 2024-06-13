@@ -890,6 +890,7 @@ class Guard(IGuard, Generic[OT]):
             prompt_params=prompt_params,
             num_reasks=num_reasks,
             metadata=metadata,
+            messages=messages,
             full_schema_reask=full_schema_reask,
             **kwargs,
         )
