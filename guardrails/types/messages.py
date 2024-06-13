@@ -19,7 +19,13 @@ class Messages():
 
     The messages is passed to the LLM as primary interface for input
     """
-    def __init__(self, source: list[dict[str, Union[Prompt, str]]], output_schema: Optional[str] = None, xml_output_schema: Optional[str] = None):
+    def __init__(
+            self, 
+            source: list[dict[str, Union[Prompt, str]]], 
+            output_schema: Optional[str] = None,
+            *,
+            xml_output_schema: Optional[str] = None,
+            ):
         self._source = source
 
 
@@ -27,18 +33,24 @@ class Messages():
         for msg in self._source:
             try: 
                 msg["content"] = self.substitute_constants(str(msg["content"]))
+                if output_schema or xml_output_schema:
+                    msg["content"] =Template(msg["content"]).safe_substitute(
+                        output_schema=output_schema, 
+                        xml_output_schema=xml_output_schema
+                    )
+                    
             except KeyError:
                 pass
 
         source = self._source
 
         self.source = source
-        # If an output schema is provided, substitute it in the prompt.
-        if output_schema:
-            self.source.append({"role":"system", "content": output_schema})
-        # If an xml output schema is provided, substitute it in the prompt.
-        if xml_output_schema:
-            self.source.append({"role":"system", "content": xml_output_schema})
+        # # If an output schema is provided, substitute it in the prompt.
+        # if output_schema:
+        #     self.source.append({"role":"system", "content": output_schema})
+        # # If an xml output schema is provided, substitute it in the prompt.
+        # if xml_output_schema:
+        #     self.source.append({"role":"system", "content": xml_output_schema})
 
 
     def __repr__(self) -> str:
@@ -49,7 +61,14 @@ class Messages():
         return f"Messages({truncated_prompt})"
 
     def __str__(self) -> str:
-        return self.source
+        return next(        
+            (
+                h.get("content")
+                for h in self.source
+                if isinstance(h, dict)
+            ),
+            "",
+        )
 
     def __iter__(self):
         self.current = 0
@@ -176,6 +195,8 @@ class Messages():
     def uses_xml(self) -> bool:
         xml_const_regx = re.compile(r"gr\..*xml_.*")
         for msg in self.source:
-            if xml_const_regx.search(msg["content"]) is not None:
+            msg_has_xml = xml_const_regx.search(msg["content"]) is not None
+            contains_xml_output = "xml_output_schema" in msg["content"]
+            if msg_has_xml or contains_xml_output:
                 return True
         return False

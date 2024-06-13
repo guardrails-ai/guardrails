@@ -319,10 +319,24 @@ class Runner:
     def prepare_messages(
         self,
         call_log: Call,
+        attempt_number: int,
         messages: Messages,
         prompt_params: Dict,
-        attempt_number: int,
+        api: Union[PromptCallableBase, AsyncPromptCallableBase],
     ) -> Messages:
+        use_xml = messages.uses_xml()
+
+        for msg in messages.source:
+            prompt = Prompt(source=msg["content"],)
+            instructions, prompt = preprocess_prompt(
+                prompt_callable=api,
+                instructions=None,
+                prompt=prompt,
+                output_type=self.output_type,
+                use_xml=use_xml,
+            )
+            msg["content"] = prompt.source
+
         formatted_messages: Messages = messages.format(**prompt_params)
 
         # validate messages
@@ -378,7 +392,11 @@ class Runner:
 
         if messages:
             messages = self.prepare_messages(
-                call_log, messages, prompt_params, attempt_number
+                call_log, 
+                attempt_number, 
+                messages, 
+                prompt_params, 
+                api
             )
         else:
             raise UserFacingException(

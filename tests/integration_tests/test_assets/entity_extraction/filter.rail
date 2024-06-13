@@ -17,15 +17,15 @@ on-fail-two-words="filter"/>
 <messages>
     <message role="user">
         <content>
-            Given the following document, answer the following questions. If the answer doesn't exist in the document, enter 'None'.
+Given the following document, answer the following questions. If the answer doesn't exist in the document, enter 'None'.
 
-            ${document}
+${document}
 
-            ${gr.xml_prefix_prompt}
+${gr.xml_prefix_prompt}
 
-            ${xml_output_schema}
+${xml_output_schema}
 
-            ${gr.xml_suffix_prompt_v2_wo_none}
+${gr.xml_suffix_prompt_v2_wo_none}
         </content>
     </message>
 </messages>

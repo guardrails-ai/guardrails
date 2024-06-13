@@ -267,7 +267,6 @@ def get_reask_setup_for_json(
     prompt_params = prompt_params or {}
     exec_options = exec_options or GuardExecutionOptions()
     original_prompt = get_original_prompt(exec_options)
-    print("ORIGNIAL PROMPT", original_prompt)
     use_xml = prompt_uses_xml(original_prompt)
 
     reask_prompt_template = None

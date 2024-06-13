@@ -17,7 +17,15 @@ class MockLiteLLMCallable(LiteLLMCallable):
         """Mock the OpenAI API call to Completion.create."""
 
         messages = kwargs.get("messages")
-
+        compiled_messages = next(
+            (
+                h.get("content")
+                for h in messages
+                if isinstance(h, dict)
+            ),
+            "",
+        )
+        print("COMPILED MESSAGES: ", compiled_messages)
         _rail_to_compiled_prompt = {  # noqa
             entity_extraction.RAIL_SPEC_WITH_REASK: entity_extraction.COMPILED_PROMPT,
         }
@@ -45,7 +53,7 @@ class MockLiteLLMCallable(LiteLLMCallable):
         }
 
         try:
-            output = mock_llm_responses[messages[0]["content"]]
+            output = mock_llm_responses[compiled_messages]
             return LLMResponse(
                 output=output,
                 prompt_token_count=123,
@@ -53,7 +61,7 @@ class MockLiteLLMCallable(LiteLLMCallable):
             )
         except KeyError:
             print("Unrecognized prompt!")
-            print(messages[0]["content"])
+            print(compiled_messages)
             raise ValueError("Compiled prompt not found")
 
 
