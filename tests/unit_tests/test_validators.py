@@ -848,7 +848,7 @@ def test_input_validation_fail(
 ):
     # With Prompt Validation
     guard = Guard.from_pydantic(output_class=Pet)
-    guard.use(TwoWords(on_fail=on_fail), on="prompt")
+    guard.use(TwoWords(on_fail=on_fail), on="messages")
 
     def custom_llm(*args, **kwargs):
         raise Exception(
@@ -871,6 +871,7 @@ def test_input_validation_fail(
                 }
             ],
         )
+    print('ERROR STR',str(excinfo.value))
     assert str(excinfo.value) == structured_message_history_error
     assert isinstance(guard.history.last.exception, ValidationError)
     assert guard.history.last.exception == excinfo.value

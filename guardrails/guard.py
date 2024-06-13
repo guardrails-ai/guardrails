@@ -584,9 +584,9 @@ class Guard(IGuard, Generic[OT]):
         self._fill_validator_map()
         self._fill_validators()
         metadata = metadata or {}
-        if not llm_api and not llm_output:
-            raise RuntimeError("'llm_api' or 'llm_output' must be provided!")
-        if not llm_output and llm_api and not (messages):
+        if not llm_output:
+            raise RuntimeError("'llm_output' must be provided!")
+        if not llm_output and not (messages):
             raise RuntimeError(
                 "'messages' must be provided in order to call an LLM!"
             )
@@ -601,7 +601,7 @@ class Guard(IGuard, Generic[OT]):
         def __exec(
             self: Guard,
             *args,
-            llm_api: Union[Callable, Callable[[Any], Awaitable[Any]]],
+            llm_api: Optional[Union[Callable, Callable[[Any], Awaitable[Any]]]],
             llm_output: Optional[str] = None,
             prompt_params: Optional[Dict] = None,
             num_reasks: Optional[int] = None,
@@ -772,7 +772,7 @@ class Guard(IGuard, Generic[OT]):
     async def _exec_async(
         self,
         *args,
-        llm_api: Callable[[Any], Awaitable[Any]],
+        llm_api: Optional[Callable[[Any], Awaitable[Any]]] = None,
         llm_output: Optional[str] = None,
         call_log: Call,
         prompt_params: Dict,  # Should be defined at this point
@@ -822,7 +822,7 @@ class Guard(IGuard, Generic[OT]):
     @overload
     def __call__(
         self,
-        llm_api: Optional[Callable],
+        llm_api: Optional[Callable]=None,
         *args,
         prompt_params: Optional[Dict] = None,
         num_reasks: Optional[int] = None,
@@ -835,7 +835,7 @@ class Guard(IGuard, Generic[OT]):
     @overload
     def __call__(
         self,
-        llm_api: Optional[Callable[[Any], Awaitable[Any]]],
+        llm_api: Optional[Callable[[Any], Awaitable[Any]]] = None,
         *args,
         prompt_params: Optional[Dict] = None,
         num_reasks: Optional[int] = None,
@@ -846,7 +846,7 @@ class Guard(IGuard, Generic[OT]):
 
     def __call__(
         self,
-        llm_api: Optional[Union[Callable, Callable[[Any], Awaitable[Any]]]],
+        llm_api: Optional[Union[Callable, Callable[[Any], Awaitable[Any]]]] = None,
         *args,
         prompt_params: Optional[Dict] = None,
         num_reasks: Optional[int] = 1,
@@ -874,7 +874,7 @@ class Guard(IGuard, Generic[OT]):
         Returns:
             The raw text output from the LLM and the validated output.
         """
-        messages = kwargs.get("messages") or self._exec_opts.messages or []
+        messages = kwargs.pop("messages", None) or self._exec_opts.messages or []
         print("kwargs", kwargs)
         print("exec_opts", self._exec_opts)
         print("arg messages", messages)

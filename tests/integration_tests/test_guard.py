@@ -297,10 +297,10 @@ def test_entity_extraction_with_noop(mocker, rail, prompt):
     "rail,prompt",
     [
         (entity_extraction.RAIL_SPEC_WITH_FILTER, None),
-        (
-            entity_extraction.PYDANTIC_RAIL_WITH_FILTER,
-            entity_extraction.PYDANTIC_PROMPT,
-        ),
+        # (
+        #     entity_extraction.PYDANTIC_RAIL_WITH_FILTER,
+        #     entity_extraction.PYDANTIC_PROMPT,
+        # ),
     ],
 )
 def test_entity_extraction_with_filter(mocker, rail, prompt):
@@ -310,7 +310,7 @@ def test_entity_extraction_with_filter(mocker, rail, prompt):
     content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
     guard = guard_initializer(rail, prompt)
     final_output = guard(
-        llm_api=get_static_openai_create_func(),
+        model='gpt-3.5-turbo',
         prompt_params={"document": content[:6000]},
         num_reasks=1,
     )

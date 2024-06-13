@@ -68,9 +68,9 @@ class AsyncGuard(Guard):
         self._fill_validator_map()
         self._fill_validators()
         metadata = metadata or {}
-        if not llm_api and not llm_output:
-            raise RuntimeError("'llm_api' or 'llm_output' must be provided!")
-        if not llm_output and llm_api and not (messages):
+        if not llm_output:
+            raise RuntimeError("'llm_output' must be provided!")
+        if not llm_output and not (messages):
             raise RuntimeError(
                 "'messages' must be provided in order to call an LLM!"
             )
@@ -85,7 +85,7 @@ class AsyncGuard(Guard):
         async def __exec(
             self: AsyncGuard,
             *args,
-            llm_api: Union[Callable, Callable[[Any], Awaitable[Any]]],
+            llm_api: Optional[Union[Callable, Callable[[Any], Awaitable[Any]]]],
             llm_output: Optional[str] = None,
             prompt_params: Optional[Dict] = None,
             num_reasks: Optional[int] = None,
@@ -193,7 +193,7 @@ class AsyncGuard(Guard):
     async def _exec_async(
         self,
         *args,
-        llm_api: Callable[[Any], Awaitable[Any]],
+        llm_api: Optional[Callable[[Any], Awaitable[Any]]],
         llm_output: Optional[str] = None,
         call_log: Call,
         prompt_params: Dict,  # Should be defined at this point
@@ -267,7 +267,7 @@ class AsyncGuard(Guard):
 
     async def __call__(
         self,
-        llm_api: Union[Callable, Callable[[Any], Awaitable[Any]]],
+        llm_api: Optional[Union[Callable, Callable[[Any], Awaitable[Any]]]],
         *args,
         prompt_params: Optional[Dict] = None,
         num_reasks: Optional[int] = 1,

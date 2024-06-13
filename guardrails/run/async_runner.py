@@ -346,7 +346,7 @@ class AsyncRunner(Runner):
                         f"{validated_messages}"
                     )
                 if validated_messages != messages_str:
-                    raise ValidationError("Message history validation failed")
+                    raise ValidationError("Messages validation failed")
         else:
             raise UserFacingException(
                 ValueError("'prompt' or 'msg_history' must be provided.")

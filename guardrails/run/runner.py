@@ -309,12 +309,12 @@ class Runner:
         iteration.outputs.validation_response = validated_messages
         if isinstance(validated_messages, ReAsk):
             raise ValidationError(
-                f"Message history validation failed: " f"{validated_messages}"
+                f"Messages validation failed: " f"{validated_messages}"
             )
         print("messages", validated_messages)
         print("msg_str", msg_str)
         if validated_messages != msg_str:
-            raise ValidationError("Message history validation failed")
+            raise ValidationError("Messages validation failed")
 
     def prepare_messages(
         self,
