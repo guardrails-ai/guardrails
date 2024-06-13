@@ -183,6 +183,15 @@ def test_format_not_read_as_validators():
     Hello world
     </prompt>
 
+    <messages>
+        <message role="system">
+            <content>Hello World</content>
+        </message>
+        <message role="user">
+            <content>Hello World</content>
+        </message>
+    </messages>
+
     </rail>
     """
     # Declaring Validators in the format field was dropped in 0.5.x

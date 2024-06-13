@@ -396,6 +396,21 @@ def rail_string_to_schema(rail_string: str) -> ProcessedSchema:
     if reask_instructions is not None:
         processed_schema.exec_opts.reask_instructions = reask_instructions.text
 
+    messages = rail_xml.find("messages")
+    if messages is not None:
+        extracted_messages = []
+        for msg in messages:
+            print(msg)
+            if msg.tag == "message":
+                message = msg
+                # role = message.get("role").text
+                role = message.attrib.get("role")
+                content = message.find("content").text
+                extracted_messages.append({"role": role, "content": content})
+        processed_schema.exec_opts.messages = extracted_messages
+
+    # TODO add support for reask_messages
+
     return processed_schema
 
 
