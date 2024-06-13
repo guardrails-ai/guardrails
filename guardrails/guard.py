@@ -574,6 +574,7 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
             *args,
             **kwargs,
         ):
+            print("CALL CALLED")
             llm_api_str = (
                 f"{llm_api.__module__}.{llm_api.__name__}" if llm_api else "None"
             )
@@ -643,7 +644,7 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
             if self._api_client is not None and model_is_supported_server_side(
                 llm_api, *args, **kwargs
             ):
-                return self._call_server(
+                res = self._call_server(
                     llm_api=llm_api,
                     prompt_params=prompt_params,
                     num_reasks=self.num_reasks,
@@ -656,11 +657,15 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
                     *args,
                     **kwargs,
                 )
+                print("path 1 triggered")
+                logger.debug(f"Guard call result: {res}", res)
+                return res
 
             # If the LLM API is async, return a coroutine. This will be deprecated soon.
 
             if asyncio.iscoroutinefunction(llm_api):
-                return self._call_async(
+                # Otherwise, call the LLM synchronously
+                res = self._call_async(
                     llm_api,
                     prompt_params=prompt_params,
                     num_reasks=self.num_reasks,
@@ -673,8 +678,10 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
                     *args,
                     **kwargs,
                 )
-            # Otherwise, call the LLM synchronously
-            return self._call_sync(
+                print("path 2 triggered")
+                logger.debug(f"Guard call result: {res}", res)
+                return res
+            res = self._call_sync(
                 llm_api,
                 prompt_params=prompt_params,
                 num_reasks=self.num_reasks,
@@ -687,9 +694,12 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
                 *args,
                 **kwargs,
             )
+            print("path 3 triggered")
+            logger.debug(f"Guard call result: {res}", res)
+            return res
 
         guard_context = contextvars.Context()
-        return guard_context.run(
+        res = guard_context.run(
             __call,
             self,
             llm_api,
@@ -703,6 +713,9 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
             *args,
             **kwargs,
         )
+        print("path 4 triggered")
+        logger.debug(f"Guard call result: {res}", res)
+        return res
 
     def _call_sync(
         self,
