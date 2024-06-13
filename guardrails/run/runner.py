@@ -54,7 +54,7 @@ class Runner:
     output_schema: Dict[str, Any]
     output_type: OutputTypes
     validation_map: ValidatorMap = {}
-    metadata: Optional[Dict[str, Any]] = None
+    metadata: Dict[str, Any]
 
     # LLM Inputs
     prompt: Optional[Prompt] = None
@@ -305,10 +305,10 @@ class Runner:
 
             # Parse: parse the output.
             parsed_output, parsing_error = self.parse(raw_output, output_schema)
-            if parsing_error:
-                iteration.outputs.exception = parsing_error
+            if parsing_error or isinstance(parsed_output, ReAsk):
+                iteration.outputs.exception = parsing_error  # type: ignore
                 iteration.outputs.error = str(parsing_error)
-                iteration.outputs.reasks.append(parsed_output)
+                iteration.outputs.reasks.append(parsed_output)  # type: ignore
             else:
                 iteration.outputs.parsed_output = parsed_output
 
@@ -326,7 +326,7 @@ class Runner:
                 reasks, valid_output = self.introspect(validated_output)
                 iteration.outputs.guarded_output = valid_output
 
-            iteration.outputs.reasks = reasks
+            iteration.outputs.reasks = list(reasks)
 
         except Exception as e:
             error_message = str(e)
@@ -370,8 +370,8 @@ class Runner:
         msg_history: MessageHistory,
         prompt_params: Dict,
         attempt_number: int,
-    ) -> List[Dict[str, str]]:
-        formatted_msg_history = []
+    ) -> MessageHistory:
+        formatted_msg_history: MessageHistory = []
         # Format any variables in the message history with the prompt params.
         for msg in msg_history:
             msg_copy = copy.deepcopy(msg)
@@ -484,10 +484,10 @@ class Runner:
         *,
         instructions: Optional[Instructions],
         prompt: Optional[Prompt],
-        msg_history: Optional[List[Dict]],
+        msg_history: Optional[MessageHistory],
         prompt_params: Optional[Dict] = None,
         api: Optional[Union[PromptCallableBase, AsyncPromptCallableBase]],
-    ) -> Tuple[Optional[Instructions], Optional[Prompt], Optional[List[Dict]]]:
+    ) -> Tuple[Optional[Instructions], Optional[Prompt], Optional[MessageHistory]]:
         """Prepare by running pre-processing and input validation.
 
         Returns:
@@ -536,7 +536,7 @@ class Runner:
         self,
         instructions: Optional[Instructions],
         prompt: Optional[Prompt],
-        msg_history: Optional[List[Dict[str, str]]],
+        msg_history: Optional[MessageHistory],
         api: Optional[PromptCallableBase],
         output: Optional[str] = None,
     ) -> LLMResponse:
@@ -571,7 +571,7 @@ class Runner:
 
     def parse(self, output: str, output_schema: Dict[str, Any], **kwargs):
         parsed_output, error = parse_llm_output(output, self.output_type, **kwargs)
-        if not error:
+        if parsed_output and not error and not isinstance(parsed_output, ReAsk):
             parsed_output = prune_extra_keys(parsed_output, output_schema)
             parsed_output = coerce_types(parsed_output, output_schema)
         return parsed_output, error
@@ -617,7 +617,7 @@ class Runner:
     def introspect(
         self,
         validated_output: Any,
-    ) -> Tuple[Sequence[ReAsk], Optional[Union[str, Dict]]]:
+    ) -> Tuple[Sequence[ReAsk], Optional[Union[str, Dict, List]]]:
         """Introspect the validated output."""
         if validated_output is None:
             return [], None
@@ -636,8 +636,8 @@ class Runner:
         reasks: Sequence[ReAsk],
         output_schema: Dict[str, Any],
         *,
-        parsed_output: Optional[Union[str, Dict, ReAsk]] = None,
-        validated_output: Optional[Union[str, Dict, ReAsk]] = None,
+        parsed_output: Optional[Union[str, List, Dict, ReAsk]] = None,
+        validated_output: Optional[Union[str, List, Dict, ReAsk]] = None,
         prompt_params: Optional[Dict] = None,
         include_instructions: bool = False,
     ) -> Tuple[Prompt, Optional[Instructions], Dict[str, Any], Optional[List[Dict]]]:

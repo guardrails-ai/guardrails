@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Optional
 
 
 class RailTypes(str, Enum):
@@ -17,7 +18,7 @@ class RailTypes(str, Enum):
     CASE = "case"
 
     @classmethod
-    def get(cls, key: str) -> "RailTypes":
+    def get(cls, key: str) -> Optional["RailTypes"]:
         try:
             return cls(key)
         except Exception:

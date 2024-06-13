@@ -7,7 +7,6 @@ from typing import (
     Awaitable,
     Callable,
     Dict,
-    Iterable,
     List,
     Optional,
     Union,
@@ -52,7 +51,7 @@ class AsyncGuard(Guard):
     async def _execute(  # FIXME: Is this override necessary?
         self,
         *args,
-        llm_api: Optional[Union[Callable, Callable[[Any], Awaitable[Any]]]] = None,
+        llm_api: Optional[Callable[..., Awaitable[Any]]] = None,
         llm_output: Optional[str] = None,
         prompt_params: Optional[Dict] = None,
         num_reasks: Optional[int] = None,
@@ -63,8 +62,9 @@ class AsyncGuard(Guard):
         full_schema_reask: Optional[bool] = None,
         **kwargs,
     ) -> Union[
-        Union[ValidationOutcome[OT], Iterable[ValidationOutcome[OT]]],
+        ValidationOutcome[OT],
         Awaitable[ValidationOutcome[OT]],
+        AsyncIterable[ValidationOutcome[OT]],
     ]:
         self._fill_validator_map()
         self._fill_validators()
@@ -86,7 +86,7 @@ class AsyncGuard(Guard):
         async def __exec(
             self: AsyncGuard,
             *args,
-            llm_api: Union[Callable, Callable[[Any], Awaitable[Any]]],
+            llm_api: Optional[Callable[..., Awaitable[Any]]],
             llm_output: Optional[str] = None,
             prompt_params: Optional[Dict] = None,
             num_reasks: Optional[int] = None,
@@ -96,7 +96,11 @@ class AsyncGuard(Guard):
             metadata: Optional[Dict] = None,
             full_schema_reask: Optional[bool] = None,
             **kwargs,
-        ):
+        ) -> Union[
+            ValidationOutcome[OT],
+            Awaitable[ValidationOutcome[OT]],
+            AsyncIterable[ValidationOutcome[OT]],
+        ]:
             prompt_params = prompt_params or {}
             metadata = metadata or {}
             if full_schema_reask is None:
@@ -169,7 +173,7 @@ class AsyncGuard(Guard):
 
             # If the LLM API is async, return a coroutine
             else:
-                result = self._exec_async(
+                result = await self._exec_async(
                     llm_api=llm_api,
                     llm_output=llm_output,
                     prompt_params=prompt_params,
@@ -186,6 +190,8 @@ class AsyncGuard(Guard):
 
             if inspect.isawaitable(result):
                 return await result
+            # TODO: Fix types once async streaming is implemented on server
+            return result  # type: ignore
 
         guard_context = contextvars.Context()
         return await guard_context.run(
@@ -207,7 +213,7 @@ class AsyncGuard(Guard):
     async def _exec_async(
         self,
         *args,
-        llm_api: Callable[[Any], Awaitable[Any]],
+        llm_api: Optional[Callable[[Any], Awaitable[Any]]],
         llm_output: Optional[str] = None,
         call_log: Call,
         prompt_params: Dict,  # Should be defined at this point
@@ -218,7 +224,11 @@ class AsyncGuard(Guard):
         instructions: Optional[str],
         msg_history: Optional[List[Dict]],
         **kwargs,
-    ) -> Union[Awaitable[ValidationOutcome[OT]], AsyncIterable[ValidationOutcome[OT]]]:
+    ) -> Union[
+        ValidationOutcome[OT],
+        Awaitable[ValidationOutcome[OT]],
+        AsyncIterable[ValidationOutcome[OT]],
+    ]:
         """Call the LLM asynchronously and validate the output.
 
         Args:
@@ -288,7 +298,7 @@ class AsyncGuard(Guard):
 
     async def __call__(
         self,
-        llm_api: Union[Callable, Callable[[Any], Awaitable[Any]]],
+        llm_api: Callable[..., Awaitable[Any]],
         *args,
         prompt_params: Optional[Dict] = None,
         num_reasks: Optional[int] = 1,
@@ -299,8 +309,9 @@ class AsyncGuard(Guard):
         full_schema_reask: Optional[bool] = None,
         **kwargs,
     ) -> Union[
-        Union[ValidationOutcome[OT], Iterable[ValidationOutcome[OT]]],
+        ValidationOutcome[OT],
         Awaitable[ValidationOutcome[OT]],
+        AsyncIterable[ValidationOutcome[OT]],
     ]:
         """Call the LLM and validate the output. Pass an async LLM API to
         return a coroutine.
@@ -351,12 +362,12 @@ class AsyncGuard(Guard):
         llm_output: str,
         *args,
         metadata: Optional[Dict] = None,
-        llm_api: Optional[Callable] = None,
+        llm_api: Optional[Callable[..., Awaitable[Any]]] = None,
         num_reasks: Optional[int] = None,
         prompt_params: Optional[Dict] = None,
         full_schema_reask: Optional[bool] = None,
         **kwargs,
-    ) -> Union[ValidationOutcome[OT], Awaitable[ValidationOutcome[OT]]]:
+    ) -> Awaitable[ValidationOutcome[OT]]:
         """Alternate flow to using AsyncGuard where the llm_output is known.
 
         Args:
@@ -392,7 +403,7 @@ class AsyncGuard(Guard):
         default_msg_history = self._exec_opts.msg_history if llm_api else None
         msg_history = kwargs.pop("msg_history", default_msg_history)
 
-        return await self._execute(
+        return await self._execute(  # type: ignore
             *args,
             llm_output=llm_output,
             llm_api=llm_api,
@@ -423,23 +434,24 @@ class AsyncGuard(Guard):
             validation_output: Optional[Any] = None
             response = self._api_client.stream_validate(
                 guard=self,  # type: ignore
-                payload=ValidatePayload.from_dict(payload),
+                payload=ValidatePayload.from_dict(payload),  # type: ignore
                 openai_api_key=get_call_kwarg("api_key"),
             )
             for fragment in response:
                 validation_output = fragment
-                if not validation_output:
+                if validation_output is None:
                     yield ValidationOutcome[OT](
                         raw_llm_output=None,
                         validated_output=None,
                         validation_passed=False,
                         error="The response from the server was empty!",
                     )
-                yield ValidationOutcome[OT](
-                    raw_llm_output=validation_output.raw_llm_response,  # type: ignore
-                    validated_output=cast(OT, validation_output.validated_output),
-                    validation_passed=validation_output.result,
-                )
+                else:
+                    yield ValidationOutcome[OT](
+                        raw_llm_output=validation_output.raw_llm_response,  # type: ignore
+                        validated_output=cast(OT, validation_output.validated_output),
+                        validation_passed=validation_output.result,
+                    )
             if validation_output:
                 self._construct_history_from_server_response(
                     validation_output=validation_output,

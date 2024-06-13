@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Sequence, Union
+from typing import Dict, List, Optional, Union
 
 from pydantic import Field
 from typing_extensions import deprecated
@@ -38,7 +38,7 @@ class Outputs(IOutputs, ArbitraryModel):
         This property may be a partial structure if field level reasks occur.""",
         default=None,
     )
-    reasks: Sequence[ReAsk] = Field(
+    reasks: List[ReAsk] = Field(
         description="Information from the validation process"
         "used to construct a ReAsk to the LLM on validation failure.",
         default_factory=list,
@@ -137,7 +137,7 @@ class Outputs(IOutputs, ArbitraryModel):
         """'Outputs.validation_output' is deprecated and will be removed in \
 versions 0.5.0 and beyond. Use 'validation_response' instead."""
     )
-    def validation_output(self) -> Optional[Union[str, ReAsk, Dict]]:
+    def validation_output(self) -> Optional[Union[str, ReAsk, List, Dict]]:
         return self.validation_response
 
     @property
@@ -145,5 +145,5 @@ versions 0.5.0 and beyond. Use 'validation_response' instead."""
         """'Outputs.validated_output' is deprecated and will be removed in \
 versions 0.5.0 and beyond. Use 'guarded_output' instead."""
     )
-    def validated_output(self) -> Optional[Union[str, ReAsk, Dict]]:
+    def validated_output(self) -> Optional[Union[str, ReAsk, List, Dict]]:
         return self.guarded_output

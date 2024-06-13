@@ -12,7 +12,7 @@ class ProcessedSchema:
     extract from the various schema wrappers a user can pass in; i.e. RAIL or
     Pydantic."""
 
-    output_type: OutputTypes = None
+    output_type: OutputTypes = field(default=OutputTypes.STRING)
     validators: List[ValidatorReference] = field(default_factory=list)
     validator_map: ValidatorMap = field(default_factory=dict)
     json_schema: Dict[str, Any] = field(default_factory=dict)

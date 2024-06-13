@@ -24,6 +24,8 @@ def test_validate_with_running_loop(mocker):
             metadata={},
             validator_map={},
             iteration=iteration,
+            absolute_path="$",
+            reference_path="$",
         )
 
         assert (
@@ -48,6 +50,8 @@ def test_validate_without_running_loop(mocker):
         metadata={},
         validator_map={},
         iteration=iteration,
+        absolute_path="$",
+        reference_path="$",
     )
 
     assert loop_spy.call_count == 1
@@ -74,6 +78,8 @@ async def test_async_validate_with_children(mocker):
         metadata={},
         validator_map={},
         iteration=iteration,
+        absolute_path="$",
+        reference_path="$",
     )
 
     assert validate_children_mock.call_count == 1
@@ -104,6 +110,8 @@ async def test_async_validate_without_children(mocker):
         metadata={},
         validator_map={},
         iteration=iteration,
+        absolute_path="$",
+        reference_path="$",
     )
 
     assert validate_children_mock.call_count == 0
