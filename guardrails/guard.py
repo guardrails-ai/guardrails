@@ -187,15 +187,6 @@ class Guard(IGuard, Generic[OT]):
     def history(self):
         return self._history
 
-    @history.setter
-    def history(self, h: Stack[Call]):
-        self._history = h
-        self.i_history = GuardHistory(h)
-
-    def _history_push(self, c: Call):
-        self._history.push(c)
-        self.history = self._history
-
     @field_validator("output_schema")
     @classmethod
     def must_be_valid_json_schema(
@@ -686,7 +677,7 @@ class Guard(IGuard, Generic[OT]):
             )
             call_log = Call(inputs=call_inputs)
             set_scope(str(object_id(call_log)))
-            self._history_push(call_log)
+            self._history.push(call_log)
 
             if self._api_client is not None and model_is_supported_server_side(
                 llm_api, *args, **kwargs
@@ -1257,7 +1248,7 @@ class Guard(IGuard, Generic[OT]):
             ]
             call_log.iterations.extend(iterations)
             if self._history.length == 0:
-                self._history_push(call_log)
+                self._history.push(call_log)
 
     def _single_server_call(
         self,
@@ -1428,3 +1419,15 @@ class Guard(IGuard, Generic[OT]):
         from guardrails.integrations.langchain.guard_runnable import GuardRunnable
 
         return GuardRunnable(self)
+
+    # override IGuard.to_dict
+    def to_dict(self) -> Dict[str, Any]:
+        i_guard = IGuard(
+            id=self.id,
+            name=self.name,
+            description=self.description,
+            validators=self.validators,
+            output_schema=self.output_schema,
+            i_history=GuardHistory(list(self.history)),
+        )
+        return i_guard.to_dict()

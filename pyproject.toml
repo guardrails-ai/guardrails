@@ -61,7 +61,7 @@ pip = ">=22"
 opentelemetry-sdk = "^1.24.0"
 opentelemetry-exporter-otlp-proto-grpc = "^1.24.0"
 opentelemetry-exporter-otlp-proto-http = "^1.24.0"
-guardrails-api-client = ">=0.3.2"
+guardrails-api-client = ">=0.3.3"
 
 [tool.poetry.extras]
 sql = ["sqlvalidator", "sqlalchemy", "sqlglot"]
