@@ -77,7 +77,11 @@ from guardrails.utils.api_utils import extract_serializeable_metadata
 from guardrails.utils.hub_telemetry_utils import HubTelemetry
 from guardrails.classes.llm.llm_response import LLMResponse
 from guardrails.actions.reask import FieldReAsk
-from guardrails.utils.validator_utils import get_validator, verify_metadata_requirements
+from guardrails.utils.validator_utils import (
+    get_validator,
+    parse_validator_reference,
+    verify_metadata_requirements,
+)
 from guardrails.validator_base import Validator
 from guardrails.types import (
     UseManyValidatorTuple,
@@ -259,20 +263,9 @@ class Guard(IGuard, Generic[OT]):
                 0,
             )
             if not v:
-                serialized_args = list(
-                    map(
-                        lambda arg: Template("{${arg}}").safe_substitute(arg=arg),
-                        (ref.kwargs or {}).values(),
-                    )
-                )
-                string_syntax = (
-                    Template("${id}: ${args}").safe_substitute(
-                        id=ref.id, args=" ".join(serialized_args)
-                    )
-                    if len(serialized_args) > 0
-                    else ref.id
-                )
-                entry.append(get_validator((string_syntax, ref.on_fail)))  # type: ignore
+                validator = parse_validator_reference(ref)
+                if validator:
+                    entry.append(validator)
                 self._validator_map[ref.on] = entry  # type: ignore
 
     def _fill_validators(self):
@@ -1430,7 +1423,13 @@ class Guard(IGuard, Generic[OT]):
             output_schema=self.output_schema,
             i_history=GuardHistory(list(self.history)),  # type: ignore
         )
-        return i_guard.to_dict()
+        i_guard_dict = i_guard.to_dict()
+
+        i_guard_dict["history"] = [
+            call.to_dict() for call in i_guard_dict.get("history", [])
+        ]
+
+        return i_guard_dict
 
     # override IGuard.from_dict
     @classmethod

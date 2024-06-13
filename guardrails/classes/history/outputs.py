@@ -1,9 +1,14 @@
-from typing import Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import Field
 from typing_extensions import deprecated
 
-from guardrails_api_client import Outputs as IOutputs
+from guardrails_api_client import (
+    Outputs as IOutputs,
+    OutputsException,
+    OutputsParsedOutput,
+    OutputsValidationResponse,
+)
 from guardrails.constants import error_status, fail_status, not_run_status, pass_status
 from guardrails.classes.llm.llm_response import LLMResponse
 from guardrails.classes.generic.arbitrary_model import ArbitraryModel
@@ -147,3 +152,17 @@ versions 0.5.0 and beyond. Use 'guarded_output' instead."""
     )
     def validated_output(self) -> Optional[Union[str, ReAsk, List, Dict]]:
         return self.guarded_output
+
+    def to_dict(self) -> Dict[str, Any]:
+        i_outputs = IOutputs(
+            llm_response_info=self.llm_response_info,  # type: ignore
+            raw_output=self.raw_output,  # type: ignore
+            parsed_output=OutputsParsedOutput(self.parsed_output),  # type: ignore
+            validation_response=OutputsValidationResponse(self.validation_response),  # type: ignore
+            guarded_output=OutputsParsedOutput(self.guarded_output),  # type: ignore
+            reasks=self.reasks,  # type: ignore
+            validator_logs=self.validator_logs,  # type: ignore
+            error=self.error,
+            exception=OutputsException(message=str(self.exception)),
+        )
+        return i_outputs.to_dict()

@@ -5,6 +5,7 @@ from typing import Optional, Union
 
 import pytest
 from pydantic import BaseModel
+from guardrails_api_client import Guard as IGuard, GuardHistory
 
 import guardrails as gd
 from guardrails.actions.reask import SkeletonReAsk
@@ -17,6 +18,11 @@ from guardrails.utils.openai_utils import (
 )
 from guardrails.actions.reask import FieldReAsk
 from guardrails.validators import FailResult, OneLine
+from tests.integration_tests.test_assets.validators import (
+    RegexMatch,
+    ValidLength,
+    ValidChoices,
+)
 
 from .mock_llm_outputs import (
     MockOpenAICallable,
@@ -1072,3 +1078,80 @@ def test_string_reask(mocker):
     assert call.guarded_output == string.LLM_OUTPUT_REASK
     assert mock_invoke_llm.call_count == 2
     mock_invoke_llm = None
+
+
+class TestSerizlizationAndDeserialization:
+    def test_guard_i_guard(self):
+        guard = Guard(
+            name="name-case", description="Checks that a string is in Name Case format."
+        ).use_many(
+            RegexMatch(regex="^(?:[A-Z][^\s]*\s?)+$"),
+            ValidLength(1, 100),
+            ValidChoices(["Some Name", "Some Other Name"]),
+        )
+
+        response = guard.parse("Some Name")
+
+        assert response.validation_passed is True
+
+        response = guard.parse("some-name")
+
+        assert response.validation_passed is False
+
+        i_guard = IGuard(
+            id=guard.id,
+            name=guard.name,
+            description=guard.description,
+            validators=guard.validators,
+            output_schema=guard.output_schema,
+            history=GuardHistory(guard.history),
+        )
+
+        cls_guard = Guard(
+            id=i_guard.id,
+            name=i_guard.name,
+            description=i_guard.description,
+            output_schema=i_guard.output_schema.to_dict(),
+            validators=i_guard.validators,
+        )
+
+        assert cls_guard == guard
+
+        response = cls_guard.parse("Some Name")
+
+        assert response.validation_passed is True
+
+        response = cls_guard.parse("some-name")
+
+        assert response.validation_passed is False
+
+    def test_ser_deser(self):
+        guard = Guard(
+            name="name-case", description="Checks that a string is in Name Case format."
+        ).use_many(
+            RegexMatch(regex="^(?:[A-Z][^\s]*\s?)+$"),
+            ValidLength(1, 100),
+            ValidChoices(["Some Name", "Some Other Name"]),
+        )
+
+        response = guard.parse("Some Name")
+
+        assert response.validation_passed is True
+
+        response = guard.parse("some-name")
+
+        assert response.validation_passed is False
+
+        ser_guard = guard.to_dict()
+
+        deser_guard = Guard.from_dict(ser_guard)
+
+        assert deser_guard == guard
+
+        response = deser_guard.parse("Some Name")
+
+        assert response.validation_passed is True
+
+        response = deser_guard.parse("some-name")
+
+        assert response.validation_passed is False

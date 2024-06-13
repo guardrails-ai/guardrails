@@ -3,6 +3,8 @@
 
 from typing import Any, Dict, List, Optional, Tuple, Type, Union, cast
 
+from guardrails_api_client import ValidatorReference
+
 from guardrails.types.validator import PydanticValidatorSpec
 from guardrails.utils.regex_utils import split_on, ESCAPED_OR_QUOTED
 from guardrails.utils.safe_get import safe_get
@@ -178,3 +180,14 @@ def verify_metadata_requirements(
     missing_keys = list(missing_keys)
     missing_keys.sort()
     return missing_keys
+
+
+def parse_validator_reference(ref: ValidatorReference) -> Optional[Validator]:
+    validator_cls = get_validator_class(ref.id)
+    if validator_cls:
+        args = ref.args or []
+        kwargs = ref.kwargs or {}
+        validator = validator_cls(
+            *args, on_fail=OnFailAction.get(ref.on_fail), **kwargs
+        )
+        return validator
