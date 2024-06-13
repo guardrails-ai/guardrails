@@ -9,7 +9,6 @@ from typing import (
     Awaitable,
     Callable,
     Dict,
-    Generator,
     Generic,
     Iterable,
     List,
@@ -108,6 +107,9 @@ class Guard(IGuard, Generic[OT]):
     the LLM, the validated output, as well as other helpful information.
     """
 
+    validators: List[ValidatorReference]
+    output_schema: ModelSchema
+
     # Pydantic Config
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -144,7 +146,7 @@ class Guard(IGuard, Generic[OT]):
             description=description,
             validators=validators,
             output_schema=model_schema,
-            i_history=GuardHistory([]),
+            i_history=GuardHistory([]),  # type: ignore
         )
 
         ### Public ###
@@ -167,7 +169,7 @@ class Guard(IGuard, Generic[OT]):
         self._exec_opts: GuardExecutionOptions = GuardExecutionOptions()
         self._tracer: Optional[Tracer] = None
         self._tracer_context: Optional[Context] = None
-        self._hub_telemetry: Optional[HubTelemetry] = None
+        self._hub_telemetry: HubTelemetry
         self._user_id: Optional[str] = None
         self._api_client: Optional[GuardrailsApiClient] = None
         self._allow_metrics_collection: Optional[bool] = None
@@ -220,7 +222,7 @@ class Guard(IGuard, Generic[OT]):
             self._set_tracer(tracer)
         self._configure_telemtry(allow_metrics_collection)
 
-    def _set_num_reasks(self, num_reasks: int = 1):
+    def _set_num_reasks(self, num_reasks: Optional[int] = 1):
         self._num_reasks = num_reasks
 
     def _set_tracer(self, tracer: Optional[Tracer] = None) -> None:
@@ -232,6 +234,7 @@ class Guard(IGuard, Generic[OT]):
     def _configure_telemtry(
         self, allow_metrics_collection: Optional[bool] = None
     ) -> None:
+        credentials = None
         if allow_metrics_collection is None:
             credentials = Credentials.from_rc_file(logger)
             # TODO: Check credentials.enable_metrics after merge from main
@@ -240,6 +243,8 @@ class Guard(IGuard, Generic[OT]):
         self._allow_metrics_collection = allow_metrics_collection
 
         if allow_metrics_collection:
+            if not credentials:
+                credentials = Credentials.from_rc_file(logger)
             # Get unique id of user from credentials
             self._user_id = credentials.id or ""
             # Initialize Hub Telemetry singleton and get the tracer
@@ -247,7 +252,7 @@ class Guard(IGuard, Generic[OT]):
 
     def _fill_validator_map(self):
         for ref in self.validators:
-            entry: List[Validator] = self._validator_map.get(ref.on, [])
+            entry: List[Validator] = self._validator_map.get(ref.on, [])  # type: ignore
             # Check if the validator from the reference
             #   has an instance in the validator_map
             v = safe_get(
@@ -266,7 +271,7 @@ class Guard(IGuard, Generic[OT]):
                 serialized_args = list(
                     map(
                         lambda arg: Template("{${arg}}").safe_substitute(arg=arg),
-                        ref.kwargs.values(),
+                        (ref.kwargs or {}).values(),
                     )
                 )
                 string_syntax = (
@@ -276,8 +281,8 @@ class Guard(IGuard, Generic[OT]):
                     if len(serialized_args) > 0
                     else ref.id
                 )
-                entry.append(get_validator((string_syntax, ref.on_fail)))
-                self._validator_map[ref.on] = entry
+                entry.append(get_validator((string_syntax, ref.on_fail)))  # type: ignore
+                self._validator_map[ref.on] = entry  # type: ignore
 
     def _fill_validators(self):
         self._validators = [
@@ -544,7 +549,7 @@ class Guard(IGuard, Generic[OT]):
         cls._set_tracer(cls, tracer)  # type: ignore
 
         schema = primitive_to_schema(
-            validators, type=SimpleTypes.STRING, description=string_description
+            list(validators), type=SimpleTypes.STRING, description=string_description
         )
         exec_opts = GuardExecutionOptions(
             messages=messages,
@@ -578,7 +583,8 @@ class Guard(IGuard, Generic[OT]):
         full_schema_reask: Optional[bool] = None,
         **kwargs,
     ) -> Union[
-        Union[ValidationOutcome[OT], Iterable[ValidationOutcome[OT]]],
+        ValidationOutcome[OT],
+        Iterable[ValidationOutcome[OT]],
         Awaitable[ValidationOutcome[OT]],
     ]:
         self._fill_validator_map()
@@ -601,7 +607,7 @@ class Guard(IGuard, Generic[OT]):
         def __exec(
             self: Guard,
             *args,
-            llm_api: Optional[Union[Callable, Callable[[Any], Awaitable[Any]]]],
+            llm_api: Optional[Union[Callable, Callable[[Any], Awaitable[Any]]]] = None,
             llm_output: Optional[str] = None,
             prompt_params: Optional[Dict] = None,
             num_reasks: Optional[int] = None,
@@ -615,7 +621,7 @@ class Guard(IGuard, Generic[OT]):
             if full_schema_reask is None:
                 full_schema_reask = self._base_model is not None
 
-            if self._allow_metrics_collection:
+            if self._allow_metrics_collection and self._hub_telemetry:
                 # Create a new span for this guard call
                 self._hub_telemetry.create_new_span(
                     span_name="/guard_call",
@@ -973,7 +979,7 @@ class Guard(IGuard, Generic[OT]):
         default_messages = self._exec_opts.messages if llm_api else None
         messages = kwargs.pop("messages", default_messages)
 
-        return self._execute(
+        return self._execute(  # type: ignore # streams are supported for parse
             *args,
             llm_output=llm_output,
             llm_api=llm_api,
@@ -1016,7 +1022,7 @@ class Guard(IGuard, Generic[OT]):
         validator_reference = ValidatorReference(
             id=validator.rail_alias,
             on=on,
-            on_fail=validator.on_fail_descriptor,
+            on_fail=validator.on_fail_descriptor,  # type: ignore
             kwargs=validator.get_args(),
         )
         self.validators.append(validator_reference)
@@ -1122,7 +1128,7 @@ class Guard(IGuard, Generic[OT]):
         history: List[Call]
         for history in session_history:
             history_events: Optional[List[Any]] = (  # type: ignore
-                history.history
+                history.history  # type: ignore
             )
             if history_events is None:
                 continue
@@ -1138,7 +1144,7 @@ class Guard(IGuard, Generic[OT]):
                         prompt_params=prompt_params,
                         num_reasks=(num_reasks or 0),
                         metadata=metadata,
-                        full_schema_reask=full_schema_reask,
+                        full_schema_reask=full_schema_reask,  # type: ignore
                     ),
                     outputs=Outputs(
                         llm_response_info=LLMResponse(
@@ -1150,7 +1156,7 @@ class Guard(IGuard, Generic[OT]):
                             if isinstance(h.parsed_output, Any)
                             else h.parsed_output
                         ),
-                        validation_output=(
+                        validation_output=(  # type: ignore
                             h.validated_output.to_dict()
                             if isinstance(h.validated_output, Any)
                             else h.validated_output
@@ -1197,7 +1203,7 @@ class Guard(IGuard, Generic[OT]):
         if self._api_client:
             validation_output: ValidationOutcome = self._api_client.validate(
                 guard=self,  # type: ignore
-                payload=ValidatePayload.from_dict(payload),
+                payload=ValidatePayload.from_dict(payload),  # type: ignore
                 openai_api_key=get_call_kwarg("api_key"),
             )
             if not validation_output:
@@ -1224,9 +1230,9 @@ class Guard(IGuard, Generic[OT]):
             # and the api we can re-enable this.
             # return ValidationOutcome[OT].from_guard_history(call_log)
             return ValidationOutcome[OT](
-                raw_llm_output=validation_output.raw_llm_response,  # type: ignore
+                raw_llm_output=validation_output.raw_llm_output,
                 validated_output=cast(OT, validation_output.validated_output),
-                validation_passed=validation_output.result,
+                validation_passed=validation_output.validation_passed,
             )
         else:
             raise ValueError("Guard does not have an api client!")
@@ -1242,28 +1248,29 @@ class Guard(IGuard, Generic[OT]):
         full_schema_reask: Optional[bool] = True,
         call_log: Optional[Call],
         stream: Optional[bool] = False,
-    ) -> Generator[ValidationOutcome[OT], None, None]:
+    ) -> Iterable[ValidationOutcome[OT]]:
         if self._api_client:
             validation_output: Optional[ValidationOutcome] = None
             response = self._api_client.stream_validate(
                 guard=self,  # type: ignore
-                payload=ValidatePayload.from_dict(payload),
+                payload=ValidatePayload.from_dict(payload),  # type: ignore
                 openai_api_key=get_call_kwarg("api_key"),
             )
             for fragment in response:
                 validation_output = fragment
-                if not validation_output:
+                if validation_output is None:
                     yield ValidationOutcome[OT](
                         raw_llm_output=None,
                         validated_output=None,
                         validation_passed=False,
                         error="The response from the server was empty!",
                     )
-                yield ValidationOutcome[OT](
-                    raw_llm_output=validation_output.raw_llm_response,  # type: ignore
-                    validated_output=cast(OT, validation_output.validated_output),
-                    validation_passed=validation_output.result,
-                )
+                else:
+                    yield ValidationOutcome[OT](
+                        raw_llm_output=validation_output.raw_llm_output,
+                        validated_output=cast(OT, validation_output.validated_output),
+                        validation_passed=validation_output.validation_passed,
+                    )
             if validation_output:
                 # TODO: Replace this with GET /guard/{guard_name}/history
                 self._construct_history_from_server_response(
@@ -1290,7 +1297,7 @@ class Guard(IGuard, Generic[OT]):
         full_schema_reask: Optional[bool] = True,
         call_log: Optional[Call],
         **kwargs,
-    ) -> Union[ValidationOutcome[OT], Generator[ValidationOutcome[OT], None, None]]:
+    ) -> Union[ValidationOutcome[OT], Iterable[ValidationOutcome[OT]]]:
         if self._api_client:
             payload: Dict[str, Any] = {"args": list(args)}
             payload.update(**kwargs)
@@ -1335,7 +1342,7 @@ class Guard(IGuard, Generic[OT]):
         api_key = os.environ.get("GUARDRAILS_API_KEY")
         if api_key is not None:
             if self.name is None:
-                self.name = f"gr-{str(self._guard_id)}"
+                self.name = f"gr-{str(self.id)}"
                 logger.warn("Warning: No name passed to guard!")
                 logger.warn(
                     "Use this auto-generated name to re-use this guard: {name}".format(

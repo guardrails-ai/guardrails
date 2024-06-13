@@ -1,19 +1,26 @@
 # TODO: Move this file to guardrails.types
 from enum import Enum
-from typing import Any, Dict, List, TypeVar
+from typing import Any, Dict, List, Optional, TypeVar, Union
 from guardrails_api_client import SimpleTypes
 
 OT = TypeVar("OT", str, List, Dict)
 
 
+# TODO: Move this to types.py
+# It's only here for historical reasons
 class OutputTypes(str, Enum):
     STRING = "str"
     LIST = "list"
     DICT = "dict"
 
-    def get(self, key, default=None):
+    @staticmethod
+    def get(key: Optional[Union[str, "OutputTypes"]], default=None):
         try:
-            return self[key]
+            if not key:
+                return default
+            if isinstance(key, OutputTypes):
+                return key
+            return OutputTypes[key]
         except Exception:
             return default
 

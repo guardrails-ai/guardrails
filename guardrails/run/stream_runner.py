@@ -1,4 +1,4 @@
-from typing import Any, Dict, Generator, List, Optional, Union
+from typing import Any, Dict, Generator, List, Optional, Union, cast
 
 from guardrails.classes.history import Call, Inputs, Iteration, Outputs
 from guardrails.classes.output_type import OT, OutputTypes
@@ -16,7 +16,7 @@ from guardrails.utils.parsing_utils import (
     parse_llm_output,
     prune_extra_keys,
 )
-from guardrails.actions.reask import SkeletonReAsk
+from guardrails.actions.reask import ReAsk, SkeletonReAsk
 from guardrails.constants import pass_status
 
 
@@ -40,6 +40,14 @@ class StreamRunner(Runner):
         Returns:
             The Call log for this run.
         """
+        # This is only used during ReAsks and ReAsks
+        #   are not yet supported for streaming.
+        # Figure out if we need to include instructions in the prompt.
+        # include_instructions = not (
+        #     self.instructions is None and self.msg_history is None
+        # )
+        prompt_params = prompt_params or {}
+
         (
             messages,
             output_schema,
@@ -176,11 +184,21 @@ class StreamRunner(Runner):
                     validate_subschema=True,
                     remainder=True,
                 )
-                if len(last_result) > 0:
+                if last_result:
                     passed = call_log.status == pass_status
+
+                    validated_output = None
+                    if passed is True:
+                        validated_output = cast(OT, last_result)
+
+                    reask = None
+                    if isinstance(last_result, ReAsk):
+                        reask = last_result
+
                     yield ValidationOutcome(
                         raw_llm_output=last_chunk_text,
-                        validated_output=last_result,
+                        validated_output=validated_output,
+                        reask=reask,
                         validation_passed=passed,
                     )
         # handle non string schema
@@ -229,7 +247,9 @@ class StreamRunner(Runner):
 
         # Finally, add to logs
         iteration.outputs.raw_output = fragment
-        iteration.outputs.parsed_output = parsed_fragment
+        # Do we need to care about the type here?
+        # What happens if parsing continuously fails?
+        iteration.outputs.parsed_output = parsed_fragment  # type: ignore
         iteration.outputs.validation_response = validated_fragment
         iteration.outputs.guarded_output = valid_op
 
@@ -276,7 +296,7 @@ class StreamRunner(Runner):
             output, self.output_type, stream=True, verified=verified
         )
 
-        if not error:
+        if parsed_output and not error and not isinstance(parsed_output, ReAsk):
             parsed_output = prune_extra_keys(parsed_output, output_schema)
             parsed_output = coerce_types(parsed_output, output_schema)
 

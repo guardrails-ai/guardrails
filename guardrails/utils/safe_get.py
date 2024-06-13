@@ -1,4 +1,5 @@
 from typing import Any, Dict, List, Optional, Tuple, Union
+from guardrails.logger import logger
 
 
 def safe_get_with_brackets(
@@ -9,7 +10,11 @@ def safe_get_with_brackets(
         if not value:
             return default
         return value
-    except Exception:
+    except Exception as e:
+        logger.debug(
+            f"Failed to get value for key: {key} out of container: {container}!"
+        )
+        logger.debug(e)
         return default
 
 

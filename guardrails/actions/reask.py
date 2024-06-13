@@ -1,6 +1,6 @@
 from copy import deepcopy
 import json
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 from guardrails_api_client import Reask as IReask
 from guardrails.classes.execution.guard_execution_options import GuardExecutionOptions
@@ -22,6 +22,8 @@ class ReAsk(IReask):
 
 
 class FieldReAsk(ReAsk):
+    # FIXME: This shouldn't be optional
+    # We should be able to assign it on init now
     path: Optional[List[Any]] = None
 
 
@@ -160,7 +162,7 @@ def update_response_by_path(output: dict, path: List[Any], value: Any) -> None:
 ### Guard Execution Methods ###
 def introspect(
     data: Optional[Union[ReAsk, str, Dict, List]],
-) -> Tuple[List[ReAsk], Optional[Union[str, Dict, List]]]:
+) -> Tuple[Sequence[ReAsk], Optional[Union[str, Dict, List]]]:
     if isinstance(data, FieldReAsk):
         return [data], None
     elif isinstance(data, SkeletonReAsk):
@@ -174,9 +176,9 @@ def get_reask_setup_for_string(
     output_type: OutputTypes,
     output_schema: Dict[str, Any],
     validation_map: ValidatorMap,
-    reasks: List[FieldReAsk],
+    reasks: Sequence[ReAsk],
     *,
-    validation_response: Optional[Union[str, Dict, ReAsk]] = None,
+    validation_response: Optional[Union[str, List, Dict, ReAsk]] = None,
     prompt_params: Optional[Dict[str, Any]] = None,
     exec_options: Optional[GuardExecutionOptions] = None,
 ) -> Tuple[Dict[str, Any], Prompt, Instructions]:
@@ -208,7 +210,9 @@ def get_reask_setup_for_string(
     )
 
     prompt = reask_prompt_template.format(
-        previous_response=validation_response.incorrect_value,
+        # FIXME: How do we properly type this?
+        # Solution will have to come from Runner all the way down to here
+        previous_response=validation_response.incorrect_value,  # type: ignore
         error_messages=error_messages,
         output_schema=schema_prompt_content,
         xml_output_schema=xml_output_schema,
@@ -248,10 +252,10 @@ def get_reask_setup_for_json(
     output_type: OutputTypes,
     output_schema: Dict[str, Any],
     validation_map: ValidatorMap,
-    reasks: List[FieldReAsk],
+    reasks: Sequence[ReAsk],
     *,
-    parsing_response: Optional[Union[str, Dict, ReAsk]] = None,
-    validation_response: Optional[Union[str, Dict, ReAsk]] = None,
+    parsing_response: Optional[Union[str, List, Dict, ReAsk]] = None,
+    validation_response: Optional[Union[str, List, Dict, ReAsk]] = None,
     use_full_schema: Optional[bool] = False,
     prompt_params: Optional[Dict[str, Any]] = None,
     exec_options: Optional[GuardExecutionOptions] = None,
@@ -266,7 +270,6 @@ def get_reask_setup_for_json(
     exec_options = exec_options or GuardExecutionOptions()
     original_prompt = get_original_prompt(exec_options)
     use_xml = prompt_uses_xml(original_prompt)
-    print("use_xml: ", use_xml)
 
     reask_prompt_template = None
     if exec_options.reask_messages:
@@ -338,7 +341,7 @@ def get_reask_setup_for_json(
             )
 
         error_messages = {
-            ".".join(str(p) for p in r.path): "; ".join(
+            ".".join(str(p) for p in r.path): "; ".join(  # type: ignore
                 f.error_message for f in r.fail_results
             )
             for r in reasks
@@ -398,10 +401,10 @@ def get_reask_setup(
     output_type: OutputTypes,
     output_schema: Dict[str, Any],
     validation_map: ValidatorMap,
-    reasks: List[FieldReAsk],
+    reasks: Sequence[ReAsk],
     *,
-    parsing_response: Optional[Union[str, Dict, ReAsk]] = None,
-    validation_response: Optional[Union[str, Dict, ReAsk]] = None,
+    parsing_response: Optional[Union[str, List, Dict, ReAsk]] = None,
+    validation_response: Optional[Union[str, List, Dict, ReAsk]] = None,
     use_full_schema: Optional[bool] = False,
     prompt_params: Optional[Dict[str, Any]] = None,
     exec_options: Optional[GuardExecutionOptions] = None,

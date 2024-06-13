@@ -1,5 +1,4 @@
 import copy
-from collections.abc import Awaitable
 from functools import partial
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
@@ -188,10 +187,10 @@ class AsyncRunner(Runner):
                 # Parsing errors are captured and not raised
                 #   because they are recoverable
                 #   i.e. result in a reask
-                iteration.outputs.exception = parsing_error
+                iteration.outputs.exception = parsing_error  # type: ignore  # pyright and pydantic don't agree
                 iteration.outputs.error = str(parsing_error)
 
-            iteration.outputs.parsed_output = parsed_output
+            iteration.outputs.parsed_output = parsed_output  # type: ignore  # pyright and pydantic don't agree
 
             if parsing_error and isinstance(parsed_output, NonParseableReAsk):
                 reasks, _ = self.introspect(parsed_output)
@@ -206,7 +205,7 @@ class AsyncRunner(Runner):
                 reasks, valid_output = self.introspect(validated_output)
                 iteration.outputs.guarded_output = valid_output
 
-            iteration.outputs.reasks = reasks
+            iteration.outputs.reasks = reasks  # type: ignore  # pyright and pydantic don't agree
 
         except Exception as e:
             error_message = str(e)
@@ -295,9 +294,7 @@ class AsyncRunner(Runner):
         messages: Optional[List[Dict]],
         prompt_params: Optional[Dict] = None,
         api: Optional[Union[PromptCallableBase, AsyncPromptCallableBase]],
-    ) -> Awaitable[
-        Tuple[ Optional[List[Dict]]]
-    ]:
+    ) -> Tuple[Optional[List[Dict]]]:
         """Prepare by running pre-processing and input validation.
 
         Returns:
@@ -320,7 +317,7 @@ class AsyncRunner(Runner):
 
             if "messages" in self.validation_map:
                 # Runner.validate_msg_history
-                messages_str = messages_string(messages)
+                messages_str = messages_string(formatted_messages)
                 inputs = Inputs(
                     llm_output=messages_str,
                 )

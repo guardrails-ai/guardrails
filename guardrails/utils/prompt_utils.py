@@ -25,7 +25,7 @@ def preprocess_prompt_for_string_output(
     prompt_callable: PromptCallableBase,
     instructions: Optional[Instructions],
     prompt: Prompt,
-) -> Tuple[Instructions, Prompt]:
+) -> Tuple[Optional[Instructions], Prompt]:
     if isinstance(prompt_callable, LiteLLMCallable) or isinstance(
         prompt_callable, AsyncLiteLLMCallable
     ):
@@ -46,7 +46,7 @@ def preprocess_prompt_for_json_output(
     instructions: Optional[Instructions],
     prompt: Prompt,
     use_xml: bool,
-) -> Tuple[Instructions, Prompt]:
+) -> Tuple[Optional[Instructions], Prompt]:
     if isinstance(prompt_callable, LiteLLMCallable) or isinstance(
         prompt_callable, AsyncLiteLLMCallable
     ):
@@ -73,7 +73,7 @@ def preprocess_prompt(
     prompt: Prompt,
     output_type: OutputTypes,
     use_xml: bool,
-) -> Tuple[Instructions, Prompt]:
+) -> Tuple[Optional[Instructions], Prompt]:
     if output_type == OutputTypes.STRING:
         return preprocess_prompt_for_string_output(
             prompt_callable, instructions, prompt

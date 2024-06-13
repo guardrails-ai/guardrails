@@ -7,7 +7,7 @@ from guardrails.classes.history.inputs import Inputs
 from guardrails.classes.generic.arbitrary_model import ArbitraryModel
 
 
-class CallInputs(ICallInputs, Inputs, ArbitraryModel):
+class CallInputs(Inputs, ICallInputs, ArbitraryModel):
     llm_api: Optional[Callable[[Any], Awaitable[Any]]] = Field(
         description="The LLM function provided by the user"
         "during Guard.__call__ or Guard.parse.",

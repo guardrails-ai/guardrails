@@ -371,7 +371,7 @@ def register_validator(name: str, data_type: Union[str, List[str]]):
     return decorator
 
 
-def get_validator_class(name: str) -> Type["Validator"]:
+def get_validator_class(name: str) -> Optional[Type["Validator"]]:
     is_hub_validator = name.startswith(hub)
     validator_key = name.replace(hub, "") if is_hub_validator else name
     registration = validators_registry.get(validator_key)

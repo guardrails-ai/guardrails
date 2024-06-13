@@ -1,4 +1,4 @@
-from typing import Optional, Sequence
+from typing import List, Optional
 
 from guardrails_api_client.models.model_schema import ModelSchema
 from guardrails_api_client.models.simple_types import SimpleTypes
@@ -11,7 +11,7 @@ from guardrails.validator_base import Validator
 
 
 def primitive_to_schema(
-    validators: Sequence[Validator],
+    validators: List[Validator],
     *,
     type: SimpleTypes = SimpleTypes.STRING,
     description: Optional[str] = None,
@@ -25,7 +25,7 @@ def primitive_to_schema(
         ValidatorReference(
             id=v.rail_alias,
             on="$",
-            on_fail=v.on_fail_descriptor,
+            on_fail=v.on_fail_descriptor,  # type: ignore
             kwargs=v.get_args(),
         )
         for v in validators

@@ -1,6 +1,6 @@
 from guardrails_api_client.models.simple_types import SimpleTypes
 import jsonref
-from typing import Any, Dict, List, Optional, Set, Union
+from typing import Any, Dict, List, Optional, Set, Union, cast
 
 from guardrails.utils.safe_get import safe_get
 
@@ -38,12 +38,13 @@ def fill_list(desired_length: int, array: list):
     return array
 
 
+# FIXME: Better Typing
 def write_value_to_path(
-    write_object: Optional[Union[str, List[Any], Dict[Any, Any]]],
+    write_object: Union[str, List[Any], Dict[Any, Any]],
     property_path: str,
     value: Any,
 ) -> Any:
-    if property_path == "$" or not len(property_path):
+    if property_path == "$" or not len(property_path) or isinstance(write_object, str):
         return value
 
     path_elems = property_path.split(".")
@@ -60,10 +61,10 @@ def write_value_to_path(
     default_value = [] if next_key_is_index else {}
     value_for_key = safe_get(write_object, key, default_value)
 
-    if isinstance(write_object, list) and key >= len(write_object):
-        write_object = fill_list(key, write_object)
+    if isinstance(write_object, list) and int(key) >= len(write_object):
+        write_object = fill_list(int(key), write_object)
 
-    write_object[key] = write_value_to_path(value_for_key, remaining_path, value)
+    write_object[key] = write_value_to_path(value_for_key, remaining_path, value)  # type: ignore
 
     return write_object
 
@@ -73,8 +74,8 @@ def _get_all_paths(
     json_schema: Dict[str, Any],
     *,
     paths: Optional[Set[str]] = None,
-    json_path: Optional[str] = "$",
-) -> Dict[str, Dict[str, Any]]:
+    json_path: str = "$",
+) -> Set[str]:
     if not paths:
         paths = set()
     # Append the parent path for this iteration
@@ -101,20 +102,20 @@ def _get_all_paths(
         paths.add(wildcard_path)
 
     # Array Schema
-    schema_items = json_schema.get("items")
+    schema_items = json_schema.get("items", {})
     if schema_items:
         _get_all_paths(schema_items, paths=paths, json_path=json_path)
 
     # Conditional SubSchema
-    if_block: Dict[str, Any] = json_schema.get("if")
+    if_block: Dict[str, Any] = json_schema.get("if", {})
     if if_block:
         _get_all_paths(if_block, paths=paths, json_path=json_path)
 
-    then_block: Dict[str, Any] = json_schema.get("then")
+    then_block: Dict[str, Any] = json_schema.get("then", {})
     if then_block:
         _get_all_paths(then_block, paths=paths, json_path=json_path)
 
-    else_block: Dict[str, Any] = json_schema.get("else")
+    else_block: Dict[str, Any] = json_schema.get("else", {})
     if else_block:
         _get_all_paths(else_block, paths=paths, json_path=json_path)
 
@@ -138,9 +139,9 @@ def get_all_paths(
     json_schema: Dict[str, Any],
     *,
     paths: Optional[Set[str]] = None,
-    json_path: Optional[str] = "$",
-) -> Dict[str, Dict[str, Any]]:
+    json_path: str = "$",
+) -> Set[str]:
     """Takes a JSON Schema and returns all possible JSONPaths within that
     schema."""
-    dereferenced_schema = jsonref.replace_refs(json_schema)
+    dereferenced_schema = cast(Dict[str, Any], jsonref.replace_refs(json_schema))
     return _get_all_paths(dereferenced_schema, paths=paths, json_path=json_path)

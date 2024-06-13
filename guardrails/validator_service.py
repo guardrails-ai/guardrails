@@ -289,8 +289,8 @@ class SequentialValidatorService(ValidatorServiceBase):
         metadata: dict,
         validator_map: ValidatorMap,
         iteration: Iteration,
-        absolute_path: str = "$",
-        reference_path: str = "$",
+        absolute_path: str,
+        reference_path: str,
     ) -> Tuple[Any, dict]:
         ###
         # NOTE: The way validation can be executed now is fundamentally wide open.
@@ -349,8 +349,8 @@ class SequentialValidatorService(ValidatorServiceBase):
         metadata: dict,
         validator_map: ValidatorMap,
         iteration: Iteration,
-        absolute_path: str = "$",
-        reference_path: str = "$",
+        absolute_path: str,
+        reference_path: str,
         **kwargs,
     ) -> Tuple[Any, dict]:
         # I assume validate stream doesn't need validate_dependents
@@ -500,7 +500,11 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
                 if isinstance(logs.validation_result, FailResult)
             ]
             if fails:
-                fail_results = [logs.validation_result for logs in fails]
+                # NOTE: Ignoring type bc we know it's a FailResult
+                fail_results: List[FailResult] = [
+                    logs.validation_result  # type: ignore
+                    for logs in fails
+                ]
                 rechecked_value = None
                 validator: Validator = validator_group[0]
                 if validator.on_fail_descriptor == OnFailAction.FIX_REASK:
@@ -592,8 +596,8 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
         metadata: dict,
         validator_map: ValidatorMap,
         iteration: Iteration,
-        absolute_path: str = "$",
-        reference_path: str = "$",
+        absolute_path: str,
+        reference_path: str,
         stream: Optional[bool] = False,
         **kwargs,
     ) -> Tuple[Any, dict]:
@@ -631,8 +635,8 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
         metadata: dict,
         validator_map: ValidatorMap,
         iteration: Iteration,
-        absolute_path: str = "$",
-        reference_path: str = "$",
+        absolute_path: str,
+        reference_path: str,
         stream: Optional[bool] = False,
         **kwargs,
     ) -> Tuple[Any, dict]:
@@ -667,6 +671,9 @@ def validate(
     stream: Optional[bool] = False,
     **kwargs,
 ):
+    if path is None:
+        path = "$"
+
     process_count = int(os.environ.get("GUARDRAILS_PROCESS_COUNT", 10))
     if stream:
         sequential_validator_service = SequentialValidatorService(disable_tracer)
@@ -700,6 +707,8 @@ async def async_validate(
     stream: Optional[bool] = False,
     **kwargs,
 ) -> Tuple[Any, dict]:
+    if path is None:
+        path = "$"
     validator_service = AsyncValidatorService(disable_tracer)
     return await validator_service.async_validate(
         value, metadata, validator_map, iteration, path, path, stream, **kwargs

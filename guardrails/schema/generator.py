@@ -2,7 +2,7 @@ import jsonref
 import re
 import rstr
 from builtins import max as get_max
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, cast
 from pydash import upper_first, snake_case, camel_case, start_case, uniq_with, is_equal
 from faker import Faker
 from random import randint, randrange, uniform
@@ -30,22 +30,26 @@ def is_number(value: Any) -> bool:
 
 
 def gen_sentence_case():
-    return upper_first(fake.words(2))
+    words = " ".join(fake.words(2))
+    return upper_first(words)
 
 
 def gen_snake_case():
-    return snake_case(fake.words(2))
+    words = " ".join(fake.words(2))
+    return snake_case(words)
 
 
 def gen_camel_case():
-    return camel_case(fake.words(2))
+    words = " ".join(fake.words(2))
+    return camel_case(words)
 
 
 def gen_title_case():
-    return start_case(fake.words(2))
+    words = " ".join(fake.words(2))
+    return start_case(words)
 
 
-def gen_num(schema: Dict[str, Any]) -> int:
+def gen_num(schema: Dict[str, Any]) -> Union[int, float]:
     schema_type = schema.get("type")
     minimum = schema.get("minimum")
     exclusive_minimum = schema.get("exclusiveMinimum")
@@ -80,7 +84,7 @@ def gen_num(schema: Dict[str, Any]) -> int:
 
     random_num = 0
     if schema_type == SimpleTypes.INTEGER or isinstance(step, int):
-        random_num = num_type(randrange(min, max, step))
+        random_num = num_type(randrange(min, max, step))  # type: ignore
     else:
         precision = get_decimal_places(step)
         random_num = round(num_type(uniform(min, max)), precision)
@@ -136,8 +140,8 @@ def gen_string(schema: Dict[str, Any], *, property_name: Optional[str] = None) -
         value = gen_formatted_string(schema_format, value)
 
     schema_pattern = schema.get("pattern")
-    regex_pattern = re.compile(schema_pattern) if schema_pattern else None
-    if regex_pattern and not regex_pattern.search(value):
+    regex_pattern = re.compile(schema_pattern) if schema_pattern else None  # type: ignore
+    if schema_pattern and regex_pattern and not regex_pattern.search(value):
         value = rstr.xeger(schema_pattern)
 
     return value
@@ -325,9 +329,9 @@ def _generate_example(
     #     pass
 
     # Apply Schema Compositions
-    one_of: List[Dict[str, Any]] = json_schema.get("oneOf")
-    any_of: List[Dict[str, Any]] = json_schema.get("anyOf")
-    all_of: List[Dict[str, Any]] = json_schema.get("allOf")
+    one_of: List[Dict[str, Any]] = json_schema.get("oneOf", [])
+    any_of: List[Dict[str, Any]] = json_schema.get("anyOf", [])
+    all_of: List[Dict[str, Any]] = json_schema.get("allOf", [])
     if one_of:
         value = pick_sub_schema(json_schema, "oneOf")
     elif any_of:
@@ -342,5 +346,5 @@ def generate_example(
     json_schema: Dict[str, Any], *, property_name: Optional[str] = None
 ) -> Any:
     """Takes a json schema and generates a sample object."""
-    dereferenced_schema = jsonref.replace_refs(json_schema)
+    dereferenced_schema = cast(Dict[str, Any], jsonref.replace_refs(json_schema))
     return _generate_example(dereferenced_schema, property_name=property_name)

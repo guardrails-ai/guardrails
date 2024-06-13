@@ -16,7 +16,7 @@ from guardrails.messages.messages import Messages
 from guardrails.run.utils import messages_source, messages_string
 from guardrails.schema.rail_schema import json_schema_to_rail_output
 from guardrails.schema.validator import schema_validation
-from guardrails.types import ModelOrListOfModels, ValidatorMap, MessageHistory
+from guardrails.types import ModelOrListOfModels, ValidatorMap, Messages
 from guardrails.utils.exception_utils import UserFacingException
 from guardrails.utils.hub_telemetry_utils import HubTelemetry
 from guardrails.classes.llm.llm_response import LLMResponse
@@ -55,7 +55,7 @@ class Runner:
     output_schema: Dict[str, Any]
     output_type: OutputTypes
     validation_map: ValidatorMap = {}
-    metadata: Optional[Dict[str, Any]] = None
+    metadata: Dict[str, Any]
 
     # LLM Inputs
     messages: Optional[Messages] = None
@@ -255,10 +255,10 @@ class Runner:
 
             # Parse: parse the output.
             parsed_output, parsing_error = self.parse(raw_output, output_schema)
-            if parsing_error:
-                iteration.outputs.exception = parsing_error
+            if parsing_error or isinstance(parsed_output, ReAsk):
+                iteration.outputs.exception = parsing_error  # type: ignore
                 iteration.outputs.error = str(parsing_error)
-                iteration.outputs.reasks.append(parsed_output)
+                iteration.outputs.reasks.append(parsed_output)  # type: ignore
             else:
                 iteration.outputs.parsed_output = parsed_output
 
@@ -276,7 +276,7 @@ class Runner:
                 reasks, valid_output = self.introspect(validated_output)
                 iteration.outputs.guarded_output = valid_output
 
-            iteration.outputs.reasks = reasks
+            iteration.outputs.reasks = list(reasks)
 
         except Exception as e:
             error_message = str(e)
@@ -322,8 +322,8 @@ class Runner:
         messages: Messages,
         prompt_params: Dict,
         attempt_number: int,
-    ) -> List[Dict[str, str]]:
-        formatted_messages = messages.format(**prompt_params)
+    ) -> Messages:
+        formatted_messages: Messages = messages.format(**prompt_params)
 
         # validate messages
         if "messages" in self.validation_map:
@@ -363,7 +363,7 @@ class Runner:
         call_log: Call,
         attempt_number: int,
         *,
-        messages: Optional[List[Dict]],
+        messages: Optional[Messages],
         prompt_params: Optional[Dict] = None,
         api: Optional[Union[PromptCallableBase, AsyncPromptCallableBase]],
     ) -> Tuple[ Optional[List[Dict]]]:
@@ -390,7 +390,7 @@ class Runner:
     @trace(name="call")
     def call(
         self,
-        messages: Optional[List[Dict[str, str]]],
+        messages: Optional[Messages],
         api: Optional[PromptCallableBase],
         output: Optional[str] = None,
     ) -> LLMResponse:
@@ -419,7 +419,7 @@ class Runner:
 
     def parse(self, output: str, output_schema: Dict[str, Any], **kwargs):
         parsed_output, error = parse_llm_output(output, self.output_type, **kwargs)
-        if not error:
+        if parsed_output and not error and not isinstance(parsed_output, ReAsk):
             parsed_output = prune_extra_keys(parsed_output, output_schema)
             parsed_output = coerce_types(parsed_output, output_schema)
         return parsed_output, error
@@ -465,7 +465,7 @@ class Runner:
     def introspect(
         self,
         validated_output: Any,
-    ) -> Tuple[Sequence[ReAsk], Optional[Union[str, Dict]]]:
+    ) -> Tuple[Sequence[ReAsk], Optional[Union[str, Dict, List]]]:
         """Introspect the validated output."""
         if validated_output is None:
             return [], None
@@ -484,8 +484,8 @@ class Runner:
         reasks: Sequence[ReAsk],
         output_schema: Dict[str, Any],
         *,
-        parsed_output: Optional[Union[str, Dict, ReAsk]] = None,
-        validated_output: Optional[Union[str, Dict, ReAsk]] = None,
+        parsed_output: Optional[Union[str, List, Dict, ReAsk]] = None,
+        validated_output: Optional[Union[str, List, Dict, ReAsk]] = None,
         prompt_params: Optional[Dict] = None,
     ) -> Tuple[Dict[str, Any], Optional[List[Dict]]]:
         """Prepare to loop again."""

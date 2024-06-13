@@ -96,7 +96,7 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
         iteration.inputs.messages = messages
 
         llm_response = await self.async_call(
-            index, messages, api, output
+            messages, api, output
         )
         stream_output = llm_response.async_stream_output
         if not stream_output:
@@ -134,9 +134,7 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
                         "of the expected output JSON schema."
                     )
 
-                reasks, valid_op = self.introspect(
-                    index, validated_fragment, output_schema
-                )
+                reasks, valid_op = self.introspect(validated_fragment)
                 if reasks:
                     raise ValueError(
                         "Reasks are not yet supported with streaming. Please "
@@ -185,7 +183,8 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
                 )
 
         iteration.outputs.raw_output = fragment
-        iteration.outputs.parsed_output = parsed_fragment
+        # FIXME: Handle case where parsing continuously fails/is a reask
+        iteration.outputs.parsed_output = parsed_fragment  # type: ignore
         iteration.outputs.validation_response = (
             cast(str, validated_fragment) if validated_fragment else None
         )
