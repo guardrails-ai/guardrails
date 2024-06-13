@@ -14,6 +14,7 @@ from guardrails.errors import ValidationError
 from guardrails.llm_providers import (
     ArbitraryCallable,
     AsyncPromptCallableBase,
+    HuggingFaceModelCallable,
     HuggingFacePipelineCallable,
     PromptCallableBase,
 )
@@ -158,11 +159,13 @@ class Runner:
 
         # JSON Schema enforcement experiment.
         if isinstance(api, HuggingFacePipelineCallable):
+            print("It's a pipeline!")
+        if isinstance(api, HuggingFaceModelCallable):
             if isinstance(self.output_schema, dict):
                 self.api = ArbitraryCallable(
                     Jsonformer(
-                        model=self.api.init_kwargs["pipeline"],
-                        tokenizer=self.api.init_kwargs["pipeline"].tokenizer,
+                        model=self.api.init_kwargs["model_generate"],
+                        tokenizer=self.api.init_kwargs["tokenizer"],
                         json_schema=self.output_schema,
                         prompt=prompt,
                     )
