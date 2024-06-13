@@ -2,6 +2,8 @@ import copy
 from functools import partial
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
 
+from jsonformer import Jsonformer
+
 from guardrails import validator_service
 from guardrails.actions.reask import get_reask_setup
 from guardrails.classes.execution.guard_execution_options import GuardExecutionOptions
@@ -9,7 +11,12 @@ from guardrails.classes.history import Call, Inputs, Iteration, Outputs
 from guardrails.classes.output_type import OutputTypes
 from guardrails.constants import fail_status
 from guardrails.errors import ValidationError
-from guardrails.llm_providers import AsyncPromptCallableBase, PromptCallableBase
+from guardrails.llm_providers import (
+    ArbitraryCallable,
+    AsyncPromptCallableBase,
+    HuggingFacePipelineCallable,
+    PromptCallableBase,
+)
 from guardrails.logger import set_scope
 from guardrails.prompt import Instructions, Prompt
 from guardrails.run.utils import msg_history_source, msg_history_string
@@ -148,6 +155,18 @@ class Runner:
         self.output = output
         self.num_reasks = num_reasks
         self.full_schema_reask = full_schema_reask
+
+        # JSON Schema enforcement experiment.
+        if isinstance(api, HuggingFacePipelineCallable):
+            if isinstance(self.output_schema, dict):
+                self.api = ArbitraryCallable(
+                    Jsonformer(
+                        model=self.api.init_kwargs["pipeline"],
+                        tokenizer=self.api.init_kwargs["pipeline"].tokenizer,
+                        json_schema=self.output_schema,
+                        prompt=prompt,
+                    )
+                )
 
         # Internal Metrics Collection
         # Get metrics opt-out from credentials

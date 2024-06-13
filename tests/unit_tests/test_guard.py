@@ -1,5 +1,7 @@
-import openai
+import importlib
 import pytest
+
+import openai
 from pydantic import BaseModel
 from guardrails import Guard, Validator
 from guardrails.utils.validator_utils import verify_metadata_requirements
@@ -614,3 +616,25 @@ def test_use_and_use_many():
 
 #     assert response.validation_passed is True
 #     assert response.validated_output == "oh canada"
+
+
+@pytest.mark.skipif(
+    not importlib.util.find_spec("transformers")
+    and not importlib.util.find_spec("torch"),
+    reason="transformers or torch is not installed",
+)
+def test_hugging_face_model_callable():
+    from transformers import pipeline
+
+    # TODO: Don't actually pull GPT-2 during the test.
+    pipe = pipeline("text-generation", model="gpt2")
+    # Have to specify the __name__ so we don't crash.
+    pipe.__name__ = "hack"
+
+    class Foo(BaseModel):
+        bar: str
+
+    g = Guard.from_pydantic(Foo)
+    out = g(pipe, prompt="This is madness.")
+    print(out)
+    assert False
