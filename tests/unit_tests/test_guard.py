@@ -637,7 +637,6 @@ def test_hugging_face_model_callable():
     g = Guard.from_pydantic(Foo)
     out = g(model.generate, tokenizer=tokenizer, prompt="This is madness.")
     print(out)
-    assert False
 
 
 def test_hugging_face_pipeline_callable():
@@ -651,4 +650,5 @@ def test_hugging_face_pipeline_callable():
 
     g = Guard.from_pydantic(Foo)
     out = g(model, prompt="This is madness.")
-    print(out)
+    assert isinstance(out, dict)
+    assert "bar" in out

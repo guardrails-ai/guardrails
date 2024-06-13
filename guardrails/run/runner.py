@@ -1,4 +1,5 @@
 import copy
+import json
 from functools import partial
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
 
@@ -159,15 +160,33 @@ class Runner:
 
         # JSON Schema enforcement experiment.
         if isinstance(api, HuggingFacePipelineCallable):
-            print("It's a pipeline!")
-        if isinstance(api, HuggingFaceModelCallable):
             if isinstance(self.output_schema, dict):
+                model = self.api.init_kwargs["pipeline"]
                 self.api = ArbitraryCallable(
-                    Jsonformer(
-                        model=self.api.init_kwargs["model_generate"],
-                        tokenizer=self.api.init_kwargs["tokenizer"],
-                        json_schema=self.output_schema,
-                        prompt=prompt,
+                    lambda p: json.dumps(
+                        Jsonformer(
+                            model=model,
+                            tokenizer=model.tokenizer,
+                            json_schema=self.output_schema,
+                            prompt=p,
+                        )()
+                    )
+                )
+        elif isinstance(api, HuggingFaceModelCallable):
+            if isinstance(self.output_schema, dict):
+                # This will not work because 'model_generate' is the .gen method.
+                # model = self.api.init_kwargs["model_generate"]
+                # Use the __self__ to grab the base mode for passing into JF.
+                model = self.api.init_kwargs["model_generate"].__self__
+                tokenizer = self.api.init_kwargs["tokenizer"]
+                self.api = ArbitraryCallable(
+                    lambda p: json.dumps(
+                        Jsonformer(
+                            model=model,
+                            tokenizer=tokenizer,
+                            json_schema=self.output_schema,
+                            prompt=p,
+                        )()
                     )
                 )
 

@@ -639,7 +639,12 @@ class Guard(IGuard, Generic[OT]):
                     attributes=[
                         ("guard_id", self.id),
                         ("user_id", self._user_id),
-                        ("llm_api", llm_api.__name__ if llm_api else "None"),
+                        (
+                            "llm_api",
+                            llm_api.__name__
+                            if (llm_api and hasattr(llm_api, "__name__"))
+                            else type(llm_api).__name__,
+                        ),
                         (
                             "custom_reask_prompt",
                             self._exec_opts.reask_prompt is not None,
