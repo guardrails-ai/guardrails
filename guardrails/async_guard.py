@@ -111,7 +111,12 @@ class AsyncGuard(Guard):
                     attributes=[
                         ("guard_id", self._guard_id),
                         ("user_id", self._user_id),
-                        ("llm_api", llm_api.__name__ if llm_api else "None"),
+                        (
+                            "llm_api",
+                            llm_api.__name__
+                            if (llm_api and hasattr(llm_api, "__name__"))
+                            else type(llm_api).__name__,
+                        ),
                         ("custom_reask_prompt", self.reask_prompt is not None),
                         (
                             "custom_reask_instructions",
@@ -334,7 +339,12 @@ class AsyncGuard(Guard):
                     attributes=[
                         ("guard_id", self._guard_id),
                         ("user_id", self._user_id),
-                        ("llm_api", llm_api.__name__ if llm_api else "None"),
+                        (
+                            "llm_api",
+                            llm_api.__name__
+                            if (llm_api and hasattr(llm_api, "__name__"))
+                            else type(llm_api).__name__,
+                        ),
                         ("custom_reask_prompt", self.reask_prompt is not None),
                         (
                             "custom_reask_instructions",
