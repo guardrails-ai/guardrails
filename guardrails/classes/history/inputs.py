@@ -5,7 +5,7 @@ from pydantic import Field
 from guardrails_api_client import Inputs as IInputs
 from guardrails.classes.generic.arbitrary_model import ArbitraryModel
 from guardrails.llm_providers import PromptCallableBase
-from guardrails.messages.messages import Messages
+from guardrails.types.inputs import Messages
 
 
 class Inputs(IInputs, ArbitraryModel):

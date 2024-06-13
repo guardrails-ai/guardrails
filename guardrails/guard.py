@@ -55,7 +55,7 @@ from guardrails.llm_providers import (
     model_is_supported_server_side,
 )
 from guardrails.logger import logger, set_scope
-from guardrails.messages.messages import Messages
+from guardrails.types.inputs import Messages
 from guardrails.run import AsyncRunner, Runner, StreamRunner
 from guardrails.schema.primitive_schema import primitive_to_schema
 from guardrails.schema.pydantic_schema import pydantic_model_to_schema

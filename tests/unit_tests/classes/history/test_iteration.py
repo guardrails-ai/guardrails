@@ -6,7 +6,7 @@ from guardrails.constants import error_status, not_run_status
 from guardrails.llm_providers import LiteLLMCallable
 from guardrails.prompt.instructions import Instructions
 from guardrails.prompt.prompt import Prompt
-from guardrails.messages.messages import Messages
+from guardrails.types.inputs import Messages
 from guardrails.classes.llm.llm_response import LLMResponse
 from guardrails.classes.validation.validator_logs import ValidatorLogs
 from guardrails.actions.reask import FieldReAsk

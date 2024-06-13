@@ -21,7 +21,7 @@ from guardrails.llm_providers import (
     PromptCallableBase,
 )
 from guardrails.logger import set_scope
-from guardrails.messages.messages import Messages
+from guardrails.types.inputs import Messages
 from guardrails.run import StreamRunner
 from guardrails.run.async_runner import AsyncRunner
 from guardrails.utils.openai_utils import OPENAI_VERSION

@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 import guardrails as gd
 from guardrails.prompt.instructions import Instructions
 from guardrails.prompt.prompt import Prompt
-from guardrails.messages.messages import Messages
+from guardrails.types.inputs import Messages
 from guardrails.utils.constants import constants
 from guardrails.utils.prompt_utils import prompt_content_for_schema
 

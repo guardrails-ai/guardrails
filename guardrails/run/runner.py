@@ -12,7 +12,7 @@ from guardrails.errors import ValidationError
 from guardrails.llm_providers import AsyncPromptCallableBase, PromptCallableBase
 from guardrails.logger import set_scope
 from guardrails.prompt import Prompt
-from guardrails.messages.messages import Messages
+from guardrails.types.inputs import Messages
 from guardrails.run.utils import messages_source, messages_string
 from guardrails.schema.rail_schema import json_schema_to_rail_output
 from guardrails.schema.validator import schema_validation

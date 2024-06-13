@@ -8,7 +8,7 @@ from guardrails.llm_providers import (
     PromptCallableBase,
 )
 from guardrails.prompt import Instructions, Prompt
-from guardrails.messages.messages import Messages
+from guardrails.types.inputs import Messages
 from guardrails.run.runner import Runner
 from guardrails.utils.openai_utils import OPENAI_VERSION
 from guardrails.utils.parsing_utils import (

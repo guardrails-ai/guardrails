@@ -1,6 +1,6 @@
 from guardrails.classes.history.inputs import Inputs
 from guardrails.llm_providers import LiteLLMCallable
-from guardrails.messages.messages import Messages
+from guardrails.types.inputs import Messages
 
 # Guard against regressions in pydantic BaseModel
 def test_empty_initialization():

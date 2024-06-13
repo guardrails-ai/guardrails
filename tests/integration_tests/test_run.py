@@ -6,7 +6,7 @@ from guardrails.llm_providers import AsyncLiteLLMCallable, LiteLLMCallable
 from guardrails.run import AsyncRunner, Runner
 from guardrails.classes.llm.llm_response import LLMResponse
 from guardrails.classes.output_type import OutputTypes
-from guardrails.messages.messages import Messages
+from guardrails.types.inputs import Messages
 from guardrails.types.on_fail import OnFailAction
 
 from .mock_llm_outputs import MockAsyncLiteLLMCallable, MockLiteLLMCallable
