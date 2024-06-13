@@ -21,6 +21,8 @@ class ScopeHandler(Handler):
 
     def emit(self, record: LogRecord) -> None:
         logs = self.scoped_logs.get(self.scope, [])
+        print("record in logs!!!!", record)
+        # logic to write record to file
         logs.append(record)
         self.scoped_logs[self.scope] = logs
 
