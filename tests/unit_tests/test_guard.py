@@ -624,17 +624,30 @@ def test_use_and_use_many():
     reason="transformers or torch is not installed",
 )
 def test_hugging_face_model_callable():
-    from transformers import pipeline
+    from transformers import AutoModelForCausalLM, AutoTokenizer
 
     # TODO: Don't actually pull GPT-2 during the test.
-    pipe = pipeline("text-generation", model="gpt2")
-    # Have to specify the __name__ so we don't crash.
-    pipe.__name__ = "hack"
+    model = AutoModelForCausalLM.from_pretrained("openai-community/gpt2")
+    tokenizer = AutoTokenizer.from_pretrained("openai-community/gpt2")
 
     class Foo(BaseModel):
         bar: str
 
     g = Guard.from_pydantic(Foo)
-    out = g(pipe, prompt="This is madness.")
+    out = g(model.generate, tokenizer=tokenizer, prompt="This is madness.")
     print(out)
     assert False
+
+
+def test_hugging_face_pipeline_callable():
+    from transformers import pipeline
+
+    # TODO: Don't actually pull GPT-2 during the test.
+    model = pipeline("text-generation", "openai-community/gpt2")
+
+    class Foo(BaseModel):
+        bar: str
+
+    g = Guard.from_pydantic(Foo)
+    out = g(model, prompt="This is madness.")
+    print(out)
