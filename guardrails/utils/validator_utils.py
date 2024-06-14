@@ -1,8 +1,11 @@
 # ruff: noqa
 """This module contains the constants and utils used by the validator.py."""
 
-from typing import Any, Dict, List, Optional, Tuple, Type, Union
+from typing import Any, Dict, List, Optional, Tuple, Type, Union, cast
 
+from guardrails_api_client import ValidatorReference
+
+from guardrails.types.validator import PydanticValidatorSpec
 from guardrails.utils.regex_utils import split_on, ESCAPED_OR_QUOTED
 from guardrails.utils.safe_get import safe_get
 from guardrails.validator_base import Validator, OnFailAction, get_validator_class
@@ -62,7 +65,11 @@ def parse_rail_validator(
         max_splits = 2 if is_hub_validator else 1
         parts = split_on(validator_spec, ":")
         # parts = validator_spec.split(":", max_splits)
-        validator_id = parts[1].strip() if is_hub_validator else parts[0].strip()
+        validator_id = (
+            ":".join([parts[0], parts[1].strip()])
+            if is_hub_validator
+            else parts[0].strip()
+        )
         arg_tokens = []
         if len(parts) > 1:
             arg_tokens = [
@@ -76,7 +83,7 @@ def parse_rail_validator(
         validator_id = validator_spec
     validator_cls = get_validator_class(validator_id)
     if validator_cls:
-        return validator_cls(*validator_args, on_fail=on_fail)
+        return validator_cls(*validator_args, on_fail=OnFailAction.get(on_fail))
     else:
         logger.warning(
             f"Validator with id {validator_id} was not found in the registry!  Ignoring..."
@@ -136,12 +143,12 @@ def get_validator(
         first_arg = safe_get(validator, 0)
         # useMany Tuple Syntax
         if isinstance(first_arg, type) and issubclass(first_arg, Validator):
-            v = parse_use_many_validator(first_arg, validator)
+            v = parse_use_many_validator(first_arg, validator)  # type: ignore
             if v:
                 return v
         # Pydantic Tuple Syntax
         else:
-            v = parse_pydantic_validator(first_arg, validator)
+            v = parse_pydantic_validator(first_arg, validator)  # type: ignore
             if v:
                 return v
         raise invalid_error
@@ -150,8 +157,16 @@ def get_validator(
         v = parse_rail_validator(validator)
         if v:
             return v
-    else:
-        raise invalid_error
+    raise invalid_error
+
+
+def safe_get_validator(v: Union[str, PydanticValidatorSpec]) -> Union[Validator, None]:
+    try:
+        validator = get_validator(v)
+        return validator
+    except ValueError as e:
+        logger.warning(e)
+        return None
 
 
 def verify_metadata_requirements(
@@ -165,3 +180,14 @@ def verify_metadata_requirements(
     missing_keys = list(missing_keys)
     missing_keys.sort()
     return missing_keys
+
+
+def parse_validator_reference(ref: ValidatorReference) -> Optional[Validator]:
+    validator_cls = get_validator_class(ref.id)
+    if validator_cls:
+        args = ref.args or []
+        kwargs = ref.kwargs or {}
+        validator = validator_cls(
+            *args, on_fail=OnFailAction.get(ref.on_fail), **kwargs
+        )
+        return validator

@@ -371,7 +371,9 @@ def register_validator(name: str, data_type: Union[str, List[str]]):
     return decorator
 
 
-def get_validator_class(name: str) -> Type["Validator"]:
+def get_validator_class(name: Optional[str]) -> Optional[Type["Validator"]]:
+    if not name:
+        return None
     is_hub_validator = name.startswith(hub)
     validator_key = name.replace(hub, "") if is_hub_validator else name
     registration = validators_registry.get(validator_key)
@@ -382,6 +384,11 @@ def get_validator_class(name: str) -> Type["Validator"]:
         import guardrails.hub  # noqa
 
         return validators_registry.get(validator_key)
+
+    if not registration:
+        warn(f"Validator with id {name} was not found in the registry!  Ignoring...")
+        return None
+
     return registration
 
 

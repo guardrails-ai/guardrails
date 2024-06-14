@@ -73,13 +73,13 @@ class Iteration(IIteration, ArbitraryModel):
             return self.outputs.raw_output
 
     @property
-    def parsed_output(self) -> Optional[Union[str, Dict]]:
+    def parsed_output(self) -> Optional[Union[str, List, Dict]]:
         """The output from the LLM after undergoing parsing but before
         validation."""
         return self.outputs.parsed_output
 
     @property
-    def validation_response(self) -> Optional[Union[ReAsk, str, Dict]]:
+    def validation_response(self) -> Optional[Union[ReAsk, str, List, Dict]]:
         """The response from a single stage of validation.
 
         Validation response is the output of a single stage of validation
@@ -95,7 +95,7 @@ class Iteration(IIteration, ArbitraryModel):
         """'Iteration.validation_output' is deprecated and will be removed in \
 versions 0.5.0 and beyond. Use 'validation_response' instead."""
     )
-    def validation_output(self) -> Optional[Union[ReAsk, str, Dict]]:
+    def validation_output(self) -> Optional[Union[ReAsk, str, List, Dict]]:
         """The output from the validation process.
 
         Could be a combination of valid output and ReAsks
@@ -103,7 +103,7 @@ versions 0.5.0 and beyond. Use 'validation_response' instead."""
         return self.validation_response
 
     @property
-    def guarded_output(self) -> Optional[Union[str, Dict]]:
+    def guarded_output(self) -> Optional[Union[str, List, Dict]]:
         """Any valid values after undergoing validation.
 
         Some values in the validated output may be "fixed" values that
@@ -117,7 +117,7 @@ versions 0.5.0 and beyond. Use 'validation_response' instead."""
         """'Iteration.validated_output' is deprecated and will be removed in \
 versions 0.5.0 and beyond. Use 'guarded_output' instead."""
     )
-    def validated_output(self) -> Optional[Union[str, Dict]]:
+    def validated_output(self) -> Optional[Union[str, List, Dict]]:
         """The valid output from the LLM after undergoing validation.
 
         Could be only a partial structure if field level reasks occur.

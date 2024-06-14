@@ -114,7 +114,7 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
         iteration.inputs.msg_history = msg_history
 
         llm_response = await self.async_call(
-            index, instructions, prompt, msg_history, api, output
+            instructions, prompt, msg_history, api, output
         )
         stream_output = llm_response.async_stream_output
         if not stream_output:
@@ -152,9 +152,7 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
                         "of the expected output JSON schema."
                     )
 
-                reasks, valid_op = self.introspect(
-                    index, validated_fragment, output_schema
-                )
+                reasks, valid_op = self.introspect(validated_fragment)
                 if reasks:
                     raise ValueError(
                         "Reasks are not yet supported with streaming. Please "
@@ -203,31 +201,12 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
                 )
 
         iteration.outputs.raw_output = fragment
-        iteration.outputs.parsed_output = parsed_fragment
+        # FIXME: Handle case where parsing continuously fails/is a reask
+        iteration.outputs.parsed_output = parsed_fragment  # type: ignore
         iteration.outputs.validation_response = (
             cast(str, validated_fragment) if validated_fragment else None
         )
         iteration.outputs.guarded_output = valid_op
-
-    # async def async_validate(
-    #     self,
-    #     iteration: Iteration,
-    #     index: int,
-    #     parsed_output: Any,
-    #     output_schema: Schema,
-    #     validate_subschema: bool = False,
-    #     stream: Optional[bool] = False,
-    # ) -> Optional[Union[Awaitable[ValidationResult], ValidationResult]]:
-    #     # FIXME: Subschema is currently broken, it always returns a string from async
-    #     # streaming.
-    #     # Should return None/empty if fail result?
-    #     _ = await output_schema.async_validate(
-    #         iteration, parsed_output, self.metadata, attempt_number=index, stream=stream  # noqa
-    #     )
-    #     try:
-    #         return iteration.outputs.validator_logs[-1].validation_result
-    #     except IndexError:
-    #         return None
 
     def get_chunk_text(self, chunk: Any, api: Union[PromptCallableBase, None]) -> str:
         """Get the text from a chunk."""

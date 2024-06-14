@@ -18,13 +18,12 @@ from guardrails.classes.output_type import OutputTypes
 from guardrails.classes.schema.processed_schema import ProcessedSchema
 from guardrails.logger import logger
 from guardrails.types import (
-    PydanticValidatorSpec,
     ModelOrListOfModels,
     ModelOrListOrDict,
     ModelOrModelUnion,
 )
 from guardrails.utils.safe_get import safe_get
-from guardrails.utils.validator_utils import get_validator
+from guardrails.utils.validator_utils import safe_get_validator
 from guardrails.validator_base import Validator
 
 
@@ -33,7 +32,7 @@ def _resolve_alias(alias: str | AliasPath | AliasChoices) -> List[str]:
     if isinstance(alias, str):
         aliases.append(alias)
     elif isinstance(alias, AliasPath):
-        aliases.append(".".join(alias.path))
+        aliases.append(".".join(str(alias.path)))
     elif isinstance(alias, AliasChoices):
         for choice in alias.choices:
             aliases.extend(_resolve_alias(choice))
@@ -69,7 +68,7 @@ def _collect_aliases(
         if isinstance(alias_generator, Callable):
             aliases.append(alias_generator(field_name))
         elif isinstance(alias_generator, AliasGenerator):
-            return _collect_aliases(alias_generator)
+            return _collect_aliases(alias_generator, field_name, model)
 
     return aliases
 
@@ -108,7 +107,7 @@ def get_base_model(
         union_members = get_args(pydantic_class)
         model_members = list(filter(is_base_model_type, union_members))
         if len(model_members) > 0:
-            schema_model = Union[tuple(union_members)]
+            schema_model = Union[tuple(union_members)]  # type: ignore
             return (schema_model, type_origin, key_type_origin)
 
     if not is_base_model_type(schema_model):
@@ -132,15 +131,6 @@ def try_get_base_model(
         return (None, None, None)
 
 
-def safe_get_validator(v: PydanticValidatorSpec) -> Union[Validator, None]:
-    try:
-        validator = get_validator(v)
-        return validator
-    except ValueError as e:
-        logger.warning(e)
-        return None
-
-
 def extract_union_member(
     member: Type,
     processed_schema: ProcessedSchema,
@@ -158,7 +148,7 @@ def extract_union_member(
             extracted_union_members.append(
                 extract_union_member(m, processed_schema, json_path, aliases)
             )
-        return Union[tuple(extracted_union_members)]
+        return Union[tuple(extracted_union_members)]  # type: ignore
 
     else:
         extracted_field_model = extract_validators(
@@ -170,7 +160,7 @@ def extract_union_member(
         if field_type_origin == list:
             return List[extracted_field_model]
         elif field_type_origin == dict:
-            return Dict[key_type_origin, extracted_field_model]
+            return Dict[key_type_origin, extracted_field_model]  # type: ignore
         return extracted_field_model
 
 
@@ -215,13 +205,11 @@ def extract_validators(
             if isinstance(validators, Validator):
                 validator_instances.append(validators)
             else:
-                validator_instances.extend(
-                    [
-                        safe_get_validator(v)
-                        for v in validators
-                        if safe_get_validator(v) is not None
-                    ]
-                )
+                validator_list = [
+                    safe_get_validator(v)  # type: ignore
+                    for v in validators
+                ]
+                validator_instances.extend([v for v in validator_list if v is not None])
             all_paths = [field_path]
             all_paths.extend(alias_paths)
             for path in all_paths:
@@ -232,50 +220,52 @@ def extract_validators(
                     ValidatorReference(
                         id=v.rail_alias,
                         on=path,
-                        on_fail=v.on_fail_descriptor,
+                        on_fail=v.on_fail_descriptor,  # type: ignore
                         kwargs=v.get_args(),
                     )
                     for v in validator_instances
                 ]
                 processed_schema.validators.extend(validator_references)
-
-        field_model, field_type_origin, key_type_origin = try_get_base_model(
-            field.annotation
-        )
-        if field_model:
-            if field_type_origin == Union:
-                union_members = list(get_args(field_model))
-                extracted_union_members = []
-                for m in union_members:
-                    extracted_union_members.append(
-                        extract_union_member(
-                            m,
-                            processed_schema=processed_schema,
-                            json_path=field_path,
-                            aliases=alias_paths,
+        if field.annotation:
+            field_model, field_type_origin, key_type_origin = try_get_base_model(
+                field.annotation
+            )
+            if field_model:
+                if field_type_origin == Union:
+                    union_members = list(get_args(field_model))
+                    extracted_union_members = []
+                    for m in union_members:
+                        extracted_union_members.append(
+                            extract_union_member(
+                                m,
+                                processed_schema=processed_schema,
+                                json_path=field_path,
+                                aliases=alias_paths,
+                            )
                         )
-                    )
 
-                model.model_fields[field_name].annotation = Union[
-                    tuple(extracted_union_members)
-                ]
-            else:
-                extracted_field_model = extract_validators(
-                    model=field_model,
-                    processed_schema=processed_schema,
-                    json_path=field_path,
-                    aliases=alias_paths,
-                )
-                if field_type_origin == list:
-                    model.model_fields[field_name].annotation = List[
-                        extracted_field_model
-                    ]
-                elif field_type_origin == dict:
-                    model.model_fields[field_name].annotation = Dict[
-                        key_type_origin, extracted_field_model
+                    model.model_fields[field_name].annotation = Union[  # type: ignore
+                        tuple(extracted_union_members)  # type: ignore
                     ]
                 else:
-                    model.model_fields[field_name].annotation = extracted_field_model
+                    extracted_field_model = extract_validators(
+                        model=field_model,
+                        processed_schema=processed_schema,
+                        json_path=field_path,
+                        aliases=alias_paths,
+                    )
+                    if field_type_origin == list:
+                        model.model_fields[field_name].annotation = List[
+                            extracted_field_model
+                        ]
+                    elif field_type_origin == dict:
+                        model.model_fields[field_name].annotation = Dict[
+                            key_type_origin, extracted_field_model  # type: ignore
+                        ]
+                    else:
+                        model.model_fields[
+                            field_name
+                        ].annotation = extracted_field_model  # noqa
     return model
 
 

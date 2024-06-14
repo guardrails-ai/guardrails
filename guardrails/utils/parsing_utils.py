@@ -2,7 +2,7 @@ import json
 from guardrails_api_client import SimpleTypes
 import jsonref
 import regex
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union, cast
 
 from guardrails.actions.reask import NonParseableReAsk
 from guardrails.classes.output_type import OutputTypes
@@ -72,7 +72,9 @@ def get_code_block(
     return trimmed_output
 
 
-def extract_json_from_ouput(output: str) -> Tuple[Optional[Dict], Optional[Exception]]:
+def extract_json_from_ouput(
+    output: str,
+) -> Tuple[Optional[Union[Dict, List]], Optional[Exception]]:
     # Find and extract json from code blocks
     extracted_code_block = output
     has_json_block, json_start, json_end = has_code_block(output, "json")
@@ -127,7 +129,7 @@ def is_valid_fragment(fragment: str, verified: set) -> bool:
         return False
 
 
-def parse_fragment(fragment: str):
+def parse_fragment(fragment: str) -> Tuple[Union[str, List, Dict], Optional[str]]:
     """Parse the fragment into a dict."""
 
     # Complete the JSON fragment to handle missing brackets
@@ -156,7 +158,7 @@ def parse_fragment(fragment: str):
 
     # Parse the fragment
     try:
-        parsed_fragment = json.loads(fragment)
+        parsed_fragment: Union[Dict, List] = json.loads(fragment)
         return parsed_fragment, None
     except ValueError as e:
         return fragment, str(e)
@@ -166,7 +168,7 @@ def parse_fragment(fragment: str):
 def parse_json_llm_output(
     output: str, **kwargs
 ) -> Tuple[
-    Union[Optional[Dict], NonParseableReAsk, str],
+    Union[str, List, Dict, NonParseableReAsk, None],
     Union[Optional[Exception], str, bool, None],
 ]:
     if kwargs.get("stream", False):
@@ -216,15 +218,17 @@ def prune_extra_keys(
     payload: Union[str, List[Any], Dict[str, Any]],
     schema: Dict[str, Any],
     *,
-    json_path: Optional[str] = "$",
-    all_json_paths: Optional[List[str]] = None,
+    json_path: str = "$",
+    all_json_paths: Optional[Set[str]] = None,
 ) -> Union[str, List[Any], Dict[str, Any]]:
-    if not all_json_paths:
+    if all_json_paths is None or not len(all_json_paths):
         all_json_paths = get_all_paths(schema)
 
     if isinstance(payload, dict):
         # Do full lookbehind
-        wildcards = [path.split(".*")[0] for path in all_json_paths if ".*" in path]
+        wildcards: List[str] = [
+            path.split(".*")[0] for path in all_json_paths if ".*" in path
+        ]
         ancestor_is_wildcard = any(w in json_path for w in wildcards)
         actual_keys = list(payload.keys())
         for key in actual_keys:
@@ -233,7 +237,7 @@ def prune_extra_keys(
                 del payload[key]
             else:
                 prune_extra_keys(
-                    payload=payload.get(key),
+                    payload=payload.get(key),  # type: ignore
                     schema=schema,
                     json_path=child_path,
                     all_json_paths=all_json_paths,
@@ -323,7 +327,7 @@ def coerce_property(
             possible_values.append(coerce_property(payload, sub_schema))
             payload = safe_get(list(filter(None, possible_values)), 0, payload)
 
-    all_of: List[Dict[str, Any]] = schema.get("allOf")
+    all_of: List[Dict[str, Any]] = schema.get("allOf", [])
     if all_of:
         if_blocks = [sub for sub in all_of if sub.get("if")]
         if if_blocks:
@@ -400,7 +404,7 @@ def coerce_property(
         payload = coerce_property(payload, factored_schema)
 
     ### Array Schema ###
-    item_schema: Dict[str, Any] = schema.get("items")
+    item_schema: Dict[str, Any] = schema.get("items", {})
     if isinstance(payload, list) and item_schema:
         coerced_items = []
         for item in payload:
@@ -413,5 +417,7 @@ def coerce_property(
 def coerce_types(
     payload: Union[str, List[Any], Dict[str, Any], Any], schema: Dict[str, Any]
 ) -> Union[str, List[Any], Dict[str, Any]]:
-    dereferenced_schema = jsonref.replace_refs(schema)
+    dereferenced_schema = cast(
+        Dict[str, Any], jsonref.replace_refs(schema)
+    )  # for pyright
     return coerce_property(payload, dereferenced_schema)

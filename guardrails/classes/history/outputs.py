@@ -1,9 +1,14 @@
-from typing import Dict, List, Optional, Sequence, Union
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import Field
 from typing_extensions import deprecated
 
-from guardrails_api_client import Outputs as IOutputs
+from guardrails_api_client import (
+    Outputs as IOutputs,
+    OutputsException,
+    OutputsParsedOutput,
+    OutputsValidationResponse,
+)
 from guardrails.constants import error_status, fail_status, not_run_status, pass_status
 from guardrails.classes.llm.llm_response import LLMResponse
 from guardrails.classes.generic.arbitrary_model import ArbitraryModel
@@ -38,7 +43,7 @@ class Outputs(IOutputs, ArbitraryModel):
         This property may be a partial structure if field level reasks occur.""",
         default=None,
     )
-    reasks: Sequence[ReAsk] = Field(
+    reasks: List[ReAsk] = Field(
         description="Information from the validation process"
         "used to construct a ReAsk to the LLM on validation failure.",
         default_factory=list,
@@ -137,7 +142,7 @@ class Outputs(IOutputs, ArbitraryModel):
         """'Outputs.validation_output' is deprecated and will be removed in \
 versions 0.5.0 and beyond. Use 'validation_response' instead."""
     )
-    def validation_output(self) -> Optional[Union[str, ReAsk, Dict]]:
+    def validation_output(self) -> Optional[Union[str, ReAsk, List, Dict]]:
         return self.validation_response
 
     @property
@@ -145,5 +150,19 @@ versions 0.5.0 and beyond. Use 'validation_response' instead."""
         """'Outputs.validated_output' is deprecated and will be removed in \
 versions 0.5.0 and beyond. Use 'guarded_output' instead."""
     )
-    def validated_output(self) -> Optional[Union[str, ReAsk, Dict]]:
+    def validated_output(self) -> Optional[Union[str, ReAsk, List, Dict]]:
         return self.guarded_output
+
+    def to_dict(self) -> Dict[str, Any]:
+        i_outputs = IOutputs(
+            llm_response_info=self.llm_response_info,  # type: ignore
+            raw_output=self.raw_output,  # type: ignore
+            parsed_output=OutputsParsedOutput(self.parsed_output),  # type: ignore
+            validation_response=OutputsValidationResponse(self.validation_response),  # type: ignore
+            guarded_output=OutputsParsedOutput(self.guarded_output),  # type: ignore
+            reasks=self.reasks,  # type: ignore
+            validator_logs=self.validator_logs,  # type: ignore
+            error=self.error,
+            exception=OutputsException(message=str(self.exception)),
+        )
+        return i_outputs.to_dict()

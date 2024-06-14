@@ -1,7 +1,7 @@
 import jsonref
 from dataclasses import dataclass
 from string import Template
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, Callable, Dict, List, Optional, Tuple, cast
 from guardrails_api_client.models.validation_type import ValidationType
 from lxml import etree as ET
 from lxml.etree import _Element, Element, SubElement, XMLParser
@@ -26,7 +26,7 @@ STRING_TAGS = ["instructions", "prompt", "reask_instructions", "reask_prompt"]
 def parse_on_fail_handlers(element: _Element) -> Dict[str, OnFailAction]:
     on_fail_handlers: Dict[str, OnFailAction] = {}
     for key, value in element.attrib.items():
-        key = xml_to_string(key)
+        key = xml_to_string(key) or ""
         if key.startswith("on-fail-"):
             on_fail_handler_name = key[len("on-fail-") :]
             on_fail_handler = OnFailAction(value)
@@ -35,7 +35,7 @@ def parse_on_fail_handlers(element: _Element) -> Dict[str, OnFailAction]:
 
 
 def get_validators(element: _Element) -> List[Validator]:
-    validators_string: str = xml_to_string(element.attrib.get("validators", ""))
+    validators_string: str = xml_to_string(element.attrib.get("validators", "")) or ""
     validator_specs = split_on(validators_string, ";")
     on_fail_handlers = parse_on_fail_handlers(element)
     validators: List[Validator] = []
@@ -59,7 +59,7 @@ def extract_validators(
         validator_reference = ValidatorReference(
             id=validator.rail_alias,
             on=json_path,
-            onFail=validator.on_fail_descriptor,
+            on_fail=validator.on_fail_descriptor,  # type: ignore
             kwargs=validator.get_args(),
         )
         processed_schema.validators.append(validator_reference)
@@ -74,7 +74,7 @@ def extract_format(
     element: _Element,
     internal_type: RailTypes,
     internal_format_attr: str,
-) -> str:
+) -> Optional[str]:
     """Prioritizes information retention over custom formats.
 
     Example:
@@ -107,7 +107,7 @@ def parse_element(
     if element.tag in STRING_TAGS:
         schema_type = RailTypes.STRING
     elif element.tag == "output":
-        schema_type = element.attrib.get("type", RailTypes.OBJECT)
+        schema_type: str = element.attrib.get("type", RailTypes.OBJECT)  # type: ignore
 
     description = xml_to_string(element.attrib.get("description"))
 
@@ -187,8 +187,8 @@ def parse_element(
         )
     elif schema_type == RailTypes.ENUM:
         format = xml_to_string(element.attrib.get("format"))
-        csv = xml_to_string(element.attrib.get("values", ""))
-        values = list(map(lambda v: v.strip(), csv.split(",")))
+        csv = xml_to_string(element.attrib.get("values", "")) or ""
+        values = [v.strip() for v in csv.split(",")] if csv else None
         return ModelSchema(
             type=ValidationType(SimpleTypes.STRING),
             description=description,
@@ -262,7 +262,7 @@ def parse_element(
             if not case_name:
                 raise ValueError("<case /> elements must specify a name!")
 
-            discriminator_model.enum.append(case_name)
+            discriminator_model.enum.append(case_name)  # type: ignore
 
             case_if_then_model = ModelSchema()
             case_if_then_properties = {}
@@ -361,11 +361,17 @@ def rail_string_to_schema(rail_string: str) -> ProcessedSchema:
 
     processed_schema.json_schema = output_schema.to_dict()
 
-    if output_schema.type.actual_instance == SimpleTypes.STRING:
+    output_schema_type = output_schema.type
+    if not output_schema_type:
+        raise ValueError(
+            "The type attribute of the <output /> tag must be one of:"
+            ' "string", "object", or "list"'
+        )
+    if output_schema_type.actual_instance == SimpleTypes.STRING:
         processed_schema.output_type = OutputTypes.STRING
-    elif output_schema.type.actual_instance == SimpleTypes.ARRAY:
+    elif output_schema_type.actual_instance == SimpleTypes.ARRAY:
         processed_schema.output_type = OutputTypes.LIST
-    elif output_schema.type.actual_instance == SimpleTypes.OBJECT:
+    elif output_schema_type.actual_instance == SimpleTypes.OBJECT:
         processed_schema.output_type = OutputTypes.DICT
     else:
         raise ValueError(
@@ -431,23 +437,25 @@ def extract_internal_format(format: str) -> Format:
         fmt.custom_format = format
         return fmt
 
-    fmt.internal_type = internal_type
+    fmt.internal_type = RailTypes.get(internal_type)
     fmt.internal_format_attr = ": ".join(format_attr_rest)
 
     return fmt
 
 
 def init_elem(
-    elem: Type[_Element] = SubElement,
+    elem: Callable[..., _Element] = SubElement,
     *,
     _tag: str,
     attrib: Dict[str, Any],
-    _parent: _Element = None,
+    _parent: Optional[_Element] = None,
 ) -> _Element:
     if elem == Element:
         return Element(_tag, attrib)
-    else:
+    elif _parent is not None:
         return SubElement(_parent, _tag, attrib)
+    # This should never happen unless we mess up the code.
+    raise RuntimeError("rail_schema.py::init_elem() was called with no parent!")
 
 
 def build_list_element(
@@ -456,9 +464,9 @@ def build_list_element(
     attributes: Dict[str, Any],
     *,
     json_path: str = "$",
-    elem: Type[_Element] = SubElement,
+    elem: Callable[..., _Element] = SubElement,
     tag_override: Optional[str] = None,
-    parent: _Element = None,
+    parent: Optional[_Element] = None,
 ) -> _Element:
     rail_type = RailTypes.LIST
     tag = tag_override or rail_type
@@ -478,7 +486,7 @@ def build_choice_case(
     validator_map: ValidatorMap,
     json_path: str,
     discriminator: Optional[str] = None,
-):
+) -> _Element:
     choice_attributes = {**attributes}
     if discriminator:
         choice_attributes["discriminator"] = discriminator
@@ -505,6 +513,7 @@ def build_choice_case(
                 required=str(required).lower(),
                 attributes={"name": ck},
             )
+    return choice
 
 
 def build_choice_case_element_from_if(
@@ -513,18 +522,18 @@ def build_choice_case_element_from_if(
     attributes: Dict[str, Any],
     *,
     json_path: str = "$",
-    elem: Type[_Element] = SubElement,
-    parent: _Element = None,
+    elem: Callable[..., _Element] = SubElement,
+    parent: Optional[_Element] = None,
 ) -> _Element:
     choice_name = json_path.split(".")[-1]
     attributes["name"] = choice_name
 
-    properties = json_schema.get("properties")
+    properties: Dict[str, Any] = json_schema.get("properties", {})
     all_of: List[Dict[str, Any]] = json_schema.get("allOf", [])
 
     # Non-conditional inclusions
     other_subs: List[Dict[str, Any]] = [sub for sub in all_of if not sub.get("if")]
-    factored_properties = {**properties}
+    factored_properties: Dict[str, Any] = {**properties}
     for sub in other_subs:
         factored_properties = {**factored_properties, **sub}
 
@@ -544,7 +553,7 @@ def build_choice_case_element_from_if(
         cases: List[str] = []
         for k, v in if_props.items():
             discriminators.append(k)
-            case_value = v.get("const")
+            case_value: str = v.get("const", "")
             cases.append(case_value)
 
         joint_discriminator = ",".join(discriminators)
@@ -571,7 +580,9 @@ def build_choice_case_element_from_if(
 
     if len(discriminator_combos) > 1:
         # FIXME: This can probably be refactored
-        anonymous_choice = init_elem(elem, _parent=parent, _tag=RailTypes.CHOICE)
+        anonymous_choice = init_elem(
+            elem, _parent=parent, _tag=RailTypes.CHOICE, attrib={}
+        )
         for discriminator, discriminator_cases in discriminator_combos.items():
             anonymous_case = SubElement(_parent=anonymous_choice, _tag=RailTypes.CASE)
             build_choice_case(
@@ -582,13 +593,17 @@ def build_choice_case_element_from_if(
                 validator_map=validator_map,
                 json_path=json_path,
             )
-    elif len(discriminator_combos) == 1:
-        discriminator, cases = list(discriminator_combos.items())[0]
-        build_choice_case(
+        return anonymous_choice
+    else:
+        first_discriminator: Tuple[str, List[Dict[str, Any]]] = list(
+            discriminator_combos.items()
+        )[0] or ("", [])
+        discriminator, discriminator_cases = first_discriminator
+        return build_choice_case(
             discriminator=discriminator,
-            cases=cases,
+            cases=discriminator_cases,
             attributes=attributes,
-            parent=parent,
+            parent=parent,  # type: ignore
             validator_map=validator_map,
             json_path=json_path,
         )
@@ -600,7 +615,7 @@ def build_choice_case_element_from_discriminator(
     attributes: Dict[str, Any],
     *,
     json_path: str = "$",
-    parent: _Element = None,
+    parent: Optional[_Element] = None,
 ) -> _Element:
     """Takes an OpenAPI Spec flavored JSON Schema with a discriminated union.
 
@@ -631,7 +646,7 @@ def build_choice_case_element_from_discriminator(
     return build_choice_case(
         cases=cases,
         attributes=attributes,
-        parent=parent,
+        parent=parent,  # type: ignore
         validator_map=validator_map,
         json_path=json_path,
         discriminator=discriminator,
@@ -644,9 +659,9 @@ def build_object_element(
     attributes: Dict[str, Any],
     *,
     json_path: str = "$",
-    elem: Type[_Element] = SubElement,
+    elem: Callable[..., _Element] = SubElement,
     tag_override: Optional[str] = None,
-    parent: _Element = None,
+    parent: Optional[_Element] = None,
 ) -> _Element:
     properties: Dict[str, Any] = json_schema.get("properties", {})
 
@@ -717,7 +732,7 @@ def build_object_element(
             return build_choice_case(
                 cases=cases,
                 attributes=attributes,
-                parent=parent,
+                parent=parent,  # type: ignore
                 validator_map=validator_map,
                 json_path=json_path,
             )
@@ -746,9 +761,9 @@ def build_string_element(
     attributes: Dict[str, Any],
     format: Format,
     *,
-    elem: Type[_Element] = SubElement,
+    elem: Callable[..., _Element] = SubElement,
     tag_override: Optional[str] = None,
-    parent: _Element = None,
+    parent: Optional[_Element] = None,
 ) -> _Element:
     enum_values: List[str] = json_schema.get("enum", [])
     if enum_values:
@@ -765,7 +780,7 @@ def build_string_element(
             attributes["type"] = RailTypes.STRING
         return init_elem(elem, _parent=parent, _tag=tag, attrib=attributes)
 
-    tag = tag_override
+    tag = tag_override or RailTypes.STRING
     type = RailTypes.STRING
     if format.internal_type == RailTypes.DATE:
         type = RailTypes.DATE
@@ -799,9 +814,9 @@ def build_element(
     validator_map: ValidatorMap,
     *,
     json_path: str = "$",
-    elem: Type[_Element] = SubElement,
+    elem: Callable[..., _Element] = SubElement,
     tag_override: Optional[str] = None,
-    parent: _Element = None,
+    parent: Optional[_Element] = None,
     required: Optional[str] = "true",
     attributes: Optional[Dict[str, Any]] = None,
 ) -> _Element:
@@ -896,7 +911,7 @@ def json_schema_to_rail_output(
     Limited support. Only guaranteed to work for JSON Schemas that were
     derived from RAIL.
     """
-    dereferenced_json_schema = jsonref.replace_refs(json_schema)
+    dereferenced_json_schema = cast(Dict[str, Any], jsonref.replace_refs(json_schema))
     output_element = build_element(
         dereferenced_json_schema,
         validator_map,
