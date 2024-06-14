@@ -208,26 +208,6 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
         )
         iteration.outputs.guarded_output = valid_op
 
-    # async def async_validate(
-    #     self,
-    #     iteration: Iteration,
-    #     index: int,
-    #     parsed_output: Any,
-    #     output_schema: Schema,
-    #     validate_subschema: bool = False,
-    #     stream: Optional[bool] = False,
-    # ) -> Optional[Union[Awaitable[ValidationResult], ValidationResult]]:
-    #     # FIXME: Subschema is currently broken, it always returns a string from async
-    #     # streaming.
-    #     # Should return None/empty if fail result?
-    #     _ = await output_schema.async_validate(
-    #         iteration, parsed_output, self.metadata, attempt_number=index, stream=stream  # noqa
-    #     )
-    #     try:
-    #         return iteration.outputs.validator_logs[-1].validation_result
-    #     except IndexError:
-    #         return None
-
     def get_chunk_text(self, chunk: Any, api: Union[PromptCallableBase, None]) -> str:
         """Get the text from a chunk."""
         chunk_text = ""
