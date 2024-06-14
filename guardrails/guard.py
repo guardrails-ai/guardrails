@@ -3,6 +3,7 @@ import contextvars
 import json
 import os
 from builtins import id as object_id
+from enum import Enum
 from string import Template
 from typing import (
     Any,
@@ -108,6 +109,12 @@ class Guard(IGuard, Generic[OT]):
     the LLM, the validated output, as well as other helpful information.
     """
 
+    class Formatter(Enum):
+        StructuredDecoding = "StructuredDecoding"
+        FunctionCalling = "FunctionCalling"
+        JsonMode = "JsonMode"
+        Passthrough = "Passthrough"
+
     # Pydantic Config
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -171,6 +178,7 @@ class Guard(IGuard, Generic[OT]):
         self._user_id: Optional[str] = None
         self._api_client: Optional[GuardrailsApiClient] = None
         self._allow_metrics_collection: Optional[bool] = None
+        self._output_formatter: Guard.Formatter = Guard.Formatter.Passthrough
 
         # TODO: Support a sink for history so that it is not solely held in memory
         self._history: Stack[Call] = Stack()
@@ -454,6 +462,7 @@ class Guard(IGuard, Generic[OT]):
         tracer: Optional[Tracer] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
+        output_formatter: Optional[Union[str, Formatter]] = Formatter.Passthrough,
     ):
         """Create a Guard instance from a Pydantic model.
 
@@ -468,6 +477,7 @@ class Guard(IGuard, Generic[OT]):
             tracer (Tracer, optional): An OpenTelemetry tracer to use for metrics and traces. Defaults to None.
             name (str, optional): A unique name for this Guard. Defaults to `gr-` + the object id.
             description (str, optional): A description for this Guard. Defaults to None.
+            output_formatter (str | Formatter, optional):
         """  # noqa
 
         if num_reasks:
@@ -507,6 +517,9 @@ class Guard(IGuard, Generic[OT]):
         guard._exec_opts = exec_opts
         guard._output_type = schema.output_type
         guard._base_model = output_class
+        if isinstance(output_formatter, str):
+            output_formatter = Guard.Formatter[output_formatter]
+        guard._output_formatter = output_formatter
         guard._fill_validators()
         return guard
 
