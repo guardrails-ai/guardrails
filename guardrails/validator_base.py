@@ -384,6 +384,11 @@ def get_validator_class(name: Optional[str]) -> Optional[Type["Validator"]]:
         import guardrails.hub  # noqa
 
         return validators_registry.get(validator_key)
+
+    if not registration:
+        warn(f"Validator with id {name} was not found in the registry!  Ignoring...")
+        return None
+
     return registration
 
 
