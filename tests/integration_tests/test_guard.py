@@ -1,4 +1,5 @@
 import enum
+import importlib
 import json
 import os
 from typing import Optional, Union
@@ -903,3 +904,33 @@ def test_guard_with_top_level_list_return_type(mocker, rail, prompt):
         {"name": "banana", "price": 0.5},
         {"name": "orange", "price": 1.5},
     ]
+
+
+@pytest.mark.skipif(
+    not importlib.util.find_spec("transformers")
+    and not importlib.util.find_spec("torch"),
+    reason="transformers or torch is not installed",
+)
+def test_guard_from_pydantic_with_mock_hf_pipeline():
+    from tests.unit_tests.mocks.mock_hf_models import make_mock_pipeline
+
+    pipe = make_mock_pipeline()
+    guard = Guard()
+    _ = guard(pipe, prompt="Don't care about the output.  Just don't crash.")
+
+
+@pytest.mark.skipif(
+    not importlib.util.find_spec("transformers")
+    and not importlib.util.find_spec("torch"),
+    reason="transformers or torch is not installed",
+)
+def test_guard_from_pydantic_with_mock_hf_model():
+    from tests.unit_tests.mocks.mock_hf_models import make_mock_model_tokenizer
+
+    model, tokenizer = make_mock_model_tokenizer()
+    guard = Guard()
+    _ = guard(
+        model.generate,
+        tokenizer=tokenizer,
+        prompt="Don't care about the output.  Just don't crash.",
+    )
