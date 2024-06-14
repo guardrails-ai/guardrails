@@ -12,12 +12,13 @@ These sources need to be built and compiled before the site can be served.
 ## Installation
 
 ```bash
-# First, make sure you're in a venv
-python -m venv .venv
-source .venv/bin/activate
-
 # Install poetry
 pip install poetry
+
+# Make sure you're in a venv (Recommended)
+# Use conda or other venv management tools if you'd like
+python -m venv .venv
+source .venv/bin/activate
 
 # Make the project
 make full
