@@ -12,10 +12,13 @@ from guardrails.llm_providers import (
 
 
 def _deref_schema_path(schema: dict, path: Union[list, str]):
-    # schema is assumed to be the "$defs" field from JSONSchema, {"$defs": ...}.
+    """Given a path like #/$defs/foo/bar/bez, nagivates into a JSONSchema dict and pulls
+    the respective sub-object."""
     if isinstance(path, str):
         path = path.split("/")
     if path[0] == "#":
+        # The '#' indicates the root of the chain, so this is a first call.
+        # If we're at the root we want to make sure we have our '$defs'.
         assert "$defs" in schema
         return _deref_schema_path(schema, path[1:])
     if len(path) == 1:
@@ -30,36 +33,6 @@ def _jsonschema_to_jsonformer(
     """Converts the large-ish JSONSchema standard into the JSONFormer schema format.
     These are mostly identical, but the jsonschema supports '$defs' and '$ref'.
     There's an additional inconsistency in the use 'integer' versus 'number'.
-    ```
-    jsonschema_style =
-    {
-        '$defs': {
-            'Obs': {
-                'type': 'object',
-                'properties': {'blah': {'type': 'integer'}}}
-            },
-        'type': 'object'
-        'properties': {
-            's': {'type': 'string'},
-            'i': {'type': 'integer'},
-            'b': {'type': 'boolean'},
-            'a': {'type': 'array', 'items': {'type': 'integer'}},
-            'o': {'$ref': '#/$defs/Obs'}
-        },
-    }
-
-    jsonformer_style =
-    {
-        "type": "object",
-        "properties": {
-            "s": {"type": "string"},
-            "i": {"type": "number"},
-            "b": {"type": "boolean"},
-            "a": {"type": "array", "items": {"type": "string"}}
-            "o": {"type": "object", "properties": ...},
-        }
-    }
-    ```
     """
     if path is None:
         path = []

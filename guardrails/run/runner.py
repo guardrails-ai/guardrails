@@ -153,8 +153,6 @@ class Runner:
         self.num_reasks = num_reasks
         self.full_schema_reask = full_schema_reask
 
-        # TODO: Inject the wrapper here.
-
         # Internal Metrics Collection
         # Get metrics opt-out from credentials
         self._disable_tracer = disable_tracer
