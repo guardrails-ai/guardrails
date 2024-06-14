@@ -165,7 +165,7 @@ class Runner:
                 self.api = ArbitraryCallable(
                     lambda p: json.dumps(
                         Jsonformer(
-                            model=model,
+                            model=model.model,
                             tokenizer=model.tokenizer,
                             json_schema=self.output_schema,
                             prompt=p,
