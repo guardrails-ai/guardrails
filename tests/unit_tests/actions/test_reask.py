@@ -568,10 +568,7 @@ Here are examples of simple (XML, JSON) pairs that show the expected behavior:
         # Examples are only included for SkeletonReAsk's
         # json.dumps(json_example, indent=2),
     )
-    for msg in reask_messages.source:
-            print("MESSAGE", msg["content"])
 
-    print("EXPECTED PROMPT", expected_prompt)
     for msg in reask_messages.source:
         if msg["role"] == "system":
             assert msg["content"] == expected_instructions

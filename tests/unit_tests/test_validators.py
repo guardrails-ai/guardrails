@@ -830,7 +830,7 @@ This also is not two words
     [
         (
             OnFailAction.REASK,
-            "Messages validation failed: incorrect_value='What kind of pet should I get?{\"properties\": {\"name\": {\"description\": \"a unique pet name\", \"title\": \"Name\", \"type\": \"string\"}}, \"required\": [\"name\"], \"type\": \"object\", \"title\": \"Pet\"}<output>\\n  <string description=\"a unique pet name\" name=\"name\" required=\"true\"></string>\\n</output>' fail_results=[FailResult(outcome='fail', error_message='must be exactly two words', fix_value='What kind', metadata=None, validated_chunk=None, error_spans=None)] path=None",  # noqa
+            "Messages validation failed: incorrect_value='What kind of pet should I get?' fail_results=[FailResult(outcome='fail', error_message='must be exactly two words', fix_value='What kind', metadata=None, validated_chunk=None, error_spans=None)] path=None",  # noqa
         ),
         (
             OnFailAction.FILTER,
