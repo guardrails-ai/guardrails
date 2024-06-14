@@ -251,7 +251,6 @@ class AsyncGuard(Guard):
             get_async_llm_ask(llm_api, *args, **kwargs) if llm_api is not None else None
         )
         if kwargs.get("stream", False):
-            # FIXME
             runner = AsyncStreamRunner(
                 output_type=self._output_type,
                 output_schema=self.output_schema.to_dict(),
