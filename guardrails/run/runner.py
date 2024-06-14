@@ -1,9 +1,7 @@
 import copy
-import json
 from functools import partial
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
 
-from jsonformer import Jsonformer
 
 from guardrails import validator_service
 from guardrails.actions.reask import get_reask_setup
@@ -13,10 +11,7 @@ from guardrails.classes.output_type import OutputTypes
 from guardrails.constants import fail_status
 from guardrails.errors import ValidationError
 from guardrails.llm_providers import (
-    ArbitraryCallable,
     AsyncPromptCallableBase,
-    HuggingFaceModelCallable,
-    HuggingFacePipelineCallable,
     PromptCallableBase,
 )
 from guardrails.logger import set_scope
@@ -158,37 +153,7 @@ class Runner:
         self.num_reasks = num_reasks
         self.full_schema_reask = full_schema_reask
 
-        # JSON Schema enforcement experiment.
-        if isinstance(api, HuggingFacePipelineCallable):
-            if isinstance(self.output_schema, dict):
-                model = self.api.init_kwargs["pipeline"]
-                self.api = ArbitraryCallable(
-                    lambda p: json.dumps(
-                        Jsonformer(
-                            model=model.model,
-                            tokenizer=model.tokenizer,
-                            json_schema=self.output_schema,
-                            prompt=p,
-                        )()
-                    )
-                )
-        elif isinstance(api, HuggingFaceModelCallable):
-            if isinstance(self.output_schema, dict):
-                # This will not work because 'model_generate' is the .gen method.
-                # model = self.api.init_kwargs["model_generate"]
-                # Use the __self__ to grab the base mode for passing into JF.
-                model = self.api.init_kwargs["model_generate"].__self__
-                tokenizer = self.api.init_kwargs["tokenizer"]
-                self.api = ArbitraryCallable(
-                    lambda p: json.dumps(
-                        Jsonformer(
-                            model=model,
-                            tokenizer=tokenizer,
-                            json_schema=self.output_schema,
-                            prompt=p,
-                        )()
-                    )
-                )
+        # TODO: Inject the wrapper here.
 
         # Internal Metrics Collection
         # Get metrics opt-out from credentials
