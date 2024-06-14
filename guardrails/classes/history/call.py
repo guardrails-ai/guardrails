@@ -440,3 +440,18 @@ versions 0.5.0 and beyond. Use 'guarded_output' instead."""
         if self._exception:
             i_call_dict["exception"] = str(self._exception)
         return i_call_dict
+
+    # TODO: Necessary to GET /guards/{guard_name}/history/{call_id}
+    # @classmethod
+    # def from_dict(cls, obj: Dict[str, Any]) -> "Call":
+    #     i_call = ICall.from_dict(obj)
+
+    #     i_exception = i_call.i_exception.actual_instance
+    #     if isinstance(i_exception, CallExceptionAnyOf):
+    #         i_exception = i_exception.message
+
+    #     cls(
+    #         iterations=i_call.iterations,
+    #         inputs=i_call.inputs,
+    #         exception=Exception(i_exception),
+    #     )

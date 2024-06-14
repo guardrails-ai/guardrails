@@ -27,8 +27,8 @@ from guardrails_api_client import (
     GuardHistory,
     ValidatorReference,
     ValidatePayload,
-    ValidationType,
     SimpleTypes,
+    ValidationOutcome as IValidationOutcome,
 )
 from pydantic import field_validator
 from pydantic.config import ConfigDict
@@ -128,6 +128,8 @@ class Guard(IGuard, Generic[OT]):
     ):
         """Initialize the Guard with validators and an output schema."""
 
+        _try_to_load = name is not None
+
         # Shared Interface Properties
         id = id or random_id()
         name = name or f"gr-{id}"
@@ -137,11 +139,11 @@ class Guard(IGuard, Generic[OT]):
         output_schema = output_schema or {"type": "string"}
 
         # Init ModelSchema class
-        schema_with_type = {**output_schema}
-        output_schema_type = output_schema.get("type")
-        if output_schema_type:
-            schema_with_type["type"] = ValidationType.from_dict(output_schema_type)
-        model_schema = ModelSchema(**schema_with_type)
+        # schema_with_type = {**output_schema}
+        # output_schema_type = output_schema.get("type")
+        # if output_schema_type:
+        #     schema_with_type["type"] = ValidationType.from_dict(output_schema_type)
+        model_schema = ModelSchema.from_dict(output_schema)
 
         # Super Init
         super().__init__(
@@ -185,7 +187,19 @@ class Guard(IGuard, Generic[OT]):
         api_key = os.environ.get("GUARDRAILS_API_KEY")
         if api_key is not None:
             self._api_client = GuardrailsApiClient(api_key=api_key)
-            self.upsert_guard()
+            _loaded = False
+            if _try_to_load:
+                loaded_guard = self._api_client.fetch_guard(self.name)
+                if loaded_guard:
+                    self.id = loaded_guard.id
+                    self.description = loaded_guard.description
+                    self.validators = loaded_guard.validators or []
+                    self.output_schema = ModelSchema.from_dict(
+                        loaded_guard.output_schema.to_dict()
+                    )
+                    _loaded = True
+            if not _loaded:
+                self._save()
 
     @property
     def history(self):
@@ -276,12 +290,12 @@ class Guard(IGuard, Generic[OT]):
         ]
 
     # FIXME: What do we want this to look like now?
-    def __repr__(self):
-        return f"Guard(RAIL={self._rail})"
+    # def __repr__(self):
+    #     return f"Guard(RAIL={self._rail})"
 
     # FIXME: What do we want this to look like now?
-    def __rich_repr__(self):
-        yield "RAIL", self._rail
+    # def __rich_repr__(self):
+    #     yield "RAIL", self._rail
 
     def __stringify__(self):
         if self._output_type == OutputTypes.STRING:
@@ -1256,7 +1270,7 @@ class Guard(IGuard, Generic[OT]):
         stream: Optional[bool] = False,
     ) -> ValidationOutcome[OT]:
         if self._api_client:
-            validation_output: ValidationOutcome = self._api_client.validate(
+            validation_output: IValidationOutcome = self._api_client.validate(
                 guard=self,  # type: ignore
                 payload=ValidatePayload.from_dict(payload),  # type: ignore
                 openai_api_key=get_call_kwarg("api_key"),
@@ -1269,16 +1283,16 @@ class Guard(IGuard, Generic[OT]):
                     error="The response from the server was empty!",
                 )
             # TODO: Replace this with GET /guard/{guard_name}/history
-            self._construct_history_from_server_response(
-                validation_output=validation_output,
-                llm_output=llm_output,
-                num_reasks=num_reasks,
-                prompt_params=prompt_params,
-                metadata=metadata,
-                full_schema_reask=full_schema_reask,
-                call_log=call_log,
-                stream=stream,
-            )
+            # self._construct_history_from_server_response(
+            #     validation_output=validation_output,
+            #     llm_output=llm_output,
+            #     num_reasks=num_reasks,
+            #     prompt_params=prompt_params,
+            #     metadata=metadata,
+            #     full_schema_reask=full_schema_reask,
+            #     call_log=call_log,
+            #     stream=stream,
+            # )
 
             # Our interfaces are too different for this to work right now.
             # Once we move towards shared interfaces for both the open source
@@ -1286,7 +1300,9 @@ class Guard(IGuard, Generic[OT]):
             # return ValidationOutcome[OT].from_guard_history(call_log)
             return ValidationOutcome[OT](
                 raw_llm_output=validation_output.raw_llm_output,
-                validated_output=cast(OT, validation_output.validated_output),
+                validated_output=cast(
+                    OT, validation_output.validated_output.actual_instance
+                ),
                 validation_passed=validation_output.validation_passed,
             )
         else:
@@ -1448,6 +1464,8 @@ class Guard(IGuard, Generic[OT]):
             validators=i_guard.validators,
             output_schema=output_schema,
         )
+
+        # TODO: Use Call.from_dict
         i_history = (
             i_guard.i_history.actual_instance
             if i_guard.i_history and i_guard.i_history.actual_instance
