@@ -1031,7 +1031,7 @@ def test_string_output(mocker):
     assert call.iterations.length == 1
 
     # For original prompt and output
-    assert call.compiled_messages[1]["content"] == string.COMPILED_PROMPT
+    assert call.compiled_messages == string.COMPILED_MESSAGES
     assert call.raw_outputs.last == string.LLM_OUTPUT
     assert mock_invoke_llm.call_count == 1
     mock_invoke_llm = None

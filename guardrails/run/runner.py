@@ -157,8 +157,6 @@ class Runner:
 
             index = 0
             for index in range(self.num_reasks + 1):
-                print("INDEX IS", index)
-                print("MESSAGES ARE", messages)
                 # Run a single step.
                 iteration = self.step(
                     index=index,
@@ -313,8 +311,7 @@ class Runner:
             raise ValidationError(
                 f"Messages validation failed: " f"{validated_messages}"
             )
-        print("messages", validated_messages)
-        print("msg_str", msg_str)
+
         if validated_messages != msg_str:
             raise ValidationError("Messages validation failed")
 

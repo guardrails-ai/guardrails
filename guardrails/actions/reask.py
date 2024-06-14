@@ -225,7 +225,7 @@ def get_reask_setup_for_string(
         xml_output_schema=xml_output_schema,
         **prompt_params,
     )
-    print("STRING REASK SETUP INSTRUCTIONS PROMPT", instructions, prompt)
+
     if exec_options.reask_messages:
         messages = Messages(source=exec_options.reask_messages)
     else:
@@ -234,21 +234,18 @@ def get_reask_setup_for_string(
             {"role": "user", "content": prompt}
         ])
     messages = messages.format(**prompt_params)
-    print("STRING REASK SETUP", messages)
+
     return output_schema, prompt, messages
 
 
 def get_original_prompt(exec_options: Optional[GuardExecutionOptions] = None) -> str:
     exec_options = exec_options or GuardExecutionOptions()
     original_messages = exec_options.messages or []
-    messages_prompt = next(
-        (
-            h.get("content")
-            for h in original_messages
-            if isinstance(h, dict)
-        ),
-        "",
-    )
+    messages_prompt = []
+    for message in original_messages:
+        messages_prompt.append(message.get("content", ""))
+    messages_prompt = "\n".join(messages_prompt)
+
     original_prompt = messages_prompt or ""
     return original_prompt
 
@@ -397,7 +394,7 @@ def get_reask_setup_for_json(
             {"role": "user", "content": prompt}
         ])
     messages = messages.format(**prompt_params)
-    print("JSON REASK SETUP", messages, messages._source)
+
     return reask_schema, prompt, messages
 
 

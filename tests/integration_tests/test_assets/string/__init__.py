@@ -9,7 +9,7 @@ reader = (
     lambda filename: open(os.path.join(DATA_DIR, filename)).read().replace("\r", "")
 )
 
-COMPILED_INSTRUCTIONS = reader("compiled_instructions.txt")
+COMPILED_MESSAGES = reader("compiled_messages.txt")
 COMPILED_PROMPT = reader("compiled_prompt.txt")
 COMPILED_LIST_PROMPT = reader("compiled_list_prompt.txt")
 LLM_OUTPUT = reader("llm_output.txt")

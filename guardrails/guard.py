@@ -859,11 +859,6 @@ class Guard(IGuard, Generic[OT]):
             The raw text output from the LLM and the validated output.
         """
         messages = kwargs.pop("messages", None) or self._exec_opts.messages or []
-        print("========IN CALL ======")
-        print("kwargs", kwargs)
-        print("exec_opts", self._exec_opts)
-        print("arg messages", messages)
-        print("llm_api", llm_api)
         
         if messages is not None and not len(messages):
             raise RuntimeError(

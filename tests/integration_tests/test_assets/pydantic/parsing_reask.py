@@ -65,6 +65,16 @@ Assistant:
 """  # noqa
 
 compiled_reask = """
+You are a helpful assistant only capable of communicating with valid JSON, and no other text.
+
+ONLY return a valid JSON object (no other text is necessary), where the key of the field in JSON is the `name` attribute of the corresponding XML, and the value is of the type specified by the corresponding XML's tag. The JSON MUST conform to the XML format, including any types and format requests e.g. requests for lists, objects and specific types. Be correct and concise. If you are unsure anywhere, enter `null`.
+
+Here are examples of simple (XML, JSON) pairs that show the expected behavior:
+- `<string name='foo' format='two-words lower-case' />` => `{'foo': 'example one'}`
+- `<list name='bar'><string format='upper-case' /></list>` => `{"bar": ['STRING ONE', 'STRING TWO', etc.]}`
+- `<object name='baz'><string name="foo" format="capitalize two-words" /><integer name="index" format="1-indexed" /></object>` => `{'baz': {'foo': 'Some String', 'index': 1}}`
+
+
 I was given the following response, which was not parseable as JSON.
 
 "Here is the JSON containing the requested information extracted from the resume:\\n\\n```\\n{\\n  \\"name\\": \\"Joe Smith\\",\\n  \\"contact_number\\": \\"1234 5678\\",\\n  \\"contact_email\\": \\"joe@example.com\\"\\n```"

@@ -406,7 +406,6 @@ def rail_string_to_schema(rail_string: str) -> ProcessedSchema:
     if messages is not None:
         extracted_messages = []
         for msg in messages:
-            print(msg)
             if msg.tag == "message":
                 message = msg
                 # role = message.get("role").text

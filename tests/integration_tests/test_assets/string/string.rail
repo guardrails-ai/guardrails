@@ -9,8 +9,7 @@
         <content>
 You are a helpful assistant, and you are helping me come up with a name for a pizza.
 
-
-${output_schema}
+${gr.complete_string_suffix}
         </content>
     </message>
     <message role="user">

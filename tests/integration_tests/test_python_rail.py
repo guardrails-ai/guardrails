@@ -198,12 +198,13 @@ def test_python_rail(mocker):
         call.iterations.first.raw_output
         == python_rail.LLM_OUTPUT_1_FAIL_GUARDRAILS_VALIDATION
     )
+    reask_messages = call.reask_messages.last
+    compiled_messages = []
+    for message in reask_messages:
+        compiled_messages.append(message["content"])
+    compiled_messages = "\n".join(compiled_messages)
 
-    assert call.iterations.last.inputs.prompt == gd.Prompt(
-        python_rail.COMPILED_PROMPT_2_WITHOUT_INSTRUCTIONS
-    )
-    # Same as above
-    assert call.reask_prompts.last == python_rail.COMPILED_PROMPT_2_WITHOUT_INSTRUCTIONS
+    assert compiled_messages == python_rail.COMPILED_PROMPT_2_WITHOUT_INSTRUCTIONS
     assert (
         call.raw_outputs.last
         == python_rail.LLM_OUTPUT_2_SUCCEED_GUARDRAILS_BUT_FAIL_PYDANTIC_VALIDATION
@@ -278,14 +279,15 @@ ${ingredients}
     assert call.iterations.length == 2
 
     # For orginal prompt and output
-    assert call.compiled_instructions == string.COMPILED_INSTRUCTIONS
-    assert call.compiled_prompt == string.COMPILED_PROMPT
+    assert call.compiled_messages == string.COMPILED_MESSAGES
     assert call.iterations.first.raw_output == string.LLM_OUTPUT
     assert call.iterations.first.validation_response == string.VALIDATED_OUTPUT_REASK
+    reask_messages = call.reask_messages.last
+    compiled_messages = []
+    for message in reask_messages:
+        compiled_messages.append(message["content"])
+    compiled_messages = "\n".join(compiled_messages)
 
-    # For re-asked prompt and output
-    assert call.iterations.last.inputs.prompt == gd.Prompt(string.COMPILED_PROMPT_REASK)
-    # Same as above
-    assert call.reask_prompts.last == string.COMPILED_PROMPT_REASK
+    assert compiled_messages == string.COMPILED_PROMPT_REASK
     assert call.raw_outputs.last == string.LLM_OUTPUT_REASK
     assert call.guarded_output == string.LLM_OUTPUT_REASK

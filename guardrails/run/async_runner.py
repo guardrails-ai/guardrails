@@ -307,9 +307,9 @@ class AsyncRunner(Runner):
         if messages:
             # Runner.prepare_msg_history
             formatted_messages = messages.format(**prompt_params)
-            use_xml = messages_uses_xml(messages._source)
+            use_xml = messages.uses_xml()
             if "messages" in self.validation_map:
-                messages = preprocess_messages(
+                messages = self.prepare_messages(
                 prompt_callable=api,
                 messages=formatted_messages,
                 output_type=self.output_type,
