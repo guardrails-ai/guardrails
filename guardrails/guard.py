@@ -494,6 +494,24 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
             ),
         )
 
+    def log_guard_and_execution_id(self, val_outcome: ValidationOutcome):
+        call = self.history.last
+        if call:
+            iter = call.iterations.last
+            if iter:
+                outputs = iter.outputs
+                if outputs:
+                    log = outputs.validator_logs[-1]
+                    guard_name = log.validator_name
+                    execution_id = log.instance_id
+                    logger.debug(
+                        f"""Guard: {guard_name} Execution ID: {str(execution_id)} 
+                        Outcome {val_outcome.__repr_str__('')}""",
+                        guard_name,
+                        str(execution_id),
+                    )
+        return []
+
     @overload
     def __call__(
         self,
@@ -658,7 +676,7 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
                     **kwargs,
                 )
                 print("path 1 triggered")
-                logger.debug(f"Guard call result: {res}", res)
+                self.log_guard_and_execution_id(res)
                 return res
 
             # If the LLM API is async, return a coroutine. This will be deprecated soon.
@@ -679,7 +697,7 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
                     **kwargs,
                 )
                 print("path 2 triggered")
-                logger.debug(f"Guard call result: {res}", res)
+                self.log_guard_and_execution_id(res)
                 return res
             res = self._call_sync(
                 llm_api,
@@ -695,7 +713,7 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
                 **kwargs,
             )
             print("path 3 triggered")
-            logger.debug(f"Guard call result: {res}", res)
+            self.log_guard_and_execution_id(res)
             return res
 
         guard_context = contextvars.Context()
@@ -714,7 +732,7 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
             **kwargs,
         )
         print("path 4 triggered")
-        logger.debug(f"Guard call result: {res}", res)
+        self.log_guard_and_execution_id(res)
         return res
 
     def _call_sync(

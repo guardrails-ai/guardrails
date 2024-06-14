@@ -3,8 +3,6 @@ import os
 from typing import Dict, List
 
 
-LOG_DIR = "guard_logs"
-
 """
 This class is responsible for sorting incoming logs
 by guard/execution, then writing them to the appropriate files.
@@ -18,39 +16,42 @@ of log files, to avoid filling up the disk with logs.
 
 class LogPrinter:
     log_files: Dict[str, List[str]] = {}
+    log_dir: str
 
-    def __init__(self):
+    def __init__(self, log_dir):
         # pull existing guard logs into internal map
-        guard_folders = os.listdir(LOG_DIR)
-        if os.path.exists(LOG_DIR) is False:
-            os.mkdir(LOG_DIR)
+        self.log_dir = log_dir
+        if os.path.exists(self.log_dir) is False:
+            os.mkdir(self.log_dir)
+        guard_folders = os.listdir(self.log_dir)
         for guard_folder in guard_folders:
-            execution_files = os.listdir(os.path.join(LOG_DIR, guard_folder))
+            execution_files = os.listdir(os.path.join(self.log_dir, guard_folder))
             self.log_files[guard_folder] = [execution_files]
 
-    def guard_from_logrecord(record: LogRecord):
-        pass
-
-    def execution_name_from_logrecord(record: LogRecord):
-        pass
-
     def emit(self, record: LogRecord):
-        guard_name = self.guard_from_logrecord(record)
-        execution_name = self.execution_name_from_logrecord(record)
+        if len(record.args) < 2:
+            return None
+        if isinstance(record.args[0], str) is False:
+            return None
+        if isinstance(record.args[1], str) is False:
+            return None
+        guard_name = record.args[0]
+        execution_name = record.args[1]
 
         if guard_name is None or execution_name is None:
             return
         existing_executions = self.log_files.get(guard_name)
         if existing_executions is None:
             # create guard folder and execution file
-            os.mkdir(os.path.join(LOG_DIR, guard_name))
+            os.mkdir(os.path.join(self.log_dir, guard_name))
             self.log_files[guard_name] = []
             existing_executions = []
             pass
-        with os.open(os.path.join(LOG_DIR, guard_name, execution_name), "w") as f:
+        path = os.path.join(self.log_dir, guard_name, execution_name)
+        with open(path, "w") as f:
             # write execution file to internal filemap
             # write log to execution file
-            f.write(record.getMessage())
+            f.write(record.msg)
             pass
         if execution_name not in existing_executions:
             # write execution file to internal filemap

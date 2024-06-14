@@ -3,27 +3,33 @@ import logging.config
 from logging import Handler, LogRecord
 from typing import Dict, List, Optional
 
+from guardrails.log_printer import LogPrinter
+
 # from src.modules.otel_logger import handler as otel_handler
 
 name = "guardrails-ai"
 base_scope = "base"
 all_scopes = "all"
+LOG_DIR = "guard_logs"
 
 
 class ScopeHandler(Handler):
     scope: str
     scoped_logs: Dict[str, List[LogRecord]]
+    log_printer: LogPrinter
 
     def __init__(self, level=logging.NOTSET, scope=base_scope):
         super().__init__(level)
         self.scope = scope
         self.scoped_logs = {}
+        self.log_printer = LogPrinter(LOG_DIR)
 
     def emit(self, record: LogRecord) -> None:
         logs = self.scoped_logs.get(self.scope, [])
         print("record in logs!!!!", record)
         # logic to write record to file
         logs.append(record)
+        self.log_printer.emit(record)
         self.scoped_logs[self.scope] = logs
 
     def set_scope(self, scope: str = base_scope):
