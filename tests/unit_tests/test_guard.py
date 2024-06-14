@@ -1,4 +1,5 @@
 import importlib
+
 import pytest
 
 import openai
@@ -636,8 +637,7 @@ def test_hugging_face_model_callable():
         bez: list[str]
 
     g = Guard.from_pydantic(Foo, output_formatter="jsonformer")
-    response = g(model.generate, tokenizer=tokenizer, prompt="This is madness.")
-    print(response.validated_output)
+    response = g(model.generate, tokenizer=tokenizer, prompt="Sample:")
     validated_output = response.validated_output
     assert isinstance(validated_output, dict)
     assert "bar" in validated_output
@@ -658,12 +658,41 @@ def test_hugging_face_pipeline_callable():
         bez: list[str]
 
     g = Guard.from_pydantic(Foo, output_formatter="jsonformer")
-    response = g(model, prompt="This is madness.")
-
-    print(response.validated_output)
+    response = g(model, prompt="Sample:")
     validated_output = response.validated_output
     assert isinstance(validated_output, dict)
     assert "bar" in validated_output
     assert isinstance(validated_output["bez"], list)
     if len(validated_output["bez"]) > 0:
         assert isinstance(validated_output["bez"][0], str)
+
+
+def test_hugging_face_pipeline_complex_schema():
+    from transformers import pipeline
+
+    # TODO: Don't actually pull GPT-2 during the test.
+    model = pipeline("text-generation", "openai-community/gpt2")
+
+    class MultiNum(BaseModel):
+        whole: int
+        frac: float
+
+    class Tricky(BaseModel):
+        foo: list[str]
+        bar: list[MultiNum]
+        bez: MultiNum
+
+    g = Guard.from_pydantic(Tricky, output_formatter="jsonformer")
+    response = g(model, prompt="Sample:")
+    out = response.validated_output
+    assert isinstance(out, dict)
+    assert "foo" in out
+    assert isinstance(out["foo"], list)
+    if len(out["foo"]) > 0:
+        assert isinstance(out["foo"][0], str)
+    assert "bar" in out
+    if len(out["bar"]) > 0:
+        assert isinstance(out["bar"][0], dict)
+    assert "bez" in out
+    assert isinstance(out["bez"]["whole"], int | float)
+    assert isinstance(out["bez"]["whole"], int | float)
