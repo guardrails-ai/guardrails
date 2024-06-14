@@ -182,7 +182,7 @@ def get_reask_setup_for_string(
     validation_response: Optional[Union[str, List, Dict, ReAsk]] = None,
     prompt_params: Optional[Dict[str, Any]] = None,
     exec_options: Optional[GuardExecutionOptions] = None,
-) -> Tuple[Dict[str, Any], Prompt, Instructions]:
+) -> Tuple[Dict[str, Any], Prompt, Messages]:
     prompt_params = prompt_params or {}
     exec_options = exec_options or GuardExecutionOptions()
 
@@ -218,8 +218,6 @@ def get_reask_setup_for_string(
     )
 
     instructions = None
-    if exec_options.reask_instructions:
-        instructions = Instructions(exec_options.reask_instructions)
     if instructions is None:
         instructions = Instructions("You are a helpful assistant.")
     instructions = instructions.format(
@@ -227,8 +225,17 @@ def get_reask_setup_for_string(
         xml_output_schema=xml_output_schema,
         **prompt_params,
     )
-
-    return output_schema, prompt, instructions
+    print("STRING REASK SETUP INSTRUCTIONS PROMPT", instructions, prompt)
+    if exec_options.reask_messages:
+        messages = Messages(source=exec_options.reask_messages)
+    else:
+        messages = Messages(source=[
+            {"role": "system", "content": instructions},
+            {"role": "user", "content": prompt}
+        ])
+    messages = messages.format(**prompt_params)
+    print("STRING REASK SETUP", messages)
+    return output_schema, prompt, messages
 
 
 def get_original_prompt(exec_options: Optional[GuardExecutionOptions] = None) -> str:
@@ -377,8 +384,6 @@ def get_reask_setup_for_json(
         **prompt_params,
     )
 
-
-
     if exec_options.reask_messages:
         messages = Messages(source=exec_options.reask_messages)
     else:
@@ -392,6 +397,7 @@ def get_reask_setup_for_json(
             {"role": "user", "content": prompt}
         ])
     messages = messages.format(**prompt_params)
+    print("JSON REASK SETUP", messages, messages._source)
     return reask_schema, prompt, messages
 
 
@@ -406,7 +412,7 @@ def get_reask_setup(
     use_full_schema: Optional[bool] = False,
     prompt_params: Optional[Dict[str, Any]] = None,
     exec_options: Optional[GuardExecutionOptions] = None,
-) -> Tuple[Dict[str, Any], Prompt, Instructions]:
+) -> Tuple[Dict[str, Any], Messages]:
     prompt_params = prompt_params or {}
     exec_options = exec_options or GuardExecutionOptions()
 

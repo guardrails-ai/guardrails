@@ -89,10 +89,6 @@ class Messages():
             variables.extend(get_template_variables(msg["content"]))
         return variables
 
-    @property
-    def format_instructions(self):
-        return self.source[self.format_instructions_start :]
-
     def substitute_constants(self, text):
         """Substitute constants in the prompt."""
         # Substitute constants by reading the constants file.
@@ -126,9 +122,6 @@ class Messages():
 
     def get_prompt_variables(self):
         return self.variable_names
-
-    def format(self, **kwargs):
-        raise NotImplementedError("Subclasses must implement this method.")
 
     def make_vars_optional(self):
         """Make all variables in the prompt optional."""

@@ -71,7 +71,7 @@ class Call(ICall, ArbitraryModel):
         return self.inputs.prompt_params
 
     @property
-    def compiled_messages(self) -> List[Dict]:
+    def compiled_messages(self) -> str:
         """The initial compiled prompt that was passed to the LLM on the first
         call."""
         if self.iterations.empty():
@@ -81,7 +81,7 @@ class Call(ICall, ArbitraryModel):
         prompt_params = initial_inputs.prompt_params or {}
 
         if initial_inputs.messages is not None:
-            return messages.format(**prompt_params).source
+            return str(messages.format(**prompt_params))
 
 
     @property
@@ -96,7 +96,7 @@ class Call(ICall, ArbitraryModel):
             reasks.remove(initial_messages)  # type: ignore
             return Stack(
                 *[
-                    r.inputs.messages.source if r.inputs.messages is not None else None
+                    str(r.inputs.messages) if r.inputs.messages is not None else None
                     for r in reasks
                 ]
             )

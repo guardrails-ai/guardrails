@@ -10,9 +10,12 @@
     </list>
 </output>
 
-<prompt>
+<messages>
+    <message role="user">
+        <content>
 Generate a dataset of fake user orders. Each row of the dataset should be valid.
 
 ${gr.complete_json_suffix}
-</prompt>
+</content>
+    </message>
 </rail>

@@ -47,7 +47,7 @@ class IsValidDirector(Validator):
 
 def test_python_rail(mocker):
     mock_invoke_llm = mocker.patch(
-        "guardrails.llm_providers.MockLiteLLMCallable._invoke_llm"
+        "guardrails.llm_providers.LiteLLMCallable._invoke_llm"
     )
     mock_invoke_llm.side_effect = [
         LLMResponse(
@@ -147,19 +147,27 @@ def test_python_rail(mocker):
 
     guard = gd.Guard.from_pydantic(
         output_class=Director,
-        prompt=(
+        messages=[
+            {
+                "role": "system",
+                "content": "\nYou are a helpful assistant only capable of communicating"
+        " with valid JSON, and no other text.\n${gr.xml_suffix_prompt_examples}",
+            },
+            {
+                "role": "user",
+                "content": (
             "Provide detailed information about the top 5 grossing movies from"
             " ${director} including release date, duration, budget, whether "
             "it's a sequel, website, and contact email.\n"
             "${gr.xml_suffix_without_examples}"
         ),
-        instructions="\nYou are a helpful assistant only capable of communicating"
-        " with valid JSON, and no other text.\n${gr.xml_suffix_prompt_examples}",
+            },
+        ]
     )
 
     # Guardrails runs validation and fixes the first failing output through reasking
     final_output = guard(
-        get_static_openai_chat_create_func(),
+        model="gpt-3.5-turbo",
         prompt_params={"director": "Christopher Nolan"},
         num_reasks=2,
         full_schema_reask=False,
@@ -178,11 +186,11 @@ def test_python_rail(mocker):
 
     if PYDANTIC_VERSION.startswith("1"):
         assert (
-            call.compiled_prompt == python_rail.COMPILED_PROMPT_1_WITHOUT_INSTRUCTIONS
+            call.compiled_messages == python_rail.COMPILED_PROMPT_1_WITHOUT_INSTRUCTIONS
         )
     else:
         assert (
-            call.compiled_prompt
+            call.compiled_messages
             == python_rail.COMPILED_PROMPT_1_PYDANTIC_2_WITHOUT_INSTRUCTIONS
         )
 
@@ -244,11 +252,19 @@ ${ingredients}
     guard = gd.Guard.from_string(
         validators,
         string_description=description,
-        prompt=prompt,
-        instructions=instructions,
+        messages=[
+            {
+                "role": "system",
+                "content": instructions,
+            },
+            {
+                "role": "user",
+                "content": prompt,
+            }
+        ],
     )
     final_output = guard(
-        llm_api=get_static_openai_create_func(),
+        model="gpt-3.5-turbo",
         prompt_params={"ingredients": "tomato, cheese, sour cream"},
         num_reasks=1,
         max_tokens=100,

@@ -106,7 +106,7 @@ def test_pydantic_with_reask(mocker):
 def test_pydantic_with_full_schema_reask(mocker):
     """Test that the entity extraction works with re-asking."""
     mock_invoke_llm = mocker.patch(
-        "guardrails.llm_providers.OpenAIChatCallable._invoke_llm"
+        "guardrails.llm_providers.LiteLLMCallable._invoke_llm"
     )
     mock_invoke_llm.side_effect = [
         LLMResponse(

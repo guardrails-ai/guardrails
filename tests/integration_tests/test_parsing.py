@@ -128,7 +128,7 @@ def test_reask_prompt_instructions(mocker):
     """
 
     mocker.patch(
-        "guardrails.llm_providers.OpenAIChatCallable._invoke_llm",
+        "guardrails.llm_providers.LiteLLMCallable._invoke_llm",
         return_value=LLMResponse(
             output=string.MSG_LLM_OUTPUT_CORRECT,
             prompt_token_count=123,

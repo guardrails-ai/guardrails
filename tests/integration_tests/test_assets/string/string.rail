@@ -17,8 +17,7 @@ ${output_schema}
         <content>
 Given the following ingredients, what would you call this pizza?
 
-${ingredients}
-        </content>
+${ingredients}</content>
     </message>
 </messages>
 

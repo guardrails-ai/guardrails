@@ -25,7 +25,7 @@ class MockLiteLLMCallable(LiteLLMCallable):
             ),
             "",
         )
-        print("COMPILED MESSAGES: ", compiled_messages)
+        # print("COMPILED MESSAGES: ", compiled_messages)
         _rail_to_compiled_prompt = {  # noqa
             entity_extraction.RAIL_SPEC_WITH_REASK: entity_extraction.COMPILED_PROMPT,
         }

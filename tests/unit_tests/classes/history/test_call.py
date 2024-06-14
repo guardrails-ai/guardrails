@@ -160,7 +160,7 @@ def test_non_empty_initialization():
     assert call.messages == messages
     assert call.prompt_params == prompt_params
     assert call.reask_messages == Stack(second_iter_messages.source)
-    assert call.compiled_messages == messages
+    assert call.compiled_messages == """You are a greeting bot"""
 
     # TODO: Test this in the integration tests
     assert call.logs == []

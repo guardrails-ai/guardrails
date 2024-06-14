@@ -157,6 +157,8 @@ class Runner:
 
             index = 0
             for index in range(self.num_reasks + 1):
+                print("INDEX IS", index)
+                print("MESSAGES ARE", messages)
                 # Run a single step.
                 iteration = self.step(
                     index=index,
@@ -508,7 +510,7 @@ class Runner:
     ) -> Tuple[Dict[str, Any], Optional[List[Dict]]]:
         """Prepare to loop again."""
         prompt_params = prompt_params or {}
-        output_schema, messages = get_reask_setup(
+        output_schema, prompt, messages = get_reask_setup(
             output_type=self.output_type,
             output_schema=output_schema,
             validation_map=self.validation_map,
@@ -520,5 +522,4 @@ class Runner:
             exec_options=self.exec_options,
         )
 
-        messages = None  # clear msg history for reasking
         return output_schema, messages

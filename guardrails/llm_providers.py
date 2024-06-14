@@ -146,7 +146,97 @@ class ManifestCallable(PromptCallableBase):
             output=manifest_response,
         )
 
+class OpenAICallable(OpenAIModel):
+    def _invoke_llm(
+        self,
+        text: str,
+        engine: str = "text-davinci-003",
+        instructions: Optional[str] = None,
+        *args,
+        **kwargs,
+    ) -> LLMResponse:
+        if "api_key" in kwargs:
+            api_key = kwargs.pop("api_key")
+        else:
+            api_key = None
 
+        if "model" in kwargs:
+            engine = kwargs.pop("model")
+
+        client = OpenAIClient(api_key=api_key)
+        return client.create_completion(
+            engine=engine,
+            prompt=nonchat_prompt(prompt=text, instructions=instructions),
+            *args,
+            **kwargs,
+        )
+
+
+class OpenAIChatCallable(OpenAIModel):
+    supports_base_model = True
+
+    def _invoke_llm(
+        self,
+        text: Optional[str] = None,
+        model: str = "gpt-3.5-turbo",
+        instructions: Optional[str] = None,
+        msg_history: Optional[List[Dict]] = None,
+        base_model: Optional[
+            Union[Type[BaseModel], Type[List[Type[BaseModel]]]]
+        ] = None,
+        function_call: Optional[Any] = None,
+        *args,
+        **kwargs,
+    ) -> LLMResponse:
+        """Wrapper for OpenAI chat engines.
+        Use Guardrails with OpenAI chat engines by doing
+        ```
+        raw_llm_response, validated_response, *rest = guard(
+            openai.ChatCompletion.create,
+            prompt_params={...},
+            text=...,
+            instructions=...,
+            msg_history=...,
+            temperature=...,
+            ...
+        )
+        ```
+        If `base_model` is passed, the chat engine will be used as a function
+        on the base model.
+        """
+
+        if msg_history is None and text is None:
+            raise PromptCallableException(
+                "You must pass in either `text` or `msg_history` to `guard.__call__`."
+            )
+
+        # Configure function calling if applicable (only for non-streaming)
+        fn_kwargs = {}
+        if base_model and not kwargs.get("stream", False):
+            function_params = convert_pydantic_model_to_openai_fn(base_model)
+            if function_call is None and function_params:
+                function_call = {"name": function_params["name"]}
+                fn_kwargs = {
+                    "functions": [function_params],
+                    "function_call": function_call,
+                }
+
+        # Call OpenAI
+        if "api_key" in kwargs:
+            api_key = kwargs.pop("api_key")
+        else:
+            api_key = None
+
+        client = OpenAIClient(api_key=api_key)
+        return client.create_chat_completion(
+            model=model,
+            messages=chat_prompt(
+                prompt=text, instructions=instructions, msg_history=msg_history
+            ),
+            *args,
+            **fn_kwargs,
+            **kwargs,
+        )
 
 class LiteLLMCallable(PromptCallableBase):
     def _invoke_llm(

@@ -25,8 +25,7 @@ ${gr.xml_prefix_prompt}
 
 ${xml_output_schema}
 
-${gr.xml_suffix_prompt_v2_wo_none}
-        </content>
+${gr.xml_suffix_prompt_v2_wo_none}</content>
     </message>
 </messages>
 
