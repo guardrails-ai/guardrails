@@ -635,7 +635,7 @@ def test_hugging_face_model_callable():
         bar: str
         bez: list[str]
 
-    g = Guard.from_pydantic(Foo)
+    g = Guard.from_pydantic(Foo, output_formatter="jsonformer")
     response = g(model.generate, tokenizer=tokenizer, prompt="This is madness.")
     print(response.validated_output)
     validated_output = response.validated_output
@@ -643,6 +643,8 @@ def test_hugging_face_model_callable():
     assert "bar" in validated_output
     assert "bez" in validated_output
     assert isinstance(validated_output["bez"], list)
+    if len(validated_output["bez"]) > 0:
+        assert isinstance(validated_output["bez"][0], str)
 
 
 def test_hugging_face_pipeline_callable():
@@ -655,10 +657,13 @@ def test_hugging_face_pipeline_callable():
         bar: str
         bez: list[str]
 
-    g = Guard.from_pydantic(Foo)
+    g = Guard.from_pydantic(Foo, output_formatter="jsonformer")
     response = g(model, prompt="This is madness.")
+
     print(response.validated_output)
     validated_output = response.validated_output
     assert isinstance(validated_output, dict)
     assert "bar" in validated_output
     assert isinstance(validated_output["bez"], list)
+    if len(validated_output["bez"]) > 0:
+        assert isinstance(validated_output["bez"][0], str)

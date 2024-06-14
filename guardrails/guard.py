@@ -3,7 +3,6 @@ import contextvars
 import json
 import os
 from builtins import id as object_id
-from enum import Enum
 from string import Template
 from typing import (
     Any,
@@ -50,6 +49,7 @@ from guardrails.classes.history.iteration import Iteration
 from guardrails.classes.history.outputs import Outputs
 from guardrails.classes.output_type import OutputTypes
 from guardrails.classes.schema.processed_schema import ProcessedSchema
+from guardrails.formatters import BaseFormatter, get_formatter
 from guardrails.llm_providers import (
     get_async_llm_ask,
     get_llm_api_enum,
@@ -108,12 +108,6 @@ class Guard(IGuard, Generic[OT]):
     class that contains the raw output from
     the LLM, the validated output, as well as other helpful information.
     """
-
-    class Formatter(Enum):
-        StructuredDecoding = "StructuredDecoding"
-        FunctionCalling = "FunctionCalling"
-        JsonMode = "JsonMode"
-        Passthrough = "Passthrough"
 
     # Pydantic Config
     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -178,7 +172,7 @@ class Guard(IGuard, Generic[OT]):
         self._user_id: Optional[str] = None
         self._api_client: Optional[GuardrailsApiClient] = None
         self._allow_metrics_collection: Optional[bool] = None
-        self._output_formatter: Guard.Formatter = Guard.Formatter.Passthrough
+        self._output_formatter: Optional[BaseFormatter] = None
 
         # TODO: Support a sink for history so that it is not solely held in memory
         self._history: Stack[Call] = Stack()
@@ -462,7 +456,7 @@ class Guard(IGuard, Generic[OT]):
         tracer: Optional[Tracer] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
-        output_formatter: Optional[Union[str, Formatter]] = Formatter.Passthrough,
+        output_formatter: Optional[Union[str, BaseFormatter]] = None,
     ):
         """Create a Guard instance from a Pydantic model.
 
@@ -518,7 +512,9 @@ class Guard(IGuard, Generic[OT]):
         guard._output_type = schema.output_type
         guard._base_model = output_class
         if isinstance(output_formatter, str):
-            output_formatter = Guard.Formatter[output_formatter]
+            output_formatter = get_formatter(
+                output_formatter, schema=output_class.model_json_schema()
+            )
         guard._output_formatter = output_formatter
         guard._fill_validators()
         return guard
@@ -780,6 +776,9 @@ class Guard(IGuard, Generic[OT]):
         **kwargs,
     ) -> Union[ValidationOutcome[OT], Iterable[ValidationOutcome[OT]]]:
         api = get_llm_ask(llm_api, *args, **kwargs) if llm_api is not None else None
+
+        if self._output_formatter is not None:
+            api = self._output_formatter.wrap_callable(api)
 
         # Check whether stream is set
         if kwargs.get("stream", False):
