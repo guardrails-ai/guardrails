@@ -27,6 +27,7 @@ typing-extensions = "^4.8.0"
 python-dateutil = "^2.8.2"
 tiktoken = ">=0.5.1"
 nltk = "^3.8.1"
+jsonformer = "0.12.0"
 
 sqlvalidator = {version = "^0.0.20", optional = true}
 sqlalchemy = {version = ">=2.0.9", optional = true}
