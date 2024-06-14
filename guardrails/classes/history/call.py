@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import Field, PrivateAttr
 from rich.panel import Panel
@@ -52,7 +52,7 @@ class Call(ICall, ArbitraryModel):
         super().__init__(
             iterations=iterations,  # type: ignore
             inputs=inputs,  # type: ignore
-            i_exception=CallException(exception),  # type: ignore
+            i_exception=CallException(message=str(exception)),  # type: ignore
         )
         self.iterations = iterations
         self.inputs = inputs
@@ -352,7 +352,7 @@ versions 0.5.0 and beyond. Use 'guarded_output' instead."""
 
     def _set_exception(self, exception: Optional[Exception]):
         self._exception = exception
-        self.i_exception = CallException(str(exception))
+        self.i_exception = CallException(message=str(exception))
 
     @property
     def failed_validations(self) -> Stack[ValidatorLogs]:
@@ -430,3 +430,15 @@ versions 0.5.0 and beyond. Use 'guarded_output' instead."""
 
     def __str__(self) -> str:
         return pretty_repr(self)
+
+    def to_dict(self) -> Dict[str, Any]:
+        i_call = ICall(
+            iterations=list(self.iterations),
+            inputs=self.inputs,
+        )
+
+        i_call_dict = i_call.to_dict()
+
+        if self._exception:
+            i_call_dict["exception"] = str(self._exception)
+        return i_call_dict

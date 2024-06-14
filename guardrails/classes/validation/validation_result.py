@@ -27,6 +27,14 @@ class PassResult(ValidationResult, IPassResult):
     # should only be used if Validator.override_value_on_pass is True
     value_override: Optional[Any] = Field(default=ValueOverrideSentinel)
 
+    def to_dict(self) -> Dict[str, Any]:
+        i_pass_result = IPassResult(outcome=self.outcome, metadata=self.metadata)
+
+        if self.value_override is not self.ValueOverrideSentinel:
+            i_pass_result.value_override = self.value_override
+
+        return i_pass_result.to_dict()
+
 
 # FIXME: Add this to json schema
 class ErrorSpan(ArbitraryModel):

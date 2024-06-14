@@ -26,7 +26,6 @@ from guardrails_api_client import (
     Guard as IGuard,
     GuardHistory,
     ValidatorReference,
-    ModelSchema,
     ValidatePayload,
     ValidationType,
     SimpleTypes,
@@ -48,6 +47,7 @@ from guardrails.classes.history.iteration import Iteration
 from guardrails.classes.history.outputs import Outputs
 from guardrails.classes.output_type import OutputTypes
 from guardrails.classes.schema.processed_schema import ProcessedSchema
+from guardrails.classes.schema.model_schema import ModelSchema
 from guardrails.llm_providers import (
     get_async_llm_ask,
     get_llm_api_enum,
@@ -77,7 +77,11 @@ from guardrails.utils.api_utils import extract_serializeable_metadata
 from guardrails.utils.hub_telemetry_utils import HubTelemetry
 from guardrails.classes.llm.llm_response import LLMResponse
 from guardrails.actions.reask import FieldReAsk
-from guardrails.utils.validator_utils import get_validator, verify_metadata_requirements
+from guardrails.utils.validator_utils import (
+    get_validator,
+    parse_validator_reference,
+    verify_metadata_requirements,
+)
 from guardrails.validator_base import Validator
 from guardrails.types import (
     UseManyValidatorTuple,
@@ -187,15 +191,6 @@ class Guard(IGuard, Generic[OT]):
     def history(self):
         return self._history
 
-    @history.setter
-    def history(self, h: Stack[Call]):
-        self._history = h
-        self.i_history = GuardHistory(h)
-
-    def _history_push(self, c: Call):
-        self._history.push(c)
-        self.history = self._history
-
     @field_validator("output_schema")
     @classmethod
     def must_be_valid_json_schema(
@@ -268,20 +263,9 @@ class Guard(IGuard, Generic[OT]):
                 0,
             )
             if not v:
-                serialized_args = list(
-                    map(
-                        lambda arg: Template("{${arg}}").safe_substitute(arg=arg),
-                        (ref.kwargs or {}).values(),
-                    )
-                )
-                string_syntax = (
-                    Template("${id}: ${args}").safe_substitute(
-                        id=ref.id, args=" ".join(serialized_args)
-                    )
-                    if len(serialized_args) > 0
-                    else ref.id
-                )
-                entry.append(get_validator((string_syntax, ref.on_fail)))  # type: ignore
+                validator = parse_validator_reference(ref)
+                if validator:
+                    entry.append(validator)
                 self._validator_map[ref.on] = entry  # type: ignore
 
     def _fill_validators(self):
@@ -657,7 +641,7 @@ class Guard(IGuard, Generic[OT]):
             )
             call_log = Call(inputs=call_inputs)
             set_scope(str(object_id(call_log)))
-            self._history_push(call_log)
+            self._history.push(call_log)
 
             if self._api_client is not None and model_is_supported_server_side(
                 llm_api, *args, **kwargs
@@ -1183,7 +1167,7 @@ class Guard(IGuard, Generic[OT]):
             ]
             call_log.iterations.extend(iterations)
             if self._history.length == 0:
-                self._history_push(call_log)
+                self._history.push(call_log)
 
     def _single_server_call(
         self,
@@ -1354,3 +1338,46 @@ class Guard(IGuard, Generic[OT]):
         from guardrails.integrations.langchain.guard_runnable import GuardRunnable
 
         return GuardRunnable(self)
+
+    # override IGuard.to_dict
+    def to_dict(self) -> Dict[str, Any]:
+        i_guard = IGuard(
+            id=self.id,
+            name=self.name,
+            description=self.description,
+            validators=self.validators,
+            output_schema=self.output_schema,
+            i_history=GuardHistory(list(self.history)),  # type: ignore
+        )
+        i_guard_dict = i_guard.to_dict()
+
+        i_guard_dict["history"] = [
+            call.to_dict() for call in i_guard_dict.get("history", [])
+        ]
+
+        return i_guard_dict
+
+    # override IGuard.from_dict
+    @classmethod
+    def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional["Guard"]:
+        i_guard = IGuard.from_dict(obj)
+        if not i_guard:
+            return i_guard
+        output_schema = (
+            i_guard.output_schema.to_dict() if i_guard.output_schema else None
+        )
+
+        guard = cls(
+            id=i_guard.id,
+            name=i_guard.name,
+            description=i_guard.description,
+            validators=i_guard.validators,
+            output_schema=output_schema,
+        )
+        i_history = (
+            i_guard.i_history.actual_instance
+            if i_guard.i_history and i_guard.i_history.actual_instance
+            else []
+        )
+        guard._history = Stack(*i_history)
+        return guard
