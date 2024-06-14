@@ -497,16 +497,16 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
     def log_guard_and_execution_id(self, val_outcome: ValidationOutcome):
         call = self.history.last
         if call:
+            execution_id = id(call)
             iter = call.iterations.last
             if iter:
                 outputs = iter.outputs
                 if outputs:
                     log = outputs.validator_logs[-1]
                     guard_name = log.validator_name
-                    execution_id = log.instance_id
                     logger.debug(
                         f"""Guard: {guard_name} Execution ID: {str(execution_id)} 
-                        Outcome {val_outcome.__repr_str__('')}""",
+Outcome {val_outcome.__repr_str__('')}""",
                         guard_name,
                         str(execution_id),
                     )
