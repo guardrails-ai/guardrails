@@ -1,11 +1,11 @@
 import inspect
-import nltk
 from collections import defaultdict
 from copy import deepcopy
 from enum import Enum
 from string import Template
 from typing import (
     Any,
+    Awaitable,
     Callable,
     Dict,
     List,
@@ -16,12 +16,13 @@ from typing import (
     Union,
     cast,
 )
-from typing_extensions import deprecated
 from warnings import warn
 
+import nltk
 from langchain_core.messages import BaseMessage
 from langchain_core.runnables import Runnable, RunnableConfig
 from pydantic import BaseModel, Field
+from typing_extensions import deprecated
 
 from guardrails.classes import InputType
 from guardrails.constants import hub
@@ -500,6 +501,12 @@ class Validator(Runnable):
 
     def chunking_function(self, chunk: str):
         return split_sentence_str(chunk)
+
+    def async_validate(
+        self, value: Any, metadata: Dict[str, Any]
+    ) -> Awaitable[ValidationResult]:
+        """Asynchronously validate a value and returns an awaitable validation result"""
+        raise NotImplementedError
 
     def validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
         """Validates a value and return a validation result."""
