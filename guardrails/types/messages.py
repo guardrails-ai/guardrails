@@ -61,14 +61,11 @@ class Messages():
         return f"Messages({truncated_prompt})"
 
     def __str__(self) -> str:
-        return next(        
-            (
-                h.get("content")
-                for h in self.source
-                if isinstance(h, dict)
-            ),
-            "",
-        )
+        compiled_messages = []
+        for message in self.source:
+            compiled_messages.append(message["content"])
+        compiled_messages = "\n".join(compiled_messages)
+        return compiled_messages
 
     def __iter__(self):
         self.current = 0

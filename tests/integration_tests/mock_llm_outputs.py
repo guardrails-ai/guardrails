@@ -17,15 +17,12 @@ class MockLiteLLMCallable(LiteLLMCallable):
         """Mock the OpenAI API call to Completion.create."""
 
         messages = kwargs.get("messages")
-        compiled_messages = next(
-            (
-                h.get("content")
-                for h in messages
-                if isinstance(h, dict)
-            ),
-            "",
-        )
-        # print("COMPILED MESSAGES: ", compiled_messages)
+
+        compiled_messages = []
+        for message in messages:
+            compiled_messages.append(message["content"])
+        compiled_messages = "\n".join(compiled_messages)
+
         _rail_to_compiled_prompt = {  # noqa
             entity_extraction.RAIL_SPEC_WITH_REASK: entity_extraction.COMPILED_PROMPT,
         }

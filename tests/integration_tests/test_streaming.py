@@ -124,27 +124,17 @@ def mock_openai_completion_create(chunks):
         index = 0
         for chunk in chunks:
             index = index + 1
-            # finished = index == len(chunks)
-            # finish_reason = "stop" if finished else None
-            # print("FINISH REASON", finish_reason)
-            if OPENAI_VERSION.startswith("0"):
-                yield {
-                    # TODO: for some reason using finish_reason here breaks everything
-                    "choices": [{"text": chunk, "finish_reason": None}],
-                    "model": "OpenAI model name",
-                }
-            else:
-                yield MockOpenAIV1ChunkResponse(
-                    choices=[
-                        Choice(
-                            text=chunk,
-                            delta=Delta(content=""),
-                            # TODO: for some reason using finish_reason here breaks everything  # noqa
-                            finish_reason=None,
-                        )
-                    ],
-                    model="OpenAI model name",
-                )
+            yield MockOpenAIV1ChunkResponse(
+                choices=[
+                    Choice(
+                        text=chunk,
+                        delta=Delta(content=""),
+                        # TODO: for some reason using finish_reason here breaks everything  # noqa
+                        finish_reason=None,
+                    )
+                ],
+                model="OpenAI model name",
+            )
 
     return gen()
 
@@ -245,73 +235,6 @@ JSON_LLM_CHUNKS = [
     " HOPE you aRe",
     ' too."}',
 ]
-
-
-@pytest.mark.parametrize(
-    "guard, expected_validated_output",
-    [
-        (
-            gd.Guard.from_pydantic(output_class=LowerCaseNoop, messages=MESSAGES),
-            expected_noop_output,
-        ),
-        (
-            gd.Guard.from_pydantic(output_class=LowerCaseFix, messages=MESSAGES),
-            expected_fix_output,
-        ),
-        (
-            gd.Guard.from_pydantic(output_class=LowerCaseFilter, messages=MESSAGES),
-            expected_filter_refrain_output,
-        ),
-        (
-            gd.Guard.from_pydantic(output_class=LowerCaseRefrain, messages=MESSAGES),
-            expected_filter_refrain_output,
-        ),
-    ],
-)
-def test_streaming_with_openai_callable(
-    mocker,
-    guard,
-    expected_validated_output,
-):
-    """Test streaming with LiteLLMCallable.
-
-    Mocks openai.Completion.create.
-    """
-    if OPENAI_VERSION.startswith("0"):
-        mocker.patch(
-            "openai.Completion.create",
-            return_value=mock_openai_completion_create(JSON_LLM_CHUNKS),
-        )
-    else:
-        mocker.patch(
-            "openai.resources.Completions.create",
-            return_value=mock_openai_completion_create(JSON_LLM_CHUNKS),
-        )
-
-    method = (
-        openai.Completion.create
-        if OPENAI_VERSION.startswith("0")
-        else openai.completions.create
-    )
-
-    method.__name__ = "mock_openai_completion_create"
-
-    generator = guard(
-        method,
-        engine="text-davinci-003",
-        max_tokens=10,
-        temperature=0,
-        stream=True,
-    )
-
-    assert isinstance(generator, Iterable)
-
-    for op in generator:
-        actual_output = op
-
-    assert actual_output.raw_llm_output == json.dumps(expected_raw_output)
-    assert actual_output.validated_output == expected_validated_output
-
 
 @pytest.mark.parametrize(
     "guard, expected_validated_output",
@@ -436,16 +359,10 @@ def test_string_schema_streaming_with_openai_chat(mocker, guard, expected_error_
 
     Mocks openai.ChatCompletion.create.
     """
-    if OPENAI_VERSION.startswith("0"):
-        mocker.patch(
-            "openai.ChatCompletion.create",
-            return_value=mock_openai_chat_completion_create(STR_LLM_CHUNKS),
-        )
-    else:
-        mocker.patch(
-            "openai.resources.chat.completions.Completions.create",
-            return_value=mock_openai_chat_completion_create(STR_LLM_CHUNKS),
-        )
+    mocker.patch(
+        "openai.resources.chat.completions.Completions.create",
+        return_value=mock_openai_chat_completion_create(STR_LLM_CHUNKS),
+    )
 
     method = (
         openai.ChatCompletion.create

@@ -328,16 +328,15 @@ class Runner:
     ) -> Messages:
         use_xml = messages.uses_xml()
 
-        for msg in messages.source:
-            prompt = Prompt(source=msg["content"],)
-            instructions, prompt = preprocess_prompt(
-                prompt_callable=api,
-                instructions=None,
-                prompt=prompt,
-                output_type=self.output_type,
-                use_xml=use_xml,
-            )
-            msg["content"] = prompt.source
+        prompt = Prompt(source=messages._source[-1]["content"],)
+        instructions, prompt = preprocess_prompt(
+            prompt_callable=api,
+            instructions=None,
+            prompt=prompt,
+            output_type=self.output_type,
+            use_xml=use_xml,
+        )
+        messages.source[-1]["content"] = prompt.source
 
         formatted_messages: Messages = messages.format(**prompt_params)
 
