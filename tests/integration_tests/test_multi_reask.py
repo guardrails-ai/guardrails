@@ -31,8 +31,7 @@ def test_multi_reask(mocker):
     guard = gd.Guard.from_rail_string(python_rail.RAIL_SPEC_WITH_VALIDATOR_PARALLELISM)
 
     guard(
-        llm_api=get_static_openai_create_func(),
-        engine="text-davinci-003",
+        model="text-davinci-003",
         num_reasks=5,
     )
 
@@ -43,7 +42,7 @@ def test_multi_reask(mocker):
 
     assert len(call.iterations) == 3
 
-    assert call.compiled_prompt == python_rail.VALIDATOR_PARALLELISM_PROMPT_1
+    assert call.compiled_messages == python_rail.VALIDATOR_PARALLELISM_PROMPT_1
     assert call.raw_outputs.first == python_rail.VALIDATOR_PARALLELISM_RESPONSE_1
     assert (
         call.iterations.first.validation_response

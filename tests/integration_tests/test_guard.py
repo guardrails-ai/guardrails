@@ -710,14 +710,13 @@ def test_string_with_message_history_reask(mocker):
     """Test single string (non-JSON) generation with message history and
     reask."""
     mocker.patch(
-        "guardrails.llm_providers.OpenAIChatCallable",
-        new=MockOpenAIChatCallable,
+        "guardrails.llm_providers.LiteLLMCallable",
+        new=MockLiteLLMCallable,
     )
 
     guard = gd.Guard.from_rail_string(string.RAIL_SPEC_FOR_MSG_HISTORY)
     final_output = guard(
-        llm_api=get_static_openai_chat_create_func(),
-        msg_history=string.MOVIE_MSG_HISTORY,
+        messages=string.MOVIE_MSG_HISTORY,
         temperature=0.0,
         model="gpt-3.5-turbo",
     )
@@ -821,7 +820,7 @@ def test_sequential_validator_log_is_not_duplicated(mocker):
         )
 
         guard(
-            llm_api=get_static_openai_create_func(),
+            model="gpt-3.5-turbo",
             prompt_params={"document": content[:6000]},
             num_reasks=1,
         )
@@ -864,7 +863,7 @@ def test_in_memory_validator_log_is_not_duplicated(mocker):
         )
 
         guard(
-            llm_api=get_static_openai_create_func(),
+            model="gpt-3.5-turbo",
             prompt_params={"document": content[:6000]},
             num_reasks=1,
         )
@@ -902,7 +901,7 @@ def test_enum_datatype():
     guard = gd.Guard.from_pydantic(Task)
     result = guard(
         lambda *args, **kwargs: pydantic.LLM_OUTPUT_ENUM_2,
-        messsages=[{"role": "user", "content": "What is the status of this task REALLY?"}],
+        messages=[{"role": "user", "content": "What is the status of this task REALLY?"}],
         num_reasks=0,
     )
 
@@ -993,7 +992,9 @@ def test_guard_with_top_level_list_return_type(mocker, rail, prompt):
 
     guard = guard_initializer(rail, prompt=prompt)
 
-    output = guard(llm_api=get_static_openai_create_func())
+    output = guard(
+        model="gpt-3.5-turbo",
+    )
 
     # Validate the output
     assert output.validated_output == [
@@ -1057,7 +1058,7 @@ def test_string_reask(mocker):
 
     guard = gd.Guard.from_rail_string(string.RAIL_SPEC_FOR_STRING_REASK)
     final_output = guard(
-        llm_api=get_static_openai_create_func(),
+        model="gpt-3.5-turbo",
         prompt_params={"ingredients": "tomato, cheese, sour cream"},
         num_reasks=1,
         max_tokens=100,
@@ -1071,7 +1072,6 @@ def test_string_reask(mocker):
     assert call.iterations.length == 2
 
     # For orginal prompt and output
-    assert call.compiled_instructions == string.COMPILED_INSTRUCTIONS
     assert call.compiled_messages == string.COMPILED_PROMPT
     assert call.iterations.first.raw_output == string.LLM_OUTPUT
     assert call.iterations.first.validation_response == string.VALIDATED_OUTPUT_REASK

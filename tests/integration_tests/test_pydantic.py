@@ -126,9 +126,8 @@ def test_pydantic_with_full_schema_reask(mocker):
         ),
     ]
 
-    guard = gd.Guard.from_pydantic(ListOfPeople, prompt=VALIDATED_RESPONSE_REASK_PROMPT)
+    guard = gd.Guard.from_pydantic(ListOfPeople, messages=[{"role":"user","content":VALIDATED_RESPONSE_REASK_PROMPT}])
     final_output = guard(
-        get_static_openai_chat_create_func(),
         model="gpt-3.5-turbo",
         max_tokens=512,
         temperature=0.5,
@@ -146,8 +145,7 @@ def test_pydantic_with_full_schema_reask(mocker):
     assert call.iterations.length == 3
 
     # For orginal prompt and output
-    assert call.compiled_prompt == pydantic.COMPILED_PROMPT_CHAT
-    assert call.compiled_instructions == pydantic.COMPILED_INSTRUCTIONS_CHAT
+    assert call.compiled_messages == pydantic.COMPILED_PROMPT_CHAT
     assert call.iterations.first.raw_output == pydantic.LLM_OUTPUT
     assert (
         call.iterations.first.validation_response == pydantic.VALIDATED_OUTPUT_REASK_1

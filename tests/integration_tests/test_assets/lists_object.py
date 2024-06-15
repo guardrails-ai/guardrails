@@ -28,6 +28,10 @@ RAIL_SPEC_WITH_LIST = """
         <float name="price" />
     </object>
   </output>
-  <prompt>Create a list of items that may be found in a grocery store.</prompt>
+  <messages>
+    <message role="user">
+      <content>Create a list of items that may be found in a grocery store.</content>
+    </message>
+  </messages>
 </rail>
 """
