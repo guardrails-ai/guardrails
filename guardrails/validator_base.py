@@ -641,12 +641,14 @@ class Validator(Runnable):
         """
 
         try:
-            submission_url = f"{validator_hub_service}/validator/hosted_endpoint"
+            validator_id = self.rail_alias.split("/")[-1]
+            submission_url = (
+                f"{validator_hub_service}/validator/{validator_id}/inference"
+            )
 
             headers = {
                 "Authorization": f"Bearer {self.token}",
                 "Content-Type": "application/json",
-                "validator": self.rail_alias.split("/")[-1],
             }
             req = requests.post(submission_url, json=request_body, headers=headers)
 
