@@ -79,9 +79,7 @@ class Details(BaseModel):
     def validate_budget_and_gross(cls, values):
         budget = values.get("budget")
         revenue = values.get("revenue")
-        # if revenue["revenue_type"] == "box_office":
-        if isinstance(revenue, BoxOfficeRevenue):
-            print("!!! revenue is BoxOfficeRevenue !!!")
+        if revenue["revenue_type"] == "box_office":
             gross = revenue["gross"]
             if budget >= gross:
                 raise ValueError("Budget must be less than gross revenue")
