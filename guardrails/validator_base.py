@@ -502,7 +502,7 @@ class Validator(Runnable):
     def chunking_function(self, chunk: str):
         return split_sentence_str(chunk)
 
-    def async_validate(
+    async def async_validate(
         self, value: Any, metadata: Dict[str, Any]
     ) -> Awaitable[ValidationResult]:
         """Asynchronously validate a value and returns an awaitable validation result"""
