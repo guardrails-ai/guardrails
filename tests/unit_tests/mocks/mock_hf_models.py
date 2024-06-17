@@ -1,18 +1,18 @@
 import os
 
 
-def make_mock_model_tokenizer():
+def make_mock_model_and_tokenizer():
     """Returns a tuple of HF AutoModelForCausalLM and AutoTokenizer."""
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
     # Can regenerate the sample pipe with this:
     # pipeline(
     #     "text-generation",
-    #     "hf-internal-testing/tiny-random-BartForCausalLM",
+    #     "hf-internal-testing/tiny-random-gpt2",
     # ).save_pretrained("...")
 
     savedir = os.path.join(
-        os.path.abspath(os.path.normpath(os.path.dirname(__file__))), "tiny-random-bart"
+        os.path.abspath(os.path.normpath(os.path.dirname(__file__))), "tiny-random-gpt2"
     )
 
     model = AutoModelForCausalLM.from_pretrained(savedir, local_files_only=True)
@@ -22,10 +22,10 @@ def make_mock_model_tokenizer():
     return model, tokenizer
 
 
-def make_mock_pipeline():
+def make_random_pipeline():
     from transformers import pipeline
 
-    model, tokenizer = make_mock_model_tokenizer()
+    model, tokenizer = make_mock_model_and_tokenizer()
 
     pipe = pipeline(
         task="text-generation",

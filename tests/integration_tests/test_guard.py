@@ -1164,9 +1164,9 @@ class TestSerizlizationAndDeserialization:
     reason="transformers or torch is not installed",
 )
 def test_guard_from_pydantic_with_mock_hf_pipeline():
-    from tests.unit_tests.mocks.mock_hf_models import make_mock_pipeline
+    from tests.unit_tests.mocks.mock_hf_models import make_random_pipeline
 
-    pipe = make_mock_pipeline()
+    pipe = make_random_pipeline()
     guard = Guard()
     _ = guard(pipe, prompt="Don't care about the output.  Just don't crash.")
 
@@ -1177,9 +1177,9 @@ def test_guard_from_pydantic_with_mock_hf_pipeline():
     reason="transformers or torch is not installed",
 )
 def test_guard_from_pydantic_with_mock_hf_model():
-    from tests.unit_tests.mocks.mock_hf_models import make_mock_model_tokenizer
+    from tests.unit_tests.mocks.mock_hf_models import make_mock_model_and_tokenizer
 
-    model, tokenizer = make_mock_model_tokenizer()
+    model, tokenizer = make_mock_model_and_tokenizer()
     guard = Guard()
     _ = guard(
         model.generate,

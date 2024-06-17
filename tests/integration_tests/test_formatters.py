@@ -12,22 +12,18 @@ from guardrails import Guard
     reason="transformers or torch is not installed",
 )
 def test_hugging_face_model_callable():
-    from transformers import AutoModelForCausalLM, AutoTokenizer
-
-    # TODO: Don't actually pull GPT-2 during the test.
-    model = AutoModelForCausalLM.from_pretrained("openai-community/gpt2")
-    tokenizer = AutoTokenizer.from_pretrained("openai-community/gpt2")
+    from tests.unit_tests.mocks.mock_hf_models import make_mock_model_and_tokenizer
+    model, tokenizer = make_mock_model_and_tokenizer()
 
     class Foo(BaseModel):
         bar: str
         bez: list[str]
 
     g = Guard.from_pydantic(Foo, output_formatter="jsonformer")
-    response = g(model.generate, tokenizer=tokenizer, prompt="Sample:")
+    response = g(model.generate, tokenizer=tokenizer, prompt="test")
     validated_output = response.validated_output
     assert isinstance(validated_output, dict)
     assert "bar" in validated_output
-    assert "bez" in validated_output
     assert isinstance(validated_output["bez"], list)
     if len(validated_output["bez"]) > 0:
         assert isinstance(validated_output["bez"][0], str)
@@ -39,10 +35,8 @@ def test_hugging_face_model_callable():
     reason="transformers or torch is not installed",
 )
 def test_hugging_face_pipeline_callable():
-    from transformers import pipeline
-
-    # TODO: Don't actually pull GPT-2 during the test.
-    model = pipeline("text-generation", "openai-community/gpt2")
+    from tests.unit_tests.mocks.mock_hf_models import make_random_pipeline
+    model = make_random_pipeline()
 
     class Foo(BaseModel):
         bar: str
@@ -64,10 +58,8 @@ def test_hugging_face_pipeline_callable():
     reason="transformers or torch is not installed",
 )
 def test_hugging_face_pipeline_complex_schema():
-    from transformers import pipeline
-
-    # TODO: Don't actually pull GPT-2 during the test.
-    model = pipeline("text-generation", "openai-community/gpt2")
+    from tests.unit_tests.mocks.mock_hf_models import make_random_pipeline
+    model = make_random_pipeline()
 
     class MultiNum(BaseModel):
         whole: int
