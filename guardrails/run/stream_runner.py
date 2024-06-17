@@ -271,21 +271,11 @@ class StreamRunner(Runner):
 
     def is_last_chunk(self, chunk: Any, api: Union[PromptCallableBase, None]) -> bool:
         """Detect if chunk is final chunk."""
-        if isinstance(api, OpenAICallable):
+        try:
             finished = chunk.choices[0].finish_reason
             return finished is not None
-        elif isinstance(api, OpenAIChatCallable):
-            finished = chunk.choices[0].finish_reason
-            return finished is not None
-        elif isinstance(api, LiteLLMCallable):
-            finished = chunk.choices[0].finish_reason
-            return finished is not None
-        else:
-            try:
-                finished = chunk.choices[0].finish_reason
-                return finished is not None
-            except (AttributeError, TypeError):
-                return False
+        except (AttributeError, TypeError):
+            return False
 
     def get_chunk_text(self, chunk: Any, api: Union[PromptCallableBase, None]) -> str:
         """Get the text from a chunk."""
