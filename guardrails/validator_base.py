@@ -512,6 +512,30 @@ class Validator(Runnable):
         """Validates a value and return a validation result."""
         raise NotImplementedError
 
+    async def async_validate_stream(
+        self, chunk: Any, metadata: Dict[str, Any], **kwargs
+    ) -> Awaitable[Optional[ValidationResult]]:
+        # combine accumulated chunks and new [:-1]chunk
+        self.accumulated_chunks.append(chunk)
+        accumulated_text = "".join(self.accumulated_chunks)
+        # check if enough chunks have accumulated for validation
+        splitcontents = self.chunking_function(accumulated_text)
+
+        # if remainder kwargs is passed, validate remainder regardless
+        remainder = kwargs.get("remainder", False)
+        if remainder:
+            splitcontents = [accumulated_text, ""]
+        if len(splitcontents) == 0:
+            return PassResult()
+        [chunk_to_validate, new_accumulated_chunks] = splitcontents
+        self.accumulated_chunks = [new_accumulated_chunks]
+        # exclude last chunk, because it may not be a complete chunk
+        validation_result = await self.validate(chunk_to_validate, metadata)
+        # if validate doesn't set validated chunk, we set it
+        if validation_result.validated_chunk is None:
+            validation_result.validated_chunk = chunk_to_validate
+        return validation_result
+
     def validate_stream(
         self, chunk: Any, metadata: Dict[str, Any], **kwargs
     ) -> Optional[ValidationResult]:
