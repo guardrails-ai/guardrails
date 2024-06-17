@@ -1,4 +1,3 @@
-import importlib
 import pytest
 
 from pydantic import BaseModel
@@ -52,6 +51,7 @@ def test_hugging_face_pipeline_callable():
 
 @pytest.mark.skip(reason="Random model infinitely recurses on complex struct. Use GPT2")
 def test_hugging_face_pipeline_complex_schema():
+    # NOTE: This is the real GPT-2 model.
     from transformers import pipeline
     model = pipeline("text-generation", "gpt2")
 
@@ -61,9 +61,6 @@ def test_hugging_face_pipeline_complex_schema():
 
     class Tricky(BaseModel):
         foo: MultiNum
-
-    # Note: If we used a real model we could do foo: list[MultiNum], but the random
-    # model tends to get stuck in an infinite loop during list generation.
 
     g = Guard.from_pydantic(Tricky, output_formatter="jsonformer")
     response = g(model, prompt="Sample:")
