@@ -86,7 +86,7 @@ prompt = """
 """
 guard = Guard.from_pydantic(output_class=Pet, prompt=prompt)
 
-validated_output, *rest = guard(
+raw_output, validated_output, *rest = guard(
     llm_api=openai.chat.completions.create,
     engine="gpt-3.5-turbo"
 )

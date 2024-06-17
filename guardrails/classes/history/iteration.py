@@ -7,17 +7,19 @@ from rich.pretty import pretty_repr
 from rich.table import Table
 from typing_extensions import deprecated
 
+from guardrails_api_client import Iteration as IIteration
 from guardrails.classes.generic.stack import Stack
 from guardrails.classes.history.inputs import Inputs
 from guardrails.classes.history.outputs import Outputs
+from guardrails.classes.generic.arbitrary_model import ArbitraryModel
 from guardrails.logger import get_scope_handler
 from guardrails.prompt.prompt import Prompt
-from guardrails.utils.logs_utils import ValidatorLogs
-from guardrails.utils.pydantic_utils import ArbitraryModel
-from guardrails.utils.reask_utils import ReAsk
+from guardrails.classes.validation.validator_logs import ValidatorLogs
+from guardrails.actions.reask import ReAsk
+from guardrails.classes.validation.validation_result import ErrorSpan
 
 
-class Iteration(ArbitraryModel):
+class Iteration(IIteration, ArbitraryModel):
     # I think these should be containered since their names slightly overlap with
     #  outputs, but could be convinced otherwise
     inputs: Inputs = Field(
@@ -71,13 +73,13 @@ class Iteration(ArbitraryModel):
             return self.outputs.raw_output
 
     @property
-    def parsed_output(self) -> Optional[Union[str, Dict]]:
+    def parsed_output(self) -> Optional[Union[str, List, Dict]]:
         """The output from the LLM after undergoing parsing but before
         validation."""
         return self.outputs.parsed_output
 
     @property
-    def validation_response(self) -> Optional[Union[ReAsk, str, Dict]]:
+    def validation_response(self) -> Optional[Union[ReAsk, str, List, Dict]]:
         """The response from a single stage of validation.
 
         Validation response is the output of a single stage of validation
@@ -93,7 +95,7 @@ class Iteration(ArbitraryModel):
         """'Iteration.validation_output' is deprecated and will be removed in \
 versions 0.5.0 and beyond. Use 'validation_response' instead."""
     )
-    def validation_output(self) -> Optional[Union[ReAsk, str, Dict]]:
+    def validation_output(self) -> Optional[Union[ReAsk, str, List, Dict]]:
         """The output from the validation process.
 
         Could be a combination of valid output and ReAsks
@@ -101,7 +103,7 @@ versions 0.5.0 and beyond. Use 'validation_response' instead."""
         return self.validation_response
 
     @property
-    def guarded_output(self) -> Optional[Union[str, Dict]]:
+    def guarded_output(self) -> Optional[Union[str, List, Dict]]:
         """Any valid values after undergoing validation.
 
         Some values in the validated output may be "fixed" values that
@@ -115,7 +117,7 @@ versions 0.5.0 and beyond. Use 'validation_response' instead."""
         """'Iteration.validated_output' is deprecated and will be removed in \
 versions 0.5.0 and beyond. Use 'guarded_output' instead."""
     )
-    def validated_output(self) -> Optional[Union[str, Dict]]:
+    def validated_output(self) -> Optional[Union[str, List, Dict]]:
         """The valid output from the LLM after undergoing validation.
 
         Could be only a partial structure if field level reasks occur.
@@ -136,6 +138,13 @@ versions 0.5.0 and beyond. Use 'guarded_output' instead."""
     def validator_logs(self) -> List[ValidatorLogs]:
         """The results of each individual validation performed on the LLM
         response during this iteration."""
+        if self.inputs.stream:
+            filtered_logs = [
+                log
+                for log in self.outputs.validator_logs
+                if log.validation_result and log.validation_result.validated_chunk
+            ]
+            return filtered_logs
         return self.outputs.validator_logs
 
     @property
@@ -154,6 +163,14 @@ versions 0.5.0 and beyond. Use 'guarded_output' instead."""
         """The validator logs for any validations that failed during this
         iteration."""
         return self.outputs.failed_validations
+
+    @property
+    def error_spans_in_output(self) -> List[ErrorSpan]:
+        """The error spans from the LLM response.
+
+        These indices are relative to the complete LLM output.
+        """
+        return self.outputs.error_spans_in_output
 
     @property
     def status(self) -> str:

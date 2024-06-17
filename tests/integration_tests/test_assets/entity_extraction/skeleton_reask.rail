@@ -3,8 +3,8 @@
 
     <list name="fees" description="What fees and charges are associated with my account?">
         <object>
-            <string name="name" format="lower-case; two-words" on-fail-lower-case="noop" on-fail-two-words="reask"/>
-            <string name="explanation" format="one-line" on-fail-one-line="noop" />
+            <string name="name" validators="lower-case; two-words" on-fail-lower-case="noop" on-fail-two-words="reask"/>
+            <string name="explanation" validators="one-line" on-fail-one-line="noop" />
             <float name="value" format="percentage"/>
         </object>
     </list>
@@ -20,8 +20,8 @@ ${document}
 
 ${gr.xml_prefix_prompt}
 
-${output_schema}
+${xml_output_schema}
 
-${gr.json_suffix_prompt_v2_wo_none}</prompt>
+${gr.xml_suffix_prompt_v2_wo_none}</prompt>
 
 </rail>

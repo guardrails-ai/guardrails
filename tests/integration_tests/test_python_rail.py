@@ -6,6 +6,7 @@ import pytest
 from pydantic import BaseModel, Field
 
 import guardrails as gd
+from guardrails.classes.llm.llm_response import LLMResponse
 from guardrails.utils.openai_utils import (
     get_static_openai_chat_create_func,
     get_static_openai_create_func,
@@ -21,7 +22,7 @@ from guardrails.validators import (
     register_validator,
 )
 
-from .mock_llm_outputs import MockOpenAICallable, MockOpenAIChatCallable
+from .mock_llm_outputs import MockOpenAICallable
 from .test_assets import python_rail, string
 
 
@@ -44,10 +45,21 @@ class IsValidDirector(Validator):
 
 
 def test_python_rail(mocker):
-    mocker.patch(
-        "guardrails.llm_providers.OpenAIChatCallable",
-        new=MockOpenAIChatCallable,
+    mock_invoke_llm = mocker.patch(
+        "guardrails.llm_providers.OpenAIChatCallable._invoke_llm"
     )
+    mock_invoke_llm.side_effect = [
+        LLMResponse(
+            output=python_rail.LLM_OUTPUT_1_FAIL_GUARDRAILS_VALIDATION,
+            prompt_token_count=123,
+            response_token_count=1234,
+        ),
+        LLMResponse(
+            output=python_rail.LLM_OUTPUT_2_SUCCEED_GUARDRAILS_BUT_FAIL_PYDANTIC_VALIDATION,
+            prompt_token_count=123,
+            response_token_count=1234,
+        ),
+    ]
 
     class BoxOfficeRevenue(BaseModel):
         revenue_type: Literal["box_office"]
@@ -115,10 +127,10 @@ def test_python_rail(mocker):
             "Provide detailed information about the top 5 grossing movies from"
             " ${director} including release date, duration, budget, whether "
             "it's a sequel, website, and contact email.\n"
-            "${gr.json_suffix_without_examples}"
+            "${gr.xml_suffix_without_examples}"
         ),
         instructions="\nYou are a helpful assistant only capable of communicating"
-        " with valid JSON, and no other text.\n${gr.json_suffix_prompt_examples}",
+        " with valid JSON, and no other text.\n${gr.xml_suffix_prompt_examples}",
     )
 
     # Guardrails runs validation and fixes the first failing output through reasking
@@ -188,7 +200,10 @@ ${ingredients}
 """
 
     guard = gd.Guard.from_string(
-        validators, description, prompt=prompt, instructions=instructions
+        validators,
+        string_description=description,
+        prompt=prompt,
+        instructions=instructions,
     )
     final_output = guard(
         llm_api=get_static_openai_create_func(),

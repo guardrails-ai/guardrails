@@ -7,7 +7,7 @@ from guardrails.validators import LowerCase, OneLine, TwoWords
 
 
 class FeeDetailsFilter(BaseModel):
-    index: int = Field(validators=("1-indexed", OnFailAction.NOOP))
+    index: int = Field(format="1-indexed")
     name: str = Field(
         validators=[
             LowerCase(on_fail=OnFailAction.FILTER),
@@ -15,7 +15,7 @@ class FeeDetailsFilter(BaseModel):
         ]
     )
     explanation: str = Field(validators=OneLine(on_fail=OnFailAction.FILTER))
-    value: float = Field(validators=("percentage", OnFailAction.NOOP))
+    value: float = Field(format="percentage")
 
 
 class ContractDetailsFilter(BaseModel):
@@ -29,7 +29,7 @@ class ContractDetailsFilter(BaseModel):
 
 
 class FeeDetailsFix(BaseModel):
-    index: int = Field(validators=("1-indexed", OnFailAction.NOOP))
+    index: int = Field(format="1-indexed")
     name: str = Field(
         validators=[
             LowerCase(on_fail=OnFailAction.FIX),
@@ -37,7 +37,7 @@ class FeeDetailsFix(BaseModel):
         ]
     )
     explanation: str = Field(validators=OneLine(on_fail=OnFailAction.FIX))
-    value: float = Field(validators=("percentage", OnFailAction.NOOP))
+    value: float = Field(format="percentage")
 
 
 class ContractDetailsFix(BaseModel):
@@ -51,7 +51,7 @@ class ContractDetailsFix(BaseModel):
 
 
 class FeeDetailsNoop(BaseModel):
-    index: int = Field(validators=("1-indexed", OnFailAction.NOOP))
+    index: int = Field(format="1-indexed")
     name: str = Field(
         validators=[
             LowerCase(on_fail=OnFailAction.NOOP),
@@ -59,7 +59,7 @@ class FeeDetailsNoop(BaseModel):
         ]
     )
     explanation: str = Field(validators=OneLine(on_fail=OnFailAction.NOOP))
-    value: float = Field(validators=("percentage", OnFailAction.NOOP))
+    value: float = Field(format="percentage")
 
 
 class ContractDetailsNoop(BaseModel):
@@ -73,7 +73,7 @@ class ContractDetailsNoop(BaseModel):
 
 
 class FeeDetailsReask(BaseModel):
-    index: int = Field(validators=("1-indexed", OnFailAction.NOOP))
+    index: int = Field(format="1-indexed")
     name: str = Field(
         validators=[
             LowerCase(on_fail=OnFailAction.NOOP),
@@ -81,7 +81,7 @@ class FeeDetailsReask(BaseModel):
         ]
     )
     explanation: str = Field(validators=OneLine(on_fail=OnFailAction.NOOP))
-    value: float = Field(validators=("percentage", OnFailAction.NOOP))
+    value: float = Field(format="percentage")
 
 
 class ContractDetailsReask(BaseModel):
@@ -95,7 +95,7 @@ class ContractDetailsReask(BaseModel):
 
 
 class FeeDetailsRefrain(BaseModel):
-    index: int = Field(validators=("1-indexed", OnFailAction.NOOP))
+    index: int = Field(format="1-indexed")
     name: str = Field(
         validators=[
             LowerCase(on_fail=OnFailAction.REFRAIN),
@@ -103,7 +103,7 @@ class FeeDetailsRefrain(BaseModel):
         ]
     )
     explanation: str = Field(validators=OneLine(on_fail=OnFailAction.REFRAIN))
-    value: float = Field(validators=("percentage", OnFailAction.NOOP))
+    value: float = Field(format="percentage")
 
 
 class ContractDetailsRefrain(BaseModel):
@@ -123,15 +123,15 @@ ${document}
 
 ${gr.xml_prefix_prompt}
 
-${output_schema}
+${xml_output_schema}
 
-${gr.json_suffix_prompt_v2_wo_none}"""  # noqa: E501
+${gr.xml_suffix_prompt_v2_wo_none}"""  # noqa: E501
 
 
 INSTRUCTIONS_CHAT_MODEL = """
 You are a helpful assistant only capable of communicating with valid JSON, and no other text.
 
-${gr.json_suffix_prompt_examples}
+${gr.xml_suffix_prompt_examples}
 """  # noqa: E501
 
 
@@ -144,5 +144,5 @@ Extract information from this document and return a JSON that follows the correc
 
 ${gr.xml_prefix_prompt}
 
-${output_schema}
+${xml_output_schema}
 """  # noqa: E501

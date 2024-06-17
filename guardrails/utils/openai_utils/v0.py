@@ -5,7 +5,7 @@ import openai
 import openai.error
 from tenacity import retry, retry_if_exception_type, wait_exponential_jitter
 
-from guardrails.utils.llm_response import LLMResponse
+from guardrails.classes.llm.llm_response import LLMResponse
 from guardrails.utils.openai_utils.base import (
     BaseAsyncOpenAIClient,
     BaseSyncOpenAIClient,

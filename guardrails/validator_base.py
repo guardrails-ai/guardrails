@@ -1,14 +1,13 @@
 import inspect
+import nltk
 from collections import defaultdict
 from copy import deepcopy
-from enum import Enum
 from string import Template
 from typing import (
     Any,
     Callable,
     Dict,
     List,
-    Literal,
     Optional,
     Tuple,
     Type,
@@ -20,11 +19,19 @@ from warnings import warn
 
 from langchain_core.messages import BaseMessage
 from langchain_core.runnables import Runnable, RunnableConfig
-from pydantic import BaseModel, Field
 
-from guardrails.classes import InputType
+from guardrails.actions.filter import Filter
+from guardrails.actions.refrain import Refrain
+from guardrails.classes import (
+    InputType,
+    ValidationResult,
+    PassResult,  # noqa
+    FailResult,
+    ErrorSpan,  # noqa
+)
 from guardrails.constants import hub
 from guardrails.errors import ValidationError
+from guardrails.types.on_fail import OnFailAction
 from guardrails.utils.dataclass import dataclass
 
 VALIDATOR_IMPORT_WARNING = """Accessing `{validator_name}` using
@@ -168,12 +175,35 @@ VALIDATOR_NAMING = {
 }
 
 
-class Filter:
-    pass
+# functions to get chunks
 
 
-class Refrain:
-    pass
+def split_sentence_str(chunk: str):
+    """A naive sentence splitter that splits on periods."""
+    if "." not in chunk:
+        return []
+    fragments = chunk.split(".")
+    return [fragments[0] + ".", ".".join(fragments[1:])]
+
+
+def split_sentence_nltk(chunk: str):
+    """
+    NOTE: this approach currently does not work
+    Use a sentence tokenizer to split the chunk into sentences.
+
+    Because using the tokenizer is expensive, we only use it if there
+    is a period present in the chunk.
+    """
+    # using the sentence tokenizer is expensive
+    # we check for a . to avoid wastefully calling the tokenizer
+    if "." not in chunk:
+        return []
+    sentences = nltk.sent_tokenize(chunk)
+    if len(sentences) == 0:
+        return []
+    # return the sentence
+    # then the remaining chunks that aren't finished accumulating
+    return [sentences[0], "".join(sentences[1:])]
 
 
 def check_refrain_in_list(schema: List) -> bool:
@@ -286,11 +316,11 @@ def filter_in_schema(schema: Union[Dict, List]) -> Union[Dict, List]:
     return filter_in_dict(schema)
 
 
-validators_registry = {}
+validators_registry: Dict[str, Type["Validator"]] = {}
 types_to_validators = defaultdict(list)
 
 
-def validator_factory(name: str, validate: Callable):
+def validator_factory(name: str, validate: Callable) -> Type["Validator"]:
     def validate_wrapper(self, *args, **kwargs):
         return validate(*args, **kwargs)
 
@@ -304,10 +334,10 @@ def validator_factory(name: str, validate: Callable):
 
 def register_validator(name: str, data_type: Union[str, List[str]]):
     """Register a validator for a data type."""
-    from guardrails.datatypes import registry as types_registry
+    from guardrails.datatypes import types_registry
 
     if isinstance(data_type, str):
-        data_type = list(types_registry.keys()) if data_type == "all" else [data_type]
+        data_type = types_registry if data_type == "all" else [data_type]
     # Make sure that the data type string exists in the data types registry.
     for dt in data_type:
         if dt not in types_registry:
@@ -341,48 +371,25 @@ def register_validator(name: str, data_type: Union[str, List[str]]):
     return decorator
 
 
-def get_validator(name: str):
+def get_validator_class(name: Optional[str]) -> Optional[Type["Validator"]]:
+    if not name:
+        return None
     is_hub_validator = name.startswith(hub)
     validator_key = name.replace(hub, "") if is_hub_validator else name
     registration = validators_registry.get(validator_key)
     if not registration and name.startswith(hub):
         # This should import everything and trigger registration
+        # So it should only have to happen once
+        # in lieu of completely unregistered validators
         import guardrails.hub  # noqa
 
         return validators_registry.get(validator_key)
+
+    if not registration:
+        warn(f"Validator with id {name} was not found in the registry!  Ignoring...")
+        return None
+
     return registration
-
-
-class ValidationResult(BaseModel):
-    outcome: str
-    metadata: Optional[Dict[str, Any]] = None
-
-
-class PassResult(ValidationResult):
-    outcome: Literal["pass"] = "pass"
-
-    class ValueOverrideSentinel:
-        pass
-
-    # should only be used if Validator.override_value_on_pass is True
-    value_override: Optional[Any] = Field(default=ValueOverrideSentinel)
-
-
-class FailResult(ValidationResult):
-    outcome: Literal["fail"] = "fail"
-
-    error_message: str
-    fix_value: Optional[Any] = None
-
-
-class OnFailAction(str, Enum):
-    REASK = "reask"
-    FIX = "fix"
-    FILTER = "filter"
-    REFRAIN = "refrain"
-    NOOP = "noop"
-    EXCEPTION = "exception"
-    FIX_REASK = "fix_reask"
 
 
 @dataclass  # type: ignore
@@ -391,6 +398,10 @@ class Validator(Runnable):
 
     rail_alias: str = ""
 
+    # chunking function returns empty list or list of 2 chunks
+    # first chunk is the chunk to validate
+    # second chunk is incomplete chunk that needs further accumulation
+    accumulated_chunks = []
     run_in_separate_process = False
     override_value_on_pass = False
     required_metadata_keys = []
@@ -449,9 +460,48 @@ class Validator(Runnable):
             self.rail_alias in validators_registry
         ), f"Validator {self.__class__.__name__} is not registered. "
 
+    def chunking_function(self, chunk: str):
+        return split_sentence_str(chunk)
+
     def validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
         """Validates a value and return a validation result."""
         raise NotImplementedError
+
+    def validate_stream(
+        self, chunk: Any, metadata: Dict[str, Any], **kwargs
+    ) -> Optional[ValidationResult]:
+        """Validates a chunk emitted by an LLM. If the LLM chunk is smaller
+        than the validator's chunking strategy, it will be accumulated until it
+        reaches the desired size. In the meantime, the validator will return
+        None.
+
+        If the LLM chunk is larger than the validator's chunking
+        strategy, it will split it into validator-sized chunks and
+        validate each one, returning an array of validation results.
+
+        Otherwise, the validator will validate the chunk and return the
+        result.
+        """
+        # combine accumulated chunks and new [:-1]chunk
+        self.accumulated_chunks.append(chunk)
+        accumulated_text = "".join(self.accumulated_chunks)
+        # check if enough chunks have accumulated for validation
+        splitcontents = self.chunking_function(accumulated_text)
+
+        # if remainder kwargs is passed, validate remainder regardless
+        remainder = kwargs.get("remainder", False)
+        if remainder:
+            splitcontents = [accumulated_text, ""]
+        if len(splitcontents) == 0:
+            return PassResult()
+        [chunk_to_validate, new_accumulated_chunks] = splitcontents
+        self.accumulated_chunks = [new_accumulated_chunks]
+        # exclude last chunk, because it may not be a complete chunk
+        validation_result = self.validate(chunk_to_validate, metadata)
+        # if validate doesn't set validated chunk, we set it
+        if validation_result.validated_chunk is None:
+            validation_result.validated_chunk = chunk_to_validate
+        return validation_result
 
     def to_prompt(self, with_keywords: bool = True) -> str:
         """Convert the validator to a prompt.
@@ -605,4 +655,5 @@ class Validator(Runnable):
         return ValidatorRunnable(self)
 
 
+# Superseded by guardrails/types/validator.py::PydanticValidatorSpec
 ValidatorSpec = Union[Validator, Tuple[Union[Validator, str, Callable], str]]
