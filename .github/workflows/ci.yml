@@ -9,6 +9,8 @@ on:
     branches:
       - main
       - dev
+      - feat/*
+      - 0.*.*
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -25,12 +27,6 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-
-      # - name: Poetry cache
-      #   uses: actions/cache@v3
-      #   with:
-      #     path: ~/.cache/pypoetry
-      #     key: poetry-cache-${{ runner.os }}-${{ matrix.python-version }}-${{ env.POETRY_VERSION }}
 
       - name: Install Poetry
         uses: snok/install-poetry@v1
@@ -49,20 +45,12 @@ jobs:
     strategy:
       matrix:
         python-version: ["3.8", "3.9", "3.10", "3.11"]
-        pydantic-version: ["1.10.9", "2.4.2"]
-        openai-version: ["1.30.1"]
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-
-      # - name: Poetry cache
-      #   uses: actions/cache@v3
-      #   with:
-      #     path: ~/.cache/pypoetry
-      #     key: poetry-cache-${{ runner.os }}-${{ matrix.python-version }}-${{ env.POETRY_VERSION }}-${{ matrix.pydantic-version }}
 
       - name: Install Poetry
         uses: snok/install-poetry@v1
@@ -71,8 +59,6 @@ jobs:
         # TODO: fix errors so that we can run `make dev` instead
         run: |
           make full
-          poetry run pip install pydantic==${{ matrix.pydantic-version }}
-          poetry run pip install openai==${{ matrix.openai-version }}
 
       - name: Static analysis with pyright
         run: |
@@ -85,9 +71,7 @@ jobs:
         python-version: ["3.8", "3.9", "3.10", "3.11"]
         # TODO: fix errors so that we can run both `make dev` and `make full`
         # dependencies: ['dev', 'full']
-        dependencies: ["full"]
-        pydantic-version: ["1.10.9", "2.4.2"]
-        openai-version: ["1.30.1"]
+        # dependencies: ["full"]
     steps:
       - uses: actions/checkout@v4
 
@@ -101,20 +85,12 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      # - name: Poetry cache
-      #   uses: actions/cache@v3
-      #   with:
-      #     path: ~/.cache/pypoetry
-      #     key: poetry-cache-${{ runner.os }}-${{ matrix.python-version }}-${{ env.POETRY_VERSION }}-${{ matrix.pydantic-version }}-${{ matrix.openai-version }}
-
       - name: Install Poetry
         uses: snok/install-poetry@v1
 
       - name: Install Dependencies
         run: |
-          make ${{ matrix.dependencies }}
-          poetry run pip install pydantic==${{ matrix.pydantic-version }}
-          poetry run pip install openai==${{ matrix.openai-version }}
+          make full
 
       - name: Run Pytests
         run: |

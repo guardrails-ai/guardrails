@@ -1,15 +1,20 @@
+import json
 import os
-from typing import Optional
+from typing import Any, Iterable, Optional
 
-from guardrails_api_client import AuthenticatedClient
-from guardrails_api_client.api.guard import update_guard, validate
+import requests
+from guardrails_api_client.configuration import Configuration
+from guardrails_api_client.api_client import ApiClient
+from guardrails_api_client.api.guard_api import GuardApi
+from guardrails_api_client.api.validate_api import ValidateApi
 from guardrails_api_client.models import Guard, ValidatePayload
-from guardrails_api_client.types import UNSET
-from httpx import Timeout
 
 
 class GuardrailsApiClient:
-    _client: AuthenticatedClient
+    _api_client: ApiClient
+    _guard_api: GuardApi
+    _validate_api: ValidateApi
+    timeout: float
     base_url: str
     api_key: str
 
@@ -22,15 +27,17 @@ class GuardrailsApiClient:
         self.api_key = (
             api_key if api_key is not None else os.environ.get("GUARDRAILS_API_KEY", "")
         )
-        self._client = AuthenticatedClient(
-            base_url=self.base_url,  # type: ignore
-            follow_redirects=True,  # type: ignore
-            token=self.api_key,
-            timeout=Timeout(300),  # type: ignore
+        self.timeout = 300
+        self._api_client = ApiClient(
+            configuration=Configuration(api_key=self.api_key, host=self.base_url)
         )
+        self._guard_api = GuardApi(self._api_client)
+        self._validate_api = ValidateApi(self._api_client)
 
     def upsert_guard(self, guard: Guard):
-        update_guard.sync(guard_name=guard.name, client=self._client, body=guard)
+        self._guard_api.update_guard(
+            guard_name=guard.name, body=guard, _request_timeout=self.timeout
+        )
 
     def validate(
         self,
@@ -41,11 +48,41 @@ class GuardrailsApiClient:
         _openai_api_key = (
             openai_api_key
             if openai_api_key is not None
-            else os.environ.get("OPENAI_API_KEY", UNSET)
+            else os.environ.get("OPENAI_API_KEY")
         )
-        return validate.sync(
+        return self._validate_api.validate(
             guard_name=guard.name,
-            client=self._client,
-            body=payload,
+            validate_payload=payload,
             x_openai_api_key=_openai_api_key,
         )
+
+    def stream_validate(
+        self,
+        guard: Guard,
+        payload: ValidatePayload,
+        openai_api_key: Optional[str] = None,
+    ) -> Iterable[Any]:
+        _openai_api_key = (
+            openai_api_key
+            if openai_api_key is not None
+            else os.environ.get("OPENAI_API_KEY")
+        )
+
+        url = f"{self.base_url}/guards/{guard.name}/validate"
+        headers = {
+            "Content-Type": "application/json",
+            "x-openai-api-key": _openai_api_key,
+        }
+
+        s = requests.Session()
+
+        with s.post(url, json=payload.to_dict(), headers=headers, stream=True) as resp:
+            for line in resp.iter_lines():
+                if not resp.ok:
+                    raise ValueError(
+                        f"status_code: {resp.status_code}"
+                        " reason: {resp.reason} text: {resp.text}"
+                    )
+                if line:
+                    json_output = json.loads(line)
+                    yield json_output

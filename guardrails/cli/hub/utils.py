@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import subprocess
 import sys
 from email.parser import BytesHeaderParser
@@ -20,33 +21,44 @@ def pip_process(
     flags: List[str] = [],
     format: Union[Literal["string"], Literal["json"]] = string_format,
     quiet: bool = False,
+    no_color: bool = False,
 ) -> Union[str, dict]:
     try:
         if not quiet:
             logger.debug(f"running pip {action} {' '.join(flags)} {package}")
-        command = [sys.executable, "-m", "pip", action] + flags
+        command = [sys.executable, "-m", "pip", action]
+        command.extend(flags)
         if package:
             command.append(package)
 
+        env = dict(os.environ)
+        if no_color:
+            env["NO_COLOR"] = "true"
         if not quiet:
             logger.debug(f"decoding output from pip {action} {package}")
-            output = subprocess.check_output(command)
+            output = subprocess.check_output(command, env=env)
         else:
-            output = subprocess.check_output(command, stderr=subprocess.DEVNULL)
+            output = subprocess.check_output(
+                command, stderr=subprocess.DEVNULL, env=env
+            )
 
         if format == json_format:
             parsed = BytesHeaderParser().parsebytes(output)
             try:
-                return json.loads(str(parsed))
+                remove_color_codes = re.compile(r"\x1b\[[0-9;]*m")
+                parsed_as_string = re.sub(
+                    remove_color_codes, "", parsed.as_string().strip()
+                )
+                return json.loads(parsed_as_string)
             except Exception:
                 logger.debug(
                     f"JSON parse exception in decoding output from pip \
 {action} {package}. Falling back to accumulating the byte stream",
                 )
-                accumulator = {}
-                for key, value in parsed.items():
-                    accumulator[key] = value
-                return accumulator
+            accumulator = {}
+            for key, value in parsed.items():
+                accumulator[key] = value
+            return accumulator
         return str(output.decode())
     except subprocess.CalledProcessError as exc:
         logger.error(

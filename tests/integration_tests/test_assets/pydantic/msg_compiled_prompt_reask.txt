@@ -2,32 +2,31 @@
 I was given the following JSON response, which had problems due to incorrect values.
 
 {
-  "incorrect_value": {
-    "name": "Inception",
-    "director": "Christopher Nolan"
-  },
-  "error_messages": [
-    "JSON does not match schema"
-  ]
+  "name": "Inception",
+  "director": "Christopher Nolan"
 }
 
 Help me correct the incorrect values based on the given error messages.
 
 
-Given below is XML that describes the information to extract from this document and the tags to extract it into.
-
-<output>
-    <string name="name" description="The name of the movie."/>
-    <string name="director" description="The name of the director."/>
-    <integer name="release_year" description="The year the movie was released."/>
-</output>
+Error Messages:
+"JSON does not match schema:\n{\n  \"$\": [\n    \"'release_year' is a required property\"\n  ]\n}"
 
 
-ONLY return a valid JSON object (no other text is necessary), where the key of the field in JSON is the `name` attribute of the corresponding XML, and the value is of the type specified by the corresponding XML's tag. The JSON MUST conform to the XML format, including any types and format requests e.g. requests for lists, objects and specific types. Be correct and concise. If you are unsure anywhere, enter `null`.
+
+Given below is a JSON Schema that describes the output structure you should return.
+
+{"properties": {"name": {"description": "The name of the movie.", "title": "Name", "type": "string"}, "director": {"description": "The name of the director.", "title": "Director", "type": "string"}, "release_year": {"description": "The year the movie was released.", "title": "Release Year", "type": "integer"}}, "required": ["name", "director", "release_year"], "type": "object", "title": "Movie"}
+
+ONLY return a valid JSON object (no other text is necessary), where the key of the field in the JSON is the key of the entries within the schema's `properties`, and the value is of the type specified by the `type` property under that key. 
+The JSON MUST conform to the structure described by the JSON Schema provided BUT SHOULD NOT BE A JSON Schema ITSELF.
+Be sure to include any types and format requests e.g. requests for lists, objects and specific types. 
+Be correct and concise. 
+If you are unsure anywhere, enter `null`.
 
 Here's an example of the structure:
 {
-  "name": "string",
-  "director": "string",
-  "release_year": 1
+  "name": "Star Wars",
+  "director": "George Lucas",
+  "release_year": 1977
 }

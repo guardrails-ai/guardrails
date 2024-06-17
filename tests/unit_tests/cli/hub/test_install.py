@@ -70,7 +70,6 @@ class TestInstall:
             ),  # noqa
         ]
         assert mock_logger_log.call_count == 2
-        print(mock_logger_log)
         mock_logger_log.assert_has_calls(log_calls)
 
         mock_get_validator_manifest.assert_called_once_with("guardrails/test-validator")
@@ -88,6 +87,7 @@ class TestInstall:
 
 class TestPipProcess:
     def test_no_package_string_format(self, mocker):
+        mocker.patch("guardrails.cli.hub.install.os.environ", return_value={})
         mock_logger_debug = mocker.patch("guardrails.cli.hub.utils.logger.debug")
 
         mock_sys_executable = mocker.patch("guardrails.cli.hub.install.sys.executable")
@@ -109,12 +109,14 @@ class TestPipProcess:
         mock_logger_debug.assert_has_calls(debug_calls)
 
         mock_subprocess_check_output.assert_called_once_with(
-            [mock_sys_executable, "-m", "pip", "inspect", "--path=./install-here"]
+            [mock_sys_executable, "-m", "pip", "inspect", "--path=./install-here"],
+            env={},
         )
 
         assert response == "string output"
 
     def test_json_format(self, mocker):
+        mocker.patch("guardrails.cli.hub.install.os.environ", return_value={})
         mock_logger_debug = mocker.patch("guardrails.cli.hub.install.logger.debug")
 
         mock_sys_executable = mocker.patch("guardrails.cli.hub.install.sys.executable")
@@ -147,7 +149,7 @@ class TestPipProcess:
         mock_logger_debug.assert_has_calls(debug_calls)
 
         mock_subprocess_check_output.assert_called_once_with(
-            [mock_sys_executable, "-m", "pip", "show", "pip"]
+            [mock_sys_executable, "-m", "pip", "show", "pip"], env={}
         )
 
         assert response == {"output": "json"}
@@ -708,6 +710,7 @@ def test_install_hub_module(mocker):
             flags=["--path=mock/install/directory"],
             format="json",
             quiet=False,
+            no_color=True,
         ),
         call("install", "rstr", quiet=False),
         call("install", "openai<2", quiet=False),
@@ -783,6 +786,7 @@ def test_quiet_install(mocker):
             flags=["--path=mock/install/directory"],
             format="json",
             quiet=True,
+            no_color=True,
         ),
         call("install", "rstr", quiet=True),
         call("install", "openai<2", quiet=True),
