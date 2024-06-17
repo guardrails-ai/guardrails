@@ -3,11 +3,11 @@ from typing import Dict
 
 import pytest
 
+from guardrails.classes.llm.llm_response import LLMResponse
 from guardrails.guard import Guard
 from guardrails.utils.openai_utils import get_static_openai_create_func
 from guardrails.validator_base import OnFailAction
 from guardrails.validators import FailResult
-from tests.integration_tests.mock_llm_outputs import MockOpenAICallable
 from tests.unit_tests.validators.test_parameters import (
     validator_test_pass_fail,
     validator_test_prompt,
@@ -38,14 +38,21 @@ def test_validator_validate(validator_test_data: Dict[str, Dict[str, str]]):
                 assert result.fix_value == test_scenario["fix_value"]
 
 
+# FIXME: This is not a unit test
 @pytest.mark.parametrize("validator_test_data", [(validator_test_python_str)])
 def test_validator_python_string(
     mocker, validator_test_data: Dict[str, Dict[str, str]]
 ):
-    mocker.patch("guardrails.llm_providers.OpenAICallable", new=MockOpenAICallable)
-
     for validator_name in validator_test_data:
         print("testing validator: ", validator_name)
+        mocker.patch(
+            "guardrails.llm_providers.OpenAICallable._invoke_llm",
+            return_value=LLMResponse(
+                output=validator_test_data[validator_name]["output"],
+                prompt_token_count=123,
+                response_token_count=1234,
+            ),
+        )
         module = importlib.import_module("guardrails.validators")
         validator_class = getattr(module, validator_name)
         validators = [validator_class(on_fail=OnFailAction.REASK)]

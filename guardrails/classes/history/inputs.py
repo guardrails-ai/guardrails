@@ -2,13 +2,14 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import Field
 
+from guardrails_api_client import Inputs as IInputs
+from guardrails.classes.generic.arbitrary_model import ArbitraryModel
 from guardrails.llm_providers import PromptCallableBase
 from guardrails.prompt.instructions import Instructions
 from guardrails.prompt.prompt import Prompt
-from guardrails.utils.pydantic_utils import ArbitraryModel
 
 
-class Inputs(ArbitraryModel):
+class Inputs(IInputs, ArbitraryModel):
     llm_api: Optional[PromptCallableBase] = Field(
         description="The constructed class for calling the LLM.", default=None
     )

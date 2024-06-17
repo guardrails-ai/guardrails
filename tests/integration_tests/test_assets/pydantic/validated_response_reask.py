@@ -4,7 +4,7 @@ from typing import Any, Dict, List
 from pydantic import BaseModel, Field
 
 from guardrails.utils.pydantic_utils import PYDANTIC_VERSION
-from guardrails.utils.reask_utils import FieldReAsk
+from guardrails.actions.reask import FieldReAsk
 from guardrails.validator_base import OnFailAction
 from guardrails.validators import (
     FailResult,
@@ -18,9 +18,9 @@ prompt = """Generate data for possible users in accordance with the specificatio
 
 ${gr.xml_prefix_prompt}
 
-${output_schema}
+${xml_output_schema}
 
-${gr.complete_json_suffix_v2}"""
+${gr.complete_xml_suffix_v2}"""
 
 
 @register_validator(name="zip_code_must_be_numeric", data_type="string")

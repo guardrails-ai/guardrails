@@ -116,17 +116,16 @@ Given below is XML that describes the information to extract from this document 
 
 
 <output>
-    <list name="fees" description="What fees and charges are associated with my account?">
-        <object>
-            <integer name="index" format="1-indexed"/>
-            <string name="name" format="lower-case; two-words"/>
-            <string name="explanation" format="one-line"/>
-            <float name="value" format="percentage"/>
-        </object>
-    </list>
-    <object name="interest_rates" description="What are the interest rates offered by the bank on savings and checking accounts, loans, and credit products?"/>
+  <list description="What fees and charges are associated with my account?" name="fees" required="true">
+    <object required="true">
+      <integer format="1-indexed" name="index" required="true"></integer>
+      <string format="lower-case; two-words" name="name" required="true"></string>
+      <string format="one-line" name="explanation" required="true"></string>
+      <float format="percentage" name="value" required="true"></float>
+    </object>
+  </list>
+  <object description="What are the interest rates offered by the bank on savings and checking accounts, loans, and credit products?" name="interest_rates" required="true"></object>
 </output>
-
 
 
 ONLY return a valid JSON object (no other text is necessary). The JSON MUST conform to the XML format, including any types and format requests e.g. requests for lists, objects and specific types. Be correct and concise.

@@ -2,14 +2,12 @@ import inspect
 import nltk
 from collections import defaultdict
 from copy import deepcopy
-from enum import Enum
 from string import Template
 from typing import (
     Any,
     Callable,
     Dict,
     List,
-    Literal,
     Optional,
     Tuple,
     Type,
@@ -21,11 +19,19 @@ from warnings import warn
 
 from langchain_core.messages import BaseMessage
 from langchain_core.runnables import Runnable, RunnableConfig
-from pydantic import BaseModel, Field
 
-from guardrails.classes import InputType
+from guardrails.actions.filter import Filter
+from guardrails.actions.refrain import Refrain
+from guardrails.classes import (
+    InputType,
+    ValidationResult,
+    PassResult,  # noqa
+    FailResult,
+    ErrorSpan,  # noqa
+)
 from guardrails.constants import hub
 from guardrails.errors import ValidationError
+from guardrails.types.on_fail import OnFailAction
 from guardrails.utils.dataclass import dataclass
 
 VALIDATOR_IMPORT_WARNING = """Accessing `{validator_name}` using
@@ -169,14 +175,6 @@ VALIDATOR_NAMING = {
 }
 
 
-class Filter:
-    pass
-
-
-class Refrain:
-    pass
-
-
 # functions to get chunks
 
 
@@ -318,11 +316,11 @@ def filter_in_schema(schema: Union[Dict, List]) -> Union[Dict, List]:
     return filter_in_dict(schema)
 
 
-validators_registry = {}
+validators_registry: Dict[str, Type["Validator"]] = {}
 types_to_validators = defaultdict(list)
 
 
-def validator_factory(name: str, validate: Callable):
+def validator_factory(name: str, validate: Callable) -> Type["Validator"]:
     def validate_wrapper(self, *args, **kwargs):
         return validate(*args, **kwargs)
 
@@ -336,10 +334,10 @@ def validator_factory(name: str, validate: Callable):
 
 def register_validator(name: str, data_type: Union[str, List[str]]):
     """Register a validator for a data type."""
-    from guardrails.datatypes import registry as types_registry
+    from guardrails.datatypes import types_registry
 
     if isinstance(data_type, str):
-        data_type = list(types_registry.keys()) if data_type == "all" else [data_type]
+        data_type = types_registry if data_type == "all" else [data_type]
     # Make sure that the data type string exists in the data types registry.
     for dt in data_type:
         if dt not in types_registry:
@@ -373,61 +371,25 @@ def register_validator(name: str, data_type: Union[str, List[str]]):
     return decorator
 
 
-def get_validator(name: str):
+def get_validator_class(name: Optional[str]) -> Optional[Type["Validator"]]:
+    if not name:
+        return None
     is_hub_validator = name.startswith(hub)
     validator_key = name.replace(hub, "") if is_hub_validator else name
     registration = validators_registry.get(validator_key)
     if not registration and name.startswith(hub):
         # This should import everything and trigger registration
+        # So it should only have to happen once
+        # in lieu of completely unregistered validators
         import guardrails.hub  # noqa
 
         return validators_registry.get(validator_key)
+
+    if not registration:
+        warn(f"Validator with id {name} was not found in the registry!  Ignoring...")
+        return None
+
     return registration
-
-
-class ValidationResult(BaseModel):
-    outcome: str
-    metadata: Optional[Dict[str, Any]] = None
-    # value argument passed to validator.validate
-    # or validator.validate_stream
-    validated_chunk: Optional[Any] = None
-
-
-class PassResult(ValidationResult):
-    outcome: Literal["pass"] = "pass"
-
-    class ValueOverrideSentinel:
-        pass
-
-    # should only be used if Validator.override_value_on_pass is True
-    value_override: Optional[Any] = Field(default=ValueOverrideSentinel)
-
-
-# specifies the start and end of segment of validate_chunk
-class ErrorSpan(BaseModel):
-    start: int
-    end: int
-    # reason validation failed, specific to this chunk
-    reason: str
-
-
-class FailResult(ValidationResult):
-    outcome: Literal["fail"] = "fail"
-
-    error_message: str
-    fix_value: Optional[Any] = None
-    # segments that caused validation to fail
-    error_spans: Optional[List[ErrorSpan]] = None
-
-
-class OnFailAction(str, Enum):
-    REASK = "reask"
-    FIX = "fix"
-    FILTER = "filter"
-    REFRAIN = "refrain"
-    NOOP = "noop"
-    EXCEPTION = "exception"
-    FIX_REASK = "fix_reask"
 
 
 @dataclass  # type: ignore
@@ -693,4 +655,5 @@ class Validator(Runnable):
         return ValidatorRunnable(self)
 
 
+# Superseded by guardrails/types/validator.py::PydanticValidatorSpec
 ValidatorSpec = Union[Validator, Tuple[Union[Validator, str, Callable], str]]
