@@ -7,13 +7,14 @@ from guardrails import Guard
 if_transformers_installed = pytest.mark.skipif(
     "not importlib.util.find_spec('transformers')\
     or not importlib.util.find_spec('torch')",
-    reason="Transformers / Torch not installed."
+    reason="Transformers / Torch not installed.",
 )
 
 
 @if_transformers_installed
 def test_hugging_face_model_callable():
     from tests.unit_tests.mocks.mock_hf_models import make_mock_model_and_tokenizer
+
     model, tokenizer = make_mock_model_and_tokenizer()
 
     class Foo(BaseModel):
@@ -33,6 +34,7 @@ def test_hugging_face_model_callable():
 @if_transformers_installed
 def test_hugging_face_pipeline_callable():
     from tests.unit_tests.mocks.mock_hf_models import make_random_pipeline
+
     model = make_random_pipeline()
 
     class Foo(BaseModel):
@@ -53,6 +55,7 @@ def test_hugging_face_pipeline_callable():
 def test_hugging_face_pipeline_complex_schema():
     # NOTE: This is the real GPT-2 model.
     from transformers import pipeline
+
     model = pipeline("text-generation", "gpt2")
 
     class MultiNum(BaseModel):

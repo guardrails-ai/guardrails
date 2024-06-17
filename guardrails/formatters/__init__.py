@@ -3,7 +3,7 @@ from guardrails.formatters.json_formatter import JsonFormatter
 
 
 def get_formatter(name: str, *args, **kwargs) -> BaseFormatter:
-    """Returns a class"""
+    """Returns a class."""
     match name.lower():
         case "jsonformer":
             return JsonFormatter(*args, **kwargs)
