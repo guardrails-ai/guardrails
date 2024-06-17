@@ -27,7 +27,7 @@ from guardrails.utils.validator_utils import safe_get_validator
 from guardrails.validator_base import Validator
 
 
-def _resolve_alias(alias: str | AliasPath | AliasChoices) -> List[str]:
+def _resolve_alias(alias: Union[str, AliasPath, AliasChoices]) -> List[str]:
     aliases = []
     if isinstance(alias, str):
         aliases.append(alias)
@@ -41,7 +41,7 @@ def _resolve_alias(alias: str | AliasPath | AliasChoices) -> List[str]:
 
 
 def _collect_aliases(
-    field: FieldInfo | AliasGenerator, field_name: str, model: Type[BaseModel]
+    field: Union[FieldInfo, AliasGenerator], field_name: str, model: Type[BaseModel]
 ) -> List[str]:
     aliases = []
 
