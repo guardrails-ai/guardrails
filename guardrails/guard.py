@@ -70,6 +70,7 @@ from guardrails.stores.context import (
     set_tracer,
     set_tracer_context,
 )
+from guardrails.types.on_fail import OnFailAction
 from guardrails.types.pydantic import ModelOrListOfModels
 from guardrails.utils.naming_utils import random_id
 from guardrails.utils.safe_get import safe_get
@@ -256,8 +257,18 @@ class Guard(IGuard, Generic[OT]):
                     for v in entry
                     if (
                         v.rail_alias == ref.id
-                        and v.on_fail_descriptor == ref.on_fail
-                        and v.get_args() == ref.kwargs
+                        and (
+                            v.on_fail_descriptor == ref.on_fail
+                            or (
+                                v.on_fail_descriptor == OnFailAction.NOOP
+                                and not ref.on_fail
+                            )
+                        )
+                        and (
+                            v.get_args() == ref.kwargs
+                            or not v.get_args()
+                            and not ref.kwargs
+                        )
                     )
                 ],
                 0,
