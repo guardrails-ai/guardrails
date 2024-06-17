@@ -3,7 +3,6 @@ import contextvars
 import json
 import os
 from builtins import id as object_id
-from enum import Enum
 from string import Template
 from typing import (
     Any,
