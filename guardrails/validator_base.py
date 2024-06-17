@@ -32,7 +32,7 @@ from guardrails.classes import (
 from guardrails.constants import hub
 from guardrails.errors import ValidationError
 from guardrails.types.on_fail import OnFailAction
-from guardrails.utils.dataclass import dataclass
+from dataclasses import dataclass
 
 VALIDATOR_IMPORT_WARNING = """Accessing `{validator_name}` using
 `from guardrails.validators import {validator_name}` is deprecated and
