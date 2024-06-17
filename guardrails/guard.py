@@ -73,7 +73,6 @@ from guardrails.stores.context import (
 from guardrails.types.on_fail import OnFailAction
 from guardrails.types.pydantic import ModelOrListOfModels
 from guardrails.utils.naming_utils import random_id
-from guardrails.utils.safe_get import safe_get
 from guardrails.utils.api_utils import extract_serializeable_metadata
 from guardrails.utils.hub_telemetry_utils import HubTelemetry
 from guardrails.classes.llm.llm_response import LLMResponse
@@ -251,29 +250,19 @@ class Guard(IGuard, Generic[OT]):
             entry: List[Validator] = self._validator_map.get(ref.on, [])  # type: ignore
             # Check if the validator from the reference
             #   has an instance in the validator_map
-            v = safe_get(
-                [
-                    v
-                    for v in entry
-                    if (
-                        v.rail_alias == ref.id
-                        and (
-                            v.on_fail_descriptor == ref.on_fail
-                            or (
-                                v.on_fail_descriptor == OnFailAction.NOOP
-                                and not ref.on_fail
-                            )
-                        )
-                        and (
-                            v.get_args() == ref.kwargs
-                            or not v.get_args()
-                            and not ref.kwargs
-                        )
-                    )
-                ],
-                0,
-            )
-            if not v:
+            existing_instance: Optional[Validator] = None
+            for v in entry:
+                same_id = v.rail_alias == ref.id
+                same_on_fail = v.on_fail_descriptor == ref.on_fail or (  # is default
+                    v.on_fail_descriptor == OnFailAction.NOOP and not ref.on_fail
+                )
+                same_args = v.get_args() == ref.kwargs or (  # Both are empty
+                    not v.get_args() and not ref.kwargs
+                )
+                if same_id and same_on_fail and same_args:
+                    existing_instance = v
+                    break
+            if not existing_instance:
                 validator = parse_validator_reference(ref)
                 if validator:
                     entry.append(validator)
