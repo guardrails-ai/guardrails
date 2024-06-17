@@ -624,17 +624,17 @@ class Guard(IGuard, Generic[OT]):
 
             if self._allow_metrics_collection and self._hub_telemetry:
                 # Create a new span for this guard call
-              llm_api_str = ""
-              if llm_api:
-                  llm_api_module_name = (
-                      llm_api.__module__ if hasattr(llm_api, "__module__") else ""
-                  )
-                  llm_api_name = (
-                      llm_api.__name__
-                      if hasattr(llm_api, "__name__")
-                      else type(llm_api).__name__
-                  )
-                  llm_api_str = f"{llm_api_module_name}.{llm_api_name}"
+                llm_api_str = ""
+                if llm_api:
+                    llm_api_module_name = (
+                        llm_api.__module__ if hasattr(llm_api, "__module__") else ""
+                    )
+                    llm_api_name = (
+                        llm_api.__name__
+                        if hasattr(llm_api, "__name__")
+                        else type(llm_api).__name__
+                    )
+                    llm_api_str = f"{llm_api_module_name}.{llm_api_name}"
                 self._hub_telemetry.create_new_span(
                     span_name="/guard_call",
                     attributes=[
