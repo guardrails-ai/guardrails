@@ -1,5 +1,4 @@
 import asyncio
-import warnings
 
 from typing import (
     Any,
@@ -141,10 +140,6 @@ class OpenAICallable(OpenAIModel):
         *args,
         **kwargs,
     ) -> LLMResponse:
-        warnings.warn(
-            """Support for this callable is depcreated please migrate to model="gpt-3.5-turbo-instruct" and the messages parameter. """,
-            FutureWarning,
-        )
         if "api_key" in kwargs:
             api_key = kwargs.pop("api_key")
         else:
@@ -196,10 +191,6 @@ class OpenAIChatCallable(OpenAIModel):
         If `base_model` is passed, the chat engine will be used as a function
         on the base model.
         """
-        warnings.warn(
-            """Support for this callable is depcreated please migrate to model='gpt-4o' and the messages parameter. """,
-            FutureWarning,
-        )
         if msg_history is None and text is None:
             raise PromptCallableException(
                 "You must pass in either `text` or `msg_history` to `guard.__call__`."
@@ -287,11 +278,6 @@ class CohereCallable(PromptCallableBase):
         ```
         """  # noqa
 
-        warnings.warn(
-            """Support for this callable is depcreated please migrate to model="command-r" and the messages parameter. """,
-            FutureWarning,
-        )
-
         if "instructions" in kwargs:
             prompt = kwargs.pop("instructions") + "\n\n" + prompt
 
@@ -344,10 +330,6 @@ class AnthropicCallable(PromptCallableBase):
             ...
         ```
         """
-        warnings.warn(
-            """Support for this callable is depcreated please migrate to model="claude-3-opus-20240229" and the messages parameter. """,
-            FutureWarning,
-        )
         try:
             import anthropic
         except ImportError:

@@ -1,7 +1,6 @@
 from builtins import id as object_id
 import contextvars
 import inspect
-import warnings
 from typing import (
     Any,
     AsyncIterable,
