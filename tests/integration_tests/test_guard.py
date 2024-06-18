@@ -1014,6 +1014,7 @@ def test_pydantic_with_lite_llm(mocker):
     )
 
     assert final_output.raw_llm_output == string.MSG_LLM_OUTPUT_INCORRECT
+
 def test_string_output(mocker):
     """Test single string (non-JSON) generation."""
     mock_invoke_llm = mocker.patch(
