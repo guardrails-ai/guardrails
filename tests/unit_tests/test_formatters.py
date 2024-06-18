@@ -10,7 +10,7 @@ def test_basic_schema_conversion():
         my_age: int
         my_height_in_nanometers: float
         my_name: str
-        my_friends: list[str]
+        my_friends: List[str]
 
     out_schema = _jsonschema_to_jsonformer(Simple.model_json_schema())
     assert out_schema["type"] == "object"
