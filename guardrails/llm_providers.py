@@ -532,7 +532,7 @@ class HuggingFacePipelineCallable(PromptCallableBase):
 
 
 class ArbitraryCallable(PromptCallableBase):
-    def __init__(self, llm_api: Callable, *args, **kwargs):
+    def __init__(self, llm_api: Optional[Callable] = None, *args, **kwargs):
         self.llm_api = llm_api
         super().__init__(*args, **kwargs)
 
@@ -629,7 +629,7 @@ def get_llm_ask(
         ):
             if (
                 hasattr(llm_api, "__func__")
-                and llm_api.__func__ == GenerationMixin.generate
+                and llm_api.__func__ == GenerationMixin.generate # type: ignore
             ):
                 return HuggingFaceModelCallable(*args, model_generate=llm_api, **kwargs)
             raise ValueError("Only text generation models are supported at this time.")
