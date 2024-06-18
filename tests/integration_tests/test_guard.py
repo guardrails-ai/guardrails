@@ -27,7 +27,6 @@ from tests.integration_tests.test_assets.validators import (
 )
 
 from .mock_llm_outputs import (
-    MockLiteLLMChatCallable,
     MockOpenAICallable,
     MockOpenAIChatCallable,
     entity_extraction,

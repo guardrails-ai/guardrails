@@ -187,32 +187,3 @@ class MockAsyncArbitraryCallable(AsyncArbitraryCallable):
     async def invoke_llm(self, prompt, *args, **kwargs):
         sync_mock = MockArbitraryCallable(kwargs.get("llm_api"))
         return sync_mock._invoke_llm(prompt, *args, **kwargs)
-
-class MockLiteLLMChatCallable(OpenAIChatCallable):
-    def _invoke_llm(
-        self,
-        *args,
-        **kwargs,
-    ):
-        """Mock the liteLLM API call to ChatCompletion.create."""
-
-        try:
-            messages = kwargs.get("messages")
-            if messages:
-                if messages == entity_extraction.COMPILED_MSG_HISTORY or "from pydantic test instruction" in messages[0]["content"]: 
-                    out_text = entity_extraction.LLM_OUTPUT
-                elif messages == string.MOVIE_MSG_HISTORY:
-                    out_text = string.MSG_LLM_OUTPUT_INCORRECT
-                else:
-                    raise ValueError("msg_history not found")
-            else:
-                raise ValueError(
-                    "specify either prompt and instructions " "or msg_history"
-                )
-            return LLMResponse(
-                output=out_text,
-                prompt_token_count=123,
-                response_token_count=1234,
-            )
-        except KeyError:
-            raise ValueError("Compiled prompt not found")
