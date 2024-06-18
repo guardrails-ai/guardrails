@@ -92,6 +92,12 @@ pyright = "1.1.334"
 lxml-stubs = "^0.4.0"
 ruff = ">=0.4.1"
 
+[tool.poetry.group.api]
+optional = true
+
+[tool.poetry.group.api.dependencies]
+guardrails-api = "^0.0.0"
+
 [tool.poetry.group.docs]
 optional = true
 
