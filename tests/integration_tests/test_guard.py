@@ -1031,6 +1031,50 @@ def test_string_output(mocker):
     assert mock_invoke_llm.call_count == 1
     mock_invoke_llm = None
 
+def test_augment_tools_with_schema(mocker):
+    mock_invoke_llm = mocker.patch(
+        "guardrails.llm_providers.OpenAICallable._invoke_llm"
+    )
+    
+    mock_invoke_llm.side_effect = [
+        LLMResponse(
+            output=json.dumps([{
+                "status": "not started",
+                "priority": 1,
+                "description": "Do something",
+            },{
+                "status": "in progress",
+                "priority": 2,
+                "description": "Do something else",
+            },{
+                "status": "on hold",
+                "priority": 3,
+                "description": "Do something else again",
+            }]),
+            prompt_token_count=123,
+            response_token_count=1234,
+        ),
+    ]
+    
+    class Task(BaseModel):
+        status: str
+        priority: int
+        description: str
+    guard = Guard.from_pydantic(Task)
+    tools = []
+    
+    guard(
+        llm_api=get_static_openai_create_func(),
+        prompt="You are a helpful assistant"
+            "read this email and return the tasks from it",
+        num_reasks=1,
+        max_tokens=100,
+        tools=guard.augment_tools_with_schema(tools),
+        tool_choice="required",
+    )
+
+    # verify that the tools are augmented with schema
+    # verify output has been parsed and validated
 
 def test_string_reask(mocker):
     """Test single string (non-JSON) generation with re-asking."""

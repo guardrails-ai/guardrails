@@ -1447,10 +1447,8 @@ class Guard(IGuard, Generic[OT]):
     def augment_tools_with_schema(
         self,
         tools: list,
-        schema: Optional[ModelOrListOfModels] = None,
     ) -> Dict[str, Any]:
-        schema = pydantic_model_to_schema(schema) or self.output_schema
-        tools = augment_tools_with_schema(tools, schema)
+        tools = augment_tools_with_schema(tools, self.output_schema)
         return tools
 
     # override IGuard.from_dict
