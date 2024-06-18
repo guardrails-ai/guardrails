@@ -86,7 +86,7 @@ def test_scope_handler():
 
     new_handler.set_scope("test-2")
 
-    test_logger.warn("test log 2")
+    test_logger.warning("test log 2")
 
     base_logs = new_handler.get_logs(base_scope)
     assert len(base_logs) == 1

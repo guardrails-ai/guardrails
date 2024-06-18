@@ -1,4 +1,4 @@
-from guardrails.utils.reask_utils import SkeletonReAsk
+from guardrails.actions.reask import SkeletonReAsk
 from guardrails.validators import FailResult
 
 MSG_VALIDATED_OUTPUT_REASK = SkeletonReAsk(
@@ -7,7 +7,12 @@ MSG_VALIDATED_OUTPUT_REASK = SkeletonReAsk(
         FailResult(
             outcome="fail",
             metadata=None,
-            error_message="JSON does not match schema",
+            error_message="""JSON does not match schema:
+{
+  "$": [
+    "'release_year' is a required property"
+  ]
+}""",
             fix_value=None,
         )
     ],

@@ -70,7 +70,6 @@ class TestInstall:
             ),  # noqa
         ]
         assert mock_logger_log.call_count == 2
-        print(mock_logger_log)
         mock_logger_log.assert_has_calls(log_calls)
 
         mock_get_validator_manifest.assert_called_once_with("guardrails/test-validator")

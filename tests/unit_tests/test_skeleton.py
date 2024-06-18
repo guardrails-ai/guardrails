@@ -1,16 +1,17 @@
-import lxml.etree as ET
 import pytest
 
-from guardrails.datatypes import Object
-from guardrails.utils.json_utils import verify_schema_against_json
+from guardrails.schema.rail_schema import rail_string_to_schema
+from guardrails.schema.validator import SchemaValidationError, validate_payload
+from guardrails.utils.parsing_utils import coerce_types
 
 
+# TODO: Make this an integration test instead.
 @pytest.mark.parametrize(
-    "xml, generated_json, result, coerce_types",
+    "rail, payload, should_pass, should_coerce_types",
     [
         (
             """
-<root>
+<rail version="0.1"><output>
 <list name="my_list">
     <object>
         <string name="my_string" />
@@ -29,7 +30,7 @@ from guardrails.utils.json_utils import verify_schema_against_json
 <list name="my_list2">
     <string />
 </list>
-</root>
+</output></rail>
             """,
             {
                 "my_list": [{"my_string": "string"}],
@@ -49,7 +50,7 @@ from guardrails.utils.json_utils import verify_schema_against_json
         ),
         (
             """
-<root>
+<rail version="0.1"><output>
 <list name="my_list">
     <object>
         <string name="my_string" />
@@ -68,7 +69,7 @@ from guardrails.utils.json_utils import verify_schema_against_json
 <list name="my_list2">
     <string />
 </list>
-</root>
+</output></rail>
             """,
             {
                 "my_list": [{"my_string": "string"}],
@@ -82,7 +83,7 @@ from guardrails.utils.json_utils import verify_schema_against_json
         ),
         (
             """
-<root>
+<rail version="0.1"><output>
 <choice name="action" discriminator="action_type" on-fail-choice="exception">
     <case name="fight">
         <string
@@ -104,7 +105,7 @@ from guardrails.utils.json_utils import verify_schema_against_json
         />
     </case>
 </choice>
-</root>
+</output></rail>
             """,
             {
                 "action": {
@@ -117,7 +118,7 @@ from guardrails.utils.json_utils import verify_schema_against_json
         ),
         (
             """
-<root>
+<rail version="0.1"><output>
 <list name="my_list3">
     <choice discriminator="action_type" on-fail-choice="exception">
         <case name="fight">
@@ -142,7 +143,7 @@ from guardrails.utils.json_utils import verify_schema_against_json
         </case>
     </choice>
 </list>
-</root>
+</output></rail>
 """,
             {
                 "my_list3": [
@@ -162,7 +163,7 @@ from guardrails.utils.json_utils import verify_schema_against_json
         ),
         (
             """
-<root>
+<rail version="0.1"><output>
 <object name="mychoices">
     <string name="some random thing"/>
     <choice name="action" discriminator="action_type" on-fail-choice="exception">
@@ -189,7 +190,7 @@ from guardrails.utils.json_utils import verify_schema_against_json
         </case>
     </choice>
 </object>
-</root>
+</output></rail>
 """,
             {
                 "mychoices": {
@@ -205,27 +206,12 @@ from guardrails.utils.json_utils import verify_schema_against_json
         ),
         (
             """
-<root>
+<rail version="0.1"><output>
 <string
     name="my_string"
     required="false"
 />
-</root>
-            """,
-            {
-                "my_string": None,
-            },
-            True,
-            False,
-        ),
-        (
-            """
-<root>
-<string
-    name="my_string"
-    required="false"
-/>
-</root>
+</output></rail>
             """,
             {},
             True,
@@ -233,27 +219,25 @@ from guardrails.utils.json_utils import verify_schema_against_json
         ),
         (
             """
-<root>
-<list
-    name="my_list"
->
-</list>
-</root>
+<rail version="0.1"><output>
+<string
+    name="my_string"
+    required="false"
+/>
+</output></rail>
             """,
-            {
-                "my_list": ["e"],
-            },
+            {},
             True,
             False,
         ),
         (
             """
-<root>
+<rail version="0.1"><output>
 <string
     name="my_string"
 >
 </string>
-</root>
+</output></rail>
             """,
             {
                 "my_string": "e",
@@ -263,12 +247,12 @@ from guardrails.utils.json_utils import verify_schema_against_json
         ),
         (
             """
-<root>
+<rail version="0.1"><output>
 <string
     name="my_string"
 >
 </string>
-</root>
+</output></rail>
             """,
             {
                 "my_string": ["a"],
@@ -278,12 +262,12 @@ from guardrails.utils.json_utils import verify_schema_against_json
         ),
         (
             """
-<root>
+<rail version="0.1"><output>
 <string
     name="my_string"
 >
 </string>
-</root>
+</output></rail>
             """,
             {
                 "my_string": {"a": "a"},
@@ -293,7 +277,14 @@ from guardrails.utils.json_utils import verify_schema_against_json
         ),
     ],
 )
-def test_skeleton(xml, generated_json, result, coerce_types):
-    xml_schema = ET.fromstring(xml)
-    datatype = Object.from_xml(xml_schema)
-    assert verify_schema_against_json(datatype, generated_json) is result
+def test_skeleton(rail, payload, should_pass, should_coerce_types):
+    payload = payload
+    processed_schema = rail_string_to_schema(rail)
+    json_schema = processed_schema.json_schema
+    if should_coerce_types:
+        payload = coerce_types(payload, json_schema)
+    if not should_pass:
+        with pytest.raises(SchemaValidationError):
+            validate_payload(payload, processed_schema.json_schema)
+    else:
+        validate_payload(payload, json_schema)

@@ -1,0 +1,100 @@
+{
+  "$defs": {
+    "Fight": {
+      "properties": {
+        "chosen_action": {
+          "const": "fight",
+          "enum": [
+            "fight"
+          ],
+          "title": "Chosen Action",
+          "type": "string"
+        },
+        "weapon": {
+          "title": "Weapon",
+          "type": "string",
+          "validators": [
+            {
+              "rail_alias": "valid-choices"
+            }
+          ]
+        }
+      },
+      "required": [
+        "chosen_action",
+        "weapon"
+      ],
+      "title": "Fight",
+      "type": "object"
+    },
+    "Flight": {
+      "properties": {
+        "chosen_action": {
+          "const": "flight",
+          "enum": [
+            "flight"
+          ],
+          "title": "Chosen Action",
+          "type": "string"
+        },
+        "flight_direction": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Flight Direction",
+          "validators": [
+            {
+              "rail_alias": "valid-choices"
+            }
+          ]
+        },
+        "distance": {
+          "title": "Distance",
+          "type": "integer",
+          "validators": [
+            {
+              "rail_alias": "valid-choices"
+            }
+          ]
+        }
+      },
+      "required": [
+        "chosen_action",
+        "flight_direction",
+        "distance"
+      ],
+      "title": "Flight",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "action": {
+      "discriminator": {
+        "mapping": {
+          "fight": "#/$defs/Fight",
+          "flight": "#/$defs/Flight"
+        },
+        "propertyName": "chosen_action"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/Fight"
+        },
+        {
+          "$ref": "#/$defs/Flight"
+        }
+      ],
+      "title": "Action"
+    }
+  },
+  "required": [
+    "action"
+  ],
+  "title": "FightOrFlight",
+  "type": "object"
+}

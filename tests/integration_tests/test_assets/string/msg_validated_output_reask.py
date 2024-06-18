@@ -1,4 +1,4 @@
-from guardrails.utils.reask_utils import FieldReAsk
+from guardrails.actions.reask import FieldReAsk
 from guardrails.validators import FailResult
 
 MSG_VALIDATED_OUTPUT_REASK = FieldReAsk(
