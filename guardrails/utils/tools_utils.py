@@ -52,17 +52,11 @@ def schema_to_tool(schema: ProcessedSchema) -> dict:
         "function": {
             "name": "gd_response_tool",
             "description": "A tool for generating responses to guardrails. It must be called last in every response.",
-            "parameters": {
-                "type": "object",
-                "properties": {},
-            },
+            "parameters": schema.json_schema,
             "required": json_schema["required"] or [],
         },
     }
 
-    for key, value in json_schema["properties"].items():
-        tool["function"]["parameters"]["properties"][key] = process_property(tool, key, value)
-    
     return tool
 
 def augment_tools_with_schema(schema: ProcessedSchema, tools: Optional[list] = [],) -> list:

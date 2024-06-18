@@ -1,56 +1,112 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from typing import List
+
+import json
 
 from guardrails.schema.pydantic_schema import pydantic_model_to_schema
 
 from guardrails.utils.tools_utils import schema_to_tool
 
-
 class Delivery(BaseModel):
-    name: str
-    description: str
-    number_of_items: int
-    address: str
-    price: float
+    customer: str=Field( description="customer name")
+    pickup_time: str=Field(description="date and time of pickup")
+    pickup_location: str=Field(description="address of pickup")
+    dropoff_time: str=Field(description="date and time of dropoff")
+    dropoff_location: str=Field(description="address of dropoff")
+    price: str = Field(description="price of delivery with currency symbol included")
+    items: str= Field(description='items for pickup/delivery typically something a single person can carry on a bike')
+    number_items: int=Field(description="number of items")
+
+class Schedule(BaseModel):
+    deliveries: List[Delivery] = Field(description="deliveries for messenger")
 
 def test_pydantic_model_to_schema():
-    schema = pydantic_model_to_schema(Delivery)
+    schema = pydantic_model_to_schema(Schedule)
+
     tool = schema_to_tool(schema)
+
     assert tool == {
         "type": "function",
         "function": {
             "name": "gd_response_tool",
             "description": "A tool for generating responses to guardrails. It must be called last in every response.",
             "parameters": {
-                "type": "object",
-                "properties": {
-                    "name": {
-                        "type": "string",
-                        "description": "",
-                    },
-                    "description": {
-                        "type": "string",
-                        "description": "",
-                    },
-                    "number_of_items": {
-                        "type": "integer",
-                        "description": "",
-                    },
-                    "address": {
-                        "type": "string",
-                        "description": "",
-                    },
-                    "price": {
-                        "type": "number",
-                        "description": "",
-                    },
+                "$defs": {
+                    "Delivery": {
+                        "properties": {
+                            "customer": {
+                                "description": "customer name",
+                                "title": "Customer",
+                                "type": "string"
+                            },
+                            "pickup_time": {
+                                "description": "date and time of pickup",
+                                "title": "Pickup Time",
+                                "type": "string"
+                            },
+                            "pickup_location": {
+                                "description": "address of pickup",
+                                "title": "Pickup Location",
+                                "type": "string"
+                            },
+                            "dropoff_time": {
+                                "description": "date and time of dropoff",
+                                "title": "Dropoff Time",
+                                "type": "string"
+                            },
+                            "dropoff_location": {
+                                "description": "address of dropoff",
+                                "title": "Dropoff Location",
+                                "type": "string"
+                            },
+                            "price": {
+                                "description": "price of delivery with currency symbol included",
+                                "title": "Price",
+                                "type": "string"
+                            },
+                            "items": {
+                                "description": "items for pickup/delivery typically something a single person can carry on a bike",
+                                "title": "Items",
+                                "type": "string"
+                            },
+                            "number_items": {
+                                "description": "number of items",
+                                "title": "Number Items",
+                                "type": "integer"
+                            }
+                        },
+                        "required": [
+                            "customer",
+                            "pickup_time",
+                            "pickup_location",
+                            "dropoff_time",
+                            "dropoff_location",
+                            "price",
+                            "items",
+                            "number_items"
+                        ],
+                        "title": "Delivery",
+                        "type": "object"
+                    }
                 },
+                "properties": {
+                    "deliveries": {
+                        "description": "deliveries for messenger",
+                        "items": {
+                            "$ref": "#/$defs/Delivery"
+                        },
+                        "title": "Deliveries",
+                        "type": "array"
+                    }
+                },
+                "required": [
+                    "deliveries"
+                ],
+                "title": "Schedule",
+                "type": "object"
             },
             "required": [
-                "name",
-                "description",
-                "number_of_items",
-                "address",
-                "price",
-            ],
+                "deliveries"
+            ]
         }
     }
