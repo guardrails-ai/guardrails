@@ -12,7 +12,6 @@ from pydantic import BaseModel, Field
 
 import guardrails as gd
 from guardrails.utils.casting_utils import to_int
-from guardrails.utils.openai_utils import OPENAI_VERSION
 from guardrails.validator_base import (
     ErrorSpan,
     FailResult,
@@ -121,30 +120,17 @@ class MockOpenAIV1ChunkResponse:
 def mock_openai_completion_create(chunks):
     # Returns a generator
     def gen():
-        index = 0
         for chunk in chunks:
-            index = index + 1
-            # finished = index == len(chunks)
-            # finish_reason = "stop" if finished else None
-            # print("FINISH REASON", finish_reason)
-            if OPENAI_VERSION.startswith("0"):
-                yield {
-                    # TODO: for some reason using finish_reason here breaks everything
-                    "choices": [{"text": chunk, "finish_reason": None}],
-                    "model": "OpenAI model name",
-                }
-            else:
-                yield MockOpenAIV1ChunkResponse(
-                    choices=[
-                        Choice(
-                            text=chunk,
-                            delta=Delta(content=""),
-                            # TODO: for some reason using finish_reason here breaks everything  # noqa
-                            finish_reason=None,
-                        )
-                    ],
-                    model="OpenAI model name",
-                )
+            yield MockOpenAIV1ChunkResponse(
+                choices=[
+                    Choice(
+                        text=chunk,
+                        delta=Delta(content=""),
+                        finish_reason=None,
+                    )
+                ],
+                model="OpenAI model name",
+            )
 
     return gen()
 
@@ -152,35 +138,17 @@ def mock_openai_completion_create(chunks):
 def mock_openai_chat_completion_create(chunks):
     # Returns a generator
     def gen():
-        index = 0
         for chunk in chunks:
-            index = index + 1
-            # finished = index == len(chunks)
-            # finish_reason = "stop" if finished else None
-            # print("FINISH REASON", finish_reason)
-            if OPENAI_VERSION.startswith("0"):
-                yield {
-                    "choices": [
-                        {
-                            "index": 0,
-                            "delta": {"content": chunk},
-                            # TODO: for some reason using finish_reason here breaks everything  # noqa
-                            "finish_reason": None,
-                        }
-                    ]
-                }
-            else:
-                yield MockOpenAIV1ChunkResponse(
-                    choices=[
-                        Choice(
-                            text="",
-                            delta=Delta(content=chunk),
-                            # TODO: for some reason using finish_reason here breaks everything  # noqa
-                            finish_reason=None,
-                        )
-                    ],
-                    model="OpenAI model name",
-                )
+            yield MockOpenAIV1ChunkResponse(
+                choices=[
+                    Choice(
+                        text="",
+                        delta=Delta(content=chunk),
+                        finish_reason=None,
+                    )
+                ],
+                model="OpenAI model name",
+            )
 
     return gen()
 
@@ -270,22 +238,12 @@ def test_streaming_with_openai_callable(
 
     Mocks openai.Completion.create.
     """
-    if OPENAI_VERSION.startswith("0"):
-        mocker.patch(
-            "openai.Completion.create",
-            return_value=mock_openai_completion_create(JSON_LLM_CHUNKS),
-        )
-    else:
-        mocker.patch(
-            "openai.resources.Completions.create",
-            return_value=mock_openai_completion_create(JSON_LLM_CHUNKS),
-        )
-
-    method = (
-        openai.Completion.create
-        if OPENAI_VERSION.startswith("0")
-        else openai.completions.create
+    mocker.patch(
+        "openai.resources.Completions.create",
+        return_value=mock_openai_completion_create(JSON_LLM_CHUNKS),
     )
+
+    method = openai.completions.create
 
     method.__name__ = "mock_openai_completion_create"
 
@@ -336,22 +294,12 @@ def test_streaming_with_openai_chat_callable(
 
     Mocks openai.ChatCompletion.create.
     """
-    if OPENAI_VERSION.startswith("0"):
-        mocker.patch(
-            "openai.ChatCompletion.create",
-            return_value=mock_openai_chat_completion_create(JSON_LLM_CHUNKS),
-        )
-    else:
-        mocker.patch(
-            "openai.resources.chat.completions.Completions.create",
-            return_value=mock_openai_chat_completion_create(JSON_LLM_CHUNKS),
-        )
-
-    method = (
-        openai.ChatCompletion.create
-        if OPENAI_VERSION.startswith("0")
-        else openai.chat.completions.create
+    mocker.patch(
+        "openai.resources.chat.completions.Completions.create",
+        return_value=mock_openai_chat_completion_create(JSON_LLM_CHUNKS),
     )
+
+    method = openai.chat.completions.create
 
     method.__name__ = "mock_openai_chat_completion_create"
 
@@ -428,22 +376,12 @@ def test_string_schema_streaming_with_openai_chat(mocker, guard, expected_error_
 
     Mocks openai.ChatCompletion.create.
     """
-    if OPENAI_VERSION.startswith("0"):
-        mocker.patch(
-            "openai.ChatCompletion.create",
-            return_value=mock_openai_chat_completion_create(STR_LLM_CHUNKS),
-        )
-    else:
-        mocker.patch(
-            "openai.resources.chat.completions.Completions.create",
-            return_value=mock_openai_chat_completion_create(STR_LLM_CHUNKS),
-        )
-
-    method = (
-        openai.ChatCompletion.create
-        if OPENAI_VERSION.startswith("0")
-        else openai.chat.completions.create
+    mocker.patch(
+        "openai.resources.chat.completions.Completions.create",
+        return_value=mock_openai_chat_completion_create(STR_LLM_CHUNKS),
     )
+
+    method = openai.chat.completions.create
 
     method.__name__ = "mock_openai_chat_completion_create"
     generator = guard(
