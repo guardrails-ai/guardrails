@@ -514,7 +514,7 @@ class AsyncGuard(Guard, Generic[OT]):
             if llm_api is None
             else 1
         )
-        default_prompt = self._exec_opts.prompt if llm_api else None
+        default_prompt = self._exec_opts.prompt if llm_api is not None else None
         prompt = kwargs.pop("prompt", default_prompt)
 
         default_instructions = self._exec_opts.instructions if llm_api else None

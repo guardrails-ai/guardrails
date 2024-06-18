@@ -1,4 +1,3 @@
-import pydantic
 import pytest
 
 from guardrails.classes.history.outputs import Outputs
@@ -184,10 +183,6 @@ def test_status(outputs: Outputs, expected_status: str):
     assert status == expected_status
 
 
-@pytest.mark.skipif(
-    pydantic.version.VERSION.startswith("1"),
-    reason="This fails in Pydantic 1.x because it casts the ReAsk to a Dict on init...",
-)
 def test_status_reask():
     outputs = Outputs(
         validation_response=ReAsk(

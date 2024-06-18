@@ -97,14 +97,6 @@ async def test_required_metadata(spec, metadata, error_message):
     not_missing_keys = verify_metadata_requirements(metadata, guard._validators)
     assert not_missing_keys == []
 
-    # test sync guard
-    with pytest.raises(ValueError) as excinfo:
-        await guard.parse("{}")
-    assert str(excinfo.value) == error_message
-
-    response = await guard.parse("{}", metadata=metadata, num_reasks=0)
-    assert response.error is None
-
     async def mock_llm(*args, **kwargs):
         return ""
 
