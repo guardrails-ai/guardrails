@@ -1,5 +1,4 @@
 from guardrails.schema.rail_schema import rail_string_to_schema
-import json
 
 def test_rail_scalar_string():
     rail_spec = """
@@ -41,9 +40,7 @@ Hello world
 </prompt>
 </rail>
 """
-    result = rail_string_to_schema(rail_spec)
-    print("====JSON SCHEMA====", json.dumps(result.json_schema, indent=2))
-    assert json.dumps(result.json_schema, indent=2) == False
+    rail_string_to_schema(rail_spec)
 
 
 def test_rail_object_with_list():

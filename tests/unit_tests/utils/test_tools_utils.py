@@ -12,7 +12,10 @@ class Delivery(BaseModel):
     dropoff_time: str=Field(description="date and time of dropoff")
     dropoff_location: str=Field(description="address of dropoff")
     price: str=Field(description="price of delivery with currency symbol included")
-    items: str=Field(description='items for pickup/delivery typically something a single person can carry on a bike')
+    items: str=Field(
+        description="items for pickup/delivery typically"
+            " something a single person can carry on a bike",
+        )
     number_items: int=Field(description="number of items")
 
 class Schedule(BaseModel):
@@ -30,7 +33,8 @@ def test_pydantic_model_to_schema():
         "type": "function",
         "function": {
             "name": "gd_response_tool",
-            "description": "A tool for generating responses to guardrails. It must be called last in every response.",
+            "description": "A tool for generating responses to guardrails."
+                " It must be called last in every response.",
             "parameters": {
                 "$defs": {
                     "Delivery": {
@@ -61,12 +65,14 @@ def test_pydantic_model_to_schema():
                                 "type": "string"
                             },
                             "price": {
-                                "description": "price of delivery with currency symbol included",
+                                "description": "price of delivery with"
+                                    " currency symbol included",
                                 "title": "Price",
                                 "type": "string"
                             },
                             "items": {
-                                "description": "items for pickup/delivery typically something a single person can carry on a bike",
+                                "description": "items for pickup/delivery typically"
+                                    " something a single person can carry on a bike",
                                 "title": "Items",
                                 "type": "string"
                             },
@@ -120,7 +126,8 @@ def test_augment_tools_with_schema():
             "type": "function",
             "function": {
                 "name": "gd_response_tool",
-                "description": "A tool for generating responses to guardrails. It must be called last in every response.",
+                "description": "A tool for generating responses to guardrails."
+                    " It must be called last in every response.",
                 "parameters": {
                     "properties": {
                         "name": {

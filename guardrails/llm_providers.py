@@ -199,7 +199,8 @@ class OpenAIChatCallable(OpenAIModel):
         # TODO: Update this to tools
         # Configure function calling if applicable (only for non-streaming)
         fn_kwargs = {}
-        if base_model and not kwargs.get("stream", False) and not kwargs.get("tools", False):
+        if (base_model and not kwargs.get("stream", False) 
+            and not kwargs.get("tools", False)):
             function_params = convert_pydantic_model_to_openai_fn(base_model)
             if function_call is None and function_params:
                 function_call = {"name": function_params["name"]}

@@ -141,12 +141,14 @@ class OpenAIClientV1(BaseOpenAIClient):
         else:
             try:
                 output = openai_response.choices[0].message.function_call.arguments
-            except AttributeError as ae_function:
+            except AttributeError:
                 try:
-                    output = openai_response.choices[0].message.tool_calls[-1].function.arguments
+                    choice = openai_response.choices[0]
+                    output = choice.message.tool_calls[-1].function.arguments
                 except AttributeError as ae_tools:
                     raise ValueError(
-                        "No message content or function call arguments returned from OpenAI"
+                        "No message content or function"
+                            " call arguments returned from OpenAI"
                     ) from ae_tools
 
         return LLMResponse(
@@ -305,12 +307,14 @@ class AsyncOpenAIClientV1(BaseOpenAIClient):
         else:
             try:
                 output = openai_response.choices[0].message.function_call.arguments
-            except AttributeError as ae_function:
+            except AttributeError:
                 try:
-                    output = openai_response.choices[0].message.tool_calls[-1].function.arguments
+                    choice = openai_response.choices[0]
+                    output = choice.message.tool_calls[-1].function.arguments
                 except AttributeError as ae_tools:
                     raise ValueError(
-                        "No message content or function call arguments returned from OpenAI"
+                        "No message content or function"
+                            " call arguments returned from OpenAI"
                     ) from ae_tools
 
         return LLMResponse(
