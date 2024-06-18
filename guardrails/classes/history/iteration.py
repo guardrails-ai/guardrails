@@ -1,5 +1,5 @@
 from typing import Dict, List, Optional, Sequence, Union
-
+from builtins import id as object_id
 from pydantic import Field
 from rich.console import Group
 from rich.panel import Panel
@@ -29,6 +29,26 @@ class Iteration(IIteration, ArbitraryModel):
     outputs: Outputs = Field(
         description="The outputs from the iteration/step.", default_factory=Outputs
     )
+
+    def __init__(
+        self,
+        call_id: str,
+        index: int,
+        inputs: Optional[Inputs] = None,
+        outputs: Optional[Outputs] = None,
+    ):
+        iteration_id = str(object_id(self))
+        inputs = inputs or Inputs()
+        outputs = outputs or Outputs()
+        super().__init__(
+            id=iteration_id,
+            call_id=call_id,
+            index=index,
+            inputs=inputs,
+            outputs=outputs,
+        )
+        self.inputs = inputs
+        self.outputs = outputs
 
     @property
     def logs(self) -> Stack[str]:

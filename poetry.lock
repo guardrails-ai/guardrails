@@ -1802,13 +1802,13 @@ protobuf = ["grpcio-tools (>=1.64.0)"]
 
 [[package]]
 name = "guardrails-api-client"
-version = "0.3.4"
+version = "0.3.5"
 description = "Guardrails API Client."
 optional = false
 python-versions = "<4,>=3.8"
 files = [
-    {file = "guardrails_api_client-0.3.4-py3-none-any.whl", hash = "sha256:4a6b28d11848c129d5474663e3bed9be3180c25a303709c388da62054b2c0621"},
-    {file = "guardrails_api_client-0.3.4.tar.gz", hash = "sha256:8b2da58baaa5449c06a4f74828078a79ce8e27121f600764e2a5b7be6aa0355c"},
+    {file = "guardrails_api_client-0.3.5-py3-none-any.whl", hash = "sha256:04783581fe95dc576f33de34ade9dfbe64c99a707b179ad88ee7eee8674f7381"},
+    {file = "guardrails_api_client-0.3.5.tar.gz", hash = "sha256:45aa2c40d3e29d77da214258cef4d5b1926ec5d329a3bf3c67c7c40fd0685097"},
 ]
 
 [package.extras]

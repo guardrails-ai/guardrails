@@ -1,5 +1,5 @@
 from typing import Any, Dict, List, Optional, Union
-
+from builtins import id as object_id
 from pydantic import Field, PrivateAttr
 from rich.panel import Panel
 from rich.pretty import pretty_repr
@@ -47,9 +47,11 @@ class Call(ICall, ArbitraryModel):
         inputs: Optional[CallInputs] = None,
         exception: Optional[Exception] = None,
     ):
+        call_id = str(object_id(self))
         iterations = iterations or Stack()
         inputs = inputs or CallInputs()
         super().__init__(
+            id=call_id,
             iterations=iterations,  # type: ignore
             inputs=inputs,  # type: ignore
             i_exception=CallException(message=str(exception)),  # type: ignore
@@ -431,6 +433,7 @@ versions 0.5.0 and beyond. Use 'guarded_output' instead."""
 
     def to_dict(self) -> Dict[str, Any]:
         i_call = ICall(
+            id=self.id,
             iterations=list(self.iterations),
             inputs=self.inputs,
         )

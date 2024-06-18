@@ -15,7 +15,10 @@ avs = AsyncValidatorService()
 
 
 def test_validate_with_running_loop(mocker):
-    iteration = Iteration()
+    iteration = Iteration(
+        call_id="mock-call",
+        index=0,
+    )
     with pytest.raises(RuntimeError) as e_info:
         mock_loop = MockLoop(True)
         mocker.patch("asyncio.get_event_loop", return_value=mock_loop)
@@ -43,7 +46,10 @@ def test_validate_without_running_loop(mocker):
     mocker.patch.object(avs, "async_validate", async_validate_mock)
     loop_spy = mocker.spy(mock_loop, "run_until_complete")
 
-    iteration = Iteration()
+    iteration = Iteration(
+        call_id="mock-call",
+        index=0,
+    )
 
     validated_value, validated_metadata = avs.validate(
         value=True,
@@ -71,7 +77,10 @@ async def test_async_validate_with_children(mocker):
 
     value = {"a": 1}
 
-    iteration = Iteration()
+    iteration = Iteration(
+        call_id="mock-call",
+        index=0,
+    )
 
     validated_value, validated_metadata = await avs.async_validate(
         value=value,
@@ -103,7 +112,10 @@ async def test_async_validate_without_children(mocker):
     run_validators_mock = mocker.patch.object(avs, "run_validators")
     run_validators_mock.return_value = ("run_validators_mock", {"async": True})
 
-    iteration = Iteration()
+    iteration = Iteration(
+        call_id="mock-call",
+        index=0,
+    )
 
     validated_value, validated_metadata = await avs.async_validate(
         value="Hello world!",
@@ -149,7 +161,10 @@ async def test_validate_children(mocker):
         }
     }
 
-    iteration = Iteration()
+    iteration = Iteration(
+        call_id="mock-call",
+        index=0,
+    )
 
     validated_value, validated_metadata = await avs.validate_children(
         value=value.get("mock-parent-key"),
@@ -230,7 +245,10 @@ async def test_run_validators(mocker):
 
     asyancio_gather_mock = mocker.patch("asyncio.gather", side_effect=mock_gather)
 
-    iteration = Iteration()
+    iteration = Iteration(
+        call_id="mock-call",
+        index=0,
+    )
 
     value, metadata = await avs.run_validators(
         iteration=iteration,
@@ -292,7 +310,10 @@ async def test_run_validators_with_override(mocker):
 
     asyancio_gather_mock = mocker.patch("asyncio.gather")
 
-    iteration = Iteration()
+    iteration = Iteration(
+        call_id="mock-call",
+        index=0,
+    )
 
     value, metadata = await avs.run_validators(
         iteration=iteration,
