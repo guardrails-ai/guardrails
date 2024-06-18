@@ -36,9 +36,9 @@ def test_hugging_face_model_callable():
 
 @if_transformers_installed
 def test_hugging_face_pipeline_callable():
-    from tests.unit_tests.mocks.mock_hf_models import make_random_pipeline
+    from tests.unit_tests.mocks.mock_hf_models import make_mock_pipeline
 
-    model = make_random_pipeline()
+    model = make_mock_pipeline()
 
     class Foo(BaseModel):
         bar: str

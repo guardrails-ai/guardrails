@@ -22,7 +22,7 @@ def make_mock_model_and_tokenizer():
     return model, tokenizer
 
 
-def make_random_pipeline():
+def make_mock_pipeline():
     from transformers import pipeline
 
     model, tokenizer = make_mock_model_and_tokenizer()
