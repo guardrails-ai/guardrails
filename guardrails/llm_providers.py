@@ -388,9 +388,9 @@ class LiteLLMCallable(PromptCallableBase):
         if text is not None or instructions is not None or msg_history is not None:
             messages = litellm_messages(
                 prompt=text, instructions=instructions, msg_history=msg_history
-            ) 
+            )
             kwargs["messages"] = messages
-        
+
         response = completion(
             model=model,
             *args,
@@ -570,7 +570,11 @@ class ArbitraryCallable(PromptCallableBase):
         )
 
 
-def get_llm_ask(llm_api: Optional[Callable] = None, *args, **kwargs) -> PromptCallableBase:
+def get_llm_ask(
+    llm_api: Optional[Callable] = None,
+    *args,
+    **kwargs,
+) -> PromptCallableBase:
     if "temperature" not in kwargs:
         kwargs.update({"temperature": 0})
     if llm_api == get_static_openai_create_func():
@@ -826,11 +830,8 @@ class AsyncLiteLLMCallable(AsyncPromptCallableBase):
                 "Install with `pip install litellm`"
             ) from e
 
-
         if text is not None or instructions is not None:
-            messages = litellm_messages(
-                prompt=text, instructions=instructions
-            ) 
+            messages = litellm_messages(prompt=text, instructions=instructions)
             kwargs["messages"] = messages
 
         response = await acompletion(

@@ -1017,21 +1017,17 @@ def test_pydantic_with_lite_llm(mocker):
     ]
     guard = gd.Guard.from_pydantic(output_class=pydantic.WITH_MSG_HISTORY)
     final_output = guard(
-        messages=string.MOVIE_MSG_HISTORY,
-        model="gpt-3.5-turbo",
-        max_tokens=10
+        messages=string.MOVIE_MSG_HISTORY, model="gpt-3.5-turbo", max_tokens=10
     )
     assert guard.history.last.inputs.msg_history == [
         {"role": "system", "content": "You are a helpful assistant."},
-        {
-            "role": "user",
-            "content": "Can you give me your favorite movie?"
-        }
+        {"role": "user", "content": "Can you give me your favorite movie?"},
     ]
 
     call = guard.history.first
     assert call.iterations.length == 2
     assert final_output.raw_llm_output == pydantic.MSG_HISTORY_LLM_OUTPUT_CORRECT
+
 
 def test_string_output(mocker):
     """Test single string (non-JSON) generation."""
