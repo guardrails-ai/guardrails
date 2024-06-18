@@ -161,7 +161,7 @@ class AsyncGuard(Guard, Generic[OT]):
         *validators: UseManyValidatorSpec,
         on: str = "output",
     ) -> "AsyncGuard":
-        guard = super().use_many(*validators, on=on)
+        guard = super().use_many(*validators, on=on)  # type: ignore
         return cast(AsyncGuard, guard)
 
     async def _execute(
