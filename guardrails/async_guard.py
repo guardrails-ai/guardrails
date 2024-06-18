@@ -7,8 +7,10 @@ from typing import (
     Awaitable,
     Callable,
     Dict,
+    Generic,
     List,
     Optional,
+    Sequence,
     Union,
     cast,
 )
@@ -19,19 +21,24 @@ from guardrails import Guard
 from guardrails.classes import OT, ValidationOutcome
 from guardrails.classes.history import Call
 from guardrails.classes.history.call_inputs import CallInputs
+from guardrails.classes.output_type import OutputTypes
+from guardrails.classes.schema.processed_schema import ProcessedSchema
 from guardrails.llm_providers import get_async_llm_ask, model_is_supported_server_side
 from guardrails.logger import set_scope
 from guardrails.run import AsyncRunner, AsyncStreamRunner
 from guardrails.stores.context import (
+    Tracer,
     get_call_kwarg,
     set_call_kwargs,
     set_tracer,
     set_tracer_context,
 )
+from guardrails.types.pydantic import ModelOrListOfModels
 from guardrails.utils.validator_utils import verify_metadata_requirements
+from guardrails.validator_base import Validator
 
 
-class AsyncGuard(Guard):
+class AsyncGuard(Guard, Generic[OT]):
     """The AsyncGuard class.
 
     This class one of the main entry point for using Guardrails. It is
@@ -48,7 +55,97 @@ class AsyncGuard(Guard):
     the LLM and the validated output stream.
     """
 
-    async def _execute(  # FIXME: Is this override necessary?
+    @classmethod
+    def _from_rail_schema(
+        cls,
+        schema: ProcessedSchema,
+        rail: str,
+        *,
+        num_reasks: Optional[int] = None,
+        tracer: Optional[Tracer] = None,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+    ):
+        guard = super()._from_rail_schema(
+            schema,
+            rail,
+            num_reasks=num_reasks,
+            tracer=tracer,
+            name=name,
+            description=description,
+        )
+        if schema.output_type == OutputTypes.STRING:
+            return cast(AsyncGuard[str], guard)
+        elif schema.output_type == OutputTypes.LIST:
+            return cast(AsyncGuard[List], guard)
+        else:
+            return cast(AsyncGuard[Dict], guard)
+
+    @classmethod
+    def from_pydantic(
+        cls,
+        output_class: ModelOrListOfModels,
+        *,
+        prompt: Optional[str] = None,  # deprecate this too
+        instructions: Optional[str] = None,  # deprecate this too
+        num_reasks: Optional[int] = None,
+        reask_prompt: Optional[str] = None,  # deprecate this too
+        reask_instructions: Optional[str] = None,  # deprecate this too
+        tracer: Optional[Tracer] = None,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+    ):
+        guard = super().from_pydantic(
+            output_class,
+            prompt=prompt,
+            instructions=instructions,
+            num_reasks=num_reasks,
+            reask_prompt=reask_prompt,
+            reask_instructions=reask_instructions,
+            tracer=tracer,
+            name=name,
+            description=description,
+        )
+        if guard._output_type == OutputTypes.LIST:
+            return cast(AsyncGuard[List], guard)
+        else:
+            return cast(AsyncGuard[Dict], guard)
+
+    @classmethod
+    def from_string(
+        cls,
+        validators: Sequence[Validator],
+        *,
+        string_description: Optional[str] = None,
+        prompt: Optional[str] = None,  # deprecate this too
+        instructions: Optional[str] = None,  # deprecate this too
+        reask_prompt: Optional[str] = None,  # deprecate this too
+        reask_instructions: Optional[str] = None,  # deprecate this too
+        num_reasks: Optional[int] = None,
+        tracer: Optional[Tracer] = None,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+    ):
+        guard = super().from_string(
+            validators,
+            string_description=string_description,
+            prompt=prompt,
+            instructions=instructions,
+            reask_prompt=reask_prompt,
+            reask_instructions=reask_instructions,
+            num_reasks=num_reasks,
+            tracer=tracer,
+            name=name,
+            description=description,
+        )
+        return cast(AsyncGuard[str], guard)
+
+    @classmethod
+    def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional["AsyncGuard"]:
+        guard = super().from_dict(obj)
+        return cast(AsyncGuard, guard)
+
+    async def _execute(
         self,
         *args,
         llm_api: Optional[Callable[..., Awaitable[Any]]] = None,
@@ -178,7 +275,7 @@ class AsyncGuard(Guard):
 
             # If the LLM API is async, return a coroutine
             else:
-                result = await self._exec_async(
+                result = await self._exec(
                     llm_api=llm_api,
                     llm_output=llm_output,
                     prompt_params=prompt_params,
@@ -215,7 +312,7 @@ class AsyncGuard(Guard):
             **kwargs,
         )
 
-    async def _exec_async(
+    async def _exec(
         self,
         *args,
         llm_api: Optional[Callable[[Any], Awaitable[Any]]],
