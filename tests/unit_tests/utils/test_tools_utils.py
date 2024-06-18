@@ -1,11 +1,9 @@
 from pydantic import BaseModel, Field
 from typing import List
 
-import json
-
 from guardrails.schema.pydantic_schema import pydantic_model_to_schema
 
-from guardrails.utils.tools_utils import schema_to_tool
+from guardrails.utils.tools_utils import augment_tools_with_schema, schema_to_tool
 
 class Delivery(BaseModel):
     customer: str=Field( description="customer name")
@@ -13,18 +11,21 @@ class Delivery(BaseModel):
     pickup_location: str=Field(description="address of pickup")
     dropoff_time: str=Field(description="date and time of dropoff")
     dropoff_location: str=Field(description="address of dropoff")
-    price: str = Field(description="price of delivery with currency symbol included")
-    items: str= Field(description='items for pickup/delivery typically something a single person can carry on a bike')
+    price: str=Field(description="price of delivery with currency symbol included")
+    items: str=Field(description='items for pickup/delivery typically something a single person can carry on a bike')
     number_items: int=Field(description="number of items")
 
 class Schedule(BaseModel):
     deliveries: List[Delivery] = Field(description="deliveries for messenger")
 
+class Person(BaseModel):
+    name: str
+    age: int
+    hair_color: str
+
 def test_pydantic_model_to_schema():
     schema = pydantic_model_to_schema(Schedule)
-
     tool = schema_to_tool(schema)
-
     assert tool == {
         "type": "function",
         "function": {
@@ -110,3 +111,44 @@ def test_pydantic_model_to_schema():
             ]
         }
     }
+
+def test_augment_tools_with_schema():
+    schema = pydantic_model_to_schema(Person)
+    tools = augment_tools_with_schema(schema)
+    assert tools == [
+        {
+            "type": "function",
+            "function": {
+                "name": "gd_response_tool",
+                "description": "A tool for generating responses to guardrails. It must be called last in every response.",
+                "parameters": {
+                    "properties": {
+                        "name": {
+                            "title": "Name",
+                            "type": "string"
+                        },
+                        "age": {
+                            "title": "Age",
+                            "type": "integer"
+                        },
+                        "hair_color": {
+                            "title": "Hair Color",
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "name",
+                        "age",
+                        "hair_color"
+                    ],
+                    "title": "Person",
+                    "type": "object"
+                },
+                "required": [
+                    "name",
+                    "age",
+                    "hair_color"
+                ]
+            }
+        }
+    ]

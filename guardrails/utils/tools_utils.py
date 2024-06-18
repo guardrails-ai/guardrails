@@ -22,6 +22,3 @@ def schema_to_tool(schema: ProcessedSchema) -> dict:
 def augment_tools_with_schema(schema: ProcessedSchema, tools: Optional[list] = [],) -> list:
     tools.append(schema_to_tool(schema))
     return tools
-
-def tools_prompt_string()-> str:
-    return "Tools have been provided. Call the gd_response_tool with the response as the last thing you do."
