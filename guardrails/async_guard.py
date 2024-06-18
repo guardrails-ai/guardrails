@@ -34,6 +34,7 @@ from guardrails.stores.context import (
     set_tracer_context,
 )
 from guardrails.types.pydantic import ModelOrListOfModels
+from guardrails.types.validator import UseManyValidatorSpec, UseValidatorSpec
 from guardrails.utils.validator_utils import verify_metadata_requirements
 from guardrails.validator_base import Validator
 
@@ -143,6 +144,24 @@ class AsyncGuard(Guard, Generic[OT]):
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional["AsyncGuard"]:
         guard = super().from_dict(obj)
+        return cast(AsyncGuard, guard)
+
+    def use(
+        self,
+        validator: UseValidatorSpec,
+        *args,
+        on: str = "output",
+        **kwargs,
+    ) -> "AsyncGuard":
+        guard = super().use(validator, *args, on=on, **kwargs)
+        return cast(AsyncGuard, guard)
+
+    def use_many(
+        self,
+        *validators: UseManyValidatorSpec,
+        on: str = "output",
+    ) -> "AsyncGuard":
+        guard = super().use_many(*validators, on=on)
         return cast(AsyncGuard, guard)
 
     async def _execute(
