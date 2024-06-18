@@ -501,8 +501,11 @@ class Guard(IGuard, Generic[OT]):
         guard._output_type = schema.output_type
         guard._base_model = output_class
         if isinstance(output_formatter, str):
+            if isinstance(output_class, list):
+                raise Exception("A root-level list is not valid JSON.")
             output_formatter = get_formatter(
-                output_formatter, schema=output_class.model_json_schema()
+                output_formatter,
+                schema=output_class.model_json_schema()  # type: ignore
             )
         guard._output_formatter = output_formatter
         guard._fill_validators()
@@ -774,7 +777,8 @@ class Guard(IGuard, Generic[OT]):
         api = get_llm_ask(llm_api, *args, **kwargs) if llm_api is not None else None
 
         if self._output_formatter is not None:
-            api = self._output_formatter.wrap_callable(api)
+            # Type suppression here? ArbitraryCallable is a subclass of PromptCallable!?
+            api = self._output_formatter.wrap_callable(api)  # type: ignore
 
         # Check whether stream is set
         if kwargs.get("stream", False):

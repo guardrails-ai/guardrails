@@ -1,12 +1,14 @@
+import importlib
 import pytest
 
 from pydantic import BaseModel
 
 from guardrails import Guard
 
+
 if_transformers_installed = pytest.mark.skipif(
-    "not importlib.util.find_spec('transformers')\
-    or not importlib.util.find_spec('torch')",
+    not importlib.util.find_spec('transformers')
+    or not importlib.util.find_spec('torch'),
     reason="Transformers / Torch not installed.",
 )
 

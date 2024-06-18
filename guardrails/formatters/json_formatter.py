@@ -1,5 +1,5 @@
 import json
-from typing import Union
+from typing import Optional, Union
 
 from jsonformer import Jsonformer
 
@@ -28,7 +28,7 @@ def _deref_schema_path(schema: dict, path: Union[list, str]):
 
 
 def _jsonschema_to_jsonformer(
-    schema: dict, path: list = None, objdefs: dict = None
+    schema: dict, path: Optional[list] = None, objdefs: Optional[dict] = None
 ) -> dict:
     """Converts the large-ish JSONSchema standard into the JSONFormer schema
     format.
