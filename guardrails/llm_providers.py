@@ -648,7 +648,7 @@ def get_llm_ask(llm_api: Callable, *args, **kwargs) -> PromptCallableBase:
     try:
         from litellm import completion  # noqa: F401 # type: ignore
 
-        if llm_api == completion or (llm_api == None and kwargs.get("model")):
+        if llm_api == completion or (llm_api is None and kwargs.get("model")):
             return LiteLLMCallable(*args, **kwargs)
     except ImportError:
         pass
@@ -945,7 +945,7 @@ def get_async_llm_ask(
     try:
         import litellm
 
-        if llm_api == litellm.acompletion or (llm_api == None and kwargs.get("model")):
+        if llm_api == litellm.acompletion or (llm_api is None and kwargs.get("model")):
             return AsyncLiteLLMCallable(*args, **kwargs)
     except ImportError:
         pass

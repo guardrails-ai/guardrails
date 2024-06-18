@@ -1021,6 +1021,13 @@ def test_pydantic_with_lite_llm(mocker):
         model="gpt-3.5-turbo",
         max_tokens=10
     )
+    assert guard.history.last.inputs.msg_history == [
+        {"role": "system", "content": "You are a helpful assistant."},
+        {
+            "role": "user",
+            "content": "Can you give me your favorite movie?"
+        }
+    ]
 
     call = guard.history.first
     assert call.iterations.length == 2
