@@ -15,27 +15,9 @@ from guardrails.llm_providers import (
     chat_prompt,
     get_llm_ask,
 )
-from guardrails.utils.openai_utils import OPENAI_VERSION
 from guardrails.utils.safe_get import safe_get_with_brackets
 
 from .mocks import MockAsyncOpenAILlm, MockOpenAILlm
-
-
-@pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="OpenAI v0 only")
-def test_openai_callable_does_not_retry_on_non_retryable_errors(mocker):
-    with pytest.raises(Exception) as e:
-        llm = MockOpenAILlm()
-        fail_non_retryable_spy = mocker.spy(llm, "fail_non_retryable")
-
-        arbitrary_callable = ArbitraryCallable(llm.fail_retryable, prompt="Hello")
-        arbitrary_callable()
-
-        assert fail_non_retryable_spy.call_count == 1
-        assert isinstance(e, PromptCallableException) is True
-        assert (
-            str(e)
-            == "The callable `fn` passed to `Guard(fn, ...)` failed with the following error: `Non-Retryable Error!`. Make sure that `fn` can be called as a function that takes in a single prompt string and returns a string."  # noqa
-        )
 
 
 def test_openai_callable_does_not_retry_on_success(mocker):
@@ -50,24 +32,6 @@ def test_openai_callable_does_not_retry_on_success(mocker):
     assert response.output == "Hello world!"
     assert response.prompt_token_count is None
     assert response.response_token_count is None
-
-
-@pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="OpenAI v0 only")
-@pytest.mark.asyncio
-async def test_async_openai_callable_does_not_retry_on_non_retryable_errors(mocker):
-    with pytest.raises(Exception) as e:
-        llm = MockAsyncOpenAILlm()
-        fail_non_retryable_spy = mocker.spy(llm, "fail_non_retryable")
-
-        arbitrary_callable = AsyncArbitraryCallable(llm.fail_retryable, prompt="Hello")
-        await arbitrary_callable()
-
-        assert fail_non_retryable_spy.call_count == 1
-        assert isinstance(e, PromptCallableException) is True
-        assert (
-            str(e)
-            == "The callable `fn` passed to `Guard(fn, ...)` failed with the following error: `Non-Retryable Error!`. Make sure that `fn` can be called as a function that takes in a single prompt string and returns a string."  # noqa
-        )
 
 
 @pytest.mark.asyncio
@@ -87,44 +51,31 @@ async def test_async_openai_callable_does_not_retry_on_success(mocker):
 
 @pytest.fixture(scope="module")
 def openai_chat_mock():
-    if OPENAI_VERSION.startswith("0"):
-        return {
-            "choices": [
-                {
-                    "message": {"content": "Mocked LLM output"},
-                }
-            ],
-            "usage": {
-                "prompt_tokens": 10,
-                "completion_tokens": 20,
-            },
-        }
-    else:
-        from openai.types import CompletionUsage
-        from openai.types.chat import ChatCompletion, ChatCompletionMessage
-        from openai.types.chat.chat_completion import Choice
+    from openai.types import CompletionUsage
+    from openai.types.chat import ChatCompletion, ChatCompletionMessage
+    from openai.types.chat.chat_completion import Choice
 
-        return ChatCompletion(
-            id="",
-            choices=[
-                Choice(
-                    finish_reason="stop",
-                    index=0,
-                    message=ChatCompletionMessage(
-                        content="Mocked LLM output",
-                        role="assistant",
-                    ),
+    return ChatCompletion(
+        id="",
+        choices=[
+            Choice(
+                finish_reason="stop",
+                index=0,
+                message=ChatCompletionMessage(
+                    content="Mocked LLM output",
+                    role="assistant",
                 ),
-            ],
-            created=0,
-            model="",
-            object="chat.completion",
-            usage=CompletionUsage(
-                completion_tokens=20,
-                prompt_tokens=10,
-                total_tokens=30,
             ),
-        )
+        ],
+        created=0,
+        model="",
+        object="chat.completion",
+        usage=CompletionUsage(
+            completion_tokens=20,
+            prompt_tokens=10,
+            total_tokens=30,
+        ),
+    )
 
 
 @pytest.fixture(scope="module")
@@ -147,61 +98,47 @@ def openai_chat_stream_mock():
 
 @pytest.fixture(scope="module")
 def openai_mock():
-    if OPENAI_VERSION.startswith("0"):
-        return {
-            "choices": [
-                {
-                    "text": "Mocked LLM output",
-                }
-            ],
-            "usage": {
-                "prompt_tokens": 10,
-                "completion_tokens": 20,
-            },
-        }
-    else:
+    @dataclass
+    class MockCompletionUsage:
+        completion_tokens: int
+        prompt_tokens: int
+        total_tokens: int
 
-        @dataclass
-        class MockCompletionUsage:
-            completion_tokens: int
-            prompt_tokens: int
-            total_tokens: int
+    @dataclass
+    class MockCompletionChoice:
+        finish_reason: str
+        index: int
+        logprobs: Any
+        text: str
 
-        @dataclass
-        class MockCompletionChoice:
-            finish_reason: str
-            index: int
-            logprobs: Any
-            text: str
+    @dataclass
+    class MockCompletion:
+        id: str
+        choices: List[MockCompletionChoice]
+        created: int
+        model: str
+        object: str
+        usage: MockCompletionUsage
 
-        @dataclass
-        class MockCompletion:
-            id: str
-            choices: List[MockCompletionChoice]
-            created: int
-            model: str
-            object: str
-            usage: MockCompletionUsage
-
-        return MockCompletion(
-            id="",
-            choices=[
-                MockCompletionChoice(
-                    finish_reason="stop",
-                    index=0,
-                    logprobs=None,
-                    text="Mocked LLM output",
-                ),
-            ],
-            created=0,
-            model="",
-            object="text_completion",
-            usage=MockCompletionUsage(
-                completion_tokens=20,
-                prompt_tokens=10,
-                total_tokens=30,
+    return MockCompletion(
+        id="",
+        choices=[
+            MockCompletionChoice(
+                finish_reason="stop",
+                index=0,
+                logprobs=None,
+                text="Mocked LLM output",
             ),
-        )
+        ],
+        created=0,
+        model="",
+        object="text_completion",
+        usage=MockCompletionUsage(
+            completion_tokens=20,
+            prompt_tokens=10,
+            total_tokens=30,
+        ),
+    )
 
 
 @pytest.fixture(scope="module")
@@ -218,10 +155,7 @@ def openai_stream_mock():
 
 
 def test_openai_callable(mocker, openai_mock):
-    if OPENAI_VERSION.startswith("0"):
-        mocker.patch("openai.Completion.create", return_value=openai_mock)
-    else:
-        mocker.patch("openai.resources.Completions.create", return_value=openai_mock)
+    mocker.patch("openai.resources.Completions.create", return_value=openai_mock)
 
     from guardrails.llm_providers import OpenAICallable
 
@@ -236,12 +170,7 @@ def test_openai_callable(mocker, openai_mock):
 
 
 def test_openai_stream_callable(mocker, openai_stream_mock):
-    if OPENAI_VERSION.startswith("0"):
-        mocker.patch("openai.Completion.create", return_value=openai_stream_mock)
-    else:
-        mocker.patch(
-            "openai.resources.Completions.create", return_value=openai_stream_mock
-        )
+    mocker.patch("openai.resources.Completions.create", return_value=openai_stream_mock)
 
     from guardrails.llm_providers import OpenAICallable
 
@@ -259,31 +188,11 @@ def test_openai_stream_callable(mocker, openai_stream_mock):
         i += 1
 
 
-@pytest.mark.asyncio
-@pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="OpenAI v0 only")
-async def test_async_openai_callable(mocker, openai_mock):
-    mocker.patch("openai.Completion.acreate", return_value=openai_mock)
-
-    from guardrails.llm_providers import AsyncOpenAICallable
-
-    openai_callable = AsyncOpenAICallable()
-    response = await openai_callable(text="Hello")
-
-    assert isinstance(response, LLMResponse) is True
-    assert response.output == "Mocked LLM output"
-    assert response.prompt_token_count == 10
-    assert response.response_token_count == 20
-
-
 def test_openai_chat_callable(mocker, openai_chat_mock):
-    if OPENAI_VERSION.startswith("0"):
-        mocker.patch("openai.ChatCompletion.create", return_value=openai_chat_mock)
-    else:
-        mocker.patch(
-            "openai.resources.chat.completions.Completions.create",
-            return_value=openai_chat_mock,
-        )
-
+    mocker.patch(
+        "openai.resources.chat.completions.Completions.create",
+        return_value=openai_chat_mock,
+    )
     from guardrails.llm_providers import OpenAIChatCallable
 
     openai_chat_callable = OpenAIChatCallable()
@@ -296,15 +205,10 @@ def test_openai_chat_callable(mocker, openai_chat_mock):
 
 
 def test_openai_chat_stream_callable(mocker, openai_chat_stream_mock):
-    if OPENAI_VERSION.startswith("0"):
-        mocker.patch(
-            "openai.ChatCompletion.create", return_value=openai_chat_stream_mock
-        )
-    else:
-        mocker.patch(
-            "openai.resources.chat.completions.Completions.create",
-            return_value=openai_chat_stream_mock,
-        )
+    mocker.patch(
+        "openai.resources.chat.completions.Completions.create",
+        return_value=openai_chat_stream_mock,
+    )
     from guardrails.llm_providers import OpenAIChatCallable
 
     openai_chat_callable = OpenAIChatCallable()
@@ -321,30 +225,11 @@ def test_openai_chat_stream_callable(mocker, openai_chat_stream_mock):
         i += 1
 
 
-@pytest.mark.asyncio
-@pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="OpenAI v0 only")
-async def test_async_openai_chat_callable(mocker, openai_chat_mock):
-    mocker.patch("openai.ChatCompletion.acreate", return_value=openai_chat_mock)
-
-    from guardrails.llm_providers import AsyncOpenAIChatCallable
-
-    openai_chat_callable = AsyncOpenAIChatCallable()
-    response = await openai_chat_callable(text="Hello")
-
-    assert isinstance(response, LLMResponse) is True
-    assert response.output == "Mocked LLM output"
-    assert response.prompt_token_count == 10
-    assert response.response_token_count == 20
-
-
 def test_openai_chat_model_callable(mocker, openai_chat_mock):
-    if OPENAI_VERSION.startswith("0"):
-        mocker.patch("openai.ChatCompletion.create", return_value=openai_chat_mock)
-    else:
-        mocker.patch(
-            "openai.resources.chat.completions.Completions.create",
-            return_value=openai_chat_mock,
-        )
+    mocker.patch(
+        "openai.resources.chat.completions.Completions.create",
+        return_value=openai_chat_mock,
+    )
 
     from guardrails.llm_providers import OpenAIChatCallable
 
@@ -353,28 +238,6 @@ def test_openai_chat_model_callable(mocker, openai_chat_mock):
 
     openai_chat_model_callable = OpenAIChatCallable()
     response = openai_chat_model_callable(
-        text="Hello",
-        base_model=MyModel,
-    )
-
-    assert isinstance(response, LLMResponse) is True
-    assert response.output == "Mocked LLM output"
-    assert response.prompt_token_count == 10
-    assert response.response_token_count == 20
-
-
-@pytest.mark.asyncio
-@pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="OpenAI v0 only")
-async def test_async_openai_chat_model_callable(mocker, openai_chat_mock):
-    mocker.patch("openai.ChatCompletion.acreate", return_value=openai_chat_mock)
-
-    from guardrails.llm_providers import AsyncOpenAIChatCallable
-
-    class MyModel(BaseModel):
-        a: str
-
-    openai_chat_model_callable = AsyncOpenAIChatCallable()
-    response = await openai_chat_model_callable(
         text="Hello",
         base_model=MyModel,
     )
@@ -565,11 +428,7 @@ def test_get_llm_ask_openai_completion():
     from guardrails.llm_providers import OpenAICallable
 
     completion_create = None
-    if OPENAI_VERSION.startswith("0"):
-        completion_create = openai.Completion.create
-    else:
-        completion_create = openai.completions.create
-
+    completion_create = openai.completions.create
     prompt_callable = get_llm_ask(completion_create)
 
     assert isinstance(prompt_callable, OpenAICallable)
@@ -584,11 +443,7 @@ def test_get_llm_ask_openai_chat():
 
     from guardrails.llm_providers import OpenAIChatCallable
 
-    chat_completion_create = None
-    if OPENAI_VERSION.startswith("0"):
-        chat_completion_create = openai.ChatCompletion.create
-    else:
-        chat_completion_create = openai.chat.completions.create
+    chat_completion_create = openai.chat.completions.create
 
     prompt_callable = get_llm_ask(chat_completion_create)
 
