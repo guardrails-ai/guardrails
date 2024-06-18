@@ -85,3 +85,11 @@ precommit:
 	pyright guardrails/
 	make lint
 	./.github/workflows/scripts/update_notebook_matrix.sh
+
+refresh:
+	echo "Removing old virtual environment"
+	rm -rf ./.venv;
+	echo "Creating new virtual environment"
+	python3 -m venv ./.venv;
+	echo "Sourcing and installing"
+	source ./.venv/bin/activate && make full;

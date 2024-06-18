@@ -3,14 +3,19 @@ from typing import Generic, Iterator, Optional, Tuple, Union, cast
 from pydantic import Field
 from rich.pretty import pretty_repr
 
+from guardrails_api_client import (
+    ValidationOutcome as IValidationOutcome,
+    ValidationOutcomeValidatedOutput,
+)
+from guardrails.actions.reask import ReAsk
 from guardrails.classes.history import Call, Iteration
 from guardrails.classes.output_type import OT
+from guardrails.classes.generic.arbitrary_model import ArbitraryModel
 from guardrails.constants import pass_status
-from guardrails.utils.logs_utils import ArbitraryModel
-from guardrails.utils.reask_utils import ReAsk
+from guardrails.utils.safe_get import safe_get
 
 
-class ValidationOutcome(ArbitraryModel, Generic[OT]):
+class ValidationOutcome(IValidationOutcome, ArbitraryModel, Generic[OT]):
     raw_llm_output: Optional[str] = Field(
         description="The raw, unchanged output from the LLM call.", default=None
     )
@@ -51,7 +56,9 @@ class ValidationOutcome(ArbitraryModel, Generic[OT]):
     def from_guard_history(cls, call: Call):
         """Create a ValidationOutcome from a history Call object."""
         last_iteration = call.iterations.last or Iteration()
-        last_output = last_iteration.validation_response or last_iteration.parsed_output
+        last_output = last_iteration.validation_response or safe_get(
+            list(last_iteration.reasks), 0
+        )
         validation_passed = call.status == pass_status
         reask = last_output if isinstance(last_output, ReAsk) else None
         error = call.error
@@ -87,3 +94,14 @@ class ValidationOutcome(ArbitraryModel, Generic[OT]):
 
     def __str__(self) -> str:
         return pretty_repr(self)
+
+    def to_dict(self):
+        i_validation_outcome = IValidationOutcome(
+            raw_llm_output=self.raw_llm_output,  # type: ignore
+            validated_output=ValidationOutcomeValidatedOutput(self.validated_output),  # type: ignore
+            reask=self.reask,
+            validation_passed=self.validation_passed,  # type: ignore
+            error=self.error,
+        )
+
+        return i_validation_outcome.to_dict()

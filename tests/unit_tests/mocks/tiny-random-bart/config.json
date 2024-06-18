@@ -1,0 +1,46 @@
+{
+  "_name_or_path": "hf-internal-testing/tiny-random-BartForCausalLM",
+  "activation_dropout": 0.0,
+  "activation_function": "gelu",
+  "architectures": [
+    "BartForCausalLM"
+  ],
+  "attention_dropout": 0.1,
+  "bos_token_id": 0,
+  "classifier_dropout": 0.0,
+  "d_model": 16,
+  "decoder_attention_heads": 4,
+  "decoder_ffn_dim": 4,
+  "decoder_layerdrop": 0.0,
+  "decoder_layers": 2,
+  "decoder_start_token_id": 2,
+  "dropout": 0.1,
+  "encoder_attention_heads": 4,
+  "encoder_ffn_dim": 4,
+  "encoder_layerdrop": 0.0,
+  "encoder_layers": 2,
+  "eos_token_id": 2,
+  "forced_eos_token_id": null,
+  "id2label": {
+    "0": "LABEL_0",
+    "1": "LABEL_1",
+    "2": "LABEL_2"
+  },
+  "init_std": 0.02,
+  "is_decoder": true,
+  "is_encoder_decoder": false,
+  "label2id": {
+    "LABEL_0": 0,
+    "LABEL_1": 1,
+    "LABEL_2": 2
+  },
+  "max_position_embeddings": 100,
+  "model_type": "bart",
+  "num_hidden_layers": 2,
+  "pad_token_id": 1,
+  "scale_embedding": false,
+  "torch_dtype": "float32",
+  "transformers_version": "4.36.2",
+  "use_cache": true,
+  "vocab_size": 1024
+}

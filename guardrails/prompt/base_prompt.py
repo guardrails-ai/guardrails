@@ -5,25 +5,36 @@ from string import Template
 from typing import Optional
 
 import regex
+
 from warnings import warn
-from guardrails.namespace_template import NamespaceTemplate
+from guardrails.classes.templating.namespace_template import NamespaceTemplate
 from guardrails.utils.constants import constants
-from guardrails.utils.parsing_utils import get_template_variables
+from guardrails.utils.templating_utils import get_template_variables
 
 
 class BasePrompt:
     """Base class for representing an LLM prompt."""
 
-    def __init__(self, source: str, output_schema: Optional[str] = None):
+    def __init__(
+        self,
+        source: str,
+        output_schema: Optional[str] = None,
+        *,
+        xml_output_schema: Optional[str] = None,
+    ):
         self._source = source
         self.format_instructions_start = self.get_format_instructions_idx(source)
 
+        # FIXME: Why is this happening on init instead of on format?
         # Substitute constants in the prompt.
         source = self.substitute_constants(source)
 
+        # FIXME: Why is this happening on init instead of on format?
         # If an output schema is provided, substitute it in the prompt.
-        if output_schema:
-            self.source = Template(source).safe_substitute(output_schema=output_schema)
+        if output_schema or xml_output_schema:
+            self.source = Template(source).safe_substitute(
+                output_schema=output_schema, xml_output_schema=xml_output_schema
+            )
         else:
             self.source = source
 
