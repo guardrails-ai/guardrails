@@ -1001,11 +1001,21 @@ def test_guard_with_top_level_list_return_type(mocker, rail, prompt):
 
 def test_pydantic_with_lite_llm(mocker):
     """Test lite llm JSON generation with message history re-asking."""
-    mocker.patch(
-        "guardrails.llm_providers.LiteLLMCallable",
-        new=MockLiteLLMChatCallable,
+    mock_invoke_llm = mocker.patch(
+        "guardrails.llm_providers.LiteLLMCallable._invoke_llm"
     )
-
+    mock_invoke_llm.side_effect = [
+        LLMResponse(
+            output=pydantic.MSG_HISTORY_LLM_OUTPUT_INCORRECT,
+            prompt_token_count=123,
+            response_token_count=1234,
+        ),
+        LLMResponse(
+            output=pydantic.MSG_HISTORY_LLM_OUTPUT_CORRECT,
+            prompt_token_count=123,
+            response_token_count=1234,
+        ),
+    ]
     guard = gd.Guard.from_pydantic(output_class=pydantic.WITH_MSG_HISTORY)
     final_output = guard(
         messages=string.MOVIE_MSG_HISTORY,
@@ -1013,7 +1023,9 @@ def test_pydantic_with_lite_llm(mocker):
         max_tokens=10
     )
 
-    assert final_output.raw_llm_output == string.MSG_LLM_OUTPUT_INCORRECT
+    call = guard.history.first
+    assert call.iterations.length == 2
+    assert final_output.raw_llm_output == pydantic.MSG_HISTORY_LLM_OUTPUT_CORRECT
 
 def test_string_output(mocker):
     """Test single string (non-JSON) generation."""
