@@ -92,6 +92,7 @@ from guardrails.types import (
 
 from guardrails.utils.tools_utils import augment_tools_with_schema
 
+
 class Guard(IGuard, Generic[OT]):
     """The Guard class.
 
@@ -1442,12 +1443,12 @@ class Guard(IGuard, Generic[OT]):
         ]
 
         return i_guard_dict
-    
+
     def augment_tools_with_schema(
-            self, 
-            tools: list, 
-            schema: Optional[ModelOrListOfModels]=None,
-            ) -> Dict[str, Any]:
+        self,
+        tools: list,
+        schema: Optional[ModelOrListOfModels] = None,
+    ) -> Dict[str, Any]:
         schema = pydantic_model_to_schema(schema) or self.output_schema
         tools = augment_tools_with_schema(tools, schema)
         return tools

@@ -1,5 +1,6 @@
 from guardrails.schema.rail_schema import rail_string_to_schema
 
+
 def test_rail_scalar_string():
     rail_spec = """
 <rail version="0.1">

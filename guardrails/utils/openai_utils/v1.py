@@ -148,7 +148,7 @@ class OpenAIClientV1(BaseOpenAIClient):
                 except AttributeError as ae_tools:
                     raise ValueError(
                         "No message content or function"
-                            " call arguments returned from OpenAI"
+                        " call arguments returned from OpenAI"
                     ) from ae_tools
 
         return LLMResponse(
@@ -314,7 +314,7 @@ class AsyncOpenAIClientV1(BaseOpenAIClient):
                 except AttributeError as ae_tools:
                     raise ValueError(
                         "No message content or function"
-                            " call arguments returned from OpenAI"
+                        " call arguments returned from OpenAI"
                     ) from ae_tools
 
         return LLMResponse(
