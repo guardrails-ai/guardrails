@@ -4,11 +4,11 @@ from guardrails.formatters.json_formatter import JsonFormatter
 
 def get_formatter(name: str, *args, **kwargs) -> BaseFormatter:
     """Returns a class."""
-    match name.lower():
-        case "jsonformer":
-            return JsonFormatter(*args, **kwargs)
-        case "none":
-            return PassthroughFormatter(*args, **kwargs)
+    name = name.lower()
+    if name == "jsonformer":
+        return JsonFormatter(*args, **kwargs)
+    elif name == "none":
+        return PassthroughFormatter(*args, **kwargs)
     raise ValueError(f"Unrecognized formatter '{name}'")
 
 

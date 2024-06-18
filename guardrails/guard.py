@@ -505,7 +505,7 @@ class Guard(IGuard, Generic[OT]):
                 raise Exception("A root-level list is not valid JSON.")
             output_formatter = get_formatter(
                 output_formatter,
-                schema=output_class.model_json_schema()  # type: ignore
+                schema=output_class.model_json_schema(),  # type: ignore
             )
         guard._output_formatter = output_formatter
         guard._fill_validators()
