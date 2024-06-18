@@ -1,5 +1,6 @@
 import importlib
 import pytest
+from typing import List
 
 from pydantic import BaseModel
 
@@ -21,7 +22,7 @@ def test_hugging_face_model_callable():
 
     class Foo(BaseModel):
         bar: str
-        bez: list[str]
+        bez: List[str]
 
     g = Guard.from_pydantic(Foo, output_formatter="jsonformer")
     response = g(model.generate, tokenizer=tokenizer, prompt="test")
@@ -41,7 +42,7 @@ def test_hugging_face_pipeline_callable():
 
     class Foo(BaseModel):
         bar: str
-        bez: list[str]
+        bez: List[str]
 
     g = Guard.from_pydantic(Foo, output_formatter="jsonformer")
     response = g(model, prompt="Sample:")

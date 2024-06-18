@@ -460,7 +460,7 @@ class Guard(IGuard, Generic[OT]):
             tracer (Tracer, optional): An OpenTelemetry tracer to use for metrics and traces. Defaults to None.
             name (str, optional): A unique name for this Guard. Defaults to `gr-` + the object id.
             description (str, optional): A description for this Guard. Defaults to None.
-            output_formatter (str | Formatter, optional):
+            output_formatter (str | Formatter, optional): 'none' (default), 'jsonformer', or a Guardrails Formatter.
         """  # noqa
 
         if num_reasks:
