@@ -551,7 +551,7 @@ class ArbitraryCallable(PromptCallableBase):
         # Get the response from the callable
         # The LLM response should either be a
         # string or an generator object of strings
-        llm_response = self.llm_api(*args, **kwargs)
+        llm_response = self.llm_api(*args, **kwargs)  # type: ignore
 
         # Check if kwargs stream is passed in
         if kwargs.get("stream", False):
@@ -629,7 +629,7 @@ def get_llm_ask(
         ):
             if (
                 hasattr(llm_api, "__func__")
-                and llm_api.__func__ == GenerationMixin.generate # type: ignore
+                and llm_api.__func__ == GenerationMixin.generate  # type: ignore
             ):
                 return HuggingFaceModelCallable(*args, model_generate=llm_api, **kwargs)
             raise ValueError("Only text generation models are supported at this time.")
