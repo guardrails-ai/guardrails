@@ -3,18 +3,16 @@ import json
 import os
 from typing import Any, Dict, List
 
-import openai
 import pytest
 from pydantic import BaseModel, Field
 
 from guardrails import Guard
 from guardrails.errors import ValidationError
 from guardrails.utils.openai_utils import (
-    OPENAI_VERSION,
-    get_static_openai_acreate_func,
     get_static_openai_create_func,
 )
 from guardrails.actions.reask import FieldReAsk
+from guardrails.utils.openai_utils.v1 import get_static_openai_acreate_func
 from guardrails.validator_base import (
     FailResult,
     Filter,
@@ -161,13 +159,10 @@ def test_summary_validators(mocker):
     pytest.importorskip("nltk", reason="nltk is not installed")
     pytest.importorskip("thefuzz", reason="thefuzz is not installed")
 
-    if OPENAI_VERSION.startswith("0"):
-        mocker.patch("openai.Embedding.create", new=mock_create_embedding)
-    else:
-        mocker.patch(
-            "openai.resources.embeddings.Embeddings.create",
-            new=mock_create_embedding,
-        )
+    mocker.patch(
+        "openai.resources.embeddings.Embeddings.create",
+        new=mock_create_embedding,
+    )
 
     mocker.patch("guardrails.embedding.OpenAIEmbedding.output_dim", new=2)
 
@@ -380,13 +375,11 @@ def test_bad_validator():
 
 def test_provenance_v1(mocker):
     """Test initialisation of ProvenanceV1."""
-    if OPENAI_VERSION.startswith("0"):
-        mocker.patch("openai.ChatCompletion.create", new=mock_chat_completion)
-    else:
-        mocker.patch(
-            "openai.resources.chat.completions.Completions.create",
-            new=mock_chat_completion,
-        )
+
+    mocker.patch(
+        "openai.resources.chat.completions.Completions.create",
+        new=mock_chat_completion,
+    )
 
     API_KEY = "<YOUR_KEY>"
     LLM_RESPONSE = "This is a sentence."
@@ -416,9 +409,6 @@ def test_provenance_v1(mocker):
     # Test guard.parse() with 3 different ways of setting the OpenAI API key API key
 
     # 1. Setting the API key directly
-    if OPENAI_VERSION.startswith("0"):  # not supported in v1 anymore
-        openai.api_key = API_KEY
-
     output = string_guard.parse(
         llm_output=LLM_RESPONSE,
         metadata={"query_function": mock_chromadb_query_function},
@@ -793,7 +783,7 @@ This also is not two words
 
 
 @pytest.mark.asyncio
-@pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="Not supported in v1")
+@pytest.mark.skip(reason="Not supported in v1")  # FIXME: Rewrite for openai v1
 async def test_async_input_validation_fix(mocker):
     async def mock_llm_api(*args, **kwargs):
         return json.dumps({"name": "Fluffy"})
@@ -1082,7 +1072,7 @@ This also is not two words
     ],
 )
 @pytest.mark.asyncio
-@pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="Not supported in v1")
+@pytest.mark.skip(reason="Not supported in v1")  # FIXME: Rewrite for openai v1
 async def test_input_validation_fail_async(
     on_fail,
     structured_prompt_error,

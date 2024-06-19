@@ -1,5 +1,5 @@
 import json
-from typing import Union
+from typing import Optional, Union
 
 from jsonformer import Jsonformer
 
@@ -12,8 +12,8 @@ from guardrails.llm_providers import (
 
 
 def _deref_schema_path(schema: dict, path: Union[list, str]):
-    """Given a path like #/$defs/foo/bar/bez, nagivates into a JSONSchema dict and pulls
-    the respective sub-object."""
+    """Given a path like #/$defs/foo/bar/bez, nagivates into a JSONSchema dict
+    and pulls the respective sub-object."""
     if isinstance(path, str):
         path = path.split("/")
     if path[0] == "#":
@@ -28,11 +28,14 @@ def _deref_schema_path(schema: dict, path: Union[list, str]):
 
 
 def _jsonschema_to_jsonformer(
-    schema: dict, path: list = None, objdefs: dict = None
+    schema: dict, path: Optional[list] = None, objdefs: Optional[dict] = None
 ) -> dict:
-    """Converts the large-ish JSONSchema standard into the JSONFormer schema format.
-    These are mostly identical, but the jsonschema supports '$defs' and '$ref'.
-    There's an additional inconsistency in the use 'integer' versus 'number'.
+    """Converts the large-ish JSONSchema standard into the JSONFormer schema
+    format.
+
+    These are mostly identical, but the jsonschema supports '$defs' and
+    '$ref'. There's an additional inconsistency in the use 'integer'
+    versus 'number'.
     """
     if path is None:
         path = []

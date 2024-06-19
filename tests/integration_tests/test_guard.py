@@ -5,8 +5,8 @@ import os
 from typing import Optional, Union
 
 import pytest
-from pydantic import BaseModel
-from guardrails_api_client import Guard as IGuard, GuardHistory
+from pydantic import BaseModel, Field
+from guardrails_api_client import Guard as IGuard, GuardHistory, ValidatorReference
 
 import guardrails as gd
 from guardrails.actions.reask import SkeletonReAsk
@@ -23,6 +23,7 @@ from tests.integration_tests.test_assets.validators import (
     RegexMatch,
     ValidLength,
     ValidChoices,
+    LowerCase,
 )
 
 from .mock_llm_outputs import (
@@ -1177,12 +1178,193 @@ def test_guard_from_pydantic_with_mock_hf_pipeline():
     reason="transformers or torch is not installed",
 )
 def test_guard_from_pydantic_with_mock_hf_model():
-    from tests.unit_tests.mocks.mock_hf_models import make_mock_model_tokenizer
+    from tests.unit_tests.mocks.mock_hf_models import make_mock_model_and_tokenizer
 
-    model, tokenizer = make_mock_model_tokenizer()
+    model, tokenizer = make_mock_model_and_tokenizer()
     guard = Guard()
     _ = guard(
         model.generate,
         tokenizer=tokenizer,
         prompt="Don't care about the output.  Just don't crash.",
     )
+
+
+class TestValidatorInitializedOnce:
+    def test_guard_init(self, mocker):
+        init_spy = mocker.spy(LowerCase, "__init__")
+
+        guard = Guard(validators=[ValidatorReference(id="lower-case", on="$")])
+
+        # Validator is not initialized until the guard is used
+        assert init_spy.call_count == 0
+
+        guard.parse("some-name")
+
+        assert init_spy.call_count == 1
+
+        # Validator is not initialized again
+        guard.parse("some-other-name")
+
+        assert init_spy.call_count == 1
+
+    def test_from_rail(self, mocker):
+        init_spy = mocker.spy(LowerCase, "__init__")
+
+        guard = Guard.from_rail_string(
+            """
+            <rail version="0.1">
+            <output
+                type="string"
+                validators="lower-case"
+            />
+            </rail>
+            """
+        )
+
+        assert init_spy.call_count == 1
+
+        # Validator is not initialized again
+        guard.parse("some-name")
+
+        assert init_spy.call_count == 1
+
+    def test_from_pydantic_validator_instance(self, mocker):
+        init_spy = mocker.spy(LowerCase, "__init__")
+
+        class MyModel(BaseModel):
+            name: str = Field(..., validators=[LowerCase()])
+
+        guard = Guard().from_pydantic(MyModel)
+
+        assert init_spy.call_count == 1
+
+        # Validator is not initialized again
+        guard.parse('{ "name": "some-name" }')
+
+        assert init_spy.call_count == 1
+
+    def test_from_pydantic_str(self, mocker):
+        init_spy = mocker.spy(LowerCase, "__init__")
+
+        class MyModel(BaseModel):
+            name: str = Field(..., validators=[("lower-case", "noop")])
+
+        guard = Guard().from_pydantic(MyModel)
+
+        assert init_spy.call_count == 1
+
+        # Validator is not initialized again
+        guard.parse('{ "name": "some-name" }')
+
+        assert init_spy.call_count == 1
+
+    def test_from_pydantic_same_instance_on_two_models(self, mocker):
+        init_spy = mocker.spy(LowerCase, "__init__")
+
+        lower_case = LowerCase()
+
+        class MyModel(BaseModel):
+            name: str = Field(..., validators=[lower_case])
+
+        class MyOtherModel(BaseModel):
+            name: str = Field(..., validators=[lower_case])
+
+        guard_1 = Guard.from_pydantic(MyModel)
+        guard_2 = Guard.from_pydantic(MyOtherModel)
+
+        assert init_spy.call_count == 1
+
+        # Validator is not initialized again
+        guard_1.parse("some-name")
+
+        assert init_spy.call_count == 1
+
+        guard_2.parse("some-other-name")
+
+        assert init_spy.call_count == 1
+
+    def test_guard_use_instance(self, mocker):
+        init_spy = mocker.spy(LowerCase, "__init__")
+
+        guard = Guard().use(LowerCase())
+
+        assert init_spy.call_count == 1
+
+        # Validator is not initialized again
+        guard.parse("some-name")
+
+        assert init_spy.call_count == 1
+
+    def test_guard_use_class(self, mocker):
+        init_spy = mocker.spy(LowerCase, "__init__")
+
+        guard = Guard().use(LowerCase)
+
+        assert init_spy.call_count == 1
+
+        # Validator is not initialized again
+        guard.parse("some-name")
+
+        assert init_spy.call_count == 1
+
+    def test_guard_use_same_instance_on_two_guards(self, mocker):
+        init_spy = mocker.spy(LowerCase, "__init__")
+
+        lower_case = LowerCase()
+
+        guard_1 = Guard().use(lower_case)
+        guard_2 = Guard().use(lower_case)
+
+        assert init_spy.call_count == 1
+
+        # Validator is not initialized again
+        guard_1.parse("some-name")
+
+        assert init_spy.call_count == 1
+
+        guard_2.parse("some-other-name")
+
+        assert init_spy.call_count == 1
+
+    def test_guard_use_many_instance(self, mocker):
+        init_spy = mocker.spy(LowerCase, "__init__")
+
+        guard = Guard().use_many(LowerCase())
+
+        assert init_spy.call_count == 1
+
+        # Validator is not initialized again
+        guard.parse("some-name")
+
+        assert init_spy.call_count == 1
+
+    def test_guard_use_many_class(self, mocker):
+        init_spy = mocker.spy(LowerCase, "__init__")
+
+        guard = Guard().use_many(LowerCase)
+
+        assert init_spy.call_count == 1
+
+        # Validator is not initialized again
+        guard.parse("some-name")
+
+        assert init_spy.call_count == 1
+
+    def test_guard_use_many_same_instance_on_two_guards(self, mocker):
+        init_spy = mocker.spy(LowerCase, "__init__")
+
+        lower_case = LowerCase()
+
+        guard_1 = Guard().use_many(lower_case)
+        guard_2 = Guard().use_many(lower_case)
+
+        assert init_spy.call_count == 1
+
+        # Validator is not initialized again
+        guard_1.parse("some-name")
+
+        assert init_spy.call_count == 1
+
+        guard_2.parse("some-other-name")
+
+        assert init_spy.call_count == 1

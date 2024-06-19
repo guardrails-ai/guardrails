@@ -71,9 +71,9 @@ from guardrails.stores.context import (
     set_tracer,
     set_tracer_context,
 )
+from guardrails.types.on_fail import OnFailAction
 from guardrails.types.pydantic import ModelOrListOfModels
 from guardrails.utils.naming_utils import random_id
-from guardrails.utils.safe_get import safe_get
 from guardrails.utils.api_utils import extract_serializeable_metadata
 from guardrails.utils.hub_telemetry_utils import HubTelemetry
 from guardrails.classes.llm.llm_response import LLMResponse
@@ -252,19 +252,19 @@ class Guard(IGuard, Generic[OT]):
             entry: List[Validator] = self._validator_map.get(ref.on, [])  # type: ignore
             # Check if the validator from the reference
             #   has an instance in the validator_map
-            v = safe_get(
-                [
-                    v
-                    for v in entry
-                    if (
-                        v.rail_alias == ref.id
-                        and v.on_fail_descriptor == ref.on_fail
-                        and v.get_args() == ref.kwargs
-                    )
-                ],
-                0,
-            )
-            if not v:
+            existing_instance: Optional[Validator] = None
+            for v in entry:
+                same_id = v.rail_alias == ref.id
+                same_on_fail = v.on_fail_descriptor == ref.on_fail or (  # is default
+                    v.on_fail_descriptor == OnFailAction.NOOP and not ref.on_fail
+                )
+                same_args = v.get_args() == ref.kwargs or (  # Both are empty
+                    not v.get_args() and not ref.kwargs
+                )
+                if same_id and same_on_fail and same_args:
+                    existing_instance = v
+                    break
+            if not existing_instance:
                 validator = parse_validator_reference(ref)
                 if validator:
                     entry.append(validator)
@@ -460,7 +460,7 @@ class Guard(IGuard, Generic[OT]):
             tracer (Tracer, optional): An OpenTelemetry tracer to use for metrics and traces. Defaults to None.
             name (str, optional): A unique name for this Guard. Defaults to `gr-` + the object id.
             description (str, optional): A description for this Guard. Defaults to None.
-            output_formatter (str | Formatter, optional):
+            output_formatter (str | Formatter, optional): 'none' (default), 'jsonformer', or a Guardrails Formatter.
         """  # noqa
 
         if num_reasks:
@@ -501,8 +501,11 @@ class Guard(IGuard, Generic[OT]):
         guard._output_type = schema.output_type
         guard._base_model = output_class
         if isinstance(output_formatter, str):
+            if isinstance(output_class, list):
+                raise Exception("A root-level list is not valid JSON.")
             output_formatter = get_formatter(
-                output_formatter, schema=output_class.model_json_schema()
+                output_formatter,
+                schema=output_class.model_json_schema(),  # type: ignore
             )
         guard._output_formatter = output_formatter
         guard._fill_validators()
@@ -649,7 +652,7 @@ class Guard(IGuard, Generic[OT]):
                     attributes=[
                         ("guard_id", self.id),
                         ("user_id", self._user_id),
-                        ("llm_api", llm_api_str),
+                        ("llm_api", llm_api_str if llm_api_str else "None"),
                         (
                             "custom_reask_prompt",
                             self._exec_opts.reask_prompt is not None,
@@ -774,7 +777,8 @@ class Guard(IGuard, Generic[OT]):
         api = get_llm_ask(llm_api, *args, **kwargs) if llm_api is not None else None
 
         if self._output_formatter is not None:
-            api = self._output_formatter.wrap_callable(api)
+            # Type suppression here? ArbitraryCallable is a subclass of PromptCallable!?
+            api = self._output_formatter.wrap_callable(api)  # type: ignore
 
         # Check whether stream is set
         if kwargs.get("stream", False):

@@ -56,4 +56,6 @@ def convert_pydantic_model_to_openai_fn(
     if "description" in json_schema and json_schema["description"] is not None:
         fn_params["description"] = json_schema["description"]
 
+    # TODO: Update this to tools
+    # Wrap in { "type": "function", "function": fn_params}
     return fn_params
