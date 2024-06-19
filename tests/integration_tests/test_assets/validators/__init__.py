@@ -7,6 +7,7 @@ from tests.integration_tests.test_assets.validators.two_words import TwoWords
 from tests.integration_tests.test_assets.validators.upper_case import UpperCase
 from tests.integration_tests.test_assets.validators.valid_choices import ValidChoices
 from tests.integration_tests.test_assets.validators.valid_length import ValidLength
+from tests.integration_tests.test_assets.validators.valid_url import ValidURL
 
 __all__ = [
     "EndsWith",
@@ -18,4 +19,5 @@ __all__ = [
     "UpperCase",
     "ValidChoices",
     "ValidLength",
+    "ValidURL",
 ]
