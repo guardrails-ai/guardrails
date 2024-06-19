@@ -764,7 +764,7 @@ distance in embedding space.
 
     guard = Guard.from_rail(...)
     guard(
-        openai.ChatCompletion.create(...),
+        openai.chat.completions.create(...),
         prompt_params={...},
         temperature=0.0,
         metadata={"query_function": query_function},
@@ -785,7 +785,7 @@ distance in embedding space.
 
     guard = Guard.from_rail(...)
     guard(
-        openai.ChatCompletion.create(...),
+        openai.chat.completions.create(...),
         prompt_params={...},
         temperature=0.0,
         metadata={
@@ -856,7 +856,7 @@ def embed_function(text: Union[str, List[str]]) -> np.ndarray:
 
 guard = Guard.from_rail(...)
 guard(
-    openai.ChatCompletion.create(...),
+    openai.chat.completions.create(...),
     prompt_params={...},
     temperature=0.0,
     metadata={
