@@ -15,7 +15,6 @@ def schema_to_tool(schema) -> dict:
             "required": schema["required"] or [],
         },
     }
-    print("===generated tool", tool)
     return tool
 
 
