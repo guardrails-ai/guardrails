@@ -79,7 +79,7 @@ Relevant (as a JSON with a single boolean key, "relevant"):\
             max_tokens=10,
             temperature=0.1,
         )
-        validated_output = cast(Dict, response.validated_output)
+        validated_output = cast(Dict, response.validated_output)  # type: ignore
         return validated_output
 
     def validate(self, value: Any, metadata: Dict) -> ValidationResult:
