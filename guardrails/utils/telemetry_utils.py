@@ -154,7 +154,7 @@ def trace_validator(
             if _tracer is None:
                 return fn(*args, **kwargs)
             with _tracer.start_as_current_span(
-                span_name,  # type: ignore (Fails in Python 3.8 for invalid reason)
+                span_name,
                 trace_context,
             ) as validator_span:
                 try:
@@ -199,7 +199,7 @@ def trace(name: str, tracer: Optional[Tracer] = None):
 
             if _tracer is not None and hasattr(_tracer, "start_as_current_span"):
                 trace_context = get_current_context()
-                with _tracer.start_as_current_span(name, trace_context) as trace_span:  # type: ignore (Fails in Python 3.8 for invalid reason)
+                with _tracer.start_as_current_span(name, trace_context) as trace_span:
                     try:
                         # TODO: Capture args and kwargs as attributes?
                         response = fn(*args, **kwargs)
@@ -225,7 +225,7 @@ def async_trace(name: str, tracer: Optional[Tracer] = None):
 
             if _tracer is not None and hasattr(_tracer, "start_as_current_span"):
                 trace_context = get_current_context()
-                with _tracer.start_as_current_span(name, trace_context) as trace_span:  # type: ignore (Fails in Python 3.8 for invalid reason)
+                with _tracer.start_as_current_span(name, trace_context) as trace_span:
                     try:
                         # TODO: Capture args and kwargs as attributes?
                         response = await fn(*args, **kwargs)
