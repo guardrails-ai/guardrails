@@ -59,6 +59,8 @@ class PromptCallableBase:
             result = self._invoke_llm(
                 *self.init_args, *args, **self.init_kwargs, **kwargs
             )
+            print("======calling with", self.init_args, args, self.init_kwargs, kwargs)
+            print("======got result", result)
         except Exception as e:
             raise PromptCallableException(
                 "The callable `fn` passed to `Guard(fn, ...)` failed"

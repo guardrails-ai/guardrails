@@ -1448,7 +1448,13 @@ class Guard(IGuard, Generic[OT]):
         self,
         tools: list,
     ) -> Dict[str, Any]:
-        tools = augment_tools_with_schema(tools= tools, schema= self.output_schema.to_dict())
+        tools = augment_tools_with_schema(
+            tools=tools,
+            # todo to_dict has a slight bug workaround here
+            # but should fix in the long run dont have to
+            # serialize and deserialize
+            schema=json.loads(self.output_schema.to_json()),
+        )
         return tools
 
     # override IGuard.from_dict

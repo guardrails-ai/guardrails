@@ -32,7 +32,7 @@ class Person(BaseModel):
 
 def test_pydantic_model_to_schema():
     schema = pydantic_model_to_schema(Schedule)
-    tool = schema_to_tool(schema)
+    tool = schema_to_tool(schema.json_schema)
     assert tool == {
         "type": "function",
         "function": {
@@ -119,7 +119,7 @@ def test_pydantic_model_to_schema():
 
 def test_augment_tools_with_schema():
     schema = pydantic_model_to_schema(Person)
-    tools = augment_tools_with_schema(schema)
+    tools = augment_tools_with_schema(schema.json_schema)
     assert tools == [
         {
             "type": "function",
