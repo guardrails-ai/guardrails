@@ -1,6 +1,8 @@
 import pytest
 
+import openai  # noqa: F401
 from pydantic import BaseModel
+
 from guardrails import Guard, Validator
 from guardrails.utils.validator_utils import verify_metadata_requirements
 from guardrails.utils import args, kwargs, on_fail
@@ -90,8 +92,6 @@ class RequiringValidator2(Validator):
 @pytest.mark.asyncio
 @pytest.mark.skip(reason="Only for OpenAI v0")  # FIXME: Rewrite for OpenAI v1
 async def test_required_metadata(spec, metadata, error_message):
-    import openai  # Linting error if imported globally for non-async test. asdfasdf
-
     guard = Guard.from_rail_string(spec)
 
     missing_keys = verify_metadata_requirements({}, guard.output_schema.root_datatype)
