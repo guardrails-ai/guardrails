@@ -1,0 +1,32 @@
+{
+  "$defs": {
+      "Fee": {
+          "properties": {
+              "index": {"title": "Index", "type": "integer", "format": "1-indexed"},
+              "name": {"title": "Name", "type": "string"},
+              "explanation": {"title": "Explanation", "type": "string"},
+              "value": {"title": "Value", "type": "number", "format": "percentage"}
+          },
+          "required": ["index", "name", "explanation", "value"],
+          "title": "Fee",
+          "type": "object"
+      }
+  },
+  "properties": {
+      "fees": {
+          "description": "What fees and charges are associated with my account?",
+          "items": {"$ref": "#/$defs/Fee"},
+          "title": "Fees",
+          "type": "array"
+      },
+      "interest_rates": {
+          "additionalProperties": {"type": "string"},
+          "description": "What are the interest rates offered by the bank on savings and checking accounts, loans, and credit products?",
+          "title": "Interest Rates",
+          "type": "object"
+      }
+  },
+  "required": ["fees", "interest_rates"],
+  "title": "CreditCardAgreement",
+  "type": "object"
+}

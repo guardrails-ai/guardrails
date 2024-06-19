@@ -10,9 +10,9 @@ from opentelemetry.trace import StatusCode, Tracer
 from guardrails.stores.context import get_tracer as get_context_tracer
 from guardrails.stores.context import get_tracer_context
 from guardrails.utils.casting_utils import to_string
-from guardrails.utils.logs_utils import ValidatorLogs
-from guardrails.utils.reask_utils import ReAsk
-from guardrails.validator_base import Filter, Refrain
+from guardrails.classes.validation.validator_logs import ValidatorLogs
+from guardrails.actions.reask import ReAsk
+from guardrails.actions import Filter, Refrain
 
 
 def get_result_type(before_value: Any, after_value: Any, outcome: str):
@@ -106,8 +106,6 @@ def trace_validator_result(
     )
 
 
-# FIXME: It's creating two of every event
-# Might be duplicate validator_logs?
 def trace_validation_result(
     validation_logs: List[ValidatorLogs],
     attempt_number: int,
@@ -156,7 +154,7 @@ def trace_validator(
             if _tracer is None:
                 return fn(*args, **kwargs)
             with _tracer.start_as_current_span(
-                span_name,  # type: ignore (Fails in Python 3.8 for invalid reason)
+                span_name,  # type: ignore (Fails in Python 3.9 for invalid reason)
                 trace_context,
             ) as validator_span:
                 try:
@@ -201,7 +199,7 @@ def trace(name: str, tracer: Optional[Tracer] = None):
 
             if _tracer is not None and hasattr(_tracer, "start_as_current_span"):
                 trace_context = get_current_context()
-                with _tracer.start_as_current_span(name, trace_context) as trace_span:  # type: ignore (Fails in Python 3.8 for invalid reason)
+                with _tracer.start_as_current_span(name, trace_context) as trace_span:  # type: ignore (Fails in Python 3.9 for invalid reason)
                     try:
                         # TODO: Capture args and kwargs as attributes?
                         response = fn(*args, **kwargs)
@@ -227,7 +225,7 @@ def async_trace(name: str, tracer: Optional[Tracer] = None):
 
             if _tracer is not None and hasattr(_tracer, "start_as_current_span"):
                 trace_context = get_current_context()
-                with _tracer.start_as_current_span(name, trace_context) as trace_span:  # type: ignore (Fails in Python 3.8 for invalid reason)
+                with _tracer.start_as_current_span(name, trace_context) as trace_span:  # type: ignore (Fails in Python 3.9 for invalid reason)
                     try:
                         # TODO: Capture args and kwargs as attributes?
                         response = await fn(*args, **kwargs)

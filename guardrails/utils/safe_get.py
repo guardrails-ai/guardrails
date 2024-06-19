@@ -1,4 +1,5 @@
 from typing import Any, Dict, List, Optional, Tuple, Union
+from guardrails.logger import logger
 
 
 def safe_get_with_brackets(
@@ -9,7 +10,11 @@ def safe_get_with_brackets(
         if not value:
             return default
         return value
-    except Exception:
+    except Exception as e:
+        logger.debug(
+            f"Failed to get value for key: {key} out of container: {container}!"
+        )
+        logger.debug(e)
         return default
 
 
@@ -22,27 +27,3 @@ def safe_get(
         return container.get(key, default)
     else:
         return safe_get_with_brackets(container, key, default)
-
-
-def get_value_from_path(
-    object: Optional[Union[str, List[Any], Dict[Any, Any]]], property_path: str
-) -> Any:
-    if object is None:
-        return None
-
-    if isinstance(object, str) and property_path == "$.string":
-        return object
-
-    path_elems = property_path.split(".")
-    path_elems.pop(0)
-
-    value = object
-    for elem in path_elems:
-        obj_value = safe_get(value, elem)
-        if not obj_value and elem.isnumeric():
-            # value was empty but the key may be an array index
-            value = safe_get(value, int(elem))
-        else:
-            value = obj_value
-
-    return value

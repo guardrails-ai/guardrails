@@ -1,31 +1,34 @@
-from typing import Dict, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import Field, PrivateAttr
 from rich.panel import Panel
 from rich.pretty import pretty_repr
 from rich.tree import Tree
-from typing_extensions import deprecated
 
+from guardrails_api_client import Call as ICall, CallException
+from guardrails.actions.filter import Filter
+from guardrails.actions.refrain import Refrain
+from guardrails.actions.reask import merge_reask_output
 from guardrails.classes.generic.stack import Stack
 from guardrails.classes.history.call_inputs import CallInputs
 from guardrails.classes.history.iteration import Iteration
+from guardrails.classes.generic.arbitrary_model import ArbitraryModel
+from guardrails.classes.validation.validation_result import ValidationResult
 from guardrails.constants import error_status, fail_status, not_run_status, pass_status
 from guardrails.prompt.instructions import Instructions
 from guardrails.prompt.prompt import Prompt
-from guardrails.utils.logs_utils import ValidatorLogs, merge_reask_output
-from guardrails.utils.pydantic_utils import ArbitraryModel
-from guardrails.utils.reask_utils import (
+from guardrails.classes.validation.validator_logs import ValidatorLogs
+from guardrails.actions.reask import (
     ReAsk,
     gather_reasks,
     sub_reasks_with_fixed_values,
 )
-from guardrails.utils.safe_get import get_value_from_path
-from guardrails.validator_base import Filter, Refrain, ValidationResult
+from guardrails.schema.parser import get_value_from_path
 
 
 # We can't inherit from Iteration because python
 # won't let you override a class attribute with a managed attribute
-class Call(ArbitraryModel):
+class Call(ICall, ArbitraryModel):
     iterations: Stack[Iteration] = Field(
         description="A stack of iterations for each"
         "step/reask that occurred during this call."
@@ -48,7 +51,7 @@ class Call(ArbitraryModel):
         super().__init__(
             iterations=iterations,  # type: ignore
             inputs=inputs,  # type: ignore
-            _exception=exception,  # type: ignore
+            i_exception=CallException(message=str(exception)),  # type: ignore
         )
         self.iterations = iterations
         self.inputs = inputs
@@ -193,21 +196,13 @@ class Call(ArbitraryModel):
         )
 
     @property
-    def parsed_outputs(self) -> Stack[Union[str, Dict]]:
+    def parsed_outputs(self) -> Stack[Union[str, List, Dict]]:
         """The outputs from the LLM after undergoing parsing but before
         validation."""
         return Stack(*[i.outputs.parsed_output for i in self.iterations])
 
     @property
-    @deprecated(
-        """'Call.validation_output' is deprecated and will be removed in \
-versions 0.5.0 and beyond. Use 'validation_response' instead."""
-    )
-    def validation_output(self) -> Optional[Union[str, Dict, ReAsk]]:
-        return self.validation_response
-
-    @property
-    def validation_response(self) -> Optional[Union[str, Dict, ReAsk]]:
+    def validation_response(self) -> Optional[Union[str, List, Dict, ReAsk]]:
         """The aggregated responses from the validation process across all
         iterations within the current call.
 
@@ -252,7 +247,7 @@ versions 0.5.0 and beyond. Use 'validation_response' instead."""
         return merged_validation_responses
 
     @property
-    def fixed_output(self) -> Optional[Union[str, Dict]]:
+    def fixed_output(self) -> Optional[Union[str, List, Dict]]:
         """The cumulative output from the validation process across all current
         iterations with any automatic fixes applied.
 
@@ -261,7 +256,7 @@ versions 0.5.0 and beyond. Use 'validation_response' instead."""
         return sub_reasks_with_fixed_values(self.validation_response)
 
     @property
-    def guarded_output(self) -> Optional[Union[str, Dict]]:
+    def guarded_output(self) -> Optional[Union[str, List, Dict]]:
         """The complete validated output after all stages of validation are
         completed.
 
@@ -292,18 +287,6 @@ versions 0.5.0 and beyond. Use 'validation_response' instead."""
                     break
             if all_noop:
                 return last_iteration.guarded_output
-
-    @property
-    @deprecated(
-        """'Call.validated_output' is deprecated and will be removed in \
-versions 0.5.0 and beyond. Use 'guarded_output' instead."""
-    )
-    def validated_output(self) -> Optional[Union[str, Dict]]:
-        """The output from the LLM after undergoing validation.
-
-        This will only have a value if the Guard is in a passing state.
-        """
-        return self.guarded_output
 
     @property
     def reasks(self) -> Stack[ReAsk]:
@@ -343,6 +326,10 @@ versions 0.5.0 and beyond. Use 'guarded_output' instead."""
         elif self.iterations.empty():
             return None
         return self.iterations.last.exception  # type: ignore
+
+    def _set_exception(self, exception: Optional[Exception]):
+        self._exception = exception
+        self.i_exception = CallException(message=str(exception))
 
     @property
     def failed_validations(self) -> Stack[ValidatorLogs]:
@@ -420,3 +407,15 @@ versions 0.5.0 and beyond. Use 'guarded_output' instead."""
 
     def __str__(self) -> str:
         return pretty_repr(self)
+
+    def to_dict(self) -> Dict[str, Any]:
+        i_call = ICall(
+            iterations=list(self.iterations),
+            inputs=self.inputs,
+        )
+
+        i_call_dict = i_call.to_dict()
+
+        if self._exception:
+            i_call_dict["exception"] = str(self._exception)
+        return i_call_dict
