@@ -403,11 +403,11 @@ class Guard(IGuard, Generic[OT]):
         cls,
         output_class: ModelOrListOfModels,
         *,
-        prompt: Optional[str] = None,  # deprecate this too
-        instructions: Optional[str] = None,  # deprecate this too
+        prompt: Optional[str] = None,  # TODO: deprecate this in 0.5.1
+        instructions: Optional[str] = None,  # TODO: deprecate this in 0.5.1
         num_reasks: Optional[int] = None,
-        reask_prompt: Optional[str] = None,  # deprecate this too
-        reask_instructions: Optional[str] = None,  # deprecate this too
+        reask_prompt: Optional[str] = None,  # TODO: deprecate this in 0.5.1
+        reask_instructions: Optional[str] = None,  # TODO: deprecate this in 0.5.1
         tracer: Optional[Tracer] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
@@ -473,10 +473,10 @@ class Guard(IGuard, Generic[OT]):
         validators: Sequence[Validator],
         *,
         string_description: Optional[str] = None,
-        prompt: Optional[str] = None,  # deprecate this too
-        instructions: Optional[str] = None,  # deprecate this too
-        reask_prompt: Optional[str] = None,  # deprecate this too
-        reask_instructions: Optional[str] = None,  # deprecate this too
+        prompt: Optional[str] = None,  # TODO: deprecate this in 0.5.1
+        instructions: Optional[str] = None,  # TODO: deprecate this in 0.5.1
+        reask_prompt: Optional[str] = None,  # TODO: deprecate this in 0.5.1
+        reask_instructions: Optional[str] = None,  # TODO: deprecate this in 0.5.1
         num_reasks: Optional[int] = None,
         tracer: Optional[Tracer] = None,
         name: Optional[str] = None,
