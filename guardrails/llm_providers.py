@@ -574,7 +574,7 @@ def get_llm_ask(
     llm_api: Optional[Callable] = None,
     *args,
     **kwargs,
-) -> PromptCallableBase:
+) -> Optional[PromptCallableBase]:
     if "temperature" not in kwargs:
         kwargs.update({"temperature": 0})
     if llm_api == get_static_openai_create_func():
