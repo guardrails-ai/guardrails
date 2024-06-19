@@ -102,9 +102,6 @@ class Runner:
         self.exec_options = copy.deepcopy(exec_options) or GuardExecutionOptions()
 
         # LLM Inputs
-        if prompt:
-            assert api, "Must provide an API if a prompt is provided."
-            assert not output, "Cannot provide both a prompt and output."
 
         stringified_output_schema = prompt_content_for_schema(
             output_type, output_schema, validation_map

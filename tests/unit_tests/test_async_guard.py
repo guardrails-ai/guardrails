@@ -1,4 +1,3 @@
-import openai
 import pytest
 from pydantic import BaseModel
 
@@ -89,9 +88,8 @@ class RequiringValidator2(Validator):
     ],
 )
 @pytest.mark.asyncio
-@pytest.mark.skip(reason="Only for OpenAI v0")  # FIXME: Re-wrtie for OpenAI v1
 async def test_required_metadata(spec, metadata, error_message):
-    guard = AsyncGuard.from_rail_string(spec)
+    guard: AsyncGuard = AsyncGuard.from_rail_string(spec)
 
     missing_keys = verify_metadata_requirements({}, guard._validators)
     assert set(missing_keys) == set(metadata)
@@ -99,22 +97,17 @@ async def test_required_metadata(spec, metadata, error_message):
     not_missing_keys = verify_metadata_requirements(metadata, guard._validators)
     assert not_missing_keys == []
 
-    # test sync guard
-    with pytest.raises(ValueError) as excinfo:
-        guard.parse("{}")
-    assert str(excinfo.value) == error_message
-
-    response = guard.parse("{}", metadata=metadata, num_reasks=0)
-    assert response.error is None
+    async def mock_llm(*args, **kwargs):
+        return ""
 
     # test async guard
     with pytest.raises(ValueError) as excinfo:
-        guard.parse("{}")
-        await guard.parse("{}", llm_api=openai.ChatCompletion.acreate, num_reasks=0)
+        await guard.parse("{}")
+        await guard.parse("{}", llm_api=mock_llm, num_reasks=0)
     assert str(excinfo.value) == error_message
 
     response = await guard.parse(
-        "{}", metadata=metadata, llm_api=openai.ChatCompletion.acreate, num_reasks=0
+        "{}", metadata=metadata, llm_api=mock_llm, num_reasks=0
     )
     assert response.error is None
 
