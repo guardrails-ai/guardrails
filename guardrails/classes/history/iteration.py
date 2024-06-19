@@ -5,7 +5,6 @@ from rich.console import Group
 from rich.panel import Panel
 from rich.pretty import pretty_repr
 from rich.table import Table
-from typing_extensions import deprecated
 
 from guardrails_api_client import Iteration as IIteration
 from guardrails.classes.generic.stack import Stack
@@ -91,37 +90,12 @@ class Iteration(IIteration, ArbitraryModel):
         return self.outputs.validation_response
 
     @property
-    @deprecated(
-        """'Iteration.validation_output' is deprecated and will be removed in \
-versions 0.5.0 and beyond. Use 'validation_response' instead."""
-    )
-    def validation_output(self) -> Optional[Union[ReAsk, str, List, Dict]]:
-        """The output from the validation process.
-
-        Could be a combination of valid output and ReAsks
-        """
-        return self.validation_response
-
-    @property
     def guarded_output(self) -> Optional[Union[str, List, Dict]]:
         """Any valid values after undergoing validation.
 
         Some values in the validated output may be "fixed" values that
         were corrected during validation. This property may be a partial
         structure if field level reasks occur.
-        """
-        return self.outputs.guarded_output
-
-    @property
-    @deprecated(
-        """'Iteration.validated_output' is deprecated and will be removed in \
-versions 0.5.0 and beyond. Use 'guarded_output' instead."""
-    )
-    def validated_output(self) -> Optional[Union[str, List, Dict]]:
-        """The valid output from the LLM after undergoing validation.
-
-        Could be only a partial structure if field level reasks occur.
-        Could contain fixed values.
         """
         return self.outputs.guarded_output
 

@@ -2,7 +2,6 @@ from copy import deepcopy
 from typing import List
 
 import pydantic.version
-import pytest
 from pydantic import BaseModel, Field
 
 from guardrails.utils.pydantic_utils import convert_pydantic_model_to_openai_fn
@@ -33,10 +32,6 @@ foo_schema = {
 
 
 # This test is descriptive, not prescriptive.
-@pytest.mark.skipif(
-    not PYDANTIC_VERSION.startswith("2"),
-    reason="Tests function calling syntax for Pydantic v2",
-)
 class TestConvertPydanticModelToOpenaiFn:
     def test_object_schema(self):
         expected_schema = deepcopy(foo_schema)
