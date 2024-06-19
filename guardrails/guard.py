@@ -1264,7 +1264,7 @@ class Guard(IGuard, Generic[OT]):
     def augment_tools_with_schema(
         self,
         tools: list,
-    ) -> Dict[str, Any]:
+    ) -> List[Dict[str, Any]]:
         tools = augment_tools_with_schema(
             tools=tools,
             # todo to_dict has a slight bug workaround here

@@ -1,6 +1,4 @@
-from typing import (
-    Optional,
-)
+from typing import List
 
 from guardrails.classes.schema.processed_schema import ProcessedSchema
 
@@ -23,7 +21,7 @@ def schema_to_tool(schema) -> dict:
 
 def augment_tools_with_schema(
     schema: ProcessedSchema,
-    tools: Optional[list] = [],
-) -> list:
-    tools.append(schema_to_tool(schema))
+    tools: List = [],
+) -> List:
+    tools.append(schema_to_tool(schema))  # type: ignore
     return tools
