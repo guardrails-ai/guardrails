@@ -502,7 +502,9 @@ class Guard(IGuard, Generic[OT]):
         guard._base_model = output_class
         if isinstance(output_formatter, str):
             if isinstance(output_class, list):
-                raise Exception("A root-level list is not valid JSON.")
+                raise Exception("""Root-level arrays are not supported with the 
+                jsonformer argument, but can be used with other json generation methods.
+                Omit the output_formatter argument to use the other methods.""")
             output_formatter = get_formatter(
                 output_formatter,
                 schema=output_class.model_json_schema(),  # type: ignore

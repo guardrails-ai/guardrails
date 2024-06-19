@@ -37,6 +37,7 @@ def _jsonschema_to_jsonformer(
     '$ref'. There's an additional inconsistency in the use 'integer'
     versus 'number'.
     """
+    # TODO: Can we use jsonref to replace references, since it's a dependency anyway?
     if path is None:
         path = []
     if objdefs is None:
