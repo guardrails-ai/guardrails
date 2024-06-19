@@ -135,8 +135,8 @@ def test_failed_validations():
             property_path="$",
         ),
         ValidatorLogs(
-            registered_name="valid-length",
-            validator_name="valid-length",
+            registered_name="length",
+            validator_name="length",
             value_before_validation="Hello there!",
             validation_result=PassResult(),
             value_after_validation="Hello there!",

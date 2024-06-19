@@ -2,6 +2,8 @@ import guardrails as gd
 from guardrails.classes.llm.llm_response import LLMResponse
 from guardrails.utils.openai_utils import get_static_openai_create_func
 
+import tests.integration_tests.test_assets.validators  # noqa
+
 from .test_assets import python_rail
 
 

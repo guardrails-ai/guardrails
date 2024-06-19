@@ -35,7 +35,7 @@ class TestPrimitiveSchema:
                 kwargs={"choices": ["north", "south", "east", "west"]},
             ),
             ValidatorReference(
-                id="valid-length",
+                id="length",
                 on="$",
                 on_fail=OnFailAction.FILTER,
                 kwargs={"min": 4, "max": 5},
