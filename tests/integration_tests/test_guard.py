@@ -1074,6 +1074,7 @@ def test_augment_tools_with_schema(mocker):
     )
 
     # verify that the tools are augmented with schema
+    assert mock_invoke_llm.call_count == 1
     # verify output has been parsed and validated
 
 def test_string_reask(mocker):

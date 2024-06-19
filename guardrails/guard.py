@@ -1448,7 +1448,7 @@ class Guard(IGuard, Generic[OT]):
         self,
         tools: list,
     ) -> Dict[str, Any]:
-        tools = augment_tools_with_schema(tools, self.output_schema)
+        tools = augment_tools_with_schema(tools= tools, schema= self.output_schema.to_dict())
         return tools
 
     # override IGuard.from_dict
