@@ -474,6 +474,14 @@ class HuggingFaceModelCallable(PromptCallableBase):
         model_inputs["do_sample"] = do_sample
         model_inputs["temperature"] = temperature
 
+        constraint_generator = kwargs.pop("constraint_generator", None)
+        if constraint_generator is not None:
+            kwargs["force_words_ids"] = list()
+            for token in constraint_generator.get_valid_tokens():
+                kwargs["force_words_ids"].append(
+                    tokenizer(token, add_special_tokens=False).input_ids
+                )
+
         output = model_generate(
             **model_inputs,
             **kwargs,
@@ -487,6 +495,9 @@ class HuggingFaceModelCallable(PromptCallableBase):
         decoded_output = tokenizer.decode(
             output[0], skip_special_tokens=skip_special_tokens
         )
+
+        if constraint_generator:
+            constraint_generator.update_valid_tokens(decoded_output)
 
         return LLMResponse(output=decoded_output)
 
@@ -514,6 +525,21 @@ class HuggingFacePipelineCallable(PromptCallableBase):
         if temperature == 0:
             temperature = None
 
+        # If we have a constraint generator pushed in, generate the "force_words_ids"
+        # kwarg.  Note that this doesn't guarantee that _only_ the given token will be
+        # generated, or even that the token will be generated next.  Example: if we
+        # force the next token to be "]", the model may generate "asdf]" or "],".
+        constraint_generator = kwargs.pop("constraint_generator", None)
+        if constraint_generator:
+            # The constraint generator may not have any constraints for us.
+            valid_tokens = constraint_generator.get_valid_tokens()
+            if valid_tokens:
+                kwargs["force_words_ids"] = list()
+                for token in valid_tokens:
+                    kwargs["force_words_ids"].append(
+                        pipeline.tokenizer(token, add_special_tokens=False).input_ids
+                    )
+
         output = pipeline(
             prompt,
             temperature=temperature,
@@ -527,6 +553,9 @@ class HuggingFacePipelineCallable(PromptCallableBase):
         # and choose the one with the least failures,
         # or accept a selection function
         content = safe_get(output[0], content_key)
+
+        if constraint_generator:
+            constraint_generator.update_valid_tokens(content)
 
         return LLMResponse(output=content)
 
