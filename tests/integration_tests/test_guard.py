@@ -12,18 +12,19 @@ import guardrails as gd
 from guardrails.actions.reask import SkeletonReAsk
 from guardrails.classes.llm.llm_response import LLMResponse
 from guardrails.classes.validation_outcome import ValidationOutcome
+from guardrails.classes.validation.validation_result import FailResult
 from guardrails.guard import Guard
 from guardrails.utils.openai_utils import (
     get_static_openai_chat_create_func,
     get_static_openai_create_func,
 )
 from guardrails.actions.reask import FieldReAsk
-from guardrails.validators import FailResult, OneLine
 from tests.integration_tests.test_assets.validators import (
     RegexMatch,
     ValidLength,
     ValidChoices,
     LowerCase,
+    OneLine,
 )
 
 from .mock_llm_outputs import (

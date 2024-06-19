@@ -12,7 +12,7 @@ from guardrails.stores.context import get_tracer_context
 from guardrails.utils.casting_utils import to_string
 from guardrails.classes.validation.validator_logs import ValidatorLogs
 from guardrails.actions.reask import ReAsk
-from guardrails.validator_base import Filter, Refrain
+from guardrails.actions import Filter, Refrain
 
 
 def get_result_type(before_value: Any, after_value: Any, outcome: str):

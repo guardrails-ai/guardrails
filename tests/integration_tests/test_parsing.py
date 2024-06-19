@@ -7,7 +7,7 @@ from guardrails import register_validator
 from guardrails.classes.llm.llm_response import LLMResponse
 from guardrails.utils.openai_utils import get_static_openai_chat_create_func
 from guardrails.validator_base import OnFailAction
-from guardrails.validators import FailResult, ValidationResult
+from guardrails.classes.validation.validation_result import FailResult, ValidationResult
 
 from .test_assets import pydantic, string
 

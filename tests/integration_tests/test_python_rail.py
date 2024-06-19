@@ -6,21 +6,19 @@ import pytest
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 import guardrails as gd
+from guardrails import Validator, register_validator
 from guardrails.classes.llm.llm_response import LLMResponse
 from guardrails.utils.openai_utils import (
     get_static_openai_chat_create_func,
     get_static_openai_create_func,
 )
-from guardrails.validator_base import OnFailAction
-from guardrails.validators import (
+from guardrails.types import OnFailAction
+from guardrails.classes.validation.validation_result import (
     FailResult,
     PassResult,
-    TwoWords,
     ValidationResult,
-    Validator,
-    ValidLength,
-    register_validator,
 )
+from tests.integration_tests.test_assets.validators import ValidLength, TwoWords
 
 from .mock_llm_outputs import MockOpenAICallable
 from .test_assets import python_rail, string
