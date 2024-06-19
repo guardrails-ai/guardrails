@@ -658,7 +658,8 @@ def get_llm_ask(
         pass
 
     # Let the user pass in an arbitrary callable.
-    return ArbitraryCallable(*args, llm_api=llm_api, **kwargs)
+    if llm_api is not None:
+        return ArbitraryCallable(*args, llm_api=llm_api, **kwargs)
 
 
 ###
