@@ -64,6 +64,7 @@ manifest = ["manifest-ml"]
 litellm = ["litellm"]
 anthropic = ["anthropic"]
 docs-build = ["nbdoc", "docspec_python", "pydoc-markdown"]
+huggingface = ["transformers", "torch"]
 
 
 [tool.poetry.group.dev.dependencies]

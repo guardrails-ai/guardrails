@@ -6853,6 +6853,7 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 [extras]
 anthropic = ["anthropic"]
 docs-build = ["docspec_python", "nbdoc", "pydoc-markdown"]
+huggingface = ["torch", "transformers"]
 litellm = ["litellm"]
 manifest = ["manifest-ml"]
 sql = ["sqlalchemy", "sqlglot", "sqlvalidator"]
@@ -6861,4 +6862,4 @@ vectordb = ["faiss-cpu", "numpy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "97acdcbdb13c3997a72ddc3738efa2c5ac366cdcbbf825ccca1c93e30a679e17"
+content-hash = "0dce64d89199972bc7bc2607ea891212624b18268302640b02efb0b40eb77122"
