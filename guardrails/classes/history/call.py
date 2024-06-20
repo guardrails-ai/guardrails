@@ -117,7 +117,26 @@ class Call(ICall, ArbitraryModel):
         prompt_params = initial_inputs.prompt_params or {}
         if instructions is not None:
             return instructions.format(**prompt_params).source
+        
+    @property
+    def reask_messages(self) -> Stack[str]:
+        """The compiled messages used during reasks.
 
+        Does not include the initial messages.
+        """
+        if self.iterations.length > 0:
+            reasks = self.iterations.copy()
+            initial_messages = reasks.first
+            reasks.remove(initial_messages)  # type: ignore
+            return Stack(
+                *[
+                    r.inputs.messages if r.inputs.messages is not None else None
+                    for r in reasks
+                ]
+            )
+
+        return Stack()
+    
     @property
     def reask_instructions(self) -> Stack[str]:
         """The compiled instructions used during reasks.

@@ -21,7 +21,7 @@ from guardrails.validator_base import OnFailAction, Validator
 
 
 ### RAIL to JSON Schema ###
-STRING_TAGS = ["instructions", "prompt", "reask_instructions", "reask_prompt"]
+STRING_TAGS = ["instructions", "prompt", "reask_instructions", "reask_prompt", "messages", "reask_messages"]
 
 
 def parse_on_fail_handlers(element: _Element) -> Dict[str, OnFailAction]:
@@ -427,6 +427,29 @@ def rail_string_to_schema(rail_string: str) -> ProcessedSchema:
             " in favor of reask_messages. Please use reask_messages instead.",
             DeprecationWarning,
         )
+
+    messages = rail_xml.find("messages")
+    if messages is not None:
+        extracted_messages = []
+        for msg in messages:
+            if msg.tag == "message":
+                message = msg
+                role = message.attrib.get("role")
+                content = message.text
+                extracted_messages.append({"role": role, "content": content})
+        processed_schema.exec_opts.messages = extracted_messages
+    
+    reask_messages = rail_xml.find("reask_messages")
+    if reask_messages is not None:
+        extracted_reask_messages = []
+        for msg in reask_messages:
+            if msg.tag == "message":
+                message = msg
+                role = message.attrib.get("role")
+                content = message.text
+                extracted_reask_messages.append({"role": role, "content": content})
+        processed_schema.exec_opts.messages = extracted_reask_messages
+
     return processed_schema
 
 

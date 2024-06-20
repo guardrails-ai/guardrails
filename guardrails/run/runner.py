@@ -640,7 +640,7 @@ class Runner:
     ) -> Tuple[Prompt, Optional[Instructions], Dict[str, Any], Optional[List[Dict]]]:
         """Prepare to loop again."""
         prompt_params = prompt_params or {}
-        output_schema, prompt, instructions = get_reask_setup(
+        output_schema, prompt, instructions, messages = get_reask_setup(
             output_type=self.output_type,
             output_schema=output_schema,
             validation_map=self.validation_map,
@@ -653,5 +653,5 @@ class Runner:
         )
         if not include_instructions:
             instructions = None
-        msg_history = None  # clear msg history for reasking
+        msg_history = messages
         return prompt, instructions, output_schema, msg_history
