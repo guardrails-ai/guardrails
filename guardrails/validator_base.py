@@ -15,13 +15,9 @@ from typing_extensions import deprecated
 
 from guardrails.actions.filter import Filter
 from guardrails.actions.refrain import Refrain
-from guardrails.classes import (
-    ErrorSpan,  # noqa
-    FailResult,
-    InputType,
-    PassResult,  # noqa
-    ValidationResult,
-)
+from guardrails.classes import ErrorSpan  # noqa
+from guardrails.classes import PassResult  # noqa
+from guardrails.classes import FailResult, InputType, ValidationResult
 from guardrails.classes.credentials import Credentials
 from guardrails.constants import hub
 from guardrails.errors import ValidationError
@@ -770,4 +766,8 @@ class Validator(Runnable):
         return self
 
     def to_runnable(self) -> Runnable:
-        pass
+        from guardrails.integrations.langchain.validator_runnable import (
+            ValidatorRunnable,
+        )
+
+        return ValidatorRunnable(self)
