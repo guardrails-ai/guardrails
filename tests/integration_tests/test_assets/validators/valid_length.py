@@ -14,7 +14,7 @@ from guardrails.validator_base import (
 )
 
 
-@register_validator(name="valid-length", data_type=["string", "list"])
+@register_validator(name="length", data_type=["string", "list"])
 class ValidLength(Validator):
     """Validates that the length of value is within the expected range.
 

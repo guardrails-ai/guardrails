@@ -1,7 +1,6 @@
 from typing import Any, Dict, List, Optional, Union
 
 from pydantic import Field
-from typing_extensions import deprecated
 
 from guardrails_api_client import (
     Outputs as IOutputs,
@@ -136,22 +135,6 @@ class Outputs(IOutputs, ArbitraryModel):
         ):
             return fail_status
         return pass_status
-
-    @property
-    @deprecated(
-        """'Outputs.validation_output' is deprecated and will be removed in \
-versions 0.5.0 and beyond. Use 'validation_response' instead."""
-    )
-    def validation_output(self) -> Optional[Union[str, ReAsk, List, Dict]]:
-        return self.validation_response
-
-    @property
-    @deprecated(
-        """'Outputs.validated_output' is deprecated and will be removed in \
-versions 0.5.0 and beyond. Use 'guarded_output' instead."""
-    )
-    def validated_output(self) -> Optional[Union[str, ReAsk, List, Dict]]:
-        return self.guarded_output
 
     def to_dict(self) -> Dict[str, Any]:
         i_outputs = IOutputs(

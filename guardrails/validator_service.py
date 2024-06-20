@@ -59,7 +59,10 @@ class ValidatorServiceBase:
             on_fail_descriptor=validator.on_fail_descriptor,
             **validator._kwargs,
         )(validate_func)
-        result = traced_validator(value, metadata, **kwargs)
+        if stream:
+            result = traced_validator(value, metadata, **kwargs)
+        else:
+            result = traced_validator(value, metadata)
         return result
 
     def perform_correction(
@@ -291,6 +294,8 @@ class SequentialValidatorService(ValidatorServiceBase):
         iteration: Iteration,
         absolute_path: str,
         reference_path: str,
+        stream: Optional[bool] = False,
+        **kwargs,
     ) -> Tuple[Any, dict]:
         ###
         # NOTE: The way validation can be executed now is fundamentally wide open.
@@ -339,7 +344,14 @@ class SequentialValidatorService(ValidatorServiceBase):
 
         # Then validate the parent value
         value, metadata = self.run_validators(
-            iteration, validator_map, value, metadata, absolute_path, reference_path
+            iteration,
+            validator_map,
+            value,
+            metadata,
+            absolute_path,
+            reference_path,
+            stream=stream,
+            **kwargs,
         )
         return value, metadata
 
@@ -450,6 +462,7 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
         absolute_property_path: str,
         reference_property_path: str,
         stream: Optional[bool] = False,
+        **kwargs,
     ):
         loop = asyncio.get_running_loop()
         validators = validator_map.get(reference_property_path, [])
@@ -480,6 +493,7 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
                         metadata,
                         absolute_property_path,
                         stream=stream,
+                        **kwargs,
                     )
                     validators_logs.append(result)
 
@@ -510,7 +524,11 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
                 if validator.on_fail_descriptor == OnFailAction.FIX_REASK:
                     fixed_value = fail_results[0].fix_value
                     rechecked_value = await self.run_validator_async(
-                        validator, fixed_value, fail_results[0].metadata or {}, stream
+                        validator,
+                        fixed_value,
+                        fail_results[0].metadata or {},
+                        stream,
+                        **kwargs,
                     )
                 value = self.perform_correction(
                     fail_results,
@@ -693,7 +711,7 @@ def validate(
         validator_service = SequentialValidatorService(disable_tracer)
 
     return validator_service.validate(
-        value, metadata, validator_map, iteration, path, path
+        value, metadata, validator_map, iteration, path, path, **kwargs
     )
 
 

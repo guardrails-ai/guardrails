@@ -1,12 +1,9 @@
-import asyncio
 import contextvars
 import json
 import os
 from builtins import id as object_id
-from string import Template
 from typing import (
     Any,
-    Awaitable,
     Callable,
     Dict,
     Generic,
@@ -49,14 +46,13 @@ from guardrails.classes.output_type import OutputTypes
 from guardrails.classes.schema.processed_schema import ProcessedSchema
 from guardrails.classes.schema.model_schema import ModelSchema
 from guardrails.llm_providers import (
-    get_async_llm_ask,
     get_llm_api_enum,
     get_llm_ask,
     model_is_supported_server_side,
 )
 from guardrails.logger import logger, set_scope
 from guardrails.prompt import Instructions, Prompt
-from guardrails.run import AsyncRunner, Runner, StreamRunner
+from guardrails.run import Runner, StreamRunner
 from guardrails.schema.primitive_schema import primitive_to_schema
 from guardrails.schema.pydantic_schema import pydantic_model_to_schema
 from guardrails.schema.rail_schema import rail_file_to_schema, rail_string_to_schema
@@ -70,9 +66,9 @@ from guardrails.stores.context import (
     set_tracer,
     set_tracer_context,
 )
+from guardrails.types.on_fail import OnFailAction
 from guardrails.types.pydantic import ModelOrListOfModels
 from guardrails.utils.naming_utils import random_id
-from guardrails.utils.safe_get import safe_get
 from guardrails.utils.api_utils import extract_serializeable_metadata
 from guardrails.utils.hub_telemetry_utils import HubTelemetry
 from guardrails.classes.llm.llm_response import LLMResponse
@@ -233,7 +229,7 @@ class Guard(IGuard, Generic[OT]):
         if allow_metrics_collection is None:
             credentials = Credentials.from_rc_file(logger)
             # TODO: Check credentials.enable_metrics after merge from main
-            allow_metrics_collection = credentials.no_metrics is False
+            allow_metrics_collection = credentials.enable_metrics is True
 
         self._allow_metrics_collection = allow_metrics_collection
 
@@ -250,19 +246,19 @@ class Guard(IGuard, Generic[OT]):
             entry: List[Validator] = self._validator_map.get(ref.on, [])  # type: ignore
             # Check if the validator from the reference
             #   has an instance in the validator_map
-            v = safe_get(
-                [
-                    v
-                    for v in entry
-                    if (
-                        v.rail_alias == ref.id
-                        and v.on_fail_descriptor == ref.on_fail
-                        and v.get_args() == ref.kwargs
-                    )
-                ],
-                0,
-            )
-            if not v:
+            existing_instance: Optional[Validator] = None
+            for v in entry:
+                same_id = v.rail_alias == ref.id
+                same_on_fail = v.on_fail_descriptor == ref.on_fail or (  # is default
+                    v.on_fail_descriptor == OnFailAction.NOOP and not ref.on_fail
+                )
+                same_args = v.get_args() == ref.kwargs or (  # Both are empty
+                    not v.get_args() and not ref.kwargs
+                )
+                if same_id and same_on_fail and same_args:
+                    existing_instance = v
+                    break
+            if not existing_instance:
                 validator = parse_validator_reference(ref)
                 if validator:
                     entry.append(validator)
@@ -274,34 +270,6 @@ class Guard(IGuard, Generic[OT]):
             for v_list in [self._validator_map[k] for k in self._validator_map]
             for v in v_list
         ]
-
-    # FIXME: What do we want this to look like now?
-    def __repr__(self):
-        return f"Guard(RAIL={self._rail})"
-
-    # FIXME: What do we want this to look like now?
-    def __rich_repr__(self):
-        yield "RAIL", self._rail
-
-    def __stringify__(self):
-        if self._output_type == OutputTypes.STRING:
-            template = Template(
-                """
-                Guard {
-                    validators: [
-                        ${validators}
-                    ]
-                }
-                    """
-            )
-            return template.safe_substitute(
-                {
-                    "validators": ",\n".join(
-                        [v.__stringify__() for v in self._validators]
-                    )
-                }
-            )
-        return self.__repr__()
 
     @classmethod
     def _from_rail_schema(
@@ -435,11 +403,11 @@ class Guard(IGuard, Generic[OT]):
         cls,
         output_class: ModelOrListOfModels,
         *,
-        prompt: Optional[str] = None,  # deprecate this too
-        instructions: Optional[str] = None,  # deprecate this too
+        prompt: Optional[str] = None,  # TODO: deprecate this in 0.5.1
+        instructions: Optional[str] = None,  # TODO: deprecate this in 0.5.1
         num_reasks: Optional[int] = None,
-        reask_prompt: Optional[str] = None,  # deprecate this too
-        reask_instructions: Optional[str] = None,  # deprecate this too
+        reask_prompt: Optional[str] = None,  # TODO: deprecate this in 0.5.1
+        reask_instructions: Optional[str] = None,  # TODO: deprecate this in 0.5.1
         tracer: Optional[Tracer] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
@@ -505,10 +473,10 @@ class Guard(IGuard, Generic[OT]):
         validators: Sequence[Validator],
         *,
         string_description: Optional[str] = None,
-        prompt: Optional[str] = None,  # deprecate this too
-        instructions: Optional[str] = None,  # deprecate this too
-        reask_prompt: Optional[str] = None,  # deprecate this too
-        reask_instructions: Optional[str] = None,  # deprecate this too
+        prompt: Optional[str] = None,  # TODO: deprecate this in 0.5.1
+        instructions: Optional[str] = None,  # TODO: deprecate this in 0.5.1
+        reask_prompt: Optional[str] = None,  # TODO: deprecate this in 0.5.1
+        reask_instructions: Optional[str] = None,  # TODO: deprecate this in 0.5.1
         num_reasks: Optional[int] = None,
         tracer: Optional[Tracer] = None,
         name: Optional[str] = None,
@@ -571,7 +539,7 @@ class Guard(IGuard, Generic[OT]):
     def _execute(
         self,
         *args,
-        llm_api: Optional[Union[Callable, Callable[[Any], Awaitable[Any]]]] = None,
+        llm_api: Optional[Callable] = None,
         llm_output: Optional[str] = None,
         prompt_params: Optional[Dict] = None,
         num_reasks: Optional[int] = None,
@@ -581,11 +549,7 @@ class Guard(IGuard, Generic[OT]):
         metadata: Optional[Dict],
         full_schema_reask: Optional[bool] = None,
         **kwargs,
-    ) -> Union[
-        ValidationOutcome[OT],
-        Iterable[ValidationOutcome[OT]],
-        Awaitable[ValidationOutcome[OT]],
-    ]:
+    ) -> Union[ValidationOutcome[OT], Iterable[ValidationOutcome[OT]]]:
         self._fill_validator_map()
         self._fill_validators()
         metadata = metadata or {}
@@ -606,7 +570,7 @@ class Guard(IGuard, Generic[OT]):
         def __exec(
             self: Guard,
             *args,
-            llm_api: Optional[Union[Callable, Callable[[Any], Awaitable[Any]]]] = None,
+            llm_api: Optional[Callable] = None,
             llm_output: Optional[str] = None,
             prompt_params: Optional[Dict] = None,
             num_reasks: Optional[int] = None,
@@ -624,12 +588,23 @@ class Guard(IGuard, Generic[OT]):
 
             if self._allow_metrics_collection and self._hub_telemetry:
                 # Create a new span for this guard call
+                llm_api_str = ""
+                if llm_api:
+                    llm_api_module_name = (
+                        llm_api.__module__ if hasattr(llm_api, "__module__") else ""
+                    )
+                    llm_api_name = (
+                        llm_api.__name__
+                        if hasattr(llm_api, "__name__")
+                        else type(llm_api).__name__
+                    )
+                    llm_api_str = f"{llm_api_module_name}.{llm_api_name}"
                 self._hub_telemetry.create_new_span(
                     span_name="/guard_call",
                     attributes=[
                         ("guard_id", self.id),
                         ("user_id", self._user_id),
-                        ("llm_api", llm_api.__name__ if llm_api else "None"),
+                        ("llm_api", llm_api_str if llm_api_str else "None"),
                         (
                             "custom_reask_prompt",
                             self._exec_opts.reask_prompt is not None,
@@ -687,24 +662,8 @@ class Guard(IGuard, Generic[OT]):
                     **kwargs,
                 )
 
-            # If the LLM API is async, return a coroutine
-            if asyncio.iscoroutinefunction(llm_api):
-                return self._exec_async(
-                    llm_api=llm_api,
-                    llm_output=llm_output,
-                    prompt_params=prompt_params,
-                    num_reasks=self._num_reasks,
-                    prompt=prompt,
-                    instructions=instructions,
-                    msg_history=msg_history,
-                    metadata=metadata,
-                    full_schema_reask=full_schema_reask,
-                    call_log=call_log,
-                    *args,
-                    **kwargs,
-                )
             # Otherwise, call the LLM synchronously
-            return self._exec_sync(
+            return self._exec(
                 llm_api=llm_api,
                 llm_output=llm_output,
                 prompt_params=prompt_params,
@@ -736,7 +695,7 @@ class Guard(IGuard, Generic[OT]):
             **kwargs,
         )
 
-    def _exec_sync(
+    def _exec(
         self,
         *args,
         llm_api: Optional[Callable] = None,
@@ -794,96 +753,9 @@ class Guard(IGuard, Generic[OT]):
             call = runner(call_log=call_log, prompt_params=prompt_params)
             return ValidationOutcome[OT].from_guard_history(call)
 
-    async def _exec_async(
-        self,
-        *args,
-        llm_api: Callable[[Any], Awaitable[Any]],
-        llm_output: Optional[str] = None,
-        call_log: Call,
-        prompt_params: Dict,  # Should be defined at this point
-        num_reasks: int = 0,  # Should be defined at this point
-        metadata: Dict,  # Should be defined at this point
-        full_schema_reask: bool = False,  # Should be defined at this point
-        prompt: Optional[str],
-        instructions: Optional[str],
-        msg_history: Optional[List[Dict]],
-        **kwargs,
-    ) -> ValidationOutcome[OT]:
-        """Call the LLM asynchronously and validate the output.
-
-        Args:
-            llm_api: The LLM API to call asynchronously (e.g. openai.Completion.acreate)
-            prompt_params: The parameters to pass to the prompt.format() method.
-            num_reasks: The max times to re-ask the LLM for invalid output.
-            prompt: The prompt to use for the LLM.
-            instructions: Instructions for chat models.
-            msg_history: The message history to pass to the LLM.
-            metadata: Metadata to pass to the validators.
-            full_schema_reask: When reasking, whether to regenerate the full schema
-                               or just the incorrect values.
-                               Defaults to `True` if a base model is provided,
-                               `False` otherwise.
-
-        Returns:
-            The raw text output from the LLM and the validated output.
-        """
-        api = (
-            get_async_llm_ask(llm_api, *args, **kwargs) if llm_api is not None else None
-        )
-        runner = AsyncRunner(
-            output_type=self._output_type,
-            output_schema=self.output_schema.to_dict(),
-            num_reasks=num_reasks,
-            validation_map=self._validator_map,
-            prompt=prompt,
-            instructions=instructions,
-            msg_history=msg_history,
-            api=api,
-            metadata=metadata,
-            output=llm_output,
-            base_model=self._base_model,
-            full_schema_reask=full_schema_reask,
-            disable_tracer=(not self._allow_metrics_collection),
-            exec_options=self._exec_opts,
-        )
-        # Why are we using a different method here instead of just overriding?
-        call = await runner.async_run(call_log=call_log, prompt_params=prompt_params)
-        return ValidationOutcome[OT].from_guard_history(call)
-
-    @overload
     def __call__(
         self,
         llm_api: Callable,
-        *args,
-        prompt_params: Optional[Dict] = None,
-        num_reasks: Optional[int] = None,
-        prompt: Optional[str] = None,
-        instructions: Optional[str] = None,
-        msg_history: Optional[List[Dict]] = None,
-        metadata: Optional[Dict] = None,
-        full_schema_reask: Optional[bool] = None,
-        stream: Optional[bool] = False,
-        **kwargs,
-    ) -> Union[ValidationOutcome[OT], Iterable[ValidationOutcome[OT]]]: ...
-
-    @overload
-    def __call__(
-        self,
-        llm_api: Callable[[Any], Awaitable[Any]],
-        *args,
-        prompt_params: Optional[Dict] = None,
-        num_reasks: Optional[int] = None,
-        prompt: Optional[str] = None,
-        instructions: Optional[str] = None,
-        msg_history: Optional[List[Dict]] = None,
-        metadata: Optional[Dict] = None,
-        full_schema_reask: Optional[bool] = None,
-        **kwargs,
-    ) -> Awaitable[ValidationOutcome[OT]]: ...
-
-    def __call__(
-        self,
-        llm_api: Union[Callable, Callable[[Any], Awaitable[Any]]],
         *args,
         prompt_params: Optional[Dict] = None,
         num_reasks: Optional[int] = 1,
@@ -893,10 +765,7 @@ class Guard(IGuard, Generic[OT]):
         metadata: Optional[Dict] = None,
         full_schema_reask: Optional[bool] = None,
         **kwargs,
-    ) -> Union[
-        Union[ValidationOutcome[OT], Iterable[ValidationOutcome[OT]]],
-        Awaitable[ValidationOutcome[OT]],
-    ]:
+    ) -> Union[ValidationOutcome[OT], Iterable[ValidationOutcome[OT]]]:
         """Call the LLM and validate the output.
 
         Args:
@@ -939,33 +808,6 @@ class Guard(IGuard, Generic[OT]):
             **kwargs,
         )
 
-    @overload
-    def parse(
-        self,
-        llm_output: str,
-        *args,
-        metadata: Optional[Dict] = None,
-        llm_api: None = None,
-        num_reasks: Optional[int] = None,
-        prompt_params: Optional[Dict] = None,
-        full_schema_reask: Optional[bool] = None,
-        **kwargs,
-    ) -> ValidationOutcome[OT]: ...
-
-    @overload
-    def parse(
-        self,
-        llm_output: str,
-        *args,
-        metadata: Optional[Dict] = None,
-        llm_api: Optional[Callable[[Any], Awaitable[Any]]] = ...,
-        num_reasks: Optional[int] = None,
-        prompt_params: Optional[Dict] = None,
-        full_schema_reask: Optional[bool] = None,
-        **kwargs,
-    ) -> Awaitable[ValidationOutcome[OT]]: ...
-
-    @overload
     def parse(
         self,
         llm_output: str,
@@ -976,19 +818,7 @@ class Guard(IGuard, Generic[OT]):
         prompt_params: Optional[Dict] = None,
         full_schema_reask: Optional[bool] = None,
         **kwargs,
-    ) -> ValidationOutcome[OT]: ...
-
-    def parse(
-        self,
-        llm_output: str,
-        *args,
-        metadata: Optional[Dict] = None,
-        llm_api: Optional[Callable] = None,
-        num_reasks: Optional[int] = None,
-        prompt_params: Optional[Dict] = None,
-        full_schema_reask: Optional[bool] = None,
-        **kwargs,
-    ) -> Union[ValidationOutcome[OT], Awaitable[ValidationOutcome[OT]]]:
+    ) -> ValidationOutcome[OT]:
         """Alternate flow to using Guard where the llm_output is known.
 
         Args:
@@ -1168,8 +998,6 @@ class Guard(IGuard, Generic[OT]):
         call_log = call_log or Call()
         if llm_api is not None:
             llm_api = get_llm_ask(llm_api)
-            if asyncio.iscoroutinefunction(llm_api):
-                llm_api = get_async_llm_ask(llm_api)
         session_history = (
             validation_output.session_history
             if validation_output is not None and validation_output.session_history

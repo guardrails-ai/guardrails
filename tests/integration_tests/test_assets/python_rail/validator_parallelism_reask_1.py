@@ -1,5 +1,5 @@
 from guardrails.actions.reask import FieldReAsk
-from guardrails.validators import FailResult
+from guardrails.classes.validation.validation_result import FailResult
 
 VALIDATOR_PARALLELISM_REASK_1 = FieldReAsk(
     incorrect_value="Hello a you\nand me",

@@ -1,21 +1,18 @@
-import openai
 import pytest
 from pydantic import BaseModel
 
-from guardrails import AsyncGuard, Validator
+from guardrails import AsyncGuard, Validator, register_validator
+from guardrails.classes.validation.validation_result import PassResult
 from guardrails.utils import args, kwargs, on_fail
-from guardrails.utils.openai_utils import OPENAI_VERSION
 from guardrails.utils.validator_utils import verify_metadata_requirements
-from guardrails.validator_base import OnFailAction
-from guardrails.validators import (  # ReadingTime,
+from guardrails.types import OnFailAction
+from tests.integration_tests.test_assets.validators import (
     EndsWith,
     LowerCase,
     OneLine,
-    PassResult,
     TwoWords,
     UpperCase,
     ValidLength,
-    register_validator,
 )
 
 
@@ -90,9 +87,8 @@ class RequiringValidator2(Validator):
     ],
 )
 @pytest.mark.asyncio
-@pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="Only for OpenAI v0")
 async def test_required_metadata(spec, metadata, error_message):
-    guard = AsyncGuard.from_rail_string(spec)
+    guard: AsyncGuard = AsyncGuard.from_rail_string(spec)
 
     missing_keys = verify_metadata_requirements({}, guard._validators)
     assert set(missing_keys) == set(metadata)
@@ -100,22 +96,17 @@ async def test_required_metadata(spec, metadata, error_message):
     not_missing_keys = verify_metadata_requirements(metadata, guard._validators)
     assert not_missing_keys == []
 
-    # test sync guard
-    with pytest.raises(ValueError) as excinfo:
-        guard.parse("{}")
-    assert str(excinfo.value) == error_message
-
-    response = guard.parse("{}", metadata=metadata, num_reasks=0)
-    assert response.error is None
+    async def mock_llm(*args, **kwargs):
+        return ""
 
     # test async guard
     with pytest.raises(ValueError) as excinfo:
-        guard.parse("{}")
-        await guard.parse("{}", llm_api=openai.ChatCompletion.acreate, num_reasks=0)
+        await guard.parse("{}")
+        await guard.parse("{}", llm_api=mock_llm, num_reasks=0)
     assert str(excinfo.value) == error_message
 
     response = await guard.parse(
-        "{}", metadata=metadata, llm_api=openai.ChatCompletion.acreate, num_reasks=0
+        "{}", metadata=metadata, llm_api=mock_llm, num_reasks=0
     )
     assert response.error is None
 

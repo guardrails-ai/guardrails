@@ -1,27 +1,30 @@
 import enum
+import importlib
 import json
 import os
 from typing import Optional, Union
 
 import pytest
-from pydantic import BaseModel
-from guardrails_api_client import Guard as IGuard, GuardHistory
+from pydantic import BaseModel, Field
+from guardrails_api_client import Guard as IGuard, GuardHistory, ValidatorReference
 
 import guardrails as gd
 from guardrails.actions.reask import SkeletonReAsk
 from guardrails.classes.llm.llm_response import LLMResponse
 from guardrails.classes.validation_outcome import ValidationOutcome
+from guardrails.classes.validation.validation_result import FailResult
 from guardrails.guard import Guard
 from guardrails.utils.openai_utils import (
     get_static_openai_chat_create_func,
     get_static_openai_create_func,
 )
 from guardrails.actions.reask import FieldReAsk
-from guardrails.validators import FailResult, OneLine
 from tests.integration_tests.test_assets.validators import (
     RegexMatch,
     ValidLength,
     ValidChoices,
+    LowerCase,
+    OneLine,
 )
 
 from .mock_llm_outputs import (
@@ -911,63 +914,6 @@ def test_enum_datatype():
     )
 
 
-@pytest.mark.skip("Move to GuardRunnable!")
-@pytest.mark.parametrize(
-    "output,throws",
-    [
-        ("Ice cream is frozen.", False),
-        ("Ice cream is a frozen dairy product that is consumed in many places.", True),
-        ("This response isn't relevant.", True),
-    ],
-)
-def test_guard_as_runnable(output: str, throws: bool):
-    from langchain_core.language_models import LanguageModelInput
-    from langchain_core.messages import AIMessage, BaseMessage
-    from langchain_core.output_parsers import StrOutputParser
-    from langchain_core.prompts import ChatPromptTemplate
-    from langchain_core.runnables import Runnable, RunnableConfig
-
-    from guardrails.errors import ValidationError
-    from guardrails.validators import ReadingTime, RegexMatch
-
-    class MockModel(Runnable):
-        def invoke(
-            self, input: LanguageModelInput, config: Optional[RunnableConfig] = None
-        ) -> BaseMessage:
-            return AIMessage(content=output)
-
-    prompt = ChatPromptTemplate.from_template("ELIF: {topic}")
-    model = MockModel()
-    guard = (
-        Guard()
-        .use(
-            RegexMatch("Ice cream", match_type="search", on_fail="refrain"), on="output"
-        )
-        .use(ReadingTime(0.05, on_fail="refrain"))  # 3 seconds
-    )
-    output_parser = StrOutputParser()
-
-    chain = prompt | model | guard | output_parser
-
-    topic = "ice cream"
-    if throws:
-        with pytest.raises(ValidationError) as exc_info:
-            chain.invoke({"topic": topic})
-
-        assert str(exc_info.value) == (
-            "The response from the LLM failed validation!"
-            "See `guard.history` for more details."
-        )
-
-        assert guard.history.last.status == "fail"
-        assert guard.history.last.status == "fail"
-
-    else:
-        result = chain.invoke({"topic": topic})
-
-        assert result == output
-
-
 @pytest.mark.parametrize(
     "rail,prompt",
     [
@@ -1155,3 +1101,214 @@ class TestSerizlizationAndDeserialization:
         response = deser_guard.parse("some-name")
 
         assert response.validation_passed is False
+
+
+@pytest.mark.skipif(
+    not importlib.util.find_spec("transformers")
+    and not importlib.util.find_spec("torch"),
+    reason="transformers or torch is not installed",
+)
+def test_guard_from_pydantic_with_mock_hf_pipeline():
+    from tests.unit_tests.mocks.mock_hf_models import make_mock_pipeline
+
+    pipe = make_mock_pipeline()
+    guard = Guard()
+    _ = guard(pipe, prompt="Don't care about the output.  Just don't crash.")
+
+
+@pytest.mark.skipif(
+    not importlib.util.find_spec("transformers")
+    and not importlib.util.find_spec("torch"),
+    reason="transformers or torch is not installed",
+)
+def test_guard_from_pydantic_with_mock_hf_model():
+    from tests.unit_tests.mocks.mock_hf_models import make_mock_model_tokenizer
+
+    model, tokenizer = make_mock_model_tokenizer()
+    guard = Guard()
+    _ = guard(
+        model.generate,
+        tokenizer=tokenizer,
+        prompt="Don't care about the output.  Just don't crash.",
+    )
+
+
+class TestValidatorInitializedOnce:
+    def test_guard_init(self, mocker):
+        init_spy = mocker.spy(LowerCase, "__init__")
+
+        guard = Guard(validators=[ValidatorReference(id="lower-case", on="$")])
+
+        # Validator is not initialized until the guard is used
+        assert init_spy.call_count == 0
+
+        guard.parse("some-name")
+
+        assert init_spy.call_count == 1
+
+        # Validator is not initialized again
+        guard.parse("some-other-name")
+
+        assert init_spy.call_count == 1
+
+    def test_from_rail(self, mocker):
+        init_spy = mocker.spy(LowerCase, "__init__")
+
+        guard = Guard.from_rail_string(
+            """
+            <rail version="0.1">
+            <output
+                type="string"
+                validators="lower-case"
+            />
+            </rail>
+            """
+        )
+
+        assert init_spy.call_count == 1
+
+        # Validator is not initialized again
+        guard.parse("some-name")
+
+        assert init_spy.call_count == 1
+
+    def test_from_pydantic_validator_instance(self, mocker):
+        init_spy = mocker.spy(LowerCase, "__init__")
+
+        class MyModel(BaseModel):
+            name: str = Field(..., validators=[LowerCase()])
+
+        guard = Guard().from_pydantic(MyModel)
+
+        assert init_spy.call_count == 1
+
+        # Validator is not initialized again
+        guard.parse('{ "name": "some-name" }')
+
+        assert init_spy.call_count == 1
+
+    def test_from_pydantic_str(self, mocker):
+        init_spy = mocker.spy(LowerCase, "__init__")
+
+        class MyModel(BaseModel):
+            name: str = Field(..., validators=[("lower-case", "noop")])
+
+        guard = Guard().from_pydantic(MyModel)
+
+        assert init_spy.call_count == 1
+
+        # Validator is not initialized again
+        guard.parse('{ "name": "some-name" }')
+
+        assert init_spy.call_count == 1
+
+    def test_from_pydantic_same_instance_on_two_models(self, mocker):
+        init_spy = mocker.spy(LowerCase, "__init__")
+
+        lower_case = LowerCase()
+
+        class MyModel(BaseModel):
+            name: str = Field(..., validators=[lower_case])
+
+        class MyOtherModel(BaseModel):
+            name: str = Field(..., validators=[lower_case])
+
+        guard_1 = Guard.from_pydantic(MyModel)
+        guard_2 = Guard.from_pydantic(MyOtherModel)
+
+        assert init_spy.call_count == 1
+
+        # Validator is not initialized again
+        guard_1.parse("some-name")
+
+        assert init_spy.call_count == 1
+
+        guard_2.parse("some-other-name")
+
+        assert init_spy.call_count == 1
+
+    def test_guard_use_instance(self, mocker):
+        init_spy = mocker.spy(LowerCase, "__init__")
+
+        guard = Guard().use(LowerCase())
+
+        assert init_spy.call_count == 1
+
+        # Validator is not initialized again
+        guard.parse("some-name")
+
+        assert init_spy.call_count == 1
+
+    def test_guard_use_class(self, mocker):
+        init_spy = mocker.spy(LowerCase, "__init__")
+
+        guard = Guard().use(LowerCase)
+
+        assert init_spy.call_count == 1
+
+        # Validator is not initialized again
+        guard.parse("some-name")
+
+        assert init_spy.call_count == 1
+
+    def test_guard_use_same_instance_on_two_guards(self, mocker):
+        init_spy = mocker.spy(LowerCase, "__init__")
+
+        lower_case = LowerCase()
+
+        guard_1 = Guard().use(lower_case)
+        guard_2 = Guard().use(lower_case)
+
+        assert init_spy.call_count == 1
+
+        # Validator is not initialized again
+        guard_1.parse("some-name")
+
+        assert init_spy.call_count == 1
+
+        guard_2.parse("some-other-name")
+
+        assert init_spy.call_count == 1
+
+    def test_guard_use_many_instance(self, mocker):
+        init_spy = mocker.spy(LowerCase, "__init__")
+
+        guard = Guard().use_many(LowerCase())
+
+        assert init_spy.call_count == 1
+
+        # Validator is not initialized again
+        guard.parse("some-name")
+
+        assert init_spy.call_count == 1
+
+    def test_guard_use_many_class(self, mocker):
+        init_spy = mocker.spy(LowerCase, "__init__")
+
+        guard = Guard().use_many(LowerCase)
+
+        assert init_spy.call_count == 1
+
+        # Validator is not initialized again
+        guard.parse("some-name")
+
+        assert init_spy.call_count == 1
+
+    def test_guard_use_many_same_instance_on_two_guards(self, mocker):
+        init_spy = mocker.spy(LowerCase, "__init__")
+
+        lower_case = LowerCase()
+
+        guard_1 = Guard().use_many(lower_case)
+        guard_2 = Guard().use_many(lower_case)
+
+        assert init_spy.call_count == 1
+
+        # Validator is not initialized again
+        guard_1.parse("some-name")
+
+        assert init_spy.call_count == 1
+
+        guard_2.parse("some-other-name")
+
+        assert init_spy.call_count == 1
