@@ -90,7 +90,7 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          if ${{ matrix.python-version }} == "3.12"; then
+          if "${{ matrix.python-version }}" == "3.12"; then
             pip install "langchain-core>=0.2"
           fi
           make full
