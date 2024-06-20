@@ -525,10 +525,6 @@ class Runner:
             instructions, prompt = self.prepare_prompt(
                 call_log, instructions, prompt, prompt_params, api, attempt_number
             )
-        else:
-            raise UserFacingException(
-                ValueError("'prompt' or 'msg_history' must be provided.")
-            )
 
         return instructions, prompt, msg_history
 
@@ -566,7 +562,7 @@ class Runner:
         elif prompt:
             llm_response = api_fn(prompt.source)
         else:
-            raise ValueError("'prompt' or 'msg_history' must be provided.")
+            llm_response = api_fn()
 
         return llm_response
 

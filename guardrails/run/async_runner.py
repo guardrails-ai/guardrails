@@ -279,7 +279,7 @@ class AsyncRunner(Runner):
         elif prompt:
             llm_response = await api_fn(prompt.source)
         else:
-            raise ValueError("'output', 'prompt' or 'msg_history' must be provided.")
+            llm_response = await api_fn()
         return llm_response
 
     # TODO: Refactor this to use inheritance and overrides

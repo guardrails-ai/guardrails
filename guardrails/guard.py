@@ -567,8 +567,6 @@ class Guard(IGuard, Generic[OT]):
         self._fill_validator_map()
         self._fill_validators()
         metadata = metadata or {}
-        if not llm_api and not llm_output:
-            raise RuntimeError("'llm_api' or 'llm_output' must be provided!")
         if not llm_output and llm_api and not (prompt or msg_history):
             raise RuntimeError(
                 "'prompt' or 'msg_history' must be provided in order to call an LLM!"
@@ -724,7 +722,7 @@ class Guard(IGuard, Generic[OT]):
         msg_history: Optional[List[Dict]] = None,
         **kwargs,
     ) -> Union[ValidationOutcome[OT], Iterable[ValidationOutcome[OT]]]:
-        api = get_llm_ask(llm_api, *args, **kwargs) if llm_api is not None else None
+        api = get_llm_ask(llm_api, *args, **kwargs)
 
         if self._output_formatter is not None:
             # Type suppression here? ArbitraryCallable is a subclass of PromptCallable!?
@@ -773,7 +771,7 @@ class Guard(IGuard, Generic[OT]):
 
     def __call__(
         self,
-        llm_api: Callable,
+        llm_api: Optional[Callable] = None,
         *args,
         prompt_params: Optional[Dict] = None,
         num_reasks: Optional[int] = 1,
@@ -805,7 +803,7 @@ class Guard(IGuard, Generic[OT]):
         """
         instructions = instructions or self._exec_opts.instructions
         prompt = prompt or self._exec_opts.prompt
-        msg_history = msg_history or []
+        msg_history = msg_history or kwargs.get("messages") or []
         if prompt is None:
             if msg_history is not None and not len(msg_history):
                 raise RuntimeError(
