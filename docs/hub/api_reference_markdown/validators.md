@@ -1,5 +1,30 @@
 # Validators
 
+## ValidLength
+
+Validates that the length of value is within the expected range.
+
+**Key Properties**
+
+| Property                      | Description                       |
+| ----------------------------- | --------------------------------- |
+| Name for `format` attribute   | `length`                          |
+| Supported data types          | `string`, `list`, `object`        |
+| Programmatic fix              | If shorter than the minimum, pad with empty last elements. If longer than the maximum, truncate. |
+
+**Arguments**:
+
+- `min` - The inclusive minimum length.
+- `max` - The inclusive maximum length.
+
+#### validate(value: Union[str, List], metadata: Dict)
+
+```python
+def validate(value: Union[str, List], metadata: Dict) -> ValidationResult
+```
+
+Validates that the length of value is within the expected range.
+
 ## TwoWords
 
 Validates that a value is two words.
@@ -12,124 +37,133 @@ Validates that a value is two words.
 | Supported data types          | `string`                          |
 | Programmatic fix              | Pick the first two words.         |
 
-## ExtractiveSummary
+## ValidURL
 
-Validates that a string is a valid extractive summary of a given
-document.
+Validates that a value is a valid URL.
 
-This validator does a fuzzy match between the sentences in the
-summary and the sentences in the document. Each sentence in the
-summary must be similar to at least one sentence in the document.
-After the validation, the summary is updated to include the
-sentences from the document that were matched, and the citations for
-those sentences are added to the end of the summary.
+**Key Properties**
+
+| Property                      | Description                       |
+| ----------------------------- | --------------------------------- |
+| Name for `format` attribute   | `valid-url`                       |
+| Supported data types          | `string`                          |
+| Programmatic fix              | None                              |
+
+## IsHighQualityTranslation
+
+Validates that the translation is of high quality.
+
+**Key Properties**
+
+| Property                      | Description                       |
+| ----------------------------- | --------------------------------- |
+| Name for `format` attribute   | `is-high-quality-translation`     |
+| Supported data types          | `string`                          |
+| Programmatic fix              | None                              |
+
+Other parameters: Metadata
+translation_source (str): The source of the translation.
+
+This validator uses one of the reference-free models from Unbabel/COMET
+to check the quality of the translation. Specifically, it uses the
+`Unbabel/wmt22-cometkiwi-da` model.
+
+Unbabel/COMET details: https://github.com/Unbabel/COMET
+Model details: https://huggingface.co/Unbabel/wmt22-cometkiwi-da
+
+Pre-requisites:
+- Install the `unbabel-comet` from source:
+`pip install git+https://github.com/Unbabel/COMET`
+- Please accept the model license from:
+https://huggingface.co/Unbabel/wmt22-cometkiwi-da
+- Login into Huggingface Hub using:
+huggingface-cli login --token $HUGGINGFACE_TOKEN
+
+## ExcludeSqlPredicates
+
+Validates that the SQL query does not contain certain predicates.
+
+**Key Properties**
+
+| Property                      | Description                       |
+| ----------------------------- | --------------------------------- |
+| Name for `format` attribute   | `exclude-sql-predicates`          |
+| Supported data types          | `string`                          |
+| Programmatic fix              | None                              |
+
+**Arguments**:
+
+- `predicates` - The list of predicates to avoid.
+
+## BugFreePython
+
+Validates that there are no Python syntactic bugs in the generated code.
+
+This validator checks for syntax errors by running `ast.parse(code)`,
+and will raise an exception if there are any.
+Only the packages in the `python` environment are available to the code snippet.
+
+**Key Properties**
+
+| Property                      | Description                       |
+| ----------------------------- | --------------------------------- |
+| Name for `format` attribute   | `bug-free-python`                 |
+| Supported data types          | `string`                          |
+| Programmatic fix              | None                              |
+
+## ExtractedSummarySentencesMatch
+
+Validates that the extracted summary sentences match the original text
+by performing a cosine similarity in the embedding space.
 
 **Key Properties**
 
 | Property                      | Description                         |
 | ----------------------------- | ----------------------------------- |
-| Name for `format` attribute   | `extractive-summary`                |
+| Name for `format` attribute   | `extracted-summary-sentences-match` |
 | Supported data types          | `string`                            |
 | Programmatic fix              | Remove any sentences that can not be verified. |
 
 **Arguments**:
 
   
-- `threshold` - The minimum fuzz ratio to be considered summarized.  Defaults to 85.
+- `threshold` - The minimum cosine similarity to be considered similar. Default to 0.7.
   
   Other parameters: Metadata
   
 - `filepaths` _List[str]_ - A list of strings that specifies the filepaths for any documents that should be used for asserting the summary's similarity.
+- `document_store` _DocumentStoreBase, optional_ - The document store to use during validation. Defaults to EphemeralDocumentStore.
+- `vector_db` _VectorDBBase, optional_ - A vector database to use for embeddings.  Defaults to Faiss.
+- `embedding_model` _EmbeddingBase, optional_ - The embeddig model to use. Defaults to OpenAIEmbedding.
 
-#### validate(value: Any, metadata: Dict)
+## OneLine
 
-```python
-def validate(value: Any, metadata: Dict) -> ValidationResult
-```
+Validates that a value is a single line, based on whether or not the
+output has a newline character (\n).
 
-Make sure each sentence was precisely copied from the document.
+**Key Properties**
 
-## SaliencyCheck
+| Property                      | Description                            |
+| ----------------------------- | -------------------------------------- |
+| Name for `format` attribute   | `one-line`                             |
+| Supported data types          | `string`                               |
+| Programmatic fix              | Keep the first line, delete other text |
 
-Checks that the summary covers the list of topics present in the
-document.
+## QARelevanceLLMEval
+
+Validates that an answer is relevant to the question asked by asking the
+LLM to self evaluate.
 
 **Key Properties**
 
 | Property                      | Description                         |
 | ----------------------------- | ----------------------------------- |
-| Name for `format` attribute   | `saliency-check`                    |
+| Name for `format` attribute   | `qa-relevance-llm-eval`             |
 | Supported data types          | `string`                            |
 | Programmatic fix              | None                                |
 
-**Arguments**:
-
-  
-- `docs_dir` - Path to the directory containing the documents.
-- `threshold` - Threshold for overlap between topics in document and summary. Defaults to 0.25
-
-#### \_\_init\_\_(docs\_dir: str, llm\_callable: Optional[Callable] = None, on\_fail: Optional[Callable] = None, threshold: float = 0.25, \*\*kwargs)
-
-```python
-def __init__(docs_dir: str,
-             llm_callable: Optional[Callable] = None,
-             on_fail: Optional[Callable] = None,
-             threshold: float = 0.25,
-             **kwargs)
-```
-
-Initialize the SalienceCheck validator.
-
-**Arguments**:
-
-- `docs_dir` - Path to the directory containing the documents.
-- `on_fail` - Function to call when validation fails.
-- `threshold` - Threshold for overlap between topics in document and summary.
-
-## BugFreeSQL
-
-Validates that there are no SQL syntactic bugs in the generated code.
-
-This is a very minimal implementation that uses the Pypi `sqlvalidator` package
-to check if the SQL query is valid. You can implement a custom SQL validator
-that uses a database connection to check if the query is valid.
-
-**Key Properties**
-
-| Property                      | Description                       |
-| ----------------------------- | --------------------------------- |
-| Name for `format` attribute   | `bug-free-sql`                    |
-| Supported data types          | `string`                          |
-| Programmatic fix              | None                              |
-
-## RemoveRedundantSentences
-
-Removes redundant sentences from a string.
-
-This validator removes sentences from a string that are similar to
-other sentences in the string. This is useful for removing
-repetitive sentences from a string.
-
-**Key Properties**
-
-| Property                      | Description                         |
-| ----------------------------- | ----------------------------------- |
-| Name for `format` attribute   | `remove-redundant-sentences`        |
-| Supported data types          | `string`                            |
-| Programmatic fix              | Remove any redundant sentences.     |
-
-**Arguments**:
-
-  
-- `threshold` - The minimum fuzz ratio to be considered redundant.  Defaults to 70.
-
-#### validate(value: Any, metadata: Dict)
-
-```python
-def validate(value: Any, metadata: Dict) -> ValidationResult
-```
-
-Remove redundant sentences from a string.
+Other parameters: Metadata
+question (str): The original question the llm was given to answer.
 
 ## DetectSecrets
 
@@ -165,7 +199,7 @@ Validates whether the generated code snippet contains any secrets.
     ```py
 
     guard = Guard.from_string(validators=[
-      DetectSecrets(on_fail=OnFailAction.FIX)
+        DetectSecrets(on_fail=OnFailAction.FIX)
     ])
     guard.parse(
         llm_output=code_snippet,
@@ -212,6 +246,24 @@ Replace the secrets on the lines with asterisks.
 - `modified_value` _str_ - The generated code snippet with secrets replaced with
   asterisks.
 
+## PydanticFieldValidator
+
+Validates a specific field in a Pydantic model with the specified
+validator method.
+
+**Key Properties**
+
+| Property                      | Description                       |
+| ----------------------------- | --------------------------------- |
+| Name for `format` attribute   | `pydantic_field_validator`        |
+| Supported data types          | `Any`                             |
+| Programmatic fix              | Override with return value from `field_validator`.   |
+
+**Arguments**:
+
+  
+- `field_validator` _Callable_ - A validator for a specific field in a Pydantic model.
+
 ## ValidRange
 
 Validates that a value is within a range.
@@ -237,148 +289,21 @@ def validate(value: Any, metadata: Dict) -> ValidationResult
 
 Validates that a value is within a range.
 
-## ExtractedSummarySentencesMatch
+## BugFreeSQL
 
-Validates that the extracted summary sentences match the original text
-by performing a cosine similarity in the embedding space.
+Validates that there are no SQL syntactic bugs in the generated code.
 
-**Key Properties**
-
-| Property                      | Description                         |
-| ----------------------------- | ----------------------------------- |
-| Name for `format` attribute   | `extracted-summary-sentences-match` |
-| Supported data types          | `string`                            |
-| Programmatic fix              | Remove any sentences that can not be verified. |
-
-**Arguments**:
-
-  
-- `threshold` - The minimum cosine similarity to be considered similar. Default to 0.7.
-  
-  Other parameters: Metadata
-  
-- `filepaths` _List[str]_ - A list of strings that specifies the filepaths for any documents that should be used for asserting the summary's similarity.
-- `document_store` _DocumentStoreBase, optional_ - The document store to use during validation. Defaults to EphemeralDocumentStore.
-- `vector_db` _VectorDBBase, optional_ - A vector database to use for embeddings.  Defaults to Faiss.
-- `embedding_model` _EmbeddingBase, optional_ - The embeddig model to use. Defaults to OpenAIEmbedding.
-
-## CompetitorCheck
-
-Validates that LLM-generated text is not naming any competitors from a
-given list.
-
-In order to use this validator you need to provide an extensive list of the
-competitors you want to avoid naming including all common variations.
-
-**Arguments**:
-
-- `competitors` _List[str]_ - List of competitors you want to avoid naming
-
-#### exact\_match(text: str, competitors: List[str])
-
-```python
-def exact_match(text: str, competitors: List[str]) -> List[str]
-```
-
-Performs exact match to find competitors from a list in a given
-text.
-
-**Arguments**:
-
-- `text` _str_ - The text to search for competitors.
-- `competitors` _list_ - A list of competitor entities to match.
-  
-
-**Returns**:
-
-- `list` - A list of matched entities.
-
-#### perform\_ner(text: str, nlp)
-
-```python
-def perform_ner(text: str, nlp) -> List[str]
-```
-
-Performs named entity recognition on text using a provided NLP
-model.
-
-**Arguments**:
-
-- `text` _str_ - The text to perform named entity recognition on.
-- `nlp` - The NLP model to use for entity recognition.
-  
-
-**Returns**:
-
-- `entities` - A list of entities found.
-
-#### is\_entity\_in\_list(entities: List[str], competitors: List[str])
-
-```python
-def is_entity_in_list(entities: List[str], competitors: List[str]) -> List
-```
-
-Checks if any entity from a list is present in a given list of
-competitors.
-
-**Arguments**:
-
-- `entities` _list_ - A list of entities to check
-- `competitors` _list_ - A list of competitor names to match
-  
-
-**Returns**:
-
-- `List` - List of found competitors
-
-#### validate(value: str, metadata=Dict)
-
-```python
-def validate(value: str, metadata=Dict) -> ValidationResult
-```
-
-Checks a text to find competitors' names in it.
-
-While running, store sentences naming competitors and generate a fixed output
-filtering out all flagged sentences.
-
-**Arguments**:
-
-- `value` _str_ - The value to be validated.
-- `metadata` _Dict, optional_ - Additional metadata. Defaults to empty dict.
-  
-
-**Returns**:
-
-- `ValidationResult` - The validation result.
-
-## BugFreePython
-
-Validates that there are no Python syntactic bugs in the generated code.
-
-This validator checks for syntax errors by running `ast.parse(code)`,
-and will raise an exception if there are any.
-Only the packages in the `python` environment are available to the code snippet.
+This is a very minimal implementation that uses the Pypi `sqlvalidator` package
+to check if the SQL query is valid. You can implement a custom SQL validator
+that uses a database connection to check if the query is valid.
 
 **Key Properties**
 
 | Property                      | Description                       |
 | ----------------------------- | --------------------------------- |
-| Name for `format` attribute   | `bug-free-python`                 |
+| Name for `format` attribute   | `bug-free-sql`                    |
 | Supported data types          | `string`                          |
 | Programmatic fix              | None                              |
-
-## LowerCase
-
-Validates that a value is lower case.
-
-**Key Properties**
-
-| Property                      | Description                       |
-| ----------------------------- | --------------------------------- |
-| Name for `format` attribute   | `lower-case`                      |
-| Supported data types          | `string`                          |
-| Programmatic fix              | Convert to lower case.            |
 
 ## EndsWith
 
@@ -395,232 +320,6 @@ Validates that a list ends with a given value.
 **Arguments**:
 
 - `end` - The required last element.
-
-## QARelevanceLLMEval
-
-Validates that an answer is relevant to the question asked by asking the
-LLM to self evaluate.
-
-**Key Properties**
-
-| Property                      | Description                         |
-| ----------------------------- | ----------------------------------- |
-| Name for `format` attribute   | `qa-relevance-llm-eval`             |
-| Supported data types          | `string`                            |
-| Programmatic fix              | None                                |
-
-Other parameters: Metadata
-question (str): The original question the llm was given to answer.
-
-## ValidURL
-
-Validates that a value is a valid URL.
-
-**Key Properties**
-
-| Property                      | Description                       |
-| ----------------------------- | --------------------------------- |
-| Name for `format` attribute   | `valid-url`                       |
-| Supported data types          | `string`                          |
-| Programmatic fix              | None                              |
-
-## SqlColumnPresence
-
-Validates that all columns in the SQL query are present in the schema.
-
-**Key Properties**
-
-| Property                      | Description                       |
-| ----------------------------- | --------------------------------- |
-| Name for `format` attribute   | `sql-column-presence`             |
-| Supported data types          | `string`                          |
-| Programmatic fix              | None                              |
-
-**Arguments**:
-
-- `cols` - The list of valid columns.
-
-## ValidChoices
-
-Validates that a value is within the acceptable choices.
-
-**Key Properties**
-
-| Property                      | Description                       |
-| ----------------------------- | --------------------------------- |
-| Name for `format` attribute   | `valid-choices`                   |
-| Supported data types          | `all`                             |
-| Programmatic fix              | None                              |
-
-**Arguments**:
-
-- `choices` - The list of valid choices.
-
-#### validate(value: Any, metadata: Dict)
-
-```python
-def validate(value: Any, metadata: Dict) -> ValidationResult
-```
-
-Validates that a value is within a range.
-
-## ReadingTime
-
-Validates that the a string can be read in less than a certain amount of
-time.
-
-**Key Properties**
-
-| Property                      | Description                         |
-| ----------------------------- | ----------------------------------- |
-| Name for `format` attribute   | `reading-time`                      |
-| Supported data types          | `string`                            |
-| Programmatic fix              | None                                |
-
-**Arguments**:
-
-  
-- `reading_time` - The maximum reading time in minutes.
-
-## IsProfanityFree
-
-Validates that a translated text does not contain profanity language.
-
-This validator uses the `alt-profanity-check` package to check if a string
-contains profanity language.
-
-**Key Properties**
-
-| Property                      | Description                       |
-| ----------------------------- | --------------------------------- |
-| Name for `format` attribute   | `is-profanity-free`               |
-| Supported data types          | `string`                          |
-| Programmatic fix              | None                              |
-
-## ValidLength
-
-Validates that the length of value is within the expected range.
-
-**Key Properties**
-
-| Property                      | Description                       |
-| ----------------------------- | --------------------------------- |
-| Name for `format` attribute   | `length`                          |
-| Supported data types          | `string`, `list`, `object`        |
-| Programmatic fix              | If shorter than the minimum, pad with empty last elements. If longer than the maximum, truncate. |
-
-**Arguments**:
-
-- `min` - The inclusive minimum length.
-- `max` - The inclusive maximum length.
-
-#### validate(value: Union[str, List], metadata: Dict)
-
-```python
-def validate(value: Union[str, List], metadata: Dict) -> ValidationResult
-```
-
-Validates that the length of value is within the expected range.
-
-## SimilarToList
-
-Validates that a value is similar to a list of previously known values.
-
-**Key Properties**
-
-| Property                      | Description                       |
-| ----------------------------- | --------------------------------- |
-| Name for `format` attribute   | `similar-to-list`                 |
-| Supported data types          | `string`                          |
-| Programmatic fix              | None                              |
-
-**Arguments**:
-
-- `standard_deviations` _int_ - The number of standard deviations from the mean to check.
-- `threshold` _float_ - The threshold for the average semantic similarity for strings.
-  
-  For integer values, this validator checks whether the value lies
-  within 'k' standard deviations of the mean of the previous values.
-  (Assumes that the previous values are normally distributed.) For
-  string values, this validator checks whether the average semantic
-  similarity between the generated value and the previous values is
-  less than a threshold.
-
-#### get\_semantic\_similarity(text1: str, text2: str, embed\_function: Callable)
-
-```python
-def get_semantic_similarity(text1: str, text2: str,
-                            embed_function: Callable) -> float
-```
-
-Get the semantic similarity between two strings.
-
-**Arguments**:
-
-- `text1` _str_ - The first string.
-- `text2` _str_ - The second string.
-- `embed_function` _Callable_ - The embedding function.
-
-**Returns**:
-
-- `similarity` _float_ - The semantic similarity between the two strings.
-
-## PydanticFieldValidator
-
-Validates a specific field in a Pydantic model with the specified
-validator method.
-
-**Key Properties**
-
-| Property                      | Description                       |
-| ----------------------------- | --------------------------------- |
-| Name for `format` attribute   | `pydantic_field_validator`        |
-| Supported data types          | `Any`                             |
-| Programmatic fix              | Override with return value from `field_validator`.   |
-
-**Arguments**:
-
-  
-- `field_validator` _Callable_ - A validator for a specific field in a Pydantic model.
-
-## PIIFilter
-
-Validates that any text does not contain any PII.
-
-This validator uses Microsoft's Presidio (https://github.com/microsoft/presidio)
-to detect PII in the text. If PII is detected, the validator will fail with a
-programmatic fix that anonymizes the text. Otherwise, the validator will pass.
-
-**Key Properties**
-
-| Property                      | Description                         |
-| ----------------------------- | ----------------------------------- |
-| Name for `format` attribute   | `pii`                               |
-| Supported data types          | `string`                            |
-| Programmatic fix              | Anonymized text with PII filtered   |
-
-**Arguments**:
-
-- `pii_entities` _str | List[str], optional_ - The PII entities to filter. Must be
-  one of `pii` or `spi`. Defaults to None. Can also be set in metadata.
-
-#### get\_anonymized\_text(text: str, entities: List[str])
-
-```python
-def get_anonymized_text(text: str, entities: List[str]) -> str
-```
-
-Analyze and anonymize the text for PII.
-
-**Arguments**:
-
-- `text` _str_ - The text to analyze.
-- `pii_entities` _List[str]_ - The PII entities to filter.
-  
-
-**Returns**:
-
-- `anonymized_text` _str_ - The anonymized text.
 
 ## OnTopic
 
@@ -707,6 +406,98 @@ Set the LLM callable.
 - `llm_callable` - Either the name of the OpenAI model, or a callable that takes
   a prompt and returns a response.
 
+## PIIFilter
+
+Validates that any text does not contain any PII.
+
+This validator uses Microsoft's Presidio (https://github.com/microsoft/presidio)
+to detect PII in the text. If PII is detected, the validator will fail with a
+programmatic fix that anonymizes the text. Otherwise, the validator will pass.
+
+**Key Properties**
+
+| Property                      | Description                         |
+| ----------------------------- | ----------------------------------- |
+| Name for `format` attribute   | `pii`                               |
+| Supported data types          | `string`                            |
+| Programmatic fix              | Anonymized text with PII filtered   |
+
+**Arguments**:
+
+- `pii_entities` _str | List[str], optional_ - The PII entities to filter. Must be
+  one of `pii` or `spi`. Defaults to None. Can also be set in metadata.
+
+#### get\_anonymized\_text(text: str, entities: List[str])
+
+```python
+def get_anonymized_text(text: str, entities: List[str]) -> str
+```
+
+Analyze and anonymize the text for PII.
+
+**Arguments**:
+
+- `text` _str_ - The text to analyze.
+- `pii_entities` _List[str]_ - The PII entities to filter.
+  
+
+**Returns**:
+
+- `anonymized_text` _str_ - The anonymized text.
+
+## SaliencyCheck
+
+Checks that the summary covers the list of topics present in the
+document.
+
+**Key Properties**
+
+| Property                      | Description                         |
+| ----------------------------- | ----------------------------------- |
+| Name for `format` attribute   | `saliency-check`                    |
+| Supported data types          | `string`                            |
+| Programmatic fix              | None                                |
+
+**Arguments**:
+
+  
+- `docs_dir` - Path to the directory containing the documents.
+- `threshold` - Threshold for overlap between topics in document and summary. Defaults to 0.25
+
+#### \_\_init\_\_(docs\_dir: str, llm\_callable: Optional[Callable] = None, on\_fail: Optional[Callable] = None, threshold: float = 0.25, \*\*kwargs)
+
+```python
+def __init__(docs_dir: str,
+             llm_callable: Optional[Callable] = None,
+             on_fail: Optional[Callable] = None,
+             threshold: float = 0.25,
+             **kwargs)
+```
+
+Initialize the SalienceCheck validator.
+
+**Arguments**:
+
+- `docs_dir` - Path to the directory containing the documents.
+- `on_fail` - Function to call when validation fails.
+- `threshold` - Threshold for overlap between topics in document and summary.
+
+## SqlColumnPresence
+
+Validates that all columns in the SQL query are present in the schema.
+
+**Key Properties**
+
+| Property                      | Description                       |
+| ----------------------------- | --------------------------------- |
+| Name for `format` attribute   | `sql-column-presence`             |
+| Supported data types          | `string`                          |
+| Programmatic fix              | None                              |
+
+**Arguments**:
+
+- `cols` - The list of valid columns.
+
 ## UpperCase
 
 Validates that a value is upper case.
@@ -718,6 +509,90 @@ Validates that a value is upper case.
 | Name for `format` attribute   | `upper-case`                      |
 | Supported data types          | `string`                          |
 | Programmatic fix              | Convert to upper case.            |
+
+## RemoveRedundantSentences
+
+Removes redundant sentences from a string.
+
+This validator removes sentences from a string that are similar to
+other sentences in the string. This is useful for removing
+repetitive sentences from a string.
+
+**Key Properties**
+
+| Property                      | Description                         |
+| ----------------------------- | ----------------------------------- |
+| Name for `format` attribute   | `remove-redundant-sentences`        |
+| Supported data types          | `string`                            |
+| Programmatic fix              | Remove any redundant sentences.     |
+
+**Arguments**:
+
+  
+- `threshold` - The minimum fuzz ratio to be considered redundant.  Defaults to 70.
+
+#### validate(value: Any, metadata: Dict)
+
+```python
+def validate(value: Any, metadata: Dict) -> ValidationResult
+```
+
+Remove redundant sentences from a string.
+
+## LowerCase
+
+Validates that a value is lower case.
+
+**Key Properties**
+
+| Property                      | Description                       |
+| ----------------------------- | --------------------------------- |
+| Name for `format` attribute   | `lower-case`                      |
+| Supported data types          | `string`                          |
+| Programmatic fix              | Convert to lower case.            |
+
+## SimilarToList
+
+Validates that a value is similar to a list of previously known values.
+
+**Key Properties**
+
+| Property                      | Description                       |
+| ----------------------------- | --------------------------------- |
+| Name for `format` attribute   | `similar-to-list`                 |
+| Supported data types          | `string`                          |
+| Programmatic fix              | None                              |
+
+**Arguments**:
+
+- `standard_deviations` _int_ - The number of standard deviations from the mean to check.
+- `threshold` _float_ - The threshold for the average semantic similarity for strings.
+  
+  For integer values, this validator checks whether the value lies
+  within 'k' standard deviations of the mean of the previous values.
+  (Assumes that the previous values are normally distributed.) For
+  string values, this validator checks whether the average semantic
+  similarity between the generated value and the previous values is
+  less than a threshold.
+
+#### get\_semantic\_similarity(text1: str, text2: str, embed\_function: Callable)
+
+```python
+def get_semantic_similarity(text1: str, text2: str,
+                            embed_function: Callable) -> float
+```
+
+Get the semantic similarity between two strings.
+
+**Arguments**:
+
+- `text1` _str_ - The first string.
+- `text2` _str_ - The second string.
+- `embed_function` _Callable_ - The embedding function.
+
+**Returns**:
+
+- `similarity` _float_ - The semantic similarity between the two strings.
 
 ## ProvenanceV0
 
@@ -946,6 +821,111 @@ contexts.
 
 - `self_eval` - The self-evaluation boolean
 
+## IsProfanityFree
+
+Validates that a translated text does not contain profanity language.
+
+This validator uses the `alt-profanity-check` package to check if a string
+contains profanity language.
+
+**Key Properties**
+
+| Property                      | Description                       |
+| ----------------------------- | --------------------------------- |
+| Name for `format` attribute   | `is-profanity-free`               |
+| Supported data types          | `string`                          |
+| Programmatic fix              | None                              |
+
+## CompetitorCheck
+
+Validates that LLM-generated text is not naming any competitors from a
+given list.
+
+In order to use this validator you need to provide an extensive list of the
+competitors you want to avoid naming including all common variations.
+
+**Arguments**:
+
+- `competitors` _List[str]_ - List of competitors you want to avoid naming
+
+#### exact\_match(text: str, competitors: List[str])
+
+```python
+def exact_match(text: str, competitors: List[str]) -> List[str]
+```
+
+Performs exact match to find competitors from a list in a given
+text.
+
+**Arguments**:
+
+- `text` _str_ - The text to search for competitors.
+- `competitors` _list_ - A list of competitor entities to match.
+  
+
+**Returns**:
+
+- `list` - A list of matched entities.
+
+#### perform\_ner(text: str, nlp)
+
+```python
+def perform_ner(text: str, nlp) -> List[str]
+```
+
+Performs named entity recognition on text using a provided NLP
+model.
+
+**Arguments**:
+
+- `text` _str_ - The text to perform named entity recognition on.
+- `nlp` - The NLP model to use for entity recognition.
+  
+
+**Returns**:
+
+- `entities` - A list of entities found.
+
+#### is\_entity\_in\_list(entities: List[str], competitors: List[str])
+
+```python
+def is_entity_in_list(entities: List[str], competitors: List[str]) -> List
+```
+
+Checks if any entity from a list is present in a given list of
+competitors.
+
+**Arguments**:
+
+- `entities` _list_ - A list of entities to check
+- `competitors` _list_ - A list of competitor names to match
+  
+
+**Returns**:
+
+- `List` - List of found competitors
+
+#### validate(value: str, metadata=Dict)
+
+```python
+def validate(value: str, metadata=Dict) -> ValidationResult
+```
+
+Checks a text to find competitors' names in it.
+
+While running, store sentences naming competitors and generate a fixed output
+filtering out all flagged sentences.
+
+**Arguments**:
+
+- `value` _str_ - The value to be validated.
+- `metadata` _Dict, optional_ - Additional metadata. Defaults to empty dict.
+  
+
+**Returns**:
+
+- `ValidationResult` - The validation result.
+
 ## RegexMatch
 
 Validates that a value matches a regular expression.
@@ -962,105 +942,6 @@ Validates that a value matches a regular expression.
 
 - `regex` - Str regex pattern
 - `match_type` - Str in {"search", "fullmatch"} for a regex search or full-match option
-
-## ExcludeSqlPredicates
-
-Validates that the SQL query does not contain certain predicates.
-
-**Key Properties**
-
-| Property                      | Description                       |
-| ----------------------------- | --------------------------------- |
-| Name for `format` attribute   | `exclude-sql-predicates`          |
-| Supported data types          | `string`                          |
-| Programmatic fix              | None                              |
-
-**Arguments**:
-
-- `predicates` - The list of predicates to avoid.
-
-## SimilarToDocument
-
-Validates that a value is similar to the document.
-
-This validator checks if the value is similar to the document by checking
-the cosine similarity between the value and the document, using an
-embedding.
-
-**Key Properties**
-
-| Property                      | Description                       |
-| ----------------------------- | --------------------------------- |
-| Name for `format` attribute   | `similar-to-document`             |
-| Supported data types          | `string`                             |
-| Programmatic fix              | None                              |
-
-**Arguments**:
-
-- `document` - The document to use for the similarity check.
-- `threshold` - The minimum cosine similarity to be considered similar.  Defaults to 0.7.
-- `model` - The embedding model to use.  Defaults to text-embedding-ada-002.
-
-#### cosine\_similarity(a: "np.ndarray", b: "np.ndarray")
-
-```python
-@staticmethod
-def cosine_similarity(a: "np.ndarray", b: "np.ndarray") -> float
-```
-
-Calculate the cosine similarity between two vectors.
-
-**Arguments**:
-
-- `a` - The first vector.
-- `b` - The second vector.
-  
-
-**Returns**:
-
-- `float` - The cosine similarity between the two vectors.
-
-## IsHighQualityTranslation
-
-Validates that the translation is of high quality.
-
-**Key Properties**
-
-| Property                      | Description                       |
-| ----------------------------- | --------------------------------- |
-| Name for `format` attribute   | `is-high-quality-translation`     |
-| Supported data types          | `string`                          |
-| Programmatic fix              | None                              |
-
-Other parameters: Metadata
-translation_source (str): The source of the translation.
-
-This validator uses one of the reference-free models from Unbabel/COMET
-to check the quality of the translation. Specifically, it uses the
-`Unbabel/wmt22-cometkiwi-da` model.
-
-Unbabel/COMET details: https://github.com/Unbabel/COMET
-Model details: https://huggingface.co/Unbabel/wmt22-cometkiwi-da
-
-Pre-requisites:
-- Install the `unbabel-comet` from source:
-`pip install git+https://github.com/Unbabel/COMET`
-- Please accept the model license from:
-https://huggingface.co/Unbabel/wmt22-cometkiwi-da
-- Login into Huggingface Hub using:
-huggingface-cli login --token $HUGGINGFACE_TOKEN
-
-## EndpointIsReachable
-
-Validates that a value is a reachable URL.
-
-**Key Properties**
-
-| Property                      | Description                       |
-| ----------------------------- | --------------------------------- |
-| Name for `format` attribute   | `is-reachable`                    |
-| Supported data types          | `string`,                         |
-| Programmatic fix              | None                              |
 
 ## ToxicLanguage
 
@@ -1138,16 +1019,135 @@ def validate_full_text(value: str, metadata: Dict[str,
 
 Validate that the entire generated text is toxic.
 
-## OneLine
+## ValidChoices
 
-Validates that a value is a single line, based on whether or not the
-output has a newline character (\n).
+Validates that a value is within the acceptable choices.
 
 **Key Properties**
 
-| Property                      | Description                            |
-| ----------------------------- | -------------------------------------- |
-| Name for `format` attribute   | `one-line`                             |
-| Supported data types          | `string`                               |
-| Programmatic fix              | Keep the first line, delete other text |
+| Property                      | Description                       |
+| ----------------------------- | --------------------------------- |
+| Name for `format` attribute   | `valid-choices`                   |
+| Supported data types          | `all`                             |
+| Programmatic fix              | None                              |
+
+**Arguments**:
+
+- `choices` - The list of valid choices.
+
+#### validate(value: Any, metadata: Dict)
+
+```python
+def validate(value: Any, metadata: Dict) -> ValidationResult
+```
+
+Validates that a value is within a range.
+
+## SimilarToDocument
+
+Validates that a value is similar to the document.
+
+This validator checks if the value is similar to the document by checking
+the cosine similarity between the value and the document, using an
+embedding.
+
+**Key Properties**
+
+| Property                      | Description                       |
+| ----------------------------- | --------------------------------- |
+| Name for `format` attribute   | `similar-to-document`             |
+| Supported data types          | `string`                             |
+| Programmatic fix              | None                              |
+
+**Arguments**:
+
+- `document` - The document to use for the similarity check.
+- `threshold` - The minimum cosine similarity to be considered similar.  Defaults to 0.7.
+- `model` - The embedding model to use.  Defaults to text-embedding-ada-002.
+
+#### cosine\_similarity(a: "np.ndarray", b: "np.ndarray")
+
+```python
+@staticmethod
+def cosine_similarity(a: "np.ndarray", b: "np.ndarray") -> float
+```
+
+Calculate the cosine similarity between two vectors.
+
+**Arguments**:
+
+- `a` - The first vector.
+- `b` - The second vector.
+  
+
+**Returns**:
+
+- `float` - The cosine similarity between the two vectors.
+
+## ReadingTime
+
+Validates that the a string can be read in less than a certain amount of
+time.
+
+**Key Properties**
+
+| Property                      | Description                         |
+| ----------------------------- | ----------------------------------- |
+| Name for `format` attribute   | `reading-time`                      |
+| Supported data types          | `string`                            |
+| Programmatic fix              | None                                |
+
+**Arguments**:
+
+  
+- `reading_time` - The maximum reading time in minutes.
+
+## ExtractiveSummary
+
+Validates that a string is a valid extractive summary of a given
+document.
+
+This validator does a fuzzy match between the sentences in the
+summary and the sentences in the document. Each sentence in the
+summary must be similar to at least one sentence in the document.
+After the validation, the summary is updated to include the
+sentences from the document that were matched, and the citations for
+those sentences are added to the end of the summary.
+
+**Key Properties**
+
+| Property                      | Description                         |
+| ----------------------------- | ----------------------------------- |
+| Name for `format` attribute   | `extractive-summary`                |
+| Supported data types          | `string`                            |
+| Programmatic fix              | Remove any sentences that can not be verified. |
+
+**Arguments**:
+
+  
+- `threshold` - The minimum fuzz ratio to be considered summarized.  Defaults to 85.
+  
+  Other parameters: Metadata
+  
+- `filepaths` _List[str]_ - A list of strings that specifies the filepaths for any documents that should be used for asserting the summary's similarity.
+
+#### validate(value: Any, metadata: Dict)
+
+```python
+def validate(value: Any, metadata: Dict) -> ValidationResult
+```
+
+Make sure each sentence was precisely copied from the document.
+
+## EndpointIsReachable
+
+Validates that a value is a reachable URL.
+
+**Key Properties**
+
+| Property                      | Description                       |
+| ----------------------------- | --------------------------------- |
+| Name for `format` attribute   | `is-reachable`                    |
+| Supported data types          | `string`,                         |
+| Programmatic fix              | None                              |
 
