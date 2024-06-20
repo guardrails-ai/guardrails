@@ -86,7 +86,7 @@ from guardrails.types import (
     ValidatorMap,
 )
 
-from guardrails.utils.tools_utils import augment_tools_with_schema
+from guardrails.utils.tools_utils import add_json_function_calling_tool
 
 
 class Guard(IGuard, Generic[OT]):
@@ -1261,11 +1261,11 @@ class Guard(IGuard, Generic[OT]):
 
         return i_guard_dict
 
-    def augment_tools_with_schema(
+    def add_json_function_calling_tool(
         self,
         tools: list,
     ) -> List[Dict[str, Any]]:
-        tools = augment_tools_with_schema(
+        tools = add_json_function_calling_tool(
             tools=tools,
             # todo to_dict has a slight bug workaround here
             # but should fix in the long run dont have to
