@@ -90,10 +90,10 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          if [ "${{ matrix.python-version }}" == "3.12" ]; then
-            pip install "langchain-core>=0.2"
-          fi
           make full
+          if [ "${{ matrix.python-version }}" == "3.12" ]; then
+            pip install "langchain-core>=0.2" "langsmith<0.2.0,>=0.1.75"
+          fi
 
       - name: Run Pytests
         run: |
