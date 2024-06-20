@@ -12,6 +12,8 @@ from typing import (
     cast,
 )
 
+import warnings
+
 from guardrails_api_client.models import LLMResource
 from pydantic import BaseModel
 
@@ -139,6 +141,12 @@ class OpenAICallable(OpenAIModel):
         *args,
         **kwargs,
     ) -> LLMResponse:
+        warnings.warn(
+                "The OpenAI callable is deprecated in favor of passing "
+                "no callable and the model argument which utilizes LiteLLM"
+                "for example guard(model='gpt-4.o', messages=[...], ...)",
+                DeprecationWarning,
+            )
         if "api_key" in kwargs:
             api_key = kwargs.pop("api_key")
         else:
@@ -190,7 +198,12 @@ class OpenAIChatCallable(OpenAIModel):
         If `base_model` is passed, the chat engine will be used as a function
         on the base model.
         """
-
+        warnings.warn(
+                "The OpenAI callable is deprecated in favor of passing "
+                "no callable and the model argument which utilizes LiteLLM"
+                "for example guard(model='gpt-4.o', messages=[...], ...)",
+                DeprecationWarning,
+            )
         if msg_history is None and text is None:
             raise PromptCallableException(
                 "You must pass in either `text` or `msg_history` to `guard.__call__`."
@@ -277,7 +290,12 @@ class CohereCallable(PromptCallableBase):
         )
         ```
         """  # noqa
-
+        warnings.warn(
+                "The OpenAI callable is deprecated in favor of passing "
+                "no callable and the model argument which utilizes LiteLLM"
+                "for example guard(model='command-r', messages=[...], ...)",
+                DeprecationWarning,
+            )
         if "instructions" in kwargs:
             prompt = kwargs.pop("instructions") + "\n\n" + prompt
 
@@ -330,6 +348,12 @@ class AnthropicCallable(PromptCallableBase):
             ...
         ```
         """
+        warnings.warn(
+            "The OpenAI callable is deprecated in favor of passing "
+            "no callable and the model argument which utilizes LiteLLM"
+            "for example guard(model='claude-3-opus-20240229', messages=[...], ...)",
+            DeprecationWarning,
+        )
         try:
             import anthropic
         except ImportError:
@@ -707,6 +731,12 @@ class AsyncOpenAICallable(AsyncOpenAIModel):
         *args,
         **kwargs,
     ):
+        warnings.warn(
+            "The OpenAI callable is deprecated in favor of passing "
+            "no callable and the model argument which utilizes LiteLLM"
+            "for example guard(model='gpt-4.o', messages=[...], ...)",
+            DeprecationWarning,
+        )
         if "api_key" in kwargs:
             api_key = kwargs.pop("api_key")
         else:
@@ -758,7 +788,12 @@ class AsyncOpenAIChatCallable(AsyncOpenAIModel):
         If `base_model` is passed, the chat engine will be used as a function
         on the base model.
         """
-
+        warnings.warn(
+            "The OpenAI callable is deprecated in favor of passing "
+            "no callable and the model argument which utilizes LiteLLM"
+            "for example guard(model='gpt-4.o', messages=[...], ...)",
+            DeprecationWarning,
+        )
         if msg_history is None and text is None:
             raise PromptCallableException(
                 "You must pass in either `text` or `msg_history` to `guard.__call__`."

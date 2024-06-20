@@ -788,6 +788,15 @@ class Guard(IGuard, Generic[OT]):
         instructions = instructions or self._exec_opts.instructions
         prompt = prompt or self._exec_opts.prompt
         msg_history = msg_history or []
+        if prompt is not None or instructions is not None or len(msg_history) > 0:
+            warnings.warn(
+                "prompt, instructions, and msg_history are deprecated "
+                "in the Guard.__call__ method."
+                "Please use the 'messages' argument to set these values."
+                "These values will be removed in 0.6.0.",
+                DeprecationWarning,
+            )
+        msg_history = kwargs.get("messages", []) or msg_history
         if prompt is None:
             if msg_history is not None and not len(msg_history):
                 raise RuntimeError(
