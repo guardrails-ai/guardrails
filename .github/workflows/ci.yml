@@ -78,7 +78,7 @@ jobs:
       - name: Create .guardrailsrc
         run: |
           echo 'id="SYSTEM TESTING"' > ~/.guardrailsrc
-          echo 'no_metrics=false' >> ~/.guardrailsrc
+          echo 'enable_metrics=false' >> ~/.guardrailsrc
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
@@ -90,6 +90,9 @@ jobs:
 
       - name: Install Dependencies
         run: |
+          if ${{ matrix.python-version }} == "3.12"; then
+            pip install "langchain-core>=0.2"
+          fi
           make full
 
       - name: Run Pytests
