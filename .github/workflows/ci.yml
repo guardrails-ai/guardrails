@@ -34,10 +34,14 @@ jobs:
       - name: Install Dependencies
         # TODO: fix errors so that we can run `make dev` instead
         run: |
+          # Setup Virtual Environment
+          python3 -m venv ./.venv
+          source .venv/bin/activate
           make full
 
       - name: Lint with ruff
         run: |
+          source .venv/bin/activate
           make lint
 
   Typing:
@@ -58,10 +62,14 @@ jobs:
       - name: Install Dependencies
         # TODO: fix errors so that we can run `make dev` instead
         run: |
+          # Setup Virtual Environment
+          python3 -m venv ./.venv
+          source .venv/bin/activate
           make full
 
       - name: Static analysis with pyright
         run: |
+          source .venv/bin/activate
           make type
 
   Pytests:
@@ -90,6 +98,10 @@ jobs:
 
       - name: Install Dependencies
         run: |
+          # Setup Virtual Environment
+          python3 -m venv ./.venv
+          source .venv/bin/activate
+          
           make full
           if [ "${{ matrix.python-version }}" == "3.12" ]; then
             echo "Installing latest langchain-core and langsmith from PyPI"
@@ -98,10 +110,13 @@ jobs:
 
       - name: Run Pytests
         run: |
+          source .venv/bin/activate
+
           echo "langchain-core version:"
           pip show langchain-core
           echo "langsmith version:"
           pip show langsmith
+
           make test-cov
 
       - name: Upload to codecov.io
