@@ -1,6 +1,6 @@
 # ruff: noqa: E501
 from guardrails.actions.reask import SkeletonReAsk
-from guardrails.validators import FailResult
+from guardrails.classes.validation.validation_result import FailResult
 
 VALIDATED_OUTPUT_SKELETON_REASK_1 = SkeletonReAsk(
     incorrect_value={

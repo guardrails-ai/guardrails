@@ -1,13 +1,11 @@
 import pytest
-
-import openai  # noqa: F401
 from pydantic import BaseModel
-
-from guardrails import Guard, Validator
+from guardrails import Guard, Validator, register_validator
+from guardrails.classes.validation.validation_result import PassResult
 from guardrails.utils.validator_utils import verify_metadata_requirements
 from guardrails.utils import args, kwargs, on_fail
-from guardrails.validator_base import OnFailAction
-from guardrails.validators import (  # ReadingTime,
+from guardrails.types import OnFailAction
+from tests.integration_tests.test_assets.validators import (
     EndsWith,
     LowerCase,
     OneLine,

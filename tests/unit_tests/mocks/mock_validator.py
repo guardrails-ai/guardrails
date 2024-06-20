@@ -1,7 +1,11 @@
 from typing import Any, Callable, Dict, Union
 
 from guardrails import Validator, register_validator
-from guardrails.validators import FailResult, PassResult, ValidationResult
+from guardrails.classes.validation.validation_result import (
+    FailResult,
+    PassResult,
+    ValidationResult,
+)
 
 
 def create_mock_validator(

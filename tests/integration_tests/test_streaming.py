@@ -21,7 +21,7 @@ from guardrails.validator_base import (
     Validator,
     register_validator,
 )
-from guardrails.validators import LowerCase
+from tests.integration_tests.test_assets.validators import LowerCase
 
 expected_raw_output = {"statement": "I am DOING well, and I HOPE you aRe too."}
 expected_fix_output = {"statement": "i am doing well, and i hope you are too."}
