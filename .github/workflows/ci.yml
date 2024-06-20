@@ -92,11 +92,16 @@ jobs:
         run: |
           make full
           if [ "${{ matrix.python-version }}" == "3.12" ]; then
+            echo "Installing latest langchain-core and langsmith from PyPI"
             pip install "langchain-core>=0.2" "langsmith<0.2.0,>=0.1.75"
           fi
 
       - name: Run Pytests
         run: |
+          echo "langchain-core version:"
+          pip show langchain-core
+          echo "langsmith version:"
+          pip show langsmith
           make test-cov
 
       - name: Upload to codecov.io
