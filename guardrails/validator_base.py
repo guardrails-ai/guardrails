@@ -1,45 +1,34 @@
 import inspect
 import logging
-import os
 from collections import defaultdict
 from copy import deepcopy
+from dataclasses import dataclass
 from string import Template
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    List,
-    Optional,
-    Tuple,
-    Type,
-    Union,
-    cast,
-)
+from typing import Any, Callable, Dict, List, Optional, Type, Union, cast
 from warnings import warn
 
 import nltk
 import requests
 from langchain_core.messages import BaseMessage
 from langchain_core.runnables import Runnable, RunnableConfig
+from typing_extensions import deprecated
 
 from guardrails.actions.filter import Filter
 from guardrails.actions.refrain import Refrain
-from typing_extensions import deprecated
-
 from guardrails.classes import (
-    InputType,
-    ValidationResult,
-    PassResult,  # noqa
-    FailResult,
     ErrorSpan,  # noqa
+    FailResult,
+    InputType,
+    PassResult,  # noqa
+    ValidationResult,
 )
 from guardrails.classes.credentials import Credentials
 from guardrails.constants import hub
 from guardrails.errors import ValidationError
-from guardrails.hub_token.token import get_jwt_token, validator_hub_service
+from guardrails.hub_token.token import get_jwt_token
 from guardrails.logger import logger
+from guardrails.remote_inference import remote_inference
 from guardrails.types.on_fail import OnFailAction
-from dataclasses import dataclass
 
 VALIDATOR_IMPORT_WARNING = """Accessing `{validator_name}` using
 `from guardrails.validators import {validator_name}` is deprecated and
@@ -180,9 +169,6 @@ VALIDATOR_NAMING = {
     ],
     "pydantic_field_validator": [],
 }
-
-
-# functions to get chunks
 
 
 def split_sentence_str(chunk: str):
@@ -414,13 +400,36 @@ class Validator(Runnable):
     _metadata = {}
 
     def __init__(
-        self, on_fail: Optional[Union[Callable, OnFailAction]] = None, **kwargs
+        self,
+        use_local: bool,
+        validation_endpoint: str,
+        on_fail: Optional[Union[Callable, OnFailAction]] = None,
+        **kwargs,
     ):
         # Raise a warning for deprecated validators
 
         # Get class name and rail_alias
         child_class_name = str(type(self).__name__)
         validator_rail_alias = self.rail_alias
+        self.use_local = use_local
+        self.validation_endpoint = validation_endpoint
+        self.creds = Credentials.from_rc_file()
+
+        if self.use_local is None:
+            if not self.creds:
+                raise PermissionError(
+                    "No credentials found! Please run 'guardrails configure' before"
+                    " making any validation requests."
+                )
+            self.hub_jwt_token = get_jwt_token(self.creds)
+            self.use_local = not remote_inference.get_use_remote_inference(self.creds)
+
+        if not self.validation_endpoint:
+            validator_id = self.rail_alias.split("/")[-1]
+            submission_url = (
+                f"{self.validation_endpoint}/validator/{validator_id}/inference"
+            )
+            self.validation_endpoint = submission_url
 
         # Check if this rail_alias is deprecated
         if validator_rail_alias in VALIDATOR_NAMING:
@@ -458,14 +467,6 @@ class Validator(Runnable):
             self.on_fail_method = None
         else:
             self.on_fail_method = on_fail
-
-        # Determines if validator is configured to use a remote ML model
-        self.remote_inference_engine = (
-            os.environ.get("REMOTE_INFERENCE_ENGINE", default="").lower() == "true"
-        )
-
-        # Determine if credentials have been established with the validator hub service
-        self.hub_jwt_token = get_jwt_token(Credentials.from_rc_file())
 
         # Store the kwargs for the validator.
         self._kwargs = kwargs
@@ -525,19 +526,19 @@ class Validator(Runnable):
             Any: Returns the output from the ML model inference.
         """
         # Only use if both are set, otherwise fall back to local inference
-        if self.hub_jwt_token and self.remote_inference_engine:
+        if self.use_local:
             logger.debug(
-                f"{self.rail_alias} has found a Validator Hub Service token."
-                " Using a remote inference engine."
+                f"{self.rail_alias} either has no hub authentication token or has not "
+                "enabled remote inference execution. This validator will use a local "
+                "inference engine."
             )
-            return self._inference_remote(model_input)
+            return self._inference_local(model_input)
 
         logger.debug(
-            f"{self.rail_alias} either has no hub authentication token or has not "
-            "enabled remote inference execution. This validator will use a local "
-            "inference engine."
+            f"{self.rail_alias} has found a Validator Hub Service token."
+            " Using a remote inference engine."
         )
-        return self._inference_local(model_input)
+        return self._inference_remote(model_input)
 
     def _chunking_function(self, chunk: str) -> List[str]:
         """The strategy used for chunking accumulated text input into validation sets.
@@ -604,10 +605,7 @@ class Validator(Runnable):
         """
 
         try:
-            validator_id = self.rail_alias.split("/")[-1]
-            submission_url = (
-                f"{validator_hub_service}/validator/{validator_id}/inference"
-            )
+            submission_url = self.validation_endpoint
 
             headers = {
                 "Authorization": f"Bearer {self.token}",
@@ -772,12 +770,4 @@ class Validator(Runnable):
         return self
 
     def to_runnable(self) -> Runnable:
-        from guardrails.integrations.langchain.validator_runnable import (
-            ValidatorRunnable,
-        )
-
-        return ValidatorRunnable(self)
-
-
-# Superseded by guardrails/types/validator.py::PydanticValidatorSpec
-ValidatorSpec = Union[Validator, Tuple[Union[Validator, str, Callable], str]]
+        pass
