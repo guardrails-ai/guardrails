@@ -1,6 +1,6 @@
 import string
 from collections import deque
-from typing import Optional, Set
+from typing import List, Optional, Set
 
 from guardrails.constraint_generator import ConstraintGenerator
 
@@ -22,8 +22,38 @@ class JSONConstraintGenerator(ConstraintGenerator):
         return False
 
 
+class JSONObjectConstraint(ConstraintGenerator):
+    def __init__(
+            self,
+            required_fields: Optional[List[str]] = None,
+            #required_types: Optional[List[str]] = None
+    ):
+        self.required_fields = required_fields
+        #self.required_types = required_types
+        self.accumulator = ""
+        self.active_subconstraint = None  # When we're making a child value...
+        self.object_opened = False
+        self.object_closed = False
+        self.valid = False
+
+    def get_valid_tokens(self) -> Optional[Set[str]]:
+        if not self.object_opened:
+            return {'{'}
+        elif self.active_subconstraint is None:
+            if not self.object_closed:
+                return {'}'}
+            else:
+                return set()  # Nothing left to do.
+
+    def update_valid_tokens(self, token: str):
+        pass
+
+    def is_complete(self) -> bool:
+        return self.object_closed
+
+
 class JSONValueConstraint(ConstraintGenerator):
-    """A JSON value is a `quoted string colon (object | array | number | string | kw)"""
+    """A JSON value is a `quoted_string colon (object|array|num|str|kw)`."""
 
     def __init__(self):
         self.accumulator = ""
@@ -38,6 +68,7 @@ class JSONValueConstraint(ConstraintGenerator):
                     KeywordConstraintGenerator("false"),
                     KeywordConstraintGenerator("null"),
                 ),
+                #KeywordConstraintGenerator("{"),
             ),
         ]
 
@@ -94,10 +125,15 @@ class ArrayConstraintGenerator(JSONConstraintGenerator):
         super().__init__(schema)
         self.base_schema = base_schema
         self.array_type = array_type
-        self.data = list()
+        self.is_opened = False
+        self.is_closed = False
+        self.is_valid = False
+        self.active_subconstraint = None
+        self.accumulator = ""
 
     def get_valid_tokens(self) -> Optional[Set[str]]:
-        pass
+        if not self.is_opened:
+
 
     def update_valid_tokens(self, token: str):
         pass

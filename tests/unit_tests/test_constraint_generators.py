@@ -122,3 +122,8 @@ def test_json_value_constraint():
     assert not c.is_complete()
     c.update_valid_tokens('bar"')
     assert c.is_complete()
+
+    c = JSONValueConstraint()
+    c.update_valid_tokens('"joke123":"Why do mirrors look like eyeballs up close?"')
+    assert c.get_valid_tokens() == set()
+    assert c.is_complete()
