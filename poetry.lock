@@ -2041,35 +2041,6 @@ files = [
 ]
 
 [[package]]
-name = "jsonargparse"
-version = "3.13.1"
-description = "Parsing of command line options, yaml/jsonnet config files and/or environment variables based on argparse."
-optional = true
-python-versions = ">=3.5"
-files = [
-    {file = "jsonargparse-3.13.1-py3-none-any.whl", hash = "sha256:b58188b98f2ac2b1f5007ece7ea821628883ce3f3ee448eb17c72d9d3b8ec893"},
-    {file = "jsonargparse-3.13.1.tar.gz", hash = "sha256:705693e9911223bf928fe4a7ed9538f24d9229c55ef5c3d3e9a8bad0e7982cf2"},
-]
-
-[package.dependencies]
-PyYAML = ">=3.13"
-
-[package.extras]
-all = ["argcomplete (>=1.12.1)", "docstring-parser (>=0.7.3)", "fsspec (>=0.8.4)", "jsonnet (>=0.13.0)", "jsonschema (>=3.2.0)", "reconplogger (>=4.4.0)", "requests (>=2.18.4)", "ruyaml (>=0.20.0)", "validators (>=0.14.2)"]
-argcomplete = ["argcomplete (>=1.12.1)"]
-dev = ["bump2version (>=0.5.11)", "coverage (>=4.5.1)", "mypy (>=0.701)", "pycodestyle (>=2.5.0)", "pylint (>=1.8.3)", "responses (>=0.12.0)", "twine (>=3.1.1)"]
-doc = ["Sphinx (>=1.7.9)", "autodocsumm (>=0.1.10)", "sphinx-autodoc-typehints (>=1.11.1)", "sphinx-rtd-theme (>=0.4.3)"]
-fsspec = ["fsspec (>=0.8.4)"]
-jsonnet = ["jsonnet (>=0.13.0)"]
-jsonschema = ["jsonschema (>=3.2.0)"]
-reconplogger = ["reconplogger (>=4.4.0)"]
-ruyaml = ["ruyaml (>=0.20.0)"]
-signatures = ["docstring-parser (>=0.7.3)"]
-test = ["coverage (>=4.5.1)", "responses (>=0.12.0)"]
-test-no-urls = ["coverage (>=4.5.1)"]
-urls = ["requests (>=2.18.4)", "validators (>=0.14.2)"]
-
-[[package]]
 name = "jsonformer"
 version = "0.12.0"
 description = ""
@@ -6910,4 +6881,4 @@ vectordb = ["faiss-cpu", "numpy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "bbed368330564a06253a5855670b0f3d1671f5eab192728149711ded420e940a"
+content-hash = "4e19eee5a58f8590a27f4f7b6a67308079299fdf279732dfaf0724b58c9b48d1"
