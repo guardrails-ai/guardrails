@@ -19,8 +19,8 @@ from guardrails import Guard
 guard = Guard.from_rail(...)
 
 raw_output, validated_output, *rest = guard(
-    openai.Completion.create,
-    engine="text-davinci-003",
+    openai.completions.create,
+    model="gpt-3.5-turbo-instruct",
     max_tokens=1024,
     temperature=0.3
 )
@@ -43,8 +43,8 @@ output = call_my_llm()
 
 validated_output = guard.parse(
     llm_output=output,
-    llm_api=openai.Completion.create,
-    engine="text-davinci-003",
+    llm_api=openai.completions.create,
+    model="gpt-3.5-turbo-instruct",
     max_tokens=1024,
     temperature=0.3,
     num_reasks=2

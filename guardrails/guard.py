@@ -229,7 +229,7 @@ class Guard(IGuard, Generic[OT]):
         if allow_metrics_collection is None:
             credentials = Credentials.from_rc_file(logger)
             # TODO: Check credentials.enable_metrics after merge from main
-            allow_metrics_collection = credentials.no_metrics is False
+            allow_metrics_collection = credentials.enable_metrics is True
 
         self._allow_metrics_collection = allow_metrics_collection
 

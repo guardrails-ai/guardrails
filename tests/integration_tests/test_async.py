@@ -17,10 +17,8 @@ async def mock_llm(*args, **kwargs):
 
 
 @pytest.mark.asyncio
-# @pytest.mark.parametrize("multiprocessing_validators", (True, False))
-async def test_entity_extraction_with_reask(
-    mocker, multiprocessing_validators: bool = False
-):
+@pytest.mark.parametrize("multiprocessing_validators", (True, False))
+async def test_entity_extraction_with_reask(mocker, multiprocessing_validators: bool):
     """Test that the entity extraction works with re-asking."""
     mock_invoke_llm = mocker.patch(
         "guardrails.llm_providers.AsyncOpenAICallable.invoke_llm",

@@ -82,12 +82,13 @@ import openai
 prompt = """
     What kind of pet should I get and what should I name it?
 
-    ${gr.complete_json_suffix_v2}
+    ${gr.complete_xml_suffix_v2}
 """
-guard = Guard.from_pydantic(output_class=Pet, prompt=prompt)
+guard = Guard.from_pydantic(output_class=Pet)
 
 raw_output, validated_output, *rest = guard(
     llm_api=openai.chat.completions.create,
+    prompt=prompt,
     engine="gpt-3.5-turbo"
 )
 
