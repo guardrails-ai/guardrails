@@ -3,15 +3,13 @@ from typing import Any, Dict, List
 
 from pydantic import BaseModel, Field
 
-from guardrails.utils.pydantic_utils import PYDANTIC_VERSION
+from guardrails import Validator, register_validator
 from guardrails.actions.reask import FieldReAsk
-from guardrails.validator_base import OnFailAction
-from guardrails.validators import (
+from guardrails.types import OnFailAction
+from guardrails.classes.validation.validation_result import (
     FailResult,
     PassResult,
     ValidationResult,
-    Validator,
-    register_validator,
 )
 
 prompt = """Generate data for possible users in accordance with the specification below.
@@ -61,33 +59,22 @@ class Person(BaseModel):
     """
 
     name: str
-    if PYDANTIC_VERSION.startswith("1"):
-        age: int = Field(
-            ..., validators=[AgeMustBeBetween0And150(on_fail=OnFailAction.REASK)]
-        )
-        zip_code: str = Field(
-            ...,
-            validators=[
+
+    age: int = Field(
+        ...,
+        json_schema_extra={
+            "validators": [AgeMustBeBetween0And150(on_fail=OnFailAction.REASK)]
+        },
+    )
+    zip_code: str = Field(
+        ...,
+        json_schema_extra={
+            "validators": [
                 ZipCodeMustBeNumeric(on_fail=OnFailAction.REASK),
                 ZipCodeInCalifornia(on_fail=OnFailAction.REASK),
             ],
-        )
-    else:
-        age: int = Field(
-            ...,
-            json_schema_extra={
-                "validators": [AgeMustBeBetween0And150(on_fail=OnFailAction.REASK)]
-            },
-        )
-        zip_code: str = Field(
-            ...,
-            json_schema_extra={
-                "validators": [
-                    ZipCodeMustBeNumeric(on_fail=OnFailAction.REASK),
-                    ZipCodeInCalifornia(on_fail=OnFailAction.REASK),
-                ],
-            },
-        )
+        },
+    )
 
 
 class ListOfPeople(BaseModel):

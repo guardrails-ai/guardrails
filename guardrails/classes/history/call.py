@@ -4,7 +4,6 @@ from pydantic import Field, PrivateAttr
 from rich.panel import Panel
 from rich.pretty import pretty_repr
 from rich.tree import Tree
-from typing_extensions import deprecated
 
 from guardrails_api_client import Call as ICall, CallException
 from guardrails.actions.filter import Filter
@@ -205,14 +204,6 @@ class Call(ICall, ArbitraryModel):
         return Stack(*[i.outputs.parsed_output for i in self.iterations])
 
     @property
-    @deprecated(
-        """'Call.validation_output' is deprecated and will be removed in \
-versions 0.5.0 and beyond. Use 'validation_response' instead."""
-    )
-    def validation_output(self) -> Optional[Union[str, List, Dict, ReAsk]]:
-        return self.validation_response
-
-    @property
     def validation_response(self) -> Optional[Union[str, List, Dict, ReAsk]]:
         """The aggregated responses from the validation process across all
         iterations within the current call.
@@ -298,18 +289,6 @@ versions 0.5.0 and beyond. Use 'validation_response' instead."""
                     break
             if all_noop:
                 return last_iteration.guarded_output
-
-    @property
-    @deprecated(
-        """'Call.validated_output' is deprecated and will be removed in \
-versions 0.5.0 and beyond. Use 'guarded_output' instead."""
-    )
-    def validated_output(self) -> Optional[Union[str, List, Dict]]:
-        """The output from the LLM after undergoing validation.
-
-        This will only have a value if the Guard is in a passing state.
-        """
-        return self.guarded_output
 
     @property
     def reasks(self) -> Stack[ReAsk]:

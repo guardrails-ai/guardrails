@@ -26,7 +26,6 @@ from guardrails.logger import set_scope
 from guardrails.prompt import Instructions, Prompt
 from guardrails.run import StreamRunner
 from guardrails.run.async_runner import AsyncRunner
-from guardrails.utils.openai_utils import OPENAI_VERSION
 
 
 class AsyncStreamRunner(AsyncRunner, StreamRunner):
@@ -216,29 +215,15 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
         """Get the text from a chunk."""
         chunk_text = ""
         if isinstance(api, OpenAICallable):
-            if OPENAI_VERSION.startswith("0"):
-                finished = chunk["choices"][0]["finish_reason"]
-                if "text" in chunk["choices"][0]:
-                    content = chunk["choices"][0]["text"]
-                    if not finished and content:
-                        chunk_text = content
-            else:
-                finished = chunk.choices[0].finish_reason
-                content = chunk.choices[0].text
-                if not finished and content:
-                    chunk_text = content
+            finished = chunk.choices[0].finish_reason
+            content = chunk.choices[0].text
+            if not finished and content:
+                chunk_text = content
         elif isinstance(api, OpenAIChatCallable):
-            if OPENAI_VERSION.startswith("0"):
-                finished = chunk["choices"][0]["finish_reason"]
-                if "content" in chunk["choices"][0]["delta"]:
-                    content = chunk["choices"][0]["delta"]["content"]
-                    if not finished and content:
-                        chunk_text = content
-            else:
-                finished = chunk.choices[0].finish_reason
-                content = chunk.choices[0].delta.content
-                if not finished and content:
-                    chunk_text = content
+            finished = chunk.choices[0].finish_reason
+            content = chunk.choices[0].delta.content
+            if not finished and content:
+                chunk_text = content
         elif isinstance(api, LiteLLMCallable):
             finished = chunk.choices[0].finish_reason
             content = chunk.choices[0].delta.content

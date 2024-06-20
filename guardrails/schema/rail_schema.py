@@ -199,13 +199,18 @@ def parse_element(
         items = None
         children = list(element)
         num_of_children = len(children)
-        if num_of_children == 0 or num_of_children > 1:
+        if num_of_children > 1:
             raise ValueError(
                 "<list /> RAIL elements must have precisely 1 child element!"
             )
-        first_child = children[0]
-        child_schema = parse_element(first_child, processed_schema, f"{json_path}.*")
-        items = child_schema.to_dict()
+        elif num_of_children == 0:
+            items = {}
+        else:
+            first_child = children[0]
+            child_schema = parse_element(
+                first_child, processed_schema, f"{json_path}.*"
+            )
+            items = child_schema.to_dict()
         return ModelSchema(
             type=ValidationType(SimpleTypes.ARRAY), items=items, description=description
         )

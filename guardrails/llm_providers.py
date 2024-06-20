@@ -196,6 +196,7 @@ class OpenAIChatCallable(OpenAIModel):
                 "You must pass in either `text` or `msg_history` to `guard.__call__`."
             )
 
+        # TODO: Update this to tools
         # Configure function calling if applicable (only for non-streaming)
         fn_kwargs = {}
         if base_model and not kwargs.get("stream", False):
@@ -763,6 +764,7 @@ class AsyncOpenAIChatCallable(AsyncOpenAIModel):
                 "You must pass in either `text` or `msg_history` to `guard.__call__`."
             )
 
+        # TODO: Update this to tools
         # Configure function calling if applicable
         fn_kwargs = {}
         if base_model:

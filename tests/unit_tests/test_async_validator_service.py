@@ -6,7 +6,7 @@ from guardrails.classes.history.iteration import Iteration
 from guardrails.classes.validation.validator_logs import ValidatorLogs
 from guardrails.validator_base import OnFailAction
 from guardrails.validator_service import AsyncValidatorService
-from guardrails.validators import PassResult
+from guardrails.classes.validation.validation_result import PassResult
 
 from .mocks import MockLoop
 from .mocks.mock_validator import create_mock_validator
