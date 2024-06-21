@@ -153,10 +153,6 @@ class Validator:
 
     rail_alias: str = ""
 
-    # chunking function returns empty list or list of 2 chunks
-    # first chunk is the chunk to validate
-    # second chunk is incomplete chunk that needs further accumulation
-    accumulated_chunks = []
     run_in_separate_process = False
     override_value_on_pass = False
     required_metadata_keys = []
@@ -166,6 +162,11 @@ class Validator:
         self, on_fail: Optional[Union[Callable, OnFailAction]] = None, **kwargs
     ):
         self.on_fail_descriptor: Union[str, OnFailAction] = "custom"
+
+        # chunking function returns empty list or list of 2 chunks
+        # first chunk is the chunk to validate
+        # second chunk is incomplete chunk that needs further accumulation
+        self.accumulated_chunks: List[str] = []
 
         if on_fail is None:
             on_fail = OnFailAction.NOOP
