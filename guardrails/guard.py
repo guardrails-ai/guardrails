@@ -45,6 +45,7 @@ from guardrails.classes.history.outputs import Outputs
 from guardrails.classes.output_type import OutputTypes
 from guardrails.classes.schema.processed_schema import ProcessedSchema
 from guardrails.classes.schema.model_schema import ModelSchema
+from guardrails.formatters import BaseFormatter, get_formatter
 from guardrails.llm_providers import (
     get_llm_api_enum,
     get_llm_ask,
@@ -85,6 +86,8 @@ from guardrails.types import (
     UseValidatorSpec,
     ValidatorMap,
 )
+
+from guardrails.utils.tools_utils import add_json_function_calling_tool
 
 
 class Guard(IGuard, Generic[OT]):
@@ -173,6 +176,7 @@ class Guard(IGuard, Generic[OT]):
         self._user_id: Optional[str] = None
         self._api_client: Optional[GuardrailsApiClient] = None
         self._allow_metrics_collection: Optional[bool] = None
+        self._output_formatter: Optional[BaseFormatter] = None
 
         # TODO: Support a sink for history so that it is not solely held in memory
         self._history: Stack[Call] = Stack()
@@ -229,7 +233,7 @@ class Guard(IGuard, Generic[OT]):
         if allow_metrics_collection is None:
             credentials = Credentials.from_rc_file(logger)
             # TODO: Check credentials.enable_metrics after merge from main
-            allow_metrics_collection = credentials.no_metrics is False
+            allow_metrics_collection = credentials.enable_metrics is True
 
         self._allow_metrics_collection = allow_metrics_collection
 
@@ -411,6 +415,7 @@ class Guard(IGuard, Generic[OT]):
         tracer: Optional[Tracer] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
+        output_formatter: Optional[Union[str, BaseFormatter]] = None,
     ):
         """Create a Guard instance from a Pydantic model.
 
@@ -425,6 +430,7 @@ class Guard(IGuard, Generic[OT]):
             tracer (Tracer, optional): An OpenTelemetry tracer to use for metrics and traces. Defaults to None.
             name (str, optional): A unique name for this Guard. Defaults to `gr-` + the object id.
             description (str, optional): A description for this Guard. Defaults to None.
+            output_formatter (str | Formatter, optional): 'none' (default), 'jsonformer', or a Guardrails Formatter.
         """  # noqa
 
         if num_reasks:
@@ -464,6 +470,16 @@ class Guard(IGuard, Generic[OT]):
         guard._exec_opts = exec_opts
         guard._output_type = schema.output_type
         guard._base_model = output_class
+        if isinstance(output_formatter, str):
+            if isinstance(output_class, list):
+                raise Exception("""Root-level arrays are not supported with the 
+                jsonformer argument, but can be used with other json generation methods.
+                Omit the output_formatter argument to use the other methods.""")
+            output_formatter = get_formatter(
+                output_formatter,
+                schema=output_class.model_json_schema(),  # type: ignore
+            )
+        guard._output_formatter = output_formatter
         guard._fill_validators()
         return guard
 
@@ -553,8 +569,6 @@ class Guard(IGuard, Generic[OT]):
         self._fill_validator_map()
         self._fill_validators()
         metadata = metadata or {}
-        if not llm_api and not llm_output:
-            raise RuntimeError("'llm_api' or 'llm_output' must be provided!")
         if not llm_output and llm_api and not (prompt or msg_history):
             raise RuntimeError(
                 "'prompt' or 'msg_history' must be provided in order to call an LLM!"
@@ -710,7 +724,11 @@ class Guard(IGuard, Generic[OT]):
         msg_history: Optional[List[Dict]] = None,
         **kwargs,
     ) -> Union[ValidationOutcome[OT], Iterable[ValidationOutcome[OT]]]:
-        api = get_llm_ask(llm_api, *args, **kwargs) if llm_api is not None else None
+        api = get_llm_ask(llm_api, *args, **kwargs)
+
+        if self._output_formatter is not None:
+            # Type suppression here? ArbitraryCallable is a subclass of PromptCallable!?
+            api = self._output_formatter.wrap_callable(api)  # type: ignore
 
         # Check whether stream is set
         if kwargs.get("stream", False):
@@ -755,7 +773,7 @@ class Guard(IGuard, Generic[OT]):
 
     def __call__(
         self,
-        llm_api: Callable,
+        llm_api: Optional[Callable] = None,
         *args,
         prompt_params: Optional[Dict] = None,
         num_reasks: Optional[int] = 1,
@@ -787,7 +805,7 @@ class Guard(IGuard, Generic[OT]):
         """
         instructions = instructions or self._exec_opts.instructions
         prompt = prompt or self._exec_opts.prompt
-        msg_history = msg_history or []
+        msg_history = msg_history or kwargs.get("messages") or []
         if prompt is None:
             if msg_history is not None and not len(msg_history):
                 raise RuntimeError(
@@ -1258,6 +1276,19 @@ class Guard(IGuard, Generic[OT]):
         ]
 
         return i_guard_dict
+
+    def add_json_function_calling_tool(
+        self,
+        tools: list,
+    ) -> List[Dict[str, Any]]:
+        tools = add_json_function_calling_tool(
+            tools=tools,
+            # todo to_dict has a slight bug workaround here
+            # but should fix in the long run dont have to
+            # serialize and deserialize
+            schema=json.loads(self.output_schema.to_json()),
+        )
+        return tools
 
     # override IGuard.from_dict
     @classmethod

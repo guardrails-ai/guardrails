@@ -418,7 +418,7 @@ class AsyncGuard(Guard, Generic[OT]):
 
     async def __call__(
         self,
-        llm_api: Callable[..., Awaitable[Any]],
+        llm_api: Optional[Callable[..., Awaitable[Any]]] = None,
         *args,
         prompt_params: Optional[Dict] = None,
         num_reasks: Optional[int] = 1,

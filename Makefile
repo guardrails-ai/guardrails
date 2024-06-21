@@ -93,3 +93,7 @@ refresh:
 	python3 -m venv ./.venv;
 	echo "Sourcing and installing"
 	source ./.venv/bin/activate && make full;
+
+update-lock:
+	poetry lock --no-update
+
