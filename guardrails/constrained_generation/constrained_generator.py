@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Set, Optional
 
 
-class ConstraintGenerator(ABC):
+class ConstrainedGenerator(ABC):
     @abstractmethod
     def is_complete(self) -> bool:
         """Returns 'true' if the tokens that have been provided so far are sufficient to

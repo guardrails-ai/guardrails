@@ -1,23 +1,23 @@
-from guardrails.constrained_generation.constraint_generator import ConstraintGenerator
+from guardrails.constrained_generation.constrained_generator import ConstrainedGenerator
 from guardrails.constrained_generation.balanced_braces_generator import (
     BalancedBracesGenerator,
 )
 from guardrails.constrained_generation.json_constraint_generator import (
-    JSONConstraintGenerator,
-    JSONValueConstraint,
-    KeywordConstraintGenerator,  # JC Note: Do we want to expose this?
-    NumberConstraintGenerator,
-    QuotedStringConstraintGenerator,
-    UnionConstraintGenerator,
+    JSONConstrainedGenerator,
+    JSONValueConstrained,
+    KeywordConstrainedGenerator,  # JC Note: Do we want to expose this?
+    NumberConstrainedGenerator,
+    QuotedStringConstrainedGenerator,
+    UnionConstrainedGenerator,
 )
 
 __all__ = [
     "BalancedBracesGenerator",
-    "ConstraintGenerator",
-    "JSONConstraintGenerator",
-    "JSONValueConstraint",
-    "KeywordConstraintGenerator",
-    "NumberConstraintGenerator",
-    "QuotedStringConstraintGenerator",
-    "UnionConstraintGenerator",
+    "ConstrainedGenerator",
+    "JSONConstrainedGenerator",
+    "JSONValueConstrained",
+    "KeywordConstrainedGenerator",
+    "NumberConstrainedGenerator",
+    "QuotedStringConstrainedGenerator",
+    "UnionConstrainedGenerator",
 ]

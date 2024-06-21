@@ -2,10 +2,10 @@ import string
 from collections import deque
 from typing import List, Optional, Set
 
-from guardrails.constrained_generation import ConstraintGenerator
+from guardrails.constrained_generation import ConstrainedGenerator
 
 
-class JSONConstraintGenerator(ConstraintGenerator):
+class JSONConstrainedGenerator(ConstrainedGenerator):
     def __init__(self, schema: dict):
         self.accumulator = ""
         self.schema = schema
@@ -22,7 +22,7 @@ class JSONConstraintGenerator(ConstraintGenerator):
         return False
 
 
-class JSONObjectConstraint(ConstraintGenerator):
+class JSONObjectConstrained(ConstrainedGenerator):
     def __init__(
             self,
             required_fields: Optional[List[str]] = None,
@@ -52,21 +52,21 @@ class JSONObjectConstraint(ConstraintGenerator):
         return self.object_closed
 
 
-class JSONValueConstraint(ConstraintGenerator):
+class JSONValueConstrained(ConstrainedGenerator):
     """A JSON value is a `quoted_string colon (object|array|num|str|kw)`."""
 
     def __init__(self):
         self.accumulator = ""
         self.constraint_chain = [
-            QuotedStringConstraintGenerator(),
-            KeywordConstraintGenerator(":"),
-            UnionConstraintGenerator(
-                QuotedStringConstraintGenerator(),
-                NumberConstraintGenerator(is_integer=False),
-                UnionConstraintGenerator(
-                    KeywordConstraintGenerator("true"),
-                    KeywordConstraintGenerator("false"),
-                    KeywordConstraintGenerator("null"),
+            QuotedStringConstrainedGenerator(),
+            KeywordConstrainedGenerator(":"),
+            UnionConstrainedGenerator(
+                QuotedStringConstrainedGenerator(),
+                NumberConstrainedGenerator(is_integer=False),
+                UnionConstrainedGenerator(
+                    KeywordConstrainedGenerator("true"),
+                    KeywordConstrainedGenerator("false"),
+                    KeywordConstrainedGenerator("null"),
                 ),
                 #KeywordConstraintGenerator("{"),
             ),
@@ -90,7 +90,7 @@ class JSONValueConstraint(ConstraintGenerator):
         return len(self.constraint_chain) == 0
 
 
-class QuotedStringConstraintGenerator(ConstraintGenerator):
+class QuotedStringConstrainedGenerator(ConstrainedGenerator):
     """Accepts a string, starting with a double quote and ending with a double quote."""
 
     def __init__(self):
@@ -120,7 +120,7 @@ class QuotedStringConstraintGenerator(ConstraintGenerator):
         return not self.quote_active and len(self.accumulator) > 2
 
 
-class ArrayConstraintGenerator(JSONConstraintGenerator):
+class ArrayConstraintGenerator(JSONConstrainedGenerator):
     def __init__(self, base_schema: dict, array_type: str, schema: dict):
         super().__init__(schema)
         self.base_schema = base_schema
@@ -138,11 +138,11 @@ class ArrayConstraintGenerator(JSONConstraintGenerator):
         raise NotImplementedError("TODO!")
 
 
-class UnionConstraintGenerator(ConstraintGenerator):
+class UnionConstrainedGenerator(ConstrainedGenerator):
     def __init__(self, *args):
         self.sub_constraints = list()
         for arg in args:
-            assert isinstance(arg, ConstraintGenerator)
+            assert isinstance(arg, ConstrainedGenerator)
             self.sub_constraints.append(arg)
 
     def get_valid_tokens(self) -> Optional[Set[str]]:
@@ -162,7 +162,7 @@ class UnionConstraintGenerator(ConstraintGenerator):
         return any([c.is_complete() for c in self.sub_constraints])
 
 
-class KeywordConstraintGenerator(ConstraintGenerator):
+class KeywordConstrainedGenerator(ConstrainedGenerator):
     """This might not seem like the most useful thing in the world, but it helps keep
     our model on the rails if we need to generate something like 'false' or 'true'."""
 
@@ -194,7 +194,7 @@ class KeywordConstraintGenerator(ConstraintGenerator):
             self.keyword = ""
 
 
-class NumberConstraintGenerator(ConstraintGenerator):
+class NumberConstrainedGenerator(ConstrainedGenerator):
     def __init__(self, is_integer: bool, allow_leading_period: bool = False):
         super().__init__()
         self.accumulator = ""

@@ -1,9 +1,9 @@
 from typing import Optional, Set
 
-from guardrails.constrained_generation import ConstraintGenerator
+from guardrails.constrained_generation import ConstrainedGenerator
 
 
-class BalancedBracesGenerator(ConstraintGenerator):
+class BalancedBracesGenerator(ConstrainedGenerator):
     def __init__(self, max_depth: int):
         self.max_depth = max_depth
         self.current_depth = 0
