@@ -2044,7 +2044,7 @@ files = [
 name = "jsonformer"
 version = "0.12.0"
 description = ""
-optional = false
+optional = true
 python-versions = ">=3.8,<4.0"
 files = [
     {file = "jsonformer-0.12.0-py3-none-any.whl", hash = "sha256:67339a764cb17e33d9a567293470f59b856ca38f2c456da6aad07652a2daf69a"},
@@ -5827,7 +5827,7 @@ test = ["pytest", "tornado (>=4.5)", "typeguard"]
 name = "termcolor"
 version = "2.4.0"
 description = "ANSI color formatting for output in terminal"
-optional = false
+optional = true
 python-versions = ">=3.8"
 files = [
     {file = "termcolor-2.4.0-py3-none-any.whl", hash = "sha256:9297c0df9c99445c2412e832e882a7884038a25617c60cea2ad69488d4040d63"},
@@ -6872,7 +6872,7 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 [extras]
 anthropic = ["anthropic"]
 docs-build = ["docspec_python", "nbdoc", "pydoc-markdown"]
-huggingface = ["torch", "transformers"]
+huggingface = ["jsonformer", "torch", "transformers"]
 litellm = ["litellm"]
 manifest = ["manifest-ml"]
 sql = ["sqlalchemy", "sqlglot", "sqlvalidator"]
@@ -6881,4 +6881,4 @@ vectordb = ["faiss-cpu", "numpy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "4e19eee5a58f8590a27f4f7b6a67308079299fdf279732dfaf0724b58c9b48d1"
+content-hash = "78c2c1087b57fdef24163ed7bb78b3b8098f19a46efe369c3408b28cc550f823"
