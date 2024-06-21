@@ -2,7 +2,7 @@ from guardrails.constrained_generation.constrained_generator import ConstrainedG
 from guardrails.constrained_generation.balanced_braces_generator import (
     BalancedBracesGenerator,
 )
-from guardrails.constrained_generation.json_constraint_generator import (
+from guardrails.constrained_generation.json_generator import (
     JSONConstrainedGenerator,
     JSONValueConstrained,
     KeywordConstrainedGenerator,  # JC Note: Do we want to expose this?
