@@ -132,11 +132,10 @@ class ArrayConstraintGenerator(JSONConstraintGenerator):
         self.accumulator = ""
 
     def get_valid_tokens(self) -> Optional[Set[str]]:
-        if not self.is_opened:
-
+        raise NotImplementedError("TODO!")
 
     def update_valid_tokens(self, token: str):
-        pass
+        raise NotImplementedError("TODO!")
 
 
 class UnionConstraintGenerator(ConstraintGenerator):
