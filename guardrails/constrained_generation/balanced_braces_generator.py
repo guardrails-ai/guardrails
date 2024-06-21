@@ -1,6 +1,6 @@
 from typing import Optional, Set
 
-from guardrails.constraint_generator import ConstraintGenerator
+from guardrails.constrained_generation import ConstraintGenerator
 
 
 class BalancedBracesGenerator(ConstraintGenerator):

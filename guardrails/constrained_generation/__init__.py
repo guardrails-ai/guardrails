@@ -1,8 +1,8 @@
-from guardrails.constraint_generator.constraint_generator import ConstraintGenerator
-from guardrails.constraint_generator.balanced_braces_generator import (
+from guardrails.constrained_generation.constraint_generator import ConstraintGenerator
+from guardrails.constrained_generation.balanced_braces_generator import (
     BalancedBracesGenerator,
 )
-from guardrails.constraint_generator.json_constraint_generator import (
+from guardrails.constrained_generation.json_constraint_generator import (
     JSONConstraintGenerator,
     JSONValueConstraint,
     KeywordConstraintGenerator,  # JC Note: Do we want to expose this?

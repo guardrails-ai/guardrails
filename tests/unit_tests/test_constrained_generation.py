@@ -1,6 +1,6 @@
 import pytest
 
-from guardrails.constraint_generator import (
+from guardrails.constrained_generation import (
     BalancedBracesGenerator,
     NumberConstraintGenerator,
     JSONValueConstraint,

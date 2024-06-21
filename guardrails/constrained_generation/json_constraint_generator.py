@@ -2,7 +2,7 @@ import string
 from collections import deque
 from typing import List, Optional, Set
 
-from guardrails.constraint_generator import ConstraintGenerator
+from guardrails.constrained_generation import ConstraintGenerator
 
 
 class JSONConstraintGenerator(ConstraintGenerator):
