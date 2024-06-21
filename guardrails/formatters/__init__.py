@@ -1,4 +1,5 @@
 from guardrails.formatters.base_formatter import BaseFormatter, PassthroughFormatter
+
 try:
     from guardrails.formatters.json_formatter import JsonFormatter
 except ImportError:
@@ -10,7 +11,7 @@ def get_formatter(name: str, *args, **kwargs) -> BaseFormatter:
     name = name.lower()
     if name == "jsonformer":
         if JsonFormatter is None:
-            raise ValueError(f"jsonformatter requires transformers to be installed.")
+            raise ValueError("jsonformatter requires transformers to be installed.")
         return JsonFormatter(*args, **kwargs)
     elif name == "none":
         return PassthroughFormatter(*args, **kwargs)
