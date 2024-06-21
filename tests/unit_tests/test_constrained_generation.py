@@ -6,7 +6,7 @@ from guardrails.constrained_generation import (
     JSONValueConstrained,
     KeywordConstrainedGenerator,
     QuotedStringConstrainedGenerator,
-    UnionConstrainedGenerator,
+    UnionGenerator,
 )
 
 
@@ -73,7 +73,7 @@ def test_keyword_constraint():
 def test_true_or_false_keyword_constraint():
     false_keyword = KeywordConstrainedGenerator("False", token_length_cap=1)
     true_keyword = KeywordConstrainedGenerator("True", token_length_cap=1)
-    c = UnionConstrainedGenerator(false_keyword, true_keyword)
+    c = UnionGenerator(false_keyword, true_keyword)
     # We can have either "True" or "False" until we parse a 'T' or 'F'.
     assert c.get_valid_tokens() == {"T", "F"}
     c.update_valid_tokens("T")
