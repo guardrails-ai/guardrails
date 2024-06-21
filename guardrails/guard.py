@@ -1006,7 +1006,7 @@ class Guard(IGuard, Generic[OT]):
             guard_history = self._api_client.get_history(
                 self.name, validation_output.call_id
             )
-            self._history.extend([Call.from_dict(call) for call in guard_history])
+            self._history.extend([Call.from_interface(call) for call in guard_history])
 
             # TODO: See if the below statement is still true
             # Our interfaces are too different for this to work right now.
@@ -1057,7 +1057,9 @@ class Guard(IGuard, Generic[OT]):
                 guard_history = self._api_client.get_history(
                     self.name, validation_output.call_id
                 )
-                self._history.extend([Call.from_dict(call) for call in guard_history])
+                self._history.extend(
+                    [Call.from_interface(call) for call in guard_history]
+                )
         else:
             raise ValueError("Guard does not have an api client!")
 

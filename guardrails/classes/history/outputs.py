@@ -4,7 +4,6 @@ from pydantic import Field
 
 from guardrails_api_client import (
     Outputs as IOutputs,
-    OutputsException,
     OutputsParsedOutput,
     OutputsValidationResponse,
 )
@@ -136,16 +135,46 @@ class Outputs(IOutputs, ArbitraryModel):
             return fail_status
         return pass_status
 
-    def to_dict(self) -> Dict[str, Any]:
-        i_outputs = IOutputs(
-            llm_response_info=self.llm_response_info,  # type: ignore
+    def to_interface(self) -> IOutputs:
+        return IOutputs(
+            llm_response_info=self.llm_response_info.to_interface(),  # type: ignore
             raw_output=self.raw_output,  # type: ignore
             parsed_output=OutputsParsedOutput(self.parsed_output),  # type: ignore
             validation_response=OutputsValidationResponse(self.validation_response),  # type: ignore
             guarded_output=OutputsParsedOutput(self.guarded_output),  # type: ignore
             reasks=self.reasks,  # type: ignore
-            validator_logs=self.validator_logs,  # type: ignore
+            validator_logs=[v.to_interface() for v in self.validator_logs],  # type: ignore
             error=self.error,
-            exception=OutputsException(message=str(self.exception)),
         )
-        return i_outputs.to_dict()
+
+    def to_dict(self) -> Dict[str, Any]:
+        return self.to_interface().to_dict()
+
+    @classmethod
+    def from_interface(cls, i_outputs: IOutputs) -> "Outputs":
+        reasks = None
+        if i_outputs.reasks:
+            reasks = [ReAsk.from_interface(r) for r in i_outputs.reasks]
+
+        validator_logs = None
+        if i_outputs.validator_logs:
+            validator_logs = [
+                ValidatorLogs.from_interface(v) for v in i_outputs.validator_logs
+            ]
+
+        return cls(
+            llm_response_info=LLMResponse.from_interface(i_outputs.llm_response_info),  # type: ignore
+            raw_output=i_outputs.raw_output,  # type: ignore
+            parsed_output=i_outputs.parsed_output.actual_instance,  # type: ignore
+            validation_response=i_outputs.validation_response.actual_instance,  # type: ignore
+            guarded_output=i_outputs.guarded_output.actual_instance,  # type: ignore
+            reasks=reasks,  # type: ignore
+            validator_logs=validator_logs,  # type: ignore
+            error=i_outputs.error,
+        )
+
+    @classmethod
+    def from_dict(cls, obj: Dict[str, Any]) -> "Outputs":
+        i_outputs = IOutputs.from_dict(obj)
+
+        return cls.from_interface(i_outputs)

@@ -49,12 +49,7 @@ class Call(ICall, ArbitraryModel):
         call_id = str(object_id(self))
         iterations = iterations or Stack()
         inputs = inputs or CallInputs()
-        super().__init__(
-            id=call_id,
-            iterations=iterations,  # type: ignore
-            inputs=inputs,  # type: ignore
-            i_exception=CallException(message=str(exception)),  # type: ignore
-        )
+        super().__init__(id=call_id)
         self.iterations = iterations
         self.inputs = inputs
         self._exception = exception
@@ -410,30 +405,26 @@ class Call(ICall, ArbitraryModel):
     def __str__(self) -> str:
         return pretty_repr(self)
 
-    def to_dict(self) -> Dict[str, Any]:
-        i_call = ICall(
+    def to_interface(self) -> ICall:
+        return ICall(
             id=self.id,
-            iterations=list(self.iterations),
-            inputs=self.inputs,
+            iterations=[i.to_interface() for i in self.iterations],
+            inputs=self.inputs.to_interface(),
+            exception=self.error,
         )
 
-        i_call_dict = i_call.to_dict()
+    def to_dict(self) -> Dict[str, Any]:
+        return self.to_interface().to_dict()
 
-        if self._exception:
-            i_call_dict["exception"] = str(self._exception)
-        return i_call_dict
+    @classmethod
+    def from_interface(cls, i_call: ICall) -> "Call":
+        iterations = Stack(*[Iteration.from_interface(i) for i in i_call.iterations])
+        inputs = CallInputs.from_interface(i_call.inputs)
+        return cls(iterations=iterations, inputs=inputs, exception=i_call.exception)
 
     # TODO: Necessary to GET /guards/{guard_name}/history/{call_id}
-    # @classmethod
-    # def from_dict(cls, obj: Dict[str, Any]) -> "Call":
-    #     i_call = ICall.from_dict(obj)
+    @classmethod
+    def from_dict(cls, obj: Dict[str, Any]) -> "Call":
+        i_call = ICall.from_dict(obj)
 
-    #     i_exception = i_call.i_exception.actual_instance
-    #     if isinstance(i_exception, CallExceptionAnyOf):
-    #         i_exception = i_exception.message
-
-    #     cls(
-    #         iterations=i_call.iterations,
-    #         inputs=i_call.inputs,
-    #         exception=Exception(i_exception),
-    #     )
+        return cls.from_interface(i_call)

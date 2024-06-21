@@ -51,3 +51,67 @@ class Inputs(IInputs, ArbitraryModel):
         description="Whether to use streaming.",
         default=False,
     )
+
+    def to_interface(self) -> IInputs:
+        serialized_msg_history = None
+        if self.msg_history:
+            serialized_msg_history = []
+            for msg in self.msg_history:
+                ser_msg = {**msg}
+                content = ser_msg.get("content")
+                if content:
+                    ser_msg["content"] = (
+                        content.source if isinstance(content, Prompt) else content
+                    )
+                serialized_msg_history.append(ser_msg)
+
+        return IInputs(
+            llm_api=str(self.llm_api),
+            llm_output=self.llm_output,
+            instructions=(
+                self.instructions.source
+                if isinstance(self.instructions, Instructions)
+                else self.instructions
+            ),
+            prompt=(
+                self.prompt.source if isinstance(self.prompt, Prompt) else self.prompt
+            ),
+            msg_history=serialized_msg_history,
+            prompt_params=self.prompt_params,
+            num_reasks=self.num_reasks,
+            metadata=self.metadata,
+            full_schema_reask=self.full_schema_reask,
+            stream=self.stream,
+        )
+
+    def to_dict(self) -> Dict[str, Any]:
+        return self.to_interface().to_dict()
+
+    @classmethod
+    def from_interface(cls, i_inputs: IInputs) -> "Inputs":
+        deserialized_msg_history = None
+        if i_inputs.msg_history:
+            deserialized_msg_history = []
+            for msg in i_inputs.msg_history:
+                ser_msg = {**msg}
+                content = ser_msg.get("content")
+                if content:
+                    ser_msg["content"] = Prompt(content)
+                deserialized_msg_history.append(ser_msg)
+
+        return cls(
+            llm_api=None,
+            llm_output=i_inputs.llm_output,
+            instructions=Instructions(i_inputs.instructions),
+            prompt=Prompt(i_inputs.prompt),
+            msg_history=deserialized_msg_history,
+            prompt_params=i_inputs.prompt_params,
+            num_reasks=i_inputs.num_reasks,
+            metadata=i_inputs.metadata,
+            full_schema_reask=i_inputs.full_schema_reask,
+        )
+
+    @classmethod
+    def from_dict(cls, obj: Dict[str, Any]) -> "Inputs":
+        i_inputs = IInputs.from_dict(obj)
+        return cls.from_interface(i_inputs)

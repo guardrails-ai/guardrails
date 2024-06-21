@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Sequence, Union
+from typing import Any, Dict, List, Optional, Sequence, Union
 from builtins import id as object_id
 from pydantic import Field
 from rich.console import Group
@@ -236,3 +236,30 @@ class Iteration(IIteration, ArbitraryModel):
 
     def __str__(self) -> str:
         return pretty_repr(self)
+
+    def to_interface(self) -> IIteration:
+        return IIteration(
+            id=self.id,
+            call_id=self.call_id,
+            index=self.index,
+            inputs=self.inputs.to_interface(),
+            outputs=self.outputs.to_interface(),
+        )
+
+    def to_dict(self) -> Dict:
+        return self.to_interface().to_dict()
+
+    @classmethod
+    def from_interface(cls, i_iteration: IIteration) -> "Iteration":
+        return cls(
+            call_id=i_iteration.call_id,
+            index=i_iteration.index,
+            inputs=Inputs.from_interface(i_iteration.inputs),
+            outputs=Outputs.from_interface(i_iteration.outputs),
+        )
+
+    @classmethod
+    def from_dict(cls, obj: Dict[str, Any]) -> "Iteration":
+        i_iteration = IIteration.from_dict(obj)
+
+        return cls.from_interface(i_iteration)

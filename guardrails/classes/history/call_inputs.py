@@ -27,3 +27,29 @@ class CallInputs(Inputs, ICallInputs, ArbitraryModel):
         description="Additional keyword-arguments for the LLM as provided by the user.",
         default_factory=dict,
     )
+
+    def to_interface(self) -> ICallInputs:
+        rest = super().to_interface()
+        return ICallInputs(
+            **rest,
+            args=self.args,
+            kwargs=self.kwargs,
+        )
+
+    def to_dict(self) -> Dict[str, Any]:
+        return self.to_interface().to_dict()
+
+    @classmethod
+    def from_interface(cls, i_call_inputs: ICallInputs) -> "CallInputs":
+        inputs = Inputs.from_interface(i_call_inputs)
+        return cls(
+            **inputs,
+            args=i_call_inputs.args,
+            kwargs=i_call_inputs.kwargs,
+        )
+
+    @classmethod
+    def from_dict(cls, obj: Dict[str, Any]):
+        i_call_inputs = super().from_dict(obj)
+
+        return cls.from_interface(i_call_inputs)

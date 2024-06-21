@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "guardrails-ai"
-version = "0.5.0a0"
+version = "0.5.0a1"
 description = "Adding guardrails to large language models."
 authors = ["Guardrails AI <contact@guardrailsai.com>"]
 license = "Apache License 2.0"
@@ -84,7 +84,7 @@ ruff = ">=0.4.1"
 optional = true
 
 [tool.poetry.group.api.dependencies]
-guardrails-api = "^0.0.0"
+guardrails-api = "^0.0.0a0"
 
 [tool.poetry.group.docs]
 optional = true
