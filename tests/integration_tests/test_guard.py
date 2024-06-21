@@ -2,7 +2,7 @@ import enum
 import importlib
 import json
 import os
-from typing import Optional, Union
+from typing import List, Optional, Union
 
 import pytest
 from pydantic import BaseModel, Field
@@ -942,6 +942,37 @@ def test_guard_with_top_level_list_return_type(mocker, rail, prompt):
     ]
 
 
+def test_pydantic_with_lite_llm(mocker):
+    """Test lite llm JSON generation with message history re-asking."""
+    mock_invoke_llm = mocker.patch(
+        "guardrails.llm_providers.LiteLLMCallable._invoke_llm"
+    )
+    mock_invoke_llm.side_effect = [
+        LLMResponse(
+            output=pydantic.MSG_HISTORY_LLM_OUTPUT_INCORRECT,
+            prompt_token_count=123,
+            response_token_count=1234,
+        ),
+        LLMResponse(
+            output=pydantic.MSG_HISTORY_LLM_OUTPUT_CORRECT,
+            prompt_token_count=123,
+            response_token_count=1234,
+        ),
+    ]
+    guard = gd.Guard.from_pydantic(output_class=pydantic.WITH_MSG_HISTORY)
+    final_output = guard(
+        messages=string.MOVIE_MSG_HISTORY, model="gpt-3.5-turbo", max_tokens=10
+    )
+    assert guard.history.last.inputs.msg_history == [
+        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "user", "content": "Can you give me your favorite movie?"},
+    ]
+
+    call = guard.history.first
+    assert call.iterations.length == 2
+    assert final_output.raw_llm_output == pydantic.MSG_HISTORY_LLM_OUTPUT_CORRECT
+
+
 def test_string_output(mocker):
     """Test single string (non-JSON) generation."""
     mock_invoke_llm = mocker.patch(
@@ -974,6 +1005,103 @@ def test_string_output(mocker):
     assert call.raw_outputs.last == string.LLM_OUTPUT
     assert mock_invoke_llm.call_count == 1
     mock_invoke_llm = None
+
+
+def test_add_json_function_calling_tool(mocker):
+    mock_invoke_llm = mocker.patch(
+        "guardrails.llm_providers.OpenAIChatCallable._invoke_llm"
+    )
+    task_list = {
+        "list": [
+            {
+                "status": "not started",
+                "priority": 1,
+                "description": "Do something",
+            },
+            {
+                "status": "in progress",
+                "priority": 2,
+                "description": "Do something else",
+            },
+            {
+                "status": "on hold",
+                "priority": 3,
+                "description": "Do something else again",
+            },
+        ],
+    }
+
+    mock_invoke_llm.side_effect = [
+        LLMResponse(
+            output=json.dumps(task_list),
+            prompt_token_count=123,
+            response_token_count=1234,
+        )
+    ]
+
+    class Task(BaseModel):
+        status: str
+        priority: int
+        description: str
+
+    class Tasks(BaseModel):
+        list: List[Task]
+
+    guard = Guard.from_pydantic(Tasks)
+    tools = [
+        {
+            "type": "function",
+            "function": {
+                "name": "get_current_weather",
+                "description": "Get the current weather in a given location",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "location": {
+                            "type": "string",
+                            "description": "The city and state, e.g. San Francisco, CA",
+                        },
+                        "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]},
+                    },
+                    "required": ["location"],
+                },
+            },
+        }
+    ]
+
+    final_output = guard(
+        llm_api=get_static_openai_chat_create_func(),
+        msg_history=[
+            {
+                "role": "user",
+                "content": "You are a helpful assistant"
+                "read this email and return the tasks from it."
+                " some email blah blah blah.",
+            }
+        ],
+        tools=guard.add_json_function_calling_tool(tools),
+        tool_choice="required",
+    )
+
+    gd_response_tool = mock_invoke_llm.call_args.kwargs["tools"][1]["function"]
+
+    assert mock_invoke_llm.call_count == 1
+    assert final_output.validated_output == task_list
+
+    # verify that the tools are augmented with schema
+    assert len(mock_invoke_llm.call_args.kwargs["tools"]) == 2
+    assert mock_invoke_llm.call_args.kwargs["tools"][0] == tools[0]
+    assert gd_response_tool["name"] == "gd_response_tool"
+    assert gd_response_tool["parameters"]["$defs"]["Task"] == {
+        "properties": {
+            "status": {"title": "Status", "type": "string"},
+            "priority": {"title": "Priority", "type": "integer"},
+            "description": {"title": "Description", "type": "string"},
+        },
+        "required": ["status", "priority", "description"],
+        "title": "Task",
+        "type": "object",
+    }
 
 
 def test_string_reask(mocker):
@@ -1122,9 +1250,9 @@ def test_guard_from_pydantic_with_mock_hf_pipeline():
     reason="transformers or torch is not installed",
 )
 def test_guard_from_pydantic_with_mock_hf_model():
-    from tests.unit_tests.mocks.mock_hf_models import make_mock_model_tokenizer
+    from tests.unit_tests.mocks.mock_hf_models import make_mock_model_and_tokenizer
 
-    model, tokenizer = make_mock_model_tokenizer()
+    model, tokenizer = make_mock_model_and_tokenizer()
     guard = Guard()
     _ = guard(
         model.generate,
