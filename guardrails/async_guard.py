@@ -87,11 +87,12 @@ class AsyncGuard(Guard, Generic[OT]):
         cls,
         output_class: ModelOrListOfModels,
         *,
-        prompt: Optional[str] = None,  # deprecate this too
-        instructions: Optional[str] = None,  # deprecate this too
+        prompt: Optional[str] = None,
+        instructions: Optional[str] = None,
         num_reasks: Optional[int] = None,
-        reask_prompt: Optional[str] = None,  # deprecate this too
-        reask_instructions: Optional[str] = None,  # deprecate this too
+        reask_prompt: Optional[str] = None,
+        reask_instructions: Optional[str] = None,
+        reask_messages: Optional[List[Dict]] = None,
         tracer: Optional[Tracer] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
@@ -103,6 +104,7 @@ class AsyncGuard(Guard, Generic[OT]):
             num_reasks=num_reasks,
             reask_prompt=reask_prompt,
             reask_instructions=reask_instructions,
+            reask_messages=reask_messages,
             tracer=tracer,
             name=name,
             description=description,
@@ -118,10 +120,10 @@ class AsyncGuard(Guard, Generic[OT]):
         validators: Sequence[Validator],
         *,
         string_description: Optional[str] = None,
-        prompt: Optional[str] = None,  # deprecate this too
-        instructions: Optional[str] = None,  # deprecate this too
-        reask_prompt: Optional[str] = None,  # deprecate this too
-        reask_instructions: Optional[str] = None,  # deprecate this too
+        prompt: Optional[str] = None,
+        instructions: Optional[str] = None,
+        reask_prompt: Optional[str] = None,
+        reask_instructions: Optional[str] = None,
         num_reasks: Optional[int] = None,
         tracer: Optional[Tracer] = None,
         name: Optional[str] = None,
@@ -242,6 +244,10 @@ class AsyncGuard(Guard, Generic[OT]):
                         (
                             "custom_reask_instructions",
                             self._exec_opts.reask_instructions is not None,
+                        ),
+                                                (
+                            "custom_reask_messages",
+                            self._exec_opts.reask_messages is not None,
                         ),
                     ],
                     is_parent=True,  # It will have children

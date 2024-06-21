@@ -216,6 +216,7 @@ class Runner:
                     instructions,
                     output_schema,
                     msg_history,
+                    messages
                 ) = self.prepare_to_loop(
                     iteration.reasks,
                     output_schema,
@@ -637,10 +638,10 @@ class Runner:
         validated_output: Optional[Union[str, List, Dict, ReAsk]] = None,
         prompt_params: Optional[Dict] = None,
         include_instructions: bool = False,
-    ) -> Tuple[Prompt, Optional[Instructions], Dict[str, Any], Optional[List[Dict]]]:
+    ) -> Tuple[Prompt, Optional[Instructions], Dict[str, Any], Optional[List[Dict]], Optional[List[Dict]]]:
         """Prepare to loop again."""
         prompt_params = prompt_params or {}
-        output_schema, prompt, instructions = get_reask_setup(
+        output_schema, prompt, instructions, messages = get_reask_setup(
             output_type=self.output_type,
             output_schema=output_schema,
             validation_map=self.validation_map,
@@ -653,5 +654,6 @@ class Runner:
         )
         if not include_instructions:
             instructions = None
-        msg_history = None  # clear msg history for reasking
-        return prompt, instructions, output_schema, msg_history
+        # todo add messages support
+        msg_history = None
+        return prompt, instructions, output_schema, msg_history, messages
