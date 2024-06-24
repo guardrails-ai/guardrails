@@ -87,11 +87,8 @@ class AsyncGuard(Guard, Generic[OT]):
         cls,
         output_class: ModelOrListOfModels,
         *,
-        prompt: Optional[str] = None,
-        instructions: Optional[str] = None,
         num_reasks: Optional[int] = None,
-        reask_prompt: Optional[str] = None,
-        reask_instructions: Optional[str] = None,
+        messages: Optional[List[Dict]] = None,
         reask_messages: Optional[List[Dict]] = None,
         tracer: Optional[Tracer] = None,
         name: Optional[str] = None,
@@ -99,11 +96,8 @@ class AsyncGuard(Guard, Generic[OT]):
     ):
         guard = super().from_pydantic(
             output_class,
-            prompt=prompt,
-            instructions=instructions,
+            messages=messages,
             num_reasks=num_reasks,
-            reask_prompt=reask_prompt,
-            reask_instructions=reask_instructions,
             reask_messages=reask_messages,
             tracer=tracer,
             name=name,
@@ -120,10 +114,8 @@ class AsyncGuard(Guard, Generic[OT]):
         validators: Sequence[Validator],
         *,
         string_description: Optional[str] = None,
-        prompt: Optional[str] = None,
-        instructions: Optional[str] = None,
-        reask_prompt: Optional[str] = None,
-        reask_instructions: Optional[str] = None,
+        messages: Optional[List[Dict]] = None,
+        reask_messages: Optional[List[Dict]] = None,
         num_reasks: Optional[int] = None,
         tracer: Optional[Tracer] = None,
         name: Optional[str] = None,
@@ -132,10 +124,8 @@ class AsyncGuard(Guard, Generic[OT]):
         guard = super().from_string(
             validators,
             string_description=string_description,
-            prompt=prompt,
-            instructions=instructions,
-            reask_prompt=reask_prompt,
-            reask_instructions=reask_instructions,
+            messages=messages,
+            reask_messages=reask_messages,
             num_reasks=num_reasks,
             tracer=tracer,
             name=name,
@@ -173,9 +163,7 @@ class AsyncGuard(Guard, Generic[OT]):
         llm_output: Optional[str] = None,
         prompt_params: Optional[Dict] = None,
         num_reasks: Optional[int] = None,
-        prompt: Optional[str] = None,
-        instructions: Optional[str] = None,
-        msg_history: Optional[List[Dict]] = None,
+        messages: Optional[List[Dict]] = None,
         metadata: Optional[Dict],
         full_schema_reask: Optional[bool] = None,
         **kwargs,
@@ -187,11 +175,9 @@ class AsyncGuard(Guard, Generic[OT]):
         self._fill_validator_map()
         self._fill_validators()
         metadata = metadata or {}
-        if not llm_api and not llm_output:
-            raise RuntimeError("'llm_api' or 'llm_output' must be provided!")
-        if not llm_output and llm_api and not (prompt or msg_history):
+        if not llm_output and llm_api and not (messages):
             raise RuntimeError(
-                "'prompt' or 'msg_history' must be provided in order to call an LLM!"
+                "'messages' must be provided in order to call an LLM!"
             )
 
         # check if validator requirements are fulfilled
@@ -208,9 +194,7 @@ class AsyncGuard(Guard, Generic[OT]):
             llm_output: Optional[str] = None,
             prompt_params: Optional[Dict] = None,
             num_reasks: Optional[int] = None,
-            prompt: Optional[str] = None,
-            instructions: Optional[str] = None,
-            msg_history: Optional[List[Dict]] = None,
+            messages: Optional[List[Dict]] = None,
             metadata: Optional[Dict] = None,
             full_schema_reask: Optional[bool] = None,
             **kwargs,
@@ -238,14 +222,6 @@ class AsyncGuard(Guard, Generic[OT]):
                             else type(llm_api).__name__,
                         ),
                         (
-                            "custom_reask_prompt",
-                            self._exec_opts.reask_prompt is not None,
-                        ),
-                        (
-                            "custom_reask_instructions",
-                            self._exec_opts.reask_instructions is not None,
-                        ),
-                                                (
                             "custom_reask_messages",
                             self._exec_opts.reask_messages is not None,
                         ),
@@ -265,14 +241,10 @@ class AsyncGuard(Guard, Generic[OT]):
                     "This should never happen."
                 )
 
-            input_prompt = prompt or self._exec_opts.prompt
-            input_instructions = instructions or self._exec_opts.instructions
+            input_messages = messages or self._exec_opts.messages
             call_inputs = CallInputs(
                 llm_api=llm_api,
-                prompt=input_prompt,
-                instructions=input_instructions,
-                msg_history=msg_history,
-                prompt_params=prompt_params,
+                messages=input_messages,
                 num_reasks=self._num_reasks,
                 metadata=metadata,
                 full_schema_reask=full_schema_reask,
@@ -305,9 +277,7 @@ class AsyncGuard(Guard, Generic[OT]):
                     llm_output=llm_output,
                     prompt_params=prompt_params,
                     num_reasks=self._num_reasks,
-                    prompt=prompt,
-                    instructions=instructions,
-                    msg_history=msg_history,
+                    messages=messages,
                     metadata=metadata,
                     full_schema_reask=full_schema_reask,
                     call_log=call_log,
@@ -328,9 +298,7 @@ class AsyncGuard(Guard, Generic[OT]):
             llm_output=llm_output,
             prompt_params=prompt_params,
             num_reasks=num_reasks,
-            prompt=prompt,
-            instructions=instructions,
-            msg_history=msg_history,
+            messages=messages,
             metadata=metadata,
             full_schema_reask=full_schema_reask,
             *args,
@@ -347,9 +315,7 @@ class AsyncGuard(Guard, Generic[OT]):
         num_reasks: int = 0,  # Should be defined at this point
         metadata: Dict,  # Should be defined at this point
         full_schema_reask: bool = False,  # Should be defined at this point
-        prompt: Optional[str],
-        instructions: Optional[str],
-        msg_history: Optional[List[Dict]],
+        messages: List[Dict] = None,
         **kwargs,
     ) -> Union[
         ValidationOutcome[OT],
@@ -362,9 +328,7 @@ class AsyncGuard(Guard, Generic[OT]):
             llm_api: The LLM API to call asynchronously (e.g. openai.Completion.acreate)
             prompt_params: The parameters to pass to the prompt.format() method.
             num_reasks: The max times to re-ask the LLM for invalid output.
-            prompt: The prompt to use for the LLM.
-            instructions: Instructions for chat models.
-            msg_history: The message history to pass to the LLM.
+            messages: List of messages for llm to respond to.
             metadata: Metadata to pass to the validators.
             full_schema_reask: When reasking, whether to regenerate the full schema
                                or just the incorrect values.
@@ -383,9 +347,7 @@ class AsyncGuard(Guard, Generic[OT]):
                 output_schema=self.output_schema.to_dict(),
                 num_reasks=num_reasks,
                 validation_map=self._validator_map,
-                prompt=prompt,
-                instructions=instructions,
-                msg_history=msg_history,
+                messages=messages,
                 api=api,
                 metadata=metadata,
                 output=llm_output,
@@ -405,9 +367,7 @@ class AsyncGuard(Guard, Generic[OT]):
                 output_schema=self.output_schema.to_dict(),
                 num_reasks=num_reasks,
                 validation_map=self._validator_map,
-                prompt=prompt,
-                instructions=instructions,
-                msg_history=msg_history,
+                messages=messages,
                 api=api,
                 metadata=metadata,
                 output=llm_output,
@@ -428,9 +388,7 @@ class AsyncGuard(Guard, Generic[OT]):
         *args,
         prompt_params: Optional[Dict] = None,
         num_reasks: Optional[int] = 1,
-        prompt: Optional[str] = None,
-        instructions: Optional[str] = None,
-        msg_history: Optional[List[Dict]] = None,
+        messages: Optional[List[Dict]] = None,
         metadata: Optional[Dict] = None,
         full_schema_reask: Optional[bool] = None,
         **kwargs,
@@ -447,9 +405,7 @@ class AsyncGuard(Guard, Generic[OT]):
                      (e.g. openai.Completion.create or openai.Completion.acreate)
             prompt_params: The parameters to pass to the prompt.format() method.
             num_reasks: The max times to re-ask the LLM for invalid output.
-            prompt: The prompt to use for the LLM.
-            instructions: Instructions for chat models.
-            msg_history: The message history to pass to the LLM.
+            messages: The messages to pass to the LLM.
             metadata: Metadata to pass to the validators.
             full_schema_reask: When reasking, whether to regenerate the full schema
                                or just the incorrect values.
@@ -460,24 +416,18 @@ class AsyncGuard(Guard, Generic[OT]):
             The raw text output from the LLM and the validated output.
         """
 
-        instructions = instructions or self._exec_opts.instructions
-        prompt = prompt or self._exec_opts.prompt
-        msg_history = msg_history or []
-        if prompt is None:
-            if msg_history is not None and not len(msg_history):
-                raise RuntimeError(
-                    "You must provide a prompt if msg_history is empty. "
-                    "Alternatively, you can provide a prompt in the Schema constructor."
-                )
+        messages = messages or self._exec_opts.messages or []
+        if messages is not None and not len(messages):
+            raise RuntimeError(
+                "You must provide messages to the LLM in order to call it."
+            )
 
         return await self._execute(
             *args,
             llm_api=llm_api,
             prompt_params=prompt_params,
             num_reasks=num_reasks,
-            prompt=prompt,
-            instructions=instructions,
-            msg_history=msg_history,
+            messages=messages,
             metadata=metadata,
             full_schema_reask=full_schema_reask,
             **kwargs,
@@ -520,14 +470,8 @@ class AsyncGuard(Guard, Generic[OT]):
             if llm_api is None
             else 1
         )
-        default_prompt = self._exec_opts.prompt if llm_api is not None else None
-        prompt = kwargs.pop("prompt", default_prompt)
-
-        default_instructions = self._exec_opts.instructions if llm_api else None
-        instructions = kwargs.pop("instructions", default_instructions)
-
-        default_msg_history = self._exec_opts.msg_history if llm_api else None
-        msg_history = kwargs.pop("msg_history", default_msg_history)
+        default_messages = self._exec_opts.messages if llm_api else None
+        messages = kwargs.pop("messages", default_messages)
 
         return await self._execute(  # type: ignore
             *args,
@@ -535,9 +479,7 @@ class AsyncGuard(Guard, Generic[OT]):
             llm_api=llm_api,
             prompt_params=prompt_params,
             num_reasks=final_num_reasks,
-            prompt=prompt,
-            instructions=instructions,
-            msg_history=msg_history,
+            messages=messages,
             metadata=metadata,
             full_schema_reask=full_schema_reask,
             **kwargs,

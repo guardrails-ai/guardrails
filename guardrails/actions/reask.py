@@ -182,7 +182,7 @@ def get_reask_setup_for_string(
     validation_response: Optional[Union[str, List, Dict, ReAsk]] = None,
     prompt_params: Optional[Dict[str, Any]] = None,
     exec_options: Optional[GuardExecutionOptions] = None,
-) -> Tuple[Dict[str, Any], Prompt, Instructions]:
+) -> Tuple[Dict[str, Any], Messages]:
     prompt_params = prompt_params or {}
     exec_options = exec_options or GuardExecutionOptions()
 

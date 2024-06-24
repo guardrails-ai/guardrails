@@ -280,108 +280,6 @@ class ManifestCallable(PromptCallableBase):
         )
 
 
-class CohereCallable(PromptCallableBase):
-    def _invoke_llm(
-        self, prompt: str, client_callable: Any, model: str, *args, **kwargs
-    ) -> LLMResponse:
-        """To use cohere for guardrails, do ``` client =
-        cohere.Client(api_key=...)
-
-        raw_llm_response, validated_response, *rest = guard(
-            client.generate,
-            prompt_params={...},
-            model="command-nightly",
-            ...
-        )
-        ```
-        """  # noqa
-        warnings.warn(
-                "The OpenAI callable is deprecated in favor of passing "
-                "no callable and the model argument which utilizes LiteLLM"
-                "for example guard(model='command-r', messages=[...], ...)",
-                DeprecationWarning,
-            )
-        if "instructions" in kwargs:
-            prompt = kwargs.pop("instructions") + "\n\n" + prompt
-
-        def is_base_cohere_chat(func):
-            try:
-                return (
-                    func.__closure__[1].cell_contents.__func__.__qualname__
-                    == "BaseCohere.chat"
-                )
-            except (AttributeError, IndexError):
-                return False
-
-        # TODO: When cohere totally gets rid of `generate`,
-        #       remove this cond and the final return
-        if is_base_cohere_chat(client_callable):
-            cohere_response = client_callable(
-                message=prompt, model=model, *args, **kwargs
-            )
-            return LLMResponse(
-                output=cohere_response.text,
-            )
-
-        cohere_response = client_callable(prompt=prompt, model=model, *args, **kwargs)
-        return LLMResponse(
-            output=cohere_response[0].text,
-        )
-
-
-class AnthropicCallable(PromptCallableBase):
-    def _invoke_llm(
-        self,
-        prompt: str,
-        client_callable: Any,
-        model: str = "claude-instant-1",
-        max_tokens_to_sample: int = 100,
-        *args,
-        **kwargs,
-    ) -> LLMResponse:
-        """Wrapper for Anthropic Completions.
-
-        To use Anthropic for guardrails, do
-        ```
-        client = anthropic.Anthropic(api_key=...)
-
-        raw_llm_response, validated_response = guard(
-            client,
-            model="claude-2",
-            max_tokens_to_sample=200,
-            prompt_params={...},
-            ...
-        ```
-        """
-        warnings.warn(
-            "The OpenAI callable is deprecated in favor of passing "
-            "no callable and the model argument which utilizes LiteLLM"
-            "for example guard(model='claude-3-opus-20240229', messages=[...], ...)",
-            DeprecationWarning,
-        )
-        try:
-            import anthropic
-        except ImportError:
-            raise PromptCallableException(
-                "The `anthropic` package is not installed. "
-                "Install with `pip install anthropic`"
-            )
-
-        if "instructions" in kwargs:
-            prompt = kwargs.pop("instructions") + "\n\n" + prompt
-
-        anthropic_prompt = f"{anthropic.HUMAN_PROMPT} {prompt} {anthropic.AI_PROMPT}"
-
-        anthropic_response = client_callable(
-            model=model,
-            prompt=anthropic_prompt,
-            max_tokens_to_sample=max_tokens_to_sample,
-            *args,
-            **kwargs,
-        )
-        return LLMResponse(output=anthropic_response.completion)
-
-
 class LiteLLMCallable(PromptCallableBase):
     def _invoke_llm(
         self,
@@ -606,38 +504,12 @@ def get_llm_ask(
 ) -> Optional[PromptCallableBase]:
     if "temperature" not in kwargs:
         kwargs.update({"temperature": 0})
-    if llm_api == get_static_openai_create_func():
-        return OpenAICallable(*args, **kwargs)
-    if llm_api == get_static_openai_chat_create_func():
-        return OpenAIChatCallable(*args, **kwargs)
 
     try:
         import manifest  # noqa: F401 # type: ignore
 
         if isinstance(llm_api, manifest.Manifest):
             return ManifestCallable(*args, client=llm_api, **kwargs)
-    except ImportError:
-        pass
-
-    try:
-        import cohere  # noqa: F401 # type: ignore
-
-        if (
-            isinstance(getattr(llm_api, "__self__", None), cohere.Client)
-            and getattr(llm_api, "__name__", None) == "generate"
-        ) or getattr(llm_api, "__module__", None) == "cohere.client":
-            return CohereCallable(*args, client_callable=llm_api, **kwargs)
-    except ImportError:
-        pass
-
-    try:
-        import anthropic.resources  # noqa: F401 # type: ignore
-
-        if isinstance(
-            getattr(llm_api, "__self__", None),
-            anthropic.resources.completions.Completions,
-        ):
-            return AnthropicCallable(*args, client_callable=llm_api, **kwargs)
     except ImportError:
         pass
 
