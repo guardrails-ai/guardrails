@@ -37,7 +37,8 @@ class CallInputs(Inputs, ICallInputs, ArbitraryModel):
         for k, v in self.kwargs.items():
             if "key" in k.lower() or "token" in k.lower():
                 redaction_length = len(v) - 4
-                redacted_kwargs[k] = f"{"*"*redaction_length}{v[-4:]}"
+                stars = "*" * redaction_length
+                redacted_kwargs[k] = f"{stars}{v[-4:]}"
             else:
                 redacted_kwargs[k] = v
         inputs["kwargs"] = redacted_kwargs
