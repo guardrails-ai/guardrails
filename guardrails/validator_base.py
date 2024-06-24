@@ -397,8 +397,8 @@ class Validator(Runnable):
 
     def __init__(
         self,
-        use_local: bool,
-        validation_endpoint: str,
+        use_local: bool = True,
+        validation_endpoint: str = None,
         on_fail: Optional[Union[Callable, OnFailAction]] = None,
         **kwargs,
     ):
