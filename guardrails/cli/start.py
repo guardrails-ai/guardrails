@@ -8,7 +8,7 @@ from guardrails.cli.logger import logger
 
 def api_is_installed() -> bool:
     try:
-        import guardrails_api  # noqa
+        import guardrails_api  # type: ignore  # noqa
 
         return True
     except ImportError:
@@ -48,7 +48,7 @@ def start(
         )
         pip_process("install", package_name)
 
-    from guardrails_api.cli.start import start  # noqa
+    from guardrails_api.cli.start import start  # type: ignore
 
     logger.info("Starting Guardrails server")
     start(env, config, timeout, threads, port)
