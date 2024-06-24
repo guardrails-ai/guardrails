@@ -61,7 +61,7 @@ class Runner:
     metadata: Dict[str, Any]
 
     # LLM Inputs
-    messages Optional[List[Dict[str, Union[Prompt, str]]]] = None
+    messages: Optional[List[Dict[str, Union[Prompt, str]]]] = None
     base_model: Optional[ModelOrListOfModels]
     exec_options: Optional[GuardExecutionOptions]
 

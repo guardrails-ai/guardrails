@@ -87,7 +87,7 @@ class AsyncRunner(Runner):
                 iteration = await self.async_step(
                     index=index,
                     api=self.api,
-                    messages,
+                    messages=messages,
                     prompt_params=prompt_params,
                     output_schema=output_schema,
                     output=self.output if index == 0 else None,

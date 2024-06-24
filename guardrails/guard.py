@@ -448,7 +448,6 @@ class Guard(IGuard, Generic[OT]):
         exec_opts = GuardExecutionOptions(
             messages=messages,
             reask_messages=reask_messages,
-            messages=messages,
         )
         guard = cls(
             name=name,
@@ -772,7 +771,7 @@ class Guard(IGuard, Generic[OT]):
             llm_api=llm_api,
             prompt_params=prompt_params,
             num_reasks=num_reasks,
-            messages=messages
+            messages=messages,
             metadata=metadata,
             full_schema_reask=full_schema_reask,
             **kwargs,
@@ -976,7 +975,7 @@ class Guard(IGuard, Generic[OT]):
                         llm_output=llm_output,
                         messages=(
                             Messages(h.messages if h.messages else None)
-                        )
+                        ),
                         prompt_params=prompt_params,
                         num_reasks=(num_reasks or 0),
                         metadata=metadata,
