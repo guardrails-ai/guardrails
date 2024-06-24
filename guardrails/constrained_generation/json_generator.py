@@ -1,11 +1,12 @@
 from collections import deque
 from typing import List, Optional, Set
 
-from guardrails.constrained_generation import ConstrainedGenerator, \
-    NumberConstrainedGenerator, UnionGenerator
+from guardrails.constrained_generation import ConstrainedGenerator
+from guardrails.constrained_generation.number_generator import NumberGenerator
+from guardrails.constrained_generation.union_generator import UnionGenerator
 
 
-class JSONConstrainedGenerator(ConstrainedGenerator):
+class JSONGenerator(ConstrainedGenerator):
     def __init__(self, schema: dict):
         self.accumulator = ""
         self.schema = schema
@@ -22,54 +23,78 @@ class JSONConstrainedGenerator(ConstrainedGenerator):
         return False
 
 
-class JSONObjectConstrained(ConstrainedGenerator):
+def _make_any() -> ConstrainedGenerator:
+    return UnionGenerator(
+        QuotedStringGenerator(),
+        NumberGenerator(is_integer=False),
+        UnionGenerator(
+            KeywordGenerator("true"),
+            KeywordGenerator("false"),
+            KeywordGenerator("null"),
+        ),
+        JSONObjectGenerator(),
+        ArrayGenerator(),
+    )
+
+
+class JSONObjectGenerator(ConstrainedGenerator):
     def __init__(
             self,
             required_fields: Optional[List[str]] = None,
-            #required_types: Optional[List[str]] = None
+            required_types: Optional[List[str]] = None
     ):
         self.required_fields = required_fields
-        #self.required_types = required_types
+        self.required_types = required_types
         self.accumulator = ""
+        self.pending_fields = list()
         self.active_subconstraint = None  # When we're making a child value...
         self.object_opened = False
         self.object_closed = False
-        self.valid = False
+        self.valid = True
 
     def get_valid_tokens(self) -> Optional[Set[str]]:
-        if not self.object_opened:
+        if not self.valid:
+            return set()  # Nothing to do.
+        elif not self.object_opened:
             return {'{'}
         elif self.active_subconstraint is None:
             if not self.object_closed:
                 return {'}'}
             else:
                 return set()  # Nothing left to do.
+        elif self.active_subconstraint.is_complete():
+            # We finished as much as {"foo":"bar"
+            # Now we need either a comma or an end parenthesis.
+            return {',', '}'}
+        else:
+            return self.active_subconstraint.get_valid_tokens()
 
     def update_valid_tokens(self, token: str):
-        pass
+        for t in token:
+            if not self.object_opened:
+                if t == '{':
+                    self.object_opened = True
+                else:
+                    self.valid = False
+                    # Pick the new subconstraint.
+                    # If we have subtypes or required fields, use those.
+
+            if not self.is_complete() and self.valid:
+                self.accumulator += t
 
     def is_complete(self) -> bool:
         return self.object_closed
 
 
-class JSONValueConstrained(ConstrainedGenerator):
+class JSONValueGenerator(ConstrainedGenerator):
     """A JSON value is a `quoted_string colon (object|array|num|str|kw)`."""
 
     def __init__(self):
-        self.accumulator = ""
+        self.finished_constraints = list()
         self.constraint_chain = [
-            QuotedStringConstrainedGenerator(),
-            KeywordConstrainedGenerator(":"),
-            UnionGenerator(
-                QuotedStringConstrainedGenerator(),
-                NumberConstrainedGenerator(is_integer=False),
-                UnionGenerator(
-                    KeywordConstrainedGenerator("true"),
-                    KeywordConstrainedGenerator("false"),
-                    KeywordConstrainedGenerator("null"),
-                ),
-                #KeywordConstraintGenerator("{"),
-            ),
+            QuotedStringGenerator(),
+            KeywordGenerator(":"),
+            _make_any(),
         ]
 
     def get_valid_tokens(self) -> Optional[Set[str]]:
@@ -79,18 +104,27 @@ class JSONValueConstrained(ConstrainedGenerator):
             return self.constraint_chain[0].get_valid_tokens()
 
     def update_valid_tokens(self, token: str):
-        self.accumulator += token
         for t in token:
             if len(self.constraint_chain) > 0:
                 self.constraint_chain[0].update_valid_tokens(t)
                 if self.constraint_chain[0].is_complete():
+                    self.finished_constraints.append(self.constraint_chain[0])
                     self.constraint_chain = self.constraint_chain[1:]
+
+    def get_name(self) -> str:
+        """If the value is complete, return it without the double quotes."""
+        assert len(self.finished_constraints) > 0
+        return self.finished_constraints[0].accumulator[1:-1]
+
+    def get_value(self):
+        assert len(self.finished_constraints) > 2
+        return self.finished_constraints[2].accumulator
 
     def is_complete(self) -> bool:
         return len(self.constraint_chain) == 0
 
 
-class QuotedStringConstrainedGenerator(ConstrainedGenerator):
+class QuotedStringGenerator(ConstrainedGenerator):
     """Accepts a string, starting with a double quote and ending with a double quote."""
 
     def __init__(self):
@@ -120,25 +154,66 @@ class QuotedStringConstrainedGenerator(ConstrainedGenerator):
         return not self.quote_active and len(self.accumulator) > 2
 
 
-class ArrayConstrainedGenerator(JSONConstrainedGenerator):
-    def __init__(self, base_schema: dict, array_type: str, schema: dict):
-        super().__init__(schema)
-        self.base_schema = base_schema
+class ArrayGenerator(ConstrainedGenerator):
+    def __init__(self, array_type: Optional[str] = None, schema: Optional[dict] = None):
+        super().__init__()
+        self.base_schema = schema
         self.array_type = array_type
         self.is_opened = False
         self.is_closed = False
-        self.is_valid = False
+        self.had_initial_entry = False
+        self.is_valid = True
         self.active_subconstraint = None
         self.accumulator = ""
 
     def get_valid_tokens(self) -> Optional[Set[str]]:
-        raise NotImplementedError("TODO!")
+        if not self.is_opened:
+            return {'['}
+        elif self.active_subconstraint is not None:
+            if self.active_subconstraint.is_complete():
+                return {',', ']'}
+            else:
+                return self.active_subconstraint.get_valid_tokens()
+        elif not self.is_closed:
+            # If we have had a value already, like [1, ], then we can offer a comma.
+            if self.had_initial_entry and self.active_subconstraint is None:
+                return {',', ']'}
+            else:
+                return {']'}
+        else:
+            return set()  # We got into a bad state somehow.
 
     def update_valid_tokens(self, token: str):
-        raise NotImplementedError("TODO!")
+        for t in token:
+            if not self.is_opened:
+                if t != '[':
+                    self.is_valid = False
+                else:
+                    self.is_opened = True
+                    # If we have type info, make the subconstraint this type.
+                    # Else make it generic.
+                    self.active_subconstraint = _make_any()
+            elif self.active_subconstraint.is_complete():
+                # Finished ["this"
+                # Now we can either add a comma or close up.
+                if t == ',':
+                    self.active_subconstraint = _make_any()
+                elif t == ']':
+                    self.is_closed = True
+                    self.is_valid = True
+                else:
+                    self.is_valid = False
+            elif not self.active_subconstraint.is_complete():
+                self.active_subconstraint.update_valid_tokens(t)
+
+            if self.is_valid:
+                self.accumulator += t
+
+    def is_complete(self) -> bool:
+        return self.is_closed
 
 
-class KeywordConstrainedGenerator(ConstrainedGenerator):
+class KeywordGenerator(ConstrainedGenerator):
     """This might not seem like the most useful thing in the world, but it helps keep
     our model on the rails if we need to generate something like 'false' or 'true'."""
 
@@ -168,5 +243,3 @@ class KeywordConstrainedGenerator(ConstrainedGenerator):
             # TODO: Log an attempt to update with an invalid token?
             self.violated = True
             self.keyword = ""
-
-

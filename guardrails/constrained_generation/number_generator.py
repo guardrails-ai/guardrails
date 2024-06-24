@@ -4,7 +4,7 @@ from typing import Optional, Set
 from guardrails.constrained_generation import ConstrainedGenerator
 
 
-class NumberConstrainedGenerator(ConstrainedGenerator):
+class NumberGenerator(ConstrainedGenerator):
     def __init__(self, is_integer: bool, allow_leading_period: bool = False):
         super().__init__()
         self.accumulator = ""

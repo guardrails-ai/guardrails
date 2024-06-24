@@ -2,12 +2,13 @@ import pytest
 
 from guardrails.constrained_generation import (
     BalancedBracesGenerator,
-    NumberConstrainedGenerator,
-    JSONValueConstrained,
-    KeywordConstrainedGenerator,
-    QuotedStringConstrainedGenerator,
+    NumberGenerator,
+    JSONValueGenerator,
+    KeywordGenerator,
+    QuotedStringGenerator,
     UnionGenerator,
 )
+from guardrails.constrained_generation.json_generator import JSONObjectGenerator
 
 
 def test_enforce_balanced_braces():
@@ -30,7 +31,7 @@ def test_enforce_balanced_braces():
 
 def test_integer_constraint():
     # Make sure all our digits are valid.
-    c = NumberConstrainedGenerator(is_integer=True)
+    c = NumberGenerator(is_integer=True)
     for i in range(0, 10):
         assert str(i) in c.get_valid_tokens()
     # An integer can start with '-'
@@ -54,7 +55,7 @@ def test_integer_constraint():
 )
 def test_float_constraint(number: str, is_integer: bool, is_valid: bool):
     all_valid = True
-    c = NumberConstrainedGenerator(is_integer=is_integer)
+    c = NumberGenerator(is_integer=is_integer)
     for digit in number:
         if digit not in c.get_valid_tokens():
             all_valid = False
@@ -64,15 +65,15 @@ def test_float_constraint(number: str, is_integer: bool, is_valid: bool):
 
 
 def test_keyword_constraint():
-    c = KeywordConstrainedGenerator("Outstanding", token_length_cap=3)
+    c = KeywordGenerator("Outstanding", token_length_cap=3)
     assert c.get_valid_tokens() == {"O", "Ou", "Out"}
     c.update_valid_tokens("Out")
     assert c.get_valid_tokens() == {"s", "st", "sta"}
 
 
 def test_true_or_false_keyword_constraint():
-    false_keyword = KeywordConstrainedGenerator("False", token_length_cap=1)
-    true_keyword = KeywordConstrainedGenerator("True", token_length_cap=1)
+    false_keyword = KeywordGenerator("False", token_length_cap=1)
+    true_keyword = KeywordGenerator("True", token_length_cap=1)
     c = UnionGenerator(false_keyword, true_keyword)
     # We can have either "True" or "False" until we parse a 'T' or 'F'.
     assert c.get_valid_tokens() == {"T", "F"}
@@ -84,7 +85,7 @@ def test_true_or_false_keyword_constraint():
 
 
 def test_quoted_string_constraint():
-    c = QuotedStringConstrainedGenerator()
+    c = QuotedStringGenerator()
     assert c.get_valid_tokens() == {'"'}
     c.update_valid_tokens('"')
     assert c.get_valid_tokens() is None  # No constraints
@@ -96,7 +97,7 @@ def test_quoted_string_constraint():
 
 
 def test_quoted_string_with_escapes():
-    c = QuotedStringConstrainedGenerator()
+    c = QuotedStringGenerator()
     c.update_valid_tokens('"This starts with a double quote')
     assert not c.is_complete()
     c.update_valid_tokens(', and has \\"one escaped quote')
@@ -108,14 +109,14 @@ def test_quoted_string_with_escapes():
 
 
 def test_json_value_constraint():
-    c = JSONValueConstrained()
+    c = JSONValueGenerator()
     assert c.get_valid_tokens() == {'"'}
     assert not c.is_complete()
     c.update_valid_tokens('"foo"')
     assert c.get_valid_tokens() == {":"}
     assert not c.is_complete()
     c.update_valid_tokens(":")
-    assert c.get_valid_tokens() == set('"tfn-1234567890')
+    assert c.get_valid_tokens() == set('"tfn-1234567890[{')
     assert not c.is_complete()
     c.update_valid_tokens('"')  # Starting a quoted string.
     assert c.get_valid_tokens() is None
@@ -123,7 +124,7 @@ def test_json_value_constraint():
     c.update_valid_tokens('bar"')
     assert c.is_complete()
 
-    c = JSONValueConstrained()
+    c = JSONValueGenerator()
     c.update_valid_tokens('"joke123":"Why do mirrors look like eyeballs up close?"')
     assert c.get_valid_tokens() == set()
     assert c.is_complete()
