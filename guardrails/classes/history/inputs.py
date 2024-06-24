@@ -7,6 +7,7 @@ from guardrails.classes.generic.arbitrary_model import ArbitraryModel
 from guardrails.llm_providers import PromptCallableBase
 from guardrails.prompt.instructions import Instructions
 from guardrails.prompt.prompt import Prompt
+from guardrails.prompt.messages import Messages
 
 
 class Inputs(IInputs, ArbitraryModel):
@@ -18,7 +19,7 @@ class Inputs(IInputs, ArbitraryModel):
         "provided by the user via Guard.parse.",
         default=None,
     )
-    messages: Optional[List[Dict]] = Field(
+    messages: Optional[Messages] = Field(
         description="The messages provided by the user for chat model calls.",
         default=None,
     )

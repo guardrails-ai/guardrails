@@ -114,9 +114,16 @@ class Call(ICall, ArbitraryModel):
             return None
         initial_inputs = self.iterations.first.inputs
         messages = initial_inputs.messages
+        prompt_params = initial_inputs.prompt_params or {}
         if messages is not None:
             return messages.format(**prompt_params).source
-        
+    
+    @property
+    def messages(self)-> Optional[List[Dict[str, Any]]]:
+        """The messages as provided by the user when initializing or calling the
+        Guard."""
+        return self.inputs.messages
+
     @property
     def reask_messages(self) -> Stack[str]:
         """The compiled messages used during reasks.
@@ -129,7 +136,7 @@ class Call(ICall, ArbitraryModel):
             reasks.remove(initial_messages)  # type: ignore
             return Stack(
                 *[
-                    r.inputs.messages if r.inputs.messages is not None else None
+                    r.inputs.messages.source if r.inputs.messages is not None else None
                     for r in reasks
                 ]
             )

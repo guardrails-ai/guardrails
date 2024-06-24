@@ -248,6 +248,19 @@ def get_reask_setup_for_string(
     return output_schema, messages
 
 
+def get_original_messages(exec_options: GuardExecutionOptions) -> List[Dict[str, Any]]:
+    exec_options = exec_options or GuardExecutionOptions()
+    original_messages = exec_options.messages or []
+    messages_prompt = next(
+        (
+            h.get("content")
+            for h in original_messages
+            if isinstance(h, dict) and h.get("role") == "user"
+        ),
+        "",
+    )
+    return original_messages
+
 def get_original_prompt(exec_options: Optional[GuardExecutionOptions] = None) -> str:
     exec_options = exec_options or GuardExecutionOptions()
     original_msg_history = exec_options.msg_history or []
@@ -283,8 +296,8 @@ def get_reask_setup_for_json(
     error_messages = {}
     prompt_params = prompt_params or {}
     exec_options = exec_options or GuardExecutionOptions()
-    original_prompt = get_original_prompt(exec_options)
-    use_xml = prompt_uses_xml(original_prompt)
+    original_messages = get_original_messages(exec_options)
+    use_xml = prompt_uses_xml(original_messages)
 
     reask_prompt_template = None
     if exec_options.reask_prompt:

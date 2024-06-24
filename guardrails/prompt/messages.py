@@ -59,6 +59,9 @@ class Messages:
                 })
         return Messages(formatted_messages)
     
+    def __iter__(self):
+        return iter(self._source)
+
     def substitute_constants(self, text):
         """Substitute constants in the prompt."""
         # Substitute constants by reading the constants file.

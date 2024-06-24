@@ -166,7 +166,10 @@ class Iteration(IIteration, ArbitraryModel):
             table.add_column("Content")
 
             for msg in messages:
-                table.add_row(str(msg["role"]), msg["content"].source)
+                if isinstance(msg["content"], str):
+                    table.add_row(str(msg["role"]), msg["content"])
+                else:
+                    table.add_row(str(msg["role"]), msg["content"].source)
 
             return table
 
