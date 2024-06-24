@@ -2,6 +2,7 @@ import copy
 from functools import partial
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
 
+
 from guardrails import validator_service
 from guardrails.actions.reask import get_reask_setup
 from guardrails.classes.execution.guard_execution_options import GuardExecutionOptions
@@ -9,7 +10,10 @@ from guardrails.classes.history import Call, Inputs, Iteration, Outputs
 from guardrails.classes.output_type import OutputTypes
 from guardrails.constants import fail_status
 from guardrails.errors import ValidationError
-from guardrails.llm_providers import AsyncPromptCallableBase, PromptCallableBase
+from guardrails.llm_providers import (
+    AsyncPromptCallableBase,
+    PromptCallableBase,
+)
 from guardrails.logger import set_scope
 from guardrails.prompt import Instructions, Prompt
 from guardrails.run.utils import msg_history_source, msg_history_string
@@ -523,10 +527,6 @@ class Runner:
             instructions, prompt = self.prepare_prompt(
                 call_log, instructions, prompt, prompt_params, api, attempt_number
             )
-        else:
-            raise UserFacingException(
-                ValueError("'prompt' or 'msg_history' must be provided.")
-            )
 
         return instructions, prompt, msg_history
 
@@ -564,7 +564,7 @@ class Runner:
         elif prompt:
             llm_response = api_fn(prompt.source)
         else:
-            raise ValueError("'prompt' or 'msg_history' must be provided.")
+            llm_response = api_fn()
 
         return llm_response
 
