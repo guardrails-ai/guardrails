@@ -21,7 +21,7 @@ class Messages:
     ):
         self._source = source
         # self.format_instructions_start = self.get_format_instructions_idx(source)
-        print("====source", source)
+
         # FIXME: Why is this happening on init instead of on format?
         # Substitute constants in the prompt.
         for message in self._source:

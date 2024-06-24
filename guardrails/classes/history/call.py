@@ -101,22 +101,21 @@ class Call(ICall, ArbitraryModel):
         return Stack()
 
     @property
-    def instructions(self) -> Optional[str]:
-        """The instructions as provided by the user when initializing or
-        calling the Guard."""
-        return self.inputs.instructions
-
+    def messages(self) -> Optional[List[Dict[str, Any]]]:
+        """The messages as provided by the user when initializing or calling the
+        Guard."""
+        return self.inputs.messages
+    
     @property
-    def compiled_instructions(self) -> Optional[str]:
-        """The initial compiled instructions that were passed to the LLM on the
+    def compiled_messages(self) -> Optional[List[Dict[str, Any]]]:
+        """The initial compiled messages that were passed to the LLM on the
         first call."""
         if self.iterations.empty():
             return None
-        initial_inputs = self.iterations.first.inputs  # type: ignore
-        instructions: Instructions = initial_inputs.instructions  # type: ignore
-        prompt_params = initial_inputs.prompt_params or {}
-        if instructions is not None:
-            return instructions.format(**prompt_params).source
+        initial_inputs = self.iterations.first.inputs
+        messages = initial_inputs.messages
+        if messages is not None:
+            return messages.format(**prompt_params).source
         
     @property
     def reask_messages(self) -> Stack[str]:
@@ -131,26 +130,6 @@ class Call(ICall, ArbitraryModel):
             return Stack(
                 *[
                     r.inputs.messages if r.inputs.messages is not None else None
-                    for r in reasks
-                ]
-            )
-
-        return Stack()
-    
-    @property
-    def reask_instructions(self) -> Stack[str]:
-        """The compiled instructions used during reasks.
-
-        Does not include the initial instructions.
-        """
-        if self.iterations.length > 0:
-            reasks = self.iterations.copy()
-            reasks.remove(reasks.first)  # type: ignore
-            return Stack(
-                *[
-                    r.inputs.instructions.source
-                    if r.inputs.instructions is not None
-                    else None
                     for r in reasks
                 ]
             )

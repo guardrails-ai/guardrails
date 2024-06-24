@@ -13,11 +13,8 @@ class CallInputs(Inputs, ICallInputs, ArbitraryModel):
         "during Guard.__call__ or Guard.parse.",
         default=None,
     )
-    prompt: Optional[str] = Field(
-        description="The prompt string as provided by the user.", default=None
-    )
-    instructions: Optional[str] = Field(
-        description="The instructions string as provided by the user.", default=None
+    messages: Optional[List[Dict[str, Any]]] = Field(
+        description="The messages as provided by the user.", default=None
     )
     args: List[Any] = Field(
         description="Additional arguments for the LLM as provided by the user.",

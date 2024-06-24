@@ -235,7 +235,8 @@ def get_reask_setup_for_string(
         messages = Messages(exec_options.reask_messages)
     if messages is None:
         messages = Messages([
-            {"role": "system", "content": "You are a helpful assistant."}
+            {"role": "system", "content": instructions},
+            {"role": "user", "content": prompt},
         ])
 
     messages = messages.format(
@@ -244,7 +245,7 @@ def get_reask_setup_for_string(
         **prompt_params,
     )
 
-    return output_schema, prompt, instructions, messages
+    return output_schema, messages
 
 
 def get_original_prompt(exec_options: Optional[GuardExecutionOptions] = None) -> str:
@@ -273,7 +274,7 @@ def get_reask_setup_for_json(
     use_full_schema: Optional[bool] = False,
     prompt_params: Optional[Dict[str, Any]] = None,
     exec_options: Optional[GuardExecutionOptions] = None,
-) -> Tuple[Dict[str, Any], Prompt, Instructions]:
+) -> Tuple[Dict[str, Any], Messages]:
     reask_schema = output_schema
     is_skeleton_reask = not any(isinstance(reask, FieldReAsk) for reask in reasks)
     is_nonparseable_reask = any(
@@ -423,7 +424,7 @@ def get_reask_setup_for_json(
             }
         ])
 
-    return reask_schema, prompt, instructions, messages
+    return reask_schema, messages
 
 
 def get_reask_setup(
@@ -437,7 +438,7 @@ def get_reask_setup(
     use_full_schema: Optional[bool] = False,
     prompt_params: Optional[Dict[str, Any]] = None,
     exec_options: Optional[GuardExecutionOptions] = None,
-) -> Tuple[Dict[str, Any], Prompt, Instructions]:
+) -> Tuple[Dict[str, Any], Messages]:
     prompt_params = prompt_params or {}
     exec_options = exec_options or GuardExecutionOptions()
 

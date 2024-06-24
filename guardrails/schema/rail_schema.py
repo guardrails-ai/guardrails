@@ -21,7 +21,7 @@ from guardrails.validator_base import OnFailAction, Validator
 
 
 ### RAIL to JSON Schema ###
-STRING_TAGS = ["instructions", "prompt", "reask_instructions", "reask_prompt", "messages", "reask_messages"]
+STRING_TAGS = ["messages", "reask_messages"]
 
 
 def parse_on_fail_handlers(element: _Element) -> Dict[str, OnFailAction]:
