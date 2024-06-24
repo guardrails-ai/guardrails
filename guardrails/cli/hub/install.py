@@ -1,7 +1,7 @@
-from contextlib import contextmanager
 import os
 import subprocess
 import sys
+from contextlib import contextmanager
 from string import Template
 from typing import List, Literal
 
@@ -9,14 +9,15 @@ import typer
 
 from guardrails.classes.generic import Stack
 from guardrails.cli.hub.hub import hub_command
+from guardrails.cli.hub.utils import (
+    get_hub_directory,
+    get_org_and_package_dirs,
+    get_site_packages_location,
+    pip_process,
+)
 from guardrails.cli.logger import LEVELS, logger
 from guardrails.cli.server.hub_client import get_validator_manifest
 from guardrails.cli.server.module_manifest import ModuleManifest
-
-from guardrails.cli.hub.utils import pip_process
-from guardrails.cli.hub.utils import get_site_packages_location
-from guardrails.cli.hub.utils import get_org_and_package_dirs
-from guardrails.cli.hub.utils import get_hub_directory
 
 from .console import console
 
@@ -237,11 +238,20 @@ Example: hub://guardrails/regex_match."
     with loader(dl_deps_msg, spinner="bouncingBar"):
         install_hub_module(module_manifest, site_packages, quiet=quiet)
 
+    # Ask about local model installation
+    install_local_models = typer.confirm(
+        "Would you like to install the local models?", default=False
+    )
+
     # Post-install
-    post_msg = "Running post-install setup"
-    with loader(post_msg, spinner="bouncingBar"):
-        run_post_install(module_manifest, site_packages)
-        add_to_hub_inits(module_manifest, site_packages)
+    if install_local_models:
+        post_msg = "Running post-install setup"
+        with loader(post_msg, spinner="bouncingBar"):
+            run_post_install(module_manifest, site_packages)
+    else:
+        logger.info("Skipping post-install setup (local models will not be installed)")
+
+    add_to_hub_inits(module_manifest, site_packages)
 
     logger.info("Installation complete")
 
