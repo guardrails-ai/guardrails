@@ -21,7 +21,6 @@ from langchain_core.runnables import Runnable
 
 from guardrails_api_client import (
     Guard as IGuard,
-    GuardHistory,
     ValidatorReference,
     ValidatePayload,
     SimpleTypes,
@@ -102,6 +101,7 @@ class Guard(IGuard, Generic[OT]):
 
     validators: List[ValidatorReference]
     output_schema: ModelSchema
+    history: Stack[Call]
 
     # Pydantic Config
     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -134,6 +134,9 @@ class Guard(IGuard, Generic[OT]):
         #     schema_with_type["type"] = ValidationType.from_dict(output_schema_type)
         model_schema = ModelSchema.from_dict(output_schema)
 
+        # TODO: Support a sink for history so that it is not solely held in memory
+        history: Stack[Call] = Stack()
+
         # Super Init
         super().__init__(
             id=id,
@@ -141,7 +144,7 @@ class Guard(IGuard, Generic[OT]):
             description=description,
             validators=validators,
             output_schema=model_schema,
-            i_history=GuardHistory([]),  # type: ignore
+            history=history,
         )
 
         ### Public ###
@@ -151,6 +154,7 @@ class Guard(IGuard, Generic[OT]):
         # self.description: Optional[str] = None
         # self.validators: Optional[List[ValidatorReference]] = []
         # self.output_schema: Optional[ModelSchema] = None
+        # self.history = history
 
         ### Legacy ##
         self._num_reasks = None
@@ -169,9 +173,6 @@ class Guard(IGuard, Generic[OT]):
         self._api_client: Optional[GuardrailsApiClient] = None
         self._allow_metrics_collection: Optional[bool] = None
 
-        # TODO: Support a sink for history so that it is not solely held in memory
-        self._history: Stack[Call] = Stack()
-
         # Gaurdrails As A Service Initialization
         api_key = os.environ.get("GUARDRAILS_API_KEY")
         if api_key is not None:
@@ -183,16 +184,18 @@ class Guard(IGuard, Generic[OT]):
                     self.id = loaded_guard.id
                     self.description = loaded_guard.description
                     self.validators = loaded_guard.validators or []
-                    self.output_schema = ModelSchema.from_dict(
-                        loaded_guard.output_schema.to_dict()
+
+                    loaded_output_schema = (
+                        ModelSchema.from_dict(  # trims out extra keys
+                            loaded_guard.output_schema.to_dict()
+                            if loaded_guard.output_schema
+                            else {"type": "string"}
+                        )
                     )
+                    self.output_schema = loaded_output_schema
                     _loaded = True
             if not _loaded:
                 self._save()
-
-    @property
-    def history(self):
-        return self._history
 
     @field_validator("output_schema")
     @classmethod
@@ -667,7 +670,7 @@ class Guard(IGuard, Generic[OT]):
 
             call_log = Call(inputs=call_inputs)
             set_scope(str(object_id(call_log)))
-            self._history.push(call_log)
+            self.history.push(call_log)
             # Otherwise, call the LLM synchronously
             return self._exec(
                 llm_api=llm_api,
@@ -1006,20 +1009,23 @@ class Guard(IGuard, Generic[OT]):
             guard_history = self._api_client.get_history(
                 self.name, validation_output.call_id
             )
-            self._history.extend([Call.from_interface(call) for call in guard_history])
+            self.history.extend([Call.from_interface(call) for call in guard_history])
 
             # TODO: See if the below statement is still true
             # Our interfaces are too different for this to work right now.
             # Once we move towards shared interfaces for both the open source
             # and the api we can re-enable this.
             # return ValidationOutcome[OT].from_guard_history(call_log)
+            validated_output = (
+                cast(OT, validation_output.validated_output.actual_instance)
+                if validation_output.validated_output
+                else None
+            )
             return ValidationOutcome[OT](
                 call_id=validation_output.call_id,
                 raw_llm_output=validation_output.raw_llm_output,
-                validated_output=cast(
-                    OT, validation_output.validated_output.actual_instance
-                ),
-                validation_passed=validation_output.validation_passed,
+                validated_output=validated_output,
+                validation_passed=(validation_output.validation_passed is True),
             )
         else:
             raise ValueError("Guard does not have an api client!")
@@ -1047,17 +1053,22 @@ class Guard(IGuard, Generic[OT]):
                         error="The response from the server was empty!",
                     )
                 else:
+                    validated_output = (
+                        cast(OT, validation_output.validated_output.actual_instance)
+                        if validation_output.validated_output
+                        else None
+                    )
                     yield ValidationOutcome[OT](
                         call_id=validation_output.call_id,
                         raw_llm_output=validation_output.raw_llm_output,
-                        validated_output=cast(OT, validation_output.validated_output),
-                        validation_passed=validation_output.validation_passed,
+                        validated_output=validated_output,
+                        validation_passed=(validation_output.validation_passed is True),
                     )
             if validation_output:
                 guard_history = self._api_client.get_history(
                     self.name, validation_output.call_id
                 )
-                self._history.extend(
+                self.history.extend(
                     [Call.from_interface(call) for call in guard_history]
                 )
         else:
@@ -1129,15 +1140,10 @@ class Guard(IGuard, Generic[OT]):
             description=self.description,
             validators=self.validators,
             output_schema=self.output_schema,
-            i_history=GuardHistory(list(self.history)),  # type: ignore
+            history=[c.to_interface() for c in self.history],  # type: ignore
         )
-        i_guard_dict = i_guard.to_dict()
 
-        i_guard_dict["history"] = [
-            call.to_dict() for call in i_guard_dict.get("history", [])
-        ]
-
-        return i_guard_dict
+        return i_guard.to_dict()
 
     # override IGuard.from_dict
     @classmethod
@@ -1157,11 +1163,10 @@ class Guard(IGuard, Generic[OT]):
             output_schema=output_schema,
         )
 
-        # TODO: Use Call.from_dict
-        i_history = (
-            i_guard.i_history.actual_instance
-            if i_guard.i_history and i_guard.i_history.actual_instance
+        history = (
+            [Call.from_interface(i_call) for i_call in i_guard.history]
+            if i_guard.history
             else []
         )
-        guard._history = Stack(*i_history)
+        guard._history = Stack(*history)
         return guard

@@ -152,11 +152,11 @@ class Outputs(IOutputs, ArbitraryModel):
 
     @classmethod
     def from_interface(cls, i_outputs: IOutputs) -> "Outputs":
-        reasks = None
+        reasks = []
         if i_outputs.reasks:
             reasks = [ReAsk.from_interface(r) for r in i_outputs.reasks]
 
-        validator_logs = None
+        validator_logs = []
         if i_outputs.validator_logs:
             validator_logs = [
                 ValidatorLogs.from_interface(v) for v in i_outputs.validator_logs
@@ -175,6 +175,6 @@ class Outputs(IOutputs, ArbitraryModel):
 
     @classmethod
     def from_dict(cls, obj: Dict[str, Any]) -> "Outputs":
-        i_outputs = IOutputs.from_dict(obj)
+        i_outputs = IOutputs.from_dict(obj) or IOutputs()
 
         return cls.from_interface(i_outputs)

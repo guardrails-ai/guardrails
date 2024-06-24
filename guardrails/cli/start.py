@@ -20,12 +20,22 @@ def start(
     env: Optional[str] = typer.Option(
         default="",
         help="An env file to load environment variables from.",
-        prompt=".env file (optional)",
     ),
     config: Optional[str] = typer.Option(
         default="",
         help="A config file to load Guards from.",
-        prompt="config file (optional)",
+    ),
+    timeout: Optional[int] = typer.Option(
+        default=5,
+        help="Gunicorn worker timeout.",
+    ),
+    threads: Optional[int] = typer.Option(
+        default=10,
+        help="Number of Gunicorn worker threads.",
+    ),
+    port: Optional[int] = typer.Option(
+        default=8000,
+        help="The port to run the server on.",
     ),
 ):
     logger.debug("Checking for prerequisites...")
@@ -41,4 +51,4 @@ def start(
     from guardrails_api.cli.start import start  # noqa
 
     logger.info("Starting Guardrails server")
-    start(env, config)
+    start(env, config, timeout, threads, port)

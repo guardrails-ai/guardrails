@@ -562,17 +562,24 @@ class AsyncGuard(Guard, Generic[OT]):
                         error="The response from the server was empty!",
                     )
                 else:
+                    validated_output = (
+                        cast(OT, validation_output.validated_output.actual_instance)
+                        if validation_output.validated_output
+                        else None
+                    )
                     yield ValidationOutcome[OT](
                         call_id=validation_output.call_id,
-                        raw_llm_output=validation_output.raw_llm_response,  # type: ignore
-                        validated_output=cast(OT, validation_output.validated_output),
-                        validation_passed=validation_output.result,
+                        raw_llm_output=validation_output.raw_llm_output,  # type: ignore
+                        validated_output=validated_output,
+                        validation_passed=(validation_output.validation_passed is True),
                     )
             if validation_output:
                 guard_history = self._api_client.get_history(
                     self.name, validation_output.call_id
                 )
-                self._history.extend([Call.from_dict(call) for call in guard_history])
+                self._history.extend(
+                    [Call.from_interface(call) for call in guard_history]
+                )
         else:
             raise ValueError("AsyncGuard does not have an api client!")
 

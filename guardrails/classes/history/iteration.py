@@ -251,15 +251,26 @@ class Iteration(IIteration, ArbitraryModel):
 
     @classmethod
     def from_interface(cls, i_iteration: IIteration) -> "Iteration":
+        inputs = (
+            Inputs.from_interface(i_iteration.inputs) if i_iteration.inputs else None
+        )
+        outputs = (
+            Outputs.from_interface(i_iteration.outputs) if i_iteration.outputs else None
+        )
         return cls(
             call_id=i_iteration.call_id,
             index=i_iteration.index,
-            inputs=Inputs.from_interface(i_iteration.inputs),
-            outputs=Outputs.from_interface(i_iteration.outputs),
+            inputs=inputs,
+            outputs=outputs,
         )
 
     @classmethod
     def from_dict(cls, obj: Dict[str, Any]) -> "Iteration":
-        i_iteration = IIteration.from_dict(obj)
+        id = obj.get("id", "0")
+        call_id = obj.get("call_id", "0")
+        index = obj.get("index", 0)
+        i_iteration = IIteration.from_dict(obj) or IIteration(
+            id=id, call_id=call_id, index=index
+        )
 
         return cls.from_interface(i_iteration)

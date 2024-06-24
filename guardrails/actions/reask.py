@@ -52,8 +52,10 @@ class ReAsk(IReask):
         return cls(incorrect_value=reask.incorrect_value, fail_results=fail_results)
 
     @classmethod
-    def from_dict(cls, obj: Dict[str, Any]) -> "ReAsk":
+    def from_dict(cls, obj: Dict[str, Any]) -> Optional["ReAsk"]:
         i_reask = super().from_dict(obj)
+        if not i_reask:
+            return None
         return cls.from_interface(i_reask)
 
 

@@ -34,7 +34,7 @@ class Inputs(IInputs, ArbitraryModel):
         "that will be formatted into the final LLM prompt.",
         default=None,
     )
-    num_reasks: int = Field(
+    num_reasks: Optional[int] = Field(
         description="The total number of reasks allowed; user provided or defaulted.",
         default=None,
     )
@@ -42,7 +42,7 @@ class Inputs(IInputs, ArbitraryModel):
         description="The metadata provided by the user to be used during validation.",
         default=None,
     )
-    full_schema_reask: bool = Field(
+    full_schema_reask: Optional[bool] = Field(
         description="Whether to perform reasks across the entire schema"
         "or at the field level.",
         default=None,
@@ -65,22 +65,24 @@ class Inputs(IInputs, ArbitraryModel):
                     )
                 serialized_msg_history.append(ser_msg)
 
+        instructions = (
+            self.instructions.source
+            if isinstance(self.instructions, Instructions)
+            else self.instructions
+        )
+
+        prompt = self.prompt.source if isinstance(self.prompt, Prompt) else self.prompt
+
         return IInputs(
-            llm_api=str(self.llm_api),
-            llm_output=self.llm_output,
-            instructions=(
-                self.instructions.source
-                if isinstance(self.instructions, Instructions)
-                else self.instructions
-            ),
-            prompt=(
-                self.prompt.source if isinstance(self.prompt, Prompt) else self.prompt
-            ),
-            msg_history=serialized_msg_history,
-            prompt_params=self.prompt_params,
-            num_reasks=self.num_reasks,
+            llm_api=str(self.llm_api),  # type: ignore - pyright doesn't understand aliases
+            llm_output=self.llm_output,  # type: ignore - pyright doesn't understand aliases
+            instructions=instructions,
+            prompt=prompt,
+            msg_history=serialized_msg_history,  # type: ignore - pyright doesn't understand aliases
+            prompt_params=self.prompt_params,  # type: ignore - pyright doesn't understand aliases
+            num_reasks=self.num_reasks,  # type: ignore - pyright doesn't understand aliases
             metadata=self.metadata,
-            full_schema_reask=self.full_schema_reask,
+            full_schema_reask=self.full_schema_reask,  # type: ignore - pyright doesn't understand aliases
             stream=self.stream,
         )
 
@@ -99,19 +101,26 @@ class Inputs(IInputs, ArbitraryModel):
                     ser_msg["content"] = Prompt(content)
                 deserialized_msg_history.append(ser_msg)
 
+        instructions = (
+            Instructions(i_inputs.instructions) if i_inputs.instructions else None
+        )
+
+        prompt = Prompt(i_inputs.prompt) if i_inputs.prompt else None
+        num_reasks = int(i_inputs.num_reasks) if i_inputs.num_reasks else None
         return cls(
             llm_api=None,
             llm_output=i_inputs.llm_output,
-            instructions=Instructions(i_inputs.instructions),
-            prompt=Prompt(i_inputs.prompt),
+            instructions=instructions,
+            prompt=prompt,
             msg_history=deserialized_msg_history,
             prompt_params=i_inputs.prompt_params,
-            num_reasks=i_inputs.num_reasks,
+            num_reasks=num_reasks,
             metadata=i_inputs.metadata,
-            full_schema_reask=i_inputs.full_schema_reask,
+            full_schema_reask=(i_inputs.full_schema_reask is True),
+            stream=(i_inputs.stream is True),
         )
 
     @classmethod
     def from_dict(cls, obj: Dict[str, Any]) -> "Inputs":
-        i_inputs = IInputs.from_dict(obj)
+        i_inputs = IInputs.from_dict(obj) or IInputs()
         return cls.from_interface(i_inputs)

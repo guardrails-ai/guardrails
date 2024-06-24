@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional, Union
 from pydantic import Field
 from guardrails_api_client import (
     ValidationResult as IValidationResult,  # noqa
@@ -19,7 +19,7 @@ class ValidationResult(IValidationResult, ArbitraryModel):
 
     @classmethod
     def from_interface(
-        cls, i_validation_result: IValidationResult
+        cls, i_validation_result: Union[IValidationResult, IPassResult, IFailResult]
     ) -> "ValidationResult":
         if i_validation_result.outcome == "pass":
             return PassResult(
@@ -28,10 +28,10 @@ class ValidationResult(IValidationResult, ArbitraryModel):
                 validated_chunk=i_validation_result.validated_chunk,
             )
         elif i_validation_result.outcome == "fail":
-            return FailResult.from_interface(i_validation_result)
+            return FailResult.from_dict(i_validation_result.to_dict())
 
         return cls(
-            outcome=i_validation_result.outcome,
+            outcome=i_validation_result.outcome or "",
             metadata=i_validation_result.metadata,
             validated_chunk=i_validation_result.validated_chunk,
         )
@@ -88,15 +88,18 @@ class FailResult(ValidationResult, IFailResult):
             ]
 
         return cls(
-            outcome=i_fail_result.outcome,
+            outcome="fail",
             metadata=i_fail_result.metadata,
             validated_chunk=i_fail_result.validated_chunk,
-            error_message=i_fail_result.error_message,
+            error_message=i_fail_result.error_message or "",
             fix_value=i_fail_result.fix_value,
             error_spans=error_spans,
         )
 
     @classmethod
     def from_dict(cls, obj: Dict[str, Any]) -> "FailResult":
-        i_fail_result = IFailResult.from_dict(obj)
+        i_fail_result = IFailResult.from_dict(obj) or IFailResult(
+            outcome="Fail",
+            error_message="",  # type: ignore - pyright doesn't understand aliases
+        )
         return cls.from_interface(i_fail_result)

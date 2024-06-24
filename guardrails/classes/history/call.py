@@ -5,7 +5,7 @@ from rich.panel import Panel
 from rich.pretty import pretty_repr
 from rich.tree import Tree
 
-from guardrails_api_client import Call as ICall, CallException
+from guardrails_api_client import Call as ICall
 from guardrails.actions.filter import Filter
 from guardrails.actions.refrain import Refrain
 from guardrails.actions.reask import merge_reask_output
@@ -49,7 +49,7 @@ class Call(ICall, ArbitraryModel):
         call_id = str(object_id(self))
         iterations = iterations or Stack()
         inputs = inputs or CallInputs()
-        super().__init__(id=call_id)
+        super().__init__(id=call_id, iterations=iterations, inputs=inputs)
         self.iterations = iterations
         self.inputs = inputs
         self._exception = exception
@@ -324,10 +324,6 @@ class Call(ICall, ArbitraryModel):
             return None
         return self.iterations.last.exception  # type: ignore
 
-    def _set_exception(self, exception: Optional[Exception]):
-        self._exception = exception
-        self.i_exception = CallException(message=str(exception))
-
     @property
     def failed_validations(self) -> Stack[ValidatorLogs]:
         """The validator logs for any validations that failed during the
@@ -418,13 +414,20 @@ class Call(ICall, ArbitraryModel):
 
     @classmethod
     def from_interface(cls, i_call: ICall) -> "Call":
-        iterations = Stack(*[Iteration.from_interface(i) for i in i_call.iterations])
-        inputs = CallInputs.from_interface(i_call.inputs)
-        return cls(iterations=iterations, inputs=inputs, exception=i_call.exception)
+        iterations = Stack(
+            *[Iteration.from_interface(i) for i in (i_call.iterations or [])]
+        )
+        inputs = (
+            CallInputs.from_interface(i_call.inputs) if i_call.inputs else CallInputs()
+        )
+        exception = Exception(i_call.exception) if i_call.exception else None
+        return cls(iterations=iterations, inputs=inputs, exception=exception)
 
     # TODO: Necessary to GET /guards/{guard_name}/history/{call_id}
     @classmethod
     def from_dict(cls, obj: Dict[str, Any]) -> "Call":
         i_call = ICall.from_dict(obj)
 
-        return cls.from_interface(i_call)
+        if i_call:
+            return cls.from_interface(i_call)
+        return Call()

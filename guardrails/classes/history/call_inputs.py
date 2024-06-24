@@ -29,27 +29,30 @@ class CallInputs(Inputs, ICallInputs, ArbitraryModel):
     )
 
     def to_interface(self) -> ICallInputs:
-        rest = super().to_interface()
-        return ICallInputs(
-            **rest,
-            args=self.args,
-            kwargs=self.kwargs,
-        )
+        inputs = super().to_interface().to_dict() or {}
+        inputs["args"] = self.args
+        # TODO: Better way to prevent creds from being logged,
+        #   if they're passed in as kwargs to the LLM
+        redacted_kwargs = {}
+        for k, v in self.kwargs.items():
+            if "key" in k.lower() or "token" in k.lower():
+                redaction_length = len(v) - 4
+                redacted_kwargs[k] = f"{"*"*redaction_length}{v[-4:]}"
+            else:
+                redacted_kwargs[k] = v
+        inputs["kwargs"] = redacted_kwargs
+        return ICallInputs(**inputs)
 
     def to_dict(self) -> Dict[str, Any]:
         return self.to_interface().to_dict()
 
     @classmethod
     def from_interface(cls, i_call_inputs: ICallInputs) -> "CallInputs":
-        inputs = Inputs.from_interface(i_call_inputs)
-        return cls(
-            **inputs,
-            args=i_call_inputs.args,
-            kwargs=i_call_inputs.kwargs,
-        )
+        inputs = i_call_inputs.to_dict()
+        return cls(**inputs)
 
     @classmethod
     def from_dict(cls, obj: Dict[str, Any]):
-        i_call_inputs = super().from_dict(obj)
+        i_call_inputs = ICallInputs.from_dict(obj) or ICallInputs()
 
         return cls.from_interface(i_call_inputs)
