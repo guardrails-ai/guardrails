@@ -74,7 +74,7 @@ class Inputs(IInputs, ArbitraryModel):
         prompt = self.prompt.source if isinstance(self.prompt, Prompt) else self.prompt
 
         return IInputs(
-            llm_api=str(self.llm_api),  # type: ignore - pyright doesn't understand aliases
+            llm_api=str(self.llm_api) if self.llm_api else None,  # type: ignore - pyright doesn't understand aliases
             llm_output=self.llm_output,  # type: ignore - pyright doesn't understand aliases
             instructions=instructions,
             prompt=prompt,
@@ -106,7 +106,9 @@ class Inputs(IInputs, ArbitraryModel):
         )
 
         prompt = Prompt(i_inputs.prompt) if i_inputs.prompt else None
-        num_reasks = int(i_inputs.num_reasks) if i_inputs.num_reasks else None
+        num_reasks = (
+            int(i_inputs.num_reasks) if i_inputs.num_reasks is not None else None
+        )
         return cls(
             llm_api=None,
             llm_output=i_inputs.llm_output,

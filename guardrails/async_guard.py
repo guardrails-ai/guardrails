@@ -295,7 +295,7 @@ class AsyncGuard(Guard, Generic[OT]):
             else:
                 call_log = Call(inputs=call_inputs)
                 set_scope(str(object_id(call_log)))
-                self._history.push(call_log)
+                self.history.push(call_log)
                 result = await self._exec(
                     llm_api=llm_api,
                     llm_output=llm_output,
@@ -577,7 +577,7 @@ class AsyncGuard(Guard, Generic[OT]):
                 guard_history = self._api_client.get_history(
                     self.name, validation_output.call_id
                 )
-                self._history.extend(
+                self.history.extend(
                     [Call.from_interface(call) for call in guard_history]
                 )
         else:

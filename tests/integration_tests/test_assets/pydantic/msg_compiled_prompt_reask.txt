@@ -16,7 +16,7 @@ Error Messages:
 
 Given below is a JSON Schema that describes the output structure you should return.
 
-{"properties": {"name": {"description": "The name of the movie.", "title": "Name", "type": "string"}, "director": {"description": "The name of the director.", "title": "Director", "type": "string"}, "release_year": {"description": "The year the movie was released.", "title": "Release Year", "type": "integer"}}, "required": ["name", "director", "release_year"], "type": "object", "title": "Movie"}
+{"properties": {"name": {"description": "The name of the movie.", "title": "Name", "type": "string"}, "director": {"description": "The name of the director.", "title": "Director", "type": "string"}, "release_year": {"description": "The year the movie was released.", "title": "Release Year", "type": "integer"}}, "uniqueItems": false, "required": ["name", "director", "release_year"], "type": "object", "title": "Movie", "deprecated": false, "readOnly": false, "writeOnly": false}
 
 ONLY return a valid JSON object (no other text is necessary), where the key of the field in the JSON is the key of the entries within the schema's `properties`, and the value is of the type specified by the `type` property under that key. 
 The JSON MUST conform to the structure described by the JSON Schema provided BUT SHOULD NOT BE A JSON Schema ITSELF.

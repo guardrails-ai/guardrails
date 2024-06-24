@@ -144,7 +144,7 @@ class Guard(IGuard, Generic[OT]):
             description=description,
             validators=validators,
             output_schema=model_schema,
-            history=history,
+            history=history,  # type: ignore - pyright doesn't understand pydantic overrides
         )
 
         ### Public ###
@@ -1168,5 +1168,5 @@ class Guard(IGuard, Generic[OT]):
             if i_guard.history
             else []
         )
-        guard._history = Stack(*history)
+        guard.history = Stack(*history)
         return guard

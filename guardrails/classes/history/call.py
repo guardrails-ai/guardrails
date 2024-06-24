@@ -49,7 +49,7 @@ class Call(ICall, ArbitraryModel):
         call_id = str(object_id(self))
         iterations = iterations or Stack()
         inputs = inputs or CallInputs()
-        super().__init__(id=call_id, iterations=iterations, inputs=inputs)
+        super().__init__(id=call_id, iterations=iterations, inputs=inputs)  # type: ignore - pyright doesn't understand pydantic overrides
         self.iterations = iterations
         self.inputs = inputs
         self._exception = exception
@@ -421,7 +421,9 @@ class Call(ICall, ArbitraryModel):
             CallInputs.from_interface(i_call.inputs) if i_call.inputs else CallInputs()
         )
         exception = Exception(i_call.exception) if i_call.exception else None
-        return cls(iterations=iterations, inputs=inputs, exception=exception)
+        call_inst = cls(iterations=iterations, inputs=inputs, exception=exception)
+        call_inst.id = i_call.id
+        return call_inst
 
     # TODO: Necessary to GET /guards/{guard_name}/history/{call_id}
     @classmethod

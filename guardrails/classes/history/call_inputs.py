@@ -48,8 +48,20 @@ class CallInputs(Inputs, ICallInputs, ArbitraryModel):
 
     @classmethod
     def from_interface(cls, i_call_inputs: ICallInputs) -> "CallInputs":
-        inputs = i_call_inputs.to_dict()
-        return cls(**inputs)
+        return cls(
+            llm_api=None,
+            llm_output=i_call_inputs.llm_output,
+            instructions=i_call_inputs.instructions,
+            prompt=i_call_inputs.prompt,
+            msg_history=i_call_inputs.msg_history,
+            prompt_params=i_call_inputs.prompt_params,
+            num_reasks=i_call_inputs.num_reasks,
+            metadata=i_call_inputs.metadata,
+            full_schema_reask=(i_call_inputs.full_schema_reask is True),
+            stream=(i_call_inputs.stream is True),
+            args=(i_call_inputs.args or []),
+            kwargs=(i_call_inputs.kwargs or {}),
+        )
 
     @classmethod
     def from_dict(cls, obj: Dict[str, Any]):

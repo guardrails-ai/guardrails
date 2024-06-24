@@ -401,7 +401,7 @@ def get_reask_setup_for_json(
     def reask_decoder(obj: ReAsk):
         decoded = {}
         for k, v in obj.__dict__.items():
-            if k in ["path"]:
+            if k in ["path", "additional_properties"]:
                 continue
             if k == "fail_results":
                 k = "error_messages"

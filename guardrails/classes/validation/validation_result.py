@@ -36,6 +36,13 @@ class ValidationResult(IValidationResult, ArbitraryModel):
             validated_chunk=i_validation_result.validated_chunk,
         )
 
+    @classmethod
+    def from_dict(cls, obj: Dict[str, Any]) -> "ValidationResult":
+        i_validation_result = IValidationResult.from_dict(obj) or IValidationResult(
+            outcome="pail"
+        )
+        return cls.from_interface(i_validation_result)
+
 
 class PassResult(ValidationResult, IPassResult):
     outcome: Literal["pass"] = "pass"
@@ -55,7 +62,18 @@ class PassResult(ValidationResult, IPassResult):
         return i_pass_result
 
     def to_dict(self) -> Dict[str, Any]:
-        return self.to_interface().to_dict()
+        # Pydantic's model_dump method isn't working properly
+        _dict = {
+            "outcome": self.outcome,
+            "metadata": self.metadata,
+            "validatedChunk": self.validated_chunk,
+            "valueOverride": (
+                self.value_override
+                if self.value_override is not self.ValueOverrideSentinel
+                else None
+            ),
+        }
+        return _dict
 
 
 # FIXME: Add this to json schema
@@ -103,3 +121,19 @@ class FailResult(ValidationResult, IFailResult):
             error_message="",  # type: ignore - pyright doesn't understand aliases
         )
         return cls.from_interface(i_fail_result)
+
+    def to_dict(self) -> Dict[str, Any]:
+        # Pydantic's model_dump method isn't working properly
+        _dict = {
+            "outcome": self.outcome,
+            "metadata": self.metadata,
+            "validatedChunk": self.validated_chunk,
+            "errorMessage": self.error_message,
+            "fixValue": self.fix_value,
+            "errorSpans": (
+                [error_span.to_dict() for error_span in self.error_spans]
+                if self.error_spans
+                else []
+            ),
+        }
+        return _dict

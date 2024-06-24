@@ -29,7 +29,7 @@ class LLMResponse(ILLMResponse):
 
         async_stream_output = None
         if self.async_stream_output:
-            async_stream_output = [str(async_to_sync(so)) for so in self.stream_output]
+            async_stream_output = [str(async_to_sync(so)) for so in self.stream_output]  # type: ignore - we just established it isn't None
 
         return ILLMResponse(
             prompt_token_count=self.prompt_token_count,  # type: ignore - pyright doesn't understand aliases

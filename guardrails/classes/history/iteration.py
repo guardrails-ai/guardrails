@@ -257,12 +257,14 @@ class Iteration(IIteration, ArbitraryModel):
         outputs = (
             Outputs.from_interface(i_iteration.outputs) if i_iteration.outputs else None
         )
-        return cls(
+        iteration = cls(
             call_id=i_iteration.call_id,
             index=i_iteration.index,
             inputs=inputs,
             outputs=outputs,
         )
+        iteration.id = i_iteration.id
+        return iteration
 
     @classmethod
     def from_dict(cls, obj: Dict[str, Any]) -> "Iteration":
