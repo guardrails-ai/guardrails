@@ -64,7 +64,7 @@ class ValidationOutcome(IValidationOutcome, ArbitraryModel, Generic[OT]):
         error = call.error
         output = cast(OT, call.guarded_output)
         return cls(
-            call_id=call.id,
+            call_id=call.id,  # type: ignore
             raw_llm_output=call.raw_outputs.last,
             validated_output=output,
             reask=reask,
@@ -98,7 +98,7 @@ class ValidationOutcome(IValidationOutcome, ArbitraryModel, Generic[OT]):
 
     def to_dict(self):
         i_validation_outcome = IValidationOutcome(
-            call_id=self.call_id,
+            call_id=self.call_id,  # type: ignore
             raw_llm_output=self.raw_llm_output,  # type: ignore
             validated_output=ValidationOutcomeValidatedOutput(self.validated_output),  # type: ignore
             reask=self.reask,

@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional, Union
 from builtins import id as object_id
-from pydantic import Field, PrivateAttr
+from pydantic import Field
 from rich.panel import Panel
 from rich.pretty import pretty_repr
 from rich.tree import Tree
@@ -36,7 +36,10 @@ class Call(ICall, ArbitraryModel):
     inputs: CallInputs = Field(
         description="The inputs as passed in to Guard.__call__ or Guard.parse"
     )
-    _exception: Optional[Exception] = PrivateAttr()
+    exception: Optional[Exception] = Field(
+        description="The exception that interrupted the run.",
+        default=None,
+    )
 
     # Prevent Pydantic from changing our types
     # Without this, Pydantic casts iterations to a list
@@ -52,7 +55,7 @@ class Call(ICall, ArbitraryModel):
         super().__init__(id=call_id, iterations=iterations, inputs=inputs)  # type: ignore - pyright doesn't understand pydantic overrides
         self.iterations = iterations
         self.inputs = inputs
-        self._exception = exception
+        self.exception = exception
 
     @property
     def prompt(self) -> Optional[str]:
@@ -309,20 +312,11 @@ class Call(ICall, ArbitraryModel):
     def error(self) -> Optional[str]:
         """The error message from any exception that raised and interrupted the
         run."""
-        if self._exception:
-            return str(self._exception)
+        if self.exception:
+            return str(self.exception)
         elif self.iterations.empty():
             return None
         return self.iterations.last.error  # type: ignore
-
-    @property
-    def exception(self) -> Optional[Exception]:
-        """The exception that interrupted the run."""
-        if self._exception:
-            return self._exception
-        elif self.iterations.empty():
-            return None
-        return self.iterations.last.exception  # type: ignore
 
     @property
     def failed_validations(self) -> Stack[ValidatorLogs]:

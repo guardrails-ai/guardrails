@@ -55,7 +55,7 @@ pip = ">=22"
 opentelemetry-sdk = "^1.24.0"
 opentelemetry-exporter-otlp-proto-grpc = "^1.24.0"
 opentelemetry-exporter-otlp-proto-http = "^1.24.0"
-guardrails-api-client = "0.3.7"
+guardrails-api-client = "0.3.8"
 
 [tool.poetry.extras]
 sql = ["sqlvalidator", "sqlalchemy", "sqlglot"]
@@ -79,12 +79,6 @@ pypdfium2 = "^4.23.1"
 pyright = "1.1.334"
 lxml-stubs = "^0.4.0"
 ruff = ">=0.4.1"
-
-[tool.poetry.group.api]
-optional = true
-
-[tool.poetry.group.api.dependencies]
-guardrails-api = "^0.0.0a0"
 
 [tool.poetry.group.docs]
 optional = true

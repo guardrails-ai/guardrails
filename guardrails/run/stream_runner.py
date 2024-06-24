@@ -186,7 +186,7 @@ class StreamRunner(Runner):
                 # 5. Convert validated fragment to a pretty JSON string
                 passed = call_log.status == pass_status
                 yield ValidationOutcome(
-                    call_id=call_log.id,
+                    call_id=call_log.id,  # type: ignore
                     #  The chunk or the whole output?
                     raw_llm_output=chunk_text,
                     validated_output=validated_text,
@@ -215,7 +215,7 @@ class StreamRunner(Runner):
                         reask = last_result
 
                     yield ValidationOutcome(
-                        call_id=call_log.id,
+                        call_id=call_log.id,  # type: ignore
                         raw_llm_output=last_chunk_text,
                         validated_output=validated_output,
                         reask=reask,
@@ -260,7 +260,7 @@ class StreamRunner(Runner):
 
                 # 5. Convert validated fragment to a pretty JSON string
                 yield ValidationOutcome(
-                    call_id=call_log.id,
+                    call_id=call_log.id,  # type: ignore
                     raw_llm_output=fragment,
                     validated_output=validated_fragment,
                     validation_passed=validated_fragment is not None,

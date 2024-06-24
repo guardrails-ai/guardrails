@@ -555,7 +555,7 @@ class AsyncGuard(Guard, Generic[OT]):
                 validation_output = fragment
                 if validation_output is None:
                     yield ValidationOutcome[OT](
-                        call_id="0",
+                        call_id="0",  # type: ignore
                         raw_llm_output=None,
                         validated_output=None,
                         validation_passed=False,
@@ -568,7 +568,7 @@ class AsyncGuard(Guard, Generic[OT]):
                         else None
                     )
                     yield ValidationOutcome[OT](
-                        call_id=validation_output.call_id,
+                        call_id=validation_output.call_id,  # type: ignore
                         raw_llm_output=validation_output.raw_llm_output,  # type: ignore
                         validated_output=validated_output,
                         validation_passed=(validation_output.validation_passed is True),

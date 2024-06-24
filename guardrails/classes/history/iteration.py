@@ -41,7 +41,7 @@ class Iteration(IIteration, ArbitraryModel):
         outputs = outputs or Outputs()
         super().__init__(
             id=iteration_id,
-            call_id=call_id,
+            call_id=call_id,  # type: ignore
             index=index,
             inputs=inputs,
             outputs=outputs,
@@ -240,7 +240,7 @@ class Iteration(IIteration, ArbitraryModel):
     def to_interface(self) -> IIteration:
         return IIteration(
             id=self.id,
-            call_id=self.call_id,
+            call_id=self.call_id,  # type: ignore
             index=self.index,
             inputs=self.inputs.to_interface(),
             outputs=self.outputs.to_interface(),
@@ -269,10 +269,12 @@ class Iteration(IIteration, ArbitraryModel):
     @classmethod
     def from_dict(cls, obj: Dict[str, Any]) -> "Iteration":
         id = obj.get("id", "0")
-        call_id = obj.get("call_id", "0")
+        call_id = obj.get("callId", obj.get("call_id", "0"))
         index = obj.get("index", 0)
         i_iteration = IIteration.from_dict(obj) or IIteration(
-            id=id, call_id=call_id, index=index
+            id=id,
+            call_id=call_id,  # type: ignore
+            index=index,  # type: ignore
         )
 
         return cls.from_interface(i_iteration)

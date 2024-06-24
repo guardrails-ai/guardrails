@@ -1611,13 +1611,13 @@ protobuf = ["grpcio-tools (>=1.64.0)"]
 
 [[package]]
 name = "guardrails-api-client"
-version = "0.3.5"
+version = "0.3.8"
 description = "Guardrails API Client."
 optional = false
 python-versions = "<4,>=3.8"
 files = [
-    {file = "guardrails_api_client-0.3.5-py3-none-any.whl", hash = "sha256:04783581fe95dc576f33de34ade9dfbe64c99a707b179ad88ee7eee8674f7381"},
-    {file = "guardrails_api_client-0.3.5.tar.gz", hash = "sha256:45aa2c40d3e29d77da214258cef4d5b1926ec5d329a3bf3c67c7c40fd0685097"},
+    {file = "guardrails_api_client-0.3.8-py3-none-any.whl", hash = "sha256:2becd5ac9c720879a997e50e2a813d9e77a6fb1a7068a96b1b9712dd6dd9efb8"},
+    {file = "guardrails_api_client-0.3.8.tar.gz", hash = "sha256:2e1e45cddf727534a378bc99f7f98da0800960918c75bda010b8bc493b946d16"},
 ]
 
 [package.extras]
@@ -6853,4 +6853,4 @@ vectordb = ["faiss-cpu", "numpy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "bf366b6887e63cecd4e31247da1c9e710692a518e7c07c29d97e168c6cde6369"
+content-hash = "b9343603ab705973c972c28fcbce08e8a8b3cbe7a8b372a0604f28be8feb09eb"

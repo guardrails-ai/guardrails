@@ -233,11 +233,11 @@ class Runner:
 
         except UserFacingException as e:
             # Because Pydantic v1 doesn't respect property setters
-            call_log._exception = e.original_exception
+            call_log.exception = e.original_exception
             raise e.original_exception
         except Exception as e:
             # Because Pydantic v1 doesn't respect property setters
-            call_log._exception = e
+            call_log.exception = e
             raise e
         return call_log
 
