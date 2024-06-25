@@ -1,5 +1,5 @@
 from typing import Any, Dict, Optional
-from guardrails_api_client import ModelSchema as IModelSchema
+from guardrails_api_client import ModelSchema as IModelSchema, ValidationType
 
 
 # Because pydantic insists on including None values in the serialized dictionary
@@ -8,12 +8,21 @@ class ModelSchema(IModelSchema):
         super_dict = super().to_dict()
         return {k: v for k, v in super_dict.items() if v is not None}
 
-    def from_dict(self, d: Dict[str, Any]) -> Optional["ModelSchema"]:
-        i_model_schema = super().from_dict(d)
+    @classmethod
+    def from_dict(cls, obj: Optional[Dict[str, Any]]) -> "ModelSchema":
+        if not obj:
+            obj = {"type": "string"}
 
-        if not i_model_schema:
-            return i_model_schema
+        i_model_schema = super().from_dict(obj)
 
-        trimmed = {k: v for k, v in i_model_schema.to_dict().items() if v is not None}
+        i_model_schema_dict = (
+            i_model_schema.to_dict() if i_model_schema else {"type": "string"}
+        )
 
-        return ModelSchema(**trimmed)
+        trimmed = {k: v for k, v in i_model_schema_dict.items() if v is not None}
+
+        output_schema_type = trimmed.get("type")
+        if output_schema_type:
+            trimmed["type"] = ValidationType.from_dict(output_schema_type)  # type: ignore
+
+        return cls(**trimmed)  # type: ignore

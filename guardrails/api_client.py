@@ -9,6 +9,8 @@ from guardrails_api_client.api.guard_api import GuardApi
 from guardrails_api_client.api.validate_api import ValidateApi
 from guardrails_api_client.models import Guard, ValidatePayload
 
+from guardrails.logger import logger
+
 
 class GuardrailsApiClient:
     _api_client: ApiClient
@@ -38,6 +40,13 @@ class GuardrailsApiClient:
         self._guard_api.update_guard(
             guard_name=guard.name, body=guard, _request_timeout=self.timeout
         )
+
+    def fetch_guard(self, guard_name: str) -> Optional[Guard]:
+        try:
+            return self._guard_api.get_guard(guard_name=guard_name)
+        except Exception as e:
+            logger.debug(f"Error fetching guard {guard_name}: {e}")
+            return None
 
     def validate(
         self,
@@ -86,3 +95,6 @@ class GuardrailsApiClient:
                 if line:
                     json_output = json.loads(line)
                     yield json_output
+
+    def get_history(self, guard_name: str, call_id: str):
+        return self._guard_api.get_guard_history(guard_name, call_id)

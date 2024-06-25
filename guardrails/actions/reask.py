@@ -20,6 +20,44 @@ class ReAsk(IReask):
     incorrect_value: Any
     fail_results: List[FailResult]
 
+    @classmethod
+    def from_interface(cls, reask: IReask) -> "ReAsk":
+        fail_results = []
+        if reask.fail_results:
+            fail_results: List[FailResult] = [
+                FailResult.from_interface(fail_result)
+                for fail_result in reask.fail_results
+            ]
+
+        if reask.additional_properties.get("path"):
+            return FieldReAsk(
+                incorrect_value=reask.incorrect_value,
+                fail_results=fail_results,
+                path=reask.additional_properties["path"],
+            )
+
+        if len(fail_results) == 1:
+            error_message = fail_results[0].error_message
+            if error_message == "Output is not parseable as JSON":
+                return NonParseableReAsk(
+                    incorrect_value=reask.incorrect_value,
+                    fail_results=fail_results,
+                )
+            elif "JSON does not match schema" in error_message:
+                return SkeletonReAsk(
+                    incorrect_value=reask.incorrect_value,
+                    fail_results=fail_results,
+                )
+
+        return cls(incorrect_value=reask.incorrect_value, fail_results=fail_results)
+
+    @classmethod
+    def from_dict(cls, obj: Dict[str, Any]) -> Optional["ReAsk"]:
+        i_reask = super().from_dict(obj)
+        if not i_reask:
+            return None
+        return cls.from_interface(i_reask)
+
 
 class FieldReAsk(ReAsk):
     # FIXME: This shouldn't be optional
@@ -363,7 +401,7 @@ def get_reask_setup_for_json(
     def reask_decoder(obj: ReAsk):
         decoded = {}
         for k, v in obj.__dict__.items():
-            if k in ["path"]:
+            if k in ["path", "additional_properties"]:
                 continue
             if k == "fail_results":
                 k = "error_messages"
