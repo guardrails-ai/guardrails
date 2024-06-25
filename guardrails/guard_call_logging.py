@@ -1,56 +1,79 @@
 import os
 import sqlite3
 import threading
-from dataclasses import dataclass, fields
+from dataclasses import dataclass
+from typing import Iterator, Optional
 
 
 @dataclass
-class GuardCallLogEntry:
-    # Keep in sync with the table creation.
-    guardname: str
+class GuardLogEntry:
+    guard_name: str
     start_time: float
     end_time: float
-    prevalidate_text: str
-    postvalidate_text: str
-    exception_text: str
     log_level: int
+    id: int = -1
+    prevalidate_text: str = ""
+    postvalidate_text: str = ""
+    exception_message: str = ""
 
 
 class _SyncStructuredLogHandler:
-    LOG_TABLE = "guard_logs"
-    CREATE_COMMAND = """"""
+    CREATE_COMMAND = """
+        CREATE TABLE IF NOT EXISTS guard_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            guard_name TEXT,
+            start_time REAL,
+            end_time REAL,
+            prevalidate_text TEXT,
+            postvalidate_text TEXT,
+            exception_message TEXT,
+            log_level INTEGER
+        );
+    """
     INSERT_COMMAND = """
-        INSERT INTO ? VALUES (
-            :guard_name, :start_time, :end_time, :prevalidate_text, :exception_text, 
-            :log_level
-        )
+        INSERT INTO guard_logs (
+            guard_name, start_time, end_time, prevalidate_text, postvalidate_text,
+            exception_message, log_level
+        ) VALUES (
+            :guard_name, :start_time, :end_time, :prevalidate_text, :postvalidate_text,
+            :exception_message, :log_level
+        );
     """
 
-    def __init__(self, default_log_path: os.PathLike):
-        self.db = sqlite3.connect(default_log_path, )
-        cursor = self.db.cursor()
-        # Generate table rows from GuardCallLogEntry.
-        create_fields = ""
-        for field in fields(GuardCallLogEntry):
-            create_fields += field.name
-            create_fields += " "
-            if field.type == int:
-                create_fields += "INTEGER"
-            elif field.type == float:
-                create_fields += "REAL"
-            elif field.type == str:
-                create_fields += "TEXT"
-            create_fields += ","
-        create_fields.removesuffix(",")  # Remove the spurious trailing ','.
-        cursor.execute(
-            "CREATE TABLE IF NOT EXISTS " +
-            _SyncStructuredLogHandler.LOG_TABLE +
-            f"({fields});"
-        )
+    def __init__(self, log_path: os.PathLike, read_mode: bool):
+        self.readonly = read_mode
+        if read_mode:
+            self.db = _SyncStructuredLogHandler._get_read_connection(log_path)
+        else:
+            self.db = _SyncStructuredLogHandler._get_write_connection(log_path)
 
-    def log_entry(self, entry: GuardCallLogEntry):
-        cursor = self.db.cursor()
-        cursor.execute("""INSERT""")
+    @classmethod
+    def _get_write_connection(cls, log_path: os.PathLike) -> sqlite3.Connection:
+        try:
+            db = sqlite3.connect(log_path, isolation_level=None)
+            db.execute('PRAGMA journal_mode = wal')
+            db.execute('PRAGMA synchronous = OFF')
+            # isolation_level = None and pragma WAL means we can READ from the DB
+            # while threads using it are writing.  Synchronous off puts us on the
+            # highway to the danger zone, depending on how willing we are to lose log
+            # messages in the event of a guard crash.
+        except sqlite3.OperationalError as e:
+            #logging.exception("Unable to connect to guard log handler.")
+            raise e
+        with db:
+            db.execute(_SyncStructuredLogHandler.CREATE_COMMAND)
+        return db
+
+    @classmethod
+    def _get_read_connection(cls, log_path: os.PathLike) -> sqlite3.Connection:
+        # A bit of a hack to open in read-only mode...
+        db = sqlite3.connect(
+            "file:" + log_path + "?mode=ro",
+            isolation_level=None,
+            uri=True
+        )
+        db.row_factory = sqlite3.Row
+        return db
 
     def log(
             self,
@@ -58,20 +81,41 @@ class _SyncStructuredLogHandler:
             start_time: float,
             end_time: float,
             prevalidate_text: str,
+            postvalidate_text: str,
             exception_text: str,
             log_level: int,
     ):
-        cursor = self.db.cursor()
-        cursor.execute(INSERT_COMMAND, (
-            _SyncStructuredLogHandler.LOG_TABLE,
-            guard_name,
-            start_time,
-            end_time,
-            prevalidate_text,
-            exception_text,
-            log_level
-        ))
+        assert not self.readonly
+        with self.db:
+            self.db.execute(_SyncStructuredLogHandler.INSERT_COMMAND, dict(
+                guard_name=guard_name,
+                start_time=start_time,
+                end_time=end_time,
+                prevalidate_text=prevalidate_text,
+                postvalidate_text=postvalidate_text,
+                exception_message=exception_text,
+                log_level=log_level
+            ))
 
+    def tail_logs(self, start_offset_idx: int) -> Iterator[GuardLogEntry]:
+        last_idx = start_offset_idx
+        cursor = self.db.cursor()
+        sql = """
+            SELECT 
+                guard_name, start_time, end_time, prevalidate_text, postvalidate_text, 
+                exception_message, log_level 
+            FROM guard_logs 
+            WHERE id > ?
+            ORDER BY start_time;
+        """
+        cursor.execute("SELECT 1 LIMIT 0;")
+        while True:
+            for row in cursor:
+                last_entry = GuardLogEntry(**row)
+                last_idx = last_entry.id
+                yield last_entry
+            # If we're here we've run out of entries to tail.
+            cursor.execute(sql, (last_idx,))
 
 class SyncStructuredLogHandlerSingleton(_SyncStructuredLogHandler):
     _instance = None
