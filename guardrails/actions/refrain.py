@@ -24,6 +24,10 @@ def check_for_refrain(value: Union[List, Dict]) -> bool:
 
 # Could be a generic instead of Any
 def apply_refrain(value: Any, output_type: OutputTypes) -> Any:
+    """Recursively check for any values that are instances of Refrain.
+
+    If found, return an empty value of the appropriate type.
+    """
     refrain_value = {}
     if output_type == OutputTypes.STRING:
         refrain_value = ""

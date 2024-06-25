@@ -78,6 +78,17 @@ class PassResult(ValidationResult, IPassResult):
 
 # FIXME: Add this to json schema
 class ErrorSpan(IErrorSpan, ArbitraryModel):
+    """ErrorSpan provide additional context for why a validation failed. They
+    specify the start and end index of the segment that caused the failure,
+    which can be useful when validating large chunks of text or validating
+    while streaming with different chunking methods.
+
+    Attributes:
+        start (int): Starting index relative to the validated chunk.
+        end (int): Ending index relative to the validated chunk.
+        reason (str): Reason validation failed for this chunk.
+    """
+
     start: int
     end: int
     # reason validation failed, specific to this chunk
@@ -89,7 +100,10 @@ class FailResult(ValidationResult, IFailResult):
 
     error_message: str
     fix_value: Optional[Any] = None
-    # segments that caused validation to fail
+    """Segments that caused validation to fail.
+
+    May not exist for non-streamed output.
+    """
     error_spans: Optional[List[ErrorSpan]] = None
 
     @classmethod

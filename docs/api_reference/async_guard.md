@@ -1,7 +1,7 @@
 <!-- ::: my_library.my_module.my_class -->
 
 
-::: guardrails.guard.Guard
+::: guardrails.guard.AsyncGuard
     options:
         members: 
             - "__init__"
