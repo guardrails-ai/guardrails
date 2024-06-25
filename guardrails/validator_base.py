@@ -15,9 +15,13 @@ from typing_extensions import deprecated
 
 from guardrails.actions.filter import Filter
 from guardrails.actions.refrain import Refrain
-from guardrails.classes import ErrorSpan  # noqa
-from guardrails.classes import PassResult  # noqa
-from guardrails.classes import FailResult, InputType, ValidationResult
+from guardrails.classes import (
+    ErrorSpan,  # noqa
+    FailResult,
+    InputType,
+    PassResult,  # noqa
+    ValidationResult,
+)
 from guardrails.classes.credentials import Credentials
 from guardrails.constants import hub
 from guardrails.errors import ValidationError
@@ -509,10 +513,7 @@ class Validator(Runnable):
         _validate() and is intended to apply any meta-validation requirements, logic,
         or pre/post processing."""
         validation_result = self._validate(value, metadata)
-        self._after_validation_call(
-            remote_inference=not self.use_local,
-            used_guardrails_endpoint=self.validation_endpoint,
-        )
+        self._after_validation_call()
         return validation_result
 
     def _inference(self, model_input: Any) -> Any:
