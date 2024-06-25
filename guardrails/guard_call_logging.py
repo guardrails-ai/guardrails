@@ -25,11 +25,13 @@ writer.log(
 import os
 import sqlite3
 import threading
+import time
 from dataclasses import dataclass, asdict
 from typing import Iterator
 
-# We should support logging a validation outcome, too.
-# from guardrails.classes import ValidationOutcome
+from guardrails.classes import ValidationOutcome
+from guardrails.classes.history import Call
+
 
 LOG_FILENAME = "guardrails_calls.db"
 
@@ -175,3 +177,29 @@ class SyncStructuredLogHandlerSingleton(_SyncStructuredLogHandler):
     def get_reader(cls) -> _SyncStructuredLogHandler:
         return _SyncStructuredLogHandler(LOG_FILENAME, read_mode=True)
 
+
+class LoggedCall:
+    def __init__(self, call_log: Call):
+        # Have to wait until the actual call to get the sync/async method.
+        self.log_handler = None
+        self.called_fn = call_log
+        self.start_time = None
+        self.end_time = None
+
+    def report_outcome(self, result: ValidationOutcome):
+        pass
+
+    def __enter__(self):
+        self.log_handler = SyncStructuredLogHandlerSingleton()
+        self.start_time = time.time()
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.end_time = time.time()
+        # Log the outcome of the operation.
+        self.log_handler.log()
+
+    def __aenter__(self):
+        self.start_time = time.time()
+
+    def __aexit__(self, exc_type, exc_val, exc_tb):
+        self.end_time = time.time()
