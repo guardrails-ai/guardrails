@@ -40,12 +40,7 @@ def start(
 ):
     logger.debug("Checking for prerequisites...")
     if not api_is_installed():
-        # FIXME: once 0.5.0 is released, and the guardrails-api package is published,
-        #   this should be the package name
-        # package_name = "guardrails-api"
-        package_name = (
-            "/Users/calebcourier/Projects/gr-mono/guardrails-cdk/guardrails-api"
-        )
+        package_name = 'guardrails-api>="^0.0.0a0"'
         pip_process("install", package_name)
 
     from guardrails_api.cli.start import start  # type: ignore
