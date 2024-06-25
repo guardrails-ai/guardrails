@@ -57,6 +57,7 @@ opentelemetry-sdk = "^1.24.0"
 opentelemetry-exporter-otlp-proto-grpc = "^1.24.0"
 opentelemetry-exporter-otlp-proto-http = "^1.24.0"
 guardrails-api-client = ">=0.3.8"
+guardrails-api = ">=0.0.0a0"
 
 [tool.poetry.extras]
 sql = ["sqlvalidator", "sqlalchemy", "sqlglot"]
@@ -66,6 +67,7 @@ litellm = ["litellm"]
 anthropic = ["anthropic"]
 docs-build = ["nbdoc", "docspec_python", "pydoc-markdown"]
 huggingface = ["transformers", "torch", "jsonformer"]
+api = ["guardrails-api"]
 
 
 [tool.poetry.group.dev.dependencies]
@@ -85,7 +87,7 @@ ruff = ">=0.4.1"
 optional = true
 
 [tool.poetry.group.api.dependencies]
-guardrails-api = "^0.0.0a0"
+guardrails-api = ">=0.0.0a0"
 
 [tool.poetry.group.docs]
 optional = true
