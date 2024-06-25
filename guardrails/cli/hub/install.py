@@ -85,7 +85,6 @@ def add_to_hub_inits(manifest: ModuleManifest, site_packages: str):
 def run_post_install(manifest: ModuleManifest, site_packages: str):
     org_package = get_org_and_package_dirs(manifest)
     post_install_script = manifest.post_install
-
     if not post_install_script:
         return
 
@@ -238,10 +237,17 @@ Example: hub://guardrails/regex_match."
     with loader(dl_deps_msg, spinner="bouncingBar"):
         install_hub_module(module_manifest, site_packages, quiet=quiet)
 
-    # Ask about local model installation
-    install_local_models = typer.confirm(
-        "Would you like to install the local models?", default=False
-    )
+    if module_manifest.tags.has_guardrails_endpoint:
+        install_local_models = typer.confirm(
+            "This validator has a Guardrails AI inference endpoint available. Would "
+            "you still like to install the local models for local inference?",
+            default=False,
+        )
+    else:
+        # Ask about local model installation
+        install_local_models = typer.confirm(
+            "Would you like to install the local models?", default=False
+        )
 
     # Post-install
     if install_local_models:
