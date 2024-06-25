@@ -30,7 +30,7 @@ class HttpError(Exception):
     message: str
 
 
-validator_hub_service = "https://so4sg4q4pb.execute-api.us-east-1.amazonaws.com"
+VALIDATOR_HUB_SERVICE = "https://so4sg4q4pb.execute-api.us-east-1.amazonaws.com"
 
 
 def get_jwt_token(creds: Credentials) -> Optional[str]:

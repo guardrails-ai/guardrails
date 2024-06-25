@@ -21,15 +21,14 @@ from guardrails.classes import FailResult, InputType, ValidationResult
 from guardrails.classes.credentials import Credentials
 from guardrails.constants import hub
 from guardrails.errors import ValidationError
-from guardrails.hub_token.token import get_jwt_token
-from guardrails.logger import logger
+from guardrails.hub_token.token import VALIDATOR_HUB_SERVICE, get_jwt_token
 from guardrails.remote_inference import remote_inference
 from guardrails.types.on_fail import OnFailAction
+from guardrails.utils.hub_telemetry_utils import HubTelemetry
 
 VALIDATOR_IMPORT_WARNING = """Accessing `{validator_name}` using
 `from guardrails.validators import {validator_name}` is deprecated and
 support will be removed after version 0.5.x. Please switch to the Guardrails Hub syntax:
-`from guardrails.hub import {hub_validator_name}` for future updates and support.
 For additional details, please visit: {hub_validator_url}.
 """
 
@@ -423,7 +422,7 @@ class Validator(Runnable):
         if not self.validation_endpoint:
             validator_id = self.rail_alias.split("/")[-1]
             submission_url = (
-                f"{self.validation_endpoint}/validator/{validator_id}/inference"
+                f"{VALIDATOR_HUB_SERVICE}/validator/{validator_id}/inference"
             )
             self.validation_endpoint = submission_url
 
@@ -509,7 +508,12 @@ class Validator(Runnable):
         External facing validate function. This function acts as a wrapper for
         _validate() and is intended to apply any meta-validation requirements, logic,
         or pre/post processing."""
-        return self._validate(value, metadata)
+        validation_result = self._validate(value, metadata)
+        self._after_validation_call(
+            remote_inference=not self.use_local,
+            used_guardrails_endpoint=self.validation_endpoint,
+        )
+        return validation_result
 
     def _inference(self, model_input: Any) -> Any:
         """Calls either a local or remote inference engine for use in the validation
@@ -523,17 +527,8 @@ class Validator(Runnable):
         """
         # Only use if both are set, otherwise fall back to local inference
         if self.use_local:
-            logger.debug(
-                f"{self.rail_alias} either has no hub authentication token or has not "
-                "enabled remote inference execution. This validator will use a local "
-                "inference engine."
-            )
             return self._inference_local(model_input)
 
-        logger.debug(
-            f"{self.rail_alias} has found a Validator Hub Service token."
-            " Using a remote inference engine."
-        )
         return self._inference_remote(model_input)
 
     def _chunking_function(self, chunk: str) -> List[str]:
@@ -771,3 +766,27 @@ class Validator(Runnable):
         )
 
         return ValidatorRunnable(self)
+
+    def _after_validation_call(self) -> None:
+        """Logs telemetry after the validator is called."""
+
+        if not self.kwargs.get("disable_tracer", False):
+            # Get HubTelemetry singleton and create a new span to
+            # log the validator inference
+            _hub_telemetry = HubTelemetry()
+            used_guardrails_endpoint = (
+                VALIDATOR_HUB_SERVICE in self.validation_endpoint and not self.use_local
+            )
+            used_custom_endpoint = not self.use_local and not used_guardrails_endpoint
+            _hub_telemetry.create_new_span(
+                span_name="/validator_inference",
+                attributes=[
+                    ("validator_name", self.rail_alias),
+                    ("used_remote_inference", not self.use_local),
+                    ("used_local_inference", self.use_local),
+                    ("used_guardrails_endpoint", used_guardrails_endpoint),
+                    ("used_custom_endpoint", used_custom_endpoint),
+                ],
+                is_parent=False,  # This span will have no children
+                has_parent=True,  # This span has a parent
+            )
