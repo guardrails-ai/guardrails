@@ -90,23 +90,31 @@ class Outputs(IOutputs, ArbitraryModel):
 
         These indices are relative to the complete LLM output.
         """
-        total_len = 0
+        # map of total length to validator
+        total_len_by_validator = {}
         spans_in_output = []
         for log in self.validator_logs:
+            validator_name = log.validator_name
+            if total_len_by_validator.get(validator_name) is None:
+                total_len_by_validator[validator_name] = 0
             result = log.validation_result
             if isinstance(result, FailResult):
                 if result.error_spans is not None:
                     for error_span in result.error_spans:
                         spans_in_output.append(
                             ErrorSpan(
-                                start=error_span.start + total_len,
-                                end=error_span.end + total_len,
+                                start=error_span.start
+                                + total_len_by_validator[validator_name],
+                                end=error_span.end
+                                + total_len_by_validator[validator_name],
                                 reason=error_span.reason,
                             )
                         )
             if isinstance(result, ValidationResult):
                 if result and result.validated_chunk is not None:
-                    total_len += len(result.validated_chunk)
+                    total_len_by_validator[validator_name] += len(
+                        result.validated_chunk
+                    )
         return spans_in_output
 
     @property
