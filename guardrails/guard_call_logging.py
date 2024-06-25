@@ -1,8 +1,37 @@
+"""
+guard_call_logging.py
+
+A set of tools to track the behavior of guards, specifically with the intent of
+collating the pre/post validation text and timing of guard calls.  Uses a singleton to
+share write access to a SQLite database across threads.
+
+# Reading logs (basic):
+reader = SyncStructuredLogHandlerSingleton.get_reader()
+for t in reader.tail_logs():
+    print(t)
+
+# Reading logs (advanced):
+reader = SyncStructuredLogHandlerSingleton.get_reader()
+reader.db.execute("SELECT * FROM guard_logs;")  # Arbitrary SQL support.
+
+# Saving logs
+writer = SynbcStructuredLogHandlerSingleton()
+writer.log(
+  "my_guard_name", start, end, "Raw LLM Output Text", "Sanitized", "exception?", 0
+)
+
+"""
+
 import os
 import sqlite3
 import threading
-from dataclasses import dataclass
-from typing import Iterator, Optional
+from dataclasses import dataclass, asdict
+from typing import Iterator
+
+# We should support logging a validation outcome, too.
+# from guardrails.classes import ValidationOutcome
+
+LOG_FILENAME = "guardrails_calls.db"
 
 
 @dataclass
@@ -97,13 +126,21 @@ class _SyncStructuredLogHandler:
                 log_level=log_level
             ))
 
-    def tail_logs(self, start_offset_idx: int) -> Iterator[GuardLogEntry]:
+    def log_entry(self, guard_log_entry):
+        assert not self.readonly
+        with self.db:
+            self.db.execute(
+                _SyncStructuredLogHandler.INSERT_COMMAND,
+                asdict(guard_log_entry)
+            )
+
+    def tail_logs(self, start_offset_idx: int = 0) -> Iterator[GuardLogEntry]:
         last_idx = start_offset_idx
         cursor = self.db.cursor()
         sql = """
             SELECT 
-                guard_name, start_time, end_time, prevalidate_text, postvalidate_text, 
-                exception_message, log_level 
+                id, guard_name, start_time, end_time, prevalidate_text, 
+                postvalidate_text, exception_message, log_level 
             FROM guard_logs 
             WHERE id > ?
             ORDER BY start_time;
@@ -117,6 +154,7 @@ class _SyncStructuredLogHandler:
             # If we're here we've run out of entries to tail.
             cursor.execute(sql, (last_idx,))
 
+
 class SyncStructuredLogHandlerSingleton(_SyncStructuredLogHandler):
     _instance = None
     _lock = threading.Lock()
@@ -126,10 +164,14 @@ class SyncStructuredLogHandlerSingleton(_SyncStructuredLogHandler):
             # This only runs if we definitely need to lock.
             with cls._lock:
                 if cls._instance is None:
-                    cls._instance = cls.create()
+                    cls._instance = cls._create()
         return cls._instance
 
     @classmethod
-    def create(cls) -> _SyncStructuredLogHandler:
-        return _SyncStructuredLogHandler()
+    def _create(cls) -> _SyncStructuredLogHandler:
+        return _SyncStructuredLogHandler(LOG_FILENAME, read_mode=False)
+
+    @classmethod
+    def get_reader(cls) -> _SyncStructuredLogHandler:
+        return _SyncStructuredLogHandler(LOG_FILENAME, read_mode=True)
 
