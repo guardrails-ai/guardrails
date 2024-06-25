@@ -7276,6 +7276,7 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 
 [extras]
 anthropic = ["anthropic"]
+api = ["guardrails-api"]
 docs-build = ["docspec_python", "nbdoc", "pydoc-markdown"]
 huggingface = ["jsonformer", "torch", "transformers"]
 litellm = ["litellm"]
@@ -7286,4 +7287,4 @@ vectordb = ["faiss-cpu", "numpy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "516e84db2a745f6f4063db8e501def11c1a070afbf04e24fae619e50ab462941"
+content-hash = "f0005738aa6be84cf095bffd9f73ef581691b511fd037c8f78a051bb14ba23b8"
