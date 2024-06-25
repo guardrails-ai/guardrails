@@ -137,13 +137,31 @@ class Outputs(IOutputs, ArbitraryModel):
 
     def to_interface(self) -> IOutputs:
         return IOutputs(
-            llm_response_info=self.llm_response_info.to_interface(),  # type: ignore
-            raw_output=self.raw_output,  # type: ignore
-            parsed_output=OutputsParsedOutput(self.parsed_output),  # type: ignore
-            validation_response=OutputsValidationResponse(self.validation_response),  # type: ignore
-            guarded_output=OutputsParsedOutput(self.guarded_output),  # type: ignore
-            reasks=self.reasks,  # type: ignore
-            validator_logs=[v.to_interface() for v in self.validator_logs],  # type: ignore
+            llm_response_info=(  # type: ignore - pydantic alias
+                self.llm_response_info.to_interface()
+                if self.llm_response_info
+                else None
+            ),
+            raw_output=self.raw_output,  # type: ignore - pydantic alias
+            parsed_output=(  # type: ignore - pydantic alias
+                OutputsParsedOutput(self.parsed_output) if self.parsed_output else None
+            ),
+            validation_response=(  # type: ignore - pydantic alias
+                OutputsValidationResponse(self.validation_response)
+                if self.validation_response
+                else None
+            ),
+            guarded_output=(  # type: ignore - pydantic alias
+                OutputsParsedOutput(self.guarded_output)
+                if self.guarded_output
+                else None
+            ),
+            reasks=self.reasks,  # type: ignore - pydantic alias
+            validator_logs=[  # type: ignore - pydantic alias
+                v.to_interface()
+                for v in self.validator_logs
+                if isinstance(v, ValidatorLogs)
+            ],
             error=self.error,
         )
 
