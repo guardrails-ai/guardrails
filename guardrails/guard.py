@@ -1152,6 +1152,19 @@ class Guard(IGuard, Generic[OT]):
             if llm_api is not None:
                 payload["llmApi"] = get_llm_api_enum(llm_api, *args, **kwargs)
 
+            if not payload.get("prompt"):
+                payload["prompt"] = self._exec_opts.prompt
+            if not payload.get("instructions"):
+                payload["instructions"] = self._exec_opts.instructions
+            if not payload.get("msg_history"):
+                payload["msg_history"] = self._exec_opts.msg_history
+            if not payload.get("reask_prompt"):
+                payload["reask_prompt"] = self._exec_opts.reask_prompt
+            if not payload.get("reask_instructions"):
+                payload["reask_instructions"] = self._exec_opts.reask_instructions
+            if not payload.get("num_reasks"):
+                payload["num_reasks"] = self._exec_opts.num_reasks
+
             should_stream = kwargs.get("stream", False)
             if should_stream:
                 return self._stream_server_call(payload=payload)
