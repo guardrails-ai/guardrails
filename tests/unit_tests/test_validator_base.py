@@ -340,14 +340,14 @@ def test_input_validation_fix(mocker):
         == "But really,"
     )
 
-    # but raises for msg_history validation
+    # but raises for messages validation
     guard = Guard.from_pydantic(output_class=Pet)
-    guard.use(TwoWords(on_fail=OnFailAction.FIX), on="msg_history")
+    guard.use(TwoWords(on_fail=OnFailAction.FIX), on="messages")
 
     with pytest.raises(ValidationError) as excinfo:
         guard(
             mock_llm_api,
-            msg_history=[
+            messages=[
                 {
                     "role": "user",
                     "content": "What kind of pet should I get?",
@@ -434,14 +434,14 @@ async def test_async_input_validation_fix(mocker):
         == "But really,"
     )
 
-    # but raises for msg_history validation
+    # but raises for messages validation
     guard = AsyncGuard.from_pydantic(output_class=Pet)
-    guard.use(TwoWords(on_fail=OnFailAction.FIX), on="msg_history")
+    guard.use(TwoWords(on_fail=OnFailAction.FIX), on="messages")
 
     with pytest.raises(ValidationError) as excinfo:
         await guard(
             mock_llm_api,
-            msg_history=[
+            messages=[
                 {
                     "role": "user",
                     "content": "What kind of pet should I get?",
@@ -584,12 +584,12 @@ def test_input_validation_fail(
 
     # With Msg History Validation
     guard = Guard.from_pydantic(output_class=Pet)
-    guard.use(TwoWords(on_fail=on_fail), on="msg_history")
+    guard.use(TwoWords(on_fail=on_fail), on="messages")
 
     with pytest.raises(ValidationError) as excinfo:
         guard(
             custom_llm,
-            msg_history=[
+            messages=[
                 {
                     "role": "user",
                     "content": "What kind of pet should I get?",
@@ -740,14 +740,14 @@ async def test_input_validation_fail_async(
     assert isinstance(guard.history.last.exception, ValidationError)
     assert guard.history.last.exception == excinfo.value
 
-    # with_msg_history_validation
+    # with_messages_validation
     guard = AsyncGuard.from_pydantic(output_class=Pet)
-    guard.use(TwoWords(on_fail=on_fail), on="msg_history")
+    guard.use(TwoWords(on_fail=on_fail), on="messages")
 
     with pytest.raises(ValidationError) as excinfo:
         await guard(
             custom_llm,
-            msg_history=[
+            messages=[
                 {
                     "role": "user",
                     "content": "What kind of pet should I get?",
@@ -809,14 +809,14 @@ This also is not two words
 
 
 def test_input_validation_mismatch_raise():
-    # prompt validation, msg_history argument
+    # prompt validation, messages argument
     guard = Guard.from_pydantic(output_class=Pet)
-    guard.use(TwoWords(on_fail=OnFailAction.FIX), on="prompt")
+    guard.use(TwoWords(on_fail=OnFailAction.FIX), on="messages")
 
     with pytest.raises(ValueError):
         guard(
             get_static_openai_create_func(),
-            msg_history=[
+            messages=[
                 {
                     "role": "user",
                     "content": "What kind of pet should I get?",
@@ -824,14 +824,14 @@ def test_input_validation_mismatch_raise():
             ],
         )
 
-    # instructions validation, msg_history argument
+    # instructions validation, messages argument
     guard = Guard.from_pydantic(output_class=Pet)
     guard.use(TwoWords(on_fail=OnFailAction.FIX), on="instructions")
 
     with pytest.raises(ValueError):
         guard(
             get_static_openai_create_func(),
-            msg_history=[
+            messages=[
                 {
                     "role": "user",
                     "content": "What kind of pet should I get?",
@@ -839,9 +839,9 @@ def test_input_validation_mismatch_raise():
             ],
         )
 
-    # msg_history validation, prompt argument
+    # messages validation, prompt argument
     guard = Guard.from_pydantic(output_class=Pet)
-    guard.use(TwoWords(on_fail=OnFailAction.FIX), on="msg_history")
+    guard.use(TwoWords(on_fail=OnFailAction.FIX), on="messages")
 
     with pytest.raises(ValueError):
         guard(

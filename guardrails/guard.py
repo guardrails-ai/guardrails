@@ -764,7 +764,7 @@ class Guard(IGuard, Generic[OT]):
         Returns:
             The raw text output from the LLM and the validated output.
         """
-        messages = kwargs.get("messages") or self._exec_opts.messages or []
+        messages = kwargs.pop("messages", None) or self._exec_opts.messages or []
 
         return self._execute(
             *args,
