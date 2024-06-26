@@ -720,7 +720,12 @@ async def test_input_validation_fail_async(
     with pytest.raises(ValidationError) as excinfo:
         await guard(
             custom_llm,
-            prompt="What kind of pet should I get?",
+            messages=[
+                {
+                    "role": "user",
+                    "content": "What kind of pet should I get?",
+                }
+            ],
         )
     assert str(excinfo.value) == structured_prompt_error
     assert isinstance(guard.history.last.exception, ValidationError)
@@ -826,7 +831,7 @@ def test_input_validation_mismatch_raise():
 
     # instructions validation, messages argument
     guard = Guard.from_pydantic(output_class=Pet)
-    guard.use(TwoWords(on_fail=OnFailAction.FIX), on="instructions")
+    guard.use(TwoWords(on_fail=OnFailAction.FIX), on="messages")
 
     with pytest.raises(ValueError):
         guard(

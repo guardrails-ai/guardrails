@@ -249,7 +249,7 @@ class Runner:
             else:
                 messages = self.prepare(
                     call_log,
-                    message=messages,
+                    messages=messages,
                     prompt_params=prompt_params,
                     api=api,
                     attempt_number=index,
