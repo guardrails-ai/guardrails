@@ -65,6 +65,14 @@ def split_sentence_nltk(chunk: str):
     sentences = nltk.sent_tokenize(chunk)
     if len(sentences) == 0:
         return []
+    if len(sentences) == 1:
+        sentence = sentences[0].strip()
+        # this can still fail if the last chunk ends on the . in an email address
+        if sentence[-1] == ".":
+            return [sentence, ""]
+        else:
+            return []
+
     # return the sentence
     # then the remaining chunks that aren't finished accumulating
     return [sentences[0], "".join(sentences[1:])]
@@ -192,7 +200,7 @@ class Validator:
         ), f"Validator {self.__class__.__name__} is not registered. "
 
     def chunking_function(self, chunk: str):
-        return split_sentence_str(chunk)
+        return split_sentence_nltk(chunk)
 
     def validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
         """Validates a value and return a validation result."""
