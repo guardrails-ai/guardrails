@@ -21,11 +21,10 @@ from langchain_core.runnables import Runnable
 
 from guardrails_api_client import (
     Guard as IGuard,
-    GuardHistory,
     ValidatorReference,
     ValidatePayload,
-    ValidationType,
     SimpleTypes,
+    ValidationOutcome as IValidationOutcome,
 )
 from pydantic import field_validator
 from pydantic.config import ConfigDict
@@ -33,15 +32,11 @@ from pydantic.config import ConfigDict
 from guardrails.api_client import GuardrailsApiClient
 from guardrails.classes.output_type import OT
 from guardrails.classes.validation_outcome import ValidationOutcome
-from guardrails.classes.validation.validation_result import FailResult
 from guardrails.classes.credentials import Credentials
 from guardrails.classes.execution import GuardExecutionOptions
 from guardrails.classes.generic import Stack
 from guardrails.classes.history import Call
 from guardrails.classes.history.call_inputs import CallInputs
-from guardrails.classes.history.inputs import Inputs
-from guardrails.classes.history.iteration import Iteration
-from guardrails.classes.history.outputs import Outputs
 from guardrails.classes.output_type import OutputTypes
 from guardrails.classes.schema.processed_schema import ProcessedSchema
 from guardrails.classes.schema.model_schema import ModelSchema
@@ -52,7 +47,6 @@ from guardrails.llm_providers import (
     model_is_supported_server_side,
 )
 from guardrails.logger import logger, set_scope
-from guardrails.prompt import Instructions, Prompt
 from guardrails.run import Runner, StreamRunner
 from guardrails.schema.primitive_schema import primitive_to_schema
 from guardrails.schema.pydantic_schema import pydantic_model_to_schema
@@ -72,8 +66,6 @@ from guardrails.types.pydantic import ModelOrListOfModels
 from guardrails.utils.naming_utils import random_id
 from guardrails.utils.api_utils import extract_serializeable_metadata
 from guardrails.utils.hub_telemetry_utils import HubTelemetry
-from guardrails.classes.llm.llm_response import LLMResponse
-from guardrails.actions.reask import FieldReAsk
 from guardrails.utils.validator_utils import (
     get_validator,
     parse_validator_reference,
@@ -112,6 +104,7 @@ class Guard(IGuard, Generic[OT]):
 
     validators: List[ValidatorReference]
     output_schema: ModelSchema
+    history: Stack[Call]
 
     # Pydantic Config
     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -127,6 +120,8 @@ class Guard(IGuard, Generic[OT]):
     ):
         """Initialize the Guard with validators and an output schema."""
 
+        _try_to_load = name is not None
+
         # Shared Interface Properties
         id = id or random_id()
         name = name or f"gr-{id}"
@@ -136,11 +131,14 @@ class Guard(IGuard, Generic[OT]):
         output_schema = output_schema or {"type": "string"}
 
         # Init ModelSchema class
-        schema_with_type = {**output_schema}
-        output_schema_type = output_schema.get("type")
-        if output_schema_type:
-            schema_with_type["type"] = ValidationType.from_dict(output_schema_type)
-        model_schema = ModelSchema(**schema_with_type)
+        # schema_with_type = {**output_schema}
+        # output_schema_type = output_schema.get("type")
+        # if output_schema_type:
+        #     schema_with_type["type"] = ValidationType.from_dict(output_schema_type)
+        model_schema = ModelSchema.from_dict(output_schema)
+
+        # TODO: Support a sink for history so that it is not solely held in memory
+        history: Stack[Call] = Stack()
 
         # Super Init
         super().__init__(
@@ -149,7 +147,7 @@ class Guard(IGuard, Generic[OT]):
             description=description,
             validators=validators,
             output_schema=model_schema,
-            i_history=GuardHistory([]),  # type: ignore
+            history=history,  # type: ignore - pyright doesn't understand pydantic overrides
         )
 
         ### Public ###
@@ -159,6 +157,7 @@ class Guard(IGuard, Generic[OT]):
         # self.description: Optional[str] = None
         # self.validators: Optional[List[ValidatorReference]] = []
         # self.output_schema: Optional[ModelSchema] = None
+        # self.history = history
 
         ### Legacy ##
         self._num_reasks = None
@@ -178,18 +177,29 @@ class Guard(IGuard, Generic[OT]):
         self._allow_metrics_collection: Optional[bool] = None
         self._output_formatter: Optional[BaseFormatter] = None
 
-        # TODO: Support a sink for history so that it is not solely held in memory
-        self._history: Stack[Call] = Stack()
-
         # Gaurdrails As A Service Initialization
         api_key = os.environ.get("GUARDRAILS_API_KEY")
         if api_key is not None:
             self._api_client = GuardrailsApiClient(api_key=api_key)
-            self.upsert_guard()
+            _loaded = False
+            if _try_to_load:
+                loaded_guard = self._api_client.fetch_guard(self.name)
+                if loaded_guard:
+                    self.id = loaded_guard.id
+                    self.description = loaded_guard.description
+                    self.validators = loaded_guard.validators or []
 
-    @property
-    def history(self):
-        return self._history
+                    loaded_output_schema = (
+                        ModelSchema.from_dict(  # trims out extra keys
+                            loaded_guard.output_schema.to_dict()
+                            if loaded_guard.output_schema
+                            else {"type": "string"}
+                        )
+                    )
+                    self.output_schema = loaded_output_schema
+                    _loaded = True
+            if not _loaded:
+                self._save()
 
     @field_validator("output_schema")
     @classmethod
@@ -274,6 +284,31 @@ class Guard(IGuard, Generic[OT]):
             for v_list in [self._validator_map[k] for k in self._validator_map]
             for v in v_list
         ]
+
+    def _fill_exec_opts(
+        self,
+        *,
+        num_reasks: Optional[int] = None,
+        prompt: Optional[str] = None,
+        instructions: Optional[str] = None,
+        msg_history: Optional[List[Dict]] = None,
+        reask_prompt: Optional[str] = None,
+        reask_instructions: Optional[str] = None,
+        **kwargs,  # noqa
+    ):
+        """Backfill execution options from kwargs."""
+        if num_reasks is not None:
+            self._exec_opts.num_reasks = num_reasks
+        if prompt is not None:
+            self._exec_opts.prompt = prompt
+        if instructions is not None:
+            self._exec_opts.instructions = instructions
+        if msg_history is not None:
+            self._exec_opts.msg_history = msg_history
+        if reask_prompt is not None:
+            self._exec_opts.reask_prompt = reask_prompt
+        if reask_instructions is not None:
+            self._exec_opts.reask_instructions = reask_instructions
 
     @classmethod
     def _from_rail_schema(
@@ -562,12 +597,22 @@ class Guard(IGuard, Generic[OT]):
         prompt: Optional[str] = None,
         instructions: Optional[str] = None,
         msg_history: Optional[List[Dict]] = None,
+        reask_prompt: Optional[str] = None,
+        reask_instructions: Optional[str] = None,
         metadata: Optional[Dict],
         full_schema_reask: Optional[bool] = None,
         **kwargs,
     ) -> Union[ValidationOutcome[OT], Iterable[ValidationOutcome[OT]]]:
         self._fill_validator_map()
         self._fill_validators()
+        self._fill_exec_opts(
+            num_reasks=num_reasks,
+            prompt=prompt,
+            instructions=instructions,
+            msg_history=msg_history,
+            reask_prompt=reask_prompt,
+            reask_instructions=reask_instructions,
+        )
         metadata = metadata or {}
         if not llm_output and llm_api and not (prompt or msg_history):
             raise RuntimeError(
@@ -657,9 +702,6 @@ class Guard(IGuard, Generic[OT]):
                 args=list(args),
                 kwargs=kwargs,
             )
-            call_log = Call(inputs=call_inputs)
-            set_scope(str(object_id(call_log)))
-            self._history.push(call_log)
 
             if self._api_client is not None and model_is_supported_server_side(
                 llm_api, *args, **kwargs
@@ -671,11 +713,13 @@ class Guard(IGuard, Generic[OT]):
                     prompt_params=prompt_params,
                     metadata=metadata,
                     full_schema_reask=full_schema_reask,
-                    call_log=call_log,
                     *args,
                     **kwargs,
                 )
 
+            call_log = Call(inputs=call_inputs)
+            set_scope(str(object_id(call_log)))
+            self.history.push(call_log)
             # Otherwise, call the LLM synchronously
             return self._exec(
                 llm_api=llm_api,
@@ -999,141 +1043,42 @@ class Guard(IGuard, Generic[OT]):
         else:
             raise ValueError("Guard does not have an api client!")
 
-    def _construct_history_from_server_response(
-        self,
-        *,
-        validation_output: Optional[Any] = None,
-        llm_api: Optional[Callable] = None,
-        llm_output: Optional[str] = None,
-        num_reasks: Optional[int] = None,
-        prompt_params: Optional[Dict] = None,
-        metadata: Optional[Dict] = None,
-        full_schema_reask: Optional[bool] = True,
-        call_log: Optional[Call],
-        stream: Optional[bool] = False,
-    ):
-        # TODO: GET /guard/{guard-name}/history
-        call_log = call_log or Call()
-        if llm_api is not None:
-            llm_api = get_llm_ask(llm_api)
-        session_history = (
-            validation_output.session_history
-            if validation_output is not None and validation_output.session_history
-            else []
-        )
-        history: List[Call]
-        for history in session_history:
-            history_events: Optional[List[Any]] = (  # type: ignore
-                history.history  # type: ignore
-            )
-            if history_events is None:
-                continue
-
-            iterations = [
-                Iteration(
-                    inputs=Inputs(
-                        llm_api=llm_api,
-                        llm_output=llm_output,
-                        instructions=(
-                            Instructions(h.instructions) if h.instructions else None
-                        ),
-                        prompt=(
-                            Prompt(h.prompt.source)  # type: ignore
-                            if h.prompt
-                            else None
-                        ),
-                        prompt_params=prompt_params,
-                        num_reasks=(num_reasks or 0),
-                        metadata=metadata,
-                        full_schema_reask=full_schema_reask,  # type: ignore
-                    ),
-                    outputs=Outputs(
-                        llm_response_info=LLMResponse(
-                            output=h.output  # type: ignore
-                        ),
-                        raw_output=h.output,
-                        parsed_output=(
-                            h.parsed_output.to_dict()
-                            if isinstance(h.parsed_output, Any)
-                            else h.parsed_output
-                        ),
-                        validation_output=(  # type: ignore
-                            h.validated_output.to_dict()
-                            if isinstance(h.validated_output, Any)
-                            else h.validated_output
-                        ),
-                        reasks=list(
-                            [
-                                FieldReAsk(
-                                    incorrect_value=r.to_dict().get("incorrect_value"),
-                                    path=r.to_dict().get("path"),
-                                    fail_results=[
-                                        FailResult(
-                                            error_message=r.to_dict().get(
-                                                "error_message"
-                                            ),
-                                            fix_value=r.to_dict().get("fix_value"),
-                                        )
-                                    ],
-                                )
-                                for r in h.reasks  # type: ignore
-                            ]
-                            if h.reasks is not None
-                            else []
-                        ),
-                    ),
-                )
-                for h in history_events
-            ]
-            call_log.iterations.extend(iterations)
-            if self._history.length == 0:
-                self._history.push(call_log)
-
-    def _single_server_call(
-        self,
-        *,
-        payload: Dict[str, Any],
-        llm_output: Optional[str] = None,
-        num_reasks: Optional[int] = None,
-        prompt_params: Optional[Dict] = None,
-        metadata: Optional[Dict] = {},
-        full_schema_reask: Optional[bool] = True,
-        call_log: Optional[Call],
-        stream: Optional[bool] = False,
-    ) -> ValidationOutcome[OT]:
+    def _single_server_call(self, *, payload: Dict[str, Any]) -> ValidationOutcome[OT]:
         if self._api_client:
-            validation_output: ValidationOutcome = self._api_client.validate(
+            validation_output: IValidationOutcome = self._api_client.validate(
                 guard=self,  # type: ignore
                 payload=ValidatePayload.from_dict(payload),  # type: ignore
                 openai_api_key=get_call_kwarg("api_key"),
             )
             if not validation_output:
                 return ValidationOutcome[OT](
+                    call_id="0",  # type: ignore
                     raw_llm_output=None,
                     validated_output=None,
                     validation_passed=False,
                     error="The response from the server was empty!",
                 )
-            # TODO: Replace this with GET /guard/{guard_name}/history
-            self._construct_history_from_server_response(
-                validation_output=validation_output,
-                llm_output=llm_output,
-                num_reasks=num_reasks,
-                prompt_params=prompt_params,
-                metadata=metadata,
-                full_schema_reask=full_schema_reask,
-                call_log=call_log,
-                stream=stream,
-            )
 
+            guard_history = self._api_client.get_history(
+                self.name, validation_output.call_id
+            )
+            self.history.extend([Call.from_interface(call) for call in guard_history])
+
+            # TODO: See if the below statement is still true
             # Our interfaces are too different for this to work right now.
             # Once we move towards shared interfaces for both the open source
             # and the api we can re-enable this.
             # return ValidationOutcome[OT].from_guard_history(call_log)
+            validated_output = (
+                cast(OT, validation_output.validated_output.actual_instance)
+                if validation_output.validated_output
+                else None
+            )
             return ValidationOutcome[OT](
+                call_id=validation_output.call_id,  # type: ignore
                 raw_llm_output=validation_output.raw_llm_output,
-                validated_output=cast(OT, validation_output.validated_output),
-                validation_passed=validation_output.validation_passed,
+                validated_output=validated_output,
+                validation_passed=(validation_output.validation_passed is True),
             )
         else:
             raise ValueError("Guard does not have an api client!")
@@ -1142,16 +1087,9 @@ class Guard(IGuard, Generic[OT]):
         self,
         *,
         payload: Dict[str, Any],
-        llm_output: Optional[str] = None,
-        num_reasks: Optional[int] = None,
-        prompt_params: Optional[Dict] = None,
-        metadata: Optional[Dict] = {},
-        full_schema_reask: Optional[bool] = True,
-        call_log: Optional[Call],
-        stream: Optional[bool] = False,
     ) -> Iterable[ValidationOutcome[OT]]:
         if self._api_client:
-            validation_output: Optional[ValidationOutcome] = None
+            validation_output: Optional[IValidationOutcome] = None
             response = self._api_client.stream_validate(
                 guard=self,  # type: ignore
                 payload=ValidatePayload.from_dict(payload),  # type: ignore
@@ -1161,28 +1099,30 @@ class Guard(IGuard, Generic[OT]):
                 validation_output = fragment
                 if validation_output is None:
                     yield ValidationOutcome[OT](
+                        call_id="0",  # type: ignore
                         raw_llm_output=None,
                         validated_output=None,
                         validation_passed=False,
                         error="The response from the server was empty!",
                     )
                 else:
+                    validated_output = (
+                        cast(OT, validation_output.validated_output.actual_instance)
+                        if validation_output.validated_output
+                        else None
+                    )
                     yield ValidationOutcome[OT](
+                        call_id=validation_output.call_id,  # type: ignore
                         raw_llm_output=validation_output.raw_llm_output,
-                        validated_output=cast(OT, validation_output.validated_output),
-                        validation_passed=validation_output.validation_passed,
+                        validated_output=validated_output,
+                        validation_passed=(validation_output.validation_passed is True),
                     )
             if validation_output:
-                # TODO: Replace this with GET /guard/{guard_name}/history
-                self._construct_history_from_server_response(
-                    validation_output=validation_output,
-                    llm_output=llm_output,
-                    num_reasks=num_reasks,
-                    prompt_params=prompt_params,
-                    metadata=metadata,
-                    full_schema_reask=full_schema_reask,
-                    call_log=call_log,
-                    stream=stream,
+                guard_history = self._api_client.get_history(
+                    self.name, validation_output.call_id
+                )
+                self.history.extend(
+                    [Call.from_interface(call) for call in guard_history]
                 )
         else:
             raise ValueError("Guard does not have an api client!")
@@ -1196,45 +1136,42 @@ class Guard(IGuard, Generic[OT]):
         prompt_params: Optional[Dict] = None,
         metadata: Optional[Dict] = {},
         full_schema_reask: Optional[bool] = True,
-        call_log: Optional[Call],
         **kwargs,
     ) -> Union[ValidationOutcome[OT], Iterable[ValidationOutcome[OT]]]:
         if self._api_client:
-            payload: Dict[str, Any] = {"args": list(args)}
+            payload: Dict[str, Any] = {
+                "args": list(args),
+                "full_schema_reask": full_schema_reask,
+            }
             payload.update(**kwargs)
             if metadata:
                 payload["metadata"] = extract_serializeable_metadata(metadata)
             if llm_output is not None:
                 payload["llmOutput"] = llm_output
             if num_reasks is not None:
-                payload["numReasks"] = num_reasks
+                payload["numReasks"] = num_reasks or self._exec_opts.num_reasks
             if prompt_params is not None:
                 payload["promptParams"] = prompt_params
             if llm_api is not None:
                 payload["llmApi"] = get_llm_api_enum(llm_api, *args, **kwargs)
 
+            if not payload.get("prompt"):
+                payload["prompt"] = self._exec_opts.prompt
+            if not payload.get("instructions"):
+                payload["instructions"] = self._exec_opts.instructions
+            if not payload.get("msg_history"):
+                payload["msg_history"] = self._exec_opts.msg_history
+            if not payload.get("reask_prompt"):
+                payload["reask_prompt"] = self._exec_opts.reask_prompt
+            if not payload.get("reask_instructions"):
+                payload["reask_instructions"] = self._exec_opts.reask_instructions
+
             should_stream = kwargs.get("stream", False)
             if should_stream:
-                return self._stream_server_call(
-                    payload=payload,
-                    llm_output=llm_output,
-                    num_reasks=num_reasks,
-                    prompt_params=prompt_params,
-                    metadata=metadata,
-                    full_schema_reask=full_schema_reask,
-                    call_log=call_log,
-                    stream=should_stream,
-                )
+                return self._stream_server_call(payload=payload)
             else:
                 return self._single_server_call(
                     payload=payload,
-                    llm_output=llm_output,
-                    num_reasks=num_reasks,
-                    prompt_params=prompt_params,
-                    metadata=metadata,
-                    full_schema_reask=full_schema_reask,
-                    call_log=call_log,
-                    stream=should_stream,
                 )
         else:
             raise ValueError("Guard does not have an api client!")
@@ -1267,15 +1204,10 @@ class Guard(IGuard, Generic[OT]):
             description=self.description,
             validators=self.validators,
             output_schema=self.output_schema,
-            i_history=GuardHistory(list(self.history)),  # type: ignore
+            history=[c.to_interface() for c in self.history],  # type: ignore
         )
-        i_guard_dict = i_guard.to_dict()
 
-        i_guard_dict["history"] = [
-            call.to_dict() for call in i_guard_dict.get("history", [])
-        ]
-
-        return i_guard_dict
+        return i_guard.to_dict()
 
     def add_json_function_calling_tool(
         self,
@@ -1307,10 +1239,11 @@ class Guard(IGuard, Generic[OT]):
             validators=i_guard.validators,
             output_schema=output_schema,
         )
-        i_history = (
-            i_guard.i_history.actual_instance
-            if i_guard.i_history and i_guard.i_history.actual_instance
+
+        history = (
+            [Call.from_interface(i_call) for i_call in i_guard.history]
+            if i_guard.history
             else []
         )
-        guard._history = Stack(*i_history)
+        guard.history = Stack(*history)
         return guard
