@@ -14,9 +14,10 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 #from guardrails.cli.guardrails import guardrails
 #from guardrails.cli.logger import logger
 #from guardrails.utils.telemetry_utils import get_tracer, get_current_context
+from guardrails.cli.watch.watch_command import watch_command
 
 
-@guardrails.command()
+@watch_command.command()
 def watch(
     refresh_interval: Optional[float] = typer.Option(
         default=0.5,
