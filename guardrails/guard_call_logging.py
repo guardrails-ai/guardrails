@@ -73,6 +73,10 @@ class GuardLogEntry:
     postvalidate_text: str = ""
     exception_message: str = ""
 
+    @property
+    def timedelta(self):
+        return self.end_time - self.start_time
+
 
 # This structured handler shouldn't be used directly, since it's touching a SQLite db.
 # Instead, use the singleton or the async singleton.
@@ -179,7 +183,18 @@ class _SyncStructuredLogHandler:
                 log_level=0
             ))
 
-    def tail_logs(self, start_offset_idx: int = 0) -> Iterator[GuardLogEntry]:
+    def tail_logs(
+            self,
+            start_offset_idx: int = 0,
+            follow: bool = False
+    ) -> Iterator[GuardLogEntry]:
+        """Returns an iterator to generate GuardLogEntries.
+        @param start_offset_idx int : Start printing entries after this IDX. If
+        negative, this will instead start printing the LAST start_offset_idx entries.
+        @param follow : If follow is True, will re-check the database for new entries
+        after the first batch is complete.  If False (default), will return when entries
+        are exhausted.
+        """
         last_idx = start_offset_idx
         cursor = self.db.cursor()
         if last_idx < 0:
@@ -198,13 +213,15 @@ class _SyncStructuredLogHandler:
             WHERE id > ?
             ORDER BY start_time;
         """
-        cursor.execute("SELECT 1 LIMIT 0;")
+        cursor.execute(sql, (last_idx,))
         while True:
             for row in cursor:
                 last_entry = GuardLogEntry(**row)
                 last_idx = last_entry.id
                 yield last_entry
-            # If we're here we've run out of entries to tail.
+            if not follow:
+                return
+            # If we're here we've run out of entries to tail. Fetch more:
             cursor.execute(sql, (last_idx,))
 
 
