@@ -14,7 +14,10 @@ from guardrails.validator_base import FailResult
 
 
 def test_empty_initialization():
-    iteration = Iteration()
+    iteration = Iteration(
+        call_id="mock-call",
+        index=0,
+    )
 
     assert iteration.inputs == Inputs()
     assert iteration.outputs == Outputs()
@@ -93,7 +96,7 @@ def test_non_empty_initialization():
         error=error,
     )
 
-    iteration = Iteration(inputs=inputs, outputs=outputs)
+    iteration = Iteration(call_id="mock-call", index=0, inputs=inputs, outputs=outputs)
 
     assert iteration.inputs == inputs
     assert iteration.outputs == outputs

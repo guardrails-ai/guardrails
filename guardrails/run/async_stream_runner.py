@@ -80,7 +80,9 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
             stream=True,
         )
         outputs = Outputs()
-        iteration = Iteration(inputs=inputs, outputs=outputs)
+        iteration = Iteration(
+            call_id=call_log.id, index=index, inputs=inputs, outputs=outputs
+        )
         set_scope(str(id(iteration)))
         call_log.iterations.push(iteration)
         if output:
@@ -143,6 +145,7 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
                     )
                 passed = call_log.status == pass_status
                 yield ValidationOutcome(
+                    call_id=call_log.id,  # type: ignore
                     raw_llm_output=chunk_text,
                     validated_output=validated_fragment,
                     validation_passed=passed,
@@ -178,6 +181,7 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
                     )
 
                 yield ValidationOutcome(
+                    call_id=call_log.id,  # type: ignore
                     raw_llm_output=fragment,
                     validated_output=chunk_text,
                     validation_passed=validated_fragment is not None,

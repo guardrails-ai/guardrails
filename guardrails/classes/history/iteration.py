@@ -1,5 +1,5 @@
-from typing import Dict, List, Optional, Sequence, Union
-
+from typing import Any, Dict, List, Optional, Sequence, Union
+from builtins import id as object_id
 from pydantic import Field
 from rich.console import Group
 from rich.panel import Panel
@@ -28,6 +28,26 @@ class Iteration(IIteration, ArbitraryModel):
     outputs: Outputs = Field(
         description="The outputs from the iteration/step.", default_factory=Outputs
     )
+
+    def __init__(
+        self,
+        call_id: str,
+        index: int,
+        inputs: Optional[Inputs] = None,
+        outputs: Optional[Outputs] = None,
+    ):
+        iteration_id = str(object_id(self))
+        inputs = inputs or Inputs()
+        outputs = outputs or Outputs()
+        super().__init__(
+            id=iteration_id,
+            call_id=call_id,  # type: ignore
+            index=index,
+            inputs=inputs,
+            outputs=outputs,
+        )
+        self.inputs = inputs
+        self.outputs = outputs
 
     @property
     def logs(self) -> Stack[str]:
@@ -191,3 +211,45 @@ class Iteration(IIteration, ArbitraryModel):
 
     def __str__(self) -> str:
         return pretty_repr(self)
+
+    def to_interface(self) -> IIteration:
+        return IIteration(
+            id=self.id,
+            call_id=self.call_id,  # type: ignore
+            index=self.index,
+            inputs=self.inputs.to_interface(),
+            outputs=self.outputs.to_interface(),
+        )
+
+    def to_dict(self) -> Dict:
+        return self.to_interface().to_dict()
+
+    @classmethod
+    def from_interface(cls, i_iteration: IIteration) -> "Iteration":
+        inputs = (
+            Inputs.from_interface(i_iteration.inputs) if i_iteration.inputs else None
+        )
+        outputs = (
+            Outputs.from_interface(i_iteration.outputs) if i_iteration.outputs else None
+        )
+        iteration = cls(
+            call_id=i_iteration.call_id,
+            index=i_iteration.index,
+            inputs=inputs,
+            outputs=outputs,
+        )
+        iteration.id = i_iteration.id
+        return iteration
+
+    @classmethod
+    def from_dict(cls, obj: Dict[str, Any]) -> "Iteration":
+        id = obj.get("id", "0")
+        call_id = obj.get("callId", obj.get("call_id", "0"))
+        index = obj.get("index", 0)
+        i_iteration = IIteration.from_dict(obj) or IIteration(
+            id=id,
+            call_id=call_id,  # type: ignore
+            index=index,  # type: ignore
+        )
+
+        return cls.from_interface(i_iteration)

@@ -122,11 +122,11 @@ class AsyncRunner(Runner):
                 )
         except UserFacingException as e:
             # Because Pydantic v1 doesn't respect property setters
-            call_log._set_exception(e.original_exception)
+            call_log.exception = e.original_exception
             raise e.original_exception
         except Exception as e:
             # Because Pydantic v1 doesn't respect property setters
-            call_log._set_exception(e)
+            call_log.exception = e
             raise e
 
         return call_log
@@ -156,7 +156,9 @@ class AsyncRunner(Runner):
             full_schema_reask=self.full_schema_reask,
         )
         outputs = Outputs()
-        iteration = Iteration(inputs=inputs, outputs=outputs)
+        iteration = Iteration(
+            call_id=call_log.id, index=index, inputs=inputs, outputs=outputs
+        )
         set_scope(str(id(iteration)))
         call_log.iterations.push(iteration)
 
@@ -315,7 +317,7 @@ class AsyncRunner(Runner):
             for msg in messages:
                 msg_copy = copy.deepcopy(msg)
                 msg_copy["content"] = msg_copy["content"].format(**prompt_params)
-                formatted_msg_history.append(msg_copy)
+                formatted_messages.append(msg_copy)
 
             if "messages" in self.validation_map:
                 # Runner.validate_message
@@ -323,7 +325,9 @@ class AsyncRunner(Runner):
                 inputs = Inputs(
                     llm_output=msg_str,
                 )
-                iteration = Iteration(inputs=inputs)
+                iteration = Iteration(
+                    call_id=call_log.id, index=attempt_number, inputs=inputs
+                )
                 call_log.iterations.insert(0, iteration)
                 value, _metadata = await validator_service.async_validate(
                     value=msg_str,

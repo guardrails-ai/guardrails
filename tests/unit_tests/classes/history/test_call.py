@@ -119,7 +119,9 @@ def test_non_empty_initialization():
         validator_logs=first_validator_logs,
     )
 
-    first_iteration = Iteration(inputs=inputs, outputs=first_outputs)
+    first_iteration = Iteration(
+        call_id="mock-call", index=0, inputs=inputs, outputs=first_outputs
+    )
 
     second_iter_messages = Messages(source=[
         {"role":"system", "content":"That wasn't quite right. Try again."}
@@ -158,7 +160,9 @@ def test_non_empty_initialization():
         validator_logs=second_validator_logs,
     )
 
-    second_iteration = Iteration(inputs=second_inputs, outputs=second_outputs)
+    second_iteration = Iteration(
+        call_id="mock-call", index=0, inputs=second_inputs, outputs=second_outputs
+    )
 
     iterations: Stack[Iteration] = Stack(first_iteration, second_iteration)
 

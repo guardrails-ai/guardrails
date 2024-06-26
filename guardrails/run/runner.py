@@ -204,11 +204,11 @@ class Runner:
 
         except UserFacingException as e:
             # Because Pydantic v1 doesn't respect property setters
-            call_log._set_exception(e.original_exception)
+            call_log.exception = e.original_exception
             raise e.original_exception
         except Exception as e:
             # Because Pydantic v1 doesn't respect property setters
-            call_log._set_exception(e)
+            call_log.exception = e
             raise e
         return call_log
 
@@ -236,7 +236,9 @@ class Runner:
             full_schema_reask=self.full_schema_reask,
         )
         outputs = Outputs()
-        iteration = Iteration(inputs=inputs, outputs=outputs)
+        iteration = Iteration(
+            call_id=call_log.id, index=index, inputs=inputs, outputs=outputs
+        )
         set_scope(str(id(iteration)))
         call_log.iterations.push(iteration)
 
@@ -300,7 +302,7 @@ class Runner:
         inputs = Inputs(
             llm_output=msg_str,
         )
-        iteration = Iteration(inputs=inputs)
+        iteration = Iteration(call_id=call_log.id, index=attempt_number, inputs=inputs)
         call_log.iterations.insert(0, iteration)
         value, _metadata = validator_service.validate(
             value=msg_str,
@@ -329,7 +331,7 @@ class Runner:
         prompt_params: Dict,
         attempt_number: int,
     ) -> MessageHistory:
-        formatted_msg_history: MessageHistory = []
+        formatted_messages: MessageHistory = []
         # Format any variables in the message history with the prompt params.
         for msg in messages:
             msg_copy = copy.deepcopy(msg)
