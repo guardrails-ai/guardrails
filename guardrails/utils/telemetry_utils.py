@@ -101,16 +101,9 @@ def trace_validator_result(
         "instance_id": instance_id,
         **kwargs,
     }
-    call_logger = SyncStructuredLogHandlerSingleton()
-    call_logger.log(
-        validator_name,
-        start_time,
-        end_time,
-        to_string(value_before_validation),
-        to_string(value_after_validation),
-        result_type,
-        0,
-    )
+
+    SyncStructuredLogHandlerSingleton().log_validator(validator_log)
+
     current_span.add_event(
         f"{validator_name}_result",
         {k: v for k, v in event.items() if v is not None},

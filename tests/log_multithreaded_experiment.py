@@ -14,12 +14,17 @@ def main(num_threads: int, num_log_messages: int):
     log_levels = list()
     for _ in range(num_log_messages):
         log_levels.append(random.randint(0, 5))
-    print("Trying with hoisted logger:")
+    print("Trying with hoisted logger:", end=" ")
     with Pool(num_threads) as pool:
         pool.map(log_with_hoisted_logger, log_levels)
-    print("Trying with acquired logger:")
+    print("Done.")
+    print("Trying with acquired logger:", end=" ")
     with Pool(num_threads) as pool:
         pool.map(log_with_acquired_singleton, log_levels)
+    print("Done.")
+    print("Trying with guard: ", end=" ")
+    log_from_inside_guard()
+    print("Done")
 
 
 def log_with_hoisted_logger(log_level: int):
@@ -52,6 +57,22 @@ def log_with_acquired_singleton(log_level: int):
         log_level
     )
     time.sleep(DELAY)
+
+
+def log_from_inside_guard():
+    from pydantic import BaseModel
+    from guardrails import Guard
+    from transformers import pipeline
+
+    model = pipeline("text-generation", "gpt2")
+
+    class Foo(BaseModel):
+        bar: int
+
+    guard = Guard.from_pydantic(Foo)
+    # This may not trigger the thing:
+    guard.validate('{"bar": 42}')
+    guard(model, prompt="Hi")
 
 
 if __name__ == '__main__':

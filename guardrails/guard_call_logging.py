@@ -31,12 +31,15 @@ from dataclasses import dataclass, asdict
 from typing import Iterator
 
 from guardrails.classes import ValidationOutcome
+from guardrails.utils.casting_utils import to_string
 from guardrails.classes.history import Call
+from guardrails.classes.validation.validator_logs import ValidatorLogs
 
 
 LOG_FILENAME = "guardrails_calls.db"
 
 
+# These adapters make it more convenient to add data into our log DB:
 # Handle timestamp -> sqlite map:
 def adapt_datetime(val):
     """Adapt datetime.datetime to Unix timestamp."""
@@ -57,7 +60,8 @@ def convert_timestamp(val):
 sqlite3.register_converter("timestamp", convert_timestamp)
 
 
-
+# This class makes it slightly easier to be selective about how we pull data.
+# While it's not the ultimate contract/DB schema, it helps with typing and improves dx.
 @dataclass
 class GuardLogEntry:
     guard_name: str
@@ -70,6 +74,8 @@ class GuardLogEntry:
     exception_message: str = ""
 
 
+# This structured handler shouldn't be used directly, since it's touching a SQLite db.
+# Instead, use the singleton or the async singleton.
 class _SyncStructuredLogHandler:
     CREATE_COMMAND = """
         CREATE TABLE IF NOT EXISTS guard_logs (
@@ -158,6 +164,21 @@ class _SyncStructuredLogHandler:
                 asdict(guard_log_entry)
             )
 
+    def log_validator(self, vlog: ValidatorLogs):
+        assert not self.readonly
+        maybe_outcome = str(vlog.validation_result.outcome) \
+            if hasattr(vlog.validation_result, "outcome") else ""
+        with self.db:
+            self.db.execute(_SyncStructuredLogHandler.INSERT_COMMAND, dict(
+                guard_name=vlog.validator_name,
+                start_time=vlog.start_time if vlog.start_time else None,
+                end_time=vlog.end_time if vlog.end_time else 0.0,
+                prevalidate_text=to_string(vlog.value_before_validation),
+                postvalidate_text=to_string(vlog.value_after_validation),
+                exception_message=maybe_outcome,
+                log_level=0
+            ))
+
     def tail_logs(self, start_offset_idx: int = 0) -> Iterator[GuardLogEntry]:
         last_idx = start_offset_idx
         cursor = self.db.cursor()
@@ -192,8 +213,10 @@ class SyncStructuredLogHandlerSingleton(_SyncStructuredLogHandler):
     _lock = threading.Lock()
 
     def __new__(cls):
-        if cls._instance is None:  # Yes, two 'if' checks to avoid mutex contention.
-            # This only runs if we definitely need to lock.
+        if cls._instance is None:
+            # We run two 'if None' checks so we don't have to call the mutex check for
+            # the cases where there's obviously no handler.  Only do a check if there
+            # MIGHT not be a handler instantiated.
             with cls._lock:
                 if cls._instance is None:
                     cls._instance = cls._create()
@@ -206,30 +229,3 @@ class SyncStructuredLogHandlerSingleton(_SyncStructuredLogHandler):
     @classmethod
     def get_reader(cls, path: os.PathLike = LOG_FILENAME) -> _SyncStructuredLogHandler:
         return _SyncStructuredLogHandler(path, read_mode=True)
-
-
-class LoggedCall:
-    def __init__(self, call_log: Call):
-        # Have to wait until the actual call to get the sync/async method.
-        self.log_handler = None
-        self.called_fn = call_log
-        self.start_time = None
-        self.end_time = None
-
-    def report_outcome(self, result: ValidationOutcome):
-        pass
-
-    def __enter__(self):
-        self.log_handler = SyncStructuredLogHandlerSingleton()
-        self.start_time = time.time()
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.end_time = time.time()
-        # Log the outcome of the operation.
-        self.log_handler.log()
-
-    def __aenter__(self):
-        self.start_time = time.time()
-
-    def __aexit__(self, exc_type, exc_val, exc_tb):
-        self.end_time = time.time()
