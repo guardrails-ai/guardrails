@@ -22,6 +22,7 @@ writer.log(
 
 """
 
+import datetime
 import os
 import sqlite3
 import threading
@@ -34,6 +35,27 @@ from guardrails.classes.history import Call
 
 
 LOG_FILENAME = "guardrails_calls.db"
+
+
+# Handle timestamp -> sqlite map:
+def adapt_datetime(val):
+    """Adapt datetime.datetime to Unix timestamp."""
+    # return val.isoformat()  # If we want to go to datetime/isoformat...
+    return int(val.timestamp())
+
+
+sqlite3.register_adapter(datetime.datetime, adapt_datetime)
+
+
+def convert_timestamp(val):
+    """Convert Unix epoch timestamp to datetime.datetime object."""
+    # To go to datetime.datetime:
+    # return datetime.datetime.fromisoformat(val.decode())
+    return datetime.datetime.fromtimestamp(int(val))
+
+
+sqlite3.register_converter("timestamp", convert_timestamp)
+
 
 
 @dataclass
@@ -139,6 +161,14 @@ class _SyncStructuredLogHandler:
     def tail_logs(self, start_offset_idx: int = 0) -> Iterator[GuardLogEntry]:
         last_idx = start_offset_idx
         cursor = self.db.cursor()
+        if last_idx < 0:
+            # We're indexing from the end, so do a quick check.
+            cursor.execute(
+                "SELECT id FROM guard_logs ORDER BY id DESC LIMIT 1 OFFSET ?;",
+                (-last_idx,)
+            )
+            for row in cursor:
+                last_idx = row['id']
         sql = """
             SELECT 
                 id, guard_name, start_time, end_time, prevalidate_text, 
@@ -170,12 +200,12 @@ class SyncStructuredLogHandlerSingleton(_SyncStructuredLogHandler):
         return cls._instance
 
     @classmethod
-    def _create(cls) -> _SyncStructuredLogHandler:
-        return _SyncStructuredLogHandler(LOG_FILENAME, read_mode=False)
+    def _create(cls, path: os.PathLike = LOG_FILENAME) -> _SyncStructuredLogHandler:
+        return _SyncStructuredLogHandler(path, read_mode=False)
 
     @classmethod
-    def get_reader(cls) -> _SyncStructuredLogHandler:
-        return _SyncStructuredLogHandler(LOG_FILENAME, read_mode=True)
+    def get_reader(cls, path: os.PathLike = LOG_FILENAME) -> _SyncStructuredLogHandler:
+        return _SyncStructuredLogHandler(path, read_mode=True)
 
 
 class LoggedCall:
