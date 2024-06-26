@@ -1741,13 +1741,13 @@ protobuf = ["grpcio-tools (>=1.64.0)"]
 
 [[package]]
 name = "guardrails-api"
-version = "0.0.0a2"
+version = "0.0.0a3"
 description = "Guardrails API"
 optional = false
 python-versions = "<4,>=3.8"
 files = [
-    {file = "guardrails_api-0.0.0a2-py3-none-any.whl", hash = "sha256:bfa72d39580095266bb5496c01e8218581adfc6761f6aa19d8fccef5bf902fff"},
-    {file = "guardrails_api-0.0.0a2.tar.gz", hash = "sha256:4fbcae08ee0d0cd61a7af5547b41c9e322cb9d2aec86ba42b228b992ffb51818"},
+    {file = "guardrails_api-0.0.0a3-py3-none-any.whl", hash = "sha256:318a23784a785536b813e3185ffeaa32cb29f3c5abb664a20f80cf8c1b53e825"},
+    {file = "guardrails_api-0.0.0a3.tar.gz", hash = "sha256:5e3aff4b20e8d4a667e6cb8f9fa69801ac48299c532aa2823dc3a4e38b912e35"},
 ]
 
 [package.dependencies]
@@ -1757,7 +1757,6 @@ Flask-Caching = ">=2.3.0,<3"
 Flask-Cors = ">=4.0.1,<5"
 Flask-SQLAlchemy = ">=3.1.1,<4"
 guardrails-ai = ">=0.5.0a2"
-gunicorn = ">=22.0.0,<23"
 jsonschema = ">=4.22.0,<5"
 litellm = ">=1.39.3,<2"
 opentelemetry-api = ">=1.0.0,<2"
@@ -1771,7 +1770,7 @@ typer = ">=0.9.4,<1"
 Werkzeug = ">=3.0.3,<4"
 
 [package.extras]
-dev = ["coverage", "pytest", "pytest-mock", "ruff"]
+dev = ["coverage", "gunicorn (>=22.0.0,<23)", "pytest", "pytest-mock", "ruff"]
 
 [[package]]
 name = "guardrails-api-client"
@@ -1786,27 +1785,6 @@ files = [
 
 [package.extras]
 dev = ["pyright", "pytest", "pytest-cov", "ruff"]
-
-[[package]]
-name = "gunicorn"
-version = "22.0.0"
-description = "WSGI HTTP Server for UNIX"
-optional = false
-python-versions = ">=3.7"
-files = [
-    {file = "gunicorn-22.0.0-py3-none-any.whl", hash = "sha256:350679f91b24062c86e386e198a15438d53a7a8207235a78ba1b53df4c4378d9"},
-    {file = "gunicorn-22.0.0.tar.gz", hash = "sha256:4a0b436239ff76fb33f11c07a16482c521a7e09c1ce3cc293c2330afe01bec63"},
-]
-
-[package.dependencies]
-packaging = "*"
-
-[package.extras]
-eventlet = ["eventlet (>=0.24.1,!=0.36.0)"]
-gevent = ["gevent (>=1.4.0)"]
-setproctitle = ["setproctitle"]
-testing = ["coverage", "eventlet", "gevent", "pytest", "pytest-cov"]
-tornado = ["tornado (>=0.2)"]
 
 [[package]]
 name = "h11"
@@ -7287,4 +7265,4 @@ vectordb = ["faiss-cpu", "numpy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "0a26588ffb0d2018dd93a4b9a0c979fb6f36a33117c42b90d91fe64a9086ae67"
+content-hash = "72e1b8cf874425425dd8a73b03def13fbcf29f17de881696d3628a54f2dc2e72"
