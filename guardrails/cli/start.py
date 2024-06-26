@@ -37,6 +37,10 @@ def start(
         default=8000,
         help="The port to run the server on.",
     ),
+    dev: Optional[bool] = typer.Option(
+        default=False,
+        help="Run in development mode without gunicorn.",
+    ),
 ):
     logger.debug("Checking for prerequisites...")
     if not api_is_installed():
@@ -46,4 +50,4 @@ def start(
     from guardrails_api.cli.start import start  # type: ignore
 
     logger.info("Starting Guardrails server")
-    start(env, config, timeout, threads, port)
+    start(env, config, timeout, threads, port, dev)
