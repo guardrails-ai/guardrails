@@ -1741,13 +1741,13 @@ protobuf = ["grpcio-tools (>=1.64.0)"]
 
 [[package]]
 name = "guardrails-api"
-version = "0.0.0a0"
+version = "0.0.0a2"
 description = "Guardrails API"
 optional = false
 python-versions = "<4,>=3.8"
 files = [
-    {file = "guardrails_api-0.0.0a0-py3-none-any.whl", hash = "sha256:d0cbd26b755a5d3b932d6b17e9a0982c8c011517e4904aca8eab75ab471b6ca9"},
-    {file = "guardrails_api-0.0.0a0.tar.gz", hash = "sha256:e6ca674ce1627b273a2fe0f1a61cb8c2c331f733d2c1ad09cd92be36f5da7bec"},
+    {file = "guardrails_api-0.0.0a2-py3-none-any.whl", hash = "sha256:bfa72d39580095266bb5496c01e8218581adfc6761f6aa19d8fccef5bf902fff"},
+    {file = "guardrails_api-0.0.0a2.tar.gz", hash = "sha256:4fbcae08ee0d0cd61a7af5547b41c9e322cb9d2aec86ba42b228b992ffb51818"},
 ]
 
 [package.dependencies]
@@ -7287,4 +7287,4 @@ vectordb = ["faiss-cpu", "numpy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "f0005738aa6be84cf095bffd9f73ef581691b511fd037c8f78a051bb14ba23b8"
+content-hash = "0a26588ffb0d2018dd93a4b9a0c979fb6f36a33117c42b90d91fe64a9086ae67"
