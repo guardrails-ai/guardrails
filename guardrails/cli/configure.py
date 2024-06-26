@@ -63,17 +63,13 @@ def configure(
     last4 = existing_token[-4:] if existing_token else ""
 
     if not clear_token:
-        console.print(
-            "\nEnter API Key below", style="bold", end=" "
-        )  # Bold style for 'Welcome'
+        console.print("\nEnter API Key below", style="bold", end=" ")
         last4 and console.print(
             "[dim]leave empty if you want to keep existing token[/dim]",
             style="italic",
             end=" ",
-        )  # Dim style for 'name'
-        last4 and console.print(
-            f"[{last4}]", style="italic"
-        )  # Italic style for the rest of the sentence
+        )
+        last4 and console.print(f"[{last4}]", style="italic")
 
         console.print(
             ":backhand_index_pointing_right: You can find your API Key at https://hub.guardrailsai.com/keys"
