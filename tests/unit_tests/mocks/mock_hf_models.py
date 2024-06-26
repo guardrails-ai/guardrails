@@ -4,6 +4,7 @@ import os
 def make_mock_model_and_tokenizer():
     """Returns a tuple of HF AutoModelForCausalLM and AutoTokenizer."""
     import torch
+
     torch.set_num_threads(1)
 
     from transformers import AutoModelForCausalLM, AutoTokenizer
