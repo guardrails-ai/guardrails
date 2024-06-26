@@ -10,6 +10,7 @@ import typer
 
 from guardrails.cli.guardrails import guardrails
 from guardrails.cli.logger import LEVELS, logger
+from guardrails.cli.hub.console import console
 
 
 DEFAULT_TOKEN = ""
@@ -46,12 +47,6 @@ def _get_default_token() -> str:
 
 @guardrails.command()
 def configure(
-    token: Optional[str] = typer.Option(
-        default_factory=_get_default_token,
-        help="Your Guardrails Hub auth token.",
-        hide_input=True,
-        prompt="Token (optional)",
-    ),
     enable_metrics: Optional[bool] = typer.Option(
         DEFAULT_ENABLE_METRICS,
         "--enable-metrics/--disable-metrics",
@@ -64,8 +59,31 @@ def configure(
         help="Clear the existing token from the configuration file.",
     ),
 ):
-    if clear_token is True:
+    existing_token = _get_default_token()
+    last4 = existing_token[-4:] if existing_token else ""
+
+    if not clear_token:
+        console.print(
+            "\nEnter API Key below", style="bold", end=" "
+        )  # Bold style for 'Welcome'
+        last4 and console.print(
+            "[dim]leave empty if you want to keep existing token[/dim]",
+            style="italic",
+            end=" ",
+        )  # Dim style for 'name'
+        last4 and console.print(
+            f"[{last4}]", style="italic"
+        )  # Italic style for the rest of the sentence
+
+        console.print(
+            ":backhand_index_pointing_right: You can find your API Key at https://hub.guardrailsai.com/keys"
+        )
+
+        token = typer.prompt("\nAPI Key", existing_token, show_default=False)
+
+    else:
         token = DEFAULT_TOKEN
+
     try:
         save_configuration_file(token, enable_metrics)
         logger.info("Configuration saved.")
