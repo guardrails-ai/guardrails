@@ -597,6 +597,8 @@ class Guard(IGuard, Generic[OT]):
         prompt: Optional[str] = None,
         instructions: Optional[str] = None,
         msg_history: Optional[List[Dict]] = None,
+        reask_prompt: Optional[str] = None,
+        reask_instructions: Optional[str] = None,
         metadata: Optional[Dict],
         full_schema_reask: Optional[bool] = None,
         **kwargs,
@@ -608,7 +610,8 @@ class Guard(IGuard, Generic[OT]):
             prompt=prompt,
             instructions=instructions,
             msg_history=msg_history,
-            **kwargs,
+            reask_prompt=reask_prompt,
+            reask_instructions=reask_instructions,
         )
         metadata = metadata or {}
         if not llm_output and llm_api and not (prompt or msg_history):
