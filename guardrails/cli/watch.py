@@ -1,11 +1,10 @@
+import json
 import sqlite3
 import time
 from dataclasses import asdict
 from typing import Optional
 
 import rich
-import rich.console
-import rich.table
 import typer
 
 from guardrails.cli.guardrails import guardrails as gr_cli
@@ -48,50 +47,18 @@ def watch_command(
             time.sleep(1)
 
     # If we are using fancy outputs, grab a console ref and prep a table.
+    output_fn = _print_and_format_plain
     if not plain:
-        console, table = _setup_console_table()
+        output_fn = _print_fancy
 
     # Spin while tailing, breaking if we aren't continuously tailing.
     for log_msg in log_reader.tail_logs(-num_lines, follow):
-        if plain:
-            _print_and_format_plain(log_msg)
-        else:
-            _update_table(log_msg, console, table)
+        output_fn(log_msg)
 
 
-def _setup_console_table():
-    console = rich.console.Console()
-    table = rich.table.Table(
-        show_header=True,
-        header_style="bold",
-    )
-    table.add_column("ID")
-    table.add_column("Name")
-    table.add_column("Start Time")
-    table.add_column("End Time")
-    table.add_column("Time Delta")
-    table.add_column("Prevalidate Text")
-    table.add_column("Postvalidate Text")
-    table.add_column("Result Text")
-    return console, table
-
-
-def _update_table(log_msg: GuardLogEntry, console, table):
-    table.add_row(
-        str(log_msg.id),
-        str(log_msg.guard_name),
-        str(log_msg.start_time),
-        str(log_msg.end_time),
-        str(log_msg.timedelta),
-        str(log_msg.prevalidate_text),
-        str(log_msg.postvalidate_text),
-        str(log_msg.exception_message),
-    )
-    console.print(table)
+def _print_fancy(log_msg: GuardLogEntry):
+    rich.print(log_msg)
 
 
 def _print_and_format_plain(log_msg: GuardLogEntry) -> None:
-    str_builder = list()
-    for k, v in asdict(log_msg).items():
-        str_builder.append(f"{k}: {v}")
-    print("\t ".join(str_builder))
+    print(json.dumps(asdict(log_msg)))
