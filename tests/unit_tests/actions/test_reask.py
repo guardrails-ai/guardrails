@@ -568,9 +568,8 @@ Here are examples of simple (XML, JSON) pairs that show the expected behavior:
         # json.dumps(json_example, indent=2),
     )
 
-    assert reask_prompt.source == expected_prompt
-
-    assert reask_instructions.source == expected_instructions
+    assert str(reask_messages.source[0]["content"]) == expected_instructions
+    assert str(reask_messages.source[1]["content"]) == expected_prompt
 
 
 ### FIXME: Implement once Field Level ReAsk is implemented w/ JSON schema ###

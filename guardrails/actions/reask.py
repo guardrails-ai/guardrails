@@ -293,11 +293,11 @@ def get_original_messages(exec_options: GuardExecutionOptions) -> List[Dict[str,
         (
             h.get("content")
             for h in original_messages
-            if isinstance(h, dict) and h.get("role") == "user"
+            if isinstance(h, dict)
         ),
         "",
     )
-    return original_messages
+    return messages_prompt
 
 def get_original_prompt(exec_options: Optional[GuardExecutionOptions] = None) -> str:
     exec_options = exec_options or GuardExecutionOptions()
@@ -338,8 +338,6 @@ def get_reask_setup_for_json(
     use_xml = prompt_uses_xml(original_messages)
 
     reask_prompt_template = None
-    if exec_options.reask_prompt:
-        reask_prompt_template = Prompt(exec_options.reask_prompt)
 
     if is_nonparseable_reask:
         if reask_prompt_template is None:
@@ -448,16 +446,12 @@ def get_reask_setup_for_json(
         **prompt_params,
     )
 
-    instructions = None
-    if exec_options.reask_instructions:
-        instructions = Instructions(exec_options.reask_instructions)
-    else:
-        instructions_const = (
-            constants["high_level_xml_instructions"]
-            if use_xml
-            else constants["high_level_json_instructions"]
-        )
-        instructions = Instructions(instructions_const)
+    instructions_const = (
+        constants["high_level_xml_instructions"]
+        if use_xml
+        else constants["high_level_json_instructions"]
+    )
+    instructions = Instructions(instructions_const)
     instructions = instructions.format(**prompt_params)
 
     messages = None
