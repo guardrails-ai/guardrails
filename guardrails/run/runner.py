@@ -211,19 +211,15 @@ class Runner:
                     break
 
                 # Get new prompt and output schema.
-                (
-                    prompt,
-                    instructions,
-                    output_schema,
-                    msg_history,
-                    messages
-                ) = self.prepare_to_loop(
-                    iteration.reasks,
-                    output_schema,
-                    parsed_output=iteration.outputs.parsed_output,
-                    validated_output=call_log.validation_response,
-                    prompt_params=prompt_params,
-                    include_instructions=include_instructions,
+                (prompt, instructions, output_schema, msg_history, messages) = (
+                    self.prepare_to_loop(
+                        iteration.reasks,
+                        output_schema,
+                        parsed_output=iteration.outputs.parsed_output,
+                        validated_output=call_log.validation_response,
+                        prompt_params=prompt_params,
+                        include_instructions=include_instructions,
+                    )
                 )
 
             # Log how many times we reasked
@@ -638,7 +634,13 @@ class Runner:
         validated_output: Optional[Union[str, List, Dict, ReAsk]] = None,
         prompt_params: Optional[Dict] = None,
         include_instructions: bool = False,
-    ) -> Tuple[Prompt, Optional[Instructions], Dict[str, Any], Optional[List[Dict]], Optional[List[Dict]]]:
+    ) -> Tuple[
+        Prompt,
+        Optional[Instructions],
+        Dict[str, Any],
+        Optional[List[Dict]],
+        Optional[List[Dict]],
+    ]:
         """Prepare to loop again."""
         prompt_params = prompt_params or {}
         output_schema, prompt, instructions, messages = get_reask_setup(

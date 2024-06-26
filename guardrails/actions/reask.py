@@ -234,9 +234,9 @@ def get_reask_setup_for_string(
     if exec_options.reask_messages:
         messages = Messages(exec_options.reask_messages)
     if messages is None:
-        messages = Messages([
-            {"role": "system", "content": "You are a helpful assistant."}
-        ])
+        messages = Messages(
+            [{"role": "system", "content": "You are a helpful assistant."}]
+        )
 
     messages = messages.format(
         output_schema=schema_prompt_content,
@@ -412,16 +412,12 @@ def get_reask_setup_for_json(
     if exec_options.reask_messages:
         messages = Messages(exec_options.reask_messages)
     else:
-        messages = Messages([
-            {
-                "role": "system", 
-                "content": instructions
-            },
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ])
+        messages = Messages(
+            [
+                {"role": "system", "content": instructions},
+                {"role": "user", "content": prompt},
+            ]
+        )
 
     return reask_schema, prompt, instructions, messages
 

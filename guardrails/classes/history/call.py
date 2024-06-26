@@ -117,7 +117,7 @@ class Call(ICall, ArbitraryModel):
         prompt_params = initial_inputs.prompt_params or {}
         if instructions is not None:
             return instructions.format(**prompt_params).source
-        
+
     @property
     def reask_messages(self) -> Stack[str]:
         """The compiled messages used during reasks.
@@ -136,7 +136,7 @@ class Call(ICall, ArbitraryModel):
             )
 
         return Stack()
-    
+
     @property
     def reask_instructions(self) -> Stack[str]:
         """The compiled instructions used during reasks.
