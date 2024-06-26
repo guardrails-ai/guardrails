@@ -285,6 +285,31 @@ class Guard(IGuard, Generic[OT]):
             for v in v_list
         ]
 
+    def _fill_exec_opts(
+        self,
+        *,
+        num_reasks: Optional[int] = None,
+        prompt: Optional[str] = None,
+        instructions: Optional[str] = None,
+        msg_history: Optional[List[Dict]] = None,
+        reask_prompt: Optional[str] = None,
+        reask_instructions: Optional[str] = None,
+        **kwargs,  # noqa
+    ):
+        """Backfill execution options from kwargs."""
+        if num_reasks is not None:
+            self._exec_opts.num_reasks = num_reasks
+        if prompt is not None:
+            self._exec_opts.prompt = prompt
+        if instructions is not None:
+            self._exec_opts.instructions = instructions
+        if msg_history is not None:
+            self._exec_opts.msg_history = msg_history
+        if reask_prompt is not None:
+            self._exec_opts.reask_prompt = reask_prompt
+        if reask_instructions is not None:
+            self._exec_opts.reask_instructions = reask_instructions
+
     @classmethod
     def _from_rail_schema(
         cls,
@@ -578,6 +603,13 @@ class Guard(IGuard, Generic[OT]):
     ) -> Union[ValidationOutcome[OT], Iterable[ValidationOutcome[OT]]]:
         self._fill_validator_map()
         self._fill_validators()
+        self._fill_exec_opts(
+            num_reasks=num_reasks,
+            prompt=prompt,
+            instructions=instructions,
+            msg_history=msg_history,
+            **kwargs,
+        )
         metadata = metadata or {}
         if not llm_output and llm_api and not (prompt or msg_history):
             raise RuntimeError(
