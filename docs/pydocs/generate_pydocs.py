@@ -1,15 +1,17 @@
 import os
+
 # from pydoc_markdown.interfaces import Context
 from docspec_python import ParserOptions
 from docs.pydocs.pydocs_markdown_impl import render_loader
 from pydoc_markdown.contrib.loaders.python import PythonLoader
+
 # from guardrails import Rail, Guard, validators, datatypes
 # from guardrails.classes.validation_outcome import ValidationOutcome
 from pydoc_markdown.contrib.renderers.markdown import MarkdownRenderer
+
 # from guardrails.classes import generic
 # from pydocs_to_md import class_to_string, module_to_string
 from pydoc_markdown.contrib.processors.filter import FilterProcessor
-
 
 
 def write_to_file(str, filename):
@@ -31,9 +33,9 @@ def write_to_file(str, filename):
 #             ),
 #         ),
 #         processor = FilterProcessor(
-#             expression="not name.startswith('_') and not name.startswith('load') and default()",
+#             expression="not name.startswith('_') and not name.startswith('load') and default()",   # noqa
 #             documented_only=True,
-            
+
 #         )
 #     ),
 #     filename="docs/api_reference_markdown/rail.md",
@@ -41,29 +43,42 @@ def write_to_file(str, filename):
 
 
 write_to_file(
-    str="# Guard\n\n" + render_loader(
+    str="# Guard\n\n"
+    + render_loader(
         PythonLoader(
-            modules=['guardrails.guard'],
-            parser=ParserOptions(
-                print_function=False
-            ),
+            modules=["guardrails.guard"],
+            parser=ParserOptions(print_function=False),
         ),
-        processor = FilterProcessor(
-            expression="name in ['Guard', 'guardrails.guard', 'guard', 'from_rail', 'from_rail_string', 'from_pydantic', 'from_string', 'configure', '__call__', 'parse', 'state']",
-            skip_empty_modules=True
-        )
+        processor=FilterProcessor(
+            expression="name in ['Guard', 'guardrails.guard', 'guard', '__init__' 'from_rail' 'from_rail_string' 'from_pydantic' 'from_string' 'configure' 'use' 'use_many' '__call__' 'parse' 'validate' 'error_spans_in_output' 'add_json_function_calling_tool' 'to_dict' 'from_dict' 'to_runnable']",  # noqa
+            skip_empty_modules=True,
+        ),
+    ),
+    filename="docs/api_reference_markdown/guard.md",
+)
+
+write_to_file(
+    str="# AsyncGuard\n\n"
+    + render_loader(
+        PythonLoader(
+            modules=["guardrails.async_guard"],
+            parser=ParserOptions(print_function=False),
+        ),
+        processor=FilterProcessor(
+            expression="name in ['AsyncGuard', 'guardrails.async_guard', 'guard', '__init__' 'from_rail' 'from_rail_string' 'from_pydantic' 'from_string' 'configure' 'use' 'use_many' '__call__' 'parse' 'validate' 'error_spans_in_output' 'add_json_function_calling_tool' 'to_dict' 'from_dict' 'to_runnable']",  # noqa
+            skip_empty_modules=True,
+        ),
     ),
     filename="docs/api_reference_markdown/guard.md",
 )
 
 
+# FIXME: This isn't a thing anymore; validators have been removed.
 write_to_file(
-    str="# Validators\n\n" + render_loader(
+    str="# Validators\n\n"
+    + render_loader(
         PythonLoader(
-            search_path=['validators'],
-            parser=ParserOptions(
-                print_function=False
-            )
+            search_path=["validators"], parser=ParserOptions(print_function=False)
         )
     ),
     filename="docs/hub/api_reference_markdown/validators.md",
@@ -71,17 +86,16 @@ write_to_file(
 
 write_to_file(
     # str=class_to_string(ValidationOutcome, ignore_prefix_list=["load", "_"]),
-    str="# Validation Outcome\n\n" + render_loader(
+    str="# Validation Outcome\n\n"
+    + render_loader(
         PythonLoader(
-            modules=['guardrails.classes.validation_outcome'],
-            parser=ParserOptions(
-                print_function=False
-            ),
+            modules=["guardrails.classes.validation_outcome"],
+            parser=ParserOptions(print_function=False),
         ),
-        processor = FilterProcessor(
+        processor=FilterProcessor(
             documented_only=True,
         ),
-        renderer = MarkdownRenderer(
+        renderer=MarkdownRenderer(
             render_module_header=False,
             insert_header_anchors=False,
             classdef_code_block=False,
@@ -89,7 +103,7 @@ write_to_file(
             classdef_with_decorators=False,
             render_typehint_in_data_header=True,
             data_code_block=True,
-        )
+        ),
     ),
     filename="docs/hub/api_reference_markdown/validation_outcome.md",
 )
@@ -102,7 +116,7 @@ write_to_file(
 #         processor = FilterProcessor(
 #             expression="""\
 # name in \
-# ['guardrails.validator_base', 'ValidationResult', 'PassResult', 'FailResult', 'ValidationError'] \
+# ['guardrails.validator_base', 'ValidationResult', 'PassResult', 'FailResult', 'ValidationError'] \   # noqa
 # or obj.parent.name in \
 # ['ValidationResult', 'PassResult', 'FailResult', 'ValidationError']\
 #             """,
@@ -119,7 +133,6 @@ write_to_file(
 #     ),
 #     filename="docs/api_reference_markdown/response_structures.md",
 # )
-
 
 
 # write_to_file(
@@ -159,14 +172,13 @@ write_to_file(
 # )
 
 write_to_file(
-    str="# History and Logs\n\n" + render_loader(
+    str="# History and Logs\n\n"
+    + render_loader(
         PythonLoader(
-            packages=['classes.history'],
-            parser=ParserOptions(
-                print_function=False
-            ),
+            packages=["classes.history"],
+            parser=ParserOptions(print_function=False),
         ),
-        renderer = MarkdownRenderer(
+        renderer=MarkdownRenderer(
             render_module_header=True,
             insert_header_anchors=False,
             descriptive_class_title=True,

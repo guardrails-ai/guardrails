@@ -12,7 +12,7 @@ from guardrails.validator_base import Validator, register_validator
 __all__ = [
     "Guard",
     "AsyncGuard",
-    "PromptCallableBase",
+    "PromptCallableBase",  # FIXME: Why is this being exported?
     "Validator",
     "OnFailAction",
     "register_validator",
