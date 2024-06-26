@@ -271,6 +271,7 @@ class AsyncRunner(Runner):
         if output is not None:
             llm_response = LLMResponse(
                 output=output,
+                full_raw_llm_output=output,
             )
         elif api_fn is None:
             raise ValueError("API or output must be provided.")

@@ -81,7 +81,11 @@ class OpenAIClientV1(BaseOpenAIClient):
             openai_response = cast(Iterable[Dict[str, Any]], openai_response)
 
             # Simply return the generator wrapped in an LLMResponse
-            return LLMResponse(output="", stream_output=openai_response)
+            return LLMResponse(
+                output="",
+                stream_output=openai_response,
+                full_raw_llm_output=openai_response,
+            )
 
         # If stream is not defined or is set to False,
         # return default behavior
@@ -92,6 +96,7 @@ class OpenAIClientV1(BaseOpenAIClient):
             raise ValueError("No token counts returned from OpenAI")
         return LLMResponse(
             output=openai_response.choices[0].text,  # type: ignore
+            full_raw_llm_output=openai_response,
             prompt_token_count=openai_response.usage.prompt_tokens,  # type: ignore
             response_token_count=openai_response.usage.completion_tokens,  # noqa: E501 # type: ignore
         )
@@ -124,7 +129,11 @@ class OpenAIClientV1(BaseOpenAIClient):
             openai_response = cast(Iterable[Dict[str, Any]], openai_response)
 
             # Simply return the generator wrapped in an LLMResponse
-            return LLMResponse(output="", stream_output=openai_response)
+            return LLMResponse(
+                output="",
+                stream_output=openai_response,
+                full_raw_llm_output=openai_response,
+            )
 
         # If stream is not defined or is set to False,
         # extract string from response
@@ -153,6 +162,7 @@ class OpenAIClientV1(BaseOpenAIClient):
 
         return LLMResponse(
             output=output,
+            full_raw_llm_output=openai_response,
             prompt_token_count=openai_response.usage.prompt_tokens,  # type: ignore
             response_token_count=openai_response.usage.completion_tokens,  # noqa: E501 # type: ignore
         )
@@ -219,6 +229,7 @@ class AsyncOpenAIClientV1(BaseOpenAIClient):
             # Return the LLMResponse
             return LLMResponse(
                 output=complete_output,
+                full_raw_llm_output=complete_output,
                 prompt_token_count=prompt_token_count,
                 response_token_count=response_token_count,
             )
@@ -232,6 +243,7 @@ class AsyncOpenAIClientV1(BaseOpenAIClient):
             raise ValueError("No token counts returned from OpenAI")
         return LLMResponse(
             output=openai_response.choices[0].text,  # type: ignore
+            full_raw_llm_output=openai_response,
             prompt_token_count=openai_response.usage.prompt_tokens,  # type: ignore
             response_token_count=openai_response.usage.completion_tokens,  # noqa: E501 # type: ignore
         )
@@ -288,6 +300,7 @@ class AsyncOpenAIClientV1(BaseOpenAIClient):
             # Return the LLMResponse
             return LLMResponse(
                 output=complete_output,
+                full_raw_llm_output=complete_output,
                 prompt_token_count=prompt_token_count,
                 response_token_count=response_token_count,
             )
@@ -319,6 +332,7 @@ class AsyncOpenAIClientV1(BaseOpenAIClient):
 
         return LLMResponse(
             output=output,
+            full_raw_llm_output=openai_response,
             prompt_token_count=openai_response.usage.prompt_tokens,  # type: ignore
             response_token_count=openai_response.usage.completion_tokens,  # noqa: E501 # type: ignore
         )

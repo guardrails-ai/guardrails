@@ -1,5 +1,5 @@
 import asyncio
-from typing import Any, Dict, Iterable, Optional, AsyncIterable
+from typing import Any, Dict, Iterable, Optional, AsyncIterable, Union
 
 from guardrails_api_client import LLMResponse as ILLMResponse
 from pydantic.config import ConfigDict
@@ -21,6 +21,10 @@ class LLMResponse(ILLMResponse):
     output: str
     stream_output: Optional[Iterable] = None
     async_stream_output: Optional[AsyncIterable] = None
+    # technically the llm and respond w anything
+    # most of the time a dict, string, iterable stream
+    # or mock object(tests)
+    full_raw_llm_output: Optional[Union[Any]] = None
 
     def to_interface(self) -> ILLMResponse:
         stream_output = None

@@ -263,6 +263,7 @@ class ManifestCallable(PromptCallableBase):
         )
         return LLMResponse(
             output=manifest_response,
+            full_raw_llm_output=manifest_response,
         )
 
 
@@ -302,11 +303,13 @@ class CohereCallable(PromptCallableBase):
             )
             return LLMResponse(
                 output=cohere_response.text,
+                full_raw_llm_output=cohere_response,
             )
 
         cohere_response = client_callable(prompt=prompt, model=model, *args, **kwargs)
         return LLMResponse(
             output=cohere_response[0].text,
+            full_raw_llm_output=cohere_response,
         )
 
 
@@ -354,7 +357,10 @@ class AnthropicCallable(PromptCallableBase):
             *args,
             **kwargs,
         )
-        return LLMResponse(output=anthropic_response.completion)
+        return LLMResponse(
+            output=anthropic_response.completion,
+            full_raw_llm_output=anthropic_response,
+        )
 
 
 class LiteLLMCallable(PromptCallableBase):
@@ -408,12 +414,14 @@ class LiteLLMCallable(PromptCallableBase):
             return LLMResponse(
                 output="",
                 stream_output=llm_response,
+                full_raw_llm_output=llm_response,
             )
-
+        # raise ValueError("response", response)
         return LLMResponse(
             output=response.choices[0].message.content,  # type: ignore
             prompt_token_count=response.usage.prompt_tokens,  # type: ignore
             response_token_count=response.usage.completion_tokens,  # type: ignore
+            full_raw_llm_output=response,
         )
 
 
@@ -492,7 +500,10 @@ class HuggingFaceModelCallable(PromptCallableBase):
             output[0], skip_special_tokens=skip_special_tokens
         )
 
-        return LLMResponse(output=decoded_output)
+        return LLMResponse(
+            output=decoded_output,
+            full_raw_llm_output=output,
+        )
 
 
 class HuggingFacePipelineCallable(PromptCallableBase):
@@ -532,7 +543,10 @@ class HuggingFacePipelineCallable(PromptCallableBase):
         # or accept a selection function
         content = safe_get(output[0], content_key)
 
-        return LLMResponse(output=content)
+        return LLMResponse(
+            output=content,
+            full_raw_llm_output=output,
+        )
 
 
 class ArbitraryCallable(PromptCallableBase):
@@ -565,12 +579,14 @@ class ArbitraryCallable(PromptCallableBase):
             return LLMResponse(
                 output="",
                 stream_output=llm_response,
+                full_raw_llm_output=llm_response,
             )
 
         # Else, the callable returns a string
         llm_response = cast(str, llm_response)
         return LLMResponse(
             output=llm_response,
+            full_raw_llm_output=llm_response,
         )
 
 
@@ -851,12 +867,14 @@ class AsyncLiteLLMCallable(AsyncPromptCallableBase):
             return LLMResponse(
                 output="",
                 async_stream_output=response.completion_stream,  # pyright: ignore[reportGeneralTypeIssues]
+                full_raw_llm_output=response,
             )
 
         return LLMResponse(
             output=response.choices[0].message.content,  # type: ignore
             prompt_token_count=response.usage.prompt_tokens,  # type: ignore
             response_token_count=response.usage.completion_tokens,  # type: ignore
+            full_raw_llm_output=response,
         )
 
 
@@ -899,6 +917,7 @@ class AsyncManifestCallable(AsyncPromptCallableBase):
             )
         return LLMResponse(
             output=manifest_response[0],
+            full_raw_llm_output=manifest_response,
         )
 
 
@@ -926,9 +945,11 @@ class AsyncArbitraryCallable(AsyncPromptCallableBase):
             return LLMResponse(
                 output="",
                 async_stream_output=output.completion_stream,
+                full_raw_llm_output=output,
             )
         return LLMResponse(
             output=output,
+            full_raw_llm_output=output,
         )
 
 
