@@ -1146,7 +1146,7 @@ class Guard(IGuard, Generic[OT]):
             if llm_output is not None:
                 payload["llmOutput"] = llm_output
             if num_reasks is not None:
-                payload["numReasks"] = num_reasks
+                payload["numReasks"] = num_reasks or self._exec_opts.num_reasks
             if prompt_params is not None:
                 payload["promptParams"] = prompt_params
             if llm_api is not None:
@@ -1162,8 +1162,6 @@ class Guard(IGuard, Generic[OT]):
                 payload["reask_prompt"] = self._exec_opts.reask_prompt
             if not payload.get("reask_instructions"):
                 payload["reask_instructions"] = self._exec_opts.reask_instructions
-            if not payload.get("num_reasks"):
-                payload["num_reasks"] = self._exec_opts.num_reasks
 
             should_stream = kwargs.get("stream", False)
             if should_stream:
