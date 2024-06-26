@@ -1,17 +1,22 @@
 import json
 import os
-from typing import Generator, Optional
+from typing import Any, Iterable, Optional
 
 import requests
-from guardrails_api_client import AuthenticatedClient
-from guardrails_api_client.api.guard import update_guard, validate
-from guardrails_api_client.models import Guard, ValidatePayload, ValidationOutput
-from guardrails_api_client.types import UNSET
-from httpx import Timeout
+from guardrails_api_client.configuration import Configuration
+from guardrails_api_client.api_client import ApiClient
+from guardrails_api_client.api.guard_api import GuardApi
+from guardrails_api_client.api.validate_api import ValidateApi
+from guardrails_api_client.models import Guard, ValidatePayload
+
+from guardrails.logger import logger
 
 
 class GuardrailsApiClient:
-    _client: AuthenticatedClient
+    _api_client: ApiClient
+    _guard_api: GuardApi
+    _validate_api: ValidateApi
+    timeout: float
     base_url: str
     api_key: str
 
@@ -24,15 +29,24 @@ class GuardrailsApiClient:
         self.api_key = (
             api_key if api_key is not None else os.environ.get("GUARDRAILS_API_KEY", "")
         )
-        self._client = AuthenticatedClient(
-            base_url=self.base_url,  # type: ignore
-            follow_redirects=True,  # type: ignore
-            token=self.api_key,
-            timeout=Timeout(300),  # type: ignore
+        self.timeout = 300
+        self._api_client = ApiClient(
+            configuration=Configuration(api_key=self.api_key, host=self.base_url)
         )
+        self._guard_api = GuardApi(self._api_client)
+        self._validate_api = ValidateApi(self._api_client)
 
     def upsert_guard(self, guard: Guard):
-        update_guard.sync(guard_name=guard.name, client=self._client, body=guard)
+        self._guard_api.update_guard(
+            guard_name=guard.name, body=guard, _request_timeout=self.timeout
+        )
+
+    def fetch_guard(self, guard_name: str) -> Optional[Guard]:
+        try:
+            return self._guard_api.get_guard(guard_name=guard_name)
+        except Exception as e:
+            logger.debug(f"Error fetching guard {guard_name}: {e}")
+            return None
 
     def validate(
         self,
@@ -43,12 +57,11 @@ class GuardrailsApiClient:
         _openai_api_key = (
             openai_api_key
             if openai_api_key is not None
-            else os.environ.get("OPENAI_API_KEY", UNSET)
+            else os.environ.get("OPENAI_API_KEY")
         )
-        return validate.sync(
+        return self._validate_api.validate(
             guard_name=guard.name,
-            client=self._client,
-            body=payload,
+            validate_payload=payload,
             x_openai_api_key=_openai_api_key,
         )
 
@@ -57,11 +70,11 @@ class GuardrailsApiClient:
         guard: Guard,
         payload: ValidatePayload,
         openai_api_key: Optional[str] = None,
-    ) -> Generator[ValidationOutput, None, None]:
+    ) -> Iterable[Any]:
         _openai_api_key = (
             openai_api_key
             if openai_api_key is not None
-            else os.environ.get("OPENAI_API_KEY", UNSET)
+            else os.environ.get("OPENAI_API_KEY")
         )
 
         url = f"{self.base_url}/guards/{guard.name}/validate"
@@ -81,4 +94,7 @@ class GuardrailsApiClient:
                     )
                 if line:
                     json_output = json.loads(line)
-                    yield ValidationOutput.from_dict(json_output)
+                    yield json_output
+
+    def get_history(self, guard_name: str, call_id: str):
+        return self._guard_api.get_guard_history(guard_name, call_id)

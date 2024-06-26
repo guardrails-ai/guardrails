@@ -1,39 +1,47 @@
-from typing import Dict, List, Optional, Sequence, Union
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import Field
-from typing_extensions import deprecated
 
+from guardrails_api_client import (
+    Outputs as IOutputs,
+    OutputsParsedOutput,
+    OutputsValidationResponse,
+)
 from guardrails.constants import error_status, fail_status, not_run_status, pass_status
-from guardrails.utils.llm_response import LLMResponse
-from guardrails.utils.logs_utils import ValidatorLogs
-from guardrails.utils.pydantic_utils import ArbitraryModel
-from guardrails.utils.reask_utils import ReAsk
-from guardrails.validator_base import ErrorSpan, FailResult, ValidationResult
+from guardrails.classes.llm.llm_response import LLMResponse
+from guardrails.classes.generic.arbitrary_model import ArbitraryModel
+from guardrails.classes.validation.validator_logs import ValidatorLogs
+from guardrails.actions.reask import ReAsk
+from guardrails.classes.validation.validation_result import (
+    ErrorSpan,
+    FailResult,
+    ValidationResult,
+)
 
 
-class Outputs(ArbitraryModel):
+class Outputs(IOutputs, ArbitraryModel):
     llm_response_info: Optional[LLMResponse] = Field(
         description="Information from the LLM response.", default=None
     )
     raw_output: Optional[str] = Field(
         description="The exact output from the LLM.", default=None
     )
-    parsed_output: Optional[Union[str, Dict]] = Field(
+    parsed_output: Optional[Union[str, List, Dict]] = Field(
         description="The output parsed from the LLM response"
         "as it was passed into validation.",
         default=None,
     )
-    validation_response: Optional[Union[str, ReAsk, Dict]] = Field(
+    validation_response: Optional[Union[str, ReAsk, List, Dict]] = Field(
         description="The response from the validation process.", default=None
     )
-    guarded_output: Optional[Union[str, Dict]] = Field(
+    guarded_output: Optional[Union[str, List, Dict]] = Field(
         description="""Any valid values after undergoing validation.
 
         Some values may be "fixed" values that were corrected during validation.
         This property may be a partial structure if field level reasks occur.""",
         default=None,
     )
-    reasks: Sequence[ReAsk] = Field(
+    reasks: List[ReAsk] = Field(
         description="Information from the validation process"
         "used to construct a ReAsk to the LLM on validation failure.",
         default_factory=list,
@@ -127,18 +135,64 @@ class Outputs(ArbitraryModel):
             return fail_status
         return pass_status
 
-    @property
-    @deprecated(
-        """'Outputs.validation_output' is deprecated and will be removed in \
-versions 0.5.0 and beyond. Use 'validation_response' instead."""
-    )
-    def validation_output(self) -> Optional[Union[str, ReAsk, Dict]]:
-        return self.validation_response
+    def to_interface(self) -> IOutputs:
+        return IOutputs(
+            llm_response_info=(  # type: ignore - pydantic alias
+                self.llm_response_info.to_interface()
+                if self.llm_response_info
+                else None
+            ),
+            raw_output=self.raw_output,  # type: ignore - pydantic alias
+            parsed_output=(  # type: ignore - pydantic alias
+                OutputsParsedOutput(self.parsed_output) if self.parsed_output else None
+            ),
+            validation_response=(  # type: ignore - pydantic alias
+                OutputsValidationResponse(self.validation_response)
+                if self.validation_response
+                else None
+            ),
+            guarded_output=(  # type: ignore - pydantic alias
+                OutputsParsedOutput(self.guarded_output)
+                if self.guarded_output
+                else None
+            ),
+            reasks=self.reasks,  # type: ignore - pydantic alias
+            validator_logs=[  # type: ignore - pydantic alias
+                v.to_interface()
+                for v in self.validator_logs
+                if isinstance(v, ValidatorLogs)
+            ],
+            error=self.error,
+        )
 
-    @property
-    @deprecated(
-        """'Outputs.validated_output' is deprecated and will be removed in \
-versions 0.5.0 and beyond. Use 'guarded_output' instead."""
-    )
-    def validated_output(self) -> Optional[Union[str, ReAsk, Dict]]:
-        return self.guarded_output
+    def to_dict(self) -> Dict[str, Any]:
+        return self.to_interface().to_dict()
+
+    @classmethod
+    def from_interface(cls, i_outputs: IOutputs) -> "Outputs":
+        reasks = []
+        if i_outputs.reasks:
+            reasks = [ReAsk.from_interface(r) for r in i_outputs.reasks]
+
+        validator_logs = []
+        if i_outputs.validator_logs:
+            validator_logs = [
+                ValidatorLogs.from_interface(v) for v in i_outputs.validator_logs
+            ]
+
+        return cls(
+            llm_response_info=LLMResponse.from_interface(i_outputs.llm_response_info),  # type: ignore
+            raw_output=i_outputs.raw_output,  # type: ignore
+            parsed_output=i_outputs.parsed_output.actual_instance,  # type: ignore
+            validation_response=i_outputs.validation_response.actual_instance,  # type: ignore
+            guarded_output=i_outputs.guarded_output.actual_instance,  # type: ignore
+            reasks=reasks,  # type: ignore
+            validator_logs=validator_logs,  # type: ignore
+            error=i_outputs.error,
+        )
+
+    @classmethod
+    def from_dict(cls, obj: Dict[str, Any]) -> "Outputs":
+        i_outputs = IOutputs.from_dict(obj) or IOutputs()
+
+        return cls.from_interface(i_outputs)
