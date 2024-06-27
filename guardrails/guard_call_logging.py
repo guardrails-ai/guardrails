@@ -5,21 +5,24 @@ A set of tools to track the behavior of guards, specifically with the intent of
 collating the pre/post validation text and timing of guard calls.  Uses a singleton to
 share write access to a SQLite database across threads.
 
+By default, logs will be created in a temporary directory.  This can be overridden by
+setting GUARDRAILS_LOG_FILE_PATH in the environment.  tracehandler.log_path will give
+the full path of the current log file.
+
 # Reading logs (basic):
-reader = SyncStructuredLogHandlerSingleton.get_reader()
-for t in reader.tail_logs():
-    print(t)
+>>> reader = TraceHandler.get_reader()
+>>> for t in reader.tail_logs():
+>>>    print(t)
 
 # Reading logs (advanced):
-reader = SyncStructuredLogHandlerSingleton.get_reader()
-reader.db.execute("SELECT * FROM guard_logs;")  # Arbitrary SQL support.
+>>> reader = TraceHandler.get_reader()
+>>> reader.db.execute("SELECT * FROM guard_logs;")  # Arbitrary SQL support.
 
 # Saving logs
-writer = SynbcStructuredLogHandlerSingleton()
-writer.log(
-  "my_guard_name", start, end, "Raw LLM Output Text", "Sanitized", "exception?", 0
-)
-
+>>> writer = TraceHandler()
+>>> writer.log(
+>>>    "my_guard_name", 0.0, 1.0, "Raw LLM Output Text", "Sanitized", "exception?"
+>>> )
 """
 
 import datetime
@@ -37,7 +40,10 @@ from guardrails.classes.validation.validator_logs import ValidatorLogs
 # TODO: We should read this from guardrailsrc.
 LOG_RETENTION_LIMIT = 100000
 LOG_FILENAME = "guardrails_calls.db"
-LOGFILE_PATH = os.path.join(tempfile.gettempdir(), LOG_FILENAME)
+LOGFILE_PATH = os.environ.get(
+    "GUARDRAILS_LOG_FILE_PATH",  # Document this environment variable.
+    os.path.join(tempfile.gettempdir(), LOG_FILENAME),
+)
 
 
 # These adapters make it more convenient to add data into our log DB:
@@ -118,7 +124,7 @@ class _SQLiteTraceHandler(_BaseTraceHandler):
     INSERT_COMMAND = """
         INSERT INTO guard_logs (
             guard_name, start_time, end_time, prevalidate_text, postvalidate_text,
-            exception_message, log_level
+            exception_message
         ) VALUES (
             :guard_name, :start_time, :end_time, :prevalidate_text, :postvalidate_text,
             :exception_message
