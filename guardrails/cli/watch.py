@@ -9,9 +9,9 @@ import typer
 
 from guardrails.cli.guardrails import guardrails as gr_cli
 from guardrails.call_tracing.guard_call_logging import (
-    GuardLogEntry,
     TraceHandler,
 )
+from guardrails.call_tracing.trace_entry import GuardTraceEntry
 
 
 @gr_cli.command(name="watch")
@@ -55,9 +55,9 @@ def watch_command(
         output_fn(log_msg)
 
 
-def _print_fancy(log_msg: GuardLogEntry):
+def _print_fancy(log_msg: GuardTraceEntry):
     rich.print(log_msg)
 
 
-def _print_and_format_plain(log_msg: GuardLogEntry) -> None:
+def _print_and_format_plain(log_msg: GuardTraceEntry) -> None:
     print(json.dumps(asdict(log_msg)))
