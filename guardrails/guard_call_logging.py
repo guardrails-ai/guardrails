@@ -88,7 +88,7 @@ class _BaseTraceHandler:
     """The base TraceHandler only pads out the methods. It's effectively a Noop"""
 
     def __init__(self, log_path: os.PathLike, read_mode: bool):
-        pass
+        self.db = None
 
     def log(self, *args, **kwargs):
         pass
@@ -217,7 +217,10 @@ class _SQLiteTraceHandler(_BaseTraceHandler):
         assert not self.readonly
         maybe_outcome = (
             str(vlog.validation_result.outcome)
-            if hasattr(vlog.validation_result, "outcome")
+            if (
+                vlog.validation_result is not None
+                and hasattr(vlog.validation_result, "outcome")
+            )
             else ""
         )
         with self.db:
@@ -292,9 +295,11 @@ class TraceHandler(_SQLiteTraceHandler):
         return cls._instance
 
     @classmethod
-    def _create(cls, path: os.PathLike = LOGFILE_PATH) -> _BaseTraceHandler:
+    def _create(cls, path: os.PathLike = LOGFILE_PATH) -> _BaseTraceHandler:  # type: ignore
         return _SQLiteTraceHandler(path, read_mode=False)
+        # To disable logging:
+        # return _BaseTraceHandler(path, read_mode=False)
 
     @classmethod
-    def get_reader(cls, path: os.PathLike = LOGFILE_PATH) -> _BaseTraceHandler:
+    def get_reader(cls, path: os.PathLike = LOGFILE_PATH) -> _BaseTraceHandler:  # type: ignore
         return _SQLiteTraceHandler(path, read_mode=True)
