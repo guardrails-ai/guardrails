@@ -238,7 +238,7 @@ except ValidationError as e:
 ### Args vs Kwargs
 In previous versions, most of the Guardrails interfaces utilized positional arguments for most parameters. This could be tedious when specifying optional arguments.
 
-In 0.5.0, for our public interfaces, only required arguments are positional; all optional arguments are key-word only.
+In 0.5.0, for our public interfaces, only required arguments are positional; all optional arguments are keyword only.
 
 If you previously called you Guard like this:
 ```py
