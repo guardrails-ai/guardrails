@@ -10,7 +10,7 @@ import typer
 from guardrails.cli.guardrails import guardrails as gr_cli
 from guardrails.guard_call_logging import (
     GuardLogEntry,
-    SyncStructuredLogHandlerSingleton,
+    SyncTraceHandler,
 )
 
 
@@ -39,9 +39,9 @@ def watch_command(
     while log_reader is None:
         try:
             if log_path_override is not None:
-                log_reader = SyncStructuredLogHandlerSingleton.get_reader(log_path_override)
+                log_reader = SyncTraceHandler.get_reader(log_path_override)
             else:
-                log_reader = SyncStructuredLogHandlerSingleton.get_reader()
+                log_reader = SyncTraceHandler.get_reader()
         except sqlite3.OperationalError:
             print("Logfile not found. Retrying.")
             time.sleep(1)

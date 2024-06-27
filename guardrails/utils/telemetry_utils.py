@@ -7,7 +7,7 @@ from opentelemetry import context
 from opentelemetry.context import Context
 from opentelemetry.trace import StatusCode, Tracer
 
-from guardrails.guard_call_logging import SyncStructuredLogHandlerSingleton
+from guardrails.guard_call_logging import SyncTraceHandler
 from guardrails.stores.context import get_tracer as get_context_tracer
 from guardrails.stores.context import get_tracer_context
 from guardrails.utils.casting_utils import to_string
@@ -102,7 +102,7 @@ def trace_validator_result(
         **kwargs,
     }
 
-    SyncStructuredLogHandlerSingleton().log_validator(validator_log)
+    SyncTraceHandler().log_validator(validator_log)
 
     current_span.add_event(
         f"{validator_name}_result",

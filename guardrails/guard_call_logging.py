@@ -26,7 +26,6 @@ import datetime
 import os
 import sqlite3
 import threading
-import time
 from dataclasses import dataclass, asdict
 from typing import Iterator
 
@@ -78,9 +77,31 @@ class GuardLogEntry:
         return self.end_time - self.start_time
 
 
+class _NoopTraceHandler:
+    def __init__(self, log_path: os.PathLike, read_mode: bool):
+        pass
+
+    def log(self, *args, **kwargs):
+        pass
+
+    def log_entry(self, guard_log_entry: GuardLogEntry):
+        pass
+
+    def log_validator(self, vlog: ValidatorLogs):
+        pass
+
+    def tail_logs(
+            self,
+            start_offset_idx: int = 0,
+            follow: bool = False,
+    ) -> Iterator[GuardLogEntry]:
+        return []
+
+
+
 # This structured handler shouldn't be used directly, since it's touching a SQLite db.
 # Instead, use the singleton or the async singleton.
-class _SyncStructuredLogHandler:
+class _SyncTraceHandler:
     CREATE_COMMAND = """
         CREATE TABLE IF NOT EXISTS guard_logs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -106,14 +127,18 @@ class _SyncStructuredLogHandler:
     def __init__(self, log_path: os.PathLike, read_mode: bool):
         self.readonly = read_mode
         if read_mode:
-            self.db = _SyncStructuredLogHandler._get_read_connection(log_path)
+            self.db = _SyncTraceHandler._get_read_connection(log_path)
         else:
-            self.db = _SyncStructuredLogHandler._get_write_connection(log_path)
+            self.db = _SyncTraceHandler._get_write_connection(log_path)
 
     @classmethod
     def _get_write_connection(cls, log_path: os.PathLike) -> sqlite3.Connection:
         try:
-            db = sqlite3.connect(log_path, isolation_level=None)
+            db = sqlite3.connect(
+                log_path,
+                isolation_level=None,
+                check_same_thread=False,
+            )
             db.execute('PRAGMA journal_mode = wal')
             db.execute('PRAGMA synchronous = OFF')
             # isolation_level = None and pragma WAL means we can READ from the DB
@@ -124,7 +149,7 @@ class _SyncStructuredLogHandler:
             #logging.exception("Unable to connect to guard log handler.")
             raise e
         with db:
-            db.execute(_SyncStructuredLogHandler.CREATE_COMMAND)
+            db.execute(_SyncTraceHandler.CREATE_COMMAND)
         return db
 
     @classmethod
@@ -150,7 +175,7 @@ class _SyncStructuredLogHandler:
     ):
         assert not self.readonly
         with self.db:
-            self.db.execute(_SyncStructuredLogHandler.INSERT_COMMAND, dict(
+            self.db.execute(_SyncTraceHandler.INSERT_COMMAND, dict(
                 guard_name=guard_name,
                 start_time=start_time,
                 end_time=end_time,
@@ -160,11 +185,11 @@ class _SyncStructuredLogHandler:
                 log_level=log_level
             ))
 
-    def log_entry(self, guard_log_entry):
+    def log_entry(self, guard_log_entry: GuardLogEntry):
         assert not self.readonly
         with self.db:
             self.db.execute(
-                _SyncStructuredLogHandler.INSERT_COMMAND,
+                _SyncTraceHandler.INSERT_COMMAND,
                 asdict(guard_log_entry)
             )
 
@@ -173,7 +198,7 @@ class _SyncStructuredLogHandler:
         maybe_outcome = str(vlog.validation_result.outcome) \
             if hasattr(vlog.validation_result, "outcome") else ""
         with self.db:
-            self.db.execute(_SyncStructuredLogHandler.INSERT_COMMAND, dict(
+            self.db.execute(_SyncTraceHandler.INSERT_COMMAND, dict(
                 guard_name=vlog.validator_name,
                 start_time=vlog.start_time if vlog.start_time else None,
                 end_time=vlog.end_time if vlog.end_time else 0.0,
@@ -225,7 +250,10 @@ class _SyncStructuredLogHandler:
             cursor.execute(sql, (last_idx,))
 
 
-class SyncStructuredLogHandlerSingleton(_SyncStructuredLogHandler):
+class SyncTraceHandler(_SyncTraceHandler):
+    """SyncTraceHandler wraps the internal _SyncTraceHandler to make it multi-thread
+    safe.  Coupled with some write ahead journaling in the _SyncTrace internal, we have
+    a faux-multi-write multi-read interface for SQLite."""
     _instance = None
     _lock = threading.Lock()
 
@@ -240,9 +268,9 @@ class SyncStructuredLogHandlerSingleton(_SyncStructuredLogHandler):
         return cls._instance
 
     @classmethod
-    def _create(cls, path: os.PathLike = LOG_FILENAME) -> _SyncStructuredLogHandler:
-        return _SyncStructuredLogHandler(path, read_mode=False)
+    def _create(cls, path: os.PathLike = LOG_FILENAME) -> _SyncTraceHandler:
+        return _SyncTraceHandler(path, read_mode=False)
 
     @classmethod
-    def get_reader(cls, path: os.PathLike = LOG_FILENAME) -> _SyncStructuredLogHandler:
-        return _SyncStructuredLogHandler(path, read_mode=True)
+    def get_reader(cls, path: os.PathLike = LOG_FILENAME) -> _SyncTraceHandler:
+        return _SyncTraceHandler(path, read_mode=True)
