@@ -7,31 +7,42 @@ from typing import (
     Awaitable,
     Callable,
     Dict,
+    Generic,
     List,
     Optional,
+    Sequence,
     Union,
     cast,
 )
 
-from guardrails_api_client.models import ValidatePayload
+from guardrails_api_client.models import (
+    ValidatePayload,
+    ValidationOutcome as IValidationOutcome,
+)
 
 from guardrails import Guard
 from guardrails.classes import OT, ValidationOutcome
 from guardrails.classes.history import Call
 from guardrails.classes.history.call_inputs import CallInputs
+from guardrails.classes.output_type import OutputTypes
+from guardrails.classes.schema.processed_schema import ProcessedSchema
 from guardrails.llm_providers import get_async_llm_ask, model_is_supported_server_side
 from guardrails.logger import set_scope
 from guardrails.run import AsyncRunner, AsyncStreamRunner
 from guardrails.stores.context import (
+    Tracer,
     get_call_kwarg,
     set_call_kwargs,
     set_tracer,
     set_tracer_context,
 )
+from guardrails.types.pydantic import ModelOrListOfModels
+from guardrails.types.validator import UseManyValidatorSpec, UseValidatorSpec
 from guardrails.utils.validator_utils import verify_metadata_requirements
+from guardrails.validator_base import Validator
 
 
-class AsyncGuard(Guard):
+class AsyncGuard(Guard, Generic[OT]):
     """The AsyncGuard class.
 
     This class one of the main entry point for using Guardrails. It is
@@ -48,7 +59,115 @@ class AsyncGuard(Guard):
     the LLM and the validated output stream.
     """
 
-    async def _execute(  # FIXME: Is this override necessary?
+    @classmethod
+    def _from_rail_schema(
+        cls,
+        schema: ProcessedSchema,
+        rail: str,
+        *,
+        num_reasks: Optional[int] = None,
+        tracer: Optional[Tracer] = None,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+    ):
+        guard = super()._from_rail_schema(
+            schema,
+            rail,
+            num_reasks=num_reasks,
+            tracer=tracer,
+            name=name,
+            description=description,
+        )
+        if schema.output_type == OutputTypes.STRING:
+            return cast(AsyncGuard[str], guard)
+        elif schema.output_type == OutputTypes.LIST:
+            return cast(AsyncGuard[List], guard)
+        else:
+            return cast(AsyncGuard[Dict], guard)
+
+    @classmethod
+    def from_pydantic(
+        cls,
+        output_class: ModelOrListOfModels,
+        *,
+        prompt: Optional[str] = None,  # deprecate this too
+        instructions: Optional[str] = None,  # deprecate this too
+        num_reasks: Optional[int] = None,
+        reask_prompt: Optional[str] = None,  # deprecate this too
+        reask_instructions: Optional[str] = None,  # deprecate this too
+        tracer: Optional[Tracer] = None,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+    ):
+        guard = super().from_pydantic(
+            output_class,
+            prompt=prompt,
+            instructions=instructions,
+            num_reasks=num_reasks,
+            reask_prompt=reask_prompt,
+            reask_instructions=reask_instructions,
+            tracer=tracer,
+            name=name,
+            description=description,
+        )
+        if guard._output_type == OutputTypes.LIST:
+            return cast(AsyncGuard[List], guard)
+        else:
+            return cast(AsyncGuard[Dict], guard)
+
+    @classmethod
+    def from_string(
+        cls,
+        validators: Sequence[Validator],
+        *,
+        string_description: Optional[str] = None,
+        prompt: Optional[str] = None,  # deprecate this too
+        instructions: Optional[str] = None,  # deprecate this too
+        reask_prompt: Optional[str] = None,  # deprecate this too
+        reask_instructions: Optional[str] = None,  # deprecate this too
+        num_reasks: Optional[int] = None,
+        tracer: Optional[Tracer] = None,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+    ):
+        guard = super().from_string(
+            validators,
+            string_description=string_description,
+            prompt=prompt,
+            instructions=instructions,
+            reask_prompt=reask_prompt,
+            reask_instructions=reask_instructions,
+            num_reasks=num_reasks,
+            tracer=tracer,
+            name=name,
+            description=description,
+        )
+        return cast(AsyncGuard[str], guard)
+
+    @classmethod
+    def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional["AsyncGuard"]:
+        guard = super().from_dict(obj)
+        return cast(AsyncGuard, guard)
+
+    def use(
+        self,
+        validator: UseValidatorSpec,
+        *args,
+        on: str = "output",
+        **kwargs,
+    ) -> "AsyncGuard":
+        guard = super().use(validator, *args, on=on, **kwargs)
+        return cast(AsyncGuard, guard)
+
+    def use_many(
+        self,
+        *validators: UseManyValidatorSpec,
+        on: str = "output",
+    ) -> "AsyncGuard":
+        guard = super().use_many(*validators, on=on)  # type: ignore
+        return cast(AsyncGuard, guard)
+
+    async def _execute(
         self,
         *args,
         llm_api: Optional[Callable[..., Awaitable[Any]]] = None,
@@ -157,9 +276,6 @@ class AsyncGuard(Guard):
                 args=list(args),
                 kwargs=kwargs,
             )
-            call_log = Call(inputs=call_inputs)
-            set_scope(str(object_id(call_log)))
-            self._history.push(call_log)
 
             if self._api_client is not None and model_is_supported_server_side(
                 llm_api, *args, **kwargs
@@ -171,14 +287,16 @@ class AsyncGuard(Guard):
                     prompt_params=prompt_params,
                     metadata=metadata,
                     full_schema_reask=full_schema_reask,
-                    call_log=call_log,
                     *args,
                     **kwargs,
                 )
 
             # If the LLM API is async, return a coroutine
             else:
-                result = await self._exec_async(
+                call_log = Call(inputs=call_inputs)
+                set_scope(str(object_id(call_log)))
+                self.history.push(call_log)
+                result = await self._exec(
                     llm_api=llm_api,
                     llm_output=llm_output,
                     prompt_params=prompt_params,
@@ -215,7 +333,7 @@ class AsyncGuard(Guard):
             **kwargs,
         )
 
-    async def _exec_async(
+    async def _exec(
         self,
         *args,
         llm_api: Optional[Callable[[Any], Awaitable[Any]]],
@@ -302,7 +420,7 @@ class AsyncGuard(Guard):
 
     async def __call__(
         self,
-        llm_api: Callable[..., Awaitable[Any]],
+        llm_api: Optional[Callable[..., Awaitable[Any]]] = None,
         *args,
         prompt_params: Optional[Dict] = None,
         num_reasks: Optional[int] = 1,
@@ -398,7 +516,7 @@ class AsyncGuard(Guard):
             if llm_api is None
             else 1
         )
-        default_prompt = self._exec_opts.prompt if llm_api else None
+        default_prompt = self._exec_opts.prompt if llm_api is not None else None
         prompt = kwargs.pop("prompt", default_prompt)
 
         default_instructions = self._exec_opts.instructions if llm_api else None
@@ -422,20 +540,12 @@ class AsyncGuard(Guard):
         )
 
     async def _stream_server_call(
-        self,
-        *,
-        payload: Dict[str, Any],
-        llm_output: Optional[str] = None,
-        num_reasks: Optional[int] = None,
-        prompt_params: Optional[Dict] = None,
-        metadata: Optional[Dict] = {},
-        full_schema_reask: Optional[bool] = True,
-        call_log: Optional[Call],
+        self, *, payload: Dict[str, Any]
     ) -> AsyncIterable[ValidationOutcome[OT]]:
         # TODO: Once server side supports async streaming, this function will need to
         # yield async generators, not generators
         if self._api_client:
-            validation_output: Optional[Any] = None
+            validation_output: Optional[IValidationOutcome] = None
             response = self._api_client.stream_validate(
                 guard=self,  # type: ignore
                 payload=ValidatePayload.from_dict(payload),  # type: ignore
@@ -445,26 +555,30 @@ class AsyncGuard(Guard):
                 validation_output = fragment
                 if validation_output is None:
                     yield ValidationOutcome[OT](
+                        call_id="0",  # type: ignore
                         raw_llm_output=None,
                         validated_output=None,
                         validation_passed=False,
                         error="The response from the server was empty!",
                     )
                 else:
+                    validated_output = (
+                        cast(OT, validation_output.validated_output.actual_instance)
+                        if validation_output.validated_output
+                        else None
+                    )
                     yield ValidationOutcome[OT](
-                        raw_llm_output=validation_output.raw_llm_response,  # type: ignore
-                        validated_output=cast(OT, validation_output.validated_output),
-                        validation_passed=validation_output.result,
+                        call_id=validation_output.call_id,  # type: ignore
+                        raw_llm_output=validation_output.raw_llm_output,  # type: ignore
+                        validated_output=validated_output,
+                        validation_passed=(validation_output.validation_passed is True),
                     )
             if validation_output:
-                self._construct_history_from_server_response(
-                    validation_output=validation_output,
-                    llm_output=llm_output,
-                    num_reasks=num_reasks,
-                    prompt_params=prompt_params,
-                    metadata=metadata,
-                    full_schema_reask=full_schema_reask,
-                    call_log=call_log,
+                guard_history = self._api_client.get_history(
+                    self.name, validation_output.call_id
+                )
+                self.history.extend(
+                    [Call.from_interface(call) for call in guard_history]
                 )
         else:
             raise ValueError("AsyncGuard does not have an api client!")

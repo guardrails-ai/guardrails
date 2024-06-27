@@ -63,19 +63,18 @@ def parse_rail_validator(
     if ":" in validator_spec:
         is_hub_validator = validator_spec.startswith(hub)
         max_splits = 2 if is_hub_validator else 1
-        parts = split_on(validator_spec, ":")
-        # parts = validator_spec.split(":", max_splits)
+        parts = validator_spec.split(":", max_splits)
         validator_id = (
             ":".join([parts[0], parts[1].strip()])
             if is_hub_validator
             else parts[0].strip()
         )
         arg_tokens = []
-        if len(parts) > 1:
+        if len(parts) > max_splits:
             arg_tokens = [
                 arg.strip()
                 for arg in split_on(
-                    parts[max_splits], "\s", exceptions=ESCAPED_OR_QUOTED
+                    parts[max_splits], r"\s", exceptions=ESCAPED_OR_QUOTED
                 )
             ]
         validator_args = parse_rail_arguments(arg_tokens)

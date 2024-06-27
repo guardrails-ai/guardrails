@@ -23,7 +23,7 @@ def test_guard_as_runnable(output: str, throws: bool, expected_error: Optional[s
     from langchain_core.runnables import Runnable, RunnableConfig
 
     from guardrails.errors import ValidationError
-    from guardrails.validators import ReadingTime, RegexMatch
+    from tests.integration_tests.test_assets.validators import ReadingTime, RegexMatch
 
     class MockModel(Runnable):
         def invoke(

@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11"]
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
@@ -34,17 +34,21 @@ jobs:
       - name: Install Dependencies
         # TODO: fix errors so that we can run `make dev` instead
         run: |
+          # Setup Virtual Environment
+          python3 -m venv ./.venv
+          source .venv/bin/activate
           make full
 
       - name: Lint with ruff
         run: |
+          source .venv/bin/activate
           make lint
 
   Typing:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11"]
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
@@ -58,17 +62,21 @@ jobs:
       - name: Install Dependencies
         # TODO: fix errors so that we can run `make dev` instead
         run: |
+          # Setup Virtual Environment
+          python3 -m venv ./.venv
+          source .venv/bin/activate
           make full
 
       - name: Static analysis with pyright
         run: |
+          source .venv/bin/activate
           make type
 
   Pytests:
     runs-on: LargeBois
     strategy:
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11"]
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
         # TODO: fix errors so that we can run both `make dev` and `make full`
         # dependencies: ['dev', 'full']
         # dependencies: ["full"]
@@ -78,7 +86,7 @@ jobs:
       - name: Create .guardrailsrc
         run: |
           echo 'id="SYSTEM TESTING"' > ~/.guardrailsrc
-          echo 'no_metrics=false' >> ~/.guardrailsrc
+          echo 'enable_metrics=false' >> ~/.guardrailsrc
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
@@ -90,10 +98,25 @@ jobs:
 
       - name: Install Dependencies
         run: |
+          # Setup Virtual Environment
+          python3 -m venv ./.venv
+          source .venv/bin/activate
+          
           make full
+          if [ "${{ matrix.python-version }}" == "3.12" ]; then
+            echo "Installing latest langchain-core and langsmith from PyPI"
+            pip install "langchain-core>=0.2" "langsmith<0.2.0,>=0.1.75"
+          fi
 
       - name: Run Pytests
         run: |
+          source .venv/bin/activate
+
+          echo "langchain-core version:"
+          pip show langchain-core
+          echo "langsmith version:"
+          pip show langsmith
+
           make test-cov
 
       - name: Upload to codecov.io

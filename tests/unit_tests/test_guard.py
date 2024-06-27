@@ -1,20 +1,20 @@
-import openai
 import pytest
+
+import openai  # noqa: F401
 from pydantic import BaseModel
-from guardrails import Guard, Validator
+
+from guardrails import Guard, Validator, register_validator
+from guardrails.classes.validation.validation_result import PassResult
 from guardrails.utils.validator_utils import verify_metadata_requirements
 from guardrails.utils import args, kwargs, on_fail
-from guardrails.utils.openai_utils import OPENAI_VERSION
-from guardrails.validator_base import OnFailAction
-from guardrails.validators import (  # ReadingTime,
+from guardrails.types import OnFailAction
+from tests.integration_tests.test_assets.validators import (
     EndsWith,
     LowerCase,
     OneLine,
-    PassResult,
     TwoWords,
     UpperCase,
     ValidLength,
-    register_validator,
 )
 
 
@@ -89,7 +89,7 @@ class RequiringValidator2(Validator):
     ],
 )
 @pytest.mark.asyncio
-@pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="Only for OpenAI v0")
+@pytest.mark.skip(reason="Only for OpenAI v0")  # FIXME: Rewrite for OpenAI v1
 async def test_required_metadata(spec, metadata, error_message):
     guard = Guard.from_rail_string(spec)
 

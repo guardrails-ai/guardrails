@@ -2,28 +2,30 @@ import enum
 import importlib
 import json
 import os
-from typing import Optional, Union
+from typing import List, Optional, Union
 
 import pytest
 from pydantic import BaseModel, Field
-from guardrails_api_client import Guard as IGuard, GuardHistory, ValidatorReference
+from guardrails_api_client import Guard as IGuard, ValidatorReference
 
 import guardrails as gd
 from guardrails.actions.reask import SkeletonReAsk
+from guardrails.classes.generic.stack import Stack
 from guardrails.classes.llm.llm_response import LLMResponse
 from guardrails.classes.validation_outcome import ValidationOutcome
+from guardrails.classes.validation.validation_result import FailResult
 from guardrails.guard import Guard
 from guardrails.utils.openai_utils import (
     get_static_openai_chat_create_func,
     get_static_openai_create_func,
 )
 from guardrails.actions.reask import FieldReAsk
-from guardrails.validators import FailResult, OneLine
 from tests.integration_tests.test_assets.validators import (
     RegexMatch,
     ValidLength,
     ValidChoices,
     LowerCase,
+    OneLine,
 )
 
 from .mock_llm_outputs import (
@@ -913,63 +915,6 @@ def test_enum_datatype():
     )
 
 
-@pytest.mark.skip("Move to GuardRunnable!")
-@pytest.mark.parametrize(
-    "output,throws",
-    [
-        ("Ice cream is frozen.", False),
-        ("Ice cream is a frozen dairy product that is consumed in many places.", True),
-        ("This response isn't relevant.", True),
-    ],
-)
-def test_guard_as_runnable(output: str, throws: bool):
-    from langchain_core.language_models import LanguageModelInput
-    from langchain_core.messages import AIMessage, BaseMessage
-    from langchain_core.output_parsers import StrOutputParser
-    from langchain_core.prompts import ChatPromptTemplate
-    from langchain_core.runnables import Runnable, RunnableConfig
-
-    from guardrails.errors import ValidationError
-    from guardrails.validators import ReadingTime, RegexMatch
-
-    class MockModel(Runnable):
-        def invoke(
-            self, input: LanguageModelInput, config: Optional[RunnableConfig] = None
-        ) -> BaseMessage:
-            return AIMessage(content=output)
-
-    prompt = ChatPromptTemplate.from_template("ELIF: {topic}")
-    model = MockModel()
-    guard = (
-        Guard()
-        .use(
-            RegexMatch("Ice cream", match_type="search", on_fail="refrain"), on="output"
-        )
-        .use(ReadingTime(0.05, on_fail="refrain"))  # 3 seconds
-    )
-    output_parser = StrOutputParser()
-
-    chain = prompt | model | guard | output_parser
-
-    topic = "ice cream"
-    if throws:
-        with pytest.raises(ValidationError) as exc_info:
-            chain.invoke({"topic": topic})
-
-        assert str(exc_info.value) == (
-            "The response from the LLM failed validation!"
-            "See `guard.history` for more details."
-        )
-
-        assert guard.history.last.status == "fail"
-        assert guard.history.last.status == "fail"
-
-    else:
-        result = chain.invoke({"topic": topic})
-
-        assert result == output
-
-
 @pytest.mark.parametrize(
     "rail,prompt",
     [
@@ -996,6 +941,37 @@ def test_guard_with_top_level_list_return_type(mocker, rail, prompt):
         {"name": "banana", "price": 0.5},
         {"name": "orange", "price": 1.5},
     ]
+
+
+def test_pydantic_with_lite_llm(mocker):
+    """Test lite llm JSON generation with message history re-asking."""
+    mock_invoke_llm = mocker.patch(
+        "guardrails.llm_providers.LiteLLMCallable._invoke_llm"
+    )
+    mock_invoke_llm.side_effect = [
+        LLMResponse(
+            output=pydantic.MSG_HISTORY_LLM_OUTPUT_INCORRECT,
+            prompt_token_count=123,
+            response_token_count=1234,
+        ),
+        LLMResponse(
+            output=pydantic.MSG_HISTORY_LLM_OUTPUT_CORRECT,
+            prompt_token_count=123,
+            response_token_count=1234,
+        ),
+    ]
+    guard = gd.Guard.from_pydantic(output_class=pydantic.WITH_MSG_HISTORY)
+    final_output = guard(
+        messages=string.MOVIE_MSG_HISTORY, model="gpt-3.5-turbo", max_tokens=10
+    )
+    assert guard.history.last.inputs.msg_history == [
+        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "user", "content": "Can you give me your favorite movie?"},
+    ]
+
+    call = guard.history.first
+    assert call.iterations.length == 2
+    assert final_output.raw_llm_output == pydantic.MSG_HISTORY_LLM_OUTPUT_CORRECT
 
 
 def test_string_output(mocker):
@@ -1030,6 +1006,103 @@ def test_string_output(mocker):
     assert call.raw_outputs.last == string.LLM_OUTPUT
     assert mock_invoke_llm.call_count == 1
     mock_invoke_llm = None
+
+
+def test_add_json_function_calling_tool(mocker):
+    mock_invoke_llm = mocker.patch(
+        "guardrails.llm_providers.OpenAIChatCallable._invoke_llm"
+    )
+    task_list = {
+        "list": [
+            {
+                "status": "not started",
+                "priority": 1,
+                "description": "Do something",
+            },
+            {
+                "status": "in progress",
+                "priority": 2,
+                "description": "Do something else",
+            },
+            {
+                "status": "on hold",
+                "priority": 3,
+                "description": "Do something else again",
+            },
+        ],
+    }
+
+    mock_invoke_llm.side_effect = [
+        LLMResponse(
+            output=json.dumps(task_list),
+            prompt_token_count=123,
+            response_token_count=1234,
+        )
+    ]
+
+    class Task(BaseModel):
+        status: str
+        priority: int
+        description: str
+
+    class Tasks(BaseModel):
+        list: List[Task]
+
+    guard = Guard.from_pydantic(Tasks)
+    tools = [
+        {
+            "type": "function",
+            "function": {
+                "name": "get_current_weather",
+                "description": "Get the current weather in a given location",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "location": {
+                            "type": "string",
+                            "description": "The city and state, e.g. San Francisco, CA",
+                        },
+                        "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]},
+                    },
+                    "required": ["location"],
+                },
+            },
+        }
+    ]
+
+    final_output = guard(
+        llm_api=get_static_openai_chat_create_func(),
+        msg_history=[
+            {
+                "role": "user",
+                "content": "You are a helpful assistant"
+                "read this email and return the tasks from it."
+                " some email blah blah blah.",
+            }
+        ],
+        tools=guard.add_json_function_calling_tool(tools),
+        tool_choice="required",
+    )
+
+    gd_response_tool = mock_invoke_llm.call_args.kwargs["tools"][1]["function"]
+
+    assert mock_invoke_llm.call_count == 1
+    assert final_output.validated_output == task_list
+
+    # verify that the tools are augmented with schema
+    assert len(mock_invoke_llm.call_args.kwargs["tools"]) == 2
+    assert mock_invoke_llm.call_args.kwargs["tools"][0] == tools[0]
+    assert gd_response_tool["name"] == "gd_response_tool"
+    assert gd_response_tool["parameters"]["$defs"]["Task"] == {
+        "properties": {
+            "status": {"title": "Status", "type": "string"},
+            "priority": {"title": "Priority", "type": "integer"},
+            "description": {"title": "Description", "type": "string"},
+        },
+        "required": ["status", "priority", "description"],
+        "title": "Task",
+        "type": "object",
+    }
 
 
 def test_string_reask(mocker):
@@ -1106,7 +1179,7 @@ class TestSerizlizationAndDeserialization:
             description=guard.description,
             validators=guard.validators,
             output_schema=guard.output_schema,
-            history=GuardHistory(guard.history),
+            history=guard.history,
         )
 
         cls_guard = Guard(
@@ -1116,6 +1189,7 @@ class TestSerizlizationAndDeserialization:
             output_schema=i_guard.output_schema.to_dict(),
             validators=i_guard.validators,
         )
+        cls_guard.history = Stack(*i_guard.history)
 
         assert cls_guard == guard
 
@@ -1178,9 +1252,9 @@ def test_guard_from_pydantic_with_mock_hf_pipeline():
     reason="transformers or torch is not installed",
 )
 def test_guard_from_pydantic_with_mock_hf_model():
-    from tests.unit_tests.mocks.mock_hf_models import make_mock_model_tokenizer
+    from tests.unit_tests.mocks.mock_hf_models import make_mock_model_and_tokenizer
 
-    model, tokenizer = make_mock_model_tokenizer()
+    model, tokenizer = make_mock_model_and_tokenizer()
     guard = Guard()
     _ = guard(
         model.generate,

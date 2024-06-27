@@ -11,7 +11,6 @@ from guardrails.llm_providers import (
 )
 from guardrails.prompt import Instructions, Prompt
 from guardrails.run.runner import Runner
-from guardrails.utils.openai_utils import OPENAI_VERSION
 from guardrails.utils.parsing_utils import (
     coerce_types,
     parse_llm_output,
@@ -99,7 +98,9 @@ class StreamRunner(Runner):
             stream=True,
         )
         outputs = Outputs()
-        iteration = Iteration(inputs=inputs, outputs=outputs)
+        iteration = Iteration(
+            call_id=call_log.id, index=index, inputs=inputs, outputs=outputs
+        )
         call_log.iterations.push(iteration)
 
         # Prepare: run pre-processing, and input validation.
@@ -185,6 +186,7 @@ class StreamRunner(Runner):
                 # 5. Convert validated fragment to a pretty JSON string
                 passed = call_log.status == pass_status
                 yield ValidationOutcome(
+                    call_id=call_log.id,  # type: ignore
                     #  The chunk or the whole output?
                     raw_llm_output=chunk_text,
                     validated_output=validated_text,
@@ -213,6 +215,7 @@ class StreamRunner(Runner):
                         reask = last_result
 
                     yield ValidationOutcome(
+                        call_id=call_log.id,  # type: ignore
                         raw_llm_output=last_chunk_text,
                         validated_output=validated_output,
                         reask=reask,
@@ -257,6 +260,7 @@ class StreamRunner(Runner):
 
                 # 5. Convert validated fragment to a pretty JSON string
                 yield ValidationOutcome(
+                    call_id=call_log.id,  # type: ignore
                     raw_llm_output=fragment,
                     validated_output=validated_fragment,
                     validation_passed=validated_fragment is not None,
@@ -272,58 +276,21 @@ class StreamRunner(Runner):
 
     def is_last_chunk(self, chunk: Any, api: Union[PromptCallableBase, None]) -> bool:
         """Detect if chunk is final chunk."""
-        if isinstance(api, OpenAICallable):
-            if OPENAI_VERSION.startswith("0"):
-                finished = chunk["choices"][0]["finish_reason"]
-                return finished is not None
-            else:
-                finished = chunk.choices[0].finish_reason
-                return finished is not None
-        elif isinstance(api, OpenAIChatCallable):
-            if OPENAI_VERSION.startswith("0"):
-                finished = chunk["choices"][0]["finish_reason"]
-                return finished is not None
-            else:
-                finished = chunk.choices[0].finish_reason
-                return finished is not None
-        elif isinstance(api, LiteLLMCallable):
+        try:
             finished = chunk.choices[0].finish_reason
             return finished is not None
-        else:
-            try:
-                finished = chunk.choices[0].finish_reason
-                return finished is not None
-            except (AttributeError, TypeError):
-                return False
+        except (AttributeError, TypeError):
+            return False
 
     def get_chunk_text(self, chunk: Any, api: Union[PromptCallableBase, None]) -> str:
         """Get the text from a chunk."""
         chunk_text = ""
         if isinstance(api, OpenAICallable):
-            if OPENAI_VERSION.startswith("0"):
-                finished = chunk["choices"][0]["finish_reason"]
-                if "text" in chunk["choices"][0]:
-                    content = chunk["choices"][0]["text"]
-                    if not finished and content:
-                        chunk_text = content
-            else:
-                finished = chunk.choices[0].finish_reason
-                content = chunk.choices[0].text
-                if not finished and content:
-                    chunk_text = content
-        elif isinstance(api, OpenAIChatCallable):
-            if OPENAI_VERSION.startswith("0"):
-                finished = chunk["choices"][0]["finish_reason"]
-                if "content" in chunk["choices"][0]["delta"]:
-                    content = chunk["choices"][0]["delta"]["content"]
-                    if not finished and content:
-                        chunk_text = content
-            else:
-                finished = chunk.choices[0].finish_reason
-                content = chunk.choices[0].delta.content
-                if not finished and content:
-                    chunk_text = content
-        elif isinstance(api, LiteLLMCallable):
+            finished = chunk.choices[0].finish_reason
+            content = chunk.choices[0].text
+            if not finished and content:
+                chunk_text = content
+        elif isinstance(api, OpenAIChatCallable) or isinstance(api, LiteLLMCallable):
             finished = chunk.choices[0].finish_reason
             content = chunk.choices[0].delta.content
             if not finished and content:

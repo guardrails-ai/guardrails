@@ -6,7 +6,10 @@ from guardrails.classes.history.iteration import Iteration
 from .mocks import MockAsyncValidatorService, MockLoop, MockSequentialValidatorService
 
 
-iteration = Iteration()
+iteration = Iteration(
+    call_id="mock-call",
+    index=0,
+)
 
 
 @pytest.mark.asyncio

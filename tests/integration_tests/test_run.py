@@ -64,7 +64,10 @@ async def test_sync_async_validate_equivalence(mocker):
         )
     ]
 
-    iteration = Iteration()
+    iteration = Iteration(
+        call_id="mock-call",
+        index=0,
+    )
 
     parsed_output, _ = runner_instance(True).parse(OUTPUT, OUTPUT_SCHEMA)
 

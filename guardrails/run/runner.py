@@ -2,6 +2,7 @@ import copy
 from functools import partial
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
 
+
 from guardrails import validator_service
 from guardrails.actions.reask import get_reask_setup
 from guardrails.classes.execution.guard_execution_options import GuardExecutionOptions
@@ -9,7 +10,10 @@ from guardrails.classes.history import Call, Inputs, Iteration, Outputs
 from guardrails.classes.output_type import OutputTypes
 from guardrails.constants import fail_status
 from guardrails.errors import ValidationError
-from guardrails.llm_providers import AsyncPromptCallableBase, PromptCallableBase
+from guardrails.llm_providers import (
+    AsyncPromptCallableBase,
+    PromptCallableBase,
+)
 from guardrails.logger import set_scope
 from guardrails.prompt import Instructions, Prompt
 from guardrails.run.utils import msg_history_source, msg_history_string
@@ -102,9 +106,6 @@ class Runner:
         self.exec_options = copy.deepcopy(exec_options) or GuardExecutionOptions()
 
         # LLM Inputs
-        if prompt:
-            assert api, "Must provide an API if a prompt is provided."
-            assert not output, "Cannot provide both a prompt and output."
 
         stringified_output_schema = prompt_content_for_schema(
             output_type, output_schema, validation_map
@@ -236,11 +237,11 @@ class Runner:
 
         except UserFacingException as e:
             # Because Pydantic v1 doesn't respect property setters
-            call_log._set_exception(e.original_exception)
+            call_log.exception = e.original_exception
             raise e.original_exception
         except Exception as e:
             # Because Pydantic v1 doesn't respect property setters
-            call_log._set_exception(e)
+            call_log.exception = e
             raise e
         return call_log
 
@@ -272,7 +273,9 @@ class Runner:
             full_schema_reask=self.full_schema_reask,
         )
         outputs = Outputs()
-        iteration = Iteration(inputs=inputs, outputs=outputs)
+        iteration = Iteration(
+            call_id=call_log.id, index=index, inputs=inputs, outputs=outputs
+        )
         set_scope(str(id(iteration)))
         call_log.iterations.push(iteration)
 
@@ -342,7 +345,7 @@ class Runner:
         inputs = Inputs(
             llm_output=msg_str,
         )
-        iteration = Iteration(inputs=inputs)
+        iteration = Iteration(call_id=call_log.id, index=attempt_number, inputs=inputs)
         call_log.iterations.insert(0, iteration)
         value, _metadata = validator_service.validate(
             value=msg_str,
@@ -388,7 +391,7 @@ class Runner:
         inputs = Inputs(
             llm_output=prompt.source,
         )
-        iteration = Iteration(inputs=inputs)
+        iteration = Iteration(call_id=call_log.id, index=attempt_number, inputs=inputs)
         call_log.iterations.insert(0, iteration)
         value, _metadata = validator_service.validate(
             value=prompt.source,
@@ -417,7 +420,7 @@ class Runner:
         inputs = Inputs(
             llm_output=instructions.source,
         )
-        iteration = Iteration(inputs=inputs)
+        iteration = Iteration(call_id=call_log.id, index=attempt_number, inputs=inputs)
         call_log.iterations.insert(0, iteration)
         value, _metadata = validator_service.validate(
             value=instructions.source,
@@ -524,10 +527,6 @@ class Runner:
             instructions, prompt = self.prepare_prompt(
                 call_log, instructions, prompt, prompt_params, api, attempt_number
             )
-        else:
-            raise UserFacingException(
-                ValueError("'prompt' or 'msg_history' must be provided.")
-            )
 
         return instructions, prompt, msg_history
 
@@ -565,7 +564,7 @@ class Runner:
         elif prompt:
             llm_response = api_fn(prompt.source)
         else:
-            raise ValueError("'prompt' or 'msg_history' must be provided.")
+            llm_response = api_fn()
 
         return llm_response
 

@@ -3,7 +3,7 @@ from typing import Dict, List
 from pydantic import BaseModel, Field
 
 from guardrails.validator_base import OnFailAction
-from guardrails.validators import LowerCase, OneLine, TwoWords
+from tests.integration_tests.test_assets.validators import LowerCase, OneLine, TwoWords
 
 
 class FeeDetailsFilter(BaseModel):
