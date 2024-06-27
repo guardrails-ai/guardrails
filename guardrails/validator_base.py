@@ -262,7 +262,7 @@ class Validator:
         _validate() and is intended to apply any meta-validation requirements, logic,
         or pre/post processing."""
         validation_result = self._validate(value, metadata)
-        self._after_validation_call()
+        self._log_telemetry()
         return validation_result
 
     def _inference(self, model_input: Any) -> Any:
@@ -486,7 +486,7 @@ class Validator:
 
         return ValidatorRunnable(self)
 
-    def _after_validation_call(self) -> None:
+    def a(self) -> None:
         """Logs telemetry after the validator is called."""
 
         if not self.kwargs.get("disable_tracer", False):
