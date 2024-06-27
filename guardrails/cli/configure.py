@@ -64,12 +64,14 @@ def configure(
 
     if not clear_token:
         console.print("\nEnter API Key below", style="bold", end=" ")
-        last4 and console.print(
-            "[dim]leave empty if you want to keep existing token[/dim]",
-            style="italic",
-            end=" ",
-        )
-        last4 and console.print(f"[{last4}]", style="italic")
+
+        if last4:
+            console.print(
+                "[dim]leave empty if you want to keep existing token[/dim]",
+                style="italic",
+                end=" ",
+            )
+            console.print(f"[{last4}]", style="italic")
 
         console.print(
             ":backhand_index_pointing_right: You can find your API Key at https://hub.guardrailsai.com/keys"
