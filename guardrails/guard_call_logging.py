@@ -35,7 +35,7 @@ from guardrails.classes.validation.validator_logs import ValidatorLogs
 
 
 # TODO: We should read this from guardrailsrc.
-LOG_RETENTION_LIMIT = 1000000
+LOG_RETENTION_LIMIT = 100000
 LOG_FILENAME = "guardrails_calls.db"
 LOGFILE_PATH = os.path.join(tempfile.gettempdir(), LOG_FILENAME)
 
@@ -68,7 +68,6 @@ class GuardLogEntry:
     guard_name: str
     start_time: float
     end_time: float
-    log_level: int
     id: int = -1
     prevalidate_text: str = ""
     postvalidate_text: str = ""
@@ -113,8 +112,7 @@ class _SQLiteTraceHandler(_BaseTraceHandler):
             end_time REAL,
             prevalidate_text TEXT,
             postvalidate_text TEXT,
-            exception_message TEXT,
-            log_level INTEGER
+            exception_message TEXT
         );
     """
     INSERT_COMMAND = """
@@ -123,7 +121,7 @@ class _SQLiteTraceHandler(_BaseTraceHandler):
             exception_message, log_level
         ) VALUES (
             :guard_name, :start_time, :end_time, :prevalidate_text, :postvalidate_text,
-            :exception_message, :log_level
+            :exception_message
         );
     """
 
@@ -189,7 +187,6 @@ class _SQLiteTraceHandler(_BaseTraceHandler):
         prevalidate_text: str,
         postvalidate_text: str,
         exception_text: str,
-        log_level: int,
     ):
         assert not self.readonly
         with self.db:
@@ -202,7 +199,6 @@ class _SQLiteTraceHandler(_BaseTraceHandler):
                     prevalidate_text=prevalidate_text,
                     postvalidate_text=postvalidate_text,
                     exception_message=exception_text,
-                    log_level=log_level,
                 ),
             )
 
@@ -228,7 +224,6 @@ class _SQLiteTraceHandler(_BaseTraceHandler):
                     prevalidate_text=to_string(vlog.value_before_validation),
                     postvalidate_text=to_string(vlog.value_after_validation),
                     exception_message=maybe_outcome,
-                    log_level=0,
                 ),
             )
 
@@ -255,7 +250,7 @@ class _SQLiteTraceHandler(_BaseTraceHandler):
         sql = """
             SELECT 
                 id, guard_name, start_time, end_time, prevalidate_text, 
-                postvalidate_text, exception_message, log_level 
+                postvalidate_text, exception_message 
             FROM guard_logs 
             WHERE id > ?
             ORDER BY start_time;

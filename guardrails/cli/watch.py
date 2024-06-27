@@ -26,7 +26,7 @@ def watch_command(
         help="Print the last n most recent lines. If omitted, will print all history.",
     ),
     follow: bool = typer.Option(
-        default=False,
+        default=True,
         help="Continuously read the last output commands",
     ),
     log_path_override: Optional[str] = typer.Option(
