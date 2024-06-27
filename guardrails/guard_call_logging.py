@@ -104,7 +104,7 @@ class _BaseTraceHandler:
         start_offset_idx: int = 0,
         follow: bool = False,
     ) -> Iterator[GuardLogEntry]:
-        return []
+        yield from []
 
 
 # This structured handler shouldn't be used directly, since it's touching a SQLite db.
@@ -168,7 +168,7 @@ class _SQLiteTraceHandler(_BaseTraceHandler):
     def _get_read_connection(cls, log_path: os.PathLike) -> sqlite3.Connection:
         # A bit of a hack to open in read-only mode...
         db = sqlite3.connect(
-            "file:" + log_path + "?mode=ro", isolation_level=None, uri=True
+            "file:" + str(log_path) + "?mode=ro", isolation_level=None, uri=True
         )
         db.row_factory = sqlite3.Row
         return db

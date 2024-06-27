@@ -38,7 +38,8 @@ def watch_command(
     while log_reader is None:
         try:
             if log_path_override is not None:
-                log_reader = TraceHandler.get_reader(log_path_override)
+                # For the noqa: Strings are pathlike. Ignore conversion issue.
+                log_reader = TraceHandler.get_reader(log_path_override)  # noqa
             else:
                 log_reader = TraceHandler.get_reader()
         except sqlite3.OperationalError:
