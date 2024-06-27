@@ -282,12 +282,12 @@ class Validator:
         # Only use if both are set, otherwise fall back to local inference
         if self.use_local:
             return self._inference_local(model_input)
-        if not self.use_local and self.inference_endpoint:
+        if not self.use_local and self.validation_endpoint:
             return self._inference_remote(model_input)
         raise RuntimeError(
             "No inference endpoint set, but use_local was false. "
             "Please set either use_local=True or "
-            "set an inference_endpoint to perform inference in the validator."
+            "set an validation_endpoint to perform inference in the validator."
         )
 
     def _chunking_function(self, chunk: str) -> List[str]:
