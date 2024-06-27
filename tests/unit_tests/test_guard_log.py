@@ -73,7 +73,6 @@ def _hoisted_logger(msg: str):
         "Testing the behavior of a hoisted logger.",
         msg,
         "",
-        0,
     )
 
 
@@ -83,5 +82,5 @@ def _acquired_logger(msg):
     trace_logger = TraceHandler()
     end = time.time()
     trace_logger.log(
-        "acquired", start, end, "Testing behavior of an acquired logger.", msg, "", 0
+        "acquired", start, end, "Testing behavior of an acquired logger.", msg, ""
     )
