@@ -81,6 +81,7 @@ class GuardLogEntry:
 
 class _BaseTraceHandler:
     """The base TraceHandler only pads out the methods. It's effectively a Noop"""
+
     def __init__(self, log_path: os.PathLike, read_mode: bool):
         pass
 
@@ -94,12 +95,11 @@ class _BaseTraceHandler:
         pass
 
     def tail_logs(
-            self,
-            start_offset_idx: int = 0,
-            follow: bool = False,
+        self,
+        start_offset_idx: int = 0,
+        follow: bool = False,
     ) -> Iterator[GuardLogEntry]:
         return []
-
 
 
 # This structured handler shouldn't be used directly, since it's touching a SQLite db.
@@ -147,14 +147,14 @@ class _SQLiteTraceHandler(_BaseTraceHandler):
                 isolation_level=None,
                 check_same_thread=False,
             )
-            db.execute('PRAGMA journal_mode = wal')
-            db.execute('PRAGMA synchronous = OFF')
+            db.execute("PRAGMA journal_mode = wal")
+            db.execute("PRAGMA synchronous = OFF")
             # isolation_level = None and pragma WAL means we can READ from the DB
             # while threads using it are writing.  Synchronous off puts us on the
             # highway to the danger zone, depending on how willing we are to lose log
             # messages in the event of a guard crash.
         except sqlite3.OperationalError as e:
-            #logging.exception("Unable to connect to guard log handler.")
+            # logging.exception("Unable to connect to guard log handler.")
             raise e
         with db:
             db.execute(_SQLiteTraceHandler.CREATE_COMMAND)
@@ -164,9 +164,7 @@ class _SQLiteTraceHandler(_BaseTraceHandler):
     def _get_read_connection(cls, log_path: os.PathLike) -> sqlite3.Connection:
         # A bit of a hack to open in read-only mode...
         db = sqlite3.connect(
-            "file:" + log_path + "?mode=ro",
-            isolation_level=None,
-            uri=True
+            "file:" + log_path + "?mode=ro", isolation_level=None, uri=True
         )
         db.row_factory = sqlite3.Row
         return db
@@ -176,62 +174,66 @@ class _SQLiteTraceHandler(_BaseTraceHandler):
         self.db.execute(
             """
             DELETE FROM guard_logs 
-            WHERE id <= (
+            WHERE id < (
                 SELECT id FROM guard_logs ORDER BY id DESC LIMIT 1 OFFSET ?  
             );
             """,
-            (keep_n,)
+            (keep_n,),
         )
 
     def log(
-            self,
-            guard_name: str,
-            start_time: float,
-            end_time: float,
-            prevalidate_text: str,
-            postvalidate_text: str,
-            exception_text: str,
-            log_level: int,
+        self,
+        guard_name: str,
+        start_time: float,
+        end_time: float,
+        prevalidate_text: str,
+        postvalidate_text: str,
+        exception_text: str,
+        log_level: int,
     ):
-        assert not self.readonly
-        with self.db:
-            self.db.execute(_SQLiteTraceHandler.INSERT_COMMAND, dict(
-                guard_name=guard_name,
-                start_time=start_time,
-                end_time=end_time,
-                prevalidate_text=prevalidate_text,
-                postvalidate_text=postvalidate_text,
-                exception_message=exception_text,
-                log_level=log_level
-            ))
-
-    def log_entry(self, guard_log_entry: GuardLogEntry):
         assert not self.readonly
         with self.db:
             self.db.execute(
                 _SQLiteTraceHandler.INSERT_COMMAND,
-                asdict(guard_log_entry)
+                dict(
+                    guard_name=guard_name,
+                    start_time=start_time,
+                    end_time=end_time,
+                    prevalidate_text=prevalidate_text,
+                    postvalidate_text=postvalidate_text,
+                    exception_message=exception_text,
+                    log_level=log_level,
+                ),
             )
+
+    def log_entry(self, guard_log_entry: GuardLogEntry):
+        assert not self.readonly
+        with self.db:
+            self.db.execute(_SQLiteTraceHandler.INSERT_COMMAND, asdict(guard_log_entry))
 
     def log_validator(self, vlog: ValidatorLogs):
         assert not self.readonly
-        maybe_outcome = str(vlog.validation_result.outcome) \
-            if hasattr(vlog.validation_result, "outcome") else ""
+        maybe_outcome = (
+            str(vlog.validation_result.outcome)
+            if hasattr(vlog.validation_result, "outcome")
+            else ""
+        )
         with self.db:
-            self.db.execute(_SQLiteTraceHandler.INSERT_COMMAND, dict(
-                guard_name=vlog.validator_name,
-                start_time=vlog.start_time if vlog.start_time else None,
-                end_time=vlog.end_time if vlog.end_time else 0.0,
-                prevalidate_text=to_string(vlog.value_before_validation),
-                postvalidate_text=to_string(vlog.value_after_validation),
-                exception_message=maybe_outcome,
-                log_level=0
-            ))
+            self.db.execute(
+                _SQLiteTraceHandler.INSERT_COMMAND,
+                dict(
+                    guard_name=vlog.validator_name,
+                    start_time=vlog.start_time if vlog.start_time else None,
+                    end_time=vlog.end_time if vlog.end_time else 0.0,
+                    prevalidate_text=to_string(vlog.value_before_validation),
+                    postvalidate_text=to_string(vlog.value_after_validation),
+                    exception_message=maybe_outcome,
+                    log_level=0,
+                ),
+            )
 
     def tail_logs(
-            self,
-            start_offset_idx: int = 0,
-            follow: bool = False
+        self, start_offset_idx: int = 0, follow: bool = False
     ) -> Iterator[GuardLogEntry]:
         """Returns an iterator to generate GuardLogEntries.
         @param start_offset_idx : Start printing entries after this IDX. If
@@ -246,10 +248,10 @@ class _SQLiteTraceHandler(_BaseTraceHandler):
             # We're indexing from the end, so do a quick check.
             cursor.execute(
                 "SELECT id FROM guard_logs ORDER BY id DESC LIMIT 1 OFFSET ?;",
-                (-last_idx,)
+                (-last_idx,),
             )
             for row in cursor:
-                last_idx = row['id']
+                last_idx = row["id"]
         sql = """
             SELECT 
                 id, guard_name, start_time, end_time, prevalidate_text, 
@@ -274,6 +276,7 @@ class TraceHandler(_SQLiteTraceHandler):
     """TraceHandler wraps the internal _SQLiteTraceHandler to make it multi-thread
     safe.  Coupled with some write ahead journaling in the _SyncTrace internal, we have
     a faux-multi-write multi-read interface for SQLite."""
+
     _instance = None
     _lock = threading.Lock()
 

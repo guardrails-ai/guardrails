@@ -19,19 +19,18 @@ def watch_command(
     plain: bool = typer.Option(
         default=False,
         is_flag=True,
-        help="Do not use any rich formatting, instead printing each entry on a line."
+        help="Do not use any rich formatting, instead printing each entry on a line.",
     ),
     num_lines: int = typer.Option(
         default=0,
-        help="Print the last n most recent lines. If omitted, will print all history."
+        help="Print the last n most recent lines. If omitted, will print all history.",
     ),
     follow: bool = typer.Option(
         default=False,
         help="Continuously read the last output commands",
     ),
     log_path_override: Optional[str] = typer.Option(
-        default=None,
-        help="Specify a path to the log output file."
+        default=None, help="Specify a path to the log output file."
     ),
 ):
     # Open a reader for the log path:

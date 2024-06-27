@@ -17,7 +17,7 @@ STOCK_MESSAGES = [
     "quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat",
     "Heeeey Macarena.",
     "Excepteur sint occaecat cupidatat non proident,",
-    "sunt in culpa qui officia deserunt mollit anim id est laborum."
+    "sunt in culpa qui officia deserunt mollit anim id est laborum.",
 ]
 
 
@@ -41,7 +41,7 @@ def test_multithreading_hoisted():
         for msg in STOCK_MESSAGES:
             out = executor.submit(_hoisted_logger, "multithread_hoist" + msg)
             out.result()
-        #executor.map(log_with_hoisted_logger, log_levels)
+        # executor.map(log_with_hoisted_logger, log_levels)
 
 
 def test_multithreading_acquired():
@@ -75,7 +75,7 @@ def _hoisted_logger(msg: str):
         "Testing the behavior of a hoisted logger.",
         msg,
         "",
-        0
+        0,
     )
 
 
@@ -85,11 +85,5 @@ def _acquired_logger(msg):
     trace_logger = TraceHandler()
     end = time.time()
     trace_logger.log(
-        "acquired",
-        start,
-        end,
-        "Testing behavior of an acquired logger.",
-        msg,
-        "",
-        0
+        "acquired", start, end, "Testing behavior of an acquired logger.", msg, "", 0
     )
