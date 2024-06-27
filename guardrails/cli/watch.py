@@ -8,7 +8,7 @@ import rich
 import typer
 
 from guardrails.cli.guardrails import guardrails as gr_cli
-from guardrails.guard_call_logging import (
+from guardrails.call_tracing.guard_call_logging import (
     GuardLogEntry,
     TraceHandler,
 )

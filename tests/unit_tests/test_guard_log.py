@@ -3,7 +3,7 @@ import concurrent.futures
 import time
 from multiprocessing import Pool
 
-from guardrails.guard_call_logging import TraceHandler
+from guardrails.call_tracing.guard_call_logging import TraceHandler
 
 NUM_THREADS = 4
 
