@@ -5,7 +5,7 @@ import sys
 import time
 from multiprocessing import Pool
 
-from guardrails.guard_call_logging import SyncTraceHandler
+from guardrails.guard_call_logging import TraceHandler
 
 NUM_THREADS = 4
 
@@ -22,7 +22,7 @@ STOCK_MESSAGES = [
 
 
 # This is hoisted for testing to see how well we share.
-_trace_logger = SyncTraceHandler()
+_trace_logger = TraceHandler()
 
 
 def test_multiprocessing_hoisted():
@@ -82,7 +82,7 @@ def _hoisted_logger(msg: str):
 def _acquired_logger(msg):
     # Note that the trace logger is acquired INSIDE the method:
     start = time.time()
-    trace_logger = SyncTraceHandler()
+    trace_logger = TraceHandler()
     end = time.time()
     trace_logger.log(
         "acquired",

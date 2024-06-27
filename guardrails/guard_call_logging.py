@@ -25,17 +25,19 @@ writer.log(
 import datetime
 import os
 import sqlite3
+import tempfile
 import threading
 from dataclasses import dataclass, asdict
 from typing import Iterator
 
-from guardrails.classes import ValidationOutcome
 from guardrails.utils.casting_utils import to_string
-from guardrails.classes.history import Call
 from guardrails.classes.validation.validator_logs import ValidatorLogs
 
 
+# TODO: We should read this from guardrailsrc.
+LOG_RETENTION_LIMIT = 1000000
 LOG_FILENAME = "guardrails_calls.db"
+LOGFILE_PATH = os.path.join(tempfile.gettempdir(), LOG_FILENAME)
 
 
 # These adapters make it more convenient to add data into our log DB:
@@ -77,7 +79,8 @@ class GuardLogEntry:
         return self.end_time - self.start_time
 
 
-class _NoopTraceHandler:
+class _BaseTraceHandler:
+    """The base TraceHandler only pads out the methods. It's effectively a Noop"""
     def __init__(self, log_path: os.PathLike, read_mode: bool):
         pass
 
@@ -101,7 +104,7 @@ class _NoopTraceHandler:
 
 # This structured handler shouldn't be used directly, since it's touching a SQLite db.
 # Instead, use the singleton or the async singleton.
-class _SyncTraceHandler:
+class _SQLiteTraceHandler(_BaseTraceHandler):
     CREATE_COMMAND = """
         CREATE TABLE IF NOT EXISTS guard_logs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -125,11 +128,16 @@ class _SyncTraceHandler:
     """
 
     def __init__(self, log_path: os.PathLike, read_mode: bool):
+        self._log_path = log_path  # Read-only value.
         self.readonly = read_mode
         if read_mode:
-            self.db = _SyncTraceHandler._get_read_connection(log_path)
+            self.db = _SQLiteTraceHandler._get_read_connection(log_path)
         else:
-            self.db = _SyncTraceHandler._get_write_connection(log_path)
+            self.db = _SQLiteTraceHandler._get_write_connection(log_path)
+
+    @property
+    def log_path(self):
+        return self._log_path
 
     @classmethod
     def _get_write_connection(cls, log_path: os.PathLike) -> sqlite3.Connection:
@@ -149,7 +157,7 @@ class _SyncTraceHandler:
             #logging.exception("Unable to connect to guard log handler.")
             raise e
         with db:
-            db.execute(_SyncTraceHandler.CREATE_COMMAND)
+            db.execute(_SQLiteTraceHandler.CREATE_COMMAND)
         return db
 
     @classmethod
@@ -163,6 +171,18 @@ class _SyncTraceHandler:
         db.row_factory = sqlite3.Row
         return db
 
+    def _truncate(self, keep_n: int = LOG_RETENTION_LIMIT):
+        assert not self.readonly
+        self.db.execute(
+            """
+            DELETE FROM guard_logs 
+            WHERE id <= (
+                SELECT id FROM guard_logs ORDER BY id DESC LIMIT 1 OFFSET ?  
+            );
+            """,
+            (keep_n,)
+        )
+
     def log(
             self,
             guard_name: str,
@@ -175,7 +195,7 @@ class _SyncTraceHandler:
     ):
         assert not self.readonly
         with self.db:
-            self.db.execute(_SyncTraceHandler.INSERT_COMMAND, dict(
+            self.db.execute(_SQLiteTraceHandler.INSERT_COMMAND, dict(
                 guard_name=guard_name,
                 start_time=start_time,
                 end_time=end_time,
@@ -189,7 +209,7 @@ class _SyncTraceHandler:
         assert not self.readonly
         with self.db:
             self.db.execute(
-                _SyncTraceHandler.INSERT_COMMAND,
+                _SQLiteTraceHandler.INSERT_COMMAND,
                 asdict(guard_log_entry)
             )
 
@@ -198,7 +218,7 @@ class _SyncTraceHandler:
         maybe_outcome = str(vlog.validation_result.outcome) \
             if hasattr(vlog.validation_result, "outcome") else ""
         with self.db:
-            self.db.execute(_SyncTraceHandler.INSERT_COMMAND, dict(
+            self.db.execute(_SQLiteTraceHandler.INSERT_COMMAND, dict(
                 guard_name=vlog.validator_name,
                 start_time=vlog.start_time if vlog.start_time else None,
                 end_time=vlog.end_time if vlog.end_time else 0.0,
@@ -214,7 +234,7 @@ class _SyncTraceHandler:
             follow: bool = False
     ) -> Iterator[GuardLogEntry]:
         """Returns an iterator to generate GuardLogEntries.
-        @param start_offset_idx int : Start printing entries after this IDX. If
+        @param start_offset_idx : Start printing entries after this IDX. If
         negative, this will instead start printing the LAST start_offset_idx entries.
         @param follow : If follow is True, will re-check the database for new entries
         after the first batch is complete.  If False (default), will return when entries
@@ -250,8 +270,8 @@ class _SyncTraceHandler:
             cursor.execute(sql, (last_idx,))
 
 
-class SyncTraceHandler(_SyncTraceHandler):
-    """SyncTraceHandler wraps the internal _SyncTraceHandler to make it multi-thread
+class TraceHandler(_SQLiteTraceHandler):
+    """TraceHandler wraps the internal _SQLiteTraceHandler to make it multi-thread
     safe.  Coupled with some write ahead journaling in the _SyncTrace internal, we have
     a faux-multi-write multi-read interface for SQLite."""
     _instance = None
@@ -268,9 +288,9 @@ class SyncTraceHandler(_SyncTraceHandler):
         return cls._instance
 
     @classmethod
-    def _create(cls, path: os.PathLike = LOG_FILENAME) -> _SyncTraceHandler:
-        return _SyncTraceHandler(path, read_mode=False)
+    def _create(cls, path: os.PathLike = LOGFILE_PATH) -> _SQLiteTraceHandler:
+        return _SQLiteTraceHandler(path, read_mode=False)
 
     @classmethod
-    def get_reader(cls, path: os.PathLike = LOG_FILENAME) -> _SyncTraceHandler:
-        return _SyncTraceHandler(path, read_mode=True)
+    def get_reader(cls, path: os.PathLike = LOGFILE_PATH) -> _SQLiteTraceHandler:
+        return _SQLiteTraceHandler(path, read_mode=True)
