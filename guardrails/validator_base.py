@@ -353,7 +353,7 @@ class Validator:
             submission_url = self.validation_endpoint
 
             headers = {
-                "Authorization": f"Bearer {self.token}",
+                "Authorization": f"Bearer {self.hub_jwt_token}",
                 "Content-Type": "application/json",
             }
             req = requests.post(submission_url, json=request_body, headers=headers)
