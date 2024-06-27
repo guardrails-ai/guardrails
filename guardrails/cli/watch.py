@@ -8,10 +8,7 @@ import rich
 import typer
 
 from guardrails.cli.guardrails import guardrails as gr_cli
-from guardrails.call_tracing.guard_call_logging import (
-    TraceHandler,
-)
-from guardrails.call_tracing.trace_entry import GuardTraceEntry
+from guardrails.call_tracing import GuardTraceEntry, TraceHandler
 
 
 @gr_cli.command(name="watch")

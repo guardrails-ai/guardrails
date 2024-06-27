@@ -1,5 +1,5 @@
 """
-guard_call_logging.py
+trace_handler.py
 
 A set of tools to track the behavior of guards, specifically with the intent of
 collating the pre/post validation text and timing of guard calls.  Uses a singleton to

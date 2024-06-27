@@ -1,3 +1,21 @@
+"""
+sqlite_trace_handler.py
+
+This is the metaphorical bread and butter of our tracing implementation, or at least the
+butter.  It wraps a SQLite database and configures it to be 'agreeable' in multithreaded
+situations.  Normally, when sharing across threads and instances one should consider
+using a larger database solution like Postgres, but in this case we only care about
+_supporting_ writing from multiple places.  We don't expect it will be the norm.
+We care about (1) not negatively impacting performance, (2) not crashing when used in
+unusual ways, and (3) not losing data when possible.
+
+The happy path should be reasonably performant.  The unhappy path should not crash.
+
+The other part of the multithreaded support comes from the public trace_handler, which
+uses a singleton pattern to only have a single instance of the database per-thread.
+If we _do_ somehow end up shared across threads, the journaling settings and writeahead
+should protect us from odd behavior.
+"""
 import datetime
 import os
 import sqlite3
