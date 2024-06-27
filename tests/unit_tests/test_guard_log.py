@@ -1,7 +1,5 @@
 import asyncio
 import concurrent.futures
-import random
-import sys
 import time
 from multiprocessing import Pool
 
