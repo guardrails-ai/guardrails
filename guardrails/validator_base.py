@@ -172,7 +172,7 @@ class Validator:
 
     def __init__(
         self,
-        use_local: bool = True,
+        use_local: bool = None,
         validation_endpoint: str = None,
         on_fail: Optional[Union[Callable, OnFailAction]] = None,
         **kwargs,
@@ -181,14 +181,18 @@ class Validator:
         self.validation_endpoint = validation_endpoint
         self.creds = Credentials.from_rc_file()
 
-        if self.use_local is None:
+        if not self.use_local:
             if not self.creds:
                 raise PermissionError(
                     "No credentials found! Please run 'guardrails configure' before"
                     " making any validation requests."
                 )
             self.hub_jwt_token = get_jwt_token(self.creds)
-            self.use_local = not remote_inference.get_use_remote_inference(self.creds)
+            # If it wasn't set, fall back to credentials
+            if self.use_local is None:
+                self.use_local = not remote_inference.get_use_remote_inference(
+                    self.creds
+                )
 
         if not self.validation_endpoint:
             validator_id = self.rail_alias.split("/")[-1]
