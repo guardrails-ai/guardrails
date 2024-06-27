@@ -16,6 +16,7 @@ uses a singleton pattern to only have a single instance of the database per-thre
 If we _do_ somehow end up shared across threads, the journaling settings and writeahead
 should protect us from odd behavior.
 """
+
 import datetime
 import os
 import sqlite3

@@ -6,7 +6,8 @@ trace_handler provides the singleton that's used for fast global access across t
 tracer_mixin defines the interface and can act as a noop.
 trace_entry is just a helpful dataclass.
 """
+
 from guardrails.call_tracing.trace_entry import GuardTraceEntry
 from guardrails.call_tracing.trace_handler import TraceHandler
 
-__all__ = ['GuardTraceEntry', 'TraceHandler']
+__all__ = ["GuardTraceEntry", "TraceHandler"]
