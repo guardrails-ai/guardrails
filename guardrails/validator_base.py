@@ -490,7 +490,7 @@ class Validator:
 
         return ValidatorRunnable(self)
 
-    def a(self) -> None:
+    def _log_telemetry(self) -> None:
         """Logs telemetry after the validator is called."""
 
         if not self.kwargs.get("disable_tracer", False):
