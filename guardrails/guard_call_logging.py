@@ -292,9 +292,10 @@ class TraceHandler(_SQLiteTraceHandler):
         return cls._instance
 
     @classmethod
-    def _create(cls, path: os.PathLike = LOGFILE_PATH) -> _SQLiteTraceHandler:
-        return _SQLiteTraceHandler(path, read_mode=False)
+    def _create(cls, path: os.PathLike = LOGFILE_PATH) -> _BaseTraceHandler:
+        # return _SQLiteTraceHandler(path, read_mode=False)
+        return _BaseTraceHandler(path, read_mode=False)
 
     @classmethod
-    def get_reader(cls, path: os.PathLike = LOGFILE_PATH) -> _SQLiteTraceHandler:
+    def get_reader(cls, path: os.PathLike = LOGFILE_PATH) -> _BaseTraceHandler:
         return _SQLiteTraceHandler(path, read_mode=True)
