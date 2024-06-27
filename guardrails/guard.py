@@ -34,6 +34,7 @@ from guardrails_api_client.models import (
 from guardrails_api_client.types import UNSET
 from langchain_core.messages import BaseMessage
 from langchain_core.runnables import Runnable, RunnableConfig
+from opentelemetry import context as otel_context
 from pydantic import BaseModel
 from pydantic.version import VERSION as PYDANTIC_VERSION
 from typing_extensions import deprecated  # type: ignore
@@ -71,6 +72,7 @@ from guardrails.utils.api_utils import extract_serializeable_metadata
 from guardrails.utils.hub_telemetry_utils import HubTelemetry
 from guardrails.utils.llm_response import LLMResponse
 from guardrails.utils.reask_utils import FieldReAsk
+from guardrails.utils.telemetry_utils import wrap_with_otel_context
 from guardrails.utils.validator_utils import get_validator
 from guardrails.validator_base import FailResult, Validator
 
@@ -697,8 +699,14 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
             )
 
         guard_context = contextvars.Context()
+
+        # get the current otel context and wrap the subsequent call to preserve otel context if guard call is being called be another 
+        # framework upstream
+        current_otel_context = otel_context.get_current()
+        wrapped__call = wrap_with_otel_context(current_otel_context, __call)
+
         return guard_context.run(
-            __call,
+            wrapped__call,
             self,
             llm_api,
             prompt_params,
@@ -1059,6 +1067,10 @@ versions 0.5.x and beyond. Pass 'reask_instructions' in the initializer \
             )
 
         guard_context = contextvars.Context()
+        # get the current otel context and wrap the subsequent call to preserve otel context if guard call is being called be another 
+        # framework upstream
+        current_otel_context = otel_context.get_current()
+        wrapped__parse = wrap_with_otel_context(current_otel_context, __parse)
         return guard_context.run(
             __parse,
             self,

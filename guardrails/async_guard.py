@@ -1,5 +1,6 @@
 import contextvars
 import inspect
+from opentelemetry import context as otel_context
 from typing import (
     Any,
     AsyncIterable,
@@ -28,6 +29,7 @@ from guardrails.stores.context import (
     set_tracer,
     set_tracer_context,
 )
+from guardrails.utils.telemetry_utils import wrap_with_otel_context
 
 
 class AsyncGuard(Guard):
@@ -191,8 +193,12 @@ class AsyncGuard(Guard):
             return result
 
         guard_context = contextvars.Context()
+        # get the current otel context and wrap the subsequent call to preserve otel context if guard call is being called by another 
+        # framework upstream
+        current_otel_context = otel_context.get_current()
+        wrapped__call = wrap_with_otel_context(current_otel_context, __call)
         return await guard_context.run(
-            __call,
+            wrapped__call,
             self,
             llm_api,
             prompt_params,
@@ -416,10 +422,13 @@ class AsyncGuard(Guard):
                 *args,
                 **kwargs,
             )
-
         guard_context = contextvars.Context()
+        # get the current otel context and wrap the subsequent call to preserve otel context if guard call is being called by another 
+        # framework upstream
+        current_otel_context = otel_context.get_current()
+        wrapped__parse = wrap_with_otel_context(current_otel_context, __parse)
         return await guard_context.run(
-            __parse,
+            wrapped__parse,
             self,
             llm_output,
             metadata,
