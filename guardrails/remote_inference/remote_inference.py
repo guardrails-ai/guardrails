@@ -2,6 +2,7 @@ from typing import Optional
 from guardrails.classes.credentials import Credentials
 
 
+# TODO: Consolidate with telemetry switches
 def get_use_remote_inference(creds: Credentials) -> Optional[bool]:
     """
     Load the use_remote_inferencing setting from the credentials.
