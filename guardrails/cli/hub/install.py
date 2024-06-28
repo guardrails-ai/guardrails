@@ -238,7 +238,7 @@ Example: hub://guardrails/regex_match."
         install_hub_module(module_manifest, site_packages, quiet=quiet)
 
     try:
-        if module_manifest.tags.has_guardrails_endpoint:
+        if module_manifest.tags and module_manifest.tags.has_guardrails_endpoint:
             install_local_models = typer.confirm(
                 "This validator has a Guardrails AI inference endpoint available. "
                 "Would you still like to install the local models for local inference?",
