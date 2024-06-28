@@ -168,10 +168,12 @@ class Validator:
         on_fail: Optional[Union[Callable, OnFailAction]] = None,
         **kwargs,
     ):
-        self.creds = Credentials.from_rc_file()
+        if not kwargs.get("disable_tracer", False):
+            self._hub_telemetry = HubTelemetry()
 
-        self.use_local = kwargs.get(["use_local"], None)
-        self.validation_endpoint = kwargs.get(["validation_endpoint"], None)
+        self.creds = Credentials.from_rc_file()
+        self.use_local = kwargs.get("use_local", None)
+        self.validation_endpoint = kwargs.get("validation_endpoint", None)
         if not self.creds:
             raise ValueError(
                 "No credentials found. Please run `guardrails configure` and try again."
@@ -486,12 +488,11 @@ class Validator:
         if not self.kwargs.get("disable_tracer", False):
             # Get HubTelemetry singleton and create a new span to
             # log the validator inference
-            _hub_telemetry = HubTelemetry()
             used_guardrails_endpoint = (
                 VALIDATOR_HUB_SERVICE in self.validation_endpoint and not self.use_local
             )
             used_custom_endpoint = not self.use_local and not used_guardrails_endpoint
-            _hub_telemetry.create_new_span(
+            self._hub_telemetry.create_new_span(
                 span_name="/validator_inference",
                 attributes=[
                     ("validator_name", self.rail_alias),
