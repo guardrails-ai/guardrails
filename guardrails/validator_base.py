@@ -8,15 +8,7 @@ import logging
 from collections import defaultdict
 from dataclasses import dataclass
 from string import Template
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    List,
-    Optional,
-    Type,
-    Union,
-)
+from typing import Any, Callable, Dict, List, Optional, Type, Union
 from warnings import warn
 
 import nltk
@@ -24,10 +16,10 @@ import requests
 from langchain_core.runnables import Runnable
 
 from guardrails.classes import (
-    ValidationResult,
-    PassResult,  # noqa
-    FailResult,
     ErrorSpan,  # noqa
+    FailResult,
+    PassResult,  # noqa
+    ValidationResult,
 )
 from guardrails.classes.credentials import Credentials
 from guardrails.constants import hub
@@ -181,7 +173,7 @@ class Validator:
         self.validation_endpoint = kwargs.get(["validation_endpoint"], None)
         if not self.creds:
             raise ValueError(
-                "No credentials found.  Please run `guardrails login` and try again."
+                "No credentials found. Please run `guardrails configure` and try again."
             )
         self.hub_jwt_token = get_jwt_token(self.creds)
 
