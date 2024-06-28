@@ -55,7 +55,7 @@ class ValidationOutcome(IValidationOutcome, ArbitraryModel, Generic[OT]):
     @classmethod
     def from_guard_history(cls, call: Call):
         """Create a ValidationOutcome from a history Call object."""
-        last_iteration = call.iterations.last or Iteration()
+        last_iteration = call.iterations.last or Iteration(call_id=call.id, index=0)
         last_output = last_iteration.validation_response or safe_get(
             list(last_iteration.reasks), 0
         )
@@ -64,6 +64,7 @@ class ValidationOutcome(IValidationOutcome, ArbitraryModel, Generic[OT]):
         error = call.error
         output = cast(OT, call.guarded_output)
         return cls(
+            call_id=call.id,  # type: ignore
             raw_llm_output=call.raw_outputs.last,
             validated_output=output,
             reask=reask,
@@ -97,6 +98,7 @@ class ValidationOutcome(IValidationOutcome, ArbitraryModel, Generic[OT]):
 
     def to_dict(self):
         i_validation_outcome = IValidationOutcome(
+            call_id=self.call_id,  # type: ignore
             raw_llm_output=self.raw_llm_output,  # type: ignore
             validated_output=ValidationOutcomeValidatedOutput(self.validated_output),  # type: ignore
             reask=self.reask,

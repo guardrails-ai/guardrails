@@ -49,6 +49,7 @@ def test_validate_llm_output(mocker):
 
     parse_mock = mocker.patch.object(mock_guard, "parse")
     parse_mock.return_value = ValidationOutcome(
+        call_id="mock-call",
         raw_llm_output="output",
         validated_output="validated output",
         validation_passed=True,

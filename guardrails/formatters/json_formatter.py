@@ -1,8 +1,6 @@
 import json
 from typing import Optional, Union
 
-from jsonformer import Jsonformer
-
 from guardrails.formatters.base_formatter import BaseFormatter
 from guardrails.llm_providers import (
     ArbitraryCallable,
@@ -94,6 +92,8 @@ class JsonFormatter(BaseFormatter):
 
     def wrap_callable(self, llm_callable) -> ArbitraryCallable:
         # JSON Schema enforcement experiment.
+        from jsonformer import Jsonformer
+
         if isinstance(llm_callable, HuggingFacePipelineCallable):
             model = llm_callable.init_kwargs["pipeline"]
             return ArbitraryCallable(

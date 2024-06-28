@@ -21,6 +21,7 @@ from warnings import warn
 
 from langchain_core.runnables import Runnable
 
+from guardrails.logger import logger
 from guardrails.classes import (
     ValidationResult,
     PassResult,  # noqa
@@ -125,20 +126,27 @@ def register_validator(name: str, data_type: Union[str, List[str]]):
     return decorator
 
 
+def try_to_import_hub():
+    try:
+        # This should import everything and trigger registration
+        # So it should only have to happen once
+        # in lieu of completely unregistered validators
+        import guardrails.hub  # noqa
+    except ImportError:
+        logger.debug("Could not import hub.  Validators may not work properly.")
+
+
 # TODO: Move this to validator_utils.py
 def get_validator_class(name: Optional[str]) -> Optional[Type["Validator"]]:
     if not name:
         return None
     is_hub_validator = name.startswith(hub)
     validator_key = name.replace(hub, "") if is_hub_validator else name
-    registration = validators_registry.get(validator_key)
-    if not registration and name.startswith(hub):
-        # This should import everything and trigger registration
-        # So it should only have to happen once
-        # in lieu of completely unregistered validators
-        import guardrails.hub  # noqa
 
-        return validators_registry.get(validator_key)
+    registration = validators_registry.get(validator_key)
+    if not registration:
+        try_to_import_hub()
+        registration = validators_registry.get(validator_key)
 
     if not registration:
         warn(f"Validator with id {name} was not found in the registry!  Ignoring...")
@@ -153,10 +161,6 @@ class Validator:
 
     rail_alias: str = ""
 
-    # chunking function returns empty list or list of 2 chunks
-    # first chunk is the chunk to validate
-    # second chunk is incomplete chunk that needs further accumulation
-    accumulated_chunks = []
     run_in_separate_process = False
     override_value_on_pass = False
     required_metadata_keys = []
@@ -166,6 +170,11 @@ class Validator:
         self, on_fail: Optional[Union[Callable, OnFailAction]] = None, **kwargs
     ):
         self.on_fail_descriptor: Union[str, OnFailAction] = "custom"
+
+        # chunking function returns empty list or list of 2 chunks
+        # first chunk is the chunk to validate
+        # second chunk is incomplete chunk that needs further accumulation
+        self.accumulated_chunks: List[str] = []
 
         if on_fail is None:
             on_fail = OnFailAction.NOOP
