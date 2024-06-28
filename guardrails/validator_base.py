@@ -172,27 +172,22 @@ class Validator:
 
     def __init__(
         self,
-        use_local: bool = None,
-        validation_endpoint: str = None,
         on_fail: Optional[Union[Callable, OnFailAction]] = None,
         **kwargs,
     ):
-        self.use_local = use_local
-        self.validation_endpoint = validation_endpoint
         self.creds = Credentials.from_rc_file()
 
-        if not self.use_local:
-            if not self.creds:
-                raise PermissionError(
-                    "No credentials found! Please run 'guardrails configure' before"
-                    " making any validation requests."
-                )
-            self.hub_jwt_token = get_jwt_token(self.creds)
-            # If it wasn't set, fall back to credentials
-            if self.use_local is None:
-                self.use_local = not remote_inference.get_use_remote_inference(
-                    self.creds
-                )
+        self.use_local = kwargs.get(["use_local"], None)
+        self.validation_endpoint = kwargs.get(["validation_endpoint"], None)
+        if not self.creds:
+            raise ValueError(
+                "No credentials found.  Please run `guardrails login` and try again."
+            )
+        self.hub_jwt_token = get_jwt_token(self.creds)
+
+        # If use_local is not set, we can fall back to the setting determined in CLI
+        if self.use_local is None:
+            self.use_local = not remote_inference.get_use_remote_inference(self.creds)
 
         if not self.validation_endpoint:
             validator_id = self.rail_alias.split("/")[-1]
@@ -362,13 +357,10 @@ class Validator:
                 "Content-Type": "application/json",
             }
             req = requests.post(submission_url, json=request_body, headers=headers)
-
-            body = req.json()
             if not req.ok:
                 logging.error(req.status_code)
-                logging.error(body.get("message"))
 
-            return body
+            return req.json()
 
         except Exception as e:
             logging.error(
