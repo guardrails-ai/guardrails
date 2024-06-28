@@ -63,7 +63,6 @@ class Messages:
         """Substitute constants in the prompt."""
         # Substitute constants by reading the constants file.
         # Regex to extract all occurrences of ${gr.<constant_name>}
-        print("====subbing constants", text)
         matches = re.findall(r"\${gr\.(\w+)}", text)
 
         # Substitute all occurrences of ${gr.<constant_name>}
