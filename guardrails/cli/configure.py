@@ -4,13 +4,12 @@ import uuid
 from os.path import expanduser
 from typing import Optional
 
-from guardrails.classes.credentials import Credentials
-from guardrails.cli.server.hub_client import AuthenticationError, get_auth
 import typer
 
+from guardrails.classes.credentials import Credentials
 from guardrails.cli.guardrails import guardrails
 from guardrails.cli.logger import LEVELS, logger
-
+from guardrails.cli.server.hub_client import AuthenticationError, get_auth
 
 DEFAULT_TOKEN = ""
 DEFAULT_ENABLE_METRICS = True
@@ -18,7 +17,9 @@ DEFAULT_USE_REMOTE_INFERENCING = True
 
 
 def save_configuration_file(
-    token: Optional[str], enable_metrics: Optional[bool], use_remote_inferencing: bool
+    token: Optional[str],
+    enable_metrics: Optional[bool],
+    use_remote_inferencing: Optional[bool],
 ) -> None:
     if token is None:
         token = DEFAULT_TOKEN
