@@ -189,11 +189,27 @@ class Outputs(IOutputs, ArbitraryModel):
             ]
 
         return cls(
-            llm_response_info=LLMResponse.from_interface(i_outputs.llm_response_info),  # type: ignore
+            llm_response_info=(  # type: ignore
+                LLMResponse.from_interface(i_outputs.llm_response_info)
+                if i_outputs.llm_response_info
+                else None
+            ),
             raw_output=i_outputs.raw_output,  # type: ignore
-            parsed_output=i_outputs.parsed_output.actual_instance,  # type: ignore
-            validation_response=i_outputs.validation_response.actual_instance,  # type: ignore
-            guarded_output=i_outputs.guarded_output.actual_instance,  # type: ignore
+            parsed_output=(  # type: ignore
+                i_outputs.parsed_output.actual_instance
+                if i_outputs.parsed_output
+                else None
+            ),
+            validation_response=(  # type: ignore
+                i_outputs.validation_response.actual_instance
+                if i_outputs.validation_response
+                else None
+            ),
+            guarded_output=(  # type: ignore
+                i_outputs.guarded_output.actual_instance
+                if i_outputs.guarded_output
+                else None
+            ),
             reasks=reasks,  # type: ignore
             validator_logs=validator_logs,  # type: ignore
             error=i_outputs.error,
