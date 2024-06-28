@@ -15,22 +15,18 @@ import nltk
 import requests
 from langchain_core.runnables import Runnable
 
-from guardrails.classes import (
-    ErrorSpan,  # noqa
-    FailResult,
-    PassResult,  # noqa
-    ValidationResult,
-)
+from guardrails.classes import ErrorSpan  # noqa
+from guardrails.classes import PassResult  # noqa
+from guardrails.classes import FailResult, ValidationResult
 from guardrails.classes.credentials import Credentials
 from guardrails.constants import hub
 from guardrails.hub_token.token import VALIDATOR_HUB_SERVICE, get_jwt_token
 from guardrails.logger import logger
 from guardrails.remote_inference import remote_inference
+from guardrails.telemetry import get_disable_telemetry
 from guardrails.types.on_fail import OnFailAction
 from guardrails.utils.hub_telemetry_utils import HubTelemetry
 
-# TODO: Use a different, lighter weight tokenizer
-#   that doesn't require downloads during runtime
 #   See: https://github.com/guardrails-ai/guardrails/issues/829
 try:
     nltk.data.find("tokenizers/punkt")
@@ -168,10 +164,11 @@ class Validator:
         on_fail: Optional[Union[Callable, OnFailAction]] = None,
         **kwargs,
     ):
-        if not kwargs.get("disable_tracer", False):
+        self.creds = Credentials.from_rc_file()
+        self._disable_telemetry = get_disable_telemetry(self.creds)
+        if not self._disable_telemetry:
             self._hub_telemetry = HubTelemetry()
 
-        self.creds = Credentials.from_rc_file()
         self.use_local = kwargs.get("use_local", None)
         self.validation_endpoint = kwargs.get("validation_endpoint", None)
         if not self.creds:
@@ -485,7 +482,7 @@ class Validator:
     def _log_telemetry(self) -> None:
         """Logs telemetry after the validator is called."""
 
-        if not self.kwargs.get("disable_tracer", False):
+        if not self._disable_telemetry:
             # Get HubTelemetry singleton and create a new span to
             # log the validator inference
             used_guardrails_endpoint = (
