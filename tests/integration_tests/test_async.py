@@ -1,48 +1,65 @@
-from unittest.mock import patch
-
-import openai
 import pytest
 
-import guardrails as gd
-from guardrails.schema import JsonSchema
-from guardrails.utils.openai_utils import OPENAI_VERSION
+from guardrails import AsyncGuard, Prompt
+from guardrails.utils import docs_utils
+from guardrails.classes.llm.llm_response import LLMResponse
 from tests.integration_tests.test_assets.fixtures import (  # noqa
     fixture_llm_output,
     fixture_rail_spec,
     fixture_validated_output,
 )
 
-from .mock_llm_outputs import MockAsyncOpenAICallable, entity_extraction
+from .mock_llm_outputs import entity_extraction
+
+
+async def mock_llm(*args, **kwargs):
+    return ""
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("multiprocessing_validators", (True, False))
-@pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="Only for OpenAI v0")
 async def test_entity_extraction_with_reask(mocker, multiprocessing_validators: bool):
     """Test that the entity extraction works with re-asking."""
+    mock_invoke_llm = mocker.patch(
+        "guardrails.llm_providers.AsyncOpenAICallable.invoke_llm",
+    )
+    mock_invoke_llm.side_effect = [
+        LLMResponse(
+            output=entity_extraction.LLM_OUTPUT,
+            prompt_token_count=123,
+            response_token_count=1234,
+        ),
+        LLMResponse(
+            # TODO: Re-enable once field level reasking is supported
+            # output=entity_extraction.LLM_OUTPUT_REASK,
+            output=entity_extraction.LLM_OUTPUT_FULL_REASK,
+            prompt_token_count=123,
+            response_token_count=1234,
+        ),
+    ]
     mocker.patch(
-        "guardrails.llm_providers.AsyncOpenAICallable",
-        new=MockAsyncOpenAICallable,
+        "guardrails.llm_providers.get_static_openai_acreate_func", return_value=mock_llm
     )
     mocker.patch(
         "guardrails.validators.Validator.run_in_separate_process",
         new=multiprocessing_validators,
     )
 
-    content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
-    guard = gd.Guard.from_rail_string(entity_extraction.RAIL_SPEC_WITH_REASK)
+    content = docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
+    guard = AsyncGuard.from_rail_string(entity_extraction.RAIL_SPEC_WITH_REASK)
 
-    with patch.object(
-        JsonSchema, "preprocess_prompt", wraps=guard.output_schema.preprocess_prompt
-    ) as mock_preprocess_prompt:
-        final_output = await guard(
-            llm_api=openai.Completion.acreate,
-            prompt_params={"document": content[:6000]},
-            num_reasks=1,
-        )
+    from guardrails.run import async_runner
 
-        # Check that the preprocess_prompt method was called.
-        mock_preprocess_prompt.assert_called()
+    preprocess_prompt_spy = mocker.spy(async_runner, "preprocess_prompt")
+
+    final_output = await guard(
+        llm_api=mock_llm,
+        prompt_params={"document": content[:6000]},
+        num_reasks=1,
+    )
+
+    # Check that the preprocess_prompt method was called.
+    preprocess_prompt_spy.assert_called()
 
     # Assertions are made on the guard state object.
     assert final_output.validation_passed is True
@@ -58,7 +75,7 @@ async def test_entity_extraction_with_reask(mocker, multiprocessing_validators: 
 
     # For orginal prompt and output
     first = call.iterations.first
-    assert first.inputs.prompt == gd.Prompt(entity_extraction.COMPILED_PROMPT)
+    assert first.inputs.prompt == Prompt(entity_extraction.COMPILED_PROMPT)
     # Same as above
     assert call.compiled_prompt == entity_extraction.COMPILED_PROMPT
     assert first.prompt_tokens_consumed == 123
@@ -68,24 +85,35 @@ async def test_entity_extraction_with_reask(mocker, multiprocessing_validators: 
 
     # For re-asked prompt and output
     final = call.iterations.last
-    assert final.inputs.prompt == gd.Prompt(entity_extraction.COMPILED_PROMPT_REASK)
+    assert final.inputs.prompt == Prompt(entity_extraction.COMPILED_PROMPT_REASK)
     # Same as above
     assert call.reask_prompts.last == entity_extraction.COMPILED_PROMPT_REASK
-    assert final.raw_output == entity_extraction.LLM_OUTPUT_REASK
+
+    # TODO: Re-enable once field level reasking is supported
+    # assert final.raw_output == entity_extraction.LLM_OUTPUT_REASK
+    assert final.raw_output == entity_extraction.LLM_OUTPUT_FULL_REASK
     assert call.guarded_output == entity_extraction.VALIDATED_OUTPUT_REASK_2
 
 
 @pytest.mark.asyncio
-@pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="Only for OpenAI v0")
 async def test_entity_extraction_with_noop(mocker):
-    mocker.patch(
-        "guardrails.llm_providers.AsyncOpenAICallable",
-        new=MockAsyncOpenAICallable,
+    mock_invoke_llm = mocker.patch(
+        "guardrails.llm_providers.AsyncOpenAICallable.invoke_llm",
     )
-    content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
-    guard = gd.Guard.from_rail_string(entity_extraction.RAIL_SPEC_WITH_NOOP)
+    mock_invoke_llm.side_effect = [
+        LLMResponse(
+            output=entity_extraction.LLM_OUTPUT,
+            prompt_token_count=123,
+            response_token_count=1234,
+        )
+    ]
+    mocker.patch(
+        "guardrails.llm_providers.get_static_openai_acreate_func", return_value=mock_llm
+    )
+    content = docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
+    guard = AsyncGuard.from_rail_string(entity_extraction.RAIL_SPEC_WITH_NOOP)
     final_output = await guard(
-        llm_api=openai.Completion.acreate,
+        llm_api=mock_llm,
         prompt_params={"document": content[:6000]},
         num_reasks=1,
     )
@@ -115,18 +143,27 @@ async def test_entity_extraction_with_noop(mocker):
 
 
 @pytest.mark.asyncio
-@pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="Only for OpenAI v0")
 async def test_entity_extraction_with_noop_pydantic(mocker):
-    mocker.patch(
-        "guardrails.llm_providers.AsyncOpenAICallable",
-        new=MockAsyncOpenAICallable,
+    mock_invoke_llm = mocker.patch(
+        "guardrails.llm_providers.AsyncOpenAICallable.invoke_llm",
     )
-    content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
-    guard = gd.Guard.from_pydantic(
-        entity_extraction.PYDANTIC_RAIL_WITH_NOOP, entity_extraction.PYDANTIC_PROMPT
+    mock_invoke_llm.side_effect = [
+        LLMResponse(
+            output=entity_extraction.LLM_OUTPUT,
+            prompt_token_count=123,
+            response_token_count=1234,
+        )
+    ]
+    mocker.patch(
+        "guardrails.llm_providers.get_static_openai_acreate_func", return_value=mock_llm
+    )
+    content = docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
+    guard = AsyncGuard.from_pydantic(
+        entity_extraction.PYDANTIC_RAIL_WITH_NOOP,
+        prompt=entity_extraction.PYDANTIC_PROMPT,
     )
     final_output = await guard(
-        llm_api=openai.Completion.acreate,
+        llm_api=mock_llm,
         prompt_params={"document": content[:6000]},
         num_reasks=1,
     )
@@ -151,18 +188,26 @@ async def test_entity_extraction_with_noop_pydantic(mocker):
 
 
 @pytest.mark.asyncio
-@pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="Only for OpenAI v0")
 async def test_entity_extraction_with_filter(mocker):
     """Test that the entity extraction works with re-asking."""
+    mock_invoke_llm = mocker.patch(
+        "guardrails.llm_providers.AsyncOpenAICallable.invoke_llm",
+    )
+    mock_invoke_llm.side_effect = [
+        LLMResponse(
+            output=entity_extraction.LLM_OUTPUT,
+            prompt_token_count=123,
+            response_token_count=1234,
+        )
+    ]
     mocker.patch(
-        "guardrails.llm_providers.AsyncOpenAICallable",
-        new=MockAsyncOpenAICallable,
+        "guardrails.llm_providers.get_static_openai_acreate_func", return_value=mock_llm
     )
 
-    content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
-    guard = gd.Guard.from_rail_string(entity_extraction.RAIL_SPEC_WITH_FILTER)
+    content = docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
+    guard = AsyncGuard.from_rail_string(entity_extraction.RAIL_SPEC_WITH_FILTER)
     final_output = await guard(
-        llm_api=openai.Completion.acreate,
+        llm_api=mock_llm,
         prompt_params={"document": content[:6000]},
         num_reasks=1,
     )
@@ -186,18 +231,26 @@ async def test_entity_extraction_with_filter(mocker):
 
 
 @pytest.mark.asyncio
-@pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="Only for OpenAI v0")
 async def test_entity_extraction_with_fix(mocker):
     """Test that the entity extraction works with re-asking."""
+    mock_invoke_llm = mocker.patch(
+        "guardrails.llm_providers.AsyncOpenAICallable.invoke_llm",
+    )
+    mock_invoke_llm.side_effect = [
+        LLMResponse(
+            output=entity_extraction.LLM_OUTPUT,
+            prompt_token_count=123,
+            response_token_count=1234,
+        )
+    ]
     mocker.patch(
-        "guardrails.llm_providers.AsyncOpenAICallable",
-        new=MockAsyncOpenAICallable,
+        "guardrails.llm_providers.get_static_openai_acreate_func", return_value=mock_llm
     )
 
-    content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
-    guard = gd.Guard.from_rail_string(entity_extraction.RAIL_SPEC_WITH_FIX)
+    content = docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
+    guard = AsyncGuard.from_rail_string(entity_extraction.RAIL_SPEC_WITH_FIX)
     final_output = await guard(
-        llm_api=openai.Completion.acreate,
+        llm_api=mock_llm,
         prompt_params={"document": content[:6000]},
         num_reasks=1,
     )
@@ -218,18 +271,26 @@ async def test_entity_extraction_with_fix(mocker):
 
 
 @pytest.mark.asyncio
-@pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="Only for OpenAI v0")
 async def test_entity_extraction_with_refrain(mocker):
     """Test that the entity extraction works with re-asking."""
+    mock_invoke_llm = mocker.patch(
+        "guardrails.llm_providers.AsyncOpenAICallable.invoke_llm",
+    )
+    mock_invoke_llm.side_effect = [
+        LLMResponse(
+            output=entity_extraction.LLM_OUTPUT,
+            prompt_token_count=123,
+            response_token_count=1234,
+        )
+    ]
     mocker.patch(
-        "guardrails.llm_providers.AsyncOpenAICallable",
-        new=MockAsyncOpenAICallable,
+        "guardrails.llm_providers.get_static_openai_acreate_func", return_value=mock_llm
     )
 
-    content = gd.docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
-    guard = gd.Guard.from_rail_string(entity_extraction.RAIL_SPEC_WITH_REFRAIN)
+    content = docs_utils.read_pdf("docs/examples/data/chase_card_agreement.pdf")
+    guard = AsyncGuard.from_rail_string(entity_extraction.RAIL_SPEC_WITH_REFRAIN)
     final_output = await guard(
-        llm_api=openai.Completion.acreate,
+        llm_api=mock_llm,
         prompt_params={"document": content[:6000]},
         num_reasks=1,
     )
@@ -250,13 +311,12 @@ async def test_entity_extraction_with_refrain(mocker):
 
 
 @pytest.mark.asyncio
-@pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="Only for OpenAI v0")
 async def test_rail_spec_output_parse(rail_spec, llm_output, validated_output):
     """Test that the rail_spec fixture is working."""
-    guard = gd.Guard.from_rail_string(rail_spec)
+    guard = AsyncGuard.from_rail_string(rail_spec)
     output = await guard.parse(
         llm_output,
-        llm_api=openai.Completion.acreate,
+        llm_api=mock_llm,
     )
     assert output.validated_output == validated_output
 
@@ -288,15 +348,14 @@ def validated_string_output():
 
 
 @pytest.mark.asyncio
-@pytest.mark.skipif(not OPENAI_VERSION.startswith("0"), reason="Only for OpenAI v0")
 async def test_string_rail_spec_output_parse(
     string_rail_spec, string_llm_output, validated_string_output
 ):
     """Test that the string_rail_spec fixture is working."""
-    guard = gd.Guard.from_rail_string(string_rail_spec)
+    guard: AsyncGuard = AsyncGuard.from_rail_string(string_rail_spec)
     output = await guard.parse(
         string_llm_output,
-        llm_api=openai.Completion.acreate,
+        llm_api=mock_llm,
         num_reasks=0,
     )
     assert output.validated_output == validated_string_output
