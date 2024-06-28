@@ -19,7 +19,7 @@ DEFAULT_USE_REMOTE_INFERENCING = True
 def save_configuration_file(
     token: Optional[str],
     enable_metrics: Optional[bool],
-    use_remote_inferencing: Optional[bool],
+    use_remote_inferencing: Optional[bool] = DEFAULT_USE_REMOTE_INFERENCING,
 ) -> None:
     if token is None:
         token = DEFAULT_TOKEN
