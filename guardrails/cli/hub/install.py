@@ -237,26 +237,34 @@ Example: hub://guardrails/regex_match."
     with loader(dl_deps_msg, spinner="bouncingBar"):
         install_hub_module(module_manifest, site_packages, quiet=quiet)
 
-    if module_manifest.tags.has_guardrails_endpoint:
-        install_local_models = typer.confirm(
-            "This validator has a Guardrails AI inference endpoint available. Would "
-            "you still like to install the local models for local inference?",
-            default=False,
-        )
-    else:
-        # Ask about local model installation
-        install_local_models = typer.confirm(
-            "Would you like to install the local models?", default=False
-        )
+    try:
+        if module_manifest.tags.has_guardrails_endpoint:
+            install_local_models = typer.confirm(
+                "This validator has a Guardrails AI inference endpoint available. "
+                "Would you still like to install the local models for local inference?",
+            )
+        else:
+            install_local_models = typer.confirm(
+                "Would you like to install the local models?", default=True
+            )
+    except AttributeError:
+        install_local_models = False
 
     # Post-install
     if install_local_models:
+        logger.log(
+            level=LEVELS.get("SPAM"),  # type: ignore
+            msg="Installing models locally!",
+        )
         post_msg = "Running post-install setup"
         with loader(post_msg, spinner="bouncingBar"):
             run_post_install(module_manifest, site_packages)
     else:
-        logger.info("Skipping post-install setup (local models will not be installed)")
-
+        logger.log(
+            level=LEVELS.get("SPAM"),  # type: ignore
+            msg="Skipping post install, models will not be "
+            "downloaded for local inference.",
+        )
     add_to_hub_inits(module_manifest, site_packages)
 
     logger.info("Installation complete")
