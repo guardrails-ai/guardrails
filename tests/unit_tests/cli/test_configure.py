@@ -3,6 +3,8 @@ from unittest.mock import call
 import pytest
 
 from tests.unit_tests.mocks.mock_file import MockFile
+import sys
+import io
 
 
 @pytest.mark.parametrize(
@@ -14,12 +16,15 @@ from tests.unit_tests.mocks.mock_file import MockFile
         ("mock_token", False),
     ],
 )
-def test_configure(mocker, token, no_metrics):
+def test_configure(mocker, monkeypatch, token, no_metrics):
     mock_save_configuration_file = mocker.patch(
         "guardrails.cli.configure.save_configuration_file"
     )
     mock_logger_info = mocker.patch("guardrails.cli.configure.logger.info")
     mock_get_auth = mocker.patch("guardrails.cli.configure.get_auth")
+
+    # Patch sys.stdin with a StringIO object
+    monkeypatch.setattr(sys, "stdin", io.StringIO("mock_input\n"))
 
     from guardrails.cli.configure import configure
 
@@ -29,7 +34,7 @@ def test_configure(mocker, token, no_metrics):
     expected_calls = [call("Configuration saved."), call("Validating credentials...")]
     mock_logger_info.assert_has_calls(expected_calls)
 
-    mock_save_configuration_file.assert_called_once_with(token, no_metrics)
+    mock_save_configuration_file.assert_called_once_with(token, no_metrics, False)
 
     assert mock_get_auth.call_count == 1
 
