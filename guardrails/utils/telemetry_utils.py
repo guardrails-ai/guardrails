@@ -7,6 +7,7 @@ from opentelemetry import context
 from opentelemetry.context import Context
 from opentelemetry.trace import StatusCode, Tracer
 
+from guardrails.call_tracing import TraceHandler
 from guardrails.stores.context import get_tracer as get_context_tracer
 from guardrails.stores.context import get_tracer_context
 from guardrails.utils.casting_utils import to_string
@@ -100,6 +101,9 @@ def trace_validator_result(
         "instance_id": instance_id,
         **kwargs,
     }
+
+    TraceHandler().log_validator(validator_log)
+
     current_span.add_event(
         f"{validator_name}_result",
         {k: v for k, v in event.items() if v is not None},
