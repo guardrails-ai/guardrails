@@ -143,7 +143,7 @@ class OpenAICallable(OpenAIModel):
         **kwargs,
     ) -> LLMResponse:
         warnings.warn(
-            "The OpenAI callable is deprecated in favor of passing "
+            "This callable  is deprecated in favor of passing "
             "no callable and the model argument which utilizes LiteLLM"
             "for example guard(model='gpt-4.o', messages=[...], ...)",
             DeprecationWarning,
@@ -200,7 +200,7 @@ class OpenAIChatCallable(OpenAIModel):
         on the base model.
         """
         warnings.warn(
-            "The OpenAI callable is deprecated in favor of passing "
+            "This callable  is deprecated in favor of passing "
             "no callable and the model argument which utilizes LiteLLM"
             "for example guard(model='gpt-4.o', messages=[...], ...)",
             DeprecationWarning,
@@ -296,7 +296,7 @@ class CohereCallable(PromptCallableBase):
         ```
         """  # noqa
         warnings.warn(
-            "The OpenAI callable is deprecated in favor of passing "
+            "This callable  is deprecated in favor of passing "
             "no callable and the model argument which utilizes LiteLLM"
             "for example guard(model='command-r', messages=[...], ...)",
             DeprecationWarning,
@@ -354,7 +354,7 @@ class AnthropicCallable(PromptCallableBase):
         ```
         """
         warnings.warn(
-            "The OpenAI callable is deprecated in favor of passing "
+            "This callable  is deprecated in favor of passing "
             "no callable and the model argument which utilizes LiteLLM"
             "for example guard(model='claude-3-opus-20240229', messages=[...], ...)",
             DeprecationWarning,
@@ -742,7 +742,7 @@ class AsyncOpenAICallable(AsyncOpenAIModel):
         **kwargs,
     ):
         warnings.warn(
-            "The OpenAI callable is deprecated in favor of passing "
+            "This callable  is deprecated in favor of passing "
             "no callable and the model argument which utilizes LiteLLM"
             "for example guard(model='gpt-4.o', messages=[...], ...)",
             DeprecationWarning,
@@ -799,7 +799,7 @@ class AsyncOpenAIChatCallable(AsyncOpenAIModel):
         on the base model.
         """
         warnings.warn(
-            "The OpenAI callable is deprecated in favor of passing "
+            "This callable  is deprecated in favor of passing "
             "no callable and the model argument which utilizes LiteLLM"
             "for example guard(model='gpt-4.o', messages=[...], ...)",
             DeprecationWarning,
