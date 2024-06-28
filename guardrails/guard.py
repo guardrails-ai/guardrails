@@ -286,6 +286,31 @@ class Guard(IGuard, Generic[OT]):
             for v in v_list
         ]
 
+    def _fill_exec_opts(
+        self,
+        *,
+        num_reasks: Optional[int] = None,
+        prompt: Optional[str] = None,
+        instructions: Optional[str] = None,
+        msg_history: Optional[List[Dict]] = None,
+        reask_prompt: Optional[str] = None,
+        reask_instructions: Optional[str] = None,
+        **kwargs,  # noqa
+    ):
+        """Backfill execution options from kwargs."""
+        if num_reasks is not None:
+            self._exec_opts.num_reasks = num_reasks
+        if prompt is not None:
+            self._exec_opts.prompt = prompt
+        if instructions is not None:
+            self._exec_opts.instructions = instructions
+        if msg_history is not None:
+            self._exec_opts.msg_history = msg_history
+        if reask_prompt is not None:
+            self._exec_opts.reask_prompt = reask_prompt
+        if reask_instructions is not None:
+            self._exec_opts.reask_instructions = reask_instructions
+
     @classmethod
     def _from_rail_schema(
         cls,
@@ -576,12 +601,22 @@ class Guard(IGuard, Generic[OT]):
         prompt: Optional[str] = None,
         instructions: Optional[str] = None,
         msg_history: Optional[List[Dict]] = None,
+        reask_prompt: Optional[str] = None,
+        reask_instructions: Optional[str] = None,
         metadata: Optional[Dict],
         full_schema_reask: Optional[bool] = None,
         **kwargs,
     ) -> Union[ValidationOutcome[OT], Iterable[ValidationOutcome[OT]]]:
         self._fill_validator_map()
         self._fill_validators()
+        self._fill_exec_opts(
+            num_reasks=num_reasks,
+            prompt=prompt,
+            instructions=instructions,
+            msg_history=msg_history,
+            reask_prompt=reask_prompt,
+            reask_instructions=reask_instructions,
+        )
         metadata = metadata or {}
         if not llm_output and llm_api and not (prompt or msg_history):
             raise RuntimeError(
@@ -1116,11 +1151,22 @@ class Guard(IGuard, Generic[OT]):
             if llm_output is not None:
                 payload["llmOutput"] = llm_output
             if num_reasks is not None:
-                payload["numReasks"] = num_reasks
+                payload["numReasks"] = num_reasks or self._exec_opts.num_reasks
             if prompt_params is not None:
                 payload["promptParams"] = prompt_params
             if llm_api is not None:
                 payload["llmApi"] = get_llm_api_enum(llm_api, *args, **kwargs)
+
+            if not payload.get("prompt"):
+                payload["prompt"] = self._exec_opts.prompt
+            if not payload.get("instructions"):
+                payload["instructions"] = self._exec_opts.instructions
+            if not payload.get("msg_history"):
+                payload["msg_history"] = self._exec_opts.msg_history
+            if not payload.get("reask_prompt"):
+                payload["reask_prompt"] = self._exec_opts.reask_prompt
+            if not payload.get("reask_instructions"):
+                payload["reask_instructions"] = self._exec_opts.reask_instructions
 
             should_stream = kwargs.get("stream", False)
             if should_stream:

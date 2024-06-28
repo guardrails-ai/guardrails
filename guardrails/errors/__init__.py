@@ -17,4 +17,4 @@ class UserFacingException(Exception):
         self.original_exception = original_exception
 
 
-__all__ = ["ValidatorError", "ValidationError", "UserFacingException"]
+__all__ = ["ValidationError", "UserFacingException"]

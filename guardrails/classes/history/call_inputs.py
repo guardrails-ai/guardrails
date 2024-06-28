@@ -35,7 +35,7 @@ class CallInputs(Inputs, ICallInputs, ArbitraryModel):
         #   if they're passed in as kwargs to the LLM
         redacted_kwargs = {}
         for k, v in self.kwargs.items():
-            if "key" in k.lower() or "token" in k.lower():
+            if ("key" in k.lower() or "token" in k.lower()) and isinstance(v, str):
                 redaction_length = len(v) - 4
                 stars = "*" * redaction_length
                 redacted_kwargs[k] = f"{stars}{v[-4:]}"
