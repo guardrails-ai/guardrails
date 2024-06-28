@@ -1,3 +1,4 @@
+
 # Response Formatting and Structure
 
 Guardrails provides several interfaces to help llms respond in valid JSON which can then be validated using Guardrails validators.
