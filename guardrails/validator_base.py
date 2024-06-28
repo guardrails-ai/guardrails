@@ -151,6 +151,7 @@ def get_validator_class(name: Optional[str]) -> Optional[Type["Validator"]]:
     return registration
 
 
+# TODO: Can we remove dataclass? It was originally added to support pydantic 1.*
 @dataclass  # type: ignore
 class Validator:
     """Base class for validators."""
