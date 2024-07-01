@@ -15,12 +15,9 @@ import nltk
 import requests
 from langchain_core.runnables import Runnable
 
-from guardrails.classes import (
-    ErrorSpan,  # noqa
-    FailResult,
-    PassResult,  # noqa
-    ValidationResult,
-)
+from guardrails.classes import ErrorSpan  # noqa
+from guardrails.classes import PassResult  # noqa
+from guardrails.classes import FailResult, ValidationResult
 from guardrails.classes.credentials import Credentials
 from guardrails.constants import hub
 from guardrails.hub_token.token import VALIDATOR_HUB_SERVICE, get_jwt_token
@@ -83,7 +80,7 @@ def validator_factory(name: str, validate: Callable) -> Type["Validator"]:
 
 
 def register_validator(
-    name: str, data_type: Union[str, List[str]], has_guardrails_endpoint: bool
+    name: str, data_type: Union[str, List[str]], has_guardrails_endpoint: bool = False
 ):
     """Register a validator for a data type."""
     from guardrails.datatypes import types_registry
