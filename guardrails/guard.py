@@ -47,7 +47,6 @@ from guardrails.llm_providers import (
     model_is_supported_server_side,
 )
 from guardrails.logger import logger, set_scope
-from guardrails.prompt import Instructions, Prompt, Messages
 from guardrails.run import Runner, StreamRunner
 from guardrails.schema.primitive_schema import primitive_to_schema
 from guardrails.schema.pydantic_schema import pydantic_model_to_schema
@@ -372,6 +371,7 @@ class Guard(IGuard, Generic[OT]):
         cls._set_tracer(cls, tracer)  # type: ignore
 
         schema = rail_file_to_schema(rail_file)
+        print("==== rail schema", schema)
         return cls._from_rail_schema(
             schema,
             rail=rail_file,
@@ -420,6 +420,7 @@ class Guard(IGuard, Generic[OT]):
         cls._set_tracer(cls, tracer)  # type: ignore
 
         schema = rail_string_to_schema(rail_string)
+
         return cls._from_rail_schema(
             schema,
             rail=rail_string,
@@ -588,10 +589,9 @@ class Guard(IGuard, Generic[OT]):
             reask_messages=reask_messages,
         )
         metadata = metadata or {}
+        print("==== _execute messages", messages)
         if not (messages):
-            raise RuntimeError(
-                "'messages' must be provided in order to call an LLM!"
-            )
+            raise RuntimeError("'messages' must be provided in order to call an LLM!")
 
         # check if validator requirements are fulfilled
         missing_keys = verify_metadata_requirements(metadata, self._validators)
@@ -686,6 +686,7 @@ class Guard(IGuard, Generic[OT]):
             set_scope(str(object_id(call_log)))
             self.history.push(call_log)
             # Otherwise, call the LLM synchronously
+            print("====executing messages", messages)
             return self._exec(
                 llm_api=llm_api,
                 llm_output=llm_output,
@@ -797,7 +798,8 @@ class Guard(IGuard, Generic[OT]):
             The raw text output from the LLM and the validated output.
         """
         messages = kwargs.pop("messages", None) or self._exec_opts.messages or []
-
+        print("==== call kwargs", kwargs)
+        print("==== call messages", messages)
         return self._execute(
             *args,
             llm_api=llm_api,

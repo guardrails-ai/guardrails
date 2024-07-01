@@ -7,19 +7,16 @@ from guardrails import validator_service
 from guardrails.classes.execution.guard_execution_options import GuardExecutionOptions
 from guardrails.classes.history import Call, Inputs, Iteration, Outputs
 from guardrails.classes.output_type import OutputTypes
-from guardrails.constants import fail_status
 from guardrails.errors import ValidationError
 from guardrails.llm_providers import AsyncPromptCallableBase, PromptCallableBase
 from guardrails.logger import set_scope
-from guardrails.prompt import Instructions, Prompt
 from guardrails.run.runner import Runner
-from guardrails.run.utils import msg_history_source, msg_history_string
+from guardrails.run.utils import msg_history_string
 from guardrails.schema.validator import schema_validation
 from guardrails.types.pydantic import ModelOrListOfModels
 from guardrails.types.validator import ValidatorMap
 from guardrails.utils.exception_utils import UserFacingException
 from guardrails.classes.llm.llm_response import LLMResponse
-from guardrails.utils.prompt_utils import preprocess_prompt, prompt_uses_xml
 from guardrails.actions.reask import NonParseableReAsk, ReAsk
 from guardrails.utils.telemetry_utils import async_trace
 
@@ -178,9 +175,7 @@ class AsyncRunner(Runner):
             iteration.inputs.messages = messages
 
             # Call: run the API.
-            llm_response = await self.async_call(
-                messages, api, output
-            )
+            llm_response = await self.async_call(messages, api, output)
 
             iteration.outputs.llm_response_info = llm_response
             output = llm_response.output
@@ -246,7 +241,7 @@ class AsyncRunner(Runner):
         elif api_fn is None:
             raise ValueError("API or output must be provided.")
         elif messages:
-            llm_response = await api_fn(messages=messages_source(messages))
+            llm_response = await api_fn(messages=messages.source)
         else:
             llm_response = await api_fn()
         return llm_response
@@ -308,7 +303,6 @@ class AsyncRunner(Runner):
         if api is None:
             raise UserFacingException(ValueError("API must be provided."))
 
-        has_messages_validation = "messages" in self.validation_map
         if messages:
             # Runner.prepare_msg_history
             formatted_messages = []
@@ -321,7 +315,7 @@ class AsyncRunner(Runner):
 
             if "messages" in self.validation_map:
                 # Runner.validate_message
-                msg_str = message_string(formatted_messages)
+                msg_str = msg_history_string(formatted_messages)
                 inputs = Inputs(
                     llm_output=msg_str,
                 )
@@ -345,14 +339,11 @@ class AsyncRunner(Runner):
                 iteration.outputs.validation_response = validated_messages
                 if isinstance(validated_messages, ReAsk):
                     raise ValidationError(
-                        f"Messages validation failed: "
-                        f"{validated_messages}"
+                        f"Messages validation failed: " f"{validated_messages}"
                     )
                 if validated_messages != msg_str:
                     raise ValidationError("Message history validation failed")
         else:
-            raise UserFacingException(
-                ValueError("'messages' must be provided.")
-            )
+            raise UserFacingException(ValueError("'messages' must be provided."))
 
         return messages

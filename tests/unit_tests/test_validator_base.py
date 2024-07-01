@@ -322,7 +322,12 @@ def test_input_validation_fix(mocker):
 
     guard(
         mock_llm_api,
-        prompt="What kind of pet should I get?",
+        messages=[
+            {
+                "role": "user",
+                "content": "What kind of pet should I get?",
+            }
+        ],
     )
     assert (
         guard.history.first.iterations.first.outputs.validation_response == "What kind"
@@ -415,7 +420,12 @@ async def test_async_input_validation_fix(mocker):
 
     await guard(
         mock_llm_api,
-        prompt="What kind of pet should I get?",
+        messages=[
+            {
+                "role": "user",
+                "content": "What kind of pet should I get?",
+            }
+        ],
     )
     assert (
         guard.history.first.iterations.first.outputs.validation_response == "What kind"
@@ -561,7 +571,12 @@ def test_input_validation_fail(
     with pytest.raises(ValidationError) as excinfo:
         guard(
             custom_llm,
-            prompt="What kind of pet should I get?",
+            messages=[
+                {
+                    "role": "user",
+                    "content": "What kind of pet should I get?",
+                }
+            ],
         )
     assert str(excinfo.value) == structured_prompt_error
     assert isinstance(guard.history.last.exception, ValidationError)
@@ -713,38 +728,6 @@ async def test_input_validation_fail_async(
         return_value=custom_llm,
     )
 
-    # with_prompt_validation
-    guard = AsyncGuard.from_pydantic(output_class=Pet)
-    guard.use(TwoWords(on_fail=on_fail), on="prompt")
-
-    with pytest.raises(ValidationError) as excinfo:
-        await guard(
-            custom_llm,
-            messages=[
-                {
-                    "role": "user",
-                    "content": "What kind of pet should I get?",
-                }
-            ],
-        )
-    assert str(excinfo.value) == structured_prompt_error
-    assert isinstance(guard.history.last.exception, ValidationError)
-    assert guard.history.last.exception == excinfo.value
-
-    # with_instructions_validation
-    guard = AsyncGuard.from_pydantic(output_class=Pet)
-    guard.use(TwoWords(on_fail=on_fail), on="instructions")
-
-    with pytest.raises(ValidationError) as excinfo:
-        await guard(
-            custom_llm,
-            prompt="What kind of pet should I get and what should I name it?",
-            instructions="What kind of pet should I get?",
-        )
-    assert str(excinfo.value) == structured_instructions_error
-    assert isinstance(guard.history.last.exception, ValidationError)
-    assert guard.history.last.exception == excinfo.value
-
     # with_messages_validation
     guard = AsyncGuard.from_pydantic(output_class=Pet)
     guard.use(TwoWords(on_fail=on_fail), on="messages")
@@ -818,7 +801,7 @@ def test_input_validation_mismatch_raise():
     guard = Guard.from_pydantic(output_class=Pet)
     guard.use(TwoWords(on_fail=OnFailAction.FIX), on="messages")
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValidationError):
         guard(
             get_static_openai_create_func(),
             messages=[
@@ -833,7 +816,7 @@ def test_input_validation_mismatch_raise():
     guard = Guard.from_pydantic(output_class=Pet)
     guard.use(TwoWords(on_fail=OnFailAction.FIX), on="messages")
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValidationError):
         guard(
             get_static_openai_create_func(),
             messages=[
@@ -848,8 +831,13 @@ def test_input_validation_mismatch_raise():
     guard = Guard.from_pydantic(output_class=Pet)
     guard.use(TwoWords(on_fail=OnFailAction.FIX), on="messages")
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValidationError):
         guard(
             get_static_openai_create_func(),
-            prompt="What kind of pet should I get?",
+            messages=[
+                {
+                    "role": "user",
+                    "content": "What kind of pet should I get?",
+                }
+            ],
         )

@@ -1,5 +1,4 @@
 import jsonref
-import warnings
 from dataclasses import dataclass
 from string import Template
 from typing import Any, Callable, Dict, List, Optional, Tuple, cast
@@ -395,7 +394,7 @@ def rail_string_to_schema(rail_string: str) -> ProcessedSchema:
                 content = message.text
                 extracted_messages.append({"role": role, "content": content})
         processed_schema.exec_opts.messages = extracted_messages
-    
+
     reask_messages = rail_xml.find("reask_messages")
     if reask_messages is not None:
         extracted_reask_messages = []
@@ -405,7 +404,7 @@ def rail_string_to_schema(rail_string: str) -> ProcessedSchema:
                 role = message.attrib.get("role")
                 content = message.text
                 extracted_reask_messages.append({"role": role, "content": content})
-        processed_schema.exec_opts.messages = extracted_reask_messages
+        processed_schema.exec_opts.reask_messages = extracted_reask_messages
 
     return processed_schema
 

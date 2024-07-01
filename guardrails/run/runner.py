@@ -1,6 +1,6 @@
 import copy
 from functools import partial
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 
 from guardrails import validator_service
@@ -8,15 +8,15 @@ from guardrails.actions.reask import get_reask_setup
 from guardrails.classes.execution.guard_execution_options import GuardExecutionOptions
 from guardrails.classes.history import Call, Inputs, Iteration, Outputs
 from guardrails.classes.output_type import OutputTypes
-from guardrails.constants import fail_status
 from guardrails.errors import ValidationError
 from guardrails.llm_providers import (
     AsyncPromptCallableBase,
     PromptCallableBase,
 )
 from guardrails.logger import set_scope
-from guardrails.prompt import Instructions, Prompt
-from guardrails.run.utils import msg_history_source, msg_history_string
+from guardrails.prompt import Prompt
+from guardrails.prompt.messages import Messages
+from guardrails.run.utils import messages_string
 from guardrails.schema.rail_schema import json_schema_to_rail_output
 from guardrails.schema.validator import schema_validation
 from guardrails.types import ModelOrListOfModels, ValidatorMap, MessageHistory
@@ -29,9 +29,7 @@ from guardrails.utils.parsing_utils import (
     prune_extra_keys,
 )
 from guardrails.utils.prompt_utils import (
-    preprocess_prompt,
     prompt_content_for_schema,
-    prompt_uses_xml,
 )
 from guardrails.actions.reask import NonParseableReAsk, ReAsk, introspect
 from guardrails.utils.telemetry_utils import trace
@@ -121,7 +119,7 @@ class Runner:
                     xml_output_schema=xml_output_schema,
                 )
                 messages_copy.append(msg_copy)
-            self.messsages = messages_copy
+            self.messages = Messages(source=messages_copy)
 
         self.base_model = base_model
 
@@ -162,7 +160,7 @@ class Runner:
                 self.messages,
                 self.output_schema,
             )
-
+            print("===runner self messages", self.messages)
             index = 0
             for index in range(self.num_reasks + 1):
                 # Run a single step.
@@ -181,10 +179,7 @@ class Runner:
                     break
 
                 # Get new prompt and output schema.
-                (
-                    prompt,
-                    messages
-                ) = self.prepare_to_loop(
+                (prompt, messages) = self.prepare_to_loop(
                     iteration.reasks,
                     output_schema,
                     parsed_output=iteration.outputs.parsed_output,
@@ -225,6 +220,7 @@ class Runner:
         output: Optional[str] = None,
     ) -> Iteration:
         """Run a full step."""
+        print("==== step input messages", messages)
         prompt_params = prompt_params or {}
         inputs = Inputs(
             llm_api=api,
@@ -319,10 +315,10 @@ class Runner:
         iteration.outputs.validation_response = validated_messages
         if isinstance(validated_messages, ReAsk):
             raise ValidationError(
-                f"Message history validation failed: " f"{validated_messages}"
+                f"Message validation failed: " f"{validated_messages}"
             )
         if validated_messages != msg_str:
-            raise ValidationError("Message history validation failed")
+            raise ValidationError("Message validation failed")
 
     def prepare_messages(
         self,
@@ -362,9 +358,8 @@ class Runner:
         if api is None:
             raise UserFacingException(ValueError("API must be provided."))
 
-        has_messages_validation = "messages" in self.validation_map
         if messages:
-            msessages = self.prepare_messages(
+            messages = self.prepare_messages(
                 call_log, messages, prompt_params, attempt_number
             )
 
@@ -383,7 +378,7 @@ class Runner:
         2. Convert the response string to a dict,
         3. Log the output
         """
-
+        print("====messages", messages)
         # If the API supports a base model, pass it in.
         api_fn = api
         if api is not None:
@@ -396,7 +391,7 @@ class Runner:
         elif api_fn is None:
             raise ValueError("API or output must be provided.")
         elif messages:
-            llm_response = api_fn(messages=messages_source(messages))
+            llm_response = api_fn(messages=messages.source)
         else:
             llm_response = api_fn()
 

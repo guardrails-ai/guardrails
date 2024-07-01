@@ -4,12 +4,12 @@ import re
 from string import Template
 from typing import Dict, List, Optional
 
-import regex
 
-from warnings import warn
 from guardrails.classes.templating.namespace_template import NamespaceTemplate
 from guardrails.utils.constants import constants
 from guardrails.utils.templating_utils import get_template_variables
+from guardrails.prompt.prompt import Prompt
+
 
 class Messages:
     def __init__(
@@ -25,24 +25,34 @@ class Messages:
         # FIXME: Why is this happening on init instead of on format?
         # Substitute constants in the prompt.
         for message in self._source:
-            # if content is instance of Prompt class, call the substitute_constants method
-            if isinstance(message['content'], str):
-                message['content'] = self.substitute_constants(message['content'])
+            try:
+                # if content is instance of Prompt class,
+                # call the substitute_constants method
+                if isinstance(message["content"], str):
+                    content = message["content"]
+                else:
+                    message["content"] = self.substitute_constants(content)
+            except Exception:
+                pass
 
         # FIXME: Why is this happening on init instead of on format?
         # If an output schema is provided, substitute it in the prompt.
         if output_schema or xml_output_schema:
             for message in self._source:
-                if isinstance(message['content'], str):
-                    message['content'] = Template(message['content']).safe_substitute(
+                if isinstance(message["content"], str):
+                    message["content"] = Template(message["content"]).safe_substitute(
                         output_schema=output_schema, xml_output_schema=xml_output_schema
                     )
         else:
             self.source = source
 
+    @property
+    def variable_names(self):
+        return get_template_variables(messages_string(self))
+
     def format(
         self,
-        **kwargs,   
+        **kwargs,
     ):
         """Format the messages using the given keyword arguments."""
         formatted_messages = []
@@ -52,13 +62,14 @@ class Messages:
             filtered_kwargs = {k: v for k, v in kwargs.items() if k in vars}
 
             # Return another instance of the class with the formatted message.
-            formatted_message = Template(message["content"]).safe_substitute(**filtered_kwargs)
-            formatted_messages.append({
-                "role":message["role"],
-                "content":formatted_message
-                })
+            formatted_message = Template(message["content"]).safe_substitute(
+                **filtered_kwargs
+            )
+            formatted_messages.append(
+                {"role": message["role"], "content": formatted_message}
+            )
         return Messages(formatted_messages)
-    
+
     def __iter__(self):
         return iter(self._source)
 
@@ -77,3 +88,16 @@ class Messages:
             text = template.safe_substitute(**mapping)
 
         return text
+
+
+def messages_string(messages: Messages) -> str:
+    messages_copy = ""
+    print("====messages", messages.source)
+    for msg in messages:
+        content = (
+            msg["content"].source
+            if getattr(msg, "content", None) and isinstance(msg["content"], Prompt)
+            else msg["content"]
+        )
+        messages_copy += content
+    return messages_copy
