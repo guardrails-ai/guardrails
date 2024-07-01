@@ -79,7 +79,9 @@ def validator_factory(name: str, validate: Callable) -> Type["Validator"]:
     return validator
 
 
-def register_validator(name: str, data_type: Union[str, List[str]]):
+def register_validator(
+    name: str, data_type: Union[str, List[str]], has_guardrails_endpoint: bool
+):
     """Register a validator for a data type."""
     from guardrails.datatypes import types_registry
 
@@ -187,7 +189,6 @@ class Validator:
                 f"{VALIDATOR_HUB_SERVICE}/validator/{validator_id}/inference"
             )
             self.validation_endpoint = submission_url
-
         self.on_fail_descriptor: Union[str, OnFailAction] = "custom"
 
         # chunking function returns empty list or list of 2 chunks
@@ -271,6 +272,7 @@ class Validator:
             return self._inference_local(model_input)
         if not self.use_local and self.validation_endpoint:
             return self._inference_remote(model_input)
+
         raise RuntimeError(
             "No inference endpoint set, but use_local was false. "
             "Please set either use_local=True or "
@@ -324,7 +326,9 @@ class Validator:
             validation_result.validated_chunk = chunk_to_validate
         return validation_result
 
-    def _hub_inference_request(self, request_body: dict) -> Any:
+    def _hub_inference_request(
+        self, request_body: dict, validation_endpoint: str
+    ) -> Any:
         """Makes a request to the Validator Hub to run a ML based validation model. This
         request is authed through the hub and rerouted to a hosted ML model. The reply
         from the hosted endpoint is returned and sent to this client.
@@ -332,6 +336,7 @@ class Validator:
 
         Args:
             request_body (dict): A dictionary containing the required info for the final
+            validation_endpoint (str): The url to request as an endpoint
             inference endpoint to run.
 
         Raises:
@@ -340,24 +345,18 @@ class Validator:
         Returns:
             Any: Post request response from the ML based validation model.
         """
+        headers = {
+            "Authorization": f"Bearer {self.hub_jwt_token}",
+            "Content-Type": "application/json",
+        }
+        print(request_body)
+        print(validation_endpoint)
+        print(headers)
+        req = requests.post(validation_endpoint, json=request_body, headers=headers)
+        if not req.ok:
+            logging.error(req.status_code)
 
-        try:
-            submission_url = self.validation_endpoint
-
-            headers = {
-                "Authorization": f"Bearer {self.hub_jwt_token}",
-                "Content-Type": "application/json",
-            }
-            req = requests.post(submission_url, json=request_body, headers=headers)
-            if not req.ok:
-                logging.error(req.status_code)
-
-            return req.json()
-
-        except Exception as e:
-            logging.error(
-                "An unexpected validation error occurred" f" in {self.rail_alias}: ", e
-            )
+        return req.json()
 
     def to_prompt(self, with_keywords: bool = True) -> str:
         """Convert the validator to a prompt.
