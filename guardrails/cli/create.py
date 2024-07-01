@@ -1,7 +1,6 @@
 import os
 import sys
 import time
-from glob import glob
 from typing import List, Optional, Union
 
 import typer
@@ -29,10 +28,9 @@ def create_command(
     name: Optional[str] = typer.Option(
         default=None, help="The name of the guard to define in the file."
     ),
-    filepath: Optional[str] = typer.Option(
-        default=None,
-        help="The path to which the configuration file should be saved. Defaults to "
-        "config.py, but will use config-X.py if a config.py file already exists.",
+    filepath: str = typer.Option(
+        default="config.py",
+        help="The path to which the configuration file should be saved.",
     ),
     dry_run: bool = typer.Option(
         default=False,
@@ -59,26 +57,18 @@ def create_command(
     )
 
 
-def check_filename(filename: Optional[Union[str, os.PathLike]]) -> str:
-    """If 'filename' is unspecified, defaults to 'config.py', but will autoincrement to
-    config-1.py, config-2.py, etc.  If a filename is specified and already exists, will
-    prompt the user to confirm overwriting."""
-    if filename is None:
-        filename = "config.py"
-        num_config_py_files = len(glob("config*.py"))
-        while os.path.exists(filename):
-            filename = f"config-{num_config_py_files}.py"
-            num_config_py_files += 1
-    else:
-        if os.path.exists(filename):
-            # Alert the user and get confirmation of overwrite.
-            overwrite = typer.confirm(
-                f"The configuration file {filename} already exists. Overwrite?"
-            )
-            if not overwrite:
-                console.print("Aborting")
-                typer.Abort()
-                sys.exit(0)  # Force exit if we fall through.
+def check_filename(filename: Union[str, os.PathLike]) -> str:
+    """If a filename is specified and already exists, will prompt the user to confirm
+    overwriting.  Aborts if the user declines."""
+    if os.path.exists(filename):
+        # Alert the user and get confirmation of overwrite.
+        overwrite = typer.confirm(
+            f"The configuration file {filename} already exists. Overwrite?"
+        )
+        if not overwrite:
+            console.print("Aborting")
+            typer.Abort()
+            sys.exit(0)  # Force exit if we fall through.
     return filename  # type: ignore
 
 
