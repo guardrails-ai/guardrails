@@ -23,7 +23,8 @@ _trace_logger = TraceHandler()
 
 
 def test_multiprocessing_hoisted():
-    """Preallocate a shared trace handler and try to log from multiple subprocesses."""
+    """Preallocate a shared trace handler and try to log from multiple
+    subprocesses."""
     with Pool(NUM_THREADS) as pool:
         pool.map(_hoisted_logger, ["multiproc_hoist" + msg for msg in STOCK_MESSAGES])
 

@@ -440,7 +440,7 @@ class AsyncGuard(Guard, Generic[OT]):
 
         Args:
             llm_api: The LLM API to call
-                     (e.g. openai.Completion.create or openai.Completion.acreate)
+                     (e.g. openai.completions.create or openai.chat.completions.create)
             prompt_params: The parameters to pass to the prompt.format() method.
             num_reasks: The max times to re-ask the LLM for invalid output.
             prompt: The prompt to use for the LLM.
@@ -496,7 +496,7 @@ class AsyncGuard(Guard, Generic[OT]):
             llm_output: The output being parsed and validated.
             metadata: Metadata to pass to the validators.
             llm_api: The LLM API to call
-                     (e.g. openai.Completion.create or openai.Completion.acreate)
+                     (e.g. openai.completions.create or openai.Completion.acreate)
             num_reasks: The max times to re-ask the LLM for invalid output.
             prompt_params: The parameters to pass to the prompt.format() method.
             full_schema_reask: When reasking, whether to regenerate the full schema

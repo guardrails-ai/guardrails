@@ -16,6 +16,21 @@ from guardrails.utils.safe_get import safe_get
 
 
 class ValidationOutcome(IValidationOutcome, ArbitraryModel, Generic[OT]):
+    """The final output from a Guard execution.
+
+    Attributes:
+        call_id: The id of the Call that produced this ValidationOutcome.
+        raw_llm_output: The raw, unchanged output from the LLM call.
+        validated_output: The validated, and potentially fixed, output from the LLM call
+            after passing through validation.
+        reask: If validation continuously fails and all allocated reasks are used,
+            this field will contain the final reask that would have been sent
+                to the LLM if additional reasks were available.
+        validation_passed: A boolean to indicate whether or not the LLM output
+            passed validation. If this is False, the validated_output may be invalid.
+        error: If the validation failed, this field will contain the error message
+    """
+
     raw_llm_output: Optional[str] = Field(
         description="The raw, unchanged output from the LLM call.", default=None
     )

@@ -178,7 +178,7 @@ class OpenAIChatCallable(OpenAIModel):
         Use Guardrails with OpenAI chat engines by doing
         ```
         raw_llm_response, validated_response, *rest = guard(
-            openai.ChatCompletion.create,
+            openai.chat.completions.create,
             prompt_params={...},
             text=...,
             instructions=...,
@@ -754,7 +754,7 @@ class AsyncOpenAIChatCallable(AsyncOpenAIModel):
         Use Guardrails with OpenAI chat engines by doing
         ```
         raw_llm_response, validated_response, *rest = guard(
-            openai.ChatCompletion.create,
+            openai.chat.completions.create,
             prompt_params={...},
             text=...,
             instructions=...,

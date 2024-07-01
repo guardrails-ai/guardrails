@@ -80,7 +80,10 @@ from guardrails.types import (
     ValidatorMap,
 )
 
-from guardrails.utils.tools_utils import add_json_function_calling_tool
+from guardrails.utils.tools_utils import (
+    # Prevent duplicate declaration in the docs
+    add_json_function_calling_tool as add_json_function_calling_tool_util,
+)
 
 
 class Guard(IGuard, Generic[OT]):
@@ -119,7 +122,11 @@ class Guard(IGuard, Generic[OT]):
         validators: Optional[List[ValidatorReference]] = None,
         output_schema: Optional[Dict[str, Any]] = None,
     ):
-        """Initialize the Guard with validators and an output schema."""
+        """Initialize the Guard with serialized validator references and an
+        output schema.
+
+        Output schema must be a valid JSON Schema.
+        """
 
         _try_to_load = name is not None
 
@@ -836,7 +843,7 @@ class Guard(IGuard, Generic[OT]):
 
         Args:
             llm_api: The LLM API to call
-                     (e.g. openai.Completion.create or openai.Completion.acreate)
+                     (e.g. openai.completions.create or openai.Completion.acreate)
             prompt_params: The parameters to pass to the prompt.format() method.
             num_reasks: The max times to re-ask the LLM for invalid output.
             prompt: The prompt to use for the LLM.
@@ -891,7 +898,7 @@ class Guard(IGuard, Generic[OT]):
             llm_output: The output being parsed and validated.
             metadata: Metadata to pass to the validators.
             llm_api: The LLM API to call
-                     (e.g. openai.Completion.create or openai.Completion.acreate)
+                     (e.g. openai.completions.create or openai.Completion.acreate)
             num_reasks: The max times to re-ask the LLM for invalid output.
             prompt_params: The parameters to pass to the prompt.format() method.
             full_schema_reask: When reasking, whether to regenerate the full schema
@@ -1218,7 +1225,7 @@ class Guard(IGuard, Generic[OT]):
     ) -> List[Dict[str, Any]]:
         """Appends an OpenAI tool that specifies the output structure using
         JSON Schema for chat models."""
-        tools = add_json_function_calling_tool(
+        tools = add_json_function_calling_tool_util(
             tools=tools,
             # todo to_dict has a slight bug workaround here
             # but should fix in the long run dont have to

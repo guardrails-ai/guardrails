@@ -13,7 +13,8 @@
     "clear": "docusaurus clear",
     "serve": "docusaurus serve",
     "write-translations": "docusaurus write-translations",
-    "write-heading-ids": "docusaurus write-heading-ids"
+    "write-heading-ids": "docusaurus write-heading-ids",
+    "restart": "rm -rf docs/api_reference_markdown; rm -rf docs-build; npm run start"
   },
   "dependencies": {
     "@docusaurus/core": "^3.1.1",

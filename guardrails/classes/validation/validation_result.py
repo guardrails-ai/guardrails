@@ -10,11 +10,19 @@ from guardrails.classes.generic.arbitrary_model import ArbitraryModel
 
 
 class ValidationResult(IValidationResult, ArbitraryModel):
+    """ValidationResult is the output type of Validator.validate and the
+    abstract base class for all validation results.
+
+    Attributes:
+        outcome (str): The outcome of the validation. Must be one of "pass" or "fail".
+        metadata (Optional[Dict[str, Any]]): The metadata associated with this
+            validation result.
+        validated_chunk (Optional[Any]): The value argument passed to
+            validator.validate or validator.validate_stream.
+    """
+
     outcome: str
     metadata: Optional[Dict[str, Any]] = None
-
-    # value argument passed to validator.validate
-    # or validator.validate_stream
     validated_chunk: Optional[Any] = None
 
     @classmethod
@@ -45,6 +53,15 @@ class ValidationResult(IValidationResult, ArbitraryModel):
 
 
 class PassResult(ValidationResult, IPassResult):
+    """PassResult is the output type of Validator.validate when validation
+    succeeds.
+
+    Attributes:
+        outcome (Literal["pass"]): The outcome of the validation. Must be "pass".
+        value_override (Optional[Any]): The value to use as an override
+            if validation passes.
+    """
+
     outcome: Literal["pass"] = "pass"
 
     class ValueOverrideSentinel:
@@ -76,26 +93,19 @@ class PassResult(ValidationResult, IPassResult):
         return _dict
 
 
-# FIXME: Add this to json schema
-class ErrorSpan(IErrorSpan, ArbitraryModel):
-    """ErrorSpan provide additional context for why a validation failed. They
-    specify the start and end index of the segment that caused the failure,
-    which can be useful when validating large chunks of text or validating
-    while streaming with different chunking methods.
+class FailResult(ValidationResult, IFailResult):
+    """FailResult is the output type of Validator.validate when validation
+    fails.
 
     Attributes:
-        start (int): Starting index relative to the validated chunk.
-        end (int): Ending index relative to the validated chunk.
-        reason (str): Reason validation failed for this chunk.
+        outcome (Literal["fail"]): The outcome of the validation. Must be "fail".
+        error_message (str): The error message indicating why validation failed.
+        fix_value (Optional[Any]): The auto-fix value that would be applied
+            if the Validator's on_fail method is "fix".
+        error_spans (Optional[List[ErrorSpan]]): Segments that caused
+            validation to fail.
     """
 
-    start: int
-    end: int
-    # reason validation failed, specific to this chunk
-    reason: str
-
-
-class FailResult(ValidationResult, IFailResult):
     outcome: Literal["fail"] = "fail"
 
     error_message: str
@@ -104,7 +114,7 @@ class FailResult(ValidationResult, IFailResult):
 
     May not exist for non-streamed output.
     """
-    error_spans: Optional[List[ErrorSpan]] = None
+    error_spans: Optional[List["ErrorSpan"]] = None
 
     @classmethod
     def from_interface(cls, i_fail_result: IFailResult) -> "FailResult":
@@ -151,3 +161,21 @@ class FailResult(ValidationResult, IFailResult):
             ),
         }
         return _dict
+
+
+class ErrorSpan(IErrorSpan, ArbitraryModel):
+    """ErrorSpan provide additional context for why a validation failed. They
+    specify the start and end index of the segment that caused the failure,
+    which can be useful when validating large chunks of text or validating
+    while streaming with different chunking methods.
+
+    Attributes:
+        start (int): Starting index relative to the validated chunk.
+        end (int): Ending index relative to the validated chunk.
+        reason (str): Reason validation failed for this chunk.
+    """
+
+    start: int
+    end: int
+    # reason validation failed, specific to this chunk
+    reason: str
