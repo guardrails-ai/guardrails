@@ -223,43 +223,47 @@ class Validator:
     def _validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
         """User implementable function.
 
-        Validates a value and return a validation result. This method should call
-        _inference() in the implementation to perform inference on some input
-        value.
+        Validates a value and return a validation result. This method
+        should call _inference() in the implementation to perform
+        inference on some input value.
         """
         raise NotImplementedError
 
     def _inference_local(self, model_input: Any) -> Any:
         """User implementable function.
 
-        Runs a machine learning pipeline on some input on the local machine. This
-        function should receive the expected input to the ML model, and output the
-        results from the ml model."""
+        Runs a machine learning pipeline on some input on the local
+        machine. This function should receive the expected input to the
+        ML model, and output the results from the ml model.
+        """
         raise NotImplementedError
 
     def _inference_remote(self, model_input: Any) -> Any:
         """User implementable function.
 
-        Runs a machine learning pipeline on some input on a remote machine. This
-        function should receive the expected input to the ML model, and output the
-        results from the ml model.
+        Runs a machine learning pipeline on some input on a remote
+        machine. This function should receive the expected input to the
+        ML model, and output the results from the ml model.
 
-        Can call _hub_inference_request() if request is routed through the hub."""
+        Can call _hub_inference_request() if request is routed through
+        the hub.
+        """
         raise NotImplementedError
 
     def validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
         """Do not override this function, instead implement _validate().
 
-        External facing validate function. This function acts as a wrapper for
-        _validate() and is intended to apply any meta-validation requirements, logic,
-        or pre/post processing."""
+        External facing validate function. This function acts as a
+        wrapper for _validate() and is intended to apply any meta-
+        validation requirements, logic, or pre/post processing.
+        """
         validation_result = self._validate(value, metadata)
         self._log_telemetry()
         return validation_result
 
     def _inference(self, model_input: Any) -> Any:
-        """Calls either a local or remote inference engine for use in the validation
-        call.
+        """Calls either a local or remote inference engine for use in the
+        validation call.
 
         Args:
             model_input (Any): Receives the input to be passed to your ML model.
@@ -280,7 +284,8 @@ class Validator:
         )
 
     def _chunking_function(self, chunk: str) -> List[str]:
-        """The strategy used for chunking accumulated text input into validation sets.
+        """The strategy used for chunking accumulated text input into
+        validation sets.
 
         Args:
             chunk (str): The text to chunk into some subset.
@@ -332,7 +337,6 @@ class Validator:
         """Makes a request to the Validator Hub to run a ML based validation model. This
         request is authed through the hub and rerouted to a hosted ML model. The reply
         from the hosted endpoint is returned and sent to this client.
-
 
         Args:
             request_body (dict): A dictionary containing the required info for the final
