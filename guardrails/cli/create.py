@@ -1,8 +1,12 @@
+import os
+import sys
 import time
-from typing import Optional
+from glob import glob
+from typing import Optional, Union
 
 import typer
 from rich.console import Console
+from rich.syntax import Syntax
 
 from guardrails.cli.guardrails import guardrails as gr_cli
 from guardrails.cli.hub.install import (  # JC: I don't like this import. Move fns?
@@ -25,9 +29,10 @@ def create_command(
     name: Optional[str] = typer.Option(
         default=None, help="The name of the guard to define in the file."
     ),
-    filepath: str = typer.Option(
-        default="config.py",
-        help="The path to which the configuration file should be saved.",
+    filepath: Optional[str] = typer.Option(
+        default=None,
+        help="The path to which the configuration file should be saved. Defaults to "
+        "config.py, but will use config-X.py if a config.py file already exists.",
     ),
     dry_run: bool = typer.Option(
         default=False,
@@ -35,15 +40,46 @@ def create_command(
         help="Print out the validators to be installed without making any changes.",
     ),
 ):
+    filepath = check_filename(filepath)
     installed_validators = split_and_install_validators(validators, dry_run)
     new_config_file = generate_config_file(installed_validators, name)
     if dry_run:
-        console.print(f"Not actually saving output to {filepath}")
-        console.print(f"The following would have been written:\n{new_config_file}")
+        console.print(f"Not actually saving output to [bold]{filepath}[/bold]")
+        console.print("The following would have been written:\n")
+        formatted = Syntax(new_config_file, "python")
+        console.print(formatted)
+        console.print("\n")
     else:
         with open(filepath, "wt") as fout:
             fout.write(new_config_file)
         console.print(f"Saved configuration to {filepath}")
+    console.print(
+        f"Replace TODOs in {filepath} and run with `guardrails start"
+        f" --config {filepath}`"
+    )
+
+
+def check_filename(filename: Optional[Union[str, os.PathLike]]) -> str:
+    """If 'filename' is unspecified, defaults to 'config.py', but will autoincrement to
+    config-1.py, config-2.py, etc.  If a filename is specified and already exists, will
+    prompt the user to confirm overwriting."""
+    if filename is None:
+        filename = "config.py"
+        num_config_py_files = len(glob("config*.py"))
+        while os.path.exists(filename):
+            filename = f"config-{num_config_py_files}.py"
+            num_config_py_files += 1
+    else:
+        if os.path.exists(filename):
+            # Alert the user and get confirmation of overwrite.
+            overwrite = typer.confirm(
+                f"The configuration file {filename} already exists. Overwrite?"
+            )
+            if not overwrite:
+                console.print("Aborting")
+                typer.Abort()
+                sys.exit(0)  # Force exit if we fall through.
+    return filename
 
 
 def split_and_install_validators(validators: str, dry_run: bool = False):
@@ -56,6 +92,7 @@ def split_and_install_validators(validators: str, dry_run: bool = False):
     site_packages = get_site_packages_location()
 
     # hub://blah -> blah, then download the manifest.
+    console.print("Checking validators...")
     with console.status("Checking validator manifests") as status:
         for v in validators:
             status.update(f"Prefetching {v}")
@@ -63,12 +100,14 @@ def split_and_install_validators(validators: str, dry_run: bool = False):
                 console.print(
                     f"WARNING: Validator {v} does not appear to be a valid URI."
                 )
-                return
+                sys.exit(-1)
             stripped_validator = v.lstrip("hub://")
             stripped_validators.append(stripped_validator)
             manifests.append(get_validator_manifest(stripped_validator))
+    console.print("Success!")
 
     # We should make sure they exist.
+    console.print("Installing...")
     with console.status("Installing validators") as status:
         for manifest, validator in zip(manifests, stripped_validators):
             status.update(f"Installing {validator}")
@@ -79,12 +118,14 @@ def split_and_install_validators(validators: str, dry_run: bool = False):
             else:
                 console.print(f"Fake installing {validator}")
                 time.sleep(1)
+    console.print("Success!")
 
     # Pull the hub information from each of the installed validators and return it.
     return [manifest.exports[0] for manifest in manifests]
 
 
 def generate_config_file(validators: str, name: Optional[str] = None) -> str:
+    console.print("Generating config file...")
     config_lines = [
         "from guardrails import Guard",
     ]
@@ -103,9 +144,14 @@ def generate_config_file(validators: str, name: Optional[str] = None) -> str:
 
     # Append validators:
     if len(validators) == 1:
-        config_lines.append(f"guard.use({validators[0]}())")
+        config_lines.append(f"guard.use({validators[0]}( TODO Fill these parameters ))")
     else:
-        multi_use = ",\n".join(["\t" + validator + "()" for validator in validators])
+        multi_use = ",\n".join(
+            [
+                "\t" + validator + "( TODO fill these parameters )"
+                for validator in validators
+            ]
+        )
         config_lines.append(f"guard.use_many(\n{multi_use}\n)")
 
     return "\n".join(config_lines)
