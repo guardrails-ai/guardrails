@@ -1,11 +1,7 @@
 from unittest.mock import call, patch
 
 import pytest
-
 from tests.unit_tests.mocks.mock_file import MockFile
-import sys
-import io
-
 
 
 @pytest.mark.parametrize(
@@ -17,23 +13,19 @@ import io
         ("", False, True),
     ],
 )
-def test_configure(mocker, monkeypatch, runner, expected_token, enable_metrics, clear_token):
+def test_configure(mocker, runner, expected_token, enable_metrics, clear_token):
     mock_save_configuration_file = mocker.patch(
         "guardrails.cli.configure.save_configuration_file"
     )
     mock_logger_info = mocker.patch("guardrails.cli.configure.logger.info")
     mock_get_auth = mocker.patch("guardrails.cli.configure.get_auth")
 
-
     CLI_COMMAND = ["configure"]
     CLI_COMMAND_ARGS = []
-    CLI_COMMAND_INPUTS = ["mock_token"]
+    CLI_COMMAND_INPUTS = ["mock_token", "mock_input"]
 
     # Patch sys.stdin with a StringIO object
-    monkeypatch.setattr(sys, "stdin", io.StringIO("mock_input\n"))
-
-    from guardrails.cli.configure import configure
-
+    from guardrails.cli.guardrails import guardrails
 
     if enable_metrics:
         CLI_COMMAND_ARGS.append("y")
@@ -63,7 +55,9 @@ def test_configure(mocker, monkeypatch, runner, expected_token, enable_metrics, 
 
     assert mock_logger_info.call_count == 2
     mock_logger_info.assert_has_calls(expected_calls)
-    mock_save_configuration_file.assert_called_once_with(expected_token, enable_metrics, False)
+    mock_save_configuration_file.assert_called_once_with(
+        expected_token, enable_metrics, False
+    )
 
 
 def test_save_configuration_file(mocker):

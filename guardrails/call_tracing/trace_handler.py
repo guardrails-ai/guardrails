@@ -1,5 +1,4 @@
-"""
-trace_handler.py
+"""trace_handler.py.
 
 A set of tools to track the behavior of guards, specifically with the intent of
 collating the pre/post validation text and timing of guard calls.  Uses a singleton to
@@ -41,9 +40,12 @@ LOGFILE_PATH = os.environ.get(
 
 
 class TraceHandler(TracerMixin):
-    """TraceHandler wraps the internal _SQLiteTraceHandler to make it multi-thread
-    safe.  Coupled with some write ahead journaling in the _SyncTrace internal, we have
-    a faux-multi-write multi-read interface for SQLite."""
+    """TraceHandler wraps the internal _SQLiteTraceHandler to make it multi-
+    thread safe.
+
+    Coupled with some write ahead journaling in the _SyncTrace internal,
+    we have a faux-multi-write multi-read interface for SQLite.
+    """
 
     _instance = None
     _lock = threading.Lock()

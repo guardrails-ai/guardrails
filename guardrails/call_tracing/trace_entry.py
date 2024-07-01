@@ -1,10 +1,10 @@
-"""
-trace_entry.py
+"""trace_entry.py.
 
-GuardTraceEntry is a dataclass which doesn't explicitly define the schema of our logs,
-but serves as a nice, easy-to-use dataclass for when we want to manipulate things
-programmatically.  If performance and filtering is a concern, it's probably worth
-writing the SQL directly instead of filtering these in a for-loop.
+GuardTraceEntry is a dataclass which doesn't explicitly define the
+schema of our logs, but serves as a nice, easy-to-use dataclass for when
+we want to manipulate things programmatically.  If performance and
+filtering is a concern, it's probably worth writing the SQL directly
+instead of filtering these in a for-loop.
 """
 
 from dataclasses import dataclass

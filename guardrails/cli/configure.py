@@ -10,6 +10,7 @@ from guardrails.classes.credentials import Credentials
 from guardrails.cli.guardrails import guardrails
 from guardrails.cli.logger import LEVELS, logger
 from guardrails.cli.hub.console import console
+from guardrails.cli.server.hub_client import AuthenticationError, get_auth
 
 
 DEFAULT_TOKEN = ""
