@@ -2,7 +2,7 @@ import os
 import sys
 import time
 from glob import glob
-from typing import Optional, Union
+from typing import List, Optional, Union
 
 import typer
 from rich.console import Console
@@ -79,22 +79,22 @@ def check_filename(filename: Optional[Union[str, os.PathLike]]) -> str:
                 console.print("Aborting")
                 typer.Abort()
                 sys.exit(0)  # Force exit if we fall through.
-    return filename
+    return filename  # type: ignore
 
 
 def split_and_install_validators(validators: str, dry_run: bool = False):
     """Given a comma-separated list of validators, check the hub to make sure all of
     them exist, install them, and return a list of 'imports'."""
-    # Quick sanity check after split:
-    validators = validators.split(",")
     stripped_validators = list()
     manifests = list()
     site_packages = get_site_packages_location()
 
+    # Split by comma, strip start and end spaces, then make sure there's a hub prefix.
+    # If all that passes, download the manifest file so we know where to install.
     # hub://blah -> blah, then download the manifest.
     console.print("Checking validators...")
     with console.status("Checking validator manifests") as status:
-        for v in validators:
+        for v in validators.split(","):
             status.update(f"Prefetching {v}")
             if not v.strip().startswith("hub://"):
                 console.print(
@@ -124,7 +124,7 @@ def split_and_install_validators(validators: str, dry_run: bool = False):
     return [manifest.exports[0] for manifest in manifests]
 
 
-def generate_config_file(validators: str, name: Optional[str] = None) -> str:
+def generate_config_file(validators: List[str], name: Optional[str] = None) -> str:
     console.print("Generating config file...")
     config_lines = [
         "from guardrails import Guard",
