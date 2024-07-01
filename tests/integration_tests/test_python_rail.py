@@ -3,26 +3,24 @@ from datetime import date, time
 from typing import List, Literal, Union
 
 import pytest
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 import guardrails as gd
+from guardrails import Validator, register_validator
+from guardrails.classes.llm.llm_response import LLMResponse
 from guardrails.utils.openai_utils import (
     get_static_openai_chat_create_func,
     get_static_openai_create_func,
 )
-from guardrails.utils.pydantic_utils import PYDANTIC_VERSION, add_validator
-from guardrails.validator_base import OnFailAction
-from guardrails.validators import (
+from guardrails.types import OnFailAction
+from guardrails.classes.validation.validation_result import (
     FailResult,
     PassResult,
-    TwoWords,
     ValidationResult,
-    Validator,
-    ValidLength,
-    register_validator,
 )
+from tests.integration_tests.test_assets.validators import ValidLength, TwoWords
 
-from .mock_llm_outputs import MockOpenAICallable, MockOpenAIChatCallable
+from .mock_llm_outputs import MockOpenAICallable
 from .test_assets import python_rail, string
 
 
@@ -44,94 +42,80 @@ class IsValidDirector(Validator):
         return PassResult()
 
 
+class BoxOfficeRevenue(BaseModel):
+    revenue_type: Literal["box_office"]
+    gross: float
+    opening_weekend: float
+
+    # Field-level validation using Pydantic (not Guardrails)
+    @field_validator("gross")
+    def validate_gross(cls, gross):
+        if gross <= 0:
+            raise ValueError("Gross revenue must be a positive value")
+        return gross
+
+
+class StreamingRevenue(BaseModel):
+    revenue_type: Literal["streaming"]
+    subscriptions: int
+    subscription_fee: float
+
+
+class Details(BaseModel):
+    release_date: date
+    duration: time
+    budget: float
+    is_sequel: bool = Field(default=False)
+    website: str = Field(
+        json_schema_extra={
+            "validators": [ValidLength(min=9, max=100, on_fail=OnFailAction.REASK)]
+        }
+    )
+
+    # Root-level validation using Pydantic (Not in Guardrails)
+    @model_validator(mode="before")
+    def validate_budget_and_gross(cls, values):
+        budget = values.get("budget")
+        revenue = values.get("revenue")
+        if revenue["revenue_type"] == "box_office":
+            gross = revenue["gross"]
+            if budget >= gross:
+                raise ValueError("Budget must be less than gross revenue")
+        return values
+
+    contact_email: str
+    revenue: Union[BoxOfficeRevenue, StreamingRevenue] = Field(
+        ..., discriminator="revenue_type"
+    )
+
+
+class Movie(BaseModel):
+    rank: int
+    title: str
+    details: Details
+
+
+class Director(BaseModel):
+    name: str = Field(validators=[IsValidDirector()])
+    movies: List[Movie]
+
+
 def test_python_rail(mocker):
-    mocker.patch(
-        "guardrails.llm_providers.OpenAIChatCallable",
-        new=MockOpenAIChatCallable,
+    mock_invoke_llm = mocker.patch(
+        "guardrails.llm_providers.OpenAIChatCallable._invoke_llm"
     )
-
-    class BoxOfficeRevenue(BaseModel):
-        revenue_type: Literal["box_office"]
-        gross: float
-        opening_weekend: float
-
-        # Field-level validation using Pydantic (not Guardrails)
-        if PYDANTIC_VERSION.startswith("1"):
-            from pydantic import validator
-
-            decorator = validator("gross")
-        else:
-            from pydantic import field_validator
-
-            decorator = field_validator("gross")
-
-        @decorator
-        def validate_gross(cls, gross):
-            if gross <= 0:
-                raise ValueError("Gross revenue must be a positive value")
-            return gross
-
-    class StreamingRevenue(BaseModel):
-        revenue_type: Literal["streaming"]
-        subscriptions: int
-        subscription_fee: float
-
-    class Details(BaseModel):
-        release_date: date
-        duration: time
-        budget: float
-        is_sequel: bool = Field(default=False)
-
-        # Root-level validation using Pydantic (Not in Guardrails)
-        if PYDANTIC_VERSION.startswith("1"):
-            website: str = Field(
-                validators=[ValidLength(min=9, max=100, on_fail=OnFailAction.REASK)]
-            )
-            from pydantic import root_validator
-
-            @root_validator
-            def validate_budget_and_gross(cls, values):
-                budget = values.get("budget")
-                revenue = values.get("revenue")
-                if isinstance(revenue, BoxOfficeRevenue):
-                    gross = revenue.gross
-                    if budget >= gross:
-                        raise ValueError("Budget must be less than gross revenue")
-                return values
-
-        else:
-            website: str = Field(
-                json_schema_extra={
-                    "validators": [
-                        ValidLength(min=9, max=100, on_fail=OnFailAction.REASK)
-                    ]
-                }
-            )
-            from pydantic import model_validator
-
-            @model_validator(mode="before")
-            def validate_budget_and_gross(cls, values):
-                budget = values.get("budget")
-                revenue = values.get("revenue")
-                if revenue["revenue_type"] == "box_office":
-                    gross = revenue["gross"]
-                    if budget >= gross:
-                        raise ValueError("Budget must be less than gross revenue")
-                return values
-
-        contact_email: str
-        revenue: Union[BoxOfficeRevenue, StreamingRevenue] = Field(
-            ..., discriminator="revenue_type"
-        )
-
-    class Movie(BaseModel):
-        rank: int
-        title: str
-        details: Details
-
-    class Director(BaseModel):
-        name: str = Field(validators=[IsValidDirector()])
-        movies: List[Movie]
+    mock_invoke_llm.side_effect = [
+        LLMResponse(
+            output=python_rail.LLM_OUTPUT_1_FAIL_GUARDRAILS_VALIDATION,
+            prompt_token_count=123,
+            response_token_count=1234,
+        ),
+        LLMResponse(
+            output=python_rail.LLM_OUTPUT_2_SUCCEED_GUARDRAILS_BUT_FAIL_PYDANTIC_VALIDATION,
+            prompt_token_count=123,
+            response_token_count=1234,
+        ),
+    ]
 
     guard = gd.Guard.from_pydantic(
         output_class=Director,
@@ -139,10 +123,10 @@ def test_python_rail(mocker):
             "Provide detailed information about the top 5 grossing movies from"
             " ${director} including release date, duration, budget, whether "
             "it's a sequel, website, and contact email.\n"
-            "${gr.json_suffix_without_examples}"
+            "${gr.xml_suffix_without_examples}"
         ),
         instructions="\nYou are a helpful assistant only capable of communicating"
-        " with valid JSON, and no other text.\n${gr.json_suffix_prompt_examples}",
+        " with valid JSON, and no other text.\n${gr.xml_suffix_prompt_examples}",
     )
 
     # Guardrails runs validation and fixes the first failing output through reasking
@@ -164,150 +148,11 @@ def test_python_rail(mocker):
     # Check that the guard state object has the correct number of re-asks.
     assert call.iterations.length == 2
 
-    if PYDANTIC_VERSION.startswith("1"):
-        assert (
-            call.compiled_prompt == python_rail.COMPILED_PROMPT_1_WITHOUT_INSTRUCTIONS
-        )
-    else:
-        assert (
-            call.compiled_prompt
-            == python_rail.COMPILED_PROMPT_1_PYDANTIC_2_WITHOUT_INSTRUCTIONS
-        )
-
     assert (
-        call.iterations.first.raw_output
-        == python_rail.LLM_OUTPUT_1_FAIL_GUARDRAILS_VALIDATION
+        call.compiled_prompt
+        == python_rail.COMPILED_PROMPT_1_PYDANTIC_2_WITHOUT_INSTRUCTIONS
     )
 
-    assert call.iterations.last.inputs.prompt == gd.Prompt(
-        python_rail.COMPILED_PROMPT_2_WITHOUT_INSTRUCTIONS
-    )
-    # Same as above
-    assert call.reask_prompts.last == python_rail.COMPILED_PROMPT_2_WITHOUT_INSTRUCTIONS
-    assert (
-        call.raw_outputs.last
-        == python_rail.LLM_OUTPUT_2_SUCCEED_GUARDRAILS_BUT_FAIL_PYDANTIC_VALIDATION
-    )
-
-    if PYDANTIC_VERSION.startswith("1"):
-        with pytest.raises(ValueError):
-            Director.parse_raw(
-                python_rail.LLM_OUTPUT_2_SUCCEED_GUARDRAILS_BUT_FAIL_PYDANTIC_VALIDATION
-            )
-
-        # The user can take corrective action based on the failed validation.
-        # Either manipulating the output themselves, taking corrective action
-        # in their application, or upstreaming their validations into Guardrails.
-
-        # The fixed output should pass validation using Pydantic
-        Director.parse_raw(python_rail.LLM_OUTPUT_3_SUCCEED_GUARDRAILS_AND_PYDANTIC)
-    else:
-        with pytest.raises(ValueError):
-            Director.model_validate_json(
-                python_rail.LLM_OUTPUT_2_SUCCEED_GUARDRAILS_BUT_FAIL_PYDANTIC_VALIDATION
-            )
-        Director.model_validate_json(
-            python_rail.LLM_OUTPUT_3_SUCCEED_GUARDRAILS_AND_PYDANTIC
-        )
-
-
-@pytest.mark.skipif(not PYDANTIC_VERSION.startswith("1"), reason="Pydantic 1.x only")
-def test_python_rail_add_validator(mocker):
-    from pydantic import root_validator, validator
-
-    mocker.patch(
-        "guardrails.llm_providers.OpenAIChatCallable",
-        new=MockOpenAIChatCallable,
-    )
-
-    class BoxOfficeRevenue(BaseModel):
-        revenue_type: Literal["box_office"]
-        gross: float
-        opening_weekend: float
-
-        # Field-level validation using Pydantic (not Guardrails)
-        @validator("gross")
-        def validate_gross(cls, gross):
-            if gross <= 0:
-                raise ValueError("Gross revenue must be a positive value")
-            return gross
-
-    class StreamingRevenue(BaseModel):
-        revenue_type: Literal["streaming"]
-        subscriptions: int
-        subscription_fee: float
-
-    class Details(BaseModel):
-        release_date: date
-        duration: time
-        budget: float
-        is_sequel: bool = Field(default=False)
-        website: str
-        contact_email: str
-        revenue: Union[BoxOfficeRevenue, StreamingRevenue] = Field(
-            ..., discriminator="revenue_type"
-        )
-
-        # Register guardrails validators
-        _website_validator = add_validator(
-            "website", fn=ValidLength(min=9, max=100, on_fail=OnFailAction.REASK)
-        )
-
-        # Root-level validation using Pydantic (Not in Guardrails)
-        @root_validator
-        def validate_budget_and_gross(cls, values):
-            budget = values.get("budget")
-            revenue = values.get("revenue")
-            if isinstance(revenue, BoxOfficeRevenue):
-                gross = revenue.gross
-                if budget >= gross:
-                    raise ValueError("Budget must be less than gross revenue")
-            return values
-
-    class Movie(BaseModel):
-        rank: int
-        title: str
-        details: Details
-
-    class Director(BaseModel):
-        name: str
-        movies: List[Movie]
-
-        # Add guardrails validators
-        _name_validator = add_validator("name", fn=IsValidDirector())
-
-    guard = gd.Guard.from_pydantic(
-        output_class=Director,
-        prompt=(
-            "Provide detailed information about the top 5 grossing movies from"
-            " ${director} including release date, duration, budget, whether "
-            "it's a sequel, website, and contact email.\n"
-            "${gr.json_suffix_without_examples}"
-        ),
-        instructions="\nYou are a helpful assistant only capable of communicating"
-        " with valid JSON, and no other text.\n${gr.json_suffix_prompt_examples}",
-    )
-
-    # Guardrails runs validation and fixes the first failing output through reasking
-    final_output = guard(
-        get_static_openai_chat_create_func(),
-        prompt_params={"director": "Christopher Nolan"},
-        num_reasks=2,
-        full_schema_reask=False,
-    )
-
-    # Assertions are made on the guard state object.
-    expected_gd_output = json.loads(
-        python_rail.LLM_OUTPUT_2_SUCCEED_GUARDRAILS_BUT_FAIL_PYDANTIC_VALIDATION
-    )
-    assert final_output.validated_output == expected_gd_output
-
-    call = guard.history.first
-
-    # Check that the guard state object has the correct number of re-asks.
-    assert call.iterations.length == 2
-
-    assert call.compiled_prompt == python_rail.COMPILED_PROMPT_1_WITHOUT_INSTRUCTIONS
     assert (
         call.iterations.first.raw_output
         == python_rail.LLM_OUTPUT_1_FAIL_GUARDRAILS_VALIDATION
@@ -324,16 +169,12 @@ def test_python_rail_add_validator(mocker):
     )
 
     with pytest.raises(ValueError):
-        Director.parse_raw(
+        Director.model_validate_json(
             python_rail.LLM_OUTPUT_2_SUCCEED_GUARDRAILS_BUT_FAIL_PYDANTIC_VALIDATION
         )
-
-    # The user can take corrective action based on the failed validation.
-    # Either manipulating the output themselves, taking corrective action
-    # in their application, or upstreaming their validations into Guardrails.
-
-    # The fixed output should pass validation using Pydantic
-    Director.parse_raw(python_rail.LLM_OUTPUT_3_SUCCEED_GUARDRAILS_AND_PYDANTIC)
+    Director.model_validate_json(
+        python_rail.LLM_OUTPUT_3_SUCCEED_GUARDRAILS_AND_PYDANTIC
+    )
 
 
 def test_python_string(mocker):
@@ -355,7 +196,10 @@ ${ingredients}
 """
 
     guard = gd.Guard.from_string(
-        validators, description, prompt=prompt, instructions=instructions
+        validators,
+        string_description=description,
+        prompt=prompt,
+        instructions=instructions,
     )
     final_output = guard(
         llm_api=get_static_openai_create_func(),

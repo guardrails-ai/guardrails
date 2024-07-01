@@ -56,7 +56,7 @@ You are a human in an enchanted forest. You come across opponents of different t
 
 You run into a ${opp_type}. What do you do?
 
-${gr.complete_json_suffix_v2}
+${gr.complete_xml_suffix_v2}
 
 
 Here are a few examples
