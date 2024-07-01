@@ -1,36 +1,22 @@
 import importlib
-#import pkgutil
-import inspect
-import subprocess
+import time
 from typing import Optional
 
 import rich
 import typer
+from rich.console import Console
 
 from guardrails.cli.guardrails import guardrails as gr_cli
-
-
-template = """
-from guardrails import Guard
-from guardrails.hub import (
-    DetectPII,
-    CompetitorCheck
+from guardrails.cli.hub.install import (  # JC: I don't like this import. Move fns?
+    install_hub_module,
+    add_to_hub_inits,
+    run_post_install
 )
+from guardrails.cli.hub.utils import get_site_packages_location
+from guardrails.cli.server.hub_client import get_validator_manifest
 
 
-input_guards = Guard()
-
-output_guards = Guard()
-output_guards.name = "Output Guard"
-output_guards.use_many(
-    DetectPII(
-        pii_entities='pii'
-    ),
-    CompetitorCheck(
-        competitors=['OpenAI', 'Anthropic']
-    )
-)
-"""
+console = Console()
 
 
 @gr_cli.command(name="create")
@@ -52,7 +38,7 @@ def create_command(
         help="Print out the validators to be installed without making any changes."
     )
 ):
-    installed_validators = split_and_process_validators(validators, dry_run)
+    installed_validators = split_and_install_validators(validators, dry_run)
     new_config_file = generate_config_file(installed_validators, name)
     if dry_run:
         rich.print(f"Not actually saving output to {filepath}")
@@ -63,42 +49,61 @@ def create_command(
         rich.print(f"Saved configuration to {filepath}")
 
 
-def split_and_process_validators(validators: str, dry_run: bool = False):
+def split_and_install_validators(validators: str, dry_run: bool = False):
     """Given a comma-separated list of validators, check the hub to make sure all of
-    them exist, then install each one via pip.  """
+    them exist, install them, and return a list of 'imports'."""
     # Quick sanity check after split:
     validators = validators.split(",")
-    checked_validators = list()
+    stripped_validators = list()
+    manifests = list()
+    site_packages = get_site_packages_location()
+
+    # hub://blah -> blah, then download the manifest.
     for v in validators:
         if not v.strip().startswith("hub://"):
             rich.print(f"WARNING: Validator {v} does not appear to be a valid URI.")
-        checked_validators.append(v.strip())
-    validators = checked_validators
+            return
+        stripped_validator = v.lstrip("hub://")
+        stripped_validators.append(stripped_validator)
+        manifests.append(get_validator_manifest(stripped_validator))
 
     # We should make sure they exist.
-    for v in validators:
-        rich.print(f"Installing {v}")
-        try:
+    with console.status("Installing validators") as status:
+        for manifest, validator in zip(manifests, stripped_validators):
+            status.update(f"Installing {validator}")
             if not dry_run:
-                # TODO: When we have the programmatic hub install tool, switch to that.
-                subprocess.run(
-                    ["guardrails", "hub", "install", v],
-                    capture_output=True,
-                    check=True
-                )
-        except subprocess.CalledProcessError as cpe:
-            rich.print(f"ERROR: Failed to install guard {v}.{cpe.stdout}\n{cpe.stderr}")
-            raise cpe
+                install_hub_module(manifest, site_packages, quiet=True)
+                run_post_install(manifest, site_packages)
+                add_to_hub_inits(manifest, site_packages)
+            else:
+                console.print(f"Fake installing {validator}")
+                time.sleep(1)
 
     # Pull the hub information from each of the installed validators and return it.
-    return [v for v in validators]
+    return [manifest.exports[0] for manifest in manifests]
 
 
 def generate_config_file(validators: str, name: Optional[str] = None) -> str:
-    return "asdf"
+    config_lines = ["from guardrails import Guard", ]
 
+    # Import one or more validators.
+    if len(validators) == 1:
+        config_lines.append(f"from guardrails.hub import {validators[0]}")
+    else:
+        multiline_import = ",\n\t".join(validators)
+        config_lines.append(f"from guardrails.hub import (\n\t{multiline_import}\n)")
 
-def _reload_hub():
-    import guardrails.hub
-    importlib.invalidate_caches()
-    return importlib.reload(guardrails.hub)
+    # Initialize our guard.
+    config_lines.append("guard = Guard()")
+    if name is not None:
+        escaped_name = name.encode('string_escape')
+        config_lines.append(f'guard.name = "{escaped_name}"')
+
+    # Append validators:
+    if len(validators) == 1:
+        config_lines.append(f"guard.use({validators[0]}())")
+    else:
+        multi_use = ",\n".join([validator + "()" for validator in validators])
+        config_lines.append(f"guard.use_many(\n{multi_use}\n)")
+
+    return "\n".join(config_lines)
