@@ -4,8 +4,7 @@ from guardrails.classes.credentials import Credentials
 
 # TODO: Consolidate with telemetry switches
 def get_use_remote_inference(creds: Credentials) -> Optional[bool]:
-    """
-    Load the use_remote_inferencing setting from the credentials.
+    """Load the use_remote_inferencing setting from the credentials.
 
     Args:
         creds (Credentials): The credentials object.
