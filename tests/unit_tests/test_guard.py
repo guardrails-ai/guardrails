@@ -521,9 +521,9 @@ def test_validate():
     # Should still only use the output validators to validate the output
     guard: Guard = (
         Guard()
-        .use(OneLine, on="prompt")
-        .use(LowerCase, on="instructions")
-        .use(UpperCase, on="msg_history")
+        .use(OneLine, on="messages")
+        .use(LowerCase, on="messages")
+        .use(UpperCase, on="messages")
         .use(LowerCase, on="output", on_fail=OnFailAction.FIX)
         .use(TwoWords, on="output")
         .use(ValidLength, 0, 12, on="output")

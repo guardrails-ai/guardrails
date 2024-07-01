@@ -6,7 +6,6 @@ import pytest
 from pydantic import BaseModel, Field
 
 import guardrails as gd
-from guardrails.prompt.instructions import Instructions
 from guardrails.prompt.prompt import Prompt
 from guardrails.prompt.messages import Messages
 from guardrails.utils.constants import constants
@@ -143,8 +142,7 @@ RAIL_WITH_REASK_MESSAGES = """
 You are a helpful bot, who answers only with valid JSON
 
 </message>
-<message role="user">
-${gr.complete_json_suffix_v2}
+<message role="user">${gr.complete_json_suffix_v2}
 </message>
 </messages>
 
@@ -194,26 +192,38 @@ def test_parse_prompt():
     guard = gd.Guard.from_rail_string(SIMPLE_RAIL_SPEC)
 
     # Strip both, raw and parsed, to be safe
-    instructions = Instructions(guard._exec_opts.instructions)
-    assert instructions.format().source.strip() == INSTRUCTIONS.strip()
-    prompt = Prompt(guard._exec_opts.prompt)
-    assert prompt.format().source.strip() == PROMPT.strip()
+    messages = Messages(source=guard._exec_opts.messages)
+    assert messages.format().source[0]["content"].strip() == INSTRUCTIONS.strip()
+    assert messages.format().source[1]["content"].strip() == PROMPT.strip()
 
 
-def test_instructions_with_params():
-    """Test a guard with instruction parameters."""
+def test_messages_with_params():
+    """Test a guard with message parameters."""
     guard = gd.Guard.from_rail_string(RAIL_WITH_PARAMS)
 
     user_instructions = "A useful system message."
     user_prompt = "A useful prompt."
+    messages = Messages(guard._exec_opts.messages)
 
-    instructions = Instructions(guard._exec_opts.instructions)
     assert (
-        instructions.format(user_instructions=user_instructions).source.strip()
+        messages.format(
+            user_instructions=user_instructions,
+            user_prompt=user_prompt,
+        )
+        .source[1]["content"]
+        .strip()
+        == user_prompt.strip()
+    )
+
+    assert (
+        messages.format(
+            user_instructions=user_instructions,
+            user_prompt=user_prompt,
+        )
+        .source[0]["content"]
+        .strip()
         == user_instructions.strip()
     )
-    prompt = Prompt(guard._exec_opts.prompt)
-    assert prompt.format(user_prompt=user_prompt).source.strip() == user_prompt.strip()
 
 
 @pytest.mark.parametrize(
@@ -244,12 +254,17 @@ def test_format_messages():
     )
 
     expected_instructions = (
-        Template(constants["complete_json_suffix_v2"])
-        .safe_substitute(output_schema=output_schema)
-        .rstrip()
+        Template(constants["complete_json_suffix_v2"]).safe_substitute(
+            output_schema=output_schema
+        )
+    ).rstrip()
+
+    messages = Messages(
+        source=guard._exec_opts.messages,
+        output_schema=output_schema,
     )
-    prompt = Prompt(guard._exec_opts.prompt, output_schema=output_schema)
-    assert prompt.format_instructions.rstrip() == expected_instructions
+
+    assert messages.source[1]["content"].rstrip() == expected_instructions
 
 
 def test_reask_messages():

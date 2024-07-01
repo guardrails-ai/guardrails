@@ -590,7 +590,7 @@ class Guard(IGuard, Generic[OT]):
         )
         metadata = metadata or {}
         print("==== _execute messages", messages)
-        if not (messages):
+        if not (messages) and llm_api:
             raise RuntimeError("'messages' must be provided in order to call an LLM!")
 
         # check if validator requirements are fulfilled

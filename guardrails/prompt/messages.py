@@ -30,7 +30,6 @@ class Messages:
                 # call the substitute_constants method
                 if isinstance(message["content"], str):
                     content = message["content"]
-                else:
                     message["content"] = self.substitute_constants(content)
             except Exception:
                 pass
@@ -43,8 +42,8 @@ class Messages:
                     message["content"] = Template(message["content"]).safe_substitute(
                         output_schema=output_schema, xml_output_schema=xml_output_schema
                     )
-        else:
-            self.source = source
+
+        self.source = self._source
 
     @property
     def variable_names(self):
@@ -77,7 +76,6 @@ class Messages:
         """Substitute constants in the prompt."""
         # Substitute constants by reading the constants file.
         # Regex to extract all occurrences of ${gr.<constant_name>}
-        print("====subbing constants", text)
         matches = re.findall(r"\${gr\.(\w+)}", text)
 
         # Substitute all occurrences of ${gr.<constant_name>}
@@ -92,7 +90,6 @@ class Messages:
 
 def messages_string(messages: Messages) -> str:
     messages_copy = ""
-    print("====messages", messages.source)
     for msg in messages:
         content = (
             msg["content"].source
