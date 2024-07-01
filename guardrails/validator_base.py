@@ -15,9 +15,12 @@ import nltk
 import requests
 from langchain_core.runnables import Runnable
 
-from guardrails.classes import ErrorSpan  # noqa
-from guardrails.classes import PassResult  # noqa
-from guardrails.classes import FailResult, ValidationResult
+from guardrails.classes import (
+    ErrorSpan,  # noqa
+    FailResult,
+    PassResult,  # noqa
+    ValidationResult,
+)
 from guardrails.classes.credentials import Credentials
 from guardrails.constants import hub
 from guardrails.hub_token.token import VALIDATOR_HUB_SERVICE, get_jwt_token
@@ -349,9 +352,6 @@ class Validator:
             "Authorization": f"Bearer {self.hub_jwt_token}",
             "Content-Type": "application/json",
         }
-        print(request_body)
-        print(validation_endpoint)
-        print(headers)
         req = requests.post(validation_endpoint, json=request_body, headers=headers)
         if not req.ok:
             logging.error(req.status_code)
