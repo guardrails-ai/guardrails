@@ -1,9 +1,7 @@
-"""
-tracer_mixin.py
+"""tracer_mixin.py.
 
-This file defines our preferred tracer interface.
-It has a side effect of acting as a 'noop' when we want to benchmark performance of a
-tracer.
+This file defines our preferred tracer interface. It has a side effect
+of acting as a 'noop' when we want to benchmark performance of a tracer.
 """
 
 import os
