@@ -51,7 +51,7 @@ def fetch(url: str, token: Optional[str], anonymousUserId: Optional[str]):
         headers = {
             "Authorization": f"Bearer {token}",
             "x-anonymous-user-id": anonymousUserId,
-            "guardrails-version": GUARDRAILS_VERSION,
+            "x-guardrails-version": GUARDRAILS_VERSION,
         }
         req = requests.get(url, headers=headers)
         body = req.json()
