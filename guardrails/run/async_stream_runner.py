@@ -161,7 +161,7 @@ class AsyncStreamRunner(StreamRunner):
         outputs = Outputs()
         iteration = Iteration(inputs=inputs, outputs=outputs)
         call_log.iterations.push(iteration)
-        if output:
+        if output is not None:
             instructions = None
             prompt = None
             msg_history = None
