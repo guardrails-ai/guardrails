@@ -410,15 +410,15 @@ class LiteLLMCallable(PromptCallableBase):
                 stream_output=llm_response,
             )
 
-        if response.choices[0].message.content is not None:
-            output = response.choices[0].message.content
+        if response.choices[0].message.content is not None:  # type: ignore
+            output = response.choices[0].message.content  # type: ignore
         else:
             try:
-                output = response.choices[0].message.function_call.arguments
+                output = response.choices[0].message.function_call.arguments  # type: ignore
             except AttributeError:
                 try:
-                    choice = response.choices[0]
-                    output = choice.message.tool_calls[-1].function.arguments
+                    choice = response.choices[0]  # type: ignore
+                    output = choice.message.tool_calls[-1].function.arguments  # type: ignore
                 except AttributeError as ae_tools:
                     raise ValueError(
                         "No message content or function"
@@ -868,15 +868,15 @@ class AsyncLiteLLMCallable(AsyncPromptCallableBase):
                 async_stream_output=response.completion_stream,  # pyright: ignore[reportGeneralTypeIssues]
             )
 
-        if response.choices[0].message.content is not None:
-            output = response.choices[0].message.content
+        if response.choices[0].message.content is not None:  # type: ignore
+            output = response.choices[0].message.content  # type: ignore
         else:
             try:
-                output = response.choices[0].message.function_call.arguments
+                output = response.choices[0].message.function_call.arguments  # type: ignore
             except AttributeError:
                 try:
-                    choice = response.choices[0]
-                    output = choice.message.tool_calls[-1].function.arguments
+                    choice = response.choices[0]  # type: ignore
+                    output = choice.message.tool_calls[-1].function.arguments  # type: ignore
                 except AttributeError as ae_tools:
                     raise ValueError(
                         "No message content or function"
