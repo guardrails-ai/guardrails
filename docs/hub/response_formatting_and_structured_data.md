@@ -1,11 +1,11 @@
 
-# Response Formatting and Structure
+# Response Formatting and Structured Data
 
 Guardrails provides several interfaces to help llms respond in valid JSON which can then be validated using Guardrails validators.
 
 ## Prerequisites
 
-First, create a Pydantic model and guard for the structured data. The model should describe the data structure to be returned. Fields do support  We"ve included here a sample prompt and data to extract the structured data from. 
+First, create a Pydantic model and guard for the structured data. The model should describe the data structure to be returned. Fields do support validators. We"ve included here a sample prompt and data to extract the structured data from. 
 
 ```py
 from guardrails import Guard
@@ -47,25 +47,9 @@ ${chat_history}
 """
 ```
 
-## Optional Guard.__call__ llm_api callable
+## Options
 
-`guard(` calls will now default to liteLLM"s callable and OpenAI compatible interface if model is set and no llm_api is provided
-
-```py
-from guardrails import Guard
-from guardrails.hub import RegexMatch
-
-NAME_REGEX = "^[A-Z][a-z]+\s[A-Z][a-z]+$"
-guard = Guard()
-
-response = guard(
-    model="gpt-4o",
-    instructions="You are a helpful assistant.",
-    prompt="How many moons does jupiter have?",
-)
-```
-
-## Function/tool calling structured response formatting
+### Function/tool calling structured response formatting
 
 For models that support openai tool/function calling(`gpt-4o`, `gpt-4-turbo`, or `gpt-3.5-turbo`)
 
@@ -74,6 +58,9 @@ from guardrails import Guard
 from guardrails.hub import RegexMatch
 from pydantic import BaseModel, Field
 from typing import List
+import os
+
+os.environ["OPENAI_API_KEY"] = "YOUR_OPENAI_API_KEY"
 
 NAME_REGEX = "^[A-Z][a-z]+\s[A-Z][a-z]+$"
 
@@ -111,7 +98,6 @@ ${chat_history}
 tools = [] # an open ai compatible list of tools
 
 response = guard(
-    openai.chat.completions.create,
     model="gpt-4o",
     instructions="You are a helpful assistant.",
     prompt=prompt,
@@ -121,16 +107,15 @@ response = guard(
 )
 ```
 
-## Prompt Updates
+### Prompt Updates
 
-For models that support JSON through prompt engineering and hinting(most models)
+For models that support JSON through prompt engineering and hinting (most models)
 ```py
 prompt+="""
 
 ${gr.complete_json_suffix_v3}
 """
 response = guard(
-    openai.chat.completions.create,
     model="gpt-4o",
     instructions="You are a helpful assistant.",
     prompt=prompt,
@@ -138,7 +123,7 @@ response = guard(
 )
 ```
 
-## Constrained decoding structured response formatting
+### Constrained decoding structured response formatting
 For Hugging Face models structured JSON output maybe returned utilizing constrained decoding.
 ```python
 from guardrails import Guard
@@ -197,7 +182,6 @@ prompt+="""
 ${gr.complete_json_suffix_v3}
 """
 response = guard(
-    openai.chat.completions.create,
     model="gpt-4o",
     instructions="You are a helpful assistant.",
     prompt=prompt,

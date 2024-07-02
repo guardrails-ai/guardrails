@@ -97,6 +97,7 @@ const sidebars = {
   hubSidebar: [
     "hub/introduction",
     "hub/getting_started",
+    "hub/response_formatting_and_structured_data",
     {
       type: "category",
       label: "How-to Guides",
