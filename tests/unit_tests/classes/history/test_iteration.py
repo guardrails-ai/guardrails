@@ -6,14 +6,17 @@ from guardrails.constants import error_status, not_run_status
 from guardrails.llm_providers import OpenAICallable
 from guardrails.prompt.instructions import Instructions
 from guardrails.prompt.prompt import Prompt
-from guardrails.utils.llm_response import LLMResponse
-from guardrails.utils.logs_utils import ValidatorLogs
-from guardrails.utils.reask_utils import FieldReAsk
+from guardrails.classes.llm.llm_response import LLMResponse
+from guardrails.classes.validation.validator_logs import ValidatorLogs
+from guardrails.actions.reask import FieldReAsk
 from guardrails.validator_base import FailResult
 
 
 def test_empty_initialization():
-    iteration = Iteration()
+    iteration = Iteration(
+        call_id="mock-call",
+        index=0,
+    )
 
     assert iteration.inputs == Inputs()
     assert iteration.outputs == Outputs()
@@ -95,7 +98,7 @@ def test_non_empty_initialization():
         error=error,
     )
 
-    iteration = Iteration(inputs=inputs, outputs=outputs)
+    iteration = Iteration(call_id="mock-call", index=0, inputs=inputs, outputs=outputs)
 
     assert iteration.inputs == inputs
     assert iteration.outputs == outputs

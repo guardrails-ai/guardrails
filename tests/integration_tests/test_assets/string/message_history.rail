@@ -2,7 +2,7 @@
 <output
     type="string"
     description="Generate a movie"
-    format="two-words"
+    validators="two-words"
     on-fail-two-words="reask">
 </output>
 </rail>

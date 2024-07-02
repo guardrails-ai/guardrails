@@ -1,185 +1,40 @@
+# TODO:
+#   - [ ] Rename this to just validator.py 0.5.x
+#   - [ ] Maintain validator_base.py for exports but deprecate them
+#   - [ ] Remove validator_base.py in 0.6.x
+
 import inspect
-import nltk
+import logging
 from collections import defaultdict
-from copy import deepcopy
-from enum import Enum
+from dataclasses import dataclass
 from string import Template
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    List,
-    Literal,
-    Optional,
-    Tuple,
-    Type,
-    Union,
-    cast,
-)
-from typing_extensions import deprecated
+from typing import Any, Callable, Dict, List, Optional, Type, Union
 from warnings import warn
 
-from langchain_core.messages import BaseMessage
-from langchain_core.runnables import Runnable, RunnableConfig
-from pydantic import BaseModel, Field
+import nltk
+import requests
+from langchain_core.runnables import Runnable
 
-from guardrails.classes import InputType
+from guardrails.classes import ErrorSpan  # noqa
+from guardrails.classes import PassResult  # noqa
+from guardrails.classes import FailResult, ValidationResult
+from guardrails.classes.credentials import Credentials
 from guardrails.constants import hub
-from guardrails.errors import ValidationError
-from guardrails.utils.dataclass import dataclass
+from guardrails.hub_token.token import VALIDATOR_HUB_SERVICE, get_jwt_token
+from guardrails.logger import logger
+from guardrails.remote_inference import remote_inference
+from guardrails.telemetry import get_disable_telemetry
+from guardrails.types.on_fail import OnFailAction
+from guardrails.utils.hub_telemetry_utils import HubTelemetry
 
-VALIDATOR_IMPORT_WARNING = """Accessing `{validator_name}` using
-`from guardrails.validators import {validator_name}` is deprecated and
-support will be removed after version 0.5.x. Please switch to the Guardrails Hub syntax:
-`from guardrails.hub import {hub_validator_name}` for future updates and support.
-For additional details, please visit: {hub_validator_url}.
-"""
-
-# Old names -> New names + hub URLs
-VALIDATOR_NAMING = {
-    "bug-free-python": [
-        "ValidPython",
-        "https://hub.guardrailsai.com/validator/reflex/valid_python",
-    ],
-    "bug-free-sql": [
-        "ValidSQL",
-        "https://hub.guardrailsai.com/validator/guardrails/valid_sql",
-    ],
-    "competitor-check": [
-        "CompetitorCheck",
-        "https://hub.guardrailsai.com/validator/guardrails/competitor_check",
-    ],
-    "detect-secrets": [
-        "SecretsPresent",
-        "https://hub.guardrailsai.com/validator/guardrails/secrets_present",
-    ],
-    "is-reachable": [
-        "EndpointIsReachable",
-        "https://hub.guardrailsai.com/validator/guardrails/endpoint_is_reachable",
-    ],
-    "ends-with": [
-        "EndsWith",
-        "https://hub.guardrailsai.com/validator/guardrails/ends_with",
-    ],
-    "exclude-sql-predicates": [
-        "ExcludeSqlPredicates",
-        "https://hub.guardrailsai.com/validator/guardrails/exclude_sql_predicates",
-    ],
-    "extracted-summary-sentences-match": [
-        "ExtractedSummarySentencesMatch",
-        "https://hub.guardrailsai.com/validator/guardrails/extracted_summary_sentences_match",  # noqa: E501
-    ],
-    "extractive-summary": [
-        "ExtractiveSummary",
-        "https://hub.guardrailsai.com/validator/aryn/extractive_summary",
-    ],
-    "is-high-quality-translation": [
-        "HighQualityTranslation",
-        "https://hub.guardrailsai.com/validator/brainlogic/high_quality_translation",
-    ],
-    "is-profanity-free": [
-        "ProfanityFree",
-        "https://hub.guardrailsai.com/validator/guardrails/profanity_free",
-    ],
-    "lower-case": [
-        "LowerCase",
-        "https://hub.guardrailsai.com/validator/guardrails/lowercase",
-    ],
-    "on_topic": [
-        "RestrictToTopic",
-        "https://hub.guardrailsai.com/validator/tryolabs/restricttotopic",
-    ],
-    "one-line": [
-        "OneLine",
-        "https://hub.guardrailsai.com/validator/guardrails/one_line",
-    ],
-    "pii": [
-        "DetectPII",
-        "https://hub.guardrailsai.com/validator/guardrails/detect_pii",
-    ],
-    "provenance-v0": [
-        "ProvenanceEmbeddings",
-        "https://hub.guardrailsai.com/validator/guardrails/provenance_embeddings",
-    ],
-    "provenance-v1": [
-        "ProvenanceLLM",
-        "https://hub.guardrailsai.com/validator/guardrails/provenance_llm",
-    ],
-    "qa-relevance-llm-eval": [
-        "QARelevanceLLMEval",
-        "https://hub.guardrailsai.com/validator/guardrails/qa_relevance_llm_eval",
-    ],
-    "reading-time": [
-        "ReadingTime",
-        "https://hub.guardrailsai.com/validator/guardrails/reading_time",
-    ],
-    "regex_match": [
-        "RegexMatch",
-        "https://hub.guardrailsai.com/validator/guardrails/regex_match",
-    ],
-    "remove-redundant-sentences": [
-        "RedundantSentences",
-        "https://hub.guardrailsai.com/validator/guardrails/redundant_sentences",
-    ],
-    "saliency-check": [
-        "SaliencyCheck",
-        "https://hub.guardrailsai.com/validator/guardrails/saliency_check",
-    ],
-    "similar-to-document": [
-        "SimilarToDocument",
-        "https://hub.guardrailsai.com/validator/guardrails/similar_to_document",
-    ],
-    "similar-to-list": [
-        "SimilarToPreviousValues",
-        "https://hub.guardrailsai.com/validator/guardrails/similar_to_previous_values",
-    ],
-    "sql-column-presence": [
-        "SqlColumnPresence",
-        "https://hub.guardrailsai.com/validator/numbersstation/sql_column_presence",
-    ],
-    "toxic-language": [
-        "ToxicLanguage",
-        "https://hub.guardrailsai.com/validator/guardrails/toxic_language",
-    ],
-    "two-words": [
-        "TwoWords",
-        "https://hub.guardrailsai.com/validator/guardrails/two_words",
-    ],
-    "upper-case": [
-        "UpperCase",
-        "https://hub.guardrailsai.com/validator/guardrails/uppercase",
-    ],
-    "valid-choices": [
-        "ValidChoices",
-        "https://hub.guardrailsai.com/validator/guardrails/valid_choices",
-    ],
-    "length": [
-        "ValidLength",
-        "https://hub.guardrailsai.com/validator/guardrails/valid_length",
-    ],
-    "valid-range": [
-        "ValidRange",
-        "https://hub.guardrailsai.com/validator/guardrails/valid_range",
-    ],
-    "valid-url": [
-        "ValidURL",
-        "https://hub.guardrailsai.com/validator/guardrails/valid_url",
-    ],
-    "pydantic_field_validator": [],
-}
+#   See: https://github.com/guardrails-ai/guardrails/issues/829
+try:
+    nltk.data.find("tokenizers/punkt")
+except LookupError:
+    nltk.download("punkt")
 
 
-class Filter:
-    pass
-
-
-class Refrain:
-    pass
-
-
-# functions to get chunks
-
-
+### functions to get chunks ###
 def split_sentence_str(chunk: str):
     """A naive sentence splitter that splits on periods."""
     if "." not in chunk:
@@ -208,121 +63,11 @@ def split_sentence_nltk(chunk: str):
     return [sentences[0], "".join(sentences[1:])]
 
 
-def check_refrain_in_list(schema: List) -> bool:
-    """Checks if a Refrain object exists in a list.
-
-    Args:
-        schema: A list that can contain lists, dicts or scalars.
-
-    Returns:
-        bool: True if a Refrain object exists in the list.
-    """
-    for item in schema:
-        if isinstance(item, Refrain):
-            return True
-        elif isinstance(item, list):
-            if check_refrain_in_list(item):
-                return True
-        elif isinstance(item, dict):
-            if check_refrain_in_dict(item):
-                return True
-
-    return False
-
-
-def check_refrain_in_dict(schema: Dict) -> bool:
-    """Checks if a Refrain object exists in a dict.
-
-    Args:
-        schema: A dict that can contain lists, dicts or scalars.
-
-    Returns:
-        True if a Refrain object exists in the dict.
-    """
-    for key, value in schema.items():
-        if isinstance(value, Refrain):
-            return True
-        elif isinstance(value, list):
-            if check_refrain_in_list(value):
-                return True
-        elif isinstance(value, dict):
-            if check_refrain_in_dict(value):
-                return True
-
-    return False
-
-
-def check_refrain(schema: Union[List, Dict]) -> bool:
-    if isinstance(schema, List):
-        return check_refrain_in_list(schema)
-    return check_refrain_in_dict(schema)
-
-
-def filter_in_list(schema: List) -> List:
-    """Remove out all Filter objects from a list.
-
-    Args:
-        schema: A list that can contain lists, dicts or scalars.
-
-    Returns:
-        A list with all Filter objects removed.
-    """
-    filtered_list = []
-
-    for item in schema:
-        if isinstance(item, Filter):
-            pass
-        elif isinstance(item, list):
-            filtered_item = filter_in_list(item)
-            if len(filtered_item):
-                filtered_list.append(filtered_item)
-        elif isinstance(item, dict):
-            filtered_dict = filter_in_dict(item)
-            if len(filtered_dict):
-                filtered_list.append(filtered_dict)
-        else:
-            filtered_list.append(item)
-
-    return filtered_list
-
-
-def filter_in_dict(schema: Dict) -> Dict:
-    """Remove out all Filter objects from a dictionary.
-
-    Args:
-        schema: A dictionary that can contain lists, dicts or scalars.
-
-    Returns:
-        A dictionary with all Filter objects removed.
-    """
-    filtered_dict = {}
-
-    for key, value in schema.items():
-        if isinstance(value, Filter):
-            pass
-        elif isinstance(value, list):
-            filtered_item = filter_in_list(value)
-            if len(filtered_item):
-                filtered_dict[key] = filtered_item
-        elif isinstance(value, dict):
-            filtered_dict[key] = filter_in_dict(value)
-        else:
-            filtered_dict[key] = value
-
-    return filtered_dict
-
-
-def filter_in_schema(schema: Union[Dict, List]) -> Union[Dict, List]:
-    if isinstance(schema, List):
-        return filter_in_list(schema)
-    return filter_in_dict(schema)
-
-
-validators_registry = {}
+validators_registry: Dict[str, Type["Validator"]] = {}
 types_to_validators = defaultdict(list)
 
 
-def validator_factory(name: str, validate: Callable):
+def validator_factory(name: str, validate: Callable) -> Type["Validator"]:
     def validate_wrapper(self, *args, **kwargs):
         return validate(*args, **kwargs)
 
@@ -334,12 +79,14 @@ def validator_factory(name: str, validate: Callable):
     return validator
 
 
-def register_validator(name: str, data_type: Union[str, List[str]]):
+def register_validator(
+    name: str, data_type: Union[str, List[str]], has_guardrails_endpoint: bool = False
+):
     """Register a validator for a data type."""
-    from guardrails.datatypes import registry as types_registry
+    from guardrails.datatypes import types_registry
 
     if isinstance(data_type, str):
-        data_type = list(types_registry.keys()) if data_type == "all" else [data_type]
+        data_type = types_registry if data_type == "all" else [data_type]
     # Make sure that the data type string exists in the data types registry.
     for dt in data_type:
         if dt not in types_registry:
@@ -373,106 +120,81 @@ def register_validator(name: str, data_type: Union[str, List[str]]):
     return decorator
 
 
-def get_validator(name: str):
+def try_to_import_hub():
+    try:
+        # This should import everything and trigger registration
+        # So it should only have to happen once
+        # in lieu of completely unregistered validators
+        import guardrails.hub  # noqa
+    except ImportError:
+        logger.debug("Could not import hub.  Validators may not work properly.")
+
+
+# TODO: Move this to validator_utils.py
+def get_validator_class(name: Optional[str]) -> Optional[Type["Validator"]]:
+    if not name:
+        return None
     is_hub_validator = name.startswith(hub)
     validator_key = name.replace(hub, "") if is_hub_validator else name
-    registration = validators_registry.get(validator_key)
-    if not registration and name.startswith(hub):
-        # This should import everything and trigger registration
-        import guardrails.hub  # noqa
 
-        return validators_registry.get(validator_key)
+    registration = validators_registry.get(validator_key)
+    if not registration:
+        try_to_import_hub()
+        registration = validators_registry.get(validator_key)
+
+    if not registration:
+        warn(f"Validator with id {name} was not found in the registry!  Ignoring...")
+        return None
+
     return registration
 
 
-class ValidationResult(BaseModel):
-    outcome: str
-    metadata: Optional[Dict[str, Any]] = None
-    # value argument passed to validator.validate
-    # or validator.validate_stream
-    validated_chunk: Optional[Any] = None
-
-
-class PassResult(ValidationResult):
-    outcome: Literal["pass"] = "pass"
-
-    class ValueOverrideSentinel:
-        pass
-
-    # should only be used if Validator.override_value_on_pass is True
-    value_override: Optional[Any] = Field(default=ValueOverrideSentinel)
-
-
-# specifies the start and end of segment of validate_chunk
-class ErrorSpan(BaseModel):
-    start: int
-    end: int
-    # reason validation failed, specific to this chunk
-    reason: str
-
-
-class FailResult(ValidationResult):
-    outcome: Literal["fail"] = "fail"
-
-    error_message: str
-    fix_value: Optional[Any] = None
-    # segments that caused validation to fail
-    error_spans: Optional[List[ErrorSpan]] = None
-
-
-class OnFailAction(str, Enum):
-    REASK = "reask"
-    FIX = "fix"
-    FILTER = "filter"
-    REFRAIN = "refrain"
-    NOOP = "noop"
-    EXCEPTION = "exception"
-    FIX_REASK = "fix_reask"
-
-
+# TODO: Can we remove dataclass? It was originally added to support pydantic 1.*
 @dataclass  # type: ignore
-class Validator(Runnable):
+class Validator:
     """Base class for validators."""
 
     rail_alias: str = ""
 
-    # chunking function returns empty list or list of 2 chunks
-    # first chunk is the chunk to validate
-    # second chunk is incomplete chunk that needs further accumulation
-    accumulated_chunks = []
     run_in_separate_process = False
     override_value_on_pass = False
     required_metadata_keys = []
     _metadata = {}
 
     def __init__(
-        self, on_fail: Optional[Union[Callable, OnFailAction]] = None, **kwargs
+        self,
+        on_fail: Optional[Union[Callable, OnFailAction]] = None,
+        **kwargs,
     ):
-        # Raise a warning for deprecated validators
+        self.creds = Credentials.from_rc_file()
+        self._disable_telemetry = get_disable_telemetry(self.creds)
+        if not self._disable_telemetry:
+            self._hub_telemetry = HubTelemetry()
 
-        # Get class name and rail_alias
-        child_class_name = str(type(self).__name__)
-        validator_rail_alias = self.rail_alias
+        self.use_local = kwargs.get("use_local", None)
+        self.validation_endpoint = kwargs.get("validation_endpoint", None)
+        if not self.creds:
+            raise ValueError(
+                "No credentials found. Please run `guardrails configure` and try again."
+            )
+        self.hub_jwt_token = get_jwt_token(self.creds)
 
-        # Check if this rail_alias is deprecated
-        if validator_rail_alias in VALIDATOR_NAMING:
-            if VALIDATOR_NAMING[validator_rail_alias]:
-                warn(
-                    VALIDATOR_IMPORT_WARNING.format(
-                        validator_name=child_class_name,
-                        hub_validator_name=VALIDATOR_NAMING[validator_rail_alias][0],
-                        hub_validator_url=VALIDATOR_NAMING[validator_rail_alias][1],
-                    ),
-                    FutureWarning,
-                )
-            else:
-                warn(
-                    f"""{child_class_name} is deprecated and
-                    will be removed after version 0.5.x.
-                    """,
-                    FutureWarning,
-                )
+        # If use_local is not set, we can fall back to the setting determined in CLI
+        if self.use_local is None:
+            self.use_local = not remote_inference.get_use_remote_inference(self.creds)
+
+        if not self.validation_endpoint:
+            validator_id = self.rail_alias.split("/")[-1]
+            submission_url = (
+                f"{VALIDATOR_HUB_SERVICE}/validator/{validator_id}/inference"
+            )
+            self.validation_endpoint = submission_url
         self.on_fail_descriptor: Union[str, OnFailAction] = "custom"
+
+        # chunking function returns empty list or list of 2 chunks
+        # first chunk is the chunk to validate
+        # second chunk is incomplete chunk that needs further accumulation
+        self.accumulated_chunks: List[str] = []
 
         if on_fail is None:
             on_fail = OnFailAction.NOOP
@@ -498,12 +220,80 @@ class Validator(Runnable):
             self.rail_alias in validators_registry
         ), f"Validator {self.__class__.__name__} is not registered. "
 
-    def chunking_function(self, chunk: str):
-        return split_sentence_str(chunk)
+    def _validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
+        """User implementable function.
+
+        Validates a value and return a validation result. This method
+        should call _inference() in the implementation to perform
+        inference on some input value.
+        """
+        raise NotImplementedError
+
+    def _inference_local(self, model_input: Any) -> Any:
+        """User implementable function.
+
+        Runs a machine learning pipeline on some input on the local
+        machine. This function should receive the expected input to the
+        ML model, and output the results from the ml model.
+        """
+        raise NotImplementedError
+
+    def _inference_remote(self, model_input: Any) -> Any:
+        """User implementable function.
+
+        Runs a machine learning pipeline on some input on a remote
+        machine. This function should receive the expected input to the
+        ML model, and output the results from the ml model.
+
+        Can call _hub_inference_request() if request is routed through
+        the hub.
+        """
+        raise NotImplementedError
 
     def validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
-        """Validates a value and return a validation result."""
-        raise NotImplementedError
+        """Do not override this function, instead implement _validate().
+
+        External facing validate function. This function acts as a
+        wrapper for _validate() and is intended to apply any meta-
+        validation requirements, logic, or pre/post processing.
+        """
+        validation_result = self._validate(value, metadata)
+        self._log_telemetry()
+        return validation_result
+
+    def _inference(self, model_input: Any) -> Any:
+        """Calls either a local or remote inference engine for use in the
+        validation call.
+
+        Args:
+            model_input (Any): Receives the input to be passed to your ML model.
+
+        Returns:
+            Any: Returns the output from the ML model inference.
+        """
+        # Only use if both are set, otherwise fall back to local inference
+        if self.use_local:
+            return self._inference_local(model_input)
+        if not self.use_local and self.validation_endpoint:
+            return self._inference_remote(model_input)
+
+        raise RuntimeError(
+            "No inference endpoint set, but use_local was false. "
+            "Please set either use_local=True or "
+            "set an validation_endpoint to perform inference in the validator."
+        )
+
+    def _chunking_function(self, chunk: str) -> List[str]:
+        """The strategy used for chunking accumulated text input into
+        validation sets.
+
+        Args:
+            chunk (str): The text to chunk into some subset.
+
+        Returns:
+            list[str]: The text chunked into some subset.
+        """
+        return split_sentence_str(chunk)
 
     def validate_stream(
         self, chunk: Any, metadata: Dict[str, Any], **kwargs
@@ -524,15 +314,15 @@ class Validator(Runnable):
         self.accumulated_chunks.append(chunk)
         accumulated_text = "".join(self.accumulated_chunks)
         # check if enough chunks have accumulated for validation
-        splitcontents = self.chunking_function(accumulated_text)
+        split_contents = self._chunking_function(accumulated_text)
 
         # if remainder kwargs is passed, validate remainder regardless
         remainder = kwargs.get("remainder", False)
         if remainder:
-            splitcontents = [accumulated_text, ""]
-        if len(splitcontents) == 0:
+            split_contents = [accumulated_text, ""]
+        if len(split_contents) == 0:
             return PassResult()
-        [chunk_to_validate, new_accumulated_chunks] = splitcontents
+        [chunk_to_validate, new_accumulated_chunks] = split_contents
         self.accumulated_chunks = [new_accumulated_chunks]
         # exclude last chunk, because it may not be a complete chunk
         validation_result = self.validate(chunk_to_validate, metadata)
@@ -540,6 +330,34 @@ class Validator(Runnable):
         if validation_result.validated_chunk is None:
             validation_result.validated_chunk = chunk_to_validate
         return validation_result
+
+    def _hub_inference_request(
+        self, request_body: dict, validation_endpoint: str
+    ) -> Any:
+        """Makes a request to the Validator Hub to run a ML based validation model. This
+        request is authed through the hub and rerouted to a hosted ML model. The reply
+        from the hosted endpoint is returned and sent to this client.
+
+        Args:
+            request_body (dict): A dictionary containing the required info for the final
+            validation_endpoint (str): The url to request as an endpoint
+            inference endpoint to run.
+
+        Raises:
+            HttpError: If the recieved reply was not ok.
+
+        Returns:
+            Any: Post request response from the ML based validation model.
+        """
+        headers = {
+            "Authorization": f"Bearer {self.hub_jwt_token}",
+            "Content-Type": "application/json",
+        }
+        req = requests.post(validation_endpoint, json=request_body, headers=headers)
+        if not req.ok:
+            logging.error(req.status_code)
+
+        return req.json()
 
     def to_prompt(self, with_keywords: bool = True) -> str:
         """Convert the validator to a prompt.
@@ -566,6 +384,7 @@ class Validator(Runnable):
             params = " ".join([f"{k}={v}" for k, v in kwargs.items()])
         return f"{self.rail_alias}: {params}"
 
+    # TODO: Is this still used anywhere?
     def to_xml_attrib(self):
         """Convert the validator to an XML attribute."""
 
@@ -630,38 +449,6 @@ class Validator(Runnable):
             }
         )
 
-    @deprecated(
-        """'Validator.invoke' is deprecated and will be removed in \
-    versions 0.5.x and beyond. Use Validator.to_runnable() instead."""
-    )
-    def invoke(
-        self, input: InputType, config: Optional[RunnableConfig] = None
-    ) -> InputType:
-        output = BaseMessage(content="", type="")
-        str_input = None
-        input_is_chat_message = False
-        if isinstance(input, BaseMessage):
-            input_is_chat_message = True
-            str_input = str(input.content)
-            output = deepcopy(input)
-        else:
-            str_input = str(input)
-
-        response = self.validate(str_input, self._metadata)
-
-        if isinstance(response, FailResult):
-            raise ValidationError(
-                (
-                    "The response from the LLM failed validation!"
-                    f"{response.error_message}"
-                )
-            )
-
-        if input_is_chat_message:
-            output.content = str_input
-            return cast(InputType, output)
-        return cast(InputType, str_input)
-
     """
     This method allows the user to provide metadata to validators used in an LCEL chain.
     This is necessary because they can't pass metadata directly to `validate` in a chain
@@ -692,5 +479,25 @@ class Validator(Runnable):
 
         return ValidatorRunnable(self)
 
+    def _log_telemetry(self) -> None:
+        """Logs telemetry after the validator is called."""
 
-ValidatorSpec = Union[Validator, Tuple[Union[Validator, str, Callable], str]]
+        if not self._disable_telemetry:
+            # Get HubTelemetry singleton and create a new span to
+            # log the validator inference
+            used_guardrails_endpoint = (
+                VALIDATOR_HUB_SERVICE in self.validation_endpoint and not self.use_local
+            )
+            used_custom_endpoint = not self.use_local and not used_guardrails_endpoint
+            self._hub_telemetry.create_new_span(
+                span_name="/validator_inference",
+                attributes=[
+                    ("validator_name", self.rail_alias),
+                    ("used_remote_inference", not self.use_local),
+                    ("used_local_inference", self.use_local),
+                    ("used_guardrails_endpoint", used_guardrails_endpoint),
+                    ("used_custom_endpoint", used_custom_endpoint),
+                ],
+                is_parent=False,  # This span will have no children
+                has_parent=True,  # This span has a parent
+            )
