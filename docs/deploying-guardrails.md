@@ -75,7 +75,16 @@ Previously we showed how to start the Guardrails API as a dev server using the `
 CMD gunicorn --bind 0.0.0.0:8000 --timeout=90 --threads=10 'guardrails_api.app:create_app(None, "config.py")'
 ```
 
-This line starts the Guardrails API Flask application with a gunicorn WSGI server.  It specifies what port to bind the server to, as well as the timeout for silent workers and the maximum number of worker threads for handling requests.  We typically use the `gthread` worker class with gunicorn because of compatibility issues between how some async workers try to monkeypatch dependencies and how some libraries specify optional imports.
+This line starts the Guardrails API Flask application with a gunicorn WSGI server.  It specifies what port to bind the server to, as well as the timeout for workers and the maximum number of worker threads for handling requests.  We typically use the `gthread` worker class with gunicorn because of compatibility issues between how some async workers try to monkeypatch dependencies and how some libraries specify optional imports.
 
 Also note that we make the intentional decision to utilize threads over workers here for simple use-cases.  You could just as easily swap the `--threads` setting with the `--workers` setting above. The key tradeoff here is the impact that has on total resource consumption.  Since the `config.py` file is loaded at startup, running multiple workers means that each worker may need to load the models utilized by any validators in the config.  For use cases that have square-wave-like or sustained high traffic, this may be a tradeoff you want to make.
 
+For further reference, you can find a bare-bones example of Dockerizing the Guardrails API here: https://github.com/guardrails-ai/guardrails-lite-server
+
+
+When selecting a deployment environment it is important to consider what types of validators you plan to use.  If most of the validators you require are static or LLM based, the Guardrails API can perform well in a serverless environment.  However if you make use of multiple ML based validators, the sheer memory footprint the underlying models bring and the need to load the models on init are good reasons to choose a more persistent hosting option.  When utilizing a containerized hosting option that allows for auto-scaling, we find that under load the tasks are generally more CPU bound than memory bound and therefore benefit more from scaling on CPU utilization or request queue depth.
+
+## Patterns and Practices for Using the Client/Server Model
+When considering what to put where when splitting your Guardrails implementation between your client application and the Guardrails API, it mostly comes down to shifting the heavy lifting to the server and keeping your implementation on the client side to a minimum.
+
+For example, you should define your Guards in the `config.py` that is loaded onto the server, not in your client application.  Additionally validators from the Guardrails HUB should also be installed on the server since that is where they will be executed; no need to install these in the client application.  This also means that _generally_ any extras you need alongside Guardrails would also be installed server side; that is, you would only want to install `guardails-ai` in your application whereas you would install `guardrails-ai[api]` on the server.  This keeps additional dependencies where they belong.
