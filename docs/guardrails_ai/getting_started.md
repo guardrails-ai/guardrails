@@ -2,16 +2,17 @@
 
 ## Installation
 
+Install the Guardrails core package and CLI using pip.
+
 ```python
 pip install guardrails-ai
 ```
 
 ## Create Input and Output Guards for LLM Validation
 
-1. Download and configure the Guardrails Hub CLI.
+1. Configure the Guardrails Hub CLI.
     
     ```bash
-    pip install guardrails-ai
     guardrails configure
     ```
 2. Install a guardrail from Guardrails Hub.
@@ -38,8 +39,7 @@ pip install guardrails-ai
     First, install the necessary guardrails from Guardrails Hub.
 
     ```bash
-    guardrails hub install hub://guardrails/competitor_check
-    guardrails hub install hub://guardrails/toxic_language
+    guardrails hub install hub://guardrails/valid_length
     ```
 
     Then, create a Guard from the installed guardrails.
@@ -48,7 +48,7 @@ pip install guardrails-ai
     from guardrails.hub import RegexMatch, ValidLength
     from guardrails import Guard
 
-    guard = Guard().use(
+    guard = Guard().use_many(
         RegexMatch(regex="^[A-Z][a-z]*$"),
         ValidLength(min=1, max=32)
     )
@@ -71,13 +71,12 @@ class Pet(BaseModel):
     name: str = Field(description="a unique pet name")
 ```
 
-Now, create a Guard from the `Pet` class. The Guard can be used to call the LLM in a manner so that the output is formatted to the `Pet` class. Under the hood, this is done by either of two methods:
+Now, create a Guard from the `Pet` class. The Guard can be used to call the LLM in a manner so that the output is formatted to match the `Pet` class. Under the hood, this is done by either of two methods:
 1. Function calling: For LLMs that support function calling, we generate structured data using the function call syntax.
 2. Prompt optimization: For LLMs that don't support function calling, we add the schema of the expected output to the prompt so that the LLM can generate structured data.
 
 ```py
 from guardrails import Guard
-import openai
 
 prompt = """
     What kind of pet should I get and what should I name it?
@@ -86,19 +85,17 @@ prompt = """
 """
 guard = Guard.from_pydantic(output_class=Pet)
 
-raw_output, validated_output, *rest = guard(
-    llm_api=openai.chat.completions.create,
-    prompt=prompt,
-    engine="gpt-3.5-turbo"
+res = guard(
+    messages=[{"role": "user", "content": prompt}],
+    model="gpt-3.5-turbo"
 )
 
-print(f"{validated_output}")
+print(res.validated_output)
 ```
 
-This prints: 
+This prints:
 ```
-{
-    "pet_type": "dog",
-    "name": "Buddy
-}
+{'pet_type': 'dog', 'name': 'Buddy'}
 ```
+
+This output is a dict that matches the structure of the `Pet` class.
