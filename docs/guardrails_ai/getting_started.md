@@ -39,6 +39,7 @@ pip install guardrails-ai
     First, install the necessary guardrails from Guardrails Hub.
 
     ```bash
+    guardrails hub install hub://guardrails/regex_match
     guardrails hub install hub://guardrails/valid_length
     ```
 
