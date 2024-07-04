@@ -89,11 +89,15 @@ You need to escape the `&` character like this:
 </prompt>
 ```
 
-If you're still encountering issues, please [open an issue](https://github.com/guardrails-ai/guardrails/issues/new) and we'll help you out!
-
-
 ## Are validators all model-based? Are they proprietary to Guardrails?
 
 Some validators are model based, some validators use LLMs, and some validators are purely logic. They are usually not proprietary, you can see a variety of them on the [Guardrails Hub](https://hub.guardrailsai.com) where they are largely open source and licensed under [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0).
 
 This doesn't preclude the creation and use of custom private validators with any given technology, but we are huge believers in the power of open source software.
+
+
+## Where do I get more help if I need it?
+
+If you're still encountering issues, please [open an issue](https://github.com/guardrails-ai/guardrails/issues/new) and we'll help you out!
+
+We're also available on [Discord](https://discord.gg/U9RKkZSBgx) if you want to chat with us directly.
