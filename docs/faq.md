@@ -4,7 +4,9 @@
 
 If you see an exception that looks like this
 
-`PromptCallableException: The callable `fn` passed to `Guard(fn, ...)` failed with the following error: `custom_llm_func() got an unexpected keyword argument 'messages'`. Make sure that `fn` can be called as a function that takes in a single prompt string and returns a string.`
+```
+PromptCallableException: The callable `fn` passed to `Guard(fn, ...)` failed with the following error: `custom_llm_func() got an unexpected keyword argument 'messages'`. Make sure that `fn` can be called as a function that takes in a single prompt string and returns a string.
+```
 
 It means that the call to the LLM failed. This is usually triggered for one of the following reasons:
 
