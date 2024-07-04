@@ -14,7 +14,7 @@ os.environ["OPENAI_API_KEY"] = "YOUR_OPEN_AI_API_KEY"
 guard = Guard()
 
 validated_output, *rest = guard(
-		prompt="How many moons does Jupiter have?",
+	prompt="How many moons does Jupiter have?",
     model="gpt-4o"
 )
 
@@ -31,9 +31,9 @@ os.environ["OPENAI_API_KEY"] = "YOUR_OPEN_AI_API_KEY"
 guard = Guard()
 
 stream_chunk_generator = guard(
-		prompt="How many moons does Jupiter have?",
+	prompt="How many moons does Jupiter have?",
     model="gpt-4o",
-    stream=True
+    stream=True,
 )
 
 for chunk in stream_chunk_generator
@@ -60,7 +60,7 @@ class Basket(BaseModel):
 guard = Guard.from_pydantic(Basket)
 
 validated_output, *rest = guard(
-		prompt="Generate a basket of 5 fruits",
+	prompt="Generate a basket of 5 fruits",
     model="gpt-4o",
     tools=guard.add_json_function_calling_tool([]),
     tool_choice="required",
@@ -82,7 +82,7 @@ guard = Guard()
 os.environ["ANTHROPIC_API_KEY"] = "your-api-key"
 
 validated_output, *rest = guard(
-		prompt="How many moons does Jupiter have?",
+	prompt="How many moons does Jupiter have?",
     model="claude-3-opus-20240229"
 )
 
@@ -100,13 +100,13 @@ os.environ["ANTHROPIC_API_KEY"] = "your-api-key"
 guard = Guard()
 
 stream_chunk_generator = guard(
-		prompt="How many moons does Jupiter have?",
+	prompt="How many moons does Jupiter have?",
     model="claude-3-opus-20240229",
     stream=True,
 )
 
 for chunk in stream_chunk_generator
-    validated_chunk_output, *rest = chunk
+    validated_output, *rest = chunk
     print(f"{validated_output}")
 ```
 
@@ -124,7 +124,7 @@ os.environ["AZURE_API_VERSION"] = "" # "2023-05-15"
 guard = Guard()
 
 validated_output, *rest = guard(
-		model = "azure/<your_deployment_name>", 
+	model="azure/<your_deployment_name>", 
     prompt="How many moons does Jupiter have?",
 )
 
@@ -143,13 +143,13 @@ os.environ["AZURE_API_VERSION"] = "" # "2023-05-15"
 guard = Guard()
 
 stream_chunk_generator = guard(
-		prompt="How many moons does Jupiter have?",
+	prompt="How many moons does Jupiter have?",
     model="azure/<your_deployment_name>", 
     stream=True
 )
 
 for chunk in stream_chunk_generator
-    validated_chunk_output, *rest = chunk
+    validated_output, *rest = chunk
     print(f"{validated_output}")
 ```
 
@@ -174,7 +174,7 @@ class Basket(BaseModel):
 guard = Guard.from_pydantic(Basket)
 
 validated_output, *rest = guard(
-		prompt="Generate a basket of 5 fruits",
+	prompt="Generate a basket of 5 fruits",
     model="azure/<your_deployment_name>", 
     tools=guard.add_json_function_calling_tool([]),
     tool_choice="required",
@@ -195,7 +195,7 @@ os.environ['GEMINI_API_KEY'] = ""
 guard = Guard()
 
 validated_output, *rest = guard(
-		prompt="How many moons does Jupiter have?",
+	prompt="How many moons does Jupiter have?",
     model="gemini/gemini-pro"
 )
 
@@ -211,13 +211,13 @@ import os
 os.environ['GEMINI_API_KEY'] = ""
 guard = Guard()
 stream_chunk_generator = guard(
-		prompt="How many moons does Jupiter have?",
+	prompt="How many moons does Jupiter have?",
     model="gemini/gemini-pro",
     stream=True
 )
 
 for chunk in stream_chunk_generator
-    validated_chunk_output, *rest = chunk
+    validated_output, *rest = chunk
     print(f"{validated_output}")
 ```
 
@@ -242,7 +242,7 @@ class Basket(BaseModel):
 guard = Guard.from_pydantic(Basket)
 
 validated_output, *rest = guard(
-		prompt="Generate a basket of 5 fruits",
+	prompt="Generate a basket of 5 fruits",
     model="gemini/gemini-pro"
     tools=guard.add_json_function_calling_tool([])
 )
