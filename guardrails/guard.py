@@ -31,6 +31,7 @@ from pydantic.config import ConfigDict
 
 from guardrails.api_client import GuardrailsApiClient
 from guardrails.classes.output_type import OT
+from guardrails.classes.validation.validation_result import ErrorSpan
 from guardrails.classes.validation_outcome import ValidationOutcome
 from guardrails.classes.credentials import Credentials
 from guardrails.classes.execution import GuardExecutionOptions
@@ -79,7 +80,10 @@ from guardrails.types import (
     ValidatorMap,
 )
 
-from guardrails.utils.tools_utils import add_json_function_calling_tool
+from guardrails.utils.tools_utils import (
+    # Prevent duplicate declaration in the docs
+    add_json_function_calling_tool as add_json_function_calling_tool_util,
+)
 
 
 class Guard(IGuard, Generic[OT]):
@@ -118,7 +122,11 @@ class Guard(IGuard, Generic[OT]):
         validators: Optional[List[ValidatorReference]] = None,
         output_schema: Optional[Dict[str, Any]] = None,
     ):
-        """Initialize the Guard with validators and an output schema."""
+        """Initialize the Guard with serialized validator references and an
+        output schema.
+
+        Output schema must be a valid JSON Schema.
+        """
 
         _try_to_load = name is not None
 
@@ -351,7 +359,8 @@ class Guard(IGuard, Generic[OT]):
         name: Optional[str] = None,
         description: Optional[str] = None,
     ):
-        """Create a Schema from a `.rail` file.
+        """Create a Guard using a `.rail` file to specify the output schema,
+        prompt, etc.
 
         Args:
             rail_file: The path to the `.rail` file.
@@ -399,7 +408,8 @@ class Guard(IGuard, Generic[OT]):
         name: Optional[str] = None,
         description: Optional[str] = None,
     ):
-        """Create a Schema from a `.rail` string.
+        """Create a Guard using a `.rail` string to specify the output schema,
+        prompt, etc..
 
         Args:
             rail_string: The `.rail` string.
@@ -452,7 +462,8 @@ class Guard(IGuard, Generic[OT]):
         description: Optional[str] = None,
         output_formatter: Optional[Union[str, BaseFormatter]] = None,
     ):
-        """Create a Guard instance from a Pydantic model.
+        """Create a Guard instance using a Pydantic model to specify the output
+        schema.
 
         Args:
             output_class: (Union[Type[BaseModel], List[Type[BaseModel]]]): The pydantic model that describes
@@ -832,7 +843,7 @@ class Guard(IGuard, Generic[OT]):
 
         Args:
             llm_api: The LLM API to call
-                     (e.g. openai.Completion.create or openai.Completion.acreate)
+                     (e.g. openai.completions.create or openai.Completion.acreate)
             prompt_params: The parameters to pass to the prompt.format() method.
             num_reasks: The max times to re-ask the LLM for invalid output.
             prompt: The prompt to use for the LLM.
@@ -845,7 +856,7 @@ class Guard(IGuard, Generic[OT]):
                                `False` otherwise.
 
         Returns:
-            The raw text output from the LLM and the validated output.
+            ValidationOutcome
         """
         instructions = instructions or self._exec_opts.instructions
         prompt = prompt or self._exec_opts.prompt
@@ -887,15 +898,14 @@ class Guard(IGuard, Generic[OT]):
             llm_output: The output being parsed and validated.
             metadata: Metadata to pass to the validators.
             llm_api: The LLM API to call
-                     (e.g. openai.Completion.create or openai.Completion.acreate)
+                     (e.g. openai.completions.create or openai.Completion.acreate)
             num_reasks: The max times to re-ask the LLM for invalid output.
             prompt_params: The parameters to pass to the prompt.format() method.
             full_schema_reask: When reasking, whether to regenerate the full schema
                                or just the incorrect values.
 
         Returns:
-            The validated response. This is either a string or a dictionary,
-                determined by the object schema defined in the RAILspec.
+            ValidationOutcome
         """
         final_num_reasks = (
             num_reasks
@@ -929,7 +939,8 @@ class Guard(IGuard, Generic[OT]):
             **kwargs,
         )
 
-    def error_spans_in_output(self):
+    def error_spans_in_output(self) -> List[ErrorSpan]:
+        """Get the error spans in the last output."""
         try:
             call = self.history.last
             if call:
@@ -991,8 +1002,6 @@ class Guard(IGuard, Generic[OT]):
         - The instructions
         - The message history
 
-        *Note*: For on="output", `use` is only available for string output types.
-
         Args:
             validator: The validator to use. Either the class or an instance.
             on: The part of the LLM request to validate. Defaults to "output".
@@ -1017,7 +1026,7 @@ class Guard(IGuard, Generic[OT]):
         *validators: UseManyValidatorSpec,
         on: str = "output",
     ) -> "Guard":
-        """Use a validator to validate results of an LLM request."""
+        """Use multiple validators to validate results of an LLM request."""
         # Loop through the validators
         for v in validators:
             hydrated_validator = get_validator(v)
@@ -1192,6 +1201,7 @@ class Guard(IGuard, Generic[OT]):
             self.upsert_guard()
 
     def to_runnable(self) -> Runnable:
+        """Convert a Guard to a LangChain Runnable."""
         from guardrails.integrations.langchain.guard_runnable import GuardRunnable
 
         return GuardRunnable(self)
@@ -1213,7 +1223,9 @@ class Guard(IGuard, Generic[OT]):
         self,
         tools: list,
     ) -> List[Dict[str, Any]]:
-        tools = add_json_function_calling_tool(
+        """Appends an OpenAI tool that specifies the output structure using
+        JSON Schema for chat models."""
+        tools = add_json_function_calling_tool_util(
             tools=tools,
             # todo to_dict has a slight bug workaround here
             # but should fix in the long run dont have to

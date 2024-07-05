@@ -117,6 +117,7 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
         llm_response = await self.async_call(
             instructions, prompt, msg_history, api, output
         )
+        iteration.outputs.llm_response_info = llm_response
         stream_output = llm_response.async_stream_output
         if not stream_output:
             raise ValueError(
@@ -127,6 +128,7 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
         fragment = ""
         parsed_fragment, validated_fragment, valid_op = None, None, None
         verified = set()
+        validation_response = ""
 
         if self.output_type == OutputTypes.STRING:
             async for chunk in stream_output:
@@ -159,6 +161,7 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
                         "Reasks are not yet supported with streaming. Please "
                         "remove reasks from schema or disable streaming."
                     )
+                validation_response += cast(str, validated_fragment)
                 passed = call_log.status == pass_status
                 yield ValidationOutcome(
                     call_id=call_log.id,  # type: ignore
@@ -196,6 +199,10 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
                         "remove reasks from schema or disable streaming."
                     )
 
+                if self.output_type == OutputTypes.LIST:
+                    validation_response = cast(list, validated_fragment)
+                else:
+                    validation_response = cast(dict, validated_fragment)
                 yield ValidationOutcome(
                     call_id=call_log.id,  # type: ignore
                     raw_llm_output=fragment,
@@ -205,10 +212,8 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
 
         iteration.outputs.raw_output = fragment
         # FIXME: Handle case where parsing continuously fails/is a reask
-        iteration.outputs.parsed_output = parsed_fragment  # type: ignore
-        iteration.outputs.validation_response = (
-            cast(str, validated_fragment) if validated_fragment else None
-        )
+        iteration.outputs.parsed_output = parsed_fragment or fragment  # type: ignore
+        iteration.outputs.validation_response = validation_response
         iteration.outputs.guarded_output = valid_op
 
     def get_chunk_text(self, chunk: Any, api: Union[PromptCallableBase, None]) -> str:

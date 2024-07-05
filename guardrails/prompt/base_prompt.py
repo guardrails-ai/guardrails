@@ -2,7 +2,7 @@
 
 import re
 from string import Template
-from typing import Optional
+from typing import List, Optional
 
 import regex
 
@@ -21,6 +21,7 @@ class BasePrompt:
         *,
         xml_output_schema: Optional[str] = None,
     ):
+        """Initialize and substitute constants in the prompt."""
         self._source = source
         self.format_instructions_start = self.get_format_instructions_idx(source)
 
@@ -55,7 +56,7 @@ class BasePrompt:
     def format_instructions(self):
         return self.source[self.format_instructions_start :]
 
-    def substitute_constants(self, text):
+    def substitute_constants(self, text: str) -> str:
         """Substitute constants in the prompt."""
         # Substitute constants by reading the constants file.
         # Regex to extract all occurrences of ${gr.<constant_name>}
@@ -70,10 +71,10 @@ class BasePrompt:
 
         return text
 
-    def get_prompt_variables(self):
+    def get_prompt_variables(self) -> List[str]:
         return self.variable_names
 
-    def format(self, **kwargs):
+    def format(self, **kwargs) -> "BasePrompt":
         raise NotImplementedError("Subclasses must implement this method.")
 
     def make_vars_optional(self):

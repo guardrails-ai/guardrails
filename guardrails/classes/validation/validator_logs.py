@@ -12,7 +12,20 @@ from guardrails.utils.casting_utils import to_int
 
 
 class ValidatorLogs(IValidatorLog, ArbitraryModel):
-    """Logs for a single validator."""
+    """Logs for a single validator execution.
+
+    Attributes:
+        validator_name (str): The class name of the validator
+        registered_name (str): The snake_cased id of the validator
+        property_path (str): The JSON path to the property being validated
+        value_before_validation (Any): The value before validation
+        value_after_validation (Optional[Any]): The value after validation;
+            could be different if `value_override`s or `fix`es are applied
+        validation_result (Optional[ValidationResult]): The result of the validation
+        start_time (Optional[datetime]): The time the validation started
+        end_time (Optional[datetime]): The time the validation ended
+        instance_id (Optional[int]): The unique id of this instance of the validator
+    """
 
     validator_name: str
     registered_name: str

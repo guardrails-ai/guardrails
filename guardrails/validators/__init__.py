@@ -12,4 +12,5 @@ __all__ = [
     "ValidationResult",
     "PassResult",
     "FailResult",
+    "ErrorSpan",
 ]
