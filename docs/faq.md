@@ -95,6 +95,14 @@ Some validators are model based, some validators use LLMs, and some validators a
 
 This doesn't preclude the creation and use of custom private validators with any given technology, but we are huge believers in the power of open source software.
 
+## Issues loging in with `guardrails configure`
+
+If you encounter issues logging in using an API key with `guardrails configure`, they may be caused by one of the following:
+
+1. Your API key has been revoked, expired, or is invalid. You can check your existing tokens and create a new one at [https://hub.guardrailsai.com/tokens](https://hub.guardrailsai.com/tokens) if necessary.
+2. If you're using Windows Powershell, ensure that you paste the token by right-clicking instead of using the keyboard shortcut `CTRL+V`, as the shortcut may cause caret characters to be pasted instead of the clipboard contents.
+
+If your login issues persist, please check the contents of the ~/.guardrailsrc file to ensure the correct token has been persisted.
 
 ## Where do I get more help if I need it?
 
