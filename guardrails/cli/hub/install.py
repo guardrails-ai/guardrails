@@ -199,6 +199,11 @@ Example: hub://guardrails/regex_match."
         "--quiet",
         help="Run the command in quiet mode to reduce output verbosity.",
     ),
+    use_local: bool = typer.Option(
+        False,
+        "--use-local",
+        help="Install the local models for local inference.",
+    ),
 ):
     verbose_printer = console.print
     quiet_printer = console.print if not quiet else lambda x: None
@@ -237,18 +242,18 @@ Example: hub://guardrails/regex_match."
     with loader(dl_deps_msg, spinner="bouncingBar"):
         install_hub_module(module_manifest, site_packages, quiet=quiet)
 
-    try:
-        if module_manifest.tags and module_manifest.tags.has_guardrails_endpoint:
-            install_local_models = typer.confirm(
-                "This validator has a Guardrails AI inference endpoint available. "
-                "Would you still like to install the local models for local inference?",
-            )
-        else:
-            install_local_models = typer.confirm(
-                "Would you like to install the local models?", default=True
-            )
-    except AttributeError:
-        install_local_models = False
+    # Check if --use-local option is set
+    install_local_models = use_local
+
+    if not install_local_models:
+        try:
+            if module_manifest.tags and module_manifest.tags.has_guardrails_endpoint:
+                install_local_models = typer.confirm(
+                    "This validator has a Guardrails AI inference endpoint available. "
+                    "Would you like to install the models for local inference?",
+                )
+        except AttributeError:
+            install_local_models = True
 
     # Post-install
     if install_local_models:
