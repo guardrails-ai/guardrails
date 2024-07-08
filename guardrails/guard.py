@@ -235,7 +235,7 @@ class Guard(IGuard, Generic[OT]):
             self._set_tracer(tracer)
         self._configure_telemtry(allow_metrics_collection)
 
-    def _set_num_reasks(self, num_reasks: Optional[int]):
+    def _set_num_reasks(self, num_reasks: Optional[int] = None) -> None:
         # Configure may check if num_reasks is none, but this method still needs to be
         # defensive for when it's called internally.  Setting a default parameter
         # doesn't help the case where the method is explicitly passed a 'None'.
