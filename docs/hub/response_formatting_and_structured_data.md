@@ -123,7 +123,7 @@ print(json.dumps(out, indent=2))
 For models that support JSON through an input argument(`gpt-4o`, `gpt-4-turbo`, or `gpt-3.5-turbo`)
 
 ```py
-prompt+="""
+messages[-1]["content"]+="""
 
 ${gr.complete_json_suffix_v3}
 """
