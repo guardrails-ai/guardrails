@@ -16,7 +16,7 @@
             - "parse"
             - "validate"
             - "error_spans_in_output"
-            - "add_json_function_calling_tool"
+            - "json_function_calling_tool"
             - "to_dict"
             - "from_dict"
             - "to_runnable"

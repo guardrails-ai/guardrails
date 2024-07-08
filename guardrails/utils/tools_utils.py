@@ -18,7 +18,7 @@ def schema_to_tool(schema) -> dict:
     return tool
 
 
-def add_json_function_calling_tool(
+def json_function_calling_tool(
     schema: ProcessedSchema,
     tools: List = [],
 ) -> List:

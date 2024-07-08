@@ -114,7 +114,7 @@ print(response)
 
 Guardrails has supported function calling for OpenAI Chat models for a while and previously would auto-insert a function to specify the schema when a Guard was created via a Pydantic model.
 
-In Guardrails 0.5.0, you can use this same pattern regardless of how the Guard was initialized.  We also made the process more transparent by allowing you to generate the tool first and decide when to pass it as a keyword argument.  For models that support openai tool/function calling (`gpt-4o`, `gpt-4-turbo`, or `gpt-3.5-turbo`), you can extend your existing `tools` with `Guard.add_json_function_calling_tool()`
+In Guardrails 0.5.0, you can use this same pattern regardless of how the Guard was initialized.  We also made the process more transparent by allowing you to generate the tool first and decide when to pass it as a keyword argument.  For models that support openai tool/function calling (`gpt-4o`, `gpt-4-turbo`, or `gpt-3.5-turbo`), you can extend your existing `tools` with `Guard.json_function_calling_tool()`
 
 Example:
 ```py
@@ -164,7 +164,7 @@ response = guard(
     instructions="You are a helpful assistant.",
     prompt=prompt,
     prompt_params={"chat_history": chat_history},
-    tools=guard.add_json_function_calling_tool(tools),
+    tools=guard.json_function_calling_tool(tools),
     tool_choice="required",
 )
 ```
