@@ -20,7 +20,8 @@ def schema_to_tool(schema) -> dict:
 
 def json_function_calling_tool(
     schema: ProcessedSchema,
-    tools: Optional[List] = [],
+    tools: Optional[List] = None,
 ) -> List:
+    tools = tools or []
     tools.append(schema_to_tool(schema))  # type: ignore
     return tools
