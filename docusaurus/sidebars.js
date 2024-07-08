@@ -53,6 +53,7 @@ const sidebars = {
         "how_to_guides/rail",
         "how_to_guides/envvars",
         "how_to_guides/telemetry",
+        "hub/response_formatting_and_structured_data",
       ],
     },
     {
