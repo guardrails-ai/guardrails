@@ -4,37 +4,29 @@
 #   - [ ] Remove validator_base.py in 0.6.x
 
 import inspect
-import nltk
+import logging
 from collections import defaultdict
+from dataclasses import dataclass
 from string import Template
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    List,
-    Optional,
-    Tuple,
-    Type,
-    Union,
-)
+from typing import Any, Callable, Dict, List, Optional, Type, Union
 from warnings import warn
 
+import nltk
+import requests
 from langchain_core.runnables import Runnable
 
-from guardrails.logger import logger
-from guardrails.classes import (
-    ValidationResult,
-    PassResult,  # noqa
-    FailResult,
-    ErrorSpan,  # noqa
-)
+from guardrails.classes import ErrorSpan  # noqa
+from guardrails.classes import PassResult  # noqa
+from guardrails.classes import FailResult, ValidationResult
+from guardrails.classes.credentials import Credentials
 from guardrails.constants import hub
+from guardrails.hub_token.token import VALIDATOR_HUB_SERVICE, get_jwt_token
+from guardrails.logger import logger
+from guardrails.remote_inference import remote_inference
+from guardrails.telemetry import get_disable_telemetry
 from guardrails.types.on_fail import OnFailAction
-from dataclasses import dataclass
+from guardrails.utils.hub_telemetry_utils import HubTelemetry
 
-
-# TODO: Use a different, lighter weight tokenizer
-#   that doesn't require downloads during runtime
 #   See: https://github.com/guardrails-ai/guardrails/issues/829
 try:
     nltk.data.find("tokenizers/punkt")
@@ -87,7 +79,9 @@ def validator_factory(name: str, validate: Callable) -> Type["Validator"]:
     return validator
 
 
-def register_validator(name: str, data_type: Union[str, List[str]]):
+def register_validator(
+    name: str, data_type: Union[str, List[str]], has_guardrails_endpoint: bool = False
+):
     """Register a validator for a data type."""
     from guardrails.datatypes import types_registry
 
@@ -155,6 +149,7 @@ def get_validator_class(name: Optional[str]) -> Optional[Type["Validator"]]:
     return registration
 
 
+# TODO: Can we remove dataclass? It was originally added to support pydantic 1.*
 @dataclass  # type: ignore
 class Validator:
     """Base class for validators."""
@@ -167,8 +162,33 @@ class Validator:
     _metadata = {}
 
     def __init__(
-        self, on_fail: Optional[Union[Callable, OnFailAction]] = None, **kwargs
+        self,
+        on_fail: Optional[Union[Callable, OnFailAction]] = None,
+        **kwargs,
     ):
+        self.creds = Credentials.from_rc_file()
+        self._disable_telemetry = get_disable_telemetry(self.creds)
+        if not self._disable_telemetry:
+            self._hub_telemetry = HubTelemetry()
+
+        self.use_local = kwargs.get("use_local", None)
+        self.validation_endpoint = kwargs.get("validation_endpoint", None)
+        if not self.creds:
+            raise ValueError(
+                "No credentials found. Please run `guardrails configure` and try again."
+            )
+        self.hub_jwt_token = get_jwt_token(self.creds)
+
+        # If use_local is not set, we can fall back to the setting determined in CLI
+        if self.use_local is None:
+            self.use_local = not remote_inference.get_use_remote_inference(self.creds)
+
+        if not self.validation_endpoint:
+            validator_id = self.rail_alias.split("/")[-1]
+            submission_url = (
+                f"{VALIDATOR_HUB_SERVICE}/validator/{validator_id}/inference"
+            )
+            self.validation_endpoint = submission_url
         self.on_fail_descriptor: Union[str, OnFailAction] = "custom"
 
         # chunking function returns empty list or list of 2 chunks
@@ -200,12 +220,80 @@ class Validator:
             self.rail_alias in validators_registry
         ), f"Validator {self.__class__.__name__} is not registered. "
 
-    def chunking_function(self, chunk: str):
-        return split_sentence_str(chunk)
+    def _validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
+        """User implementable function.
+
+        Validates a value and return a validation result. This method
+        should call _inference() in the implementation to perform
+        inference on some input value.
+        """
+        raise NotImplementedError
+
+    def _inference_local(self, model_input: Any) -> Any:
+        """User implementable function.
+
+        Runs a machine learning pipeline on some input on the local
+        machine. This function should receive the expected input to the
+        ML model, and output the results from the ml model.
+        """
+        raise NotImplementedError
+
+    def _inference_remote(self, model_input: Any) -> Any:
+        """User implementable function.
+
+        Runs a machine learning pipeline on some input on a remote
+        machine. This function should receive the expected input to the
+        ML model, and output the results from the ml model.
+
+        Can call _hub_inference_request() if request is routed through
+        the hub.
+        """
+        raise NotImplementedError
 
     def validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
-        """Validates a value and return a validation result."""
-        raise NotImplementedError
+        """Do not override this function, instead implement _validate().
+
+        External facing validate function. This function acts as a
+        wrapper for _validate() and is intended to apply any meta-
+        validation requirements, logic, or pre/post processing.
+        """
+        validation_result = self._validate(value, metadata)
+        self._log_telemetry()
+        return validation_result
+
+    def _inference(self, model_input: Any) -> Any:
+        """Calls either a local or remote inference engine for use in the
+        validation call.
+
+        Args:
+            model_input (Any): Receives the input to be passed to your ML model.
+
+        Returns:
+            Any: Returns the output from the ML model inference.
+        """
+        # Only use if both are set, otherwise fall back to local inference
+        if self.use_local:
+            return self._inference_local(model_input)
+        if not self.use_local and self.validation_endpoint:
+            return self._inference_remote(model_input)
+
+        raise RuntimeError(
+            "No inference endpoint set, but use_local was false. "
+            "Please set either use_local=True or "
+            "set an validation_endpoint to perform inference in the validator."
+        )
+
+    def _chunking_function(self, chunk: str) -> List[str]:
+        """The strategy used for chunking accumulated text input into
+        validation sets.
+
+        Args:
+            chunk (str): The text to chunk into some subset.
+
+        Returns:
+            list[str]: The text chunked into some subset.
+        """
+        return split_sentence_str(chunk)
 
     def validate_stream(
         self, chunk: Any, metadata: Dict[str, Any], **kwargs
@@ -226,15 +314,15 @@ class Validator:
         self.accumulated_chunks.append(chunk)
         accumulated_text = "".join(self.accumulated_chunks)
         # check if enough chunks have accumulated for validation
-        splitcontents = self.chunking_function(accumulated_text)
+        split_contents = self._chunking_function(accumulated_text)
 
         # if remainder kwargs is passed, validate remainder regardless
         remainder = kwargs.get("remainder", False)
         if remainder:
-            splitcontents = [accumulated_text, ""]
-        if len(splitcontents) == 0:
+            split_contents = [accumulated_text, ""]
+        if len(split_contents) == 0:
             return PassResult()
-        [chunk_to_validate, new_accumulated_chunks] = splitcontents
+        [chunk_to_validate, new_accumulated_chunks] = split_contents
         self.accumulated_chunks = [new_accumulated_chunks]
         # exclude last chunk, because it may not be a complete chunk
         validation_result = self.validate(chunk_to_validate, metadata)
@@ -242,6 +330,34 @@ class Validator:
         if validation_result.validated_chunk is None:
             validation_result.validated_chunk = chunk_to_validate
         return validation_result
+
+    def _hub_inference_request(
+        self, request_body: dict, validation_endpoint: str
+    ) -> Any:
+        """Makes a request to the Validator Hub to run a ML based validation model. This
+        request is authed through the hub and rerouted to a hosted ML model. The reply
+        from the hosted endpoint is returned and sent to this client.
+
+        Args:
+            request_body (dict): A dictionary containing the required info for the final
+            validation_endpoint (str): The url to request as an endpoint
+            inference endpoint to run.
+
+        Raises:
+            HttpError: If the recieved reply was not ok.
+
+        Returns:
+            Any: Post request response from the ML based validation model.
+        """
+        headers = {
+            "Authorization": f"Bearer {self.hub_jwt_token}",
+            "Content-Type": "application/json",
+        }
+        req = requests.post(validation_endpoint, json=request_body, headers=headers)
+        if not req.ok:
+            logging.error(req.status_code)
+
+        return req.json()
 
     def to_prompt(self, with_keywords: bool = True) -> str:
         """Convert the validator to a prompt.
@@ -363,6 +479,25 @@ class Validator:
 
         return ValidatorRunnable(self)
 
+    def _log_telemetry(self) -> None:
+        """Logs telemetry after the validator is called."""
 
-# Superseded by guardrails/types/validator.py::PydanticValidatorSpec
-ValidatorSpec = Union[Validator, Tuple[Union[Validator, str, Callable], str]]
+        if not self._disable_telemetry:
+            # Get HubTelemetry singleton and create a new span to
+            # log the validator inference
+            used_guardrails_endpoint = (
+                VALIDATOR_HUB_SERVICE in self.validation_endpoint and not self.use_local
+            )
+            used_custom_endpoint = not self.use_local and not used_guardrails_endpoint
+            self._hub_telemetry.create_new_span(
+                span_name="/validator_inference",
+                attributes=[
+                    ("validator_name", self.rail_alias),
+                    ("used_remote_inference", not self.use_local),
+                    ("used_local_inference", self.use_local),
+                    ("used_guardrails_endpoint", used_guardrails_endpoint),
+                    ("used_custom_endpoint", used_custom_endpoint),
+                ],
+                is_parent=False,  # This span will have no children
+                has_parent=True,  # This span has a parent
+            )

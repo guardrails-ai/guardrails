@@ -185,7 +185,7 @@ class AsyncRunner(Runner):
 
         try:
             # Prepare: run pre-processing, and input validation.
-            if output:
+            if output is not None:
                 instructions = None
                 prompt = None
                 msg_history = None

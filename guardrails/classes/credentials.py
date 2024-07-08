@@ -13,6 +13,7 @@ class Credentials(Serializeable):
     token: Optional[str] = None
     no_metrics: Optional[bool] = False
     enable_metrics: Optional[bool] = True
+    use_remote_inferencing: Optional[bool] = True
 
     @staticmethod
     def _to_bool(value: str) -> Optional[bool]:

@@ -95,7 +95,7 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
         )
         set_scope(str(id(iteration)))
         call_log.iterations.push(iteration)
-        if output:
+        if output is not None:
             instructions = None
             prompt = None
             msg_history = None
