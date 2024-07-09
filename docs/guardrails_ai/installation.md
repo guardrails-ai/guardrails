@@ -28,7 +28,7 @@ To install a specific version, run:
 # pip install guardrails-ai==[version-number]
 
 # Example:
-pip install guardrails-ai==0.2.0a6
+pip install guardrails-ai==0.5.0a10
 ```
 
 ## Install from GitHub
@@ -39,7 +39,7 @@ Installing directly from GitHub is useful when a release has not yet been cut wi
 # pip install git+https://github.com/guardrails-ai/guardrails.git@[branch/commit/tag]
 # Examples:
 pip install git+https://github.com/guardrails-ai/guardrails.git@main
-pip install git+https://github.com/guardrails-ai/guardrails.git@dev
+pip install git+https://github.com/guardrails-ai/guardrails.git@0.5.0-dev
 ```
 
 
