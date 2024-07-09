@@ -194,6 +194,11 @@ def install(
         help="URI to the package to install.\
 Example: hub://guardrails/regex_match."
     ),
+    local_models: bool = typer.Option(
+        None,
+        "--install-local-models/--no-install-local-models",
+        help="Install local models",
+    ),
     quiet: bool = typer.Option(
         False,
         "--quiet",
@@ -203,6 +208,8 @@ Example: hub://guardrails/regex_match."
     verbose_printer = console.print
     quiet_printer = console.print if not quiet else lambda x: None
     """Install a validator from the Hub."""
+    print("==== hub installing")
+    print("local models", local_models)
     if not package_uri.startswith("hub://"):
         logger.error("Invalid URI!")
         sys.exit(1)
@@ -236,19 +243,22 @@ Example: hub://guardrails/regex_match."
     dl_deps_msg = "Downloading dependencies"
     with loader(dl_deps_msg, spinner="bouncingBar"):
         install_hub_module(module_manifest, site_packages, quiet=quiet)
-
-    try:
-        if module_manifest.tags and module_manifest.tags.has_guardrails_endpoint:
-            install_local_models = typer.confirm(
-                "This validator has a Guardrails AI inference endpoint available. "
-                "Would you still like to install the local models for local inference?",
-            )
-        else:
-            install_local_models = typer.confirm(
-                "Would you like to install the local models?", default=True
-            )
-    except AttributeError:
-        install_local_models = False
+    if local_models is not None:
+        install_local_models = local_models
+    else:
+        try:
+            if module_manifest.tags and module_manifest.tags.has_guardrails_endpoint:
+                install_local_models = typer.confirm(
+                    "This validator has a Guardrails AI inference endpoint available. "
+                    "Would you still like to install the"
+                    " local models for local inference?",
+                )
+            else:
+                install_local_models = typer.confirm(
+                    "Would you like to install the local models?", default=True
+                )
+        except AttributeError:
+            install_local_models = False
 
     # Post-install
     if install_local_models:

@@ -59,6 +59,18 @@ def configure(
         help="Opt out of anonymous metrics collection.",
         prompt="Enable anonymous metrics reporting?",
     ),
+    token: Optional[str] = typer.Option(
+        None,
+        "--token",
+        help="API Key for Guardrails. If not provided, you will be prompted for it.",
+    ),
+    remote_inferencing: Optional[bool] = typer.Option(
+        DEFAULT_USE_REMOTE_INFERENCING,
+        "--enable-remote-inferencing/--disable-remote-inferencing",
+        help="Opt in to remote inferencing. "
+        "If not provided, you will be prompted for it.",
+        prompt="Do you wish to use remote inferencing?",
+    ),
     clear_token: Optional[bool] = typer.Option(
         False,
         "--clear-token",
@@ -68,7 +80,7 @@ def configure(
     existing_token = _get_default_token()
     last4 = existing_token[-4:] if existing_token else ""
 
-    if not clear_token:
+    if not clear_token and token is None:
         console.print("\nEnter API Key below", style="bold", end=" ")
 
         if last4:
@@ -86,21 +98,10 @@ def configure(
         token = typer.prompt("\nAPI Key", existing_token, show_default=False)
 
     else:
-        token = DEFAULT_TOKEN
-
-    # Ask about remote inferencing
-    use_remote_inferencing = (
-        typer.prompt(
-            "Do you wish to use remote inferencing? (Y/N)",
-            type=str,
-            default="Y",
-            show_default=False,
-        ).lower()
-        == "y"
-    )
+        token = token or DEFAULT_TOKEN
 
     try:
-        save_configuration_file(token, enable_metrics, use_remote_inferencing)
+        save_configuration_file(token, enable_metrics, remote_inferencing)
         logger.info("Configuration saved.")
 
         if not token:
