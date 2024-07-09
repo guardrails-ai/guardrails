@@ -126,6 +126,7 @@ class TestInstall:
                 msg="Skipping post install, models will not be downloaded for local inference.",  # noqa
             ),  # noqa
         ]
+
         assert mock_logger_log.call_count == 3
         mock_logger_log.assert_has_calls(log_calls)
 

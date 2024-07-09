@@ -208,8 +208,6 @@ Example: hub://guardrails/regex_match."
     verbose_printer = console.print
     quiet_printer = console.print if not quiet else lambda x: None
     """Install a validator from the Hub."""
-    print("==== hub installing")
-    print("local models", local_models)
     if not package_uri.startswith("hub://"):
         logger.error("Invalid URI!")
         sys.exit(1)
@@ -243,7 +241,8 @@ Example: hub://guardrails/regex_match."
     dl_deps_msg = "Downloading dependencies"
     with loader(dl_deps_msg, spinner="bouncingBar"):
         install_hub_module(module_manifest, site_packages, quiet=quiet)
-    if local_models is not None:
+
+    if local_models is True or local_models is False:
         install_local_models = local_models
     else:
         try:
