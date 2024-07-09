@@ -295,7 +295,8 @@ class AsyncGuard(Guard, Generic[OT]):
             else:
                 call_log = Call(inputs=call_inputs)
                 set_scope(str(object_id(call_log)))
-                self.history.push(call_log)
+                with self._history_lock.acquire():
+                    self.history.push(call_log)
                 result = await self._exec(
                     llm_api=llm_api,
                     llm_output=llm_output,
@@ -574,12 +575,14 @@ class AsyncGuard(Guard, Generic[OT]):
                         validation_passed=(validation_output.validation_passed is True),
                     )
             if validation_output:
+                # Do we need a mutex lock on this read?
                 guard_history = self._api_client.get_history(
                     self.name, validation_output.call_id
                 )
-                self.history.extend(
-                    [Call.from_interface(call) for call in guard_history]
-                )
+                with self._history_lock.acquire():
+                    self.history.extend(
+                        [Call.from_interface(call) for call in guard_history]
+                    )
         else:
             raise ValueError("AsyncGuard does not have an api client!")
 

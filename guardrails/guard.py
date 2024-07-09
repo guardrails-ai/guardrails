@@ -2,6 +2,7 @@ import contextvars
 import json
 import os
 from builtins import id as object_id
+from threading import Lock
 from typing import (
     Any,
     Callable,
@@ -106,6 +107,7 @@ class Guard(IGuard, Generic[OT]):
     the LLM, the validated output, as well as other helpful information.
     """
 
+    _history_lock: Lock = Lock()
     validators: List[ValidatorReference]
     output_schema: ModelSchema
     history: Stack[Call]
@@ -737,7 +739,8 @@ class Guard(IGuard, Generic[OT]):
 
             call_log = Call(inputs=call_inputs)
             set_scope(str(object_id(call_log)))
-            self.history.push(call_log)
+            with self._history_lock.acquire():
+                self.history.push(call_log)
             # Otherwise, call the LLM synchronously
             return self._exec(
                 llm_api=llm_api,
@@ -949,7 +952,8 @@ class Guard(IGuard, Generic[OT]):
     def error_spans_in_output(self) -> List[ErrorSpan]:
         """Get the error spans in the last output."""
         try:
-            call = self.history.last
+            with self._history_lock.acquire():
+                call = self.history.last
             if call:
                 iter = call.iterations.last
                 if iter:
@@ -1078,7 +1082,10 @@ class Guard(IGuard, Generic[OT]):
             guard_history = self._api_client.get_history(
                 self.name, validation_output.call_id
             )
-            self.history.extend([Call.from_interface(call) for call in guard_history])
+            with self._history_lock.acquire():
+                self.history.extend(
+                    [Call.from_interface(call) for call in guard_history]
+                )
 
             # TODO: See if the below statement is still true
             # Our interfaces are too different for this to work right now.
@@ -1137,9 +1144,10 @@ class Guard(IGuard, Generic[OT]):
                 guard_history = self._api_client.get_history(
                     self.name, validation_output.call_id
                 )
-                self.history.extend(
-                    [Call.from_interface(call) for call in guard_history]
-                )
+                with self._history_lock.acquire():
+                    self.history.extend(
+                        [Call.from_interface(call) for call in guard_history]
+                    )
         else:
             raise ValueError("Guard does not have an api client!")
 
@@ -1215,13 +1223,15 @@ class Guard(IGuard, Generic[OT]):
 
     # override IGuard.to_dict
     def to_dict(self) -> Dict[str, Any]:
+        with self._history_lock.acquire():
+            interface_history = [c.to_interface() for c in self.history]
         i_guard = IGuard(
             id=self.id,
             name=self.name,
             description=self.description,
             validators=self.validators,
             output_schema=self.output_schema,
-            history=[c.to_interface() for c in self.history],  # type: ignore
+            history=interface_history,  # type: ignore
         )
 
         return i_guard.to_dict()
@@ -1259,10 +1269,12 @@ class Guard(IGuard, Generic[OT]):
             output_schema=output_schema,
         )
 
-        history = (
-            [Call.from_interface(i_call) for i_call in i_guard.history]
-            if i_guard.history
-            else []
-        )
-        guard.history = Stack(*history)
+        with i_guard._history_lock.acquire():
+            history = (
+                [Call.from_interface(i_call) for i_call in i_guard.history]
+                if i_guard.history
+                else []
+            )
+        with guard._history_lock.acquire():
+            guard.history = Stack(*history)
         return guard
