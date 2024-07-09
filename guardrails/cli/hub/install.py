@@ -136,7 +136,7 @@ def get_install_url(manifest: ModuleManifest) -> str:
 
 
 def install_hub_module(
-    module_manifest: ModuleManifest, site_packages: str, quiet: bool = False
+    module_manifest: ModuleManifest, site_packages: str, quiet: bool = True
 ):
     install_url = get_install_url(module_manifest)
     install_directory = get_hub_directory(module_manifest, site_packages)
