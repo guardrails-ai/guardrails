@@ -22,8 +22,9 @@ console = Console()
 
 @gr_cli.command(name="create")
 def create_command(
-    validators: str = typer.Option(
-        help="A comma-separated list of validator hub URIs. ",
+    validators: Optional[str] = typer.Option(
+        default=None,
+        help="A comma-separated list of validator hub URIs.",
     ),
     name: Optional[str] = typer.Option(
         default=None, help="The name of the guard to define in the file."
@@ -74,7 +75,11 @@ def check_filename(filename: Union[str, os.PathLike]) -> str:
 
 def split_and_install_validators(validators: str, dry_run: bool = False):
     """Given a comma-separated list of validators, check the hub to make sure all of
-    them exist, install them, and return a list of 'imports'."""
+    them exist, install them, and return a list of 'imports'.  If validators is empty,
+    returns an empty list."""
+    if not validators:
+        return []
+
     stripped_validators = list()
     manifests = list()
     site_packages = get_site_packages_location()
@@ -123,7 +128,7 @@ def generate_config_file(validators: List[str], name: Optional[str] = None) -> s
     # Import one or more validators.
     if len(validators) == 1:
         config_lines.append(f"from guardrails.hub import {validators[0]}")
-    else:
+    elif len(validators) > 1:
         multiline_import = ",\n\t".join(validators)
         config_lines.append(f"from guardrails.hub import (\n\t{multiline_import}\n)")
 
@@ -135,7 +140,7 @@ def generate_config_file(validators: List[str], name: Optional[str] = None) -> s
     # Append validators:
     if len(validators) == 1:
         config_lines.append(f"guard.use({validators[0]}( TODO Fill these parameters ))")
-    else:
+    elif len(validators) > 1:
         multi_use = ",\n".join(
             [
                 "\t" + validator + "( TODO fill these parameters )"
