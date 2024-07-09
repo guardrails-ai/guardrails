@@ -40,16 +40,22 @@ class ValidatorLogs(IValidatorLog, ArbitraryModel):
     def to_interface(self) -> IValidatorLog:
         start_time = self.start_time.isoformat() if self.start_time else None
         end_time = self.end_time.isoformat() if self.end_time else None
+        validation_result = (
+            ValidatorLogValidationResult(self.validation_result)
+            if self.validation_result
+            else None
+        )
+        # pyright doesn't understand aliases so all type aliases are ignored.
         return IValidatorLog(
-            validator_name=self.validator_name,  # type: ignore - pyright doesn't understand aliases
-            registered_name=self.registered_name,  # type: ignore - pyright doesn't understand aliases
-            instance_id=ValidatorLogInstanceId(self.instance_id),  # type: ignore - pyright doesn't understand aliases
-            property_path=self.property_path,  # type: ignore - pyright doesn't understand aliases
-            value_before_validation=self.value_before_validation,  # type: ignore - pyright doesn't understand aliases
-            value_after_validation=self.value_after_validation,  # type: ignore - pyright doesn't understand aliases
-            validation_result=ValidatorLogValidationResult(self.validation_result),  # type: ignore - pyright doesn't understand aliases
-            start_time=start_time,  # type: ignore - pyright doesn't understand aliases
-            end_time=end_time,  # type: ignore - pyright doesn't understand aliases
+            validator_name=self.validator_name,  # type: ignore
+            registered_name=self.registered_name,  # type: ignore
+            instance_id=ValidatorLogInstanceId(self.instance_id),  # type: ignore
+            property_path=self.property_path,  # type: ignore
+            value_before_validation=self.value_before_validation,  # type: ignore
+            value_after_validation=self.value_after_validation,  # type: ignore
+            validation_result=validation_result,  # type: ignore
+            start_time=start_time,  # type: ignore
+            end_time=end_time,  # type: ignore
         )
 
     def to_dict(self) -> Dict[str, Any]:
