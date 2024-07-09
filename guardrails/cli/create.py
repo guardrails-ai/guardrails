@@ -22,8 +22,8 @@ console = Console()
 
 @gr_cli.command(name="create")
 def create_command(
-    validators: Optional[str] = typer.Option(
-        default=None,
+    validators: str = typer.Option(
+        default="",
         help="A comma-separated list of validator hub URIs.",
     ),
     name: Optional[str] = typer.Option(
