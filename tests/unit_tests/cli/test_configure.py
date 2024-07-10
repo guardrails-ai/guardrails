@@ -56,7 +56,7 @@ def test_configure(mocker, runner, expected_token, enable_metrics, clear_token):
     assert mock_logger_info.call_count == 2
     mock_logger_info.assert_has_calls(expected_calls)
     mock_save_configuration_file.assert_called_once_with(
-        expected_token, enable_metrics, False
+        expected_token, enable_metrics, True
     )
 
 
