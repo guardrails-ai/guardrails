@@ -410,8 +410,23 @@ class LiteLLMCallable(PromptCallableBase):
                 stream_output=llm_response,
             )
 
+        if response.choices[0].message.content is not None:  # type: ignore
+            output = response.choices[0].message.content  # type: ignore
+        else:
+            try:
+                output = response.choices[0].message.function_call.arguments  # type: ignore
+            except AttributeError:
+                try:
+                    choice = response.choices[0]  # type: ignore
+                    output = choice.message.tool_calls[-1].function.arguments  # type: ignore
+                except AttributeError as ae_tools:
+                    raise ValueError(
+                        "No message content or function"
+                        " call arguments returned from OpenAI"
+                    ) from ae_tools
+
         return LLMResponse(
-            output=response.choices[0].message.content,  # type: ignore
+            output=output,  # type: ignore
             prompt_token_count=response.usage.prompt_tokens,  # type: ignore
             response_token_count=response.usage.completion_tokens,  # type: ignore
         )
@@ -853,8 +868,23 @@ class AsyncLiteLLMCallable(AsyncPromptCallableBase):
                 async_stream_output=response.completion_stream,  # pyright: ignore[reportGeneralTypeIssues]
             )
 
+        if response.choices[0].message.content is not None:  # type: ignore
+            output = response.choices[0].message.content  # type: ignore
+        else:
+            try:
+                output = response.choices[0].message.function_call.arguments  # type: ignore
+            except AttributeError:
+                try:
+                    choice = response.choices[0]  # type: ignore
+                    output = choice.message.tool_calls[-1].function.arguments  # type: ignore
+                except AttributeError as ae_tools:
+                    raise ValueError(
+                        "No message content or function"
+                        " call arguments returned from OpenAI"
+                    ) from ae_tools
+
         return LLMResponse(
-            output=response.choices[0].message.content,  # type: ignore
+            output=output,  # type: ignore
             prompt_token_count=response.usage.prompt_tokens,  # type: ignore
             response_token_count=response.usage.completion_tokens,  # type: ignore
         )
