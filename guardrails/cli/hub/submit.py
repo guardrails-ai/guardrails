@@ -20,7 +20,7 @@ def submit(
     """Submit a validator to the Guardrails AI team for review and
     publishing."""
     try:
-        if not filepath or filepath == "./{package_name}.py":  # noqa
+        if not filepath or filepath == "./{package_name}.py":
             filepath = f"./{package_name}.py"
 
         target = os.path.abspath(filepath)
