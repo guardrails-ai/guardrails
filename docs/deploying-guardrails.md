@@ -72,12 +72,12 @@ As previously mentioned, the Guardrails API is currently a simple Flask applicat
 
 Previously we showed how to start the Guardrails API as a dev server using the `guardrails start` command.  When launching the Guardrails API with a WSGI server, you will reference the underlying `guardrails_api` module instead.  For example, when we Dockerize the Guardrails API for internal use, our final line is:
 ```Dockerfile
-CMD gunicorn --bind 0.0.0.0:8000 --timeout=90 --threads=10 'guardrails_api.app:create_app(None, "config.py")'
+CMD gunicorn --bind 0.0.0.0:8000 --timeout=90 --workers=10 'guardrails_api.app:create_app(None, "config.py")'
 ```
 
 This line starts the Guardrails API Flask application with a gunicorn WSGI server.  It specifies what port to bind the server to, as well as the timeout for workers and the maximum number of worker threads for handling requests.  We typically use the `gthread` worker class with gunicorn because of compatibility issues between how some async workers try to monkeypatch dependencies and how some libraries specify optional imports.
 
-Also note that we make the intentional decision to utilize threads over workers here for simple use-cases.  You could just as easily swap the `--threads` setting with the `--workers` setting above. The key tradeoff here is the impact that has on total resource consumption.  Since the `config.py` file is loaded at startup, running multiple workers means that each worker may need to load the models utilized by any validators in the config.  For use cases that have square-wave-like or sustained high traffic, this may be a tradeoff you want to make.
+The [Official Gunicorn Documentation](https://docs.gunicorn.org/en/latest/design.html#how-many-workers) recommends setting the number of threads/workers to (2 x num_cores) + 1, though this may prove to be too resource intensive, depending on the choice of models in validators.  Specifying `--threads=` instead of `--workers=` will cause gunicorn to use multithreading instead of multiprocessing.  Threads will be lighter weight, as they can share the models loaded at startup from `config.py`, but [risk hitting race conditions](https://github.com/guardrails-ai/guardrails/discussions/899) when manipulating history.  For cases that have several larger models, need longer to process requests, have square-wave-like traffic, or have sustained high traffic, `--threads` may prove to be a desirable tradeoff.     
 
 For further reference, you can find a bare-bones example of Dockerizing the Guardrails API here: https://github.com/guardrails-ai/guardrails-lite-server
 
