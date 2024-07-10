@@ -91,6 +91,11 @@ const sidebars = {
     },
     {
       type: "doc",
+      id: "cli",
+      label: "CLI",
+    },
+    {
+      type: "doc",
       id: "faq",
       label: "FAQ",
     },
