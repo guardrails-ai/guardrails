@@ -267,7 +267,6 @@ class AsyncRunner(Runner):
             supports_base_model = getattr(api, "supports_base_model", False)
             if supports_base_model:
                 api_fn = partial(api, base_model=self.base_model)
-
         if output is not None:
             llm_response = LLMResponse(
                 output=output,

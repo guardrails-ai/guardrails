@@ -867,7 +867,7 @@ class Guard(IGuard, Generic[OT]):
         """
         instructions = instructions or self._exec_opts.instructions
         prompt = prompt or self._exec_opts.prompt
-        msg_history = msg_history or kwargs.get("messages") or []
+        msg_history = msg_history or kwargs.get("messages", None) or []
         if prompt is None:
             if msg_history is not None and not len(msg_history):
                 raise RuntimeError(
@@ -1014,6 +1014,8 @@ class Guard(IGuard, Generic[OT]):
             on: The part of the LLM request to validate. Defaults to "output".
         """
         hydrated_validator = get_validator(validator, *args, **kwargs)
+        if on == "messages":
+            on = "msg_history"
         self.__add_validator(hydrated_validator, on=on)
         self._save()
         return self
@@ -1035,6 +1037,8 @@ class Guard(IGuard, Generic[OT]):
     ) -> "Guard":
         """Use multiple validators to validate results of an LLM request."""
         # Loop through the validators
+        if on == "messages":
+            on = "msg_history"
         for v in validators:
             hydrated_validator = get_validator(v)
             self.__add_validator(hydrated_validator, on=on)
