@@ -382,7 +382,7 @@ class Runner:
             formatted_msg_history.append(msg_copy)
 
         # validate msg_history
-        if "msg_history" in self.validation_map or "messages" in self.validation_map:
+        if "msg_history" in self.validation_map:
             self.validate_msg_history(call_log, formatted_msg_history, attempt_number)
 
         return formatted_msg_history
