@@ -82,7 +82,7 @@ from guardrails.types import (
 
 from guardrails.utils.tools_utils import (
     # Prevent duplicate declaration in the docs
-    add_json_function_calling_tool as add_json_function_calling_tool_util,
+    json_function_calling_tool as json_function_calling_tool_util,
 )
 
 
@@ -1245,13 +1245,13 @@ class Guard(IGuard, Generic[OT]):
 
         return i_guard.to_dict()
 
-    def add_json_function_calling_tool(
+    def json_function_calling_tool(
         self,
-        tools: list,
+        tools: Optional[list] = None,
     ) -> List[Dict[str, Any]]:
         """Appends an OpenAI tool that specifies the output structure using
         JSON Schema for chat models."""
-        tools = add_json_function_calling_tool_util(
+        tools = json_function_calling_tool_util(
             tools=tools,
             # todo to_dict has a slight bug workaround here
             # but should fix in the long run dont have to

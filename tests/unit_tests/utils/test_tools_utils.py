@@ -3,7 +3,7 @@ from typing import List
 
 from guardrails.schema.pydantic_schema import pydantic_model_to_schema
 
-from guardrails.utils.tools_utils import add_json_function_calling_tool, schema_to_tool
+from guardrails.utils.tools_utils import json_function_calling_tool, schema_to_tool
 
 
 class Delivery(BaseModel):
@@ -117,9 +117,9 @@ def test_pydantic_model_to_schema():
     }
 
 
-def test_add_json_function_calling_tool():
+def test_json_function_calling_tool():
     schema = pydantic_model_to_schema(Person)
-    tools = add_json_function_calling_tool(schema.json_schema)
+    tools = json_function_calling_tool(schema.json_schema)
     assert tools == [
         {
             "type": "function",

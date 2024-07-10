@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from guardrails.classes.schema.processed_schema import ProcessedSchema
 
@@ -18,9 +18,10 @@ def schema_to_tool(schema) -> dict:
     return tool
 
 
-def add_json_function_calling_tool(
+def json_function_calling_tool(
     schema: ProcessedSchema,
-    tools: List = [],
+    tools: Optional[List] = None,
 ) -> List:
+    tools = tools or []
     tools.append(schema_to_tool(schema))  # type: ignore
     return tools
