@@ -1013,6 +1013,21 @@ class Guard(IGuard, Generic[OT]):
             validator: The validator to use. Either the class or an instance.
             on: The part of the LLM request to validate. Defaults to "output".
         """
+        # check if args has any validators hiding in it
+        # throw error to user so they can update
+        if args:
+            for arg in args:
+                if (
+                    isinstance(arg, type)
+                    and issubclass(arg, Validator)
+                    or isinstance(arg, Validator)
+                ):
+                    raise ValueError(
+                        "Validator is an argument besides the first."
+                        "Please pass it as the first or use the 'use_many' method for"
+                        " multiple validators."
+                    )
+
         hydrated_validator = get_validator(validator, *args, **kwargs)
         self.__add_validator(hydrated_validator, on=on)
         self._save()

@@ -37,6 +37,12 @@ def test_default_noop():
     assert not res.validation_passed
 
 
+def test_multiple_validators():
+    # throws value error for multiple validators
+    with pytest.raises(ValueError):
+        Guard().use(FailureValidator, FailureValidator)
+
+
 def test_filter():
     guard = Guard().use(FailureValidator, on_fail="filter")
     res = guard.parse("hi")
