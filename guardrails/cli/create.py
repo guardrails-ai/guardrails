@@ -90,8 +90,9 @@ def split_and_install_validators(validators: str, dry_run: bool = False):
     console.print("Checking validators...")
     with console.status("Checking validator manifests") as status:
         for v in validators.split(","):
+            v = v.strip()
             status.update(f"Prefetching {v}")
-            if not v.strip().startswith("hub://"):
+            if not v.startswith("hub://"):
                 console.print(
                     f"WARNING: Validator {v} does not appear to be a valid URI."
                 )
