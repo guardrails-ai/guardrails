@@ -867,7 +867,7 @@ class Guard(IGuard, Generic[OT]):
         """
         instructions = instructions or self._exec_opts.instructions
         prompt = prompt or self._exec_opts.prompt
-        msg_history = msg_history or kwargs.get("messages") or []
+        msg_history = msg_history or kwargs.get("messages", None) or []
         if prompt is None:
             if msg_history is not None and not len(msg_history):
                 raise RuntimeError(
@@ -964,6 +964,7 @@ class Guard(IGuard, Generic[OT]):
             "output",
             "prompt",
             "instructions",
+            "messages",
             "msg_history",
         ] and not on.startswith("$"):
             warnings.warn(
