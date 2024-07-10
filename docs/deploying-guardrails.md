@@ -72,7 +72,7 @@ As previously mentioned, the Guardrails API is currently a simple Flask applicat
 
 Previously we showed how to start the Guardrails API as a dev server using the `guardrails start` command.  When launching the Guardrails API with a WSGI server, you will reference the underlying `guardrails_api` module instead.  For example, when we Dockerize the Guardrails API for internal use, our final line is:
 ```Dockerfile
-CMD gunicorn --bind 0.0.0.0:8000 --timeout=90 --workers=10 'guardrails_api.app:create_app(None, "config.py")'
+CMD gunicorn --bind 0.0.0.0:8000 --timeout=90 --workers=4 'guardrails_api.app:create_app(None, "config.py")'
 ```
 
 This line starts the Guardrails API Flask application with a gunicorn WSGI server.  It specifies what port to bind the server to, as well as the timeout for workers and the maximum number of worker threads for handling requests.  We typically use the `gthread` worker class with gunicorn because of compatibility issues between how some async workers try to monkeypatch dependencies and how some libraries specify optional imports.
