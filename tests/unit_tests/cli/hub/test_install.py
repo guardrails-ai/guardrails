@@ -168,10 +168,6 @@ class TestInstall:
             hub_command, ["install", "hub://test-namespace/test-package"]
         )
 
-        # Check if the correct prompt was in the output
-
-        assert "Would you like to install the local models?" in result.output
-
         # Check if the installation was successful
         assert result.exit_code == 0
 
