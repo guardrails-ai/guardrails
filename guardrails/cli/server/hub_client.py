@@ -87,7 +87,7 @@ def get_jwt_token(creds: Credentials) -> Optional[str]:
     # check for jwt expiration
     if token:
         try:
-            jwt.decode(token, options={"verify_signature": False})
+            jwt.decode(token, options={"verify_signature": False, "verify_exp": True})
         except ExpiredSignatureError:
             raise ExpiredTokenError(TOKEN_EXPIRED_MESSAGE)
         except DecodeError:
