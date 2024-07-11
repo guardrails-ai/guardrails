@@ -12,7 +12,7 @@ from guardrails.classes.credentials import Credentials
 from guardrails.cli.logger import logger
 from guardrails.cli.server.module_manifest import ModuleManifest
 
-FIND_NEW_TOKEN = "You can find a new token at https://hub.guardrailsai.com/tokens"
+FIND_NEW_TOKEN = "You can find a new token at https://hub.guardrailsai.com/keys"
 
 TOKEN_EXPIRED_MESSAGE = f"""Your token has expired. Please run `guardrails configure`\
 to update your token.

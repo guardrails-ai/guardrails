@@ -3,7 +3,7 @@ import jwt
 from jwt import ExpiredSignatureError, DecodeError
 from typing import Optional
 
-FIND_NEW_TOKEN = "You can find a new token at https://hub.guardrailsai.com/tokens"
+FIND_NEW_TOKEN = "You can find a new token at https://hub.guardrailsai.com/keys"
 
 TOKEN_EXPIRED_MESSAGE = f"""Your token has expired. Please run `guardrails configure`\
 to update your token.
