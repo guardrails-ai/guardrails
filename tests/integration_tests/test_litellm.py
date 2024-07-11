@@ -119,3 +119,29 @@ def test_litellm_openai_async():
     assert res.validated_output
     assert res.validated_output == res.raw_llm_output
     assert len(res.validated_output.split("\n")) == 10
+
+
+@pytest.mark.skipif(
+    os.environ.get("OPENAI_API_KEY") in [None, "mocked"],
+    reason="openai api key not set",
+)
+def test_litellm_openai_async_messages():
+    import asyncio
+
+    # from litellm import acompletion
+    guard = gd.Guard()
+    ares = guard(
+        model="gpt-3.5-turbo",
+        messages=[
+            {
+                "role": "user",
+                "content": "Name 10 unique fruits, "
+                "lowercase only, one per line, no numbers",
+            }
+        ],
+    )
+
+    res = asyncio.run(ares)
+    assert res.validated_output
+    assert res.validated_output == res.raw_llm_output
+    assert len(res.validated_output.split("\n")) == 10
