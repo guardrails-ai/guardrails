@@ -192,7 +192,6 @@ class AsyncGuard(Guard, Generic[OT]):
             raise RuntimeError(
                 "'prompt' or 'msg_history' must be provided in order to call an LLM!"
             )
-        # raise ValueError("msg_history", msg_history)
         # check if validator requirements are fulfilled
         missing_keys = verify_metadata_requirements(metadata, self._validators)
         if missing_keys:
