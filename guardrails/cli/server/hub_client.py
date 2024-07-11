@@ -1,4 +1,5 @@
 import sys
+from importlib.metadata import version
 from string import Template
 from typing import Any, Dict, Optional
 
@@ -19,6 +20,7 @@ to update your token.
 TOKEN_INVALID_MESSAGE = f"""Your token is invalid. Please run `guardrails configure`\
 to update your token.
 {FIND_NEW_TOKEN}"""
+GUARDRAILS_VERSION = version("guardrails-ai")
 
 validator_hub_service = "https://so4sg4q4pb.execute-api.us-east-1.amazonaws.com"
 validator_manifest_endpoint = Template(
@@ -50,6 +52,7 @@ def fetch(url: str, token: Optional[str], anonymousUserId: Optional[str]):
         headers = {
             "Authorization": f"Bearer {token}",
             "x-anonymous-user-id": anonymousUserId,
+            "x-guardrails-version": GUARDRAILS_VERSION,
         }
         req = requests.get(url, headers=headers)
         body = req.json()

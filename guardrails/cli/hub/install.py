@@ -1,7 +1,7 @@
-from contextlib import contextmanager
 import os
 import subprocess
 import sys
+from contextlib import contextmanager
 from string import Template
 from typing import List, Literal
 
@@ -9,14 +9,15 @@ import typer
 
 from guardrails.classes.generic import Stack
 from guardrails.cli.hub.hub import hub_command
+from guardrails.cli.hub.utils import (
+    get_hub_directory,
+    get_org_and_package_dirs,
+    get_site_packages_location,
+    pip_process,
+)
 from guardrails.cli.logger import LEVELS, logger
 from guardrails.cli.server.hub_client import get_validator_manifest
 from guardrails.cli.server.module_manifest import ModuleManifest
-
-from guardrails.cli.hub.utils import pip_process
-from guardrails.cli.hub.utils import get_site_packages_location
-from guardrails.cli.hub.utils import get_org_and_package_dirs
-from guardrails.cli.hub.utils import get_hub_directory
 
 from .console import console
 
@@ -84,7 +85,6 @@ def add_to_hub_inits(manifest: ModuleManifest, site_packages: str):
 def run_post_install(manifest: ModuleManifest, site_packages: str):
     org_package = get_org_and_package_dirs(manifest)
     post_install_script = manifest.post_install
-
     if not post_install_script:
         return
 
@@ -194,6 +194,11 @@ def install(
         help="URI to the package to install.\
 Example: hub://guardrails/regex_match."
     ),
+    local_models: bool = typer.Option(
+        None,
+        "--install-local-models/--no-install-local-models",
+        help="Install local models",
+    ),
     quiet: bool = typer.Option(
         False,
         "--quiet",
@@ -237,11 +242,39 @@ Example: hub://guardrails/regex_match."
     with loader(dl_deps_msg, spinner="bouncingBar"):
         install_hub_module(module_manifest, site_packages, quiet=quiet)
 
+    if local_models is True or local_models is False:
+        install_local_models = local_models
+    else:
+        try:
+            if module_manifest.tags and module_manifest.tags.has_guardrails_endpoint:
+                install_local_models = typer.confirm(
+                    "This validator has a Guardrails AI inference endpoint available. "
+                    "Would you still like to install the"
+                    " local models for local inference?",
+                )
+            else:
+                install_local_models = typer.confirm(
+                    "Would you like to install the local models?", default=True
+                )
+        except AttributeError:
+            install_local_models = False
+
     # Post-install
-    post_msg = "Running post-install setup"
-    with loader(post_msg, spinner="bouncingBar"):
-        run_post_install(module_manifest, site_packages)
-        add_to_hub_inits(module_manifest, site_packages)
+    if install_local_models:
+        logger.log(
+            level=LEVELS.get("SPAM"),  # type: ignore
+            msg="Installing models locally!",
+        )
+        post_msg = "Running post-install setup"
+        with loader(post_msg, spinner="bouncingBar"):
+            run_post_install(module_manifest, site_packages)
+    else:
+        logger.log(
+            level=LEVELS.get("SPAM"),  # type: ignore
+            msg="Skipping post install, models will not be "
+            "downloaded for local inference.",
+        )
+    add_to_hub_inits(module_manifest, site_packages)
 
     logger.info("Installation complete")
 

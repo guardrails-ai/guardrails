@@ -1,7 +1,7 @@
 import os
 from typing import Any, List, Optional
 
-from guardrails.utils.llm_response import LLMResponse
+from guardrails.classes.llm.llm_response import LLMResponse
 
 
 class BaseOpenAIClient:

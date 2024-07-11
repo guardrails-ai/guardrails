@@ -1,6 +1,7 @@
 import pytest
 
-from guardrails.utils.json_utils import extract_json_from_ouput
+from guardrails.utils.parsing_utils import extract_json_from_ouput
+
 
 json_code_block = """
 ```json

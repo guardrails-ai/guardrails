@@ -10,6 +10,38 @@ import pytest
 
 import guardrails as gd
 
+from typing import List
+from pydantic import BaseModel
+
+
+@pytest.mark.skipif(
+    not importlib.util.find_spec("litellm"),
+    reason="`litellm` is not installed",
+)
+@pytest.mark.skipif(
+    os.environ.get("OPENAI_API_KEY") in [None, "mocked"],
+    reason="openai api key not set",
+)
+def test_litellm_tools():
+    class Fruit(BaseModel):
+        name: str
+        color: str
+        description: str
+
+    class Fruits(BaseModel):
+        list: List[Fruit]
+
+    guard = gd.Guard.from_pydantic(Fruits)
+    res = guard(
+        model="gpt-4o",
+        msg_history=[
+            {"role": "user", "content": "Name 10 unique fruits, lowercase only"}
+        ],
+        tools=guard.add_json_function_calling_tool([]),
+        tool_choice="required",
+    )
+    assert res.validated_output
+
 
 @pytest.mark.skipif(
     not importlib.util.find_spec("litellm"),
