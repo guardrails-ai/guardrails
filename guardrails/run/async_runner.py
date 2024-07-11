@@ -339,8 +339,6 @@ class AsyncRunner(Runner):
             The instructions, prompt, and message history.
         """
         prompt_params = prompt_params or {}
-        if api is None:
-            raise UserFacingException(ValueError("API must be provided."))
 
         has_prompt_validation = "prompt" in self.validation_map
         has_instructions_validation = "instructions" in self.validation_map
