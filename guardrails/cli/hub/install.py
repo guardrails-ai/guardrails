@@ -195,7 +195,7 @@ def install(
 Example: hub://guardrails/regex_match."
     ),
     local_models: bool = typer.Option(
-        None,
+        True,
         "--install-local-models/--no-install-local-models",
         help="Install local models",
     ),
@@ -242,22 +242,17 @@ Example: hub://guardrails/regex_match."
     with loader(dl_deps_msg, spinner="bouncingBar"):
         install_hub_module(module_manifest, site_packages, quiet=quiet)
 
-    if local_models is True or local_models is False:
-        install_local_models = local_models
-    else:
-        try:
-            if module_manifest.tags and module_manifest.tags.has_guardrails_endpoint:
-                install_local_models = typer.confirm(
-                    "This validator has a Guardrails AI inference endpoint available. "
-                    "Would you still like to install the"
-                    " local models for local inference?",
-                )
-            else:
-                install_local_models = typer.confirm(
-                    "Would you like to install the local models?", default=True
-                )
-        except AttributeError:
-            install_local_models = False
+    install_local_models = local_models
+
+    try:
+        if module_manifest.tags and module_manifest.tags.has_guardrails_endpoint:
+            install_local_models = typer.confirm(
+                "This validator has a Guardrails AI inference endpoint available. "
+                "Would you still like to install the"
+                " local models for local inference?",
+            )
+    except AttributeError:
+        pass
 
     # Post-install
     if install_local_models:
