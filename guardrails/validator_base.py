@@ -353,7 +353,7 @@ class Validator:
             "Authorization": f"Bearer {self.hub_jwt_token}",
             "Content-Type": "application/json",
         }
-        req = requests.post(validation_endpoint, json=request_body, headers=headers)
+        req = requests.post(validation_endpoint, data=request_body, headers=headers)
         if not req.ok:
             logging.error(req.status_code)
 
