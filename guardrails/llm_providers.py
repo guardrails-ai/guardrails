@@ -867,7 +867,6 @@ class AsyncLiteLLMCallable(AsyncPromptCallableBase):
             return LLMResponse(
                 output="",
                 async_stream_output=response.completion_stream,  # pyright: ignore[reportGeneralTypeIssues]
-                full_raw_llm_output=response,
             )
 
         return LLMResponse(
@@ -945,7 +944,6 @@ class AsyncArbitraryCallable(AsyncPromptCallableBase):
             return LLMResponse(
                 output="",
                 async_stream_output=output.completion_stream,
-                full_raw_llm_output=output,
             )
         return LLMResponse(
             output=output,
