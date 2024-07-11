@@ -367,7 +367,7 @@ class AsyncGuard(Guard, Generic[OT]):
         Returns:
             The raw text output from the LLM and the validated output.
         """
-        api = get_async_llm_ask(llm_api, *args, **kwargs)
+        api = get_async_llm_ask(llm_api, *args, **kwargs)  # type: ignore
         if kwargs.get("stream", False):
             runner = AsyncStreamRunner(
                 output_type=self._output_type,
