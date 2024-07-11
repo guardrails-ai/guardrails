@@ -454,7 +454,7 @@ class AsyncGuard(Guard, Generic[OT]):
         instructions = instructions or self._exec_opts.instructions
         prompt = prompt or self._exec_opts.prompt
         msg_history = msg_history or kwargs.pop("messages", None) or []
-        # raise ValueError("msg_history", msg_history)
+
         if prompt is None:
             if msg_history is not None and not len(msg_history):
                 raise RuntimeError(
