@@ -271,6 +271,9 @@ class Guard(IGuard, Generic[OT]):
             self._hub_telemetry = HubTelemetry()
 
     def _fill_validator_map(self):
+        # dont init validators if were going to call the server
+        if self._api_client is not None:
+            return
         for ref in self.validators:
             entry: List[Validator] = self._validator_map.get(ref.on, [])  # type: ignore
             # Check if the validator from the reference
