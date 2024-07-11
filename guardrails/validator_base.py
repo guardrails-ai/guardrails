@@ -329,6 +329,10 @@ class Validator:
         # if validate doesn't set validated chunk, we set it
         if validation_result.validated_chunk is None:
             validation_result.validated_chunk = chunk_to_validate
+        if isinstance(validation_result, FailResult):
+            if validation_result.error_spans is None:
+                validation_result.error_spans = [ErrorSpan(0, len(chunk_to_validate))]
+
         return validation_result
 
     def _hub_inference_request(
