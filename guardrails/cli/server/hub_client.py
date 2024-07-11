@@ -3,8 +3,9 @@ from string import Template
 from typing import Any, Dict, Optional
 
 import requests
-from jwt import JWT
-from jwt.exceptions import JWTDecodeError
+import jwt
+from jwt import ExpiredSignatureError, DecodeError
+
 
 from guardrails.classes.credentials import Credentials
 from guardrails.cli.logger import logger
@@ -86,13 +87,11 @@ def get_jwt_token(creds: Credentials) -> Optional[str]:
     # check for jwt expiration
     if token:
         try:
-            JWT().decode(token, do_verify=False)
-        except JWTDecodeError as e:
-            # if the error message includes "Expired", then the token is expired
-            if "Expired" in str(e):
-                raise ExpiredTokenError(TOKEN_EXPIRED_MESSAGE)
-            else:
-                raise InvalidTokenError(TOKEN_INVALID_MESSAGE)
+            jwt.decode(token, options={"verify_signature": False})
+        except ExpiredSignatureError:
+            raise ExpiredTokenError(TOKEN_EXPIRED_MESSAGE)
+        except DecodeError:
+            raise InvalidTokenError(TOKEN_INVALID_MESSAGE)
     return token
 
 

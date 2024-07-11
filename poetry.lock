@@ -2633,19 +2633,6 @@ test-integration = ["ipykernel", "jupyter-server (!=2.11)", "nbconvert", "pytest
 test-ui = ["calysto-bash"]
 
 [[package]]
-name = "jwt"
-version = "1.3.1"
-description = "JSON Web Token library for Python 3."
-optional = false
-python-versions = ">= 3.6"
-files = [
-    {file = "jwt-1.3.1-py3-none-any.whl", hash = "sha256:61c9170f92e736b530655e75374681d4fcca9cfa8763ab42be57353b2b203494"},
-]
-
-[package.dependencies]
-cryptography = ">=3.1,<3.4.0 || >3.4.0"
-
-[[package]]
 name = "keyring"
 version = "25.2.1"
 description = "Store and access your passwords safely."
@@ -5061,6 +5048,23 @@ files = [
 
 [package.extras]
 windows-terminal = ["colorama (>=0.4.6)"]
+
+[[package]]
+name = "pyjwt"
+version = "2.8.0"
+description = "JSON Web Token implementation in Python"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "PyJWT-2.8.0-py3-none-any.whl", hash = "sha256:59127c392cc44c2da5bb3192169a91f429924e17aff6534d70fdc02ab3e04320"},
+    {file = "PyJWT-2.8.0.tar.gz", hash = "sha256:57e28d156e3d5c10088e0c68abb90bfac3df82b40a71bd0daa20c65ccd5c23de"},
+]
+
+[package.extras]
+crypto = ["cryptography (>=3.4.0)"]
+dev = ["coverage[toml] (==5.0.4)", "cryptography (>=3.4.0)", "pre-commit", "pytest (>=6.0.0,<7.0.0)", "sphinx (>=4.5.0,<5.0.0)", "sphinx-rtd-theme", "zope.interface"]
+docs = ["sphinx (>=4.5.0,<5.0.0)", "sphinx-rtd-theme", "zope.interface"]
+tests = ["coverage[toml] (==5.0.4)", "pytest (>=6.0.0,<7.0.0)"]
 
 [[package]]
 name = "pymdown-extensions"
@@ -8340,4 +8344,4 @@ vectordb = ["faiss-cpu", "numpy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8.1"
-content-hash = "f2c26b1ad671f41fb695448f5f007d9f29609581db2a23301169a4d0a5ab11f1"
+content-hash = "344c86547eec24c2fb96247aad607011d8569dbd8156a599c4b9ce75355a5091"
