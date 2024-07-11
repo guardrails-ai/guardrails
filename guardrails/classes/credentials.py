@@ -30,7 +30,7 @@ class Credentials(Serializeable):
                 logger = logging.getLogger()
             home = expanduser("~")
             guardrails_rc = os.path.join(home, ".guardrailsrc")
-            with open(guardrails_rc) as rc_file:
+            with open(guardrails_rc, encoding="utf-8") as rc_file:
                 lines = rc_file.readlines()
                 filtered_lines = list(filter(lambda l: l.strip(), lines))
                 creds = {}
