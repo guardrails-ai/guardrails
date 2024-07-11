@@ -414,7 +414,7 @@ class AsyncRunner(Runner):
                 instructions = instructions.format(**prompt_params)
 
             instructions, prompt = preprocess_prompt(
-                prompt_callable=api,
+                prompt_callable=api,  # type: ignore
                 instructions=instructions,
                 prompt=prompt,
                 output_type=self.output_type,
