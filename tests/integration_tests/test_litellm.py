@@ -37,7 +37,7 @@ def test_litellm_tools():
         msg_history=[
             {"role": "user", "content": "Name 10 unique fruits, lowercase only"}
         ],
-        tools=guard.add_json_function_calling_tool([]),
+        tools=guard.json_function_calling_tool([]),
         tool_choice="required",
     )
     assert res.validated_output
@@ -108,7 +108,7 @@ def test_litellm_openai_async():
     from litellm import litellm
 
     # from litellm import acompletion
-    guard = gd.Guard()
+    guard = gd.AsyncGuard()
     ares = guard(
         llm_api=litellm.acompletion,
         model="gpt-3.5-turbo",
@@ -129,7 +129,7 @@ def test_litellm_openai_async_messages():
     import asyncio
 
     # from litellm import acompletion
-    guard = gd.Guard()
+    guard = gd.AsyncGuard()
     ares = guard(
         model="gpt-3.5-turbo",
         messages=[
