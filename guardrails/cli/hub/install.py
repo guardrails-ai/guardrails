@@ -195,7 +195,7 @@ def install(
 Example: hub://guardrails/regex_match."
     ),
     local_models: bool = typer.Option(
-        True,
+        False,
         "--install-local-models/--no-install-local-models",
         help="Install local models",
     ),
