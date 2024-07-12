@@ -51,9 +51,7 @@ class TestInstall:
         mock_get_site_packages_location.return_value = site_packages
 
         mocker.patch("guardrails.cli.hub.install.install_hub_module")
-        mock_run_post_install = mocker.patch(
-            "guardrails.cli.hub.install.run_post_install"
-        )
+
         mock_add_to_hub_init = mocker.patch(
             "guardrails.cli.hub.install.add_to_hub_inits"
         )
@@ -66,7 +64,11 @@ class TestInstall:
 
         log_calls = [
             call(level=5, msg="Installing hub://guardrails/test-validator..."),
-            call(level=5, msg="Installing models locally!"),
+            call(
+                level=5,
+                msg="Skipping post install, models will not be downloaded for local "
+                "inference.",
+            ),
             call(
                 level=5,
                 msg="✅Successfully installed hub://guardrails/test-validator!\n\nImport validator:\nfrom guardrails.hub import TestValidator\n\nGet more info:\nhttps://hub.guardrailsai.com/validator/id\n",  # noqa
@@ -78,8 +80,6 @@ class TestInstall:
         mock_get_validator_manifest.assert_called_once_with("guardrails/test-validator")
 
         assert mock_get_site_packages_location.call_count == 1
-
-        mock_run_post_install.assert_called_once_with(manifest, site_packages)
 
         mock_add_to_hub_init.assert_called_once_with(manifest, site_packages)
 
