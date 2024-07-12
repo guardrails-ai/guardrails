@@ -142,7 +142,7 @@ class ValidatorServiceBase:
         self,
         validator: Validator,
         validator_logs: ValidatorLogs,
-        result: ValidationResult,
+        result: ValidationResult | None,
     ):
         end_time = datetime.now()
         validator_logs.validation_result = result
@@ -192,7 +192,7 @@ class SequentialValidatorService(ValidatorServiceBase):
         validator_logs: ValidatorLogs,
         stream: Optional[bool] = False,
         **kwargs,
-    ) -> ValidationResult:
+    ) -> ValidationResult | None:
         result = self.execute_validator(validator, value, metadata, stream, **kwargs)
         if asyncio.iscoroutine(result):
             raise UserFacingException(
@@ -201,8 +201,8 @@ class SequentialValidatorService(ValidatorServiceBase):
                     f"Either use AsyncGuard or remove {validator_logs.validator_name}."
                 )
             )
-        elif result is None:
-            result = PassResult()
+        if result is None:
+            return result
         return cast(ValidationResult, result)
 
     def run_validator(
@@ -249,6 +249,7 @@ class SequentialValidatorService(ValidatorServiceBase):
                 **kwargs,
             )
             result = validator_logs.validation_result
+
             result = cast(ValidationResult, result)
             if isinstance(result, FailResult):
                 rechecked_value = None
