@@ -331,7 +331,9 @@ class Validator:
             validation_result.validated_chunk = chunk_to_validate
         if isinstance(validation_result, FailResult):
             if validation_result.error_spans is None:
-                validation_result.error_spans = [ErrorSpan(0, len(chunk_to_validate))]
+                validation_result.error_spans = [
+                    ErrorSpan(start=0, end=len(chunk_to_validate))
+                ]
 
         return validation_result
 
