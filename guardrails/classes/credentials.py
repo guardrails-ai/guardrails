@@ -6,6 +6,8 @@ from typing import Optional
 
 from guardrails.classes.generic.serializeable import Serializeable
 
+BOOL_CONFIGS = set(["no_metrics", "enable_metrics", "use_remote_inferencing"])
+
 
 @dataclass
 class Credentials(Serializeable):
@@ -22,6 +24,12 @@ class Credentials(Serializeable):
         if value.lower() == "false":
             return False
         return None
+
+    @staticmethod
+    def has_rc_file() -> bool:
+        home = expanduser("~")
+        guardrails_rc = os.path.join(home, ".guardrailsrc")
+        return os.path.exists(guardrails_rc)
 
     @staticmethod
     def from_rc_file(logger: Optional[logging.Logger] = None) -> "Credentials":
@@ -49,7 +57,7 @@ class Credentials(Serializeable):
                         key, value = line_content
                         key = key.strip()
                         value = value.strip()
-                        if key == "no_metrics" or key == "enable_metrics":
+                        if key in BOOL_CONFIGS:
                             value = Credentials._to_bool(value)
 
                         creds[key] = value
