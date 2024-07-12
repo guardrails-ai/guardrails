@@ -138,7 +138,7 @@ def generate_config_file(validators: List[str], name: Optional[str] = None) -> s
     if name is not None:
         config_lines.append(f"guard.name = {name.__repr__()}")
 
-    # Warn the user that they need to configure their tokenizers.
+    # Warn the user that they need to update their config file.
     config_lines.append(
         'print("GUARD PARAMETERS UNFILLED! UPDATE THIS FILE!")'
         "  # TODO: Remove this when parameters are filled."
