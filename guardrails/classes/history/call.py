@@ -20,7 +20,7 @@ from guardrails.utils.reask_utils import (
     sub_reasks_with_fixed_values,
 )
 from guardrails.utils.safe_get import get_value_from_path
-from guardrails.validator_base import Filter, Refrain
+from guardrails.validator_base import Filter, Refrain, ValidationResult
 
 
 # We can't inherit from Iteration because python
@@ -56,13 +56,13 @@ class Call(ArbitraryModel):
 
     @property
     def prompt(self) -> Optional[str]:
-        """The prompt as provided by the user when intializing or calling the
+        """The prompt as provided by the user when initializing or calling the
         Guard."""
         return self.inputs.prompt
 
     @property
     def prompt_params(self) -> Optional[Dict]:
-        """The prompt parameters as provided by the user when intializing or
+        """The prompt parameters as provided by the user when initializing or
         calling the Guard."""
         return self.inputs.prompt_params
 
@@ -99,8 +99,8 @@ class Call(ArbitraryModel):
 
     @property
     def instructions(self) -> Optional[str]:
-        """The instructions as provided by the user when intializing or calling
-        the Guard."""
+        """The instructions as provided by the user when initializing or
+        calling the Guard."""
         return self.inputs.instructions
 
     @property
@@ -353,6 +353,7 @@ versions 0.5.0 and beyond. Use 'guarded_output' instead."""
                 log
                 for log in self.validator_logs
                 if log.validation_result is not None
+                and isinstance(log.validation_result, ValidationResult)
                 and log.validation_result.outcome == "fail"
             ]
         )

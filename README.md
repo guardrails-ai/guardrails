@@ -98,7 +98,7 @@ pip install guardrails-ai
 
     guard = Guard().use_many(
         CompetitorCheck(["Apple", "Microsoft", "Google"], on_fail=OnFailAction.EXCEPTION),
-        ToxicLanguage(threshold=0.5, validation_method="sentence", on_fail=OnFailAction.EXCEPTION),),
+        ToxicLanguage(threshold=0.5, validation_method="sentence", on_fail=OnFailAction.EXCEPTION)
     )
 
     guard.validate(
@@ -148,7 +148,7 @@ prompt = """
 """
 guard = Guard.from_pydantic(output_class=Pet, prompt=prompt)
 
-validated_output, *rest = guard(
+raw_output, validated_output, *rest = guard(
     llm_api=openai.completions.create,
     engine="gpt-3.5-turbo-instruct"
 )

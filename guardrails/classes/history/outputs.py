@@ -8,7 +8,7 @@ from guardrails.utils.llm_response import LLMResponse
 from guardrails.utils.logs_utils import ValidatorLogs
 from guardrails.utils.pydantic_utils import ArbitraryModel
 from guardrails.utils.reask_utils import ReAsk
-from guardrails.validator_base import FailResult
+from guardrails.validator_base import ErrorSpan, FailResult, ValidationResult
 
 
 class Outputs(ArbitraryModel):
@@ -71,9 +71,35 @@ class Outputs(ArbitraryModel):
                 log
                 for log in self.validator_logs
                 if log.validation_result is not None
+                and isinstance(log.validation_result, ValidationResult)
                 and log.validation_result.outcome == "fail"
             ]
         )
+
+    @property
+    def error_spans_in_output(self) -> List[ErrorSpan]:
+        """The error spans from the LLM response.
+
+        These indices are relative to the complete LLM output.
+        """
+        total_len = 0
+        spans_in_output = []
+        for log in self.validator_logs:
+            result = log.validation_result
+            if isinstance(result, FailResult):
+                if result.error_spans is not None:
+                    for error_span in result.error_spans:
+                        spans_in_output.append(
+                            ErrorSpan(
+                                start=error_span.start + total_len,
+                                end=error_span.end + total_len,
+                                reason=error_span.reason,
+                            )
+                        )
+            if isinstance(result, ValidationResult):
+                if result and result.validated_chunk is not None:
+                    total_len += len(result.validated_chunk)
+        return spans_in_output
 
     @property
     def status(self) -> str:

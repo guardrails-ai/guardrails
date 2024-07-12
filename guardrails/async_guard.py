@@ -2,6 +2,7 @@ import contextvars
 import inspect
 from typing import (
     Any,
+    AsyncIterable,
     Awaitable,
     Callable,
     Dict,
@@ -9,7 +10,10 @@ from typing import (
     List,
     Optional,
     Union,
+    cast,
 )
+
+from guardrails_api_client.models import ValidatePayload, ValidationOutput
 
 from guardrails import Guard
 from guardrails.classes import OT, ValidationOutcome
@@ -17,8 +21,13 @@ from guardrails.classes.history import Call
 from guardrails.classes.history.call_inputs import CallInputs
 from guardrails.llm_providers import get_async_llm_ask, model_is_supported_server_side
 from guardrails.logger import set_scope
-from guardrails.run import AsyncRunner
-from guardrails.stores.context import set_call_kwargs, set_tracer, set_tracer_context
+from guardrails.run import AsyncRunner, AsyncStreamRunner
+from guardrails.stores.context import (
+    get_call_kwarg,
+    set_call_kwargs,
+    set_tracer,
+    set_tracer_context,
+)
 
 
 class AsyncGuard(Guard):
@@ -150,6 +159,7 @@ class AsyncGuard(Guard):
                 full_schema_reask=full_schema_reask,
                 args=list(args),
                 kwargs=kwargs,
+                stream=kwargs.get("stream"),
             )
             call_log = Call(inputs=call_inputs)
             set_scope(str(id(call_log)))
@@ -158,7 +168,7 @@ class AsyncGuard(Guard):
             if self._api_client is not None and model_is_supported_server_side(
                 llm_api, *args, **kwargs
             ):
-                return self._call_server(
+                result = self._call_server(
                     llm_api=llm_api,
                     num_reasks=self.num_reasks,
                     prompt_params=prompt_params,
@@ -167,30 +177,24 @@ class AsyncGuard(Guard):
                     *args,
                     **kwargs,
                 )
-
-            # If the LLM API is not async, fail
-            # FIXME: it seems like this check isn't actually working?
-            if not inspect.isawaitable(llm_api) and not inspect.iscoroutinefunction(
-                llm_api
-            ):
-                raise RuntimeError(
-                    f"The LLM API `{llm_api.__name__}` is not a coroutine. "
-                    "Please use an async LLM API."
+            else:
+                result = self._call_async(
+                    llm_api,
+                    prompt_params=prompt_params,
+                    num_reasks=self.num_reasks,
+                    prompt=prompt,
+                    instructions=instructions,
+                    msg_history=msg_history,
+                    metadata=metadata,
+                    full_schema_reask=full_schema_reask,
+                    call_log=call_log,
+                    *args,
+                    **kwargs,
                 )
-            # Otherwise, call the LLM
-            return await self._call_async(
-                llm_api,
-                prompt_params=prompt_params,
-                num_reasks=self.num_reasks,
-                prompt=prompt,
-                instructions=instructions,
-                msg_history=msg_history,
-                metadata=metadata,
-                full_schema_reask=full_schema_reask,
-                call_log=call_log,
-                *args,
-                **kwargs,
-            )
+
+            if inspect.isawaitable(result):
+                return await result
+            return result
 
         guard_context = contextvars.Context()
         return await guard_context.run(
@@ -221,7 +225,7 @@ class AsyncGuard(Guard):
         call_log: Call,
         *args,
         **kwargs,
-    ) -> ValidationOutcome[OT]:
+    ) -> Union[ValidationOutcome[OT], AsyncIterable[ValidationOutcome[OT]]]:
         """Call the LLM asynchronously and validate the output.
 
         Args:
@@ -249,24 +253,48 @@ class AsyncGuard(Guard):
                     "You must provide a prompt if msg_history is empty. "
                     "Alternatively, you can provide a prompt in the RAIL spec."
                 )
+        if kwargs.get("stream", False):
+            runner = AsyncStreamRunner(
+                instructions=instructions_obj,
+                prompt=prompt_obj,
+                msg_history=msg_history_obj,
+                api=get_async_llm_ask(llm_api, *args, **kwargs),
+                prompt_schema=self.rail.prompt_schema,
+                instructions_schema=self.rail.instructions_schema,
+                msg_history_schema=self.rail.msg_history_schema,
+                output_schema=self.rail.output_schema,
+                num_reasks=num_reasks,
+                metadata=metadata,
+                base_model=self.base_model,
+                full_schema_reask=full_schema_reask,
+                disable_tracer=self._disable_tracer,
+            )
+            # Here we have an async generator
+            async_generator = runner.async_run(
+                call_log=call_log, prompt_params=prompt_params
+            )
+            return async_generator
 
-        runner = AsyncRunner(
-            instructions=instructions_obj,
-            prompt=prompt_obj,
-            msg_history=msg_history_obj,
-            api=get_async_llm_ask(llm_api, *args, **kwargs),
-            prompt_schema=self.rail.prompt_schema,
-            instructions_schema=self.rail.instructions_schema,
-            msg_history_schema=self.rail.msg_history_schema,
-            output_schema=self.rail.output_schema,
-            num_reasks=num_reasks,
-            metadata=metadata,
-            base_model=self.base_model,
-            full_schema_reask=full_schema_reask,
-            disable_tracer=self._disable_tracer,
-        )
-        call = await runner.async_run(call_log=call_log, prompt_params=prompt_params)
-        return ValidationOutcome[OT].from_guard_history(call)
+        else:
+            runner = AsyncRunner(
+                instructions=instructions_obj,
+                prompt=prompt_obj,
+                msg_history=msg_history_obj,
+                api=get_async_llm_ask(llm_api, *args, **kwargs),
+                prompt_schema=self.rail.prompt_schema,
+                instructions_schema=self.rail.instructions_schema,
+                msg_history_schema=self.rail.msg_history_schema,
+                output_schema=self.rail.output_schema,
+                num_reasks=num_reasks,
+                metadata=metadata,
+                base_model=self.base_model,
+                full_schema_reask=full_schema_reask,
+                disable_tracer=self._disable_tracer,
+            )
+            call = await runner.async_run(
+                call_log=call_log, prompt_params=prompt_params
+            )
+            return ValidationOutcome[OT].from_guard_history(call)
 
     async def parse(
         self,
@@ -369,6 +397,7 @@ class AsyncGuard(Guard):
                 full_schema_reask=full_schema_reask,
                 args=list(args),
                 kwargs=kwargs,
+                stream=kwargs.get("stream"),
             )
             call_log = Call(inputs=call_inputs)
             set_scope(str(id(call_log)))
@@ -388,31 +417,17 @@ class AsyncGuard(Guard):
                     **kwargs,
                 )
 
-            # FIXME: checking not llm_api because it can still fall back on defaults and
-            # function as expected. We should handle this better.
-            if (
-                not llm_api
-                or inspect.iscoroutinefunction(llm_api)
-                or inspect.isasyncgenfunction(llm_api)
-            ):
-                return await self._async_parse(
-                    llm_output,
-                    metadata,
-                    llm_api=llm_api,
-                    num_reasks=self.num_reasks,
-                    prompt_params=prompt_params,
-                    full_schema_reask=full_schema_reask,
-                    call_log=call_log,
-                    *args,
-                    **kwargs,
-                )
-
-            else:
-                raise NotImplementedError(
-                    "AsyncGuard does not support non-async LLM APIs. "
-                    "Please use the synchronous API Guard or supply an asynchronous "
-                    "LLM API."
-                )
+            return await self._async_parse(
+                llm_output,
+                metadata,
+                llm_api=llm_api,
+                num_reasks=self.num_reasks,
+                prompt_params=prompt_params,
+                full_schema_reask=full_schema_reask,
+                call_log=call_log,
+                *args,
+                **kwargs,
+            )
 
         guard_context = contextvars.Context()
         return await guard_context.run(
@@ -469,3 +484,50 @@ class AsyncGuard(Guard):
         call = await runner.async_run(call_log=call_log, prompt_params=prompt_params)
 
         return ValidationOutcome[OT].from_guard_history(call)
+
+    async def _stream_server_call(
+        self,
+        *,
+        payload: Dict[str, Any],
+        llm_output: Optional[str] = None,
+        num_reasks: Optional[int] = None,
+        prompt_params: Optional[Dict] = None,
+        metadata: Optional[Dict] = {},
+        full_schema_reask: Optional[bool] = True,
+        call_log: Optional[Call],
+    ) -> AsyncIterable[ValidationOutcome[OT]]:
+        # TODO: Once server side supports async streaming, this function will need to
+        # yield async generators, not generators
+        if self._api_client:
+            validation_output: Optional[ValidationOutput] = None
+            response = self._api_client.stream_validate(
+                guard=self,  # type: ignore
+                payload=ValidatePayload.from_dict(payload),
+                openai_api_key=get_call_kwarg("api_key"),
+            )
+            for fragment in response:
+                validation_output = fragment
+                if not validation_output:
+                    yield ValidationOutcome[OT](
+                        raw_llm_output=None,
+                        validated_output=None,
+                        validation_passed=False,
+                        error="The response from the server was empty!",
+                    )
+                yield ValidationOutcome[OT](
+                    raw_llm_output=validation_output.raw_llm_response,  # type: ignore
+                    validated_output=cast(OT, validation_output.validated_output),
+                    validation_passed=validation_output.result,
+                )
+            if validation_output:
+                self._construct_history_from_server_response(
+                    validation_output=validation_output,
+                    llm_output=llm_output,
+                    num_reasks=num_reasks,
+                    prompt_params=prompt_params,
+                    metadata=metadata,
+                    full_schema_reask=full_schema_reask,
+                    call_log=call_log,
+                )
+        else:
+            raise ValueError("Guard does not have an api client!")

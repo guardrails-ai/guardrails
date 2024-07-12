@@ -87,7 +87,13 @@ class Schema:
         raise NotImplementedError
 
     async def async_validate(
-        self, iteration: Iteration, data: Any, metadata: Dict, attempt_number: int = 0
+        self,
+        iteration: Iteration,
+        data: Any,
+        metadata: Dict,
+        attempt_number: int = 0,
+        stream: Optional[bool] = False,
+        **kwargs,
     ) -> Any:
         """Asynchronously validate a dictionary of data against the schema.
 

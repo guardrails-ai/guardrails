@@ -156,7 +156,8 @@ def trace_validator(
             if _tracer is None:
                 return fn(*args, **kwargs)
             with _tracer.start_as_current_span(
-                span_name, trace_context
+                span_name,  # type: ignore (Fails in Python 3.8 for invalid reason)
+                trace_context,
             ) as validator_span:
                 try:
                     validator_span.set_attribute(
@@ -200,7 +201,7 @@ def trace(name: str, tracer: Optional[Tracer] = None):
 
             if _tracer is not None and hasattr(_tracer, "start_as_current_span"):
                 trace_context = get_current_context()
-                with _tracer.start_as_current_span(name, trace_context) as trace_span:
+                with _tracer.start_as_current_span(name, trace_context) as trace_span:  # type: ignore (Fails in Python 3.8 for invalid reason)
                     try:
                         # TODO: Capture args and kwargs as attributes?
                         response = fn(*args, **kwargs)
@@ -226,7 +227,7 @@ def async_trace(name: str, tracer: Optional[Tracer] = None):
 
             if _tracer is not None and hasattr(_tracer, "start_as_current_span"):
                 trace_context = get_current_context()
-                with _tracer.start_as_current_span(name, trace_context) as trace_span:
+                with _tracer.start_as_current_span(name, trace_context) as trace_span:  # type: ignore (Fails in Python 3.8 for invalid reason)
                     try:
                         # TODO: Capture args and kwargs as attributes?
                         response = await fn(*args, **kwargs)
@@ -245,7 +246,7 @@ def async_trace(name: str, tracer: Optional[Tracer] = None):
     return trace_wrapper
 
 
-def default_otel_collector_tracer(resource_name: str = "guardsrails"):
+def default_otel_collector_tracer(resource_name: str = "guardrails"):
     """This is the standard otel tracer set to talk to a grpc open telemetry
     collector running on port 4317."""
 
@@ -265,7 +266,7 @@ def default_otel_collector_tracer(resource_name: str = "guardsrails"):
     return trace.get_tracer("gr")
 
 
-def default_otlp_tracer(resource_name: str = "guardsrails"):
+def default_otlp_tracer(resource_name: str = "guardrails"):
     """This tracer will emit spans directly to an otlp endpoint, configured by
     the following environment variables:
 
@@ -275,7 +276,7 @@ def default_otlp_tracer(resource_name: str = "guardsrails"):
     OTEL_EXPORTER_OTLP_HEADERS
 
     We recommend using Grafana to collect your metrics. A full example of how to
-    do that is in our (docs)[https://docs.guardsrails.com/telemetry]
+    do that is in our (docs)[https://docs.guardrails.com/telemetry]
     """
     import os
 
