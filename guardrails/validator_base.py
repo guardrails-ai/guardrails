@@ -332,7 +332,9 @@ class Validator:
         if isinstance(validation_result, FailResult):
             if validation_result.error_spans is None:
                 validation_result.error_spans = [
-                    ErrorSpan(start=0, end=len(chunk_to_validate))
+                    ErrorSpan(
+                        start=0, end=len(chunk_to_validate), reason="Validation failed."
+                    )
                 ]
 
         return validation_result
