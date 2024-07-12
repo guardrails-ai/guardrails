@@ -138,16 +138,22 @@ def generate_config_file(validators: List[str], name: Optional[str] = None) -> s
     if name is not None:
         config_lines.append(f"guard.name = {name.__repr__()}")
 
+    # Warn the user that they need to configure their tokenizers.
+    config_lines.append(
+        'print("GUARD PARAMETERS UNFILLED! UPDATE THIS FILE!")'
+        "  # TODO: Remove this when parameters are filled."
+    )
+
     # Append validators:
     if len(validators) == 1:
-        config_lines.append(f"guard.use({validators[0]}( TODO Fill these parameters ))")
+        config_lines.append(f"guard.use({validators[0]}())  # TODO: Add parameters.")
     elif len(validators) > 1:
-        multi_use = ",\n".join(
+        multi_use = "".join(
             [
-                "\t" + validator + "( TODO fill these parameters )"
+                "\t" + validator + "(),  # TODO: Add parameters.\n"
                 for validator in validators
             ]
         )
-        config_lines.append(f"guard.use_many(\n{multi_use}\n)")
+        config_lines.append(f"guard.use_many(\n{multi_use})")
 
     return "\n".join(config_lines)
