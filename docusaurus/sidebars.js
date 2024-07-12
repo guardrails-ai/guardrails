@@ -96,6 +96,11 @@ const sidebars = {
     },
     {
       type: "doc",
+      id: "server_rest_api",
+      label: "Server API Reference",
+    },
+    {
+      type: "doc",
       id: "faq",
       label: "FAQ",
     },
