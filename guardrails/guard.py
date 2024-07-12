@@ -240,7 +240,7 @@ class Guard(IGuard, Generic[OT]):
         # defensive for when it's called internally.  Setting a default parameter
         # doesn't help the case where the method is explicitly passed a 'None'.
         if num_reasks is None:
-            logger.info("_set_num_reasks called with 'None'.  Defaulting to 1.")
+            logger.debug("_set_num_reasks called with 'None'.  Defaulting to 1.")
             self._num_reasks = 1
         else:
             self._num_reasks = num_reasks
@@ -1219,7 +1219,7 @@ class Guard(IGuard, Generic[OT]):
         if api_key is not None:
             if self.name is None:
                 self.name = f"gr-{str(self.id)}"
-                logger.warn("Warning: No name passed to guard!")
+                logger.warn("No name passed to guard!")
                 logger.warn(
                     "Use this auto-generated name to re-use this guard: {name}".format(
                         name=self.name
