@@ -3,7 +3,7 @@ import itertools
 import os
 from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime
-from typing import Any, Awaitable, Dict, List, Optional, Tuple, Union, cast
+from typing import Any, Awaitable, Dict, Iterable, List, Optional, Tuple, Union, cast
 
 from guardrails.actions.filter import Filter, apply_filters
 from guardrails.actions.refrain import Refrain, apply_refrain
@@ -225,6 +225,20 @@ class SequentialValidatorService(ValidatorServiceBase):
 
         return self.after_run_validator(validator, validator_logs, result)
 
+    def run_validators_stream(
+        self,
+        iteration: Iteration,
+        validator_map: ValidatorMap,
+        value_stream: Iterable[Any],
+        metadata: Dict[str, Any],
+        absolute_property_path: str,
+        reference_property_path: str,
+        stream: Optional[bool] = False,
+        **kwargs,
+    ):
+        # this will be a generator
+        pass
+
     def run_validators(
         self,
         iteration: Iteration,
@@ -358,30 +372,30 @@ class SequentialValidatorService(ValidatorServiceBase):
 
     def validate_stream(
         self,
-        value: Any,
+        value_stream: Iterable[Any],
         metadata: dict,
         validator_map: ValidatorMap,
         iteration: Iteration,
         absolute_path: str,
         reference_path: str,
         **kwargs,
-    ) -> Tuple[Any, dict]:
+    ) -> Iterable[Tuple[Any, dict]]:
         # I assume validate stream doesn't need validate_dependents
         # because right now we're only handling StringSchema
 
         # Validate the field
-        value, metadata = self.run_validators(
+        gen  = self.run_validators_stream(
             iteration,
             validator_map,
-            value,
+            value_stream,
             metadata,
             absolute_path,
             reference_path,
             True,
             **kwargs,
         )
-
-        return value, metadata
+        for value, metadata in gen:
+            yield value, metadata
 
 
 class MultiprocMixin:

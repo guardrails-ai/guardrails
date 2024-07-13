@@ -163,6 +163,7 @@ class StreamRunner(Runner):
                 if move_to_next:
                     # Continue to next chunk
                     continue
+                # TODO: change this to self.validate_stream()
                 validated_text = self.validate(
                     iteration,
                     index,
