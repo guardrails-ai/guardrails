@@ -259,6 +259,7 @@ class SequentialValidatorService(ValidatorServiceBase):
                     has_none = True
                 if isinstance(result, FailResult):
                     rechecked_value = None
+                    # TODO: we are not supporting fix_reask for streaming
                     if validator.on_fail_descriptor == OnFailAction.FIX_REASK:
                         fixed_value = result.fix_value
                         rechecked_value = self.run_validator_sync(
@@ -286,9 +287,9 @@ class SequentialValidatorService(ValidatorServiceBase):
                 validator_logs.value_after_validation = chunk
                 if result and result.metadata is not None:
                     metadata = result.metadata
-
+                # TODO: Filter is no longer terminal, so we shouldn't yield, right?
                 if isinstance(chunk, (Refrain, Filter, ReAsk)):
-                    return chunk, metadata
+                    yield chunk, metadata
             if not has_none:
                 yield chunk, metadata
             else:
