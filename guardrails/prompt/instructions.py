@@ -2,7 +2,7 @@
 
 from string import Template
 
-from guardrails.utils.parsing_utils import get_template_variables
+from guardrails.utils.templating_utils import get_template_variables
 
 from .base_prompt import BasePrompt
 
@@ -25,7 +25,7 @@ class Instructions(BasePrompt):
     def __eq__(self, __value: object) -> bool:
         return isinstance(__value, Instructions) and self.source == __value.source
 
-    def format(self, **kwargs):
+    def format(self, **kwargs) -> "Instructions":
         """Format the prompt using the given keyword arguments."""
         # Only use the keyword arguments that are present in the prompt.
         vars = get_template_variables(self.source)

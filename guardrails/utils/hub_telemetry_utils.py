@@ -115,7 +115,7 @@ class HubTelemetry:
         if self._tracer is None:
             return
         with self._tracer.start_as_current_span(
-            span_name,  # type: ignore (Fails in Python 3.8 for invalid reason)
+            span_name,  # type: ignore (Fails in Python 3.9 for invalid reason)
             context=self.extract_current_context() if has_parent else None,
         ) as span:
             if is_parent:
