@@ -90,14 +90,17 @@ const sidebars = {
       ],
     },
     {
-      type: "doc",
-      id: "cli",
-      label: "CLI",
+      type: "category",
+      label: "Server",
+      collapsed: true,
+      items: [
+        "server/rest_api",
+      ],
     },
     {
       type: "doc",
-      id: "server_rest_api",
-      label: "Server API Reference",
+      id: "cli",
+      label: "CLI",
     },
     {
       type: "doc",

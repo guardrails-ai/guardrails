@@ -1,5 +1,5 @@
 ---
-title: Guardrails API v0.0.0
+title: Guardrails Rest API
 language_tabs:
   - shell: Shell
   - http: HTTP
