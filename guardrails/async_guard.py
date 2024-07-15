@@ -226,18 +226,24 @@ class AsyncGuard(Guard, Generic[OT]):
                 full_schema_reask = self._base_model is not None
 
             if self._allow_metrics_collection:
+                llm_api_str = ""
+                if llm_api:
+                    llm_api_module_name = (
+                        llm_api.__module__ if hasattr(llm_api, "__module__") else ""
+                    )
+                    llm_api_name = (
+                        llm_api.__name__
+                        if hasattr(llm_api, "__name__")
+                        else type(llm_api).__name__
+                    )
+                    llm_api_str = f"{llm_api_module_name}.{llm_api_name}"
                 # Create a new span for this guard call
                 self._hub_telemetry.create_new_span(
                     span_name="/guard_call",
                     attributes=[
                         ("guard_id", self.id),
                         ("user_id", self._user_id),
-                        (
-                            "llm_api",
-                            llm_api.__name__
-                            if (llm_api and hasattr(llm_api, "__name__"))
-                            else type(llm_api).__name__,
-                        ),
+                        ("llm_api", llm_api_str),
                         (
                             "custom_reask_prompt",
                             self._exec_opts.reask_prompt is not None,

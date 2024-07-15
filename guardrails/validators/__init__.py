@@ -4,6 +4,7 @@ from guardrails.validator_base import (
     ValidationResult,
     Validator,
     register_validator,
+    ErrorSpan,
 )
 
 __all__ = [

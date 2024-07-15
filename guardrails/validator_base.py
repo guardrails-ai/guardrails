@@ -329,14 +329,25 @@ class Validator:
         # if validate doesn't set validated chunk, we set it
         if validation_result.validated_chunk is None:
             validation_result.validated_chunk = chunk_to_validate
+        if isinstance(validation_result, FailResult):
+            if validation_result.error_spans is None:
+                validation_result.error_spans = [
+                    ErrorSpan(
+                        start=0,
+                        end=len(chunk_to_validate),
+                        reason="The input failed validation.",
+                    )
+                ]
+
         return validation_result
 
     def _hub_inference_request(
         self, request_body: dict, validation_endpoint: str
     ) -> Any:
-        """Makes a request to the Validator Hub to run a ML based validation model. This
-        request is authed through the hub and rerouted to a hosted ML model. The reply
-        from the hosted endpoint is returned and sent to this client.
+        """Makes a request to the Validator Hub to run a ML based validation
+        model. This request is authed through the hub and rerouted to a hosted
+        ML model. The reply from the hosted endpoint is returned and sent to
+        this client.
 
         Args:
             request_body (dict): A dictionary containing the required info for the final
