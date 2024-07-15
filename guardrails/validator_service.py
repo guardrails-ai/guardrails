@@ -229,15 +229,70 @@ class SequentialValidatorService(ValidatorServiceBase):
         self,
         iteration: Iteration,
         validator_map: ValidatorMap,
-        value_stream: Iterable[Any],
+        value_stream: Iterable[Tuple[Any, bool]],
         metadata: Dict[str, Any],
         absolute_property_path: str,
         reference_property_path: str,
-        stream: Optional[bool] = False,
         **kwargs,
-    ):
-        # this will be a generator
-        pass
+    ) -> Iterable[Tuple[Any, Dict[str, Any]]]:
+        validators = validator_map.get(reference_property_path, [])
+        # Validate the field
+        # TODO: Under what conditions do we yield?
+        # When we have at least one non-None value?
+        # When we have all non-None values?
+        # Does this depend on whether we are fix or not?
+        for chunk in value_stream:
+            has_none = False
+            for validator in validators:
+                validator_logs = self.run_validator(
+                    iteration,
+                    validator,
+                    chunk,
+                    metadata,
+                    absolute_property_path,
+                    True**kwargs,
+                )
+                result = validator_logs.validation_result
+
+                result = cast(ValidationResult, result)
+                if result is None:
+                    has_none = True
+                if isinstance(result, FailResult):
+                    rechecked_value = None
+                    if validator.on_fail_descriptor == OnFailAction.FIX_REASK:
+                        fixed_value = result.fix_value
+                        rechecked_value = self.run_validator_sync(
+                            validator,
+                            fixed_value,
+                            metadata,
+                            validator_logs,
+                            True,
+                            **kwargs,
+                        )
+                    chunk = self.perform_correction(
+                        [result],
+                        chunk,
+                        validator,
+                        validator.on_fail_descriptor,
+                        rechecked_value=rechecked_value,
+                    )
+                elif isinstance(result, PassResult):
+                    if (
+                        validator.override_value_on_pass
+                        and result.value_override is not result.ValueOverrideSentinel
+                    ):
+                        chunk = result.value_override
+
+                validator_logs.value_after_validation = chunk
+                if result and result.metadata is not None:
+                    metadata = result.metadata
+
+                if isinstance(chunk, (Refrain, Filter, ReAsk)):
+                    return chunk, metadata
+            if not has_none:
+                yield chunk, metadata
+            else:
+                continue
 
     def run_validators(
         self,
@@ -372,7 +427,7 @@ class SequentialValidatorService(ValidatorServiceBase):
 
     def validate_stream(
         self,
-        value_stream: Iterable[Any],
+        value_stream: Iterable[Tuple[Any, bool]],
         metadata: dict,
         validator_map: ValidatorMap,
         iteration: Iteration,
@@ -384,14 +439,13 @@ class SequentialValidatorService(ValidatorServiceBase):
         # because right now we're only handling StringSchema
 
         # Validate the field
-        gen  = self.run_validators_stream(
+        gen = self.run_validators_stream(
             iteration,
             validator_map,
             value_stream,
             metadata,
             absolute_path,
             reference_path,
-            True,
             **kwargs,
         )
         for value, metadata in gen:
@@ -701,18 +755,12 @@ def validate(
     iteration: Iteration,
     disable_tracer: Optional[bool] = True,
     path: Optional[str] = None,
-    stream: Optional[bool] = False,
     **kwargs,
 ):
     if path is None:
         path = "$"
 
     process_count = int(os.environ.get("GUARDRAILS_PROCESS_COUNT", 10))
-    if stream:
-        sequential_validator_service = SequentialValidatorService(disable_tracer)
-        return sequential_validator_service.validate_stream(
-            value, metadata, validator_map, iteration, path, path, **kwargs
-        )
     try:
         loop = asyncio.get_event_loop()
     except RuntimeError:
@@ -728,6 +776,25 @@ def validate(
     return validator_service.validate(
         value, metadata, validator_map, iteration, path, path, **kwargs
     )
+
+
+def validate_stream(
+    value_stream: Iterable[Tuple[Any, bool]],
+    metadata: dict,
+    validator_map: ValidatorMap,
+    iteration: Iteration,
+    disable_tracer: Optional[bool] = True,
+    path: Optional[str] = None,
+    **kwargs,
+) -> Iterable[Tuple[Any, dict]]:
+    if path is None:
+        path = "$"
+    sequential_validator_service = SequentialValidatorService(disable_tracer)
+    gen = sequential_validator_service.validate_stream(
+        value_stream, metadata, validator_map, iteration, path, path, **kwargs
+    )
+    for value, metadata in gen:
+        yield value, metadata
 
 
 async def async_validate(

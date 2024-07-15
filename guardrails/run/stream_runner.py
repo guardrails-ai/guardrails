@@ -1,4 +1,4 @@
-from typing import Any, Dict, Generator, List, Optional, Union, cast
+from typing import Any, Dict, Generator, Iterable, List, Optional, Tuple, Union, cast
 
 from guardrails.classes.history import Call, Inputs, Iteration, Outputs
 from guardrails.classes.output_type import OT, OutputTypes
@@ -136,7 +136,6 @@ class StreamRunner(Runner):
                 "the API is returning a generator."
             )
 
-        fragment = ""
         parsed_fragment, validated_fragment, valid_op = None, None, None
         verified = set()
         validation_response = ""
@@ -147,33 +146,32 @@ class StreamRunner(Runner):
         if self.output_type == OutputTypes.STRING:
             stream_finished = False
             last_chunk_text = ""
-            for chunk in stream:
-                # 1. Get the text from the chunk and append to fragment
-                chunk_text = self.get_chunk_text(chunk, api)
-                last_chunk_text = chunk_text
-                finished = self.is_last_chunk(chunk, api)
-                if finished:
-                    stream_finished = True
-                fragment += chunk_text
 
-                # 2. Parse the chunk
-                parsed_chunk, move_to_next = self.parse(
-                    chunk_text, output_schema, verified=verified
-                )
-                if move_to_next:
-                    # Continue to next chunk
-                    continue
-                # TODO: change this to self.validate_stream()
-                validated_text = self.validate(
-                    iteration,
-                    index,
-                    parsed_chunk,
-                    output_schema,
-                    True,
-                    validate_subschema=True,
-                    # if it is the last chunk, validate everything that's left
-                    remainder=finished,
-                )
+            def prepare_chunk_generator(stream) -> Iterable[Tuple[Any, bool]]:
+                for chunk in stream:
+                    chunk_text = self.get_chunk_text(chunk, api)
+                    last_chunk_text = chunk_text
+                    finished = self.is_last_chunk(chunk, api)
+                    # 2. Parse the chunk
+                    parsed_chunk, move_to_next = self.parse(
+                        chunk_text, output_schema, verified=verified
+                    )
+                    if move_to_next:
+                        # Continue to next chunk
+                        continue
+                    yield parsed_chunk, finished
+
+            prepped_stream = prepare_chunk_generator(stream)
+            gen = self.validate_stream(
+                iteration,
+                index,
+                prepped_stream,
+                output_schema,
+                True,
+                validate_subschema=True,
+            )
+
+            for validated_text in gen:
                 if isinstance(validated_text, SkeletonReAsk):
                     raise ValueError(
                         "Received fragment schema is an invalid sub-schema "
@@ -197,6 +195,8 @@ class StreamRunner(Runner):
                     validated_output=validated_text,
                     validation_passed=passed,
                 )
+
+            # TODO: handle this!
             # handle case where generator doesn't give finished status
             if not stream_finished:
                 last_result = self.validate(
@@ -228,6 +228,7 @@ class StreamRunner(Runner):
                     )
         # handle non string schema
         else:
+            fragment = ""
             for chunk in stream:
                 # 1. Get the text from the chunk and append to fragment
                 chunk_text = self.get_chunk_text(chunk, api)
