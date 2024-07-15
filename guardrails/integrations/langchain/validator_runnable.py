@@ -1,7 +1,6 @@
 from guardrails.integrations.langchain.base_runnable import BaseRunnable
 from guardrails.validator_base import FailResult, Validator
 from guardrails.errors import ValidationError
-from guardrails.classes.output_type import OT
 
 
 class ValidatorRunnable(BaseRunnable):
@@ -11,7 +10,7 @@ class ValidatorRunnable(BaseRunnable):
         self.name = validator.rail_alias
         self.validator = validator
 
-    def _validate(self, input: str) -> OT:
+    def _validate(self, input: str) -> str:
         response = self.validator.validate(input, self.validator._metadata)
         if isinstance(response, FailResult):
             raise ValidationError(

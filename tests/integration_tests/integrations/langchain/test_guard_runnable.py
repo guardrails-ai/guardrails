@@ -3,10 +3,12 @@ import io
 import sys
 
 import pytest
+from pydantic import PrivateAttr
 
 from guardrails.guard import Guard
 from guardrails.integrations.langchain.guard_runnable import GuardRunnable
 from guardrails.errors import ValidationError
+from guardrails.classes import ValidationOutcome
 
 from tests.integration_tests.test_assets.validators import ReadingTime, RegexMatch
 
@@ -98,23 +100,29 @@ def test_guard_runnable_max_retries(
     succeed_on_attempt, max_retries, expected_attempts, expected_result
 ):
     from langchain_core.runnables import RunnableConfig
-    from guardrails.classes import ValidationOutcome
 
     class CountingGuard(Guard):
-        def __init__(self, succeed_on_attempt):
-            super().__init__()
-            self.attempt_count = 0
-            self.succeed_on_attempt = succeed_on_attempt
+        _attempt_count: int = PrivateAttr(default=0)
+        _succeed_on_attempt: int = PrivateAttr()
+
+        def __init__(self, succeed_on_attempt: int, **kwargs):
+            super().__init__(**kwargs)
+            self._succeed_on_attempt = succeed_on_attempt
 
         def validate(self, value):
-            self.attempt_count += 1
-            if self.attempt_count >= self.succeed_on_attempt:
+            self._attempt_count += 1
+            if self._attempt_count >= self._succeed_on_attempt:
                 return ValidationOutcome(
+                    call_id="0",  # type: ignore
                     raw_llm_output=value,
-                    validated_output=f"Succeeded on attempt {self.attempt_count}",
+                    validated_output=f"Succeeded on attempt {self._attempt_count}",
                     validation_passed=True,
                 )
-            raise ValidationError(f"Failed attempt {self.attempt_count}")
+            raise ValidationError(f"Failed attempt {self._attempt_count}")
+
+        @property
+        def attempt_count(self):
+            return self._attempt_count
 
     guard = CountingGuard(succeed_on_attempt)
     runnable = GuardRunnable(guard)
