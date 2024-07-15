@@ -6,7 +6,7 @@ import sys
 import pytest
 
 from guardrails.errors import ValidationError
-from guardrails.validators import ReadingTime, RegexMatch
+from tests.integration_tests.test_assets.validators import ReadingTime, RegexMatch
 
 
 @pytest.mark.parametrize(

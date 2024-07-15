@@ -1,16 +1,18 @@
 import sys
+from importlib.metadata import version
 from string import Template
 from typing import Any, Dict, Optional
 
 import requests
-from jwt import JWT
-from jwt.exceptions import JWTDecodeError
+import jwt
+from jwt import ExpiredSignatureError, DecodeError
+
 
 from guardrails.classes.credentials import Credentials
 from guardrails.cli.logger import logger
 from guardrails.cli.server.module_manifest import ModuleManifest
 
-FIND_NEW_TOKEN = "You can find a new token at https://hub.guardrailsai.com/tokens"
+FIND_NEW_TOKEN = "You can find a new token at https://hub.guardrailsai.com/keys"
 
 TOKEN_EXPIRED_MESSAGE = f"""Your token has expired. Please run `guardrails configure`\
 to update your token.
@@ -18,6 +20,7 @@ to update your token.
 TOKEN_INVALID_MESSAGE = f"""Your token is invalid. Please run `guardrails configure`\
 to update your token.
 {FIND_NEW_TOKEN}"""
+GUARDRAILS_VERSION = version("guardrails-ai")
 
 validator_hub_service = "https://so4sg4q4pb.execute-api.us-east-1.amazonaws.com"
 validator_manifest_endpoint = Template(
@@ -49,6 +52,7 @@ def fetch(url: str, token: Optional[str], anonymousUserId: Optional[str]):
         headers = {
             "Authorization": f"Bearer {token}",
             "x-anonymous-user-id": anonymousUserId,
+            "x-guardrails-version": GUARDRAILS_VERSION,
         }
         req = requests.get(url, headers=headers)
         body = req.json()
@@ -86,13 +90,11 @@ def get_jwt_token(creds: Credentials) -> Optional[str]:
     # check for jwt expiration
     if token:
         try:
-            JWT().decode(token, do_verify=False)
-        except JWTDecodeError as e:
-            # if the error message includes "Expired", then the token is expired
-            if "Expired" in str(e):
-                raise ExpiredTokenError(TOKEN_EXPIRED_MESSAGE)
-            else:
-                raise InvalidTokenError(TOKEN_INVALID_MESSAGE)
+            jwt.decode(token, options={"verify_signature": False, "verify_exp": True})
+        except ExpiredSignatureError:
+            raise ExpiredTokenError(TOKEN_EXPIRED_MESSAGE)
+        except DecodeError:
+            raise InvalidTokenError(TOKEN_INVALID_MESSAGE)
     return token
 
 

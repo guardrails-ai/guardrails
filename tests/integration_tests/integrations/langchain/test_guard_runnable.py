@@ -5,9 +5,10 @@ import sys
 import pytest
 
 from guardrails.guard import Guard
-from guardrails.validators import ReadingTime, RegexMatch
 from guardrails.integrations.langchain.guard_runnable import GuardRunnable
 from guardrails.errors import ValidationError
+
+from tests.integration_tests.test_assets.validators import ReadingTime, RegexMatch
 
 
 @pytest.fixture

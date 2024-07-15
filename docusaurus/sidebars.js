@@ -53,6 +53,7 @@ const sidebars = {
         "how_to_guides/rail",
         "how_to_guides/envvars",
         "how_to_guides/telemetry",
+        "hub/response_formatting_and_structured_data",
       ],
     },
     {
@@ -87,6 +88,11 @@ const sidebars = {
         "migration_guides/0-3-migration",
         "migration_guides/0-2-migration",
       ],
+    },
+    {
+      type: "doc",
+      id: "cli",
+      label: "CLI",
     },
     {
       type: "doc",

@@ -7,12 +7,13 @@ from opentelemetry import context
 from opentelemetry.context import Context
 from opentelemetry.trace import StatusCode, Tracer
 
+from guardrails.call_tracing import TraceHandler
 from guardrails.stores.context import get_tracer as get_context_tracer
 from guardrails.stores.context import get_tracer_context
 from guardrails.utils.casting_utils import to_string
-from guardrails.utils.logs_utils import ValidatorLogs
-from guardrails.utils.reask_utils import ReAsk
-from guardrails.validator_base import Filter, Refrain
+from guardrails.classes.validation.validator_logs import ValidatorLogs
+from guardrails.actions.reask import ReAsk
+from guardrails.actions import Filter, Refrain
 
 
 def get_result_type(before_value: Any, after_value: Any, outcome: str):
@@ -100,14 +101,15 @@ def trace_validator_result(
         "instance_id": instance_id,
         **kwargs,
     }
+
+    TraceHandler().log_validator(validator_log)
+
     current_span.add_event(
         f"{validator_name}_result",
         {k: v for k, v in event.items() if v is not None},
     )
 
 
-# FIXME: It's creating two of every event
-# Might be duplicate validator_logs?
 def trace_validation_result(
     validation_logs: List[ValidatorLogs],
     attempt_number: int,
@@ -156,7 +158,7 @@ def trace_validator(
             if _tracer is None:
                 return fn(*args, **kwargs)
             with _tracer.start_as_current_span(
-                span_name,  # type: ignore (Fails in Python 3.8 for invalid reason)
+                span_name,  # type: ignore (Fails in Python 3.9 for invalid reason)
                 trace_context,
             ) as validator_span:
                 try:
@@ -201,7 +203,7 @@ def trace(name: str, tracer: Optional[Tracer] = None):
 
             if _tracer is not None and hasattr(_tracer, "start_as_current_span"):
                 trace_context = get_current_context()
-                with _tracer.start_as_current_span(name, trace_context) as trace_span:  # type: ignore (Fails in Python 3.8 for invalid reason)
+                with _tracer.start_as_current_span(name, trace_context) as trace_span:  # type: ignore (Fails in Python 3.9 for invalid reason)
                     try:
                         # TODO: Capture args and kwargs as attributes?
                         response = fn(*args, **kwargs)
@@ -227,7 +229,7 @@ def async_trace(name: str, tracer: Optional[Tracer] = None):
 
             if _tracer is not None and hasattr(_tracer, "start_as_current_span"):
                 trace_context = get_current_context()
-                with _tracer.start_as_current_span(name, trace_context) as trace_span:  # type: ignore (Fails in Python 3.8 for invalid reason)
+                with _tracer.start_as_current_span(name, trace_context) as trace_span:  # type: ignore (Fails in Python 3.9 for invalid reason)
                     try:
                         # TODO: Capture args and kwargs as attributes?
                         response = await fn(*args, **kwargs)
@@ -246,7 +248,7 @@ def async_trace(name: str, tracer: Optional[Tracer] = None):
     return trace_wrapper
 
 
-def default_otel_collector_tracer(resource_name: str = "guardrails"):
+def default_otel_collector_tracer(resource_name: str = "guardsrails"):
     """This is the standard otel tracer set to talk to a grpc open telemetry
     collector running on port 4317."""
 
@@ -266,7 +268,7 @@ def default_otel_collector_tracer(resource_name: str = "guardrails"):
     return trace.get_tracer("gr")
 
 
-def default_otlp_tracer(resource_name: str = "guardrails"):
+def default_otlp_tracer(resource_name: str = "guardsrails"):
     """This tracer will emit spans directly to an otlp endpoint, configured by
     the following environment variables:
 
@@ -276,7 +278,7 @@ def default_otlp_tracer(resource_name: str = "guardrails"):
     OTEL_EXPORTER_OTLP_HEADERS
 
     We recommend using Grafana to collect your metrics. A full example of how to
-    do that is in our (docs)[https://docs.guardrails.com/telemetry]
+    do that is in our (docs)[https://docs.guardsrails.com/telemetry]
     """
     import os
 

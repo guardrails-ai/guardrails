@@ -13,6 +13,7 @@ class Credentials(Serializeable):
     token: Optional[str] = None
     no_metrics: Optional[bool] = False
     enable_metrics: Optional[bool] = True
+    use_remote_inferencing: Optional[bool] = True
 
     @staticmethod
     def _to_bool(value: str) -> Optional[bool]:
@@ -29,14 +30,14 @@ class Credentials(Serializeable):
                 logger = logging.getLogger()
             home = expanduser("~")
             guardrails_rc = os.path.join(home, ".guardrailsrc")
-            with open(guardrails_rc) as rc_file:
+            with open(guardrails_rc, encoding="utf-8") as rc_file:
                 lines = rc_file.readlines()
                 filtered_lines = list(filter(lambda l: l.strip(), lines))
                 creds = {}
                 for line in filtered_lines:
                     line_content = line.split("=", 1)
                     if len(line_content) != 2:
-                        logger.warn(
+                        logger.warning(
                             """
                             Invalid line found in .guardrailsrc file!
                             All lines in this file should follow the format: key=value
