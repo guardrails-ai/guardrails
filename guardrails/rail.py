@@ -14,7 +14,7 @@ from guardrails.utils.xml_utils import cast_xml_to_string
 from guardrails.validator_base import ValidatorSpec
 
 # TODO: Logging
-XMLPARSER = ET.XMLParser(encoding="utf-8")
+XMLPARSER = ET.XMLParser(encoding="utf-8",resolve_entities=False)
 
 
 @dataclass
