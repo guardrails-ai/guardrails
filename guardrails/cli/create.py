@@ -59,8 +59,11 @@ def create_command(
 
 
 def check_filename(filename: Union[str, os.PathLike]) -> str:
-    """If a filename is specified and already exists, will prompt the user to confirm
-    overwriting.  Aborts if the user declines."""
+    """If a filename is specified and already exists, will prompt the user to
+    confirm overwriting.
+
+    Aborts if the user declines.
+    """
     if os.path.exists(filename):
         # Alert the user and get confirmation of overwrite.
         overwrite = typer.confirm(
@@ -74,9 +77,11 @@ def check_filename(filename: Union[str, os.PathLike]) -> str:
 
 
 def split_and_install_validators(validators: str, dry_run: bool = False):
-    """Given a comma-separated list of validators, check the hub to make sure all of
-    them exist, install them, and return a list of 'imports'.  If validators is empty,
-    returns an empty list."""
+    """Given a comma-separated list of validators, check the hub to make sure
+    all of them exist, install them, and return a list of 'imports'.
+
+    If validators is empty, returns an empty list.
+    """
     if not validators:
         return []
 
