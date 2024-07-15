@@ -82,3 +82,52 @@ def test_guard_runnable_with_callback_config(guard_runnable):
     sys.stdout = sys.__stdout__
 
     assert "Ice cream is sweet" in captured_output.getvalue()
+
+
+@pytest.mark.parametrize(
+    "succeed_on_attempt, max_retries, expected_attempts, expected_result",
+    [
+        (1, 2, 1, "Succeeded on attempt 1"),
+        (2, 2, 1, "Failed attempt 1"),
+        (2, None, 1, "Failed attempt 1"),
+        (2, 0, 1, "Failed attempt 1"),
+    ],
+)
+def test_guard_runnable_max_retries(
+    succeed_on_attempt, max_retries, expected_attempts, expected_result
+):
+    from langchain_core.runnables import RunnableConfig
+    from guardrails.classes import ValidationOutcome
+
+    class CountingGuard(Guard):
+        def __init__(self, succeed_on_attempt):
+            super().__init__()
+            self.attempt_count = 0
+            self.succeed_on_attempt = succeed_on_attempt
+
+        def validate(self, value):
+            self.attempt_count += 1
+            if self.attempt_count >= self.succeed_on_attempt:
+                return ValidationOutcome(
+                    raw_llm_output=value,
+                    validated_output=f"Succeeded on attempt {self.attempt_count}",
+                    validation_passed=True,
+                )
+            raise ValidationError(f"Failed attempt {self.attempt_count}")
+
+    guard = CountingGuard(succeed_on_attempt)
+    runnable = GuardRunnable(guard)
+
+    config = (
+        RunnableConfig(max_retries=max_retries) if max_retries is not None else None
+    )
+
+    if "Failed" in expected_result:
+        with pytest.raises(ValidationError) as exc_info:
+            runnable.invoke("test input", config=config)
+        assert expected_result in str(exc_info.value)
+    else:
+        result = runnable.invoke("test input", config=config)
+        assert result == expected_result
+
+    assert guard.attempt_count == expected_attempts
