@@ -80,11 +80,6 @@ const config = {
             position: "left",
             label: "Docs",
             docId: "index",
-          }, {
-            type: 'docSidebar',
-            position: 'left',
-            sidebarId: 'hubSidebar',
-            label: 'Hub Docs',
           }
         ],
       },
