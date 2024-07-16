@@ -11,7 +11,7 @@ cd docs/examples
 notebook="$1"
 
 # Check if the notebook should be processed
-invalid_notebooks=("llamaindex-output-parsing.ipynb" "competitors_check.ipynb" "guardrails_server.ipynb" "valid_chess_moves.ipynb")
+invalid_notebooks=("llamaindex-output-parsing.ipynb" "competitors_check.ipynb" "guardrails_server.ipynb" "valid_chess_moves.ipynb" "translation_to_specific_language.ipynb")
 if [[ ! " ${invalid_notebooks[@]} " =~ " ${notebook} " ]]; then
   echo "Processing $notebook..."
   # poetry run jupyter nbconvert --to notebook --execute "$notebook"
