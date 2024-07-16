@@ -45,10 +45,9 @@ We will focus on the first use case in this document.
 
 5. Reference your Guard by name to use it in your application code:
     ```py
-    import os
+    from guardrails import Guard, settings
 
-
-    os.environ["GUARDRAILS_API_KEY"] = "your-guardrails-token"
+    settings.use_server = True
 
     name_guard = Guard(name="name-case")
 
