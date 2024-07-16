@@ -119,12 +119,12 @@ export GUARDRAILS_TOKEN=$(cat ~/.guardrailsrc| awk -F 'token=' '{print $2}' | aw
 Run the following to build your container and push up to ECR:
 
 ```bash
+# Build Container
 docker build --platform linux/amd64 --build-arg GUARDRAILS_TOKEN=$GUARDRAILS_TOKEN -t guardrails-api:latest .
 
+# Push to ECR
 aws ecr get-login-password --region ${YOUR_AWS_REGION} | docker login --username AWS --password-stdin ${YOUR_AWS_ACCOUNT_ID}.dkr.ecr.${YOUR_AWS_REGION}.amazonaws.com
-
 docker tag guardrails-api:latest ${YOUR_AWS_ACCOUNT_ID}.dkr.ecr.${YOUR_AWS_REGION}.amazonaws.com/gr-backend-images:latest
-
 docker push ${YOUR_AWS_ACCOUNT_ID}.dkr.ecr.${YOUR_AWS_REGION}.amazonaws.com/gr-backend-images:latest
 ```
 
