@@ -188,13 +188,10 @@ class AsyncGuard(Guard, Generic[OT]):
         self._fill_validator_map()
         self._fill_validators()
         metadata = metadata or {}
-        if not llm_api and not llm_output:
-            raise RuntimeError("'llm_api' or 'llm_output' must be provided!")
         if not llm_output and llm_api and not (prompt or msg_history):
             raise RuntimeError(
                 "'prompt' or 'msg_history' must be provided in order to call an LLM!"
             )
-
         # check if validator requirements are fulfilled
         missing_keys = verify_metadata_requirements(metadata, self._validators)
         if missing_keys:
@@ -376,9 +373,7 @@ class AsyncGuard(Guard, Generic[OT]):
         Returns:
             The raw text output from the LLM and the validated output.
         """
-        api = (
-            get_async_llm_ask(llm_api, *args, **kwargs) if llm_api is not None else None
-        )
+        api = get_async_llm_ask(llm_api, *args, **kwargs)  # type: ignore
         if kwargs.get("stream", False):
             runner = AsyncStreamRunner(
                 output_type=self._output_type,
@@ -465,6 +460,7 @@ class AsyncGuard(Guard, Generic[OT]):
         instructions = instructions or self._exec_opts.instructions
         prompt = prompt or self._exec_opts.prompt
         msg_history = msg_history or kwargs.pop("messages", None) or []
+
         if prompt is None:
             if msg_history is not None and not len(msg_history):
                 raise RuntimeError(

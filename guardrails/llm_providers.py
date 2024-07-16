@@ -823,8 +823,9 @@ class AsyncOpenAIChatCallable(AsyncOpenAIModel):
 class AsyncLiteLLMCallable(AsyncPromptCallableBase):
     async def invoke_llm(
         self,
-        text: str,
+        text: Optional[str] = None,
         instructions: Optional[str] = None,
+        msg_history: Optional[List[Dict]] = None,
         *args,
         **kwargs,
     ):
@@ -851,8 +852,12 @@ class AsyncLiteLLMCallable(AsyncPromptCallableBase):
                 "Install with `pip install litellm`"
             ) from e
 
-        if text is not None or instructions is not None:
-            messages = litellm_messages(prompt=text, instructions=instructions)
+        if text is not None or instructions is not None or msg_history is not None:
+            messages = litellm_messages(
+                prompt=text,
+                instructions=instructions,
+                msg_history=msg_history,
+            )
             kwargs["messages"] = messages
 
         response = await acompletion(
@@ -965,6 +970,14 @@ class AsyncArbitraryCallable(AsyncPromptCallableBase):
 def get_async_llm_ask(
     llm_api: Callable[[Any], Awaitable[Any]], *args, **kwargs
 ) -> AsyncPromptCallableBase:
+    try:
+        import litellm
+
+        if llm_api == litellm.acompletion or (llm_api is None and kwargs.get("model")):
+            return AsyncLiteLLMCallable(*args, **kwargs)
+    except ImportError:
+        pass
+
     # these only work with openai v0 (None otherwise)
     if llm_api == get_static_openai_acreate_func():
         return AsyncOpenAICallable(*args, **kwargs)
@@ -976,14 +989,6 @@ def get_async_llm_ask(
 
         if isinstance(llm_api, manifest.Manifest):
             return AsyncManifestCallable(*args, client=llm_api, **kwargs)
-    except ImportError:
-        pass
-
-    try:
-        import litellm
-
-        if llm_api == litellm.acompletion or (llm_api is None and kwargs.get("model")):
-            return AsyncLiteLLMCallable(*args, **kwargs)
     except ImportError:
         pass
 
