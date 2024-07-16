@@ -97,7 +97,20 @@ const sidebars = {
       items: [
         // "integrations/azure_openai",
         "integrations/langchain",
-        "how_to_guides/telemetry"
+        {
+          type: "category",
+          label: "Telemetry",
+          collapsed: true,
+          items: [
+            {
+              type: "link",
+              label: "Arize AI",
+              href: "https://docs.arize.com/arize/large-language-models/guardrails",
+            },
+            "integrations/telemetry/grafana",
+          ],
+        },
+
         // "integrations/openai_functions",
       ],
     },

@@ -22,7 +22,7 @@ os.environ["OPENAI_API_KEY"] = [YOUR API KEY]
 guard = Guard()
 
 res = guard(
-    model="gpt-3.5-turbo-instruct",
+    model="gpt-3.5-turbo",
     messages=[{
         "role": "user",
         "content": "How do I make a cake?"
@@ -76,7 +76,7 @@ output = openai.chat.completions.create(
 
 res = guard.parse(
     llm_output=output,
-    model="gpt-3.5-turbo-instruct",
+    model="gpt-3.5-turbo",
     num_reasks=1
 )
 
@@ -85,7 +85,7 @@ print(guard.history.last.reasks) # A list of reasks
 ```
 
 ## Error Handling and Retries
-Guardtails currently performs automatic retries with exponential backoff when any of the following errors occur when calling the LLM:
+Guardrails currently performs automatic retries with exponential backoff when any of the following errors occur when calling the LLM:
 
 - openai.error.APIConnectionError
 - openai.error.APIError
@@ -96,8 +96,11 @@ Guardtails currently performs automatic retries with exponential backoff when an
 - An incorrect structure was returned from the LLM
 
 Note that this list is not exhaustive of the possible errors that could occur.  In the event that errors other than these arise during LLM calls, an exception will be raised.  The messaging of this exception is intended to help troubleshoot common problems, especially with custom LLM wrappers, as well as communicate the underlying error.  This type of exception would look like the following:
+
 ```log
-The callable `fn` passed to `Guard(fn, ...)` failed with the following error: `{Root error message here!}`. Make sure that `fn` can be called as a function that takes in a single prompt string and returns a string.
+The callable `fn` passed to `Guard(fn, ...)` failed with the following error:
+  {Root error message here!}.
+Make sure that `fn` can be called as a function that takes in a single prompt string and returns a string.
 ```
 
 In situations where the exception can be handled and retried, that is the exception is in the list above, the call to the LLM will be retried with exponential backoff until a max wait time between requests of sixty (60) seconds is reached.
