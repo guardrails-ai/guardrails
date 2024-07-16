@@ -1,1 +1,1 @@
-# Structured Data Vlidation
+# Structured Data Validation
