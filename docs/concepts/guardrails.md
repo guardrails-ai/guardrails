@@ -1,4 +1,4 @@
-## Guardrails
+# Guardrails
 
 Guardrails are a set of ML models or rules that are used to validate the output of a language model. They are used to ensure that the output of the model is safe, accurate, and meets the requirements of the user. Guardrails can be used to check for things like bias, toxicity, and other issues that may arise from using a language model.
 
