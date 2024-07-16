@@ -59,7 +59,7 @@ RUN cp /app/config.py $(pip show guardrails-api | grep Location | awk '{print $2
 EXPOSE 8000
 
 # Command to start the Gunicorn server with specified settings
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--timeout=5", "--threads=8", "guardrails_api.app:create_app()"]
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--timeout=5", "--threads=3", "guardrails_api.app:create_app()"]
 ```
 
 Then create a `hub-requirements.txt` file containing all of the hub installs required for your Guards:
@@ -257,13 +257,13 @@ variable "aws_region" {
 variable "backend_cpu" {
   description = "CPU units for the service"
   type        = number
-  default     = 8*1024
+  default     = 1*1024
 }
 
 variable "backend_memory" {
   description = "Memory units for the service"
   type        = number
-  default     = 16*1024
+  default     = 2*1024
 }
 
 variable "backend_server_port" {
