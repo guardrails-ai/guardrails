@@ -1,7 +1,6 @@
 # Imports
 import logging
 
-from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import (  # HTTP Exporter
     OTLPSpanExporter,
 )
@@ -73,8 +72,7 @@ class HubTelemetry:
         self._tracer_provider.add_span_processor(self._processor)
 
         # Set the tracer provider and return a tracer
-        trace.set_tracer_provider(self._tracer_provider)
-        self._tracer = trace.get_tracer(self._tracer_name)
+        self._tracer = self._tracer_provider.get_tracer(self._tracer_name)
 
         self._prop = TraceContextTextMapPropagator()
 
