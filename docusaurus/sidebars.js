@@ -75,22 +75,26 @@ const sidebars = {
       type: "category",
       label: "Examples",
       collapsed: false,
-      items: ["examples/chatbot", "examples/summarizer"],
+      items: ["examples/chatbot", "examples/summarizer", {
+        type: "link",
+        label: "More Examples",
+        href: "https://github.com/guardrails-ai/guardrails/tree/main/docs/examples"
+      }],
     },
     {
       type: "category",
       label: "Cookbooks",
       collapsed: true,
       items: [
-        //"cookbooks/enable_streaming",
+        "cookbooks/using_llms",
         {
           type: "category",
           label: "Integrations",
           collapsed: true,
           items: [
-            "integrations/azure_openai",
+            // "integrations/azure_openai",
             "integrations/langchain",
-            "integrations/openai_functions",
+            // "integrations/openai_functions",
           ],
         },
       ],

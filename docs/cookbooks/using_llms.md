@@ -1,4 +1,4 @@
-## Interacting with different LLMs
+# Using LLMs
 
 Guardrails has support for 100+ LLMs through its integration with LiteLLM. To interact with a model set the desired LLM API KEY such as the OPENAI_API_KEY and the desired model with the model property. Examples are below for some common ones.
 
@@ -217,9 +217,7 @@ for chunk in stream_chunk_generator
     print(f"{chunk.validated_output}")
 ```
 
-### Tools/Function calling
-
-NOTE guardrails will not support until upgrade to 1.40.16 see https://github.com/BerriAI/litellm/issues/3086 need https://github.com/guardrails-ai/guardrails/pull/872
+### COMING SOON - Tools/Function calling
 
 ```python
 from pydantic import BaseModel, Field
