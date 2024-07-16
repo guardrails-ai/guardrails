@@ -1,5 +1,5 @@
 import threading
-from typing import Optional, Self
+from typing import Optional
 
 
 class Settings:
@@ -8,7 +8,7 @@ class Settings:
     """Whether to use a local server for running Guardrails."""
     use_server: Optional[bool]
 
-    def __new__(cls) -> Self:
+    def __new__(cls) -> "Settings":
         if cls._instance is None:
             with cls._lock:
                 if cls._instance is None:
