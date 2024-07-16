@@ -5,7 +5,7 @@ import TabItem from '@theme/TabItem';
 
 ## Introduction
 
-TBD. 
+Guardrails is a framework that validates and structures data from language models. These validations range simple checks like regex matching to more complex checks like competitor analysis. Guardrails can be used with any language model.
 
 ## Installation
 
@@ -25,7 +25,7 @@ First, install Guardrails for your desired language:
 <TabItem value="py" label="Python">
 
 ```bash
-pip install --pre guardrails-ai
+pip install guardrails-ai
 ```
 
 </TabItem>
@@ -39,71 +39,18 @@ npm i @guardrails-ai/core
 
 </Tabs>
 
-### Download and install the Guardrails Hub CLI (required)
+### Configure the Guardrails CLI (required)
     
 ```bash
-pip install guardrails-ai
 guardrails configure
 ```
 
-### Advanced installation
+## Usage
 
-#### Install specific version
-
-<Tabs>
-
-<TabItem value="py" label="Python">
-
-To install a specific version in Python, run:
-
-```bash
-# pip install guardrails-ai==[version-number]
-
-# Example:
-pip install guardrails-ai==0.2.0a6
-```
-
-</TabItem>
-<TabItem value="js" label="JavaScript">
-
-To install a pre-release version with Javascript, install it with the intended semantic version. 
-
-</TabItem>
-
-</Tabs>
-
-#### Install from GitHub
-
-Installing directly from GitHub is useful when a release has not yet been cut with the changes pushed to a branch that you need. Non-released versions may include breaking changes, and may not yet have full test coverage. We recommend using a released version whenever possible.
-
-<Tabs>
-
-<TabItem value="py" label="Python">
-
-```bash
-# pip install git+https://github.com/guardrails-ai/guardrails.git@[branch/commit/tag]
-# Examples:
-pip install git+https://github.com/guardrails-ai/guardrails.git@main
-pip install git+https://github.com/guardrails-ai/guardrails.git@dev
-```
-
-</TabItem>
-<TabItem value="js" label="JavaScript">
-
-```bash
-npm i git+https://github.com/guardrails-ai/guardrails-js.git
-```
-
-</TabItem>
-
-</Tabs>
-
-## AI validation example
-
-1. Install a guardrail from Guardrails Hub.
+1. Install a guardrail from [Guardrails Hub](https://hub.guardrailsai.com).
 
     ```bash
-    guardrails hub install hub://guardrails/regex_match
+    guardrails hub install hub://guardrails/regex_match --quiet
     ```
 2. Create a Guard from the installed guardrail.
 
@@ -117,15 +64,18 @@ npm i git+https://github.com/guardrails-ai/guardrails-js.git
         RegexMatch(regex="^[A-Z][a-z]*$")
     )
 
-    guard.parse("Caesar")  # Guardrail Passes
-    guard.parse("Caesar is a great leader")  # Guardrail Fails
+    print(guard.parse("Caesar").validation_passed)  # Guardrail Passes
+    print(
+        guard.parse("Caesar Salad")
+        .validation_passed
+    )  # Guardrail Fails
     ```
 3. Run multiple guardrails within a Guard.
     First, install the necessary guardrails from Guardrails Hub.
 
     ```bash
-    guardrails hub install hub://guardrails/competitor_check
-    guardrails hub install hub://guardrails/toxic_language
+    guardrails hub install hub://guardrails/competitor_check --quiet
+    guardrails hub install hub://guardrails/toxic_language --quiet
     ```
 
     Then, create a Guard from the installed guardrails.
@@ -134,16 +84,23 @@ npm i git+https://github.com/guardrails-ai/guardrails-js.git
     from guardrails.hub import RegexMatch, ValidLength
     from guardrails import Guard
 
-    guard = Guard().use(
+    guard = Guard().use_many(
         RegexMatch(regex="^[A-Z][a-z]*$"),
-        ValidLength(min=1, max=32)
+        ValidLength(min=1, max=12)
     )
 
-    guard.parse("Caesar")  # Guardrail Passes
-    guard.parse("Caesar is a great leader")  # Guardrail Fails
+    print(guard.parse("Caesar").validation_passed)  # Guardrail Passes
+    print(
+        guard.parse("Caesar Salad")
+        .validation_passed
+    )  # Guardrail Fails due to regex match
+    print(
+        guard.parse("Caesarisagreatleader")
+        .validation_passed
+    )  # Guardrail Fails due to length
     ```
 
-## Structured data example
+## Structured Data Generation and Validation
 
 Now, let's go through an example where we ask an LLM to generate fake pet names. 
 
@@ -165,21 +122,23 @@ class Pet(BaseModel):
 
 ```py
 from guardrails import Guard
-import openai
 
 prompt = """
     What kind of pet should I get and what should I name it?
 
     ${gr.complete_json_suffix_v2}
 """
-guard = Guard.from_pydantic(output_class=Pet, prompt=prompt)
+guard = Guard.from_pydantic(output_class=Pet)
 
-raw_output, validated_output, *rest = guard(
-    llm_api=openai.chat.completions.create,
-    engine="gpt-3.5-turbo"
+res = guard(
+    model="gpt-3.5-turbo",
+    messages=[{
+        "role": "user",
+        "content": prompt
+    }]
 )
 
-print(f"{validated_output}")
+print(f"{res.validated_output}")
 ```
 
 This prints: 
@@ -189,3 +148,54 @@ This prints:
     "name": "Buddy
 }
 ```
+
+## Advanced installation instructions
+
+### Install specific version
+
+<Tabs>
+
+<TabItem value="py" label="Python">
+
+To install a specific version in Python, run:
+
+```bash
+# pip install guardrails-ai==[version-number]
+
+# Example:
+pip install guardrails-ai==0.5.0a13
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+To install a pre-release version with Javascript, install it with the intended semantic version. 
+
+</TabItem>
+
+</Tabs>
+
+### Install from GitHub
+
+Installing directly from GitHub is useful when a release has not yet been cut with the changes pushed to a branch that you need. Non-released versions may include breaking changes, and may not yet have full test coverage. We recommend using a released version whenever possible.
+
+<Tabs>
+
+<TabItem value="py" label="Python">
+
+```bash
+# pip install git+https://github.com/guardrails-ai/guardrails.git@[branch/commit/tag]
+# Example:
+pip install git+https://github.com/guardrails-ai/guardrails.git@main
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```bash
+npm i git+https://github.com/guardrails-ai/guardrails-js.git
+```
+
+</TabItem>
+
+</Tabs>
