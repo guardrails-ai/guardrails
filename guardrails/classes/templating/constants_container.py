@@ -17,7 +17,7 @@ class ConstantsContainer:
         with open(constants_file, "r") as f:
             xml = f.read()
 
-        parser = ET.XMLParser(encoding="utf-8")
+        parser = ET.XMLParser(encoding="utf-8", resolve_entities=False)
         parsed_constants = ET.fromstring(xml, parser=parser)
 
         for child in parsed_constants:
