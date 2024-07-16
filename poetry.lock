@@ -7261,7 +7261,6 @@ anthropic = ["anthropic"]
 api = ["guardrails-api"]
 docs-build = ["docspec_python", "nbdoc", "pydoc-markdown"]
 huggingface = ["jsonformer", "torch", "transformers"]
-litellm = ["litellm"]
 manifest = ["manifest-ml"]
 sql = ["sqlalchemy", "sqlglot", "sqlvalidator"]
 vectordb = ["faiss-cpu", "numpy"]
@@ -7269,4 +7268,4 @@ vectordb = ["faiss-cpu", "numpy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "eef06a36e35dbc9c872ecf20d74e38ae68ddacf42ef411b6022a986f48c1f0e8"
+content-hash = "18cd2e5d4e04e8aae206a165364749f4f76af72fd4b43aeee9ed1c3a2850fa46"

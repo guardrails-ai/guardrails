@@ -63,7 +63,6 @@ guardrails-api = ">=0.0.0a3"
 sql = ["sqlvalidator", "sqlalchemy", "sqlglot"]
 vectordb = ["faiss-cpu", "numpy"]
 manifest = ["manifest-ml"]
-litellm = ["litellm"]
 anthropic = ["anthropic"]
 docs-build = ["nbdoc", "docspec_python", "pydoc-markdown"]
 huggingface = ["transformers", "torch", "jsonformer"]
