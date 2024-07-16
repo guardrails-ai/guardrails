@@ -233,7 +233,13 @@ By setting the above environment variable `GUARDRAILS_BASE_URL` the SDK will be 
 
 When building the container we made some crucial choices in order to make Guardrails production ready. Namely we opted for remote inferencing & did not include local models. This allows us to reduce the image size by preventing heavy validators from being included in the final container image and instead use hosted versions of ML based validators.
 
-In addition to the configuration above we recommend that you host your ECS cluster in private subnet and configure autoscaling policies with appropriate minimum & maximum container counts based on your expected workloads. Furthermore, we recommend that you also serve the API using https.
+In addition to the configuration above we recommend that you host your ECS cluster in private subnet and configure autoscaling policies with appropriate minimum & maximum container counts based on your expected workloads. Furthermore, we recommend that you also serve the API using HTTPs.
+
+Lastly, you can configure the below terraform code as you see fit including but not limited to:
+- Turning into a terraform module by placing into a subfolder within your main terraform module
+- Configuring default memory & cpu units per container
+- Setting up autoscaling policies and Cloudwatch Alarms
+- Setting up Telemetry with AWS X-Ray
 
 # Terraform
 
