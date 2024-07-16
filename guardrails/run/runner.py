@@ -579,21 +579,20 @@ class Runner:
         self,
         iteration: Iteration,
         attempt_number: int,
-        parsed_output_stream: Iterable[Tuple[Any, bool]],
+        parsed_output_stream: Iterable[Tuple[Any, str, bool]],
         output_schema: Dict[str, Any],
         **kwargs,
     ) -> Iterable[Tuple[Any, Dict[str, Any]]]:
         gen = validator_service.validate_stream(
-            value=parsed_output_stream,
-            metadata=self.metadata,
-            validator_map=self.validation_map,
-            iteration=iteration,
-            disable_tracer=self._disable_tracer,
-            path="$",
+            parsed_output_stream,
+            self.metadata,
+            self.validation_map,
+            iteration,
+            self._disable_tracer,
+            "$",
             **kwargs,
         )
-        for value, metadata in gen:
-            yield value, metadata
+        return gen
 
     def validate(
         self,

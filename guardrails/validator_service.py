@@ -234,15 +234,16 @@ class SequentialValidatorService(ValidatorServiceBase):
         absolute_property_path: str,
         reference_property_path: str,
         **kwargs,
-    ) -> Iterable[Tuple[Any, Dict[str, Any]]]:
+    ) -> Iterable[Tuple[Any, str, Dict[str, Any]]]:
         validators = validator_map.get(reference_property_path, [])
         # Validate the field
         # TODO: Under what conditions do we yield?
         # When we have at least one non-None value?
         # When we have all non-None values?
         # Does this depend on whether we are fix or not?
-        for chunk in value_stream:
+        for chunk, finished in value_stream:
             has_none = False
+            original_text = chunk
             for validator in validators:
                 validator_logs = self.run_validator(
                     iteration,
@@ -250,26 +251,17 @@ class SequentialValidatorService(ValidatorServiceBase):
                     chunk,
                     metadata,
                     absolute_property_path,
-                    True**kwargs,
+                    True,
+                    **kwargs,
                 )
                 result = validator_logs.validation_result
 
-                result = cast(ValidationResult, result)
                 if result is None:
                     has_none = True
+                result = cast(ValidationResult, result)
+
                 if isinstance(result, FailResult):
                     rechecked_value = None
-                    # TODO: we are not supporting fix_reask for streaming
-                    if validator.on_fail_descriptor == OnFailAction.FIX_REASK:
-                        fixed_value = result.fix_value
-                        rechecked_value = self.run_validator_sync(
-                            validator,
-                            fixed_value,
-                            metadata,
-                            validator_logs,
-                            True,
-                            **kwargs,
-                        )
                     chunk = self.perform_correction(
                         [result],
                         chunk,
@@ -287,13 +279,10 @@ class SequentialValidatorService(ValidatorServiceBase):
                 validator_logs.value_after_validation = chunk
                 if result and result.metadata is not None:
                     metadata = result.metadata
-                # TODO: Filter is no longer terminal, so we shouldn't yield, right?
-                if isinstance(chunk, (Refrain, Filter, ReAsk)):
-                    yield chunk, metadata
-            if not has_none:
-                yield chunk, metadata
-            else:
-                continue
+                # # TODO: Filter is no longer terminal, so we shouldn't yield, right?
+                # if isinstance(chunk, (Refrain, Filter, ReAsk)):
+                #     yield chunk, metadata
+            yield chunk, original_text, metadata
 
     def run_validators(
         self,
@@ -435,7 +424,7 @@ class SequentialValidatorService(ValidatorServiceBase):
         absolute_path: str,
         reference_path: str,
         **kwargs,
-    ) -> Iterable[Tuple[Any, dict]]:
+    ) -> Iterable[Tuple[Any, str, dict]]:
         # I assume validate stream doesn't need validate_dependents
         # because right now we're only handling StringSchema
 
@@ -449,8 +438,7 @@ class SequentialValidatorService(ValidatorServiceBase):
             reference_path,
             **kwargs,
         )
-        for value, metadata in gen:
-            yield value, metadata
+        return gen
 
 
 class MultiprocMixin:
@@ -787,15 +775,14 @@ def validate_stream(
     disable_tracer: Optional[bool] = True,
     path: Optional[str] = None,
     **kwargs,
-) -> Iterable[Tuple[Any, dict]]:
+) -> Iterable[Tuple[Any, str, dict]]:
     if path is None:
         path = "$"
     sequential_validator_service = SequentialValidatorService(disable_tracer)
     gen = sequential_validator_service.validate_stream(
         value_stream, metadata, validator_map, iteration, path, path, **kwargs
     )
-    for value, metadata in gen:
-        yield value, metadata
+    return gen
 
 
 async def async_validate(

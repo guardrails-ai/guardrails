@@ -167,11 +167,10 @@ class StreamRunner(Runner):
                 index,
                 prepped_stream,
                 output_schema,
-                True,
                 validate_subschema=True,
             )
 
-            for validated_text in gen:
+            for validated_text, original_text, metadata in gen:
                 if isinstance(validated_text, SkeletonReAsk):
                     raise ValueError(
                         "Received fragment schema is an invalid sub-schema "
@@ -191,7 +190,7 @@ class StreamRunner(Runner):
                 yield ValidationOutcome(
                     call_id=call_log.id,  # type: ignore
                     #  The chunk or the whole output?
-                    raw_llm_output=chunk_text,
+                    raw_llm_output=original_text,
                     validated_output=validated_text,
                     validation_passed=passed,
                 )
@@ -276,13 +275,14 @@ class StreamRunner(Runner):
                     validation_passed=validated_fragment is not None,
                 )
 
-        # Finally, add to logs
-        iteration.outputs.raw_output = fragment
-        # Do we need to care about the type here?
-        # What happens if parsing continuously fails?
-        iteration.outputs.parsed_output = parsed_fragment or fragment  # type: ignore
-        iteration.outputs.validation_response = validation_response
-        iteration.outputs.guarded_output = valid_op
+        # TODO: FIX THIS!
+        # # Finally, add to logs
+        # iteration.outputs.raw_output = fragment
+        # # Do we need to care about the type here?
+        # # What happens if parsing continuously fails?
+        # iteration.outputs.parsed_output = parsed_fragment or fragment  # type: ignore
+        # iteration.outputs.validation_response = validation_response
+        # iteration.outputs.guarded_output = valid_op
 
     def is_last_chunk(self, chunk: Any, api: Union[PromptCallableBase, None]) -> bool:
         """Detect if chunk is final chunk."""
