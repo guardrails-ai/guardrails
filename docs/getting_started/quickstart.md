@@ -50,7 +50,7 @@ guardrails configure
 1. Install a guardrail from [Guardrails Hub](https://hub.guardrailsai.com).
 
     ```bash
-    guardrails hub install hub://guardrails/regex_match
+    guardrails hub install hub://guardrails/regex_match --quiet
     ```
 2. Create a Guard from the installed guardrail.
 
@@ -64,15 +64,18 @@ guardrails configure
         RegexMatch(regex="^[A-Z][a-z]*$")
     )
 
-    guard.parse("Caesar")  # Guardrail Passes
-    guard.parse("Caesar is a great leader")  # Guardrail Fails
+    print(guard.parse("Caesar").validation_passed)  # Guardrail Passes
+    print(
+        guard.parse("Caesar Salad")
+        .validation_passed
+    )  # Guardrail Fails
     ```
 3. Run multiple guardrails within a Guard.
     First, install the necessary guardrails from Guardrails Hub.
 
     ```bash
-    guardrails hub install hub://guardrails/competitor_check
-    guardrails hub install hub://guardrails/toxic_language
+    guardrails hub install hub://guardrails/competitor_check --quiet
+    guardrails hub install hub://guardrails/toxic_language --quiet
     ```
 
     Then, create a Guard from the installed guardrails.
@@ -83,11 +86,18 @@ guardrails configure
 
     guard = Guard().use_many(
         RegexMatch(regex="^[A-Z][a-z]*$"),
-        ValidLength(min=1, max=32)
+        ValidLength(min=1, max=12)
     )
 
-    guard.parse("Caesar")  # Guardrail Passes
-    guard.parse("Caesar is a great leader")  # Guardrail Fails
+    print(guard.parse("Caesar").validation_passed)  # Guardrail Passes
+    print(
+        guard.parse("Caesar Salad")
+        .validation_passed
+    )  # Guardrail Fails due to regex match
+    print(
+        guard.parse("Caesarisagreatleader")
+        .validation_passed
+    )  # Guardrail Fails due to length
     ```
 
 ## Structured data example
@@ -112,7 +122,6 @@ class Pet(BaseModel):
 
 ```py
 from guardrails import Guard
-import openai
 
 prompt = """
     What kind of pet should I get and what should I name it?
@@ -122,7 +131,7 @@ prompt = """
 guard = Guard.from_pydantic(output_class=Pet)
 
 res = guard(
-    engine="gpt-3.5-turbo",
+    model="gpt-3.5-turbo",
     messages=[{
         "role": "user",
         "content": prompt
