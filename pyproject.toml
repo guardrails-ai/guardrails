@@ -29,13 +29,13 @@ typing-extensions = "^4.8.0"
 python-dateutil = "^2.8.2"
 tiktoken = ">=0.5.1"
 nltk = "^3.8.1"
+litellm = "^1.37.14"
 
 sqlvalidator = {version = "^0.0.20", optional = true}
 sqlalchemy = {version = ">=2.0.9", optional = true}
 sqlglot = {version = "^19.0.3", optional = true}
 faiss-cpu = {version = "^1.7.4", optional = true}
 numpy = {version = ">=1.25, <2.0", optional = true}
-litellm = {version = "^1.37.14", optional = true}
 manifest-ml = {version = "^0.1.8", optional = true}
 transformers = {version = "^4.36.0", optional = true}
 anthropic = {version = "^0.7.2", optional = true}
