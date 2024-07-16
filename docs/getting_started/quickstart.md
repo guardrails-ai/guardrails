@@ -100,7 +100,7 @@ guardrails configure
     )  # Guardrail Fails due to length
     ```
 
-## Structured data example
+## Structured Data Generation and Validation
 
 Now, let's go through an example where we ask an LLM to generate fake pet names. 
 
@@ -163,7 +163,7 @@ To install a specific version in Python, run:
 # pip install guardrails-ai==[version-number]
 
 # Example:
-pip install guardrails-ai==0.2.0a6
+pip install guardrails-ai==0.5.0a13
 ```
 
 </TabItem>
@@ -185,9 +185,8 @@ Installing directly from GitHub is useful when a release has not yet been cut wi
 
 ```bash
 # pip install git+https://github.com/guardrails-ai/guardrails.git@[branch/commit/tag]
-# Examples:
+# Example:
 pip install git+https://github.com/guardrails-ai/guardrails.git@main
-pip install git+https://github.com/guardrails-ai/guardrails.git@dev
 ```
 
 </TabItem>
