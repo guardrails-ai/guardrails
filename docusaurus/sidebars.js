@@ -36,7 +36,6 @@ const sidebars = {
       label: "Getting started",
       collapsed: false,
       items: [
-<<<<<<< HEAD
         "getting_started/quickstart",
         "getting_started/why_use",
         "getting_started/ai_validation",
@@ -45,16 +44,6 @@ const sidebars = {
         "getting_started/deploying",
         "getting_started/contributing",
         "getting_started/help"
-=======
-        "how_to_guides/llm_api_wrappers",
-        "how_to_guides/streaming",
-        "how_to_guides/structured_data_with_guardrails",
-        "how_to_guides/logs",
-        "how_to_guides/rail",
-        "how_to_guides/envvars",
-        "how_to_guides/telemetry",
-        "hub/response_formatting_and_structured_data",
->>>>>>> 0.5.0-dev
       ],
     },
     {
@@ -110,21 +99,7 @@ const sidebars = {
         "migration_guides/0-3-migration",
         "migration_guides/0-2-migration",
       ],
-<<<<<<< HEAD
     }
-=======
-    },
-    {
-      type: "doc",
-      id: "cli",
-      label: "CLI",
-    },
-    {
-      type: "doc",
-      id: "faq",
-      label: "FAQ",
-    },
->>>>>>> 0.5.0-dev
   ],
   hubSidebar: [
     "hub/introduction",

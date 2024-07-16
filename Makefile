@@ -57,8 +57,6 @@ precommit:
 	# pytest -x -q --no-summary
 	pyright guardrails/
 	make lint
-<<<<<<< HEAD
-=======
 	./.github/workflows/scripts/update_notebook_matrix.sh
 
 refresh:
@@ -71,5 +69,4 @@ refresh:
 
 update-lock:
 	poetry lock --no-update
->>>>>>> 0.5.0-dev
 
