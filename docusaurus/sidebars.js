@@ -54,7 +54,7 @@ const sidebars = {
         "concepts/guard",
         "concepts/guardrails",
         "concepts/hub",
-        "concepts/remote_validation_endpoint",
+        "concepts/remote_validation_inference",
         {
           type: "category",
           label: "Streaming",
@@ -62,7 +62,6 @@ const sidebars = {
           items: [
             "concepts/streaming",
             "concepts/async_streaming",
-            "concepts/streaming_validation",
             "concepts/streaming_structured_data",
           ],
         },
