@@ -1219,8 +1219,8 @@ class Guard(IGuard, Generic[OT]):
         if api_key is not None:
             if self.name is None:
                 self.name = f"gr-{str(self.id)}"
-                logger.warn("No name passed to guard!")
-                logger.warn(
+                logger.warning("No name passed to guard!")
+                logger.warning(
                     "Use this auto-generated name to re-use this guard: {name}".format(
                         name=self.name
                     )
