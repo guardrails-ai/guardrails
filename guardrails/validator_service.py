@@ -241,20 +241,29 @@ class SequentialValidatorService(ValidatorServiceBase):
         for validator in validators:
             if stream:
                 if validator.on_fail_descriptor is OnFailAction.REASK:
-                    raise ValueError("Reask is not supported for stream validation")
+                    raise ValueError(
+                        """Reask is not supported for stream validation, 
+                        only noop and exception are supported."""
+                    )
                 if validator.on_fail_descriptor is OnFailAction.FIX:
                     raise ValueError(
-                        "Fix on fail is not supported for stream validation"
+                        """Fix is not supported for stream validation, 
+                        only noop and exception are supported."""
                     )
                 if validator.on_fail_descriptor is OnFailAction.FIX_REASK:
-                    raise ValueError("Fix Reask is not supported for stream validation")
+                    raise ValueError(
+                        """Fix reask is not supported for stream validation, 
+                        only noop and exception are supported."""
+                    )
                 if validator.on_fail_descriptor is OnFailAction.FILTER:
                     raise ValueError(
-                        "Filter on fail is not supported for stream validation"
+                        """Filter is not supported for stream validation, 
+                        only noop and exception are supported."""
                     )
                 if validator.on_fail_descriptor is OnFailAction.REFRAIN:
                     raise ValueError(
-                        "Refrain on fail is not supported for stream validation"
+                        """Refrain is not supported for stream validation, 
+                        only noop and exception are supported."""
                     )
             validator_logs = self.run_validator(
                 iteration,
