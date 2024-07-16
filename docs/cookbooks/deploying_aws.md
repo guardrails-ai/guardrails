@@ -142,7 +142,7 @@ In some cases you may update your `config.py` file or your `hub-requirements.txt
 For this to work you must set the following configuration on Github Actions:
 - `AWS_ACCESS_KEY_ID` [Secret]
 - `AWS_SECRET_ACCESS_KEY` [Secret]
-- `AWS_ECR_REPOSITORY` [Variable]
+- `AWS_ECR_REPOSITORY` [Variable] Can be set to the output of `terraform output -raw ecr_repository_url`
 - `AWS_ECS_CLUSTER_NAME` [Variable] Can be set to `gr-backend-ecs-cluster` as default
 - `AWS_ECS_SERVICE_NAME` [Variable] Can be set to `gr-backend-ecs-service` as default
 
