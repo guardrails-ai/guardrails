@@ -5,7 +5,7 @@ import TabItem from '@theme/TabItem';
 
 ## Introduction
 
-TBD. 
+Guardrails is a framework that validates and structures data from language models. These validations range simple checks like regex matching to more complex checks like competitor analysis. Guardrails can be used with any language model.
 
 ## Installation
 
@@ -25,7 +25,7 @@ First, install Guardrails for your desired language:
 <TabItem value="py" label="Python">
 
 ```bash
-pip install --pre guardrails-ai
+pip install guardrails-ai
 ```
 
 </TabItem>
@@ -39,68 +39,15 @@ npm i @guardrails-ai/core
 
 </Tabs>
 
-### Download and install the Guardrails Hub CLI (required)
+### Configure the Guardrails CLI (required)
     
 ```bash
-pip install guardrails-ai
 guardrails configure
 ```
 
-### Advanced installation
+## Usage
 
-#### Install specific version
-
-<Tabs>
-
-<TabItem value="py" label="Python">
-
-To install a specific version in Python, run:
-
-```bash
-# pip install guardrails-ai==[version-number]
-
-# Example:
-pip install guardrails-ai==0.2.0a6
-```
-
-</TabItem>
-<TabItem value="js" label="JavaScript">
-
-To install a pre-release version with Javascript, install it with the intended semantic version. 
-
-</TabItem>
-
-</Tabs>
-
-#### Install from GitHub
-
-Installing directly from GitHub is useful when a release has not yet been cut with the changes pushed to a branch that you need. Non-released versions may include breaking changes, and may not yet have full test coverage. We recommend using a released version whenever possible.
-
-<Tabs>
-
-<TabItem value="py" label="Python">
-
-```bash
-# pip install git+https://github.com/guardrails-ai/guardrails.git@[branch/commit/tag]
-# Examples:
-pip install git+https://github.com/guardrails-ai/guardrails.git@main
-pip install git+https://github.com/guardrails-ai/guardrails.git@dev
-```
-
-</TabItem>
-<TabItem value="js" label="JavaScript">
-
-```bash
-npm i git+https://github.com/guardrails-ai/guardrails-js.git
-```
-
-</TabItem>
-
-</Tabs>
-
-## AI validation example
-
-1. Install a guardrail from Guardrails Hub.
+1. Install a guardrail from [Guardrails Hub](https://hub.guardrailsai.com).
 
     ```bash
     guardrails hub install hub://guardrails/regex_match
@@ -134,7 +81,7 @@ npm i git+https://github.com/guardrails-ai/guardrails-js.git
     from guardrails.hub import RegexMatch, ValidLength
     from guardrails import Guard
 
-    guard = Guard().use(
+    guard = Guard().use_many(
         RegexMatch(regex="^[A-Z][a-z]*$"),
         ValidLength(min=1, max=32)
     )
@@ -172,14 +119,17 @@ prompt = """
 
     ${gr.complete_json_suffix_v2}
 """
-guard = Guard.from_pydantic(output_class=Pet, prompt=prompt)
+guard = Guard.from_pydantic(output_class=Pet)
 
-raw_output, validated_output, *rest = guard(
-    llm_api=openai.chat.completions.create,
-    engine="gpt-3.5-turbo"
+res = guard(
+    engine="gpt-3.5-turbo",
+    messages=[{
+        "role": "user",
+        "content": prompt
+    }]
 )
 
-print(f"{validated_output}")
+print(f"{res.validated_output}")
 ```
 
 This prints: 
@@ -189,3 +139,55 @@ This prints:
     "name": "Buddy
 }
 ```
+
+## Advanced installation instructions
+
+### Install specific version
+
+<Tabs>
+
+<TabItem value="py" label="Python">
+
+To install a specific version in Python, run:
+
+```bash
+# pip install guardrails-ai==[version-number]
+
+# Example:
+pip install guardrails-ai==0.2.0a6
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+To install a pre-release version with Javascript, install it with the intended semantic version. 
+
+</TabItem>
+
+</Tabs>
+
+### Install from GitHub
+
+Installing directly from GitHub is useful when a release has not yet been cut with the changes pushed to a branch that you need. Non-released versions may include breaking changes, and may not yet have full test coverage. We recommend using a released version whenever possible.
+
+<Tabs>
+
+<TabItem value="py" label="Python">
+
+```bash
+# pip install git+https://github.com/guardrails-ai/guardrails.git@[branch/commit/tag]
+# Examples:
+pip install git+https://github.com/guardrails-ai/guardrails.git@main
+pip install git+https://github.com/guardrails-ai/guardrails.git@dev
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```bash
+npm i git+https://github.com/guardrails-ai/guardrails-js.git
+```
+
+</TabItem>
+
+</Tabs>

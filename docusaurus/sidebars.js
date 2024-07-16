@@ -44,6 +44,7 @@ const sidebars = {
         "getting_started/deploying",
         "getting_started/contributing",
         "getting_started/help",
+        "faq"
       ],
     },
     {
@@ -87,16 +88,17 @@ const sidebars = {
       collapsed: true,
       items: [
         "cookbooks/using_llms",
-        {
-          type: "category",
-          label: "Integrations",
-          collapsed: true,
-          items: [
-            // "integrations/azure_openai",
-            "integrations/langchain",
-            // "integrations/openai_functions",
-          ],
-        },
+      ],
+    },
+    {
+      type: "category",
+      label: "Integrations",
+      collapsed: true,
+      items: [
+        // "integrations/azure_openai",
+        "integrations/langchain",
+        "how_to_guides/telemetry"
+        // "integrations/openai_functions",
       ],
     },
     {
