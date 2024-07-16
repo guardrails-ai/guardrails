@@ -8,6 +8,7 @@ from guardrails.prompt import Instructions, Prompt
 from guardrails.utils import constants, docs_utils
 from guardrails.types.on_fail import OnFailAction
 from guardrails.validator_base import Validator, register_validator
+from guardrails.settings import settings
 
 __all__ = [
     "Guard",
@@ -21,4 +22,5 @@ __all__ = [
     "configure_logging",
     "Prompt",
     "Instructions",
+    "settings",
 ]
