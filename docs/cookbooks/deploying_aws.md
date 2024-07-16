@@ -14,6 +14,9 @@ Create a `Dockerfile` in a new working directory `guardrails-server` (or alterna
 ```Dockerfile
 FROM python:3.11-slim
 
+ARG GUARDRAILS_TOKEN
+ARG GUARDRAILS_SDK_VERSION="guardrails-ai[api]>=0.5.0,<6"
+
 # Set environment variables to avoid writing .pyc files and to unbuffer Python output
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
@@ -30,13 +33,21 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # Install guardrails, the guardrails API, and gunicorn
-RUN pip install "guardrails-ai[api]>=0.5.0,<6" "gunicorn"
+RUN pip install $GUARDRAILS_SDK_VERSION "gunicorn"
+
+RUN guardrails configure --enable-metrics --enable-remote-inferencing --token $GUARDRAILS_TOKEN
 
 # Copy the hub requirements file to the container
 COPY hub-requirements.txt /app/hub-requirements.txt
 
-# Install Hub Dependencies (if any)
-RUN guardrails create --validators=$(python -c 'print(",".join(open("./hub-requirements.txt", encoding="utf-8").read().splitlines()))') || exit 0
+# Install hub dependencies
+RUN export GR_INSTALLS=$(python -c 'print(",".join(open("./hub-requirements.txt", encoding="utf-8").read().splitlines()))'); \
+    set -e; IFS=','; \
+    for url in $GR_INSTALLS; do \
+        if [ -n "$url" ]; then \
+            guardrails hub install --quiet --no-install-local-models "$url"; \
+        fi; \
+    done
 
 # Overwrite Config file with one with user's settings
 COPY config.py /app/config.py
@@ -62,7 +73,7 @@ hub://guardrails/toxic_language
 At this point you can now generate the required config file (`config.py`) which is needed for the server to know how to configure each guard.
 
 ```bash
-guardrails create --validators=$(python -c 'print(",".join(open("./hub_requirements.txt", encoding="utf-8").read().splitlines()))')
+guardrails create --validators=$(python -c 'print(",".join(open("./hub-requirements.txt", encoding="utf-8").read().splitlines()))')
 ```
 
 > ⚠️ *Important:* Ensure to add in any telemetry configuration and guard configuration to the config file AND ensure each guard is given a variable name i.e `guard1 = Guard(...)`
@@ -92,11 +103,23 @@ terraform apply -var="aws_region=us-east-1" -var="backend_memory=16384" -var="ba
 
 Once the deployment has succeeded you should see some output values (which will be required if you wish to set up CI).
 
-If you choose not to use the provided CI, you can manually complete the deployment process by building a container and pushing it up to AWS container registry (ECS):
+# Step 3
 
+You can deploy the application manually as specified in Step 3a or skip to Step 3b to deploy the application with CI.
+
+## Step 3a: Deploying Application Manually
+
+Firstly, create or use your existing guardrails token and export it to your current shell `export GUARDRAILS_TOKEN="..."`
 
 ```bash
-docker build --platform linux/amd64 -t guardrails-api:latest .
+# Optionally use the command below to use your existing token
+export GUARDRAILS_TOKEN=$(cat ~/.guardrailsrc| awk -F 'token=' '{print $2}' | awk '{print $1}' | tr -d '\n')
+```
+
+Run the following to build your container and push up to ECR:
+
+```bash
+docker build --platform linux/amd64 --build-arg GUARDRAILS_TOKEN=$GUARDRAILS_TOKEN -t guardrails-api:latest .
 
 aws ecr get-login-password --region ${YOUR_AWS_REGION} | docker login --username AWS --password-stdin ${YOUR_AWS_ACCOUNT_ID}.dkr.ecr.${YOUR_AWS_REGION}.amazonaws.com
 
@@ -112,7 +135,7 @@ aws ecs update-service --cluster gr-backend-ecs-cluster --service gr-backend-ecs
 ```
 
 
-# Step 3: (Optional) CI
+## Step 3b: Deploying Application Using CI
 
 In some cases you may update your `config.py` file or your `hub-requirements.txt` file to add/remove guards. Here it may help to set up CI to automate the process of updating your Guardrails API container and deploy to ECS.
 
@@ -193,6 +216,24 @@ jobs:
 
 
 ```
+
+# Step 4: Using with SDK
+
+You should be able to get the URL for your Guardrails API using:
+
+```bash
+export GUARDRAILS_BASE_URL=$(terraform output -raw backend_service_url)
+echo "http://$GUARDRAILS_BASE_URL"
+```
+
+By setting the above environment variable `GUARDRAILS_BASE_URL` the SDK will be able to use this as a backend for running validations.
+
+
+# Considerations for Production
+
+When building the container we made some crucial choices in order to make Guardrails production ready. Namely we opted for remote inferencing & did not include local models. This allows us to reduce the image size by preventing heavy validators from being included in the final container image and instead use hosted versions of ML based validators.
+
+In addition to the configuration above we recommend that you host your ECS cluster in private subnet and configure autoscaling policies with appropriate minimum & maximum container counts based on your expected workloads. Furthermore, we recommend that you also serve the API using https.
 
 # Terraform
 
