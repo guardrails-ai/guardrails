@@ -1,5 +1,5 @@
 ---
-title: Guardrails Rest API
+title: Guardrails Server Rest API
 language_tabs:
   - shell: Shell
   - http: HTTP

@@ -1,6 +1,6 @@
 # The Guard
 
-The guard object is the main interface for GuardRails. It can be used without configuration for string-based LLM apps, and accepts a pydantic object for structured data usecases. The Guard is then used to run the GuardRails AI engine. It is the object that wraps LLM calls, orchestrates validation, and keeps track of call history.
+The guard object is the main interface for Guardrails. It can be used without configuration for string-based LLM apps, and accepts a pydantic object for structured data usecases. The Guard is then used to run the Guardrails AI engine. It is the object that wraps LLM calls, orchestrates validation, and keeps track of call history.
 
 
 ## How it works
@@ -17,7 +17,8 @@ After initializing a guard, you can invoke it using a model name and messages fo
 from guardrails import Guard
 import os
 
-os.environ["OPENAI_API_KEY"] = [YOUR API KEY]
+# Set your openai API key here
+# os.environ["OPENAI_API_KEY"] = [YOUR API KEY]
 
 guard = Guard()
 
@@ -85,22 +86,5 @@ print(guard.history.last.reasks) # A list of reasks
 ```
 
 ## Error Handling and Retries
-Guardrails currently performs automatic retries with exponential backoff when any of the following errors occur when calling the LLM:
 
-- openai.error.APIConnectionError
-- openai.error.APIError
-- openai.error.TryAgain
-- openai.error.Timeout
-- openai.error.RateLimitError
-- openai.error.ServiceUnavailableError
-- An incorrect structure was returned from the LLM
-
-Note that this list is not exhaustive of the possible errors that could occur.  In the event that errors other than these arise during LLM calls, an exception will be raised.  The messaging of this exception is intended to help troubleshoot common problems, especially with custom LLM wrappers, as well as communicate the underlying error.  This type of exception would look like the following:
-
-```log
-The callable `fn` passed to `Guard(fn, ...)` failed with the following error:
-  {Root error message here!}.
-Make sure that `fn` can be called as a function that takes in a single prompt string and returns a string.
-```
-
-In situations where the exception can be handled and retried, that is the exception is in the list above, the call to the LLM will be retried with exponential backoff until a max wait time between requests of sixty (60) seconds is reached.
+Guardrails is designed to account for different types of errors that can occur when calling the LLM, and it is also designed to emit helpful errors when validations fail. Read more about error handling and retries [here](./error_remediation).

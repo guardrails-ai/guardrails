@@ -1,5 +1,29 @@
 # Error remediation
 
+## LLM Error Handling and Retries
+Guardrails currently performs automatic retries with exponential backoff when any of the following errors occur when calling the LLM:
+
+- openai.error.APIConnectionError
+- openai.error.APIError
+- openai.error.TryAgain
+- openai.error.Timeout
+- openai.error.RateLimitError
+- openai.error.ServiceUnavailableError
+- An incorrect structure was returned from the LLM
+
+Guardrails will continue to retry with backoff until a max wait time between requests of sixty (60) seconds is reached.
+
+Note that this list is not exhaustive of the possible errors that could occur.  In the event that errors other than these arise during LLM calls, an exception will be raised.  The messaging of this exception is intended to help troubleshoot common problems, especially with custom LLM wrappers, as well as communicate the underlying error.  This type of exception would look like the following:
+
+```log
+The callable `fn` passed to `Guard(fn, ...)` failed with the following error:
+  {Root error message here!}.
+Make sure that `fn` can be called as a function that takes in a single prompt string and returns a string.
+```
+
+
+## Validator OnFailActions
+
 Guardrails provides a number of `OnFailActions` for when a validator fails. The `OnFailAction` specifies the corrective action that should be taken if the quality criteria is not met. The corrective action can be one of the following:
 
 | Action    | Behavior                                                                                                                                                                                               | Supports Streaming? | 
@@ -11,3 +35,13 @@ Guardrails provides a number of `OnFailActions` for when a validator fails. The 
 | `OnFailAction.FILTER`  | (Only applicable for structured data validation) Filter the incorrect value. This only filters the field that fails, and will return the rest of the generated output.                                                                                  | No | 
 | `OnFailAction.REFRAIN` | Refrain from returning an output. This is useful when the generated output is not safe to return, in which case a `None` value is returned instead.                                                          | No | 
 | `OnFailAction.FIX_REASK` | First, fix the generated output deterministically, and then rerun validation with the deterministically fixed output. If validation fails, then perform reasking.           | No | 
+
+
+## Guidance on dealing with Validator errors
+
+When a validator fails, Guardrails does two things
+
+1. logs the failure in history (accessible via `guard.history.last.failed_validations`)
+2. takes the corrective action specified by the `on_fail` action on the validator
+
+While Reasks and Fixes are useful for simple usecase, as usecases get more complex, we recommend switching to an exception-based approach. This is because exceptions provide more flexibility in handling errors, and can be used to implement more complex error handling logic. They can also be used to more effectively route your LLM app along different paths based on the type of error that occured and which set of validators failed.

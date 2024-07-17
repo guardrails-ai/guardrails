@@ -10,34 +10,11 @@ Guardrails is a framework that validates and structures data from language model
 ## Installation
 
 ### Download Guardrails (required)
-
-Guardrails consists of two parts:
-
-* The core Guardrails package (Python or Javascript)
-* Guardrails Hub, which enables downloading from our library of publicly available validators. 
-
-**Note**: The Javascript library works via an I/O bridge to run the underlying Python library. You must have Python 3.16 or greater installed on your system to use the Javascript library. 
-
 First, install Guardrails for your desired language: 
-
-<Tabs>
-
-<TabItem value="py" label="Python">
 
 ```bash
 pip install guardrails-ai
 ```
-
-</TabItem>
-<TabItem value="js" label="JavaScript">
-
-```bash
-npm i @guardrails-ai/core
-```
-
-</TabItem>
-
-</Tabs>
 
 ### Configure the Guardrails CLI (required)
     
@@ -150,6 +127,15 @@ This prints:
 ```
 
 ## Advanced installation instructions
+
+### Install the Javascript library
+
+**Note**: The Javascript library works via an I/O bridge to run the underlying Python library. You must have Python 3.16 or greater installed on your system to use the Javascript library. 
+
+
+```bash
+npm i @guardrails-ai/core
+```
 
 ### Install specific version
 
