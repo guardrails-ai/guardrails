@@ -119,6 +119,7 @@ const sidebars = {
       label: "Migration Guides",
       collapsed: true,
       items: [
+        "migration_guides/0-5-migration",
         "migration_guides/0-4-migration",
         "migration_guides/0-3-migration",
         "migration_guides/0-2-migration",
