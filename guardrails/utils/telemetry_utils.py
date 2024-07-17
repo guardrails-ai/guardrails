@@ -7,12 +7,14 @@ from opentelemetry import context
 from opentelemetry.context import Context
 from opentelemetry.trace import StatusCode, Tracer
 
+from guardrails.call_tracing import TraceHandler
 from guardrails.stores.context import get_tracer as get_context_tracer
 from guardrails.stores.context import get_tracer_context
 from guardrails.utils.casting_utils import to_string
-from guardrails.utils.logs_utils import ValidatorLogs
-from guardrails.utils.reask_utils import ReAsk
-from guardrails.validator_base import Filter, Refrain
+from guardrails.classes.validation.validator_logs import ValidatorLogs
+from guardrails.actions.reask import ReAsk
+from guardrails.actions import Filter, Refrain
+from guardrails.logger import logger
 
 
 def get_result_type(before_value: Any, after_value: Any, outcome: str):
@@ -54,7 +56,7 @@ def get_span(span=None):
         current_span = trace.get_current_span(current_context)
         return current_span
     except Exception as e:
-        print(e)
+        logger.error(e)
         return None
 
 
@@ -100,35 +102,24 @@ def trace_validator_result(
         "instance_id": instance_id,
         **kwargs,
     }
+
+    TraceHandler().log_validator(validator_log)
+
     current_span.add_event(
         f"{validator_name}_result",
         {k: v for k, v in event.items() if v is not None},
     )
 
 
-# FIXME: It's creating two of every event
-# Might be duplicate validator_logs?
 def trace_validation_result(
     validation_logs: List[ValidatorLogs],
     attempt_number: int,
     current_span=None,
 ):
-    # Duplicate logs are showing here
-    # print("validation_logs.validator_logs: ", validation_logs.validator_logs)
     _current_span = get_span(current_span)
     if _current_span is not None:
         for log in validation_logs:
-            # Duplicate logs are showing here
-            # print("calling trace_validator_result with: ", log, attempt_number)
             trace_validator_result(_current_span, log, attempt_number)
-
-        # CHECKME: disabled these because I think we flattened this structure?
-        # if validation_logs.children:
-        #     for child in validation_logs.children:
-        #         # print("calling trace_validation_result with child logs")
-        #         trace_validation_result(
-        #             validation_logs.children.get(child), attempt_number, _current_span
-        #         )
 
 
 def trace_validator(
@@ -156,7 +147,7 @@ def trace_validator(
             if _tracer is None:
                 return fn(*args, **kwargs)
             with _tracer.start_as_current_span(
-                span_name,  # type: ignore (Fails in Python 3.8 for invalid reason)
+                span_name,  # type: ignore (Fails in Python 3.9 for invalid reason)
                 trace_context,
             ) as validator_span:
                 try:
@@ -201,7 +192,7 @@ def trace(name: str, tracer: Optional[Tracer] = None):
 
             if _tracer is not None and hasattr(_tracer, "start_as_current_span"):
                 trace_context = get_current_context()
-                with _tracer.start_as_current_span(name, trace_context) as trace_span:  # type: ignore (Fails in Python 3.8 for invalid reason)
+                with _tracer.start_as_current_span(name, trace_context) as trace_span:  # type: ignore (Fails in Python 3.9 for invalid reason)
                     try:
                         # TODO: Capture args and kwargs as attributes?
                         response = fn(*args, **kwargs)
@@ -227,7 +218,7 @@ def async_trace(name: str, tracer: Optional[Tracer] = None):
 
             if _tracer is not None and hasattr(_tracer, "start_as_current_span"):
                 trace_context = get_current_context()
-                with _tracer.start_as_current_span(name, trace_context) as trace_span:  # type: ignore (Fails in Python 3.8 for invalid reason)
+                with _tracer.start_as_current_span(name, trace_context) as trace_span:  # type: ignore (Fails in Python 3.9 for invalid reason)
                     try:
                         # TODO: Capture args and kwargs as attributes?
                         response = await fn(*args, **kwargs)
@@ -246,19 +237,25 @@ def async_trace(name: str, tracer: Optional[Tracer] = None):
     return trace_wrapper
 
 
-def wrap_with_otel_context(outer_scope_otel_context: Context, func: Callable[..., Any]) -> Callable[..., Any]:
-    """
-    This function is designed to ensure that a given OpenTelemetry context is applied when executing a specified function.
-    It is particularly useful for preserving the trace context when a guardrails is executed in a different execution flow or 
-    when integrating with other frameworks.
+def wrap_with_otel_context(
+    outer_scope_otel_context: Context, func: Callable[..., Any]
+) -> Callable[..., Any]:
+    """This function is designed to ensure that a given OpenTelemetry context
+    is applied when executing a specified function. It is particularly useful
+    for preserving the trace context when a guardrails is executed in a
+    different execution flow or when integrating with other frameworks.
 
     Args:
-        outer_scope_otel_context (Context): The OpenTelemetry context to apply when executing the function.
-        func (Callable[..., Any]): The function to be executed within the given OpenTelemetry context.
+        outer_scope_otel_context (Context): The OpenTelemetry context to apply
+            when executing the function.
+        func (Callable[..., Any]): The function to be executed within
+            the given OpenTelemetry context.
 
     Returns:
-        Callable[..., Any]: A wrapped version of 'func' that, when called, executes with 'outer_scope_otel_context' applied.
+        Callable[..., Any]: A wrapped version of 'func' that, when called,
+            executes with 'outer_scope_otel_context' applied.
     """
+
     def wrapped_func(*args: Any, **kwargs: Any) -> Any:
         # Attach the specified OpenTelemetry context before executing 'func'
         token = context.attach(outer_scope_otel_context)
@@ -266,8 +263,10 @@ def wrap_with_otel_context(outer_scope_otel_context: Context, func: Callable[...
             # Execute 'func' within the attached context
             return func(*args, **kwargs)
         finally:
-            # Ensure the context is detached after execution to maintain correct context management
+            # Ensure the context is detached after execution
+            #   to maintain correct context management
             context.detach(token)
+
     return wrapped_func
 
 

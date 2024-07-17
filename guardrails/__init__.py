@@ -5,15 +5,15 @@ from guardrails.async_guard import AsyncGuard
 from guardrails.llm_providers import PromptCallableBase
 from guardrails.logging_utils import configure_logging
 from guardrails.prompt import Instructions, Prompt
-from guardrails.rail import Rail
 from guardrails.utils import constants, docs_utils
-from guardrails.validator_base import OnFailAction, Validator, register_validator
+from guardrails.types.on_fail import OnFailAction
+from guardrails.validator_base import Validator, register_validator
+from guardrails.settings import settings
 
 __all__ = [
     "Guard",
     "AsyncGuard",
-    "PromptCallableBase",
-    "Rail",
+    "PromptCallableBase",  # FIXME: Why is this being exported?
     "Validator",
     "OnFailAction",
     "register_validator",
@@ -22,4 +22,5 @@ __all__ = [
     "configure_logging",
     "Prompt",
     "Instructions",
+    "settings",
 ]

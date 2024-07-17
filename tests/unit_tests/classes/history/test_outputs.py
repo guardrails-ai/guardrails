@@ -1,11 +1,10 @@
-import pydantic
 import pytest
 
 from guardrails.classes.history.outputs import Outputs
 from guardrails.constants import error_status, fail_status, not_run_status, pass_status
-from guardrails.utils.llm_response import LLMResponse
-from guardrails.utils.logs_utils import ValidatorLogs
-from guardrails.utils.reask_utils import ReAsk
+from guardrails.classes.llm.llm_response import LLMResponse
+from guardrails.classes.validation.validator_logs import ValidatorLogs
+from guardrails.actions.reask import ReAsk
 from guardrails.validator_base import FailResult, PassResult
 
 
@@ -136,8 +135,8 @@ def test_failed_validations():
             property_path="$",
         ),
         ValidatorLogs(
-            registered_name="valid-length",
-            validator_name="valid-length",
+            registered_name="length",
+            validator_name="length",
             value_before_validation="Hello there!",
             validation_result=PassResult(),
             value_after_validation="Hello there!",
@@ -184,10 +183,6 @@ def test_status(outputs: Outputs, expected_status: str):
     assert status == expected_status
 
 
-@pytest.mark.skipif(
-    pydantic.version.VERSION.startswith("1"),
-    reason="This fails in Pydantic 1.x because it casts the ReAsk to a Dict on init...",
-)
 def test_status_reask():
     outputs = Outputs(
         validation_response=ReAsk(

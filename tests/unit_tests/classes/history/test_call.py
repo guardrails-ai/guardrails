@@ -8,9 +8,9 @@ from guardrails.constants import not_run_status, pass_status
 from guardrails.llm_providers import ArbitraryCallable
 from guardrails.prompt.instructions import Instructions
 from guardrails.prompt.prompt import Prompt
-from guardrails.utils.llm_response import LLMResponse
-from guardrails.utils.logs_utils import ValidatorLogs
-from guardrails.utils.reask_utils import ReAsk
+from guardrails.classes.llm.llm_response import LLMResponse
+from guardrails.classes.validation.validator_logs import ValidatorLogs
+from guardrails.actions.reask import ReAsk
 from guardrails.validator_base import FailResult, PassResult
 
 
@@ -117,7 +117,9 @@ def test_non_empty_initialization():
         validator_logs=first_validator_logs,
     )
 
-    first_iteration = Iteration(inputs=inputs, outputs=first_outputs)
+    first_iteration = Iteration(
+        call_id="mock-call", index=0, inputs=inputs, outputs=first_outputs
+    )
 
     second_iter_prompt = Prompt(source="That wasn't quite right. Try again.")
 
@@ -155,7 +157,9 @@ def test_non_empty_initialization():
         validator_logs=second_validator_logs,
     )
 
-    second_iteration = Iteration(inputs=second_inputs, outputs=second_outputs)
+    second_iteration = Iteration(
+        call_id="mock-call", index=0, inputs=second_inputs, outputs=second_outputs
+    )
 
     iterations: Stack[Iteration] = Stack(first_iteration, second_iteration)
 

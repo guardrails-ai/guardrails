@@ -4,23 +4,31 @@ import pytest
 
 import guardrails as gd
 from guardrails import register_validator
+from guardrails.classes.llm.llm_response import LLMResponse
 from guardrails.utils.openai_utils import get_static_openai_chat_create_func
 from guardrails.validator_base import OnFailAction
-from guardrails.validators import FailResult, ValidationResult
+from guardrails.classes.validation.validation_result import FailResult, ValidationResult
 
-from .mock_llm_outputs import (
-    MockArbitraryCallable,
-    MockAsyncArbitraryCallable,
-    MockOpenAIChatCallable,
-)
-from .test_assets import pydantic
+from .test_assets import pydantic, string
 
 
 def test_parsing_reask(mocker):
     """Test re-asking when response is not parseable."""
-    mocker.patch(
-        "guardrails.llm_providers.ArbitraryCallable", new=MockArbitraryCallable
+    mock_invoke_llm = mocker.patch(
+        "guardrails.llm_providers.ArbitraryCallable._invoke_llm",
     )
+    mock_invoke_llm.side_effect = [
+        LLMResponse(
+            output=pydantic.PARSING_UNPARSEABLE_LLM_OUTPUT,
+            prompt_token_count=123,
+            response_token_count=1234,
+        ),
+        LLMResponse(
+            output=pydantic.PARSING_EXPECTED_LLM_OUTPUT,
+            prompt_token_count=123,
+            response_token_count=1234,
+        ),
+    ]
 
     guard = gd.Guard.from_pydantic(
         output_class=pydantic.PersonalDetails, prompt=pydantic.PARSING_INITIAL_PROMPT
@@ -60,12 +68,23 @@ def test_parsing_reask(mocker):
 @pytest.mark.asyncio
 async def test_async_parsing_reask(mocker):
     """Test re-asking when response is not parseable during async flow."""
-    mocker.patch(
-        "guardrails.llm_providers.AsyncArbitraryCallable",
-        new=MockAsyncArbitraryCallable,
+    mock_invoke_llm = mocker.patch(
+        "guardrails.llm_providers.AsyncArbitraryCallable.invoke_llm",
     )
+    mock_invoke_llm.side_effect = [
+        LLMResponse(
+            output=pydantic.PARSING_UNPARSEABLE_LLM_OUTPUT,
+            prompt_token_count=123,
+            response_token_count=1234,
+        ),
+        LLMResponse(
+            output=pydantic.PARSING_EXPECTED_LLM_OUTPUT,
+            prompt_token_count=123,
+            response_token_count=1234,
+        ),
+    ]
 
-    guard = gd.Guard.from_pydantic(
+    guard = gd.AsyncGuard.from_pydantic(
         output_class=pydantic.PersonalDetails, prompt=pydantic.PARSING_INITIAL_PROMPT
     )
 
@@ -91,6 +110,7 @@ async def test_async_parsing_reask(mocker):
     assert call.iterations.first.guarded_output is None
 
     # For re-asked prompt and output
+
     assert call.iterations.last.inputs.prompt == gd.Prompt(
         pydantic.PARSING_COMPILED_REASK
     )
@@ -108,16 +128,22 @@ def test_reask_prompt_instructions(mocker):
     """
 
     mocker.patch(
-        "guardrails.llm_providers.OpenAIChatCallable",
-        new=MockOpenAIChatCallable,
+        "guardrails.llm_providers.OpenAIChatCallable._invoke_llm",
+        return_value=LLMResponse(
+            output=string.MSG_LLM_OUTPUT_CORRECT,
+            prompt_token_count=123,
+            response_token_count=1234,
+        ),
     )
 
     @register_validator(name="always_fail", data_type="string")
     def always_fail(value: str, metadata: Dict) -> ValidationResult:
         return FailResult(error_message=f"Value {value} should fail.")
 
+    # We don't support tuple syntax for from_string and never have
+    # Once the validator function is decorated though, it becomes a Validator class
     guard = gd.Guard.from_string(
-        validators=[(always_fail, OnFailAction.REASK)],
+        validators=[always_fail(OnFailAction.REASK)],
         description="Some description",
     )
 

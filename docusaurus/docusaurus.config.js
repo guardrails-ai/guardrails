@@ -76,15 +76,35 @@ const config = {
         },
         items: [
           {
-            type: "doc",
+            type: "docSidebar",
             position: "left",
             label: "Docs",
-            docId: "index",
+            sidebarId: "docs",
           }, {
-            type: 'docSidebar',
-            position: 'left',
-            sidebarId: 'hubSidebar',
-            label: 'Hub Docs',
+            type: "docSidebar",
+            position: "left",
+            label: "Concepts",
+            sidebarId: "concepts"
+          }, {
+            type: "docSidebar",
+            position: "left",
+            label: "How-to Guides",
+            sidebarId: "howToGuides"
+          }, {
+            type: "docSidebar",
+            position: "left",
+            label: "Examples",
+            sidebarId: "examples"
+          }, {
+            type: "docSidebar",
+            position: "left",
+            label: "Integrations",
+            sidebarId: "integrations"
+          }, {
+            type: "docSidebar",
+            position: "left",
+            label: "API Reference",
+            sidebarId: "apiReference"
           }
         ],
       },

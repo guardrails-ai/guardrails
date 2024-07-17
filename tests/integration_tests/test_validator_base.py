@@ -1,5 +1,8 @@
-from typing import Any, Dict
+from typing import Any, Callable, Dict, Optional, Union
 
+import pytest
+
+from guardrails.classes.validation.validation_result import PassResult
 from guardrails.guard import Guard
 from guardrails.validator_base import (
     FailResult,
@@ -34,6 +37,12 @@ def test_default_noop():
     assert not res.validation_passed
 
 
+def test_multiple_validators():
+    # throws value error for multiple validators
+    with pytest.raises(ValueError):
+        Guard().use(FailureValidator, FailureValidator)
+
+
 def test_filter():
     guard = Guard().use(FailureValidator, on_fail="filter")
     res = guard.parse("hi")
@@ -56,3 +65,38 @@ def test_exception():
         assert "Failed cuz this is the failure validator" in str(e)
     else:
         assert False, "Expected an exception"
+
+
+@register_validator("mycustominstancecheckvalidator", data_type="string")
+class MyValidator(Validator):
+    def __init__(
+        self,
+        an_instance_attr: str,
+        on_fail: Optional[Union[Callable, str]] = None,
+        **kwargs,
+    ):
+        self.an_instance_attr = an_instance_attr
+        super().__init__(on_fail=on_fail, an_instance_attr=an_instance_attr, **kwargs)
+
+    def validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
+        return PassResult()
+
+
+@pytest.mark.parametrize(
+    "instance_attr",
+    [
+        "a",
+        object(),
+    ],
+)
+def test_validator_instance_attr_equality(mocker, instance_attr):
+    validator = MyValidator(an_instance_attr=instance_attr)
+
+    assert validator.an_instance_attr is instance_attr
+
+    guard = Guard.from_string(
+        validators=[validator],
+        prompt="",
+    )
+
+    assert guard._validators[0].an_instance_attr == instance_attr

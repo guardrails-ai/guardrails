@@ -9,6 +9,7 @@ import guardrails as gd
 from guardrails.prompt.instructions import Instructions
 from guardrails.prompt.prompt import Prompt
 from guardrails.utils.constants import constants
+from guardrails.utils.prompt_utils import prompt_content_for_schema
 
 INSTRUCTIONS = "\nYou are a helpful bot, who answers only with valid JSON\n"
 
@@ -16,7 +17,7 @@ PROMPT = "Extract a string from the text"
 
 REASK_PROMPT = """
 Please try that again, extract a string from the text
-${output_schema}
+${xml_output_schema}
 ${previous_response}
 """
 
@@ -115,7 +116,7 @@ ${gr.complete_json_suffix_v2}
 </prompt>
 <reask_prompt>
 Please try that again, extract a string from the text
-${output_schema}
+${xml_output_schema}
 ${previous_response}
 </reask_prompt>
 </rail>
@@ -140,7 +141,7 @@ ${gr.complete_json_suffix_v2}
 </prompt>
 <reask_prompt>
 Please try that again, extract a string from the text
-${output_schema}
+${xml_output_schema}
 ${previous_response}
 </reask_prompt>
 <reask_instructions>
@@ -155,8 +156,10 @@ def test_parse_prompt():
     guard = gd.Guard.from_rail_string(SIMPLE_RAIL_SPEC)
 
     # Strip both, raw and parsed, to be safe
-    assert guard.instructions.format().source.strip() == INSTRUCTIONS.strip()
-    assert guard.prompt.format().source.strip() == PROMPT.strip()
+    instructions = Instructions(guard._exec_opts.instructions)
+    assert instructions.format().source.strip() == INSTRUCTIONS.strip()
+    prompt = Prompt(guard._exec_opts.prompt)
+    assert prompt.format().source.strip() == PROMPT.strip()
 
 
 def test_instructions_with_params():
@@ -166,14 +169,13 @@ def test_instructions_with_params():
     user_instructions = "A useful system message."
     user_prompt = "A useful prompt."
 
+    instructions = Instructions(guard._exec_opts.instructions)
     assert (
-        guard.instructions.format(user_instructions=user_instructions).source.strip()
+        instructions.format(user_instructions=user_instructions).source.strip()
         == user_instructions.strip()
     )
-    assert (
-        guard.prompt.format(user_prompt=user_prompt).source.strip()
-        == user_prompt.strip()
-    )
+    prompt = Prompt(guard._exec_opts.prompt)
+    assert prompt.format(user_prompt=user_prompt).source.strip() == user_prompt.strip()
 
 
 @pytest.mark.parametrize(
@@ -187,32 +189,39 @@ def test_variable_names(rail, var_names):
     """Test extracting variable names from a prompt."""
     guard = gd.Guard.from_rail_string(rail)
 
-    assert guard.prompt.variable_names == var_names
+    prompt = Prompt(guard._exec_opts.prompt)
+
+    assert prompt.variable_names == var_names
 
 
 def test_format_instructions():
     """Test extracting format instructions from a prompt."""
     guard = gd.Guard.from_rail_string(RAIL_WITH_FORMAT_INSTRUCTIONS)
-    output_schema = guard.rail.output_schema.transpile()
+
+    output_schema = prompt_content_for_schema(
+        guard._output_type,
+        guard.output_schema.to_dict(),
+        validator_map=guard._validator_map,
+        json_path="$",
+    )
+
     expected_instructions = (
         Template(constants["complete_json_suffix_v2"])
         .safe_substitute(output_schema=output_schema)
         .rstrip()
     )
-
-    assert guard.prompt.format_instructions.rstrip() == expected_instructions
+    prompt = Prompt(guard._exec_opts.prompt, output_schema=output_schema)
+    assert prompt.format_instructions.rstrip() == expected_instructions
 
 
 def test_reask_prompt():
     guard = gd.Guard.from_rail_string(RAIL_WITH_REASK_PROMPT)
-    assert guard.output_schema.reask_prompt_template == Prompt(REASK_PROMPT)
+    assert guard._exec_opts.reask_prompt == REASK_PROMPT
 
 
 def test_reask_instructions():
     guard = gd.Guard.from_rail_string(RAIL_WITH_REASK_INSTRUCTIONS)
-    assert guard.output_schema._reask_instructions_template == Instructions(
-        INSTRUCTIONS
-    )
+    assert guard._exec_opts.reask_instructions == INSTRUCTIONS
 
 
 @pytest.mark.parametrize(
@@ -240,14 +249,15 @@ def test_gr_prefixed_prompt_item_passes():
     prompt = """Give me a response to ${grade}"""
 
     guard = gd.Guard.from_pydantic(output_class=TestResponse, prompt=prompt)
-    assert len(guard.prompt.variable_names) == 1
+    prompt = Prompt(guard._exec_opts.prompt)
+    assert len(prompt.variable_names) == 1
 
 
 def test_gr_dot_prefixed_prompt_item_fails():
     with pytest.raises(Exception):
         # From pydantic:
         prompt = """Give me a response to ${gr.ade}"""
-        gd.Guard.from_pydantic(output_class=TestResponse, prompt=prompt)
+        Prompt(prompt)
 
 
 def test_escape():

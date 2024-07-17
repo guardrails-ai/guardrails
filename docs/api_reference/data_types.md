@@ -3,16 +3,5 @@
 ::: guardrails.datatypes
     options:
         filters:
-            - "!get_validators"
-            - "!registry"
-            - "!DataType"
-            - "!register_type"
-            - "!Scalar"
-            - "!set_children"
-            - "!validate"
-            - "!from_str"
-            - "!from_xml"
-            - "!model"
-            - "!validators"
-            - "!to_object_element"
+            - "!types_registry"
         show_bases: true
