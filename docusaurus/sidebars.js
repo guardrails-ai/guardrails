@@ -37,10 +37,10 @@ const sidebars = {
       collapsed: false,
       items: [
         "getting_started/quickstart",
-        "getting_started/why_use",
-        "getting_started/ai_validation",
-        "getting_started/ml_based",
-        "getting_started/structured_data",
+        // "getting_started/why_use",
+        // "getting_started/ai_validation",
+        // "getting_started/ml_based",
+        // "getting_started/structured_data",
         "getting_started/deploying",
         "getting_started/contributing",
         "getting_started/help",
@@ -88,6 +88,7 @@ const sidebars = {
       collapsed: true,
       items: [
         "cookbooks/using_llms",
+        "cookbooks/deploying_aws",
       ],
     },
     {

@@ -1,4 +1,4 @@
-# Deploying Guardrails Server on AWS
+# AWS - Deploying Guardrails Server
 
 Guardrails allows you to deploy a dedicated server to run guard executions while continuing to use the Guardrails SDK as you do today.
 
