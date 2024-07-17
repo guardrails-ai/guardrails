@@ -78,7 +78,7 @@ const config = {
           {
             type: "docSidebar",
             position: "left",
-            label: "Getting Started",
+            label: "Docs",
             sidebarId: "docs",
           }, {
             type: "docSidebar",
@@ -105,11 +105,6 @@ const config = {
             position: "left",
             label: "API Reference",
             sidebarId: "apiReference"
-          }, {
-            type: "docSidebar",
-            position: "left",
-            label: "Migration Guides",
-            sidebarId: "migrationGuides"
           }
         ],
       },
