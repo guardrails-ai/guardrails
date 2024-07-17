@@ -14,6 +14,7 @@ from guardrails.utils.casting_utils import to_string
 from guardrails.classes.validation.validator_logs import ValidatorLogs
 from guardrails.actions.reask import ReAsk
 from guardrails.actions import Filter, Refrain
+from guardrails.logger import logger
 
 
 def get_result_type(before_value: Any, after_value: Any, outcome: str):
@@ -55,7 +56,7 @@ def get_span(span=None):
         current_span = trace.get_current_span(current_context)
         return current_span
     except Exception as e:
-        print(e)
+        logger.error(e)
         return None
 
 
@@ -115,22 +116,10 @@ def trace_validation_result(
     attempt_number: int,
     current_span=None,
 ):
-    # Duplicate logs are showing here
-    # print("validation_logs.validator_logs: ", validation_logs.validator_logs)
     _current_span = get_span(current_span)
     if _current_span is not None:
         for log in validation_logs:
-            # Duplicate logs are showing here
-            # print("calling trace_validator_result with: ", log, attempt_number)
             trace_validator_result(_current_span, log, attempt_number)
-
-        # CHECKME: disabled these because I think we flattened this structure?
-        # if validation_logs.children:
-        #     for child in validation_logs.children:
-        #         # print("calling trace_validation_result with child logs")
-        #         trace_validation_result(
-        #             validation_logs.children.get(child), attempt_number, _current_span
-        #         )
 
 
 def trace_validator(
