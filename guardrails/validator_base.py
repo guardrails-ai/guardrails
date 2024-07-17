@@ -1,11 +1,11 @@
 import inspect
-import nltk
 from collections import defaultdict
 from copy import deepcopy
 from enum import Enum
 from string import Template
 from typing import (
     Any,
+    Awaitable,
     Callable,
     Dict,
     List,
@@ -16,12 +16,13 @@ from typing import (
     Union,
     cast,
 )
-from typing_extensions import deprecated
 from warnings import warn
 
+import nltk
 from langchain_core.messages import BaseMessage
 from langchain_core.runnables import Runnable, RunnableConfig
 from pydantic import BaseModel, Field
+from typing_extensions import deprecated
 
 from guardrails.classes import InputType
 from guardrails.constants import hub
@@ -501,9 +502,39 @@ class Validator(Runnable):
     def chunking_function(self, chunk: str):
         return split_sentence_str(chunk)
 
+    async def async_validate(
+        self, value: Any, metadata: Dict[str, Any]
+    ) -> Awaitable[ValidationResult]:
+        """Asynchronously validate a value and returns an awaitable validation result"""
+        raise NotImplementedError
+
     def validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
         """Validates a value and return a validation result."""
         raise NotImplementedError
+
+    async def async_validate_stream(
+        self, chunk: Any, metadata: Dict[str, Any], **kwargs
+    ) -> Awaitable[Optional[ValidationResult]]:
+        # combine accumulated chunks and new [:-1]chunk
+        self.accumulated_chunks.append(chunk)
+        accumulated_text = "".join(self.accumulated_chunks)
+        # check if enough chunks have accumulated for validation
+        splitcontents = self.chunking_function(accumulated_text)
+
+        # if remainder kwargs is passed, validate remainder regardless
+        remainder = kwargs.get("remainder", False)
+        if remainder:
+            splitcontents = [accumulated_text, ""]
+        if len(splitcontents) == 0:
+            return PassResult()
+        [chunk_to_validate, new_accumulated_chunks] = splitcontents
+        self.accumulated_chunks = [new_accumulated_chunks]
+        # exclude last chunk, because it may not be a complete chunk
+        validation_result = await self.validate(chunk_to_validate, metadata)
+        # if validate doesn't set validated chunk, we set it
+        if validation_result.validated_chunk is None:
+            validation_result.validated_chunk = chunk_to_validate
+        return validation_result
 
     def validate_stream(
         self, chunk: Any, metadata: Dict[str, Any], **kwargs
