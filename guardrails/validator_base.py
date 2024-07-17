@@ -127,7 +127,7 @@ def try_to_import_hub():
         # in lieu of completely unregistered validators
         import guardrails.hub  # noqa
     except ImportError:
-        logger.debug("Could not import hub.  Validators may not work properly.")
+        logger.error("Could not import hub. Validators may not work properly.")
 
 
 # TODO: Move this to validator_utils.py

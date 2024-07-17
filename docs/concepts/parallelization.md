@@ -1,4 +1,5 @@
-# Parallelization and the Orchestration of Guard Executions
+# Parallelization
+## And the Orchestration of Guard Executions
 
 This document is a description of the current implementation of the Guardrails' validation loop.  It attempts to explain the current patterns used with some notes on why those patterns were accepted at the time of implementation and potential future optimizations.  It is _not_ meant to be prescriptive as there can, and will, be improvements made in future versions.
 
