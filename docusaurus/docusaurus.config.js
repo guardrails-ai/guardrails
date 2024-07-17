@@ -110,11 +110,6 @@ const config = {
             position: "left",
             label: "Migration Guides",
             sidebarId: "migrationGuides"
-          }, {
-            type: "doc",
-            position: "left",
-            label: "Guardrails Server API",
-            docId: "guardrails_server_api"
           }
         ],
       },
