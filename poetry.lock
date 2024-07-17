@@ -1741,13 +1741,13 @@ protobuf = ["grpcio-tools (>=1.64.0)"]
 
 [[package]]
 name = "guardrails-api"
-version = "0.0.0a3"
+version = "0.0.1"
 description = "Guardrails API"
 optional = false
 python-versions = "<4,>=3.8"
 files = [
-    {file = "guardrails_api-0.0.0a3-py3-none-any.whl", hash = "sha256:318a23784a785536b813e3185ffeaa32cb29f3c5abb664a20f80cf8c1b53e825"},
-    {file = "guardrails_api-0.0.0a3.tar.gz", hash = "sha256:5e3aff4b20e8d4a667e6cb8f9fa69801ac48299c532aa2823dc3a4e38b912e35"},
+    {file = "guardrails_api-0.0.1-py3-none-any.whl", hash = "sha256:c0c16a3eb28dd9dea2f24d3cc32fee8fe9cc29c9cde5f84bb660212c0516b467"},
+    {file = "guardrails_api-0.0.1.tar.gz", hash = "sha256:b1e353005bf3b74adc1dc1aad8d0fc23d110529adf5e99b713ac02852da0ae8a"},
 ]
 
 [package.dependencies]
@@ -1756,7 +1756,7 @@ flask = ">=3.0.3,<4"
 Flask-Caching = ">=2.3.0,<3"
 Flask-Cors = ">=4.0.1,<5"
 Flask-SQLAlchemy = ">=3.1.1,<4"
-guardrails-ai = ">=0.5.0a2"
+guardrails-ai = ">=0.5.0a11"
 jsonschema = ">=4.22.0,<5"
 litellm = ">=1.39.3,<2"
 opentelemetry-api = ">=1.0.0,<2"
@@ -7268,4 +7268,4 @@ vectordb = ["faiss-cpu", "numpy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "18cd2e5d4e04e8aae206a165364749f4f76af72fd4b43aeee9ed1c3a2850fa46"
+content-hash = "7324b8f6722a8ffa85dce351e32df205cd72d6f7dd24d37186c4a71604dcd489"
