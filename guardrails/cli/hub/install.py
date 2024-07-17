@@ -9,6 +9,7 @@ import typer
 
 from guardrails.classes.generic import Stack
 from guardrails.cli.hub.hub import hub_command
+
 from guardrails.cli.hub.utils import (
     get_hub_directory,
     get_org_and_package_dirs,
@@ -18,6 +19,7 @@ from guardrails.cli.hub.utils import (
 from guardrails.cli.logger import LEVELS, logger
 from guardrails.cli.server.hub_client import get_validator_manifest
 from guardrails.cli.server.module_manifest import ModuleManifest
+from guardrails.classes.credentials import Credentials
 
 from .console import console
 
@@ -195,7 +197,7 @@ def install(
 Example: hub://guardrails/regex_match."
     ),
     local_models: bool = typer.Option(
-        None,
+        False,
         "--install-local-models/--no-install-local-models",
         help="Install local models",
     ),
@@ -211,6 +213,8 @@ Example: hub://guardrails/regex_match."
     if not package_uri.startswith("hub://"):
         logger.error("Invalid URI!")
         sys.exit(1)
+
+    has_rc_file = Credentials.has_rc_file()
 
     installing_msg = f"Installing {package_uri}..."
     logger.log(
@@ -242,22 +246,22 @@ Example: hub://guardrails/regex_match."
     with loader(dl_deps_msg, spinner="bouncingBar"):
         install_hub_module(module_manifest, site_packages, quiet=quiet)
 
-    if local_models is True or local_models is False:
-        install_local_models = local_models
-    else:
-        try:
-            if module_manifest.tags and module_manifest.tags.has_guardrails_endpoint:
-                install_local_models = typer.confirm(
-                    "This validator has a Guardrails AI inference endpoint available. "
-                    "Would you still like to install the"
-                    " local models for local inference?",
-                )
-            else:
-                install_local_models = typer.confirm(
-                    "Would you like to install the local models?", default=True
-                )
-        except AttributeError:
-            install_local_models = False
+    install_local_models = local_models
+
+    try:
+        if has_rc_file:
+            # if we do want to remote then we don't want to install local models
+            install_local_models = not Credentials.from_rc_file(
+                logger
+            ).use_remote_inferencing
+        elif module_manifest.tags and module_manifest.tags.has_guardrails_endpoint:
+            install_local_models = typer.confirm(
+                "This validator has a Guardrails AI inference endpoint available. "
+                "Would you still like to install the"
+                " local models for local inference?",
+            )
+    except AttributeError:
+        pass
 
     # Post-install
     if install_local_models:

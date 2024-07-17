@@ -84,6 +84,7 @@ from guardrails.utils.tools_utils import (
     # Prevent duplicate declaration in the docs
     json_function_calling_tool as json_function_calling_tool_util,
 )
+from guardrails.settings import settings
 
 
 class Guard(IGuard, Generic[OT]):
@@ -186,8 +187,8 @@ class Guard(IGuard, Generic[OT]):
         self._output_formatter: Optional[BaseFormatter] = None
 
         # Gaurdrails As A Service Initialization
-        api_key = os.environ.get("GUARDRAILS_API_KEY")
-        if api_key is not None:
+        if settings.use_server:
+            api_key = os.environ.get("GUARDRAILS_API_KEY")
             self._api_client = GuardrailsApiClient(api_key=api_key)
             _loaded = False
             if _try_to_load:
@@ -240,7 +241,7 @@ class Guard(IGuard, Generic[OT]):
         # defensive for when it's called internally.  Setting a default parameter
         # doesn't help the case where the method is explicitly passed a 'None'.
         if num_reasks is None:
-            logger.info("_set_num_reasks called with 'None'.  Defaulting to 1.")
+            logger.debug("_set_num_reasks called with 'None'.  Defaulting to 1.")
             self._num_reasks = 1
         else:
             self._num_reasks = num_reasks
@@ -272,7 +273,7 @@ class Guard(IGuard, Generic[OT]):
 
     def _fill_validator_map(self):
         # dont init validators if were going to call the server
-        if self._api_client is not None:
+        if settings.use_server:
             return
         for ref in self.validators:
             entry: List[Validator] = self._validator_map.get(ref.on, [])  # type: ignore
@@ -724,7 +725,7 @@ class Guard(IGuard, Generic[OT]):
                 kwargs=kwargs,
             )
 
-            if self._api_client is not None and model_is_supported_server_side(
+            if settings.use_server and model_is_supported_server_side(
                 llm_api, *args, **kwargs
             ):
                 return self._call_server(
@@ -1076,13 +1077,13 @@ class Guard(IGuard, Generic[OT]):
     #     pass
 
     def upsert_guard(self):
-        if self._api_client:
+        if settings.use_server and self._api_client:
             self._api_client.upsert_guard(self)
         else:
-            raise ValueError("Guard does not have an api client!")
+            raise ValueError("Using the Guardrails server is not enabled!")
 
     def _single_server_call(self, *, payload: Dict[str, Any]) -> ValidationOutcome[OT]:
-        if self._api_client:
+        if settings.use_server and self._api_client:
             validation_output: IValidationOutcome = self._api_client.validate(
                 guard=self,  # type: ignore
                 payload=ValidatePayload.from_dict(payload),  # type: ignore
@@ -1126,7 +1127,7 @@ class Guard(IGuard, Generic[OT]):
         *,
         payload: Dict[str, Any],
     ) -> Iterable[ValidationOutcome[OT]]:
-        if self._api_client:
+        if settings.use_server and self._api_client:
             validation_output: Optional[IValidationOutcome] = None
             response = self._api_client.stream_validate(
                 guard=self,  # type: ignore
@@ -1176,7 +1177,7 @@ class Guard(IGuard, Generic[OT]):
         full_schema_reask: Optional[bool] = True,
         **kwargs,
     ) -> Union[ValidationOutcome[OT], Iterable[ValidationOutcome[OT]]]:
-        if self._api_client:
+        if settings.use_server and self._api_client:
             payload: Dict[str, Any] = {
                 "args": list(args),
                 "full_schema_reask": full_schema_reask,
@@ -1216,11 +1217,11 @@ class Guard(IGuard, Generic[OT]):
 
     def _save(self):
         api_key = os.environ.get("GUARDRAILS_API_KEY")
-        if api_key is not None:
+        if settings.use_server:
             if self.name is None:
                 self.name = f"gr-{str(self.id)}"
-                logger.warn("Warning: No name passed to guard!")
-                logger.warn(
+                logger.warning("No name passed to guard!")
+                logger.warning(
                     "Use this auto-generated name to re-use this guard: {name}".format(
                         name=self.name
                     )

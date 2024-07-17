@@ -73,7 +73,7 @@ response = guard(
     model="gpt-4o",
     messages=messages,
     prompt_params={"chat_history": chat_history},
-    tools=guard.add_json_function_calling_tool(tools),
+    tools=guard.json_function_calling_tool(tools),
     tool_choice="required",
 )
 ```

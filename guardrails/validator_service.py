@@ -239,6 +239,32 @@ class SequentialValidatorService(ValidatorServiceBase):
         # Validate the field
         validators = validator_map.get(reference_property_path, [])
         for validator in validators:
+            if stream:
+                if validator.on_fail_descriptor is OnFailAction.REASK:
+                    raise ValueError(
+                        """Reask is not supported for stream validation, 
+                        only noop and exception are supported."""
+                    )
+                if validator.on_fail_descriptor is OnFailAction.FIX:
+                    raise ValueError(
+                        """Fix is not supported for stream validation, 
+                        only noop and exception are supported."""
+                    )
+                if validator.on_fail_descriptor is OnFailAction.FIX_REASK:
+                    raise ValueError(
+                        """Fix reask is not supported for stream validation, 
+                        only noop and exception are supported."""
+                    )
+                if validator.on_fail_descriptor is OnFailAction.FILTER:
+                    raise ValueError(
+                        """Filter is not supported for stream validation, 
+                        only noop and exception are supported."""
+                    )
+                if validator.on_fail_descriptor is OnFailAction.REFRAIN:
+                    raise ValueError(
+                        """Refrain is not supported for stream validation, 
+                        only noop and exception are supported."""
+                    )
             validator_logs = self.run_validator(
                 iteration,
                 validator,
