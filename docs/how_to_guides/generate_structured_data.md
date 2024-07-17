@@ -1,5 +1,4 @@
-
-# Response Formatting and Structured Data
+# Generate Structured Data
 
 Guardrails provides several interfaces to help llms respond in valid JSON which can then be validated using Guardrails validators. In this cookbook, we'll demonstrate how each interface is used with examples.
 
