@@ -20,8 +20,11 @@ headingLevel: 2
 <!-- Generator: Widdershins v4.0.1 -->
 
 <h1 id="guardrails-api">Guardrails Server REST API</h1>
+:::note
 
-Guardrails CRUD API. The server hosts the documenation on this page in an interactive swagger UI. Typically these are available at localhost:8000/docs if you are running the server locally with default configurations. 
+Guardrails CRUD API. The server hosts the documenation on this page in an interactive swagger UI. Typically these are available at [localhost:8000/docs](http://localhost:8000/docs) if you are running the server locally with default configurations. 
+
+:::
 
 # Authentication
 
