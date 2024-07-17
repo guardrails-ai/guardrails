@@ -1,6 +1,4 @@
-import pytest
-
-from guardrails.rail import Rail
+from guardrails.schema.rail_schema import rail_string_to_schema
 
 
 def test_rail_scalar_string():
@@ -20,7 +18,7 @@ Hello world
 
 </rail>
 """
-    Rail.from_string(rail_spec)
+    rail_string_to_schema(rail_spec)
 
 
 def test_rail_object_with_scalar():
@@ -43,7 +41,7 @@ Hello world
 </prompt>
 </rail>
 """
-    Rail.from_string(rail_spec)
+    rail_string_to_schema(rail_spec)
 
 
 def test_rail_object_with_list():
@@ -65,7 +63,7 @@ Hello world
 
 </rail>
 """
-    Rail.from_string(rail_spec)
+    rail_string_to_schema(rail_spec)
 
 
 def test_rail_object_with_object():
@@ -87,7 +85,7 @@ Hello world
 
 </rail>
 """
-    Rail.from_string(rail_spec)
+    rail_string_to_schema(rail_spec)
 
 
 def test_rail_list_with_scalar():
@@ -106,7 +104,7 @@ Hello world
 
 </rail>
 """
-    Rail.from_string(rail_spec)
+    rail_string_to_schema(rail_spec)
 
 
 def test_rail_list_with_list():
@@ -127,7 +125,7 @@ Hello world
 
 </rail>
 """
-    Rail.from_string(rail_spec)
+    rail_string_to_schema(rail_spec)
 
 
 def test_rail_list_with_object():
@@ -148,7 +146,7 @@ Hello world
 
 </rail>
 """
-    Rail.from_string(rail_spec)
+    rail_string_to_schema(rail_spec)
 
 
 def test_rail_outermost_list():
@@ -167,10 +165,10 @@ Hello world
 
 </rail>
 """
-    Rail.from_string(rail_spec)
+    rail_string_to_schema(rail_spec)
 
 
-def test_format_deprecated():
+def test_format_not_read_as_validators():
     rail_spec = """
     <rail version="0.1">
     <output>
@@ -187,7 +185,7 @@ def test_format_deprecated():
 
     </rail>
     """
-    with pytest.warns(DeprecationWarning):
-        rail = Rail.from_string(rail_spec)
-    validator = rail.output_schema.root_datatype.children.string_name.validators[0]
-    assert validator.rail_alias == "two-words"
+    # Declaring Validators in the format field was dropped in 0.5.x
+    #   as stated in the previous DeprecationWarning.
+    processed_schema = rail_string_to_schema(rail_spec)
+    assert len(processed_schema.validators) == 0

@@ -1,6 +1,6 @@
 # ruff: noqa: E501
-from guardrails.utils.reask_utils import FieldReAsk
-from guardrails.validators import FailResult
+from guardrails.actions.reask import FieldReAsk
+from guardrails.classes.validation.validation_result import FailResult
 
 VALIDATED_OUTPUT_REASK_1 = {
     "fees": [

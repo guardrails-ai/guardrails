@@ -1,4 +1,4 @@
-# Guardrails AI
+# Introduction
 
 ## What is Guardrails?
 

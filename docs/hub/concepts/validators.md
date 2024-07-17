@@ -18,7 +18,7 @@ As an example, the `ExtractedSummarySentencesMatch` validator accepts a `filepat
 guard = Guard.from_rail("my_railspec.rail")
 
 outcome = guard(
-    llm_api=openai.ChatCompletion.create,
+    llm_api=openai.chat.completions.create,
     model="gpt-3.5-turbo",
     num_reasks=3,
     metadata={

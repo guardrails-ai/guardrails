@@ -2,7 +2,7 @@
 <output
     type="string"
     description="Name for the pizza"
-    format="two-words"
+    validators="two-words"
     on-fail-two-words="reask"
 />
 

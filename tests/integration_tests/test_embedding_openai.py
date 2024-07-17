@@ -53,10 +53,7 @@ class TestOpenAIEmbedding:
 
     def test_embed_query(self, mocker):
         mock_create = None
-        if OPENAI_VERSION.startswith("0"):
-            mock_create = mocker.patch("openai.Embedding.create")
-        else:
-            mock_create = mocker.patch("openai.resources.Embeddings.create")
+        mock_create = mocker.patch("openai.resources.Embeddings.create")
 
         mock_create.return_value = MockOpenAIEmbedding()
 
@@ -70,14 +67,9 @@ class TestOpenAIEmbedding:
         mock_environ.return_value = "test_api_key"
 
         mock_create = None
-        if OPENAI_VERSION.startswith("0"):
-            mock_create = mocker.patch("openai.Embedding.create")
-            mock_create.return_value = MockResponse(
-                data=[{"embedding": [1.0, 2.0, 3.0]}]
-            )
-        else:
-            mock_create = mocker.patch("openai.resources.Embeddings.create")
-            mock_create.return_value = MockResponse(data=[[1.0, 2.0, 3.0]])
+
+        mock_create = mocker.patch("openai.resources.Embeddings.create")
+        mock_create.return_value = MockResponse(data=[[1.0, 2.0, 3.0]])
 
         instance = OpenAIEmbedding(api_key="test_api_key")
         result = instance._get_embedding(["test text"])
