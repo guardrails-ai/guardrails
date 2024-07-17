@@ -224,6 +224,67 @@ class SequentialValidatorService(ValidatorServiceBase):
         )
 
         return self.after_run_validator(validator, validator_logs, result)
+    
+    def run_validators_stream_fix(
+        self,
+        iteration: Iteration,
+        validator_map: ValidatorMap,
+        value_stream: Iterable[Tuple[Any, bool]],
+        metadata: Dict[str, Any],
+        absolute_property_path: str,
+        reference_property_path: str,
+        **kwargs,
+    ) -> Iterable[Tuple[Any, str, Dict[str, Any]]]:
+        validators = validator_map.get(reference_property_path, [])
+        acc_output = ''
+        for chunk, finished in value_stream:
+            original_text = chunk
+            acc_output += chunk
+            fixed_values = []
+            for validator in validators:
+                validator_logs = self.run_validator(
+                    iteration,
+                    validator,
+                    chunk,
+                    metadata,
+                    absolute_property_path,
+                    True,
+                    **kwargs,
+                )
+                result = validator_logs.validation_result
+
+                result = cast(ValidationResult, result)
+                # if we have a concrete result, log it in the validation map
+                if isinstance(result, FailResult):
+                    rechecked_value = None
+                    chunk = self.perform_correction(
+                        [result],
+                        chunk,
+                        validator,
+                        validator.on_fail_descriptor,
+                        rechecked_value=rechecked_value,
+                    )
+                    fixed_values.append(chunk)
+                elif isinstance(result, PassResult):
+                    if (
+                        validator.override_value_on_pass
+                        and result.value_override is not result.ValueOverrideSentinel
+                    ):
+                        chunk = result.value_override
+                        fixed_values.append(chunk)
+
+                validator_logs.value_after_validation = chunk
+                if result and result.metadata is not None:
+                    metadata = result.metadata
+                # # TODO: Filter is no longer terminal, so we shouldn't yield, right?
+                # if isinstance(chunk, (Refrain, Filter, ReAsk)):
+                #     yield chunk, metadata
+            # if every validator has yielded a concrete value, merge and yield
+            print('acc output:', acc_output)
+            print('fixed values:', fixed_values)
+            if len(fixed_values == len(validators)):
+                # TODO: merge values
+                yield chunk, original_text, metadata
 
     def run_validators_stream(
         self,
