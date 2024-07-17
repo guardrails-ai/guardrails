@@ -76,10 +76,45 @@ const config = {
         },
         items: [
           {
+            type: "docSidebar",
+            position: "left",
+            label: "Getting Started",
+            sidebarId: "docs",
+          }, {
+            type: "docSidebar",
+            position: "left",
+            label: "Concepts",
+            sidebarId: "concepts"
+          }, {
+            type: "docSidebar",
+            position: "left",
+            label: "How-to Guides",
+            sidebarId: "howToGuides"
+          }, {
+            type: "docSidebar",
+            position: "left",
+            label: "Examples",
+            sidebarId: "examples"
+          }, {
+            type: "docSidebar",
+            position: "left",
+            label: "Integrations",
+            sidebarId: "integrations"
+          }, {
+            type: "docSidebar",
+            position: "left",
+            label: "API Reference",
+            sidebarId: "apiReference"
+          }, {
+            type: "docSidebar",
+            position: "left",
+            label: "Migration Guides",
+            sidebarId: "migrationGuides"
+          }, {
             type: "doc",
             position: "left",
-            label: "Docs",
-            docId: "index",
+            label: "Guardrails Server API",
+            docId: "guardrails_server_api"
           }
         ],
       },

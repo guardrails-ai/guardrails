@@ -1,8 +1,4 @@
----
-slug: docs/
----
-
-# Guardrails AI
+# Introduction
 
 ## What is Guardrails?
 
