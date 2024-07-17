@@ -116,6 +116,14 @@ const sidebars = {
     },
     {
       type: "category",
+      label: "Server",
+      collapsed: true,
+      items: [
+        "server/rest_api",
+      ],
+    },
+    {
+      type: "category",
       label: "Migration Guides",
       collapsed: true,
       items: [
