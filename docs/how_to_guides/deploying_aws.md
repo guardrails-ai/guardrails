@@ -96,7 +96,7 @@ terraform init
 One can then copy the provided [Terraform Code](#Terraform) or use their own by placing into our working directory and running:
 
 ```bash
-terraform apply -var="aws_region=us-east-1" -var="backend_memory=16384" -var="backend_cpu=8192" -var="desired_count=0"
+terraform apply -var="aws_region=us-east-1" -var="backend_memory=2048" -var="backend_cpu=1024" -var="desired_count=0"
 ```
 
 > Each can be configured based on your requirements. `desired_count` corresponds to the number of containers that should always be running. Alternatively one can configure a minimum & maximum count with some autoscaling policy. It is initially set to `0` since we have yet to upload the container to the AWS container registry (ECR).
