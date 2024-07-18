@@ -62,10 +62,10 @@ class TraceHandler(TracerMixin):
 
     @classmethod
     def _create(cls) -> TracerMixin:  # type: ignore
-        return SQLiteTraceHandler(LOGFILE_PATH, read_mode=False)
+        return SQLiteTraceHandler(LOGFILE_PATH, read_mode=False)  # type: ignore
         # To disable logging:
         # return _BaseTraceHandler(LOGFILE_PATH, read_mode=False)
 
     @classmethod
     def get_reader(cls) -> TracerMixin:  # type: ignore
-        return SQLiteTraceHandler(LOGFILE_PATH, read_mode=True)
+        return SQLiteTraceHandler(LOGFILE_PATH, read_mode=True)  # type: ignore
