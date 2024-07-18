@@ -85,7 +85,7 @@ Here is a full list of the environment variables which can be placed in an `.env
 OTEL_METRICS_EXPORTER=otlp
 OTEL_TRACES_EXPORTER=otlp
 OTEL_PYTHON_TRACER_PROVIDER=gr-api-tracer-provider
-OTEL_SERVICE_NAME=my-service
+OTEL_SERVICE_NAME=gr-api-service
 OTEL_INSTRUMENTATION_HTTP_CAPTURE_HEADERS_SERVER_REQUEST=Accept-Encoding,User-Agent,Referer
 OTEL_INSTRUMENTATION_HTTP_CAPTURE_HEADERS_SERVER_RESPONSE=Last-Modified,Content-Type
 OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
