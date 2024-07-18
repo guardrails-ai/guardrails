@@ -1,6 +1,8 @@
 # Use Supported LLMs
 
-Guardrails has support for 100+ LLMs through its integration with LiteLLM. To interact with a model set the desired LLM API KEY such as the OPENAI_API_KEY and the desired model with the model property. Examples are below for some common ones.
+Guardrails has support for 100+ LLMs through its integration with LiteLLM. This integration is really useful because it allows the Guardrails call API to use the same clean interface that LiteLLM and OpenAI use. This means that you can use  similar code to make LLM requests with Guardrails as you would with OpenAI.
+
+To interact with a model, set the desired LLM API KEY such as the OPENAI_API_KEY and the desired model with the model property. Examples are below for some common ones.
 
 ## OpenAI
 
