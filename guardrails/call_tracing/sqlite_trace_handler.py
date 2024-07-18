@@ -82,8 +82,6 @@ class SQLiteTraceHandler(TracerMixin):
     """
 
     def __init__(self, log_path: os.PathLike, read_mode: bool):
-        # super().__init__(log_path, read_mode)
-        # super(TracerMixin, self).__init__(log_path, read_mode)
         self._log_path = log_path  # Read-only value.
         self.last_cleanup = time.time()
         self.readonly = read_mode
