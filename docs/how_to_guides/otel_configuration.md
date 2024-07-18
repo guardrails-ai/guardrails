@@ -93,7 +93,7 @@ OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
 OTEL_EXPORTER_OTLP_HEADERS=Authorization=Basic%20... # Optional for auth
 ```
 
-> ⚠️ Important: Ensure `OTEL_PYTHON_TRACER_PROVIDER` is set otherwise the Guardrails API may fail to start when the either `OTEL_TRACES_EXPORTER` or `OTEL_METRICS_EXPORTER` is set to anything but `none`
+> ⚠️ Important: Ensure `OTEL_PYTHON_TRACER_PROVIDER` is set otherwise the Guardrails API may fail to start when either `OTEL_TRACES_EXPORTER` or `OTEL_METRICS_EXPORTER` is set to anything but `none`
 
 ### Usage
 
