@@ -116,8 +116,6 @@ guardrails start --config=./config.py
 Then run validations against it:
 
 ```python
-# non server mode
-
 from guardrails import Guard
 guard = Guard(name="RegexGuard")
 
@@ -137,10 +135,6 @@ At which point you should see traces relating to endpoints being hit on the Guar
 `config.py`
 
 ```python
-# load .env file & place on top of file
-from dotenv import load_dotenv
-load_dotenv()
-
 from guardrails.utils.telemetry_utils import default_otlp_tracer
 
 # Define guard
