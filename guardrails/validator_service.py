@@ -224,7 +224,39 @@ class SequentialValidatorService(ValidatorServiceBase):
         )
 
         return self.after_run_validator(validator, validator_logs, result)
-    
+
+    def run_validators_stream(
+        self,
+        iteration: Iteration,
+        validator_map: ValidatorMap,
+        value_stream: Iterable[Tuple[Any, bool]],
+        metadata: Dict[str, Any],
+        absolute_property_path: str,
+        reference_property_path: str,
+        **kwargs,
+    ) -> Iterable[Tuple[Any, str, Dict[str, Any]]]:
+        validators = validator_map.get(reference_property_path, [])
+        for validator in validators:
+            if validator.on_fail_descriptor == OnFailAction.FIX:
+                return self.run_validators_stream_fix(
+                    iteration,
+                    validator_map,
+                    value_stream,
+                    metadata,
+                    absolute_property_path,
+                    reference_property_path,
+                    **kwargs,
+                )
+        return self.run_validators_stream_noop(
+            iteration,
+            validator_map,
+            value_stream,
+            metadata,
+            absolute_property_path,
+            reference_property_path,
+            **kwargs,
+        )
+
     def run_validators_stream_fix(
         self,
         iteration: Iteration,
@@ -236,12 +268,19 @@ class SequentialValidatorService(ValidatorServiceBase):
         **kwargs,
     ) -> Iterable[Tuple[Any, str, Dict[str, Any]]]:
         validators = validator_map.get(reference_property_path, [])
-        acc_output = ''
+        acc_output = ""
+        validator_partial_acc: dict[str, str] = {}
+        for validator in validators:
+            validator_partial_acc[validator.rail_alias] = ""
         for chunk, finished in value_stream:
             original_text = chunk
             acc_output += chunk
             fixed_values = []
             for validator in validators:
+                # reset chunk to original text
+                chunk = original_text
+                print("chunk", chunk)
+                print("finished", finished)
                 validator_logs = self.run_validator(
                     iteration,
                     validator,
@@ -249,10 +288,11 @@ class SequentialValidatorService(ValidatorServiceBase):
                     metadata,
                     absolute_property_path,
                     True,
+                    remainder=finished,
                     **kwargs,
                 )
+                print("res", validator_logs.validation_result)
                 result = validator_logs.validation_result
-
                 result = cast(ValidationResult, result)
                 # if we have a concrete result, log it in the validation map
                 if isinstance(result, FailResult):
@@ -265,13 +305,17 @@ class SequentialValidatorService(ValidatorServiceBase):
                         rechecked_value=rechecked_value,
                     )
                     fixed_values.append(chunk)
+                    validator_partial_acc[validator.rail_alias] += chunk
                 elif isinstance(result, PassResult):
                     if (
                         validator.override_value_on_pass
                         and result.value_override is not result.ValueOverrideSentinel
                     ):
                         chunk = result.value_override
-                        fixed_values.append(chunk)
+                    else:
+                        chunk = result.validated_chunk
+                    fixed_values.append(chunk)
+                    validator_partial_acc[validator.rail_alias] += chunk
 
                 validator_logs.value_after_validation = chunk
                 if result and result.metadata is not None:
@@ -280,13 +324,17 @@ class SequentialValidatorService(ValidatorServiceBase):
                 # if isinstance(chunk, (Refrain, Filter, ReAsk)):
                 #     yield chunk, metadata
             # if every validator has yielded a concrete value, merge and yield
-            print('acc output:', acc_output)
-            print('fixed values:', fixed_values)
-            if len(fixed_values == len(validators)):
-                # TODO: merge values
+            print("acc output:", acc_output)
+            print("fixed values:", fixed_values)
+            if len(fixed_values) == len(validators):
+                print("merging the following values:")
+                for validator in validators:
+                    print(validator_partial_acc[validator.rail_alias])
+                print("\n")
+                # TODO: merge values in validator_partial_acc
                 yield chunk, original_text, metadata
 
-    def run_validators_stream(
+    def run_validators_stream_noop(
         self,
         iteration: Iteration,
         validator_map: ValidatorMap,
@@ -819,6 +867,7 @@ def validate(
     if process_count == 1:
         validator_service = SequentialValidatorService(disable_tracer)
     elif loop is not None and not loop.is_running():
+        print("this should not be printing!")
         validator_service = AsyncValidatorService(disable_tracer)
     else:
         validator_service = SequentialValidatorService(disable_tracer)
@@ -840,6 +889,7 @@ def validate_stream(
     if path is None:
         path = "$"
     sequential_validator_service = SequentialValidatorService(disable_tracer)
+    print("seq validator service", sequential_validator_service)
     gen = sequential_validator_service.validate_stream(
         value_stream, metadata, validator_map, iteration, path, path, **kwargs
     )
@@ -858,6 +908,7 @@ async def async_validate(
 ) -> Tuple[Any, dict]:
     if path is None:
         path = "$"
+    print("we really should not be here")
     validator_service = AsyncValidatorService(disable_tracer)
     return await validator_service.async_validate(
         value, metadata, validator_map, iteration, path, path, stream, **kwargs

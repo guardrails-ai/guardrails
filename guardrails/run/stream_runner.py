@@ -142,7 +142,6 @@ class StreamRunner(Runner):
         # Loop over the stream
         # and construct "fragments" of concatenated chunks
         # for now, handle string and json schema differently
-
         if self.output_type == OutputTypes.STRING:
             stream_finished = False
             last_chunk_text = ""
@@ -197,34 +196,34 @@ class StreamRunner(Runner):
 
             # TODO: handle this!
             # handle case where generator doesn't give finished status
-            if not stream_finished:
-                last_result = self.validate(
-                    iteration,
-                    index,
-                    "",
-                    output_schema,
-                    True,
-                    validate_subschema=True,
-                    remainder=True,
-                )
-                if last_result:
-                    passed = call_log.status == pass_status
+            # if not stream_finished:
+            #     last_result = self.validate(
+            #         iteration,
+            #         index,
+            #         "",
+            #         output_schema,
+            #         True,
+            #         validate_subschema=True,
+            #         remainder=True,
+            #     )
+            #     if last_result:
+            #         passed = call_log.status == pass_status
 
-                    validated_output = None
-                    if passed is True:
-                        validated_output = cast(OT, last_result)
+            #         validated_output = None
+            #         if passed is True:
+            #             validated_output = cast(OT, last_result)
 
-                    reask = None
-                    if isinstance(last_result, ReAsk):
-                        reask = last_result
+            #         reask = None
+            #         if isinstance(last_result, ReAsk):
+            #             reask = last_result
 
-                    yield ValidationOutcome(
-                        call_id=call_log.id,  # type: ignore
-                        raw_llm_output=last_chunk_text,
-                        validated_output=validated_output,
-                        reask=reask,
-                        validation_passed=passed,
-                    )
+            #         yield ValidationOutcome(
+            #             call_id=call_log.id,  # type: ignore
+            #             raw_llm_output=last_chunk_text,
+            #             validated_output=validated_output,
+            #             reask=reask,
+            #             validation_passed=passed,
+            #         )
         # handle non string schema
         else:
             fragment = ""
