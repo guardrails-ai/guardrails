@@ -51,7 +51,7 @@ Here's a basic example of how to integrate Guardrails with a LangChain LCEL chai
     ```
 
 3. Define the LCEL chain components and pipe the prompt, model, output parser, and the Guard together.
-The ``guard.to_runnable()`` method converts the Guardrails guard into a LangChain-compatible runnable object.
+The `guard.to_runnable()` method converts the Guardrails guard into a LangChain-compatible runnable object.
 
     ```python
     prompt = ChatPromptTemplate.from_template("Answer this question {question}")
@@ -77,6 +77,29 @@ In this example, the chain sends the question to the model and then applies Guar
 
 ## Advanced Usage [TODO]
 
-1. Langsmith
+### LangSmith Integration
 
-2. Runnable Config
+LangSmith is a powerful tool for tracing, monitoring, and debugging your AI applications. Here's how to use it with your Guardrails-enhanced LangChain:
+
+1. Set up Langsmith:
+
+   ```bash
+   pip install langsmith
+   export LANGCHAIN_TRACING_V2=true
+   export LANGCHAIN_ENDPOINT="https://api.smith.langchain.com"
+   export LANGCHAIN_API_KEY="your-api-key"
+   ```
+
+2. View traces in the Langsmith UI to analyze:
+   - LLM inputs and outputs
+   - Guardrails validator results
+   - Performance metrics
+   - Error logs
+
+![LangSmith Trace View](./assets/langsmith_1.png)
+
+![Validator Results](./assets/langsmith_2.png)
+
+By integrating Langsmith, you can gain deeper insights into how your Guardrails validators are affecting the LLM outputs and overall chain performance.
+
+### Customizable Runnable Config
