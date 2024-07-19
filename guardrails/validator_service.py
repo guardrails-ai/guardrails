@@ -1,6 +1,7 @@
 import asyncio
 import itertools
 import os
+from three_merge import merge
 from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime
 from typing import Any, Awaitable, Dict, Iterable, List, Optional, Tuple, Union, cast
@@ -256,6 +257,14 @@ class SequentialValidatorService(ValidatorServiceBase):
             reference_property_path,
             **kwargs,
         )
+    
+    # requires at least 2 validators
+    def multi_merge(self, original:str, new_values:list[str]) -> str:
+        current = new_values.pop()
+        while len(new_values)>0:
+            next = new_values.pop()
+            current = merge(current, next, original)
+        return current
 
     def run_validators_stream_fix(
         self,
@@ -272,10 +281,15 @@ class SequentialValidatorService(ValidatorServiceBase):
         validator_partial_acc: dict[str, str] = {}
         for validator in validators:
             validator_partial_acc[validator.rail_alias] = ""
+        last_chunk = None
+        last_chunk_validated = False
+        last_chunk_missing_validators = []
         for chunk, finished in value_stream:
             original_text = chunk
             acc_output += chunk
             fixed_values = []
+            last_chunk = chunk
+            last_chunk_missing_validators = []
             for validator in validators:
                 # reset chunk to original text
                 chunk = original_text
@@ -293,6 +307,8 @@ class SequentialValidatorService(ValidatorServiceBase):
                 )
                 print("res", validator_logs.validation_result)
                 result = validator_logs.validation_result
+                if result is None:
+                    last_chunk_missing_validators.append(validator)
                 result = cast(ValidationResult, result)
                 # if we have a concrete result, log it in the validation map
                 if isinstance(result, FailResult):
@@ -316,23 +332,79 @@ class SequentialValidatorService(ValidatorServiceBase):
                         chunk = result.validated_chunk
                     fixed_values.append(chunk)
                     validator_partial_acc[validator.rail_alias] += chunk
-
                 validator_logs.value_after_validation = chunk
                 if result and result.metadata is not None:
                     metadata = result.metadata
-                # # TODO: Filter is no longer terminal, so we shouldn't yield, right?
-                # if isinstance(chunk, (Refrain, Filter, ReAsk)):
-                #     yield chunk, metadata
             # if every validator has yielded a concrete value, merge and yield
             print("acc output:", acc_output)
             print("fixed values:", fixed_values)
+            # only merge and yield if all validators have run 
+            # TODO: check if only 1 validator - then skip merging
             if len(fixed_values) == len(validators):
+                last_chunk_validated = True
+                print('acc output', acc_output)
                 print("merging the following values:")
+                values_to_merge = []
                 for validator in validators:
-                    print(validator_partial_acc[validator.rail_alias])
-                print("\n")
+                    values_to_merge.append(validator_partial_acc[validator.rail_alias])
+                print(values_to_merge)
+                merged_value = self.multi_merge(acc_output, values_to_merge)
+                print('merged value:', merged_value)
+                acc_output = ""
                 # TODO: merge values in validator_partial_acc
-                yield chunk, original_text, metadata
+                # TODO: also need to reset validator_partial_acc
+                yield merged_value, original_text, metadata
+            else:
+                last_chunk_validated = False
+        # handle case where LLM doesn't yield finished flag
+        # we need to validate remainder of accumulated chunks
+        if not last_chunk_validated:
+            original_text = last_chunk
+            for validator in last_chunk_missing_validators:
+                last_log = self.run_validator(
+                        iteration,
+                        validator,
+                        # use empty chunk
+                        # validator has already accumulated the chunk from the first loop
+                        '',
+                        metadata,
+                        absolute_property_path,
+                        True,
+                        remainder=True,
+                        **kwargs,
+                )
+                result = last_log.validation_result
+                if isinstance(result, FailResult):
+                    rechecked_value = None
+                    last_chunk = self.perform_correction(
+                        [result],
+                        last_chunk,
+                        validator,
+                        validator.on_fail_descriptor,
+                        rechecked_value=rechecked_value,
+                    )
+                    validator_partial_acc[validator.rail_alias] += last_chunk
+                elif isinstance(result, PassResult):
+                    if (
+                        validator.override_value_on_pass
+                        and result.value_override is not result.ValueOverrideSentinel
+                    ):
+                        last_chunk = result.value_override
+                    else:
+                        last_chunk = result.validated_chunk
+                    validator_partial_acc[validator.rail_alias] += last_chunk
+                last_log.value_after_validation = last_chunk
+                if result and result.metadata is not None:
+                    metadata = result.metadata
+            print('merging the following values (in last)')
+            values_to_merge = []
+            for validator in validators:
+                values_to_merge.append(validator_partial_acc[validator.rail_alias])
+            print(values_to_merge)
+            merged_value = self.multi_merge(acc_output, values_to_merge)
+            print('merged value:', merged_value)
+            yield merged_value, original_text, metadata
+            # yield merged value
 
     def run_validators_stream_noop(
         self,

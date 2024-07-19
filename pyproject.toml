@@ -58,6 +58,7 @@ opentelemetry-exporter-otlp-proto-grpc = "^1.24.0"
 opentelemetry-exporter-otlp-proto-http = "^1.24.0"
 guardrails-api-client = ">=0.3.8"
 guardrails-api = ">=0.0.0a3"
+three-merge = "^0.1.1"
 
 [tool.poetry.extras]
 sql = ["sqlvalidator", "sqlalchemy", "sqlglot"]
