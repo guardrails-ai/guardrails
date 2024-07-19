@@ -1,0 +1,14 @@
+import json
+from guardrails import Guard
+from guardrails.hub import {VALIDATOR_IMPORTS}
+
+try:
+    guards = json.loads("""
+{GUARDS}
+                                 """) or []
+except json.JSONDecodeError:
+    print("Error parsing guards from JSON")
+    SystemExit(1)
+
+# instantiate guards
+{GUARD_INSTANTIATIONS}

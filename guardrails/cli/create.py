@@ -4,6 +4,7 @@ import time
 from typing import List, Optional, Union
 
 import typer
+import json
 from rich.console import Console
 from rich.syntax import Syntax
 
@@ -15,14 +16,14 @@ from guardrails.cli.hub.install import (  # JC: I don't like this import. Move f
 )
 from guardrails.cli.hub.utils import get_site_packages_location
 from guardrails.cli.server.hub_client import get_validator_manifest
-
+from guardrails.cli.hub.template import is_valid_template, get_template
 
 console = Console()
 
 
 @gr_cli.command(name="create")
 def create_command(
-    validators: str = typer.Option(
+    validators: Optional[str] = typer.Option(
         default="",
         help="A comma-separated list of validator hub URIs.",
     ),
@@ -33,6 +34,11 @@ def create_command(
         default="config.py",
         help="The path to which the configuration file should be saved.",
     ),
+    template: Optional[str] = typer.Option(
+        default=None,
+        help="Then name of the template to base the configuration file on."
+        " For example chatbot or summarizer.",
+    ),
     dry_run: bool = typer.Option(
         default=False,
         is_flag=True,
@@ -40,8 +46,26 @@ def create_command(
     ),
 ):
     filepath = check_filename(filepath)
-    installed_validators = split_and_install_validators(validators, dry_run)
-    new_config_file = generate_config_file(installed_validators, name)
+
+    if not validators and template is not None and is_valid_template(template):
+        template = get_template(template)
+        validators = {}
+        for guard in template["guards"]:
+            print("=== guard ===")
+            print(guard)
+            for validator in guard["validators"]:
+                print("=== validator ===")
+                print(validator)
+                validators[f"hub://{validator['id']}"] = True
+        validators = ",".join(validators.keys())
+        print("=== validators ===")
+        print(validators)
+        installed_validators = split_and_install_validators(validators, dry_run)
+        new_config_file = generate_template_config(template, installed_validators)
+    else:
+        installed_validators = split_and_install_validators(validators, dry_run)
+        new_config_file = generate_config_file(installed_validators, name)
+
     if dry_run:
         console.print(f"Not actually saving output to [bold]{filepath}[/bold]")
         console.print("The following would have been written:\n")
@@ -56,6 +80,33 @@ def create_command(
         f"Replace TODOs in {filepath} and run with `guardrails start"
         f" --config {filepath}`"
     )
+
+
+def generate_template_config(template: dict, installed_validators) -> str:
+    print("=== installed validators ====")
+    print(installed_validators)
+    # Read the template file
+    script_dir = os.path.dirname(__file__)
+    config_template_path = os.path.join(
+        script_dir, "hub", "template_config.py.template"
+    )
+
+    with open(config_template_path, "r") as file:
+        template_content = file.read()
+    guard_instantiations = []
+
+    for i, guard in enumerate(template["guards"]):
+        guard_instantiations.append(f"guard{i} = Guard.from_dict(guards[{i}])")
+    guard_instantiations = "\n".join(guard_instantiations)
+    # Interpolate variables
+    output_content = template_content.format(
+        GUARDS=json.dumps(template["guards"], indent=4),
+        VALIDATOR_IMPORTS=", ".join(installed_validators),
+        GUARD_INSTANTIATIONS=guard_instantiations,
+    )
+    print("=== generated config from template ====")
+    print(output_content)
+    return output_content
 
 
 def check_filename(filename: Union[str, os.PathLike]) -> str:
