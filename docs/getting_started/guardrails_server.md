@@ -3,7 +3,7 @@ import TabItem from '@theme/TabItem';
 
 # Guardrails Server
 
-## Overview
+# Overview
 
 In Guardrails v0.5.0, we released the Guardrails Server. The Guardrails server unlocks several usecases and programming languages through features like **OpenAI SDK compatible enpdoints**, remote validator executions, and server-side support of custom functions.
 
@@ -11,9 +11,9 @@ Together, these features make it easier to get started, and make it possible to 
 
 This document will overview a few of the key features of the Guardrails Server, and how to get started.
 
-## Walkthrough
+# Walkthrough
 
-### 1. Install the Guardrails Server
+## 1. Install the Guardrails Server
 This is done by simply installing the `guardrails-ai` package. See the [installation guide](./quickstart.md) for more information.
 
 ```bash
@@ -21,21 +21,21 @@ pip install guardrails-ai;
 guardrails configure;
 ```
 
-### 2. Create a Guardrails config file
+## 2. Create a Guardrails config file
 The Guardrails config file is a python file that includes the Guardrails that you want to use, defined in a `Guard` object.
 
 We'll use the `create` command on the guardrails CLI to do this. We'll specify the [GibberishText validator](https://hub.guardrailsai.com/validator/guardrails/gibberish_text) from the Guardrails Hub.
 
 
 ```bash
-guardrails create --validators hub://guardrails/gibberish_text
+guardrails create --validators hub://guardrails/gibberish_text --name gibberish_guard
 ```
 
 :::note
-This creates a file called config.py with a Guard object that uses the GibberishText validator. The Guard object still needs to be named.
+This creates a file called config.py with a Guard object that uses the GibberishText validator. This file can be edited to include more guards, or to change guard behavior.
 :::
 
-Update the guard with a Guard name. Also, have the GibberishText validator throw an exception when it is violated.
+Update the guard to have the GibberishText validator throw an exception when it is violated. It should look like this
 
 ```python
 from guardrails import Guard
@@ -44,7 +44,7 @@ guard = Guard(name='gibberish_guard')
 guard.use(GibberishText(on_fail='exception'))
 ```
 
-### 3. Start the Guardrails Server
+## 3. Start the Guardrails Server
 The guardrails CLI starts the server on `localhost:8000` by default. An API reference can be found at `https://localhost:8000/docs`. Since guards run on the backend, you also want to set LLM API Keys in the environment.
 
 ```bash
@@ -54,7 +54,9 @@ guardrails start --config config.py
 
 Guardrails is now running on localhost:8000.
 
-### 4. Update client to use the Guardrails Server
+## 4. Update client to use the Guardrails Server
+
+### OpenAI SDK Integration
 You need only route your openai (or openai compatible sdk) base_url to the `http://localhost:8000/guards/[guard_name]/openai/v1/` endpoint. Your client code will now throw an exception if the GibberishText validator is violated. Note, this works in multiple languages.
 
 <Tabs>
@@ -62,12 +64,13 @@ You need only route your openai (or openai compatible sdk) base_url to the `http
 <TabItem value="py" label="Python">
 
 ```python
-import openai
-openai.base_url = (
-    "http://localhost:8000/guards/gibberish_guard/openai/v1/"
+from openai import OpenAI
+
+client = OpenAI(
+  base_url='http://127.0.0.1:8000/guards/gibberish_guard/openai/v1',
 )
 
-response = openai.chat.completions.create(
+response = client.chat.completions.create(
     model="gpt-3.5-turbo",
     messages=[{
         "role": "user",
@@ -108,6 +111,23 @@ main();
 :::note
 A `guardrails` key is added to the response object, which includes the validation results.
 :::
+
+### Advanced Client Usage
+Advanced client usage is available in Python. You can point a Guard shim to the Guardrails server and use it as a normal Guard object.
+
+To do this, you must first set a `use_server` flag in Guardrails settings.
+
+```python
+# Client code
+from guardrails import Guard, settings
+
+settings.use_server = True
+
+name_guard = Guard(name="gibberish_guard")
+
+validation_outcome = name_guard.validate("floofy doopy boopy")
+```
+
 
 ## Learn More
 - [Guardrails Server Concepts](../concepts/deploying)
