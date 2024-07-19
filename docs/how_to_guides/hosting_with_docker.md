@@ -197,3 +197,52 @@ CMD gunicorn --bind 0.0.0.0:8000 --timeout=90 --workers=4 'guardrails_api.app:cr
 Since the Flask development server is not production-ready, we run it behind [Gunicorn](https://gunicorn.org/) to provide concurrent request processing. In this configuration, the Gunicorn server on any given container instance will spawn up 4 concurrent workers to handle many requests at a time with a 90 second timeout for silent (unresponsive) workers. 
 
 Note that you can replace Gunicorn here with another WSGI server.
+
+### Using OpenAI with the Guardrails server
+
+Just like the open source library, the Guardrails server comes with first class support for OpenAI, and other LLM APIs. By setting your Guardrails Docker Image up to talk to OpenAI, you can pass around guarded OpenAI sdk compatible endpoints to your team, ensuring that all uses of the API are validated and secure.
+
+As with any other use case with OpenAI, you must authenticate with an API key in order to make requests to its services. You have two options for providing an OpenAI API key to the Guardrails server:
+
+
+1. Specify the API key at build or deploy time as an environment variable on the container.  This approach allows you to avoid including your key in requests and abstract it away into the container runtime.  Note, though, that if and when your key changes, you would need to redeploy the server with the updated key.
+
+2. Specify the API key at runtime by including it as a named header `x-openai-api-key`. This approach allows you to utilize different API keys with different scopes if necessary as well as performing key rotation without the need to restart the server.
+
+Below we’ll show a quick example of setting the OpenAI API key as an environment variable on the container.
+
+First declare this new environment variable in the Dockerfile right below the Guardrails token.  These new lines would look like this:
+
+
+```
+ARG GUARDRAILS_TOKEN
+ENV OPENAI_API_KEY
+```
+
+
+Second, when running the docker container, include this new environment variable with an `--env` flag:
+
+
+```
+docker run --env OPENAI_API_KEY=sk-my_openai_api_key -d guardrails-server:latest
+```
+
+
+This is the simplest and most explicit way to set the environment variable in the container.  Note also that both Docker and the Guardrails server support `.env` files.  Should you wish to use this option instead, you can do so in the docker run command:
+
+
+```
+docker run --env-file ./.env -d guardrails-server:latest
+```
+
+
+Or when starting the Guardrails server:
+
+
+```
+CMD gunicorn --bind 0.0.0.0:8000 --timeout=90 --workers=4 'guardrails_api.app:create_app("./.env", "config.py")'
+```
+
+### Using Other LLMs with the Guardrails server
+
+One final note, the same approaches above can be used to set other environment variables including other OpenAI env vars like `OPENAI_API_BASE`, as well as for other libraries or LLMs like` ANTHROPIC_API_KEY`, `TOGETHERAI_API_KEY`, etc..
