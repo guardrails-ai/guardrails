@@ -318,8 +318,6 @@ class Validator:
 
         # if remainder kwargs is passed, validate remainder regardless
         remainder = kwargs.get("remainder", False)
-        print("remainder:", remainder)
-        print("acc text", accumulated_text)
         if remainder:
             split_contents = [accumulated_text, ""]
         # if no chunks are returned, we haven't accumulated enough

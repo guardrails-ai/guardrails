@@ -6228,23 +6228,6 @@ test = ["pre-commit", "pytest (>=7.0)", "pytest-timeout"]
 typing = ["mypy (>=1.6,<2.0)", "traitlets (>=5.11.1)"]
 
 [[package]]
-name = "three-merge"
-version = "0.1.1"
-description = "Simple library for merging two strings with respect to a base one"
-optional = false
-python-versions = "*"
-files = [
-    {file = "three-merge-0.1.1.tar.gz", hash = "sha256:60f6afe144595560d63ae32625351bcef3b94733b54eb97800a9feb0f3d9d970"},
-    {file = "three_merge-0.1.1-py2.py3-none-any.whl", hash = "sha256:dd219f4696aa0bbec6099ac3528b4de0450ff9bde862dd8f6d6f52e745f83464"},
-]
-
-[package.dependencies]
-diff-match-patch = "*"
-
-[package.extras]
-test = ["flaky", "pytest", "pytest-cov", "pytest-timeout"]
-
-[[package]]
 name = "tiktoken"
 version = "0.7.0"
 description = "tiktoken is a fast BPE tokeniser for use with OpenAI's models"
@@ -7301,4 +7284,4 @@ vectordb = ["faiss-cpu", "numpy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "7561cc7629e44fb931a58a24cf848c97564997c6a50cbfb45255fd08ccd5883c"
+content-hash = "4efb246e4ff31c3f9586aadbc21503777099be71b56e539b2c50870489aff6b1"
