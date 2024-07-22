@@ -218,7 +218,7 @@ def test_rail_with_messages():
         },
         {
             "role": "system",
-            "content": "Be brief and concise. "
+            "content": "Be brief and concise. \n"
             "It should not be longer than 1-2 sentences.",
         },
     ]
