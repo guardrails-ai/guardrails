@@ -309,7 +309,7 @@ def get_reask_setup_for_string(
         **prompt_params,
     )
 
-    return output_schema, prompt, instructions, messages
+    return output_schema, prompt, instructions
 
 
 def get_original_prompt(exec_options: Optional[GuardExecutionOptions] = None) -> str:
@@ -473,18 +473,19 @@ def get_reask_setup_for_json(
         instructions = Instructions(instructions_const)
     instructions = instructions.format(**prompt_params)
 
-    messages = None
-    if exec_options.reask_messages:
-        messages = Messages(exec_options.reask_messages)
-    else:
-        messages = Messages(
-            [
-                {"role": "system", "content": instructions},
-                {"role": "user", "content": prompt},
-            ]
-        )
+    # TODO: enable this in 0.6.0
+    # messages = None
+    # if exec_options.reask_messages:
+    #     messages = Messages(exec_options.reask_messages)
+    # else:
+    #     messages = Messages(
+    #         [
+    #             {"role": "system", "content": instructions},
+    #             {"role": "user", "content": prompt},
+    #         ]
+    #     )
 
-    return reask_schema, prompt, instructions, messages
+    return reask_schema, prompt, instructions
 
 
 def get_reask_setup(

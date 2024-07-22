@@ -119,7 +119,6 @@ class AsyncRunner(Runner):
                     instructions,
                     output_schema,
                     msg_history,
-                    messages,
                 ) = self.prepare_to_loop(
                     iteration.reasks,
                     output_schema,

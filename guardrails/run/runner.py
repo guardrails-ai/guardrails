@@ -211,7 +211,7 @@ class Runner:
                     break
 
                 # Get new prompt and output schema.
-                (prompt, instructions, output_schema, msg_history, messages) = (
+                (prompt, instructions, output_schema, msg_history) = (
                     self.prepare_to_loop(
                         iteration.reasks,
                         output_schema,
@@ -641,11 +641,10 @@ class Runner:
         Optional[Instructions],
         Dict[str, Any],
         Optional[List[Dict]],
-        Optional[List[Dict]],
     ]:
         """Prepare to loop again."""
         prompt_params = prompt_params or {}
-        output_schema, prompt, instructions, messages = get_reask_setup(
+        output_schema, prompt, instructions = get_reask_setup(
             output_type=self.output_type,
             output_schema=output_schema,
             validation_map=self.validation_map,
@@ -660,4 +659,4 @@ class Runner:
             instructions = None
         # todo add messages support
         msg_history = None
-        return prompt, instructions, output_schema, msg_history, messages
+        return prompt, instructions, output_schema, msg_history
