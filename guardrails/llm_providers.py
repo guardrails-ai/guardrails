@@ -596,6 +596,15 @@ def get_llm_ask(
 ) -> Optional[PromptCallableBase]:
     if "temperature" not in kwargs:
         kwargs.update({"temperature": 0})
+
+    try:
+        from litellm import completion
+
+        if llm_api == completion or (llm_api is None and kwargs.get("model")):
+            return LiteLLMCallable(*args, **kwargs)
+    except ImportError:
+        pass
+
     if llm_api == get_static_openai_create_func():
         return OpenAICallable(*args, **kwargs)
     if llm_api == get_static_openai_chat_create_func():
@@ -665,14 +674,6 @@ def get_llm_ask(
             raise ValueError(
                 "Only text generation pipelines are supported at this time."
             )
-    except ImportError:
-        pass
-
-    try:
-        from litellm import completion  # noqa: F401 # type: ignore
-
-        if llm_api == completion or (llm_api is None and kwargs.get("model")):
-            return LiteLLMCallable(*args, **kwargs)
     except ImportError:
         pass
 
