@@ -19,12 +19,15 @@ This is a comprehensive guide on integrating Guardrails with [LangChain](https:/
     pip install langchain langchain_openai
     ```
 
-2. As a prequisite we install the necessary validators from the Guardrails Hub:
+2. As a prerequisite we install the necessary validators from the Guardrails Hub:
 
     ```bash
     guardrails hub install hub://guardrails/competitor_check --quiet
     guardrails hub install hub://guardrails/toxic_language --quiet
     ```
+
+   - `CompetitorCheck`: Identifies and optionally removes mentions of specified competitor names.
+   - `ToxicLanguage`: Detects and optionally removes toxic or inappropriate language from the output.
 
 ## Basic Integration
 
@@ -75,7 +78,7 @@ The `guard.to_runnable()` method converts the Guardrails guard into a LangChain-
 
 In this example, the chain sends the question to the model and then applies Guardrails validators to the response. The CompetitorCheck validator specifically removes mentions of the specified competitors (Delta, American Airlines, United), resulting in a filtered list of non-competitor airlines.
 
-## Advanced Usage [TODO]
+## Advanced Usage
 
 ### LangSmith Integration
 
@@ -100,6 +103,4 @@ LangSmith is a powerful tool for tracing, monitoring, and debugging your AI appl
 
 ![Validator Results](./assets/langsmith_2.png)
 
-By integrating Langsmith, you can gain deeper insights into how your Guardrails validators are affecting the LLM outputs and overall chain performance.
-
-### Customizable Runnable Config
+By integrating LangSmith, you can gain deeper insights into how your Guardrails validators are affecting the LLM outputs and overall chain performance.
