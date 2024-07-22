@@ -549,7 +549,6 @@ Here are examples of simple (XML, JSON) pairs that show the expected behavior:
         reask_schema,
         reask_prompt,
         reask_instructions,
-        reask_messages,
     ) = get_reask_setup(
         output_type,
         output_schema,
