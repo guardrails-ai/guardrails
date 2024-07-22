@@ -19,6 +19,18 @@ from guardrails.classes.validation.validation_result import ErrorSpan
 
 
 class Iteration(IIteration, ArbitraryModel):
+    """An Iteration represents a single iteration of the validation loop
+    including a single call to the LLM if applicable.
+
+    Attributes:
+        id (str): The unique identifier for the iteration.
+        call_id (str): The unique identifier for the Call
+            that this iteration is a part of.
+        index (int): The index of this iteration within the Call.
+        inputs (Inputs): The inputs for the validation loop.
+        outputs (Outputs): The outputs from the validation loop.
+    """
+
     # I think these should be containered since their names slightly overlap with
     #  outputs, but could be convinced otherwise
     inputs: Inputs = Field(

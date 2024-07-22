@@ -18,6 +18,13 @@ from guardrails.utils.prompt_utils import prompt_content_for_schema, prompt_uses
 
 ### Classes/Types ###
 class ReAsk(IReask):
+    """Base class for ReAsk objects.
+
+    Attributes:
+        incorrect_value (Any): The value that failed validation.
+        fail_results (List[FailResult]): The results of the failed validations.
+    """
+
     incorrect_value: Any
     fail_results: List[FailResult]
 
@@ -61,16 +68,36 @@ class ReAsk(IReask):
 
 
 class FieldReAsk(ReAsk):
+    """An implementation of ReAsk that is used to reask for a specific field.
+    Inherits from ReAsk.
+
+    Attributes:
+        path (Optional[List[Any]]): a list of keys that
+            designated the path to the field that failed validation.
+    """
+
     # FIXME: This shouldn't be optional
     # We should be able to assign it on init now
     path: Optional[List[Any]] = None
 
 
 class SkeletonReAsk(ReAsk):
+    """An implementation of ReAsk that is used to reask for structured data
+    when the response does not match the expected schema.
+
+    Inherits from ReAsk.
+    """
+
     pass
 
 
 class NonParseableReAsk(ReAsk):
+    """An implementation of ReAsk that is used to reask for structured data
+    when the response is not parseable as JSON.
+
+    Inherits from ReAsk.
+    """
+
     pass
 
 

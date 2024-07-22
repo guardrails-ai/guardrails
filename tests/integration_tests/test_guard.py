@@ -1008,7 +1008,7 @@ def test_string_output(mocker):
     mock_invoke_llm = None
 
 
-def test_add_json_function_calling_tool(mocker):
+def test_json_function_calling_tool(mocker):
     mock_invoke_llm = mocker.patch(
         "guardrails.llm_providers.OpenAIChatCallable._invoke_llm"
     )
@@ -1080,7 +1080,7 @@ def test_add_json_function_calling_tool(mocker):
                 " some email blah blah blah.",
             }
         ],
-        tools=guard.add_json_function_calling_tool(tools),
+        tools=guard.json_function_calling_tool(tools),
         tool_choice="required",
     )
 

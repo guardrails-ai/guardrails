@@ -20,6 +20,28 @@ from guardrails.classes.validation.validation_result import (
 
 
 class Outputs(IOutputs, ArbitraryModel):
+    """Outputs represent the data that is output from the validation loop.
+
+    Attributes:
+        llm_response_info (Optional[LLMResponse]): Information from the LLM response
+        raw_output (Optional[str]): The exact output from the LLM.
+        parsed_output (Optional[Union[str, List, Dict]]): The output parsed from the LLM
+            response as it was passed into validation.
+        validation_response (Optional[Union[str, ReAsk, List, Dict]]): The response
+            from the validation process.
+        guarded_output (Optional[Union[str, List, Dict]]): Any valid values after
+            undergoing validation.
+            Some values may be "fixed" values that were corrected during validation.
+            This property may be a partial structure if field level reasks occur.
+        reasks (List[ReAsk]): Information from the validation process used to construct
+            a ReAsk to the LLM on validation failure. Default [].
+        validator_logs (List[ValidatorLogs]): The results of each individual
+            validation. Default [].
+        error (Optional[str]): The error message from any exception that raised
+            and interrupted the process.
+        exception (Optional[Exception]): The exception that interrupted the process.
+    """
+
     llm_response_info: Optional[LLMResponse] = Field(
         description="Information from the LLM response.", default=None
     )
@@ -47,7 +69,6 @@ class Outputs(IOutputs, ArbitraryModel):
         default_factory=list,
     )
     # TODO: Rename this;
-    # TODO: Add json_path to ValidatorLogs to specify what property it applies to
     validator_logs: List[ValidatorLogs] = Field(
         description="The results of each individual validation.", default_factory=list
     )

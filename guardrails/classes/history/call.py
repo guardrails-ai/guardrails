@@ -29,6 +29,20 @@ from guardrails.schema.parser import get_value_from_path
 # We can't inherit from Iteration because python
 # won't let you override a class attribute with a managed attribute
 class Call(ICall, ArbitraryModel):
+    """A Call represents a single execution of a Guard. One Call is created
+    each time the user invokes the `Guard.__call__`, `Guard.parse`, or
+    `Guard.validate` method.
+
+    Attributes:
+        iterations (Stack[Iteration]): A stack of iterations
+            for the initial validation round
+            and one for each reask that occurs during a Call.
+        inputs (CallInputs): The inputs as passed in to
+            `Guard.__call__`, `Guard.parse`, or `Guard.validate`
+        exception (Optional[Exception]): The exception that interrupted
+            the Guard execution.
+    """
+
     iterations: Stack[Iteration] = Field(
         description="A stack of iterations for each"
         "step/reask that occurred during this call."

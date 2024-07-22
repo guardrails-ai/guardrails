@@ -6,6 +6,8 @@ from typing import Optional
 
 from guardrails.classes.generic.serializeable import Serializeable
 
+BOOL_CONFIGS = set(["no_metrics", "enable_metrics", "use_remote_inferencing"])
+
 
 @dataclass
 class Credentials(Serializeable):
@@ -13,6 +15,7 @@ class Credentials(Serializeable):
     token: Optional[str] = None
     no_metrics: Optional[bool] = False
     enable_metrics: Optional[bool] = True
+    use_remote_inferencing: Optional[bool] = True
 
     @staticmethod
     def _to_bool(value: str) -> Optional[bool]:
@@ -23,13 +26,19 @@ class Credentials(Serializeable):
         return None
 
     @staticmethod
+    def has_rc_file() -> bool:
+        home = expanduser("~")
+        guardrails_rc = os.path.join(home, ".guardrailsrc")
+        return os.path.exists(guardrails_rc)
+
+    @staticmethod
     def from_rc_file(logger: Optional[logging.Logger] = None) -> "Credentials":
         try:
             if not logger:
                 logger = logging.getLogger()
             home = expanduser("~")
             guardrails_rc = os.path.join(home, ".guardrailsrc")
-            with open(guardrails_rc) as rc_file:
+            with open(guardrails_rc, encoding="utf-8") as rc_file:
                 lines = rc_file.readlines()
                 filtered_lines = list(filter(lambda l: l.strip(), lines))
                 creds = {}
@@ -48,7 +57,7 @@ class Credentials(Serializeable):
                         key, value = line_content
                         key = key.strip()
                         value = value.strip()
-                        if key == "no_metrics" or key == "enable_metrics":
+                        if key in BOOL_CONFIGS:
                             value = Credentials._to_bool(value)
 
                         creds[key] = value

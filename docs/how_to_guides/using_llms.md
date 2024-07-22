@@ -1,0 +1,251 @@
+# Use Supported LLMs
+
+Guardrails has support for 100+ LLMs through its integration with LiteLLM. This integration is really useful because it allows the Guardrails call API to use the same clean interface that LiteLLM and OpenAI use. This means that you can use  similar code to make LLM requests with Guardrails as you would with OpenAI.
+
+To interact with a model, set the desired LLM API KEY such as the OPENAI_API_KEY and the desired model with the model property. Examples are below for some common ones.
+
+## OpenAI
+
+### Basic Usage
+
+```python
+from guardrails import Guard
+
+os.environ["OPENAI_API_KEY"] = "YOUR_OPEN_AI_API_KEY"
+
+guard = Guard()
+
+result = guard(
+    messages=[{"role":"user", "content":"How many moons does Jupiter have?"}],
+    model="gpt-4o",
+)
+
+print(f"{result.validated_output}")
+```
+
+### Streaming
+
+```python
+from guardrails import Guard
+
+os.environ["OPENAI_API_KEY"] = "YOUR_OPEN_AI_API_KEY"
+
+guard = Guard()
+
+stream_chunk_generator = guard(
+    messages=[{"role":"user", "content":"How many moons does Jupiter have?"}],
+    model="gpt-4o",
+    stream=True,
+)
+
+for chunk in stream_chunk_generator
+    print(f"{chunk.validated_output}")
+```
+
+### Tools/Function Calling
+
+```python
+from pydantic import BaseModel, Field
+from typing import List
+from guardrails import Guard
+
+os.environ["OPENAI_API_KEY"] = "YOUR_OPEN_AI_API_KEY"
+
+class Fruit(BaseModel):
+    name: str
+    color: str
+
+class Basket(BaseModel):
+    fruits: List[Fruit]
+    
+guard = Guard.from_pydantic(Basket)
+
+result = guard(
+    messages=[{"role":"user", "content":"Generate a basket of 5 fruits"}],
+    model="gpt-4o",
+    tools=guard.add_json_function_calling_tool([]),
+    tool_choice="required",
+)
+
+print(f"{result.validated_output}")
+```
+
+## Anthropic
+
+### Basic Usage
+
+```python
+from guardrails import Guard
+import os
+
+guard = Guard()
+
+os.environ["ANTHROPIC_API_KEY"] = "your-api-key"
+
+result = guard(
+    messages=[{"role":"user", "content":"How many moons does Jupiter have?"}],
+    model="claude-3-opus-20240229"
+)
+
+print(f"{result.validated_output}")
+```
+
+### Streaming
+
+```python
+from guardrails import Guard
+import os
+
+os.environ["ANTHROPIC_API_KEY"] = "your-api-key"
+
+guard = Guard()
+
+stream_chunk_generator = guard(
+    messages=[{"role":"user", "content":"How many moons does Jupiter have?"}],
+    model="claude-3-opus-20240229",
+    stream=True,
+)
+
+for chunk in stream_chunk_generator
+    print(f"{chunk.validated_output}")
+```
+
+## Azure OpenAI
+
+### Basic Usage
+
+```python
+from guardrails import Guard
+import os
+os.environ["AZURE_API_KEY"] = "" # "my-azure-api-key"
+os.environ["AZURE_API_BASE"] = "" # "https://example-endpoint.openai.azure.com"
+os.environ["AZURE_API_VERSION"] = "" # "2023-05-15"
+
+guard = Guard()
+
+result = guard(
+    model="azure/<your_deployment_name>",
+    messages=[{"role":"user", "content":"How many moons does Jupiter have?"}],
+)
+
+print(f"{result.validated_output}")
+```
+
+### Streaming
+
+```python
+from guardrails import Guard
+
+os.environ["AZURE_API_KEY"] = "" # "my-azure-api-key"
+os.environ["AZURE_API_BASE"] = "" # "https://example-endpoint.openai.azure.com"
+os.environ["AZURE_API_VERSION"] = "" # "2023-05-15"
+
+guard = Guard()
+
+stream_chunk_generator = guard(
+    messages=[{"role":"user", "content":"How many moons does Jupiter have?"}],
+    model="azure/<your_deployment_name>", 
+    stream=True
+)
+
+for chunk in stream_chunk_generator
+    print(f"{chunk.validated_output}")
+```
+
+### Tools/Function Calling
+
+```python
+from pydantic import BaseModel, Field
+from typing import List
+from guardrails import Guard
+
+os.environ["AZURE_API_KEY"] = "" # "my-azure-api-key"
+os.environ["AZURE_API_BASE"] = "" # "https://example-endpoint.openai.azure.com"
+os.environ["AZURE_API_VERSION"] = "" # "2023-05-15"
+
+class Fruit(BaseModel):
+    name: str
+    color: str
+
+class Basket(BaseModel):
+    fruits: List[Fruit]
+    
+guard = Guard.from_pydantic(Basket)
+
+result = guard(
+    messages=[{"role":"user", "content":"Generate a basket of 5 fruits"}],
+    model="azure/<your_deployment_name>", 
+    tools=guard.add_json_function_calling_tool([]),
+    tool_choice="required",
+)
+
+print(f"{result.validated_output}")
+```
+
+## Gemini
+
+### Basic Usage
+
+```python
+from guardrails import Guard
+import os
+
+os.environ['GEMINI_API_KEY'] = ""
+guard = Guard()
+
+result = guard(
+    messages=[{"role":"user", "content":"How many moons does Jupiter have?"}],
+    model="gemini/gemini-pro"
+)
+
+print(f"{result.validated_output}")
+```
+
+### Streaming
+
+```python
+from guardrails import Guard
+import os
+
+os.environ['GEMINI_API_KEY'] = ""
+guard = Guard()
+stream_chunk_generator = guard(
+    messages=[{"role":"user", "content":"How many moons does Jupiter have?"}],
+    model="gemini/gemini-pro",
+    stream=True
+)
+
+for chunk in stream_chunk_generator
+    print(f"{chunk.validated_output}")
+```
+
+### COMING SOON - Tools/Function calling
+
+```python
+from pydantic import BaseModel, Field
+from typing import List
+from guardrails import Guard
+
+os.environ['GEMINI_API_KEY'] = ""
+
+class Fruit(BaseModel):
+    name: str
+    color: str
+
+class Basket(BaseModel):
+    fruits: List[Fruit]
+    
+guard = Guard.from_pydantic(Basket)
+
+result = guard(
+    messages=[{"role":"user", "content":"Generate a basket of 5 fruits"}],
+    model="gemini/gemini-pro"
+    tools=guard.add_json_function_calling_tool([])
+)
+
+print(f"{result.validated_output}")
+```
+
+## Other LLMs
+
+See LiteLLM’s documentation [here](https://docs.litellm.ai/docs/providers) for details on many other llms.

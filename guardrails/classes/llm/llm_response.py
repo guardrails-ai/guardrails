@@ -13,6 +13,21 @@ def async_to_sync(awaitable):
 
 # TODO: We might be able to delete this
 class LLMResponse(ILLMResponse):
+    """Standard information collection from LLM responses to feed the
+    validation loop.
+
+    Attributes:
+        output (str): The output from the LLM.
+        stream_output (Optional[Iterable]): A stream of output from the LLM.
+            Default None.
+        async_stream_output (Optional[AsyncIterable]): An async stream of output
+            from the LLM.  Default None.
+        prompt_token_count (Optional[int]): The number of tokens in the prompt.
+            Default None.
+        response_token_count (Optional[int]): The number of tokens in the response.
+            Default None.
+    """
+
     # Pydantic Config
     model_config = ConfigDict(arbitrary_types_allowed=True)
 

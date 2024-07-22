@@ -1,7 +1,7 @@
 import sys
 from functools import wraps
 from operator import attrgetter
-from typing import Any, List, Optional, Union
+from typing import Any, Callable, List, Optional, Union
 
 from opentelemetry import context
 from opentelemetry.context import Context
@@ -14,6 +14,7 @@ from guardrails.utils.casting_utils import to_string
 from guardrails.classes.validation.validator_logs import ValidatorLogs
 from guardrails.actions.reask import ReAsk
 from guardrails.actions import Filter, Refrain
+from guardrails.logger import logger
 
 
 def get_result_type(before_value: Any, after_value: Any, outcome: str):
@@ -55,7 +56,7 @@ def get_span(span=None):
         current_span = trace.get_current_span(current_context)
         return current_span
     except Exception as e:
-        print(e)
+        logger.error(e)
         return None
 
 
@@ -115,22 +116,10 @@ def trace_validation_result(
     attempt_number: int,
     current_span=None,
 ):
-    # Duplicate logs are showing here
-    # print("validation_logs.validator_logs: ", validation_logs.validator_logs)
     _current_span = get_span(current_span)
     if _current_span is not None:
         for log in validation_logs:
-            # Duplicate logs are showing here
-            # print("calling trace_validator_result with: ", log, attempt_number)
             trace_validator_result(_current_span, log, attempt_number)
-
-        # CHECKME: disabled these because I think we flattened this structure?
-        # if validation_logs.children:
-        #     for child in validation_logs.children:
-        #         # print("calling trace_validation_result with child logs")
-        #         trace_validation_result(
-        #             validation_logs.children.get(child), attempt_number, _current_span
-        #         )
 
 
 def trace_validator(
@@ -246,6 +235,39 @@ def async_trace(name: str, tracer: Optional[Tracer] = None):
         return to_trace_or_not_to_trace
 
     return trace_wrapper
+
+
+def wrap_with_otel_context(
+    outer_scope_otel_context: Context, func: Callable[..., Any]
+) -> Callable[..., Any]:
+    """This function is designed to ensure that a given OpenTelemetry context
+    is applied when executing a specified function. It is particularly useful
+    for preserving the trace context when a guardrails is executed in a
+    different execution flow or when integrating with other frameworks.
+
+    Args:
+        outer_scope_otel_context (Context): The OpenTelemetry context to apply
+            when executing the function.
+        func (Callable[..., Any]): The function to be executed within
+            the given OpenTelemetry context.
+
+    Returns:
+        Callable[..., Any]: A wrapped version of 'func' that, when called,
+            executes with 'outer_scope_otel_context' applied.
+    """
+
+    def wrapped_func(*args: Any, **kwargs: Any) -> Any:
+        # Attach the specified OpenTelemetry context before executing 'func'
+        token = context.attach(outer_scope_otel_context)
+        try:
+            # Execute 'func' within the attached context
+            return func(*args, **kwargs)
+        finally:
+            # Ensure the context is detached after execution
+            #   to maintain correct context management
+            context.detach(token)
+
+    return wrapped_func
 
 
 def default_otel_collector_tracer(resource_name: str = "guardsrails"):

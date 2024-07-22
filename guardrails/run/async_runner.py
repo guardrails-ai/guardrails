@@ -186,7 +186,7 @@ class AsyncRunner(Runner):
 
         try:
             # Prepare: run pre-processing, and input validation.
-            if output:
+            if output is not None:
                 instructions = None
                 prompt = None
                 msg_history = None
@@ -268,7 +268,6 @@ class AsyncRunner(Runner):
             supports_base_model = getattr(api, "supports_base_model", False)
             if supports_base_model:
                 api_fn = partial(api, base_model=self.base_model)
-
         if output is not None:
             llm_response = LLMResponse(
                 output=output,
@@ -341,8 +340,6 @@ class AsyncRunner(Runner):
             The instructions, prompt, and message history.
         """
         prompt_params = prompt_params or {}
-        if api is None:
-            raise UserFacingException(ValueError("API must be provided."))
 
         has_prompt_validation = "prompt" in self.validation_map
         has_instructions_validation = "instructions" in self.validation_map
@@ -418,7 +415,7 @@ class AsyncRunner(Runner):
                 instructions = instructions.format(**prompt_params)
 
             instructions, prompt = preprocess_prompt(
-                prompt_callable=api,
+                prompt_callable=api,  # type: ignore
                 instructions=instructions,
                 prompt=prompt,
                 output_type=self.output_type,

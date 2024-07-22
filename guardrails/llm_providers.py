@@ -186,7 +186,7 @@ class OpenAIChatCallable(OpenAIModel):
         Use Guardrails with OpenAI chat engines by doing
         ```
         raw_llm_response, validated_response, *rest = guard(
-            openai.ChatCompletion.create,
+            openai.chat.completions.create,
             prompt_params={...},
             text=...,
             instructions=...,
@@ -435,8 +435,23 @@ class LiteLLMCallable(PromptCallableBase):
                 stream_output=llm_response,
             )
 
+        if response.choices[0].message.content is not None:  # type: ignore
+            output = response.choices[0].message.content  # type: ignore
+        else:
+            try:
+                output = response.choices[0].message.function_call.arguments  # type: ignore
+            except AttributeError:
+                try:
+                    choice = response.choices[0]  # type: ignore
+                    output = choice.message.tool_calls[-1].function.arguments  # type: ignore
+                except AttributeError as ae_tools:
+                    raise ValueError(
+                        "No message content or function"
+                        " call arguments returned from OpenAI"
+                    ) from ae_tools
+
         return LLMResponse(
-            output=response.choices[0].message.content,  # type: ignore
+            output=output,  # type: ignore
             prompt_token_count=response.usage.prompt_tokens,  # type: ignore
             response_token_count=response.usage.completion_tokens,  # type: ignore
         )
@@ -606,6 +621,15 @@ def get_llm_ask(
 ) -> Optional[PromptCallableBase]:
     if "temperature" not in kwargs:
         kwargs.update({"temperature": 0})
+
+    try:
+        from litellm import completion
+
+        if llm_api == completion or (llm_api is None and kwargs.get("model")):
+            return LiteLLMCallable(*args, **kwargs)
+    except ImportError:
+        pass
+
     if llm_api == get_static_openai_create_func():
         return OpenAICallable(*args, **kwargs)
     if llm_api == get_static_openai_chat_create_func():
@@ -675,14 +699,6 @@ def get_llm_ask(
             raise ValueError(
                 "Only text generation pipelines are supported at this time."
             )
-    except ImportError:
-        pass
-
-    try:
-        from litellm import completion  # noqa: F401 # type: ignore
-
-        if llm_api == completion or (llm_api is None and kwargs.get("model")):
-            return LiteLLMCallable(*args, **kwargs)
     except ImportError:
         pass
 
@@ -785,7 +801,7 @@ class AsyncOpenAIChatCallable(AsyncOpenAIModel):
         Use Guardrails with OpenAI chat engines by doing
         ```
         raw_llm_response, validated_response, *rest = guard(
-            openai.ChatCompletion.create,
+            openai.chat.completions.create,
             prompt_params={...},
             text=...,
             instructions=...,
@@ -844,8 +860,9 @@ class AsyncOpenAIChatCallable(AsyncOpenAIModel):
 class AsyncLiteLLMCallable(AsyncPromptCallableBase):
     async def invoke_llm(
         self,
-        text: str,
+        text: Optional[str] = None,
         instructions: Optional[str] = None,
+        msg_history: Optional[List[Dict]] = None,
         *args,
         **kwargs,
     ):
@@ -872,8 +889,12 @@ class AsyncLiteLLMCallable(AsyncPromptCallableBase):
                 "Install with `pip install litellm`"
             ) from e
 
-        if text is not None or instructions is not None:
-            messages = litellm_messages(prompt=text, instructions=instructions)
+        if text is not None or instructions is not None or msg_history is not None:
+            messages = litellm_messages(
+                prompt=text,
+                instructions=instructions,
+                msg_history=msg_history,
+            )
             kwargs["messages"] = messages
 
         response = await acompletion(
@@ -889,8 +910,23 @@ class AsyncLiteLLMCallable(AsyncPromptCallableBase):
                 async_stream_output=response.completion_stream,  # pyright: ignore[reportGeneralTypeIssues]
             )
 
+        if response.choices[0].message.content is not None:  # type: ignore
+            output = response.choices[0].message.content  # type: ignore
+        else:
+            try:
+                output = response.choices[0].message.function_call.arguments  # type: ignore
+            except AttributeError:
+                try:
+                    choice = response.choices[0]  # type: ignore
+                    output = choice.message.tool_calls[-1].function.arguments  # type: ignore
+                except AttributeError as ae_tools:
+                    raise ValueError(
+                        "No message content or function"
+                        " call arguments returned from OpenAI"
+                    ) from ae_tools
+
         return LLMResponse(
-            output=response.choices[0].message.content,  # type: ignore
+            output=output,  # type: ignore
             prompt_token_count=response.usage.prompt_tokens,  # type: ignore
             response_token_count=response.usage.completion_tokens,  # type: ignore
         )
@@ -971,6 +1007,14 @@ class AsyncArbitraryCallable(AsyncPromptCallableBase):
 def get_async_llm_ask(
     llm_api: Callable[[Any], Awaitable[Any]], *args, **kwargs
 ) -> AsyncPromptCallableBase:
+    try:
+        import litellm
+
+        if llm_api == litellm.acompletion or (llm_api is None and kwargs.get("model")):
+            return AsyncLiteLLMCallable(*args, **kwargs)
+    except ImportError:
+        pass
+
     # these only work with openai v0 (None otherwise)
     if llm_api == get_static_openai_acreate_func():
         return AsyncOpenAICallable(*args, **kwargs)
@@ -982,14 +1026,6 @@ def get_async_llm_ask(
 
         if isinstance(llm_api, manifest.Manifest):
             return AsyncManifestCallable(*args, client=llm_api, **kwargs)
-    except ImportError:
-        pass
-
-    try:
-        import litellm
-
-        if llm_api == litellm.acompletion or (llm_api is None and kwargs.get("model")):
-            return AsyncLiteLLMCallable(*args, **kwargs)
     except ImportError:
         pass
 

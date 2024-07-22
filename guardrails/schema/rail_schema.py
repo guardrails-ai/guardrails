@@ -358,7 +358,7 @@ def rail_string_to_schema(rail_string: str) -> ProcessedSchema:
         validators=[], validator_map={}, exec_opts=GuardExecutionOptions()
     )
 
-    XMLPARSER = XMLParser(encoding="utf-8")
+    XMLPARSER = XMLParser(encoding="utf-8", resolve_entities=False)
     rail_xml: _Element = ET.fromstring(rail_string, parser=XMLPARSER)
 
     # Load <output /> schema
