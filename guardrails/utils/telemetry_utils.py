@@ -1,25 +1,28 @@
+import json
 import sys
 from functools import wraps
 from operator import attrgetter
-from typing import Any, Callable, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 from opentelemetry import context
 from opentelemetry.context import Context
-from opentelemetry.trace import StatusCode, Tracer
+from opentelemetry.trace import StatusCode, Tracer, Span
+
+from guardrails_api_client.models import Reask
 
 from guardrails.call_tracing import TraceHandler
 from guardrails.stores.context import get_tracer as get_context_tracer
 from guardrails.stores.context import get_tracer_context
 from guardrails.utils.casting_utils import to_string
 from guardrails.classes.validation.validator_logs import ValidatorLogs
-from guardrails.actions.reask import ReAsk
-from guardrails.actions import Filter, Refrain
 from guardrails.logger import logger
+from guardrails.actions.filter import Filter
+from guardrails.actions.refrain import Refrain
 
 
 def get_result_type(before_value: Any, after_value: Any, outcome: str):
     try:
-        if isinstance(after_value, (Filter, Refrain, ReAsk)):
+        if isinstance(after_value, (Filter, Refrain, Reask)):
             name = after_value.__class__.__name__.lower()
         elif after_value != before_value:
             name = "fix"
@@ -46,7 +49,7 @@ def get_current_context() -> Union[Context, None]:
     return otel_current_context or tracer_context
 
 
-def get_span(span=None):
+def get_span(span: Optional[Span] = None) -> Optional[Span]:
     if span is not None and hasattr(span, "add_event"):
         return span
     try:
@@ -184,6 +187,37 @@ def trace_validator(
     return trace_validator_wrapper
 
 
+def serialize(val: Any) -> Optional[str]:
+    try:
+        if val is None:
+            return None
+        if hasattr(val, "to_dict"):
+            return json.dumps(val.to_dict())
+        elif hasattr(val, "__dict__"):
+            return json.dumps(val.__dict__)
+        elif isinstance(val, dict) or isinstance(val, list):
+            return json.dumps(val)
+        return str(val)
+    except Exception:
+        return None
+
+
+def to_dict(val: Any) -> Dict:
+    try:
+        if val is None:
+            return {}
+        elif isinstance(val, dict):
+            return val
+        elif hasattr(val, "to_dict"):
+            return val.to_dict()
+        elif hasattr(val, "__dict__"):
+            return val.__dict__
+        else:
+            return dict(val)
+    except Exception:
+        return {}
+
+
 def trace(name: str, tracer: Optional[Tracer] = None):
     def trace_wrapper(fn):
         @wraps(fn)
@@ -194,8 +228,32 @@ def trace(name: str, tracer: Optional[Tracer] = None):
                 trace_context = get_current_context()
                 with _tracer.start_as_current_span(name, trace_context) as trace_span:  # type: ignore (Fails in Python 3.9 for invalid reason)
                     try:
+                        ser_args = [serialize(arg) for arg in args]
+                        ser_kwargs = {k: serialize(v) for k, v in kwargs.items()}
+                        inputs = {
+                            "args": [sarg for sarg in ser_args if sarg is not None],
+                            "kwargs": {
+                                k: v for k, v in ser_kwargs.items() if v is not None
+                            },
+                        }
+                        trace_span.set_attribute("input.mime_type", "application/json")
+                        trace_span.set_attribute("input.value", json.dumps(inputs))
                         # TODO: Capture args and kwargs as attributes?
                         response = fn(*args, **kwargs)
+
+                        ser_output = serialize(response)
+                        if ser_output:
+                            trace_span.set_attribute(
+                                "output.mime_type", "application/json"
+                            )
+                            trace_span.set_attribute(
+                                "output.value",
+                                (
+                                    json.dumps(ser_output)
+                                    if isinstance(ser_output, dict)
+                                    else ser_output
+                                ),
+                            )
                         return response
                     except Exception as e:
                         trace_span.set_status(
@@ -220,8 +278,33 @@ def async_trace(name: str, tracer: Optional[Tracer] = None):
                 trace_context = get_current_context()
                 with _tracer.start_as_current_span(name, trace_context) as trace_span:  # type: ignore (Fails in Python 3.9 for invalid reason)
                     try:
+                        ser_args = [serialize(arg) for arg in args]
+                        ser_kwargs = {k: serialize(v) for k, v in kwargs.items()}
+                        inputs = {
+                            "args": [sarg for sarg in ser_args if sarg is not None],
+                            "kwargs": {
+                                k: v for k, v in ser_kwargs.items() if v is not None
+                            },
+                        }
+                        trace_span.set_attribute("input.mime_type", "application/json")
+                        trace_span.set_attribute("input.value", json.dumps(inputs))
                         # TODO: Capture args and kwargs as attributes?
                         response = await fn(*args, **kwargs)
+
+                        ser_output = serialize(response)
+                        if ser_output:
+                            trace_span.set_attribute(
+                                "output.mime_type", "application/json"
+                            )
+                            trace_span.set_attribute(
+                                "output.value",
+                                (
+                                    json.dumps(ser_output)
+                                    if isinstance(ser_output, dict)
+                                    else ser_output
+                                ),
+                            )
+
                         return response
                     except Exception as e:
                         trace_span.set_status(
@@ -332,3 +415,139 @@ def default_otlp_tracer(resource_name: str = "guardsrails"):
     trace.set_tracer_provider(traceProvider)
 
     return trace.get_tracer("guardrails-ai")
+
+
+def trace_operation(
+    *,
+    input_mime_type: Optional[str] = None,
+    input_value: Optional[Any] = None,
+    output_mime_type: Optional[str] = None,
+    output_value: Optional[Any] = None,
+):
+    """Traces an operation (any function call) using OpenInference semantic
+    conventions."""
+    current_span = get_span()
+
+    if current_span is None:
+        return
+
+    ser_input_mime_type = serialize(input_mime_type)
+    if ser_input_mime_type:
+        current_span.set_attribute("input.mime_type", ser_input_mime_type)
+
+    ser_input_value = serialize(input_value)
+    if ser_input_value:
+        current_span.set_attribute("input.value", ser_input_value)
+
+    ser_output_mime_type = serialize(output_mime_type)
+    if ser_output_mime_type:
+        current_span.set_attribute("output.mime_type", ser_output_mime_type)
+
+    ser_output_value = serialize(output_value)
+    if ser_output_value:
+        current_span.set_attribute("output.value", ser_output_value)
+
+
+def trace_llm_call(
+    *,
+    function_call: Optional[
+        Dict[str, Any]
+    ] = None,  # JSON String	"{function_name: 'add', args: [1, 2]}"	Object recording details of a function call in models or APIs  # noqa
+    input_messages: Optional[
+        List[Dict[str, Any]]
+    ] = None,  # List of objects†	[{"message.role": "user", "message.content": "hello"}]	List of messages sent to the LLM in a chat API request  # noqa
+    invocation_parameters: Optional[
+        Dict[str, Any]
+    ] = None,  # JSON string	"{model_name: 'gpt-3', temperature: 0.7}"	Parameters used during the invocation of an LLM or API  # noqa
+    model_name: Optional[
+        str
+    ] = None,  # String	"gpt-3.5-turbo"	The name of the language model being utilized  # noqa
+    output_messages: Optional[
+        List[Dict[str, Any]]
+    ] = None,  # List of objects	[{"message.role": "user", "message.content": "hello"}]	List of messages received from the LLM in a chat API request  # noqa
+    prompt_template_template: Optional[
+        str
+    ] = None,  # String	"Weather forecast for {city} on {date}"	Template used to generate prompts as Python f-strings  # noqa
+    prompt_template_variables: Optional[
+        Dict[str, Any]
+    ] = None,  # JSON String	{ context: "<context from retrieval>", subject: "math" }	JSON of key value pairs applied to the prompt template  # noqa
+    prompt_template_version: Optional[
+        str
+    ] = None,  # String	"v1.0"	The version of the prompt template  # noqa
+    token_count_completion: Optional[
+        int
+    ] = None,  # Integer	15	The number of tokens in the completion  # noqa
+    token_count_prompt: Optional[
+        int
+    ] = None,  # Integer	5	The number of tokens in the prompt  # noqa
+    token_count_total: Optional[
+        int
+    ] = None,  # Integer	20	Total number of tokens, including prompt and completion  # noqa
+):
+    """Traces an LLM call using OpenInference semantic conventions."""
+    current_span = get_span()
+
+    if current_span is None:
+        return
+
+    ser_function_call = serialize(function_call)
+    if ser_function_call:
+        current_span.set_attribute("llm.function_call", ser_function_call)
+
+    if input_messages and isinstance(input_messages, list):
+        for i, message in enumerate(input_messages):
+            msg_obj = to_dict(message)
+            for key, value in msg_obj.items():
+                standardized_key = f"message.{key}" if "message" not in key else key
+                current_span.set_attribute(
+                    f"llm.input_messages.{i}.{standardized_key}",
+                    serialize(value),  # type: ignore
+                )
+
+    ser_invocation_parameters = serialize(invocation_parameters)
+    if ser_invocation_parameters:
+        current_span.set_attribute(
+            "llm.invocation_parameters", ser_invocation_parameters
+        )
+
+    ser_model_name = serialize(model_name)
+    if ser_model_name:
+        current_span.set_attribute("llm.model_name", ser_model_name)
+
+    if output_messages and isinstance(output_messages, list):
+        for i, message in enumerate(output_messages):
+            # Most responses are either dictionaries or Pydantic models
+            msg_obj = to_dict(message)
+            for key, value in msg_obj.items():
+                standardized_key = f"message.{key}" if "message" not in key else key
+                current_span.set_attribute(
+                    f"llm.output_messages.{i}.{standardized_key}",
+                    serialize(value),  # type: ignore
+                )
+
+    ser_prompt_template_template = serialize(prompt_template_template)
+    if ser_prompt_template_template:
+        current_span.set_attribute(
+            "llm.prompt_template.template", ser_prompt_template_template
+        )
+
+    ser_prompt_template_variables = serialize(prompt_template_variables)
+    if ser_prompt_template_variables:
+        current_span.set_attribute(
+            "llm.prompt_template.variables", ser_prompt_template_variables
+        )
+
+    ser_prompt_template_version = serialize(prompt_template_version)
+    if ser_prompt_template_version:
+        current_span.set_attribute(
+            "llm.prompt_template.version", ser_prompt_template_version
+        )
+
+    if token_count_completion:
+        current_span.set_attribute("llm.token_count.completion", token_count_completion)
+
+    if token_count_prompt:
+        current_span.set_attribute("llm.token_count.prompt", token_count_prompt)
+
+    if token_count_total:
+        current_span.set_attribute("llm.token_count.total", token_count_total)
