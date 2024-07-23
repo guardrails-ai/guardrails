@@ -30,7 +30,7 @@ python-dateutil = "^2.8.2"
 tiktoken = ">=0.5.1"
 nltk = "^3.8.1"
 litellm = "^1.37.14"
-
+sentence-transformers = "3.0.1"
 sqlvalidator = {version = "^0.0.20", optional = true}
 sqlalchemy = {version = ">=2.0.9", optional = true}
 sqlglot = {version = "^19.0.3", optional = true}

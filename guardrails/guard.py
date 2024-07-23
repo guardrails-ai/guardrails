@@ -92,6 +92,14 @@ from guardrails.utils.tools_utils import (
 )
 from guardrails.settings import settings
 
+from sentence_transformers import SentenceTransformer
+import numpy as np
+from numpy.linalg import norm
+
+model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
+
+
+
 
 class Guard(IGuard, Generic[OT]):
     """The Guard class.
@@ -771,12 +779,13 @@ class Guard(IGuard, Generic[OT]):
                     **kwargs,
                 )
                 if isinstance(resp, ValidationOutcome):
-                    trace_operation(
-                        input_mime_type="text/plain",
-                        input_value=f"""
+                    input_value = f"""
                         {self.history.last.compiled_instructions}
                         {self.history.last.compiled_prompt}
-                        """,
+                        """
+                    trace_operation(
+                        input_mime_type="text/plain",
+                        input_value=input_value,
                         output_mime_type="text/plain",
                         output_value=resp.validated_output,
                     )
@@ -785,6 +794,31 @@ class Guard(IGuard, Generic[OT]):
                     guard_span.set_attribute(
                         "validation_passed", resp.validation_passed
                     )
+
+                    raw_embed = model.encode(resp.raw_llm_output)
+                    validated_embed = model.encode(resp.validated_output)
+                    input_embed = model.encode(input_value)
+
+                    # define two arrays
+                    raw_embed_np = np.array(raw_embed)
+                    validated_embed_np = np.array(validated_embed)
+                    input_embed_np = np.array(input_embed)
+
+                    # compute cosine similarity
+                    raw_output_x_validated_output_cosine = np.sum(raw_embed_np*validated_embed_np, axis=0)/(norm(raw_embed_np, axis=0)*norm(validated_embed_np, axis=0))
+                    input_x_validated_output_cosine = np.sum(input_embed_np*validated_embed_np, axis=0)/(norm(input_embed_np, axis=0)*norm(validated_embed_np, axis=0))
+                    input_x_raw_output_cosine = np.sum(input_embed_np*raw_embed_np, axis=0)/(norm(input_embed_np, axis=0)*norm(raw_embed_np, axis=0))
+
+                    guard_span.set_attribute(
+                        "raw_output_x_validated_output_cosine", raw_output_x_validated_output_cosine
+                    )
+                    guard_span.set_attribute(
+                        "input_x_validated_output_cosine", input_x_validated_output_cosine
+                    )
+                    guard_span.set_attribute(
+                        "input_x_raw_output_cosine", input_x_raw_output_cosine
+                    )
+
                 return resp
 
             guard_context = contextvars.Context()
