@@ -4,6 +4,7 @@ from functools import wraps
 from operator import attrgetter
 from typing import Any, Callable, Dict, List, Optional, Union
 
+from guardrails_api_client import ValidationResult
 from opentelemetry import context
 from opentelemetry.context import Context
 from opentelemetry.trace import StatusCode, Tracer, Span
@@ -155,6 +156,9 @@ def trace_validator(
             ) as validator_span:
                 try:
                     validator_span.set_attribute(
+                        "validator_name", validator_name or "unknown"
+                    )
+                    validator_span.set_attribute(
                         "on_fail_descriptor", on_fail_descriptor or "noop"
                     )
                     validator_span.set_attribute(
@@ -166,9 +170,22 @@ def trace_validator(
 
                     # NOTE: Update if Validator.validate method signature ever changes
                     if args is not None and len(args) > 1:
-                        validator_span.set_attribute("input", to_string(args[1]) or "")
+                        validator_span.set_attribute("input", to_string(args[0]) or "")
+                        trace_operation(
+                            input_value=args[0], input_mime_type="text/plain"
+                        )
 
-                    return fn(*args, **kwargs)
+                    resp = fn(*args, **kwargs)
+
+                    if isinstance(resp, ValidationResult):
+                        trace_operation(
+                            output_value=resp.to_dict(),
+                            output_mime_type="application/json",
+                        )
+                        validator_span.set_attribute(
+                            "span.attributes.validation_result.outcome", resp.outcome
+                        )
+
                 except Exception as e:
                     validator_span.set_status(
                         status=StatusCode.ERROR, description=str(e)
