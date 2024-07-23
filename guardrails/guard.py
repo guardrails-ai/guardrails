@@ -781,6 +781,7 @@ class Guard(IGuard, Generic[OT]):
                         output_value=resp.validated_output,
                     )
                     guard_span.set_attribute("guard_id", self.id)
+                    guard_span.set_attribute("guard_name", self.name)
                     guard_span.set_attribute(
                         "validation_passed", resp.validation_passed
                     )
