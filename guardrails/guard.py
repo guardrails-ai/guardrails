@@ -810,13 +810,13 @@ class Guard(IGuard, Generic[OT]):
                     input_x_raw_output_cosine = np.sum(input_embed_np*raw_embed_np, axis=0)/(norm(input_embed_np, axis=0)*norm(raw_embed_np, axis=0))
 
                     guard_span.set_attribute(
-                        "raw_output_x_validated_output_cosine", raw_output_x_validated_output_cosine
+                        "raw_output_x_validated_output_cosine", f"{raw_output_x_validated_output_cosine}"
                     )
                     guard_span.set_attribute(
-                        "input_x_validated_output_cosine", input_x_validated_output_cosine
+                        "input_x_validated_output_cosine", f"{input_x_validated_output_cosine}"
                     )
                     guard_span.set_attribute(
-                        "input_x_raw_output_cosine", input_x_raw_output_cosine
+                        "input_x_raw_output_cosine", f"{input_x_raw_output_cosine}"
                     )
 
                 return resp
