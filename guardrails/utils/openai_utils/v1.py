@@ -9,6 +9,8 @@ from guardrails.utils.openai_utils.streaming_utils import (
     num_tokens_from_messages,
     num_tokens_from_string,
 )
+from guardrails.utils.safe_get import safe_get
+from guardrails.utils.telemetry_utils import trace_llm_call, trace_operation
 
 
 def get_static_openai_create_func():
@@ -56,9 +58,29 @@ class OpenAIClientV1(BaseOpenAIClient):
     def create_completion(
         self, engine: str, prompt: str, *args, **kwargs
     ) -> LLMResponse:
+        trace_operation(
+            input_mime_type="application/json",
+            input_value={
+                **kwargs,
+                "model": engine,
+                "prompt": prompt,
+                "args": args,
+            },
+        )
+
+        trace_llm_call(
+            invocation_parameters={
+                **kwargs,
+                "model": engine,
+                "prompt": prompt,
+            }
+        )
+
         response = self.client.completions.create(
             model=engine, prompt=prompt, *args, **kwargs
         )
+
+        trace_operation(output_mime_type="application/json", output_value=response)
 
         return self.construct_nonchat_response(
             stream=kwargs.get("stream", False),
@@ -90,6 +112,14 @@ class OpenAIClientV1(BaseOpenAIClient):
             raise ValueError("No choices returned from OpenAI")
         if openai_response.usage is None:
             raise ValueError("No token counts returned from OpenAI")
+        trace_llm_call(
+            output_messages=[
+                {"role": "assistant", "content": openai_response.choices[0].text}
+            ],
+            token_count_completion=openai_response.usage.completion_tokens,
+            token_count_prompt=openai_response.usage.prompt_tokens,
+            token_count_total=openai_response.usage.total_tokens,
+        )
         return LLMResponse(
             output=openai_response.choices[0].text,  # type: ignore
             prompt_token_count=openai_response.usage.prompt_tokens,  # type: ignore
@@ -99,9 +129,33 @@ class OpenAIClientV1(BaseOpenAIClient):
     def create_chat_completion(
         self, model: str, messages: List[Any], *args, **kwargs
     ) -> LLMResponse:
+        trace_operation(
+            input_mime_type="application/json",
+            input_value={
+                **kwargs,
+                "model": model,
+                "messages": messages,
+                "args": args,
+            },
+        )
+        function_calling_tools = [
+            tool.get("function")
+            for tool in kwargs.get("tools", [])
+            if isinstance(tool, Dict) and tool.get("type") == "function"
+        ]
+        trace_llm_call(
+            input_messages=messages,
+            model_name=model,
+            invocation_parameters={**kwargs, "model": model, "messages": messages},
+            function_call=kwargs.get(
+                "function_call", safe_get(function_calling_tools, 0)
+            ),
+        )
         response = self.client.chat.completions.create(
             model=model, messages=messages, *args, **kwargs
         )
+
+        trace_operation(output_mime_type="application/json", output_value=response)
 
         return self.construct_chat_response(
             stream=kwargs.get("stream", False),
@@ -150,7 +204,12 @@ class OpenAIClientV1(BaseOpenAIClient):
                         "No message content or function"
                         " call arguments returned from OpenAI"
                     ) from ae_tools
-
+        trace_llm_call(
+            output_messages=[choice.message for choice in openai_response.choices],  # type: ignore
+            token_count_completion=openai_response.usage.completion_tokens,
+            token_count_prompt=openai_response.usage.prompt_tokens,
+            token_count_total=openai_response.usage.total_tokens,
+        )
         return LLMResponse(
             output=output,
             prompt_token_count=openai_response.usage.prompt_tokens,  # type: ignore

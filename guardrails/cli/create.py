@@ -66,6 +66,13 @@ def create_command(
         installed_validators = split_and_install_validators(validators, dry_run)
         new_config_file = generate_config_file(installed_validators, name)
 
+    if name is None:
+        name = "Guard"
+        if len(installed_validators) > 0:
+            name = installed_validators[0] + "Guard"
+
+        console.print(f"No name provided for guard. Defaulting to {name}")
+
     if dry_run:
         console.print(f"Not actually saving output to [bold]{filepath}[/bold]")
         console.print("The following would have been written:\n")
