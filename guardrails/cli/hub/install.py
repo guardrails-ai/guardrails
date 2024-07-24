@@ -203,7 +203,7 @@ Example: hub://guardrails/regex_match."
     ),
     quiet: bool = typer.Option(
         False,
-        "--quiet",
+        "-q", "--quiet",
         help="Run the command in quiet mode to reduce output verbosity.",
     ),
 ):
