@@ -7,6 +7,7 @@ repos:
         name: ruff
         description: "Run 'ruff' for linting"
         args: ["--fix"]
+        exclude: docs/ 
       # Performs ruff format
       - id: ruff-format
         name: ruff-format
