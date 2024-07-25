@@ -58,6 +58,8 @@ def fetch(url: str, token: Optional[str], anonymousUserId: Optional[str]):
             "x-guardrails-version": GUARDRAILS_VERSION,
         }
         req = requests.get(url, headers=headers)
+        print("===vhs===", VALIDATOR_HUB_SERVICE)
+        print("===req===", req.text)
         body = req.json()
 
         if not req.ok:
@@ -107,6 +109,37 @@ def fetch_module(module_name: str) -> ModuleManifest:
 
     module_manifest_json = fetch_module_manifest(module_name, token, creds.id)
     return ModuleManifest.from_dict(module_manifest_json)
+
+
+def fetch_template(template_address: str) -> Dict[str, Any]:
+    creds = Credentials.from_rc_file(logger)
+    token = get_jwt_token(creds)
+
+    namespace, template_name = template_address.replace("hub:template://", "").split(
+        "/", 1
+    )
+    template_path = f"guard-templates/{namespace}/{template_name}"
+    template_url = f"{VALIDATOR_HUB_SERVICE}/{template_path}"
+    return fetch(template_url, token, creds.id)
+
+
+# GET /guard-templates/{namespace}/{guardTemplateName}
+def get_guard_template(template_address: str):
+    try:
+        template = fetch_template(template_address)
+        if not template:
+            logger.error(f"Failed to install template {template_address}")
+            sys.exit(1)
+        return template
+    except HttpError:
+        logger.error(f"Failed to install template {template_address}")
+        sys.exit(1)
+    except (ExpiredTokenError, InvalidTokenError) as e:
+        logger.error(AuthenticationError(e))
+        sys.exit(1)
+    except Exception as e:
+        logger.error("An unexpected error occurred!", e)
+        sys.exit(1)
 
 
 # GET /validator-manifests/{namespace}/{validatorName}

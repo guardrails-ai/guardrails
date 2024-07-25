@@ -53,15 +53,9 @@ def create_command(
         template_dict, template_file_name = get_template(template)
         validators = {}
         for guard in template_dict["guards"]:
-            print("=== guard ===")
-            print(guard)
             for validator in guard["validators"]:
-                print("=== validator ===")
-                print(validator)
                 validators[f"hub://{validator['id']}"] = True
         validators = ",".join(validators.keys())
-        print("=== validators ===")
-        print(validators)
         installed_validators = split_and_install_validators(validators, dry_run)
         new_config_file = generate_template_config(
             template_dict, installed_validators, template_file_name
@@ -70,7 +64,7 @@ def create_command(
         installed_validators = split_and_install_validators(validators, dry_run)
         new_config_file = generate_config_file(installed_validators, name)
 
-    if name is None:
+    if name is None and validators:
         name = "Guard"
         if len(installed_validators) > 0:
             name = installed_validators[0] + "Guard"
@@ -96,8 +90,6 @@ def create_command(
 def generate_template_config(
     template: dict, installed_validators, template_file_name
 ) -> str:
-    print("=== installed validators ====")
-    print(installed_validators)
     # Read the template file
     script_dir = os.path.dirname(os.path.realpath(__file__))
     config_template_path = os.path.join(
@@ -118,8 +110,7 @@ def generate_template_config(
         VALIDATOR_IMPORTS=", ".join(installed_validators),
         GUARD_INSTANTIATIONS=guard_instantiations,
     )
-    print("=== generated config from template ====")
-    print(output_content)
+
     return output_content
 
 
