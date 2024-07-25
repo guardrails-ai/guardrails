@@ -1,12 +1,10 @@
 import os
-import sys
-from contextlib import contextmanager
-import typer
 import re
 
 from guardrails.cli.hub.hub import hub_command
 from guardrails.cli.hub.utils import get_site_packages_location
 from .console import console
+
 
 @hub_command.command(name="list")
 def list():
@@ -17,9 +15,9 @@ def list():
     installed_validators = []
 
     if os.path.isfile(hub_init_file):
-        with open(hub_init_file, 'r') as file:
+        with open(hub_init_file, "r") as file:
             content = file.read()
-            matches = re.findall(r'from .* import (\w+)', content)
+            matches = re.findall(r"from .* import (\w+)", content)
             installed_validators.extend(matches)
 
     if installed_validators:
@@ -28,4 +26,3 @@ def list():
             console.print(f"- {validator}")
     else:
         console.print("No validators installed.")
-
