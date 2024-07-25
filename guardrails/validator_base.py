@@ -447,7 +447,7 @@ def validator_factory(name: str, validate: Callable) -> Type[Validator]:
 
 def register_validator(
     name: str, data_type: Union[str, List[str]], has_guardrails_endpoint: bool = False
-) -> Callable[[Union[Type[V], Callable]], Type[V]]:
+) -> Callable[[Union[Type[V], Callable]], Union[Type[V], Type[Validator]]]:
     """Register a validator for a data type."""
     from guardrails.datatypes import types_registry
 
@@ -460,7 +460,9 @@ def register_validator(
 
         types_to_validators[dt].append(name)
 
-    def decorator(cls_or_func: Union[Type[V], Callable]) -> Type[V]:
+    def decorator(
+        cls_or_func: Union[Type[V], Callable],
+    ) -> Union[Type[V], Type[Validator]]:
         """Register a validator for a data type."""
         if isinstance(cls_or_func, type) and issubclass(cls_or_func, Validator):
             cls = cls_or_func
@@ -481,7 +483,7 @@ def register_validator(
                 "can be registered as validators."
             )
         validators_registry[name] = cls
-        return cls  # type: ignore
+        return cls
 
     return decorator
 
