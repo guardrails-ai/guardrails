@@ -58,8 +58,6 @@ def fetch(url: str, token: Optional[str], anonymousUserId: Optional[str]):
             "x-guardrails-version": GUARDRAILS_VERSION,
         }
         req = requests.get(url, headers=headers)
-        print("===vhs===", VALIDATOR_HUB_SERVICE)
-        print("===req===", req.text)
         body = req.json()
 
         if not req.ok:
