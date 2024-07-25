@@ -1,7 +1,7 @@
 import os
 import sys
 import time
-from typing import List, Optional, Union
+from typing import Dict, List, Optional, Union
 
 import typer
 import json
@@ -51,17 +51,17 @@ def create_command(
 
     if not validators and template is not None:
         template_dict, template_file_name = get_template(template)
-        validators = {}
+        validators_map: Dict[str, bool] = {}
         for guard in template_dict["guards"]:
             for validator in guard["validators"]:
-                validators[f"hub://{validator['id']}"] = True
-        validators = ",".join(validators.keys())
-        installed_validators = split_and_install_validators(validators, dry_run)
+                validators_map[f"hub://{validator['id']}"] = True
+        validators = ",".join(validators_map.keys())
+        installed_validators = split_and_install_validators(validators, dry_run)  # type: ignore
         new_config_file = generate_template_config(
             template_dict, installed_validators, template_file_name
         )
     else:
-        installed_validators = split_and_install_validators(validators, dry_run)
+        installed_validators = split_and_install_validators(validators, dry_run)  # type: ignore
         new_config_file = generate_config_file(installed_validators, name)
 
     if name is None and validators:

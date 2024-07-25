@@ -14,7 +14,7 @@ def get_template(template_name: str) -> tuple[dict, str]:
             return json.load(fin), template_file_name
 
     # todo - load this from the hub and create an appropriate file
-    template_file_name = f"{template_name.split("/")[-1]}.json"
+    template_file_name = f"{template_name.split('/')[-1]}.json"
     template = get_guard_template(template_name)
     # write template to file
     out_path = os.path.join(os.getcwd(), template_file_name)
