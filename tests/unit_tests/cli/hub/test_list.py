@@ -1,21 +1,20 @@
-import os
-import re
-from unittest.mock import mock_open, patch
+from unittest.mock import mock_open
 
 import pytest
 from typer.testing import CliRunner
 
 from guardrails.cli.hub.hub import hub_command
-from guardrails.cli.hub.utils import get_site_packages_location
 
-from guardrails.cli.hub.list import hub_command, list
 
 runner = CliRunner()
 
 class TestListCommand:
     @pytest.fixture(autouse=True)
     def setup(self, mocker):
-        mocker.patch("guardrails.cli.hub.utils.get_site_packages_location", return_value="/test/site-packages")
+        mocker.patch(
+            "guardrails.cli.hub.utils.get_site_packages_location", 
+            return_value="/test/site-packages",
+        )
 
     def test_list_no_validators_installed(self, mocker):
         mocker.patch("os.path.isfile", return_value=False)
