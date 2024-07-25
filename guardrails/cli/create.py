@@ -16,7 +16,7 @@ from guardrails.cli.hub.install import (  # JC: I don't like this import. Move f
 )
 from guardrails.cli.hub.utils import get_site_packages_location
 from guardrails.cli.server.hub_client import get_validator_manifest
-from guardrails.cli.hub.template import is_valid_template, get_template
+from guardrails.cli.hub.template import get_template
 
 console = Console()
 
@@ -36,8 +36,10 @@ def create_command(
     ),
     template: Optional[str] = typer.Option(
         default=None,
-        help="Then name of the template to base the configuration file on."
-        " For example chatbot or summarizer.",
+        help="Then hub uri to template to base the configuration file on."
+        " For example hub:template://guardrails/chatbot or hub:template://guardrails/summarizer."
+        " Files paths ending in .json are also accepted."
+        " If this is provided, validators should not be provided.",
     ),
     dry_run: bool = typer.Option(
         default=False,
@@ -47,10 +49,10 @@ def create_command(
 ):
     filepath = check_filename(filepath)
 
-    if not validators and template is not None and is_valid_template(template):
-        template = get_template(template)
+    if not validators and template is not None:
+        template_dict, template_file_name = get_template(template)
         validators = {}
-        for guard in template["guards"]:
+        for guard in template_dict["guards"]:
             print("=== guard ===")
             print(guard)
             for validator in guard["validators"]:
@@ -61,7 +63,9 @@ def create_command(
         print("=== validators ===")
         print(validators)
         installed_validators = split_and_install_validators(validators, dry_run)
-        new_config_file = generate_template_config(template, installed_validators)
+        new_config_file = generate_template_config(
+            template_dict, installed_validators, template_file_name
+        )
     else:
         installed_validators = split_and_install_validators(validators, dry_run)
         new_config_file = generate_config_file(installed_validators, name)
@@ -89,11 +93,13 @@ def create_command(
     )
 
 
-def generate_template_config(template: dict, installed_validators) -> str:
+def generate_template_config(
+    template: dict, installed_validators, template_file_name
+) -> str:
     print("=== installed validators ====")
     print(installed_validators)
     # Read the template file
-    script_dir = os.path.dirname(__file__)
+    script_dir = os.path.dirname(os.path.realpath(__file__))
     config_template_path = os.path.join(
         script_dir, "hub", "template_config.py.template"
     )
@@ -107,6 +113,7 @@ def generate_template_config(template: dict, installed_validators) -> str:
     guard_instantiations = "\n".join(guard_instantiations)
     # Interpolate variables
     output_content = template_content.format(
+        TEMPLATE_FILE_NAME=template_file_name,
         GUARDS=json.dumps(template["guards"], indent=4),
         VALIDATOR_IMPORTS=", ".join(installed_validators),
         GUARD_INSTANTIATIONS=guard_instantiations,
