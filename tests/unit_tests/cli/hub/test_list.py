@@ -8,11 +8,12 @@ from guardrails.cli.hub.hub import hub_command
 
 runner = CliRunner()
 
+
 class TestListCommand:
     @pytest.fixture(autouse=True)
     def setup(self, mocker):
         mocker.patch(
-            "guardrails.cli.hub.utils.get_site_packages_location", 
+            "guardrails.cli.hub.utils.get_site_packages_location",
             return_value="/test/site-packages",
         )
 
