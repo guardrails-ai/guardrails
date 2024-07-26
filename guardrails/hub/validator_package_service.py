@@ -47,43 +47,41 @@ class ValidatorPackageService:
         (module_manifest, site_packages) = ValidatorPackageService.install__prep(
             module_name
         )
-
         # pip install
         ValidatorPackageService.install__pip_install_hub_module(
             module_manifest, site_packages, quiet=quiet
         )
-
         # post install
         ValidatorPackageService.install__post_install(module_manifest, site_packages)
 
         return ValidatorPackageService.get_validator_from_manifest(module_manifest)
 
-    @staticmethod
+    @staticmethod  # ====== tested
     def install__prep(module_name: str) -> tuple[ModuleManifest, str]:
         module_manifest = get_validator_manifest(module_name)
         site_packages = ValidatorPackageService.get_site_packages_location()
         return (module_manifest, site_packages)
 
-    @staticmethod
+    @staticmethod  # ====== tested
     def install__post_install(module_manifest: ModuleManifest, site_packages: str):
         ValidatorPackageService.run_post_install(module_manifest, site_packages)
         ValidatorPackageService.add_to_hub_inits(module_manifest, site_packages)
 
     @staticmethod
-    def get_site_packages_location():
+    def get_site_packages_location():  # ====== tested
         pip_package_location = Path(ValidatorPackageService.get_module_path("pip"))
         # Get the location of site-packages
         site_packages_path = str(pip_package_location.parent)
         return site_packages_path
 
     @staticmethod
-    def reload_module(module_path):
+    def reload_module(module_path):  # ====== tested
         try:
             reloaded_module: ModuleType = None
             # Dynamically import the module based on its path
             if "guardrails.hub" in sys.modules:
                 # Reload the module if it's already imported
-                reloaded_module = importlib.reload(sys.modules["guardrails.hub"])
+                importlib.reload(sys.modules["guardrails.hub"])
                 print("Reloaded module: guardrails.hub")
 
             if module_path not in sys.modules:
@@ -91,19 +89,19 @@ class ValidatorPackageService:
                 reloaded_module = importlib.import_module(module_path)
                 sys.modules[module_path] = reloaded_module
                 print(f"Imported module: {module_path}")
+            else:
+                reloaded_module = sys.modules[module_path]
+                print(f"Module already imported: {module_path}")
 
             return reloaded_module
-        except ModuleNotFoundError as e:
-            print(f"Module not found: {module_path}. Error: {str(e)}")
-        except Exception as e:
-            print(
-                f"Error reloading or importing module: {module_path}. Error: {str(e)}"
-            )
+        except ModuleNotFoundError:
+            raise
+        except Exception:
+            raise
 
     @staticmethod
-    def get_validator_from_manifest(manifest: ModuleManifest):
+    def get_validator_from_manifest(manifest: ModuleManifest):  # ====== tested
         org_package = ValidatorPackageService.get_org_and_package_dirs(manifest)
-        # post_install_script = manifest.post_install
         module_name = manifest.module_name
 
         _relative_path = ".".join([*org_package, module_name])
@@ -117,7 +115,9 @@ class ValidatorPackageService:
         return ValidatorPackageService.reload_module(import_line)
 
     @staticmethod
-    def get_org_and_package_dirs(manifest: ModuleManifest) -> List[str]:
+    def get_org_and_package_dirs(
+        manifest: ModuleManifest,
+    ) -> List[str]:  # ====== tested
         org_name = manifest.namespace
         package_name = manifest.package_name
         org = snake_case(org_name if len(org_name) > 1 else "")
@@ -125,7 +125,7 @@ class ValidatorPackageService:
         return list(filter(None, [org, package]))
 
     @staticmethod
-    def add_to_hub_inits(manifest: ModuleManifest, site_packages: str):
+    def add_to_hub_inits(manifest: ModuleManifest, site_packages: str):  # ====== tested
         org_package = ValidatorPackageService.get_org_and_package_dirs(manifest)
         exports: List[str] = manifest.exports or []
         sorted_exports = sorted(exports, reverse=True)
@@ -172,29 +172,28 @@ class ValidatorPackageService:
                 namespace_init.close()
 
     @staticmethod
-    def get_module_path(package_name):
-        if package_name not in sys.modules:
-            import importlib
-
-            importlib.import_module(package_name)
-
-        module = sys.modules[package_name]
+    def get_module_path(package_name):  # ====== tested
         try:
-            # Check if the module is actually a package
+            if package_name not in sys.modules:
+                module = importlib.import_module(package_name)
+                sys.modules[package_name] = module
+
+            module = sys.modules[package_name]
             package_path = module.__path__[0]  # Take the first entry if it's a list
-        except AttributeError:
-            # This means it's a standalone module, not a package
-            try:
-                package_path = module.__path__
-            except AttributeError:
-                raise FailedToLocateModule(
-                    f"The module {package_name} does not appear to be a package or a regular module."
-                )
+
+        except (ModuleNotFoundError, AttributeError, TypeError) as e:
+            # wasn't able to import the module
+            raise FailedToLocateModule(
+                f"""
+                    The module {package_name} could not be found in 
+                    the current environment.
+                """
+            ) from e
 
         return package_path
 
     @staticmethod
-    def get_module_name(package_uri: str):
+    def get_module_name(package_uri: str):  # ====== tested
         if not package_uri.startswith("hub://"):
             raise InvalidHubInstallURL("The package URI must start with 'hub://'")
 
@@ -202,7 +201,7 @@ class ValidatorPackageService:
         return module_name
 
     @staticmethod
-    def get_install_url(manifest: ModuleManifest) -> str:
+    def get_install_url(manifest: ModuleManifest) -> str:  # ====== tested
         repo = manifest.repository
         repo_url = repo.url
         branch = repo.branch
@@ -257,7 +256,10 @@ class ValidatorPackageService:
                     e,
                 )
                 raise FailedPackageInstallationPostInstall(
-                    f"An unexpected exception occurred while running the post install script for {manifest.id}!"
+                    f"""
+                    An unexpected exception occurred while running the post install 
+                    script for {manifest.id}!
+                    """
                 )
 
     @staticmethod
