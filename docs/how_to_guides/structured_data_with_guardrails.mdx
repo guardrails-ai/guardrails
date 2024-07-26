@@ -55,13 +55,14 @@ Below is the syntax for generating structured data with Guardrails AI using `Pyd
         <integer name="age" />
         <boolean name="is_employed" />
       </output>
+    </rail>
     ```
 
     Then, create a `Guard` object that uses the RAIL spec to generate structured data.
     ```python
     from guardrails import Guard
 
-    guard = Guard.from_s("""
+    guard = Guard.from_rail_string("""
       <rail version="0.1">
         <output>
           <string name="name" />
