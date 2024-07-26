@@ -1,4 +1,4 @@
-# Integrating Guardrails with LangChain
+# LangChain
 
 ## Overview
 
