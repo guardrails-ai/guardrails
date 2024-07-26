@@ -270,7 +270,10 @@ Example: hub://guardrails/regex_match."
         pass
 
     # Post-install
-    if not use_remote_endpoint and install_local_models is not False:
+    install_local_models = (
+        install_local_models if install_local_models is not None else True
+    )
+    if not use_remote_endpoint and install_local_models is True:
         logger.log(
             level=LEVELS.get("SPAM"),  # type: ignore
             msg="Installing models locally!",

@@ -12,7 +12,7 @@ class TestInstall:
     def test_exits_early_if_uri_is_not_valid(self, mocker):
         mock_logger_error = mocker.patch("guardrails.cli.hub.install.logger.error")
 
-        from guardrails.cli.hub.install import install, sys
+        from guardrails.cli.hub.install import sys
 
         sys_exit_spy = mocker.spy(sys, "exit")
 
@@ -58,9 +58,12 @@ class TestInstall:
 
         monkeypatch.setattr("typer.confirm", lambda prompt, default=True: True)
 
-        from guardrails.cli.hub.install import install
+        runner = CliRunner()
 
-        install("hub://guardrails/test-validator", quiet=False, local_models=False)
+        runner.invoke(
+            hub_command,
+            ["install", "hub://guardrails/test-validator", "--no-install-local-models"],
+        )
 
         log_calls = [
             call(level=5, msg="Installing hub://guardrails/test-validator..."),
@@ -119,9 +122,12 @@ class TestInstall:
 
         monkeypatch.setattr("typer.confirm", lambda prompt, default=True: True)
 
-        from guardrails.cli.hub.install import install
+        runner = CliRunner()
 
-        install("hub://guardrails/test-validator", quiet=False, local_models=True)
+        runner.invoke(
+            hub_command,
+            ["install", "hub://guardrails/test-validator", "--install-local-models"],
+        )
 
         log_calls = [
             call(level=5, msg="Installing hub://guardrails/test-validator..."),
@@ -179,9 +185,9 @@ class TestInstall:
 
         monkeypatch.setattr("typer.confirm", lambda prompt, default=True: True)
 
-        from guardrails.cli.hub.install import install
+        runner = CliRunner()
 
-        install("hub://guardrails/test-validator", quiet=False)
+        runner.invoke(hub_command, ["install", "hub://guardrails/test-validator"])
 
         log_calls = [
             call(level=5, msg="Installing hub://guardrails/test-validator..."),
@@ -235,9 +241,9 @@ class TestInstall:
         mocker.patch("guardrails.cli.hub.install.run_post_install")
         mocker.patch("guardrails.cli.hub.install.add_to_hub_inits")
 
-        monkeypatch.setattr("typer.confirm", lambda _: False)
+        runner = CliRunner()
 
-        install("hub://guardrails/test-validator", quiet=False)
+        runner.invoke(hub_command, ["install", "hub://guardrails/test-validator"])
 
         log_calls = [
             call(level=5, msg="Installing hub://guardrails/test-validator..."),
