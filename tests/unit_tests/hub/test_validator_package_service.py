@@ -554,23 +554,79 @@ class TestValidatorPackageService:
             == "/fake/site-packages/guardrails/hub/guardrails_ai/test_package"
         )
 
-    @patch("guardrails.hub.validator_package_service.pip_process")
-    def test_install__pip_install_hub_module(self, mock_pip_process):
-        # Setup
-        mock_pip_process.side_effect = lambda *args, **kwargs: f"pip {args} {kwargs}"
-
-        # Test
-        ValidatorPackageService.install__pip_install_hub_module(
-            self.manifest, self.site_packages, quiet=False
+    def test_install_hub_module(self, mocker):
+        mock_get_install_url = mocker.patch(
+            "guardrails.hub.validator_package_service.ValidatorPackageService.get_install_url"
         )
+        mock_get_install_url.return_value = "mock-install-url"
 
-        # Assert
-        mock_pip_process.assert_called_once_with(
-            "install",
-            "git+https://github.com/example/test@main",
-            [
-                "--target=/fake/site-packages/guardrails/hub/guardrails_ai/test_package",
-                "--no-deps",
-            ],
-            quiet=False,
+        mock_get_hub_directory = mocker.patch(
+            "guardrails.hub.validator_package_service.ValidatorPackageService.get_hub_directory"
         )
+        mock_get_hub_directory.return_value = "mock/install/directory"
+
+        mock_pip_process = mocker.patch(
+            "guardrails.hub.validator_package_service.pip_process"
+        )
+        inspect_report = {
+            "installed": [
+                {
+                    "metadata": {
+                        "requires_dist": [
+                            "rstr",
+                            "openai <2",
+                            "pydash (>=7.0.6,<8.0.0)",
+                            'faiss-cpu (>=1.7.4,<2.0.0) ; extra == "vectordb"',
+                        ]
+                    }
+                }
+            ]
+        }
+        mock_pip_process.side_effect = [
+            "Sucessfully installed test-validator",
+            inspect_report,
+            "Sucessfully installed rstr",
+            "Sucessfully installed openai<2",
+            "Sucessfully installed pydash>=7.0.6,<8.0.0",
+        ]
+
+        manifest = ModuleManifest.from_dict(
+            {
+                "id": "id",
+                "name": "name",
+                "author": {"name": "me", "email": "me@me.me"},
+                "maintainers": [],
+                "repository": {"url": "some-repo"},
+                "namespace": "guardrails-ai",
+                "package_name": "test-validator",
+                "module_name": "validator",
+                "exports": ["TestValidator"],
+                "tags": {},
+            }
+        )
+        site_packages = "./site-packages"
+        ValidatorPackageService.install__pip_install_hub_module(manifest, site_packages)
+
+        mock_get_install_url.assert_called_once_with(manifest)
+        mock_get_hub_directory.assert_called_once_with(manifest, site_packages)
+
+        assert mock_pip_process.call_count == 5
+        pip_calls = [
+            call(
+                "install",
+                "mock-install-url",
+                ["--target=mock/install/directory", "--no-deps"],
+                quiet=False,
+            ),
+            call(
+                "inspect",
+                flags=["--path=mock/install/directory"],
+                format="json",
+                quiet=False,
+                no_color=True,
+            ),
+            call("install", "rstr", quiet=False),
+            call("install", "openai<2", quiet=False),
+            call("install", "pydash>=7.0.6,<8.0.0", quiet=False),
+        ]
+        mock_pip_process.assert_has_calls(pip_calls)
