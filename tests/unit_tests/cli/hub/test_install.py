@@ -11,7 +11,7 @@ class TestInstall:
     def test_exits_early_if_uri_is_not_valid(self, mocker):
         mock_logger_error = mocker.patch("guardrails.cli.hub.install.logger.error")
 
-        from guardrails.cli.hub.install import install, sys
+        from guardrails.cli.hub.install import sys
 
         sys_exit_spy = mocker.spy(sys, "exit")
 
@@ -21,7 +21,7 @@ class TestInstall:
         mock_logger_error.assert_called_once_with("Invalid URI!")
         sys_exit_spy.assert_called_once_with(1)
 
-    def test_install_local_models(self, mocker, monkeypatch):
+    def test_install_local_models__false(self, mocker, monkeypatch):
         mock_logger_log = mocker.patch("guardrails.cli.hub.install.logger.log")
 
         mock_get_validator_manifest = mocker.patch(
@@ -57,9 +57,12 @@ class TestInstall:
 
         monkeypatch.setattr("typer.confirm", lambda prompt, default=True: True)
 
-        from guardrails.cli.hub.install import install
+        runner = CliRunner()
 
-        install("hub://guardrails/test-validator", quiet=False)
+        runner.invoke(
+            hub_command,
+            ["install", "hub://guardrails/test-validator", "--no-install-local-models"],
+        )
 
         log_calls = [
             call(level=5, msg="Installing hub://guardrails/test-validator..."),
@@ -67,6 +70,129 @@ class TestInstall:
                 level=5,
                 msg="Skipping post install, models will not be downloaded for local "
                 "inference.",
+            ),
+            call(
+                level=5,
+                msg="✅Successfully installed hub://guardrails/test-validator!\n\nImport validator:\nfrom guardrails.hub import TestValidator\n\nGet more info:\nhttps://hub.guardrailsai.com/validator/id\n",  # noqa
+            ),  # noqa
+        ]
+        assert mock_logger_log.call_count == 3
+        mock_logger_log.assert_has_calls(log_calls)
+
+        mock_get_validator_manifest.assert_called_once_with("guardrails/test-validator")
+
+        assert mock_get_site_packages_location.call_count == 1
+
+        mock_add_to_hub_init.assert_called_once_with(manifest, site_packages)
+
+    def test_install_local_models__true(self, mocker, monkeypatch):
+        mock_logger_log = mocker.patch("guardrails.cli.hub.install.logger.log")
+
+        mock_get_validator_manifest = mocker.patch(
+            "guardrails.cli.hub.install.get_validator_manifest"
+        )
+        manifest = ModuleManifest.from_dict(
+            {
+                "id": "id",
+                "name": "name",
+                "author": {"name": "me", "email": "me@me.me"},
+                "maintainers": [],
+                "repository": {"url": "some-repo"},
+                "namespace": "guardrails",
+                "package_name": "test-validator",
+                "module_name": "test_validator",
+                "exports": ["TestValidator"],
+                "tags": {"has_guardrails_endpoint": False},
+            }
+        )
+        mock_get_validator_manifest.return_value = manifest
+
+        mock_get_site_packages_location = mocker.patch(
+            "guardrails.cli.hub.install.get_site_packages_location"
+        )
+        site_packages = "./.venv/lib/python3.X/site-packages"
+        mock_get_site_packages_location.return_value = site_packages
+
+        mocker.patch("guardrails.cli.hub.install.install_hub_module")
+
+        mock_add_to_hub_init = mocker.patch(
+            "guardrails.cli.hub.install.add_to_hub_inits"
+        )
+
+        monkeypatch.setattr("typer.confirm", lambda prompt, default=True: True)
+
+        runner = CliRunner()
+
+        runner.invoke(
+            hub_command,
+            ["install", "hub://guardrails/test-validator", "--install-local-models"],
+        )
+
+        log_calls = [
+            call(level=5, msg="Installing hub://guardrails/test-validator..."),
+            call(
+                level=5,
+                msg="Installing models locally!",
+            ),
+            call(
+                level=5,
+                msg="✅Successfully installed hub://guardrails/test-validator!\n\nImport validator:\nfrom guardrails.hub import TestValidator\n\nGet more info:\nhttps://hub.guardrailsai.com/validator/id\n",  # noqa
+            ),  # noqa
+        ]
+        assert mock_logger_log.call_count == 3
+        mock_logger_log.assert_has_calls(log_calls)
+
+        mock_get_validator_manifest.assert_called_once_with("guardrails/test-validator")
+
+        assert mock_get_site_packages_location.call_count == 1
+
+        mock_add_to_hub_init.assert_called_once_with(manifest, site_packages)
+
+    def test_install_local_models__none(self, mocker, monkeypatch):
+        mock_logger_log = mocker.patch("guardrails.cli.hub.install.logger.log")
+
+        mock_get_validator_manifest = mocker.patch(
+            "guardrails.cli.hub.install.get_validator_manifest"
+        )
+        manifest = ModuleManifest.from_dict(
+            {
+                "id": "id",
+                "name": "name",
+                "author": {"name": "me", "email": "me@me.me"},
+                "maintainers": [],
+                "repository": {"url": "some-repo"},
+                "namespace": "guardrails",
+                "package_name": "test-validator",
+                "module_name": "test_validator",
+                "exports": ["TestValidator"],
+                "tags": {"has_guardrails_endpoint": False},
+            }
+        )
+        mock_get_validator_manifest.return_value = manifest
+
+        mock_get_site_packages_location = mocker.patch(
+            "guardrails.cli.hub.install.get_site_packages_location"
+        )
+        site_packages = "./.venv/lib/python3.X/site-packages"
+        mock_get_site_packages_location.return_value = site_packages
+
+        mocker.patch("guardrails.cli.hub.install.install_hub_module")
+
+        mock_add_to_hub_init = mocker.patch(
+            "guardrails.cli.hub.install.add_to_hub_inits"
+        )
+
+        monkeypatch.setattr("typer.confirm", lambda prompt, default=True: True)
+
+        runner = CliRunner()
+
+        runner.invoke(hub_command, ["install", "hub://guardrails/test-validator"])
+
+        log_calls = [
+            call(level=5, msg="Installing hub://guardrails/test-validator..."),
+            call(
+                level=5,
+                msg="Installing models locally!",
             ),
             call(
                 level=5,
@@ -114,15 +240,15 @@ class TestInstall:
         mocker.patch("guardrails.cli.hub.install.run_post_install")
         mocker.patch("guardrails.cli.hub.install.add_to_hub_inits")
 
-        monkeypatch.setattr("typer.confirm", lambda _: False)
+        runner = CliRunner()
 
-        install("hub://guardrails/test-validator", quiet=False)
+        runner.invoke(hub_command, ["install", "hub://guardrails/test-validator"])
 
         log_calls = [
             call(level=5, msg="Installing hub://guardrails/test-validator..."),
             call(
                 level=5,
-                msg="Skipping post install, models will not be downloaded for local inference.",  # noqa
+                msg="Installing models locally!",  # noqa
             ),  # noqa
         ]
 

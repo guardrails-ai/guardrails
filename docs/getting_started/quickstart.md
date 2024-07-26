@@ -51,8 +51,7 @@ guardrails configure
     First, install the necessary guardrails from Guardrails Hub.
 
     ```bash
-    guardrails hub install hub://guardrails/competitor_check --quiet
-    guardrails hub install hub://guardrails/toxic_language --quiet
+    guardrails hub install hub://guardrails/valid_length --quiet
     ```
 
     Then, create a Guard from the installed guardrails.

@@ -97,12 +97,7 @@ const sidebars = {
   ],
   integrations: [
     // "integrations/azure_openai",
-    // "integrations/langchain",
-    {
-      type: "link",
-      label: "Langchain",
-      href: "https://www.guardrailsai.com/blog/using-langchain-and-lcel-with-guardrails-ai"
-    },
+    "integrations/langchain",
     {
       type: "category",
       label: "Telemetry",

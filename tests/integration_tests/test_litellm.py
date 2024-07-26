@@ -12,6 +12,12 @@ import guardrails as gd
 
 from typing import List
 from pydantic import BaseModel
+from guardrails.llm_providers import (
+    get_llm_ask,
+    LiteLLMCallable,
+    get_async_llm_ask,
+    AsyncLiteLLMCallable,
+)
 
 
 @pytest.mark.skipif(
@@ -145,3 +151,21 @@ def test_litellm_openai_async_messages():
     assert res.validated_output
     assert res.validated_output == res.raw_llm_output
     assert len(res.validated_output.split("\n")) == 10
+
+
+@pytest.mark.skipif(
+    not importlib.util.find_spec("litellm"),
+    reason="`litellm` is not installed",
+)
+def test_get_llm_ask_returns_litellm_callable_without_llm_api():
+    result = get_llm_ask(llm_api=None, model="azure/gpt-4")
+    assert isinstance(result, LiteLLMCallable)
+
+
+@pytest.mark.skipif(
+    not importlib.util.find_spec("litellm"),
+    reason="`litellm` is not installed",
+)
+def test_get_async_llm_ask_returns_async_litellm_callable_without_llm_api():
+    result = get_async_llm_ask(llm_api=None, model="azure/gpt-4")
+    assert isinstance(result, AsyncLiteLLMCallable)

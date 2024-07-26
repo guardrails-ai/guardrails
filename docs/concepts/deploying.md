@@ -2,6 +2,10 @@
 
 This document is a guide on our preffered method to deploy Guardrails to production.  We will discuss the new client/server model and the benefits this approach gains us.  We'll also look at some patterns we find useful when deploying to a production environment as well as some practices to keep in mind when developing with this new pattern.
 
+:::note
+Read the quick start guide on using Guardrails on the server [here](https://www.guardrailsai.com/docs/getting_started/guardrails_server)
+:::
+
 ## The Client/Server Model
 
 ### Guardrails As A Service
@@ -87,3 +91,10 @@ When selecting a deployment environment it is important to consider what types o
 When considering what to put where when splitting your Guardrails implementation between your client application and the Guardrails API, it mostly comes down to shifting the heavy lifting to the server and keeping your implementation on the client side to a minimum.
 
 For example, you should define your Guards in the `config.py` that is loaded onto the server, not in your client application.  Additionally validators from the Guardrails HUB should also be installed on the server since that is where they will be executed; no need to install these in the client application.  This also means that _generally_ any extras you need alongside Guardrails would also be installed server side; that is, you would only want to install `guardails-ai` in your application whereas you would install `guardrails-ai[api]` on the server.  This keeps additional dependencies where they belong.
+
+
+## Next Steps
+
+Go ahead and deploy your dockerized Guardrails server on any cloud! We have guides on how to deploy Guardrails on specific clouds.
+
+- [Deploying Guardrails on AWS](https://www.guardrailsai.com/docs/how_to_guides/deploying_aws)
