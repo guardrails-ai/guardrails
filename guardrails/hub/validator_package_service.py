@@ -3,17 +3,19 @@ import os
 from pathlib import Path
 import subprocess
 import sys
-from types import ModuleType
-from typing import List
+from typing import List, Literal
 from pydash.strings import snake_case
 
 from guardrails.classes.credentials import Credentials
 from guardrails.classes.generic.stack import Stack
 from guardrails.logger import logger as guardrails_logger
 
-from guardrails.cli.hub.utils import pip_process, json_format
+from guardrails.cli.hub.utils import pip_process
 from guardrails.cli.server.module_manifest import ModuleManifest
 from guardrails.cli.server.hub_client import get_validator_manifest
+
+json_format: Literal["json"] = "json"
+string_format: Literal["string"] = "string"
 
 
 class FailedPackageInspection(Exception):
@@ -56,28 +58,28 @@ class ValidatorPackageService:
 
         return ValidatorPackageService.get_validator_from_manifest(module_manifest)
 
-    @staticmethod  # ====== tested
+    @staticmethod
     def install__prep(module_name: str) -> tuple[ModuleManifest, str]:
         module_manifest = get_validator_manifest(module_name)
         site_packages = ValidatorPackageService.get_site_packages_location()
         return (module_manifest, site_packages)
 
-    @staticmethod  # ====== tested
+    @staticmethod
     def install__post_install(module_manifest: ModuleManifest, site_packages: str):
         ValidatorPackageService.run_post_install(module_manifest, site_packages)
         ValidatorPackageService.add_to_hub_inits(module_manifest, site_packages)
 
     @staticmethod
-    def get_site_packages_location():  # ====== tested
+    def get_site_packages_location():
         pip_package_location = Path(ValidatorPackageService.get_module_path("pip"))
         # Get the location of site-packages
         site_packages_path = str(pip_package_location.parent)
         return site_packages_path
 
     @staticmethod
-    def reload_module(module_path):  # ====== tested
+    def reload_module(module_path):
         try:
-            reloaded_module: ModuleType = None
+            reloaded_module = None
             # Dynamically import the module based on its path
             if "guardrails.hub" in sys.modules:
                 # Reload the module if it's already imported
@@ -100,7 +102,7 @@ class ValidatorPackageService:
             raise
 
     @staticmethod
-    def get_validator_from_manifest(manifest: ModuleManifest):  # ====== tested
+    def get_validator_from_manifest(manifest: ModuleManifest):
         org_package = ValidatorPackageService.get_org_and_package_dirs(manifest)
         module_name = manifest.module_name
 
@@ -117,7 +119,7 @@ class ValidatorPackageService:
     @staticmethod
     def get_org_and_package_dirs(
         manifest: ModuleManifest,
-    ) -> List[str]:  # ====== tested
+    ) -> List[str]:
         org_name = manifest.namespace
         package_name = manifest.package_name
         org = snake_case(org_name if len(org_name) > 1 else "")
@@ -125,7 +127,7 @@ class ValidatorPackageService:
         return list(filter(None, [org, package]))
 
     @staticmethod
-    def add_to_hub_inits(manifest: ModuleManifest, site_packages: str):  # ====== tested
+    def add_to_hub_inits(manifest: ModuleManifest, site_packages: str):
         org_package = ValidatorPackageService.get_org_and_package_dirs(manifest)
         exports: List[str] = manifest.exports or []
         sorted_exports = sorted(exports, reverse=True)
@@ -172,7 +174,7 @@ class ValidatorPackageService:
                 namespace_init.close()
 
     @staticmethod
-    def get_module_path(package_name):  # ====== tested
+    def get_module_path(package_name):
         try:
             if package_name not in sys.modules:
                 module = importlib.import_module(package_name)
@@ -193,7 +195,7 @@ class ValidatorPackageService:
         return package_path
 
     @staticmethod
-    def get_module_name(package_uri: str):  # ====== tested
+    def get_module_name(package_uri: str):
         if not package_uri.startswith("hub://"):
             raise InvalidHubInstallURL("The package URI must start with 'hub://'")
 
@@ -201,7 +203,7 @@ class ValidatorPackageService:
         return module_name
 
     @staticmethod
-    def get_install_url(manifest: ModuleManifest) -> str:  # ====== tested
+    def get_install_url(manifest: ModuleManifest) -> str:
         repo = manifest.repository
         repo_url = repo.url
         branch = repo.branch
