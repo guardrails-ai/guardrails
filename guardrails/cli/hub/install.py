@@ -257,7 +257,7 @@ Example: hub://guardrails/regex_match."
         if has_rc_file:
             # if we do want to remote then we don't want to install local models
             use_remote_endpoint = (
-                not Credentials.from_rc_file(logger).use_remote_inferencing
+                Credentials.from_rc_file(logger).use_remote_inferencing
                 and module_has_endpoint
             )
         elif install_local_models is None and module_has_endpoint:

@@ -3,14 +3,24 @@ from unittest.mock import call
 import pytest
 from typer.testing import CliRunner
 
+from guardrails.classes.credentials import Credentials
 from guardrails.cli.hub.install import hub_command, install
 from guardrails.cli.server.module_manifest import ModuleManifest
 from tests.unit_tests.mocks.mock_file import MockFile
 
 
+@pytest.mark.parametrize(
+    "use_remote_inferencing",
+    [False, True],
+)
 class TestInstall:
-    def test_exits_early_if_uri_is_not_valid(self, mocker):
+    def test_exits_early_if_uri_is_not_valid(self, mocker, use_remote_inferencing):
         mock_logger_error = mocker.patch("guardrails.cli.hub.install.logger.error")
+
+        mocker.patch(
+            "guardrails.cli.hub.install.Credentials.has_rc_file",
+            return_value=True,
+        )
 
         from guardrails.cli.hub.install import sys
 
@@ -22,8 +32,20 @@ class TestInstall:
         mock_logger_error.assert_called_once_with("Invalid URI!")
         sys_exit_spy.assert_called_once_with(1)
 
-    def test_install_local_models__false(self, mocker, monkeypatch):
+    def test_install_local_models__false(
+        self, mocker, monkeypatch, use_remote_inferencing
+    ):
         mock_logger_log = mocker.patch("guardrails.cli.hub.install.logger.log")
+
+        mocker.patch(
+            "guardrails.cli.hub.install.Credentials.has_rc_file",
+            return_value=True,
+        )
+
+        mocker.patch(
+            "guardrails.cli.hub.install.Credentials.from_rc_file",
+            return_value=Credentials(use_remote_inferencing=use_remote_inferencing),
+        )
 
         mock_get_validator_manifest = mocker.patch(
             "guardrails.cli.hub.install.get_validator_manifest"
@@ -86,8 +108,20 @@ class TestInstall:
 
         mock_add_to_hub_init.assert_called_once_with(manifest, site_packages)
 
-    def test_install_local_models__true(self, mocker, monkeypatch):
+    def test_install_local_models__true(
+        self, mocker, monkeypatch, use_remote_inferencing
+    ):
         mock_logger_log = mocker.patch("guardrails.cli.hub.install.logger.log")
+
+        mocker.patch(
+            "guardrails.cli.hub.install.Credentials.has_rc_file",
+            return_value=True,
+        )
+
+        mocker.patch(
+            "guardrails.cli.hub.install.Credentials.from_rc_file",
+            return_value=Credentials(use_remote_inferencing=use_remote_inferencing),
+        )
 
         mock_get_validator_manifest = mocker.patch(
             "guardrails.cli.hub.install.get_validator_manifest"
@@ -149,8 +183,20 @@ class TestInstall:
 
         mock_add_to_hub_init.assert_called_once_with(manifest, site_packages)
 
-    def test_install_local_models__none(self, mocker, monkeypatch):
+    def test_install_local_models__none(
+        self, mocker, monkeypatch, use_remote_inferencing
+    ):
         mock_logger_log = mocker.patch("guardrails.cli.hub.install.logger.log")
+
+        mocker.patch(
+            "guardrails.cli.hub.install.Credentials.has_rc_file",
+            return_value=True,
+        )
+
+        mocker.patch(
+            "guardrails.cli.hub.install.Credentials.from_rc_file",
+            return_value=Credentials(use_remote_inferencing=use_remote_inferencing),
+        )
 
         mock_get_validator_manifest = mocker.patch(
             "guardrails.cli.hub.install.get_validator_manifest"
@@ -209,8 +255,122 @@ class TestInstall:
 
         mock_add_to_hub_init.assert_called_once_with(manifest, site_packages)
 
-    def test_happy_path(self, mocker, monkeypatch):
+    def test_happy_path(self, mocker, monkeypatch, use_remote_inferencing):
         mock_logger_log = mocker.patch("guardrails.cli.hub.install.logger.log")
+
+        mocker.patch(
+            "guardrails.cli.hub.install.Credentials.has_rc_file",
+            return_value=True,
+        )
+
+        mocker.patch(
+            "guardrails.cli.hub.install.Credentials.from_rc_file",
+            return_value=Credentials(use_remote_inferencing=use_remote_inferencing),
+        )
+
+        mock_get_validator_manifest = mocker.patch(
+            "guardrails.cli.hub.install.get_validator_manifest"
+        )
+        manifest = ModuleManifest.from_dict(
+            {
+                "id": "id",
+                "name": "name",
+                "author": {"name": "me", "email": "me@me.me"},
+                "maintainers": [],
+                "repository": {"url": "some-repo"},
+                "namespace": "guardrails",
+                "package_name": "test-validator",
+                "module_name": "test_validator",
+                "exports": ["TestValidator"],
+                "tags": {"has_guardrails_endpoint": False},
+            }
+        )
+        mock_get_validator_manifest.return_value = manifest
+
+        mock_get_site_packages_location = mocker.patch(
+            "guardrails.cli.hub.install.get_site_packages_location"
+        )
+        site_packages = "./.venv/lib/python3.X/site-packages"
+        mock_get_site_packages_location.return_value = site_packages
+
+        mocker.patch("guardrails.cli.hub.install.install_hub_module")
+        mocker.patch("guardrails.cli.hub.install.run_post_install")
+        mocker.patch("guardrails.cli.hub.install.add_to_hub_inits")
+
+        runner = CliRunner()
+
+        runner.invoke(hub_command, ["install", "hub://guardrails/test-validator"])
+
+        log_calls = [
+            call(level=5, msg="Installing hub://guardrails/test-validator..."),
+            call(
+                level=5,
+                msg="Installing models locally!",  # noqa
+            ),  # noqa
+        ]
+
+        assert mock_logger_log.call_count == 3
+        mock_logger_log.assert_has_calls(log_calls)
+
+        mock_get_validator_manifest.assert_called_once_with("guardrails/test-validator")
+
+        assert mock_get_site_packages_location.call_count == 1
+
+    def test_install_local_models_confirmation(self, mocker, use_remote_inferencing):
+        # Mock dependencies
+        mocker.patch("guardrails.cli.hub.install.get_site_packages_location")
+        mocker.patch("guardrails.cli.hub.install.install_hub_module")
+        mocker.patch("guardrails.cli.hub.install.run_post_install")
+        mocker.patch("guardrails.cli.hub.install.add_to_hub_inits")
+        mocker.patch(
+            "guardrails.cli.hub.install.Credentials.has_rc_file",
+            return_value=False,
+        )
+
+        # Create a manifest with Guardrails endpoint
+        manifest_with_endpoint = ModuleManifest.from_dict(
+            {
+                "id": "test-id",
+                "name": "test-name",
+                "author": {"name": "test-author", "email": "test@email.com"},
+                "maintainers": [],
+                "repository": {"url": "test-repo"},
+                "namespace": "test-namespace",
+                "package_name": "test-package",
+                "module_name": "test_module",
+                "exports": ["TestValidator"],
+                "tags": {"has_guardrails_endpoint": True},
+            }
+        )
+        mocker.patch(
+            "guardrails.cli.hub.install.get_validator_manifest",
+            return_value=manifest_with_endpoint,
+        )
+
+        runner = CliRunner()
+
+        # Run the install command with simulated user input
+        result = runner.invoke(
+            hub_command, ["install", "hub://test-namespace/test-package"]
+        )
+
+        # Check if the installation was successful
+        assert result.exit_code == 0
+
+    def test_use_remote_endpoint(
+        self, mocker, monkeypatch, use_remote_inferencing: bool
+    ):
+        mock_logger_log = mocker.patch("guardrails.cli.hub.install.logger.log")
+
+        mocker.patch(
+            "guardrails.cli.hub.install.Credentials.has_rc_file",
+            return_value=True,
+        )
+
+        mocker.patch(
+            "guardrails.cli.hub.install.Credentials.from_rc_file",
+            return_value=Credentials(use_remote_inferencing=use_remote_inferencing),
+        )
 
         mock_get_validator_manifest = mocker.patch(
             "guardrails.cli.hub.install.get_validator_manifest"
@@ -245,11 +405,17 @@ class TestInstall:
 
         runner.invoke(hub_command, ["install", "hub://guardrails/test-validator"])
 
+        msg = (
+            "Skipping post install, models will not be downloaded for local inference."
+            if use_remote_inferencing
+            else "Installing models locally!"
+        )
+
         log_calls = [
             call(level=5, msg="Installing hub://guardrails/test-validator..."),
             call(
                 level=5,
-                msg="Installing models locally!",  # noqa
+                msg=msg,  # noqa
             ),  # noqa
         ]
 
@@ -259,43 +425,6 @@ class TestInstall:
         mock_get_validator_manifest.assert_called_once_with("guardrails/test-validator")
 
         assert mock_get_site_packages_location.call_count == 1
-
-    def test_install_local_models_confirmation(self, mocker):
-        # Mock dependencies
-        mocker.patch("guardrails.cli.hub.install.get_site_packages_location")
-        mocker.patch("guardrails.cli.hub.install.install_hub_module")
-        mocker.patch("guardrails.cli.hub.install.run_post_install")
-        mocker.patch("guardrails.cli.hub.install.add_to_hub_inits")
-
-        # Create a manifest with Guardrails endpoint
-        manifest_with_endpoint = ModuleManifest.from_dict(
-            {
-                "id": "test-id",
-                "name": "test-name",
-                "author": {"name": "test-author", "email": "test@email.com"},
-                "maintainers": [],
-                "repository": {"url": "test-repo"},
-                "namespace": "test-namespace",
-                "package_name": "test-package",
-                "module_name": "test_module",
-                "exports": ["TestValidator"],
-                "tags": {"has_guardrails_endpoint": False},
-            }
-        )
-        mocker.patch(
-            "guardrails.cli.hub.install.get_validator_manifest",
-            return_value=manifest_with_endpoint,
-        )
-
-        runner = CliRunner()
-
-        # Run the install command with simulated user input
-        result = runner.invoke(
-            hub_command, ["install", "hub://test-namespace/test-package"]
-        )
-
-        # Check if the installation was successful
-        assert result.exit_code == 0
 
 
 class TestPipProcess:
