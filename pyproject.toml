@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "guardrails-ai"
-version = "0.5.0"
+version = "0.5.1"
 description = "Adding guardrails to large language models."
 authors = ["Guardrails AI <contact@guardrailsai.com>"]
 license = "Apache License 2.0"
@@ -20,7 +20,7 @@ lxml = "^4.9.3"
 openai = "^1.30.1"
 rich = "^13.6.0"
 pydantic = ">=2.0.0, <3.0"
-typer = {extras = ["all"], version = "^0.9.0"}
+typer = {extras = ["all"],  version = ">=0.9.0, <0.13"}
 griffe = "^0.36.9"
 tenacity = ">=8.1.0"
 regex = "^2023.10.3"

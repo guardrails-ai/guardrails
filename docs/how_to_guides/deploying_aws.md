@@ -4,10 +4,13 @@ Guardrails allows you to deploy a dedicated server to run guard executions while
 
 In this cookbook we show an example of deploying a containerized version of Guardrails API into AWS leveraging AWS ECS. 
 
-> Note: Guardrails API is a feature is available as of `>=0.5.0`
+:::note
+- Read the quick start guide on using Guardrails on the server [here](https://www.guardrailsai.com/docs/getting_started/guardrails_server)
+- Find generalized information on deploying Guardrails [here](https://www.guardrailsai.com/docs/concepts/deploying)
+:::
 
 
-# Step 1: Containerizing Guardrails API
+## Step 1: Containerizing Guardrails API
 
 Create a `Dockerfile` in a new working directory `guardrails-server` (or alternative)
 
@@ -78,7 +81,7 @@ guardrails create --validators=$(python -c 'print(",".join(open("./hub-requireme
 
 > ⚠️ *Important:* Ensure to add in any telemetry configuration and guard configuration to the config file AND ensure each guard is given a variable name i.e `guard1 = Guard(...)`
 
-# Step 2: Deploying Infra
+## Step 2: Deploying Infra
 
 By leveraging AWS ECS we can scale to handle increasing workloads by scaling the number of containers. Furthermore we can leverage a streamlined deployment process using ECS with rolling updates (Step 3).
 
@@ -96,18 +99,18 @@ terraform init
 One can then copy the provided [Terraform Code](#Terraform) or use their own by placing into our working directory and running:
 
 ```bash
-terraform apply -var="aws_region=us-east-1" -var="backend_memory=16384" -var="backend_cpu=8192" -var="desired_count=0"
+terraform apply -var="aws_region=us-east-1" -var="backend_memory=2048" -var="backend_cpu=1024" -var="desired_count=0"
 ```
 
 > Each can be configured based on your requirements. `desired_count` corresponds to the number of containers that should always be running. Alternatively one can configure a minimum & maximum count with some autoscaling policy. It is initially set to `0` since we have yet to upload the container to the AWS container registry (ECR).
 
 Once the deployment has succeeded you should see some output values (which will be required if you wish to set up CI).
 
-# Step 3
+## Step 3
 
 You can deploy the application manually as specified in Step 3a or skip to Step 3b to deploy the application with CI.
 
-## Step 3a: Deploying Application Manually
+### Step 3a: Deploying Application Manually
 
 Firstly, create or use your existing guardrails token and export it to your current shell `export GUARDRAILS_TOKEN="..."`
 
@@ -135,7 +138,7 @@ aws ecs update-service --cluster gr-backend-ecs-cluster --service gr-backend-ecs
 ```
 
 
-## Step 3b: Deploying Application Using CI
+### Step 3b: Deploying Application Using CI
 
 In some cases you may update your `config.py` file or your `hub-requirements.txt` file to add/remove guards. Here it may help to set up CI to automate the process of updating your Guardrails API container and deploy to ECS.
 
@@ -145,6 +148,7 @@ For this to work you must set the following configuration on Github Actions:
 - `AWS_ECR_REPOSITORY` [Variable] Can be set to the output of `terraform output -raw ecr_repository_url`
 - `AWS_ECS_CLUSTER_NAME` [Variable] Can be set to `gr-backend-ecs-cluster` as default
 - `AWS_ECS_SERVICE_NAME` [Variable] Can be set to `gr-backend-ecs-service` as default
+- `AWS_ECS_DESIRED_TASK_COUNT` [Variable] Can be set to `1` or any amount of containers to keep warm
 
 Here is some provided Github Actions workflow which does this on pushes to the `main` branch:
 
@@ -168,6 +172,7 @@ jobs:
       AWS_ECR_REPOSITORY: ${{ vars.AWS_ECR_REPOSITORY }} 
       AWS_ECS_CLUSTER_NAME: ${{ vars.AWS_ECS_CLUSTER_NAME }}
       AWS_ECS_SERVICE_NAME: ${{ vars.AWS_ECS_SERVICE_NAME }}
+      AWS_ECS_DESIRED_TASK_COUNT: ${{ vars.AWS_ECS_DESIRED_TASK_COUNT }}
       WORKING_DIR: "./"
     steps: 
     
@@ -210,14 +215,12 @@ jobs:
 
       - name: Deploy to ECS
         run: |
-          aws ecs update-service --cluster ${{ env.AWS_ECS_CLUSTER_NAME }} --service ${{ env.AWS_ECS_SERVICE_NAME }} --desired-count 1 --force-new-deployment
+          aws ecs update-service --cluster ${{ env.AWS_ECS_CLUSTER_NAME }} --service ${{ env.AWS_ECS_SERVICE_NAME }} --desired-count ${{ env.AWS_ECS_DESIRED_TASK_COUNT }} --force-new-deployment
         env:
           AWS_DEFAULT_REGION: ${{ env.AWS_REGION }}
-
-
 ```
 
-# Step 4: Using with SDK
+## Step 4: Using with SDK
 
 You should be able to get the URL for your Guardrails API using:
 

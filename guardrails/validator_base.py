@@ -8,7 +8,7 @@ import logging
 from collections import defaultdict
 from dataclasses import dataclass
 from string import Template
-from typing import Any, Callable, Dict, List, Optional, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, Union
 from warnings import warn
 
 import nltk
@@ -61,92 +61,6 @@ def split_sentence_nltk(chunk: str):
     # return the sentence
     # then the remaining chunks that aren't finished accumulating
     return [sentences[0], "".join(sentences[1:])]
-
-
-validators_registry: Dict[str, Type["Validator"]] = {}
-types_to_validators = defaultdict(list)
-
-
-def validator_factory(name: str, validate: Callable) -> Type["Validator"]:
-    def validate_wrapper(self, *args, **kwargs):
-        return validate(*args, **kwargs)
-
-    validator = type(
-        name,
-        (Validator,),
-        {"validate": validate_wrapper, "rail_alias": name},
-    )
-    return validator
-
-
-def register_validator(
-    name: str, data_type: Union[str, List[str]], has_guardrails_endpoint: bool = False
-):
-    """Register a validator for a data type."""
-    from guardrails.datatypes import types_registry
-
-    if isinstance(data_type, str):
-        data_type = types_registry if data_type == "all" else [data_type]
-    # Make sure that the data type string exists in the data types registry.
-    for dt in data_type:
-        if dt not in types_registry:
-            raise ValueError(f"Data type {dt} is not registered.")
-
-        types_to_validators[dt].append(name)
-
-    def decorator(cls_or_func: Union[Type[Validator], Callable]):
-        """Register a validator for a data type."""
-        if isinstance(cls_or_func, type) and issubclass(cls_or_func, Validator):
-            cls = cls_or_func
-            cls.rail_alias = name
-        elif callable(cls_or_func) and not isinstance(cls_or_func, type):
-            func = cls_or_func
-            func.rail_alias = name  # type: ignore
-            # ensure function takes two args
-            if not func.__code__.co_argcount == 2:
-                raise ValueError(
-                    f"Validator function {func.__name__} must take two arguments."
-                )
-            # dynamically create Validator subclass with `validate` method as `func`
-            cls = validator_factory(name, func)
-        else:
-            raise ValueError(
-                "Only functions and Validator subclasses "
-                "can be registered as validators."
-            )
-        validators_registry[name] = cls
-        return cls
-
-    return decorator
-
-
-def try_to_import_hub():
-    try:
-        # This should import everything and trigger registration
-        # So it should only have to happen once
-        # in lieu of completely unregistered validators
-        import guardrails.hub  # noqa
-    except ImportError:
-        logger.error("Could not import hub. Validators may not work properly.")
-
-
-# TODO: Move this to validator_utils.py
-def get_validator_class(name: Optional[str]) -> Optional[Type["Validator"]]:
-    if not name:
-        return None
-    is_hub_validator = name.startswith(hub)
-    validator_key = name.replace(hub, "") if is_hub_validator else name
-
-    registration = validators_registry.get(validator_key)
-    if not registration:
-        try_to_import_hub()
-        registration = validators_registry.get(validator_key)
-
-    if not registration:
-        warn(f"Validator with id {name} was not found in the registry!  Ignoring...")
-        return None
-
-    return registration
 
 
 # TODO: Can we remove dataclass? It was originally added to support pydantic 1.*
@@ -512,3 +426,92 @@ class Validator:
                 is_parent=False,  # This span will have no children
                 has_parent=True,  # This span has a parent
             )
+
+
+V = TypeVar("V", bound=Validator, covariant=True)
+validators_registry: Dict[str, Type[Validator]] = {}
+types_to_validators = defaultdict(list)
+
+
+def validator_factory(name: str, validate: Callable) -> Type[Validator]:
+    def validate_wrapper(self, *args, **kwargs):
+        return validate(*args, **kwargs)
+
+    validator = type(
+        name,
+        (Validator,),
+        {"validate": validate_wrapper, "rail_alias": name},
+    )
+    return validator
+
+
+def register_validator(
+    name: str, data_type: Union[str, List[str]], has_guardrails_endpoint: bool = False
+) -> Callable[[Union[Type[V], Callable]], Union[Type[V], Type[Validator]]]:
+    """Register a validator for a data type."""
+    from guardrails.datatypes import types_registry
+
+    if isinstance(data_type, str):
+        data_type = types_registry if data_type == "all" else [data_type]
+    # Make sure that the data type string exists in the data types registry.
+    for dt in data_type:
+        if dt not in types_registry:
+            raise ValueError(f"Data type {dt} is not registered.")
+
+        types_to_validators[dt].append(name)
+
+    def decorator(
+        cls_or_func: Union[Type[V], Callable],
+    ) -> Union[Type[V], Type[Validator]]:
+        """Register a validator for a data type."""
+        if isinstance(cls_or_func, type) and issubclass(cls_or_func, Validator):
+            cls = cls_or_func
+            cls.rail_alias = name
+        elif callable(cls_or_func) and not isinstance(cls_or_func, type):
+            func = cls_or_func
+            func.rail_alias = name  # type: ignore
+            # ensure function takes two args
+            if not func.__code__.co_argcount == 2:
+                raise ValueError(
+                    f"Validator function {func.__name__} must take two arguments."
+                )
+            # dynamically create Validator subclass with `validate` method as `func`
+            cls = validator_factory(name, func)
+        else:
+            raise ValueError(
+                "Only functions and Validator subclasses "
+                "can be registered as validators."
+            )
+        validators_registry[name] = cls
+        return cls
+
+    return decorator
+
+
+def try_to_import_hub():
+    try:
+        # This should import everything and trigger registration
+        # So it should only have to happen once
+        # in lieu of completely unregistered validators
+        import guardrails.hub  # noqa
+    except ImportError:
+        logger.error("Could not import hub. Validators may not work properly.")
+
+
+# TODO: Move this to validator_utils.py
+def get_validator_class(name: Optional[str]) -> Optional[Type[Validator]]:
+    if not name:
+        return None
+    is_hub_validator = name.startswith(hub)
+    validator_key = name.replace(hub, "") if is_hub_validator else name
+
+    registration = validators_registry.get(validator_key)
+    if not registration:
+        try_to_import_hub()
+        registration = validators_registry.get(validator_key)
+
+    if not registration:
+        warn(f"Validator with id {name} was not found in the registry!  Ignoring...")
+        return None
+
+    return registration

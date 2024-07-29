@@ -26,6 +26,7 @@ from guardrails_api_client import (
     SimpleTypes,
     ValidationOutcome as IValidationOutcome,
 )
+from opentelemetry import context as otel_context
 from pydantic import field_validator
 from pydantic.config import ConfigDict
 
@@ -67,6 +68,7 @@ from guardrails.types.pydantic import ModelOrListOfModels
 from guardrails.utils.naming_utils import random_id
 from guardrails.utils.api_utils import extract_serializeable_metadata
 from guardrails.utils.hub_telemetry_utils import HubTelemetry
+from guardrails.utils.telemetry_utils import wrap_with_otel_context
 from guardrails.utils.validator_utils import (
     get_validator,
     parse_validator_reference,
@@ -735,6 +737,9 @@ class Guard(IGuard, Generic[OT]):
                     prompt_params=prompt_params,
                     metadata=metadata,
                     full_schema_reask=full_schema_reask,
+                    prompt=prompt,
+                    instructions=instructions,
+                    msg_history=msg_history,
                     *args,
                     **kwargs,
                 )
@@ -759,8 +764,15 @@ class Guard(IGuard, Generic[OT]):
             )
 
         guard_context = contextvars.Context()
+
+        # get the current otel context and wrap the subsequent call
+        #   to preserve otel context if guard call is being called be another
+        # framework upstream
+        current_otel_context = otel_context.get_current()
+        wrapped__exec = wrap_with_otel_context(current_otel_context, __exec)
+
         return guard_context.run(
-            __exec,
+            wrapped__exec,
             self,
             llm_api=llm_api,
             llm_output=llm_output,

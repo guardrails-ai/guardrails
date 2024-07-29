@@ -1,6 +1,7 @@
 from builtins import id as object_id
 import contextvars
 import inspect
+from opentelemetry import context as otel_context
 from typing import (
     Any,
     AsyncIterable,
@@ -38,6 +39,7 @@ from guardrails.stores.context import (
 )
 from guardrails.types.pydantic import ModelOrListOfModels
 from guardrails.types.validator import UseManyValidatorSpec, UseValidatorSpec
+from guardrails.utils.telemetry_utils import wrap_with_otel_context
 from guardrails.utils.validator_utils import verify_metadata_requirements
 from guardrails.validator_base import Validator
 
@@ -290,6 +292,9 @@ class AsyncGuard(Guard, Generic[OT]):
                     prompt_params=prompt_params,
                     metadata=metadata,
                     full_schema_reask=full_schema_reask,
+                    prompt=prompt,
+                    instructions=instructions,
+                    msg_history=msg_history,
                     *args,
                     **kwargs,
                 )
@@ -320,8 +325,13 @@ class AsyncGuard(Guard, Generic[OT]):
             return result  # type: ignore
 
         guard_context = contextvars.Context()
+        # get the current otel context and wrap the subsequent call
+        #   to preserve otel context if guard call is being called by another
+        # framework upstream
+        current_otel_context = otel_context.get_current()
+        wrapped__exec = wrap_with_otel_context(current_otel_context, __exec)
         return await guard_context.run(
-            __exec,
+            wrapped__exec,
             self,
             llm_api=llm_api,
             llm_output=llm_output,
