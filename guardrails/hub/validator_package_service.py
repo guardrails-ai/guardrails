@@ -175,11 +175,6 @@ class ValidatorPackageService:
         return (module_manifest, site_packages)
 
     @staticmethod
-    def install__post_install(module_manifest: ModuleManifest, site_packages: str):
-        ValidatorPackageService.run_post_install(module_manifest, site_packages)
-        ValidatorPackageService.add_to_hub_inits(module_manifest, site_packages)
-
-    @staticmethod
     def get_site_packages_location():
         pip_package_location = Path(ValidatorPackageService.get_module_path("pip"))
         # Get the location of site-packages

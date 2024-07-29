@@ -451,17 +451,6 @@ class TestValidatorPackageService:
         mock_get_site_packages_location.assert_called_once()
 
     @patch(
-        "guardrails.hub.validator_package_service.ValidatorPackageService.run_post_install"
-    )
-    @patch(
-        "guardrails.hub.validator_package_service.ValidatorPackageService.add_to_hub_inits"
-    )
-    def test_install__post_install(self, mock_add_to_hub_inits, mock_run_post_install):
-        ValidatorPackageService.install__post_install(self.manifest, self.site_packages)
-        mock_add_to_hub_inits.assert_called_once_with(self.manifest, self.site_packages)
-        mock_run_post_install.assert_called_once_with(self.manifest, self.site_packages)
-
-    @patch(
         "guardrails.hub.validator_package_service.ValidatorPackageService.get_module_path"
     )
     def test_get_site_packages_location(self, mock_get_module_path):
