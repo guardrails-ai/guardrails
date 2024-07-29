@@ -91,7 +91,7 @@ class ValidatorPackageService:
         dl_deps_msg = "Downloading dependencies"
         with loader(dl_deps_msg, spinner="bouncingBar"):
             ValidatorPackageService.install__pip_install_hub_module(
-                module_manifest, site_packages, quiet=quiet
+                module_manifest, site_packages, quiet=quiet, logger=cli_logger
             )
 
         use_remote_endpoint = False
@@ -103,7 +103,7 @@ class ValidatorPackageService:
             if has_rc_file:
                 # if we do want to remote then we don't want to install local models
                 use_remote_endpoint = (
-                    not Credentials.from_rc_file(cli_logger).use_remote_inferencing
+                    Credentials.from_rc_file(cli_logger).use_remote_inferencing
                     and module_has_endpoint
                 )
             elif install_local_models is None and module_has_endpoint:
@@ -122,7 +122,9 @@ class ValidatorPackageService:
             )
             post_msg = "Running post-install setup"
             with loader(post_msg, spinner="bouncingBar"):
-                ValidatorPackageService.run_post_install(module_manifest, site_packages)
+                ValidatorPackageService.run_post_install(
+                    module_manifest, site_packages, logger=cli_logger
+                )
         else:
             cli_logger.log(
                 level=LEVELS.get("SPAM"),  # type: ignore
