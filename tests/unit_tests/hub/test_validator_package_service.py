@@ -664,7 +664,7 @@ class TestValidatorPackageService:
             }
         )
         site_packages = "./site-packages"
-        ValidatorPackageService.install__pip_install_hub_module(manifest, site_packages)
+        ValidatorPackageService.install_hub_module(manifest, site_packages)
 
         mock_get_install_url.assert_called_once_with(manifest)
         mock_get_hub_directory.assert_called_once_with(manifest, site_packages)
@@ -741,7 +741,7 @@ class TestInstall:
             "guardrails.hub.validator_package_service.ValidatorPackageService.install__prep"
         )
         mock_pip_install_hub_module = mocker.patch(
-            "guardrails.hub.validator_package_service.ValidatorPackageService.install__pip_install_hub_module"
+            "guardrails.hub.validator_package_service.ValidatorPackageService.install_hub_module"
         )
         mocker.patch(
             "guardrails.hub.validator_package_service.ValidatorPackageService.get_validator_from_manifest"
@@ -800,7 +800,7 @@ class TestInstall:
             "guardrails.hub.validator_package_service.ValidatorPackageService.install__prep"
         )
         mock_pip_install_hub_module = mocker.patch(
-            "guardrails.hub.validator_package_service.ValidatorPackageService.install__pip_install_hub_module"
+            "guardrails.hub.validator_package_service.ValidatorPackageService.install_hub_module"
         )
         mocker.patch(
             "guardrails.hub.validator_package_service.ValidatorPackageService.get_validator_from_manifest"
@@ -858,7 +858,7 @@ class TestInstall:
             "guardrails.hub.validator_package_service.ValidatorPackageService.install__prep"
         )
         mock_pip_install_hub_module = mocker.patch(
-            "guardrails.hub.validator_package_service.ValidatorPackageService.install__pip_install_hub_module"
+            "guardrails.hub.validator_package_service.ValidatorPackageService.install_hub_module"
         )
         mocker.patch(
             "guardrails.hub.validator_package_service.ValidatorPackageService.get_validator_from_manifest"
@@ -916,7 +916,7 @@ class TestInstall:
             "guardrails.hub.validator_package_service.ValidatorPackageService.install__prep"
         )
         mock_pip_install_hub_module = mocker.patch(
-            "guardrails.hub.validator_package_service.ValidatorPackageService.install__pip_install_hub_module"
+            "guardrails.hub.validator_package_service.ValidatorPackageService.install_hub_module"
         )
         mocker.patch(
             "guardrails.hub.validator_package_service.ValidatorPackageService.get_validator_from_manifest"
@@ -957,7 +957,7 @@ class TestInstall:
         )
         mocker.patch("guardrails.hub.validator_package_service.cli_logger.log")
         mocker.patch(
-            "guardrails.hub.validator_package_service.ValidatorPackageService.install__pip_install_hub_module"
+            "guardrails.hub.validator_package_service.ValidatorPackageService.install_hub_module"
         )
         mocker.patch(
             "guardrails.hub.validator_package_service.ValidatorPackageService.get_validator_from_manifest"
@@ -1015,7 +1015,7 @@ class TestInstall:
             "guardrails.hub.validator_package_service.ValidatorPackageService.install__prep"
         )
         mocker.patch(
-            "guardrails.hub.validator_package_service.ValidatorPackageService.install__pip_install_hub_module"
+            "guardrails.hub.validator_package_service.ValidatorPackageService.install_hub_module"
         )
         mocker.patch(
             "guardrails.hub.validator_package_service.ValidatorPackageService.get_validator_from_manifest"

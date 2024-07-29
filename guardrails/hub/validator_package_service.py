@@ -90,7 +90,7 @@ class ValidatorPackageService:
         # 3. Install - Pip Installation of git module
         dl_deps_msg = "Downloading dependencies"
         with loader(dl_deps_msg, spinner="bouncingBar"):
-            ValidatorPackageService.install__pip_install_hub_module(
+            ValidatorPackageService.install_hub_module(
                 module_manifest, site_packages, quiet=quiet, logger=cli_logger
             )
 
@@ -380,16 +380,12 @@ class ValidatorPackageService:
         return os.path.join(site_packages, "guardrails", "hub", *org_package)
 
     @staticmethod
-    def install__pip_install_hub_module(
+    def install_hub_module(
         module_manifest: ModuleManifest,
         site_packages: str,
         quiet: bool = False,
         logger=guardrails_logger,
     ):
-        """
-        renamed from install_hub_module to install__pip_install_hub_module
-        """
-
         install_url = ValidatorPackageService.get_install_url(module_manifest)
         install_directory = ValidatorPackageService.get_hub_directory(
             module_manifest, site_packages
