@@ -44,7 +44,9 @@ class TestInstall:
 
         mocker.patch(
             "guardrails.cli.hub.install.Credentials.from_rc_file",
-            return_value=Credentials(use_remote_inferencing=use_remote_inferencing),
+            return_value=Credentials.from_dict(
+                {"use_remote_inferencing": use_remote_inferencing}
+            ),
         )
 
         mock_get_validator_manifest = mocker.patch(
@@ -120,7 +122,9 @@ class TestInstall:
 
         mocker.patch(
             "guardrails.cli.hub.install.Credentials.from_rc_file",
-            return_value=Credentials(use_remote_inferencing=use_remote_inferencing),
+            return_value=Credentials.from_dict(
+                {"use_remote_inferencing": use_remote_inferencing}
+            ),
         )
 
         mock_get_validator_manifest = mocker.patch(
@@ -195,7 +199,9 @@ class TestInstall:
 
         mocker.patch(
             "guardrails.cli.hub.install.Credentials.from_rc_file",
-            return_value=Credentials(use_remote_inferencing=use_remote_inferencing),
+            return_value=Credentials.from_dict(
+                {"use_remote_inferencing": use_remote_inferencing}
+            ),
         )
 
         mock_get_validator_manifest = mocker.patch(
@@ -265,7 +271,9 @@ class TestInstall:
 
         mocker.patch(
             "guardrails.cli.hub.install.Credentials.from_rc_file",
-            return_value=Credentials(use_remote_inferencing=use_remote_inferencing),
+            return_value=Credentials.from_dict(
+                {"use_remote_inferencing": use_remote_inferencing}
+            ),
         )
 
         mock_get_validator_manifest = mocker.patch(
@@ -369,7 +377,9 @@ class TestInstall:
 
         mocker.patch(
             "guardrails.cli.hub.install.Credentials.from_rc_file",
-            return_value=Credentials(use_remote_inferencing=use_remote_inferencing),
+            return_value=Credentials.from_dict(
+                {"use_remote_inferencing": use_remote_inferencing}
+            ),
         )
 
         mock_get_validator_manifest = mocker.patch(
