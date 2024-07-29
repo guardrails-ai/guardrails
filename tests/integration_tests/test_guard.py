@@ -1243,7 +1243,7 @@ def test_guard_from_pydantic_with_mock_hf_pipeline():
 
     pipe = make_mock_pipeline()
     guard = Guard()
-    _ = guard(pipe, prompt="Don't care about the output.  Just don't crash.")
+    _ = guard(pipe, prompt="Don't care about the output.")
 
 
 @pytest.mark.skipif(
@@ -1259,7 +1259,7 @@ def test_guard_from_pydantic_with_mock_hf_model():
     _ = guard(
         model.generate,
         tokenizer=tokenizer,
-        prompt="Don't care about the output.  Just don't crash.",
+        prompt="Don't care about the output.",
     )
 
 
