@@ -46,6 +46,9 @@ Here's a basic example of how to integrate Guardrails with a LangChain LCEL chai
 2. Create a Guard object with two validators: CompetitorCheck and ToxicLanguage.
 
     ```python
+    from guardrails import Guard
+    from guardrails.hub import CompetitorCheck, ToxicLanguage
+
     competitors_list = ["delta", "american airlines", "united"]
     guard = Guard().use_many(
         CompetitorCheck(competitors=competitors_list, on_fail="fix"),
@@ -60,7 +63,7 @@ The `guard.to_runnable()` method converts the Guardrails guard into a LangChain-
     prompt = ChatPromptTemplate.from_template("Answer this question {question}")
     output_parser = StrOutputParser()
 
-    chain = prompt | model | output_parser | guard.to_runnable()
+    chain = prompt | model | guard.to_runnable() | output_parser
     ```
 
 4. Invoke the chain
