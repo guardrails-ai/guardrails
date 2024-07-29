@@ -3,7 +3,7 @@ import pytest
 import sys
 from unittest.mock import ANY, call, patch, MagicMock
 
-from guardrails.cli.server.module_manifest import ModuleManifest, Repository
+from guardrails.cli.server.module_manifest import ModuleManifest
 from guardrails.hub.validator_package_service import (
     FailedToLocateModule,
     ValidatorPackageService,
@@ -413,20 +413,21 @@ class TestRunPostInstall:
 
 class TestValidatorPackageService:
     def setup_method(self):
-        self.manifest = ModuleManifest(
-            id="test-id",
-            name="test-validator",
-            namespace="guardrails-ai",
-            package_name="test-package",
-            module_name="test_module",
-            exports=["TestValidator"],
-            repository=Repository(url="https://github.com/example/test", branch="main"),
-            post_install="post_install_script.py",
-            author="Alejandro",
-            maintainers=["Alejandro"],
-            encoder="json",
+        self.manifest = ModuleManifest.from_dict(
+            {
+                "id": "id",
+                "name": "name",
+                "author": {"name": "me", "email": "me@me.me"},
+                "maintainers": [],
+                "repository": {"url": "some-repo"},
+                "namespace": "guardrails",
+                "package_name": "test-validator",
+                "module_name": "test_validator",
+                "exports": ["TestValidator"],
+                "tags": {"has_guardrails_endpoint": False},
+            }
         )
-        self.site_packages = "/fake/site-packages"
+        self.site_packages = "./.venv/lib/python3.X/site-packages"
 
     @patch("guardrails.hub.validator_package_service.get_validator_manifest")
     @patch(
@@ -608,8 +609,8 @@ class TestValidatorPackageService:
         )
         assert (
             hub_directory
-            == "/fake/site-packages/guardrails/hub/guardrails_ai/test_package"
-        )
+            == "./.venv/lib/python3.X/site-packages/guardrails/hub/guardrails/test_validator"  # noqa
+        )  # noqa
 
     def test_install_hub_module(self, mocker):
         mock_get_install_url = mocker.patch(
