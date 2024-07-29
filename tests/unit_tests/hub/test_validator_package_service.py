@@ -1,7 +1,7 @@
 from pathlib import Path
 import pytest
 import sys
-from unittest.mock import call, patch, MagicMock
+from unittest.mock import ANY, call, patch, MagicMock
 
 from guardrails.cli.server.module_manifest import ModuleManifest, Repository
 from guardrails.hub.validator_package_service import (
@@ -428,42 +428,6 @@ class TestValidatorPackageService:
         )
         self.site_packages = "/fake/site-packages"
 
-    @patch(
-        "guardrails.hub.validator_package_service.ValidatorPackageService.get_module_name"
-    )
-    @patch(
-        "guardrails.hub.validator_package_service.ValidatorPackageService.install__prep"
-    )
-    @patch(
-        "guardrails.hub.validator_package_service.ValidatorPackageService.install__pip_install_hub_module"
-    )
-    @patch(
-        "guardrails.hub.validator_package_service.ValidatorPackageService.install__post_install"
-    )
-    def test_install(
-        self, mock_post_install, mock_install_module, mock_prep, mock_get_module_name
-    ):
-        # Setup
-        mock_get_module_name.return_value = "test-module"
-        mock_prep.return_value = (self.manifest, self.site_packages)
-        expected_validator = MagicMock()
-
-        with patch(
-            "guardrails.hub.validator_package_service.ValidatorPackageService.get_validator_from_manifest",
-            return_value=expected_validator,
-        ):
-            # Test
-            validator = ValidatorPackageService.install("hub://test-module")
-
-            # Assert
-            assert validator == expected_validator
-            mock_get_module_name.assert_called_once_with("hub://test-module")
-            mock_prep.assert_called_once_with("test-module")
-            mock_install_module.assert_called_once_with(
-                self.manifest, self.site_packages, quiet=True
-            )
-            mock_post_install.assert_called_once_with(self.manifest, self.site_packages)
-
     @patch("guardrails.hub.validator_package_service.get_validator_manifest")
     @patch(
         "guardrails.hub.validator_package_service.ValidatorPackageService.get_site_packages_location"
@@ -523,27 +487,120 @@ class TestValidatorPackageService:
             f"guardrails.hub.guardrails_ai.test_package.{self.manifest.module_name}"
         )
 
-    def test_get_org_and_package_dirs(self):
-        org_package_dirs = ValidatorPackageService.get_org_and_package_dirs(
-            self.manifest
-        )
-        assert org_package_dirs == ["guardrails_ai", "test_package"]
+    @pytest.mark.parametrize(
+        "manifest,expected",
+        [
+            (
+                ModuleManifest.from_dict(
+                    {
+                        "id": "id",
+                        "name": "name",
+                        "author": {"name": "me", "email": "me@me.me"},
+                        "maintainers": [],
+                        "repository": {"url": "some-repo"},
+                        "namespace": "guardrails-ai",
+                        "package_name": "test-validator",
+                        "module_name": "test_validator",
+                        "exports": ["TestValidator"],
+                        "tags": {},
+                    }
+                ),
+                ["guardrails_ai", "test_validator"],
+            ),
+            (
+                ModuleManifest.from_dict(
+                    {
+                        "id": "id",
+                        "name": "name",
+                        "author": {"name": "me", "email": "me@me.me"},
+                        "maintainers": [],
+                        "repository": {"url": "some-repo"},
+                        "namespace": "",
+                        "package_name": "test-validator",
+                        "module_name": "test_validator",
+                        "exports": ["TestValidator"],
+                        "tags": {},
+                    }
+                ),
+                ["test_validator"],
+            ),
+        ],
+    )
+    def test_get_org_and_package_dirs(self, manifest, expected):
+        from guardrails.hub.validator_package_service import ValidatorPackageService
+
+        actual = ValidatorPackageService.get_org_and_package_dirs(manifest)
+        assert actual == expected
 
     def test_get_module_name_valid(self):
-        # Test
         module_name = ValidatorPackageService.get_module_name("hub://test-module")
-
-        # Assert
         assert module_name == "test-module"
 
     def test_get_module_name_invalid(self):
-        # Test & Assert
         with pytest.raises(InvalidHubInstallURL):
             ValidatorPackageService.get_module_name("invalid-uri")
 
-    def test_get_install_url(self):
-        actual = ValidatorPackageService.get_install_url(self.manifest)
-        assert actual == "git+https://github.com/example/test@main"
+    @pytest.mark.parametrize(
+        "manifest,expected",
+        [
+            (
+                ModuleManifest.from_dict(
+                    {
+                        "id": "id",
+                        "name": "name",
+                        "author": {"name": "me", "email": "me@me.me"},
+                        "maintainers": [],
+                        "repository": {"url": "some-repo"},
+                        "namespace": "guardrails-ai",
+                        "package_name": "test-validator",
+                        "module_name": "validator",
+                        "exports": ["TestValidator"],
+                        "tags": {},
+                    }
+                ),
+                "git+some-repo",
+            ),
+            (
+                ModuleManifest.from_dict(
+                    {
+                        "id": "id",
+                        "name": "name",
+                        "author": {"name": "me", "email": "me@me.me"},
+                        "maintainers": [],
+                        "repository": {"url": "git+some-repo"},
+                        "namespace": "guardrails-ai",
+                        "package_name": "test-validator",
+                        "module_name": "validator",
+                        "exports": ["TestValidator"],
+                        "tags": {},
+                        "post_install": "",
+                    }
+                ),
+                "git+some-repo",
+            ),
+            (
+                ModuleManifest.from_dict(
+                    {
+                        "id": "id",
+                        "name": "name",
+                        "author": {"name": "me", "email": "me@me.me"},
+                        "maintainers": [],
+                        "repository": {"url": "git+some-repo", "branch": "prod"},
+                        "namespace": "guardrails-ai",
+                        "package_name": "test-validator",
+                        "module_name": "validator",
+                        "exports": ["TestValidator"],
+                        "tags": {},
+                        "post_install": "",
+                    }
+                ),
+                "git+some-repo@prod",
+            ),
+        ],
+    )
+    def test_get_install_url(self, manifest, expected):
+        actual = ValidatorPackageService.get_install_url(manifest)
+        assert actual == expected
 
     def test_get_hub_directory(self):
         hub_directory = ValidatorPackageService.get_hub_directory(
@@ -630,3 +687,168 @@ class TestValidatorPackageService:
             call("install", "pydash>=7.0.6,<8.0.0", quiet=False),
         ]
         mock_pip_process.assert_has_calls(pip_calls)
+
+
+class TestInstall:
+    def setup_method(self):
+        self.manifest = ModuleManifest.from_dict(
+            {
+                "id": "id",
+                "name": "name",
+                "author": {"name": "me", "email": "me@me.me"},
+                "maintainers": [],
+                "repository": {"url": "some-repo"},
+                "namespace": "guardrails",
+                "package_name": "test-validator",
+                "module_name": "test_validator",
+                "exports": ["TestValidator"],
+                "tags": {"has_guardrails_endpoint": False},
+            }
+        )
+        self.site_packages = "./.venv/lib/python3.X/site-packages"
+
+    def test_exits_early_if_uri_is_not_valid(self, mocker):
+        with pytest.raises(InvalidHubInstallURL):
+            ValidatorPackageService.install("not a hub uri")
+
+    def test_install_local_models__false(self, mocker, monkeypatch):
+        mock_logger_log = mocker.patch(
+            "guardrails.hub.validator_package_service.cli_logger.log"
+        )
+
+        install_prep_mock = mocker.patch(
+            "guardrails.hub.validator_package_service.ValidatorPackageService.install__prep"
+        )
+        mock_pip_install_hub_module = mocker.patch(
+            "guardrails.hub.validator_package_service.ValidatorPackageService.install__pip_install_hub_module"
+        )
+        mocker.patch(
+            "guardrails.hub.validator_package_service.ValidatorPackageService.get_validator_from_manifest"
+        )
+        mock_add_to_hub_init = mocker.patch(
+            "guardrails.hub.validator_package_service.ValidatorPackageService.add_to_hub_inits"
+        )
+
+        install_prep_mock.return_value = self.manifest, self.site_packages
+
+        ValidatorPackageService.install(
+            "hub://guardrails/test-validator",
+            install_local_models=False,
+            install_local_models_confirm=lambda: False,
+        )
+
+        log_calls = [
+            call(level=5, msg="Installing hub://guardrails/test-validator..."),
+            call(
+                level=5,
+                msg="Skipping post install, models will not be downloaded for local "
+                "inference.",
+            ),
+            call(
+                level=5,
+                msg="✅Successfully installed hub://guardrails/test-validator!\n\nImport validator:\nfrom guardrails.hub import TestValidator\n\nGet more info:\nhttps://hub.guardrailsai.com/validator/id\n",  # noqa
+            ),  # noqa
+        ]
+        assert mock_logger_log.call_count == 3
+        mock_logger_log.assert_has_calls(log_calls)
+
+        install_prep_mock.assert_called_once_with("guardrails/test-validator")
+
+        mock_pip_install_hub_module.assert_called_once_with(
+            self.manifest, self.site_packages, quiet=ANY
+        )
+        mock_add_to_hub_init.assert_called_once_with(self.manifest, self.site_packages)
+
+    def test_install_local_models__none(self, mocker, monkeypatch):
+        mock_logger_log = mocker.patch(
+            "guardrails.hub.validator_package_service.cli_logger.log"
+        )
+
+        install_prep_mock = mocker.patch(
+            "guardrails.hub.validator_package_service.ValidatorPackageService.install__prep"
+        )
+        mock_pip_install_hub_module = mocker.patch(
+            "guardrails.hub.validator_package_service.ValidatorPackageService.install__pip_install_hub_module"
+        )
+        mocker.patch(
+            "guardrails.hub.validator_package_service.ValidatorPackageService.get_validator_from_manifest"
+        )
+        mock_add_to_hub_init = mocker.patch(
+            "guardrails.hub.validator_package_service.ValidatorPackageService.add_to_hub_inits"
+        )
+
+        install_prep_mock.return_value = self.manifest, self.site_packages
+
+        ValidatorPackageService.install(
+            "hub://guardrails/test-validator",
+            install_local_models=None,
+            install_local_models_confirm=lambda: True,
+        )
+
+        log_calls = [
+            call(level=5, msg="Installing hub://guardrails/test-validator..."),
+            call(
+                level=5,
+                msg="Installing models locally!",
+            ),
+            call(
+                level=5,
+                msg="✅Successfully installed hub://guardrails/test-validator!\n\nImport validator:\nfrom guardrails.hub import TestValidator\n\nGet more info:\nhttps://hub.guardrailsai.com/validator/id\n",  # noqa
+            ),  # noqa
+        ]
+        assert mock_logger_log.call_count == 3
+        mock_logger_log.assert_has_calls(log_calls)
+
+        install_prep_mock.assert_called_once_with("guardrails/test-validator")
+
+        mock_pip_install_hub_module.assert_called_once_with(
+            self.manifest, self.site_packages, quiet=ANY
+        )
+        mock_add_to_hub_init.assert_called_once_with(self.manifest, self.site_packages)
+
+    def test_install_local_models__true(self, mocker, monkeypatch):
+        mock_logger_log = mocker.patch(
+            "guardrails.hub.validator_package_service.cli_logger.log"
+        )
+
+        install_prep_mock = mocker.patch(
+            "guardrails.hub.validator_package_service.ValidatorPackageService.install__prep"
+        )
+        mock_pip_install_hub_module = mocker.patch(
+            "guardrails.hub.validator_package_service.ValidatorPackageService.install__pip_install_hub_module"
+        )
+        mocker.patch(
+            "guardrails.hub.validator_package_service.ValidatorPackageService.get_validator_from_manifest"
+        )
+        mock_add_to_hub_init = mocker.patch(
+            "guardrails.hub.validator_package_service.ValidatorPackageService.add_to_hub_inits"
+        )
+
+        install_prep_mock.return_value = self.manifest, self.site_packages
+
+        ValidatorPackageService.install(
+            "hub://guardrails/test-validator",
+            install_local_models=True,
+            install_local_models_confirm=lambda: True,
+        )
+
+        log_calls = [
+            call(level=5, msg="Installing hub://guardrails/test-validator..."),
+            call(
+                level=5,
+                msg="Installing models locally!",
+            ),
+            call(
+                level=5,
+                msg="✅Successfully installed hub://guardrails/test-validator!\n\nImport validator:\nfrom guardrails.hub import TestValidator\n\nGet more info:\nhttps://hub.guardrailsai.com/validator/id\n",  # noqa
+            ),  # noqa
+        ]
+        assert mock_logger_log.call_count == 3
+        mock_logger_log.assert_has_calls(log_calls)
+
+        install_prep_mock.assert_called_once_with("guardrails/test-validator")
+
+        mock_pip_install_hub_module.assert_called_once_with(
+            self.manifest, self.site_packages, quiet=ANY
+        )
+        mock_add_to_hub_init.assert_called_once_with(self.manifest, self.site_packages)
