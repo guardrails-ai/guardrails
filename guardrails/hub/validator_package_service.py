@@ -441,3 +441,6 @@ class ValidatorPackageService:
                     )
                     if not quiet:
                         logger.info(dep_install_output)
+
+
+install = ValidatorPackageService.install
