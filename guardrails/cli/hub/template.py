@@ -6,7 +6,6 @@ from guardrails.cli.server.hub_client import get_guard_template
 
 def get_template(template_name: str) -> tuple[dict, str]:
     # if template ends in .json load file from disk relative to the execution directory
-
     if template_name.endswith(".json"):
         template_file_name = template_name
         file_path = os.path.join(os.getcwd(), template_name)
@@ -18,7 +17,7 @@ def get_template(template_name: str) -> tuple[dict, str]:
     template = get_guard_template(template_name)
     # write template to file
     out_path = os.path.join(os.getcwd(), template_file_name)
-    print(f"Writing template to {out_path}")
+
     with open(out_path, "wt") as fout:
         fout.write(json.dumps(template, indent=4))
 

@@ -39,7 +39,7 @@ def create_command(
         help="Then hub uri to template to base the configuration file on."
         " For example hub:template://guardrails/chatbot or hub:template://guardrails/summarizer."
         " Files paths ending in .json are also accepted."
-        " If this is provided, validators should not be provided.",
+        " If this option is set, validators should not be provided.",
     ),
     dry_run: bool = typer.Option(
         default=False,
