@@ -449,5 +449,7 @@ class ValidatorPackageService:
                         logger.info(dep_install_output)
 
 
-def install(*args, **kwargs):
-    return ValidatorPackageService.install(*args, **kwargs)
+def install(package_uri: str, install_local_models=None, quiet: bool = True):
+    return ValidatorPackageService.install(
+        package_uri, install_local_models=install_local_models, quiet=quiet
+    )
