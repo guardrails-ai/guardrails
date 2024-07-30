@@ -222,7 +222,7 @@ def test_get_site_packages_location(mocker):
     mock_pip_process = mocker.patch("guardrails.cli.hub.utils.pip_process")
     mock_pip_process.return_value = {"Location": "/site-pacakges"}
 
-    from guardrails.cli.hub.install import get_site_packages_location
+    from guardrails.cli.hub.utils import get_site_packages_location
 
     response = get_site_packages_location()
 
