@@ -16,8 +16,6 @@ from guardrails.cli.hub.utils import (
 from guardrails.cli.logger import logger
 from guardrails.cli.server.module_manifest import ModuleManifest
 
-from guardrails.hub.validator_package_service import ValidatorPackageService
-
 
 def removesuffix(string: str, suffix: str) -> str:
     if sys.version_info.minor >= 9:
@@ -204,6 +202,7 @@ Example: hub://guardrails/regex_match."
     ),
 ):
     try:
+        from guardrails.hub.validator_package_service import ValidatorPackageService
 
         def confirm():
             return typer.confirm(
