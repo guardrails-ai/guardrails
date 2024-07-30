@@ -447,3 +447,7 @@ class ValidatorPackageService:
                     )
                     if not quiet:
                         logger.info(dep_install_output)
+
+
+def install(*args, **kwargs):
+    return ValidatorPackageService.install(*args, **kwargs)
