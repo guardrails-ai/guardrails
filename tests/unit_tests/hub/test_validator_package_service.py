@@ -7,6 +7,7 @@ from guardrails.classes.credentials import Credentials
 from guardrails.cli.server.module_manifest import ModuleManifest
 from guardrails.hub.validator_package_service import (
     FailedToLocateModule,
+    LocalModelFlagNotSet,
     ValidatorPackageService,
     InvalidHubInstallURL,
 )
@@ -983,6 +984,50 @@ class TestInstall:
         )
 
         mock_confirm.assert_called_once()
+
+    def test_install_local_models_confirmation_raises_exception(
+        self, mocker, use_remote_inferencing
+    ):
+        mocker.patch(
+            "guardrails.hub.validator_package_service.Credentials.has_rc_file",
+            return_value=False,
+        )
+        mocker.patch("guardrails.hub.validator_package_service.cli_logger.log")
+        mocker.patch(
+            "guardrails.hub.validator_package_service.ValidatorPackageService.install_hub_module"
+        )
+        mocker.patch(
+            "guardrails.hub.validator_package_service.ValidatorPackageService.get_validator_from_manifest"
+        )
+        mocker.patch(
+            "guardrails.hub.validator_package_service.ValidatorPackageService.add_to_hub_inits"
+        )
+
+        mock_install_prep = mocker.patch(
+            "guardrails.hub.validator_package_service.ValidatorPackageService.install__prep"
+        )
+
+        manifest_with_endpoint = ModuleManifest.from_dict(
+            {
+                "id": "test-id",
+                "name": "test-name",
+                "author": {"name": "test-author", "email": "test@email.com"},
+                "maintainers": [],
+                "repository": {"url": "test-repo"},
+                "namespace": "test-namespace",
+                "package_name": "test-package",
+                "module_name": "test_module",
+                "exports": ["TestValidator"],
+                "tags": {"has_guardrails_endpoint": True},
+            }
+        )
+
+        mock_install_prep.return_value = manifest_with_endpoint, self.site_packages
+
+        with pytest.raises(LocalModelFlagNotSet):
+            ValidatorPackageService.install(
+                "hub://guardrails/test-validator",
+            )
 
     def test_use_remote_endpoint(self, mocker, use_remote_inferencing: bool):
         mocker.patch(

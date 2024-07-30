@@ -45,6 +45,10 @@ class InvalidHubInstallURL(Exception):
     pass
 
 
+class LocalModelFlagNotSet(Exception):
+    pass
+
+
 @contextmanager
 def do_nothing_context(*args, **kwargs):
     try:
@@ -53,13 +57,20 @@ def do_nothing_context(*args, **kwargs):
         pass
 
 
+def default_local_models_confirm():
+    raise LocalModelFlagNotSet(
+        "The install_local_models keyword argument"
+        " must be set to True or False to confirm"
+    )
+
+
 class ValidatorPackageService:
     @staticmethod
     def install(
         package_uri: str,
         install_local_models=None,
         quiet: bool = True,
-        install_local_models_confirm: Callable = lambda: True,
+        install_local_models_confirm: Callable = default_local_models_confirm,
     ):
         """Install a validator from the Hub."""
 
