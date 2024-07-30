@@ -214,15 +214,21 @@ class ValidatorPackageService:
 
     @staticmethod
     def get_validator_from_manifest(manifest: ModuleManifest):
+        """
+        Get Validator class from the installed module based on the manifest.
+        Note: manifest.exports yields a list of exported Validator classes.
+
+        Args:
+            manifest (ModuleManifest): The manifest of the installed module
+
+        Returns:
+            Any: The Validator class from the installed module
+        """
         org_package = ValidatorPackageService.get_org_and_package_dirs(manifest)
         module_name = manifest.module_name
 
         _relative_path = ".".join([*org_package, module_name])
-
-        exports: List[str] = manifest.exports or []
         import_line = f"guardrails.hub.{_relative_path}"
-        print(f" => Import {import_line}")
-        print(f" => Exports: {exports}")
 
         # Reload or import the module
         return ValidatorPackageService.reload_module(import_line)
@@ -441,6 +447,3 @@ class ValidatorPackageService:
                     )
                     if not quiet:
                         logger.info(dep_install_output)
-
-
-install = ValidatorPackageService.install
