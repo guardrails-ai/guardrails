@@ -1,8 +1,98 @@
-from unittest.mock import call
+from unittest.mock import ANY, call
+from typer.testing import CliRunner
+from guardrails.cli.hub.install import hub_command
 
 import pytest
 
 from guardrails.cli.server.module_manifest import ModuleManifest
+
+
+class TestInstall:
+    def test_exits_early_if_uri_is_not_valid(self, mocker):
+        mock_logger_error = mocker.patch(
+            "guardrails.hub.validator_package_service.cli_logger.error"
+        )
+
+        runner = CliRunner()
+        result = runner.invoke(hub_command, ["install", "some-invalid-uri"])
+
+        assert result.exit_code == 1
+        mock_logger_error.assert_called_once_with(
+            "Invalid URI! The package URI must start with 'hub://'"
+        )
+
+    def test_install_local_models__false(self, mocker):
+        mock_install = mocker.patch(
+            "guardrails.hub.validator_package_service.ValidatorPackageService.install"
+        )
+        runner = CliRunner()
+        result = runner.invoke(
+            hub_command,
+            ["install", "hub://guardrails/test-validator", "--no-install-local-models"],
+        )
+
+        mock_install.assert_called_once_with(
+            "hub://guardrails/test-validator",
+            install_local_models=False,
+            quiet=False,
+            install_local_models_confirm=ANY,
+        )
+
+        assert result.exit_code == 0
+
+    def test_install_local_models__true(self, mocker):
+        mock_install = mocker.patch(
+            "guardrails.hub.validator_package_service.ValidatorPackageService.install"
+        )
+        runner = CliRunner()
+        result = runner.invoke(
+            hub_command,
+            ["install", "hub://guardrails/test-validator", "--install-local-models"],
+        )
+        mock_install.assert_called_once_with(
+            "hub://guardrails/test-validator",
+            install_local_models=True,
+            quiet=False,
+            install_local_models_confirm=ANY,
+        )
+
+        assert result.exit_code == 0
+
+    def test_install_local_models__none(self, mocker):
+        mock_install = mocker.patch(
+            "guardrails.hub.validator_package_service.ValidatorPackageService.install"
+        )
+        runner = CliRunner()
+        result = runner.invoke(
+            hub_command,
+            ["install", "hub://guardrails/test-validator"],
+        )
+        mock_install.assert_called_once_with(
+            "hub://guardrails/test-validator",
+            install_local_models=None,
+            quiet=False,
+            install_local_models_confirm=ANY,
+        )
+
+        assert result.exit_code == 0
+
+    def test_install_quiet(self, mocker):
+        mock_install = mocker.patch(
+            "guardrails.hub.validator_package_service.ValidatorPackageService.install"
+        )
+        runner = CliRunner()
+        result = runner.invoke(
+            hub_command, ["install", "hub://guardrails/test-validator", "--quiet"]
+        )
+
+        mock_install.assert_called_once_with(
+            "hub://guardrails/test-validator",
+            install_local_models=None,
+            quiet=True,
+            install_local_models_confirm=ANY,
+        )
+
+        assert result.exit_code == 0
 
 
 class TestPipProcess:

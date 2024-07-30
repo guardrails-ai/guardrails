@@ -189,17 +189,12 @@ class ValidatorPackageService:
             if "guardrails.hub" in sys.modules:
                 # Reload the module if it's already imported
                 importlib.reload(sys.modules["guardrails.hub"])
-                print("Reloaded module: guardrails.hub")
-
             if module_path not in sys.modules:
                 # Import the module if it has not been imported yet
                 reloaded_module = importlib.import_module(module_path)
                 sys.modules[module_path] = reloaded_module
-                print(f"Imported module: {module_path}")
             else:
                 reloaded_module = sys.modules[module_path]
-                print(f"Module already imported: {module_path}")
-
             return reloaded_module
         except ModuleNotFoundError:
             raise
@@ -302,7 +297,9 @@ class ValidatorPackageService:
     @staticmethod
     def get_module_name(package_uri: str):
         if not package_uri.startswith("hub://"):
-            raise InvalidHubInstallURL("The package URI must start with 'hub://'")
+            raise InvalidHubInstallURL(
+                "Invalid URI! The package URI must start with 'hub://'"
+            )
 
         module_name = package_uri.replace("hub://", "")
         return module_name
