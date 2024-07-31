@@ -260,14 +260,12 @@ class SequentialValidatorService(ValidatorServiceBase):
 
     # requires at least 2 validators
     def multi_merge(self, original: str, new_values: list[str]) -> str:
-        print('merging these:', new_values)
+        print("merging these:", new_values)
         current = new_values.pop()
         while len(new_values) > 0:
             nextval = new_values.pop()
-            print("next", nextval)
             current = merge(current, nextval, original)
-            print("current", current)
-        print('final merge', current)
+        print("final merge", current)
         return current
 
     def run_validators_stream_fix(
@@ -297,7 +295,7 @@ class SequentialValidatorService(ValidatorServiceBase):
             for validator in validators:
                 # reset chunk to original text
                 chunk = original_text
-                print("chunk", chunk)
+                print("\n\nchunk", chunk)
                 print("finished", finished)
                 validator_logs = self.run_validator(
                     iteration,
@@ -347,17 +345,16 @@ class SequentialValidatorService(ValidatorServiceBase):
             if len(fixed_values) == len(validators):
                 last_chunk_validated = True
                 print("acc output", acc_output)
-                print("merging the following values:")
                 values_to_merge = []
                 for validator in validators:
                     values_to_merge.append(validator_partial_acc[validator.rail_alias])
-                print(values_to_merge)
                 merged_value = self.multi_merge(acc_output, values_to_merge)
                 # merged_value = self.multi_merge(acc_output, values_to_merge)
-                print("merged value:", merged_value)
+                print("\nmerged value:", merged_value)
                 acc_output = ""
-                # TODO: merge values in validator_partial_acc
-                # TODO: also need to reset validator_partial_acc
+                # reset validator_partial_acc
+                for validator in validators:
+                    validator_partial_acc[validator.rail_alias] = ""
                 yield merged_value, original_text, metadata
             else:
                 last_chunk_validated = False
@@ -401,13 +398,11 @@ class SequentialValidatorService(ValidatorServiceBase):
                 last_log.value_after_validation = last_chunk
                 if result and result.metadata is not None:
                     metadata = result.metadata
-            print("merging the following values (in last)")
             values_to_merge = []
             for validator in validators:
                 values_to_merge.append(validator_partial_acc[validator.rail_alias])
-            print(values_to_merge)
             merged_value = self.multi_merge(acc_output, values_to_merge)
-            print("merged value:", merged_value)
+            print("merged value in last:", merged_value)
             yield merged_value, original_text, metadata
             # yield merged value
 
