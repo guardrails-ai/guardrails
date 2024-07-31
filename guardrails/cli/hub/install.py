@@ -3,7 +3,7 @@ import subprocess
 import sys
 from contextlib import contextmanager
 from string import Template
-from typing import List, Literal
+from typing import List, Literal, Optional
 
 import typer
 
@@ -196,8 +196,8 @@ def install(
         help="URI to the package to install.\
 Example: hub://guardrails/regex_match."
     ),
-    local_models: bool = typer.Option(
-        False,
+    local_models: Optional[bool] = typer.Option(
+        None,
         "--install-local-models/--no-install-local-models",
         help="Install local models",
     ),
@@ -248,14 +248,19 @@ Example: hub://guardrails/regex_match."
         install_hub_module(module_manifest, site_packages, quiet=quiet)
 
     install_local_models = local_models
+    use_remote_endpoint = False
+    module_has_endpoint = (
+        module_manifest.tags and module_manifest.tags.has_guardrails_endpoint
+    )
 
     try:
         if has_rc_file:
             # if we do want to remote then we don't want to install local models
-            install_local_models = not Credentials.from_rc_file(
-                logger
-            ).use_remote_inferencing
-        elif module_manifest.tags and module_manifest.tags.has_guardrails_endpoint:
+            use_remote_endpoint = (
+                Credentials.from_rc_file(logger).use_remote_inferencing
+                and module_has_endpoint
+            )
+        elif install_local_models is None and module_has_endpoint:
             install_local_models = typer.confirm(
                 "This validator has a Guardrails AI inference endpoint available. "
                 "Would you still like to install the"
@@ -265,7 +270,10 @@ Example: hub://guardrails/regex_match."
         pass
 
     # Post-install
-    if install_local_models:
+    install_local_models = (
+        install_local_models if install_local_models is not None else True
+    )
+    if not use_remote_endpoint and install_local_models is True:
         logger.log(
             level=LEVELS.get("SPAM"),  # type: ignore
             msg="Installing models locally!",

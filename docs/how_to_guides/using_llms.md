@@ -63,7 +63,7 @@ guard = Guard.from_pydantic(Basket)
 result = guard(
     messages=[{"role":"user", "content":"Generate a basket of 5 fruits"}],
     model="gpt-4o",
-    tools=guard.add_json_function_calling_tool([]),
+    tools=guard.json_function_calling_tool([]),
     tool_choice="required",
 )
 
