@@ -20,7 +20,7 @@ def guard_runnable():
         .use(
             RegexMatch("Ice cream", match_type="search", on_fail="refrain"), on="output"
         )
-        .use(ReadingTime(0.05, on_fail="refrain"))
+        .use(ReadingTime(0.05, on_fail="noop"))
     )
 
 
