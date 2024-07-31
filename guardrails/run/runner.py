@@ -28,13 +28,13 @@ from guardrails.utils.parsing_utils import (
     parse_llm_output,
     prune_extra_keys,
 )
+from guardrails.run.utils import preprocess_prompt
 from guardrails.utils.prompt_utils import (
-    preprocess_prompt,
     prompt_content_for_schema,
     prompt_uses_xml,
 )
 from guardrails.actions.reask import NonParseableReAsk, ReAsk, introspect
-from guardrails.utils.telemetry_utils import trace
+from guardrails.utils.telemetry_utils import trace_step
 
 
 class Runner:
@@ -245,7 +245,7 @@ class Runner:
             raise e
         return call_log
 
-    @trace(name="step")
+    @trace_step(name="step")
     def step(
         self,
         index: int,
@@ -530,7 +530,7 @@ class Runner:
 
         return instructions, prompt, msg_history
 
-    @trace(name="call")
+    @trace_step(name="call")
     def call(
         self,
         instructions: Optional[Instructions],

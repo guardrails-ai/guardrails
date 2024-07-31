@@ -19,7 +19,8 @@ from guardrails.types.pydantic import ModelOrListOfModels
 from guardrails.types.validator import ValidatorMap
 from guardrails.utils.exception_utils import UserFacingException
 from guardrails.classes.llm.llm_response import LLMResponse
-from guardrails.utils.prompt_utils import preprocess_prompt, prompt_uses_xml
+from guardrails.utils.prompt_utils import prompt_uses_xml
+from guardrails.run.utils import preprocess_prompt
 from guardrails.actions.reask import NonParseableReAsk, ReAsk
 from guardrails.utils.telemetry_utils import async_trace
 

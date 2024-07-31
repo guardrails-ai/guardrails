@@ -1,6 +1,5 @@
 import sys
 import os
-from importlib.metadata import version
 from string import Template
 from typing import Any, Dict, Optional
 
@@ -12,6 +11,7 @@ from jwt import ExpiredSignatureError, DecodeError
 from guardrails.classes.credentials import Credentials
 from guardrails.cli.logger import logger
 from guardrails.cli.server.module_manifest import ModuleManifest
+from guardrails.version import GUARDRAILS_VERSION
 
 FIND_NEW_TOKEN = "You can find a new token at https://hub.guardrailsai.com/keys"
 
@@ -21,7 +21,6 @@ to update your token.
 TOKEN_INVALID_MESSAGE = f"""Your token is invalid. Please run `guardrails configure`\
 to update your token.
 {FIND_NEW_TOKEN}"""
-GUARDRAILS_VERSION = version("guardrails-ai")
 
 VALIDATOR_HUB_SERVICE = os.getenv(
     "GR_VALIDATOR_HUB_SERVICE", "https://so4sg4q4pb.execute-api.us-east-1.amazonaws.com"

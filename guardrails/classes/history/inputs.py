@@ -4,7 +4,7 @@ from pydantic import Field
 
 from guardrails_api_client import Inputs as IInputs
 from guardrails.classes.generic.arbitrary_model import ArbitraryModel
-from guardrails.llm_providers import PromptCallableBase
+from guardrails.classes.llm.prompt_callable import PromptCallableBase
 from guardrails.prompt.instructions import Instructions
 from guardrails.prompt.prompt import Prompt
 

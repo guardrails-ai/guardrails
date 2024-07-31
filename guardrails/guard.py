@@ -69,8 +69,7 @@ from guardrails.utils.naming_utils import random_id
 from guardrails.utils.api_utils import extract_serializeable_metadata
 from guardrails.utils.hub_telemetry_utils import HubTelemetry
 from guardrails.utils.telemetry_utils import (
-    default_otel_collector_tracer,
-    trace_operation,
+    trace_guard_execution,
     wrap_with_otel_context,
 )
 from guardrails.utils.validator_utils import (
@@ -91,12 +90,6 @@ from guardrails.utils.tools_utils import (
     json_function_calling_tool as json_function_calling_tool_util,
 )
 from guardrails.settings import settings
-
-from sentence_transformers import SentenceTransformer
-import numpy as np
-from numpy.linalg import norm
-
-model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
 
 
 class Guard(IGuard, Generic[OT]):
@@ -241,12 +234,23 @@ class Guard(IGuard, Generic[OT]):
         tracer: Optional[Tracer] = None,
         allow_metrics_collection: Optional[bool] = None,
     ):
-        """Configure the Guard."""
+        """Configure the Guard.
+
+        Args:
+            num_reasks (int, optional): The max times to re-ask the LLM
+                if validation fails. Defaults to None.
+            tracer (Tracer, optional): An OpenTelemetry tracer to use for
+                sending traces to your OpenTelemetry sink. Defaults to None.
+            allow_metrics_collection (bool, optional): Whether to allow
+                Guardrails to collect anonymous metrics.
+                Defaults to None, and falls back to waht is
+                    set via the `guardrails configure` command.
+        """
         if num_reasks:
             self._set_num_reasks(num_reasks)
         if tracer:
             self._set_tracer(tracer)
-        self._configure_telemtry(allow_metrics_collection)
+        self._configure_hub_telemtry(allow_metrics_collection)
 
     def _set_num_reasks(self, num_reasks: Optional[int] = None) -> None:
         # Configure may check if num_reasks is none, but this method still needs to be
@@ -259,12 +263,20 @@ class Guard(IGuard, Generic[OT]):
             self._num_reasks = num_reasks
 
     def _set_tracer(self, tracer: Optional[Tracer] = None) -> None:
+        if tracer is not None:
+            warnings.warn(
+                "Setting tracer during initialization is deprecated"
+                " and will be removed in 0.6.x!"
+                "Configure a TracerProvider instead and we will"
+                " obtain a tracer from it via the Tracer API.",
+                DeprecationWarning,
+            )
         self._tracer = tracer
         set_tracer(tracer)
         set_tracer_context()
         self._tracer_context = get_tracer_context()
 
-    def _configure_telemtry(
+    def _configure_hub_telemtry(
         self, allow_metrics_collection: Optional[bool] = None
     ) -> None:
         credentials = None
@@ -637,221 +649,162 @@ class Guard(IGuard, Generic[OT]):
         full_schema_reask: Optional[bool] = None,
         **kwargs,
     ) -> Union[ValidationOutcome[OT], Iterable[ValidationOutcome[OT]]]:
-        current_otel_context = otel_context.get_current()
-        tracer = self._tracer or default_otel_collector_tracer()
-
-        with tracer.start_as_current_span(
-            name="guard", context=current_otel_context
-        ) as guard_span:
-            self._fill_validator_map()
-            self._fill_validators()
-            self._fill_exec_opts(
-                num_reasks=num_reasks,
-                prompt=prompt,
-                instructions=instructions,
-                msg_history=msg_history,
-                reask_prompt=reask_prompt,
-                reask_instructions=reask_instructions,
+        self._fill_validator_map()
+        self._fill_validators()
+        self._fill_exec_opts(
+            num_reasks=num_reasks,
+            prompt=prompt,
+            instructions=instructions,
+            msg_history=msg_history,
+            reask_prompt=reask_prompt,
+            reask_instructions=reask_instructions,
+        )
+        metadata = metadata or {}
+        if not llm_output and llm_api and not (prompt or msg_history):
+            raise RuntimeError(
+                "'prompt' or 'msg_history' must be provided " "in order to call an LLM!"
             )
+
+        # check if validator requirements are fulfilled
+        missing_keys = verify_metadata_requirements(metadata, self._validators)
+        if missing_keys:
+            raise ValueError(
+                f"Missing required metadata keys: {', '.join(missing_keys)}"
+            )
+
+        def __exec(
+            self: Guard,
+            *args,
+            llm_api: Optional[Callable] = None,
+            llm_output: Optional[str] = None,
+            prompt_params: Optional[Dict] = None,
+            num_reasks: Optional[int] = None,
+            prompt: Optional[str] = None,
+            instructions: Optional[str] = None,
+            msg_history: Optional[List[Dict]] = None,
+            metadata: Optional[Dict] = None,
+            full_schema_reask: Optional[bool] = None,
+            **kwargs,
+        ):
+            prompt_params = prompt_params or {}
             metadata = metadata or {}
-            if not llm_output and llm_api and not (prompt or msg_history):
+            if full_schema_reask is None:
+                full_schema_reask = self._base_model is not None
+
+            if self._allow_metrics_collection and self._hub_telemetry:
+                # Create a new span for this guard call
+                llm_api_str = ""
+                if llm_api:
+                    llm_api_module_name = (
+                        llm_api.__module__ if hasattr(llm_api, "__module__") else ""
+                    )
+                    llm_api_name = (
+                        llm_api.__name__
+                        if hasattr(llm_api, "__name__")
+                        else type(llm_api).__name__
+                    )
+                    llm_api_str = f"{llm_api_module_name}.{llm_api_name}"
+                self._hub_telemetry.create_new_span(
+                    span_name="/guard_call",
+                    attributes=[
+                        ("guard_id", self.id),
+                        ("user_id", self._user_id),
+                        ("llm_api", llm_api_str if llm_api_str else "None"),
+                        (
+                            "custom_reask_prompt",
+                            self._exec_opts.reask_prompt is not None,
+                        ),
+                        (
+                            "custom_reask_instructions",
+                            self._exec_opts.reask_instructions is not None,
+                        ),
+                    ],
+                    is_parent=True,  # It will have children
+                    has_parent=False,  # Has no parents
+                )
+
+            set_call_kwargs(kwargs)
+            set_tracer(self._tracer)
+            set_tracer_context(self._tracer_context)
+
+            self._set_num_reasks(num_reasks=num_reasks)
+            if self._num_reasks is None:
                 raise RuntimeError(
-                    "'prompt' or 'msg_history' must be provided "
-                    "in order to call an LLM!"
+                    "`num_reasks` is `None` after calling `configure()`. "
+                    "This should never happen."
                 )
 
-            # check if validator requirements are fulfilled
-            missing_keys = verify_metadata_requirements(metadata, self._validators)
-            if missing_keys:
-                raise ValueError(
-                    f"Missing required metadata keys: {', '.join(missing_keys)}"
-                )
+            input_prompt = prompt or self._exec_opts.prompt
+            input_instructions = instructions or self._exec_opts.instructions
+            call_inputs = CallInputs(
+                llm_api=llm_api,
+                prompt=input_prompt,
+                instructions=input_instructions,
+                msg_history=msg_history,
+                prompt_params=prompt_params,
+                num_reasks=self._num_reasks,
+                metadata=metadata,
+                full_schema_reask=full_schema_reask,
+                args=list(args),
+                kwargs=kwargs,
+            )
 
-            def __exec(
-                self: Guard,
-                *args,
-                llm_api: Optional[Callable] = None,
-                llm_output: Optional[str] = None,
-                prompt_params: Optional[Dict] = None,
-                num_reasks: Optional[int] = None,
-                prompt: Optional[str] = None,
-                instructions: Optional[str] = None,
-                msg_history: Optional[List[Dict]] = None,
-                metadata: Optional[Dict] = None,
-                full_schema_reask: Optional[bool] = None,
-                **kwargs,
+            if settings.use_server and model_is_supported_server_side(
+                llm_api, *args, **kwargs
             ):
-                prompt_params = prompt_params or {}
-                metadata = metadata or {}
-                if full_schema_reask is None:
-                    full_schema_reask = self._base_model is not None
-
-                if self._allow_metrics_collection and self._hub_telemetry:
-                    # Create a new span for this guard call
-                    llm_api_str = ""
-                    if llm_api:
-                        llm_api_module_name = (
-                            llm_api.__module__ if hasattr(llm_api, "__module__") else ""
-                        )
-                        llm_api_name = (
-                            llm_api.__name__
-                            if hasattr(llm_api, "__name__")
-                            else type(llm_api).__name__
-                        )
-                        llm_api_str = f"{llm_api_module_name}.{llm_api_name}"
-                    self._hub_telemetry.create_new_span(
-                        span_name="/guard_call",
-                        attributes=[
-                            ("guard_id", self.id),
-                            ("user_id", self._user_id),
-                            ("llm_api", llm_api_str if llm_api_str else "None"),
-                            (
-                                "custom_reask_prompt",
-                                self._exec_opts.reask_prompt is not None,
-                            ),
-                            (
-                                "custom_reask_instructions",
-                                self._exec_opts.reask_instructions is not None,
-                            ),
-                        ],
-                        is_parent=True,  # It will have children
-                        has_parent=False,  # Has no parents
-                    )
-
-                set_call_kwargs(kwargs)
-                set_tracer(self._tracer)
-                set_tracer_context(self._tracer_context)
-
-                self._set_num_reasks(num_reasks=num_reasks)
-                if self._num_reasks is None:
-                    raise RuntimeError(
-                        "`num_reasks` is `None` after calling `configure()`. "
-                        "This should never happen."
-                    )
-
-                input_prompt = prompt or self._exec_opts.prompt
-                input_instructions = instructions or self._exec_opts.instructions
-                call_inputs = CallInputs(
-                    llm_api=llm_api,
-                    prompt=input_prompt,
-                    instructions=input_instructions,
-                    msg_history=msg_history,
-                    prompt_params=prompt_params,
-                    num_reasks=self._num_reasks,
-                    metadata=metadata,
-                    full_schema_reask=full_schema_reask,
-                    args=list(args),
-                    kwargs=kwargs,
-                )
-
-                if settings.use_server and model_is_supported_server_side(
-                    llm_api, *args, **kwargs
-                ):
-                    return self._call_server(
-                        llm_output=llm_output,
-                        llm_api=llm_api,
-                        num_reasks=self._num_reasks,
-                        prompt_params=prompt_params,
-                        metadata=metadata,
-                        full_schema_reask=full_schema_reask,
-                        *args,
-                        **kwargs,
-                    )
-
-                call_log = Call(inputs=call_inputs)
-                set_scope(str(object_id(call_log)))
-                self.history.push(call_log)
-                # Otherwise, call the LLM synchronously
-                resp = self._exec(
-                    llm_api=llm_api,
+                return self._call_server(
                     llm_output=llm_output,
-                    prompt_params=prompt_params,
+                    llm_api=llm_api,
                     num_reasks=self._num_reasks,
-                    prompt=prompt,
-                    instructions=instructions,
-                    msg_history=msg_history,
+                    prompt_params=prompt_params,
                     metadata=metadata,
                     full_schema_reask=full_schema_reask,
-                    call_log=call_log,
                     *args,
                     **kwargs,
                 )
-                if isinstance(resp, ValidationOutcome):
-                    input_value = f"""
-                        {self.history.last.compiled_instructions}
-                        {self.history.last.compiled_prompt}
-                        """
-                    trace_operation(
-                        input_mime_type="text/plain",
-                        input_value=input_value,
-                        output_mime_type="text/plain",
-                        output_value=resp.validated_output,
-                    )
-                    guard_span.set_attribute("guard_id", self.id)
-                    guard_span.set_attribute("guard_name", self.name)
-                    guard_span.set_attribute(
-                        "validation_passed", resp.validation_passed
-                    )
 
-                    raw_embed = model.encode(resp.raw_llm_output)
-                    validated_embed = model.encode(resp.validated_output)
-                    input_embed = model.encode(input_value)
-
-                    # define two arrays
-                    raw_embed_np = np.array(raw_embed)
-                    validated_embed_np = np.array(validated_embed)
-                    input_embed_np = np.array(input_embed)
-
-                    # compute cosine similarity
-                    raw_output_x_validated_output_cosine = np.sum(
-                        raw_embed_np * validated_embed_np, axis=0
-                    ) / (norm(raw_embed_np, axis=0) * norm(validated_embed_np, axis=0))
-                    input_x_validated_output_cosine = np.sum(
-                        input_embed_np * validated_embed_np, axis=0
-                    ) / (
-                        norm(input_embed_np, axis=0) * norm(validated_embed_np, axis=0)
-                    )
-                    input_x_raw_output_cosine = np.sum(
-                        input_embed_np * raw_embed_np, axis=0
-                    ) / (norm(input_embed_np, axis=0) * norm(raw_embed_np, axis=0))
-
-                    guard_span.set_attribute(
-                        "raw_output_x_validated_output_cosine",
-                        float(str(raw_output_x_validated_output_cosine)),
-                    )
-                    guard_span.set_attribute(
-                        "input_x_validated_output_cosine",
-                        float(str(input_x_validated_output_cosine)),
-                    )
-                    guard_span.set_attribute(
-                        "input_x_raw_output_cosine",
-                        float(str(input_x_raw_output_cosine)),
-                    )
-
-                return resp
-
-            guard_context = contextvars.Context()
-
-            # get the current otel context and wrap the subsequent call
-            #   to preserve otel context if guard call is being called be another
-            # framework upstream
-            wrapped__exec = wrap_with_otel_context(current_otel_context, __exec)
-
-            return guard_context.run(
-                wrapped__exec,
-                self,
+            call_log = Call(inputs=call_inputs)
+            set_scope(str(object_id(call_log)))
+            self.history.push(call_log)
+            # Otherwise, call the LLM synchronously
+            return self._exec(
                 llm_api=llm_api,
                 llm_output=llm_output,
                 prompt_params=prompt_params,
-                num_reasks=num_reasks,
+                num_reasks=self._num_reasks,
                 prompt=prompt,
                 instructions=instructions,
                 msg_history=msg_history,
                 metadata=metadata,
                 full_schema_reask=full_schema_reask,
+                call_log=call_log,
                 *args,
                 **kwargs,
             )
+
+        guard_context = contextvars.Context()
+
+        # get the current otel context and wrap the subsequent call
+        #   to preserve otel context if guard call is being called be another
+        # framework upstream
+        current_otel_context = otel_context.get_current()
+        wrapped__exec = wrap_with_otel_context(current_otel_context, __exec)
+
+        return guard_context.run(
+            wrapped__exec,
+            self,
+            llm_api=llm_api,
+            llm_output=llm_output,
+            prompt_params=prompt_params,
+            num_reasks=num_reasks,
+            prompt=prompt,
+            instructions=instructions,
+            msg_history=msg_history,
+            metadata=metadata,
+            full_schema_reask=full_schema_reask,
+            *args,
+            **kwargs,
+        )
 
     def _exec(
         self,
@@ -956,8 +909,11 @@ class Guard(IGuard, Generic[OT]):
                     "You must provide a prompt if msg_history is empty. "
                     "Alternatively, you can provide a prompt in the Schema constructor."
                 )
-
-        return self._execute(
+        return trace_guard_execution(
+            self.name,
+            self.history,
+            self._execute,
+            self._tracer,
             *args,
             llm_api=llm_api,
             prompt_params=prompt_params,
@@ -1014,7 +970,11 @@ class Guard(IGuard, Generic[OT]):
         default_msg_history = self._exec_opts.msg_history if llm_api else None
         msg_history = kwargs.pop("msg_history", default_msg_history)
 
-        return self._execute(  # type: ignore # streams are supported for parse
+        return trace_guard_execution(
+            self.name,
+            self.history,
+            self._execute,  # type: ignore # streams are supported for parse
+            self._tracer,
             *args,
             llm_output=llm_output,
             llm_api=llm_api,
