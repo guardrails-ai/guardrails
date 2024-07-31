@@ -291,7 +291,7 @@ class SequentialValidatorService(ValidatorServiceBase):
             acc_output += chunk
             fixed_values = []
             last_chunk = chunk
-            last_chunk_missing_validators = [] 
+            last_chunk_missing_validators = []
 
             refrain_triggered = False
             for validator in validators:
@@ -347,7 +347,7 @@ class SequentialValidatorService(ValidatorServiceBase):
 
             if refrain_triggered:
                 # if we have a failresult from a refrain/filter validator, yield empty
-                yield '', original_text, metadata
+                yield "", original_text, metadata
             else:
                 # if every validator has yielded a concrete value, merge and yield
                 print("acc output:", acc_output)
@@ -359,7 +359,9 @@ class SequentialValidatorService(ValidatorServiceBase):
                     print("acc output", acc_output)
                     values_to_merge = []
                     for validator in validators:
-                        values_to_merge.append(validator_partial_acc[validator.rail_alias])
+                        values_to_merge.append(
+                            validator_partial_acc[validator.rail_alias]
+                        )
                     merged_value = self.multi_merge(acc_output, values_to_merge)
                     # merged_value = self.multi_merge(acc_output, values_to_merge)
                     print("\nmerged value:", merged_value)
