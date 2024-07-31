@@ -291,7 +291,9 @@ class SequentialValidatorService(ValidatorServiceBase):
             acc_output += chunk
             fixed_values = []
             last_chunk = chunk
-            last_chunk_missing_validators = []
+            last_chunk_missing_validators = [] 
+
+            refrain_triggered = False
             for validator in validators:
                 # reset chunk to original text
                 chunk = original_text
@@ -314,6 +316,11 @@ class SequentialValidatorService(ValidatorServiceBase):
                 result = cast(ValidationResult, result)
                 # if we have a concrete result, log it in the validation map
                 if isinstance(result, FailResult):
+                    is_filter = validator.on_fail_descriptor is OnFailAction.FILTER
+                    is_refrain = validator.on_fail_descriptor is OnFailAction.REFRAIN
+                    if is_filter or is_refrain:
+                        refrain_triggered = True
+                        break
                     rechecked_value = None
                     chunk = self.perform_correction(
                         [result],
@@ -337,27 +344,32 @@ class SequentialValidatorService(ValidatorServiceBase):
                 validator_logs.value_after_validation = chunk
                 if result and result.metadata is not None:
                     metadata = result.metadata
-            # if every validator has yielded a concrete value, merge and yield
-            print("acc output:", acc_output)
-            print("fixed values:", fixed_values)
-            # only merge and yield if all validators have run
-            # TODO: check if only 1 validator - then skip merging
-            if len(fixed_values) == len(validators):
-                last_chunk_validated = True
-                print("acc output", acc_output)
-                values_to_merge = []
-                for validator in validators:
-                    values_to_merge.append(validator_partial_acc[validator.rail_alias])
-                merged_value = self.multi_merge(acc_output, values_to_merge)
-                # merged_value = self.multi_merge(acc_output, values_to_merge)
-                print("\nmerged value:", merged_value)
-                acc_output = ""
-                # reset validator_partial_acc
-                for validator in validators:
-                    validator_partial_acc[validator.rail_alias] = ""
-                yield merged_value, original_text, metadata
+
+            if refrain_triggered:
+                # if we have a failresult from a refrain/filter validator, yield empty
+                yield '', original_text, metadata
             else:
-                last_chunk_validated = False
+                # if every validator has yielded a concrete value, merge and yield
+                print("acc output:", acc_output)
+                print("fixed values:", fixed_values)
+                # only merge and yield if all validators have run
+                # TODO: check if only 1 validator - then skip merging
+                if len(fixed_values) == len(validators):
+                    last_chunk_validated = True
+                    print("acc output", acc_output)
+                    values_to_merge = []
+                    for validator in validators:
+                        values_to_merge.append(validator_partial_acc[validator.rail_alias])
+                    merged_value = self.multi_merge(acc_output, values_to_merge)
+                    # merged_value = self.multi_merge(acc_output, values_to_merge)
+                    print("\nmerged value:", merged_value)
+                    acc_output = ""
+                    # reset validator_partial_acc
+                    for validator in validators:
+                        validator_partial_acc[validator.rail_alias] = ""
+                    yield merged_value, original_text, metadata
+                else:
+                    last_chunk_validated = False
         # handle case where LLM doesn't yield finished flag
         # we need to validate remainder of accumulated chunks
         if not last_chunk_validated:
