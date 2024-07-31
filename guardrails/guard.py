@@ -96,9 +96,7 @@ from sentence_transformers import SentenceTransformer
 import numpy as np
 from numpy.linalg import norm
 
-model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
-
-
+model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
 
 
 class Guard(IGuard, Generic[OT]):
@@ -805,18 +803,29 @@ class Guard(IGuard, Generic[OT]):
                     input_embed_np = np.array(input_embed)
 
                     # compute cosine similarity
-                    raw_output_x_validated_output_cosine = np.sum(raw_embed_np*validated_embed_np, axis=0)/(norm(raw_embed_np, axis=0)*norm(validated_embed_np, axis=0))
-                    input_x_validated_output_cosine = np.sum(input_embed_np*validated_embed_np, axis=0)/(norm(input_embed_np, axis=0)*norm(validated_embed_np, axis=0))
-                    input_x_raw_output_cosine = np.sum(input_embed_np*raw_embed_np, axis=0)/(norm(input_embed_np, axis=0)*norm(raw_embed_np, axis=0))
+                    raw_output_x_validated_output_cosine = np.sum(
+                        raw_embed_np * validated_embed_np, axis=0
+                    ) / (norm(raw_embed_np, axis=0) * norm(validated_embed_np, axis=0))
+                    input_x_validated_output_cosine = np.sum(
+                        input_embed_np * validated_embed_np, axis=0
+                    ) / (
+                        norm(input_embed_np, axis=0) * norm(validated_embed_np, axis=0)
+                    )
+                    input_x_raw_output_cosine = np.sum(
+                        input_embed_np * raw_embed_np, axis=0
+                    ) / (norm(input_embed_np, axis=0) * norm(raw_embed_np, axis=0))
 
                     guard_span.set_attribute(
-                        "raw_output_x_validated_output_cosine", float(str(raw_output_x_validated_output_cosine))
+                        "raw_output_x_validated_output_cosine",
+                        float(str(raw_output_x_validated_output_cosine)),
                     )
                     guard_span.set_attribute(
-                        "input_x_validated_output_cosine", float(str(input_x_validated_output_cosine))
+                        "input_x_validated_output_cosine",
+                        float(str(input_x_validated_output_cosine)),
                     )
                     guard_span.set_attribute(
-                        "input_x_raw_output_cosine", float(str(input_x_raw_output_cosine))
+                        "input_x_raw_output_cosine",
+                        float(str(input_x_raw_output_cosine)),
                     )
 
                 return resp

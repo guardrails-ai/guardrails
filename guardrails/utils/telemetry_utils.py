@@ -370,7 +370,7 @@ def wrap_with_otel_context(
     return wrapped_func
 
 
-def default_otel_collector_tracer(resource_name: str = "guardsrails"):
+def default_otel_collector_tracer(resource_name: str = "guardrails"):
     """This is the standard otel tracer set to talk to a grpc open telemetry
     collector running on port 4317."""
 
@@ -390,7 +390,7 @@ def default_otel_collector_tracer(resource_name: str = "guardsrails"):
     return trace.get_tracer("gr")
 
 
-def default_otlp_tracer(resource_name: str = "guardsrails"):
+def default_otlp_tracer(resource_name: str = "guardrails"):
     """This tracer will emit spans directly to an otlp endpoint, configured by
     the following environment variables:
 
@@ -400,7 +400,7 @@ def default_otlp_tracer(resource_name: str = "guardsrails"):
     OTEL_EXPORTER_OTLP_HEADERS
 
     We recommend using Grafana to collect your metrics. A full example of how to
-    do that is in our (docs)[https://docs.guardsrails.com/telemetry]
+    do that is in our (docs)[https://docs.guardrails.com/telemetry]
     """
     import os
 

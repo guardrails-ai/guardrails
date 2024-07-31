@@ -99,8 +99,8 @@ You can combine `RAIL` elements to create an arbitrarily complex output structur
     <rail version="0.1">
         <output>
             <object name="some_object">
-                <string name="some_str_key" description="What should the value for this key represent?" format="two-words; upper-case" />
-                <integer name="some_other_key" description="What should this integer represent?" format="min-val: 0"/>
+                <string name="some_str_key" description="What should the value for this key represent?" validators="guardrails/uppercase; guardrails/two_words" />
+                <integer name="some_other_key" description="What should this integer represent?" validators="guardrails/valid_range:0" />
             </object>
         </output>
     </rail>
@@ -139,7 +139,7 @@ In the above example, `"SOME STRING"` is the value for the `some_str_key` key, a
     <rail version="0.1">
         <output>
             <list name="some_list" format="min-len: 2">
-                <string format="two-words; upper-case" />
+                <string validators="guardrails/uppercase; guardrails/two_words" />
             </list>
         </output>
     </rail>
@@ -237,7 +237,7 @@ Each element can have attributes that specify additional information about the d
 
 2. `description` attribute that specifies the description of the field. This is similar to a prompt that will be provided to the LLM. It can contain more context to help the LLM generate the correct output.
 3. (Coming soon!) `required` attribute that specifies whether the field is required or not. If the field is required, the LLM will be asked to generate the field until it is generated correctly. If the field is not required, the LLM will not be asked to generate the field if it is not generated correctly.
-4. `format` attribute that specifies the quality criteria that the field should respect. The `format` attribute can contain multiple quality criteria separated by a colon (`;`). For example, `two-words; upper-case`.
+4. `validators` attribute that specifies the quality criteria that the field should respect. The `format` attribute can contain multiple quality criteria separated by a colon (`;`). For example, `guardrails/uppercase; guardrails/two_words`.
 5. `on-fail-{quality-criteria}` attribute that specifies the corrective action to take in case the quality criteria is not met. For example, `on-fail-two-words="reask"` specifies that if the field does not have two words, the LLM should be asked to re-generate the field.
 
 
@@ -251,9 +251,9 @@ E.g.,
                 name="some_key"
                 description="Detailed description of what the value of the key should be"
                 required="true"
-                format="two-words; upper-case"
-                on-fail-two-words="reask"
-                on-fail-upper-case="noop" 
+                validators="guardrails/uppercase; guardrails/two_words"
+                on-fail-guardrails_two_words="reask"
+                on-fail-guardrails_uppercase="noop"
             />
         </output>
     </rail>
@@ -277,8 +277,8 @@ The `format` attribute allows specifying the quality criteria for each field in 
         <string
             name="text"
             description="The generated text"
-            format="two-words; upper-case"
-            on-fail-two-words="reask"
+            validators="guardrails/uppercase; guardrails/two_words"
+            on-fail-guardrails_two_words="reask"
         />
     </output>
 </rail>
@@ -339,7 +339,7 @@ An example of the compiled `output` element:
             <string
                 name="text"
                 description="The generated text"
-                format="two-words; upper-case"
+                validators="guardrails/uppercase; guardrails/two_words"
             />
         </output>
     </rail>

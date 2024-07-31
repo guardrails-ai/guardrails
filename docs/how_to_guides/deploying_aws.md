@@ -4,7 +4,10 @@ Guardrails allows you to deploy a dedicated server to run guard executions while
 
 In this cookbook we show an example of deploying a containerized version of Guardrails API into AWS leveraging AWS ECS. 
 
-> Note: Guardrails API is a feature is available as of `>=0.5.0`
+:::note
+- Read the quick start guide on using Guardrails on the server [here](https://www.guardrailsai.com/docs/getting_started/guardrails_server)
+- Find generalized information on deploying Guardrails [here](https://www.guardrailsai.com/docs/concepts/deploying)
+:::
 
 
 ## Step 1: Containerizing Guardrails API
