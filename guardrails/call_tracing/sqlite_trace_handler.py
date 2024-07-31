@@ -197,12 +197,13 @@ class SQLiteTraceHandler(TracerMixin):
     ) -> Iterator[GuardTraceEntry]:
         """Returns an iterator to generate GuardLogEntries.
 
-        @param start_offset_idx : Start printing entries after this IDX. If negative,
-        this will instead start printing the LAST start_offset_idx entries.
+        @param start_offset_idx : Start printing entries after this IDX.
+        If negative, this will instead start printing the LAST
+        start_offset_idx entries.
 
-        @param follow : If follow is True, will re-check the database for new entries
-        after the first batch is complete.  If False (default), will return when entries
-        are exhausted.
+        @param follow : If follow is True, will re-check the database
+        for new entries after the first batch is complete.  If False
+        (default), will return when entries are exhausted.
         """
         last_idx = start_offset_idx
         cursor = self.db.cursor()
