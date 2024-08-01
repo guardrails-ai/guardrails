@@ -407,17 +407,26 @@ def test_string_schema_streaming_with_openai_chat(mocker, guard, expected_error_
     # TODO assert something about these error spans
 
 
-POETRY_CHUNKS = [
-    ''
-]
+POETRY_CHUNKS = [""]
+
+
 def test_fix_behavior(mocker):
     mocker.patch(
-    "openai.resources.chat.completions.Completions.create",
-    return_value=mock_openai_chat_completion_create(STR_LLM_CHUNKS),
+        "openai.resources.chat.completions.Completions.create",
+        return_value=mock_openai_chat_completion_create(STR_LLM_CHUNKS),
     )
 
-    guard = gd.Guard.use_many(DetectPII(on_fail=OnFailAction.FILTER,
-                 pii_entities='pii'),
-                 LowerCase(on_fail=OnFailAction.FIX))
-    gen = guard(llm_api=openai.chat.completions.create, model='gpt-4', stream=True)
-    
+    guard = gd.Guard.use_many(
+        DetectPII(on_fail=OnFailAction.FILTER, pii_entities="pii"),
+        LowerCase(on_fail=OnFailAction.FIX),
+    )
+    gen = guard(llm_api=openai.chat.completions.create, model="gpt-4", stream=True)
+    text = ''
+    original = ''
+    for res in gen:
+        print('script val output:',res.validated_output)
+        print('original:', res.raw_llm_output)
+        original = original + res.raw_llm_output
+        text = text + res.validated_output
+    print('FINAL TEXT', text)
+    print('original text', original)
