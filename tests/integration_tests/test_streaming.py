@@ -517,5 +517,5 @@ def test_filter_behavior(mocker):
         == """"John, under GOLDEN bridges, roams,
 SAN Francisco's hills, his HOME.
 """
-    )
+)
 

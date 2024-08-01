@@ -260,12 +260,10 @@ class SequentialValidatorService(ValidatorServiceBase):
 
     # requires at least 2 validators
     def multi_merge(self, original: str, new_values: list[str]) -> str:
-        print("merging these:", new_values)
         current = new_values.pop()
         while len(new_values) > 0:
             nextval = new_values.pop()
             current = merge(current, nextval, original)
-        print("final merge", current)
         return current
 
     def run_validators_stream_fix(
@@ -298,8 +296,6 @@ class SequentialValidatorService(ValidatorServiceBase):
             for validator in validators:
                 # reset chunk to original text
                 chunk = original_text
-                print("\n\nchunk", chunk)
-                print("finished", finished)
                 validator_logs = self.run_validator(
                     iteration,
                     validator,
@@ -310,7 +306,6 @@ class SequentialValidatorService(ValidatorServiceBase):
                     remainder=finished,
                     **kwargs,
                 )
-                print("res", validator_logs.validation_result)
                 result = validator_logs.validation_result
                 if result is None:
                     last_chunk_missing_validators.append(validator)
@@ -351,13 +346,10 @@ class SequentialValidatorService(ValidatorServiceBase):
                 yield "", acc_output, metadata
             else:
                 # if every validator has yielded a concrete value, merge and yield
-                print("acc output:", acc_output)
-                print("fixed values:", fixed_values)
                 # only merge and yield if all validators have run
                 # TODO: check if only 1 validator - then skip merging
                 if len(fixed_values) == len(validators):
                     last_chunk_validated = True
-                    print("acc output", acc_output)
                     values_to_merge = []
                     for validator in validators:
                         values_to_merge.append(
@@ -365,7 +357,6 @@ class SequentialValidatorService(ValidatorServiceBase):
                         )
                     merged_value = self.multi_merge(acc_output, values_to_merge)
                     # merged_value = self.multi_merge(acc_output, values_to_merge)
-                    print("\nmerged value:", merged_value)
                     # reset validator_partial_acc
                     for validator in validators:
                         validator_partial_acc[validator.rail_alias] = ""
@@ -417,7 +408,6 @@ class SequentialValidatorService(ValidatorServiceBase):
             for validator in validators:
                 values_to_merge.append(validator_partial_acc[validator.rail_alias])
             merged_value = self.multi_merge(acc_output, values_to_merge)
-            print("merged value in last:", merged_value)
             yield merged_value, original_text, metadata
             # yield merged value
 
@@ -954,7 +944,6 @@ def validate(
     if process_count == 1:
         validator_service = SequentialValidatorService(disable_tracer)
     elif loop is not None and not loop.is_running():
-        print("this should not be printing!")
         validator_service = AsyncValidatorService(disable_tracer)
     else:
         validator_service = SequentialValidatorService(disable_tracer)
@@ -976,7 +965,6 @@ def validate_stream(
     if path is None:
         path = "$"
     sequential_validator_service = SequentialValidatorService(disable_tracer)
-    print("seq validator service", sequential_validator_service)
     gen = sequential_validator_service.validate_stream(
         value_stream, metadata, validator_map, iteration, path, path, **kwargs
     )
@@ -995,7 +983,6 @@ async def async_validate(
 ) -> Tuple[Any, dict]:
     if path is None:
         path = "$"
-    print("we really should not be here")
     validator_service = AsyncValidatorService(disable_tracer)
     return await validator_service.async_validate(
         value, metadata, validator_map, iteration, path, path, stream, **kwargs
