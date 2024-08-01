@@ -1,4 +1,3 @@
-import os
 from typing import Any, AsyncIterable, Dict, Iterable, List, cast
 
 import openai
@@ -14,14 +13,10 @@ from guardrails.utils.telemetry_utils import trace_llm_call, trace_operation
 
 
 def get_static_openai_create_func():
-    if "OPENAI_API_KEY" not in os.environ:
-        return None
     return openai.completions.create
 
 
 def get_static_openai_chat_create_func():
-    if "OPENAI_API_KEY" not in os.environ:
-        return None
     return openai.chat.completions.create
 
 
