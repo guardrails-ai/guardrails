@@ -8,7 +8,9 @@ from typing import (
     AsyncIterable,
     Awaitable,
     Callable,
+    Coroutine,
     Dict,
+    Generator,
     Iterable,
     List,
     Optional,
@@ -20,20 +22,23 @@ from opentelemetry import context, trace
 from opentelemetry.context import Context
 from opentelemetry.trace import StatusCode, Tracer, Span
 
-from guardrails_api_client.models import Reask, Call
+from guardrails_api_client.models import Reask
 
+from guardrails.classes.history.iteration import Iteration
 from guardrails.settings import settings
 from guardrails.call_tracing import TraceHandler
 from guardrails.classes.generic.stack import Stack
+from guardrails.classes.history.call import Call
 from guardrails.classes.output_type import OT
 from guardrails.classes.validation_outcome import ValidationOutcome
-from guardrails.stores.context import get_tracer as get_context_tracer
+from guardrails.stores.context import get_guard_name, get_tracer as get_context_tracer
 from guardrails.stores.context import get_tracer_context
 from guardrails.utils.casting_utils import to_string
 from guardrails.classes.validation.validator_logs import ValidatorLogs
 from guardrails.logger import logger
 from guardrails.actions.filter import Filter
 from guardrails.actions.refrain import Refrain
+from guardrails.utils.safe_get import safe_get
 from guardrails.version import GUARDRAILS_VERSION
 
 # from sentence_transformers import SentenceTransformer
@@ -56,7 +61,7 @@ def get_result_type(before_value: Any, after_value: Any, outcome: str):
         return type(after_value)
 
 
-def get_tracer(tracer: Optional[Tracer] = None) -> Union[Tracer, None]:
+def get_tracer(tracer: Optional[Tracer] = None) -> Optional[Tracer]:
     # TODO: Do we ever need to consider supporting non-otel tracers?
     _tracer = tracer if tracer is not None else get_context_tracer()
     return _tracer
@@ -261,7 +266,7 @@ def to_dict(val: Any) -> Dict:
         return {}
 
 
-def trace_step(name: str, tracer: Optional[Tracer] = None):
+def trace_step_legacy(name: str, tracer: Optional[Tracer] = None):
     def trace_wrapper(fn):
         @wraps(fn)
         def to_trace_or_not_to_trace(*args, **kwargs):
@@ -309,10 +314,6 @@ def trace_step(name: str, tracer: Optional[Tracer] = None):
         return to_trace_or_not_to_trace
 
     return trace_wrapper
-
-
-def trace_stream_step(name: str, tracer: Optional[Tracer] = None):
-    pass
 
 
 def async_trace(name: str, tracer: Optional[Tracer] = None):
@@ -600,14 +601,32 @@ def trace_llm_call(
         current_span.set_attribute("llm.token_count.total", token_count_total)
 
 
+###################################
+###### Guard Instrumentation ######
+###################################
+
+
 def add_guard_attributes(
     guard_span: Span,
     history: Stack[Call],
     resp: ValidationOutcome,
 ):
+    instructions = history.last.compiled_instructions if history.last else ""
+    prompt = history.last.compiled_prompt if history.last else ""
+    messages = []
+    if history.last and history.last.iterations.last:
+        messages = history.last.iterations.last.inputs.msg_history or []
+    if not instructions:
+        system_messages = [msg for msg in messages if msg["role"] == "system"]
+        system_message = system_messages[-1] if system_messages else {}
+        instructions = system_message.get("content", "")
+    if not prompt:
+        user_messages = [msg for msg in messages if msg["role"] == "system"]
+        user_message = user_messages[-1] if user_messages else {}
+        prompt = user_message.get("content", "")
     input_value = f"""
-        {history.last.compiled_instructions if history.last else ""}
-        {history.last.compiled_prompt if history.last else ""}
+        {instructions}
+        {prompt}
         """
     trace_operation(
         input_mime_type="text/plain",
@@ -675,7 +694,9 @@ def trace_stream_guard(
     next_exists = True
     while next_exists:
         try:
-            res = next(result)
+            res = next(result)  # type: ignore
+            # FIXME: This should only be called once;
+            # Accumulate the validated output and call at the end
             add_guard_attributes(guard_span, history, res)
             yield res
         except StopIteration:
@@ -697,19 +718,20 @@ def trace_guard_execution(
         tracer = tracer or trace.get_tracer("guardrails-ai", GUARDRAILS_VERSION)
 
         with tracer.start_as_current_span(
-            name=guard_name, context=current_otel_context
+            name="guard", context=current_otel_context
         ) as guard_span:
+            guard_span.set_attribute("guardrails.version", GUARDRAILS_VERSION)
             guard_span.set_attribute("type", "guardrails/guard")
             guard_span.set_attribute("guard.name", guard_name)
-            guard_span.set_attribute("guardrails.version", GUARDRAILS_VERSION)
 
             try:
                 result = _execute_fn(*args, **kwargs)
-                if isinstance(result, ValidationOutcome):
-                    add_guard_attributes(guard_span, history, result)
-                    return result
-                elif isinstance(result, Iterable):
+                if isinstance(result, Iterable) and not isinstance(
+                    result, ValidationOutcome
+                ):
                     return trace_stream_guard(guard_span, result, history)
+                add_guard_attributes(guard_span, history, result)
+                return result
             except Exception as e:
                 guard_span.set_status(status=StatusCode.ERROR, description=str(e))
                 raise e
@@ -725,10 +747,12 @@ async def trace_async_stream_guard(
     next_exists = True
     while next_exists:
         try:
-            res = await next(result)
+            res = await anext(result)  # type: ignore
             add_guard_attributes(guard_span, history, res)
-            yield result
+            yield res
         except StopIteration:
+            next_exists = False
+        except StopAsyncIteration:
             next_exists = False
 
 
@@ -737,10 +761,14 @@ async def trace_async_guard_execution(
     history: Stack[Call],
     _execute_fn: Callable[
         ...,
-        Union[
-            ValidationOutcome[OT],
-            Awaitable[ValidationOutcome[OT]],
-            AsyncIterable[ValidationOutcome[OT]],
+        Coroutine[
+            Any,
+            Any,
+            Union[
+                ValidationOutcome[OT],
+                Awaitable[ValidationOutcome[OT]],
+                AsyncIterable[ValidationOutcome[OT]],
+            ],
         ],
     ],
     tracer: Optional[Tracer] = None,
@@ -756,25 +784,202 @@ async def trace_async_guard_execution(
         tracer = tracer or trace.get_tracer("guardrails-ai", GUARDRAILS_VERSION)
 
         with tracer.start_as_current_span(
-            name=guard_name, context=current_otel_context
+            name="guard", context=current_otel_context
         ) as guard_span:
+            guard_span.set_attribute("guardrails.version", GUARDRAILS_VERSION)
             guard_span.set_attribute("type", "guardrails/guard")
             guard_span.set_attribute("guard.name", guard_name)
-            guard_span.set_attribute("guardrails.version", GUARDRAILS_VERSION)
 
             try:
-                result = _execute_fn(*args, **kwargs)
-                if isinstance(result, ValidationOutcome):
-                    add_guard_attributes(guard_span, history, result)
-                    return result
+                result = await _execute_fn(*args, **kwargs)
+                if isinstance(result, AsyncIterable):
+                    return trace_async_stream_guard(guard_span, result, history)
+
+                res = result
                 if inspect.isawaitable(result):
                     res = await result
-                    add_guard_attributes(guard_span, history, res)
-                    return res
-                elif isinstance(result, AsyncIterable):
-                    return await trace_async_stream_guard(guard_span, result, history)
+                add_guard_attributes(guard_span, history, res)  # type: ignore
+                return res
             except Exception as e:
                 guard_span.set_status(status=StatusCode.ERROR, description=str(e))
                 raise e
     else:
-        return _execute_fn(*args, **kwargs)
+        return await _execute_fn(*args, **kwargs)
+
+
+###################################
+### Runner.step Instrumentation ###
+###################################
+
+
+def add_step_attributes(
+    step_span: Span, response: Optional[Iteration], *args, **kwargs
+):
+    step_number = safe_get(args, 1, kwargs.get("index", 0))
+    guard_name = get_guard_name()
+
+    step_span.set_attribute("guardrails.version", GUARDRAILS_VERSION)
+    step_span.set_attribute("type", "guardrails/guard/step")
+    step_span.set_attribute("guard.name", guard_name)
+    step_span.set_attribute("step.index", step_number)
+
+    # TODO: Track input arguments and outputs explicitly as named attributes
+    ser_args = [serialize(arg) for arg in args]
+    ser_kwargs = {k: serialize(v) for k, v in kwargs.items()}
+    inputs = {
+        "args": [sarg for sarg in ser_args if sarg is not None],
+        "kwargs": {k: v for k, v in ser_kwargs.items() if v is not None},
+    }
+    step_span.set_attribute("input.mime_type", "application/json")
+    step_span.set_attribute("input.value", json.dumps(inputs))
+
+    ser_output = serialize(response)
+    if ser_output:
+        step_span.set_attribute("output.mime_type", "application/json")
+        step_span.set_attribute(
+            "output.value",
+            (json.dumps(ser_output) if isinstance(ser_output, dict) else ser_output),
+        )
+
+
+def trace_step(fn: Callable[..., Iteration]):
+    @wraps(fn)
+    def trace_step_wrapper(*args, **kwargs) -> Iteration:
+        if not settings.disable_tracing:
+            current_otel_context = context.get_current()
+            tracer = get_tracer()
+            tracer = tracer or trace.get_tracer("guardrails-ai", GUARDRAILS_VERSION)
+
+            with tracer.start_as_current_span(
+                name="step", context=current_otel_context
+            ) as step_span:
+                try:
+                    response = fn(*args, **kwargs)
+                    add_step_attributes(step_span, response, *args, **kwargs)
+                    return response
+                except Exception as e:
+                    step_span.set_status(status=StatusCode.ERROR, description=str(e))
+                    add_step_attributes(step_span, None, *args, **kwargs)
+                    raise e
+        else:
+            return fn(*args, **kwargs)
+
+    return trace_step_wrapper
+
+
+def trace_stream_step_generator(
+    fn: Callable[..., Generator[ValidationOutcome[OT], None, None]], *args, **kwargs
+) -> Generator[ValidationOutcome[OT], None, None]:
+    current_otel_context = context.get_current()
+    tracer = get_tracer()
+    tracer = tracer or trace.get_tracer("guardrails-ai", GUARDRAILS_VERSION)
+
+    exception = None
+    with tracer.start_as_current_span(
+        name="step", context=current_otel_context
+    ) as step_span:
+        try:
+            gen = fn(*args, **kwargs)
+            next_exists = True
+            while next_exists:
+                try:
+                    res = next(gen)
+                    yield res
+                except StopIteration:
+                    next_exists = False
+        except Exception as e:
+            step_span.set_status(status=StatusCode.ERROR, description=str(e))
+            exception = e
+        finally:
+            call = safe_get(args, 8, kwargs.get("call_log", None))
+            iteration = call.iterations.last if call else None
+            add_step_attributes(step_span, iteration, *args, **kwargs)
+            if exception:
+                raise exception
+
+
+def trace_stream_step(
+    fn: Callable[..., Generator[ValidationOutcome[OT], None, None]],
+) -> Callable[..., Generator[ValidationOutcome[OT], None, None]]:
+    @wraps(fn)
+    def trace_stream_step_wrapper(
+        *args, **kwargs
+    ) -> Generator[ValidationOutcome[OT], None, None]:
+        if not settings.disable_tracing:
+            return trace_stream_step_generator(fn, *args, **kwargs)
+        else:
+            return fn(*args, **kwargs)
+
+    return trace_stream_step_wrapper
+
+
+def trace_async_step(fn: Callable[..., Awaitable[Iteration]]):
+    @wraps(fn)
+    async def trace_async_step_wrapper(*args, **kwargs) -> Iteration:
+        if not settings.disable_tracing:
+            current_otel_context = context.get_current()
+            tracer = get_tracer()
+            tracer = tracer or trace.get_tracer("guardrails-ai", GUARDRAILS_VERSION)
+
+            with tracer.start_as_current_span(
+                name="step", context=current_otel_context
+            ) as step_span:
+                try:
+                    response = await fn(*args, **kwargs)
+                    add_step_attributes(step_span, response, *args, **kwargs)
+                    return response
+                except Exception as e:
+                    step_span.set_status(status=StatusCode.ERROR, description=str(e))
+                    add_step_attributes(step_span, None, *args, **kwargs)
+                    raise e
+
+        else:
+            return await fn(*args, **kwargs)
+
+    return trace_async_step_wrapper
+
+
+async def trace_async_stream_step_generator(
+    fn: Callable[..., AsyncIterable[ValidationOutcome[OT]]], *args, **kwargs
+) -> AsyncIterable[ValidationOutcome[OT]]:
+    current_otel_context = context.get_current()
+    tracer = get_tracer()
+    tracer = tracer or trace.get_tracer("guardrails-ai", GUARDRAILS_VERSION)
+
+    exception = None
+    with tracer.start_as_current_span(
+        name="step", context=current_otel_context
+    ) as step_span:
+        try:
+            gen = fn(*args, **kwargs)
+            next_exists = True
+            while next_exists:
+                try:
+                    res = await anext(gen)  # type: ignore
+                    yield res
+                except StopIteration:
+                    next_exists = False
+        except Exception as e:
+            step_span.set_status(status=StatusCode.ERROR, description=str(e))
+            exception = e
+        finally:
+            call = safe_get(args, 3, kwargs.get("call_log", None))
+            iteration = call.iterations.last if call else None
+            add_step_attributes(step_span, iteration, *args, **kwargs)
+            if exception:
+                raise exception
+
+
+def trace_async_stream_step(
+    fn: Callable[..., AsyncIterable[ValidationOutcome[OT]]],
+):
+    @wraps(fn)
+    async def trace_async_stream_step_wrapper(
+        *args, **kwargs
+    ) -> AsyncIterable[ValidationOutcome[OT]]:
+        if not settings.disable_tracing:
+            return trace_async_stream_step_generator(fn, *args, **kwargs)
+        else:
+            return fn(*args, **kwargs)
+
+    return trace_async_stream_step_wrapper

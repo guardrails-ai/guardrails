@@ -245,7 +245,7 @@ class Runner:
             raise e
         return call_log
 
-    @trace_step(name="step")
+    @trace_step
     def step(
         self,
         index: int,
@@ -530,7 +530,7 @@ class Runner:
 
         return instructions, prompt, msg_history
 
-    @trace_step(name="call")
+    # @trace_step(name="call")
     def call(
         self,
         instructions: Optional[Instructions],

@@ -26,6 +26,7 @@ from guardrails.logger import set_scope
 from guardrails.prompt import Instructions, Prompt
 from guardrails.run import StreamRunner
 from guardrails.run.async_runner import AsyncRunner
+from guardrails.utils.telemetry_utils import trace_async_stream_step
 
 
 class AsyncStreamRunner(AsyncRunner, StreamRunner):
@@ -46,7 +47,7 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
             self.output_schema,
         )
 
-        result = self.async_step(
+        result = await self.async_step(
             0,
             output_schema,
             call_log,
@@ -62,7 +63,7 @@ class AsyncStreamRunner(AsyncRunner, StreamRunner):
         async for call in result:
             yield call
 
-    # @async_trace(name="step")
+    @trace_async_stream_step
     async def async_step(
         self,
         index: int,

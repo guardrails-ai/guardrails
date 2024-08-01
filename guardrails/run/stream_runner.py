@@ -1,7 +1,7 @@
 from typing import Any, Dict, Generator, List, Optional, Union, cast
 
 from guardrails.classes.history import Call, Inputs, Iteration, Outputs
-from guardrails.classes.output_type import OT, OutputTypes
+from guardrails.classes.output_type import OutputTypes  # , OT
 from guardrails.classes.validation_outcome import ValidationOutcome
 from guardrails.llm_providers import (
     LiteLLMCallable,
@@ -18,6 +18,7 @@ from guardrails.utils.parsing_utils import (
 )
 from guardrails.actions.reask import ReAsk, SkeletonReAsk
 from guardrails.constants import pass_status
+from guardrails.utils.telemetry_utils import trace_stream_step
 
 
 class StreamRunner(Runner):
@@ -30,7 +31,8 @@ class StreamRunner(Runner):
 
     def __call__(
         self, call_log: Call, prompt_params: Optional[Dict] = {}
-    ) -> Generator[ValidationOutcome[OT], None, None]:
+    ) -> Generator[ValidationOutcome, None, None]:
+        # ) -> Generator[ValidationOutcome[OT], None, None]:
         """Execute the StreamRunner.
 
         Args:
@@ -72,7 +74,7 @@ class StreamRunner(Runner):
             call_log=call_log,
         )
 
-    # @trace_stream_step(name="step")
+    @trace_stream_step
     def step(
         self,
         index: int,
@@ -84,7 +86,8 @@ class StreamRunner(Runner):
         output_schema: Dict[str, Any],
         call_log: Call,
         output: Optional[str] = None,
-    ) -> Generator[ValidationOutcome[OT], None, None]:
+    ) -> Generator[ValidationOutcome, None, None]:
+        # ) -> Generator[ValidationOutcome[OT], None, None]:
         """Run a full step."""
         inputs = Inputs(
             llm_api=api,
@@ -213,7 +216,7 @@ class StreamRunner(Runner):
 
                     validated_output = None
                     if passed is True:
-                        validated_output = cast(OT, last_result)
+                        validated_output = last_result  # cast(OT, last_result)
 
                     reask = None
                     if isinstance(last_result, ReAsk):

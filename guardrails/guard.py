@@ -60,6 +60,7 @@ from guardrails.stores.context import (
     get_call_kwarg,
     get_tracer_context,
     set_call_kwargs,
+    set_guard_name,
     set_tracer,
     set_tracer_context,
 )
@@ -214,6 +215,9 @@ class Guard(IGuard, Generic[OT]):
                     _loaded = True
             if not _loaded:
                 self._save()
+
+        # Set Context Variables
+        set_guard_name(self.name)
 
     @field_validator("output_schema")
     @classmethod

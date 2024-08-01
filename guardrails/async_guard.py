@@ -544,7 +544,7 @@ class AsyncGuard(Guard, Generic[OT]):
         default_msg_history = self._exec_opts.msg_history if llm_api else None
         msg_history = kwargs.pop("msg_history", default_msg_history)
 
-        return await trace_async_guard_execution(
+        return await trace_async_guard_execution(  # type: ignore
             self.name,
             self.history,
             self._execute,

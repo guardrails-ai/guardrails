@@ -22,7 +22,7 @@ from guardrails.classes.llm.llm_response import LLMResponse
 from guardrails.utils.prompt_utils import prompt_uses_xml
 from guardrails.run.utils import preprocess_prompt
 from guardrails.actions.reask import NonParseableReAsk, ReAsk
-from guardrails.utils.telemetry_utils import async_trace
+from guardrails.utils.telemetry_utils import trace_async_step
 
 
 class AsyncRunner(Runner):
@@ -150,7 +150,7 @@ class AsyncRunner(Runner):
         return call_log
 
     # TODO: Refactor this to use inheritance and overrides
-    @async_trace(name="step")
+    @trace_async_step
     async def async_step(
         self,
         index: int,
@@ -247,7 +247,7 @@ class AsyncRunner(Runner):
         return iteration
 
     # TODO: Refactor this to use inheritance and overrides
-    @async_trace(name="call")
+    # @async_trace(name="call")
     async def async_call(
         self,
         instructions: Optional[Instructions],
