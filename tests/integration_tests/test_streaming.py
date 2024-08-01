@@ -21,7 +21,7 @@ from guardrails.validator_base import (
     Validator,
     register_validator,
 )
-from guardrails.hub import LowerCase, DetectPII
+from tests.integration_tests.test_assets.validators import LowerCase, DetectPII
 
 expected_raw_output = {"statement": "I am DOING well, and I HOPE you aRe too."}
 expected_fix_output = {"statement": "i am doing well, and i hope you are too."}
@@ -407,26 +407,66 @@ def test_string_schema_streaming_with_openai_chat(mocker, guard, expected_error_
     # TODO assert something about these error spans
 
 
-POETRY_CHUNKS = [""]
+POETRY_CHUNKS = ['"John, under ',
+                 'GOLDEN bridges',
+                 ', roams,\n',
+                 'SAN Francisco\'s ',
+                 'hills, his HOME.\n',
+                 'Dreams of',
+                 ' FOG, and salty AIR,\n',
+                 'In his HEART',
+                 ', he\'s always THERE.']
 
 
 def test_fix_behavior(mocker):
     mocker.patch(
         "openai.resources.chat.completions.Completions.create",
-        return_value=mock_openai_chat_completion_create(STR_LLM_CHUNKS),
+        return_value=mock_openai_chat_completion_create(POETRY_CHUNKS),
     )
 
-    guard = gd.Guard.use_many(
-        DetectPII(on_fail=OnFailAction.FILTER, pii_entities="pii"),
+    guard = gd.Guard().use_many(
+        DetectPII(on_fail=OnFailAction.FIX, pii_entities="pii"),
         LowerCase(on_fail=OnFailAction.FIX),
     )
-    gen = guard(llm_api=openai.chat.completions.create, model="gpt-4", stream=True)
-    text = ''
-    original = ''
+    gen = guard(llm_api=openai.chat.completions.create, 
+                prompt="Write me a 4 line poem about John in San Francisco. Make every third word all caps.", 
+                model="gpt-4", stream=True)
+    text = ""
+    original = ""
     for res in gen:
-        print('script val output:',res.validated_output)
-        print('original:', res.raw_llm_output)
         original = original + res.raw_llm_output
         text = text + res.validated_output
-    print('FINAL TEXT', text)
-    print('original text', original)
+    assert text == """"<PERSON>, under golden bridges, roams,
+<LOCATION> hills, his home.
+dreams of fog, and salty air,
+in his heart, he's always there."""
+    assert original == """"John, under GOLDEN bridges, roams,
+SAN Francisco's hills, his HOME.
+Dreams of FOG, and salty AIR,
+In his HEART, he's always THERE."""
+
+def test_refrain_behavior(mocker):
+    mocker.patch(
+        "openai.resources.chat.completions.Completions.create",
+        return_value=mock_openai_chat_completion_create(POETRY_CHUNKS),
+    )
+
+    guard = gd.Guard().use_many(
+        DetectPII(on_fail=OnFailAction.REFRAIN, pii_entities="pii"),
+        LowerCase(on_fail=OnFailAction.FIX),
+    )
+    gen = guard(llm_api=openai.chat.completions.create, 
+                prompt="Write me a 4 line poem about John in San Francisco. Make every third word all caps.", 
+                model="gpt-4", stream=True)
+    text = ""
+    original = ""
+    for res in gen:
+        original = original + res.raw_llm_output
+        text = text + res.validated_output
+    print("text", text)
+    print("original:",original)
+    assert text == ""
+    assert original == """"John, under GOLDEN bridges, roams,
+SAN Francisco's hills, his HOME.
+"""
+

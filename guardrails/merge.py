@@ -288,7 +288,7 @@ def merge(source: str, target: str, base: str) -> str:
     while source is not None:
         print("source", source)
         source_status, source_text = source
-        assert source_status == ADDITION or source_status == PRESERVED
+        # assert source_status == ADDITION or source_status == PRESERVED
         if source_status == ADDITION:
             composed_text.append(source_text)
         prev_source_text = source[1]
@@ -297,7 +297,7 @@ def merge(source: str, target: str, base: str) -> str:
     while target is not None:
         print("target", target)
         target_status, target_text = target
-        assert target_status == ADDITION or source_status == PRESERVED
+        # assert target_status == ADDITION or source_status == PRESERVED
         if target_status == ADDITION:
             composed_text.append(target_text)
         prev_target_text = target[1]

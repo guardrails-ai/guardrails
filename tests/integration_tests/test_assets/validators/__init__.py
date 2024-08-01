@@ -8,6 +8,7 @@ from tests.integration_tests.test_assets.validators.upper_case import UpperCase
 from tests.integration_tests.test_assets.validators.valid_choices import ValidChoices
 from tests.integration_tests.test_assets.validators.valid_length import ValidLength
 from tests.integration_tests.test_assets.validators.valid_url import ValidURL
+from tests.integration_tests.test_assets.validators.detect_pii import DetectPII
 
 __all__ = [
     "EndsWith",
@@ -20,4 +21,5 @@ __all__ = [
     "ValidChoices",
     "ValidLength",
     "ValidURL",
+    "DetectPII"
 ]

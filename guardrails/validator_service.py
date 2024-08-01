@@ -286,14 +286,15 @@ class SequentialValidatorService(ValidatorServiceBase):
         last_chunk = None
         last_chunk_validated = False
         last_chunk_missing_validators = []
+        refrain_triggered = False
         for chunk, finished in value_stream:
             original_text = chunk
             acc_output += chunk
             fixed_values = []
             last_chunk = chunk
             last_chunk_missing_validators = []
-
-            refrain_triggered = False
+            if refrain_triggered:
+                break
             for validator in validators:
                 # reset chunk to original text
                 chunk = original_text
@@ -347,7 +348,7 @@ class SequentialValidatorService(ValidatorServiceBase):
 
             if refrain_triggered:
                 # if we have a failresult from a refrain/filter validator, yield empty
-                yield "", original_text, metadata
+                yield "", acc_output, metadata
             else:
                 # if every validator has yielded a concrete value, merge and yield
                 print("acc output:", acc_output)
@@ -374,7 +375,7 @@ class SequentialValidatorService(ValidatorServiceBase):
                     last_chunk_validated = False
         # handle case where LLM doesn't yield finished flag
         # we need to validate remainder of accumulated chunks
-        if not last_chunk_validated:
+        if not last_chunk_validated and not refrain_triggered:
             original_text = last_chunk
             for validator in last_chunk_missing_validators:
                 last_log = self.run_validator(
