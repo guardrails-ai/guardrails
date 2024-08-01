@@ -25,6 +25,7 @@ from opentelemetry.trace import StatusCode, Tracer, Span
 from guardrails_api_client.models import Reask
 
 from guardrails.classes.history.iteration import Iteration
+from guardrails.classes.llm.llm_response import LLMResponse
 from guardrails.settings import settings
 from guardrails.call_tracing import TraceHandler
 from guardrails.classes.generic.stack import Stack
@@ -601,9 +602,9 @@ def trace_llm_call(
         current_span.set_attribute("llm.token_count.total", token_count_total)
 
 
-###################################
-###### Guard Instrumentation ######
-###################################
+#########################################
+###### START Guard Instrumentation ######
+#########################################
 
 
 def add_guard_attributes(
@@ -807,11 +808,17 @@ async def trace_async_guard_execution(
         return await _execute_fn(*args, **kwargs)
 
 
-###################################
-### Runner.step Instrumentation ###
-###################################
+#########################################
+####### END Guard Instrumentation #######
+#########################################
 
 
+#########################################
+### START Runner.step Instrumentation ###
+#########################################
+
+
+# TODO: Track input arguments and outputs explicitly as named attributes
 def add_step_attributes(
     step_span: Span, response: Optional[Iteration], *args, **kwargs
 ):
@@ -823,7 +830,6 @@ def add_step_attributes(
     step_span.set_attribute("guard.name", guard_name)
     step_span.set_attribute("step.index", step_number)
 
-    # TODO: Track input arguments and outputs explicitly as named attributes
     ser_args = [serialize(arg) for arg in args]
     ser_kwargs = {k: serialize(v) for k, v in kwargs.items()}
     inputs = {
@@ -983,3 +989,97 @@ def trace_async_stream_step(
             return fn(*args, **kwargs)
 
     return trace_async_stream_step_wrapper
+
+
+#########################################
+#### END Runner.step Instrumentation ####
+#########################################
+
+
+#########################################
+### START Runner.call Instrumentation ###
+#########################################
+
+
+# TODO: Track input arguments and outputs explicitly as named attributes
+def add_call_attributes(
+    call_span: Span, response: Optional[LLMResponse], *args, **kwargs
+):
+    guard_name = get_guard_name()
+
+    call_span.set_attribute("guardrails.version", GUARDRAILS_VERSION)
+    call_span.set_attribute("type", "guardrails/guard/step/call")
+    call_span.set_attribute("guard.name", guard_name)
+
+    ser_args = [serialize(arg) for arg in args]
+    ser_kwargs = {k: serialize(v) for k, v in kwargs.items()}
+    inputs = {
+        "args": [sarg for sarg in ser_args if sarg is not None],
+        "kwargs": {k: v for k, v in ser_kwargs.items() if v is not None},
+    }
+    call_span.set_attribute("input.mime_type", "application/json")
+    call_span.set_attribute("input.value", json.dumps(inputs))
+
+    ser_output = serialize(response)
+    if ser_output:
+        call_span.set_attribute("output.mime_type", "application/json")
+        call_span.set_attribute(
+            "output.value",
+            (json.dumps(ser_output) if isinstance(ser_output, dict) else ser_output),
+        )
+
+
+def trace_call(fn: Callable[..., LLMResponse]):
+    @wraps(fn)
+    def trace_call_wrapper(*args, **kwargs):
+        if not settings.disable_tracing:
+            current_otel_context = context.get_current()
+            tracer = get_tracer()
+            tracer = tracer or trace.get_tracer("guardrails-ai", GUARDRAILS_VERSION)
+
+            with tracer.start_as_current_span(
+                name="call", context=current_otel_context
+            ) as call_span:
+                try:
+                    response = fn(*args, **kwargs)
+                    add_call_attributes(call_span, response, *args, **kwargs)
+                    return response
+                except Exception as e:
+                    call_span.set_status(status=StatusCode.ERROR, description=str(e))
+                    add_call_attributes(call_span, None, *args, **kwargs)
+                    raise e
+        else:
+            return fn(*args, **kwargs)
+
+    return trace_call_wrapper
+
+
+def trace_async_call(fn: Callable[..., Awaitable[LLMResponse]]):
+    @wraps(fn)
+    async def trace_async_call_wrapper(*args, **kwargs):
+        if not settings.disable_tracing:
+            current_otel_context = context.get_current()
+            tracer = get_tracer()
+            tracer = tracer or trace.get_tracer("guardrails-ai", GUARDRAILS_VERSION)
+
+            with tracer.start_as_current_span(
+                name="call", context=current_otel_context
+            ) as call_span:
+                try:
+                    response = await fn(*args, **kwargs)
+                    add_call_attributes(call_span, response, *args, **kwargs)
+                    return response
+                except Exception as e:
+                    call_span.set_status(status=StatusCode.ERROR, description=str(e))
+                    add_call_attributes(call_span, None, *args, **kwargs)
+                    raise e
+
+        else:
+            return await fn(*args, **kwargs)
+
+    return trace_async_call_wrapper
+
+
+#########################################
+#### END Runner.call Instrumentation ####
+#########################################

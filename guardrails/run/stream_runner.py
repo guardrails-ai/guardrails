@@ -1,7 +1,7 @@
 from typing import Any, Dict, Generator, List, Optional, Union, cast
 
 from guardrails.classes.history import Call, Inputs, Iteration, Outputs
-from guardrails.classes.output_type import OutputTypes  # , OT
+from guardrails.classes.output_type import OT, OutputTypes
 from guardrails.classes.validation_outcome import ValidationOutcome
 from guardrails.llm_providers import (
     LiteLLMCallable,
@@ -31,8 +31,7 @@ class StreamRunner(Runner):
 
     def __call__(
         self, call_log: Call, prompt_params: Optional[Dict] = {}
-    ) -> Generator[ValidationOutcome, None, None]:
-        # ) -> Generator[ValidationOutcome[OT], None, None]:
+    ) -> Generator[ValidationOutcome[OT], None, None]:
         """Execute the StreamRunner.
 
         Args:
@@ -86,8 +85,7 @@ class StreamRunner(Runner):
         output_schema: Dict[str, Any],
         call_log: Call,
         output: Optional[str] = None,
-    ) -> Generator[ValidationOutcome, None, None]:
-        # ) -> Generator[ValidationOutcome[OT], None, None]:
+    ) -> Generator[ValidationOutcome[OT], None, None]:
         """Run a full step."""
         inputs = Inputs(
             llm_api=api,
@@ -216,7 +214,7 @@ class StreamRunner(Runner):
 
                     validated_output = None
                     if passed is True:
-                        validated_output = last_result  # cast(OT, last_result)
+                        validated_output = cast(OT, last_result)
 
                     reask = None
                     if isinstance(last_result, ReAsk):
