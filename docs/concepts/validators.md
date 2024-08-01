@@ -56,6 +56,10 @@ def starts_with_a(value: str, metadata: Dict) -> ValidationResult:
     )
 ```
 
+:::note
+A fix_value was supplied in the FailResult in the example above. This value represents a programmatic fix that can be applied to the output if `on_fail='fix'` is passed during validator initialization.
+:::
+
 If you need to perform more complex operations or require addtional arguments to perform the validation, then the validator can be specified as a class that inherits from our base Validator class:
 
 ```py
