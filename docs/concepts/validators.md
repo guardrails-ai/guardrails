@@ -92,6 +92,46 @@ Custom validators must be defined before creating a `Guard` or `RAIL` spec in th
 but otherwise can be used like built in validators. It can be used in a `RAIL` spec OR
 a `Pydantic` model like so:
 
+Custom validators must be defined before creating a `Guard` in the code, 
+but otherwise can be used just like built in validators.
+
+### Guard.use Example
+```py
+from guardrails import Guard
+from .my_custom_validators import starts_with_a, StartsWith
+
+guard = Guard().use(
+    StartsWith("my-prefix")
+).use(
+    starts_with_a()
+)
+```
+
+### Pydantic Example
+```py
+from guardrails import Guard
+from pydantic import BaseModel, Field
+from .my_custom_validators import starts_with_a, StartsWith
+
+class MyModel(BaseModel):
+    a_string: Field(validators=[starts_with_a()])
+    custom_string: Field(validators=[StartsWith("my-prefix")])
+
+guard = Guard.from_pydantic(MyModel)
+```
+
+### RAIL Example
+```xml
+<rail version="0.1">
+...
+<output>
+    <string name="a_string" type="string" validators="starts-with-a">
+    <string name="custom_string" type="string" validators="starts-with: my-prefix">
+</output>
+...
+</rail>
+``` 
+
 ## Submitting a Custom Validator to the Hub
 
 There are two ways to create a new validator and submit it to the Hub.
