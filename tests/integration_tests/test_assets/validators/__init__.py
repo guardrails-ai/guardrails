@@ -21,5 +21,5 @@ __all__ = [
     "ValidChoices",
     "ValidLength",
     "ValidURL",
-    "DetectPII"
+    "DetectPII",
 ]

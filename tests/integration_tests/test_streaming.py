@@ -407,15 +407,17 @@ def test_string_schema_streaming_with_openai_chat(mocker, guard, expected_error_
     # TODO assert something about these error spans
 
 
-POETRY_CHUNKS = ['"John, under ',
-                 'GOLDEN bridges',
-                 ', roams,\n',
-                 'SAN Francisco\'s ',
-                 'hills, his HOME.\n',
-                 'Dreams of',
-                 ' FOG, and salty AIR,\n',
-                 'In his HEART',
-                 ', he\'s always THERE.']
+POETRY_CHUNKS = [
+    '"John, under ',
+    "GOLDEN bridges",
+    ", roams,\n",
+    "SAN Francisco's ",
+    "hills, his HOME.\n",
+    "Dreams of",
+    " FOG, and salty AIR,\n",
+    "In his HEART",
+    ", he's always THERE.",
+]
 
 
 def test_fix_behavior(mocker):
@@ -428,22 +430,32 @@ def test_fix_behavior(mocker):
         DetectPII(on_fail=OnFailAction.FIX, pii_entities="pii"),
         LowerCase(on_fail=OnFailAction.FIX),
     )
-    gen = guard(llm_api=openai.chat.completions.create, 
-                prompt="Write me a 4 line poem about John in San Francisco. Make every third word all caps.", 
-                model="gpt-4", stream=True)
+    gen = guard(
+        llm_api=openai.chat.completions.create,
+        prompt="Write me a 4 line poem about John in San Francisco. Make every third word all caps.",
+        model="gpt-4",
+        stream=True,
+    )
     text = ""
     original = ""
     for res in gen:
         original = original + res.raw_llm_output
         text = text + res.validated_output
-    assert text == """"<PERSON>, under golden bridges, roams,
+    assert (
+        text
+        == """"<PERSON>, under golden bridges, roams,
 <LOCATION> hills, his home.
 dreams of fog, and salty air,
 in his heart, he's always there."""
-    assert original == """"John, under GOLDEN bridges, roams,
+    )
+    assert (
+        original
+        == """"John, under GOLDEN bridges, roams,
 SAN Francisco's hills, his HOME.
 Dreams of FOG, and salty AIR,
 In his HEART, he's always THERE."""
+    )
+
 
 def test_refrain_behavior(mocker):
     mocker.patch(
@@ -455,18 +467,55 @@ def test_refrain_behavior(mocker):
         DetectPII(on_fail=OnFailAction.REFRAIN, pii_entities="pii"),
         LowerCase(on_fail=OnFailAction.FIX),
     )
-    gen = guard(llm_api=openai.chat.completions.create, 
-                prompt="Write me a 4 line poem about John in San Francisco. Make every third word all caps.", 
-                model="gpt-4", stream=True)
+    gen = guard(
+        llm_api=openai.chat.completions.create,
+        prompt="Write me a 4 line poem about John in San Francisco. Make every third word all caps.",
+        model="gpt-4",
+        stream=True,
+    )
     text = ""
     original = ""
     for res in gen:
         original = original + res.raw_llm_output
         text = text + res.validated_output
     print("text", text)
-    print("original:",original)
+    print("original:", original)
     assert text == ""
-    assert original == """"John, under GOLDEN bridges, roams,
+    assert (
+        original
+        == """"John, under GOLDEN bridges, roams,
 SAN Francisco's hills, his HOME.
 """
+    )
+
+def test_filter_behavior(mocker):
+    mocker.patch(
+        "openai.resources.chat.completions.Completions.create",
+        return_value=mock_openai_chat_completion_create(POETRY_CHUNKS),
+    )
+
+    guard = gd.Guard().use_many(
+        DetectPII(on_fail=OnFailAction.FIX, pii_entities="pii"),
+        LowerCase(on_fail=OnFailAction.FILTER),
+    )
+    gen = guard(
+        llm_api=openai.chat.completions.create,
+        prompt="Write me a 4 line poem about John in San Francisco. Make every third word all caps.",
+        model="gpt-4",
+        stream=True,
+    )
+    text = ""
+    original = ""
+    for res in gen:
+        original = original + res.raw_llm_output
+        text = text + res.validated_output
+    print("text", text)
+    print("original:", original)
+    assert text == ""
+    assert (
+        original
+        == """"John, under GOLDEN bridges, roams,
+SAN Francisco's hills, his HOME.
+"""
+    )
 
