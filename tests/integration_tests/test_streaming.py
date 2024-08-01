@@ -21,7 +21,7 @@ from guardrails.validator_base import (
     Validator,
     register_validator,
 )
-from tests.integration_tests.test_assets.validators import LowerCase
+from guardrails.hub import LowerCase, DetectPII
 
 expected_raw_output = {"statement": "I am DOING well, and I HOPE you aRe too."}
 expected_fix_output = {"statement": "i am doing well, and i hope you are too."}
@@ -405,3 +405,19 @@ def test_string_schema_streaming_with_openai_chat(mocker, guard, expected_error_
         assert accumulated_output[error_span.start : error_span.end] == expected[0]
         assert error_span.reason == expected[1]
     # TODO assert something about these error spans
+
+
+POETRY_CHUNKS = [
+    ''
+]
+def test_fix_behavior(mocker):
+    mocker.patch(
+    "openai.resources.chat.completions.Completions.create",
+    return_value=mock_openai_chat_completion_create(STR_LLM_CHUNKS),
+    )
+
+    guard = gd.Guard.use_many(DetectPII(on_fail=OnFailAction.FILTER,
+                 pii_entities='pii'),
+                 LowerCase(on_fail=OnFailAction.FIX))
+    gen = guard(llm_api=openai.chat.completions.create, model='gpt-4', stream=True)
+    

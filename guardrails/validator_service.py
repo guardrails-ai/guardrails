@@ -365,11 +365,11 @@ class SequentialValidatorService(ValidatorServiceBase):
                     merged_value = self.multi_merge(acc_output, values_to_merge)
                     # merged_value = self.multi_merge(acc_output, values_to_merge)
                     print("\nmerged value:", merged_value)
-                    acc_output = ""
                     # reset validator_partial_acc
                     for validator in validators:
                         validator_partial_acc[validator.rail_alias] = ""
-                    yield merged_value, original_text, metadata
+                    yield merged_value, acc_output, metadata
+                    acc_output = ""
                 else:
                     last_chunk_validated = False
         # handle case where LLM doesn't yield finished flag
