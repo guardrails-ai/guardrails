@@ -802,7 +802,10 @@ class Guard(IGuard, Generic[OT]):
         msg_history: Optional[List[Dict]] = None,
         **kwargs,
     ) -> Union[ValidationOutcome[OT], Iterable[ValidationOutcome[OT]]]:
-        api = get_llm_ask(llm_api, *args, **kwargs)
+        api = None
+
+        if llm_api is not None or kwargs.get("model") is not None:
+            api = get_llm_ask(llm_api, *args, **kwargs)
 
         if self._output_formatter is not None:
             # Type suppression here? ArbitraryCallable is a subclass of PromptCallable!?
