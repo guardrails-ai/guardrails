@@ -553,7 +553,7 @@ def trace_guard_execution(
         tracer = tracer or trace.get_tracer("guardrails-ai", GUARDRAILS_VERSION)
 
         with tracer.start_as_current_span(
-            name="guard",
+            name="guard",  # type: ignore
             context=current_otel_context,  # type: ignore
         ) as guard_span:
             guard_span.set_attribute("guardrails.version", GUARDRAILS_VERSION)
@@ -620,7 +620,7 @@ async def trace_async_guard_execution(
         tracer = tracer or trace.get_tracer("guardrails-ai", GUARDRAILS_VERSION)
 
         with tracer.start_as_current_span(
-            name="guard",
+            name="guard",  # type: ignore
             context=current_otel_context,  # type: ignore
         ) as guard_span:
             guard_span.set_attribute("guardrails.version", GUARDRAILS_VERSION)
@@ -693,7 +693,7 @@ def trace_step(fn: Callable[..., Iteration]):
             tracer = tracer or trace.get_tracer("guardrails-ai", GUARDRAILS_VERSION)
 
             with tracer.start_as_current_span(
-                name="step",
+                name="step",  # type: ignore
                 context=current_otel_context,  # type: ignore
             ) as step_span:
                 try:
@@ -719,7 +719,7 @@ def trace_stream_step_generator(
 
     exception = None
     with tracer.start_as_current_span(
-        name="step",
+        name="step",  # type: ignore
         context=current_otel_context,  # type: ignore
     ) as step_span:
         try:
@@ -766,7 +766,7 @@ def trace_async_step(fn: Callable[..., Awaitable[Iteration]]):
             tracer = tracer or trace.get_tracer("guardrails-ai", GUARDRAILS_VERSION)
 
             with tracer.start_as_current_span(
-                name="step",
+                name="step",  # type: ignore
                 context=current_otel_context,  # type: ignore
             ) as step_span:
                 try:
@@ -793,7 +793,7 @@ async def trace_async_stream_step_generator(
 
     exception = None
     with tracer.start_as_current_span(
-        name="step",
+        name="step",  # type: ignore
         context=current_otel_context,  # type: ignore
     ) as step_span:
         try:
@@ -878,7 +878,7 @@ def trace_call(fn: Callable[..., LLMResponse]):
             tracer = tracer or trace.get_tracer("guardrails-ai", GUARDRAILS_VERSION)
 
             with tracer.start_as_current_span(
-                name="call",
+                name="call",  # type: ignore
                 context=current_otel_context,  # type: ignore
             ) as call_span:
                 try:
@@ -904,7 +904,7 @@ def trace_async_call(fn: Callable[..., Awaitable[LLMResponse]]):
             tracer = tracer or trace.get_tracer("guardrails-ai", GUARDRAILS_VERSION)
 
             with tracer.start_as_current_span(
-                name="call",
+                name="call",  # type: ignore
                 context=current_otel_context,  # type: ignore
             ) as call_span:
                 try:
@@ -1008,7 +1008,7 @@ def trace_validator(
                 )
                 validator_span_name = f"{validator_name}.validate"
                 with _tracer.start_as_current_span(
-                    name=validator_span_name,
+                    name=validator_span_name,  # type: ignore
                     context=current_otel_context,  # type: ignore
                 ) as validator_span:
                     try:
