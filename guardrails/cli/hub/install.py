@@ -202,7 +202,7 @@ Example: hub://guardrails/regex_match."
     ),
 ):
     try:
-        from guardrails.hub.validator_package_service import ValidatorPackageService
+        from guardrails.hub.install import install
 
         def confirm():
             return typer.confirm(
@@ -211,7 +211,7 @@ Example: hub://guardrails/regex_match."
                 " local models for local inference?",
             )
 
-        ValidatorPackageService.install(
+        install(
             package_uri,
             install_local_models=local_models,
             quiet=quiet,
