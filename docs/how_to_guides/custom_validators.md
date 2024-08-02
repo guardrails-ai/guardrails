@@ -3,7 +3,7 @@
 If you need to perform a validation that is not currently supported by the hub, you can create your own custom validators.
 
 ## As A Function
-A custom validator can be as simple as a single function if you do not require addtional arguments:
+A custom validator can be as simple as a single function if you do not require additional arguments:
 
 ```py
 from typing import Dict
@@ -32,7 +32,7 @@ def toxicWords(value: str, metadata: Dict) -> ValidationResult:
 ```
 
 ## As A Class
-If you need to perform more complex operations or require addtional arguments to perform the validation, then the validator can be specified as a class that inherits from our base Validator class:
+If you need to perform more complex operations or require additional arguments to perform the validation, then the validator can be specified as a class that inherits from our base Validator class:
 
 ```py
 from typing import Callable, Dict, Optional
@@ -165,7 +165,7 @@ from guardrails.validators import (
 from litellm import completion
 
 PROMPT = """
-You are a helpful assitant.
+You are a helpful assistant.
 Analyze the other messages provided and respond with a number between 0 and 100 and nothing else.
 Do not output prose.
 0 means the messages contain no toxic language.
@@ -211,7 +211,7 @@ class ToxicLanguage(Validator):
 
 Validators support streaming validation out of the box. The validate_stream method handles calling _validate with accumulated chunks of a stream when a guard is executed with `guard(streaming=True`
 
-By default stream validation is done on a per sentence basis. Validator._chunking_function maybe overloaded to provide a custom chunking strategy. This maybe useful to optimize latency when integrating outside services such as llms and controling how much data an validating model gets to give it more or less context.
+By default stream validation is done on a per sentence basis. Validator._chunking_function may be overloaded to provide a custom chunking strategy. This is useful to optimize latency when integrating outside services such as llms and controlling how much data an validating model gets to give it more or less context.
 
 The code below in a validator will cause a validator to validate a stream of text 1 paragraph at a time.
 
