@@ -447,9 +447,3 @@ class ValidatorPackageService:
                     )
                     if not quiet:
                         logger.info(dep_install_output)
-
-
-def install(package_uri: str, install_local_models=None, quiet: bool = True):
-    return ValidatorPackageService.install(
-        package_uri, install_local_models=install_local_models, quiet=quiet
-    )
