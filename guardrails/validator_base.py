@@ -187,12 +187,9 @@ class Validator:
         """
         # Only use if both are set, otherwise fall back to local inference
         if self.use_local:
-            print("==== using local inf")
             return self._inference_local(model_input)
         if not self.use_local and self.validation_endpoint:
-            print("==== using remote inf")
             out = self._inference_remote(model_input)
-            print("==== out", out)
             return out
 
         raise RuntimeError(
