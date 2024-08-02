@@ -60,6 +60,12 @@ def create_command(
         new_config_file = generate_template_config(
             template_dict, installed_validators, template_file_name
         )
+    elif not validators and template is None:
+        console.print(
+            "No validators or template provided. Please run `guardrails create --help`"
+            " for options and details."
+        )
+        sys.exit(1)
     else:
         installed_validators = split_and_install_validators(validators, dry_run)  # type: ignore
         if name is None and validators:
