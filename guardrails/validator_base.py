@@ -189,8 +189,7 @@ class Validator:
         if self.use_local:
             return self._inference_local(model_input)
         if not self.use_local and self.validation_endpoint:
-            out = self._inference_remote(model_input)
-            return out
+            return self._inference_remote(model_input)
 
         raise RuntimeError(
             "No inference endpoint set, but use_local was false. "
