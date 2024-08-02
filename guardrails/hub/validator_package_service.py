@@ -42,7 +42,7 @@ class InvalidHubInstallURL(Exception):
 
 class ValidatorPackageService:
     @staticmethod
-    def install__prep(module_name: str) -> tuple[ModuleManifest, str]:
+    def get_manifest_and_site_packages(module_name: str) -> tuple[ModuleManifest, str]:
         module_manifest = get_validator_manifest(module_name)
         site_packages = ValidatorPackageService.get_site_packages_location()
         return (module_manifest, site_packages)

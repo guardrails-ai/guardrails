@@ -71,8 +71,8 @@ def install(
     # 2. Prep Installation
     fetch_manifest_msg = "Fetching manifest"
     with loader(fetch_manifest_msg, spinner="bouncingBar"):
-        (module_manifest, site_packages) = ValidatorPackageService.install__prep(
-            module_name
+        (module_manifest, site_packages) = (
+            ValidatorPackageService.get_manifest_and_site_packages(module_name)
         )
 
     # 3. Install - Pip Installation of git module

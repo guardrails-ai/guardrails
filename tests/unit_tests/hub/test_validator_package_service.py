@@ -433,7 +433,7 @@ class TestValidatorPackageService:
     @patch(
         "guardrails.hub.validator_package_service.ValidatorPackageService.get_site_packages_location"
     )
-    def test_install__prep(
+    def test_get_manifest_and_site_packages(
         self, mock_get_site_packages_location, mock_get_validator_manifest
     ):
         # Setup
@@ -441,7 +441,9 @@ class TestValidatorPackageService:
         mock_get_site_packages_location.return_value = self.site_packages
 
         # Test
-        manifest, site_packages = ValidatorPackageService.install__prep("test-module")
+        manifest, site_packages = (
+            ValidatorPackageService.get_manifest_and_site_packages("test-module")
+        )
 
         # Assert
         assert manifest == self.manifest

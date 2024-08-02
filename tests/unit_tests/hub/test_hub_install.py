@@ -54,8 +54,8 @@ class TestInstall:
 
         mock_logger_log = mocker.patch("guardrails.hub.install.cli_logger.log")
 
-        install_prep_mock = mocker.patch(
-            "guardrails.hub.validator_package_service.ValidatorPackageService.install__prep"
+        get_manifest_and_site_packages_mock = mocker.patch(
+            "guardrails.hub.validator_package_service.ValidatorPackageService.get_manifest_and_site_packages"
         )
         mock_pip_install_hub_module = mocker.patch(
             "guardrails.hub.validator_package_service.ValidatorPackageService.install_hub_module"
@@ -67,7 +67,10 @@ class TestInstall:
             "guardrails.hub.validator_package_service.ValidatorPackageService.add_to_hub_inits"
         )
 
-        install_prep_mock.return_value = self.manifest, self.site_packages
+        get_manifest_and_site_packages_mock.return_value = (
+            self.manifest,
+            self.site_packages,
+        )
 
         install(
             "hub://guardrails/test-validator",
@@ -90,7 +93,9 @@ class TestInstall:
         assert mock_logger_log.call_count == 3
         mock_logger_log.assert_has_calls(log_calls)
 
-        install_prep_mock.assert_called_once_with("guardrails/test-validator")
+        get_manifest_and_site_packages_mock.assert_called_once_with(
+            "guardrails/test-validator"
+        )
 
         mock_pip_install_hub_module.assert_called_once_with(
             self.manifest, self.site_packages, quiet=ANY, logger=ANY
@@ -111,8 +116,8 @@ class TestInstall:
 
         mock_logger_log = mocker.patch("guardrails.hub.install.cli_logger.log")
 
-        install_prep_mock = mocker.patch(
-            "guardrails.hub.validator_package_service.ValidatorPackageService.install__prep"
+        get_manifest_and_site_packages_mock = mocker.patch(
+            "guardrails.hub.validator_package_service.ValidatorPackageService.get_manifest_and_site_packages"
         )
         mock_pip_install_hub_module = mocker.patch(
             "guardrails.hub.validator_package_service.ValidatorPackageService.install_hub_module"
@@ -124,7 +129,10 @@ class TestInstall:
             "guardrails.hub.validator_package_service.ValidatorPackageService.add_to_hub_inits"
         )
 
-        install_prep_mock.return_value = self.manifest, self.site_packages
+        get_manifest_and_site_packages_mock.return_value = (
+            self.manifest,
+            self.site_packages,
+        )
 
         install(
             "hub://guardrails/test-validator",
@@ -146,7 +154,9 @@ class TestInstall:
         assert mock_logger_log.call_count == 3
         mock_logger_log.assert_has_calls(log_calls)
 
-        install_prep_mock.assert_called_once_with("guardrails/test-validator")
+        get_manifest_and_site_packages_mock.assert_called_once_with(
+            "guardrails/test-validator"
+        )
 
         mock_pip_install_hub_module.assert_called_once_with(
             self.manifest, self.site_packages, quiet=ANY, logger=ANY
@@ -167,8 +177,8 @@ class TestInstall:
 
         mock_logger_log = mocker.patch("guardrails.hub.install.cli_logger.log")
 
-        install_prep_mock = mocker.patch(
-            "guardrails.hub.validator_package_service.ValidatorPackageService.install__prep"
+        get_manifest_and_site_packages_mock = mocker.patch(
+            "guardrails.hub.validator_package_service.ValidatorPackageService.get_manifest_and_site_packages"
         )
         mock_pip_install_hub_module = mocker.patch(
             "guardrails.hub.validator_package_service.ValidatorPackageService.install_hub_module"
@@ -180,7 +190,10 @@ class TestInstall:
             "guardrails.hub.validator_package_service.ValidatorPackageService.add_to_hub_inits"
         )
 
-        install_prep_mock.return_value = self.manifest, self.site_packages
+        get_manifest_and_site_packages_mock.return_value = (
+            self.manifest,
+            self.site_packages,
+        )
 
         install(
             "hub://guardrails/test-validator",
@@ -202,7 +215,9 @@ class TestInstall:
         assert mock_logger_log.call_count == 3
         mock_logger_log.assert_has_calls(log_calls)
 
-        install_prep_mock.assert_called_once_with("guardrails/test-validator")
+        get_manifest_and_site_packages_mock.assert_called_once_with(
+            "guardrails/test-validator"
+        )
 
         mock_pip_install_hub_module.assert_called_once_with(
             self.manifest, self.site_packages, quiet=ANY, logger=ANY
@@ -223,8 +238,8 @@ class TestInstall:
 
         mock_logger_log = mocker.patch("guardrails.hub.install.cli_logger.log")
 
-        install_prep_mock = mocker.patch(
-            "guardrails.hub.validator_package_service.ValidatorPackageService.install__prep"
+        get_manifest_and_site_packages_mock = mocker.patch(
+            "guardrails.hub.validator_package_service.ValidatorPackageService.get_manifest_and_site_packages"
         )
         mock_pip_install_hub_module = mocker.patch(
             "guardrails.hub.validator_package_service.ValidatorPackageService.install_hub_module"
@@ -236,7 +251,10 @@ class TestInstall:
             "guardrails.hub.validator_package_service.ValidatorPackageService.add_to_hub_inits"
         )
 
-        install_prep_mock.return_value = self.manifest, self.site_packages
+        get_manifest_and_site_packages_mock.return_value = (
+            self.manifest,
+            self.site_packages,
+        )
 
         install(
             "hub://guardrails/test-validator",
@@ -254,7 +272,9 @@ class TestInstall:
         assert mock_logger_log.call_count == 3
         mock_logger_log.assert_has_calls(log_calls)
 
-        install_prep_mock.assert_called_once_with("guardrails/test-validator")
+        get_manifest_and_site_packages_mock.assert_called_once_with(
+            "guardrails/test-validator"
+        )
 
         mock_pip_install_hub_module.assert_called_once_with(
             self.manifest, self.site_packages, quiet=ANY, logger=ANY
@@ -277,8 +297,8 @@ class TestInstall:
             "guardrails.hub.validator_package_service.ValidatorPackageService.add_to_hub_inits"
         )
 
-        mock_install_prep = mocker.patch(
-            "guardrails.hub.validator_package_service.ValidatorPackageService.install__prep"
+        mock_get_manifest_and_site_packages = mocker.patch(
+            "guardrails.hub.validator_package_service.ValidatorPackageService.get_manifest_and_site_packages"
         )
 
         manifest_with_endpoint = ModuleManifest.from_dict(
@@ -296,7 +316,10 @@ class TestInstall:
             }
         )
 
-        mock_install_prep.return_value = manifest_with_endpoint, self.site_packages
+        mock_get_manifest_and_site_packages.return_value = (
+            manifest_with_endpoint,
+            self.site_packages,
+        )
 
         mock_confirm = MagicMock()
         install(
@@ -324,8 +347,8 @@ class TestInstall:
             "guardrails.hub.validator_package_service.ValidatorPackageService.add_to_hub_inits"
         )
 
-        mock_install_prep = mocker.patch(
-            "guardrails.hub.validator_package_service.ValidatorPackageService.install__prep"
+        mock_get_manifest_and_site_packages = mocker.patch(
+            "guardrails.hub.validator_package_service.ValidatorPackageService.get_manifest_and_site_packages"
         )
 
         manifest_with_endpoint = ModuleManifest.from_dict(
@@ -343,7 +366,10 @@ class TestInstall:
             }
         )
 
-        mock_install_prep.return_value = manifest_with_endpoint, self.site_packages
+        mock_get_manifest_and_site_packages.return_value = (
+            manifest_with_endpoint,
+            self.site_packages,
+        )
 
         with pytest.raises(LocalModelFlagNotSet):
             install(
@@ -364,8 +390,8 @@ class TestInstall:
 
         mock_logger_log = mocker.patch("guardrails.hub.install.cli_logger.log")
 
-        install_prep_mock = mocker.patch(
-            "guardrails.hub.validator_package_service.ValidatorPackageService.install__prep"
+        get_manifest_and_site_packages_mock = mocker.patch(
+            "guardrails.hub.validator_package_service.ValidatorPackageService.get_manifest_and_site_packages"
         )
         mocker.patch(
             "guardrails.hub.validator_package_service.ValidatorPackageService.install_hub_module"
@@ -391,7 +417,7 @@ class TestInstall:
                 "tags": {"has_guardrails_endpoint": True},
             }
         )
-        install_prep_mock.return_value = manifest, self.site_packages
+        get_manifest_and_site_packages_mock.return_value = manifest, self.site_packages
 
         install("hub://guardrails/test-validator")
 
