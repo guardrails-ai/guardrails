@@ -169,7 +169,7 @@ class StreamRunner(Runner):
                 validate_subschema=True,
             )
 
-            for validated_text, original_text, metadata in gen:
+            for validated_text, original_text, metadata, validation_results in gen:
                 if isinstance(validated_text, SkeletonReAsk):
                     raise ValueError(
                         "Received fragment schema is an invalid sub-schema "
@@ -192,6 +192,7 @@ class StreamRunner(Runner):
                     raw_llm_output=original_text,
                     validated_output=validated_text,
                     validation_passed=passed,
+                    validation_fragments=validation_results
                 )
 
             # TODO: handle this!

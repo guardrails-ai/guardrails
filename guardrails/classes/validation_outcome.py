@@ -1,4 +1,4 @@
-from typing import Generic, Iterator, Optional, Tuple, Union, cast
+from typing import Generic, Iterator, List, Optional, Tuple, Union, cast
 
 from pydantic import Field
 from rich.pretty import pretty_repr
@@ -9,10 +9,12 @@ from guardrails_api_client import (
 )
 from guardrails.actions.reask import ReAsk
 from guardrails.classes.history import Call, Iteration
+from guardrails.classes.validation.validation_result import ValidationFragment
 from guardrails.classes.output_type import OT
 from guardrails.classes.generic.arbitrary_model import ArbitraryModel
 from guardrails.constants import pass_status
 from guardrails.utils.safe_get import safe_get
+
 
 
 class ValidationOutcome(IValidationOutcome, ArbitraryModel, Generic[OT]):
@@ -30,6 +32,7 @@ class ValidationOutcome(IValidationOutcome, ArbitraryModel, Generic[OT]):
             passed validation. If this is False, the validated_output may be invalid.
         error: If the validation failed, this field will contain the error message
     """
+    validation_results:Optional[List[ValidationFragment]] = None
 
     raw_llm_output: Optional[str] = Field(
         description="The raw, unchanged output from the LLM call.", default=None

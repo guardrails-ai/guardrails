@@ -8,6 +8,7 @@ from guardrails.actions.reask import get_reask_setup
 from guardrails.classes.execution.guard_execution_options import GuardExecutionOptions
 from guardrails.classes.history import Call, Inputs, Iteration, Outputs
 from guardrails.classes.output_type import OutputTypes
+from guardrails.classes.validation.validation_result import ValidationFragment
 from guardrails.constants import fail_status
 from guardrails.errors import ValidationError
 from guardrails.llm_providers import (
@@ -582,7 +583,7 @@ class Runner:
         parsed_output_stream: Iterable[Tuple[Any, str, bool]],
         output_schema: Dict[str, Any],
         **kwargs,
-    ) -> Iterable[Tuple[Any, Dict[str, Any]]]:
+    ) -> Iterable[Tuple[Any, Dict[str, Any], List[ValidationFragment]]]:
         gen = validator_service.validate_stream(
             parsed_output_stream,
             self.metadata,

@@ -6,7 +6,7 @@ from guardrails_api_client import (
     FailResult as IFailResult,
     ErrorSpan as IErrorSpan,
 )
-from guardrails.classes.generic.arbitrary_model import ArbitraryModel
+from guardrails.classes.generic.arbitrary_model import ArbitraryModel, BaseModel
 
 
 class ValidationResult(IValidationResult, ArbitraryModel):
@@ -179,3 +179,12 @@ class ErrorSpan(IErrorSpan, ArbitraryModel):
     end: int
     # reason validation failed, specific to this chunk
     reason: str
+
+class ProcessedErrorSpan(ErrorSpan):
+    fragment:str
+
+class ValidationFragment(BaseModel):
+    validatorName:str
+    validatorStatus:Union[Literal["pass"],Literal["fail"]]
+    failureReason:str
+    errorSpans:List[ProcessedErrorSpan]

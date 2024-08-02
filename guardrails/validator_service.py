@@ -12,6 +12,8 @@ from guardrails.classes.output_type import OutputTypes
 from guardrails.classes.validation.validation_result import (
     FailResult,
     PassResult,
+    ProcessedErrorSpan,
+    ValidationFragment,
     ValidationResult,
 )
 from guardrails.errors import ValidationError
@@ -235,7 +237,7 @@ class SequentialValidatorService(ValidatorServiceBase):
         absolute_property_path: str,
         reference_property_path: str,
         **kwargs,
-    ) -> Iterable[Tuple[Any, str, Dict[str, Any]]]:
+    ) -> Iterable[Tuple[Any, str, Dict[str, Any]], List[ValidationFragment]]:
         validators = validator_map.get(reference_property_path, [])
         for validator in validators:
             if validator.on_fail_descriptor == OnFailAction.FIX:
@@ -275,7 +277,7 @@ class SequentialValidatorService(ValidatorServiceBase):
         absolute_property_path: str,
         reference_property_path: str,
         **kwargs,
-    ) -> Iterable[Tuple[Any, str, Dict[str, Any]]]:
+    ) -> Iterable[Tuple[Any, str, Dict[str, Any]], List[ValidationFragment]]:
         validators = validator_map.get(reference_property_path, [])
         acc_output = ""
         validator_partial_acc: dict[str, str] = {}
@@ -284,11 +286,13 @@ class SequentialValidatorService(ValidatorServiceBase):
         last_chunk = None
         last_chunk_validated = False
         last_chunk_missing_validators = []
+        validation_results = []
         refrain_triggered = False
         for chunk, finished in value_stream:
             original_text = chunk
             acc_output += chunk
             fixed_values = []
+            validation_results = []
             last_chunk = chunk
             last_chunk_missing_validators = []
             if refrain_triggered:
@@ -312,6 +316,24 @@ class SequentialValidatorService(ValidatorServiceBase):
                 result = cast(ValidationResult, result)
                 # if we have a concrete result, log it in the validation map
                 if isinstance(result, FailResult):
+                    processed_error_spans = []
+                    for span in result.error_spans:
+                        processed_error_spans.append(
+                            ProcessedErrorSpan(
+                                start=span.start,
+                                end=span.end,
+                                reason=span.reason,
+                                fragment=result.validated_chunk[span.start:span.end]
+                            )
+                        )
+                    validation_results.append(
+                        ValidationFragment(
+                            validatorName=validator.rail_alias,
+                            validatorStatus='fail',
+                            failureReason=result.error_message,
+                            error_spans=processed_error_spans
+                        )
+                    )
                     is_filter = validator.on_fail_descriptor is OnFailAction.FILTER
                     is_refrain = validator.on_fail_descriptor is OnFailAction.REFRAIN
                     if is_filter or is_refrain:
@@ -328,6 +350,14 @@ class SequentialValidatorService(ValidatorServiceBase):
                     fixed_values.append(chunk)
                     validator_partial_acc[validator.rail_alias] += chunk
                 elif isinstance(result, PassResult):
+                    validation_results.append(
+                        ValidationFragment(
+                            validatorName=validator.rail_alias,
+                            validatorStatus='pass',
+                            failureReason="",
+                            error_spans=[]
+                        )
+                    )
                     if (
                         validator.override_value_on_pass
                         and result.value_override is not result.ValueOverrideSentinel
@@ -343,7 +373,7 @@ class SequentialValidatorService(ValidatorServiceBase):
 
             if refrain_triggered:
                 # if we have a failresult from a refrain/filter validator, yield empty
-                yield "", acc_output, metadata
+                yield "", acc_output, metadata, validation_results
             else:
                 # if every validator has yielded a concrete value, merge and yield
                 # only merge and yield if all validators have run
@@ -360,7 +390,7 @@ class SequentialValidatorService(ValidatorServiceBase):
                     # reset validator_partial_acc
                     for validator in validators:
                         validator_partial_acc[validator.rail_alias] = ""
-                    yield merged_value, acc_output, metadata
+                    yield merged_value, acc_output, metadata, validation_results
                     acc_output = ""
                 else:
                     last_chunk_validated = False
@@ -383,6 +413,24 @@ class SequentialValidatorService(ValidatorServiceBase):
                 )
                 result = last_log.validation_result
                 if isinstance(result, FailResult):
+                    processed_error_spans = []
+                    for span in result.error_spans:
+                        processed_error_spans.append(
+                            ProcessedErrorSpan(
+                                start=span.start,
+                                end=span.end,
+                                reason=span.reason,
+                                fragment=result.validated_chunk[span.start:span.end]
+                            )
+                        )
+                    validation_results.append(
+                        ValidationFragment(
+                            validatorName=validator.rail_alias,
+                            validatorStatus='fail',
+                            failureReason=result.error_message,
+                            error_spans=processed_error_spans
+                        )
+                    )
                     rechecked_value = None
                     last_chunk = self.perform_correction(
                         [result],
@@ -393,6 +441,14 @@ class SequentialValidatorService(ValidatorServiceBase):
                     )
                     validator_partial_acc[validator.rail_alias] += last_chunk
                 elif isinstance(result, PassResult):
+                    validation_results.append(
+                        ValidationFragment(
+                            validatorName=validator.rail_alias,
+                            validatorStatus='pass',
+                            failureReason="",
+                            error_spans=[]
+                        )
+                    )
                     if (
                         validator.override_value_on_pass
                         and result.value_override is not result.ValueOverrideSentinel
@@ -408,7 +464,7 @@ class SequentialValidatorService(ValidatorServiceBase):
             for validator in validators:
                 values_to_merge.append(validator_partial_acc[validator.rail_alias])
             merged_value = self.multi_merge(acc_output, values_to_merge)
-            yield merged_value, original_text, metadata
+            yield merged_value, original_text, metadata, validation_results
             # yield merged value
 
     def run_validators_stream_noop(
@@ -420,7 +476,7 @@ class SequentialValidatorService(ValidatorServiceBase):
         absolute_property_path: str,
         reference_property_path: str,
         **kwargs,
-    ) -> Iterable[Tuple[Any, str, Dict[str, Any]]]:
+    ) -> Iterable[Tuple[Any, str, Dict[str, Any]], List[ValidationFragment]]:
         validators = validator_map.get(reference_property_path, [])
         # Validate the field
         # TODO: Under what conditions do we yield?
@@ -430,6 +486,7 @@ class SequentialValidatorService(ValidatorServiceBase):
         for chunk, finished in value_stream:
             has_none = False
             original_text = chunk
+            validation_results = []
             for validator in validators:
                 validator_logs = self.run_validator(
                     iteration,
@@ -447,6 +504,24 @@ class SequentialValidatorService(ValidatorServiceBase):
                 result = cast(ValidationResult, result)
 
                 if isinstance(result, FailResult):
+                    processed_error_spans = []
+                    for span in result.error_spans:
+                        processed_error_spans.append(
+                            ProcessedErrorSpan(
+                                start=span.start,
+                                end=span.end,
+                                reason=span.reason,
+                                fragment=result.validated_chunk[span.start:span.end]
+                            )
+                        )
+                    validation_results.append(
+                        ValidationFragment(
+                            validatorName=validator.rail_alias,
+                            validatorStatus='fail',
+                            failureReason=result.error_message,
+                            error_spans=processed_error_spans
+                        )
+                    )
                     rechecked_value = None
                     chunk = self.perform_correction(
                         [result],
@@ -456,6 +531,14 @@ class SequentialValidatorService(ValidatorServiceBase):
                         rechecked_value=rechecked_value,
                     )
                 elif isinstance(result, PassResult):
+                    validation_results.append(
+                        ValidationFragment(
+                            validatorName=validator.rail_alias,
+                            validatorStatus='pass',
+                            failureReason="",
+                            error_spans=[]
+                        )
+                    )
                     if (
                         validator.override_value_on_pass
                         and result.value_override is not result.ValueOverrideSentinel
@@ -465,10 +548,9 @@ class SequentialValidatorService(ValidatorServiceBase):
                 validator_logs.value_after_validation = chunk
                 if result and result.metadata is not None:
                     metadata = result.metadata
-                # # TODO: Filter is no longer terminal, so we shouldn't yield, right?
-                # if isinstance(chunk, (Refrain, Filter, ReAsk)):
-                #     yield chunk, metadata
-            yield chunk, original_text, metadata
+                if isinstance(chunk, (Refrain, Filter, ReAsk)):
+                    yield chunk, '', metadata, validation_results
+            yield chunk, original_text, metadata, validation_results
 
     def run_validators(
         self,
@@ -610,7 +692,7 @@ class SequentialValidatorService(ValidatorServiceBase):
         absolute_path: str,
         reference_path: str,
         **kwargs,
-    ) -> Iterable[Tuple[Any, str, dict]]:
+    ) -> Iterable[Tuple[Any, str, dict], List[ValidationFragment]]:
         # I assume validate stream doesn't need validate_dependents
         # because right now we're only handling StringSchema
 
@@ -961,7 +1043,7 @@ def validate_stream(
     disable_tracer: Optional[bool] = True,
     path: Optional[str] = None,
     **kwargs,
-) -> Iterable[Tuple[Any, str, dict]]:
+) -> Iterable[Tuple[Any, str, dict, List[ValidationFragment]]]:
     if path is None:
         path = "$"
     sequential_validator_service = SequentialValidatorService(disable_tracer)
