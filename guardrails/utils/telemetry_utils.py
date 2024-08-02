@@ -374,11 +374,12 @@ def trace_llm_call(
         for i, message in enumerate(input_messages):
             msg_obj = to_dict(message)
             for key, value in msg_obj.items():
-                standardized_key = f"message.{key}" if "message" not in key else key
-                current_span.set_attribute(
-                    f"llm.input_messages.{i}.{standardized_key}",
-                    serialize(value),  # type: ignore
-                )
+                if value is not None:
+                    standardized_key = f"message.{key}" if "message" not in key else key
+                    current_span.set_attribute(
+                        f"llm.input_messages.{i}.{standardized_key}",
+                        serialize(value),  # type: ignore
+                    )
 
     ser_invocation_parameters = serialize(invocation_parameters)
     if ser_invocation_parameters:
@@ -395,11 +396,12 @@ def trace_llm_call(
             # Most responses are either dictionaries or Pydantic models
             msg_obj = to_dict(message)
             for key, value in msg_obj.items():
-                standardized_key = f"message.{key}" if "message" not in key else key
-                current_span.set_attribute(
-                    f"llm.output_messages.{i}.{standardized_key}",
-                    serialize(value),  # type: ignore
-                )
+                if value is not None:
+                    standardized_key = f"message.{key}" if "message" not in key else key
+                    current_span.set_attribute(
+                        f"llm.output_messages.{i}.{standardized_key}",
+                        serialize(value),  # type: ignore
+                    )
 
     ser_prompt_template_template = serialize(prompt_template_template)
     if ser_prompt_template_template:
@@ -454,7 +456,7 @@ def add_guard_attributes(
         system_message = system_messages[-1] if system_messages else {}
         instructions = system_message.get("content", "")
     if not prompt:
-        user_messages = [msg for msg in messages if msg["role"] == "system"]
+        user_messages = [msg for msg in messages if msg["role"] == "user"]
         user_message = user_messages[-1] if user_messages else {}
         prompt = user_message.get("content", "")
     input_value = f"""
@@ -956,21 +958,29 @@ def add_validator_attributes(
             validator_span.set_attribute(f"validator.init.{k}", serialize(v) or "")
 
     ### Validator.validate ###
-    validator_span.set_attribute("validator.validate.value", value_arg)
-    validator_span.set_attribute("validator.validate.metadata", metadata_arg)
+    validator_span.set_attribute("validator.validate.input.value", value_arg)
+    validator_span.set_attribute("validator.validate.input.metadata", metadata_arg)
     for k, v in kwargs.items():
         if v is not None:
-            validator_span.set_attribute(f"validator.validate.{k}", serialize(v) or "")
-    trace_operation(input_value=value_arg, input_mime_type="text/plain")
+            validator_span.set_attribute(
+                f"validator.validate.input.{k}", serialize(v) or ""
+            )
+    trace_operation(
+        input_value={"value": value_arg, "metadata": metadata_arg},
+        input_mime_type="application/json",
+    )
 
     if result is not None:
+        output = result.to_dict()
         trace_operation(
-            output_value=result.to_dict(),
+            output_value=output,
             output_mime_type="application/json",
         )
-        validator_span.set_attribute(
-            "validator.validation_result.outcome", result.outcome
-        )
+        for k, v in output.items():
+            if v is not None:
+                validator_span.set_attribute(
+                    f"validator.validate.output.{k}", serialize(v) or ""
+                )
 
 
 def trace_validator(
