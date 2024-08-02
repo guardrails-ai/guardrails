@@ -54,8 +54,6 @@ class ValidatorServiceBase:
         traced_validator = trace_validator(
             validator_name=validator.rail_alias,
             obj_id=id(validator),
-            # TODO - re-enable once we have namespace support
-            # namespace=validator.namespace,
             on_fail_descriptor=validator.on_fail_descriptor,
             **validator._kwargs,
         )(validate_func)

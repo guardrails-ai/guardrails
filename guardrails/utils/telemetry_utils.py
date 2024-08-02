@@ -17,7 +17,6 @@ from typing import (
     Union,
 )
 
-from guardrails_api_client import ValidationResult
 from opentelemetry import context, trace
 from opentelemetry.context import Context
 from opentelemetry.trace import StatusCode, Tracer, Span
@@ -32,6 +31,7 @@ from guardrails.classes.generic.stack import Stack
 from guardrails.classes.history.call import Call
 from guardrails.classes.output_type import OT
 from guardrails.classes.validation_outcome import ValidationOutcome
+from guardrails.classes.validation.validation_result import ValidationResult
 from guardrails.stores.context import get_guard_name, get_tracer as get_context_tracer
 from guardrails.stores.context import get_tracer_context
 from guardrails.utils.casting_utils import to_string
@@ -92,6 +92,9 @@ def get_span(span: Optional[Span] = None) -> Optional[Span]:
         return None
 
 
+# TODO: How do we depreciate this?
+# We want to encourage users to utilize the validator spans
+#   instead of the events on the step span
 def trace_validator_result(
     current_span, validator_log: ValidatorLogs, attempt_number: int, **kwargs
 ):
@@ -143,6 +146,9 @@ def trace_validator_result(
     )
 
 
+# TODO: How do we depreciate this?
+# We want to encourage users to utilize the validator spans
+#   instead of the events on the step span
 def trace_validation_result(
     validation_logs: List[ValidatorLogs],
     attempt_number: int,
@@ -152,88 +158,6 @@ def trace_validation_result(
     if _current_span is not None:
         for log in validation_logs:
             trace_validator_result(_current_span, log, attempt_number)
-
-
-def trace_validator(
-    validator_name: str,
-    obj_id: int,
-    # TODO - re-enable once we have namespace support
-    # namespace: str = None,
-    on_fail_descriptor: Optional[str] = None,
-    tracer: Optional[Tracer] = None,
-    **init_kwargs,
-):
-    def trace_validator_wrapper(fn):
-        _tracer = get_tracer(tracer)
-
-        @wraps(fn)
-        def with_trace(*args, **kwargs):
-            span_name = (
-                # TODO - re-enable once we have namespace support
-                # f"{namespace}.{validator_name}.validate"
-                # if namespace is not None
-                # else f"{validator_name}.validate"
-                f"{validator_name}.validate"
-            )
-            trace_context = get_current_context()
-            if _tracer is None:
-                return fn(*args, **kwargs)
-            with _tracer.start_as_current_span(
-                span_name,  # type: ignore (Fails in Python 3.9 for invalid reason)
-                trace_context,
-            ) as validator_span:
-                try:
-                    validator_span.set_attribute("type", "guardrails/validator")
-                    validator_span.set_attribute(
-                        "validator.name", validator_name or "unknown"
-                    )
-                    validator_span.set_attribute(
-                        "validator_name", validator_name or "unknown"
-                    )
-                    validator_span.set_attribute(
-                        "on_fail_descriptor", on_fail_descriptor or "noop"
-                    )
-                    validator_span.set_attribute(
-                        "args",
-                        to_string({k: to_string(v) for k, v in init_kwargs.items()})
-                        or "{}",
-                    )
-                    validator_span.set_attribute("instance_id", to_string(obj_id) or "")
-
-                    # NOTE: Update if Validator.validate method signature ever changes
-                    if args is not None and len(args) > 1:
-                        validator_span.set_attribute("input", to_string(args[0]) or "")
-                        trace_operation(
-                            input_value=args[0], input_mime_type="text/plain"
-                        )
-
-                    resp = fn(*args, **kwargs)
-
-                    if isinstance(resp, ValidationResult):
-                        trace_operation(
-                            output_value=resp.to_dict(),
-                            output_mime_type="application/json",
-                        )
-                        validator_span.set_attribute(
-                            "span.attributes.validation_result.outcome", resp.outcome
-                        )
-
-                except Exception as e:
-                    validator_span.set_status(
-                        status=StatusCode.ERROR, description=str(e)
-                    )
-                    raise e
-
-        @wraps(fn)
-        def without_a_trace(*args, **kwargs):
-            return fn(*args, **kwargs)
-
-        if _tracer is not None and hasattr(_tracer, "start_as_current_span"):
-            return with_trace
-        else:
-            return without_a_trace
-
-    return trace_validator_wrapper
 
 
 def serialize(val: Any) -> Optional[str]:
@@ -265,108 +189,6 @@ def to_dict(val: Any) -> Dict:
             return dict(val)
     except Exception:
         return {}
-
-
-def trace_step_legacy(name: str, tracer: Optional[Tracer] = None):
-    def trace_wrapper(fn):
-        @wraps(fn)
-        def to_trace_or_not_to_trace(*args, **kwargs):
-            _tracer = get_tracer(tracer)
-
-            if _tracer is not None and hasattr(_tracer, "start_as_current_span"):
-                trace_context = get_current_context()
-                with _tracer.start_as_current_span(name, trace_context) as trace_span:  # type: ignore (Fails in Python 3.9 for invalid reason)
-                    try:
-                        ser_args = [serialize(arg) for arg in args]
-                        ser_kwargs = {k: serialize(v) for k, v in kwargs.items()}
-                        inputs = {
-                            "args": [sarg for sarg in ser_args if sarg is not None],
-                            "kwargs": {
-                                k: v for k, v in ser_kwargs.items() if v is not None
-                            },
-                        }
-                        trace_span.set_attribute("input.mime_type", "application/json")
-                        trace_span.set_attribute("input.value", json.dumps(inputs))
-                        # TODO: Capture args and kwargs as attributes?
-                        response = fn(*args, **kwargs)
-
-                        ser_output = serialize(response)
-                        if ser_output:
-                            trace_span.set_attribute(
-                                "output.mime_type", "application/json"
-                            )
-                            trace_span.set_attribute(
-                                "output.value",
-                                (
-                                    json.dumps(ser_output)
-                                    if isinstance(ser_output, dict)
-                                    else ser_output
-                                ),
-                            )
-                        return response
-                    except Exception as e:
-                        trace_span.set_status(
-                            status=StatusCode.ERROR, description=str(e)
-                        )
-                        raise e
-            else:
-                return fn(*args, **kwargs)
-
-        return to_trace_or_not_to_trace
-
-    return trace_wrapper
-
-
-def async_trace(name: str, tracer: Optional[Tracer] = None):
-    def trace_wrapper(fn):
-        @wraps(fn)
-        async def to_trace_or_not_to_trace(*args, **kwargs):
-            _tracer = get_tracer(tracer)
-
-            if _tracer is not None and hasattr(_tracer, "start_as_current_span"):
-                trace_context = get_current_context()
-                with _tracer.start_as_current_span(name, trace_context) as trace_span:  # type: ignore (Fails in Python 3.9 for invalid reason)
-                    try:
-                        ser_args = [serialize(arg) for arg in args]
-                        ser_kwargs = {k: serialize(v) for k, v in kwargs.items()}
-                        inputs = {
-                            "args": [sarg for sarg in ser_args if sarg is not None],
-                            "kwargs": {
-                                k: v for k, v in ser_kwargs.items() if v is not None
-                            },
-                        }
-                        trace_span.set_attribute("input.mime_type", "application/json")
-                        trace_span.set_attribute("input.value", json.dumps(inputs))
-                        # TODO: Capture args and kwargs as attributes?
-                        response = await fn(*args, **kwargs)
-
-                        ser_output = serialize(response)
-                        if ser_output:
-                            trace_span.set_attribute(
-                                "output.mime_type", "application/json"
-                            )
-                            trace_span.set_attribute(
-                                "output.value",
-                                (
-                                    json.dumps(ser_output)
-                                    if isinstance(ser_output, dict)
-                                    else ser_output
-                                ),
-                            )
-
-                        return response
-                    except Exception as e:
-                        trace_span.set_status(
-                            status=StatusCode.ERROR, description=str(e)
-                        )
-                        raise e
-            else:
-                response = await fn(*args, **kwargs)
-                return response
-
-        return to_trace_or_not_to_trace
-
-    return trace_wrapper
 
 
 def wrap_with_otel_context(
@@ -464,6 +286,11 @@ def default_otlp_tracer(resource_name: str = "guardrails"):
     trace.set_tracer_provider(traceProvider)
 
     return trace.get_tracer("guardrails-ai")
+
+
+################################################################
+###### START OpenInference Span Attribute Instrumentation ######
+################################################################
 
 
 def trace_operation(
@@ -600,6 +427,11 @@ def trace_llm_call(
 
     if token_count_total:
         current_span.set_attribute("llm.token_count.total", token_count_total)
+
+
+################################################################
+####### END OpenInference Span Attribute Instrumentation #######
+################################################################
 
 
 #########################################
@@ -1082,4 +914,120 @@ def trace_async_call(fn: Callable[..., Awaitable[LLMResponse]]):
 
 #########################################
 #### END Runner.call Instrumentation ####
+#########################################
+
+
+#########################################
+#### START Validator Instrumentation ####
+#########################################
+
+
+def add_validator_attributes(
+    *args,
+    validator_span: Span,
+    validator_name: str,
+    obj_id: int,
+    on_fail_descriptor: Optional[str] = None,
+    result: Optional[ValidationResult] = None,
+    init_kwargs: Dict[str, Any] = {},
+    **kwargs,
+):
+    value_arg = serialize(safe_get(args, 0)) or ""
+    metadata_arg = serialize(safe_get(args, 1, {})) or "{}"
+
+    # Legacy Span Attributes
+    validator_span.set_attribute("on_fail_descriptor", on_fail_descriptor or "noop")
+    validator_span.set_attribute(
+        "args",
+        to_string({k: to_string(v) for k, v in init_kwargs.items()}) or "{}",
+    )
+    validator_span.set_attribute("instance_id", serialize(obj_id) or "")
+    validator_span.set_attribute("input", value_arg)
+
+    # New Span Attributes
+    validator_span.set_attribute("type", "guardrails/guard/step/validator")
+
+    ### Validator.__init__ ###
+    validator_span.set_attribute("validator.name", validator_name or "unknown")
+    validator_span.set_attribute("validator.on_fail", on_fail_descriptor or "noop")
+    validator_span.set_attribute("validator.instance_id", serialize(obj_id) or "")
+    for k, v in init_kwargs.items():
+        if v is not None:
+            validator_span.set_attribute(f"validator.init.{k}", serialize(v) or "")
+
+    ### Validator.validate ###
+    validator_span.set_attribute("validator.validate.value", value_arg)
+    validator_span.set_attribute("validator.validate.metadata", metadata_arg)
+    for k, v in kwargs.items():
+        if v is not None:
+            validator_span.set_attribute(f"validator.validate.{k}", serialize(v) or "")
+    trace_operation(input_value=value_arg, input_mime_type="text/plain")
+
+    if result is not None:
+        trace_operation(
+            output_value=result.to_dict(),
+            output_mime_type="application/json",
+        )
+        validator_span.set_attribute(
+            "validator.validation_result.outcome", result.outcome
+        )
+
+
+def trace_validator(
+    validator_name: str,
+    obj_id: int,
+    on_fail_descriptor: Optional[str] = None,
+    tracer: Optional[Tracer] = None,
+    **init_kwargs,
+):
+    def trace_validator_decorator(fn: Callable[..., Optional[ValidationResult]]):
+        @wraps(fn)
+        def trace_validator_wrapper(*args, **kwargs):
+            if not settings.disable_tracing:
+                current_otel_context = context.get_current()
+                _tracer = get_tracer(tracer) or trace.get_tracer(
+                    "guardrails-ai", GUARDRAILS_VERSION
+                )
+                validator_span_name = f"{validator_name}.validate"
+                with _tracer.start_as_current_span(
+                    name=validator_span_name, context=current_otel_context
+                ) as validator_span:
+                    try:
+                        resp = fn(*args, **kwargs)
+                        add_validator_attributes(
+                            *args,
+                            validator_span=validator_span,
+                            validator_name=validator_name,
+                            obj_id=obj_id,
+                            on_fail_descriptor=on_fail_descriptor,
+                            result=resp,
+                            init_kwargs=init_kwargs,
+                            **kwargs,
+                        )
+                        return resp
+                    except Exception as e:
+                        validator_span.set_status(
+                            status=StatusCode.ERROR, description=str(e)
+                        )
+                        add_validator_attributes(
+                            *args,
+                            validator_span=validator_span,
+                            validator_name=validator_name,
+                            obj_id=obj_id,
+                            on_fail_descriptor=on_fail_descriptor,
+                            result=None,
+                            init_kwargs=init_kwargs,
+                            **kwargs,
+                        )
+                        raise e
+            else:
+                return fn(*args, **kwargs)
+
+        return trace_validator_wrapper
+
+    return trace_validator_decorator
+
+
+#########################################
+##### END Validator Instrumentation #####
 #########################################
