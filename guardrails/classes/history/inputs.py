@@ -7,6 +7,7 @@ from guardrails.classes.generic.arbitrary_model import ArbitraryModel
 from guardrails.llm_providers import PromptCallableBase
 from guardrails.prompt.instructions import Instructions
 from guardrails.prompt.prompt import Prompt
+from guardrails.prompt.messages import Messages
 
 
 class Inputs(IInputs, ArbitraryModel):
@@ -49,6 +50,10 @@ class Inputs(IInputs, ArbitraryModel):
         description="The constructed Prompt class.", default=None
     )
     msg_history: Optional[List[Dict]] = Field(
+        description="The message history provided by the user for chat model calls.",
+        default=None,
+    )
+    messages: Optional[List[Messages]] = Field(
         description="The message history provided by the user for chat model calls.",
         default=None,
     )
