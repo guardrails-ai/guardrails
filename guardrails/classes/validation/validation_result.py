@@ -180,11 +180,13 @@ class ErrorSpan(IErrorSpan, ArbitraryModel):
     # reason validation failed, specific to this chunk
     reason: str
 
+
 class ProcessedErrorSpan(ErrorSpan):
-    fragment:str
+    fragment: str
+
 
 class ValidationFragment(BaseModel):
-    validatorName:str
-    validatorStatus:Union[Literal["pass"],Literal["fail"]]
-    failureReason:str
-    errorSpans:List[ProcessedErrorSpan]
+    validator_name: str
+    validator_status: Union[Literal["pass"], Literal["fail"]]
+    failure_reason: str
+    error_spans: List[ProcessedErrorSpan]

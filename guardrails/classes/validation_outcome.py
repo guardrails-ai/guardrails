@@ -16,7 +16,6 @@ from guardrails.constants import pass_status
 from guardrails.utils.safe_get import safe_get
 
 
-
 class ValidationOutcome(IValidationOutcome, ArbitraryModel, Generic[OT]):
     """The final output from a Guard execution.
 
@@ -32,7 +31,8 @@ class ValidationOutcome(IValidationOutcome, ArbitraryModel, Generic[OT]):
             passed validation. If this is False, the validated_output may be invalid.
         error: If the validation failed, this field will contain the error message
     """
-    validation_results:Optional[List[ValidationFragment]] = None
+
+    validation_results: Optional[List[ValidationFragment]] = None
 
     raw_llm_output: Optional[str] = Field(
         description="The raw, unchanged output from the LLM call.", default=None

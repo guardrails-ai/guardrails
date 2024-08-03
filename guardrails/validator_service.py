@@ -237,7 +237,7 @@ class SequentialValidatorService(ValidatorServiceBase):
         absolute_property_path: str,
         reference_property_path: str,
         **kwargs,
-    ) -> Iterable[Tuple[Any, str, Dict[str, Any]], List[ValidationFragment]]:
+    ) -> Iterable[Tuple[Any, str, Dict[str, Any],List[ValidationFragment]] ]:
         validators = validator_map.get(reference_property_path, [])
         for validator in validators:
             if validator.on_fail_descriptor == OnFailAction.FIX:
@@ -277,7 +277,7 @@ class SequentialValidatorService(ValidatorServiceBase):
         absolute_property_path: str,
         reference_property_path: str,
         **kwargs,
-    ) -> Iterable[Tuple[Any, str, Dict[str, Any]], List[ValidationFragment]]:
+    ) -> Iterable[Tuple[Any, str, Dict[str, Any],List[ValidationFragment]] ]:
         validators = validator_map.get(reference_property_path, [])
         acc_output = ""
         validator_partial_acc: dict[str, str] = {}
@@ -317,21 +317,21 @@ class SequentialValidatorService(ValidatorServiceBase):
                 # if we have a concrete result, log it in the validation map
                 if isinstance(result, FailResult):
                     processed_error_spans = []
-                    for span in result.error_spans:
+                    for span in result.error_spans or []:
                         processed_error_spans.append(
                             ProcessedErrorSpan(
                                 start=span.start,
                                 end=span.end,
                                 reason=span.reason,
-                                fragment=result.validated_chunk[span.start:span.end]
+                                fragment=result.validated_chunk[span.start : span.end],
                             )
                         )
                     validation_results.append(
                         ValidationFragment(
-                            validatorName=validator.rail_alias,
-                            validatorStatus='fail',
-                            failureReason=result.error_message,
-                            error_spans=processed_error_spans
+                            validator_name=validator.rail_alias,
+                            validator_status="fail",
+                            failure_reason=result.error_message,
+                            error_spans=processed_error_spans,
                         )
                     )
                     is_filter = validator.on_fail_descriptor is OnFailAction.FILTER
@@ -352,10 +352,10 @@ class SequentialValidatorService(ValidatorServiceBase):
                 elif isinstance(result, PassResult):
                     validation_results.append(
                         ValidationFragment(
-                            validatorName=validator.rail_alias,
-                            validatorStatus='pass',
-                            failureReason="",
-                            error_spans=[]
+                            validator_name=validator.rail_alias,
+                            validator_status="pass",
+                            failure_reason="",
+                            error_spans=[],
                         )
                     )
                     if (
@@ -414,21 +414,21 @@ class SequentialValidatorService(ValidatorServiceBase):
                 result = last_log.validation_result
                 if isinstance(result, FailResult):
                     processed_error_spans = []
-                    for span in result.error_spans:
+                    for span in result.error_spans or []:
                         processed_error_spans.append(
                             ProcessedErrorSpan(
                                 start=span.start,
                                 end=span.end,
                                 reason=span.reason,
-                                fragment=result.validated_chunk[span.start:span.end]
+                                fragment=result.validated_chunk[span.start : span.end],
                             )
                         )
                     validation_results.append(
                         ValidationFragment(
-                            validatorName=validator.rail_alias,
-                            validatorStatus='fail',
-                            failureReason=result.error_message,
-                            error_spans=processed_error_spans
+                            validator_name=validator.rail_alias,
+                            validator_status="fail",
+                            failure_reason=result.error_message,
+                            error_spans=processed_error_spans,
                         )
                     )
                     rechecked_value = None
@@ -443,10 +443,10 @@ class SequentialValidatorService(ValidatorServiceBase):
                 elif isinstance(result, PassResult):
                     validation_results.append(
                         ValidationFragment(
-                            validatorName=validator.rail_alias,
-                            validatorStatus='pass',
-                            failureReason="",
-                            error_spans=[]
+                            validator_name=validator.rail_alias,
+                            validator_status="pass",
+                            failure_reason="",
+                            error_spans=[],
                         )
                     )
                     if (
@@ -476,7 +476,7 @@ class SequentialValidatorService(ValidatorServiceBase):
         absolute_property_path: str,
         reference_property_path: str,
         **kwargs,
-    ) -> Iterable[Tuple[Any, str, Dict[str, Any]], List[ValidationFragment]]:
+    ) -> Iterable[Tuple[Any, str, Dict[str, Any],List[ValidationFragment]] ]:
         validators = validator_map.get(reference_property_path, [])
         # Validate the field
         # TODO: Under what conditions do we yield?
@@ -502,26 +502,26 @@ class SequentialValidatorService(ValidatorServiceBase):
                 if result is None:
                     has_none = True
                 result = cast(ValidationResult, result)
-
                 if isinstance(result, FailResult):
                     processed_error_spans = []
-                    for span in result.error_spans:
+                    for span in result.error_spans or []:
                         processed_error_spans.append(
                             ProcessedErrorSpan(
                                 start=span.start,
                                 end=span.end,
                                 reason=span.reason,
-                                fragment=result.validated_chunk[span.start:span.end]
+                                fragment=result.validated_chunk[span.start : span.end],
                             )
                         )
                     validation_results.append(
                         ValidationFragment(
-                            validatorName=validator.rail_alias,
-                            validatorStatus='fail',
-                            failureReason=result.error_message,
-                            error_spans=processed_error_spans
+                            validator_name=validator.rail_alias,
+                            validator_status="fail",
+                            failure_reason=result.error_message,
+                            error_spans=processed_error_spans,
                         )
                     )
+                    print('fail', validation_results)
                     rechecked_value = None
                     chunk = self.perform_correction(
                         [result],
@@ -533,12 +533,13 @@ class SequentialValidatorService(ValidatorServiceBase):
                 elif isinstance(result, PassResult):
                     validation_results.append(
                         ValidationFragment(
-                            validatorName=validator.rail_alias,
-                            validatorStatus='pass',
-                            failureReason="",
-                            error_spans=[]
+                            validator_name=validator.rail_alias,
+                            validator_status="pass",
+                            failure_reason="",
+                            error_spans=[],
                         )
                     )
+                    print('pass', validation_results)
                     if (
                         validator.override_value_on_pass
                         and result.value_override is not result.ValueOverrideSentinel
@@ -549,7 +550,7 @@ class SequentialValidatorService(ValidatorServiceBase):
                 if result and result.metadata is not None:
                     metadata = result.metadata
                 if isinstance(chunk, (Refrain, Filter, ReAsk)):
-                    yield chunk, '', metadata, validation_results
+                    yield chunk, "", metadata, validation_results
             yield chunk, original_text, metadata, validation_results
 
     def run_validators(
@@ -692,7 +693,7 @@ class SequentialValidatorService(ValidatorServiceBase):
         absolute_path: str,
         reference_path: str,
         **kwargs,
-    ) -> Iterable[Tuple[Any, str, dict], List[ValidationFragment]]:
+    ) -> Iterable[Tuple[Any, str, dict, List[ValidationFragment]] ]:
         # I assume validate stream doesn't need validate_dependents
         # because right now we're only handling StringSchema
 
