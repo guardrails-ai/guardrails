@@ -237,7 +237,7 @@ class SequentialValidatorService(ValidatorServiceBase):
         absolute_property_path: str,
         reference_property_path: str,
         **kwargs,
-    ) -> Iterable[Tuple[Any, str, Dict[str, Any],List[ValidationFragment]] ]:
+    ) -> Iterable[Tuple[Any, str, Dict[str, Any], List[ValidationFragment]]]:
         validators = validator_map.get(reference_property_path, [])
         for validator in validators:
             if validator.on_fail_descriptor == OnFailAction.FIX:
@@ -277,7 +277,7 @@ class SequentialValidatorService(ValidatorServiceBase):
         absolute_property_path: str,
         reference_property_path: str,
         **kwargs,
-    ) -> Iterable[Tuple[Any, str, Dict[str, Any],List[ValidationFragment]] ]:
+    ) -> Iterable[Tuple[Any, str, Dict[str, Any], List[ValidationFragment]]]:
         validators = validator_map.get(reference_property_path, [])
         acc_output = ""
         validator_partial_acc: dict[str, str] = {}
@@ -476,7 +476,7 @@ class SequentialValidatorService(ValidatorServiceBase):
         absolute_property_path: str,
         reference_property_path: str,
         **kwargs,
-    ) -> Iterable[Tuple[Any, str, Dict[str, Any],List[ValidationFragment]] ]:
+    ) -> Iterable[Tuple[Any, str, Dict[str, Any], List[ValidationFragment]]]:
         validators = validator_map.get(reference_property_path, [])
         # Validate the field
         # TODO: Under what conditions do we yield?
@@ -521,7 +521,7 @@ class SequentialValidatorService(ValidatorServiceBase):
                             error_spans=processed_error_spans,
                         )
                     )
-                    print('fail', validation_results)
+                    print("fail", validation_results)
                     rechecked_value = None
                     chunk = self.perform_correction(
                         [result],
@@ -539,7 +539,7 @@ class SequentialValidatorService(ValidatorServiceBase):
                             error_spans=[],
                         )
                     )
-                    print('pass', validation_results)
+                    print("pass", validation_results)
                     if (
                         validator.override_value_on_pass
                         and result.value_override is not result.ValueOverrideSentinel
@@ -693,7 +693,7 @@ class SequentialValidatorService(ValidatorServiceBase):
         absolute_path: str,
         reference_path: str,
         **kwargs,
-    ) -> Iterable[Tuple[Any, str, dict, List[ValidationFragment]] ]:
+    ) -> Iterable[Tuple[Any, str, dict, List[ValidationFragment]]]:
         # I assume validate stream doesn't need validate_dependents
         # because right now we're only handling StringSchema
 

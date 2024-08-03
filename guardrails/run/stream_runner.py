@@ -186,7 +186,7 @@ class StreamRunner(Runner):
                 # 5. Convert validated fragment to a pretty JSON string
                 validation_response += cast(str, validated_text)
                 passed = call_log.status == pass_status
-                print('validation_results', validation_results)
+                print("validation_results", validation_results)
                 yield ValidationOutcome(
                     call_id=call_log.id,  # type: ignore
                     #  The chunk or the whole output?
