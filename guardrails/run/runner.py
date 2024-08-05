@@ -375,6 +375,7 @@ class Runner:
                 raise ValidationError("Message content validation failed")
 
             msg["content"] = cast(str, validated_msg)
+            validated_msgs += validated_msg
 
         iteration.outputs.validation_response = validated_msgs
 
