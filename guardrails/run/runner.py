@@ -1,6 +1,6 @@
 import copy
 from functools import partial
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union, cast
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
 
 
 from guardrails import validator_service
@@ -574,7 +574,6 @@ class Runner:
             parsed_output = prune_extra_keys(parsed_output, output_schema)
             parsed_output = coerce_types(parsed_output, output_schema)
         return parsed_output, error
-
 
     def validate(
         self,

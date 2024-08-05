@@ -485,6 +485,7 @@ SAN Francisco's hills, his HOME.
 """
     )
 
+
 def test_filter_behavior(mocker):
     mocker.patch(
         "openai.resources.chat.completions.Completions.create",
@@ -512,5 +513,4 @@ def test_filter_behavior(mocker):
         == """"John, under GOLDEN bridges, roams,
 SAN Francisco's hills, his HOME.
 """
-)
-
+    )

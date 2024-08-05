@@ -169,7 +169,7 @@ class StreamRunner(Runner):
                 iteration,
                 self._disable_tracer,
                 "$",
-                validate_subschema=True
+                validate_subschema=True,
             )
 
             for validated_text, original_text, metadata in gen:
