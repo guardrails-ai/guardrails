@@ -369,10 +369,10 @@ class Runner:
 
             if isinstance(validated_msg, ReAsk):
                 raise ValidationError(
-                    f"Message content validation failed: {validated_msg}"
+                    f"Message history validation failed: {validated_msg}"
                 )
             elif not validated_msg or iteration.status == fail_status:
-                raise ValidationError("Message content validation failed")
+                raise ValidationError("Message history validation failed")
 
             msg["content"] = cast(str, validated_msg)
             validated_msgs += validated_msg
