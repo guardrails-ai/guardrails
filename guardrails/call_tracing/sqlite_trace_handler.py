@@ -90,10 +90,6 @@ class SQLiteTraceHandler(TracerMixin):
         else:
             self.db = SQLiteTraceHandler._get_write_connection(log_path)
 
-    @property
-    def log_path(self):
-        return self._log_path
-
     @classmethod
     def _get_write_connection(cls, log_path: os.PathLike) -> sqlite3.Connection:
         try:
@@ -193,17 +189,21 @@ class SQLiteTraceHandler(TracerMixin):
             )
         self._truncate()
 
+    def clear_logs(self):
+        self.db.execute("DELETE FROM guard_logs;")
+
     def tail_logs(
         self, start_offset_idx: int = 0, follow: bool = False
     ) -> Iterator[GuardTraceEntry]:
-        """Returns an iterator to generate GuardLogEntries. @param
-        start_offset_idx : Start printing entries after this IDX. If.
+        """Returns an iterator to generate GuardLogEntries.
 
-        negative, this will instead start printing the LAST
-        start_offset_idx entries. @param follow : If follow is True,
-        will re-check the database for new entries after the first batch
-        is complete.  If False (default), will return when entries are
-        exhausted.
+        @param start_offset_idx : Start printing entries after this IDX.
+        If negative, this will instead start printing the LAST
+        start_offset_idx entries.
+
+        @param follow : If follow is True, will re-check the database
+        for new entries after the first batch is complete.  If False
+        (default), will return when entries are exhausted.
         """
         last_idx = start_offset_idx
         cursor = self.db.cursor()

@@ -1,9 +1,6 @@
-
-# Response Formatting and Structured Data
+# Generate Structured Data
 
 Guardrails provides several interfaces to help llms respond in valid JSON which can then be validated using Guardrails validators. In this cookbook, we'll demonstrate how each interface is used with examples.
-
-To learn more about our approach to structured data, see the [Structured Data](https://guardrailsai.com/docs/structured_data) guide.
 
 ## Prerequisites
 
@@ -65,7 +62,7 @@ messages = [{
 
 ### Function/tool calling structured response formatting
 
-For models that support openai tool/function calling(`gpt-4o`, `gpt-4-turbo`, or `gpt-3.5-turbo`). Learn more about tools [here](https://guardrailsai.com/docs/tools).
+For models that support openai tool/function calling(`gpt-4o`, `gpt-4-turbo`, or `gpt-3.5-turbo`).
 
 ```py
 tools = [] # an open ai compatible list of tools
@@ -74,14 +71,14 @@ response = guard(
     model="gpt-4o",
     messages=messages,
     prompt_params={"chat_history": chat_history},
-    tools=guard.add_json_function_calling_tool(tools),
+    tools=guard.json_function_calling_tool(tools),
     tool_choice="required",
 )
 ```
 
 ### Prompt Updates
 
-For models that support JSON through prompt engineering and hinting (most models). Learn more about prompt engineering for structured data [here](https://guardrailsai.com/docs/prompt_engineering).
+For models that support JSON through prompt engineering and hinting (most models).
 
 
 ```py
@@ -101,7 +98,7 @@ response = guard(
 
 ### Constrained decoding structured response formatting
 
-For Hugging Face models structured JSON output maybe returned utilizing constrained decoding. Constrained decoding is a technique that allows you to guide the model to generate a specific type of output, a little bit like JSON ad-libs. Learn more about constrained decoding [here](https://guardrailsai.com/docs/constrained_decoding).
+For Hugging Face models structured JSON output maybe returned utilizing constrained decoding. Constrained decoding is a technique that allows you to guide the model to generate a specific type of output, a little bit like JSON ad-libs. Learn more about constrained decoding [here](https://www.guardrailsai.com/blog/json-with-open-source-models).
 
 ```python
 g = Guard.from_pydantic(NewFriends, output_formatter="jsonformer")

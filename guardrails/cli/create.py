@@ -41,6 +41,14 @@ def create_command(
 ):
     filepath = check_filename(filepath)
     installed_validators = split_and_install_validators(validators, dry_run)
+
+    if name is None:
+        name = "Guard"
+        if len(installed_validators) > 0:
+            name = installed_validators[0] + "Guard"
+
+        console.print(f"No name provided for guard. Defaulting to {name}")
+
     new_config_file = generate_config_file(installed_validators, name)
     if dry_run:
         console.print(f"Not actually saving output to [bold]{filepath}[/bold]")
@@ -59,8 +67,11 @@ def create_command(
 
 
 def check_filename(filename: Union[str, os.PathLike]) -> str:
-    """If a filename is specified and already exists, will prompt the user to confirm
-    overwriting.  Aborts if the user declines."""
+    """If a filename is specified and already exists, will prompt the user to
+    confirm overwriting.
+
+    Aborts if the user declines.
+    """
     if os.path.exists(filename):
         # Alert the user and get confirmation of overwrite.
         overwrite = typer.confirm(
@@ -74,9 +85,11 @@ def check_filename(filename: Union[str, os.PathLike]) -> str:
 
 
 def split_and_install_validators(validators: str, dry_run: bool = False):
-    """Given a comma-separated list of validators, check the hub to make sure all of
-    them exist, install them, and return a list of 'imports'.  If validators is empty,
-    returns an empty list."""
+    """Given a comma-separated list of validators, check the hub to make sure
+    all of them exist, install them, and return a list of 'imports'.
+
+    If validators is empty, returns an empty list.
+    """
     if not validators:
         return []
 
@@ -138,16 +151,22 @@ def generate_config_file(validators: List[str], name: Optional[str] = None) -> s
     if name is not None:
         config_lines.append(f"guard.name = {name.__repr__()}")
 
+    # Warn the user that they need to update their config file.
+    config_lines.append(
+        'print("GUARD PARAMETERS UNFILLED! UPDATE THIS FILE!")'
+        "  # TODO: Remove this when parameters are filled."
+    )
+
     # Append validators:
     if len(validators) == 1:
-        config_lines.append(f"guard.use({validators[0]}( TODO Fill these parameters ))")
+        config_lines.append(f"guard.use({validators[0]}())  # TODO: Add parameters.")
     elif len(validators) > 1:
-        multi_use = ",\n".join(
+        multi_use = "".join(
             [
-                "\t" + validator + "( TODO fill these parameters )"
+                "\t" + validator + "(),  # TODO: Add parameters.\n"
                 for validator in validators
             ]
         )
-        config_lines.append(f"guard.use_many(\n{multi_use}\n)")
+        config_lines.append(f"guard.use_many(\n{multi_use})")
 
     return "\n".join(config_lines)

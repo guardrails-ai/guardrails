@@ -49,7 +49,7 @@ class GuardrailsApiClient:
         try:
             return self._guard_api.get_guard(guard_name=guard_name)
         except Exception as e:
-            logger.debug(f"Error fetching guard {guard_name}: {e}")
+            logger.error(f"Error fetching guard {guard_name}: {e}")
             return None
 
     def validate(

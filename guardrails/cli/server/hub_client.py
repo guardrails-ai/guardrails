@@ -1,4 +1,5 @@
 import sys
+import os
 from importlib.metadata import version
 from string import Template
 from typing import Any, Dict, Optional
@@ -22,7 +23,9 @@ to update your token.
 {FIND_NEW_TOKEN}"""
 GUARDRAILS_VERSION = version("guardrails-ai")
 
-validator_hub_service = "https://so4sg4q4pb.execute-api.us-east-1.amazonaws.com"
+VALIDATOR_HUB_SERVICE = os.getenv(
+    "GR_VALIDATOR_HUB_SERVICE", "https://so4sg4q4pb.execute-api.us-east-1.amazonaws.com"
+)
 validator_manifest_endpoint = Template(
     "validator-manifests/${namespace}/${validator_name}"
 )
@@ -80,7 +83,7 @@ def fetch_module_manifest(
     manifest_path = validator_manifest_endpoint.safe_substitute(
         namespace=namespace, validator_name=validator_name
     )
-    manifest_url = f"{validator_hub_service}/{manifest_path}"
+    manifest_url = f"{VALIDATOR_HUB_SERVICE}/{manifest_path}"
     return fetch(manifest_url, token, anonymousUserId)
 
 
@@ -130,7 +133,7 @@ def get_auth():
     try:
         creds = Credentials.from_rc_file(logger)
         token = get_jwt_token(creds)
-        auth_url = f"{validator_hub_service}/auth"
+        auth_url = f"{VALIDATOR_HUB_SERVICE}/auth"
         response = fetch(auth_url, token, creds.id)
         if not response:
             raise AuthenticationError("Failed to authenticate!")
@@ -148,7 +151,7 @@ def post_validator_submit(package_name: str, content: str):
     try:
         creds = Credentials.from_rc_file(logger)
         token = get_jwt_token(creds)
-        submission_url = f"{validator_hub_service}/validator/submit"
+        submission_url = f"{VALIDATOR_HUB_SERVICE}/validator/submit"
 
         headers = {
             "Authorization": f"Bearer {token}",

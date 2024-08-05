@@ -1,7 +1,7 @@
 import asyncio
 import concurrent.futures
 import time
-from multiprocessing import Pool
+from multiprocessing import Pool, Process
 
 from guardrails.call_tracing import TraceHandler
 
@@ -49,6 +49,18 @@ def test_multithreading_acquired():
             out.result()
 
 
+def test_clear_logs_while_logging():
+    # Hammer writes to the logfile while clearing from a separate process.
+    # See if anything crashes.
+    p = Process(target=_write_to_logs_a_bunch, args=(256, 0.01))
+    p.start()
+    trace_logger = TraceHandler()
+    for _ in range(256):
+        trace_logger.clear_logs()
+        time.sleep(0.01)
+    p.join()
+
+
 def test_asyncio_hoisted():
     async def do_it(msg: str):
         _hoisted_logger(msg)
@@ -84,3 +96,17 @@ def _acquired_logger(msg):
     trace_logger.log(
         "acquired", start, end, "Testing behavior of an acquired logger.", msg, ""
     )
+
+
+def _write_to_logs_a_bunch(count: int, delay: float):
+    trace_logger = TraceHandler()
+    for i in range(count):
+        trace_logger.log(
+            "acquired",
+            time.time(),
+            time.time(),
+            f"Writing message {i} of {count} with {delay} seconds between them.",
+            "",
+            "",
+        )
+        time.sleep(delay)

@@ -19,6 +19,7 @@ from guardrails.utils.parsing_utils import (
 )
 from guardrails.actions.reask import ReAsk, SkeletonReAsk
 from guardrails.constants import pass_status
+from guardrails.utils.telemetry_utils import trace
 
 
 class StreamRunner(Runner):
@@ -73,6 +74,7 @@ class StreamRunner(Runner):
             call_log=call_log,
         )
 
+    @trace(name="step")
     def step(
         self,
         index: int,
