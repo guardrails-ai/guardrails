@@ -344,25 +344,41 @@ class Runner:
         )
         iteration = Iteration(call_id=call_log.id, index=attempt_number, inputs=inputs)
         call_log.iterations.insert(0, iteration)
-        value, _metadata = validator_service.validate(
-            value=msg_str,
-            metadata=self.metadata,
-            validator_map=self.validation_map,
-            iteration=iteration,
-            disable_tracer=self._disable_tracer,
-            path="msg_history",
-        )
-        validated_msg_history = validator_service.post_process_validation(
-            value, attempt_number, iteration, OutputTypes.STRING
-        )
 
-        iteration.outputs.validation_response = validated_msg_history
-        if isinstance(validated_msg_history, ReAsk):
-            raise ValidationError(
-                f"Message history validation failed: " f"{validated_msg_history}"
+        validated_msgs = ""
+
+        for msg in msg_history:
+            content = (
+                msg["content"].source
+                if isinstance(msg["content"], Prompt)
+                else msg["content"]
             )
-        if validated_msg_history != msg_str:
-            raise ValidationError("Message history validation failed")
+
+            value, _metadata = validator_service.validate(
+                value=content,
+                metadata=self.metadata,
+                validator_map=self.validation_map,
+                iteration=iteration,
+                disable_tracer=self._disable_tracer,
+                path="msg_history",
+            )
+
+            validated_msg = validator_service.post_process_validation(
+                value, attempt_number, iteration, OutputTypes.STRING
+            )
+
+            if isinstance(validated_msg, ReAsk):
+                raise ValidationError(
+                    f"Message content validation failed: {validated_msg}"
+                )
+            elif not validated_msg or iteration.status == fail_status:
+                raise ValidationError("Message content validation failed")
+
+            msg["content"] = cast(str, validated_msg)
+
+        iteration.outputs.validation_response = validated_msgs
+
+        return msg_history
 
     def prepare_msg_history(
         self,
@@ -380,7 +396,9 @@ class Runner:
 
         # validate msg_history
         if "msg_history" in self.validation_map:
-            self.validate_msg_history(call_log, formatted_msg_history, attempt_number)
+            formatted_msg_history = self.validate_msg_history(
+                call_log, formatted_msg_history, attempt_number
+            )
 
         return formatted_msg_history
 
