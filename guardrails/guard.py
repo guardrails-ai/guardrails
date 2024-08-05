@@ -216,9 +216,6 @@ class Guard(IGuard, Generic[OT]):
             if not _loaded:
                 self._save()
 
-        # Set Context Variables
-        set_guard_name(self.name)
-
     @field_validator("output_schema")
     @classmethod
     def must_be_valid_json_schema(
@@ -730,6 +727,7 @@ class Guard(IGuard, Generic[OT]):
             set_call_kwargs(kwargs)
             set_tracer(self._tracer)
             set_tracer_context(self._tracer_context)
+            set_guard_name(self.name)
 
             self._set_num_reasks(num_reasks=num_reasks)
             if self._num_reasks is None:
