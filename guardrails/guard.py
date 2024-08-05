@@ -465,11 +465,13 @@ class Guard(IGuard, Generic[OT]):
         cls,
         output_class: ModelOrListOfModels,
         *,
-        prompt: Optional[str] = None,  # TODO: deprecate this in 0.5.1
-        instructions: Optional[str] = None,  # TODO: deprecate this in 0.5.1
+        prompt: Optional[str] = None,
+        instructions: Optional[str] = None,
         num_reasks: Optional[int] = None,
-        reask_prompt: Optional[str] = None,  # TODO: deprecate this in 0.5.1
-        reask_instructions: Optional[str] = None,  # TODO: deprecate this in 0.5.1
+        reask_prompt: Optional[str] = None,
+        reask_instructions: Optional[str] = None,
+        reask_messages: Optional[List[Dict]] = None,
+        messages: Optional[List[Dict]] = None,
         tracer: Optional[Tracer] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
@@ -485,6 +487,7 @@ class Guard(IGuard, Generic[OT]):
             instructions (str, optional): Instructions for chat models. Defaults to None.
             reask_prompt (str, optional): An alternative prompt to use during reasks. Defaults to None.
             reask_instructions (str, optional): Alternative instructions to use during reasks. Defaults to None.
+            reask_messages (List[Dict], optional): A list of messages to use during reasks. Defaults to None.
             num_reasks (int, optional): The max times to re-ask the LLM if validation fails. Deprecated
             tracer (Tracer, optional): An OpenTelemetry tracer to use for metrics and traces. Defaults to None.
             name (str, optional): A unique name for this Guard. Defaults to `gr-` + the object id.
@@ -503,6 +506,19 @@ class Guard(IGuard, Generic[OT]):
                 DeprecationWarning,
             )
 
+        if reask_instructions:
+            warnings.warn(
+                "reask_instructions is deprecated and will be removed in 0.6.x!"
+                "Please be prepared to set reask_messages instead.",
+                DeprecationWarning,
+            )
+        if reask_prompt:
+            warnings.warn(
+                "reask_prompt is deprecated and will be removed in 0.6.x!"
+                "Please be prepared to set reask_messages instead.",
+                DeprecationWarning,
+            )
+
         # We have to set the tracer in the ContextStore before the Rail,
         #   and therefore the Validators, are initialized
         cls._set_tracer(cls, tracer)  # type: ignore
@@ -513,6 +529,8 @@ class Guard(IGuard, Generic[OT]):
             instructions=instructions,
             reask_prompt=reask_prompt,
             reask_instructions=reask_instructions,
+            reask_messages=reask_messages,
+            messages=messages,
         )
         guard = cls(
             name=name,
@@ -548,10 +566,12 @@ class Guard(IGuard, Generic[OT]):
         validators: Sequence[Validator],
         *,
         string_description: Optional[str] = None,
-        prompt: Optional[str] = None,  # TODO: deprecate this in 0.5.1
-        instructions: Optional[str] = None,  # TODO: deprecate this in 0.5.1
-        reask_prompt: Optional[str] = None,  # TODO: deprecate this in 0.5.1
-        reask_instructions: Optional[str] = None,  # TODO: deprecate this in 0.5.1
+        prompt: Optional[str] = None,
+        instructions: Optional[str] = None,
+        reask_prompt: Optional[str] = None,
+        reask_instructions: Optional[str] = None,
+        reask_messages: Optional[List[Dict]] = None,
+        messages: Optional[List[Dict]] = None,
         num_reasks: Optional[int] = None,
         tracer: Optional[Tracer] = None,
         name: Optional[str] = None,
@@ -566,11 +586,24 @@ class Guard(IGuard, Generic[OT]):
             instructions (str, optional): Instructions for chat models. Defaults to None.
             reask_prompt (str, optional): An alternative prompt to use during reasks. Defaults to None.
             reask_instructions (str, optional): Alternative instructions to use during reasks. Defaults to None.
+            reask_messages (List[Dict], optional): A list of messages to use during reasks. Defaults to None.
             num_reasks (int, optional): The max times to re-ask the LLM if validation fails. Deprecated
             tracer (Tracer, optional): An OpenTelemetry tracer to use for metrics and traces. Defaults to None.
             name (str, optional): A unique name for this Guard. Defaults to `gr-` + the object id.
             description (str, optional): A description for this Guard. Defaults to None.
         """  # noqa
+        if reask_instructions:
+            warnings.warn(
+                "reask_instructions is deprecated and will be removed in 0.6.x!"
+                "Please be prepared to set reask_messages instead.",
+                DeprecationWarning,
+            )
+        if reask_prompt:
+            warnings.warn(
+                "reask_prompt is deprecated and will be removed in 0.6.x!"
+                "Please be prepared to set reask_messages instead.",
+                DeprecationWarning,
+            )
 
         if num_reasks:
             warnings.warn(
@@ -594,6 +627,8 @@ class Guard(IGuard, Generic[OT]):
             instructions=instructions,
             reask_prompt=reask_prompt,
             reask_instructions=reask_instructions,
+            reask_messages=reask_messages,
+            messages=messages,
         )
         guard = cast(
             Guard[str],
@@ -695,6 +730,10 @@ class Guard(IGuard, Generic[OT]):
                         (
                             "custom_reask_instructions",
                             self._exec_opts.reask_instructions is not None,
+                        ),
+                        (
+                            "custom_reask_messages",
+                            self._exec_opts.reask_messages is not None,
                         ),
                     ],
                     is_parent=True,  # It will have children

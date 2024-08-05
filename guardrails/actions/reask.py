@@ -8,6 +8,7 @@ from guardrails.classes.output_type import OutputTypes
 from guardrails.classes.validation.validation_result import FailResult
 from guardrails.prompt.instructions import Instructions
 from guardrails.prompt.prompt import Prompt
+from guardrails.prompt.messages import Messages
 from guardrails.schema.generator import generate_example
 from guardrails.schema.rail_schema import json_schema_to_rail_output
 from guardrails.types.validator import ValidatorMap
@@ -294,6 +295,19 @@ def get_reask_setup_for_string(
         xml_output_schema=xml_output_schema,
         **prompt_params,
     )
+    messages = None
+    if exec_options.reask_messages:
+        messages = Messages(exec_options.reask_messages)
+    if messages is None:
+        messages = Messages(
+            [{"role": "system", "content": "You are a helpful assistant."}]
+        )
+
+    messages = messages.format(
+        output_schema=schema_prompt_content,
+        xml_output_schema=xml_output_schema,
+        **prompt_params,
+    )
 
     return output_schema, prompt, instructions
 
@@ -458,6 +472,18 @@ def get_reask_setup_for_json(
         )
         instructions = Instructions(instructions_const)
     instructions = instructions.format(**prompt_params)
+
+    # TODO: enable this in 0.6.0
+    # messages = None
+    # if exec_options.reask_messages:
+    #     messages = Messages(exec_options.reask_messages)
+    # else:
+    #     messages = Messages(
+    #         [
+    #             {"role": "system", "content": instructions},
+    #             {"role": "user", "content": prompt},
+    #         ]
+    #     )
 
     return reask_schema, prompt, instructions
 
