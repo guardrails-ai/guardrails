@@ -940,6 +940,7 @@ def add_validator_attributes(
     on_fail_descriptor: Optional[str] = None,
     result: Optional[ValidationResult] = None,
     init_kwargs: Dict[str, Any] = {},
+    validation_session_id: str,
     **kwargs,
 ):
     value_arg = serialize(safe_get(args, 0)) or ""
@@ -956,6 +957,7 @@ def add_validator_attributes(
 
     # New Span Attributes
     validator_span.set_attribute("type", "guardrails/guard/step/validator")
+    validator_span.set_attribute("validation_session_id", validation_session_id)
 
     ### Validator.__init__ ###
     validator_span.set_attribute("validator.name", validator_name or "unknown")
@@ -996,6 +998,8 @@ def trace_validator(
     obj_id: int,
     on_fail_descriptor: Optional[str] = None,
     tracer: Optional[Tracer] = None,
+    *,
+    validation_session_id: str,
     **init_kwargs,
 ):
     def trace_validator_decorator(fn: Callable[..., Optional[ValidationResult]]):
@@ -1021,6 +1025,7 @@ def trace_validator(
                             on_fail_descriptor=on_fail_descriptor,
                             result=resp,
                             init_kwargs=init_kwargs,
+                            validation_session_id=validation_session_id,
                             **kwargs,
                         )
                         return resp
@@ -1036,6 +1041,7 @@ def trace_validator(
                             on_fail_descriptor=on_fail_descriptor,
                             result=None,
                             init_kwargs=init_kwargs,
+                            validation_session_id=validation_session_id,
                             **kwargs,
                         )
                         raise e

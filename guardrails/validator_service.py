@@ -48,6 +48,8 @@ class ValidatorServiceBase:
         value: Any,
         metadata: Optional[Dict],
         stream: Optional[bool] = False,
+        *,
+        validation_session_id: str,
         **kwargs,
     ) -> ValidatorResult:
         validate_func = validator.validate_stream if stream else validator.validate
@@ -55,6 +57,7 @@ class ValidatorServiceBase:
             validator_name=validator.rail_alias,
             obj_id=id(validator),
             on_fail_descriptor=validator.on_fail_descriptor,
+            validation_session_id=validation_session_id,
             **validator._kwargs,
         )(validate_func)
         if stream:
@@ -189,9 +192,18 @@ class SequentialValidatorService(ValidatorServiceBase):
         metadata: Dict,
         validator_logs: ValidatorLogs,
         stream: Optional[bool] = False,
+        *,
+        validation_session_id: str,
         **kwargs,
     ) -> ValidationResult:
-        result = self.execute_validator(validator, value, metadata, stream, **kwargs)
+        result = self.execute_validator(
+            validator,
+            value,
+            metadata,
+            stream,
+            validation_session_id=validation_session_id,
+            **kwargs,
+        )
         if asyncio.iscoroutine(result):
             raise UserFacingException(
                 ValueError(
@@ -218,7 +230,13 @@ class SequentialValidatorService(ValidatorServiceBase):
         )
 
         result = self.run_validator_sync(
-            validator, value, metadata, validator_logs, stream, **kwargs
+            validator,
+            value,
+            metadata,
+            validator_logs,
+            stream,
+            validation_session_id=iteration.id,
+            **kwargs,
         )
 
         return self.after_run_validator(validator, validator_logs, result)
@@ -425,10 +443,17 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
         value: Any,
         metadata: Dict,
         stream: Optional[bool] = False,
+        *,
+        validation_session_id: str,
         **kwargs,
     ) -> ValidationResult:
         result: ValidatorResult = self.execute_validator(
-            validator, value, metadata, stream, **kwargs
+            validator,
+            value,
+            metadata,
+            stream,
+            validation_session_id=validation_session_id,
+            **kwargs,
         )
         if asyncio.iscoroutine(result):
             result = await result
@@ -454,7 +479,12 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
         )
 
         result = await self.run_validator_async(
-            validator, value, metadata, stream, **kwargs
+            validator,
+            value,
+            metadata,
+            stream,
+            validation_session_id=iteration.id,
+            **kwargs,
         )
 
         return self.after_run_validator(validator, validator_logs, result)
@@ -552,6 +582,7 @@ class AsyncValidatorService(ValidatorServiceBase, MultiprocMixin):
                         fixed_value,
                         fail_results[0].metadata or {},
                         stream,
+                        validation_session_id=iteration.id,
                         **kwargs,
                     )
                 value = self.perform_correction(
