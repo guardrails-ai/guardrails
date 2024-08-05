@@ -472,6 +472,26 @@ def add_guard_attributes(
     guard_span.set_attribute("type", "guardrails/guard")
     guard_span.set_attribute("validation_passed", resp.validation_passed)
 
+    execution_id = history.last.id if history.last else None
+    if execution_id is not None:
+        guard_span.set_attribute("execution_id", execution_id)
+
+    token_consumption = history.last.tokens_consumed if history.last else None
+    if token_consumption is not None:
+        guard_span.set_attribute("token_consumption", token_consumption)
+
+    number_of_reasks = (
+        history.last.iterations.last.index
+        if history.last and history.last.iterations.last
+        else None
+    )
+    if number_of_reasks is not None:
+        guard_span.set_attribute("number_of_reasks", number_of_reasks)
+
+    number_of_llm_calls = number_of_reasks + 1 if number_of_reasks is not None else None
+    if number_of_llm_calls is not None:
+        guard_span.set_attribute("number_of_llm_calls", number_of_llm_calls)
+
     # # FIXME: Find a lighter weight library to do this.
     # raw_embed = model.encode(resp.raw_llm_output)
     # validated_embed = model.encode(resp.validated_output)
