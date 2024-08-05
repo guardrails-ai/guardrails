@@ -1,5 +1,6 @@
 from typing import Any, Dict, Generator, Iterable, List, Optional, Tuple, Union, cast
 
+from guardrails import validator_service
 from guardrails.classes.history import Call, Inputs, Iteration, Outputs
 from guardrails.classes.output_type import OT, OutputTypes
 from guardrails.classes.validation_outcome import ValidationOutcome
@@ -161,12 +162,14 @@ class StreamRunner(Runner):
                     yield parsed_chunk, finished
 
             prepped_stream = prepare_chunk_generator(stream)
-            gen = self.validate_stream(
-                iteration,
-                index,
+            gen = validator_service.validate_stream(
                 prepped_stream,
-                output_schema,
-                validate_subschema=True,
+                self.metadata,
+                self.validation_map,
+                iteration,
+                self._disable_tracer,
+                "$",
+                validate_subschema=True
             )
 
             for validated_text, original_text, metadata in gen:

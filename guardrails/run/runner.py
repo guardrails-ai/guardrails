@@ -575,24 +575,6 @@ class Runner:
             parsed_output = coerce_types(parsed_output, output_schema)
         return parsed_output, error
 
-    def validate_stream(
-        self,
-        iteration: Iteration,
-        attempt_number: int,
-        parsed_output_stream: Iterable[Tuple[Any, str, bool]],
-        output_schema: Dict[str, Any],
-        **kwargs,
-    ) -> Iterable[Tuple[Any, Dict[str, Any]]]:
-        gen = validator_service.validate_stream(
-            parsed_output_stream,
-            self.metadata,
-            self.validation_map,
-            iteration,
-            self._disable_tracer,
-            "$",
-            **kwargs,
-        )
-        return gen
 
     def validate(
         self,

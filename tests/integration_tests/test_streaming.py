@@ -399,7 +399,6 @@ def test_string_schema_streaming_with_openai_chat(mocker, guard, expected_error_
         accumulated_output += op.raw_llm_output
     error_spans = guard.error_spans_in_output()
 
-    # print spans
     assert len(error_spans) == len(expected_error_spans)
     for error_span, expected in zip(error_spans, expected_error_spans):
         assert accumulated_output[error_span.start : error_span.end] == expected[0]
@@ -478,8 +477,6 @@ def test_refrain_behavior(mocker):
     for res in gen:
         original = original + res.raw_llm_output
         text = text + res.validated_output
-    print("text", text)
-    print("original:", original)
     assert text == ""
     assert (
         original
@@ -509,8 +506,6 @@ def test_filter_behavior(mocker):
     for res in gen:
         original = original + res.raw_llm_output
         text = text + res.validated_output
-    print("text", text)
-    print("original:", original)
     assert text == ""
     assert (
         original

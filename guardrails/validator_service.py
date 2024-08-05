@@ -143,7 +143,7 @@ class ValidatorServiceBase:
         self,
         validator: Validator,
         validator_logs: ValidatorLogs,
-        result: ValidationResult | None,
+        result: Optional[ValidationResult],
     ):
         end_time = datetime.now()
         validator_logs.validation_result = result
