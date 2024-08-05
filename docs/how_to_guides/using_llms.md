@@ -246,6 +246,46 @@ result = guard(
 print(f"{result.validated_output}")
 ```
 
+## Databricks
+
+### Basic Usage
+
+```python
+from guardrails import Guard
+
+os.environ["DATABRICKS_API_KEY"] = "" # your databricks key
+os.environ["DATABRICKS_API_BASE"] = "" # e.g.: https://abc-123ab12a-1234.cloud.databricks.com
+
+guard = Guard()
+
+result = guard(
+    messages=[{"role":"user", "content":"How many moons does Jupiter have?"}],
+    model="databricks/databricks-dbrx-instruct",
+)
+
+print(f"{result.validated_output}")
+```
+
+### Streaming
+
+```python
+from guardrails import Guard
+
+os.environ["DATABRICKS_API_KEY"] = "" # your databricks key
+os.environ["DATABRICKS_API_BASE"] = "" # e.g.: https://abc-123ab12a-1234.cloud.databricks.com
+
+guard = Guard()
+
+stream_chunk_generator = guard(
+    messages=[{"role":"user", "content":"How many moons does Jupiter have?"}],
+    model="databricks/databricks-dbrx-instruct",
+    stream=True,
+)
+
+for chunk in stream_chunk_generator
+    print(f"{chunk.validated_output}")
+```
+
 ## Other LLMs
 
 See LiteLLM’s documentation [here](https://docs.litellm.ai/docs/providers) for details on many other llms.
