@@ -12,6 +12,7 @@ from guardrails.classes.output_type import OutputTypes
 from guardrails.classes.validation.validation_result import (
     FailResult,
     PassResult,
+    StreamValidationResult,
     ValidationResult,
 )
 from guardrails.errors import ValidationError
@@ -235,7 +236,7 @@ class SequentialValidatorService(ValidatorServiceBase):
         absolute_property_path: str,
         reference_property_path: str,
         **kwargs,
-    ) -> Iterable[Tuple[Any, str, Dict[str, Any]]]:
+    ) -> Iterable[StreamValidationResult]:
         validators = validator_map.get(reference_property_path, [])
         for validator in validators:
             if validator.on_fail_descriptor == OnFailAction.FIX:
@@ -275,7 +276,7 @@ class SequentialValidatorService(ValidatorServiceBase):
         absolute_property_path: str,
         reference_property_path: str,
         **kwargs,
-    ) -> Iterable[Tuple[Any, str, Dict[str, Any]]]:
+    ) -> Iterable[StreamValidationResult]:
         validators = validator_map.get(reference_property_path, [])
         acc_output = ""
         validator_partial_acc: dict[str, str] = {}
@@ -343,7 +344,9 @@ class SequentialValidatorService(ValidatorServiceBase):
 
             if refrain_triggered:
                 # if we have a failresult from a refrain/filter validator, yield empty
-                yield "", acc_output, metadata
+                yield StreamValidationResult(
+                    chunk="", original_text=acc_output, metadata=metadata
+                )
             else:
                 # if every validator has yielded a concrete value, merge and yield
                 # only merge and yield if all validators have run
@@ -360,7 +363,9 @@ class SequentialValidatorService(ValidatorServiceBase):
                     # reset validator_partial_acc
                     for validator in validators:
                         validator_partial_acc[validator.rail_alias] = ""
-                    yield merged_value, acc_output, metadata
+                    yield StreamValidationResult(
+                        chunk=merged_value, original_text=acc_output, metadata=metadata
+                    )
                     acc_output = ""
                 else:
                     last_chunk_validated = False
@@ -408,7 +413,9 @@ class SequentialValidatorService(ValidatorServiceBase):
             for validator in validators:
                 values_to_merge.append(validator_partial_acc[validator.rail_alias])
             merged_value = self.multi_merge(acc_output, values_to_merge)
-            yield merged_value, original_text, metadata
+            yield StreamValidationResult(
+                chunk=merged_value, original_text=original_text, metadata=metadata
+            )
             # yield merged value
 
     def run_validators_stream_noop(
@@ -420,7 +427,7 @@ class SequentialValidatorService(ValidatorServiceBase):
         absolute_property_path: str,
         reference_property_path: str,
         **kwargs,
-    ) -> Iterable[Tuple[Any, str, Dict[str, Any]]]:
+    ) -> Iterable[Tuple[StreamValidationResult]]:
         validators = validator_map.get(reference_property_path, [])
         # Validate the field
         # TODO: Under what conditions do we yield?
@@ -428,7 +435,6 @@ class SequentialValidatorService(ValidatorServiceBase):
         # When we have all non-None values?
         # Does this depend on whether we are fix or not?
         for chunk, finished in value_stream:
-            has_none = False
             original_text = chunk
             for validator in validators:
                 validator_logs = self.run_validator(
@@ -441,9 +447,6 @@ class SequentialValidatorService(ValidatorServiceBase):
                     **kwargs,
                 )
                 result = validator_logs.validation_result
-
-                if result is None:
-                    has_none = True
                 result = cast(ValidationResult, result)
 
                 if isinstance(result, FailResult):
@@ -468,7 +471,9 @@ class SequentialValidatorService(ValidatorServiceBase):
                 # # TODO: Filter is no longer terminal, so we shouldn't yield, right?
                 # if isinstance(chunk, (Refrain, Filter, ReAsk)):
                 #     yield chunk, metadata
-            yield chunk, original_text, metadata
+            yield StreamValidationResult(
+                chunk=chunk, original_text=original_text, metadata=metadata
+            )
 
     def run_validators(
         self,
@@ -636,7 +641,7 @@ class SequentialValidatorService(ValidatorServiceBase):
         absolute_path: str,
         reference_path: str,
         **kwargs,
-    ) -> Iterable[Tuple[Any, str, dict]]:
+    ) -> Iterable[StreamValidationResult]:
         # I assume validate stream doesn't need validate_dependents
         # because right now we're only handling StringSchema
 
@@ -987,7 +992,7 @@ def validate_stream(
     disable_tracer: Optional[bool] = True,
     path: Optional[str] = None,
     **kwargs,
-) -> Iterable[Tuple[Any, str, dict]]:
+) -> Iterable[StreamValidationResult]:
     if path is None:
         path = "$"
     sequential_validator_service = SequentialValidatorService(disable_tracer)

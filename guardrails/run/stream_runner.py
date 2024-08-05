@@ -174,28 +174,31 @@ class StreamRunner(Runner):
                 validate_subschema=True,
             )
 
-            for validated_text, original_text, metadata in gen:
-                if isinstance(validated_text, SkeletonReAsk):
+            for res in gen:
+                chunk = res.chunk
+                original_text = res.original_text
+                metadata = res.metadata
+                if isinstance(chunk, SkeletonReAsk):
                     raise ValueError(
                         "Received fragment schema is an invalid sub-schema "
                         "of the expected output JSON schema."
                     )
 
                 # 4. Introspect: inspect the validated fragment for reasks
-                reasks, valid_op = self.introspect(validated_text)
+                reasks, valid_op = self.introspect(chunk)
                 if reasks:
                     raise ValueError(
                         "Reasks are not yet supported with streaming. Please "
                         "remove reasks from schema or disable streaming."
                     )
                 # 5. Convert validated fragment to a pretty JSON string
-                validation_response += cast(str, validated_text)
+                validation_response += cast(str, chunk)
                 passed = call_log.status == pass_status
                 yield ValidationOutcome(
                     call_id=call_log.id,  # type: ignore
                     #  The chunk or the whole output?
                     raw_llm_output=original_text,
-                    validated_output=validated_text,
+                    validated_output=chunk,
                     validation_passed=passed,
                 )
 
