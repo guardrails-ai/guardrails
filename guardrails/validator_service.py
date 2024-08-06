@@ -264,7 +264,10 @@ class SequentialValidatorService(ValidatorServiceBase):
         current = new_values.pop()
         while len(new_values) > 0:
             nextval = new_values.pop()
+            print('merging current:', current)
+            print('merging nextval:', nextval)
             current = merge(current, nextval, original)
+            print('merge result:',current)
         return current
 
     def run_validators_stream_fix(
@@ -281,7 +284,7 @@ class SequentialValidatorService(ValidatorServiceBase):
         acc_output = ""
         validator_partial_acc: dict[str, str] = {}
         for validator in validators:
-            validator_partial_acc[validator.rail_alias] = ""
+            validator_partial_acc[id(validator)] = ""
         last_chunk = None
         last_chunk_validated = False
         last_chunk_missing_validators = []
@@ -327,7 +330,7 @@ class SequentialValidatorService(ValidatorServiceBase):
                         rechecked_value=rechecked_value,
                     )
                     fixed_values.append(chunk)
-                    validator_partial_acc[validator.rail_alias] += chunk
+                    validator_partial_acc[id(validator)] += chunk
                 elif isinstance(result, PassResult):
                     if (
                         validator.override_value_on_pass
@@ -337,7 +340,7 @@ class SequentialValidatorService(ValidatorServiceBase):
                     else:
                         chunk = result.validated_chunk
                     fixed_values.append(chunk)
-                    validator_partial_acc[validator.rail_alias] += chunk
+                    validator_partial_acc[id(validator)] += chunk
                 validator_logs.value_after_validation = chunk
                 if result and result.metadata is not None:
                     metadata = result.metadata
@@ -356,13 +359,13 @@ class SequentialValidatorService(ValidatorServiceBase):
                     values_to_merge = []
                     for validator in validators:
                         values_to_merge.append(
-                            validator_partial_acc[validator.rail_alias]
+                            validator_partial_acc[id(validator)]
                         )
                     merged_value = self.multi_merge(acc_output, values_to_merge)
                     # merged_value = self.multi_merge(acc_output, values_to_merge)
                     # reset validator_partial_acc
                     for validator in validators:
-                        validator_partial_acc[validator.rail_alias] = ""
+                        validator_partial_acc[id(validator)] = ""
                     yield StreamValidationResult(
                         chunk=merged_value, original_text=acc_output, metadata=metadata
                     )
@@ -396,7 +399,7 @@ class SequentialValidatorService(ValidatorServiceBase):
                         validator.on_fail_descriptor,
                         rechecked_value=rechecked_value,
                     )
-                    validator_partial_acc[validator.rail_alias] += last_chunk
+                    validator_partial_acc[id(validator)] += last_chunk
                 elif isinstance(result, PassResult):
                     if (
                         validator.override_value_on_pass
@@ -405,13 +408,13 @@ class SequentialValidatorService(ValidatorServiceBase):
                         last_chunk = result.value_override
                     else:
                         last_chunk = result.validated_chunk
-                    validator_partial_acc[validator.rail_alias] += last_chunk
+                    validator_partial_acc[id(validator)] += last_chunk
                 last_log.value_after_validation = last_chunk
                 if result and result.metadata is not None:
                     metadata = result.metadata
             values_to_merge = []
             for validator in validators:
-                values_to_merge.append(validator_partial_acc[validator.rail_alias])
+                values_to_merge.append(validator_partial_acc[id(validator)])
             merged_value = self.multi_merge(acc_output, values_to_merge)
             yield StreamValidationResult(
                 chunk=merged_value, original_text=original_text, metadata=metadata
