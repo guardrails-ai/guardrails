@@ -24,7 +24,7 @@ to update your token.
 GUARDRAILS_VERSION = version("guardrails-ai")
 
 VALIDATOR_HUB_SERVICE = os.getenv(
-    "GR_VALIDATOR_HUB_SERVICE", "https://so4sg4q4pb.execute-api.us-east-1.amazonaws.com"
+    "GR_VALIDATOR_HUB_SERVICE", "https://hub.api.guardrailsai.com"
 )
 validator_manifest_endpoint = Template(
     "validator-manifests/${namespace}/${validator_name}"
