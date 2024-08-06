@@ -313,8 +313,10 @@ class Pet(BaseModel):
 
 
 def test_input_validation_fix(mocker):
-    def mock_llm_api(*args, **kwargs):
-        return json.dumps({"name": "Fluffy"})
+    # Create a mock object for the mock_llm_api function
+    mock_llm_api = mocker.Mock()
+
+    mock_llm_api.return_value = json.dumps({"name": "Fluffy"})
 
     # fix returns an amended value for prompt/instructions validation,
     guard = Guard.from_pydantic(output_class=Pet)
@@ -340,23 +342,21 @@ def test_input_validation_fix(mocker):
         == "But really,"
     )
 
-    # but raises for msg_history validation
     guard = Guard.from_pydantic(output_class=Pet)
     guard.use(TwoWords(on_fail=OnFailAction.FIX), on="msg_history")
 
-    with pytest.raises(ValidationError) as excinfo:
-        guard(
-            mock_llm_api,
-            msg_history=[
-                {
-                    "role": "user",
-                    "content": "What kind of pet should I get?",
-                }
-            ],
-        )
-    assert str(excinfo.value) == "Message history validation failed"
-    assert isinstance(guard.history.first.exception, ValidationError)
-    assert guard.history.first.exception == excinfo.value
+    guard(
+        mock_llm_api,
+        msg_history=[
+            {
+                "role": "user",
+                "content": "What kind of pet should I get?",
+            }
+        ],
+    )
+    assert mock_llm_api.call_count == 3
+    # last call should have "What kind" as the input
+    assert mock_llm_api.call_args.kwargs["msg_history"][0]["content"] == "What kind"
 
     # rail prompt validation
     guard = Guard.from_rail_string(
