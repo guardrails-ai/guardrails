@@ -209,7 +209,7 @@ class ToxicLanguage(Validator):
 
 ## Streaming
 
-Validators support streaming validation out of the box. The validate_stream method handles calling _validate with accumulated chunks of a stream when a guard is executed with `guard(streaming=True`
+Validators support streaming validation out of the box. The validate_stream method handles calling _validate with accumulated chunks of a stream when a guard is executed with `guard(streaming=True, ...)`
 
 By default stream validation is done on a per sentence basis. Validator._chunking_function may be overloaded to provide a custom chunking strategy. This is useful to optimize latency when integrating outside services such as llms and controlling how much data an validating model gets to give it more or less context.
 
