@@ -264,10 +264,10 @@ class SequentialValidatorService(ValidatorServiceBase):
         current = new_values.pop()
         while len(new_values) > 0:
             nextval = new_values.pop()
-            print('merging current:', current)
+            print('\n\n\nmerging current:', current)
             print('merging nextval:', nextval)
             current = merge(current, nextval, original)
-            print('merge result:',current)
+            print('\nmerge result:',current)
         return current
 
     def run_validators_stream_fix(

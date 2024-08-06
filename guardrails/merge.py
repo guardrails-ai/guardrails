@@ -31,6 +31,8 @@ def merge(source: str, target: str, base: str) -> str:
     while source is not None and target is not None:
         source_status, source_text = source
         target_status, target_text = target
+        # print('source', source)
+        # print('target', target)
         if source_status == PRESERVED and target_status == PRESERVED:
             # Base is preserved for both source and target
             if len(source_text) > len(target_text):
@@ -279,8 +281,11 @@ def merge(source: str, target: str, base: str) -> str:
                     target = next(diff2, None)
                 else:
                     merge_conflict = True
+
             # Don't handle double deletion scenario
-            # if merge_conflict:
+            if merge_conflict:
+                source = next(diff1, None)
+                target = next(diff2, None)
             # composed_text.append("<<<<<<< -- {0} ".format(source_text))
             # composed_text.append("======= -- {0} ".format(target_text))
             # composed_text.append(">>>>>>>")
