@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, List, Union, cast
+from typing import Any, Callable, Dict, List, Union
 import difflib
 import nltk
 
@@ -16,7 +16,7 @@ from guardrails.validator_base import ErrorSpan
 class MockDetectPII(Validator):
     """Validates that any text does not contain any PII.
 
-    Instead of using Microsoft Presidio, it accepts a map of PII text to their replacements, 
+    Instead of using Microsoft Presidio, it accepts a map of PII text to their replacements,
     and performs a simple string replacement. For example, if the map is {"John Doe": "REDACTED"},
     then the text "John Doe is a person" will be replaced with "REDACTED is a person".
 
@@ -93,7 +93,7 @@ class MockDetectPII(Validator):
     ):
         super().__init__(on_fail, pii_entities=pii_entities, **kwargs)
         self.pii_entities = pii_entities
-        self.replace_map = replace_map 
+        self.replace_map = replace_map
 
     def get_anonymized_text(self, text: str, entities: List[str]) -> str:
         """Analyze and anonymize the text for PII.

@@ -426,8 +426,11 @@ def test_fix_behavior(mocker):
     )
 
     guard = gd.Guard().use_many(
-        MockDetectPII(on_fail=OnFailAction.FIX, pii_entities="pii", 
-                      replace_map={"John":"<PERSON>", "SAN Francisco's":"<LOCATION>"}),
+        MockDetectPII(
+            on_fail=OnFailAction.FIX,
+            pii_entities="pii",
+            replace_map={"John": "<PERSON>", "SAN Francisco's": "<LOCATION>"},
+        ),
         LowerCase(on_fail=OnFailAction.FIX),
     )
     gen = guard(
@@ -464,8 +467,11 @@ def test_refrain_behavior(mocker):
     )
 
     guard = gd.Guard().use_many(
-        MockDetectPII(on_fail=OnFailAction.REFRAIN, pii_entities="pii", 
-                      replace_map={"John":"<PERSON>", "SAN Francisco's":"<LOCATION>"}),
+        MockDetectPII(
+            on_fail=OnFailAction.REFRAIN,
+            pii_entities="pii",
+            replace_map={"John": "<PERSON>", "SAN Francisco's": "<LOCATION>"},
+        ),
         LowerCase(on_fail=OnFailAction.FIX),
     )
     gen = guard(
@@ -495,8 +501,11 @@ def test_filter_behavior(mocker):
     )
 
     guard = gd.Guard().use_many(
-        MockDetectPII(on_fail=OnFailAction.FIX, pii_entities="pii", 
-                      replace_map={"John":"<PERSON>", "SAN Francisco's":"<LOCATION>"}),
+        MockDetectPII(
+            on_fail=OnFailAction.FIX,
+            pii_entities="pii",
+            replace_map={"John": "<PERSON>", "SAN Francisco's": "<LOCATION>"},
+        ),
         LowerCase(on_fail=OnFailAction.FILTER),
     )
     gen = guard(
