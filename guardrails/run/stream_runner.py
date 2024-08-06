@@ -18,7 +18,7 @@ from guardrails.utils.parsing_utils import (
 )
 from guardrails.actions.reask import ReAsk, SkeletonReAsk
 from guardrails.constants import pass_status
-from guardrails.utils.telemetry_utils import trace_stream_step
+from guardrails.telemetry import trace_stream_step
 
 
 class StreamRunner(Runner):

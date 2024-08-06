@@ -34,7 +34,7 @@ from guardrails.utils.prompt_utils import (
     prompt_uses_xml,
 )
 from guardrails.actions.reask import NonParseableReAsk, ReAsk, introspect
-from guardrails.utils.telemetry_utils import trace_call, trace_step
+from guardrails.telemetry import trace_call, trace_step
 
 
 class Runner:

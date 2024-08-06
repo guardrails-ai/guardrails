@@ -69,7 +69,7 @@ from guardrails.types.pydantic import ModelOrListOfModels
 from guardrails.utils.naming_utils import random_id
 from guardrails.utils.api_utils import extract_serializeable_metadata
 from guardrails.utils.hub_telemetry_utils import HubTelemetry
-from guardrails.utils.telemetry_utils import (
+from guardrails.telemetry import (
     trace_guard_execution,
     wrap_with_otel_context,
 )
@@ -663,7 +663,7 @@ class Guard(IGuard, Generic[OT]):
         metadata = metadata or {}
         if not llm_output and llm_api and not (prompt or msg_history):
             raise RuntimeError(
-                "'prompt' or 'msg_history' must be provided " "in order to call an LLM!"
+                "'prompt' or 'msg_history' must be provided in order to call an LLM!"
             )
 
         # check if validator requirements are fulfilled

@@ -20,7 +20,8 @@ from guardrails.utils.exception_utils import UserFacingException
 from guardrails.utils.hub_telemetry_utils import HubTelemetry
 from guardrails.classes.validation.validator_logs import ValidatorLogs
 from guardrails.actions.reask import FieldReAsk, ReAsk
-from guardrails.utils.telemetry_utils import trace_validation_result, trace_validator
+from guardrails.telemetry.legacy_validator_tracing import trace_validation_result
+from guardrails.telemetry import trace_validator
 from guardrails.validator_base import Validator
 
 ValidatorResult = Optional[Union[ValidationResult, Awaitable[ValidationResult]]]

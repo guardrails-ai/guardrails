@@ -39,10 +39,7 @@ from guardrails.stores.context import (
 )
 from guardrails.types.pydantic import ModelOrListOfModels
 from guardrails.types.validator import UseManyValidatorSpec, UseValidatorSpec
-from guardrails.utils.telemetry_utils import (
-    trace_async_guard_execution,
-    wrap_with_otel_context,
-)
+from guardrails.telemetry import trace_async_guard_execution, wrap_with_otel_context
 from guardrails.utils.validator_utils import verify_metadata_requirements
 from guardrails.validator_base import Validator
 

@@ -32,7 +32,7 @@ from guardrails.utils.openai_utils import (
 )
 from guardrails.utils.pydantic_utils import convert_pydantic_model_to_openai_fn
 from guardrails.utils.safe_get import safe_get
-from guardrails.utils.telemetry_utils import trace_llm_call, trace_operation
+from guardrails.telemetry import trace_llm_call, trace_operation
 
 
 ###

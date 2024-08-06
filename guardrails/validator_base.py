@@ -23,7 +23,6 @@ from guardrails.constants import hub
 from guardrails.hub_token.token import VALIDATOR_HUB_SERVICE, get_jwt_token
 from guardrails.logger import logger
 from guardrails.remote_inference import remote_inference
-from guardrails.telemetry import get_disable_telemetry
 from guardrails.types.on_fail import OnFailAction
 from guardrails.utils.hub_telemetry_utils import HubTelemetry
 
@@ -81,7 +80,7 @@ class Validator:
         **kwargs,
     ):
         self.creds = Credentials.from_rc_file()
-        self._disable_telemetry = get_disable_telemetry(self.creds)
+        self._disable_telemetry = self.creds.enable_metrics is not True
         if not self._disable_telemetry:
             self._hub_telemetry = HubTelemetry()
 
