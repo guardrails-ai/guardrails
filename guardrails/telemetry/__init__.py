@@ -1,7 +1,9 @@
 from guardrails.telemetry.common import (
-    default_otel_collector_tracer,
-    default_otlp_tracer,
     wrap_with_otel_context,
+)
+from guardrails.telemetry.default_otlp_tracer import default_otlp_tracer
+from guardrails.telemetry.default_otel_collector_tracer import (
+    default_otel_collector_tracer,
 )
 from guardrails.telemetry.guard_tracing import (
     trace_guard_execution,
