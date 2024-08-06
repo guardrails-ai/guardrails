@@ -295,7 +295,15 @@ def test_custom_on_fail_handler(
         pet_type: str = Field(description="Species of pet", validators=[validator])
         name: str = Field(description="a unique pet name")
 
-    guard = Guard.from_pydantic(output_class=Pet, prompt=prompt)
+    guard = Guard.from_pydantic(
+        output_class=Pet,
+        messages=[
+            {
+                "role": "user",
+                "content": prompt,
+            }
+        ],
+    )
     if isinstance(expected_result, type) and issubclass(expected_result, Exception):
         with pytest.raises(ValidationError) as excinfo:
             guard.parse(output, num_reasks=0)
@@ -316,36 +324,7 @@ def test_input_validation_fix(mocker):
     def mock_llm_api(*args, **kwargs):
         return json.dumps({"name": "Fluffy"})
 
-    # fix returns an amended value for prompt/instructions validation,
-    guard = Guard.from_pydantic(output_class=Pet)
-    guard.use(TwoWords(on_fail=OnFailAction.FIX), on="prompt")
-
-    guard(
-        mock_llm_api,
-        messages=[
-            {
-                "role": "user",
-                "content": "What kind of pet should I get?",
-            }
-        ],
-    )
-    assert (
-        guard.history.first.iterations.first.outputs.validation_response == "What kind"
-    )
-    guard = Guard.from_pydantic(output_class=Pet)
-    guard.use(TwoWords(on_fail=OnFailAction.FIX), on="instructions")
-
-    guard(
-        mock_llm_api,
-        prompt="What kind of pet should I get and what should I name it?",
-        instructions="But really, what kind of pet should I get?",
-    )
-    assert (
-        guard.history.first.iterations.first.outputs.validation_response
-        == "But really,"
-    )
-
-    # but raises for messages validation
+    # raises for messages validation
     guard = Guard.from_pydantic(output_class=Pet)
     guard.use(TwoWords(on_fail=OnFailAction.FIX), on="messages")
 

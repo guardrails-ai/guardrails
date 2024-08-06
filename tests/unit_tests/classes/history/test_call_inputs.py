@@ -6,14 +6,12 @@ def test_empty_initialization():
 
     # Overrides and additional properties
     assert call_inputs.llm_api is None
-    assert call_inputs.prompt is None
-    assert call_inputs.instructions is None
     assert call_inputs.args == []
     assert call_inputs.kwargs == {}
 
     # Inherited properties
     assert call_inputs.llm_output is None
-    assert call_inputs.msg_history is None
+    assert call_inputs.messages is None
     assert call_inputs.prompt_params is None
     assert call_inputs.num_reasks is None
     assert call_inputs.metadata is None

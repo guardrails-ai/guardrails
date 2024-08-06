@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from pydantic import Field
 
@@ -18,10 +18,7 @@ class Inputs(IInputs, ArbitraryModel):
             for calling the LLM.
         llm_output (Optional[str]): The string output from an
             external LLM call provided by the user via Guard.parse.
-        instructions (Optional[Instructions]): The constructed
-            Instructions class for chat model calls.
-        prompt (Optional[Prompt]): The constructed Prompt class.
-        msg_history (Optional[List[Dict]]): The message history
+        messages (Optional[List[Dict]]): The message history
             provided by the user for chat model calls.
         prompt_params (Optional[Dict]): The parameters provided
             by the user that will be formatted into the final LLM prompt.
@@ -44,10 +41,6 @@ class Inputs(IInputs, ArbitraryModel):
     )
     messages: Optional[Messages] = Field(
         description="The messages provided by the user for chat model calls.",
-        default=None,
-    )
-    messages: Optional[List[Messages]] = Field(
-        description="The message history provided by the user for chat model calls.",
         default=None,
     )
     prompt_params: Optional[Dict] = Field(
