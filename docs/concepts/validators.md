@@ -6,13 +6,13 @@ Validators are how we apply quality controls to the outputs of LLMs.  They speci
 Each validator is a method that encodes some criteria, and checks if a given value meets that criteria.
 
 - If the value passes the criteria defined, the validator returns `PassResult`. In most cases this means returning that value unchanged. In very few advanced cases, there may be a a value override (the specific validator will document this).
-- If the value does not pass the criteria, a `FailResult` is returned.  In this case, the validator applies the user-configured `on_fail` policies (see [On-Fail Policies](/docs/hub/concepts/on_fail_policies.md) for more details).
+- If the value does not pass the criteria, a `FailResult` is returned.  In this case, the validator applies the user-configured `on_fail` policies (see [On-Fail Policies](/docs/how_to_guides/custom_validators#on-fail)).
 
 ## Runtime Metadata
 
 Occasionally, validators need additional metadata that is only available during runtime. Metadata could be data generated during the execution of a validator (*important if you're writing your own validators*), or could just be a container for runtime arguments.
 
-As an example, the `ExtractedSummarySentencesMatch` validator accepts a `filepaths` property in the metadata dictionary to specify what source files to compare the summary against to ensure similarity.  Unlike arguments which are specified at validator initialization, metadata is specified when calling `guard.validate` or `guard.__call__` (this is the `guard()` function). For more information on how to use metadata, see [How to use Metadata](/docs/hub/how_to_guides/metadata.md).
+As an example, the `ExtractedSummarySentencesMatch` validator accepts a `filepaths` property in the metadata dictionary to specify what source files to compare the summary against to ensure similarity.  Unlike arguments which are specified at validator initialization, metadata is specified when calling `guard.validate` or `guard.__call__` (this is the `guard()` function).
 
 ```python
 guard = Guard.from_rail("my_railspec.rail")
@@ -30,109 +30,50 @@ outcome = guard(
 )
 ```
 
+If multiple validators require metadata, create a single metadata dictionary that contains the metadata keys for each validator. In the example below, both the `Provenance_LLM` and `DetectPII` validators require metadata.
+
+```python
+from guardrails import Guard
+from guardrails.hub import DetectPII, ProvenanceLLM
+
+from sentence_transformers import SentenceTransformer
+
+
+# Setup Guard with multiple validators
+guard = Guard().use_many(
+    ProvenanceLLM(validation_method="sentence"),
+    DetectPII()
+)
+
+# Setup metadata for provenance validator
+sources = [
+    "The sun is a star.",
+    "The sun rises in the east and sets in the west."
+]
+model = SentenceTransformer('paraphrase-MiniLM-L6-v2')
+
+def embed_function(sources: list[str]) -> np.array:
+    return model.encode(sources)
+
+# Setup metadata for PII validator
+pii_entities = ["EMAIL_ADDRESS", "PHONE_NUMBER"]
+
+# Create a single metadata dictionary containing metadata keys for each validator
+metadata = {
+    'pii_entities': pii_entities,
+    'sources': sources,
+    'embed_function': embed_function
+}
+
+# Pass the metadata to the guard.validate method
+guard.validate("some text", metadata=metadata)
+```
+
 ## Custom Validators
 
-If you need to perform a validation that is not currently supported by the hub, you can create your own custom validators.
+Custom validators can extend the ability of Guardrails beyond the hub. Documentation for them can be found [here](/docs/how_to_guides/custom_validators).
 
-A custom validator can be as simple as a single function if you do not require addtional arguments:
-
-```py
-from typing import Dict
-from guardrails.validators import (
-    FailResult,
-    PassResult,
-    register_validator,
-    ValidationResult,
-)
-
-@register_validator(name="starts-with-a", data_type="string")
-def starts_with_a(value: str, metadata: Dict) -> ValidationResult:
-    if value.startswith("a"):
-        return PassResult()
-
-    return FailResult(
-        error_message=f"Value {value} does not start with a.",
-        fix_value="a" + value,
-    )
-```
-
-:::note
-A fix_value was supplied in the FailResult in the example above. This value represents a programmatic fix that can be applied to the output if `on_fail='fix'` is passed during validator initialization.
-:::
-
-If you need to perform more complex operations or require addtional arguments to perform the validation, then the validator can be specified as a class that inherits from our base Validator class:
-
-```py
-from typing import Callable, Dict, Optional
-from guardrails.validators import (
-    FailResult,
-    PassResult,
-    register_validator,
-    ValidationResult,
-    Validator,
-)
-
-@register_validator(name="starts-with", data_type="string")
-class StartsWith(Validator):
-    def __init__(self, prefix: str, on_fail: Optional[Callable] = None):
-        super().__init__(on_fail=on_fail, prefix=prefix)
-        self.prefix = prefix
-
-    def validate(self, value: str, metadata: Dict) -> ValidationResult:
-        if value.startswith(self.prefix):
-            return PassResult()
-
-        return FailResult(
-            error_message=f"Value {value} does not start with {self.prefix}.",
-            fix_value=self.prefix + value,  # To enable the "fix" option for on-fail
-        )
-```
-
-Custom validators must be defined before creating a `Guard` or `RAIL` spec in the code, 
-but otherwise can be used like built in validators. It can be used in a `RAIL` spec OR
-a `Pydantic` model like so:
-
-Custom validators must be defined before creating a `Guard` in the code, 
-but otherwise can be used just like built in validators.
-
-### Guard.use Example
-```py
-from guardrails import Guard
-from .my_custom_validators import starts_with_a, StartsWith
-
-guard = Guard().use(
-    StartsWith("my-prefix")
-).use(
-    starts_with_a()
-)
-```
-
-### Pydantic Example
-```py
-from guardrails import Guard
-from pydantic import BaseModel, Field
-from .my_custom_validators import starts_with_a, StartsWith
-
-class MyModel(BaseModel):
-    a_string: Field(validators=[starts_with_a()])
-    custom_string: Field(validators=[StartsWith("my-prefix")])
-
-guard = Guard.from_pydantic(MyModel)
-```
-
-### RAIL Example
-```xml
-<rail version="0.1">
-...
-<output>
-    <string name="a_string" type="string" validators="starts-with-a">
-    <string name="custom_string" type="string" validators="starts-with: my-prefix">
-</output>
-...
-</rail>
-``` 
-
-## Submitting a Custom Validator to the Hub
+## Submitting a Validator to the Hub
 
 There are two ways to create a new validator and submit it to the Hub.
 
