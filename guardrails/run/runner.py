@@ -379,7 +379,7 @@ class Runner:
 
         iteration.outputs.validation_response = validated_msgs
 
-        return msg_history
+        return msg_history  # type: ignore
 
     def prepare_msg_history(
         self,
@@ -397,7 +397,7 @@ class Runner:
 
         # validate msg_history
         if "msg_history" in self.validation_map:
-            formatted_msg_history = self.validate_msg_history(
+            formatted_msg_history = self.validate_msg_history(  # type: ignore
                 call_log, formatted_msg_history, attempt_number
             )
 
