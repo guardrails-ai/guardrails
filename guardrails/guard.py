@@ -26,11 +26,13 @@ from guardrails_api_client import (
     SimpleTypes,
     ValidationOutcome as IValidationOutcome,
 )
+from opentelemetry import context as otel_context
 from pydantic import field_validator
 from pydantic.config import ConfigDict
 
 from guardrails.api_client import GuardrailsApiClient
 from guardrails.classes.output_type import OT
+from guardrails.classes.validation.validation_result import ErrorSpan
 from guardrails.classes.validation_outcome import ValidationOutcome
 from guardrails.classes.credentials import Credentials
 from guardrails.classes.execution import GuardExecutionOptions
@@ -66,6 +68,7 @@ from guardrails.types.pydantic import ModelOrListOfModels
 from guardrails.utils.naming_utils import random_id
 from guardrails.utils.api_utils import extract_serializeable_metadata
 from guardrails.utils.hub_telemetry_utils import HubTelemetry
+from guardrails.utils.telemetry_utils import wrap_with_otel_context
 from guardrails.utils.validator_utils import (
     get_validator,
     parse_validator_reference,
@@ -79,7 +82,11 @@ from guardrails.types import (
     ValidatorMap,
 )
 
-from guardrails.utils.tools_utils import add_json_function_calling_tool
+from guardrails.utils.tools_utils import (
+    # Prevent duplicate declaration in the docs
+    json_function_calling_tool as json_function_calling_tool_util,
+)
+from guardrails.settings import settings
 
 
 class Guard(IGuard, Generic[OT]):
@@ -118,7 +125,11 @@ class Guard(IGuard, Generic[OT]):
         validators: Optional[List[ValidatorReference]] = None,
         output_schema: Optional[Dict[str, Any]] = None,
     ):
-        """Initialize the Guard with validators and an output schema."""
+        """Initialize the Guard with serialized validator references and an
+        output schema.
+
+        Output schema must be a valid JSON Schema.
+        """
 
         _try_to_load = name is not None
 
@@ -178,8 +189,8 @@ class Guard(IGuard, Generic[OT]):
         self._output_formatter: Optional[BaseFormatter] = None
 
         # Gaurdrails As A Service Initialization
-        api_key = os.environ.get("GUARDRAILS_API_KEY")
-        if api_key is not None:
+        if settings.use_server:
+            api_key = os.environ.get("GUARDRAILS_API_KEY")
             self._api_client = GuardrailsApiClient(api_key=api_key)
             _loaded = False
             if _try_to_load:
@@ -227,8 +238,15 @@ class Guard(IGuard, Generic[OT]):
             self._set_tracer(tracer)
         self._configure_telemtry(allow_metrics_collection)
 
-    def _set_num_reasks(self, num_reasks: Optional[int] = 1):
-        self._num_reasks = num_reasks
+    def _set_num_reasks(self, num_reasks: Optional[int] = None) -> None:
+        # Configure may check if num_reasks is none, but this method still needs to be
+        # defensive for when it's called internally.  Setting a default parameter
+        # doesn't help the case where the method is explicitly passed a 'None'.
+        if num_reasks is None:
+            logger.debug("_set_num_reasks called with 'None'.  Defaulting to 1.")
+            self._num_reasks = 1
+        else:
+            self._num_reasks = num_reasks
 
     def _set_tracer(self, tracer: Optional[Tracer] = None) -> None:
         self._tracer = tracer
@@ -256,6 +274,9 @@ class Guard(IGuard, Generic[OT]):
             self._hub_telemetry = HubTelemetry()
 
     def _fill_validator_map(self):
+        # dont init validators if were going to call the server
+        if settings.use_server:
+            return
         for ref in self.validators:
             entry: List[Validator] = self._validator_map.get(ref.on, [])  # type: ignore
             # Check if the validator from the reference
@@ -342,7 +363,8 @@ class Guard(IGuard, Generic[OT]):
         name: Optional[str] = None,
         description: Optional[str] = None,
     ):
-        """Create a Schema from a `.rail` file.
+        """Create a Guard using a `.rail` file to specify the output schema,
+        prompt, etc.
 
         Args:
             rail_file: The path to the `.rail` file.
@@ -391,7 +413,8 @@ class Guard(IGuard, Generic[OT]):
         name: Optional[str] = None,
         description: Optional[str] = None,
     ):
-        """Create a Schema from a `.rail` string.
+        """Create a Guard using a `.rail` string to specify the output schema,
+        prompt, etc..
 
         Args:
             rail_string: The `.rail` string.
@@ -443,7 +466,8 @@ class Guard(IGuard, Generic[OT]):
         description: Optional[str] = None,
         output_formatter: Optional[Union[str, BaseFormatter]] = None,
     ):
-        """Create a Guard instance from a Pydantic model.
+        """Create a Guard instance using a Pydantic model to specify the output
+        schema.
 
         Args:
             output_class: (Union[Type[BaseModel], List[Type[BaseModel]]]): The pydantic model that describes
@@ -668,7 +692,7 @@ class Guard(IGuard, Generic[OT]):
                 kwargs=kwargs,
             )
 
-            if self._api_client is not None and model_is_supported_server_side(
+            if settings.use_server and model_is_supported_server_side(
                 llm_api, *args, **kwargs
             ):
                 return self._call_server(
@@ -678,6 +702,7 @@ class Guard(IGuard, Generic[OT]):
                     prompt_params=prompt_params,
                     metadata=metadata,
                     full_schema_reask=full_schema_reask,
+                    messages=messages,
                     *args,
                     **kwargs,
                 )
@@ -701,8 +726,15 @@ class Guard(IGuard, Generic[OT]):
             )
 
         guard_context = contextvars.Context()
+
+        # get the current otel context and wrap the subsequent call
+        #   to preserve otel context if guard call is being called be another
+        # framework upstream
+        current_otel_context = otel_context.get_current()
+        wrapped__exec = wrap_with_otel_context(current_otel_context, __exec)
+
         return guard_context.run(
-            __exec,
+            wrapped__exec,
             self,
             llm_api=llm_api,
             llm_output=llm_output,
@@ -728,7 +760,10 @@ class Guard(IGuard, Generic[OT]):
         messages: Optional[List[Dict]] = None,
         **kwargs,
     ) -> Union[ValidationOutcome[OT], Iterable[ValidationOutcome[OT]]]:
-        api = get_llm_ask(llm_api, *args, **kwargs)
+        api = None
+
+        if llm_api is not None or kwargs.get("model") is not None:
+            api = get_llm_ask(llm_api, *args, **kwargs)
 
         if self._output_formatter is not None:
             # Type suppression here? ArbitraryCallable is a subclass of PromptCallable!?
@@ -785,7 +820,7 @@ class Guard(IGuard, Generic[OT]):
 
         Args:
             llm_api: The LLM API to call
-                     (e.g. openai.Completion.create or openai.Completion.acreate)
+                     (e.g. openai.completions.create or openai.Completion.acreate)
             prompt_params: The parameters to pass to the prompt.format() method.
             num_reasks: The max times to re-ask the LLM for invalid output.
             metadata: Metadata to pass to the validators.
@@ -795,11 +830,16 @@ class Guard(IGuard, Generic[OT]):
                                `False` otherwise.
 
         Returns:
-            The raw text output from the LLM and the validated output.
+            ValidationOutcome
         """
         messages = kwargs.pop("messages", None) or self._exec_opts.messages or []
         print("==== call kwargs", kwargs)
         print("==== call messages", messages)
+        if messages is not None and not len(messages):
+            raise RuntimeError(
+                "You must provide messages "
+                "Alternatively, you can provide a messages in the Schema constructor."
+            )
         return self._execute(
             *args,
             llm_api=llm_api,
@@ -828,15 +868,14 @@ class Guard(IGuard, Generic[OT]):
             llm_output: The output being parsed and validated.
             metadata: Metadata to pass to the validators.
             llm_api: The LLM API to call
-                     (e.g. openai.Completion.create or openai.Completion.acreate)
+                     (e.g. openai.completions.create or openai.Completion.acreate)
             num_reasks: The max times to re-ask the LLM for invalid output.
             prompt_params: The parameters to pass to the prompt.format() method.
             full_schema_reask: When reasking, whether to regenerate the full schema
                                or just the incorrect values.
 
         Returns:
-            The validated response. This is either a string or a dictionary,
-                determined by the object schema defined in the RAILspec.
+            ValidationOutcome
         """
         final_num_reasks = (
             num_reasks
@@ -862,7 +901,8 @@ class Guard(IGuard, Generic[OT]):
             **kwargs,
         )
 
-    def error_spans_in_output(self):
+    def error_spans_in_output(self) -> List[ErrorSpan]:
+        """Get the error spans in the last output."""
         try:
             call = self.history.last
             if call:
@@ -920,13 +960,28 @@ class Guard(IGuard, Generic[OT]):
         - The output of an LLM request
         - The messages
 
-        *Note*: For on="output", `use` is only available for string output types.
-
         Args:
             validator: The validator to use. Either the class or an instance.
             on: The part of the LLM request to validate. Defaults to "output".
         """
+        # check if args has any validators hiding in it
+        # throw error to user so they can update
+        if args:
+            for arg in args:
+                if (
+                    isinstance(arg, type)
+                    and issubclass(arg, Validator)
+                    or isinstance(arg, Validator)
+                ):
+                    raise ValueError(
+                        "Validator is an argument besides the first."
+                        "Please pass it as the first or use the 'use_many' method for"
+                        " multiple validators."
+                    )
+
         hydrated_validator = get_validator(validator, *args, **kwargs)
+        if on == "messages":
+            on = "msg_history"
         self.__add_validator(hydrated_validator, on=on)
         self._save()
         return self
@@ -946,8 +1001,10 @@ class Guard(IGuard, Generic[OT]):
         *validators: UseManyValidatorSpec,
         on: str = "output",
     ) -> "Guard":
-        """Use a validator to validate results of an LLM request."""
+        """Use multiple validators to validate results of an LLM request."""
         # Loop through the validators
+        if on == "messages":
+            on = "msg_history"
         for v in validators:
             hydrated_validator = get_validator(v)
             self.__add_validator(hydrated_validator, on=on)
@@ -967,13 +1024,13 @@ class Guard(IGuard, Generic[OT]):
     #     pass
 
     def upsert_guard(self):
-        if self._api_client:
+        if settings.use_server and self._api_client:
             self._api_client.upsert_guard(self)
         else:
-            raise ValueError("Guard does not have an api client!")
+            raise ValueError("Using the Guardrails server is not enabled!")
 
     def _single_server_call(self, *, payload: Dict[str, Any]) -> ValidationOutcome[OT]:
-        if self._api_client:
+        if settings.use_server and self._api_client:
             validation_output: IValidationOutcome = self._api_client.validate(
                 guard=self,  # type: ignore
                 payload=ValidatePayload.from_dict(payload),  # type: ignore
@@ -1017,7 +1074,7 @@ class Guard(IGuard, Generic[OT]):
         *,
         payload: Dict[str, Any],
     ) -> Iterable[ValidationOutcome[OT]]:
-        if self._api_client:
+        if settings.use_server and self._api_client:
             validation_output: Optional[IValidationOutcome] = None
             response = self._api_client.stream_validate(
                 guard=self,  # type: ignore
@@ -1067,7 +1124,7 @@ class Guard(IGuard, Generic[OT]):
         full_schema_reask: Optional[bool] = True,
         **kwargs,
     ) -> Union[ValidationOutcome[OT], Iterable[ValidationOutcome[OT]]]:
-        if self._api_client:
+        if settings.use_server and self._api_client:
             payload: Dict[str, Any] = {
                 "args": list(args),
                 "full_schema_reask": full_schema_reask,
@@ -1101,11 +1158,11 @@ class Guard(IGuard, Generic[OT]):
 
     def _save(self):
         api_key = os.environ.get("GUARDRAILS_API_KEY")
-        if api_key is not None:
+        if settings.use_server:
             if self.name is None:
                 self.name = f"gr-{str(self.id)}"
-                logger.warn("Warning: No name passed to guard!")
-                logger.warn(
+                logger.warning("No name passed to guard!")
+                logger.warning(
                     "Use this auto-generated name to re-use this guard: {name}".format(
                         name=self.name
                     )
@@ -1115,6 +1172,7 @@ class Guard(IGuard, Generic[OT]):
             self.upsert_guard()
 
     def to_runnable(self) -> Runnable:
+        """Convert a Guard to a LangChain Runnable."""
         from guardrails.integrations.langchain.guard_runnable import GuardRunnable
 
         return GuardRunnable(self)
@@ -1132,11 +1190,13 @@ class Guard(IGuard, Generic[OT]):
 
         return i_guard.to_dict()
 
-    def add_json_function_calling_tool(
+    def json_function_calling_tool(
         self,
-        tools: list,
+        tools: Optional[list] = None,
     ) -> List[Dict[str, Any]]:
-        tools = add_json_function_calling_tool(
+        """Appends an OpenAI tool that specifies the output structure using
+        JSON Schema for chat models."""
+        tools = json_function_calling_tool_util(
             tools=tools,
             # todo to_dict has a slight bug workaround here
             # but should fix in the long run dont have to

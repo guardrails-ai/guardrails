@@ -99,7 +99,6 @@ class AsyncRunner(Runner):
                 (
                     messages,
                     output_schema,
-                    messages,
                 ) = self.prepare_to_loop(
                     iteration.reasks,
                     output_schema,
@@ -233,7 +232,6 @@ class AsyncRunner(Runner):
             supports_base_model = getattr(api, "supports_base_model", False)
             if supports_base_model:
                 api_fn = partial(api, base_model=self.base_model)
-
         if output is not None:
             llm_response = LLMResponse(
                 output=output,
@@ -300,8 +298,6 @@ class AsyncRunner(Runner):
             The messages
         """
         prompt_params = prompt_params or {}
-        if api is None:
-            raise UserFacingException(ValueError("API must be provided."))
 
         if messages:
             # Runner.prepare_msg_history

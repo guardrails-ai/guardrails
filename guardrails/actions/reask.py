@@ -18,6 +18,13 @@ from guardrails.utils.prompt_utils import prompt_content_for_schema, prompt_uses
 
 ### Classes/Types ###
 class ReAsk(IReask):
+    """Base class for ReAsk objects.
+
+    Attributes:
+        incorrect_value (Any): The value that failed validation.
+        fail_results (List[FailResult]): The results of the failed validations.
+    """
+
     incorrect_value: Any
     fail_results: List[FailResult]
 
@@ -61,16 +68,36 @@ class ReAsk(IReask):
 
 
 class FieldReAsk(ReAsk):
+    """An implementation of ReAsk that is used to reask for a specific field.
+    Inherits from ReAsk.
+
+    Attributes:
+        path (Optional[List[Any]]): a list of keys that
+            designated the path to the field that failed validation.
+    """
+
     # FIXME: This shouldn't be optional
     # We should be able to assign it on init now
     path: Optional[List[Any]] = None
 
 
 class SkeletonReAsk(ReAsk):
+    """An implementation of ReAsk that is used to reask for structured data
+    when the response does not match the expected schema.
+
+    Inherits from ReAsk.
+    """
+
     pass
 
 
 class NonParseableReAsk(ReAsk):
+    """An implementation of ReAsk that is used to reask for structured data
+    when the response is not parseable as JSON.
+
+    Inherits from ReAsk.
+    """
+
     pass
 
 
@@ -272,10 +299,12 @@ def get_reask_setup_for_string(
     if exec_options.reask_messages:
         messages = Messages(exec_options.reask_messages)
     if messages is None:
-        messages = Messages([
-            {"role": "system", "content": instructions},
-            {"role": "user", "content": prompt},
-        ])
+        messages = Messages(
+            [
+                {"role": "system", "content": instructions},
+                {"role": "user", "content": prompt},
+            ]
+        )
 
     messages = messages.format(
         output_schema=schema_prompt_content,
@@ -290,14 +319,11 @@ def get_original_messages(exec_options: GuardExecutionOptions) -> List[Dict[str,
     exec_options = exec_options or GuardExecutionOptions()
     original_messages = exec_options.messages or []
     messages_prompt = next(
-        (
-            h.get("content")
-            for h in original_messages
-            if isinstance(h, dict)
-        ),
+        (h.get("content") for h in original_messages if isinstance(h, dict)),
         "",
     )
     return messages_prompt
+
 
 def get_original_prompt(exec_options: Optional[GuardExecutionOptions] = None) -> str:
     exec_options = exec_options or GuardExecutionOptions()
@@ -458,16 +484,12 @@ def get_reask_setup_for_json(
     if exec_options.reask_messages:
         messages = Messages(exec_options.reask_messages)
     else:
-        messages = Messages([
-            {
-                "role": "system", 
-                "content": instructions
-            },
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ])
+        messages = Messages(
+            [
+                {"role": "system", "content": instructions},
+                {"role": "user", "content": prompt},
+            ]
+        )
 
     return reask_schema, messages
 

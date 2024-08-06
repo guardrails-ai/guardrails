@@ -6,6 +6,7 @@ class Filter:
 
 
 def apply_filters(value: Any) -> Any:
+    """Recursively filter out any values that are instances of Filter."""
     if isinstance(value, Filter):
         pass
     elif isinstance(value, List):

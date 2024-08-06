@@ -1008,7 +1008,7 @@ def test_string_output(mocker):
     mock_invoke_llm = None
 
 
-def test_add_json_function_calling_tool(mocker):
+def test_json_function_calling_tool(mocker):
     mock_invoke_llm = mocker.patch(
         "guardrails.llm_providers.OpenAIChatCallable._invoke_llm"
     )
@@ -1080,7 +1080,7 @@ def test_add_json_function_calling_tool(mocker):
                 " some email blah blah blah.",
             }
         ],
-        tools=guard.add_json_function_calling_tool(tools),
+        tools=guard.json_function_calling_tool(tools),
         tool_choice="required",
     )
 
@@ -1243,7 +1243,7 @@ def test_guard_from_pydantic_with_mock_hf_pipeline():
 
     pipe = make_mock_pipeline()
     guard = Guard()
-    _ = guard(pipe, prompt="Don't care about the output.  Just don't crash.")
+    _ = guard(pipe, prompt="Don't care about the output.")
 
 
 @pytest.mark.skipif(
@@ -1259,7 +1259,7 @@ def test_guard_from_pydantic_with_mock_hf_model():
     _ = guard(
         model.generate,
         tokenizer=tokenizer,
-        prompt="Don't care about the output.  Just don't crash.",
+        prompt="Don't care about the output.",
     )
 
 

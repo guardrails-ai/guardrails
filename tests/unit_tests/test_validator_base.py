@@ -746,6 +746,24 @@ async def test_input_validation_fail_async(
     assert isinstance(guard.history.last.exception, ValidationError)
     assert guard.history.last.exception == excinfo.value
 
+    # with_messages_validation
+    guard = AsyncGuard.from_pydantic(output_class=Pet)
+    guard.use(TwoWords(on_fail=on_fail), on="messages")
+
+    with pytest.raises(ValidationError) as excinfo:
+        await guard(
+            custom_llm,
+            messages=[
+                {
+                    "role": "user",
+                    "content": "What kind of pet should I get?",
+                }
+            ],
+        )
+    assert str(excinfo.value) == structured_message_history_error
+    assert isinstance(guard.history.last.exception, ValidationError)
+    assert guard.history.last.exception == excinfo.value
+
     # rail prompt validation
     guard = AsyncGuard.from_rail_string(
         f"""

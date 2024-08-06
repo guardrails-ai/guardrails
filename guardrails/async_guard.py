@@ -1,6 +1,7 @@
 from builtins import id as object_id
 import contextvars
 import inspect
+from opentelemetry import context as otel_context
 from typing import (
     Any,
     AsyncIterable,
@@ -38,6 +39,7 @@ from guardrails.stores.context import (
 )
 from guardrails.types.pydantic import ModelOrListOfModels
 from guardrails.types.validator import UseManyValidatorSpec, UseValidatorSpec
+from guardrails.utils.telemetry_utils import wrap_with_otel_context
 from guardrails.utils.validator_utils import verify_metadata_requirements
 from guardrails.validator_base import Validator
 
@@ -179,10 +181,7 @@ class AsyncGuard(Guard, Generic[OT]):
         self._fill_validators()
         metadata = metadata or {}
         if not llm_output and llm_api and not (messages):
-            raise RuntimeError(
-                "'messages' must be provided in order to call an LLM!"
-            )
-
+            raise RuntimeError("'messages' must be provided in order to call an LLM!")
         # check if validator requirements are fulfilled
         missing_keys = verify_metadata_requirements(metadata, self._validators)
         if missing_keys:
@@ -212,18 +211,24 @@ class AsyncGuard(Guard, Generic[OT]):
                 full_schema_reask = self._base_model is not None
 
             if self._allow_metrics_collection:
+                llm_api_str = ""
+                if llm_api:
+                    llm_api_module_name = (
+                        llm_api.__module__ if hasattr(llm_api, "__module__") else ""
+                    )
+                    llm_api_name = (
+                        llm_api.__name__
+                        if hasattr(llm_api, "__name__")
+                        else type(llm_api).__name__
+                    )
+                    llm_api_str = f"{llm_api_module_name}.{llm_api_name}"
                 # Create a new span for this guard call
                 self._hub_telemetry.create_new_span(
                     span_name="/guard_call",
                     attributes=[
                         ("guard_id", self.id),
                         ("user_id", self._user_id),
-                        (
-                            "llm_api",
-                            llm_api.__name__
-                            if (llm_api and hasattr(llm_api, "__name__"))
-                            else type(llm_api).__name__,
-                        ),
+                        ("llm_api", llm_api_str),
                         (
                             "custom_reask_messages",
                             self._exec_opts.reask_messages is not None,
@@ -265,6 +270,7 @@ class AsyncGuard(Guard, Generic[OT]):
                     prompt_params=prompt_params,
                     metadata=metadata,
                     full_schema_reask=full_schema_reask,
+                    messages=messages,
                     *args,
                     **kwargs,
                 )
@@ -293,8 +299,13 @@ class AsyncGuard(Guard, Generic[OT]):
             return result  # type: ignore
 
         guard_context = contextvars.Context()
+        # get the current otel context and wrap the subsequent call
+        #   to preserve otel context if guard call is being called by another
+        # framework upstream
+        current_otel_context = otel_context.get_current()
+        wrapped__exec = wrap_with_otel_context(current_otel_context, __exec)
         return await guard_context.run(
-            __exec,
+            wrapped__exec,
             self,
             llm_api=llm_api,
             llm_output=llm_output,
@@ -340,9 +351,7 @@ class AsyncGuard(Guard, Generic[OT]):
         Returns:
             The raw text output from the LLM and the validated output.
         """
-        api = (
-            get_async_llm_ask(llm_api, *args, **kwargs) if llm_api is not None else None
-        )
+        api = get_async_llm_ask(llm_api, *args, **kwargs)  # type: ignore
         if kwargs.get("stream", False):
             runner = AsyncStreamRunner(
                 output_type=self._output_type,
@@ -404,7 +413,7 @@ class AsyncGuard(Guard, Generic[OT]):
 
         Args:
             llm_api: The LLM API to call
-                     (e.g. openai.Completion.create or openai.Completion.acreate)
+                     (e.g. openai.completions.create or openai.chat.completions.create)
             prompt_params: The parameters to pass to the prompt.format() method.
             num_reasks: The max times to re-ask the LLM for invalid output.
             messages: The messages to pass to the LLM.
@@ -452,7 +461,7 @@ class AsyncGuard(Guard, Generic[OT]):
             llm_output: The output being parsed and validated.
             metadata: Metadata to pass to the validators.
             llm_api: The LLM API to call
-                     (e.g. openai.Completion.create or openai.Completion.acreate)
+                     (e.g. openai.completions.create or openai.Completion.acreate)
             num_reasks: The max times to re-ask the LLM for invalid output.
             prompt_params: The parameters to pass to the prompt.format() method.
             full_schema_reask: When reasking, whether to regenerate the full schema

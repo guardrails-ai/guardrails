@@ -9,7 +9,6 @@ from guardrails.llm_providers import (
     OpenAIChatCallable,
     PromptCallableBase,
 )
-from guardrails.prompt import Instructions, Prompt
 from guardrails.run.runner import Runner
 from guardrails.utils.parsing_utils import (
     coerce_types,
@@ -18,6 +17,7 @@ from guardrails.utils.parsing_utils import (
 )
 from guardrails.actions.reask import ReAsk, SkeletonReAsk
 from guardrails.constants import pass_status
+from guardrails.utils.telemetry_utils import trace
 
 
 class StreamRunner(Runner):
@@ -60,6 +60,7 @@ class StreamRunner(Runner):
             call_log=call_log,
         )
 
+    @trace(name="step")
     def step(
         self,
         index: int,
@@ -102,7 +103,9 @@ class StreamRunner(Runner):
         iteration.inputs.messages = messages
 
         # Call: run the API that returns a generator wrapped in LLMResponse
-        llm_response = self.call(msg_history, api, output)
+        llm_response = self.call(messages, api, output)
+
+        iteration.outputs.llm_response_info = llm_response
 
         # Get the stream (generator) from the LLMResponse
         stream = llm_response.stream_output
@@ -115,6 +118,7 @@ class StreamRunner(Runner):
         fragment = ""
         parsed_fragment, validated_fragment, valid_op = None, None, None
         verified = set()
+        validation_response = ""
         # Loop over the stream
         # and construct "fragments" of concatenated chunks
         # for now, handle string and json schema differently
@@ -162,6 +166,7 @@ class StreamRunner(Runner):
                         "remove reasks from schema or disable streaming."
                     )
                 # 5. Convert validated fragment to a pretty JSON string
+                validation_response += cast(str, validated_text)
                 passed = call_log.status == pass_status
                 yield ValidationOutcome(
                     call_id=call_log.id,  # type: ignore
@@ -236,6 +241,10 @@ class StreamRunner(Runner):
                         "remove reasks from schema or disable streaming."
                     )
 
+                if self.output_type == OutputTypes.LIST:
+                    validation_response = cast(list, validated_fragment)
+                else:
+                    validation_response = cast(dict, validated_fragment)
                 # 5. Convert validated fragment to a pretty JSON string
                 yield ValidationOutcome(
                     call_id=call_log.id,  # type: ignore
@@ -248,8 +257,8 @@ class StreamRunner(Runner):
         iteration.outputs.raw_output = fragment
         # Do we need to care about the type here?
         # What happens if parsing continuously fails?
-        iteration.outputs.parsed_output = parsed_fragment  # type: ignore
-        iteration.outputs.validation_response = validated_fragment
+        iteration.outputs.parsed_output = parsed_fragment or fragment  # type: ignore
+        iteration.outputs.validation_response = validation_response
         iteration.outputs.guarded_output = valid_op
 
     def is_last_chunk(self, chunk: Any, api: Union[PromptCallableBase, None]) -> bool:

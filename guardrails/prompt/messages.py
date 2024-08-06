@@ -20,19 +20,14 @@ class Messages:
         xml_output_schema: Optional[str] = None,
     ):
         self._source = source
-        # self.format_instructions_start = self.get_format_instructions_idx(source)
 
         # FIXME: Why is this happening on init instead of on format?
         # Substitute constants in the prompt.
         for message in self._source:
-            try:
-                # if content is instance of Prompt class,
-                # call the substitute_constants method
-                if isinstance(message["content"], str):
-                    content = message["content"]
-                    message["content"] = self.substitute_constants(content)
-            except Exception:
-                pass
+            # if content is instance of Prompt class
+            # call the substitute_constants method
+            if isinstance(message["content"], str):
+                message["content"] = self.substitute_constants(message["content"])
 
         # FIXME: Why is this happening on init instead of on format?
         # If an output schema is provided, substitute it in the prompt.

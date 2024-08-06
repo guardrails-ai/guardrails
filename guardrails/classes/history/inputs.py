@@ -11,6 +11,29 @@ from guardrails.prompt.messages import Messages
 
 
 class Inputs(IInputs, ArbitraryModel):
+    """Inputs represent the input data that is passed into the validation loop.
+
+    Attributes:
+        llm_api (Optional[PromptCallableBase]): The constructed class
+            for calling the LLM.
+        llm_output (Optional[str]): The string output from an
+            external LLM call provided by the user via Guard.parse.
+        instructions (Optional[Instructions]): The constructed
+            Instructions class for chat model calls.
+        prompt (Optional[Prompt]): The constructed Prompt class.
+        msg_history (Optional[List[Dict]]): The message history
+            provided by the user for chat model calls.
+        prompt_params (Optional[Dict]): The parameters provided
+            by the user that will be formatted into the final LLM prompt.
+        num_reasks (Optional[int]): The total number of reasks allowed;
+            user provided or defaulted.
+        metadata (Optional[Dict[str, Any]]): The metadata provided
+            by the user to be used during validation.
+        full_schema_reask (Optional[bool]): Whether reasks we
+            performed across the entire schema or at the field level.
+        stream (Optional[bool]): Whether or not streaming was used.
+    """
+
     llm_api: Optional[PromptCallableBase] = Field(
         description="The constructed class for calling the LLM.", default=None
     )
@@ -21,6 +44,10 @@ class Inputs(IInputs, ArbitraryModel):
     )
     messages: Optional[Messages] = Field(
         description="The messages provided by the user for chat model calls.",
+        default=None,
+    )
+    messages: Optional[List[Messages]] = Field(
+        description="The message history provided by the user for chat model calls.",
         default=None,
     )
     prompt_params: Optional[Dict] = Field(

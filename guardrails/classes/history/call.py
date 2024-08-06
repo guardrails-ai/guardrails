@@ -15,8 +15,8 @@ from guardrails.classes.history.iteration import Iteration
 from guardrails.classes.generic.arbitrary_model import ArbitraryModel
 from guardrails.classes.validation.validation_result import ValidationResult
 from guardrails.constants import error_status, fail_status, not_run_status, pass_status
-from guardrails.prompt.instructions import Instructions
 from guardrails.prompt.prompt import Prompt
+from guardrails.prompt.messages import Messages
 from guardrails.classes.validation.validator_logs import ValidatorLogs
 from guardrails.actions.reask import (
     ReAsk,
@@ -29,6 +29,20 @@ from guardrails.schema.parser import get_value_from_path
 # We can't inherit from Iteration because python
 # won't let you override a class attribute with a managed attribute
 class Call(ICall, ArbitraryModel):
+    """A Call represents a single execution of a Guard. One Call is created
+    each time the user invokes the `Guard.__call__`, `Guard.parse`, or
+    `Guard.validate` method.
+
+    Attributes:
+        iterations (Stack[Iteration]): A stack of iterations
+            for the initial validation round
+            and one for each reask that occurs during a Call.
+        inputs (CallInputs): The inputs as passed in to
+            `Guard.__call__`, `Guard.parse`, or `Guard.validate`
+        exception (Optional[Exception]): The exception that interrupted
+            the Guard execution.
+    """
+
     iterations: Stack[Iteration] = Field(
         description="A stack of iterations for each"
         "step/reask that occurred during this call."
@@ -105,7 +119,7 @@ class Call(ICall, ArbitraryModel):
         """The messages as provided by the user when initializing or calling the
         Guard."""
         return self.inputs.messages
-    
+
     @property
     def compiled_messages(self) -> Optional[List[Dict[str, Any]]]:
         """The initial compiled messages that were passed to the LLM on the
@@ -117,15 +131,9 @@ class Call(ICall, ArbitraryModel):
         prompt_params = initial_inputs.prompt_params or {}
         if messages is not None:
             return messages.format(**prompt_params).source
-    
-    @property
-    def messages(self)-> Optional[List[Dict[str, Any]]]:
-        """The messages as provided by the user when initializing or calling the
-        Guard."""
-        return self.inputs.messages
 
     @property
-    def reask_messages(self) -> Stack[str]:
+    def reask_messages(self) -> Stack[Messages]:
         """The compiled messages used during reasks.
 
         Does not include the initial messages.

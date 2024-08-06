@@ -8,6 +8,21 @@ from guardrails.classes.generic.arbitrary_model import ArbitraryModel
 
 
 class CallInputs(Inputs, ICallInputs, ArbitraryModel):
+    """CallInputs represent the input data that is passed into the Guard from
+    the user. Inherits from Inputs with the below overrides and additional
+    attributes.
+
+    Attributes:
+        llm_api (Optional[Callable[[Any], Awaitable[Any]]]): The LLM function
+            provided by the user during Guard.__call__ or Guard.parse.
+        prompt (Optional[str]): The prompt string as provided by the user.
+        instructions (Optional[str]): The instructions string as provided by the user.
+        args (List[Any]): Additional arguments for the LLM as provided by the user.
+            Default [].
+        kwargs (Dict[str, Any]): Additional keyword-arguments for
+            the LLM as provided by the user. Default {}.
+    """
+
     llm_api: Optional[Callable[[Any], Awaitable[Any]]] = Field(
         description="The LLM function provided by the user"
         "during Guard.__call__ or Guard.parse.",

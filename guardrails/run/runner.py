@@ -178,8 +178,8 @@ class Runner:
                 if not self.do_loop(index, iteration.reasks):
                     break
 
-                # Get new prompt and output schema.
-                (prompt, messages) = self.prepare_to_loop(
+                # Get new messages and output schema.
+                (messages, output_schema) = self.prepare_to_loop(
                     iteration.reasks,
                     output_schema,
                     parsed_output=iteration.outputs.parsed_output,
@@ -196,7 +196,6 @@ class Runner:
                     is_parent=False,  # This span has no children
                     has_parent=True,  # This span has a parent
                 )
-
         except UserFacingException as e:
             # Because Pydantic v1 doesn't respect property setters
             call_log.exception = e.original_exception

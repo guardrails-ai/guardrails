@@ -87,6 +87,9 @@ def _jsonschema_to_jsonformer(
 
 
 class JsonFormatter(BaseFormatter):
+    """A formatter that uses Jsonformer to ensure the shape of structured data
+    for Hugging Face models."""
+
     def __init__(self, schema: dict):
         self.output_schema = _jsonschema_to_jsonformer(schema)
 
