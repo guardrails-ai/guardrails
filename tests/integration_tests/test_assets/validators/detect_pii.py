@@ -10,17 +10,15 @@ from guardrails.validator_base import (
     register_validator,
 )
 from guardrails.validator_base import ErrorSpan
-from presidio_analyzer import AnalyzerEngine
-from presidio_anonymizer import AnonymizerEngine
 
 
 @register_validator(name="guardrails/detect_pii", data_type="string")
-class DetectPII(Validator):
+class MockDetectPII(Validator):
     """Validates that any text does not contain any PII.
 
-    This validator uses Microsoft's Presidio (https://github.com/microsoft/presidio)
-    to detect PII in the text. If PII is detected, the validator will fail with a
-    programmatic fix that anonymizes the text. Otherwise, the validator will pass.
+    Instead of using Microsoft Presidio, it accepts a map of PII text to their replacements, 
+    and performs a simple string replacement. For example, if the map is {"John Doe": "REDACTED"},
+    then the text "John Doe is a person" will be replaced with "REDACTED is a person".
 
     **Key Properties**
 
@@ -90,12 +88,12 @@ class DetectPII(Validator):
         self,
         pii_entities: Union[str, List[str], None] = None,
         on_fail: Union[Callable[..., Any], None] = None,
+        replace_map: Dict[str, str] = {},
         **kwargs,
     ):
         super().__init__(on_fail, pii_entities=pii_entities, **kwargs)
         self.pii_entities = pii_entities
-        self.pii_analyzer = AnalyzerEngine()
-        self.pii_anonymizer = AnonymizerEngine()
+        self.replace_map = replace_map 
 
     def get_anonymized_text(self, text: str, entities: List[str]) -> str:
         """Analyze and anonymize the text for PII.
@@ -107,11 +105,10 @@ class DetectPII(Validator):
         Returns:
             anonymized_text (str): The anonymized text.
         """
-        results = self.pii_analyzer.analyze(text=text, entities=entities, language="en")
-        results = cast(List[Any], results)
-        anonymized_text = self.pii_anonymizer.anonymize(
-            text=text, analyzer_results=results
-        ).text
+        anonymized_text = text
+        # iterate through keys in replace_map
+        for key in self.replace_map:
+            anonymized_text = anonymized_text.replace(key, self.replace_map[key])
         return anonymized_text
 
     def validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:

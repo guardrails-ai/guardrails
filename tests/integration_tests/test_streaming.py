@@ -21,7 +21,7 @@ from guardrails.validator_base import (
     Validator,
     register_validator,
 )
-from tests.integration_tests.test_assets.validators import LowerCase, DetectPII
+from tests.integration_tests.test_assets.validators import LowerCase, MockDetectPII
 
 expected_raw_output = {"statement": "I am DOING well, and I HOPE you aRe too."}
 expected_fix_output = {"statement": "i am doing well, and i hope you are too."}
@@ -324,7 +324,7 @@ def test_streaming_with_openai_chat_callable(
 STR_LLM_CHUNKS = [
     # 38 characters
     "This sentence is simply just ",
-    "too long."
+    "too long.",
     # 25 characters long
     "This ",
     "sentence ",
@@ -426,7 +426,8 @@ def test_fix_behavior(mocker):
     )
 
     guard = gd.Guard().use_many(
-        DetectPII(on_fail=OnFailAction.FIX, pii_entities="pii"),
+        MockDetectPII(on_fail=OnFailAction.FIX, pii_entities="pii", 
+                      replace_map={"John":"<PERSON>", "SAN Francisco's":"<LOCATION>"}),
         LowerCase(on_fail=OnFailAction.FIX),
     )
     gen = guard(
@@ -463,7 +464,8 @@ def test_refrain_behavior(mocker):
     )
 
     guard = gd.Guard().use_many(
-        DetectPII(on_fail=OnFailAction.REFRAIN, pii_entities="pii"),
+        MockDetectPII(on_fail=OnFailAction.REFRAIN, pii_entities="pii", 
+                      replace_map={"John":"<PERSON>", "SAN Francisco's":"<LOCATION>"}),
         LowerCase(on_fail=OnFailAction.FIX),
     )
     gen = guard(
@@ -493,7 +495,8 @@ def test_filter_behavior(mocker):
     )
 
     guard = gd.Guard().use_many(
-        DetectPII(on_fail=OnFailAction.FIX, pii_entities="pii"),
+        MockDetectPII(on_fail=OnFailAction.FIX, pii_entities="pii", 
+                      replace_map={"John":"<PERSON>", "SAN Francisco's":"<LOCATION>"}),
         LowerCase(on_fail=OnFailAction.FILTER),
     )
     gen = guard(
