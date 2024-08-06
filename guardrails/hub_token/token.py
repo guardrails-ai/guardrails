@@ -32,7 +32,7 @@ class HttpError(Exception):
 
 
 VALIDATOR_HUB_SERVICE = os.getenv(
-    "GR_VALIDATOR_HUB_SERVICE", "https://so4sg4q4pb.execute-api.us-east-1.amazonaws.com"
+    "GR_VALIDATOR_HUB_SERVICE", "https://hub.api.guardrailsai.com"
 )
 
 
