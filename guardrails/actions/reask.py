@@ -247,7 +247,7 @@ def get_reask_setup_for_string(
     validation_response: Optional[Union[str, List, Dict, ReAsk]] = None,
     prompt_params: Optional[Dict[str, Any]] = None,
     exec_options: Optional[GuardExecutionOptions] = None,
-) -> Tuple[Dict[str, Any], Prompt, Instructions]:
+) -> Tuple[Dict[str, Any], Messages]:
     prompt_params = prompt_params or {}
     exec_options = exec_options or GuardExecutionOptions()
 
@@ -300,7 +300,10 @@ def get_reask_setup_for_string(
         messages = Messages(exec_options.reask_messages)
     if messages is None:
         messages = Messages(
-            [{"role": "system", "content": "You are a helpful assistant."}]
+            [
+                {"role": "system", "content": instructions},
+                {"role": "user", "content": prompt},
+            ]
         )
 
     messages = messages.format(
@@ -309,7 +312,17 @@ def get_reask_setup_for_string(
         **prompt_params,
     )
 
-    return output_schema, prompt, instructions
+    return output_schema, messages
+
+
+def get_original_messages(exec_options: GuardExecutionOptions) -> List[Dict[str, Any]]:
+    exec_options = exec_options or GuardExecutionOptions()
+    original_messages = exec_options.messages or []
+    messages_prompt = next(
+        (h.get("content") for h in original_messages if isinstance(h, dict)),
+        "",
+    )
+    return messages_prompt
 
 
 def get_original_prompt(exec_options: Optional[GuardExecutionOptions] = None) -> str:
@@ -338,7 +351,7 @@ def get_reask_setup_for_json(
     use_full_schema: Optional[bool] = False,
     prompt_params: Optional[Dict[str, Any]] = None,
     exec_options: Optional[GuardExecutionOptions] = None,
-) -> Tuple[Dict[str, Any], Prompt, Instructions]:
+) -> Tuple[Dict[str, Any], Messages]:
     reask_schema = output_schema
     is_skeleton_reask = not any(isinstance(reask, FieldReAsk) for reask in reasks)
     is_nonparseable_reask = any(
@@ -347,12 +360,10 @@ def get_reask_setup_for_json(
     error_messages = {}
     prompt_params = prompt_params or {}
     exec_options = exec_options or GuardExecutionOptions()
-    original_prompt = get_original_prompt(exec_options)
-    use_xml = prompt_uses_xml(original_prompt)
+    original_messages = get_original_messages(exec_options)
+    use_xml = prompt_uses_xml(original_messages)
 
     reask_prompt_template = None
-    if exec_options.reask_prompt:
-        reask_prompt_template = Prompt(exec_options.reask_prompt)
 
     if is_nonparseable_reask:
         if reask_prompt_template is None:
@@ -461,31 +472,26 @@ def get_reask_setup_for_json(
         **prompt_params,
     )
 
-    instructions = None
-    if exec_options.reask_instructions:
-        instructions = Instructions(exec_options.reask_instructions)
-    else:
-        instructions_const = (
-            constants["high_level_xml_instructions"]
-            if use_xml
-            else constants["high_level_json_instructions"]
-        )
-        instructions = Instructions(instructions_const)
+    instructions_const = (
+        constants["high_level_xml_instructions"]
+        if use_xml
+        else constants["high_level_json_instructions"]
+    )
+    instructions = Instructions(instructions_const)
     instructions = instructions.format(**prompt_params)
 
-    # TODO: enable this in 0.6.0
-    # messages = None
-    # if exec_options.reask_messages:
-    #     messages = Messages(exec_options.reask_messages)
-    # else:
-    #     messages = Messages(
-    #         [
-    #             {"role": "system", "content": instructions},
-    #             {"role": "user", "content": prompt},
-    #         ]
-    #     )
+    messages = None
+    if exec_options.reask_messages:
+        messages = Messages(exec_options.reask_messages)
+    else:
+        messages = Messages(
+            [
+                {"role": "system", "content": instructions},
+                {"role": "user", "content": prompt},
+            ]
+        )
 
-    return reask_schema, prompt, instructions
+    return reask_schema, messages
 
 
 def get_reask_setup(
@@ -499,7 +505,7 @@ def get_reask_setup(
     use_full_schema: Optional[bool] = False,
     prompt_params: Optional[Dict[str, Any]] = None,
     exec_options: Optional[GuardExecutionOptions] = None,
-) -> Tuple[Dict[str, Any], Prompt, Instructions]:
+) -> Tuple[Dict[str, Any], Messages]:
     prompt_params = prompt_params or {}
     exec_options = exec_options or GuardExecutionOptions()
 

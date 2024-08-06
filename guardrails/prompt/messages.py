@@ -8,6 +8,7 @@ from typing import Dict, List, Optional
 from guardrails.classes.templating.namespace_template import NamespaceTemplate
 from guardrails.utils.constants import constants
 from guardrails.utils.templating_utils import get_template_variables
+from guardrails.prompt.prompt import Prompt
 
 
 class Messages:
@@ -36,8 +37,12 @@ class Messages:
                     message["content"] = Template(message["content"]).safe_substitute(
                         output_schema=output_schema, xml_output_schema=xml_output_schema
                     )
-        else:
-            self.source = source
+
+        self.source = self._source
+
+    @property
+    def variable_names(self):
+        return get_template_variables(messages_string(self))
 
     def format(
         self,
@@ -59,6 +64,9 @@ class Messages:
             )
         return Messages(formatted_messages)
 
+    def __iter__(self):
+        return iter(self._source)
+
     def substitute_constants(self, text):
         """Substitute constants in the prompt."""
         # Substitute constants by reading the constants file.
@@ -73,3 +81,15 @@ class Messages:
             text = template.safe_substitute(**mapping)
 
         return text
+
+
+def messages_string(messages: Messages) -> str:
+    messages_copy = ""
+    for msg in messages:
+        content = (
+            msg["content"].source
+            if getattr(msg, "content", None) and isinstance(msg["content"], Prompt)
+            else msg["content"]
+        )
+        messages_copy += content
+    return messages_copy

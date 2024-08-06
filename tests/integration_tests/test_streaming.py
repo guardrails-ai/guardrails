@@ -199,6 +199,8 @@ Say something nice to me.
 ${gr.complete_json_suffix}
 """
 
+MESSAGES=[{"role": "user", "content": PROMPT}]
+
 JSON_LLM_CHUNKS = [
     '{"statement":',
     ' "I am DOING',
@@ -212,19 +214,19 @@ JSON_LLM_CHUNKS = [
     "guard, expected_validated_output",
     [
         (
-            gd.Guard.from_pydantic(output_class=LowerCaseNoop, prompt=PROMPT),
+            gd.Guard.from_pydantic(output_class=LowerCaseNoop, messages=MESSAGES),
             expected_noop_output,
         ),
         (
-            gd.Guard.from_pydantic(output_class=LowerCaseFix, prompt=PROMPT),
+            gd.Guard.from_pydantic(output_class=LowerCaseFix, messages=MESSAGES),
             expected_fix_output,
         ),
         (
-            gd.Guard.from_pydantic(output_class=LowerCaseFilter, prompt=PROMPT),
+            gd.Guard.from_pydantic(output_class=LowerCaseFilter, messages=MESSAGES),
             expected_filter_refrain_output,
         ),
         (
-            gd.Guard.from_pydantic(output_class=LowerCaseRefrain, prompt=PROMPT),
+            gd.Guard.from_pydantic(output_class=LowerCaseRefrain, messages=MESSAGES),
             expected_filter_refrain_output,
         ),
     ],
@@ -268,19 +270,19 @@ def test_streaming_with_openai_callable(
     "guard, expected_validated_output",
     [
         (
-            gd.Guard.from_pydantic(output_class=LowerCaseNoop, prompt=PROMPT),
+            gd.Guard.from_pydantic(output_class=LowerCaseNoop, messages=MESSAGES),
             expected_noop_output,
         ),
         (
-            gd.Guard.from_pydantic(output_class=LowerCaseFix, prompt=PROMPT),
+            gd.Guard.from_pydantic(output_class=LowerCaseFix, messages=MESSAGES),
             expected_fix_output,
         ),
         (
-            gd.Guard.from_pydantic(output_class=LowerCaseFilter, prompt=PROMPT),
+            gd.Guard.from_pydantic(output_class=LowerCaseFilter, messages=MESSAGES),
             expected_filter_refrain_output,
         ),
         (
-            gd.Guard.from_pydantic(output_class=LowerCaseRefrain, prompt=PROMPT),
+            gd.Guard.from_pydantic(output_class=LowerCaseRefrain, messages=MESSAGES),
             expected_filter_refrain_output,
         ),
     ],
@@ -345,7 +347,7 @@ STR_LLM_CHUNKS = [
                 validators=[
                     MinSentenceLengthValidator(26, 30, on_fail=OnFailAction.NOOP)
                 ],
-                prompt=STR_PROMPT,
+                messages=MESSAGES,
             ),
             # each value is a tuple
             # first is expected text inside span

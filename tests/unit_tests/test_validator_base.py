@@ -295,7 +295,15 @@ def test_custom_on_fail_handler(
         pet_type: str = Field(description="Species of pet", validators=[validator])
         name: str = Field(description="a unique pet name")
 
-    guard = Guard.from_pydantic(output_class=Pet, prompt=prompt)
+    guard = Guard.from_pydantic(
+        output_class=Pet,
+        messages=[
+            {
+                "role": "user",
+                "content": prompt,
+            }
+        ],
+    )
     if isinstance(expected_result, type) and issubclass(expected_result, Exception):
         with pytest.raises(ValidationError) as excinfo:
             guard.parse(output, num_reasks=0)
@@ -316,38 +324,14 @@ def test_input_validation_fix(mocker):
     def mock_llm_api(*args, **kwargs):
         return json.dumps({"name": "Fluffy"})
 
-    # fix returns an amended value for prompt/instructions validation,
+    # raises for messages validation
     guard = Guard.from_pydantic(output_class=Pet)
-    guard.use(TwoWords(on_fail=OnFailAction.FIX), on="prompt")
-
-    guard(
-        mock_llm_api,
-        prompt="What kind of pet should I get?",
-    )
-    assert (
-        guard.history.first.iterations.first.outputs.validation_response == "What kind"
-    )
-    guard = Guard.from_pydantic(output_class=Pet)
-    guard.use(TwoWords(on_fail=OnFailAction.FIX), on="instructions")
-
-    guard(
-        mock_llm_api,
-        prompt="What kind of pet should I get and what should I name it?",
-        instructions="But really, what kind of pet should I get?",
-    )
-    assert (
-        guard.history.first.iterations.first.outputs.validation_response
-        == "But really,"
-    )
-
-    # but raises for msg_history validation
-    guard = Guard.from_pydantic(output_class=Pet)
-    guard.use(TwoWords(on_fail=OnFailAction.FIX), on="msg_history")
+    guard.use(TwoWords(on_fail=OnFailAction.FIX), on="messages")
 
     with pytest.raises(ValidationError) as excinfo:
         guard(
             mock_llm_api,
-            msg_history=[
+            messages=[
                 {
                     "role": "user",
                     "content": "What kind of pet should I get?",
@@ -415,7 +399,12 @@ async def test_async_input_validation_fix(mocker):
 
     await guard(
         mock_llm_api,
-        prompt="What kind of pet should I get?",
+        messages=[
+            {
+                "role": "user",
+                "content": "What kind of pet should I get?",
+            }
+        ],
     )
     assert (
         guard.history.first.iterations.first.outputs.validation_response == "What kind"
@@ -434,14 +423,14 @@ async def test_async_input_validation_fix(mocker):
         == "But really,"
     )
 
-    # but raises for msg_history validation
+    # but raises for messages validation
     guard = AsyncGuard.from_pydantic(output_class=Pet)
-    guard.use(TwoWords(on_fail=OnFailAction.FIX), on="msg_history")
+    guard.use(TwoWords(on_fail=OnFailAction.FIX), on="messages")
 
     with pytest.raises(ValidationError) as excinfo:
         await guard(
             mock_llm_api,
-            msg_history=[
+            messages=[
                 {
                     "role": "user",
                     "content": "What kind of pet should I get?",
@@ -561,7 +550,12 @@ def test_input_validation_fail(
     with pytest.raises(ValidationError) as excinfo:
         guard(
             custom_llm,
-            prompt="What kind of pet should I get?",
+            messages=[
+                {
+                    "role": "user",
+                    "content": "What kind of pet should I get?",
+                }
+            ],
         )
     assert str(excinfo.value) == structured_prompt_error
     assert isinstance(guard.history.last.exception, ValidationError)
@@ -584,12 +578,12 @@ def test_input_validation_fail(
 
     # With Msg History Validation
     guard = Guard.from_pydantic(output_class=Pet)
-    guard.use(TwoWords(on_fail=on_fail), on="msg_history")
+    guard.use(TwoWords(on_fail=on_fail), on="messages")
 
     with pytest.raises(ValidationError) as excinfo:
         guard(
             custom_llm,
-            msg_history=[
+            messages=[
                 {
                     "role": "user",
                     "content": "What kind of pet should I get?",
@@ -713,41 +707,14 @@ async def test_input_validation_fail_async(
         return_value=custom_llm,
     )
 
-    # with_prompt_validation
+    # with_messages_validation
     guard = AsyncGuard.from_pydantic(output_class=Pet)
-    guard.use(TwoWords(on_fail=on_fail), on="prompt")
+    guard.use(TwoWords(on_fail=on_fail), on="messages")
 
     with pytest.raises(ValidationError) as excinfo:
         await guard(
             custom_llm,
-            prompt="What kind of pet should I get?",
-        )
-    assert str(excinfo.value) == structured_prompt_error
-    assert isinstance(guard.history.last.exception, ValidationError)
-    assert guard.history.last.exception == excinfo.value
-
-    # with_instructions_validation
-    guard = AsyncGuard.from_pydantic(output_class=Pet)
-    guard.use(TwoWords(on_fail=on_fail), on="instructions")
-
-    with pytest.raises(ValidationError) as excinfo:
-        await guard(
-            custom_llm,
-            prompt="What kind of pet should I get and what should I name it?",
-            instructions="What kind of pet should I get?",
-        )
-    assert str(excinfo.value) == structured_instructions_error
-    assert isinstance(guard.history.last.exception, ValidationError)
-    assert guard.history.last.exception == excinfo.value
-
-    # with_msg_history_validation
-    guard = AsyncGuard.from_pydantic(output_class=Pet)
-    guard.use(TwoWords(on_fail=on_fail), on="msg_history")
-
-    with pytest.raises(ValidationError) as excinfo:
-        await guard(
-            custom_llm,
-            msg_history=[
+            messages=[
                 {
                     "role": "user",
                     "content": "What kind of pet should I get?",
@@ -827,14 +794,14 @@ This also is not two words
 
 
 def test_input_validation_mismatch_raise():
-    # prompt validation, msg_history argument
+    # prompt validation, messages argument
     guard = Guard.from_pydantic(output_class=Pet)
-    guard.use(TwoWords(on_fail=OnFailAction.FIX), on="prompt")
+    guard.use(TwoWords(on_fail=OnFailAction.FIX), on="messages")
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValidationError):
         guard(
             get_static_openai_create_func(),
-            msg_history=[
+            messages=[
                 {
                     "role": "user",
                     "content": "What kind of pet should I get?",
@@ -842,14 +809,14 @@ def test_input_validation_mismatch_raise():
             ],
         )
 
-    # instructions validation, msg_history argument
+    # instructions validation, messages argument
     guard = Guard.from_pydantic(output_class=Pet)
-    guard.use(TwoWords(on_fail=OnFailAction.FIX), on="instructions")
+    guard.use(TwoWords(on_fail=OnFailAction.FIX), on="messages")
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValidationError):
         guard(
             get_static_openai_create_func(),
-            msg_history=[
+            messages=[
                 {
                     "role": "user",
                     "content": "What kind of pet should I get?",
@@ -857,12 +824,17 @@ def test_input_validation_mismatch_raise():
             ],
         )
 
-    # msg_history validation, prompt argument
+    # messages validation, prompt argument
     guard = Guard.from_pydantic(output_class=Pet)
-    guard.use(TwoWords(on_fail=OnFailAction.FIX), on="msg_history")
+    guard.use(TwoWords(on_fail=OnFailAction.FIX), on="messages")
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValidationError):
         guard(
             get_static_openai_create_func(),
-            prompt="What kind of pet should I get?",
+            messages=[
+                {
+                    "role": "user",
+                    "content": "What kind of pet should I get?",
+                }
+            ],
         )
