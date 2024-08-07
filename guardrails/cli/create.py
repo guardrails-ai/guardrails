@@ -1,7 +1,7 @@
 import os
 import sys
 import time
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Union, cast
 
 import typer
 import json
@@ -45,6 +45,8 @@ def create_command(
         help="Print out the validators to be installed without making any changes.",
     ),
 ):
+    # fix pyright typing issue
+    validators = cast(str, validators)
     filepath = check_filename(filepath)
 
     if not validators and template is not None:
@@ -54,11 +56,11 @@ def create_command(
             for validator in guard["validators"]:
                 validators_map[f"hub://{validator['id']}"] = True
         validators = ",".join(validators_map.keys())
-        installed_validators = split_and_install_validators(  # type: ignore
+        installed_validators = split_and_install_validators(
             validators,
             local_models,
-            dry_run,  # type: ignore
-        )  # type: ignore
+            dry_run,
+        )
         new_config_file = generate_template_config(
             template_dict, installed_validators, template_file_name
         )
@@ -69,11 +71,11 @@ def create_command(
         )
         sys.exit(1)
     else:
-        installed_validators = split_and_install_validators(  # type: ignore
+        installed_validators = split_and_install_validators(
             validators,
             local_models,
-            dry_run,  # type: ignore
-        )  # type: ignore
+            dry_run,
+        )
         if name is None and validators:
             name = "Guard"
             if len(installed_validators) > 0:

@@ -1,17 +1,15 @@
 from contextlib import contextmanager
 from string import Template
-from types import ModuleType
-from typing import Callable, List
+from typing import Callable, cast
 
-from guardrails.hub.validator_package_service import ValidatorPackageService
+from guardrails.hub.validator_package_service import (
+    ValidatorPackageService,
+    ValidatorModuleType,
+)
 from guardrails.classes.credentials import Credentials
 
 from guardrails.cli.hub.console import console
 from guardrails.cli.logger import LEVELS, logger as cli_logger
-
-
-class ValidatorModuleType(ModuleType):
-    __validator_exports__: List[str]
 
 
 class LocalModelFlagNotSet(Exception):
@@ -133,6 +131,7 @@ def install(
     installed_module = ValidatorPackageService.get_validator_from_manifest(
         module_manifest
     )
+    installed_module = cast(ValidatorModuleType, installed_module)
 
     # Print success messages
     cli_logger.info("Installation complete")
