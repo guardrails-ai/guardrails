@@ -163,12 +163,14 @@ def split_and_install_validators(
             validator_hub_uri = v.strip()
             status.update(f"Installing {v}")
             if not dry_run:
-                manifest_export = install(
+                module = install(
                     package_uri=validator_hub_uri,
                     install_local_models=local_models,
                     quiet=True,
                 )
-                manifest_exports.append(manifest_export)
+                exports = [name for name in dir(module) if not name.startswith("__")]
+                print("Extracted exports: ", exports)
+                manifest_exports.append(exports)
             else:
                 console.print(f"Fake installing {validator_hub_uri}")
                 time.sleep(1)
